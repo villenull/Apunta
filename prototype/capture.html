@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>New note</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <a href="patients.html" class="back">
+      <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Patients
+    </a>
+  </div>
+  <div class="content">
+    <h2 id="patient-name" style="margin-bottom:4px">New note</h2>
+    <div class="field" style="margin-bottom:20px;max-width:260px">
+      <label class="label">Note format</label>
+      <select>
+        <option>Progress note</option>
+        <option>Intake note</option>
+      </select>
+    </div>
+
+    <div class="stack" id="picker">
+      <div class="btn-option" onclick="show('record')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z" stroke="currentColor" stroke-width="1.5"/><path d="M19 11a7 7 0 01-14 0M12 18v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div>
+          <div class="opt-title">Record audio</div>
+          <div class="opt-sub">Narrate your notes right now</div>
+        </div>
+      </div>
+      <div class="btn-option" onclick="show('type')">
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div>
+          <div class="opt-title">Type it out</div>
+          <div class="opt-sub">Quick summary in your own words</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="record-ui" style="display:none;text-align:center;padding:32px 0">
+      <div class="record-dot">
+        <svg class="icon" style="width:26px;height:26px;color:var(--danger)" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 003-3V6a3 3 0 00-6 0v6a3 3 0 003 3z" stroke="currentColor" stroke-width="1.6"/><path d="M19 11a7 7 0 01-14 0M12 18v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <p class="timer">00:14</p>
+      <p class="muted" style="margin:4px 0 20px">Recording&hellip;</p>
+      <a href="#" id="record-done-link" class="btn btn-primary">Stop and process</a>
+    </div>
+
+    <div id="type-ui" style="display:none">
+      <textarea placeholder="Type your session summary..." style="height:130px;margin-bottom:14px"></textarea>
+      <a href="#" id="type-done-link" class="btn btn-primary btn-block">Process note</a>
+    </div>
+  </div>
+</div>
+<script>
+function show(kind){
+  document.getElementById('picker').style.display = 'none';
+  ['record','type'].forEach(k => {
+    document.getElementById(k+'-ui').style.display = k === kind ? 'block' : 'none';
+  });
+}
+const params = new URLSearchParams(window.location.search);
+const patient = params.get('patient');
+if (patient) {
+  document.getElementById('patient-name').textContent = 'New note for ' + patient;
+  const dest = 'patients.html?patient=' + encodeURIComponent(patient) + '&note=new';
+  document.getElementById('record-done-link').href = dest;
+  document.getElementById('type-done-link').href = dest;
+}
+</script>
+</body>
+</html>

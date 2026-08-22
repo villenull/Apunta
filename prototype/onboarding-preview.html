@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Confirm your format</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <a href="onboarding-format.html" class="back">
+      <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back
+    </a>
+  </div>
+  <div class="content">
+    <div class="progress">
+      <div class="dot done"></div>
+      <div class="dot done"></div>
+    </div>
+
+    <h2 style="margin-bottom:6px">Here's what we found</h2>
+    <p class="muted" style="margin-bottom:20px">Check this matches your work's format before saving.</p>
+
+    <div class="card">
+      <div class="field">
+        <label class="label">Format name</label>
+        <input type="text" value="Progress note">
+      </div>
+      <label class="label">Sections detected</label>
+      <div id="sections">
+        <div class="section-chip"><span>Subjective</span>
+          <svg class="icon" style="width:16px;height:16px;cursor:pointer" viewBox="0 0 24 24" fill="none" onclick="this.closest('.section-chip').remove()"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="section-chip"><span>Objective</span>
+          <svg class="icon" style="width:16px;height:16px;cursor:pointer" viewBox="0 0 24 24" fill="none" onclick="this.closest('.section-chip').remove()"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="section-chip"><span>Assessment</span>
+          <svg class="icon" style="width:16px;height:16px;cursor:pointer" viewBox="0 0 24 24" fill="none" onclick="this.closest('.section-chip').remove()"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="section-chip"><span>Plan</span>
+          <svg class="icon" style="width:16px;height:16px;cursor:pointer" viewBox="0 0 24 24" fill="none" onclick="this.closest('.section-chip').remove()"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <button class="btn small" style="margin-top:4px;padding:7px 12px">+ Add section</button>
+    </div>
+
+    <div class="row gap-12" style="margin-top:20px">
+      <a href="onboarding-format.html" class="btn" style="flex:1">Start over</a>
+      <a href="add-patient.html" class="btn btn-primary" style="flex:1">Looks right, save</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Practice Notes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Patients column -->
+  <div class="col col-patients">
+    <div class="col-header">
+      <div class="row gap-8">
+        <svg class="mark" style="width:20px;height:20px" viewBox="0 0 24 24" fill="none">
+          <path d="M2 12c1-3 2-4 3-2s1 5 3 3 1-6 3-3 1 5 3 2" stroke="#1F6F63" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M14 12h8" stroke="#1F6F63" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <h3 style="margin:0">Patients</h3>
+      </div>
+      <a href="add-patient.html" class="icon-btn" title="Add patient">
+        <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+    <div style="padding:10px 12px 4px">
+      <input type="text" id="patient-search" placeholder="Search patients" oninput="renderPatients()" style="font-size:13px;padding:8px 10px">
+    </div>
+    <div class="col-body" id="patient-list"></div>
+    <div style="padding:10px 14px;border-top:0.5px solid var(--border)">
+      <a href="settings.html" class="small" style="color:var(--text-secondary)">Note formats &amp; settings</a>
+    </div>
+  </div>
+
+  <!-- Notes column -->
+  <div class="col col-notes">
+    <div class="col-header">
+      <h3 id="notes-header" style="margin:0">Notes</h3>
+    </div>
+    <div class="col-body" id="notes-panel"></div>
+  </div>
+
+  <!-- Main pane -->
+  <div class="col col-main" id="main-panel"></div>
+
+</div>
+
+<script>
+const sampleNoteText = `Subjective: Patient reports improved sleep since last session and decreased frequency of intrusive thoughts.
+
+Objective: Alert, oriented, cooperative, mood congruent with affect.
+
+Assessment: Continued progress on anxiety management goals; responding well to current CBT approach.
+
+Plan: Continue weekly sessions. Introduce grounding exercises for use between sessions.`;
+
+const patients = [
+  {
+    id: 'john-smith', name: 'John Smith', initials: 'JS',
+    notes: [
+      { id: 'n3', date: 'Aug 8, 2026', title: 'Progress note', published: true, text: sampleNoteText, chat: [] },
+      { id: 'n2', date: 'Aug 1, 2026', title: 'Progress note', published: true,
+        text: `Subjective: Patient describes increased stress related to an upcoming work deadline.
+
+Objective: Alert and engaged, slightly restless affect.
+
+Assessment: Stress reactive to situational trigger, no acute risk indicators.
+
+Plan: Practice breathing exercises daily. Follow up next week.`, chat: [] },
+      { id: 'n1', date: 'Jul 24, 2026', title: 'Intake note', published: true,
+        text: `Presenting problem: Patient presents with generalized anxiety symptoms over the past six months.
+
+History: No prior therapy. Family history of anxiety.
+
+Formulation: Symptoms consistent with GAD, likely exacerbated by work transition.
+
+Plan: Begin weekly CBT-based sessions.`, chat: [] }
+    ]
+  },
+  {
+    id: 'maria-ruiz', name: 'Maria Ruiz', initials: 'MR',
+    notes: [
+      { id: 'n4', date: 'Aug 4, 2026', title: 'Progress note', published: true,
+        text: `Subjective: Patient reports difficult week around anniversary of loss.
+
+Objective: Tearful at points, otherwise composed.
+
+Assessment: Grief processing progressing as expected.
+
+Plan: Continue supportive therapy weekly.`, chat: [] }
+    ]
+  },
+  {
+    id: 'ana-torres', name: 'Ana Torres', initials: 'AT',
+    notes: []
+  }
+];
+
+let activePatientId = null;
+let activeNoteId = null;
+let pendingRef = null;
+
+function findPatient(id){ return patients.find(p => p.id === id); }
+function findNote(patient, id){ return patient.notes.find(n => n.id === id); }
+
+function init(){
+  const params = new URLSearchParams(window.location.search);
+  const preselect = params.get('patient');
+  const wantsNew = params.get('note') === 'new';
+
+  if (preselect) {
+    const match = patients.find(p => p.name === preselect);
+    if (match) activePatientId = match.id;
+  }
+
+  if (wantsNew && activePatientId) {
+    const patient = findPatient(activePatientId);
+    const newNote = {
+      id: 'draft-' + Date.now(),
+      date: 'Today',
+      title: 'Progress note',
+      published: false,
+      text: sampleNoteText,
+      chat: [{ role: 'ai', text: "Here's a first pass based on your dictation. Tell me what to change \u2014 shorten a section, add something I missed, adjust tone \u2014 and I'll update it. Highlight any part of the note to point me right at it." }]
+    };
+    patient.notes.unshift(newNote);
+    activeNoteId = newNote.id;
+  }
+
+  renderAll();
+}
+
+function renderAll(){
+  renderPatients();
+  if (activePatientId) renderNotes();
+  else renderEmptyMain('no-patient');
+}
+
+function renderPatients(){
+  const el = document.getElementById('patient-list');
+  const q = (document.getElementById('patient-search')?.value || '').toLowerCase();
+  const visible = patients.filter(p => p.name.toLowerCase().includes(q));
+  el.innerHTML = visible.map(p => `
+    <div class="list-item ${p.id === activePatientId ? 'active' : ''}" onclick="selectPatient('${p.id}')">
+      <div class="avatar">${p.initials}</div>
+      <div>
+        <div class="name">${p.name}</div>
+        <div class="sub">${p.notes.length} note${p.notes.length === 1 ? '' : 's'}</div>
+      </div>
+    </div>
+  `).join('') || `<p class="small" style="padding:8px 10px;color:var(--text-muted)">No patients match.</p>`;
+}
+
+function selectPatient(id){
+  activePatientId = id;
+  activeNoteId = null;
+  renderPatients();
+  renderNotes();
+}
+
+function renderNotes(){
+  const patient = findPatient(activePatientId);
+  document.getElementById('notes-header').textContent = patient.name.split(' ')[0] + '\u2019s notes';
+
+  const panel = document.getElementById('notes-panel');
+  const newBtn = `
+    <div class="new-note-btn" onclick="window.location='capture.html?patient=${encodeURIComponent(patient.name)}'">
+      <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      New note
+    </div>`;
+
+  if (patient.notes.length === 0) {
+    panel.innerHTML = newBtn + `<p class="small" style="padding:0 10px;color:var(--text-muted)">No notes yet for ${patient.name}.</p>`;
+    renderEmptyMain('no-notes', patient);
+    return;
+  }
+
+  panel.innerHTML = newBtn + patient.notes.map(n => `
+    <div class="note-item ${n.id === activeNoteId ? 'active' : ''}" onclick="selectNote('${n.id}')">
+      <div class="note-title">${n.published ? '' : '<span class="draft-dot"></span>'}${n.title}</div>
+      <div class="note-date">${n.date}${n.published ? '' : ' \u00b7 Draft'}</div>
+      <div class="note-preview">${n.text.slice(0, 60).replace(/\n/g, ' ')}&hellip;</div>
+    </div>
+  `).join('');
+
+  if (activeNoteId) {
+    const note = findNote(patient, activeNoteId);
+    if (note) renderNoteView(patient, note);
+    else renderEmptyMain('no-note-selected', patient);
+  } else {
+    renderEmptyMain('no-note-selected', patient);
+  }
+}
+
+function selectNote(id){
+  activeNoteId = id;
+  pendingRef = null;
+  renderNotes();
+}
+
+function renderEmptyMain(kind, patient){
+  const main = document.getElementById('main-panel');
+  if (kind === 'no-patient') {
+    main.innerHTML = `
+      <div class="empty-state">
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M10 11a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p>Select a patient to see their notes</p>
+      </div>`;
+  } else {
+    main.innerHTML = `
+      <div class="empty-state">
+        <svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M14 3v5h5M6 3h8l5 5v13H6z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p style="margin-bottom:14px">No note selected for ${patient.name}</p>
+        <a href="capture.html?patient=${encodeURIComponent(patient.name)}" class="btn btn-primary">
+          <svg style="width:15px;height:15px" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Create new note
+        </a>
+      </div>`;
+  }
+}
+
+function renderNoteView(patient, note){
+  document.getElementById('main-panel').innerHTML = `
+    <div class="note-chat-split">
+      <div class="note-editor-col">
+        <div class="note-editor-header row between">
+          <div>
+            <p class="small" style="color:var(--text-secondary);margin-bottom:2px">${patient.name} &middot; created ${note.date}${note.edited ? ' &middot; edited ' + note.edited : ''}</p>
+            <h2>${note.title}</h2>
+          </div>
+          <div class="row gap-8">
+            <button class="btn small" style="padding:7px 10px" onclick="deleteNote()" title="Delete note">
+              <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="btn small" style="padding:7px 12px" onclick="copyNote()" id="copy-btn">
+              <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="1.5"/></svg>
+              Copy
+            </button>
+            <button class="btn small btn-publish ${note.published ? 'is-published' : ''}" style="padding:7px 12px" onclick="publishNote()" id="publish-btn">
+              ${note.published ? publishedLabel() : publishLabel()}
+            </button>
+          </div>
+        </div>
+        <div class="note-editor-body">
+          <div class="note-editable" id="note-editable" contenteditable="${note.published ? 'false' : 'true'}" style="${note.published ? 'opacity:0.85;cursor:default' : ''}" oninput="onNoteEdit()" onmouseup="onNoteSelect()">${escapeHtml(note.text)}</div>
+        </div>
+      </div>
+      <div class="chat-col">
+        <div class="chat-header">
+          <h3 style="margin:0">Refine with AI</h3>
+        </div>
+        <div class="chat-thread" id="chat-thread"></div>
+        <div id="ref-chip-holder"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 8px">
+          <button class="btn small" style="padding:5px 10px;font-size:12px" onclick="quickAction('Make it shorter')">Shorter</button>
+          <button class="btn small" style="padding:5px 10px;font-size:12px" onclick="quickAction('Use a more clinical tone')">More clinical</button>
+          <button class="btn small" style="padding:5px 10px;font-size:12px" onclick="quickAction('Expand the plan section')">Expand plan</button>
+          <button class="btn small" style="padding:5px 10px;font-size:12px" onclick="quickAction('Check for anything missing')">What's missing?</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Ask a question or give feedback..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn btn-primary" onclick="sendChat()">
+            <svg style="width:15px;height:15px" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  renderChatThread();
+}
+
+function publishLabel(){
+  return `<svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Publish`;
+}
+function publishedLabel(){
+  return `<svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Published (click to edit)`;
+}
+
+function escapeHtml(text){
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function currentNote(){
+  const patient = findPatient(activePatientId);
+  return { patient, note: findNote(patient, activeNoteId) };
+}
+
+function quickAction(text){
+  document.getElementById('chat-input').value = text;
+  sendChat();
+}
+
+function deleteNote(){
+  if (!confirm('Delete this note? This cannot be undone.')) return;
+  const patient = findPatient(activePatientId);
+  patient.notes = patient.notes.filter(n => n.id !== activeNoteId);
+  activeNoteId = null;
+  renderPatients();
+  renderNotes();
+}
+
+function onNoteEdit(){
+  const { note } = currentNote();
+  note.text = document.getElementById('note-editable').innerText;
+  note.edited = 'today';
+  if (note.published) {
+    note.published = false;
+    const btn = document.getElementById('publish-btn');
+    btn.classList.remove('is-published');
+    btn.innerHTML = publishLabel();
+  }
+  const preview = document.querySelector(`.note-item.active .note-preview`);
+  if (preview) preview.textContent = note.text.slice(0, 60).replace(/\n/g, ' ') + '\u2026';
+}
+
+function copyNote(){
+  const text = document.getElementById('note-editable').innerText;
+  navigator.clipboard.writeText(text).catch(() => {});
+  flashCopyBtn();
+}
+
+function flashCopyBtn(){
+  const btn = document.getElementById('copy-btn');
+  const original = btn.innerHTML;
+  btn.innerHTML = '<svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Copied';
+  setTimeout(() => { btn.innerHTML = original; }, 1400);
+}
+
+function publishNote(){
+  const { note } = currentNote();
+  const editable = document.getElementById('note-editable');
+  const btn = document.getElementById('publish-btn');
+
+  if (note.published) {
+    // Unlock for editing
+    note.published = false;
+    editable.setAttribute('contenteditable', 'true');
+    editable.style.opacity = '';
+    editable.style.cursor = '';
+    btn.classList.remove('is-published');
+    btn.innerHTML = publishLabel();
+    renderNotes();
+    return;
+  }
+
+  // Publish: copy + lock
+  const text = editable.innerText;
+  note.text = text;
+  navigator.clipboard.writeText(text).catch(() => {});
+  note.published = true;
+  editable.setAttribute('contenteditable', 'false');
+  editable.style.opacity = '0.85';
+  editable.style.cursor = 'default';
+  btn.classList.add('is-published');
+  btn.innerHTML = publishedLabel();
+  renderNotes();
+}
+
+function onNoteSelect(){
+  const sel = window.getSelection();
+  const text = sel.toString().trim();
+  const holder = document.getElementById('ref-chip-holder');
+  if (text.length > 0) {
+    pendingRef = text;
+    holder.innerHTML = `
+      <div class="ref-chip">
+        <span>&ldquo;${text.length > 70 ? text.slice(0, 70) + '\u2026' : text}&rdquo;</span>
+        <button onclick="clearRef()">&times;</button>
+      </div>`;
+  }
+}
+
+function clearRef(){
+  pendingRef = null;
+  document.getElementById('ref-chip-holder').innerHTML = '';
+}
+
+function renderChatThread(){
+  const { note } = currentNote();
+  const thread = document.getElementById('chat-thread');
+  thread.innerHTML = note.chat.map(m => `
+    <div class="chat-msg ${m.role}">
+      <div class="chat-bubble">
+        ${m.ref ? `<div class="chat-quote">&ldquo;${m.ref}&rdquo;</div>` : ''}
+        ${m.text}
+      </div>
+    </div>
+  `).join('') || `<p class="small" style="color:var(--text-muted)">Ask a question about this note, or give feedback to refine it.</p>`;
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function sendChat(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const { note } = currentNote();
+
+  note.chat.push({ role: 'user', text, ref: pendingRef });
+  input.value = '';
+  const ref = pendingRef;
+  clearRef();
+  renderChatThread();
+
+  setTimeout(() => {
+    let reply = "Updated the note based on that.";
+    const locked = note.published;
+    if (locked && !/\?/.test(text)) {
+      reply = "This note is published, so I won\u2019t change it. Click \u201cPublished (click to edit)\u201d to unlock it first, then ask me again.";
+    } else if (/plan/i.test(text) && !locked) {
+      note.text = note.text.replace(/Plan:[\s\S]*$/, 'Plan: Continue weekly sessions and grounding exercises.');
+      reply = "Shortened the Plan section.";
+    } else if (/sleep|subjective/i.test(text) && !locked) {
+      note.text = note.text.replace(/(Subjective:.*?)(\n\n|$)/s, (m, p1, p2) => p1 + ' Also noted improved appetite this week.' + p2);
+      reply = "Added that to the Subjective section.";
+    } else if (/\?/.test(text)) {
+      reply = "Based on the note, " + (ref ? "the section you highlighted covers that \u2014 let me know if you'd like it expanded." : "that detail isn't currently in the note. Want me to add it?");
+    } else if (locked) {
+      reply = "This note is published, so I won\u2019t change it. Click \u201cPublished (click to edit)\u201d to unlock it first.";
+    }
+    note.chat.push({ role: 'ai', text: reply });
+    if (!locked) {
+      document.getElementById('note-editable').innerText = note.text;
+    }
+    renderChatThread();
+  }, 550);
+}
+
+init();
+</script>
+</body>
+</html>

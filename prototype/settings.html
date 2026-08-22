@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Settings</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <a href="patients.html" class="back">
+      <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Patients
+    </a>
+  </div>
+  <div class="content">
+    <h2 style="margin-bottom:16px">Note formats</h2>
+
+    <div class="card" style="padding:8px 16px;margin-bottom:16px">
+      <div class="patient-row">
+        <div>
+          <p style="font-weight:500;font-size:15px">Progress note</p>
+          <p class="small" style="color:var(--text-secondary)">Subjective, Objective, Assessment, Plan</p>
+        </div>
+        <span class="small" style="color:var(--text-secondary)">Edit</span>
+      </div>
+      <div class="patient-row">
+        <div>
+          <p style="font-weight:500;font-size:15px">Intake note</p>
+          <p class="small" style="color:var(--text-secondary)">Presenting problem, History, Formulation, Plan</p>
+        </div>
+        <span class="small" style="color:var(--text-secondary)">Edit</span>
+      </div>
+    </div>
+
+    <a href="onboarding-format.html" class="btn btn-block">
+      <svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Add another format
+    </a>
+  </div>
+</div>
+</body>
+</html>
