@@ -79,11 +79,17 @@ export function updateNote(db: Database, id: string, patch: UpdateNoteInput): No
 }
 
 /** Sets `status` and `published_at` together — the schema requires they agree. */
-export function setNotePublished(db: Database, id: string, published: boolean): Note | undefined {
+export function setNotePublished(
+  db: Database,
+  id: string,
+  published: boolean,
+  /** Seeding backdates the sample notes; the API always uses "now". */
+  at?: string,
+): Note | undefined {
   const current = getNote(db, id);
   if (!current) return undefined;
 
-  const now = new Date().toISOString();
+  const now = at ?? new Date().toISOString();
   const next: Note = {
     ...current,
     status: published ? 'published' : 'draft',
