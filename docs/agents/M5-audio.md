@@ -11,6 +11,30 @@ existing draft pipeline.
 Read `docs/research/local-ai-stack-2026-08.md` §3 first. **Never** use the
 browser SpeechRecognition/Web Speech API — hard privacy rule.
 
+## Read before you start: ffmpeg is probably out
+
+`docs/research/m8-bundling-2026-08.md` (Aug 2026) found two things that make
+the ffmpeg step below unnecessary, and one licensing reason to want it gone:
+
+- `whisper-cli` no longer needs a 16 kHz WAV. It decodes through miniaudio and
+  resamples/downmixes internally (WAV, MP3, FLAC, Ogg Vorbis, stdin). The
+  README's "16-bit WAV only" line is stale. It still cannot read Opus/WebM.
+- Chromium accepts `new AudioContext({ sampleRate: 16000 })`, so the browser
+  can record 16 kHz mono directly and write a 44-byte RIFF header itself —
+  roughly 80 lines, no server-side transcode.
+- Homebrew's ffmpeg is GPL-3.0-or-later and no maintained prebuilt LGPL arm64
+  macOS build exists, so bundling it in M8's `.dmg` is a real problem. Not
+  depending on it now avoids having to undo this later.
+
+**So: record 16 kHz mono WAV in the browser, POST that, and skip ffmpeg.**
+If you deviate, say why in `docs/decisions.md`. Either way the `ffmpeg` key in
+`shared/src/health.ts` and the M7 setup checklist need revisiting — a machine
+with no ffmpeg installed should not show red for a dependency the app no
+longer uses.
+
+The deliverables below are written as originally drafted; treat the ffmpeg
+step as superseded rather than as instruction.
+
 ## Deliverables
 
 1. `WhisperCppSttProvider` implementing `SttProvider`:
