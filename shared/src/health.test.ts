@@ -6,6 +6,7 @@ const stub = {
   ok: true,
   version: '0.0.0',
   fakeAi: false,
+  db: { path: '/tmp/practice-notes.db', migrationLevel: 1 },
   ollama: { reachable: false, model: null, modelPresent: false },
   whisper: { binaryPresent: false, modelPresent: false },
   ffmpeg: { present: false },

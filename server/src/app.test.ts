@@ -1,37 +1,24 @@
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { HealthResponseSchema } from '@patience/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { buildApp } from './app.js';
-import { ensureDataDir, loadConfig } from './config.js';
+import { DB_FILENAME } from './config.js';
+import { createTestApp, type TestApp } from './test/harness.js';
 
-const dataDir = mkdtempSync(join(tmpdir(), 'patience-test-'));
-
-const config = loadConfig({
-  PATIENCE_PORT: '0',
-  PATIENCE_DATA_DIR: dataDir,
-  PATIENCE_FAKE_AI: '1',
-});
-
-let app: Awaited<ReturnType<typeof buildApp>>;
+let harness: TestApp;
 
 beforeAll(async () => {
-  ensureDataDir(config.dataDir);
-  app = await buildApp({ config, logger: false });
-  await app.ready();
+  harness = await createTestApp();
 });
 
 afterAll(async () => {
-  await app.close();
-  rmSync(dataDir, { recursive: true, force: true });
+  await harness.close();
 });
 
 describe('GET /api/health', () => {
   it('answers with a schema-valid payload', async () => {
-    const response = await app.inject({ method: 'GET', url: '/api/health' });
+    const response = await harness.app.inject({ method: 'GET', url: '/api/health' });
 
     expect(response.statusCode).toBe(200);
     const body: unknown = response.json();
@@ -43,11 +30,19 @@ describe('GET /api/health', () => {
       ffmpeg: { present: false },
     });
   });
+
+  it('reports where the database lives and how far migrations have run', async () => {
+    const response = await harness.app.inject({ method: 'GET', url: '/api/health' });
+
+    const health = HealthResponseSchema.parse(response.json());
+    expect(health.db.path).toBe(join(harness.dataDir, DB_FILENAME));
+    expect(health.db.migrationLevel).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('unknown routes', () => {
   it('404s unknown /api routes as JSON', async () => {
-    const response = await app.inject({ method: 'GET', url: '/api/nope' });
+    const response = await harness.app.inject({ method: 'GET', url: '/api/nope' });
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toMatchObject({ error: 'not_found', message: 'Not Found' });
