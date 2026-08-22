@@ -179,24 +179,34 @@ Two constraints that follow either way:
   visible evidence of where it came from — exactly the pattern "invent a
   plausible conclusion" looks like from the inside.
 
-  Recommended shape, for M3/M6 to decide properly:
+  **The sketch that was here has been superseded** by a full design in
+  `docs/research/style-profile-design-2026-08.md`, which corrected it on three
+  points. Kept here so the correction is legible rather than silent:
 
-  1. **Derive a style profile, don't paste examples.** A one-time pass over her
-     notes producing a description — register, sentence length, "client" vs
-     "patient", how she opens an Assessment, whether she uses first person.
-     The prompt then carries a style *description*, which cannot demonstrate
-     inference the way an example does.
-  2. **Build real paired examples from her actual use.** Once she is drafting
-     from dictations, each accepted note is a genuine (dictation → note) pair
-     where the mapping is visible. Those are safe few-shot material and they
-     accumulate for free.
-  3. If raw excerpts are used at all before (2) has a corpus, restrict them to
-     sections where inference is structurally impossible — Subjective and
-     Objective — and never Assessment.
+  - It proposed restricting raw excerpts to Subjective and Objective, on the
+    grounds that inference is impossible there. **Wrong on every count:**
+    Subjective is not inference-free, the length prior survives section
+    scoping intact, and a partial note contradicts a schema that requires all
+    keys.
+  - It called real (dictation → note) pairs from her own use "safe". **Not
+    automatically** — a published note is the draft *plus* whatever
+    conclusions she typed from memory, so pairs need an entailment filter
+    before they qualify.
+  - It said "derive a style profile" without saying by what. It must mean
+    *measured by code* — enums, counts, a frequency-filtered phrase list — not
+    *described by a model*. A prose description derived from clinical material
+    can smuggle content priors and cannot be tested.
 
-  Whatever lands, the M7 eval must re-run against her real formats, with
-  fabrication rate compared before and after the style profile is switched
-  on. A style change that quietly raises fabrication is the failure mode.
+  The design that replaces it keeps her past notes **out of the prompt
+  entirely**, which retires the truncation, logging and context-window risks
+  the sketch had accepted. Read that document before implementing any of this;
+  the summary below is not a substitute.
+
+  The cheapest, highest-value piece needs nothing from us: **golden pairs she
+  writes herself** from the fabricated John Smith / Maria Ruiz dictations
+  already in `e2e/fixtures/eval/`. Highest voice fidelity, zero patient data,
+  visible input, and her own choice of epistemic restraint demonstrated rather
+  than described. Ten minutes of her time and no code.
 
 ### 11 — `[unclear in dictation]` is allowed, with no gate
 

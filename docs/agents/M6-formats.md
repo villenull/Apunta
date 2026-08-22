@@ -10,6 +10,22 @@ the owner's Claude skill drive a format's drafting instructions.
 
 Read `docs/skill-porting.md` and research §4 first.
 
+**Also read `docs/research/style-profile-design-2026-08.md` before touching
+anything voice-related.** The owner asked for drafts in her established voice
+learned from her past notes, and separately forbade the model from stating
+conclusions she did not voice. The naive implementation of the first defeats
+the second, and that document is the design that resolves it — including two
+rules it is easy to get wrong (features may describe a sentence but never a
+section, because a section-length target is a content quota; and attribution
+and hedging may only be raised, never lowered, because de-hedging is itself a
+faithfulness failure even when it is genuinely her voice).
+
+Her past notes must never become prompt content. A gate before any of this
+ships: a half-day pre-experiment (§7.1 of that document) testing whether a
+12B model follows a descriptive style block at all. If it does not, the whole
+design collapses to golden pairs — worth finding out cheaply rather than
+after building it.
+
 ## Deliverables
 
 1. Text extraction in `server/src/extract/`: `.docx` via `mammoth`
