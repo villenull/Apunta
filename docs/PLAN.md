@@ -243,6 +243,16 @@ so its final acceptance is a manual run on the owner's Mac.
 ## 8. Deferred (do not build now)
 
 - Passcode + at-rest encryption (SQLCipher) — backlog, design allows it.
+  Deferred deliberately, not by omission: the app has no login, so the key
+  would sit on the same disk protected by the same login password FileVault
+  already uses. Bundling passcode and SQLCipher into one item is correct —
+  a passcode without SQLCipher is a UI gate over a plaintext file, and
+  SQLCipher without a passcode is a lock with the key taped to it. The most
+  likely harm from shipping it early is not an attacker getting in but a solo
+  practitioner losing a Keychain-held key and being locked out of years of
+  history. v1 spends the effort on *verifying* FileVault instead, and on
+  encrypting backups once they leave the machine. See
+  `docs/research/data-at-rest-2026-08.md`.
 - In-browser WebLLM/whisper fallback engine — provider interface allows it.
 - Optional Claude API provider (paid, higher quality) — same interface.
 - Multi-user/auth/sync/hosted mode.

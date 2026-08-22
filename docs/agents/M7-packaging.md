@@ -25,17 +25,53 @@ setup-script path clean and well-documented, because M8 builds on it.
    checksum) → writes chosen model into settings → prints "run `npm start`".
 2. First-run/setup wizard in the app: when `/api/health` reports anything
    missing, `/setup` shows a checklist (Ollama running / model present /
-   whisper binary / whisper model / ffmpeg) with the exact command to fix
-   each, a "re-check" button, and a copyable one-liner for the setup script.
+   whisper binary / whisper model) with the exact command to fix each, a
+   "re-check" button, and a copyable one-liner for the setup script. Drop
+   `ffmpeg` from this list — M5 no longer uses it.
+
+   **Add a FileVault check** (`fdesetup status`). It is the only thing standing
+   between a stolen laptop and every clinical record on it, recent Apple
+   silicon Setup Assistant may not prompt for it, and without it the volume key
+   is protected only by the hardware UID — by nothing she knows. Verify it
+   rather than assuming it; say plainly what it means if it is off.
    The M3 banner links here. When all green: "You're fully local — nothing
    leaves this Mac."
 3. `npm start` opens the browser (`open http://127.0.0.1:7717` on darwin)
    after listening. Optional `scripts/install-launchagent.sh` creating a
    LaunchAgent so the server starts at login (document uninstall).
-4. Export & backup: `GET /api/export` streams a zip of all notes as
-   markdown (`Patient/2026-08-22 Progress note.md`) + a `data.json` dump;
-   Settings gains an Export button and shows the db file path with a "your
-   backup is this file" note.
+4. Export & backup — **rewritten; see `docs/research/data-at-rest-2026-08.md`.**
+   The owner keeps every note forever and the records system holds the
+   authoritative copy, so this laptop carries a second complete set of clinical
+   records with no institutional backup behind it. The research names the
+   biggest real risk to her as *the backup not existing, or existing and not
+   being restorable* — it outranks every confidentiality scenario because the
+   harm is certain rather than conditional.
+
+   As originally specified (markdown + `data.json`, no `.db`, no manifest, no
+   restore instructions) this produces something you can read but cannot
+   restore. Fix that:
+
+   - The zip carries **the `.db` itself**, not only a rendering of it, plus a
+     manifest (schema version, app version, note/patient counts, timestamp)
+     and a plain-language RESTORE.txt written for someone who no longer has
+     Apunta installed. Keep the markdown too — it is the human-readable
+     fallback — but it is not the backup.
+   - **Warn about the destination.** Desktop and Documents are exactly the two
+     folders "Desktop & Documents Folders" syncs to iCloud, so the obvious save
+     location uploads clinical records to Apple. Worse, with Optimize Mac
+     Storage on, macOS evicts unopened files to 0-byte placeholders and Time
+     Machine then backs up the stub — a backup that appears to exist and is
+     empty when needed.
+   - **Encrypt any backup that leaves the machine**, since it no longer has
+     FileVault under it.
+   - Restore instructions must say: restore the `.db` alone and **delete any
+     stale `-wal`/`-shm` beside it**. Missing that step is what actually
+     causes damage. (Modern Time Machine snapshots APFS, so the trio is
+     captured atomically — the restore is crash-consistent and SQLite replays
+     the WAL.)
+   - Do **not** run a bare `VACUUM` on the live database: it writes a full
+     plaintext copy of every note into `TMPDIR`, falling through to `/var/tmp`
+     or `/tmp` when unset.
 5. Polish pass (small, bounded): keyboard focus states, Escape closes
    confirms, patient archive UI (hide archived with a toggle), note list
    relative dates ("Today", "Aug 8, 2026" per prototype), error toasts for
@@ -59,6 +95,15 @@ setup-script path clean and well-documented, because M8 builds on it.
 7. README rewritten for an end user: what it is, privacy model, setup on a
    Mac (3 steps), daily use, backup, troubleshooting table, then a
    development section.
+
+## Before you start
+
+`docs/research/data-at-rest-2026-08.md` §7 lists nine claims the research could
+not verify from primary sources (this container's egress policy blocked
+`sqlite.org`, `support.apple.com` and `eclecticlight.co`), each with the exact
+command to settle it on a real Mac. Run those during the manual verification
+pass. **None of them may reach user-facing documentation unverified** — wrong
+guidance about where a backup lives is worse than none.
 
 ## Acceptance criteria
 
