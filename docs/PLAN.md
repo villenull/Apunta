@@ -193,7 +193,7 @@ Dependency order — each is one work packet in `docs/agents/`:
 M0 scaffold → M1 data+API → M2 web shell → M3 AI providers ─┬→ M4 refine chat
                                                             ├→ M5 audio capture
                                                             └→ M6 format onboarding
-M4+M5+M6 → M7 setup, polish & packaging
+M4+M5+M6 → M7 setup, polish & eval → M8 double-clickable installer
 ```
 
 M4, M5 and M6 each depend only on M3, so they may be tackled in any order
@@ -213,6 +213,15 @@ concurrently would collide in the same working tree. See
 | M5 | `M5-audio.md` | Record → upload → ffmpeg → whisper.cpp → transcript → draft |
 | M6 | `M6-formats.md` | Format onboarding (template/examples/manual), detection, editor, skill import |
 | M7 | `M7-packaging.md` | macOS setup script, first-run wizard, model auto-pick, export, polish, eval harness |
+| M8 | `M8-installer.md` | Double-clickable `.dmg` — bundled runtimes, first-run download UI, signing, non-technical install guide |
+
+**M7 vs M8.** M7 makes the app work on a developer's Mac via a setup script.
+M8 makes it installable by someone who has never opened a terminal: no
+Homebrew, no Node, no git clone, no Ollama install — one download, one drag,
+one progress bar. M8 bundles `llama-server` (llama.cpp) rather than requiring
+Ollama, which is why PLAN §2 insists the app only ever speak the
+OpenAI-compatible API. M8 cannot be built or verified in CI (it needs macOS),
+so its final acceptance is a manual run on the owner's Mac.
 
 ## 8. Deferred (do not build now)
 

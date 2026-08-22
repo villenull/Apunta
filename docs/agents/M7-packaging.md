@@ -8,6 +8,12 @@ Make it real on the owner's MacBook: guided setup, model auto-pick,
 first-run wizard, export/backup, rough edges sanded, and a model-quality
 eval harness.
 
+**Scope boundary:** M7 targets a developer's Mac and may assume a terminal,
+Homebrew, and a git clone. Making the app installable by a non-technical
+user — a signed `.dmg`, bundled runtimes, no Homebrew, no terminal — is
+M8 (`M8-installer.md`). Do not start building an app bundle here; keep the
+setup-script path clean and well-documented, because M8 builds on it.
+
 ## Deliverables
 
 1. `scripts/setup-macos.sh` (idempotent, re-runnable, loud about what it

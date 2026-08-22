@@ -31,9 +31,14 @@ and give it this prompt (swap the packet name):
 > stop when every acceptance criterion passes locally (lint, typecheck,
 > tests, build, e2e), then push.
 
-**Order:** M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7, strictly one at a time.
-M4, M5 and M6 only depend on M3, so they may be done in any order among
+**Order:** M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8, strictly one at a
+time. M4, M5 and M6 only depend on M3, so they may be done in any order among
 themselves — but still sequentially, never concurrently.
+
+M8 is the odd one out: it builds a macOS app bundle, which **cannot be built,
+signed or run in the Linux CI container**. Its agent produces the tooling and
+verifies what static checks allow; final acceptance is a manual run on the
+owner's Mac against the checklist in the packet.
 
 **Every packet inherits:** the hard rules in CLAUDE.md, the definition of
 done, and the testing expectations in docs/PLAN.md §6. Acceptance criteria
