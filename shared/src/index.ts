@@ -54,3 +54,38 @@ export type { ChatMessage, ChatRole, CreateChatMessageInput } from './chat-messa
 
 export { SettingKeySchema, SettingsSchema, UpdateSettingsRequestSchema } from './settings.js';
 export type { Settings, UpdateSettingsRequest } from './settings.js';
+
+export {
+  buildRefineSchema,
+  buildSectionsSchema,
+  DetectedFormatSchema,
+  detectedFormatJsonSchema,
+  emptySectionNames,
+  MAX_SECTION_CHARS,
+  refineJsonSchema,
+  sectionsJsonSchema,
+  sectionsToText,
+  textToSections,
+} from './sections.js';
+export type { DetectedFormat, JsonSchemaObject, RefineResult, Sections } from './sections.js';
+
+export {
+  AiErrorCodeSchema,
+  GENERATE_EVENT_NAMES,
+  GenerateErrorEventSchema,
+  GenerateNoteEventSchema,
+  GenerateRequestSchema,
+  GenerateStageSchema,
+  GenerateStatusEventSchema,
+  GenerateTokenEventSchema,
+} from './generate.js';
+export type {
+  AiErrorCode,
+  GenerateErrorEvent,
+  GenerateEventName,
+  GenerateNoteEvent,
+  GenerateRequest,
+  GenerateStage,
+  GenerateStatusEvent,
+  GenerateTokenEvent,
+} from './generate.js';
