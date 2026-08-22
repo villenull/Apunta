@@ -4,8 +4,9 @@ Six multiple-choice questions put to the practice owner (the therapist this is
 being built for) before the UI is finalised. Her answers verbatim, then what
 each one changes.
 
-All seven are now answered. Question 7 was a follow-up added after the first
-six came back, to resolve an ambiguity in her answer to question 6.
+All seven are answered, plus four clarifying questions put to her directly
+afterwards (questions 8–11 below). One of those reversed an earlier reading:
+**typed capture is the primary path, not dictation.**
 
 ## Answers
 
@@ -21,20 +22,29 @@ six came back, to resolve an ambiguity in her answer to question 6.
 
 ## What each answer changes
 
-### 1 — Dictation *and* rough written notes (M5, M2 capture)
+### 1 + 8 — Mostly written, not spoken (M2, M3, M5)
 
-Her note matters more than the choice. She does not pick one input; she speaks
-after the session **and** has rough notes written out. The prototype's capture
-screen is either/or — record **or** type. That is now wrong.
+The original answer picked dictation, but the note said "rough notes written
+out", so this was put to her again. **"Mostly written. Speaking is
+occasional."** That is the opposite emphasis to what answer 1 implied, and it
+is the single most useful correction in the set.
 
-Capture should take both in one pass: an audio recording *and* a text field for
-the rough notes, both fed to the drafting call as separate labelled inputs
-(transcript + the therapist's own written notes). The written notes are the
-higher-confidence source — they are her words, already deliberate — and the
-prompt should say so.
+Consequences, all of them good:
 
-M5 owns the real change; M2 should not build an either/or toggle that M5 has
-to tear out.
+- **Typed capture is the product, not a stopgap.** M2's "Type it out" path is
+  the main flow and deserves to be built as such, not as scaffolding M3
+  replaces.
+- **M5 (audio) is deferrable.** It stays in the plan and the existing order
+  already puts it after M3, so nothing needs reordering — but v1 could ship
+  without it. That also takes the urgency out of M8's whisper-cli problem
+  (upstream ships no prebuilt macOS binary, so packaging has to compile it).
+- **Faithfulness gets easier.** Her rough notes are already her words, chosen
+  deliberately, with no transcription noise. There is less for the model to
+  reconstruct and less room to invent than there would be from a hurried
+  dictation recalled hours later.
+- Capture should still accept both together when she does record — the earlier
+  point stands that either/or is wrong — but the text field is the default and
+  the recorder is the secondary affordance.
 
 ### 2 — Notes are written in an end-of-day batch (M2, M4)
 
@@ -61,6 +71,8 @@ system, and the note gets there by clipboard. That reframes several things:
 - **Copy plain text, not markdown.** The destination is almost certainly a
   plain textarea; markdown would paste literal asterisks and hashes. Section
   name, newline, body, blank line between sections. No syntax characters.
+- **One box at the far end** (answer 9), so a single whole-note Copy is
+  correct. No per-section copy buttons needed — that possibility is closed.
 - **An empty section still needs its header in the copied text**, so she can
   fill it in on the far side. This is where answers 3 and 5 meet: blanks
   travel. Which means the empty-section checklist has to fire **before copy**,
@@ -75,11 +87,19 @@ system, and the note gets there by clipboard. That reframes several things:
 accept rich text. Plain text with blank lines pastes correctly nearly
 everywhere, so this is a refinement rather than a blocker.
 
-**Worth raising, not yet decided:** patient material now lives in two places.
-Deleting a note here does not delete it there, and vice versa. An affordance
-along the lines of "copied into records — remove the draft from Apunta?" may
-belong in M4, but it is speculative until she says whether she wants drafts
-kept as a working history or cleared once filed.
+**Answered by question 10: she keeps everything.** Full history stays in
+Apunta. No "filed, now clear it" affordance, no auto-delete, no archive-on-copy.
+
+That has a consequence worth stating plainly: **this machine now holds a second
+complete copy of every clinical record**, and it is the copy with no
+institutional backup behind it. Two things follow.
+
+- M7's export/backup work matters more than the demotion above implies. It is
+  a real archive of a real record set, not a convenience.
+- Passcode and at-rest encryption (SQLCipher) sit in `docs/PLAN.md` §8 as
+  deferred. Deferred is still the right call for v1 — the laptop's own disk
+  encryption is the current answer — but this answer strengthens the case for
+  revisiting it, and the design already allows it.
 
 ### 4 — Revision by chat (M4)
 
@@ -178,17 +198,37 @@ Two constraints that follow either way:
   fabrication rate compared before and after the style profile is switched
   on. A style change that quietly raises fabrication is the failure mode.
 
+### 11 — `[unclear in dictation]` is allowed, with no gate
+
+She chose the marker **without** the "warn me before I copy" variant that was
+offered alongside it, having been shown the risk that one could slip into a
+filed record. So: the marker is written where the audio was muddy, and nothing
+blocks the copy.
+
+Implement it as chosen. The reasonable way to honour both the choice and the
+risk is to make the marker **visually obvious in the editor** — distinctly
+styled, not just bracketed prose — so it is hard to miss on screen without
+anything interrupting her.
+
+This also revises an earlier decision. The empty-section checklist was recorded
+as firing "before copy". She has now declined a copy-time interruption once,
+and her blanks are deliberate — she may well intend to fill them in on the far
+side. So **the empty-section indicator should be visible, not blocking**: mark
+empty sections plainly in the editor, do not gate the copy. Worth confirming
+with her if it ever feels wrong in use.
+
+Note this only applies to dictation, which answer 8 just made the secondary
+path — so it is a smaller surface than it looked.
+
 ## Still open
 
-Nothing blocking. Three small things worth asking when convenient:
+Nothing blocking, and nothing needed before M3.
 
 1. **Which records system** the note is pasted into (see answer 3). Refines
-   the clipboard format; plain text works regardless.
-2. **Whether drafts should be cleared once filed** in the other system, or
-   kept here as a working history (see answer 3).
-3. Carried over from `docs/note-instructions/rationale.md`: whether a bracketed
-   `[unclear in dictation]` marker is acceptable in her records at all, and
-   whether cross-session comparison belongs in Objective or Assessment.
+   the clipboard format; plain text into one box works regardless, so this is
+   a refinement rather than a question.
+2. Carried over from `docs/note-instructions/rationale.md`: whether
+   cross-session comparison belongs in Objective or Assessment.
 
-`rationale.md` §1 (silence about risk) and §3 (may the Assessment reason) are
-both now answered — by questions 5 and 7 respectively.
+`rationale.md` §1 (silence about risk), §3 (may the Assessment reason) and §4
+(the `[unclear]` marker) are all now answered — by questions 5, 7 and 11.
