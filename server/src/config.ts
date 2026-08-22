@@ -13,12 +13,18 @@ const repoRoot = resolve(serverRoot, '..');
 
 export const DEFAULT_PORT = 7717;
 
+export const DB_FILENAME = 'practice-notes.db';
+
 export interface AppConfig {
   /** Always loopback — the server must never be reachable from the network. */
   readonly host: '127.0.0.1';
   readonly port: number;
-  /** Where SQLite and audio scratch files will live (M1+). */
+  /** Where SQLite and audio scratch files live. */
   readonly dataDir: string;
+  /** The SQLite file itself, inside `dataDir`. */
+  readonly dbFile: string;
+  /** Numbered `.sql` migrations, shipped next to the server code. */
+  readonly migrationsDir: string;
   /** `PATIENCE_FAKE_AI=1` — deterministic providers, no local AI tooling needed. */
   readonly fakeAi: boolean;
   /** Built SPA. Served in production; absent during `npm run dev`. */
@@ -50,18 +56,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
 
   const dataDirOverride = env['PATIENCE_DATA_DIR'];
+  const dataDir = dataDirOverride ? resolve(dataDirOverride) : defaultDataDir();
 
   return {
     host: '127.0.0.1',
     port,
-    dataDir: dataDirOverride ? resolve(dataDirOverride) : defaultDataDir(),
+    dataDir,
+    dbFile: join(dataDir, DB_FILENAME),
+    // `serverRoot` is `server/` whether we are running from `src/` under tsx or
+    // from the built `dist/`, so the .sql files are found either way.
+    migrationsDir: join(serverRoot, 'migrations'),
     fakeAi: env['PATIENCE_FAKE_AI'] === '1',
     webDistDir: join(repoRoot, 'web', 'dist'),
     version: pkg.version ?? '0.0.0',
   };
 }
 
-/** Nothing writes to the data dir yet (M1 does), but it must exist at boot. */
+/** The data dir holds the database (and later, audio scratch files). */
 export function ensureDataDir(dataDir: string): string {
   mkdirSync(dataDir, { recursive: true });
   return dataDir;
