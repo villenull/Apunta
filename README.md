@@ -9,7 +9,47 @@ free, open-weight models — nothing leaves the machine.
 non-AI JSON API; the browser UI is still the M0 placeholder.**
 Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
-[`docs/agents/`](docs/agents/README.md) in order M0 → M7.
+[`docs/agents/`](docs/agents/README.md) in order M0 → M8.
+
+## Picking this up on another machine
+
+Everything lives on one branch, which is also this repository's default
+branch — a plain clone gets all of it:
+
+```sh
+git clone https://github.com/villenull/Patience.git
+cd Patience
+npm install          # Node 22+; better-sqlite3 needs a prebuilt binary or a compiler
+npm test             # 115 tests — confirms the checkout is sound
+```
+
+### Where the project stands
+
+| Packet | State |
+| --- | --- |
+| M0 scaffold | done — monorepo, toolchain, CI, egress guard, placeholder SPA |
+| M1 data + API | done — migrations, SQLite, every non-AI endpoint, seed script |
+| M2 web shell | **next** — port `prototype/` to React against the real API |
+| M3–M8 | planned; packets written in `docs/agents/` |
+
+Ready and waiting for the packets that need them: the evaluation corpus in
+`e2e/fixtures/eval/` (M7) and drafted note-drafting instructions in
+`docs/note-instructions/` (M3).
+
+### To continue with a coding agent
+
+Open a session on this repo and give it:
+
+> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M2-web-shell.md, then
+> implement that packet exactly. All work stays on the current branch — do
+> not create a feature branch or open a PR. Keep commits small and stop when
+> every acceptance criterion passes locally (lint, typecheck, tests, build,
+> e2e), then push.
+
+Two environment notes worth carrying over: CI has **never actually run** on
+GitHub Actions, so watch the first run; and in a sandbox that pre-installs
+Chromium, Playwright needs `PLAYWRIGHT_CHROMIUM_EXECUTABLE` pointed at it
+(on a normal machine, leave it unset).
 
 ## Development
 

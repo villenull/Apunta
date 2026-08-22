@@ -1,0 +1,61 @@
+# Age in seconds of the most recently touched dirty path (staged, unstaged or
+# untracked). Echoes -1 when the tree is clean.
+#
+# Why: the main agent's turn can end while a *background subagent* is still
+# mid-build, so the tree is dirty on virtually every stop. Nagging then is a
+# false alarm — and acting on it is actively harmful, because committing another
+# agent's half-written files fragments its history and can capture files in a
+# broken intermediate state. What this check actually exists to catch is work
+# that is finished-or-forgotten and would be lost when the container is
+# reclaimed. Recency separates the two: still moving = someone is on it;
+# untouched for a while = genuinely stranded, so speak up.
+newest_dirty_change_age() {
+  local newest=0 f mt now
+  while IFS= read -r f; do
+    [[ -e "$f" ]] || continue
+    # GNU stat, then BSD/macOS stat.
+    mt=$(stat -c %Y "$f" 2>/dev/null || stat -f %m "$f" 2>/dev/null) || continue
+    [[ "$mt" =~ ^[0-9]+$ ]] || continue
+    ((mt > newest)) && newest=$mt
+  done < <(
+    git diff --name-only 2>/dev/null
+    git diff --cached --name-only 2>/dev/null
+    git ls-files --others --exclude-standard 2>/dev/null
+  )
+  if ((newest == 0)); then
+    echo -1
+    return
+  fi
+  now=$(date +%s)
+  echo $((now - newest))
+}
+
+# Seconds a dirty tree may keep changing before it is reported. Set
+# CLAUDE_STOP_HOOK_DIRTY_GRACE=0 to restore the old always-nag behaviour.
+dirty_grace=${CLAUDE_STOP_HOOK_DIRTY_GRACE:-600}
+dirty_age=$(newest_dirty_change_age)
+
+# Only suppress while the tree is demonstrably still being written to. The
+# unpushed- and unsigned-commit checks below are NOT suppressed: pushing never
+# touches the working tree, so it is always safe to ask for, even mid-build.
+if ((dirty_age >= 0 && dirty_age < dirty_grace)); then
+  : # actively being edited — stay quiet
+else
+  stale_note=""
+  if ((dirty_age >= 0)); then
+    stale_note=" Nothing has changed for $((dirty_age / 60))m, so this looks stranded rather than in progress."
+  fi
+
+  # Check for uncommitted changes (both staged and unstaged)
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "There are uncommitted changes in the repository. Please commit and push these changes to the remote branch.${stale_note}" >&2
+    exit 2
+  fi
+
+  # Check for untracked files that might be important
+  untracked_files=$(git ls-files --others --exclude-standard)
+  if [[ -n "$untracked_files" ]]; then
+    echo "There are untracked files in the repository. Please commit and push these changes to the remote branch.${stale_note}" >&2
+    exit 2
+  fi
+fi
