@@ -9,7 +9,32 @@ prompt assembly, schema-enforced structured output, and the typed-note →
 drafted-note flow end to end (streaming). Audio and chat come later but
 their interfaces are defined here.
 
-Read `docs/research/local-ai-stack-2026-08.md` §2 and §4 before starting.
+Read `docs/research/local-ai-stack-2026-08.md` §2 and §4 before starting, and
+`docs/research/macos-setup-verification.md` §2 — it contains three findings
+that directly change this packet:
+
+1. **Use `/api/chat`, not `/v1/chat/completions`.** For the reasoning models
+   we target, the OpenAI-compatible endpoint returned empty `content` with all
+   text in `reasoning` and no way to disable thinking
+   ([ollama#15288](https://github.com/ollama/ollama/issues/15288)), and
+   `think:false` broke `format` on Gemma 4
+   ([#15260](https://github.com/ollama/ollama/issues/15260)). Both have fix
+   PRs, but they are precisely this packet's failure shape — cover them in
+   `smoke:live`.
+2. **Reject MLX tags.** Ollama's MLX engine silently ignores `format`, so
+   structured output is not enforced. The model picker must refuse any name
+   matching `/-(mlx|nvfp4)\b/` with an explanation. See the warning in
+   PLAN §2.
+3. **Never trust `format` alone.** Always `JSON.parse` + re-validate against
+   the zod schema server-side, and treat a schema violation as an expected
+   error path with a real user-facing message — not an assertion. This is the
+   safety net if either issue above regresses.
+
+Default format instructions: `docs/note-instructions/` contains drafted
+Progress and Intake instructions (with a `rationale.md` listing open clinical
+questions). Port those into `default-instructions.ts` rather than writing new
+ones. Do **not** act on the open clinical questions yourself — they are the
+practice owner's to answer.
 
 ## Deliverables
 

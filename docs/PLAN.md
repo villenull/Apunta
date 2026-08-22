@@ -76,14 +76,31 @@ flowchart LR
 ### Model defaults (Apple Silicon)
 
 Chosen at setup based on RAM (`sysctl -n hw.memsize`), user-overridable in
-Settings. Verify exact Ollama tags at implementation time (`ollama search`);
-the families are fixed:
+Settings. Tags verified 2026-08-22 —
+`docs/research/macos-setup-verification.md` carries the evidence, the
+neighbouring-tag list, and a pre-ship verification script:
 
-| RAM | Default LLM | Notes |
-| --- | --- | --- |
-| ≥ 32GB | Qwen3.6-35B-A3B (4-bit MLX) | best quality, ~20GB resident |
-| 16–32GB | Gemma 4 12B QAT Q4 | ~8GB, 30–95 tok/s on M-series |
-| < 16GB | Qwen3.5-4B Q4_K_M | small-model fallback |
+| RAM | Literal Ollama tag | Size | Notes |
+| --- | --- | --- | --- |
+| ≥ 36GB | `qwen3.6:35b-a3b` | 24GB | best quality, 256K ctx |
+| 16–35GB | `gemma4:12b-it-qat` | 7.2GB | **the default on the target Mac** |
+| < 16GB | `qwen3.5:4b-q4_K_M` | 3.4GB | small-model fallback |
+
+> ⚠️ **Never use an `-mlx` (or `-nvfp4`) tag.** Ollama's MLX engine *silently
+> ignores* the `format` parameter, so JSON-schema structured output is not
+> enforced at all — no error, no warning
+> ([ollama#16563](https://github.com/ollama/ollama/issues/16563), open;
+> [#17013](https://github.com/ollama/ollama/issues/17013)). Schema-constrained
+> sampling is the load-bearing assumption of §5, and MLX is the *default*
+> engine flavour on Apple Silicon, so this would fail silently on exactly the
+> machine we target. GGUF tags only; the model picker must reject
+> `/-(mlx|nvfp4)\b/`; and the server must always re-validate parsed output
+> against the zod schema rather than trusting `format`.
+
+Two further corrections from that verification: pin explicit tags, never
+`:latest` (`gemma4:latest` resolves to E4B, not 12B), and the ≥36GB boundary
+is deliberate — Metal caps usable GPU memory at ~75% of unified RAM, so a
+24GB model leaves no headroom on a 32GB Mac.
 
 STT: `whisper-large-v3-turbo` Q5_0 GGUF (~574MB) for whisper.cpp. Always pass
 an `initial_prompt` built from the user's vocabulary list (Settings) —
