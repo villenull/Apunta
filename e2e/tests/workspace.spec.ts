@@ -1,9 +1,23 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { expect, test, uniqueName } from '../support/fixtures';
 
 /** Committed next to the specs, so a reviewer can eyeball the layout. */
 const SCREENSHOT = join(import.meta.dirname, '..', 'screenshots', 'workspace-1280x800.png');
+
+/**
+ * Only write it when it is missing, or when explicitly refreshing.
+ *
+ * PNG encoding is not byte-stable, so writing on every run left the working
+ * tree dirty after every `npm run e2e` — which is exactly the noise the Stop
+ * hook exists to flag, and it trained everyone to ignore a real warning. The
+ * screenshot is a reference for human eyes, not an assertion; it only needs
+ * rewriting when the layout actually changes.
+ *
+ * Refresh it with `UPDATE_SCREENSHOTS=1 npm run e2e`, then commit the result.
+ */
+const shouldWriteScreenshot = () => process.env.UPDATE_SCREENSHOTS === '1' || !existsSync(SCREENSHOT);
 
 /**
  * The M2 flows, end to end in fake-AI mode, through the built SPA and the real
@@ -173,7 +187,9 @@ test.describe('the workspace', () => {
     await page.goto(`/?patient=${patient.id}&note=${note.id}`);
     await expect(page.getByTestId('note-body')).toBeVisible();
 
-    await page.screenshot({ path: SCREENSHOT });
+    if (shouldWriteScreenshot()) {
+      await page.screenshot({ path: SCREENSHOT });
+    }
 
     await expect(page.locator('.col-patients')).toBeVisible();
     await expect(page.locator('.col-notes')).toBeVisible();
