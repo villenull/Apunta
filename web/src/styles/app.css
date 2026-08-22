@@ -307,6 +307,19 @@
   border-bottom: 0.5px solid var(--border);
   flex-shrink: 0;
   gap: 12px;
+  /* The editor column is ~370px wide inside the 1180px shell, which is not
+     enough for a title and three buttons on one line; the actions drop below
+     the title rather than squeezing it to two words per line. */
+  flex-wrap: wrap;
+}
+
+.note-editor-header > div:first-child {
+  min-width: 0;
+}
+
+.note-actions {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .note-editor-body {

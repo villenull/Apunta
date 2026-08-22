@@ -169,7 +169,7 @@ export function NoteView({ patient, note, onNoteChanged, onNoteDeleted }: NoteVi
             </p>
             <h2 data-testid="note-title">{note.title}</h2>
           </div>
-          <div className="row gap-8">
+          <div className="row gap-8 note-actions">
             <button
               type="button"
               className="btn small btn-compact-icon"
