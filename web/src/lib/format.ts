@@ -1,0 +1,61 @@
+/** Display helpers shared by the workspace screens. All match `prototype/`. */
+
+/** "John Smith" → "JS", the avatar text in the patients column. */
+export function initials(name: string): string {
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
+  return words
+    .slice(0, 2)
+    .map((word) => (word[0] ?? '').toUpperCase())
+    .join('');
+}
+
+/** "John Smith" → "John", for the notes column header ("John's notes"). */
+export function firstName(name: string): string {
+  return name.trim().split(/\s+/)[0] ?? name;
+}
+
+const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
+function sameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/**
+ * The prototype's note dates: "Aug 8, 2026", or "Today" for a note written in
+ * this session (`patients.html` labels a freshly drafted note "Today").
+ */
+export function formatNoteDate(iso: string, now: Date = new Date()): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return sameDay(date, now) ? 'Today' : DATE_FORMAT.format(date);
+}
+
+/** The "· edited today" half of the note header line. */
+export function formatEditedDate(iso: string, now: Date = new Date()): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return sameDay(date, now) ? 'today' : DATE_FORMAT.format(date);
+}
+
+/** A note counts as edited once it has been saved after creation. */
+export function wasEdited(createdAt: string, updatedAt: string): boolean {
+  return new Date(updatedAt).getTime() > new Date(createdAt).getTime();
+}
+
+/** One-line preview under a note's title, as `patients.html` builds it. */
+export function notePreview(content: string): string {
+  const flattened = content.slice(0, 60).replace(/\n/g, ' ').trim();
+  return flattened.length === 0 ? '' : `${flattened}…`;
+}
+
+/** "3 notes" / "1 note", the sub-line of a patient row. */
+export function noteCountLabel(count: number): string {
+  return `${String(count)} note${count === 1 ? '' : 's'}`;
+}

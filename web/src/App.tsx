@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { fetchHealth } from './api.js';
+import { fetchHealth } from './api/index.js';
 
 type Status = { state: 'loading' } | { state: 'ok'; version: string } | { state: 'error'; message: string };
 

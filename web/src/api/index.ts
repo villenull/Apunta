@@ -1,0 +1,10 @@
+export { ApiRequestError, errorMessage, requestJson, requestVoid } from './client.js';
+export type { HttpMethod, Parser, RequestOptions } from './client.js';
+
+export { fetchHealth } from './health.js';
+
+export { createPatient, deletePatient, getPatient, listPatients, updatePatient } from './patients.js';
+
+export { createNote, deleteNote, listNotes, publishNote, unpublishNote, updateNote } from './notes.js';
+
+export { createFormat, deleteFormat, listFormats, updateFormat } from './formats.js';
