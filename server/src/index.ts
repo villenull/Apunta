@@ -20,7 +20,7 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 try {
   await app.listen({ host: config.host, port: config.port });
   app.log.info(
-    { dataDir: config.dataDir, fakeAi: config.fakeAi },
+    { dataDir: config.dataDir, db: config.dbFile, fakeAi: config.fakeAi },
     `Practice Notes on http://${config.host}:${config.port}`,
   );
 } catch (error) {
