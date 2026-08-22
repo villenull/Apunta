@@ -821,3 +821,28 @@ select:disabled {
 .error-state {
   color: var(--danger);
 }
+
+.format-name {
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* The area an onboarding option reveals under itself. */
+.onboarding-area {
+  margin-top: 16px;
+}
+
+/* The × on a section chip is a button here, not a bare SVG. */
+.chip-remove {
+  width: auto;
+  height: auto;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+}
+
+.chip-remove:hover {
+  background: none;
+  border: none;
+  color: var(--danger);
+}

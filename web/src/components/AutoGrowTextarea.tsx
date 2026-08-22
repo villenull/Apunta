@@ -10,6 +10,7 @@ import { useLayoutEffect, useRef } from 'react';
  */
 export type AutoGrowTextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
   value: string;
+  'data-testid'?: string;
 };
 
 export function AutoGrowTextarea({ value, ...rest }: AutoGrowTextareaProps): React.JSX.Element {
