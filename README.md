@@ -5,7 +5,8 @@ summaries into structured clinical notes. The UI runs in a browser tab; all
 AI processing (transcription and note drafting) runs on the local PC with
 free, open-weight models — nothing leaves the machine.
 
-**Status: scaffold (M0) in place — empty skeleton, no product features yet.**
+**Status: data layer and API (M1) in place — SQLite storage and the full
+non-AI JSON API; the browser UI is still the M0 placeholder.**
 Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
 [`docs/agents/`](docs/agents/README.md) in order M0 → M7.
@@ -23,6 +24,9 @@ Prettier), `npm run typecheck`, `npm test` (Vitest, all workspaces) and `npm
 run e2e` (Playwright/Chromium — it builds first and boots the server in fake-AI
 mode on port 7788 with a temp data dir); `npm run format` fixes formatting and
 `npm run smoke:live` is the manual real-model check, stubbed until M3/M5.
+`npm run seed` fills the database with the prototype's sample practice (John
+Smith and friends) so there is something to click through; it leaves a
+database that already has data alone unless you pass `-- --reset`.
 Useful env: `PATIENCE_PORT`, `PATIENCE_DATA_DIR`, `PATIENCE_FAKE_AI=1`, and
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when the sandbox already has a browser that
 `playwright install` should not replace.

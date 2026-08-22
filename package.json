@@ -26,7 +26,7 @@
     "test:watch": "vitest",
     "build": "npm run build:shared && npm run build --workspace @patience/server && npm run build --workspace @patience/web",
     "e2e": "npm run e2e --workspace @patience/e2e",
-    "seed": "npm run build:shared && npm run seed --workspace @patience/server",
+    "seed": "npm run build:shared && npm run seed --workspace @patience/server --",
     "smoke:live": "node scripts/smoke-live.mjs"
   },
   "devDependencies": {

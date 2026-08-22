@@ -11,6 +11,10 @@ test-results/
 
 # local data + env
 data/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite-journal
 *.sqlite-wal

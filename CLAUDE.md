@@ -24,6 +24,8 @@ Work packets: `docs/agents/`.
 - `npm run dev` — server (:7717, tsx watch) + Vite (:5173, proxies /api)
 - `npm run dev:fake` — same with `PATIENCE_FAKE_AI=1`
 - `npm start` — production: build web, serve app at http://127.0.0.1:7717
+- `npm run seed` — dev only: load the prototype's sample practice into the
+  database (`npm run seed -- --reset` replaces existing content)
 - `npm run lint` / `npm run typecheck` / `npm test` — must all pass
 - `npm run e2e` — Playwright (builds first, runs server in fake mode)
 - `npm run smoke:live` — manual, needs real Ollama + whisper installed
