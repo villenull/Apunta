@@ -100,19 +100,42 @@ To let an agent apply it, switch out of auto permission mode (`Shift+Tab`, or
 start with `--permission-mode default`) and approve the prompt. Repeat every
 session.
 
-### Option C — auto-patch from a repo SessionStart hook (possible; think first)
+### Option C — auto-patch from a repo SessionStart hook (**ADOPTED 2026-08-22**)
 
 A `.claude/settings.json` committed to this repo could register a SessionStart
 hook that re-applies the patch on every session. Hook commands are executed by
 the harness rather than issued as tool calls, so they are not subject to the
 permission classifier — it would work.
 
-**It is deliberately not implemented here.** It would mean this repository
-silently rewrites the supervision hook that watches the agent working in it,
-automatically, on every session. The intent is benign and the change is small,
-but "the project edits its own supervisor at startup" is a pattern that
-deserves a deliberate human decision rather than being inherited from a
-dev-notes file. If you want it, decide that explicitly.
+This was written up as "deliberately not implemented" because it means the
+repository rewrites the supervision hook that watches the agent working in it,
+automatically, on every session — a pattern that deserves a deliberate human
+decision rather than being inherited from a dev-notes file. **The owner made
+that decision on 2026-08-22 and asked for it to be fixed for good.** It is now
+live:
+
+- `.claude/settings.json` registers a SessionStart hook.
+- `.claude/hooks/apply-stop-hook-grace.sh` re-applies the patch on every
+  session start. It is idempotent, backs the original up to
+  `~/.claude/stop-hook-git-check.sh.pre-apunta.bak`, syntax-checks its own
+  output and restores the backup if the check fails, and **no-ops if the
+  upstream hook no longer contains the exact block it expects** — so an
+  upstream rewrite degrades to stock behaviour rather than a broken hook.
+
+What it changes: the two dirty-tree checks fire only when the newest
+uncommitted change is at least ten minutes old, and then say how long the tree
+has been idle. What it does not change: the unpushed-commit and
+unsigned-commit checks, which are never suppressed — pushing does not touch the
+working tree, so it is always safe to ask for.
+
+Verified when adopted: quiet on a dirty-but-active tree; fires with
+`CLAUDE_STOP_HOOK_DIRTY_GRACE=0`; recursion guard intact; installer idempotent;
+unpushed checks present; backup written.
+
+**To turn it off:** set `CLAUDE_STOP_HOOK_DIRTY_GRACE=0` for stock behaviour in
+one session, or delete the SessionStart entry from `.claude/settings.json` to
+stop the patch being applied at all. The next session then gets the stock hook,
+because the launcher rewrites it anyway.
 
 ### Option D — report it
 
@@ -121,16 +144,28 @@ hook has no notion of "a subagent is still running," and its own advice is
 actively harmful in that state. Worth reporting upstream rather than every
 project working around it.
 
-## Recommendation
+## Where this landed
 
-Take **Option A** and move on. It is free, it survives every rebuild, it is
-already encoded in `CLAUDE.md`, and it is the fix that demonstrably produced
-clean history on M1. Reach for Option B only if the noise genuinely gets in the
-way during a long multi-agent session.
+**Both A and C are in force, and they do different jobs.**
+
+Option A is the one that protects commit history: never commit a background
+agent's in-flight work, ask the agent to commit its own, push freely. That
+rule stands whatever the hook does, and it is still in `CLAUDE.md`.
+
+Option C removes the false alarm itself, so the rule is no longer enforced by
+a warning that cries wolf on every turn. It was adopted on 2026-08-22 by
+explicit owner decision; see Option C above for what is installed and how to
+turn it off.
+
+Option D still stands as worth doing: the hook has no notion of "a subagent is
+still running", and in that state its advice is actively harmful. Every project
+working around this separately is a poor outcome.
 
 ---
 
 ## Files here
 
-- `stop-hook-dirty-grace.sh.txt` — the Option B patch. Harness configuration,
-  not project code; kept only so it survives a machine rebuild.
+- `stop-hook-dirty-grace.sh.txt` — the Option B patch, kept as the readable
+  reference for what the grace period does. The live implementation is
+  `.claude/hooks/apply-stop-hook-grace.sh` at the repo root; this file is the
+  same logic without the installer scaffolding.
