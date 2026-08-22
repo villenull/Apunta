@@ -119,6 +119,13 @@ export function Workspace(): React.JSX.Element {
       />
 
       <div className="col col-main" data-testid="main-pane">
+        {/* Formats are loaded to decide the first-run redirect; if that call
+            fails, say so rather than quietly behaving as if formats exist. */}
+        {formats.state.status === 'error' && (
+          <p className="form-error" role="alert">
+            {formats.state.message}
+          </p>
+        )}
         {actionError !== null && (
           <p className="form-error" role="alert">
             {actionError}

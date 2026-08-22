@@ -88,6 +88,15 @@ export function Capture(): React.JSX.Element {
         </select>
       </div>
 
+      {formats.state.status === 'error' && (
+        <p className="form-error" role="alert">
+          {formats.state.message}{' '}
+          <button type="button" className="btn small btn-quick" onClick={formats.reload}>
+            Try again
+          </button>
+        </p>
+      )}
+
       {formats.state.status === 'ready' && available.length === 0 ? (
         <p className="muted">
           No note formats yet. <Link to="/onboarding/format">Add one first</Link> — a note needs a structure

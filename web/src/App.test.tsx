@@ -184,6 +184,25 @@ describe('note editing', () => {
   });
 });
 
+describe('a server that is not answering', () => {
+  it('says so in the workspace rather than rendering an empty practice', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      }),
+    );
+
+    renderApp();
+
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts.some((alert) => alert.textContent?.includes('Could not reach the Apunta server'))).toBe(
+      true,
+    );
+    expect(screen.getByTestId('patient-list').textContent).toContain('Could not reach the Apunta server');
+  });
+});
+
 describe('first run', () => {
   it('sends a practice with no note format to onboarding', async () => {
     installFakeApi({ formats: [], patients: [] });
