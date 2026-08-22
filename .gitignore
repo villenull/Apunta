@@ -1,0 +1,21 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# test + tooling output
+coverage/
+playwright-report/
+blob-report/
+test-results/
+.playwright/
+
+# local data + env
+data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+.env
+.env.local
+
+.DS_Store
+*.log

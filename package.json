@@ -1,0 +1,43 @@
+{
+  "name": "patience",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Practice Notes — local-first clinical note drafting",
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "shared",
+    "server",
+    "web",
+    "e2e"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace @patience/shared",
+    "dev": "npm run build:shared && concurrently -n server,web -c green,cyan \"npm run dev --workspace @patience/server\" \"npm run dev --workspace @patience/web\"",
+    "dev:fake": "cross-env PATIENCE_FAKE_AI=1 npm run dev",
+    "start": "npm run build && node server/dist/index.js",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
+    "test": "npm run build:shared && vitest run",
+    "test:watch": "vitest",
+    "build": "npm run build:shared && npm run build --workspace @patience/server && npm run build --workspace @patience/web",
+    "e2e": "npm run build && npm run e2e --workspace @patience/e2e",
+    "smoke:live": "node scripts/smoke-live.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^10.0.5",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.9.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.11.0",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.11"
+  }
+}
