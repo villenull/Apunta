@@ -5,8 +5,9 @@ summaries into structured clinical notes. The UI runs in a browser tab; all
 AI processing (transcription and note drafting) runs on the local PC with
 free, open-weight models — nothing leaves the machine.
 
-**Status: data layer and API (M1) in place — SQLite storage and the full
-non-AI JSON API; the browser UI is still the M0 placeholder.**
+**Status: the app works end to end without AI (M2) — the prototype's
+workspace, capture, settings and format onboarding screens are React running
+against the real API. Note drafting (M3) is next.**
 Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
 [`docs/agents/`](docs/agents/README.md) in order M0 → M8.
@@ -27,7 +28,7 @@ branch — a plain clone gets all of it:
 git clone https://github.com/villenull/Apunta.git
 cd Apunta
 npm install          # Node 22+; better-sqlite3 needs a prebuilt binary or a compiler
-npm test             # 115 tests — confirms the checkout is sound
+npm test             # 150 tests — confirms the checkout is sound
 ```
 
 ### Where the project stands
@@ -36,8 +37,9 @@ npm test             # 115 tests — confirms the checkout is sound
 | --- | --- |
 | M0 scaffold | done — monorepo, toolchain, CI, egress guard, placeholder SPA |
 | M1 data + API | done — migrations, SQLite, every non-AI endpoint, seed script |
-| M2 web shell | **next** — port `prototype/` to React against the real API |
-| M3–M8 | planned; packets written in `docs/agents/` |
+| M2 web shell | done — prototype ported to React: workspace, capture, settings, manual format onboarding |
+| M3 AI providers | **next** — provider layer, fakes, Ollama drafting, typed note → draft |
+| M4–M8 | planned; packets written in `docs/agents/` |
 
 Ready and waiting for the packets that need them: the evaluation corpus in
 `e2e/fixtures/eval/` (M7) and drafted note-drafting instructions in
@@ -47,7 +49,7 @@ Ready and waiting for the packets that need them: the evaluation corpus in
 
 Open a session on this repo and give it:
 
-> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M2-web-shell.md, then
+> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M3-ai-providers.md, then
 > implement that packet exactly. All work stays on the current branch — do
 > not create a feature branch or open a PR. Keep commits small and stop when
 > every acceptance criterion passes locally (lint, typecheck, tests, build,
