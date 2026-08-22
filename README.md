@@ -13,6 +13,13 @@ Start at
 
 ## Picking this up on another machine
 
+> **Read [`docs/dev-notes/README.md`](docs/dev-notes/README.md) first.** It
+> explains a Stop-hook false alarm that fires constantly while background
+> coding agents are working, why acting on it damages commit history, and the
+> no-cost protocol that avoids it. Two minutes there saves an hour of
+> confusion.
+
+
 Everything lives on one branch, which is also this repository's default
 branch — a plain clone gets all of it:
 

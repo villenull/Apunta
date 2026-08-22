@@ -49,6 +49,21 @@ Work packets: `docs/agents/`.
   Stage explicit paths, never `git add -A`; on a rejected push,
   `git pull --rebase` and retry — never force-push.
 
+## Working alongside background agents
+
+A Stop hook complains whenever the git tree is dirty. While a background agent
+is mid-build that is a **false alarm**, and acting on it does real damage —
+committing another agent's half-written files fragments its history and can
+capture a broken intermediate state. Background: `docs/dev-notes/README.md`.
+
+- Never commit a background agent's in-flight work. Leave the dirty tree alone.
+- If a large body of work is sitting uncommitted, **message the agent and ask
+  it to commit and push.** It knows what is finished; you do not.
+- Push whenever you like — pushing never touches the working tree, so it is
+  always safe mid-build.
+- As an agent: commit each coherent piece as it lands, so a large delta never
+  sits exposed. The container can be reclaimed without warning.
+
 ## Definition of done (every packet)
 
 lint + typecheck + unit/integration + build + e2e all green locally and in
