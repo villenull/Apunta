@@ -10,11 +10,18 @@ import { useLoader } from '../hooks/useLoader.js';
 const RECORDING_TOOLTIP = 'Recording arrives in a later milestone';
 
 /**
- * `prototype/capture.html` — pick a format, then dictate or type.
+ * `prototype/capture.html` — the format, and how the session gets in.
  *
- * M2 implements the typed path only, and it saves the typed text as the note's
- * body. M3 replaces that with a call to /api/generate, which drafts the note
- * from the same text; the screen around it does not change.
+ * One deliberate difference from the prototype: the options are not a
+ * either/or picker that swaps the screen. The practice owner said she both
+ * speaks a session aloud *and* writes rough notes
+ * (`docs/feedback/2026-08-22-owner-answers.md`), so M5 will feed a recording
+ * and typed notes to the same drafting call. Building the toggle now would
+ * only be something for M5 to tear out.
+ *
+ * M2 implements the typed path, and saves the typed text as the note's body.
+ * M3 replaces that with /api/generate, which drafts the note from the same
+ * text; the screen around it does not change.
  */
 export function Capture(): React.JSX.Element {
   const { patientId = '' } = useParams();
@@ -27,7 +34,6 @@ export function Capture(): React.JSX.Element {
   const formats = useLoader(loadFormats);
 
   const [chosenFormatId, setChosenFormatId] = useState<string | null>(null);
-  const [typing, setTyping] = useState(false);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,28 +93,48 @@ export function Capture(): React.JSX.Element {
           No note formats yet. <Link to="/onboarding/format">Add one first</Link> — a note needs a structure
           to follow.
         </p>
-      ) : typing ? (
-        <div data-testid="type-ui">
-          <div className="field">
-            <textarea
-              placeholder="Type your session summary..."
-              aria-label="Session summary"
-              data-testid="summary-input"
-              value={text}
-              onChange={(event) => {
-                setText(event.target.value);
-              }}
-              autoFocus
-            />
+      ) : (
+        <>
+          <div className="stack">
+            <button type="button" className="btn-option" disabled title={RECORDING_TOOLTIP}>
+              <MicIcon />
+              <div>
+                <div className="opt-title">Record audio</div>
+                <div className="opt-sub">Narrate your notes right now</div>
+                <div className="opt-sub later-milestone">{RECORDING_TOOLTIP}.</div>
+              </div>
+            </button>
+
+            <div className="capture-typed" data-testid="type-ui">
+              <div className="row gap-12 capture-typed-head">
+                <KeyboardIcon />
+                <div>
+                  <div className="opt-title">Type it out</div>
+                  <div className="opt-sub">Quick summary in your own words</div>
+                </div>
+              </div>
+              <textarea
+                placeholder="Type your session summary..."
+                aria-label="Session summary"
+                data-testid="summary-input"
+                value={text}
+                onChange={(event) => {
+                  setText(event.target.value);
+                }}
+                autoFocus
+              />
+            </div>
           </div>
+
           {error !== null && (
             <p className="form-error" role="alert">
               {error}
             </p>
           )}
+
           <button
             type="button"
-            className="btn btn-primary btn-block"
+            className="btn btn-primary btn-block form-actions"
             data-testid="process-note"
             disabled={busy || text.trim().length === 0}
             onClick={() => {
@@ -117,32 +143,7 @@ export function Capture(): React.JSX.Element {
           >
             {busy ? 'Saving…' : 'Process note'}
           </button>
-        </div>
-      ) : (
-        <div className="stack">
-          <button type="button" className="btn-option" disabled title={RECORDING_TOOLTIP}>
-            <MicIcon />
-            <div>
-              <div className="opt-title">Record audio</div>
-              <div className="opt-sub">Narrate your notes right now</div>
-              <div className="opt-sub later-milestone">{RECORDING_TOOLTIP}.</div>
-            </div>
-          </button>
-          <button
-            type="button"
-            className="btn-option"
-            data-testid="type-it-out"
-            onClick={() => {
-              setTyping(true);
-            }}
-          >
-            <KeyboardIcon />
-            <div>
-              <div className="opt-title">Type it out</div>
-              <div className="opt-sub">Quick summary in your own words</div>
-            </div>
-          </button>
-        </div>
+        </>
       )}
     </Screen>
   );

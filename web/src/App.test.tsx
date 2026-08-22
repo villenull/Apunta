@@ -245,7 +245,6 @@ describe('adding a patient and a typed note', () => {
     renderApp(`/capture/${john.id}`);
 
     expect(await screen.findByText(`New note for ${john.name}`)).toBeDefined();
-    fireEvent.click(screen.getByTestId('type-it-out'));
     fireEvent.change(screen.getByTestId('summary-input'), {
       target: { value: 'Sleep better this week, still anxious about work.' },
     });
@@ -256,7 +255,7 @@ describe('adding a patient and a typed note', () => {
     expect(api.state.notes).toHaveLength(1);
   });
 
-  it('offers recording but leaves it for M5', async () => {
+  it('offers recording beside the typed notes, but leaves it for M5', async () => {
     installFakeApi({ formats: [progressNote], patients: [john] });
     renderApp(`/capture/${john.id}`);
 

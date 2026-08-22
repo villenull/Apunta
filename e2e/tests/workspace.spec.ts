@@ -52,7 +52,6 @@ test.describe('the workspace', () => {
     await page.getByRole('button', { name: 'New note' }).click();
     await expect(page.getByTestId('capture-heading')).toHaveText(`New note for ${patientName}`);
     await page.getByLabel('Note format').selectOption({ label: formatName });
-    await page.getByTestId('type-it-out').click();
     await page.getByTestId('summary-input').fill('Sleep improved, intrusive thoughts less frequent.');
     await page.getByTestId('process-note').click();
 

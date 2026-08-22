@@ -859,3 +859,36 @@ select:disabled {
   border: none;
   color: var(--danger);
 }
+
+/*
+ * Capture's typed input. Framed like a .btn-option so the two ways in read as
+ * a pair, but it is not a choice: the recording option (M5) and the typed
+ * notes both feed the same drafting call.
+ */
+.capture-typed {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 14px;
+}
+
+.capture-typed-head {
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.capture-typed textarea {
+  min-height: 130px;
+}
+
+/* .opt-title/.opt-sub are scoped to .btn-option in the prototype's CSS. */
+.capture-typed .opt-title {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.capture-typed .opt-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
