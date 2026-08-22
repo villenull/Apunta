@@ -4,7 +4,8 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { DEFAULT_PORT, defaultDataDir, ensureDataDir, loadConfig } from './config.js';
+import { DEFAULT_OLLAMA_URL, DEFAULT_PORT, defaultDataDir, ensureDataDir, loadConfig } from './config.js';
+import { EgressBlockedError } from './egress-guard.js';
 
 const created: string[] = [];
 
@@ -34,6 +35,29 @@ describe('loadConfig', () => {
 
   it('rejects a nonsense port', () => {
     expect(() => loadConfig({ APUNTA_PORT: 'later' })).toThrow(/APUNTA_PORT/);
+  });
+
+  it('defaults the Ollama URL to loopback and accepts a loopback override', () => {
+    expect(loadConfig({}).ollamaUrl).toBe(DEFAULT_OLLAMA_URL);
+    expect(loadConfig({ APUNTA_OLLAMA_URL: 'http://localhost:11500' }).ollamaUrl).toBe(
+      'http://localhost:11500',
+    );
+  });
+
+  /**
+   * An env var that names a host gets the same check as everything else, and
+   * it fails at boot rather than at the first draft — by which point the
+   * therapist's session notes would already have been handed to `fetch`.
+   */
+  it('refuses an Ollama URL that is not loopback', () => {
+    expect(() => loadConfig({ APUNTA_OLLAMA_URL: 'https://evil.example' })).toThrow(EgressBlockedError);
+    expect(() => loadConfig({ APUNTA_OLLAMA_URL: 'http://127.0.0.1.evil.com' })).toThrow(EgressBlockedError);
+    expect(() => loadConfig({ APUNTA_OLLAMA_URL: 'not a url' })).toThrow(EgressBlockedError);
+  });
+
+  it('rejects a negative fake stream delay', () => {
+    expect(() => loadConfig({ APUNTA_FAKE_STREAM_DELAY_MS: '-1' })).toThrow(/APUNTA_FAKE_STREAM_DELAY_MS/);
+    expect(loadConfig({ APUNTA_FAKE_STREAM_DELAY_MS: '0' }).fakeStreamDelayMs).toBe(0);
   });
 });
 

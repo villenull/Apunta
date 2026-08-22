@@ -10,14 +10,25 @@ import type { AiErrorCode } from '@apunta/shared';
  */
 export class AiError extends Error {
   readonly code: AiErrorCode;
-  /** Technical context for the server log. Never sent to the browser. */
+  /**
+   * Technical context for the server log. Never sent to the browser.
+   *
+   * **Shape only — never model output, never source text.** A prompt and a
+   * draft are the therapist's account of a session, which is real patient
+   * material (CLAUDE.md hard rule 2), and this field has two routes to a log
+   * file: the provider's own logger, and pino's `err` serializer, which copies
+   * every *enumerable* own property of a thrown error onto the record. So it
+   * is defined non-enumerable: an `AiError` that escapes to the Fastify error
+   * handler cannot print its detail even by accident. Lengths, counts, key
+   * names and validation paths carry all the diagnostic value anyway.
+   */
   readonly detail: string | undefined;
 
   constructor(code: AiErrorCode, message: string, detail?: string) {
     super(message);
     this.name = 'AiError';
     this.code = code;
-    this.detail = detail;
+    Object.defineProperty(this, 'detail', { value: detail, enumerable: false, writable: false });
   }
 }
 

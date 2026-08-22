@@ -86,7 +86,21 @@ export function installEgressGuard(): () => void {
   const guarded: GuardedFetch = async (input: FetchInput, init?: RequestInit) => {
     assertLoopbackUrl(urlOf(input));
     if (!original) throw new Error('global fetch is unavailable');
-    return original(input, init);
+
+    // The URL check runs once, on the URL the caller passed. With the default
+    // `redirect: 'follow'`, undici would then follow up to twenty hops *inside*
+    // `original`, beneath this wrapper, which is never consulted again — so a
+    // service holding a loopback port could answer 307 (method and body
+    // preserved) and send a whole drafted note to a host the guard never saw.
+    // Nothing Apunta talks to has any legitimate reason to redirect.
+    const response = await original(input, { ...init, redirect: 'manual' });
+    if (response.status >= 300 && response.status < 400) {
+      throw new EgressBlockedError(
+        urlOf(input),
+        `the loopback service answered ${String(response.status)} with a redirect`,
+      );
+    }
+    return response;
   };
   guarded[GUARD_FLAG] = true;
 

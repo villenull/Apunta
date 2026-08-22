@@ -28,6 +28,8 @@ export async function createTestApp(): Promise<TestApp> {
     APUNTA_PORT: '0',
     APUNTA_DATA_DIR: dataDir,
     APUNTA_FAKE_AI: '1',
+    // Pacing is a demo concern; an integration suite should not pay for it.
+    APUNTA_FAKE_STREAM_DELAY_MS: '0',
   });
 
   // The suite drives the same database the app does, so a test can assert on

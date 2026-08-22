@@ -2,7 +2,7 @@
   "name": "apunta",
   "version": "0.0.0",
   "private": true,
-  "description": "Apunta — local-first clinical note drafting",
+  "description": "Apunta \u2014 local-first clinical note drafting",
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
@@ -19,7 +19,7 @@
     "dev": "npm run build:shared && concurrently -n server,web -c green,cyan \"npm run dev --workspace @apunta/server\" \"npm run dev --workspace @apunta/web\"",
     "dev:fake": "cross-env APUNTA_FAKE_AI=1 npm run dev",
     "start": "npm run build && node server/dist/index.js",
-    "lint": "eslint . && prettier --check .",
+    "lint": "eslint . && prettier --check . && node scripts/check-no-external-urls.mjs",
     "format": "prettier --write .",
     "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
     "test": "npm run build:shared && vitest run",

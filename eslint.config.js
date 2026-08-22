@@ -11,6 +11,9 @@ import tseslint from 'typescript-eslint';
  */
 const NON_LOOPBACK_URL = String.raw`/^https?:\/\/(?!127\.0\.0\.1|localhost|\[::1\])/`;
 
+const SPEECH_MESSAGE =
+  'The Web Speech API can send audio to Google. Transcription runs server-side (whisper.cpp).';
+
 const privacyRules = {
   'no-restricted-syntax': [
     'error',
@@ -26,12 +29,22 @@ const privacyRules = {
   'no-restricted-globals': [
     'error',
     {
-      name: 'SpeechRecognition',
-      message: 'The Web Speech API can send audio to Google. Transcription runs server-side (whisper.cpp).',
-    },
-    {
-      name: 'webkitSpeechRecognition',
-      message: 'The Web Speech API can send audio to Google. Transcription runs server-side (whisper.cpp).',
+      // Without `checkGlobalObject`, the rule reports only a bare
+      // `SpeechRecognition` identifier — and misses
+      // `window.SpeechRecognition || window.webkitSpeechRecognition`, which is
+      // the canonical MDN snippet and therefore the form anyone would actually
+      // paste. Found by the 2026-08 privacy audit (W5).
+      checkGlobalObject: true,
+      globals: [
+        {
+          name: 'SpeechRecognition',
+          message: SPEECH_MESSAGE,
+        },
+        {
+          name: 'webkitSpeechRecognition',
+          message: SPEECH_MESSAGE,
+        },
+      ],
     },
   ],
 };

@@ -25,7 +25,9 @@ describe('GET /api/health', () => {
     expect(HealthResponseSchema.parse(body)).toMatchObject({
       ok: true,
       fakeAi: true,
-      ollama: { reachable: false, model: null, modelPresent: false },
+      // Fake mode answers "yes, the AI is here" so the workspace banner stays
+      // down and `APUNTA_FAKE_AI=1` is a whole working app, not half of one.
+      ollama: { reachable: true, model: 'fake-llm', modelPresent: true },
       whisper: { binaryPresent: false, modelPresent: false },
       ffmpeg: { present: false },
     });

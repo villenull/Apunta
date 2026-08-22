@@ -73,7 +73,7 @@ function stub(options: StubOptions): { fetchImpl: typeof globalThis.fetch; calls
   const calls: ChatCall[] = [];
   let index = 0;
 
-  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const fetchImpl = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = String(input);
     if (url.endsWith('/api/tags')) {
       return new Response(

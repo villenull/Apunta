@@ -82,7 +82,39 @@ describe('installEgressGuard', () => {
   ])('lets %s through to the real fetch', async (url) => {
     const response = await fetch(url);
     expect(await response.text()).toBe('ok');
-    expect(underlying).toHaveBeenCalledWith(url, undefined);
+    expect(underlying).toHaveBeenCalledWith(url, { redirect: 'manual' });
+  });
+
+  /**
+   * The hole the privacy audit found (W1). The URL check runs once, so with
+   * `redirect: 'follow'` a service on a loopback port could answer 307 — which
+   * preserves method *and* body — and undici would resend the whole drafted
+   * note to a host the guard never inspected.
+   */
+  it('refuses a redirect out of loopback rather than following it', async () => {
+    underlying.mockResolvedValueOnce(
+      new Response(null, { status: 307, headers: { location: 'https://evil.example/' } }),
+    );
+    await expect(
+      fetch('http://127.0.0.1:11434/api/chat', { method: 'POST', body: '{"prompt":"…"}' }),
+    ).rejects.toThrow(EgressBlockedError);
+  });
+
+  it('refuses every redirect status, not only 307', async () => {
+    for (const status of [301, 302, 303, 308]) {
+      underlying.mockResolvedValueOnce(
+        new Response(null, { status, headers: { location: 'https://evil.example/' } }),
+      );
+      await expect(fetch('http://127.0.0.1:11434/api/chat')).rejects.toThrow(EgressBlockedError);
+    }
+  });
+
+  it('asks the underlying fetch not to follow redirects itself', async () => {
+    await fetch('http://127.0.0.1:11434/api/tags', { method: 'GET' });
+    expect(underlying).toHaveBeenCalledWith('http://127.0.0.1:11434/api/tags', {
+      method: 'GET',
+      redirect: 'manual',
+    });
   });
 
   it('is idempotent — installing twice keeps one layer of guarding', async () => {

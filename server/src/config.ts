@@ -4,6 +4,8 @@ import { homedir, platform } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { assertLoopbackUrl } from './egress-guard.js';
+
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version?: string };
 
@@ -18,6 +20,20 @@ export const DB_FILENAME = 'apunta.db';
 export const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
 
 export const DEFAULT_FAKE_STREAM_DELAY_MS = 12;
+
+/**
+ * Fail at boot, not at the first draft.
+ *
+ * `APUNTA_OLLAMA_URL` names a host, so it gets the same check as everything
+ * else. The egress guard would block a non-loopback Ollama anyway, but only
+ * after the prompt — the therapist's account of a session — had already been
+ * assembled and handed to `fetch`, and only for as long as every outbound path
+ * goes through `fetch`. Three lines here turn that into a clear startup error.
+ */
+function loopbackOnly(url: string): string {
+  assertLoopbackUrl(url);
+  return url;
+}
 
 function readDelay(raw: string | undefined): number {
   if (raw === undefined || raw === '') return DEFAULT_FAKE_STREAM_DELAY_MS;
@@ -89,7 +105,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     migrationsDir: join(serverRoot, 'migrations'),
     fakeAi: env['APUNTA_FAKE_AI'] === '1',
     fakeStreamDelayMs: readDelay(env['APUNTA_FAKE_STREAM_DELAY_MS']),
-    ollamaUrl: env['APUNTA_OLLAMA_URL']?.trim() || DEFAULT_OLLAMA_URL,
+    ollamaUrl: loopbackOnly(env['APUNTA_OLLAMA_URL']?.trim() || DEFAULT_OLLAMA_URL),
     webDistDir: join(repoRoot, 'web', 'dist'),
     version: pkg.version ?? '0.0.0',
   };

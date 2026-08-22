@@ -4,10 +4,13 @@ import fastifyStatic from '@fastify/static';
 import type { Database } from 'better-sqlite3';
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { createProviders } from './ai/index.js';
+import type { AiProviders } from './ai/types.js';
 import { loadConfig, type AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { registerErrorHandler } from './http/errors.js';
 import { registerFormatRoutes } from './routes/formats.js';
+import { registerGenerateRoute } from './routes/generate.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerNoteRoutes } from './routes/notes.js';
 import { registerPatientRoutes } from './routes/patients.js';
@@ -22,6 +25,12 @@ export interface BuildAppOptions {
    * the one named by the config and closes it again when the app closes.
    */
   db?: Database;
+  /**
+   * Override the AI providers. Integration tests use it to point a real
+   * Ollama provider at a dead port with fakes off, which is the only way to
+   * exercise the "local AI is not running" path.
+   */
+  providers?: AiProviders;
 }
 
 /**
@@ -40,13 +49,20 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     });
   }
 
+  const providers =
+    options.providers ??
+    createProviders(config, db, (message, detail) => {
+      app.log.warn(detail, message);
+    });
+
   registerErrorHandler(app);
 
-  registerHealthRoute(app, config, db);
+  registerHealthRoute(app, config, db, providers);
   registerPatientRoutes(app, db);
   registerNoteRoutes(app, db);
   registerFormatRoutes(app, db);
   registerSettingsRoutes(app, db);
+  registerGenerateRoute(app, db, providers);
 
   const hasBuiltSpa = existsSync(config.webDistDir);
   if (hasBuiltSpa) {

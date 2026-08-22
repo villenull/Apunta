@@ -309,8 +309,11 @@ export class OllamaProvider implements LlmProvider {
     let parsed: unknown;
     try {
       parsed = JSON.parse(text);
-    } catch (error) {
-      throw aiError('invalid_output', `detectFormat did not return JSON: ${String(error)}`);
+    } catch {
+      // `String(error)` on a JSON.parse failure quotes the first ten
+      // characters of the input, and for detectFormat the input may be the
+      // owner's own past notes.
+      throw aiError('invalid_output', `detectFormat did not return JSON (${String(text.length)} chars)`);
     }
     const validated = DetectedFormatSchema.safeParse(parsed);
     if (!validated.success) {
@@ -354,6 +357,9 @@ export class OllamaProvider implements LlmProvider {
         { role: 'user', content: options.user },
       ];
       if (correction !== null) {
+        // Quoting the model's own answer back to it stays inside the prompt —
+        // it never reaches a log — but the reason appended below is shape-only
+        // for the same reason `AiError.detail` is.
         messages.push({ role: 'assistant', content: correction.slice(0, 2000) });
         messages.push({
           role: 'user',
@@ -444,7 +450,12 @@ export class OllamaProvider implements LlmProvider {
     try {
       return JSON.parse(text);
     } catch (error) {
-      throw new NotJson(`${String(error)}; first 120 chars: ${text.slice(0, 120)}`);
+      // Never the text itself: on this path `text` is the drafted note. Its
+      // length and first character separate a fence from prose from a
+      // truncated object, which is the whole diagnosis, and carry no content.
+      throw new NotJson(
+        `not JSON: ${String(text.length)} chars starting ${JSON.stringify(text.slice(0, 1))}`,
+      );
     }
   }
 
@@ -525,6 +536,9 @@ export class OllamaProvider implements LlmProvider {
     if (response.status >= 500 && /memory|allocat|out of memory|oom/i.test(text)) {
       return aiError('insufficient_memory', text.slice(0, 300));
     }
+    // Ollama's own error strings describe the model and the runtime, not the
+    // request body, so they are safe to keep — they are the only clue to an
+    // OOM or a bad tag.
     return aiError('ollama_error', `HTTP ${String(response.status)}: ${text.slice(0, 300)}`);
   }
 
@@ -720,7 +734,10 @@ function describeShapeMismatch(value: unknown, want: readonly string[]): string 
   }
   const got = Object.keys(value as Record<string, unknown>);
   const missing = want.filter((key) => !got.includes(key));
-  const extra = got.filter((key) => !want.includes(key));
+  // An unexpected key is model output, so it is truncated: `thought` is the
+  // diagnosis, and a model that emitted a whole sentence as a key must not put
+  // that sentence in a log line.
+  const extra = got.filter((key) => !want.includes(key)).map((key) => key.slice(0, 40));
   const parts: string[] = [];
   if (missing.length > 0) parts.push(`missing [${missing.join(', ')}]`);
   if (extra.length > 0) parts.push(`unexpected [${extra.join(', ')}]`);
