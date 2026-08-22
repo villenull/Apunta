@@ -1,0 +1,460 @@
+import type { Sections } from '@apunta/shared';
+import { describe, expect, it } from 'vitest';
+
+import { AiError } from './errors.js';
+import { NUM_CTX, OllamaProvider } from './ollama.js';
+import type { LlmEvent } from './types.js';
+
+/**
+ * The Ollama provider against a stubbed `fetch`.
+ *
+ * Every scenario here is a failure mode `docs/research/m3-preflight-2026-08.md`
+ * §3 records against a real Ollama, reproduced at the wire level: they all
+ * return HTTP 200 with `done_reason: "stop"` and no other signal, which is
+ * exactly why the server has to detect them itself.
+ */
+
+const MODEL = 'gemma4:12b-it-qat';
+const SOAP = ['Subjective', 'Objective', 'Assessment', 'Plan'];
+
+const GOOD: Sections = {
+  Subjective: 'Patient reports improved sleep.',
+  Objective: '',
+  Assessment: 'Progressing.',
+  Plan: 'Continue weekly.',
+};
+
+interface ChatCall {
+  readonly body: Record<string, unknown>;
+}
+
+interface StubOptions {
+  /** One entry per `/api/chat` call, in order. The last repeats. */
+  readonly chats: readonly (ChatReply | (() => ChatReply))[];
+  readonly tags?: unknown;
+  readonly capabilities?: readonly string[];
+}
+
+interface ChatReply {
+  readonly status?: number;
+  /** The assistant content, streamed as NDJSON. */
+  readonly content?: string;
+  readonly thinking?: string;
+  readonly doneReason?: string;
+  readonly promptTokens?: number;
+  readonly body?: string;
+  readonly error?: unknown;
+}
+
+function ndjson(reply: ChatReply): string {
+  const lines: string[] = [];
+  for (const piece of (reply.content ?? '').match(/.{1,7}/gs) ?? []) {
+    lines.push(JSON.stringify({ model: MODEL, message: { content: piece }, done: false }));
+  }
+  if (reply.thinking !== undefined) {
+    lines.push(JSON.stringify({ model: MODEL, message: { thinking: reply.thinking }, done: false }));
+  }
+  lines.push(
+    JSON.stringify({
+      model: MODEL,
+      message: { content: '' },
+      done: true,
+      done_reason: reply.doneReason ?? 'stop',
+      prompt_eval_count: reply.promptTokens ?? 1200,
+      eval_count: 240,
+      eval_duration: 4_000_000_000,
+      load_duration: 1_000_000,
+    }),
+  );
+  return `${lines.join('\n')}\n`;
+}
+
+function stub(options: StubOptions): { fetchImpl: typeof globalThis.fetch; calls: ChatCall[] } {
+  const calls: ChatCall[] = [];
+  let index = 0;
+
+  const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const url = String(input);
+    if (url.endsWith('/api/tags')) {
+      return new Response(
+        JSON.stringify(options.tags ?? { models: [{ name: MODEL, details: { format: 'gguf' } }] }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+    if (url.endsWith('/api/show')) {
+      return new Response(
+        JSON.stringify({ capabilities: options.capabilities ?? ['completion', 'thinking'] }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
+    }
+    if (!url.endsWith('/api/chat')) throw new Error(`unexpected request to ${url}`);
+
+    const sent = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    calls.push({ body: sent });
+    const entry = options.chats[Math.min(index, options.chats.length - 1)];
+    index += 1;
+    const reply = typeof entry === 'function' ? entry() : (entry as ChatReply);
+    if (reply.error !== undefined) throw reply.error;
+
+    const status = reply.status ?? 200;
+    if (status !== 200) return new Response(reply.body ?? '', { status });
+    if (sent['stream'] === false) {
+      // `detectFormat` does not stream, so Ollama answers with one object.
+      return new Response(
+        JSON.stringify({ model: MODEL, message: { content: reply.content ?? '' }, done: true }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    }
+    return new Response(ndjson(reply), { status: 200, headers: { 'content-type': 'application/x-ndjson' } });
+  }) as typeof globalThis.fetch;
+
+  return { fetchImpl, calls };
+}
+
+function provider(options: StubOptions, overrides: Record<string, unknown> = {}): OllamaProvider {
+  const { fetchImpl } = stub(options);
+  return new OllamaProvider({ resolveModel: () => MODEL, fetchImpl, ...overrides });
+}
+
+async function drain(events: AsyncIterable<LlmEvent>): Promise<LlmEvent[]> {
+  const collected: LlmEvent[] = [];
+  for await (const event of events) collected.push(event);
+  return collected;
+}
+
+async function expectAiError(events: AsyncIterable<LlmEvent>): Promise<AiError> {
+  try {
+    await drain(events);
+  } catch (error) {
+    if (error instanceof AiError) return error;
+    throw error;
+  }
+  throw new Error('expected the call to throw an AiError');
+}
+
+const REQUEST = {
+  instructions: '',
+  formatName: 'Progress note',
+  sections: SOAP,
+  typedNotes: 'Sleep improved, intrusive thoughts less frequent. Engaged. Keep weekly, add grounding.',
+} as const;
+
+describe('OllamaProvider.generateNote — the happy path', () => {
+  it('streams decoded section text and yields the validated sections', async () => {
+    const events = await drain(
+      provider({ chats: [{ content: JSON.stringify(GOOD) }] }).generateNote(REQUEST),
+    );
+    const last = events.at(-1);
+    expect(last?.type).toBe('sections');
+    if (last?.type !== 'sections') throw new Error('unreachable');
+    expect(last.sections).toEqual(GOOD);
+    expect(last.stats.attempts).toBe(1);
+
+    const streamed: Record<string, string> = {};
+    for (const event of events) {
+      if (event.type === 'token') streamed[event.section] = (streamed[event.section] ?? '') + event.text;
+    }
+    expect(streamed['Subjective']).toBe(GOOD['Subjective']);
+    expect(streamed).not.toHaveProperty('Objective');
+  });
+
+  it('sends the settings PLAN §2 requires', async () => {
+    const { fetchImpl, calls } = stub({ chats: [{ content: JSON.stringify(GOOD) }] });
+    await drain(new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(REQUEST));
+
+    const body = calls[0]?.body as {
+      options: Record<string, number>;
+      format: { additionalProperties: boolean; required: string[] };
+      think: boolean;
+      stream: boolean;
+    };
+    expect(body.options['temperature']).toBe(0);
+    expect(body.options['num_ctx']).toBe(NUM_CTX);
+    expect(body.options['repeat_penalty']).toBe(1);
+    expect(body.options['num_predict']).toBeGreaterThan(0);
+    expect(body.format.required).toEqual(SOAP);
+    expect(body.format.additionalProperties).toBe(false);
+    expect(body.think).toBe(false);
+    expect(body.stream).toBe(true);
+  });
+
+  /** Sending `think` to a model without the capability is a hard HTTP 400. */
+  it('omits `think` for a model that does not support thinking', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [{ content: JSON.stringify(GOOD) }],
+      capabilities: ['completion'],
+    });
+    await drain(new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(REQUEST));
+    expect(calls[0]?.body).not.toHaveProperty('think');
+  });
+
+  it('unwraps a fenced response rather than failing on it', async () => {
+    const events = await drain(
+      provider({ chats: [{ content: `\`\`\`json\n${JSON.stringify(GOOD)}\n\`\`\`` }] }).generateNote(REQUEST),
+    );
+    expect(events.at(-1)?.type).toBe('sections');
+  });
+});
+
+describe('OllamaProvider.generateNote — the retry ladder', () => {
+  /** ollama#17871: valid JSON, wrong keys — the grammar was never applied. */
+  it('retries once with the validation error and succeeds', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [
+        { content: JSON.stringify({ thought: 'The user has provided a large text excerpt…' }) },
+        { content: JSON.stringify(GOOD) },
+      ],
+    });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(REQUEST),
+    );
+
+    const last = events.at(-1);
+    if (last?.type !== 'sections') throw new Error('unreachable');
+    expect(last.stats.attempts).toBe(2);
+    expect(events.some((event) => event.type === 'status' && event.stage === 'retrying')).toBe(true);
+
+    const retry = calls[1]?.body as {
+      messages: { role: string; content: string }[];
+      options: { seed: number };
+    };
+    expect(retry.messages).toHaveLength(4);
+    expect(retry.messages[3]?.content).toContain('unexpected [thought]');
+    // A retry at the same seed and temperature 0 would reproduce the failure.
+    expect(retry.options.seed).toBe(1);
+  });
+
+  /**
+   * The third rung: `think:false` breaking `format` is a family-scoped bug that
+   * keeps reappearing (ollama#15260 fixed for gemma4 only, #17871 open for
+   * qwen3.6), and omitting `think` is the documented workaround.
+   */
+  it('drops `think` on a third attempt when the grammar looks bypassed', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [
+        { content: 'Here is the note you asked for: Subjective — sleeping better.' },
+        { content: 'Still prose, I am afraid.' },
+        { content: JSON.stringify(GOOD) },
+      ],
+    });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(REQUEST),
+    );
+
+    const last = events.at(-1);
+    if (last?.type !== 'sections') throw new Error('unreachable');
+    expect(last.stats.attempts).toBe(3);
+    expect(calls[0]?.body).toHaveProperty('think', false);
+    expect(calls[1]?.body).toHaveProperty('think', false);
+    expect(calls[2]?.body).not.toHaveProperty('think');
+  });
+
+  it('gives up with invalid_output when the shape never comes right', async () => {
+    const error = await expectAiError(
+      provider({ chats: [{ content: 'not json at all' }] }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('invalid_output');
+    expect(error.message).toContain("wasn't a note");
+  });
+
+  /** ollama#15502, the failure most likely to sink this on the target Mac. */
+  it('rejects a repetition loop even though it is valid JSON', async () => {
+    const looping = { ...GOOD, Plan: `plan ${'own '.repeat(40)}` };
+    const error = await expectAiError(
+      provider({ chats: [{ content: JSON.stringify(looping) }] }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('degenerate_output');
+  });
+
+  it('retries a repetition loop on a fresh seed without quoting it back', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [
+        { content: JSON.stringify({ ...GOOD, Plan: `plan ${'own '.repeat(40)}` }) },
+        { content: JSON.stringify(GOOD) },
+      ],
+    });
+    await drain(new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(REQUEST));
+
+    const retry = calls[1]?.body as { messages: unknown[]; options: { seed: number } };
+    expect(retry.messages).toHaveLength(2);
+    expect(retry.options.seed).toBe(1);
+  });
+});
+
+describe('OllamaProvider.generateNote — terminal failures', () => {
+  it('reports Ollama not running', async () => {
+    const refused = Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } });
+    const error = await expectAiError(provider({ chats: [{ error: refused }] }).generateNote(REQUEST));
+    expect(error.code).toBe('ollama_unreachable');
+  });
+
+  it('reports a model that has not been pulled', async () => {
+    const error = await expectAiError(provider({ chats: [], tags: { models: [] } }).generateNote(REQUEST));
+    expect(error.code).toBe('model_missing');
+  });
+
+  /** ollama#16563: the MLX engine returns HTTP 200 and ignores `format`. */
+  it('refuses a model whose weights are not GGUF', async () => {
+    const error = await expectAiError(
+      provider({
+        chats: [],
+        tags: { models: [{ name: MODEL, details: { format: 'safetensors' } }] },
+      }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('non_gguf_model');
+  });
+
+  it('refuses an MLX-flavoured tag before it makes a single request', async () => {
+    const { fetchImpl, calls } = stub({ chats: [] });
+    const error = await expectAiError(
+      new OllamaProvider({ resolveModel: () => 'qwen3.8:27b-mlx', fetchImpl }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('unsupported_model_tag');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('reports running out of memory', async () => {
+    const error = await expectAiError(
+      provider({
+        chats: [
+          {
+            status: 500,
+            body: JSON.stringify({
+              error: 'model requires more system memory (24.0 GiB) than is available (12.1 GiB)',
+            }),
+          },
+        ],
+      }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('insufficient_memory');
+  });
+
+  /**
+   * The silent one. Ollama truncates from the head, so an over-long prompt
+   * drops the anti-fabrication rules and keeps the patient material — with a
+   * fluent answer and nothing in the response to say so.
+   */
+  it('detects a prompt that was truncated, from prompt_eval_count', async () => {
+    const error = await expectAiError(
+      provider({
+        chats: [{ content: JSON.stringify(GOOD), promptTokens: NUM_CTX - 2 }],
+      }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('context_overflow');
+  });
+
+  it('refuses an over-long source before sending it', async () => {
+    const { fetchImpl, calls } = stub({ chats: [] });
+    const error = await expectAiError(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote({
+        ...REQUEST,
+        typedNotes: 'word '.repeat(20_000),
+      }),
+    );
+    expect(error.code).toBe('input_too_long');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('reports output cut off mid-note', async () => {
+    const error = await expectAiError(
+      provider({
+        chats: [{ content: '{"Subjective": "Sleeping bet', doneReason: 'length' }],
+      }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('output_truncated');
+  });
+
+  /** ollama#15288 / #15428: everything stranded in the reasoning block. */
+  it('reports an empty answer whose text all went to `thinking`', async () => {
+    const error = await expectAiError(
+      provider({ chats: [{ content: '', thinking: 'Let me consider the sections…' }] }).generateNote(REQUEST),
+    );
+    expect(error.code).toBe('empty_response');
+    expect(error.detail).toContain('message.thinking');
+  });
+});
+
+describe('OllamaProvider.refineNote', () => {
+  it('streams the reply and returns the rewritten sections', async () => {
+    const answer = { reply: 'Shortened the Plan section.', updatedSections: GOOD };
+    const events = await drain(
+      provider({ chats: [{ content: JSON.stringify(answer) }] }).refineNote({
+        instructions: '',
+        sections: SOAP,
+        noteText: 'Subjective: Sleeping better.\n\nPlan: Continue weekly.',
+        history: [],
+        message: 'Shorten the plan.',
+      }),
+    );
+
+    const last = events.at(-1);
+    if (last?.type !== 'refined') throw new Error('unreachable');
+    expect(last.reply).toBe('Shortened the Plan section.');
+    expect(last.updatedSections).toEqual(GOOD);
+
+    const streamedKeys = new Set(
+      events.filter((event) => event.type === 'token').map((event) => event.section),
+    );
+    expect([...streamedKeys]).toEqual(['reply']);
+  });
+
+  it('accepts an answer that leaves the note alone', async () => {
+    const events = await drain(
+      provider({
+        chats: [{ content: JSON.stringify({ reply: 'That is not in the note.', updatedSections: null }) }],
+      }).refineNote({
+        instructions: '',
+        sections: SOAP,
+        noteText: 'Plan: Continue weekly.',
+        history: [],
+        message: 'Did she mention medication?',
+      }),
+    );
+    const last = events.at(-1);
+    if (last?.type !== 'refined') throw new Error('unreachable');
+    expect(last.updatedSections).toBeNull();
+  });
+});
+
+describe('OllamaProvider.detectFormat', () => {
+  it('returns the detected name and sections', async () => {
+    const detected = { name: 'Progress note', sections: SOAP };
+    const result = await provider({ chats: [{ content: JSON.stringify(detected) }] }).detectFormat({
+      kind: 'template',
+      text: 'Subjective:\nObjective:\nAssessment:\nPlan:',
+    });
+    expect(result).toEqual(detected);
+  });
+
+  it('rejects a response that is not a format', async () => {
+    await expect(
+      provider({ chats: [{ content: JSON.stringify({ name: 'Progress note' }) }] }).detectFormat({
+        kind: 'template',
+        text: 'Subjective:',
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_output' });
+  });
+});
+
+describe('OllamaProvider.describe', () => {
+  it('reports the model and its weight format', async () => {
+    await expect(provider({ chats: [] }).describe()).resolves.toEqual({
+      reachable: true,
+      model: MODEL,
+      modelPresent: true,
+      weightsFormat: 'gguf',
+    });
+  });
+
+  it('reports unreachable rather than throwing when Ollama is down', async () => {
+    const fetchImpl = (() => {
+      throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } });
+    }) as unknown as typeof globalThis.fetch;
+    await expect(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).describe(),
+    ).resolves.toMatchObject({ reachable: false, modelPresent: false });
+  });
+});

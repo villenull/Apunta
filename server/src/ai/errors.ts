@@ -1,0 +1,73 @@
+import type { AiErrorCode } from '@apunta/shared';
+
+/**
+ * A local-AI failure the user can act on.
+ *
+ * Every code here is a failure mode observed against a real Ollama and
+ * catalogued in `docs/research/m3-preflight-2026-08.md` §3 — not a
+ * hypothetical, and not an assertion. The message is written for a therapist,
+ * not a programmer: it says what happened and what to do about it.
+ */
+export class AiError extends Error {
+  readonly code: AiErrorCode;
+  /** Technical context for the server log. Never sent to the browser. */
+  readonly detail: string | undefined;
+
+  constructor(code: AiErrorCode, message: string, detail?: string) {
+    super(message);
+    this.name = 'AiError';
+    this.code = code;
+    this.detail = detail;
+  }
+}
+
+/** The exact banner copy from the M3 packet, so the two paths agree. */
+export const UNREACHABLE_MESSAGE = "Apunta can't reach the local AI — see Setup";
+
+const MESSAGES: Record<AiErrorCode, string> = {
+  ollama_unreachable: `${UNREACHABLE_MESSAGE}. Ollama does not appear to be running on this machine.`,
+  model_missing:
+    "Apunta's AI model isn't installed yet. Run the setup script to download it, then try again.",
+  non_gguf_model:
+    'The configured model is not a GGUF build, and Apunta cannot make it follow the note format reliably. Choose a GGUF model in Settings.',
+  unsupported_model_tag:
+    'That model tag is an MLX/safetensors build. Apunta cannot make those follow the note format reliably — pick a GGUF tag instead.',
+  insufficient_memory:
+    'This machine ran out of memory loading the AI model. Choose a smaller model in Settings and try again.',
+  input_too_long:
+    'This session summary is too long for the AI to read in one go. Shorten it, or split it into two notes.',
+  context_overflow:
+    "The AI ran out of room and had to drop part of Apunta's instructions, so the draft was thrown away. Shorten the summary and try again.",
+  output_truncated: 'The AI ran out of room mid-note. Try again, or shorten the summary.',
+  empty_response: 'The AI returned nothing. Try again — if it keeps happening, check Setup.',
+  invalid_output:
+    "The AI returned something that wasn't a note. Try again — if it keeps happening, the model may not be following the note format.",
+  degenerate_output:
+    'The AI got stuck repeating itself instead of writing the note. Try again — if it keeps happening, try a different model in Settings.',
+  timeout: 'The AI took too long to answer. It may still be loading the model — try again in a moment.',
+  ollama_error: 'The local AI reported an error. Check Setup, then try again.',
+};
+
+export function aiError(code: AiErrorCode, detail?: string): AiError {
+  return new AiError(code, MESSAGES[code], detail);
+}
+
+/**
+ * `fetch` rejects with a useless `TypeError: fetch failed`; the reason is on
+ * `cause.code`. A refused connection is Ollama not running, which is by far
+ * the most common state on a machine that has not been set up yet.
+ */
+const CONNECTION_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'ENOTFOUND',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
+
+export function isConnectionFailure(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const cause = (error as { cause?: { code?: unknown } }).cause;
+  return typeof cause?.code === 'string' && CONNECTION_CODES.has(cause.code);
+}

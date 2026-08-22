@@ -15,6 +15,19 @@ export const DEFAULT_PORT = 7717;
 
 export const DB_FILENAME = 'apunta.db';
 
+export const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
+
+export const DEFAULT_FAKE_STREAM_DELAY_MS = 12;
+
+function readDelay(raw: string | undefined): number {
+  if (raw === undefined || raw === '') return DEFAULT_FAKE_STREAM_DELAY_MS;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`APUNTA_FAKE_STREAM_DELAY_MS must be a non-negative number (got "${raw}")`);
+  }
+  return value;
+}
+
 export interface AppConfig {
   /** Always loopback — the server must never be reachable from the network. */
   readonly host: '127.0.0.1';
@@ -27,6 +40,14 @@ export interface AppConfig {
   readonly migrationsDir: string;
   /** `APUNTA_FAKE_AI=1` — deterministic providers, no local AI tooling needed. */
   readonly fakeAi: boolean;
+  /**
+   * Milliseconds between chunks from the fake LLM. Non-zero by default so the
+   * streaming draft is visible in a demo and observable in Playwright; set
+   * `APUNTA_FAKE_STREAM_DELAY_MS=0` in a unit test that does not care.
+   */
+  readonly fakeStreamDelayMs: number;
+  /** Where the local Ollama listens. Loopback only — the egress guard sees to that. */
+  readonly ollamaUrl: string;
   /** Built SPA. Served in production; absent during `npm run dev`. */
   readonly webDistDir: string;
   readonly version: string;
@@ -67,6 +88,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     // from the built `dist/`, so the .sql files are found either way.
     migrationsDir: join(serverRoot, 'migrations'),
     fakeAi: env['APUNTA_FAKE_AI'] === '1',
+    fakeStreamDelayMs: readDelay(env['APUNTA_FAKE_STREAM_DELAY_MS']),
+    ollamaUrl: env['APUNTA_OLLAMA_URL']?.trim() || DEFAULT_OLLAMA_URL,
     webDistDir: join(repoRoot, 'web', 'dist'),
     version: pkg.version ?? '0.0.0',
   };
