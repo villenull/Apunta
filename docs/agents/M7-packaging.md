@@ -1,6 +1,6 @@
 # M7 — Setup, polish, packaging, eval
 
-**Branch:** `feat/m7-packaging` · **Depends on:** M4 + M5 + M6
+**Depends on:** M4 + M5 + M6
 
 ## Goal
 

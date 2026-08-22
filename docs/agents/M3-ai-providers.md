@@ -1,6 +1,6 @@
 # M3 — AI provider layer + note drafting
 
-**Branch:** `feat/m3-ai-providers` · **Depends on:** M2
+**Depends on:** M2
 
 ## Goal
 

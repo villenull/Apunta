@@ -1,6 +1,6 @@
 # M0 — Scaffold
 
-**Branch:** `feat/m0-scaffold` · **Depends on:** nothing
+**Depends on:** nothing
 
 ## Goal
 

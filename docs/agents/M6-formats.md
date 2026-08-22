@@ -1,6 +1,6 @@
 # M6 — Format onboarding + skill import
 
-**Branch:** `feat/m6-formats` · **Depends on:** M3 (may run parallel to M4/M5)
+**Depends on:** M3 (run after M3; may be done in any order with M4, M5)
 
 ## Goal
 

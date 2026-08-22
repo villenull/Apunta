@@ -1,6 +1,6 @@
 # M5 — Audio capture + local transcription
 
-**Branch:** `feat/m5-audio` · **Depends on:** M3 (may run parallel to M4/M6)
+**Depends on:** M3 (run after M3; may be done in any order with M4, M6)
 
 ## Goal
 

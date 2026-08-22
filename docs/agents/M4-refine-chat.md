@@ -1,6 +1,6 @@
 # M4 — Refine chat
 
-**Branch:** `feat/m4-refine-chat` · **Depends on:** M3 (may run parallel to M5/M6)
+**Depends on:** M3 (run after M3; may be done in any order with M5, M6)
 
 ## Goal
 

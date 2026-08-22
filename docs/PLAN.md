@@ -196,8 +196,12 @@ M0 scaffold → M1 data+API → M2 web shell → M3 AI providers ─┬→ M4 re
 M4+M5+M6 → M7 setup, polish & packaging
 ```
 
-M4, M5, M6 are independent of each other and may run as parallel agents on
-separate branches after M3 merges.
+M4, M5 and M6 each depend only on M3, so they may be tackled in any order
+among themselves — but **packets run strictly one at a time**. All work lands
+on a single shared branch (`claude/local-browser-app-planning-0likfi`) with no
+feature branches and no inter-packet pull requests, so two agents working
+concurrently would collide in the same working tree. See
+`docs/agents/README.md` for the branch workflow.
 
 | # | Packet | One-line outcome |
 | --- | --- | --- |

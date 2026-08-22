@@ -1,6 +1,6 @@
 # M2 — Web app shell (prototype → React)
 
-**Branch:** `feat/m2-web-shell` · **Depends on:** M1
+**Depends on:** M1
 
 ## Goal
 

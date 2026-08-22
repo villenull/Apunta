@@ -1,6 +1,6 @@
 # M1 — Data layer + CRUD API
 
-**Branch:** `feat/m1-data-api` · **Depends on:** M0
+**Depends on:** M0
 
 ## Goal
 

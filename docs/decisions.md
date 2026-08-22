@@ -12,3 +12,4 @@ decision (including deviations from a work packet).
 | 2026-08-22 | No login in v1; single-tenant SQLite; UUID keys + clean HTTP API kept product-ready | Owner decision (2026-08-22 Q&A); "possible product someday" | PLAN §1 |
 | 2026-08-22 | Note editor is a textarea, not contenteditable | Selection offsets needed for highlight-refs; simpler, safer | M2/M4 packets |
 | 2026-08-22 | TypeScript monorepo (Fastify + React + shared zod), tests Vitest + Playwright, fakes as first-class providers | One language for all agents; fakes keep CI hermetic and the app demoable anywhere | PLAN §2/§5/§6 |
+| 2026-08-22 | Single shared branch for all packets; no feature branches, no inter-packet PRs; packets run one at a time | Owner decision — solo project, no review gate to serve; removes merge friction. Cost: M4/M5/M6 lose potential parallelism | docs/agents/README.md |

@@ -41,8 +41,11 @@ Work packets: `docs/agents/`.
   exists in the prototype.
 - Tests colocated as `*.test.ts`; e2e in `e2e/`. New behavior lands with
   tests in the same commit.
-- Commits: imperative subject, body says why. Branch per packet
-  (`feat/m3-ai-providers`).
+- Commits: imperative subject, body says why.
+- **One branch for everything** (`claude/local-browser-app-planning-0likfi`):
+  no feature branches, no inter-packet PRs, one packet in flight at a time.
+  Stage explicit paths, never `git add -A`; on a rejected push,
+  `git pull --rebase` and retry — never force-push.
 
 ## Definition of done (every packet)
 
