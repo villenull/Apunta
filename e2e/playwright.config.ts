@@ -33,8 +33,9 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    // Root `npm run e2e` builds web + server first; this only boots the result.
-    command: 'node server/dist/index.js',
+    // Self-contained: build shared + server + web, then serve the built SPA and
+    // API from one process, exactly as `npm start` does for the user.
+    command: 'npm run build && node server/dist/index.js',
     cwd: repoRoot,
     url: `${baseURL}/api/health`,
     reuseExistingServer: !process.env['CI'],
