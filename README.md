@@ -5,14 +5,36 @@ summaries into structured clinical notes. The UI runs in a browser tab; all
 AI processing (transcription and note drafting) runs on the local PC with
 free, open-weight models — nothing leaves the machine.
 
-**Status: planned, ready for implementation.** Start at
+**Status: scaffold (M0) in place — empty skeleton, no product features yet.**
+Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
 [`docs/agents/`](docs/agents/README.md) in order M0 → M7.
+
+## Development
+
+Node 22+ (`.nvmrc` pins the major). `npm install` once at the repo root — this
+is an npm-workspaces monorepo, so the four packages install together. Day to
+day: `npm run dev` starts the API on <http://127.0.0.1:7717> (tsx watch) plus
+Vite on <http://127.0.0.1:5173> with `/api` proxied to it, and `npm run
+dev:fake` is the same with `PATIENCE_FAKE_AI=1` so no local AI tooling is
+needed. `npm start` builds everything and serves the whole app from
+<http://127.0.0.1:7717>. Before committing, run `npm run lint` (ESLint +
+Prettier), `npm run typecheck`, `npm test` (Vitest, all workspaces) and `npm
+run e2e` (Playwright/Chromium — it builds first and boots the server in fake-AI
+mode on port 7788 with a temp data dir); `npm run format` fixes formatting and
+`npm run smoke:live` is the manual real-model check, stubbed until M3/M5.
+Useful env: `PATIENCE_PORT`, `PATIENCE_DATA_DIR`, `PATIENCE_FAKE_AI=1`, and
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` when the sandbox already has a browser that
+`playwright install` should not replace.
 
 ## Repository layout
 
 | Path | What it is |
 | --- | --- |
+| `shared/` | zod schemas and types shared by server and web (built to `dist/` before the other packages build) |
+| `server/` | Fastify API on `127.0.0.1:7717`; serves `web/dist` in production |
+| `web/` | React + Vite SPA |
+| `e2e/` | Playwright specs |
 | `docs/PLAN.md` | Master plan: architecture, data model, API, AI pipeline, testing strategy, milestones |
 | `docs/agents/` | Self-contained work packets (M0–M7) for coding agents, with acceptance criteria |
 | `docs/research/` | Verified Aug-2026 research behind the stack choices |
