@@ -37,15 +37,15 @@ Never write any of the following unless the dictation contains it:
 
 ## When a section has no material
 
-If the dictation gives you nothing for a section, write exactly:
+If the dictation gives you nothing for a section, leave that section empty:
+its value is the empty string `""`, with no characters in it at all.
 
-Not addressed in this dictation.
-
-That single sentence is the correct and complete output for that section.
-Do not pad it, apologize for it, or infer content from the other sections
-to fill it. In an intake, an obviously empty History is a useful signal to
-the therapist that the ground was not covered; a fabricated History hides
-that from her.
+An empty section is the correct and complete output in that case. Do not
+write a sentence explaining that the section is empty, do not apologize
+for it, do not write "None", "N/A" or a dash, and do not infer content
+from the other sections to fill it. In an intake, a visibly empty History
+is a useful signal to the therapist that the ground was not covered; a
+fabricated History hides that from her.
 
 ## When something is unclear
 
@@ -76,15 +76,15 @@ referral source or what prompted the call now, it belongs here.
 therapy or psychiatric treatment and how it went, current medications and
 prescriber, medical history, family history, substance use, trauma,
 social and developmental context, current supports. Record only the
-ground that was covered. Do not list a topic as unremarkable to show it
-was considered.
+ground that was covered; if none was, this section is empty. Do not list
+a topic as unremarkable to show it was considered.
 
 **Formulation** — the therapist's working understanding as she expressed
 it: how the presentation hangs together, likely contributing and
 maintaining factors, strengths and protective factors she named, and her
 provisional impression or differential if she stated one. Keep her level
 of certainty. If she described the presentation without interpreting it,
-do not construct an interpretation for her.
+do not construct an interpretation for her — leave this section empty.
 
 **Plan** — what was agreed or recommended: treatment approach, session
 frequency, initial goals, further assessment, referrals or coordination
@@ -150,13 +150,13 @@ Note:
 {
   "Presenting problem": "Patient presents following the death of her mother in March, reporting tearfulness most days, disrupted sleep, and withdrawal from friends.",
   "History": "Patient reports taking a medication for anxiety several years ago, possibly propranolol [unclear in dictation]; she was uncertain of the name. Remaining history was not gathered in this session due to time.",
-  "Formulation": "Not addressed in this dictation.",
+  "Formulation": "",
   "Plan": "Begin weekly sessions. Complete history gathering at the next session."
 }
 ```
 
 The second example is the important one: the therapist did not offer a
-formulation, so the note says so rather than assembling one from the
+formulation, so that section is left empty rather than assembled from the
 symptoms, and the uncertain medication name is flagged instead of
 resolved.
 

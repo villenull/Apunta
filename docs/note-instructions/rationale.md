@@ -63,20 +63,26 @@ In rough order of expected effect:
 1. **The two few-shot pairs.** Per the research note, examples move a
    small model more than rules do. Each format's second example is the
    load-bearing one: it demonstrates a section with no material
-   resolving to the fallback sentence, so refusal-to-fill is shown, not
-   just asserted.
+   resolving to an empty string, so refusal-to-fill is shown, not just
+   asserted. They are also the *only* few-shot examples the model sees:
+   M3's prompt builder contributes the schema restatement and nothing
+   else, precisely so it cannot contradict these (see
+   `docs/decisions.md`).
 2. **The named-forbidden-phrase list.** Generic prohibitions ("do not
    fabricate") are weak; small models comply much better with concrete
    strings. "Alert and oriented", "mood congruent with affect", "denies
    suicidal ideation", "no acute risk indicators" are exactly the
    boilerplate a model trained on clinical text emits when a section is
    empty, so they are quoted verbatim as things never to write unheard.
-3. **The exact fallback sentence.** "Not addressed in this dictation."
-   is fixed wording rather than a description of what to say, so it is
-   easy to produce, easy to spot in review, easy to snapshot-test, and
-   easy for the M7 eval harness to detect. It also keeps every schema
-   field non-empty, which matters because the schema requires all
-   sections.
+3. **The empty section.** A section with no material is the empty
+   string — the practice owner's answer to design question 5, which
+   replaced the fixed fallback sentence this document originally
+   proposed. A blank is what she wants to see and fill in, it cannot be
+   mistaken for content, and it is trivial to detect. The cost is that
+   "every section is non-empty" is no longer a property anything may
+   assume: the schema permits `""`, the editor needs a placeholder so a
+   blank reads as deliberate rather than broken, and M7's rubric has to
+   key refusal-to-fill off emptiness rather than off a sentence.
 4. **The intake negative-findings rule.** "No prior therapy" and "denies
    substance use" read as fact but are assertions about what was asked.
    This is the intake-specific failure the progress note does not share,
@@ -115,49 +121,51 @@ In rough order of expected effect:
   rewriting the therapist's own words — which the style section
   explicitly forbids.
 
-## Clinical judgment calls a licensed clinician should review
+## Clinical judgment calls — answered
 
-I am not a clinician. These four choices are content decisions, not
-engineering ones, and should be confirmed before shipping.
+I am not a clinician, so these four content decisions were put to the
+practice owner. She answered all four on 2026-08-22
+(`docs/feedback/2026-08-22-owner-answers.md`); the resolutions are
+recorded in `docs/decisions.md` and are already reflected in both
+instruction files. **They are settled — do not re-open them without her.**
 
-1. **Silence about risk produces silence in the note.** The model is
-   told never to write "denies suicidal ideation" or "no safety
-   concerns" unless the therapist said it, and a session where risk was
-   never mentioned yields an Assessment with no risk sentence at all.
-   That is the honest behavior, but some practices, payers, and
-   malpractice carriers expect every progress note to carry an explicit
-   risk statement. If that is the expectation here, the right fix is an
-   app-level affordance — a prompt to the therapist during review, or a
-   checklist item — not permission for the model to assert a negative
-   finding. Worth an explicit decision.
-2. **The wording of the fallback sentence.** "Not addressed in this
-   dictation." refers to the dictation rather than the session, which is
-   accurate — the model only ever sees the dictation — and avoids
-   implying the clinician omitted something. But it will be visible in a
-   published note if the therapist does not replace it, and it reveals
-   that the note was drafted from dictation. She may prefer "Not
-   discussed this session", a blank, or a bracketed placeholder. Easy to
-   change; it appears in four places per file.
-3. **Whether the Assessment/Formulation may reason at all.** As written,
-   the model may only report clinical judgment the therapist voiced; if
-   she describes symptoms and draws no conclusion, the section says it
-   was not addressed. A therapist who dictates observations and expects
-   the note to assemble the interpretation will find this too
-   conservative and should say so — but loosening it is precisely the
-   change most likely to produce a confident fabricated diagnosis, so I
-   would loosen it only with her explicit direction and a re-run of the
-   eval fixtures.
-4. **The `[unclear in dictation]` flag.** It supports the review
-   workflow, and it appears in one intake example on a possible
-   medication name. Two things to confirm: that a bracketed editorial
-   marker is acceptable in her record-keeping at all, and that the
-   marker is never left in a published note by accident. An app-side
-   check that warns on `[unclear` at publish time would make this safe;
-   I have not specified one, and it would belong in M4 or M7.
+1. **Silence about risk produces silence in the note.** ✅ *Confirmed as
+   drafted.* Design question 5 asked what a section with no material
+   should say and she chose a blank over a written negative. The model is
+   still told never to write "denies suicidal ideation" or "no safety
+   concerns" unless the therapist said it, and a session where risk never
+   came up yields no risk sentence at all. If a payer ever requires an
+   explicit risk statement, the fix stays app-level — a review-time
+   prompt — never permission for the model to assert a negative finding.
+2. **The wording of the fallback sentence.** ✅ *Resolved by removing
+   it.* Design question 5: "leave the section blank for me to fill in".
+   The sentence "Not addressed in this dictation." is gone from both
+   files; a section with no material is now the empty string. The cascade
+   is in `docs/decisions.md`: the schema permits empty bodies, nothing
+   downstream may assume otherwise, the editor needs a placeholder, and
+   M7's rubric must key refusal-to-fill off emptiness rather than off the
+   sentence.
+3. **Whether the Assessment/Formulation may reason at all.** ✅ *It may
+   not.* Design question 7, verbatim: "Stay quiet — if I didn't say what
+   I made of it, the note shouldn't either." The conservative drafted
+   behaviour stands unchanged, and so does the banned-boilerplate list.
+   Note the tension this creates with her answer to question 6 (write in
+   her voice, learned from her past notes): her past notes contain her
+   conclusions, so they are used to derive a *style profile*, never
+   pasted in as few-shot examples that would teach the model to infer.
+4. **The `[unclear in dictation]` flag.** ✅ *Keep it, with no gate.*
+   Clarifying question 11 offered the marker with and without a
+   "warn me before I copy" check, and she chose it without — having been
+   shown the risk that a marker could slip into a filed record. The
+   marker stays exactly as drafted in both files. The agreed way to
+   honour both the choice and the risk is to style it distinctly in the
+   editor (M4/M7) so it is hard to miss, rather than interrupting her.
 
-One smaller item: the progress note example renders "The restlessness
-observed at previous sessions was not present" from "none of the
-restlessness I saw last month". That is a faithful paraphrase, but it
-imports a comparison to a prior session into the Objective section. If
-she considers cross-session comparison to belong in Assessment rather
-than Objective, the example should move it.
+## Still open
+
+One smaller item, and it is genuinely open: the progress note example
+renders "The restlessness observed at previous sessions was not present"
+from "none of the restlessness I saw last month". That is a faithful
+paraphrase, but it imports a comparison to a prior session into the
+Objective section. If she considers cross-session comparison to belong in
+Assessment rather than Objective, the example should move it.
