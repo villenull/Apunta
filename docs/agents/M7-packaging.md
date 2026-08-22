@@ -43,7 +43,7 @@ setup-script path clean and well-documented, because M8 builds on it.
    stating the local-only guarantee in plain language.
 6. `npm run eval`: script running every `e2e/fixtures/eval/*.txt` transcript
    through the **real** model for each format, N=3 runs each. Markdown report
-   to stdout; document model comparison (`PATIENCE_EVAL_MODELS=a,b`).
+   to stdout; document model comparison (`APUNTA_EVAL_MODELS=a,b`).
    - **The corpus already exists** — 10 transcripts plus `expectations.md`,
      `rubric.md` and `README.md` are in `e2e/fixtures/eval/`. Do not write new
      fixtures; implement against the rubric that is there.

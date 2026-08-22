@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('the app shell loads and reports a healthy server', async ({ page }) => {
   await page.goto('/');
 
-  await expect(page.getByTestId('health-status')).toHaveText('Practice Notes — server ok');
+  await expect(page.getByTestId('health-status')).toHaveText('Apunta — server ok');
 });
 
 test('the health endpoint answers with the stub payload', async ({ request }) => {

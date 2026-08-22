@@ -1,5 +1,5 @@
 {
-  "name": "@patience/web",
+  "name": "@apunta/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@patience/shared": "*",
+    "@apunta/shared": "*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

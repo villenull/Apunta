@@ -1,4 +1,4 @@
-import { SettingsSchema, type Settings } from '@patience/shared';
+import { SettingsSchema, type Settings } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createTestApp, type TestApp } from '../test/harness.js';

@@ -1,4 +1,4 @@
-import type { ChatMessage, CreateChatMessageInput } from '@patience/shared';
+import type { ChatMessage, CreateChatMessageInput } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 
 import { uuidv7 } from './uuid.js';

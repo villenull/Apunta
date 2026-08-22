@@ -17,8 +17,8 @@ let dataDir: string;
 let db: Database;
 
 beforeEach(() => {
-  dataDir = mkdtempSync(join(tmpdir(), 'patience-seed-'));
-  db = openDatabase({ file: join(dataDir, 'practice-notes.db'), migrationsDir }).db;
+  dataDir = mkdtempSync(join(tmpdir(), 'apunta-seed-'));
+  db = openDatabase({ file: join(dataDir, 'apunta.db'), migrationsDir }).db;
 });
 
 afterEach(() => {

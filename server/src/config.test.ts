@@ -21,25 +21,25 @@ describe('loadConfig', () => {
     expect(config.fakeAi).toBe(false);
   });
 
-  it('honours PATIENCE_PORT, PATIENCE_DATA_DIR and PATIENCE_FAKE_AI', () => {
+  it('honours APUNTA_PORT, APUNTA_DATA_DIR and APUNTA_FAKE_AI', () => {
     const config = loadConfig({
-      PATIENCE_PORT: '7799',
-      PATIENCE_DATA_DIR: '/tmp/patience-data',
-      PATIENCE_FAKE_AI: '1',
+      APUNTA_PORT: '7799',
+      APUNTA_DATA_DIR: '/tmp/apunta-data',
+      APUNTA_FAKE_AI: '1',
     });
     expect(config.port).toBe(7799);
-    expect(config.dataDir).toBe('/tmp/patience-data');
+    expect(config.dataDir).toBe('/tmp/apunta-data');
     expect(config.fakeAi).toBe(true);
   });
 
   it('rejects a nonsense port', () => {
-    expect(() => loadConfig({ PATIENCE_PORT: 'later' })).toThrow(/PATIENCE_PORT/);
+    expect(() => loadConfig({ APUNTA_PORT: 'later' })).toThrow(/APUNTA_PORT/);
   });
 });
 
 describe('ensureDataDir', () => {
   it('creates the directory when it is missing', () => {
-    const dir = join(tmpdir(), `patience-cfg-${Date.now()}`, 'nested');
+    const dir = join(tmpdir(), `apunta-cfg-${Date.now()}`, 'nested');
     created.push(dir);
     expect(existsSync(dir)).toBe(false);
     ensureDataDir(dir);

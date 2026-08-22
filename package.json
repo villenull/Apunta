@@ -1,8 +1,8 @@
 {
-  "name": "patience",
+  "name": "apunta",
   "version": "0.0.0",
   "private": true,
-  "description": "Practice Notes — local-first clinical note drafting",
+  "description": "Apunta — local-first clinical note drafting",
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
@@ -15,18 +15,18 @@
     "e2e"
   ],
   "scripts": {
-    "build:shared": "npm run build --workspace @patience/shared",
-    "dev": "npm run build:shared && concurrently -n server,web -c green,cyan \"npm run dev --workspace @patience/server\" \"npm run dev --workspace @patience/web\"",
-    "dev:fake": "cross-env PATIENCE_FAKE_AI=1 npm run dev",
+    "build:shared": "npm run build --workspace @apunta/shared",
+    "dev": "npm run build:shared && concurrently -n server,web -c green,cyan \"npm run dev --workspace @apunta/server\" \"npm run dev --workspace @apunta/web\"",
+    "dev:fake": "cross-env APUNTA_FAKE_AI=1 npm run dev",
     "start": "npm run build && node server/dist/index.js",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
     "test": "npm run build:shared && vitest run",
     "test:watch": "vitest",
-    "build": "npm run build:shared && npm run build --workspace @patience/server && npm run build --workspace @patience/web",
-    "e2e": "npm run e2e --workspace @patience/e2e",
-    "seed": "npm run build:shared && npm run seed --workspace @patience/server --",
+    "build": "npm run build:shared && npm run build --workspace @apunta/server && npm run build --workspace @apunta/web",
+    "e2e": "npm run e2e --workspace @apunta/e2e",
+    "seed": "npm run build:shared && npm run seed --workspace @apunta/server --",
     "smoke:live": "node scripts/smoke-live.mjs"
   },
   "devDependencies": {

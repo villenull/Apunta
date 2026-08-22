@@ -25,9 +25,9 @@ export function App(): React.JSX.Element {
   return (
     <main className="placeholder">
       <h1 data-testid="health-status">
-        {status.state === 'loading' && 'Practice Notes — checking server…'}
-        {status.state === 'ok' && 'Practice Notes — server ok'}
-        {status.state === 'error' && 'Practice Notes — server unreachable'}
+        {status.state === 'loading' && 'Apunta — checking server…'}
+        {status.state === 'ok' && 'Apunta — server ok'}
+        {status.state === 'error' && 'Apunta — server unreachable'}
       </h1>
       <p className="muted">
         {status.state === 'ok'

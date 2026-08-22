@@ -21,7 +21,7 @@ try {
   await app.listen({ host: config.host, port: config.port });
   app.log.info(
     { dataDir: config.dataDir, db: config.dbFile, fakeAi: config.fakeAi },
-    `Practice Notes on http://${config.host}:${config.port}`,
+    `Apunta on http://${config.host}:${config.port}`,
   );
 } catch (error) {
   app.log.error(error);

@@ -1,4 +1,4 @@
-import type { HealthResponse } from '@patience/shared';
+import type { HealthResponse } from '@apunta/shared';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,7 +8,7 @@ const health: HealthResponse = {
   ok: true,
   version: '0.0.0',
   fakeAi: true,
-  db: { path: '/tmp/practice-notes.db', migrationLevel: 1 },
+  db: { path: '/tmp/apunta.db', migrationLevel: 1 },
   ollama: { reachable: false, model: null, modelPresent: false },
   whisper: { binaryPresent: false, modelPresent: false },
   ffmpeg: { present: false },
@@ -30,7 +30,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByText('Practice Notes — server ok')).toBeDefined();
+    expect(await screen.findByText('Apunta — server ok')).toBeDefined();
   });
 
   it('reports the server as unreachable when the fetch fails', async () => {
@@ -43,6 +43,6 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByText('Practice Notes — server unreachable')).toBeDefined();
+    expect(await screen.findByText('Apunta — server unreachable')).toBeDefined();
   });
 });

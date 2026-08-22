@@ -40,8 +40,8 @@ practice owner's to answer.
 
 1. `server/src/ai/` with the `LlmProvider` and `SttProvider` interfaces from
    PLAN §5 (define both; implement STT fake only — real whisper is M5).
-   Selection in one factory: `PATIENCE_FAKE_AI=1` → fakes; otherwise Ollama
-   (base URL `PATIENCE_OLLAMA_URL`, default `http://127.0.0.1:11434`) and
+   Selection in one factory: `APUNTA_FAKE_AI=1` → fakes; otherwise Ollama
+   (base URL `APUNTA_OLLAMA_URL`, default `http://127.0.0.1:11434`) and
    model from settings (`llm_model` key; default per PLAN §2's RAM table —
    implement the RAM lookup with `sysctl -n hw.memsize` on darwin, fall back
    to the small model elsewhere).
@@ -84,7 +84,7 @@ practice owner's to answer.
    new draft selected (prototype behavior).
 8. Health endpoint now real for LLM: Ollama reachable, configured model in
    `GET /api/tags`. Workspace shows a dismissible banner when health says
-   the AI is unavailable ("Practice Notes can't reach the local AI — see
+   the AI is unavailable ("Apunta can't reach the local AI — see
    Setup") — full wizard is M7.
 9. `npm run smoke:live`: node script that requires real Ollama, generates a
    draft from `e2e/fixtures/transcript-sample.txt`, asserts schema-valid +

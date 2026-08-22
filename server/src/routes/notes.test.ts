@@ -1,10 +1,4 @@
-import {
-  NoteListResponseSchema,
-  NoteSchema,
-  type Note,
-  type NoteFormat,
-  type Patient,
-} from '@patience/shared';
+import { NoteListResponseSchema, NoteSchema, type Note, type NoteFormat, type Patient } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createChatMessage } from '../db/chat-messages.js';

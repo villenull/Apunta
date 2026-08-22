@@ -7,10 +7,10 @@ import { defineConfig, devices } from '@playwright/test';
 const repoRoot = resolve(import.meta.dirname, '..');
 
 /** Never touch the real data directory from tests. */
-const dataDir = mkdtempSync(join(tmpdir(), 'patience-e2e-'));
+const dataDir = mkdtempSync(join(tmpdir(), 'apunta-e2e-'));
 
 /** Not 7717, so a dev server left running does not collide with the suite. */
-const port = Number(process.env['PATIENCE_E2E_PORT'] ?? 7788);
+const port = Number(process.env['APUNTA_E2E_PORT'] ?? 7788);
 const baseURL = `http://127.0.0.1:${String(port)}`;
 
 /**
@@ -43,9 +43,9 @@ export default defineConfig({
     stderr: 'pipe',
     timeout: 60_000,
     env: {
-      PATIENCE_PORT: String(port),
-      PATIENCE_FAKE_AI: '1',
-      PATIENCE_DATA_DIR: dataDir,
+      APUNTA_PORT: String(port),
+      APUNTA_FAKE_AI: '1',
+      APUNTA_DATA_DIR: dataDir,
     },
   },
 });

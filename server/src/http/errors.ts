@@ -1,4 +1,4 @@
-import type { ApiError, ApiErrorCode } from '@patience/shared';
+import type { ApiError, ApiErrorCode } from '@apunta/shared';
 import type { FastifyError, FastifyInstance } from 'fastify';
 import { ZodError } from 'zod';
 

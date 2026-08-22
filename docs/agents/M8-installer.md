@@ -4,7 +4,7 @@
 
 ## Goal
 
-Turn Practice Notes from "a repo a developer runs" into "an app a therapist
+Turn Apunta from "a repo a developer runs" into "an app a therapist
 installs herself." The target user has never opened Terminal, does not have
 Homebrew, and will not clone a git repository. She downloads one file, drags
 it to Applications, opens it, and follows a progress bar.
@@ -55,12 +55,12 @@ you are also shipping x86_64 or a universal binary, and why.
 
 ### 2. App shell
 
-A native macOS app bundle, `Practice Notes.app`, that owns the server
+A native macOS app bundle, `Apunta.app`, that owns the server
 lifecycle and opens the UI in the user's default browser. The UI stays a
 browser tab — do not turn this into a webview app.
 
 A **menu-bar (status item) app** is the intended shape: the icon shows
-running state, and its menu offers Open Practice Notes, Stop, and Quit.
+running state, and its menu offers Open Apunta, Stop, and Quit.
 
 Choose the shell technology yourself and record the choice with reasoning in
 `docs/decisions.md`. Tauri v2 is the recommended starting point (small

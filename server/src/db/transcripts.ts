@@ -1,4 +1,4 @@
-import type { CreateTranscriptInput, Transcript } from '@patience/shared';
+import type { CreateTranscriptInput, Transcript } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 
 import { uuidv7 } from './uuid.js';

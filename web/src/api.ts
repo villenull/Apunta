@@ -1,4 +1,4 @@
-import { HealthResponseSchema, type HealthResponse } from '@patience/shared';
+import { HealthResponseSchema, type HealthResponse } from '@apunta/shared';
 
 /**
  * All requests are same-origin relative paths: in production the Fastify server

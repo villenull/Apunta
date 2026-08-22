@@ -99,7 +99,7 @@ The remaining eight each bait a specific failure:
 To compare two models:
 
 ```sh
-PATIENCE_EVAL_MODELS=gemma4:12b,qwen3.5:4b npm run eval
+APUNTA_EVAL_MODELS=gemma4:12b,qwen3.5:4b npm run eval
 ```
 
 Lead the comparison with the fabrication rate, not the completeness score.

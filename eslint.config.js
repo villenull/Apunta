@@ -16,13 +16,11 @@ const privacyRules = {
     'error',
     {
       selector: `Literal[value=${NON_LOOPBACK_URL}]`,
-      message:
-        'No outbound URLs: Practice Notes may only talk to 127.0.0.1/localhost/::1 (CLAUDE.md hard rule 1).',
+      message: 'No outbound URLs: Apunta may only talk to 127.0.0.1/localhost/::1 (CLAUDE.md hard rule 1).',
     },
     {
       selector: `TemplateElement[value.raw=${NON_LOOPBACK_URL}]`,
-      message:
-        'No outbound URLs: Practice Notes may only talk to 127.0.0.1/localhost/::1 (CLAUDE.md hard rule 1).',
+      message: 'No outbound URLs: Apunta may only talk to 127.0.0.1/localhost/::1 (CLAUDE.md hard rule 1).',
     },
   ],
   'no-restricted-globals': [

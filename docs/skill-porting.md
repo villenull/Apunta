@@ -1,7 +1,7 @@
-# Porting a Claude skill into Practice Notes
+# Porting a Claude skill into Apunta
 
 The owner's spouse has a Claude skill she uses to write her clinical notes.
-Practice Notes does **not** run a skills engine — instead, each note format
+Apunta does **not** run a skills engine — instead, each note format
 has an `instructions` field (see Settings → format → Instructions), and that
 text becomes the system prompt for local-model drafting. This doc is the
 recipe for turning the skill into that text. Research backing:

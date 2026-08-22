@@ -51,7 +51,7 @@ test('the health endpoint reports a migrated database', async ({ request }) => {
 
   expect(response.ok()).toBe(true);
   const health = (await response.json()) as { db: { path: string; migrationLevel: number } };
-  expect(health.db.path).toContain('practice-notes.db');
+  expect(health.db.path).toContain('apunta.db');
   expect(health.db.migrationLevel).toBeGreaterThanOrEqual(1);
 });
 

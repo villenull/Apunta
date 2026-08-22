@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { NoteFormat, Note, Patient } from '@patience/shared';
+import type { NoteFormat, Note, Patient } from '@apunta/shared';
 import type { FastifyInstance } from 'fastify';
 
 import { buildApp } from '../app.js';
@@ -10,7 +10,7 @@ import { loadConfig, type AppConfig } from '../config.js';
 import { openDatabase, type Database } from '../db/index.js';
 
 /**
- * Integration-test harness. Every suite gets its own temp `PATIENCE_DATA_DIR`,
+ * Integration-test harness. Every suite gets its own temp `APUNTA_DATA_DIR`,
  * so tests exercise a real SQLite file and real migrations without ever going
  * near the user's actual data directory.
  */
@@ -23,11 +23,11 @@ export interface TestApp {
 }
 
 export async function createTestApp(): Promise<TestApp> {
-  const dataDir = mkdtempSync(join(tmpdir(), 'patience-test-'));
+  const dataDir = mkdtempSync(join(tmpdir(), 'apunta-test-'));
   const config = loadConfig({
-    PATIENCE_PORT: '0',
-    PATIENCE_DATA_DIR: dataDir,
-    PATIENCE_FAKE_AI: '1',
+    APUNTA_PORT: '0',
+    APUNTA_DATA_DIR: dataDir,
+    APUNTA_FAKE_AI: '1',
   });
 
   // The suite drives the same database the app does, so a test can assert on

@@ -2,7 +2,7 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-const SERVER_PORT = process.env['PATIENCE_PORT'] ?? '7717';
+const SERVER_PORT = process.env['APUNTA_PORT'] ?? '7717';
 
 export default defineConfig({
   plugins: [react()],

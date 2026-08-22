@@ -1,4 +1,4 @@
-import type { Patient, PatientListItem } from '@patience/shared';
+import type { Patient, PatientListItem } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 
 import { uuidv7 } from './uuid.js';

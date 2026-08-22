@@ -3,7 +3,7 @@ import {
   UpdateNoteFormatRequestSchema,
   type NoteFormat,
   type NoteFormatListResponse,
-} from '@patience/shared';
+} from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 

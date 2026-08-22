@@ -14,7 +14,7 @@ const migrationsDir = loadConfig({}).migrationsDir;
 let dataDir: string;
 
 beforeEach(() => {
-  dataDir = mkdtempSync(join(tmpdir(), 'patience-migrate-'));
+  dataDir = mkdtempSync(join(tmpdir(), 'apunta-migrate-'));
 });
 
 afterEach(() => {
@@ -49,7 +49,7 @@ describe('loadMigrations', () => {
 
 describe('migrate', () => {
   it('creates the schema and records what it applied', () => {
-    const file = join(dataDir, 'practice-notes.db');
+    const file = join(dataDir, 'apunta.db');
     const { db, migrations } = openDatabase({ file, migrationsDir });
 
     expect(migrations.applied).toEqual([1]);
@@ -78,7 +78,7 @@ describe('migrate', () => {
   });
 
   it('is a no-op against an already migrated database, and keeps its data', () => {
-    const file = join(dataDir, 'practice-notes.db');
+    const file = join(dataDir, 'apunta.db');
 
     const first = openDatabase({ file, migrationsDir });
     first.db

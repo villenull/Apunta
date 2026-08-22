@@ -3,7 +3,7 @@ import {
   UpdatePatientRequestSchema,
   type Patient,
   type PatientListResponse,
-} from '@patience/shared';
+} from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';

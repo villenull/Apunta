@@ -11,7 +11,7 @@ concurrency:
 
 env:
   # Everything in CI runs against the deterministic fake AI providers.
-  PATIENCE_FAKE_AI: '1'
+  APUNTA_FAKE_AI: '1'
 
 jobs:
   verify:

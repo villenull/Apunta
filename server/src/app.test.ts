@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { HealthResponseSchema } from '@patience/shared';
+import { HealthResponseSchema } from '@apunta/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { DB_FILENAME } from './config.js';

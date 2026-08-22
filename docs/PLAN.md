@@ -1,4 +1,4 @@
-# Practice Notes — Master Plan
+# Apunta — Master Plan
 
 **Read this first.** Every coding agent working on this repo starts here, then
 reads `/CLAUDE.md` (conventions) and its own work packet in `docs/agents/`.
@@ -114,8 +114,8 @@ to the model).
 ## 3. Data model
 
 SQLite via `better-sqlite3`, migrations as numbered SQL files applied at boot.
-Data dir: `~/Library/Application Support/Practice Notes/` (override with
-`PATIENCE_DATA_DIR`; tests always set it to a temp dir). UUIDv7 ids, UTC ISO
+Data dir: `~/Library/Application Support/Apunta/` (override with
+`APUNTA_DATA_DIR`; tests always set it to a temp dir). UUIDv7 ids, UTC ISO
 timestamps.
 
 - `patients` — id, name, identifier (nullable), created_at, archived_at (nullable)
@@ -159,7 +159,7 @@ validation, client types, and (for LLM outputs) JSON-schema generation.
 ## 5. AI pipeline
 
 Two provider interfaces in `server/src/ai/`, each with a real and a fake
-implementation, selected by env (`PATIENCE_FAKE_AI=1` → fakes):
+implementation, selected by env (`APUNTA_FAKE_AI=1` → fakes):
 
 ```ts
 interface LlmProvider {
@@ -183,7 +183,7 @@ interface SttProvider {
   input (e.g. transcript containing "sleep" yields the prototype's sample
   SOAP note). All CI runs use fakes; real-model runs are a manual smoke
   script. Fakes live in production code (not test helpers) so the app is
-  fully demoable on any machine with `PATIENCE_FAKE_AI=1`.
+  fully demoable on any machine with `APUNTA_FAKE_AI=1`.
 - Prompts are assembled in `server/src/ai/prompts.ts` from the format's
   `instructions` + section list + few-shot examples. Stateless per request.
   Snapshot-tested.

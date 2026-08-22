@@ -9,8 +9,8 @@ No UI changes beyond keeping the placeholder green.
 
 ## Deliverables
 
-1. SQLite via `better-sqlite3`. DB file `practice-notes.db` inside
-   `PATIENCE_DATA_DIR` (default `~/Library/Application Support/Practice
+1. SQLite via `better-sqlite3`. DB file `apunta.db` inside
+   `APUNTA_DATA_DIR` (default `~/Library/Application Support/Practice
    Notes/`, created on boot). Numbered SQL migrations in
    `server/migrations/` applied at startup inside a transaction, tracked in
    a `schema_migrations` table.

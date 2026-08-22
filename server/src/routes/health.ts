@@ -1,4 +1,4 @@
-import type { HealthResponse } from '@patience/shared';
+import type { HealthResponse } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 

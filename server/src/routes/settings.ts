@@ -1,4 +1,4 @@
-import { UpdateSettingsRequestSchema, type Settings } from '@patience/shared';
+import { UpdateSettingsRequestSchema, type Settings } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 

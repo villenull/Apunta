@@ -1,4 +1,4 @@
-import { PatientListResponseSchema, PatientSchema, type Patient } from '@patience/shared';
+import { PatientListResponseSchema, PatientSchema, type Patient } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';

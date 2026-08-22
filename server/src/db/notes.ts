@@ -1,4 +1,4 @@
-import type { Note } from '@patience/shared';
+import type { Note } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 
 import { uuidv7 } from './uuid.js';

@@ -1,4 +1,4 @@
-# Patience — Practice Notes
+# Apunta
 
 A local-first app for a solo practice that turns dictated or typed session
 summaries into structured clinical notes. The UI runs in a browser tab; all
@@ -24,8 +24,8 @@ Everything lives on one branch, which is also this repository's default
 branch — a plain clone gets all of it:
 
 ```sh
-git clone https://github.com/villenull/Patience.git
-cd Patience
+git clone https://github.com/villenull/Apunta.git
+cd Apunta
 npm install          # Node 22+; better-sqlite3 needs a prebuilt binary or a compiler
 npm test             # 115 tests — confirms the checkout is sound
 ```
@@ -64,7 +64,7 @@ Node 22+ (`.nvmrc` pins the major). `npm install` once at the repo root — this
 is an npm-workspaces monorepo, so the four packages install together. Day to
 day: `npm run dev` starts the API on <http://127.0.0.1:7717> (tsx watch) plus
 Vite on <http://127.0.0.1:5173> with `/api` proxied to it, and `npm run
-dev:fake` is the same with `PATIENCE_FAKE_AI=1` so no local AI tooling is
+dev:fake` is the same with `APUNTA_FAKE_AI=1` so no local AI tooling is
 needed. `npm start` builds everything and serves the whole app from
 <http://127.0.0.1:7717>. Before committing, run `npm run lint` (ESLint +
 Prettier), `npm run typecheck`, `npm test` (Vitest, all workspaces) and `npm
@@ -74,7 +74,7 @@ mode on port 7788 with a temp data dir); `npm run format` fixes formatting and
 `npm run seed` fills the database with the prototype's sample practice (John
 Smith and friends) so there is something to click through; it leaves a
 database that already has data alone unless you pass `-- --reset`.
-Useful env: `PATIENCE_PORT`, `PATIENCE_DATA_DIR`, `PATIENCE_FAKE_AI=1`, and
+Useful env: `APUNTA_PORT`, `APUNTA_DATA_DIR`, `APUNTA_FAKE_AI=1`, and
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when the sandbox already has a browser that
 `playwright install` should not replace.
 
@@ -87,7 +87,7 @@ Useful env: `PATIENCE_PORT`, `PATIENCE_DATA_DIR`, `PATIENCE_FAKE_AI=1`, and
 | `web/` | React + Vite SPA |
 | `e2e/` | Playwright specs |
 | `docs/PLAN.md` | Master plan: architecture, data model, API, AI pipeline, testing strategy, milestones |
-| `docs/agents/` | Self-contained work packets (M0–M7) for coding agents, with acceptance criteria |
+| `docs/agents/` | Self-contained work packets (M0–M8) for coding agents, with acceptance criteria |
 | `docs/research/` | Verified Aug-2026 research behind the stack choices |
 | `docs/skill-porting.md` | How the owner's Claude skill becomes the local model's drafting instructions |
 | `docs/decisions.md` | Append-only decisions log |

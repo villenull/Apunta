@@ -1,4 +1,4 @@
-# Practice Notes — agent guide
+# Apunta — agent guide
 
 Local-first therapy-notes app: React SPA in a browser tab, Fastify server on
 127.0.0.1, SQLite storage, all AI local (Ollama LLM + whisper.cpp STT).
@@ -13,7 +13,7 @@ Work packets: `docs/agents/`.
    at runtime (bundle everything), no external fonts.
 2. Real patient text never goes in fixtures, tests, or commits. Use the
    prototype's sample data (John Smith etc.).
-3. `PATIENCE_FAKE_AI=1` must always keep the entire app runnable and
+3. `APUNTA_FAKE_AI=1` must always keep the entire app runnable and
    demoable with zero AI tooling installed. CI runs everything in fake mode.
 4. Server logic stays OS-portable; only `scripts/` may assume macOS/Homebrew.
 5. Don't widen scope beyond your packet. Deferred list: `docs/PLAN.md` §8.
@@ -22,7 +22,7 @@ Work packets: `docs/agents/`.
 
 - `npm install` — workspace install (Node 22+)
 - `npm run dev` — server (:7717, tsx watch) + Vite (:5173, proxies /api)
-- `npm run dev:fake` — same with `PATIENCE_FAKE_AI=1`
+- `npm run dev:fake` — same with `APUNTA_FAKE_AI=1`
 - `npm start` — production: build web, serve app at http://127.0.0.1:7717
 - `npm run seed` — dev only: load the prototype's sample practice into the
   database (`npm run seed -- --reset` replaces existing content)

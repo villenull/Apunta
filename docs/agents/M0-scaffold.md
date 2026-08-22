@@ -17,7 +17,7 @@ No product features.
 2. `shared/`: TypeScript package exporting zod + generated types; start with
    a `HealthResponse` schema.
 3. `server/`: Fastify 5 + TypeScript (run with `tsx` in dev, `tsc` build for
-   prod). Binds `127.0.0.1:7717` (port via `PATIENCE_PORT`).
+   prod). Binds `127.0.0.1:7717` (port via `APUNTA_PORT`).
    - `GET /api/health` returning a stub `HealthResponse` (all checks
      hard-coded false for now, `ok: true`).
    - **Egress guard**: at bootstrap, wrap global `fetch` to throw on any URL
@@ -25,15 +25,15 @@ No product features.
    - In production mode serves static files from `web/dist` with SPA
      fallback to `index.html`.
 4. `web/`: Vite + React 19 + TypeScript. Placeholder page that fetches
-   `/api/health` and renders "Practice Notes — server ok". Vite dev server
+   `/api/health` and renders "Apunta — server ok". Vite dev server
    proxies `/api` → `http://127.0.0.1:7717`. Port the design tokens (CSS
    custom properties, fonts, base element styles) from `prototype/style.css`
    into `web/src/styles/tokens.css` — visual components come in M2.
 5. Tooling: ESLint (flat config) + Prettier + `tsc --noEmit` typecheck across
    workspaces; Vitest configured in `server`, `shared`, `web`.
 6. `e2e/`: Playwright (Chromium only) with a `webServer` config that builds
-   web and starts the server with `PATIENCE_FAKE_AI=1` and a temp
-   `PATIENCE_DATA_DIR`. One spec: loads `/`, sees the health message.
+   web and starts the server with `APUNTA_FAKE_AI=1` and a temp
+   `APUNTA_DATA_DIR`. One spec: loads `/`, sees the health message.
 7. `.github/workflows/ci.yml`: on push/PR — install, lint, typecheck, test,
    build, Playwright (with browser caching). ubuntu-latest, Node 22.
 8. `.gitignore`, `.nvmrc`, and a one-paragraph "Development" section added to
@@ -45,7 +45,7 @@ No product features.
   pin with caret ranges and commit the lockfile.
 - Keep the server entry small: `buildApp()` factory (used by tests via
   `fastify.inject`) separate from `listen` bootstrap.
-- `PATIENCE_DATA_DIR` env is read at boot even though nothing uses it yet —
+- `APUNTA_DATA_DIR` env is read at boot even though nothing uses it yet —
   create the directory if missing.
 
 ## Acceptance criteria

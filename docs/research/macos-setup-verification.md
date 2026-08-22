@@ -1,4 +1,4 @@
-# macOS setup verification — Practice Notes
+# macOS setup verification — Apunta
 
 **Verified 2026-08-22.** Scope: everything `scripts/setup-macos.sh` (M7) and the
 Ollama/whisper providers (M3, M5) need to name literally — package names, model
@@ -449,7 +449,7 @@ own `caveats` acknowledge this and point users at the HF repo:
 So `scripts/setup-macos.sh` should do a plain, verified curl:
 
 ```sh
-MODEL_DIR="$HOME/Library/Application Support/Practice Notes/models"
+MODEL_DIR="$HOME/Library/Application Support/Apunta/models"
 MODEL_FILE="$MODEL_DIR/ggml-large-v3-turbo-q5_0.bin"
 MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin"
 MODEL_SHA1="e050f7970618a659205450ad97eb95a18d69c9ee"
@@ -790,5 +790,5 @@ Listed plainly rather than guessed:
    list is [S] and irrelevant to us.
 9. **ffmpeg handling of truncated MediaRecorder webm headers** (§5.3).
 
-Per the standing constraint on this spike, nothing in `/home/user/Patience` was
+Per the standing constraint on this spike, nothing in `/home/user/Apunta` was
 read-modified — this document is the only artifact.

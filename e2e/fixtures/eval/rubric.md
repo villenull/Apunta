@@ -253,7 +253,7 @@ gating failures. Then per model, aggregate:
 - mean tokens/second and mean wall-clock per note
 - run-to-run variance across the N runs
 
-For a two-model comparison (`PATIENCE_EVAL_MODELS=a,b`), print the per-model
+For a two-model comparison (`APUNTA_EVAL_MODELS=a,b`), print the per-model
 aggregates side by side and list every fixture where the two models
 disagree on a gating check — that short list is what a human should read.
 

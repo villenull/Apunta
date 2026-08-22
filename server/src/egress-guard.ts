@@ -20,7 +20,7 @@ export class EgressBlockedError extends Error {
 
   constructor(requestedUrl: string, reason: string) {
     super(
-      `Egress blocked: ${reason}. Practice Notes may only talk to 127.0.0.1, localhost or ::1 (requested: ${requestedUrl}).`,
+      `Egress blocked: ${reason}. Apunta may only talk to 127.0.0.1, localhost or ::1 (requested: ${requestedUrl}).`,
     );
     this.name = 'EgressBlockedError';
     this.requestedUrl = requestedUrl;
@@ -71,7 +71,7 @@ function urlOf(input: FetchInput): string {
   return String(input);
 }
 
-const GUARD_FLAG = Symbol.for('patience.egressGuard');
+const GUARD_FLAG = Symbol.for('apunta.egressGuard');
 
 type GuardedFetch = typeof fetch & { [GUARD_FLAG]?: true };
 

@@ -1,4 +1,4 @@
-import { NoteFormatListResponseSchema, NoteFormatSchema, type NoteFormat } from '@patience/shared';
+import { NoteFormatListResponseSchema, NoteFormatSchema, type NoteFormat } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';

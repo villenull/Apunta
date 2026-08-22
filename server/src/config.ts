@@ -13,7 +13,7 @@ const repoRoot = resolve(serverRoot, '..');
 
 export const DEFAULT_PORT = 7717;
 
-export const DB_FILENAME = 'practice-notes.db';
+export const DB_FILENAME = 'apunta.db';
 
 export interface AppConfig {
   /** Always loopback — the server must never be reachable from the network. */
@@ -25,7 +25,7 @@ export interface AppConfig {
   readonly dbFile: string;
   /** Numbered `.sql` migrations, shipped next to the server code. */
   readonly migrationsDir: string;
-  /** `PATIENCE_FAKE_AI=1` — deterministic providers, no local AI tooling needed. */
+  /** `APUNTA_FAKE_AI=1` — deterministic providers, no local AI tooling needed. */
   readonly fakeAi: boolean;
   /** Built SPA. Served in production; absent during `npm run dev`. */
   readonly webDistDir: string;
@@ -38,24 +38,24 @@ export interface AppConfig {
  */
 export function defaultDataDir(): string {
   if (platform() === 'darwin') {
-    return join(homedir(), 'Library', 'Application Support', 'Practice Notes');
+    return join(homedir(), 'Library', 'Application Support', 'Apunta');
   }
   if (platform() === 'win32') {
     const appData = process.env['APPDATA'];
-    return appData ? join(appData, 'Practice Notes') : join(homedir(), 'Practice Notes');
+    return appData ? join(appData, 'Apunta') : join(homedir(), 'Apunta');
   }
   const xdg = process.env['XDG_DATA_HOME'];
-  return xdg ? join(xdg, 'practice-notes') : join(homedir(), '.local', 'share', 'practice-notes');
+  return xdg ? join(xdg, 'apunta') : join(homedir(), '.local', 'share', 'apunta');
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
-  const rawPort = env['PATIENCE_PORT'];
+  const rawPort = env['APUNTA_PORT'];
   const port = rawPort === undefined || rawPort === '' ? DEFAULT_PORT : Number(rawPort);
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
-    throw new Error(`PATIENCE_PORT must be an integer between 0 and 65535 (got "${rawPort}")`);
+    throw new Error(`APUNTA_PORT must be an integer between 0 and 65535 (got "${rawPort}")`);
   }
 
-  const dataDirOverride = env['PATIENCE_DATA_DIR'];
+  const dataDirOverride = env['APUNTA_DATA_DIR'];
   const dataDir = dataDirOverride ? resolve(dataDirOverride) : defaultDataDir();
 
   return {
@@ -66,7 +66,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     // `serverRoot` is `server/` whether we are running from `src/` under tsx or
     // from the built `dist/`, so the .sql files are found either way.
     migrationsDir: join(serverRoot, 'migrations'),
-    fakeAi: env['PATIENCE_FAKE_AI'] === '1',
+    fakeAi: env['APUNTA_FAKE_AI'] === '1',
     webDistDir: join(repoRoot, 'web', 'dist'),
     version: pkg.version ?? '0.0.0',
   };

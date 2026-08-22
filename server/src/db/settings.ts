@@ -1,4 +1,4 @@
-import type { Settings } from '@patience/shared';
+import type { Settings } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 
 /**
