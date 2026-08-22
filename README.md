@@ -53,10 +53,14 @@ Open a session on this repo and give it:
 > every acceptance criterion passes locally (lint, typecheck, tests, build,
 > e2e), then push.
 
-Two environment notes worth carrying over: CI has **never actually run** on
-GitHub Actions, so watch the first run; and in a sandbox that pre-installs
+One environment note worth carrying over: in a sandbox that pre-installs
 Chromium, Playwright needs `PLAYWRIGHT_CHROMIUM_EXECUTABLE` pointed at it
-(on a normal machine, leave it unset).
+(on a normal machine, and in CI, leave it unset).
+
+CI is green and has been running all along — see
+[`docs/research/ci-audit-2026-08.md`](docs/research/ci-audit-2026-08.md) for a
+full audit of the workflow against its real run logs, including the two config
+items with an externally-set deadline.
 
 ## Development
 
