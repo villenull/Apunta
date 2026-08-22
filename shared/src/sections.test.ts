@@ -106,9 +106,9 @@ describe('sectionsJsonSchema', () => {
 describe('buildRefineSchema', () => {
   it('accepts a reply that leaves the note alone', () => {
     const schema = buildRefineSchema(SOAP);
-    expect(schema.safeParse({ reply: 'That detail is not in the note.', updatedSections: null }).success).toBe(
-      true,
-    );
+    expect(
+      schema.safeParse({ reply: 'That detail is not in the note.', updatedSections: null }).success,
+    ).toBe(true);
   });
 
   it('accepts a reply that rewrites every section', () => {
@@ -152,7 +152,12 @@ describe('DetectedFormatSchema', () => {
 describe('sectionsToText', () => {
   it('writes `Section: body` paragraphs in format order', () => {
     const text = sectionsToText(
-      { Plan: 'Continue weekly.', Subjective: 'Sleeping better.', Objective: 'Engaged.', Assessment: 'Good.' },
+      {
+        Plan: 'Continue weekly.',
+        Subjective: 'Sleeping better.',
+        Objective: 'Engaged.',
+        Assessment: 'Good.',
+      },
       SOAP,
     );
     expect(text).toBe(
@@ -186,9 +191,7 @@ describe('textToSections', () => {
   /** A body may legitimately say "Plan: continue weekly" mid-sentence. */
   it('does not split on a colon inside a body', () => {
     const text = 'Subjective: She said: the week was hard.\n\nPlan: Continue weekly.';
-    expect(textToSections(text, ['Subjective', 'Plan'])['Subjective']).toBe(
-      'She said: the week was hard.',
-    );
+    expect(textToSections(text, ['Subjective', 'Plan'])['Subjective']).toBe('She said: the week was hard.');
   });
 
   it('keeps a multi-line body together', () => {

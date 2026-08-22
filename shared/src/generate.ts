@@ -26,10 +26,9 @@ export const GenerateRequestSchema = z
     /** Defaults to the format's name, matching the prototype's note titles. */
     title: boundedText(200).optional(),
   })
-  .refine(
-    (body) => (body.typed_notes ?? '').trim() !== '' || (body.transcript ?? '').trim() !== '',
-    { message: 'Provide typed notes, a transcript, or both' },
-  );
+  .refine((body) => (body.typed_notes ?? '').trim() !== '' || (body.transcript ?? '').trim() !== '', {
+    message: 'Provide typed notes, a transcript, or both',
+  });
 export type GenerateRequest = z.infer<typeof GenerateRequestSchema>;
 
 /**
@@ -77,13 +76,7 @@ export const GENERATE_EVENT_NAMES = ['status', 'token', 'note', 'error'] as cons
 export type GenerateEventName = (typeof GENERATE_EVENT_NAMES)[number];
 
 /** What the server is waiting on, so a slow cold model does not look frozen. */
-export const GenerateStageSchema = z.enum([
-  'connecting',
-  'loading-model',
-  'drafting',
-  'retrying',
-  'saving',
-]);
+export const GenerateStageSchema = z.enum(['connecting', 'loading-model', 'drafting', 'retrying', 'saving']);
 export type GenerateStage = z.infer<typeof GenerateStageSchema>;
 
 export const GenerateStatusEventSchema = z.object({
