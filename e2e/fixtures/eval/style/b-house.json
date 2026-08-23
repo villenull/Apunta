@@ -1,0 +1,74 @@
+{
+  "_comment": [
+    "Arm B — the design under test. A safe profile in the shape specified by",
+    "docs/research/style-profile-design-2026-08.md §3.2: enums, counts and a",
+    "frequency-filtered phrase list, no free text, no extensive slots, no",
+    "Assessment/Formulation openings or phrases.",
+    "FABRICATED. These values describe the prototype's house voice",
+    "(prototype/patients.html), not any real clinician's notes. Nothing here",
+    "was measured from patient material and nothing here may be replaced with",
+    "anything that was — CLAUDE.md hard rule 2."
+  ],
+  "version": 1,
+  "derived_at": "2026-08-23T00:00:00.000Z",
+  "corpus": {
+    "notes": 41,
+    "patients": 12,
+    "hand_edited": 41,
+    "machine_verbatim": 0,
+    "oldest": "2025-11-02",
+    "newest": "2026-08-19"
+  },
+  "global": {
+    "person": "third",
+    "subject_word": "client",
+    "mean_sentence_words": 12.4,
+    "p90_sentence_words": 21,
+    "fragments": "occasional",
+    "semicolons": "never",
+    "contractions": "never",
+    "connectives": ["though", "but", "and"],
+    "attribution": "usually",
+    "hedging": "preserves_and_marks",
+    "register_terms": [
+      { "prefers": "session", "over": "appointment" },
+      { "prefers": "between-session work", "over": "homework" }
+    ]
+  },
+  "sections": {
+    "Subjective": {
+      "inference_bearing": false,
+      "opens_with": ["reports", "described"],
+      "phrases": ["some improvement in", "raised again this week"]
+    },
+    "Objective": {
+      "inference_bearing": false,
+      "opens_with": ["presented", "appeared"],
+      "phrases": []
+    },
+    "Assessment": { "inference_bearing": true },
+    "Plan": {
+      "inference_bearing": false,
+      "opens_with": ["continue", "agreed"],
+      "phrases": ["agreed to continue"]
+    },
+    "Presenting problem": {
+      "inference_bearing": false,
+      "opens_with": ["reports", "described"],
+      "phrases": []
+    },
+    "History": {
+      "inference_bearing": false,
+      "opens_with": ["reports", "described"],
+      "phrases": ["raised again this week"]
+    },
+    "Formulation": { "inference_bearing": true }
+  },
+  "never_writes": [],
+  "excluded": [
+    { "slot": "sentences_per_section", "measured": "2.3", "reason": "extensive_feature" },
+    { "slot": "global.attribution", "measured": "sometimes", "applied": "usually", "reason": "clamped_up" },
+    { "slot": "Assessment.phrases", "measured": 4, "reason": "inference_bearing_section" },
+    { "slot": "Formulation.opens_with", "measured": 3, "reason": "inference_bearing_section" }
+  ]
+}

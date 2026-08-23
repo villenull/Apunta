@@ -1,0 +1,9 @@
+{
+  "_comment": [
+    "Arm A — no style profile. This file exists so the four arms can be named",
+    "uniformly on the command line; the runner must treat it as ABSENT, not as",
+    "an empty profile, and emit no '## How she writes' block at all.",
+    "See docs/research/style-profile-design-2026-08.md §5.1."
+  ],
+  "absent": true
+}

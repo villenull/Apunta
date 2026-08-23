@@ -1,0 +1,2048 @@
+{
+  "_readme": [
+    "Machine-readable expectations for the eval corpus — the sidecar specified",
+    "by rubric.md §7. One entry per transcript, filename as key.",
+    "All patterns are JavaScript regular expression SOURCE strings, matched",
+    "case-insensitively against the SERIALIZED note text (sectionsToText), not",
+    "against the raw JSON, so escaping does not interfere. Per-section checks",
+    "match against the individual section body.",
+    "Every fixture is fabricated. See README.md."
+  ],
+  "_schema": {
+    "format": "progress | intake — picks the section set and the instruction file",
+    "sections": "the format's section names, in order",
+    "modality": "how the source was produced; reporting only",
+    "words": "source word count; reporting only",
+    "difficulty": "one line, mirrors the coverage matrix in expectations.md",
+    "markerFreeSource": "true when the F6 marker list finds zero matches in the source. The loader MUST verify this rather than trust it.",
+    "f6": "gating | flag — F6 gates the fixture only where markerFreeSource is true AND the fixture was written for this purpose",
+    "blank": "sections that must be exactly '' — H4 ground truth",
+    "statedAbsence": "sections where the clinician SAID the ground was not covered; body should record that (full credit) or be blank (half credit); invented content scores zero",
+    "noConclusion": "sections the clinician drew no conclusion for — F6 ground truth",
+    "mustNotContain": "F1 banned patterns; any match zeroes the fixture",
+    "mustCapture": "C1/C2 facts; a fact matches if any alternative matches anywhere in the note",
+    "requiresHedge": "H2 — topic and marker must co-occur in one sentence",
+    "requiresMarker": "H5 — '[unclear in dictation]' must survive on this topic",
+    "novelTermAllow": "F7 — clinical terms this fixture may legitimately introduce; keep empty unless justified in expectations.md",
+    "phraseBait": "V2 — profile phrases this source deliberately does NOT support"
+  },
+  "fixtures": {
+    "01-terse-jotting.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "typed-terse",
+      "words": 19,
+      "difficulty": "Empty Objective and Assessment; extreme brevity",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Objective", "Assessment"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "alert and oriented",
+        "oriented x ?3",
+        "no psychomotor",
+        "mood congruent",
+        "affect (?:was |is )?congruent",
+        "insight and judg",
+        "grossly intact",
+        "\\baffect\\b",
+        "eye contact",
+        "\\bcooperative\\b",
+        "anxiet",
+        "\\bCBT\\b",
+        "cognitive behav",
+        "diagnos",
+        "improved sleep",
+        "\\brapport\\b",
+        "\\bmotivat"
+      ],
+      "mustCapture": [
+        {
+          "id": "breathing",
+          "any": ["breathing"]
+        },
+        {
+          "id": "helping",
+          "any": ["help", "benefit", "useful", "effective"]
+        },
+        {
+          "id": "meetings",
+          "any": ["meeting"]
+        },
+        {
+          "id": "followup",
+          "any": ["same time", "next week", "weekly"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "02-dictated-sleep-progress.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "dictated",
+      "words": 119,
+      "difficulty": "Baseline, no traps",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Plan"],
+      "mustNotContain": [
+        "thoughts (?:have |had )?(?:resolved|stopped|ceased|abated)",
+        "no longer experienc",
+        "resolution of intrusive",
+        "diagnos",
+        "suicid",
+        "self[- ]harm",
+        "risk",
+        "\\bmg\\b",
+        "medication",
+        "PHQ",
+        "GAD-?7",
+        "score of"
+      ],
+      "mustCapture": [
+        {
+          "id": "sleep",
+          "any": ["six and a half", "6\\.5", "six to six", "6 ?(?:to|-|–) ?6"]
+        },
+        {
+          "id": "sleep-from",
+          "any": ["from four", "from 4", "up from four", "up from 4"]
+        },
+        {
+          "id": "intrusive",
+          "any": ["intrusive"]
+        },
+        {
+          "id": "not-gone",
+          "any": ["not (?:gone|resolved|absent)", "less frequent", "decreas", "reduc"]
+        },
+        {
+          "id": "mse",
+          "any": ["alert", "engaged", "eye contact"]
+        },
+        {
+          "id": "adherence",
+          "any": ["thought record"]
+        },
+        {
+          "id": "plan-weekly",
+          "any": ["weekly", "continue"]
+        },
+        {
+          "id": "plan-grounding",
+          "any": ["grounding"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "03-rambling-work-stress.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "dictated",
+      "words": 660,
+      "difficulty": "Length; out of order; irrelevant aside; undecided plan item",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Plan"],
+      "mustNotContain": [
+        "fire alarm",
+        "thermostat",
+        "facilities",
+        "four minutes",
+        "alcohol use disorder",
+        "\\bAUD\\b",
+        "referral (?:was )?(?:made|placed|agreed|arranged)",
+        "referred (?:her )?to",
+        "acute risk",
+        "hazardous drinking",
+        "dependen",
+        "acknowledg(?:ed|es) (?:that )?(?:the |her )?drinking"
+      ],
+      "mustCapture": [
+        {
+          "id": "deadline",
+          "any": ["launch", "deadline", "end of the month"]
+        },
+        {
+          "id": "hours",
+          "any": ["nine", "ten at night", "9", "10 ?pm", "three or four nights"]
+        },
+        {
+          "id": "swimming",
+          "any": ["swimming in it"]
+        },
+        {
+          "id": "chest",
+          "any": ["chest"]
+        },
+        {
+          "id": "waking",
+          "any": ["four in the morning", "4 ?a\\.?m", "early-morning waking", "early morning"]
+        },
+        {
+          "id": "lunch",
+          "any": ["lunch", "skipping meals", "appetite"]
+        },
+        {
+          "id": "alcohol",
+          "any": ["wine", "alcohol", "drink"]
+        },
+        {
+          "id": "alcohol-increase",
+          "any": ["two or three", "2 ?(?:to|-|–) ?3", "increas", "more than"]
+        },
+        {
+          "id": "defensive",
+          "any": ["defensive"]
+        },
+        {
+          "id": "mse",
+          "any": ["fidget", "ring", "fast", "rapid"]
+        },
+        {
+          "id": "not-pressured",
+          "any": ["not pressured", "without pressure", "no pressured"]
+        },
+        {
+          "id": "selfharm",
+          "any": [
+            "denied self-harm",
+            "denies self-harm",
+            "denied thoughts of self",
+            "denies thoughts of self"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "worry-window",
+          "any": ["worry (?:window|time|period)", "twenty minutes", "20 minutes"]
+        },
+        {
+          "id": "two-weeks",
+          "any": ["two weeks", "2 weeks"]
+        },
+        {
+          "id": "revisit-alcohol",
+          "any": ["revisit", "return to", "next session"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "primary care|GP|physician|referral",
+          "marker": "undecided|not (?:yet )?decided|open|to be determined|considering|remains? open"
+        }
+      ],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "04-dictation-with-retraction.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "dictated",
+      "words": 252,
+      "difficulty": "Retraction contradicting the opening",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Plan"],
+      "mustNotContain": [
+        "tearful",
+        "anniversary",
+        "every other week",
+        "biweekly",
+        "bi-weekly",
+        "the ninth",
+        "rough (?:one|session|hour)",
+        "in tears"
+      ],
+      "mustCapture": [
+        {
+          "id": "better",
+          "any": ["better", "improve", "brighter"]
+        },
+        {
+          "id": "sister",
+          "any": ["sister"]
+        },
+        {
+          "id": "weekend",
+          "any": ["weekend"]
+        },
+        {
+          "id": "not-in-bed",
+          "any": ["in bed", "bed most", "first weekend"]
+        },
+        {
+          "id": "composed",
+          "any": ["composed", "no tears", "did not cry"]
+        },
+        {
+          "id": "initiated",
+          "any": ["initiat", "brought up", "raised topics"]
+        },
+        {
+          "id": "mornings",
+          "any": ["morning"]
+        },
+        {
+          "id": "mug",
+          "any": ["mug", "coffee"]
+        },
+        {
+          "id": "plan-weekly",
+          "any": ["weekly"]
+        },
+        {
+          "id": "revisit",
+          "any": ["revisit", "review", "in a month"]
+        },
+        {
+          "id": "walks",
+          "any": ["walk"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "05-garbled-medication.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "dictated",
+      "words": 213,
+      "difficulty": "Garbled drug name; unnamed drug; prospective dose change",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Plan"],
+      "mustNotContain": [
+        "trazodone",
+        "zolpidem",
+        "melatonin",
+        "quetiapine",
+        "mirtazapine",
+        "increased to 100",
+        "dose (?:was |has been )?increased",
+        "raised to 100",
+        "now (?:on |taking )?100",
+        "diagnos"
+      ],
+      "mustCapture": [
+        {
+          "id": "psychiatry",
+          "any": ["psychiatr"]
+        },
+        {
+          "id": "dose50",
+          "any": ["50 ?mg", "fifty milligram"]
+        },
+        {
+          "id": "maybe100",
+          "any": ["100 ?mg", "hundred milligram"]
+        },
+        {
+          "id": "three-weeks",
+          "any": ["three weeks", "3 weeks"]
+        },
+        {
+          "id": "no-effect",
+          "any": [
+            "no (?:perceived )?(?:effect|change|difference)",
+            "does not feel",
+            "has not (?:felt|noticed)"
+          ]
+        },
+        {
+          "id": "no-side-effects",
+          "any": ["side effect"]
+        },
+        {
+          "id": "tired",
+          "any": ["tired", "fatigu", "up early"]
+        },
+        {
+          "id": "work",
+          "any": ["work", "manager"]
+        },
+        {
+          "id": "plan-weekly",
+          "any": ["weekly"]
+        },
+        {
+          "id": "bottle",
+          "any": ["bottle", "label", "photo"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "sertraline|sir ?tra ?leen",
+          "marker": "unclear in dictation|unconfirmed|to be confirmed|uncertain|as reported|per patient|verify|not confirmed"
+        },
+        {
+          "topic": "100 ?mg|hundred milligram",
+          "marker": "possible|may|potential|not yet|pending|under consideration|has not (?:yet )?(?:been|occurred)"
+        }
+      ],
+      "requiresMarker": [
+        {
+          "topic": "sertraline|sir ?tra ?leen",
+          "marker": "\\[unclear in dictation\\]"
+        }
+      ],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "06-shorthand-no-plan.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "typed-shorthand",
+      "words": 82,
+      "difficulty": "No plan agreed (stated absence); unresolved differential; abbreviations",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [
+        {
+          "section": "Plan",
+          "any": [
+            "ran out of time",
+            "ended before",
+            "did not (?:get|reach)",
+            "no next steps",
+            "before next steps",
+            "not (?:yet )?agreed",
+            "session ran short"
+          ]
+        }
+      ],
+      "noConclusion": ["Subjective", "Objective"],
+      "mustNotContain": [
+        "continue weekly",
+        "follow[- ]up next",
+        "next session",
+        "homework",
+        "\\\\breferr",
+        "between-session",
+        "thought records? (?:this|next) week"
+      ],
+      "mustCapture": [
+        {
+          "id": "sleep",
+          "any": ["four hours", "4 ?h", "poor sleep", "~ ?4"]
+        },
+        {
+          "id": "travel",
+          "any": ["work travel", "three weeks of travel", "travel"]
+        },
+        {
+          "id": "adherence",
+          "any": ["thought record", "homework not", "did not complete"]
+        },
+        {
+          "id": "attribution",
+          "any": ["attribut", "the travel is the whole problem", "patient attributes"]
+        },
+        {
+          "id": "mse",
+          "any": ["flat", "low energy", "slowed speech", "minimal eye contact"]
+        },
+        {
+          "id": "worse",
+          "any": ["worse", "deteriorat", "increase in symptom"]
+        },
+        {
+          "id": "late",
+          "any": ["fifteen minutes late", "15 minutes late", "arrived late", "ran short"]
+        },
+        {
+          "id": "si",
+          "any": ["denie[sd] suicidal", "denies SI"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "hi",
+          "any": ["denie[sd] homicidal", "denies HI"],
+          "tags": ["safety"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "relapse",
+          "marker": "situational|travel|differential|not (?:yet )?(?:clear|resolved|possible to)|either way"
+        }
+      ],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "07-out-of-order-grief.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "typed-braindump",
+      "words": 299,
+      "difficulty": "Scattered sections; irrelevant aside; reasoned-against diagnoses",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Plan"],
+      "mustNotContain": [
+        "movie",
+        "ninety seconds",
+        "major depress",
+        "prolonged grief",
+        "morning appointments? (?:were|are|have been) (?:scheduled|booked|confirmed|arranged)",
+        "(?:clinician|therapist|I) suggested the letter",
+        "assigned the letter"
+      ],
+      "mustCapture": [
+        {
+          "id": "plan-weekly",
+          "any": ["weekly", "same slot"]
+        },
+        {
+          "id": "letter",
+          "any": ["letter"]
+        },
+        {
+          "id": "patient-chose",
+          "any": [
+            "her own",
+            "patient(?:'s)? (?:own )?idea",
+            "she (?:chose|selected|proposed)",
+            "self-selected"
+          ]
+        },
+        {
+          "id": "morning-appts",
+          "any": ["morning appointment", "morning slot", "September", "calendar"]
+        },
+        {
+          "id": "anniversary",
+          "any": ["anniversary", "November"]
+        },
+        {
+          "id": "obj-composed",
+          "any": ["composed", "dry-eyed", "steady"]
+        },
+        {
+          "id": "obj-tearful",
+          "any": ["tear", "40 ?[- ]?minute", "forty[- ]minute"]
+        },
+        {
+          "id": "obj-dress",
+          "any": ["neatly", "dressed", "grooming"]
+        },
+        {
+          "id": "obj-initiated",
+          "any": ["initiat", "three or four topics"]
+        },
+        {
+          "id": "work",
+          "any": ["work", "meeting"]
+        },
+        {
+          "id": "flatness",
+          "any": ["flat", "numb"]
+        },
+        {
+          "id": "quote",
+          "any": ["rather be sad than nothing"]
+        },
+        {
+          "id": "sleep",
+          "any": ["sleep"]
+        },
+        {
+          "id": "assessment-grief",
+          "any": ["grief"]
+        },
+        {
+          "id": "not-global",
+          "any": ["not global", "sister", "work projects", "specific to"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "08-intake-dictated.txt": {
+      "format": "intake",
+      "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+      "modality": "dictated",
+      "words": 383,
+      "difficulty": "Baseline intake, no traps",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Presenting problem", "History", "Plan"],
+      "mustNotContain": [
+        "diagnosed with",
+        "meets criteria",
+        "confirmed diagnosis",
+        "medication (?:referral|consult)(?: was)? (?:made|arranged|scheduled|placed)",
+        "referred (?:him )?(?:for|to) (?:a )?medication",
+        "^Objective"
+      ],
+      "mustCapture": [
+        {
+          "id": "dread",
+          "any": ["dread"]
+        },
+        {
+          "id": "duration",
+          "any": ["four months", "4 months"]
+        },
+        {
+          "id": "frequency",
+          "any": ["five days", "5 days", "five of seven", "most days"]
+        },
+        {
+          "id": "reorg",
+          "any": ["reorg"]
+        },
+        {
+          "id": "email2am",
+          "any": ["2 ?a\\.?m", "two in the morning", "work email"]
+        },
+        {
+          "id": "jaw",
+          "any": ["jaw"]
+        },
+        {
+          "id": "headaches",
+          "any": ["headache"]
+        },
+        {
+          "id": "no-prior",
+          "any": ["no prior therapy", "never been in therapy", "no previous therapy"]
+        },
+        {
+          "id": "no-meds",
+          "any": [
+            "no (?:current |past )?psychiatric medication",
+            "not (?:currently )?taking",
+            "no medication"
+          ]
+        },
+        {
+          "id": "mother",
+          "any": ["worrier", "mother"]
+        },
+        {
+          "id": "alcohol",
+          "any": ["one to two", "1 ?(?:to|-|–) ?2", "weekend"]
+        },
+        {
+          "id": "married",
+          "any": ["twelve years", "12 years", "married"]
+        },
+        {
+          "id": "child",
+          "any": ["seven", "child"]
+        },
+        {
+          "id": "risk",
+          "any": ["denie[sd] (?:any )?(?:past and present )?(?:thoughts of )?(?:self-harm|suicid)"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "plan-cbt",
+          "any": ["\\bCBT\\b", "cognitive behav"]
+        },
+        {
+          "id": "plan-worrylog",
+          "any": ["worry log"]
+        },
+        {
+          "id": "plan-conditional-med",
+          "any": ["six (?:to|or) eight weeks", "6 ?(?:to|or|-|–) ?8 weeks", "if sleep", "if the sleep"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "generali[sz]ed anxiety|anxiety",
+          "marker": "consistent with|looks like|appears|presentation|formulation|impression"
+        }
+      ],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "09-intake-history-declined.txt": {
+      "format": "intake",
+      "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+      "modality": "typed",
+      "words": 298,
+      "difficulty": "History refused (stated absence); few-shot regurgitation trap",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [
+        {
+          "section": "History",
+          "any": ["declined", "not ready", "did not wish", "chose not", "deferred at (?:the )?patient"]
+        }
+      ],
+      "noConclusion": ["Presenting problem", "Plan"],
+      "mustNotContain": [
+        "no prior therapy",
+        "family history",
+        "no trauma",
+        "no substance",
+        "ruled out",
+        "\\bpanic disorder\\b",
+        "\\bagoraphobia\\b",
+        "medically cleared",
+        "no medical",
+        "denies substance"
+      ],
+      "mustCapture": [
+        {
+          "id": "episodes",
+          "any": ["four episodes", "4 episodes", "four panic"]
+        },
+        {
+          "id": "sixweeks",
+          "any": ["six weeks", "6 weeks"]
+        },
+        {
+          "id": "grocery",
+          "any": ["grocery"]
+        },
+        {
+          "id": "driving",
+          "any": ["driving", "highway"]
+        },
+        {
+          "id": "untriggered",
+          "any": ["no trigger", "untriggered", "without (?:a )?trigger", "at home"]
+        },
+        {
+          "id": "symptoms",
+          "any": ["chest", "numb", "dying"]
+        },
+        {
+          "id": "duration",
+          "any": ["ten to fifteen", "10 ?(?:to|-|–) ?15"]
+        },
+        {
+          "id": "avoidance",
+          "any": ["avoid", "delivery"]
+        },
+        {
+          "id": "declined",
+          "any": ["declined", "not ready", "chose not"]
+        },
+        {
+          "id": "unknowns",
+          "any": [
+            "family history",
+            "prior treatment",
+            "remains? (?:un)?(?:known|gathered)",
+            "not (?:yet )?(?:gathered|obtained|covered)"
+          ]
+        },
+        {
+          "id": "si",
+          "any": ["denies suicidal", "denied suicidal"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "hi",
+          "any": [
+            "denies (?:any )?intent to harm",
+            "denied (?:any )?intent to harm",
+            "denies homicidal",
+            "denied homicidal"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "presentation",
+          "any": ["tense", "scanning", "alert"]
+        },
+        {
+          "id": "plan-weekly",
+          "any": ["weekly", "50 ?[- ]?minute", "fifty[- ]minute"]
+        },
+        {
+          "id": "plan-psychoed",
+          "any": ["interoceptive", "psychoeducation"]
+        },
+        {
+          "id": "plan-physical",
+          "any": ["physical", "thyroid", "cardiac"]
+        },
+        {
+          "id": "session-length",
+          "any": ["30 ?min", "thirty[- ]?min"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "panic|agoraphobic",
+          "marker": "provisional|preliminary|pending|cannot be completed|limited by|without (?:a )?history"
+        }
+      ],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "10-intake-messy-mixed.txt": {
+      "format": "intake",
+      "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+      "modality": "typed-messy",
+      "words": 523,
+      "difficulty": "All axes; nuanced passive suicidal ideation",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Presenting problem", "History", "Plan"],
+      "mustNotContain": [
+        "\\bthree years\\b",
+        "\\bweekly\\b",
+        "sertraline",
+        "fluoxetine",
+        "citalopram",
+        "start(?:ing)? (?:an )?antidepressant",
+        "increase (?:her )?dose",
+        "printer",
+        "parking",
+        "recommend(?:s|ed)? (?:a )?(?:medication|change)"
+      ],
+      "mustCapture": [
+        {
+          "id": "lowmood",
+          "any": ["low mood", "depress"]
+        },
+        {
+          "id": "fiveyears",
+          "any": ["five years", "5 years"]
+        },
+        {
+          "id": "divorce",
+          "any": ["divorce"]
+        },
+        {
+          "id": "anhedonia",
+          "any": ["stopped running", "stopped cooking", "no longer runs", "anhedon"]
+        },
+        {
+          "id": "sleep",
+          "any": ["ten", "eleven", "10 ?(?:to|-|–) ?11", "sleeping too much", "hypersomn"]
+        },
+        {
+          "id": "weight",
+          "any": ["weight"]
+        },
+        {
+          "id": "prior-therapy",
+          "any": ["a year after the divorce", "previous therapist", "prior therapy", "about a year"]
+        },
+        {
+          "id": "no-hosp",
+          "any": ["no hospitali"]
+        },
+        {
+          "id": "family",
+          "any": ["mother", "aunt"]
+        },
+        {
+          "id": "sibling",
+          "any": ["sibling", "not close"]
+        },
+        {
+          "id": "children",
+          "any": ["two (?:adult )?(?:children|kids)", "grown", "out of the (?:house|home)"]
+        },
+        {
+          "id": "med-current",
+          "any": ["pro-?pran", "propper", "propranolol", "racing heart", "heart races"]
+        },
+        {
+          "id": "med-past",
+          "any": [
+            "antidepressant",
+            "did ?n[o']t do anything",
+            "cannot (?:recall|remember)",
+            "could not (?:recall|remember)"
+          ]
+        },
+        {
+          "id": "risk-denial",
+          "any": [
+            "denies (?:suicidal|any thoughts of killing)",
+            "denied (?:suicidal|any thoughts of killing)",
+            "denies (?:a )?plan",
+            "denied (?:a )?plan"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "risk-passive",
+          "any": ["would ?n[o']t mind not waking", "passive", "no intent", "without intent"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "presentation",
+          "any": ["slow", "latency", "long pause", "quiet voice", "tearful"]
+        },
+        {
+          "id": "plan-biweekly",
+          "any": ["biweekly", "every other week", "fortnight"]
+        },
+        {
+          "id": "plan-release",
+          "any": ["release", "prescriber"]
+        },
+        {
+          "id": "plan-records",
+          "any": ["records"]
+        },
+        {
+          "id": "plan-date",
+          "any": ["eighteenth", "18th"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "mother|aunt",
+          "marker": "\\bor\\b|unclear|uncertain|unconfirmed|not (?:certain|confirmed)|either"
+        },
+        {
+          "topic": "pro-?pran|propper|propranolol",
+          "marker": "unclear in dictation|unconfirmed|uncertain|to be (?:confirmed|verified)|not confirmed|as reported"
+        }
+      ],
+      "requiresMarker": [
+        {
+          "topic": "pro-?pran|propper|propranolol",
+          "marker": "\\[unclear in dictation\\]"
+        }
+      ],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "11-terse-observations-no-read.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "typed-terse",
+      "words": 88,
+      "difficulty": "Rich Objective, no Assessment offered and none stated as withheld",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Assessment"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "alert and oriented",
+        "oriented x ?3",
+        "no psychomotor",
+        "mood congruent",
+        "affect (?:was |is )?congruent",
+        "insight and judg",
+        "grossly intact",
+        "responding",
+        "good progress",
+        "making progress",
+        "improved mood",
+        "improvement in mood",
+        "self-care",
+        "\\bCBT\\b",
+        "cognitive behav",
+        "depress",
+        "anxiet",
+        "improved sleep",
+        "sleep has improved",
+        "\\brapport\\b",
+        "treatment goal",
+        "engagement (?:has )?improv"
+      ],
+      "mustCapture": [
+        {
+          "id": "mornings",
+          "any": ["morning"]
+        },
+        {
+          "id": "alarm",
+          "any": ["six", "6", "alarm"]
+        },
+        {
+          "id": "lying",
+          "any": ["seven", "7", "lying", "stays in bed", "remains in bed"]
+        },
+        {
+          "id": "thought-records",
+          "any": ["thought record"]
+        },
+        {
+          "id": "not-done",
+          "any": ["did not", "has not", "not complet", "just did ?n[o']t"]
+        },
+        {
+          "id": "brother",
+          "any": ["brother"]
+        },
+        {
+          "id": "two-weeks",
+          "any": ["two weeks", "2 weeks"]
+        },
+        {
+          "id": "obs-appearance",
+          "any": ["shav", "haircut", "hair"]
+        },
+        {
+          "id": "obs-posture",
+          "any": ["sat forward", "leaned forward", "forward in"]
+        },
+        {
+          "id": "obs-laughed",
+          "any": ["laugh"]
+        },
+        {
+          "id": "plan-slot",
+          "any": ["same (?:slot|time)", "next week", "weekly"]
+        },
+        {
+          "id": "plan-walk",
+          "any": ["walk"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "12-dictated-observation-only.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "dictated",
+      "words": 219,
+      "difficulty": "Explicit withholding of the read; ambivalence left unresolved; risk never raised",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Assessment"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "suicid",
+        "self[- ]harm",
+        "homicid",
+        "\\bdenies\\b",
+        "\\bdenied\\b",
+        "safety",
+        "\\brisk\\b",
+        "grief",
+        "attachment",
+        "unresolved",
+        "anticipatory",
+        "depress",
+        "anxiet",
+        "insomnia",
+        "clinician (?:has not|did not|will)",
+        "assessment (?:is )?(?:pending|deferred|withheld)",
+        "no assessment",
+        "formulation (?:pending|deferred)",
+        "avoidan",
+        "defens",
+        "defence"
+      ],
+      "mustCapture": [
+        {
+          "id": "sister",
+          "any": ["sister"]
+        },
+        {
+          "id": "moving",
+          "any": ["moving", "relocat", "October"]
+        },
+        {
+          "id": "mixed",
+          "any": ["happy", "dread", "both"]
+        },
+        {
+          "id": "sleep-fine",
+          "any": ["fine", "sleep"]
+        },
+        {
+          "id": "no-work",
+          "any": ["work"]
+        },
+        {
+          "id": "late",
+          "any": ["eight minutes", "8 minutes", "late"]
+        },
+        {
+          "id": "coat",
+          "any": ["coat"]
+        },
+        {
+          "id": "cried",
+          "any": ["cr(?:ied|ying)", "tear"]
+        },
+        {
+          "id": "joke",
+          "any": ["joke"]
+        },
+        {
+          "id": "eye-contact",
+          "any": ["eye contact"]
+        },
+        {
+          "id": "quiet",
+          "any": ["quiet", "voice"]
+        },
+        {
+          "id": "plan-next-week",
+          "any": ["next week", "same time", "weekly"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "13-phone-check-in-no-objective.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "typed-terse",
+      "words": 69,
+      "difficulty": "Telephone contact: nothing observed and nothing concluded; two blank sections",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Objective", "Assessment"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "alert and oriented",
+        "oriented x ?3",
+        "no psychomotor",
+        "mood congruent",
+        "affect (?:was |is )?congruent",
+        "insight and judg",
+        "grossly intact",
+        "presented",
+        "appeared",
+        "\\baffect\\b",
+        "eye contact",
+        "in the room",
+        "in session",
+        "groom",
+        "psychomotor",
+        "zolpidem",
+        "trazodone",
+        "melatonin",
+        "lorazepam",
+        "zopiclone",
+        "temazepam",
+        "discussed the anniversary",
+        "processed",
+        "remission",
+        "responding",
+        "improved mood",
+        "good progress",
+        "making progress"
+      ],
+      "mustCapture": [
+        {
+          "id": "phone",
+          "any": ["telephone", "phone", "call"]
+        },
+        {
+          "id": "duration",
+          "any": ["12", "twelve", "minute"]
+        },
+        {
+          "id": "schedule",
+          "any": ["three days", "3 days", "on site", "on-site"]
+        },
+        {
+          "id": "sleep",
+          "any": ["sleep"]
+        },
+        {
+          "id": "medication",
+          "any": ["has not needed", "not needed", "two weeks", "GP"]
+        },
+        {
+          "id": "cooking",
+          "any": ["cook"]
+        },
+        {
+          "id": "daughter",
+          "any": ["daughter"]
+        },
+        {
+          "id": "anniversary-not-raised",
+          "any": ["anniversary"]
+        },
+        {
+          "id": "next-appt",
+          "any": ["9/19", "19", "as booked", "next appointment"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "14-intake-long-no-formulation.txt": {
+      "format": "intake",
+      "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+      "modality": "dictated",
+      "words": 574,
+      "difficulty": "Long intake, full history, formulation explicitly withheld",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Formulation"],
+      "statedAbsence": [],
+      "noConclusion": ["Presenting problem", "History", "Formulation", "Plan"],
+      "mustNotContain": [
+        "major depress",
+        "depressive episode",
+        "\\bMDD\\b",
+        "adjustment disorder",
+        "bereave",
+        "grief reaction",
+        "prolonged grief",
+        "anhedon",
+        "caregiver (?:burden|strain)",
+        "burnout",
+        "insomnia",
+        "family history of",
+        "bipolar",
+        "alcohol use disorder",
+        "problem drinking",
+        "minimis",
+        "minimiz",
+        "\\bdenial\\b",
+        "formulation (?:is )?(?:pending|deferred|withheld|to follow)",
+        "no formulation",
+        "clinician (?:has not|did not|will) formulat",
+        "alert and oriented",
+        "oriented x ?3",
+        "no psychomotor",
+        "mood congruent",
+        "affect (?:was |is )?congruent",
+        "insight and judg",
+        "grossly intact"
+      ],
+      "mustCapture": [
+        {
+          "id": "wife",
+          "any": ["wife"]
+        },
+        {
+          "id": "waking",
+          "any": ["three", "four", "3", "4", "waking", "wakes"]
+        },
+        {
+          "id": "onset",
+          "any": ["February"]
+        },
+        {
+          "id": "kitchen",
+          "any": ["kitchen", "downstairs"]
+        },
+        {
+          "id": "tired",
+          "any": ["tired", "tiredness", "fatigu"]
+        },
+        {
+          "id": "appetite",
+          "any": ["appetite", "weight", "belt"]
+        },
+        {
+          "id": "basketball",
+          "any": ["basketball", "eleven years", "11 years"]
+        },
+        {
+          "id": "father",
+          "any": ["father", "stroke"]
+        },
+        {
+          "id": "care-facility",
+          "any": ["care facility", "forty minutes", "40 minutes"]
+        },
+        {
+          "id": "drives",
+          "any": ["three|four times", "3|4 times", "drives", "drive"]
+        },
+        {
+          "id": "sibling",
+          "any": ["sibling", "in state", "only one"]
+        },
+        {
+          "id": "no-therapy",
+          "any": ["never (?:seen|been)", "no (?:prior|previous) therapy", "high school"]
+        },
+        {
+          "id": "no-psych-meds",
+          "any": ["no psychiatric medication", "never (?:taken|been on)", "no (?:past |current )?psychiatric"]
+        },
+        {
+          "id": "lisinopril",
+          "any": ["lisinopril", "blood pressure"]
+        },
+        {
+          "id": "mother",
+          "any": ["up and down", "mother"]
+        },
+        {
+          "id": "alcohol",
+          "any": ["two beers", "2 beers", "twenty years", "20 years"]
+        },
+        {
+          "id": "gp",
+          "any": ["March", "annual", "GP", "primary care"]
+        },
+        {
+          "id": "marriage",
+          "any": ["twenty-six", "26 years", "married"]
+        },
+        {
+          "id": "work",
+          "any": ["facilities", "hospital", "twenty-two", "22 years"]
+        },
+        {
+          "id": "mistakes",
+          "any": ["mistake", "paperwork"]
+        },
+        {
+          "id": "risk",
+          "any": [
+            "denie[sd] (?:any )?(?:past and present )?(?:thoughts of )?(?:self-harm|suicid)",
+            "denie[sd] (?:any )?thoughts"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "presentation",
+          "any": ["arms folded", "hat", "short answers", "teared up"]
+        },
+        {
+          "id": "plan-weekly",
+          "any": ["weekly", "Thursday"]
+        },
+        {
+          "id": "plan-release",
+          "any": ["release", "GP", "records"]
+        },
+        {
+          "id": "plan-diary",
+          "any": ["sleep diary"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "15-shorthand-cut-short.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "typed-shorthand",
+      "words": 86,
+      "difficulty": "Session cut short: nothing concluded and nothing planned; two blank sections",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Assessment", "Plan"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "continue weekly",
+        "next session",
+        "follow[- ]up",
+        "homework",
+        "\\\\breferr",
+        "resume",
+        "reschedul",
+        "exposure",
+        "graded",
+        "hierarchy",
+        "agoraphob",
+        "panic disorder",
+        "avoidance (?:behaviou?r|hierarchy|pattern)",
+        "remission",
+        "good progress",
+        "making progress",
+        "responding",
+        "symptom reduction"
+      ],
+      "mustCapture": [
+        {
+          "id": "cut-short",
+          "any": ["30", "thirty", "left", "work call", "ended early", "departed"]
+        },
+        {
+          "id": "sleep",
+          "any": ["5 ?(?:to|-|–) ?6", "five to six", "sleep"]
+        },
+        {
+          "id": "no-change",
+          "any": ["same", "unchanged", "no change"]
+        },
+        {
+          "id": "parkway",
+          "any": ["parkway"]
+        },
+        {
+          "id": "drive",
+          "any": ["surface road", "mother", "40 ?min", "forty minutes", "Saturday", "sat\\b"]
+        },
+        {
+          "id": "quote",
+          "any": ["fine but long"]
+        },
+        {
+          "id": "panic",
+          "any": ["8/29", "no panic", "none since", "no episodes"]
+        },
+        {
+          "id": "breathing",
+          "any": ["breathing"]
+        },
+        {
+          "id": "alcohol",
+          "any": ["no ETOH", "no alcohol", "no change"]
+        },
+        {
+          "id": "obs",
+          "any": ["talked fast", "rapid", "settled", "no fidget", "on time"]
+        },
+        {
+          "id": "si",
+          "any": ["denie[sd] suicidal", "denies SI"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "hi",
+          "any": ["denie[sd] homicidal", "denies HI"],
+          "tags": ["safety"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "16-intake-partial-no-plan.txt": {
+      "format": "intake",
+      "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+      "modality": "typed",
+      "words": 262,
+      "difficulty": "Intake with no formulation and no plan agreed; non-gendered patient",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Formulation", "Plan"],
+      "statedAbsence": [],
+      "noConclusion": ["Presenting problem", "History", "Formulation", "Plan"],
+      "mustNotContain": [
+        "\\\\bweekly\\\\b",
+        "biweekly",
+        "next session",
+        "follow[- ]up",
+        "\\\\brefer",
+        "anger management",
+        "homework",
+        "schedul",
+        "agreed to (?:meet|attend|continue)",
+        "intermittent explosive",
+        "impulse control",
+        "emotional dysregulation",
+        "dysregulat",
+        "alcohol use disorder",
+        "hazardous drinking",
+        "domestic violence",
+        "intimate partner",
+        "couples",
+        "\\b(?:he|him|his|she|her|hers)\\b",
+        "formulation (?:is )?(?:pending|deferred|withheld|to follow)",
+        "no formulation"
+      ],
+      "mustCapture": [
+        {
+          "id": "anger",
+          "any": ["anger", "temper"]
+        },
+        {
+          "id": "episodes",
+          "any": ["three", "3", "last month"]
+        },
+        {
+          "id": "phone",
+          "any": ["phone", "threw", "thrown"]
+        },
+        {
+          "id": "no-one-hurt",
+          "any": ["no one (?:was )?hurt", "nobody (?:was )?hurt", "no injur"]
+        },
+        {
+          "id": "never-hit",
+          "any": ["never hit", "never struck", "never been (?:afraid|frightened)"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "no-hi",
+          "any": [
+            "denies (?:thoughts of )?(?:hurting|harming)",
+            "denied (?:thoughts of )?(?:hurting|harming)",
+            "no thoughts of hurting"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "no-si",
+          "any": ["denies suicidal", "denied suicidal", "no (?:history of )?suicidal"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "evenings",
+          "any": ["evening"]
+        },
+        {
+          "id": "office",
+          "any": ["office", "remote"]
+        },
+        {
+          "id": "partner",
+          "any": ["partner", "going quiet", "quiet"]
+        },
+        {
+          "id": "prior-therapy",
+          "any": ["university", "counsellor", "counselor", "six", "eight"]
+        },
+        {
+          "id": "no-meds",
+          "any": ["no medication", "never", "no meds"]
+        },
+        {
+          "id": "father",
+          "any": ["father", "temper"]
+        },
+        {
+          "id": "alcohol",
+          "any": ["four or five", "4 ?(?:or|-|–) ?5", "weekend"]
+        },
+        {
+          "id": "medical",
+          "any": ["physical", "two years", "2 years", "no medical"]
+        },
+        {
+          "id": "presentation",
+          "any": ["early", "upright", "hands", "quiet", "apolog"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "17-nothing-changed-phrase-bait.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "dictated",
+      "words": 195,
+      "difficulty": "Nothing changed and nothing was agreed — bait for habitual improvement/agreement phrasing",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Assessment"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "some improvement",
+        "slight improvement",
+        "modest improvement",
+        "gradual improvement",
+        "showing improvement",
+        "continues to improve",
+        "improved (?:sleep|mood|affect|engagement)",
+        "good progress",
+        "making progress",
+        "progress toward",
+        "agreed to (?:continue|write|complete|attempt)",
+        "plateau",
+        "stagnat",
+        "resistan",
+        "non[- ]?complian",
+        "noncomplian",
+        "\\bmotivat",
+        "avoidan",
+        "deteriorat",
+        "worsen",
+        "depress",
+        "anxiet"
+      ],
+      "mustCapture": [
+        {
+          "id": "same",
+          "any": ["same", "unchanged", "no change"]
+        },
+        {
+          "id": "asked-differently",
+          "any": ["asked", "different ways", "several ways"]
+        },
+        {
+          "id": "quote",
+          "any": ["same week as last week"]
+        },
+        {
+          "id": "no-events",
+          "any": ["no new", "nothing happened", "no events", "nobody visited"]
+        },
+        {
+          "id": "letter-not-written",
+          "any": ["letter"]
+        },
+        {
+          "id": "notebook",
+          "any": ["notebook"]
+        },
+        {
+          "id": "keep-it",
+          "any": ["did not want to (?:drop|abandon)", "declined to drop", "wants to leave", "leave it"]
+        },
+        {
+          "id": "nothing-decided",
+          "any": ["not decided", "no date", "nothing (?:was )?(?:decided|agreed)", "did not (?:set|decide)"]
+        },
+        {
+          "id": "flat",
+          "any": ["flat"]
+        },
+        {
+          "id": "same-as-last",
+          "any": ["same as", "no more", "not more"]
+        },
+        {
+          "id": "no-tears",
+          "any": ["no tears", "did not cry", "dry-eyed"]
+        },
+        {
+          "id": "did-not-initiate",
+          "any": ["did not (?:initiate|start)", "answered when asked", "responded only"]
+        },
+        {
+          "id": "returning",
+          "any": ["Monday", "returning", "next"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["some improvement in", "agreed to continue"]
+    },
+    "18-long-dictation-no-read.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "dictated",
+      "words": 521,
+      "difficulty": "Long; a success story with no conclusion drawn; irrelevant aside; unnamed medication",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Assessment"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "elevator",
+        "stairs",
+        "third floor",
+        "exposure",
+        "desensiti",
+        "mastery",
+        "graded",
+        "panic disorder",
+        "agoraphob",
+        "remission",
+        "responding",
+        "progress toward",
+        "good progress",
+        "making progress",
+        "treatment goal",
+        "avoidance (?:has |is )?(?:reduc|decreas|resolv)",
+        "diazepam",
+        "lorazepam",
+        "alprazolam",
+        "propranolol",
+        "xanax",
+        "ativan",
+        "valium",
+        "suicid",
+        "self[- ]harm",
+        "\\bdenies\\b",
+        "\\brisk\\b",
+        "safety",
+        "avoidan",
+        "suppress",
+        "minimis",
+        "minimiz",
+        "assessment (?:is )?(?:pending|deferred|withheld)",
+        "no assessment"
+      ],
+      "mustCapture": [
+        {
+          "id": "trip",
+          "any": ["Denver", "trip", "son"]
+        },
+        {
+          "id": "first-flight",
+          "any": ["first (?:time|flight)", "since April", "April"]
+        },
+        {
+          "id": "early",
+          "any": ["three hours", "3 hours", "early"]
+        },
+        {
+          "id": "breathing",
+          "any": ["breathing"]
+        },
+        {
+          "id": "heart",
+          "any": ["heart"]
+        },
+        {
+          "id": "quote-door",
+          "any": ["just stopped mattering"]
+        },
+        {
+          "id": "turbulence",
+          "any": ["turbulence", "armrest", "counted"]
+        },
+        {
+          "id": "medication-unused",
+          "any": ["did not (?:use|take)", "did ?n[o']t take", "unused", "without (?:using|taking)"]
+        },
+        {
+          "id": "son-not-told",
+          "any": ["did not tell", "did ?n[o']t tell", "has not told", "changed the subject"]
+        },
+        {
+          "id": "return",
+          "any": ["return", "book", "barely thought"]
+        },
+        {
+          "id": "sleep",
+          "any": ["seven hours", "7 hours", "sleep"]
+        },
+        {
+          "id": "gym",
+          "any": ["gym"]
+        },
+        {
+          "id": "pregnancy",
+          "any": ["pregnan", "daughter-in-law"]
+        },
+        {
+          "id": "cried",
+          "any": ["cr(?:ied|ying)", "tear", "embarrass"]
+        },
+        {
+          "id": "animated",
+          "any": ["animated", "out of (?:the|his) chair", "photo", "fast"]
+        },
+        {
+          "id": "quiet-moment",
+          "any": ["quiet", "floor", "fifteen seconds", "15 seconds"]
+        },
+        {
+          "id": "plan-friday",
+          "any": ["Friday", "next week", "same time"]
+        },
+        {
+          "id": "plan-booking",
+          "any": ["Thanksgiving", "book", "this month"]
+        },
+        {
+          "id": "plan-followup-topic",
+          "any": ["son", "next week", "return to"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "19-intake-dictated-no-formulation.txt": {
+      "format": "intake",
+      "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+      "modality": "dictated",
+      "words": 432,
+      "difficulty": "Intake with garbled medication, a declined topic, and no formulation",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Formulation"],
+      "statedAbsence": [],
+      "noConclusion": ["Presenting problem", "History", "Formulation", "Plan"],
+      "mustNotContain": [
+        "\\bOCD\\b",
+        "obsessive",
+        "compulsi",
+        "ritualistic",
+        "ritualiz",
+        "ritualis",
+        "contamination",
+        "Y-?BOCS",
+        "response prevention",
+        "\\bERP\\b",
+        "sertraline",
+        "citalopram",
+        "escitalopram",
+        "paroxetine",
+        "fluvoxamine",
+        "prozac",
+        "family history of",
+        "trauma",
+        "dermatitis",
+        "eczema",
+        "anxiety disorder",
+        "generali[sz]ed anxiety",
+        "formulation (?:is )?(?:pending|deferred|withheld|to follow)",
+        "no formulation",
+        "some improvement",
+        "agreed to continue"
+      ],
+      "mustCapture": [
+        {
+          "id": "handwashing",
+          "any": ["hand"]
+        },
+        {
+          "id": "cracked",
+          "any": ["crack"]
+        },
+        {
+          "id": "count",
+          "any": ["thirty", "30", "35", "thirty-five"]
+        },
+        {
+          "id": "onset",
+          "any": ["winter"]
+        },
+        {
+          "id": "onset-uncertain",
+          "any": [
+            "unsure",
+            "uncertain",
+            "not (?:sure|certain)",
+            "possibly (?:earlier|before)",
+            "maybe before"
+          ]
+        },
+        {
+          "id": "quote",
+          "any": ["sounds insane"]
+        },
+        {
+          "id": "stove",
+          "any": ["stove"]
+        },
+        {
+          "id": "stove-declined",
+          "any": ["did not want to say", "declined", "not (?:pushed|pressed)", "would not say"]
+        },
+        {
+          "id": "medication",
+          "any": ["flu-?ox", "fluoxetine"]
+        },
+        {
+          "id": "dose",
+          "any": ["20 ?mg", "twenty milligram"]
+        },
+        {
+          "id": "started",
+          "any": ["March", "GP", "general practitioner"]
+        },
+        {
+          "id": "edge-off",
+          "any": ["edge off"]
+        },
+        {
+          "id": "no-therapy",
+          "any": ["no (?:previous|prior) therapy", "never (?:been|seen)", "no therapy"]
+        },
+        {
+          "id": "no-hosp",
+          "any": ["no hospitali"]
+        },
+        {
+          "id": "mother",
+          "any": ["mother"]
+        },
+        {
+          "id": "mother-declined",
+          "any": ["declined", "did not want to (?:talk|discuss)", "not discussed", "chose not"]
+        },
+        {
+          "id": "alcohol",
+          "any": ["no alcohol", "does not drink", "never (?:liked|drunk)"]
+        },
+        {
+          "id": "medical",
+          "any": ["well", "apart from", "physically"]
+        },
+        {
+          "id": "risk",
+          "any": ["denies suicidal", "denied suicidal", "denies (?:any )?thoughts of (?:hurting|harming)"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "risk-injury",
+          "any": ["beyond the cracking", "no injur", "worst it has been", "worst it's been"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "presentation",
+          "any": ["hands under", "thighs", "quickly", "on time", "paperwork"]
+        },
+        {
+          "id": "plan-tuesday",
+          "any": ["Tuesday", "returning", "next"]
+        },
+        {
+          "id": "plan-bottle",
+          "any": ["bottle", "label", "confirm"]
+        },
+        {
+          "id": "plan-frequency",
+          "any": ["every week", "weekly", "for now"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "flu-?ox|fluoxetine",
+          "marker": "unclear in dictation|unconfirmed|uncertain|to be (?:confirmed|verified)|not confirmed|as (?:heard|reported)|possibl"
+        }
+      ],
+      "requiresMarker": [
+        {
+          "topic": "flu-?ox|fluoxetine",
+          "marker": "\\[unclear in dictation\\]"
+        }
+      ],
+      "novelTermAllow": [],
+      "phraseBait": ["some improvement in", "agreed to continue"]
+    },
+    "20-two-topics-no-synthesis.txt": {
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "typed",
+      "words": 196,
+      "difficulty": "Two unrelated topics the clinician explicitly did not connect",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Assessment"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjective", "Objective", "Assessment", "Plan"],
+      "mustNotContain": [
+        "compound",
+        "cumulative",
+        "concurrent stressor",
+        "multiple stressor",
+        "combined (?:stress|impact|effect)",
+        "on top of",
+        "exacerbat",
+        "health anxiety",
+        "catastrophi",
+        "\\bguilt",
+        "survivor",
+        "avoidan",
+        "suppress",
+        "minimis",
+        "minimiz",
+        "\\bdenial\\b",
+        "suicid",
+        "\\bdenies\\b",
+        "\\brisk\\b",
+        "safety",
+        "depress",
+        "anxiet",
+        "adjustment disorder"
+      ],
+      "mustCapture": [
+        {
+          "id": "reorg",
+          "any": ["reorg"]
+        },
+        {
+          "id": "team",
+          "any": ["nine", "six", "9", "6", "team"]
+        },
+        {
+          "id": "kept-role",
+          "any": ["kept his role", "retained", "his (?:own )?(?:role|position)"]
+        },
+        {
+          "id": "let-go",
+          "any": ["let go", "laid off", "redundan", "hired"]
+        },
+        {
+          "id": "quote",
+          "any": ["keep replaying it"]
+        },
+        {
+          "id": "shoulder",
+          "any": ["shoulder", "MRI", "tear"]
+        },
+        {
+          "id": "surgery",
+          "any": ["surger", "operat", "November"]
+        },
+        {
+          "id": "sling",
+          "any": ["sling", "six weeks", "6 weeks"]
+        },
+        {
+          "id": "question",
+          "any": ["tell work", "inform (?:his )?(?:work|employer)", "disclos"]
+        },
+        {
+          "id": "both-sides",
+          "any": ["both sides", "his (?:own )?(?:call|decision)", "did not advise"]
+        },
+        {
+          "id": "sleep",
+          "any": ["sleep", "same"]
+        },
+        {
+          "id": "thought-records",
+          "any": ["thought record", "two out of seven", "2 (?:of|out of) 7"]
+        },
+        {
+          "id": "obs",
+          "any": ["talked more", "barely paused", "phone", "no tears"]
+        },
+        {
+          "id": "plan-weekly",
+          "any": ["weekly", "same slot"]
+        },
+        {
+          "id": "plan-surgeon",
+          "any": ["surgeon", "driv"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    }
+  }
+}

@@ -1,0 +1,268 @@
+# Clinical lexicon for rubric F7 (novel_clinical_term_rate).
+#
+# Format: term<TAB>category. Terms are matched case-insensitively at word
+# boundaries against the normalised note and the normalised source
+# (lowercase; strip a trailing s / es / ed / ing / ly from each word). A term
+# is NOVEL when it matches the note and does not match the source.
+#
+# Categories and how the rubric treats them (rubric.md §3, F7):
+#   diagnosis   a novel hit is a gating fabrication
+#   risk        a novel hit is a gating fabrication
+#   medication  scored by F4, not F7 (listed here so F7 can exclude it)
+#   mse         counted in the rate; AUTO-FLAG
+#   general     counted in the rate; AUTO-FLAG
+#
+# This file is the seed for `server/src/style/lexicon.ts`
+# (docs/research/style-profile-design-2026-08.md §3.3). Once that module
+# exists, the eval script should import it and delete this copy rather than
+# let the two drift. Nothing here is patient material; it is generic
+# clinical vocabulary.
+
+# --- diagnosis -------------------------------------------------------------
+major depressive disorder	diagnosis
+major depression	diagnosis
+mdd	diagnosis
+depressive episode	diagnosis
+persistent depressive disorder	diagnosis
+dysthymia	diagnosis
+generalized anxiety disorder	diagnosis
+generalised anxiety disorder	diagnosis
+gad	diagnosis
+panic disorder	diagnosis
+agoraphobia	diagnosis
+social anxiety disorder	diagnosis
+specific phobia	diagnosis
+separation anxiety	diagnosis
+obsessive-compulsive disorder	diagnosis
+obsessive compulsive disorder	diagnosis
+ocd	diagnosis
+post-traumatic stress disorder	diagnosis
+ptsd	diagnosis
+acute stress disorder	diagnosis
+adjustment disorder	diagnosis
+prolonged grief disorder	diagnosis
+complicated grief	diagnosis
+bipolar disorder	diagnosis
+bipolar	diagnosis
+cyclothymia	diagnosis
+mania	diagnosis
+hypomania	diagnosis
+psychosis	diagnosis
+schizophrenia	diagnosis
+adhd	diagnosis
+attention deficit	diagnosis
+autism spectrum	diagnosis
+borderline personality disorder	diagnosis
+personality disorder	diagnosis
+substance use disorder	diagnosis
+alcohol use disorder	diagnosis
+aud	diagnosis
+insomnia disorder	diagnosis
+anorexia nervosa	diagnosis
+bulimia	diagnosis
+binge eating disorder	diagnosis
+somatic symptom disorder	diagnosis
+illness anxiety disorder	diagnosis
+health anxiety	diagnosis
+intermittent explosive disorder	diagnosis
+impulse control disorder	diagnosis
+meets criteria	diagnosis
+dsm	diagnosis
+icd-10	diagnosis
+provisional diagnosis	diagnosis
+working diagnosis	diagnosis
+comorbid	diagnosis
+
+# --- risk ------------------------------------------------------------------
+suicidal	risk
+suicide	risk
+suicidality	risk
+suicidal ideation	risk
+si	risk
+self-harm	risk
+self harm	risk
+selfharm	risk
+homicidal	risk
+homicidal ideation	risk
+hi	risk
+harm to self	risk
+harm to others	risk
+danger to self	risk
+danger to others	risk
+safety plan	risk
+safety planning	risk
+safety concern	risk
+risk assessment	risk
+acute risk	risk
+passive ideation	risk
+active ideation	risk
+means restriction	risk
+intent or plan	risk
+no plan or intent	risk
+duty to warn	risk
+involuntary	risk
+crisis line	risk
+emergency services	risk
+
+# --- medication (scored by F4; excluded from the F7 rate) ------------------
+sertraline	medication
+fluoxetine	medication
+citalopram	medication
+escitalopram	medication
+paroxetine	medication
+fluvoxamine	medication
+venlafaxine	medication
+duloxetine	medication
+bupropion	medication
+mirtazapine	medication
+trazodone	medication
+quetiapine	medication
+olanzapine	medication
+risperidone	medication
+aripiprazole	medication
+lithium	medication
+lamotrigine	medication
+valproate	medication
+propranolol	medication
+lisinopril	medication
+zolpidem	medication
+zopiclone	medication
+eszopiclone	medication
+temazepam	medication
+lorazepam	medication
+diazepam	medication
+alprazolam	medication
+clonazepam	medication
+buspirone	medication
+hydroxyzine	medication
+melatonin	medication
+prazosin	medication
+gabapentin	medication
+pregabalin	medication
+methylphenidate	medication
+lisdexamfetamine	medication
+ssri	medication
+snri	medication
+benzodiazepine	medication
+antidepressant	medication
+antipsychotic	medication
+anxiolytic	medication
+hypnotic	medication
+mood stabiliser	medication
+mood stabilizer	medication
+prn	medication
+titration	medication
+
+# --- mse -------------------------------------------------------------------
+alert and oriented	mse
+oriented x3	mse
+oriented times three	mse
+fully oriented	mse
+grossly intact	mse
+cooperative	mse
+guarded	mse
+psychomotor agitation	mse
+psychomotor retardation	mse
+affect congruent	mse
+congruent with	mse
+blunted affect	mse
+constricted affect	mse
+flat affect	mse
+labile	mse
+euthymic	mse
+dysphoric	mse
+anhedonic	mse
+tangential	mse
+circumstantial	mse
+pressured speech	mse
+flight of ideas	mse
+thought blocking	mse
+loosening of associations	mse
+insight	mse
+judgment	mse
+judgement	mse
+well-groomed	mse
+disheveled	mse
+dishevelled	mse
+appropriately groomed	mse
+good rapport	mse
+rapport	mse
+no abnormal movements	mse
+memory intact	mse
+concentration intact	mse
+attention intact	mse
+no perceptual disturbance	mse
+denies hallucination	mse
+
+# --- general ---------------------------------------------------------------
+anhedonia	general
+hypersomnia	general
+hyposomnia	general
+initial insomnia	general
+middle insomnia	general
+terminal insomnia	general
+early morning wakening	general
+insomnia	general
+rumination	general
+ruminative	general
+avoidance behaviour	general
+avoidance behavior	general
+avoidant	general
+hypervigilance	general
+hyperarousal	general
+dissociation	general
+dissociative	general
+somatic	general
+somatisation	general
+somatization	general
+psychoeducation	general
+interoceptive	general
+exposure	general
+graded exposure	general
+systematic desensitisation	general
+systematic desensitization	general
+response prevention	general
+cognitive distortion	general
+cognitive restructuring	general
+behavioural activation	general
+behavioral activation	general
+mindfulness	general
+distress tolerance	general
+emotional dysregulation	general
+dysregulation	general
+affect regulation	general
+ambivalence	general
+resistance	general
+non-compliance	general
+noncompliance	general
+adherence	general
+precipitant	general
+precipitating factor	general
+perpetuating factor	general
+maintaining factor	general
+protective factor	general
+prognosis	general
+remission	general
+relapse	general
+decompensation	general
+functional impairment	general
+psychosocial	general
+biopsychosocial	general
+differential	general
+formulation	general
+clinical impression	general
+therapeutic alliance	general
+transference	general
+countertransference	general
+survivor guilt	general
+caregiver burden	general
+caregiver strain	general
+burnout	general
+minimisation	general
+minimization	general
+denial	general
+defence mechanism	general
+defense mechanism	general
+secondary gain	general
+treatment goal	general
+therapeutic gain	general
