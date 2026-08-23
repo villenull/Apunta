@@ -48,12 +48,17 @@ export class RecordingLlmProvider implements LlmProvider {
   readonly summarised: SummariseNoteRequest[] = [];
   readonly suggestions: SuggestPlanGoalsRequest[] = [];
   readonly compositions: ComposeBriefRequest[] = [];
+  /** M6: what a format's saved `instructions` turn into on a drafting call. */
+  readonly drafts: GenerateNoteRequest[] = [];
+  /** M6: what the detect endpoint actually handed the model. */
+  readonly detections: DetectFormatRequest[] = [];
 
   private readonly inner = new FakeLlmProvider({ streamDelayMs: 0 });
 
   constructor(private readonly stubs: ProviderStubs = {}) {}
 
   generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
+    this.drafts.push(request);
     return this.inner.generateNote(request);
   }
 
@@ -62,6 +67,7 @@ export class RecordingLlmProvider implements LlmProvider {
   }
 
   detectFormat(request: DetectFormatRequest): Promise<DetectedFormat> {
+    this.detections.push(request);
     return this.inner.detectFormat(request);
   }
 

@@ -213,11 +213,17 @@ describe('fakeDetectFormat', () => {
     ]);
   });
 
-  it('falls back to SOAP when it recognises nothing', () => {
+  it('falls back to SOAP when it recognises no heading but the text says "Subjective"', () => {
+    expect(
+      fakeDetectFormat({ kind: 'examples', text: 'she wrote a Subjective paragraph and stopped' }).sections,
+    ).toEqual(['Subjective', 'Objective', 'Assessment', 'Plan']);
+  });
+
+  it('falls back to the intake shape when it recognises nothing at all', () => {
     expect(fakeDetectFormat({ kind: 'examples', text: 'nothing heading-like here' }).sections).toEqual([
-      'Subjective',
-      'Objective',
-      'Assessment',
+      'Presenting problem',
+      'History',
+      'Formulation',
       'Plan',
     ]);
   });

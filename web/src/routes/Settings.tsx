@@ -63,6 +63,8 @@ export function Settings(): React.JSX.Element {
                     sections: format.sections,
                     returnTo: '/settings',
                     formatId: format.id,
+                    source: format.source,
+                    instructions: format.instructions,
                   } satisfies FormatDraft
                 }
               >

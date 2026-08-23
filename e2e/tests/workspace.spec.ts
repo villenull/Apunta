@@ -392,7 +392,8 @@ test.describe('first run', () => {
     await expect(page.getByRole('heading', { name: 'Add your note format' })).toBeVisible();
   });
 
-  test('offers the upload paths but leaves them to M6', async ({ page }) => {
+  /** What the uploads do once a file is chosen is `tests/formats.spec.ts`. */
+  test('offers all three paths, with the uploads waiting on a file', async ({ page }) => {
     await page.goto('/onboarding/format');
 
     await page.getByText('Upload a blank template').click();

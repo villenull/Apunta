@@ -34,7 +34,7 @@ export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 export interface RequestOptions {
   method?: HttpMethod;
-  /** Serialized as JSON. */
+  /** Serialized as JSON — unless it is a `FormData`, which is sent as-is. */
   body?: unknown;
   signal?: AbortSignal;
 }
@@ -43,13 +43,18 @@ const NETWORK_ERROR_MESSAGE = 'Could not reach the Apunta server. Is it still ru
 
 function buildInit(options: RequestOptions): RequestInit {
   const { method = 'GET', body, signal } = options;
-  return {
-    method,
-    ...(body === undefined
+  // A `FormData` body is passed straight through with **no** content-type
+  // header: the browser has to set it itself, because only it knows the
+  // multipart boundary it generated. Setting one by hand produces a body the
+  // server cannot parse (M6's uploads).
+  const payload =
+    body === undefined
       ? {}
-      : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }),
-    ...(signal ? { signal } : {}),
-  };
+      : body instanceof FormData
+        ? { body }
+        : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } };
+
+  return { method, ...payload, ...(signal ? { signal } : {}) };
 }
 
 /** Turn a non-2xx response into an ApiRequestError carrying the server's message. */

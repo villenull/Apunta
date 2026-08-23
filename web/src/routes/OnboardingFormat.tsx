@@ -1,6 +1,8 @@
+import { MAX_DETECT_FILES } from '@apunta/shared';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
+import { detectFormat, errorMessage } from '../api/index.js';
 import { ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { duplicateSection, parseSections } from '../lib/sections.js';
@@ -8,15 +10,11 @@ import { asFormatDraft, type FormatDraft } from './formatDraft.js';
 
 type Choice = 'template' | 'examples' | 'manual';
 
-/** M6 implements the two upload paths; until then they explain themselves. */
-const COMING_SOON = 'Reading a format from files arrives in a later milestone.';
-
 /**
- * `prototype/onboarding-format.html`. All three options render; only "Describe
- * it myself" can be completed in M2, and it is the one the first run needs.
- *
- * After the format is saved the prototype goes on to add a patient, so that is
- * where a first run returns to; Settings sends the user back to Settings.
+ * `prototype/onboarding-format.html`. All three options are live: upload a
+ * blank template, upload two or three completed notes, or type the sections
+ * out. The last one is the only path that cannot fail, so every failure
+ * message on the other two points back at it.
  */
 export function OnboardingFormat(): React.JSX.Element {
   const navigate = useNavigate();
@@ -26,9 +24,17 @@ export function OnboardingFormat(): React.JSX.Element {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [name, setName] = useState('');
   const [sectionsText, setSectionsText] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleContinue(): void {
+  function choose(next: Choice): void {
+    setChoice(next);
+    setFiles([]);
+    setError(null);
+  }
+
+  function handleManual(): void {
     const trimmedName = name.trim();
     const sections = parseSections(sectionsText);
     const duplicate = duplicateSection(sections);
@@ -50,6 +56,30 @@ export function OnboardingFormat(): React.JSX.Element {
     void navigate('/onboarding/preview', { state: draft });
   }
 
+  async function handleUpload(kind: 'template' | 'examples'): Promise<void> {
+    setBusy(true);
+    setError(null);
+    try {
+      const detected = await detectFormat(kind, files);
+      const draft: FormatDraft = {
+        name: detected.name,
+        sections: [...detected.sections],
+        returnTo,
+        source: kind,
+        ...(detected.truncated ? { truncated: true } : {}),
+      };
+      await navigate('/onboarding/preview', { state: draft });
+    } catch (thrown) {
+      setError(errorMessage(thrown));
+      setBusy(false);
+    }
+  }
+
+  const canContinue =
+    choice === 'manual' ||
+    (choice === 'template' && files.length === 1) ||
+    (choice === 'examples' && files.length >= 2);
+
   return (
     <Screen {...(returnTo === '/settings' ? { back: { to: '/settings', label: 'Settings' } } : {})}>
       <div className="progress">
@@ -64,7 +94,7 @@ export function OnboardingFormat(): React.JSX.Element {
         <Option
           selected={choice === 'template'}
           onSelect={() => {
-            setChoice('template');
+            choose('template');
           }}
           icon={<TemplateIcon />}
           title="Upload a blank template"
@@ -73,7 +103,7 @@ export function OnboardingFormat(): React.JSX.Element {
         <Option
           selected={choice === 'examples'}
           onSelect={() => {
-            setChoice('examples');
+            choose('examples');
           }}
           icon={<ExamplesIcon />}
           title="Upload a few example notes"
@@ -82,7 +112,7 @@ export function OnboardingFormat(): React.JSX.Element {
         <Option
           selected={choice === 'manual'}
           onSelect={() => {
-            setChoice('manual');
+            choose('manual');
           }}
           icon={<PencilIcon />}
           title="Describe it myself"
@@ -91,10 +121,26 @@ export function OnboardingFormat(): React.JSX.Element {
       </div>
 
       {choice === 'template' && (
-        <ComingSoonDrop hint="Drop a .docx or .pdf template here" testId="area-template" />
+        <Dropzone
+          testId="area-template"
+          inputId="file-template"
+          hint="Drop a .docx or .pdf template here"
+          multiple={false}
+          files={files}
+          onFiles={setFiles}
+          disabled={busy}
+        />
       )}
       {choice === 'examples' && (
-        <ComingSoonDrop hint="Drop 2-3 completed notes here" testId="area-examples" />
+        <Dropzone
+          testId="area-examples"
+          inputId="file-examples"
+          hint="Drop 2-3 completed notes here"
+          multiple
+          files={files}
+          onFiles={setFiles}
+          disabled={busy}
+        />
       )}
       {choice === 'manual' && (
         <div className="onboarding-area" data-testid="area-manual">
@@ -131,7 +177,16 @@ export function OnboardingFormat(): React.JSX.Element {
 
       {error !== null && (
         <p className="form-error" role="alert">
-          {error}
+          {error}{' '}
+          <button
+            type="button"
+            className="btn small btn-quick"
+            onClick={() => {
+              choose('manual');
+            }}
+          >
+            Describe it myself
+          </button>
         </p>
       )}
 
@@ -139,11 +194,20 @@ export function OnboardingFormat(): React.JSX.Element {
         type="button"
         className="btn btn-primary btn-block form-actions"
         data-testid="format-continue"
-        disabled={choice !== 'manual'}
-        onClick={handleContinue}
+        disabled={!canContinue || busy}
+        onClick={() => {
+          if (choice === 'manual') handleManual();
+          else if (choice === 'template' || choice === 'examples') void handleUpload(choice);
+        }}
       >
-        Continue
+        {busy ? 'Reading your file…' : 'Continue'}
       </button>
+
+      {busy && (
+        <p className="small state-note" role="status">
+          Reading the file and working out its sections. Nothing is saved until you say it looks right.
+        </p>
+      )}
     </Screen>
   );
 }
@@ -168,16 +232,89 @@ function Option({ selected, onSelect, icon, title, subtitle }: OptionProps): Rea
   );
 }
 
-function ComingSoonDrop({ hint, testId }: { hint: string; testId: string }): React.JSX.Element {
+interface DropzoneProps {
+  testId: string;
+  inputId: string;
+  hint: string;
+  multiple: boolean;
+  files: File[];
+  onFiles: (files: File[]) => void;
+  disabled: boolean;
+}
+
+/**
+ * Drag-and-drop with click-to-browse behind it.
+ *
+ * The `<input type="file">` is the real control — it is what a keyboard and a
+ * screen reader reach, and it is what Playwright sets files on — and the
+ * dashed area is a label wrapped around it. Dropping files writes the same
+ * state, so the two ways in are one code path from here on.
+ */
+function Dropzone({
+  testId,
+  inputId,
+  hint,
+  multiple,
+  files,
+  onFiles,
+  disabled,
+}: DropzoneProps): React.JSX.Element {
+  const [over, setOver] = useState(false);
+
+  function accept(list: FileList | null): void {
+    if (list === null) return;
+    onFiles(Array.from(list).slice(0, multiple ? MAX_DETECT_FILES : 1));
+  }
+
   return (
     <div className="onboarding-area" data-testid={testId}>
-      <div className="dropzone">
+      <label
+        className={over ? 'dropzone dropzone-over' : 'dropzone'}
+        htmlFor={inputId}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => {
+          setOver(false);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          setOver(false);
+          accept(event.dataTransfer.files);
+        }}
+      >
         <UploadIcon />
         <p className="small">{hint}</p>
+        <p className="small later-milestone">or click to choose a file</p>
+        <input
+          id={inputId}
+          type="file"
+          className="visually-hidden"
+          accept=".docx,.pdf,.txt,.md"
+          multiple={multiple}
+          disabled={disabled}
+          data-testid={`${testId}-input`}
+          onChange={(event) => {
+            accept(event.target.files);
+          }}
+        />
+      </label>
+
+      {files.length > 0 && (
+        <ul className="upload-list" data-testid={`${testId}-files`}>
+          {files.map((file) => (
+            <li className="small" key={`${file.name}-${String(file.size)}`}>
+              {file.name}
+            </li>
+          ))}
+        </ul>
+      )}
+      {multiple && files.length === 1 && (
         <p className="small later-milestone">
-          {COMING_SOON} For now, choose &ldquo;Describe it myself&rdquo;.
+          Add one or two more — Apunta works out the sections from what the notes have in common.
         </p>
-      </div>
+      )}
     </div>
   );
 }

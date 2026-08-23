@@ -1,8 +1,13 @@
 import {
+  DetectFormatResponseSchema,
   NoteFormatListResponseSchema,
   NoteFormatSchema,
+  SkillFlattenResponseSchema,
   type CreateNoteFormatRequest,
+  type DetectFormatResponse,
+  type DetectKind,
   type NoteFormat,
+  type SkillFlattenResponse,
   type UpdateNoteFormatRequest,
 } from '@apunta/shared';
 
@@ -28,4 +33,43 @@ export async function updateFormat(id: string, patch: UpdateNoteFormatRequest): 
 /** Refused with 409 while notes still reference the format. */
 export async function deleteFormat(id: string): Promise<void> {
   return requestVoid(`/api/formats/${id}`, { method: 'DELETE' });
+}
+
+/**
+ * Read a format out of an uploaded template or a few example notes. Saves
+ * nothing: the answer goes to the confirm screen, and only what she approves
+ * there is sent to `POST /api/formats`.
+ *
+ * **The file names are dropped here, before the upload leaves the browser.**
+ * `Smith, John — 2026-07-14.docx` names a client, and a server cannot leak
+ * what it never receives.
+ */
+export async function detectFormat(
+  kind: DetectKind,
+  files: readonly File[],
+  signal?: AbortSignal,
+): Promise<DetectFormatResponse> {
+  const form = new FormData();
+  form.append('kind', kind);
+  files.forEach((file, index) => {
+    form.append('files', file, `upload-${String(index + 1)}`);
+  });
+  return requestJson('/api/formats/detect', DetectFormatResponseSchema, {
+    method: 'POST',
+    body: form,
+    ...(signal ? { signal } : {}),
+  });
+}
+
+/** Flatten a `SKILL.md` (or a `.zip` of the folder) for review. Saves nothing. */
+export async function flattenSkill(file: File, signal?: AbortSignal): Promise<SkillFlattenResponse> {
+  const form = new FormData();
+  // The server sniffs the bytes, so the name carries nothing — and a constant
+  // is one less thing that could carry a client's name off the machine.
+  form.append('file', file, 'skill-upload');
+  return requestJson('/api/formats/flatten-skill', SkillFlattenResponseSchema, {
+    method: 'POST',
+    body: form,
+    ...(signal ? { signal } : {}),
+  });
 }

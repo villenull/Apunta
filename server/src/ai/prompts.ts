@@ -1,4 +1,5 @@
 import {
+  approximateTokens,
   MAX_BRIEF_LINES,
   MAX_SUGGESTED_EVIDENCE,
   MAX_SUGGESTED_GOALS,
@@ -235,14 +236,12 @@ export function buildDetectFormatPrompt(request: DetectFormatRequest): ChatPromp
 }
 
 /**
- * A rough token count, used to refuse an over-long prompt rather than let
- * Ollama silently truncate it (which would drop the anti-fabrication rules and
- * keep the patient material). ~3.5 characters per token is the usual ratio for
- * English prose; it does not need to be exact, only conservative.
+ * Re-exported rather than defined here: M6's Instructions panel shows the same
+ * estimate in the browser beside its textarea, so the ratio moved to
+ * `shared/src/common.ts` to keep the meter and this refusal threshold one
+ * number. Every existing importer keeps importing it from here.
  */
-export function approximateTokens(text: string): number {
-  return Math.ceil(text.length / 3.5);
-}
+export { approximateTokens };
 
 /** What the model produced, in the order the format defines. */
 export function orderSections(sections: Sections, order: readonly string[]): Sections {
