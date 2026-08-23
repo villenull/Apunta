@@ -1,17 +1,32 @@
-import { textToSections, type DetectedFormat, type Sections } from '@apunta/shared';
+import {
+  MAX_BRIEF_LINES,
+  MAX_SUMMARY_EXCERPTS,
+  MAX_SUMMARY_POINTS,
+  textToSections,
+  type BriefComposition,
+  type DetectedFormat,
+  type NoteSummary,
+  type PlanSuggestion,
+  type Sections,
+  type SuggestedGoal,
+} from '@apunta/shared';
 
 import { JsonStringStreamDecoder } from './json-stream.js';
 import { orderSections } from './prompts.js';
 import type {
+  ComposeBriefRequest,
   DetectFormatRequest,
   GenerateNoteRequest,
   LlmDescription,
   LlmEvent,
   LlmProvider,
+  LlmResult,
   LlmStats,
   RefineNoteRequest,
   SttEvent,
   SttProvider,
+  SummariseNoteRequest,
+  SuggestPlanGoalsRequest,
   TranscribeRequest,
 } from './types.js';
 
@@ -177,6 +192,18 @@ export class FakeLlmProvider implements LlmProvider {
     return Promise.resolve(fakeDetectFormat(request));
   }
 
+  summariseNote(request: SummariseNoteRequest): Promise<LlmResult<NoteSummary>> {
+    return Promise.resolve({ value: fakeSummariseNote(request), stats: FAKE_STATS });
+  }
+
+  suggestPlanGoals(request: SuggestPlanGoalsRequest): Promise<LlmResult<PlanSuggestion>> {
+    return Promise.resolve({ value: fakeSuggestPlanGoals(request), stats: FAKE_STATS });
+  }
+
+  composeBrief(request: ComposeBriefRequest): Promise<LlmResult<BriefComposition>> {
+    return Promise.resolve({ value: fakeComposeBrief(request), stats: FAKE_STATS });
+  }
+
   /** Stream a JSON document through the real decoder, word by word. */
   private async *streamJson(json: string): AsyncIterable<LlmEvent> {
     const decoder = new JsonStringStreamDecoder();
@@ -271,4 +298,109 @@ export class FakeSttProvider implements SttProvider {
       text: `Okay, John Smith today. He says he's sleeping a lot better since we changed the wind-down routine, and the intrusive thoughts are less frequent.${vocabulary} Keep going weekly, and I want to give him some grounding exercises he can use between sessions.`,
     };
   }
+}
+
+// --- M9: plan drafting and session prep, faked ---------------------------
+
+/** The first sentence of a body, kept as a literal slice so it stays quotable. */
+function firstSentence(body: string): string {
+  const trimmed = body.trim();
+  const stop = /[.!?](\s|$)/.exec(trimmed);
+  return stop === null ? trimmed : trimmed.slice(0, stop.index + 1);
+}
+
+/**
+ * Stage one, faked: a note reduced to points and excerpts.
+ *
+ * The excerpts are checked against the note here, exactly as the server checks
+ * them: a fake that offered a paraphrase would sail past a verification the
+ * real path would fail, and every test written against it would be proving
+ * something about a path that does not exist.
+ */
+export function fakeSummariseNote(request: SummariseNoteRequest): NoteSummary {
+  const sections = textToSections(request.noteText, request.sections);
+  const bodies = request.sections.map((name) => (sections[name] ?? '').trim()).filter((body) => body !== '');
+
+  const points = bodies.slice(0, MAX_SUMMARY_POINTS).map(firstSentence);
+  const excerpts = points
+    .filter((excerpt) => request.noteText.includes(excerpt))
+    .slice(0, MAX_SUMMARY_EXCERPTS);
+
+  return { points, excerpts };
+}
+
+/** The prototype practice's two stories, as goals a therapist would recognise. */
+const FAKE_GOALS: readonly { readonly pattern: RegExp; readonly goal: Omit<SuggestedGoal, 'evidence'> }[] = [
+  {
+    pattern: /grief|bereave|anniversary|mother|passed away/i,
+    goal: {
+      statement: 'Maria re-engages with the parts of her life she withdrew from after her loss.',
+      objectives: [
+        {
+          statement:
+            'Maria will take part in at least one planned social contact outside her household each week.',
+          measure: 'her report at the start of each session',
+          baseline: '',
+        },
+      ],
+      interventions: ['Weekly supportive therapy', 'Behavioural activation planning in session'],
+    },
+  },
+  {
+    pattern: /sleep|intrusive|anxiet|restless/i,
+    goal: {
+      statement: 'John sleeps well enough to get through a workday without an afternoon crash.',
+      objectives: [
+        {
+          statement: 'John will report 6 or more hours of sleep on at least 5 of 7 nights.',
+          measure: 'his weekly sleep log, reviewed in session',
+          baseline: '',
+        },
+      ],
+      interventions: ['CBT for insomnia', 'Grounding exercises rehearsed in session'],
+    },
+  },
+];
+
+/**
+ * Stage two of plan drafting, faked.
+ *
+ * Every goal cites a real offered excerpt by index, and a goal already in the
+ * plan is not proposed again — the two properties a second suggestion run has
+ * to have for the "propose beside it, never over it" rule to mean anything.
+ */
+export function fakeSuggestPlanGoals(request: SuggestPlanGoalsRequest): PlanSuggestion {
+  const already = new Set(request.existingGoals.map((goal) => goal.trim().toLowerCase()));
+  const goals: SuggestedGoal[] = [];
+  const used = new Set<string>();
+
+  for (const note of request.notes) {
+    if (note.excerpts.length === 0) continue;
+    const haystack = note.excerpts.join(' ');
+    const match = FAKE_GOALS.find((entry) => entry.pattern.test(haystack));
+    if (!match) continue;
+    if (used.has(match.goal.statement) || already.has(match.goal.statement.trim().toLowerCase())) continue;
+    used.add(match.goal.statement);
+
+    const baseline = note.excerpts[0] ?? '';
+    goals.push({
+      ...match.goal,
+      objectives: match.goal.objectives.map((objective) => ({ ...objective, baseline })),
+      evidence: [{ note: note.index, excerpt: 0 }],
+    });
+  }
+
+  return { goals };
+}
+
+/** Stage two of prep, faked: one line per point, newest note first. */
+export function fakeComposeBrief(request: ComposeBriefRequest): BriefComposition {
+  const lines: BriefComposition['lines'] = [];
+  for (const note of request.notes) {
+    for (const point of note.points.slice(0, 2)) {
+      if (lines.length === MAX_BRIEF_LINES) return { lines };
+      lines.push({ note: note.index, text: point });
+    }
+  }
+  return { lines };
 }

@@ -439,6 +439,102 @@ describe('OllamaProvider.detectFormat', () => {
   });
 });
 
+describe('OllamaProvider — the M9 two-stage calls', () => {
+  const SUMMARY = { points: ['Sleeping better.'], excerpts: ['getting six hours most nights'] };
+
+  it('summarises one note and reports what the call cost', async () => {
+    const result = await provider({ chats: [{ content: JSON.stringify(SUMMARY) }] }).summariseNote({
+      noteText: 'Subjective: getting six hours most nights.',
+      sections: SOAP,
+    });
+
+    expect(result.value).toEqual(SUMMARY);
+    // `prompt_eval_count` is the only observability Ollama gives us on
+    // truncation, and every M9 call reports it like every other call.
+    expect(result.stats.promptTokens).toBe(1200);
+    expect(result.stats.attempts).toBe(1);
+  });
+
+  it('refuses a summary whose prompt came back flush against the context window', async () => {
+    await expect(
+      provider({
+        chats: [{ content: JSON.stringify(SUMMARY), promptTokens: NUM_CTX }],
+      }).summariseNote({ noteText: 'Subjective: anything.', sections: SOAP }),
+    ).rejects.toMatchObject({ code: 'context_overflow' });
+  });
+
+  it('retries a malformed suggestion and accepts the corrected one', async () => {
+    const good = {
+      goals: [
+        {
+          statement: 'Sleep improves.',
+          objectives: [],
+          interventions: [],
+          evidence: [{ note: 0, excerpt: 0 }],
+        },
+      ],
+    };
+    const result = await provider({
+      chats: [{ content: '{"goals": "all of them"}' }, { content: JSON.stringify(good) }],
+    }).suggestPlanGoals({
+      diagnoses: [],
+      modality: '',
+      frequency: '',
+      existingGoals: [],
+      notes: [{ index: 0, date: '2026-08-01', excerpts: ['sleeping better'] }],
+    });
+
+    expect(result.value.goals[0]?.statement).toBe('Sleep improves.');
+    expect(result.stats.attempts).toBe(2);
+  });
+
+  /**
+   * An extra key coming back when `additionalProperties: false` went out means
+   * the grammar was never applied — and a diagnosis is the one key that must
+   * never survive that.
+   */
+  it('rejects a suggestion carrying a diagnosis, however plausible', async () => {
+    const withDiagnosis = {
+      goals: [
+        {
+          statement: 'Sleep improves.',
+          objectives: [],
+          interventions: [],
+          evidence: [{ note: 0, excerpt: 0 }],
+          diagnosis: 'F41.1',
+        },
+      ],
+    };
+    await expect(
+      provider({ chats: [{ content: JSON.stringify(withDiagnosis) }] }).suggestPlanGoals({
+        diagnoses: [],
+        modality: '',
+        frequency: '',
+        existingGoals: [],
+        notes: [{ index: 0, date: '2026-08-01', excerpts: ['sleeping better'] }],
+      }),
+    ).rejects.toMatchObject({ code: 'invalid_output' });
+  });
+
+  it('rejects a briefing line that is a repetition loop', async () => {
+    const degenerate = { lines: [{ note: 0, text: 'own own own own own own own own own own' }] };
+    await expect(
+      provider({ chats: [{ content: JSON.stringify(degenerate) }] }).composeBrief({
+        notes: [{ index: 0, date: '2026-08-01', title: 'Progress note', points: ['Sleeping better.'] }],
+      }),
+    ).rejects.toMatchObject({ code: 'degenerate_output' });
+  });
+
+  it('refuses to send a note too long to fit the window rather than let it be truncated', async () => {
+    await expect(
+      provider({ chats: [{ content: JSON.stringify(SUMMARY) }] }).summariseNote({
+        noteText: `Subjective: ${'a very long account of the session. '.repeat(2000)}`,
+        sections: SOAP,
+      }),
+    ).rejects.toMatchObject({ code: 'input_too_long' });
+  });
+});
+
 describe('OllamaProvider.describe', () => {
   it('reports the model and its weight format', async () => {
     await expect(provider({ chats: [] }).describe()).resolves.toEqual({

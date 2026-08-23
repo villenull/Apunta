@@ -2,7 +2,14 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { UNCLEAR_MARKER } from '@apunta/shared';
+import {
+  MAX_LOOKBACK_NOTES,
+  MAX_SUMMARY_EXCERPT_CHARS,
+  MAX_SUMMARY_EXCERPTS,
+  MAX_SUMMARY_POINT_CHARS,
+  MAX_SUMMARY_POINTS,
+  UNCLEAR_MARKER,
+} from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -12,11 +19,15 @@ import {
   INTAKE_NOTE_INSTRUCTIONS,
   PROGRESS_NOTE_INSTRUCTIONS,
 } from './default-instructions.js';
+import { NUM_CTX } from './ollama.js';
 import {
   approximateTokens,
+  buildComposeBriefPrompt,
   buildDetectFormatPrompt,
   buildGeneratePrompt,
   buildRefinePrompt,
+  buildSuggestPlanPrompt,
+  buildSummariseNotePrompt,
   orderSections,
   outputFormatBlock,
   tailReminder,
@@ -310,5 +321,138 @@ describe('orderSections', () => {
 describe('approximateTokens', () => {
   it('is conservative, so an over-long prompt is refused rather than truncated', () => {
     expect(approximateTokens('x'.repeat(3500))).toBe(1000);
+  });
+});
+
+/**
+ * M9's two-stage prompts.
+ *
+ * The context arithmetic is the point of these tests, not a detail of them:
+ * both M9 paths exist in two stages *because* one call carrying six notes
+ * would be truncated from the head, dropping the instructions and keeping the
+ * patient material. So each stage is measured against the same budget the
+ * provider enforces.
+ */
+describe('M9 prompts and the context budget', () => {
+  const NOTE = [
+    'Subjective: Patient reports improved sleep since last session and decreased frequency of intrusive thoughts.',
+    '',
+    'Objective: Alert and engaged in session.',
+    '',
+    'Assessment: Continued progress on anxiety management goals.',
+    '',
+    'Plan: Continue weekly sessions.',
+  ].join('\n');
+
+  it('summarises one note per call, and says to copy rather than paraphrase', () => {
+    const prompt = buildSummariseNotePrompt({ noteText: NOTE, sections: SOAP });
+    expect(prompt.system).toContain('character for character');
+    expect(prompt.system).toContain('is discarded');
+    expect(prompt.system).toContain('draw a conclusion it does not state');
+    expect(prompt.user).toContain('improved sleep since last session');
+    expect(prompt.user.trimEnd().endsWith('and nothing else.')).toBe(true);
+  });
+
+  it('keeps a long note inside the budget one note at a time', () => {
+    // A note far longer than anything a session produces.
+    const long = `Subjective: ${'The patient described the week in detail. '.repeat(200)}`;
+    const prompt = buildSummariseNotePrompt({ noteText: long, sections: SOAP });
+    const tokens = approximateTokens(prompt.system) + approximateTokens(prompt.user);
+    expect(tokens).toBeLessThan(NUM_CTX * 0.75);
+  });
+
+  it('gives the drafting call the diagnosis as input, and no way to return one', () => {
+    const prompt = buildSuggestPlanPrompt({
+      diagnoses: ['F41.1 (ICD-10-CM) Generalized anxiety disorder'],
+      modality: 'Individual psychotherapy (CBT)',
+      frequency: 'Weekly, 50 minutes',
+      existingGoals: [],
+      notes: [{ index: 0, date: '2026-08-01', excerpts: ['six, six and a half hours most nights now'] }],
+    });
+
+    expect(prompt.user).toContain('Diagnosis, entered by the therapist: F41.1');
+    expect(prompt.system).toContain('The diagnosis is given to you');
+    expect(prompt.system).toContain('Do not invent a target number or a target date');
+    // The output contract names three keys and none of them is a diagnosis.
+    expect(prompt.system).toContain('"goals"');
+    expect(prompt.system).not.toMatch(/"diagnos/i);
+  });
+
+  it('tells the drafting call to propose beside her goals, not over them', () => {
+    const prompt = buildSuggestPlanPrompt({
+      diagnoses: [],
+      modality: '',
+      frequency: '',
+      existingGoals: ['John sleeps well enough to get through a workday.'],
+      notes: [{ index: 0, date: '2026-08-01', excerpts: ['sleeping a lot better'] }],
+    });
+    expect(prompt.user).toContain('Do not restate, revise or replace these');
+    expect(prompt.user).toContain('John sleeps well enough to get through a workday.');
+    // With no diagnosis recorded it must not go looking for one.
+    expect(prompt.user).toContain('without naming or implying a diagnosis');
+  });
+
+  it('cites by number, so a citation cannot be typed from memory', () => {
+    const prompt = buildSuggestPlanPrompt({
+      diagnoses: [],
+      modality: '',
+      frequency: '',
+      existingGoals: [],
+      notes: [
+        { index: 0, date: '2026-08-01', excerpts: ['first excerpt', 'second excerpt'] },
+        { index: 1, date: '2026-08-08', excerpts: ['third excerpt'] },
+      ],
+    });
+    expect(prompt.user).toContain('Note 0 — 2026-08-01');
+    expect(prompt.user).toContain('  [1] "second excerpt"');
+    expect(prompt.user).toContain('Note 1 — 2026-08-08');
+    expect(prompt.system).toContain('must cite at least one excerpt');
+  });
+
+  /**
+   * The prohibition the owner chose, made structural: the briefing call is
+   * never shown the plan, so it cannot relate a goal to a note.
+   */
+  it('never puts the plan in the briefing prompt', () => {
+    const prompt = buildComposeBriefPrompt({
+      notes: [
+        {
+          index: 0,
+          date: '2026-08-08',
+          title: 'Progress note',
+          points: ['Reported sleeping better since the wind-down routine changed.'],
+        },
+      ],
+    });
+
+    expect(prompt.system).not.toMatch(/goal|objective|treatment plan/i);
+    expect(prompt.user).not.toMatch(/goal|objective/i);
+    expect(prompt.system).toContain('not an assessment');
+    expect(prompt.system).toContain('Do not say whether treatment is working');
+    expect(prompt.user).toContain('Note 0 — 2026-08-08 — Progress note');
+  });
+
+  it('keeps the second stage small even at the maximum lookback', () => {
+    const notes = Array.from({ length: MAX_LOOKBACK_NOTES }, (_, index) => ({
+      index,
+      date: '2026-08-01',
+      title: 'Progress note',
+      points: Array.from({ length: MAX_SUMMARY_POINTS }, () => 'x'.repeat(MAX_SUMMARY_POINT_CHARS)),
+    }));
+    const brief = buildComposeBriefPrompt({ notes });
+    expect(approximateTokens(brief.system) + approximateTokens(brief.user)).toBeLessThan(NUM_CTX * 0.75);
+
+    const suggest = buildSuggestPlanPrompt({
+      diagnoses: ['F41.1 (ICD-10-CM) Generalized anxiety disorder'],
+      modality: 'Individual psychotherapy (CBT)',
+      frequency: 'Weekly, 50 minutes',
+      existingGoals: ['x'.repeat(500)],
+      notes: Array.from({ length: MAX_LOOKBACK_NOTES }, (_, index) => ({
+        index,
+        date: '2026-08-01',
+        excerpts: Array.from({ length: MAX_SUMMARY_EXCERPTS }, () => 'y'.repeat(MAX_SUMMARY_EXCERPT_CHARS)),
+      })),
+    });
+    expect(approximateTokens(suggest.system) + approximateTokens(suggest.user)).toBeLessThan(NUM_CTX * 0.75);
   });
 });

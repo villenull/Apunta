@@ -1,37 +1,55 @@
 import {
+  BriefCompositionSchema,
+  briefCompositionJsonSchema,
   buildRefineSchema,
   buildSectionsSchema,
   DetectedFormatSchema,
   detectedFormatJsonSchema,
+  NoteSummarySchema,
+  noteSummaryJsonSchema,
+  PlanSuggestionSchema,
+  planSuggestionJsonSchema,
   refineJsonSchema,
   sectionsJsonSchema,
+  type BriefComposition,
   type DetectedFormat,
   type GenerateStage,
   type JsonSchemaObject,
+  type NoteSummary,
+  type PlanSuggestion,
   type RefineResult,
   type Sections,
 } from '@apunta/shared';
+import type { z } from 'zod';
 
 import { DEFAULT_OLLAMA_URL } from '../config.js';
-import { findDegenerateSection } from './degenerate.js';
+import { findDegeneration, findDegenerateSection } from './degenerate.js';
 import { aiError, AiError, isConnectionFailure } from './errors.js';
 import { JsonStringStreamDecoder, stripCodeFence } from './json-stream.js';
 import { assertGgufWeights, assertSupportedModelName, defaultModelForMachine } from './model-picker.js';
 import {
   approximateTokens,
+  buildComposeBriefPrompt,
   buildDetectFormatPrompt,
   buildGeneratePrompt,
   buildRefinePrompt,
+  buildSuggestPlanPrompt,
+  buildSummariseNotePrompt,
   orderSections,
+  type ChatPrompt,
 } from './prompts.js';
 import type {
+  ComposeBriefRequest,
   DetectFormatRequest,
   GenerateNoteRequest,
   LlmDescription,
   LlmEvent,
   LlmProvider,
+  LlmResult,
   LlmStats,
   RefineNoteRequest,
+  SummariseNoteRequest,
+  SuggestPlanGoalsRequest,
 } from './types.js';
 
 /**
@@ -277,6 +295,96 @@ export class OllamaProvider implements LlmProvider {
     });
 
     yield { type: 'refined', reply: value.reply, updatedSections: value.updatedSections, stats };
+  }
+
+  // --- M9: two-stage plan drafting and session prep -----------------------
+
+  /**
+   * Stage one, one note at a time.
+   *
+   * The whole reason both M9 paths are two-stage: an over-long prompt is
+   * truncated from the head, so six notes in one call would drop the
+   * instructions and keep the material. `runJson` goes through the same retry
+   * ladder as everything else, which is what checks `prompt_eval_count`
+   * against `num_ctx` on every one of these calls.
+   */
+  async summariseNote(request: SummariseNoteRequest): Promise<LlmResult<NoteSummary>> {
+    return this.runJson(
+      buildSummariseNotePrompt(request),
+      noteSummaryJsonSchema(),
+      NoteSummarySchema,
+      ['points', 'excerpts'],
+      (value) => [...value.points, ...value.excerpts],
+    );
+  }
+
+  /** Stage two of plan drafting. Never writes accepted content — it cannot: it returns suggestions. */
+  async suggestPlanGoals(request: SuggestPlanGoalsRequest): Promise<LlmResult<PlanSuggestion>> {
+    return this.runJson(
+      buildSuggestPlanPrompt(request),
+      planSuggestionJsonSchema(),
+      PlanSuggestionSchema,
+      ['goals'],
+      (value) => value.goals.flatMap((goal) => [goal.statement, ...goal.interventions]),
+    );
+  }
+
+  /** Stage two of session prep. The plan is not in this prompt and never is. */
+  async composeBrief(request: ComposeBriefRequest): Promise<LlmResult<BriefComposition>> {
+    return this.runJson(
+      buildComposeBriefPrompt(request),
+      briefCompositionJsonSchema(),
+      BriefCompositionSchema,
+      ['lines'],
+      (value) => value.lines.map((line) => line.text),
+    );
+  }
+
+  /**
+   * One schema-enforced call whose result is a value rather than a stream.
+   *
+   * The status events the ladder yields are dropped: a promise-shaped call has
+   * nowhere to show "loading the model", and the routes that use these emit
+   * their own per-note progress instead. Everything else — the retry ladder,
+   * the truncation check, the fenced-response diagnosis — is the same code the
+   * streaming paths run, deliberately: a second AI path would be a second set
+   * of failure modes to discover in production.
+   */
+  private async runJson<T>(
+    prompt: ChatPrompt,
+    format: JsonSchemaObject,
+    schema: z.ZodType<T>,
+    keys: readonly string[],
+    freeText: (value: T) => readonly string[],
+  ): Promise<LlmResult<T>> {
+    const model = this.resolveModel();
+    await this.requireUsableModel(model);
+    this.assertFits(prompt.system, prompt.user);
+
+    const validate = (value: unknown): T => {
+      const parsed = schema.safeParse(value);
+      if (!parsed.success) throw new ShapeMismatch(describeShapeMismatch(value, keys));
+      for (const body of freeText(parsed.data)) {
+        const finding = findDegeneration(body);
+        if (finding) {
+          throw new DegenerateOutput(`a field repeats "${finding.token}" ${String(finding.count)} times`);
+        }
+      }
+      return parsed.data;
+    };
+
+    const generator = this.runLadder<T>({
+      model,
+      system: prompt.system,
+      user: prompt.user,
+      format,
+      validate,
+    });
+
+    for (;;) {
+      const next = await generator.next();
+      if (next.done === true) return next.value;
+    }
   }
 
   async detectFormat(request: DetectFormatRequest): Promise<DetectedFormat> {

@@ -1,4 +1,11 @@
-import type { DetectedFormat, GenerateStage, Sections } from '@apunta/shared';
+import type {
+  BriefComposition,
+  DetectedFormat,
+  GenerateStage,
+  NoteSummary,
+  PlanSuggestion,
+  Sections,
+} from '@apunta/shared';
 
 /**
  * The two provider interfaces from PLAN §5, each with a real and a fake
@@ -78,6 +85,62 @@ export type LlmEvent =
       readonly stats: LlmStats;
     };
 
+/**
+ * The material one note contributes to a second-stage call (M9).
+ *
+ * Both of M9's AI paths are two-stage: each note is summarised in its own call
+ * first, and the call that matters sees only these small objects. Ollama
+ * truncates an over-long prompt from the head — dropping the instructions and
+ * keeping the patient material — so "put six notes in one prompt" is not a
+ * quality trade-off, it is the silent failure this project is built against
+ * (`docs/research/m3-preflight-2026-08.md`).
+ */
+export interface SummariseNoteRequest {
+  /** Exactly what the editor shows for that note. */
+  readonly noteText: string;
+  readonly sections: readonly string[];
+}
+
+/** One note's verbatim excerpts, offered to the drafting call by index. */
+export interface SuggestNoteMaterial {
+  /** The number the model cites this note by. Its position in the list. */
+  readonly index: number;
+  /** `YYYY-MM-DD`, so a citation reads as a date. */
+  readonly date: string;
+  readonly excerpts: readonly string[];
+}
+
+export interface SuggestPlanGoalsRequest {
+  /**
+   * The diagnosis, as **input**. Goals are drafted toward it; the model never
+   * proposes one, and the schema it writes into has no field for one.
+   */
+  readonly diagnoses: readonly string[];
+  readonly modality: string;
+  readonly frequency: string;
+  /** Accepted goal statements, so a second run proposes beside them, not over them. */
+  readonly existingGoals: readonly string[];
+  readonly notes: readonly SuggestNoteMaterial[];
+}
+
+/** One note's summary points, offered to the briefing call by index. */
+export interface BriefNoteMaterial {
+  readonly index: number;
+  readonly date: string;
+  readonly title: string;
+  readonly points: readonly string[];
+}
+
+export interface ComposeBriefRequest {
+  readonly notes: readonly BriefNoteMaterial[];
+}
+
+/** A non-streamed call: the validated value plus what the call cost. */
+export interface LlmResult<T> {
+  readonly value: T;
+  readonly stats: LlmStats;
+}
+
 export interface LlmProvider {
   /** Streams a draft, then yields the validated sections object. Throws `AiError`. */
   generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent>;
@@ -85,6 +148,12 @@ export interface LlmProvider {
   refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent>;
   /** Reads a template or an example note and names its sections (M6). */
   detectFormat(request: DetectFormatRequest): Promise<DetectedFormat>;
+  /** Stage one of both M9 paths: one note in, a small structured object out. */
+  summariseNote(request: SummariseNoteRequest): Promise<LlmResult<NoteSummary>>;
+  /** Stage two of plan drafting: proposed goals, each citing offered excerpts (M9). */
+  suggestPlanGoals(request: SuggestPlanGoalsRequest): Promise<LlmResult<PlanSuggestion>>;
+  /** Stage two of session prep: a briefing, every line tied to one note (M9). */
+  composeBrief(request: ComposeBriefRequest): Promise<LlmResult<BriefComposition>>;
   /** For `/api/health` and `smoke:live`: what this provider is talking to. */
   describe(): Promise<LlmDescription>;
 }

@@ -1,7 +1,22 @@
-import type { Sections } from '@apunta/shared';
+import {
+  MAX_BRIEF_LINES,
+  MAX_SUGGESTED_EVIDENCE,
+  MAX_SUGGESTED_GOALS,
+  MAX_SUGGESTED_INTERVENTIONS,
+  MAX_SUGGESTED_OBJECTIVES,
+  MAX_SUMMARY_EXCERPTS,
+  MAX_SUMMARY_POINTS,
+  type Sections,
+} from '@apunta/shared';
 
 import { instructionsFor } from './default-instructions.js';
-import type { DetectFormatRequest, GenerateNoteRequest, RefineNoteRequest } from './types.js';
+import type {
+  ComposeBriefRequest,
+  DetectFormatRequest,
+  GenerateNoteRequest,
+  RefineNoteRequest,
+  SuggestPlanGoalsRequest,
+} from './types.js';
 
 /**
  * Prompt assembly. Stateless per request: the full system prompt goes out on
@@ -234,4 +249,202 @@ export function orderSections(sections: Sections, order: readonly string[]): Sec
   const ordered: Sections = {};
   for (const name of order) ordered[name] = sections[name] ?? '';
   return ordered;
+}
+
+/**
+ * Stage one of both M9 paths: one note, reduced to points and verbatim
+ * excerpts.
+ *
+ * The excerpts are the load-bearing part. They are what a proposed goal will
+ * be shown standing on, and the server verifies each one is a literal
+ * substring of the note before it is offered — so the instruction to copy
+ * rather than paraphrase is not politeness, it is the difference between a
+ * citation that survives verification and one that is silently discarded.
+ *
+ * Deliberately narrow: this call reduces, it does not interpret. Owner answer
+ * 7 — "if I didn't say what I made of it, the note shouldn't either" — governs
+ * anything derived from her notes, not only the notes themselves.
+ */
+export function buildSummariseNotePrompt(request: {
+  noteText: string;
+  sections: readonly string[];
+}): ChatPrompt {
+  const system = [
+    'You reduce one clinical note to a small structured summary, so that a later step can read several notes without exceeding its context.',
+    'You do not interpret the note, add to it, or draw a conclusion it does not state.',
+    '',
+    '## Output format',
+    '',
+    'Return one JSON object and nothing else, with exactly these keys:',
+    '',
+    `  "points" — up to ${String(MAX_SUMMARY_POINTS)} short lines, each one thing the note records. Plain prose, no bullet characters.`,
+    `  "excerpts" — up to ${String(MAX_SUMMARY_EXCERPTS)} short passages copied from the note character for character.`,
+    '',
+    'Copy an excerpt exactly as it appears, including its wording and punctuation. Do not paraphrase, tidy, or join two passages: a passage that is not a literal copy of the note is discarded.',
+    'Choose excerpts that carry something concrete — what the patient reported, what was agreed, a number, a change.',
+    'Every point must be supported by the note. Do not add an impression, a formulation, or a recommendation the note does not contain.',
+    'If the note holds nothing usable, return two empty arrays.',
+  ].join('\n');
+
+  const user = [
+    'The note:',
+    '',
+    request.noteText.trim(),
+    '',
+    'Reply with a single JSON object with exactly the keys "points" and "excerpts", and nothing else.',
+  ].join('\n');
+
+  return { system, user };
+}
+
+/**
+ * The rules a measurable objective has to satisfy, and the near-misses that
+ * look right and are not.
+ *
+ * From `docs/research/m9-plan-requirements-2026-08.md` §6, which draws them
+ * from the payer and accreditor documents. "Measurable" is the most-failed
+ * requirement in the field — the Joint Commission standard ran a 61.69%
+ * noncompliance rate — and it is a shape a model imitates rather than a rule
+ * it applies, so the near-misses are here for the same reason the good
+ * examples are.
+ */
+const OBJECTIVE_RULES = [
+  '## What makes an objective measurable',
+  '',
+  '1. The subject is the client and the verb is observable. If the therapist is the subject, it is an intervention, not an objective.',
+  '2. It carries a number — a count, a frequency, a duration, or a rating the client gives.',
+  '3. It names where the number comes from: "his sleep log", "count of completed thought records", "her report at the start of session".',
+  '4. It states the baseline where the notes give one.',
+  "5. It uses the client's own words where they exist, in clinical register.",
+  '6. It never contains "as clinically indicated", "as needed", "continue to", "work on", "explore", "process", or "improve".',
+  '',
+  'Objectives that work:',
+  '  "John will report 6 or more hours of sleep on at least 5 of 7 nights, for 3 consecutive weeks." Measure: his weekly sleep log. Baseline: 4 hours most nights at intake.',
+  '  "Maria will take part in at least one planned social contact outside her household each week." Measure: her report at the start of each session. Baseline: most Sundays spent in bed through July.',
+  '',
+  'Near-misses, and what is wrong with each:',
+  '  "John will sleep better." — no number and no measure. That is the goal, offered as an objective.',
+  '  "John will reduce intrusive thoughts." — direction without magnitude; nothing separates met from unmet.',
+  '  "John will continue CBT for insomnia." — the therapist is the actor. That belongs in the interventions.',
+  '  "Maria will attend weekly sessions." — attendance is a condition of treatment, not an objective.',
+  '  "Maria will reduce grief symptoms by 50%." — a percentage with no instrument behind it. It looks defensible until someone asks.',
+].join('\n');
+
+/**
+ * Stage two of plan drafting.
+ *
+ * Three things are structural rather than instructed, and the prompt only
+ * restates them because the schema is invisible to the model:
+ *
+ * - **The diagnosis is input.** It is given here so goals are drafted toward
+ *   it, which is the requirement being drafted for. The model has nowhere to
+ *   write one back.
+ * - **Citations are indices** into the excerpts offered below, which the
+ *   server verified against the notes. A goal that cites nothing resolvable is
+ *   dropped rather than shown.
+ * - **Targets are blank.** A note can supply a baseline; it cannot supply a
+ *   target, because she never said one. There is no field for it.
+ */
+export function buildSuggestPlanPrompt(request: SuggestPlanGoalsRequest): ChatPrompt {
+  const system = [
+    'You draft candidate treatment-plan goals for a therapist to review. Everything you write is a suggestion she will accept, edit or discard — nothing you produce goes into her plan on its own.',
+    '',
+    OBJECTIVE_RULES,
+    '',
+    '## What you may and may not draw on',
+    '',
+    "Work only from the excerpts below. They are quoted from the therapist's own notes.",
+    'The diagnosis is given to you. It is hers. Do not restate it, question it, add to it, or infer one — you have nowhere to write one and a diagnosis from you would be worthless to her.',
+    'Do not invent a target number or a target date. The notes can tell you where the client started; they cannot tell you where he should end up, and that is hers to set.',
+    'Every goal you propose must cite at least one excerpt. If you cannot cite one, do not propose the goal.',
+    '',
+    '## Output format',
+    '',
+    'Return one JSON object and nothing else, with exactly this key:',
+    '',
+    `  "goals" — up to ${String(MAX_SUGGESTED_GOALS)} objects, each with:`,
+    '      "statement" — the goal, which may be broad. One sentence about the client.',
+    `      "objectives" — up to ${String(MAX_SUGGESTED_OBJECTIVES)} objects, each with "statement", "measure" and "baseline". Leave "baseline" as "" unless an excerpt gives you one.`,
+    `      "interventions" — up to ${String(MAX_SUGGESTED_INTERVENTIONS)} short strings naming what the therapist does, including the modality.`,
+    `      "evidence" — up to ${String(MAX_SUGGESTED_EVIDENCE)} objects, each { "note": <note number>, "excerpt": <excerpt number> }, pointing at the excerpts this goal came from.`,
+    '',
+    'Do not add any other key. Do not use markdown or bullet characters.',
+  ].join('\n');
+
+  const parts: string[] = [];
+  parts.push(
+    request.diagnoses.length === 0
+      ? 'Diagnosis: not recorded. Draft goals from the material below without naming or implying a diagnosis.'
+      : `Diagnosis, entered by the therapist: ${request.diagnoses.join('; ')}`,
+  );
+  if (request.modality.trim() !== '') parts.push(`Service modality: ${request.modality.trim()}`);
+  if (request.frequency.trim() !== '') parts.push(`Service frequency: ${request.frequency.trim()}`);
+
+  if (request.existingGoals.length > 0) {
+    parts.push(
+      '',
+      'Goals already in her plan. Do not restate, revise or replace these — propose only what is missing:',
+      ...request.existingGoals.map((goal) => `  - ${goal}`),
+    );
+  }
+
+  parts.push('', 'Excerpts from her recent notes, numbered:');
+  for (const note of request.notes) {
+    parts.push('', `Note ${String(note.index)} — ${note.date}`);
+    note.excerpts.forEach((excerpt, position) => {
+      parts.push(`  [${String(position)}] "${excerpt}"`);
+    });
+  }
+
+  parts.push(
+    '',
+    'Reply with a single JSON object with exactly the key "goals", and nothing else. Cite every goal.',
+  );
+
+  return { system, user: parts.join('\n') };
+}
+
+/**
+ * Stage two of session prep.
+ *
+ * **The plan is not in this prompt, and must never be.** The owner declined
+ * having the app draw connections between her plan and her notes, and that
+ * covers prep as well as drafting (M9 §"No goal tracking"). Keeping the goals
+ * out of the call is what makes the prohibition structural rather than a rule
+ * the model could be talked out of: it cannot relate a goal to a note it was
+ * never shown. Prep presents the notes; the screen puts the plan beside them;
+ * she does the connecting.
+ */
+export function buildComposeBriefPrompt(request: ComposeBriefRequest): ChatPrompt {
+  const system = [
+    'You prepare a short reading brief for a therapist who is about to walk into a session. It is a reminder of what her recent notes say, not an assessment.',
+    '',
+    '## What the brief is',
+    '',
+    'Each line restates one thing from one note, in her own clinical register, so she can scan it in twenty seconds.',
+    'Do not say whether treatment is working, whether anything is improving, or what should happen next.',
+    'Do not add anything the notes do not say. If two notes cover the same ground, keep the more recent one.',
+    'Put the most recent material first.',
+    '',
+    '## Output format',
+    '',
+    'Return one JSON object and nothing else, with exactly this key:',
+    '',
+    `  "lines" — up to ${String(MAX_BRIEF_LINES)} objects, each { "note": <the number of the note it came from>, "text": <one sentence> }.`,
+    '',
+    'Every line comes from exactly one note, and "note" must be that note\'s number. Do not merge two notes into one line.',
+    'Do not add any other key. Do not use markdown or bullet characters.',
+  ].join('\n');
+
+  const parts: string[] = ['Her recent notes, newest first, reduced to points:'];
+  for (const note of request.notes) {
+    parts.push('', `Note ${String(note.index)} — ${note.date} — ${note.title}`);
+    for (const point of note.points) parts.push(`  - ${point}`);
+  }
+  parts.push(
+    '',
+    'Reply with a single JSON object with exactly the key "lines", and nothing else. Every line names the note it came from.',
+  );
+
+  return { system, user: parts.join('\n') };
 }

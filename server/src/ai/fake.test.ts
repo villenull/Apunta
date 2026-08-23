@@ -1,7 +1,15 @@
 import { sectionsToText, type Sections } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
-import { fakeDetectFormat, FakeLlmProvider, fakeRefine, FakeSttProvider } from './fake.js';
+import {
+  fakeComposeBrief,
+  fakeDetectFormat,
+  fakeRefine,
+  fakeSummariseNote,
+  fakeSuggestPlanGoals,
+  FakeLlmProvider,
+  FakeSttProvider,
+} from './fake.js';
 import type { LlmEvent } from './types.js';
 
 const SOAP = ['Subjective', 'Objective', 'Assessment', 'Plan'];
@@ -231,5 +239,86 @@ describe('FakeSttProvider', () => {
     }
     expect(events).toEqual(['progress', 'progress', 'progress', 'progress', 'transcript']);
     expect(transcript).toContain('John Smith');
+  });
+});
+
+describe('the faked M9 stages', () => {
+  const SOAP = ['Subjective', 'Objective', 'Assessment', 'Plan'];
+  const NOTE = [
+    'Subjective: Patient reports improved sleep since last session. He is getting six hours most nights.',
+    '',
+    'Objective:',
+    '',
+    'Assessment: Continued progress on anxiety management goals.',
+    '',
+    'Plan: Continue weekly sessions.',
+  ].join('\n');
+
+  /**
+   * The property the whole evidence chain rests on. A fake that offered a
+   * paraphrase would pass a verification the real path fails, and every test
+   * built on it would be proving something about a path that does not exist.
+   */
+  it('only offers excerpts that are literally in the note', () => {
+    const summary = fakeSummariseNote({ noteText: NOTE, sections: SOAP });
+
+    expect(summary.excerpts.length).toBeGreaterThan(0);
+    for (const excerpt of summary.excerpts) expect(NOTE).toContain(excerpt);
+    // The empty section contributes nothing rather than an invented line.
+    expect(summary.points.join(' ')).not.toContain('Objective');
+  });
+
+  it('has nothing to say about an empty note', () => {
+    expect(fakeSummariseNote({ noteText: '', sections: SOAP })).toEqual({ points: [], excerpts: [] });
+  });
+
+  it('proposes goals that cite an offered excerpt, and never a diagnosis', () => {
+    const suggestion = fakeSuggestPlanGoals({
+      diagnoses: ['F41.1 (ICD-10-CM) Generalized anxiety disorder'],
+      modality: 'Individual psychotherapy (CBT)',
+      frequency: 'Weekly, 50 minutes',
+      existingGoals: [],
+      notes: [{ index: 0, date: '2026-08-08', excerpts: ['improved sleep since last session'] }],
+    });
+
+    expect(suggestion.goals).toHaveLength(1);
+    const goal = suggestion.goals[0];
+    expect(goal?.statement).toContain('John sleeps well enough');
+    expect(goal?.evidence).toEqual([{ note: 0, excerpt: 0 }]);
+    expect(JSON.stringify(suggestion)).not.toMatch(/F41|diagnos/i);
+    // A baseline may be cited; a target may not be invented.
+    expect(goal?.objectives[0]?.baseline).toBe('improved sleep since last session');
+    expect(JSON.stringify(suggestion)).not.toMatch(/target/i);
+  });
+
+  it('does not propose a goal that is already in the plan', () => {
+    const notes = [{ index: 0, date: '2026-08-08', excerpts: ['improved sleep since last session'] }];
+    const first = fakeSuggestPlanGoals({
+      diagnoses: [],
+      modality: '',
+      frequency: '',
+      existingGoals: [],
+      notes,
+    });
+    const second = fakeSuggestPlanGoals({
+      diagnoses: [],
+      modality: '',
+      frequency: '',
+      existingGoals: [first.goals[0]?.statement ?? ''],
+      notes,
+    });
+    expect(second.goals).toEqual([]);
+  });
+
+  it('composes a briefing whose every line names one note', () => {
+    const brief = fakeComposeBrief({
+      notes: [
+        { index: 0, date: '2026-08-08', title: 'Progress note', points: ['Sleeping better.', 'Alert.'] },
+        { index: 1, date: '2026-08-01', title: 'Progress note', points: ['Poor sleep.'] },
+      ],
+    });
+
+    expect(brief.lines.map((line) => line.note)).toEqual([0, 0, 1]);
+    expect(brief.lines[0]?.text).toBe('Sleeping better.');
   });
 });
