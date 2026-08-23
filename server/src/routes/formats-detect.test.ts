@@ -2,7 +2,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DetectFormatResponse, NoteFormat, SkillFlattenResponse } from '@apunta/shared';
+import {
+  MAX_DETECT_CHARS,
+  type DetectFormatResponse,
+  type NoteFormat,
+  type SkillFlattenResponse,
+} from '@apunta/shared';
 import { strToU8, zipSync } from 'fflate';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -110,6 +115,20 @@ describe('POST /api/formats/detect', () => {
       { name: 'files', value: Buffer.from('Presenting problem:\nHistory:\nPlan:\n'), filename: 't.txt' },
     ]);
     expect(response.json<DetectFormatResponse>().sections).toEqual(['Presenting problem', 'History', 'Plan']);
+  });
+
+  it('caps a long upload and says so, rather than letting the prompt be truncated', async () => {
+    // Ollama truncates from the head — the instructions go and the material
+    // stays. The budget is spent here instead, and the answer admits it.
+    const long = `Subjective:\n${'a'.repeat(MAX_DETECT_CHARS)}\nPlan:\n`;
+    const response = await post('/api/formats/detect', [
+      { name: 'kind', value: 'template' },
+      { name: 'files', value: Buffer.from(long), filename: 'long.txt' },
+    ]);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json<DetectFormatResponse>().truncated).toBe(true);
+    expect(llm.detections[0]?.text.length).toBeLessThanOrEqual(MAX_DETECT_CHARS);
   });
 
   it('saves nothing — the therapist confirms on the next screen', async () => {
