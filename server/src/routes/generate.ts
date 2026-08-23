@@ -1,5 +1,6 @@
 import {
   emptySectionNames,
+  FIRST_PASS_MESSAGE,
   GenerateRequestSchema,
   sectionsToText,
   type GenerateRequest,
@@ -12,6 +13,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
 import type { AiProviders, LlmStats } from '../ai/types.js';
+import { createChatMessage } from '../db/chat-messages.js';
 import { getFormat } from '../db/formats.js';
 import { createNote } from '../db/notes.js';
 import { createTranscript } from '../db/transcripts.js';
@@ -102,9 +104,16 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
 }
 
 /**
- * The note and one transcript row per source it was drafted from. Typed notes
- * and a recording are different rows because they are different evidence, and
- * M5 will supply both for the same note.
+ * The note, one transcript row per source it was drafted from, and the
+ * assistant's opening turn in the refine thread.
+ *
+ * Typed notes and a recording are different rows because they are different
+ * evidence, and M5 will supply both for the same note.
+ *
+ * The opening turn is written here rather than by the browser so that the
+ * thread is complete the moment the note exists: a reload, a second tab, or a
+ * draft opened next week all show the same conversation, and nothing has to
+ * synthesise a message that was never stored.
  */
 function persist(db: Database, input: GenerateRequest, format: NoteFormat, sections: Sections): Note {
   const note = createNote(db, {
@@ -123,6 +132,13 @@ function persist(db: Database, input: GenerateRequest, format: NoteFormat, secti
   if (transcript !== '') {
     createTranscript(db, { note_id: note.id, source: 'audio', raw_text: input.transcript ?? '' });
   }
+
+  createChatMessage(db, {
+    note_id: note.id,
+    role: 'assistant',
+    text: FIRST_PASS_MESSAGE,
+    ref_quote: null,
+  });
   return note;
 }
 

@@ -52,6 +52,30 @@ export type { CreateTranscriptInput, Transcript, TranscriptSource } from './tran
 export { ChatMessageSchema, ChatRoleSchema, CreateChatMessageInputSchema } from './chat-message.js';
 export type { ChatMessage, ChatRole, CreateChatMessageInput } from './chat-message.js';
 
+export {
+  CHAT_EVENT_NAMES,
+  CHAT_HISTORY_TURNS,
+  ChatErrorEventSchema,
+  ChatMessageEventSchema,
+  ChatMessageListResponseSchema,
+  ChatNoteUpdatedEventSchema,
+  ChatRequestSchema,
+  ChatStatusEventSchema,
+  ChatTokenEventSchema,
+  FIRST_PASS_MESSAGE,
+  PUBLISHED_REFUSAL,
+} from './chat.js';
+export type {
+  ChatErrorEvent,
+  ChatEventName,
+  ChatMessageEvent,
+  ChatMessageListResponse,
+  ChatNoteUpdatedEvent,
+  ChatRequest,
+  ChatStatusEvent,
+  ChatTokenEvent,
+} from './chat.js';
+
 export { SettingKeySchema, SettingsSchema, UpdateSettingsRequestSchema } from './settings.js';
 export type { Settings, UpdateSettingsRequest } from './settings.js';
 

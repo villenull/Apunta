@@ -9,6 +9,7 @@ import type { AiProviders } from './ai/types.js';
 import { loadConfig, type AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { registerErrorHandler } from './http/errors.js';
+import { registerChatRoutes } from './routes/chat.js';
 import { registerFormatRoutes } from './routes/formats.js';
 import { registerGenerateRoute } from './routes/generate.js';
 import { registerHealthRoute } from './routes/health.js';
@@ -63,6 +64,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerFormatRoutes(app, db);
   registerSettingsRoutes(app, db);
   registerGenerateRoute(app, db, providers);
+  registerChatRoutes(app, db, providers);
 
   const hasBuiltSpa = existsSync(config.webDistDir);
   if (hasBuiltSpa) {
