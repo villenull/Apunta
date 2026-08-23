@@ -62,7 +62,17 @@ export function RefineColumn({
   const [error, setError] = useState<string | null>(null);
 
   const threadRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const updateThread = thread.update;
+
+  // Switching notes or closing the tab mid-reply must stop the model, not
+  // leave it generating into a stream nobody is reading: the server watches
+  // for the disconnect and aborts its call to Ollama.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const messages = thread.state.status === 'ready' ? thread.state.data : [];
 
@@ -95,6 +105,9 @@ export function RefineColumn({
     setStreaming('');
     setStatus(null);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       await sendChatMessage(
         noteId,
@@ -114,8 +127,11 @@ export function RefineColumn({
           },
           onNoteUpdated,
         },
+        controller.signal,
       );
     } catch (thrown) {
+      // An abort is her navigating away, not a failure to report.
+      if (controller.signal.aborted) return;
       setError(errorMessage(thrown));
       // Her message is already saved server-side; drop only the half-written
       // reply, which is not.
@@ -124,8 +140,11 @@ export function RefineColumn({
       // before its `message` event.
       thread.reload();
     } finally {
-      setSending(false);
-      setStatus(null);
+      abortRef.current = null;
+      if (!controller.signal.aborted) {
+        setSending(false);
+        setStatus(null);
+      }
     }
   }
 

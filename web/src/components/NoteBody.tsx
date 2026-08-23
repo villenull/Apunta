@@ -66,7 +66,9 @@ export function NoteBody({
               </mark>
             ),
           )}
-          {/* A trailing newline the textarea also reserves a line for. */}
+          {/* A sentinel: a text node ending in a newline has it collapsed at
+              the end of a block, which would leave the backdrop a line short
+              for a note that ends in one. */}
           {'\n'}
         </div>
 
