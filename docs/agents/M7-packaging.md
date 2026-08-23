@@ -64,6 +64,12 @@ setup-script path clean and well-documented, because M8 builds on it.
      empty when needed.
    - **Encrypt any backup that leaves the machine**, since it no longer has
      FileVault under it.
+   - **Include the treatment plans** in the human-readable half, one document
+     per version. M9 built the renderer (`planDocumentText` in `shared/`) and
+     serves it at `GET /api/plans/:id/export`; the zip's markdown rendering
+     currently stops at notes. A plan version is a payer-facing record whose
+     retention is measured in years, and export is the part of it that
+     outlives this schema (M9 deliverable 6, `docs/research/m9-plan-requirements-2026-08.md` §5).
    - Restore instructions must say: restore the `.db` alone and **delete any
      stale `-wal`/`-shm` beside it**. Missing that step is what actually
      causes damage. (Modern Time Machine snapshots APFS, so the trio is
