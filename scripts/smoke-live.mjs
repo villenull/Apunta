@@ -43,6 +43,19 @@ const arg = (name) => {
   return i === -1 ? undefined : argv[i + 1];
 };
 
+// `npm run smoke:live --runs 5` does not do what it looks like: npm claims
+// `--runs` as its own config and forwards only `5`. The script would then run
+// once, silently, which is the weakest possible evidence about an intermittent
+// bug while looking like the strong check. Catch it instead of obeying it.
+const stray = argv.filter((a) => /^\d+$/.test(a) && argv[argv.indexOf(a) - 1] !== '--runs');
+if (stray.length > 0) {
+  fail(
+    `unexpected bare argument "${stray[0]}".\n` +
+      'If you meant to repeat runs, npm needs the separator:\n' +
+      '  npm run smoke:live -- --runs 5',
+  );
+}
+
 const FIXTURES = join(root, 'e2e', 'fixtures', 'eval');
 const runs = Number(arg('runs') ?? 1);
 const intake = arg('format') === 'intake';

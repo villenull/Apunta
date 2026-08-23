@@ -89,8 +89,18 @@ for the failure modes fakes cannot show — a repetition loop under constrained
 decoding, a prompt long enough that Ollama truncated the instructions off the
 front, generation that stopped at the token limit, and weights whose engine
 ignores the schema entirely. It takes `--fixture`, `--model`, `--format
-intake` and `--runs n`; the loop it looks for is intermittent, so `--runs 5`
-is the honest check.
+intake` and `--runs n`. The loop it looks for is intermittent, so five runs is
+the honest check — and note the `--`, without which npm swallows the flag and
+silently runs once:
+
+```sh
+npm run smoke:live -- --runs 5
+```
+
+Before trusting any of this on the target Mac, run `bash
+scripts/preflight-macos.sh` — see [`docs/PREFLIGHT.md`](docs/PREFLIGHT.md). It
+is read-only and checks the assumptions this project has never been able to
+verify from a Linux container.
 `npm run seed` fills the database with the prototype's sample practice (John
 Smith and friends) so there is something to click through; it leaves a
 database that already has data alone unless you pass `-- --reset`.
