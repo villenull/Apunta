@@ -130,6 +130,19 @@ timestamps.
 - `chat_messages` — id, note_id, role (`user|assistant`), text,
   ref_quote (nullable — highlighted excerpt), created_at
 - `settings` — key, value (JSON)
+- `treatment_plans` — id, patient_id, version, status
+  (`draft|active|superseded`), created_at, activated_at (nullable),
+  review_due (nullable), content (JSON), superseded_by (nullable). Versioned:
+  a review creates a new row rather than overwriting, because the plan is
+  payer-facing and needs a dated revision history (M9)
+- `plan_goals` — id, plan_id, ordinal, statement, objectives (JSON),
+  interventions (JSON), measure, target_date (nullable), status
+  (`proposed|accepted|met|discontinued`), evidence (JSON — note ids with
+  quoted excerpts), created_at. `proposed` is a model suggestion and is **not**
+  part of the plan until accepted (M9)
+- `session_briefs` — id, patient_id, generated_at, content (JSON),
+  source_note_ids (JSON). A row exists only when the therapist saves a
+  briefing; prep is otherwise ephemeral (M9)
 
 **Note content contract:** generation and refinement always round-trip
 through a sections object `{ "<Section name>": "<body>", ... }` (one required
@@ -152,6 +165,13 @@ and receives a full revised sections object back.
 - `GET|POST /api/formats`, `GET|PATCH|DELETE /api/formats/:id`
 - `POST /api/formats/detect` (multipart .docx/.pdf/.txt files or body text) → `{ name, sections[] }`
 - `GET|PUT /api/settings`
+- `GET /api/patients/:id/plan` (+ `?version=`, `/versions`),
+  `POST /api/patients/:id/plan` (start a review),
+  `PATCH|POST|DELETE` on `/api/plans/:id/goals[/:goalId]`
+- `POST /api/patients/:id/plan/suggest` → SSE stream of **proposed** goals
+  with cited evidence; never writes accepted content
+- `POST /api/patients/:id/prep` → SSE briefing, persisted only via
+  `POST /api/patients/:id/prep/save`
 
 Request/response shapes are zod schemas in `shared/`, used for server
 validation, client types, and (for LLM outputs) JSON-schema generation.
@@ -211,6 +231,7 @@ M0 scaffold → M1 data+API → M2 web shell → M3 AI providers ─┬→ M4 re
                                                             ├→ M5 audio capture
                                                             └→ M6 format onboarding
 M4+M5+M6 → M7 setup, polish & eval → M8 double-clickable installer
+M3+M4 → M9 treatment plan & session prep (independent of M5/M6)
 ```
 
 M4, M5 and M6 each depend only on M3, so they may be tackled in any order
@@ -231,6 +252,7 @@ concurrently would collide in the same working tree. See
 | M6 | `M6-formats.md` | Format onboarding (template/examples/manual), detection, editor, skill import |
 | M7 | `M7-packaging.md` | macOS setup script, first-run wizard, model auto-pick, export, polish, eval harness |
 | M8 | `M8-installer.md` | Double-clickable `.dmg` — bundled runtimes, first-run download UI, signing, non-technical install guide |
+| M9 | `M9-treatment-plan.md` | Versioned treatment plan (model-suggested, therapist-owned) + on-demand session prep briefings |
 
 **M7 vs M8.** M7 makes the app work on a developer's Mac via a setup script.
 M8 makes it installable by someone who has never opened a terminal: no
