@@ -132,17 +132,39 @@ timestamps.
 - `settings` — key, value (JSON)
 - `treatment_plans` — id, patient_id, version, status
   (`draft|active|superseded`), created_at, activated_at (nullable),
-  review_due (nullable), content (JSON), superseded_by (nullable). Versioned:
-  a review creates a new row rather than overwriting, because the plan is
-  payer-facing and needs a dated revision history (M9)
-- `plan_goals` — id, plan_id, ordinal, statement, objectives (JSON),
-  interventions (JSON), measure, target_date (nullable), status
-  (`proposed|accepted|met|discontinued`), evidence (JSON — note ids with
-  quoted excerpts), created_at. `proposed` is a model suggestion and is **not**
-  part of the plan until accepted (M9)
-- `session_briefs` — id, patient_id, generated_at, content (JSON),
-  source_note_ids (JSON). A row exists only when the therapist saves a
+  review_due, review_interval_days, diagnoses (JSON — code, system,
+  description, primary), presenting_problem, strengths, modality, frequency,
+  discharge_criteria, effective_from / effective_to, clinician_name /
+  clinician_credential / clinician_licence / clinician_npi (snapshotted from
+  Settings at activation), attested_at, attestation_text,
+  client_participation (`not_recorded|reviewed_with_client|declined|signed_elsewhere`)
+  with its date and reason, superseded_by (nullable). Versioned: a review
+  creates a new row rather than overwriting, because the plan is payer-facing
+  and needs a dated revision history — which is also why the diagnosis and the
+  clinician identity live on the **version** rather than on the patient, where
+  a later change would silently rewrite what they were at the time (M9,
+  `docs/research/m9-plan-requirements-2026-08.md` §3.1)
+- `plan_goals` — id, plan_id, ordinal, statement, objectives (JSON array of
+  **objects**: statement, measure, baseline, target_value, target_date,
+  source), interventions (JSON), target_date (nullable), status
+  (`proposed|accepted|met|discontinued`), source
+  (`model_suggested|clinician_authored`), evidence (JSON — note id, note date,
+  section and the verbatim excerpt), carried_from_goal_id (nullable — lineage
+  across a review), created_at, accepted_at. `proposed` is a model suggestion
+  and is **not** part of the plan until accepted; a CHECK constraint keeps
+  `accepted_at` set exactly when it is no longer proposed. Objectives are
+  objects rather than strings because measurability attaches to the objective,
+  and a schema of strings cannot express a measurable one (M9)
+- `session_briefs` — id, patient_id, generated_at, content (JSON — the lines,
+  each with the note it came from, plus how far back it read), source_note_ids
+  (JSON), saved, created_at. A row exists only when the therapist saves a
   briefing; prep is otherwise ephemeral (M9)
+
+**Calendar dates vs instants.** `review_due`, `target_date`, `effective_from`,
+`effective_to` and `client_participation_on` are **calendar dates**
+(`YYYY-MM-DD`), not UTC instants: a due date stored as an instant moves by a
+day depending on the reader's timezone, and this app renders dates in local
+time in a browser. Everything else stays a UTC ISO timestamp.
 
 **Note content contract:** generation and refinement always round-trip
 through a sections object `{ "<Section name>": "<body>", ... }` (one required
@@ -167,11 +189,16 @@ and receives a full revised sections object back.
 - `GET|PUT /api/settings`
 - `GET /api/patients/:id/plan` (+ `?version=`, `/versions`),
   `POST /api/patients/:id/plan` (start a review),
+  `PATCH /api/plans/:id` (the plan-level fields, hers to type),
+  `POST /api/plans/:id/activate` (puts a version in force: supersedes the
+  previous one, snapshots the clinician, dates the attestation),
+  `GET /api/plans/:id/export` (`text/plain` — the payer-facing document),
   `PATCH|POST|DELETE` on `/api/plans/:id/goals[/:goalId]`
 - `POST /api/patients/:id/plan/suggest` → SSE stream of **proposed** goals
   with cited evidence; never writes accepted content
 - `POST /api/patients/:id/prep` → SSE briefing, persisted only via
-  `POST /api/patients/:id/prep/save`
+  `POST /api/patients/:id/prep/save`; `GET /api/patients/:id/prep` lists the
+  briefings she kept
 
 Request/response shapes are zod schemas in `shared/`, used for server
 validation, client types, and (for LLM outputs) JSON-schema generation.
@@ -186,6 +213,10 @@ interface LlmProvider {
   generateNote(req: { instructions: string; sections: string[]; transcript: string }): AsyncIterable<LlmEvent>;
   refineNote(req: { instructions: string; sections: string[]; noteText: string; history: ChatTurn[]; message: string; refQuote?: string }): AsyncIterable<LlmEvent>;
   detectFormat(req: { kind: 'template' | 'examples' | 'manual'; text: string }): Promise<{ name: string; sections: string[] }>;
+  // M9, both stages of the plan and prep paths:
+  summariseNote(req: { noteText: string; sections: string[] }): Promise<LlmResult<NoteSummary>>;
+  suggestPlanGoals(req: { diagnoses: string[]; modality: string; frequency: string; existingGoals: string[]; notes: SuggestNoteMaterial[] }): Promise<LlmResult<PlanSuggestion>>;
+  composeBrief(req: { notes: BriefNoteMaterial[] }): Promise<LlmResult<BriefComposition>>;
 }
 interface SttProvider {
   transcribe(req: { wavPath: string; vocabulary: string[] }): AsyncIterable<SttEvent>; // progress + final text
@@ -199,6 +230,20 @@ interface SttProvider {
   — the model may answer a question without touching the note. The **server**
   enforces the published-lock: if the note is published, `updatedSections` is
   discarded and the canned "unlock first" reply from the prototype is used.
+- **M9's two paths are two-stage, and that is a safety property rather than a
+  performance one.** Ollama truncates an over-long prompt from the head, so one
+  call carrying five notes would drop the instructions and keep the patient
+  material. Each note is summarised in its own call (`summariseNote`), and the
+  call that matters — `suggestPlanGoals` or `composeBrief` — sees only those
+  small objects. Both go through the same retry ladder as everything else,
+  which is what checks `prompt_eval_count` against `num_ctx` on every call.
+  The lookback is a setting (`ai_lookback_notes`, default 5, hard cap 12).
+- `suggestPlanGoals` **has no diagnosis field in either direction** and no way
+  to state a target value or date: the diagnosis goes in as input, and a
+  target is a number no note contains. It cites evidence by index into
+  excerpts the server verified as literal substrings of the note, so a
+  citation cannot be invented. `composeBrief` is never shown the plan, which
+  is what makes "nothing connects goals to notes" structural.
 - `FakeLlmProvider` / `FakeSttProvider`: deterministic, instant, keyed on
   input (e.g. transcript containing "sleep" yields the prototype's sample
   SOAP note). All CI runs use fakes; real-model runs are a manual smoke

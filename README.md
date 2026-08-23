@@ -5,10 +5,12 @@ summaries into structured clinical notes. The UI runs in a browser tab; all
 AI processing (transcription and note drafting) runs on the local PC with
 free, open-weight models — nothing leaves the machine.
 
-**Status: a note can now be drafted and then repaired without touching it
-(M4) — describe what is wrong in the chat and the model rewrites the note,
-with the published lock enforced server-side. The app still runs with no AI
-installed at all (`APUNTA_FAKE_AI=1`). Audio capture (M5) is next.**
+**Status: alongside drafting and repairing a note (M3, M4), the app now
+carries a versioned treatment plan and prepares her for a session (M9). The
+model drafts goals from her recent notes and she owns them — a suggestion is
+not part of the plan until she accepts it, and every one arrives quoting the
+note it came from. The app still runs with no AI installed at all
+(`APUNTA_FAKE_AI=1`). Audio capture (M5) is next.**
 Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
 [`docs/agents/`](docs/agents/README.md) in order M0 → M9.
@@ -29,7 +31,7 @@ branch — a plain clone gets all of it:
 git clone https://github.com/villenull/Apunta.git
 cd Apunta
 npm install          # Node 22+; better-sqlite3 needs a prebuilt binary or a compiler
-npm test             # 150 tests — confirms the checkout is sound
+npm test             # 476 tests — confirms the checkout is sound
 ```
 
 ### Where the project stands
@@ -41,7 +43,8 @@ npm test             # 150 tests — confirms the checkout is sound
 | M2 web shell | done — prototype ported to React: workspace, capture, settings, manual format onboarding |
 | M3 AI providers | done — provider layer, fakes, Ollama drafting with enforced schema, typed note → streamed draft |
 | M4 refine chat | done — streaming chat that rewrites the note, highlight-refs, server-side publish lock, empty-section and unclear-dictation markers |
-| M5 onwards | planned; packets written in `docs/agents/` |
+| M9 treatment plan + prep | done — versioned payer-facing plan, model-drafted goals she accepts or discards with the note text they came from, review flow with lineage, dated attestation, plain-text export, and a session briefing that reads the last few notes one call at a time |
+| M5–M8 | planned; packets written in `docs/agents/` |
 
 Ready and waiting for the packets that need them: the evaluation corpus in
 `e2e/fixtures/eval/` (M7), and the research in `docs/research/` — a privacy
