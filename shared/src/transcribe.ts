@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 import { boundedText, IdSchema, MAX_BODY_CHARS, optionalText } from './common.js';
 import type { AiErrorCodeSchema } from './generate.js';
-import { AUDIO_SAMPLE_RATE } from './wav.js';
 
 /**
  * `POST /api/transcribe` — record → transcript → draft, in one request (M5).
@@ -77,8 +76,6 @@ export const STT_VOCABULARY_SETTING = 'stt_vocabulary';
 export const MAX_VOCABULARY_TERMS = 200;
 export const MAX_VOCABULARY_TERM_CHARS = 60;
 
-export const VocabularySchema = z.array(z.string().trim().min(1).max(MAX_VOCABULARY_TERM_CHARS));
-
 /**
  * Whisper's `initial_prompt` shares the text context window, so the rendered
  * prompt is truncated to this many tokens rather than sent whole. Upstream's
@@ -118,6 +115,3 @@ export const WARN_RECORDING_SECONDS = 30 * 60;
  * The 60-minute cap at 16 kHz mono 16-bit is ~115 MB; this rounds up.
  */
 export const MAX_AUDIO_BYTES = 128 * 1024 * 1024;
-
-/** Bytes one second of the recording format occupies. */
-export const AUDIO_BYTES_PER_SECOND = AUDIO_SAMPLE_RATE * 2;

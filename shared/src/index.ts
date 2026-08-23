@@ -50,7 +50,6 @@ export { CreateTranscriptInputSchema, TranscriptSchema, TranscriptSourceSchema }
 export type { CreateTranscriptInput, Transcript, TranscriptSource } from './transcript.js';
 
 export {
-  AUDIO_BYTES_PER_SECOND,
   DEFAULT_KEEP_AUDIO,
   DEFAULT_WHISPER_BINARY,
   KEEP_AUDIO_SETTING,
@@ -65,7 +64,6 @@ export {
   TRANSCRIBE_EVENT_NAMES,
   TranscribeFieldsSchema,
   TranscribeProgressEventSchema,
-  VocabularySchema,
   WARN_RECORDING_SECONDS,
   WHISPER_BINARY_SETTING,
   WHISPER_MODEL_FILENAME,
