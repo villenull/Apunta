@@ -38,6 +38,33 @@ The M6 "Import from skill file" button automates steps 1, 3 (line-level
 heuristics), and 4, then leaves the result for human review — steps 3
 (content inlining), 6, and 7 are judgment calls done by hand.
 
+It takes a `SKILL.md`, or a `.zip` of the skill folder, and reports what it
+removed rule by rule — *"frontmatter removed · 1 command block dropped · 11
+tool lines dropped"* — because a count is checkable and a silent rewrite is
+not. **Every one of those rules over-deletes on some real skill**, so read the
+result before saving. It never inlines a `references/` file; it lists the ones
+the body still mentions so you can paste in the parts you need. Nothing is
+saved until you press save.
+
+## Real client material inside a skill
+
+**A working therapist's `SKILL.md` plausibly contains her own examples.** That
+is the point of a skill — it encodes how *she* writes notes — and step 6 above
+asks for few-shot pairs outright.
+
+Unlike an uploaded example note, which M6's detection path destroys inside one
+request, imported skill text is different in kind:
+
+- it is persisted in `note_formats.instructions`;
+- it is sent to the model as the system prompt on **every** draft, forever;
+- it is included in M7's export;
+- and it is the first thing anyone would paste into a bug report.
+
+So read the flattened text before saving, and replace any real session with a
+fabricated one. Prefer pairs written from made-up sessions — the prototype's
+John Smith and Maria Ruiz are the register — over anything lifted out of a
+real record. The import panel says this too; the recipe is where it belongs.
+
 ## Why this works
 
 - Structured output is grammar-enforced at sampling time (Ollama `format` /
