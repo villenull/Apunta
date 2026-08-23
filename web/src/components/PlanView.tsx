@@ -23,7 +23,7 @@ import {
 } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { copyText } from '../lib/clipboard.js';
-import { formatDayGap, formatPlanDate } from '../lib/format.js';
+import { formatDayGap, formatInstantAsDate, formatPlanDate } from '../lib/format.js';
 import { CheckIcon, CopyIcon, PlusIcon } from './icons.js';
 import { PlanDetails } from './PlanDetails.js';
 import { PlanGoalCard } from './PlanGoalCard.js';
@@ -147,7 +147,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
         read === 0
           ? 'There are no notes for this patient yet, so there was nothing to draft from.'
           : `Read ${String(read)} ${read === 1 ? 'note' : 'notes'}${
-              oldest === null ? '' : `, back to ${formatPlanDate(oldest.slice(0, 10))}`
+              oldest === null ? '' : `, back to ${formatInstantAsDate(oldest)}`
             } (limit ${String(done.lookback.cap)}).${
               done.lookback.skipped_note_ids.length > 0
                 ? ` ${String(done.lookback.skipped_note_ids.length)} could not be read.`

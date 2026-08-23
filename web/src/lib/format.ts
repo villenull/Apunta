@@ -75,6 +75,19 @@ export function formatPlanDate(date: string): string {
   return DATE_FORMAT.format(new Date(Number(year), Number(month) - 1, Number(day)));
 }
 
+/**
+ * An instant as the calendar date it fell on **locally**.
+ *
+ * `formatNoteDate` says "Today" for a note written today, which is right on a
+ * note but clumsy in "read back to …". Slicing the ISO string instead would
+ * print the UTC date, which is the day before for anyone west of Greenwich
+ * writing in the evening.
+ */
+export function formatInstantAsDate(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : DATE_FORMAT.format(date);
+}
+
 /** "in 12 days" / "12 days ago" / "today", for the review-due line. */
 export function formatDayGap(daysUntil: number): string {
   if (daysUntil === 0) return 'today';

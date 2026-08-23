@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { errorMessage, getPlan, listBriefings, prepareBriefing, saveBriefing } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { formatNoteDate, formatPlanDate } from '../lib/format.js';
+import { formatInstantAsDate, formatNoteDate, formatPlanDate } from '../lib/format.js';
 import { CheckIcon } from './icons.js';
 
 /**
@@ -214,7 +214,7 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
                   }${
                     lookback.oldest_note_date === null
                       ? ''
-                      : `, back to ${formatPlanDate(lookback.oldest_note_date.slice(0, 10))}`
+                      : `, back to ${formatInstantAsDate(lookback.oldest_note_date)}`
                   } (limit ${String(lookback.cap)}).`}
               {lookback.skipped_note_ids.length > 0
                 ? ` ${String(lookback.skipped_note_ids.length)} could not be read.`

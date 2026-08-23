@@ -4,6 +4,7 @@ import {
   firstName,
   formatDayGap,
   formatEditedDate,
+  formatInstantAsDate,
   formatNoteDate,
   formatPlanDate,
   initials,
@@ -88,5 +89,12 @@ describe('formatDayGap', () => {
     expect(formatDayGap(1)).toBe('in 1 day');
     expect(formatDayGap(12)).toBe('in 12 days');
     expect(formatDayGap(-11)).toBe('11 days ago');
+  });
+});
+
+describe('formatInstantAsDate', () => {
+  it('reads an instant as the local day it fell on, with no "Today"', () => {
+    expect(formatInstantAsDate('2026-08-12T15:00:00.000Z')).toBe('Aug 12, 2026');
+    expect(formatInstantAsDate('nonsense')).toBe('nonsense');
   });
 });
