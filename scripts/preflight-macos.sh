@@ -1051,12 +1051,12 @@ else
   note "Only needed once audio recording (M5) is in use."
 fi
 
-check "ffmpeg (audio conversion for transcription)"
+check "ffmpeg (not required — reported for information only)"
 if have ffmpeg; then
   run_t 15 ffmpeg -version
-  res OK "$(rt | head -n 1)"
+  res INFO "$(rt | head -n 1)"
 else
-  res INFO "not installed — needed only once audio recording (M5) is in use"
+  res INFO "not installed — and not needed: Apunta records 16 kHz WAV in the browser and never transcodes"
 fi
 
 # ===========================================================================

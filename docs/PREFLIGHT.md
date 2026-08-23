@@ -78,8 +78,10 @@ enforces the note's structure. A model in the wrong format returns something
 that looks fine and quietly ignores the rules, with no error, so this is worth
 knowing before rather than after.
 
-**Speech-to-text and the toolchain.** Whether whisper.cpp, its model file,
-ffmpeg and Node are present and the right versions.
+**Speech-to-text and the toolchain.** Whether whisper.cpp, its model file and
+Node are present and the right versions. (ffmpeg is reported for information
+only — the app records 16 kHz WAV in the browser and never transcodes, so a Mac
+without ffmpeg is a Mac that works.)
 
 ---
 

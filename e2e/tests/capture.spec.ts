@@ -1,3 +1,5 @@
+import type { Page } from '@playwright/test';
+
 import { expect, test, uniqueName } from '../support/fixtures';
 
 /**
@@ -18,14 +20,11 @@ interface Created {
   id: string;
 }
 
-async function practice(page: import('@playwright/test').Page): Promise<{
-  patient: string;
-  format: string;
-}> {
+async function practice(page: Page): Promise<{ patient: string; format: string }> {
   const formatName = uniqueName('E2E capture format');
   const patientName = uniqueName('E2E capture patient');
 
-  const format = await page.evaluate(async (name) => {
+  await page.evaluate(async (name) => {
     const response = await fetch('/api/formats', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

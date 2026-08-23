@@ -47,12 +47,12 @@ flowchart LR
     DB[(SQLite<br/>data dir)]
     OLL[Ollama :11434<br/>LLM]
     WSP[whisper-cli<br/>child process]
-    FF[ffmpeg<br/>audio convert]
   end
   SPA -- "/api/* JSON + SSE" --> API
+  SPA -- "16 kHz mono WAV<br/>(recorded in the tab)" --> API
   API --> DB
   API -- "OpenAI-compatible /v1 + /api/chat(format)" --> OLL
-  API -- spawn --> FF --> WSP
+  API -- spawn --> WSP
 ```
 
 - **One repo, npm workspaces:** `server/` (Fastify + TypeScript),
@@ -66,9 +66,16 @@ flowchart LR
   base URL at it (same API shape); don't depend on Ollama-only quirks except
   the documented `format` parameter path, which has an OpenAI-compatible
   `response_format: {type: "json_schema"}` equivalent.
-- **STT** runs server-side: browser records with MediaRecorder → uploads →
-  ffmpeg converts to 16kHz WAV → `whisper-cli` (whisper.cpp, Metal)
-  transcribes. Never use the browser SpeechRecognition API.
+- **STT** runs server-side, with **no transcoder anywhere**: the browser
+  records 16 kHz mono through `new AudioContext({ sampleRate: 16000 })` and an
+  `AudioWorkletNode`, writes the 44-byte RIFF header itself, and uploads that
+  WAV; the server spawns `whisper-cli` (whisper.cpp, Metal) on the file as it
+  arrives. whisper.cpp decodes via miniaudio now, so the ffmpeg step this plan
+  originally carried is gone — along with the GPL binary M8 would have had to
+  ship (`docs/research/m8-bundling-2026-08.md` §3.4). Duration comes from the
+  WAV header, not `ffprobe`. `MediaRecorder` is unusable here: it emits
+  webm/opus, the one container whisper.cpp cannot read. Never use the browser
+  SpeechRecognition API.
 - **Egress guard:** at server bootstrap, wrap `fetch` to reject any URL whose
   host is not `127.0.0.1`/`localhost`. There is no legitimate outbound
   network call at runtime. Tests assert this.
@@ -175,7 +182,7 @@ and receives a full revised sections object back.
 
 ## 4. API surface (all under `/api`)
 
-- `GET /api/health` → `{ ok, ollama: {reachable, model, modelPresent}, whisper: {binaryPresent, modelPresent}, ffmpeg: {present} }`
+- `GET /api/health` → `{ ok, ollama: {reachable, model, modelPresent}, whisper: {binaryPresent, modelPresent, binary, model} }` — no `ffmpeg` key: the app does not use it (M5)
 - `GET|POST /api/patients`, `GET|PATCH|DELETE /api/patients/:id`
 - `GET /api/patients/:id/notes`, `POST /api/notes`, `GET|PATCH|DELETE /api/notes/:id`
 - `POST /api/notes/:id/publish`, `POST /api/notes/:id/unpublish`
@@ -183,7 +190,10 @@ and receives a full revised sections object back.
   source) → SSE stream of draft tokens, final event carries the saved note
 - `POST /api/notes/:id/chat` (body: message, ref_quote?) → SSE stream:
   assistant reply tokens + optional `note-updated` event with new content
-- `POST /api/transcribe` (multipart audio) → SSE progress → final transcript
+- `POST /api/transcribe` (multipart: the recorded WAV plus patient/format ids
+  and any typed notes) → SSE `progress` while whisper works, then the same
+  `status`/`token`/`note` stream `/api/generate` sends — one request takes a
+  recording to a saved draft
 - `GET|POST /api/formats`, `GET|PATCH|DELETE /api/formats/:id`
 - `POST /api/formats/detect` (multipart .docx/.pdf/.txt files or body text) → `{ name, sections[] }`
 - `GET|PUT /api/settings`
@@ -293,7 +303,7 @@ concurrently would collide in the same working tree. See
 | M2 | `M2-web-shell.md` | Prototype UI ported to React against the real API (no AI yet) |
 | M3 | `M3-ai-providers.md` | Provider layer, fakes, Ollama drafting with structured output, typed-note → draft flow |
 | M4 | `M4-refine-chat.md` | Streaming refine chat with highlight-refs, quick actions, publish-lock |
-| M5 | `M5-audio.md` | Record → upload → ffmpeg → whisper.cpp → transcript → draft |
+| M5 | `M5-audio.md` | Record 16 kHz WAV in the tab → upload → whisper.cpp → transcript → draft |
 | M6 | `M6-formats.md` | Format onboarding (template/examples/manual), detection, editor, skill import |
 | M7 | `M7-packaging.md` | macOS setup script, first-run wizard, model auto-pick, export, polish, eval harness |
 | M8 | `M8-installer.md` | Double-clickable `.dmg` — bundled runtimes, first-run download UI, signing, non-technical install guide |
