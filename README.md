@@ -61,7 +61,7 @@ been built entirely in a Linux container with no Ollama in it.
 
 Open a session on this repo and give it:
 
-> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M5-audio.md, then
+> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M7-packaging.md, then
 > implement that packet exactly. All work stays on the current branch — do
 > not create a feature branch or open a PR. Keep commits small and stop when
 > every acceptance criterion passes locally (lint, typecheck, tests, build,
