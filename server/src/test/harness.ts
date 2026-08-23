@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import type { NoteFormat, Note, Patient } from '@apunta/shared';
 import type { FastifyInstance } from 'fastify';
 
+import type { AiProviders } from '../ai/types.js';
 import { buildApp } from '../app.js';
 import { loadConfig, type AppConfig } from '../config.js';
 import { openDatabase, type Database } from '../db/index.js';
@@ -22,7 +23,16 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
-export async function createTestApp(): Promise<TestApp> {
+export interface TestAppOptions {
+  /**
+   * Override the AI providers. M9's routes make several calls per request, so
+   * a suite that wants to see *which* calls were made — or make one of them
+   * fail — passes a recording provider here.
+   */
+  readonly providers?: AiProviders;
+}
+
+export async function createTestApp(options: TestAppOptions = {}): Promise<TestApp> {
   const dataDir = mkdtempSync(join(tmpdir(), 'apunta-test-'));
   const config = loadConfig({
     APUNTA_PORT: '0',
@@ -35,7 +45,12 @@ export async function createTestApp(): Promise<TestApp> {
   // The suite drives the same database the app does, so a test can assert on
   // rows (cascades especially) that no endpoint exposes.
   const { db } = openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir });
-  const app = await buildApp({ config, db, logger: false });
+  const app = await buildApp({
+    config,
+    db,
+    logger: false,
+    ...(options.providers ? { providers: options.providers } : {}),
+  });
   await app.ready();
 
   return {

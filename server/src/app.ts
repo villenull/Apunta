@@ -15,6 +15,8 @@ import { registerGenerateRoute } from './routes/generate.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerNoteRoutes } from './routes/notes.js';
 import { registerPatientRoutes } from './routes/patients.js';
+import { registerPlanRoutes } from './routes/plans.js';
+import { registerPrepRoutes } from './routes/prep.js';
 import { registerSettingsRoutes } from './routes/settings.js';
 
 export interface BuildAppOptions {
@@ -65,6 +67,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerSettingsRoutes(app, db);
   registerGenerateRoute(app, db, providers);
   registerChatRoutes(app, db, providers);
+  registerPlanRoutes(app, db, providers);
+  registerPrepRoutes(app, db, providers);
 
   const hasBuiltSpa = existsSync(config.webDistDir);
   if (hasBuiltSpa) {
