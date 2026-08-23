@@ -314,25 +314,22 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                 void draftGoals();
               }}
             >
-              Draft goals from recent notes
+              {drafting ? 'Reading your notes…' : 'Draft goals from recent notes'}
             </button>
           </div>
+          {status !== null && (
+            <p className="small state-note" data-testid="draft-status">
+              {status}
+            </p>
+          )}
+          {lookbackNote !== null && (
+            <p className="small note-meta" data-testid="lookback-note">
+              {lookbackNote}
+            </p>
+          )}
         </div>
       ) : (
         <>
-          <PlanDetails
-            key={current.id}
-            plan={current}
-            readOnly={readOnly}
-            busy={busy}
-            onSave={(patch: UpdatePlanRequest) => {
-              void run(async () => {
-                await updatePlan(current.id, patch);
-                reload();
-              });
-            }}
-          />
-
           <section className="plan-section">
             <h3>Goals</h3>
             {accepted.length === 0 && (
@@ -437,6 +434,31 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
             </section>
           )}
 
+          {/*
+            Folded away by default. The plan is payer-facing, but the view she
+            opens between sessions is the goals — a screen that leads with a
+            form of empty compliance fields is the thing M9 warns against.
+            A superseded version opens it: that one is the record, not a
+            working document.
+          */}
+          <details className="plan-details-block" data-testid="plan-details-block" open={readOnly}>
+            <summary data-testid="toggle-details">
+              Plan details <span className="small note-meta">{detailSummary(current)}</span>
+            </summary>
+            <PlanDetails
+              key={current.id}
+              plan={current}
+              readOnly={readOnly}
+              busy={busy}
+              onSave={(patch: UpdatePlanRequest) => {
+                void run(async () => {
+                  await updatePlan(current.id, patch);
+                  reload();
+                });
+              }}
+            />
+          </details>
+
           <section className="plan-section plan-attestation" data-testid="plan-attestation">
             <h3>Attestation</h3>
             {current.attested_at === null ? (
@@ -468,4 +490,17 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
       )}
     </div>
   );
+}
+
+/**
+ * The one-line version of the plan-level fields, so the folded section still
+ * says whether the things a payer asks for are there.
+ */
+function detailSummary(plan: TreatmentPlan): string {
+  const parts = [
+    ...plan.diagnoses.map((diagnosis) => diagnosis.code.trim()).filter((code) => code !== ''),
+    plan.modality.trim(),
+    plan.frequency.trim(),
+  ].filter((part) => part !== '');
+  return parts.length === 0 ? '— diagnosis, modality and frequency not recorded' : `— ${parts.join(' · ')}`;
 }

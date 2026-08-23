@@ -218,6 +218,37 @@ describe('PlanView', () => {
     });
   });
 
+  /** The daily view leads with the goals, not with a form of payer fields. */
+  it('folds the plan-level fields away, but says whether they are filled in', async () => {
+    const patient = patientFixture();
+    const plan = makePlan(patient.id, {
+      diagnoses: [
+        { code: 'F41.1', system: 'icd-10-cm', description: 'Generalized anxiety disorder', primary: true },
+      ],
+      modality: 'Individual psychotherapy (CBT)',
+    });
+    installFakeApi({ patients: [patient], plans: [plan], goals: [] });
+
+    render(<PlanView patient={patient} onOpenNote={() => {}} />);
+
+    const details = await screen.findByTestId('plan-details-block');
+    expect(details.hasAttribute('open')).toBe(false);
+    expect(screen.getByTestId('toggle-details').textContent).toContain(
+      'F41.1 · Individual psychotherapy (CBT)',
+    );
+  });
+
+  it('says plainly when the payer-facing fields are missing', async () => {
+    const patient = patientFixture();
+    installFakeApi({ patients: [patient], plans: [makePlan(patient.id)], goals: [] });
+
+    render(<PlanView patient={patient} onOpenNote={() => {}} />);
+
+    expect((await screen.findByTestId('toggle-details')).textContent).toContain(
+      'diagnosis, modality and frequency not recorded',
+    );
+  });
+
   it('says an unattested plan is not a signature', async () => {
     const patient = patientFixture();
     installFakeApi({ patients: [patient], plans: [makePlan(patient.id)], goals: [] });

@@ -334,12 +334,12 @@ const FAKE_GOALS: readonly { readonly pattern: RegExp; readonly goal: Omit<Sugge
   {
     pattern: /grief|bereave|anniversary|mother|passed away/i,
     goal: {
-      statement: 'Maria re-engages with the parts of her life she withdrew from after her loss.',
+      statement: 'The client re-engages with the parts of life they withdrew from after the loss.',
       objectives: [
         {
           statement:
-            'Maria will take part in at least one planned social contact outside her household each week.',
-          measure: 'her report at the start of each session',
+            'The client will take part in at least one planned social contact outside the household each week.',
+          measure: 'their report at the start of each session',
           baseline: '',
         },
       ],
@@ -347,13 +347,27 @@ const FAKE_GOALS: readonly { readonly pattern: RegExp; readonly goal: Omit<Sugge
     },
   },
   {
-    pattern: /sleep|intrusive|anxiet|restless/i,
+    pattern: /meeting|deadline|manager|workload|work stress/i,
     goal: {
-      statement: 'John sleeps well enough to get through a workday without an afternoon crash.',
+      statement: 'The client gets through a work week without the escalating worry described at intake.',
       objectives: [
         {
-          statement: 'John will report 6 or more hours of sleep on at least 5 of 7 nights.',
-          measure: 'his weekly sleep log, reviewed in session',
+          statement: 'The client will use paced breathing before at least 2 work meetings a week.',
+          measure: 'their report, tallied weekly',
+          baseline: '',
+        },
+      ],
+      interventions: ['Cognitive restructuring around work-related worry'],
+    },
+  },
+  {
+    pattern: /sleep|intrusive|anxiet|restless/i,
+    goal: {
+      statement: 'The client sleeps well enough to get through a workday without an afternoon crash.',
+      objectives: [
+        {
+          statement: 'The client will report 6 or more hours of sleep on at least 5 of 7 nights.',
+          measure: 'their weekly sleep log, reviewed in session',
           baseline: '',
         },
       ],

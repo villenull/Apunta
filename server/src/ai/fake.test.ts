@@ -283,7 +283,7 @@ describe('the faked M9 stages', () => {
 
     expect(suggestion.goals).toHaveLength(1);
     const goal = suggestion.goals[0];
-    expect(goal?.statement).toContain('John sleeps well enough');
+    expect(goal?.statement).toContain('sleeps well enough');
     expect(goal?.evidence).toEqual([{ note: 0, excerpt: 0 }]);
     expect(JSON.stringify(suggestion)).not.toMatch(/F41|diagnos/i);
     // A baseline may be cited; a target may not be invented.

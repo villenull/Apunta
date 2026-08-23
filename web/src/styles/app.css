@@ -1176,15 +1176,16 @@ select:disabled {
   padding: 8px 10px;
   border-radius: 8px;
   border: 0.5px solid var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
+  background: none;
+  color: var(--accent);
   font-family: inherit;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
 }
 
 .col-action-btn:hover {
-  color: var(--text-primary);
+  background: var(--surface);
   border-color: var(--border-strong);
 }
 
@@ -1291,8 +1292,14 @@ select:disabled {
 
 .plan-goal-statement {
   font-family: var(--font-serif);
-  font-size: 15px;
+  font-size: 16px;
   margin-top: 4px;
+}
+
+/* Smaller than the goal it belongs to: the goal is the heading of the pair. */
+.plan-objective p,
+.prep-goal p {
+  font-size: 14px;
 }
 
 /* A suggestion. Not the plan, and it must not look like it. */
@@ -1349,6 +1356,10 @@ select:disabled {
   font-size: 13px;
   color: var(--text-secondary);
   font-style: italic;
+}
+
+.plan-evidence blockquote .link-button {
+  margin-left: 8px;
 }
 
 .plan-attestation p {
@@ -1426,4 +1437,32 @@ select:disabled {
     height: auto;
     border: none;
   }
+}
+
+/*
+ * The plan-level fields fold away.
+ *
+ * They are what a payer audit asks for, and they are not what she opens the
+ * screen to see: the packet's own warning is that the daily view must not feel
+ * like a compliance form. So the goals lead, and the form is one click behind
+ * a summary that still says whether the required fields are filled in.
+ */
+.plan-details-block {
+  border-top: 0.5px solid var(--border);
+  padding: 12px 22px;
+}
+
+.plan-details-block > summary {
+  cursor: pointer;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.plan-details-block > summary > .note-meta {
+  font-family: var(--font-sans);
+}
+
+.plan-details-block .plan-details {
+  padding: 12px 0 0;
 }
