@@ -82,6 +82,11 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('note-title')).toHaveText(formatName);
     await expect(page.getByTestId('note-list')).toContainText('Draft');
 
+    // The refine thread opens itself, so the chat is never a blank column.
+    await expect(page.getByTestId('chat-thread')).toContainText(
+      "Here's a first pass based on your dictation.",
+    );
+
     // --- Edit the body; the header picks up the edit -------------------------
     const edited = 'Subjective: Sleep improved.\n\nPlan: Continue weekly sessions.';
     await body.fill(edited);
@@ -145,27 +150,156 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('empty-no-patient')).toHaveText('Select a patient to see their notes');
   });
 
-  test('shows the refine column as a placeholder until M4', async ({ page, request }) => {
+  /**
+   * The refine chat end to end — the practice owner's primary repair path
+   * (`docs/feedback/2026-08-22-owner-answers.md`, design question 4), so it
+   * gets the longest flow in the suite.
+   */
+  test('refines a note by chat, refuses on a published one, and survives a reload', async ({
+    page,
+    request,
+  }) => {
     const format = (await (
       await request.post('/api/formats', {
-        data: { name: uniqueName('E2E format'), sections: ['Subjective', 'Plan'] },
+        data: {
+          name: uniqueName('E2E refine format'),
+          sections: ['Subjective', 'Objective', 'Assessment', 'Plan'],
+        },
       })
     ).json()) as Created;
     const patient = (await (
-      await request.post('/api/patients', { data: { name: uniqueName('E2E Patient') } })
+      await request.post('/api/patients', { data: { name: uniqueName('E2E Refine Patient') } })
     ).json()) as Created;
     const note = (await (
       await request.post('/api/notes', {
-        data: { patient_id: patient.id, format_id: format.id, content: 'Subjective: Sample body.' },
+        data: {
+          patient_id: patient.id,
+          format_id: format.id,
+          content: [
+            'Subjective: Patient reports improved sleep since last session.',
+            'Objective: Alert and engaged in session.',
+            'Assessment: Continued progress on anxiety management goals.',
+            'Plan: Continue weekly sessions. Introduce grounding exercises for use between sessions.',
+          ].join('\n\n'),
+        },
       })
     ).json()) as Created;
 
     await page.goto(`/?patient=${patient.id}&note=${note.id}`);
 
-    await expect(page.getByRole('heading', { name: 'Refine with AI' })).toBeVisible();
-    await expect(page.getByTestId('refine-placeholder')).toContainText('AI arrives in a later milestone');
-    await expect(page.getByLabel('Ask a question or give feedback')).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Shorter' })).toBeDisabled();
+    const body = page.getByTestId('note-body');
+    const thread = page.getByTestId('chat-thread');
+    await expect(thread).toContainText('Ask a question about this note, or give feedback to refine it.');
+
+    // --- Highlight-to-reference: the secondary affordance, still shipped ----
+    await body.click();
+    await body.evaluate((element: HTMLTextAreaElement) => {
+      element.setSelectionRange(0, 'Subjective: Patient reports improved sleep'.length);
+      // React derives onSelect from document `selectionchange`, not from a
+      // `select` event dispatched at the element.
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    await expect(page.getByTestId('ref-chip')).toContainText('Subjective: Patient reports improved');
+
+    await page.getByTestId('chat-input').fill('What is missing from this?');
+    await page.getByTestId('chat-send').click();
+
+    // The excerpt travels with the message, and the chip is cleared after.
+    await expect(thread).toContainText('“Subjective: Patient reports improved sleep”');
+    await expect(page.getByTestId('ref-chip')).toBeHidden();
+    await expect(thread).toContainText('Based on the note');
+    // A question changes nothing.
+    await expect(body).toContainText('Introduce grounding exercises');
+
+    // --- A quick action rewrites the note, visibly -------------------------
+    await page.getByRole('button', { name: 'Expand plan' }).click();
+    await expect(thread).toContainText('Expand the plan section');
+    await expect(body).toContainText('Plan: Continue weekly sessions and grounding exercises.');
+    await expect(body).not.toContainText('Introduce grounding exercises');
+    // The notes-column preview moved with it.
+    await expect(page.getByTestId('note-list')).toContainText('Subjective: Patient reports improved');
+
+    // --- Publishing locks it, and the chat says so rather than editing -----
+    await page.getByTestId('publish-button').click();
+    await expect(page.getByTestId('publish-button')).toContainText('Published (click to edit)');
+
+    await page.getByTestId('chat-input').fill('Make the plan much shorter');
+    await page.getByTestId('chat-send').click();
+    await expect(thread).toContainText('This note is published, so I won’t change it.');
+    await expect(body).toContainText('Plan: Continue weekly sessions and grounding exercises.');
+
+    // --- Unlock, and the same request goes through ------------------------
+    await page.getByTestId('publish-button').click();
+    await expect(page.getByTestId('publish-button')).toHaveText('Publish');
+
+    await page.getByTestId('chat-input').fill('Add something about sleep');
+    await page.getByTestId('chat-send').click();
+    await expect(thread).toContainText('Added that to the Subjective section.');
+    await expect(body).toContainText('Also noted improved appetite this week.');
+
+    // --- The whole conversation is still there after a reload -------------
+    await page.reload();
+    await expect(page.getByTestId('chat-thread')).toContainText('What is missing from this?');
+    await expect(page.getByTestId('chat-thread')).toContainText('Expand the plan section');
+    await expect(page.getByTestId('chat-thread')).toContainText(
+      'This note is published, so I won’t change it.',
+    );
+    await expect(page.getByTestId('note-body')).toContainText('Also noted improved appetite this week.');
+  });
+
+  /**
+   * An empty section and an unclear-dictation marker are both visible and
+   * neither blocks anything — the owner declined a gate on each (design
+   * questions 5 and 11).
+   */
+  test('marks a blank section and an unclear flag without gating copy', async ({ page, request }) => {
+    const format = (await (
+      await request.post('/api/formats', {
+        data: { name: uniqueName('E2E marker format'), sections: ['Subjective', 'Objective', 'Plan'] },
+      })
+    ).json()) as Created;
+    const patient = (await (
+      await request.post('/api/patients', { data: { name: uniqueName('E2E Marker Patient') } })
+    ).json()) as Created;
+    const note = (await (
+      await request.post('/api/notes', {
+        data: {
+          patient_id: patient.id,
+          format_id: format.id,
+          content: [
+            'Subjective: Possibly propranolol [unclear in dictation]; she was uncertain of the name.',
+            'Objective:',
+            'Plan: Continue weekly sessions.',
+          ].join('\n\n'),
+        },
+      })
+    ).json()) as Created;
+
+    await page.goto(`/?patient=${patient.id}&note=${note.id}`);
+
+    await expect(page.getByTestId('empty-sections')).toHaveText(
+      'Nothing recorded in Objective — add or leave blank.',
+    );
+    await expect(page.locator('.marker-unclear')).toHaveText('[unclear in dictation]');
+    await expect(page.locator('.marker-empty-section')).toHaveText('Objective:');
+
+    // Nothing is gated: copy takes the note as it stands, blanks and all.
+    //
+    // What lands on the clipboard is exactly what the editor shows — the note
+    // is pasted into one plain text box in another records system, so it is
+    // `Section: body` paragraphs with a blank line between and not a
+    // character of markdown syntax. An empty section still carries its
+    // header, because she fills the blank in on the far side.
+    await page.getByTestId('copy-button').click();
+    const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clipboard).toBe(
+      [
+        'Subjective: Possibly propranolol [unclear in dictation]; she was uncertain of the name.',
+        'Objective:',
+        'Plan: Continue weekly sessions.',
+      ].join('\n\n'),
+    );
+    expect(clipboard).not.toMatch(/[*#_`~]|^\s*[-+]\s/m);
   });
 
   /**

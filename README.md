@@ -5,9 +5,10 @@ summaries into structured clinical notes. The UI runs in a browser tab; all
 AI processing (transcription and note drafting) runs on the local PC with
 free, open-weight models — nothing leaves the machine.
 
-**Status: typed notes are drafted by a local model (M3) — capture streams a
-draft section by section, and the app still runs with no AI installed at all
-(`APUNTA_FAKE_AI=1`). The refine chat (M4) is next.**
+**Status: a note can now be drafted and then repaired without touching it
+(M4) — describe what is wrong in the chat and the model rewrites the note,
+with the published lock enforced server-side. The app still runs with no AI
+installed at all (`APUNTA_FAKE_AI=1`). Audio capture (M5) is next.**
 Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
 [`docs/agents/`](docs/agents/README.md) in order M0 → M8.
@@ -39,8 +40,8 @@ npm test             # 150 tests — confirms the checkout is sound
 | M1 data + API | done — migrations, SQLite, every non-AI endpoint, seed script |
 | M2 web shell | done — prototype ported to React: workspace, capture, settings, manual format onboarding |
 | M3 AI providers | done — provider layer, fakes, Ollama drafting with enforced schema, typed note → streamed draft |
-| M4 refine chat | **next** — streaming chat over a draft, highlight-refs, publish lock |
-| M5–M8 | planned; packets written in `docs/agents/` |
+| M4 refine chat | done — streaming chat that rewrites the note, highlight-refs, server-side publish lock, empty-section and unclear-dictation markers |
+| M5 onwards | planned; packets written in `docs/agents/` |
 
 Ready and waiting for the packets that need them: the evaluation corpus in
 `e2e/fixtures/eval/` (M7), and the research in `docs/research/` — a privacy
@@ -57,7 +58,7 @@ been built entirely in a Linux container with no Ollama in it.
 
 Open a session on this repo and give it:
 
-> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M4-refine-chat.md, then
+> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M5-audio.md, then
 > implement that packet exactly. All work stays on the current branch — do
 > not create a feature branch or open a PR. Keep commits small and stop when
 > every acceptance criterion passes locally (lint, typecheck, tests, build,
