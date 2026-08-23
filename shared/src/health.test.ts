@@ -8,8 +8,12 @@ const stub = {
   fakeAi: false,
   db: { path: '/tmp/apunta.db', migrationLevel: 1 },
   ollama: { reachable: false, model: null, modelPresent: false },
-  whisper: { binaryPresent: false, modelPresent: false },
-  ffmpeg: { present: false },
+  whisper: {
+    binaryPresent: false,
+    modelPresent: false,
+    binary: 'whisper-cli',
+    model: '/tmp/models/ggml-large-v3-turbo-q5_0.bin',
+  },
 };
 
 describe('HealthResponseSchema', () => {
@@ -18,8 +22,17 @@ describe('HealthResponseSchema', () => {
   });
 
   it('rejects a payload missing a dependency check', () => {
-    const { ffmpeg: _ffmpeg, ...withoutFfmpeg } = stub;
-    expect(HealthResponseSchema.safeParse(withoutFfmpeg).success).toBe(false);
+    const { whisper: _whisper, ...withoutWhisper } = stub;
+    expect(HealthResponseSchema.safeParse(withoutWhisper).success).toBe(false);
+  });
+
+  /**
+   * ffmpeg is not a dependency of the running app (M5 records WAV in the
+   * browser), so it is not in the contract either — a stray key must not be
+   * quietly accepted and then rendered as a red row in M7's setup checklist.
+   */
+  it('has no ffmpeg check', () => {
+    expect(Object.keys(HealthResponseSchema.shape)).not.toContain('ffmpeg');
   });
 
   it('rejects unknown value types', () => {

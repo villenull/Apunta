@@ -101,6 +101,20 @@ silently runs once:
 npm run smoke:live -- --runs 5
 ```
 
+`--audio` adds the transcription half: a real whisper.cpp run over a WAV,
+printed with its wall time and real-time factor. `--audio-only` stops there
+(Ollama is never contacted) and `--from-audio` drafts the note from what
+whisper heard, which is the recording path end to end. The checked-in fixture
+is synthetic tones with no speech in it, so point it at a dictation you
+recorded yourself — and do not commit that file:
+
+```sh
+npm run smoke:live -- --audio ~/dictation.wav --from-audio
+```
+
+Neither audio flag has ever been run either: this container has no whisper.cpp
+in it any more than it has an Ollama.
+
 Before trusting any of this on the target Mac, run `bash
 scripts/preflight-macos.sh` — see [`docs/PREFLIGHT.md`](docs/PREFLIGHT.md). It
 is read-only and checks the assumptions this project has never been able to
@@ -134,7 +148,8 @@ Useful env: `APUNTA_PORT`, `APUNTA_DATA_DIR`, `APUNTA_FAKE_AI=1`, and
 A TypeScript monorepo: a Fastify server bound to `127.0.0.1` serves a React
 SPA and a JSON/SSE API backed by SQLite, and talks only to local AI — Ollama
 for drafting/refining notes (schema-enforced structured output) and
-whisper.cpp for transcribing recordings (ffmpeg-converted, vocabulary-biased).
+whisper.cpp for transcribing recordings (recorded as 16 kHz WAV in the browser
+so nothing has to transcode them, vocabulary-biased).
 Fake AI providers make the whole app runnable and CI-testable with nothing
 installed; a macOS setup script installs the real stack and picks a model
 sized to the machine's RAM.

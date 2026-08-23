@@ -65,6 +65,24 @@ export const AiErrorCodeSchema = z.enum([
   'timeout',
   /** Anything else Ollama reported. */
   'ollama_error',
+
+  // Speech-to-text (M5). Same enum because they are the same kind of thing —
+  // a local tool that is missing, wrong or too slow — and they surface through
+  // the same `error` event, with a message written for the user.
+  /** `whisper-cli` is not on PATH, or `whisper_binary` names nothing runnable. */
+  'whisper_missing',
+  /** The GGUF model file named by `whisper_model` is not there. */
+  'whisper_model_missing',
+  /** The upload was not a WAV. Nothing transcodes it; whisper cannot read it. */
+  'audio_unsupported',
+  /** A WAV whisper could not decode — truncated, or a codec miniaudio lacks. */
+  'audio_decode_failed',
+  /** whisper exited non-zero for any other reason. */
+  'transcription_failed',
+  /** whisper produced no transcript inside its timeout. */
+  'transcription_timeout',
+  /** whisper ran fine and heard no speech — a muted mic, or the wrong input. */
+  'transcription_empty',
 ]);
 export type AiErrorCode = z.infer<typeof AiErrorCodeSchema>;
 

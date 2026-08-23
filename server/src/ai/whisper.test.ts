@@ -1,0 +1,386 @@
+import type { spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { PassThrough } from 'node:stream';
+
+import { MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { AiError } from './errors.js';
+import { approximateTokens } from './prompts.js';
+import type { SttEvent } from './types.js';
+import {
+  buildVocabularyPrompt,
+  buildWhisperArgs,
+  classifyFailure,
+  parseProgress,
+  parseTranscript,
+  timeoutFor,
+  TRANSCRIBE_BASE_TIMEOUT_MS,
+  WhisperCppSttProvider,
+} from './whisper.js';
+
+/**
+ * The real STT provider, driven through a fake `spawn`.
+ *
+ * No whisper.cpp is installed in CI (hard rule 3), and installing one would
+ * make this suite prove something about a machine rather than about the code.
+ * What is worth asserting is the part we wrote: the command line, the prompt
+ * budget, the progress parser against captured whisper output, and which typed
+ * error each failure becomes.
+ */
+
+/** Real captured shape of `whisper-cli --print-progress` output on stderr. */
+const STDERR_SAMPLE = [
+  'whisper_init_from_file_with_params_no_state: loading model from ggml-large-v3-turbo-q5_0.bin',
+  'whisper_print_progress_callback: progress =  10%',
+  'whisper_print_progress_callback: progress =  20%',
+  'whisper_print_progress_callback: progress = 100%',
+].join('\n');
+
+interface FakeChild extends EventEmitter {
+  stdout: PassThrough;
+  stderr: PassThrough;
+  kill: (signal?: NodeJS.Signals) => boolean;
+  killed: boolean;
+  exitCode: number | null;
+  signalCode: NodeJS.Signals | null;
+}
+
+interface SpawnCall {
+  readonly command: string;
+  readonly args: readonly string[];
+}
+
+function fakeSpawn(drive: (child: FakeChild) => void, calls: SpawnCall[] = []) {
+  return ((command: string, args: readonly string[]) => {
+    calls.push({ command, args });
+    const child = new EventEmitter() as FakeChild;
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.exitCode = null;
+    child.signalCode = null;
+    child.killed = false;
+    child.kill = (signal?: NodeJS.Signals) => {
+      child.killed = true;
+      child.signalCode = signal ?? 'SIGTERM';
+      return true;
+    };
+    setTimeout(() => {
+      drive(child);
+    }, 0);
+    return child;
+    // The provider only uses the pipe overload; the cast keeps the fake honest
+    // about that rather than reimplementing every `spawn` signature.
+  }) as unknown as typeof spawn;
+}
+
+let dir: string;
+let modelPath: string;
+
+beforeAll(() => {
+  dir = mkdtempSync(join(tmpdir(), 'apunta-whisper-'));
+  modelPath = join(dir, 'ggml-large-v3-turbo-q5_0.bin');
+  writeFileSync(modelPath, 'not really a model, but a real file');
+});
+
+afterAll(() => {
+  rmSync(dir, { recursive: true, force: true });
+});
+
+function provider(drive: (child: FakeChild) => void, calls: SpawnCall[] = [], model = () => modelPath) {
+  return new WhisperCppSttProvider({
+    resolveBinary: () => 'whisper-cli',
+    resolveModel: model,
+    spawnImpl: fakeSpawn(drive, calls),
+    timeoutMs: 2000,
+  });
+}
+
+async function collect(events: AsyncIterable<SttEvent>): Promise<SttEvent[]> {
+  const seen: SttEvent[] = [];
+  for await (const event of events) seen.push(event);
+  return seen;
+}
+
+describe('buildWhisperArgs', () => {
+  it('names the model and the file, asks for prose and for progress', () => {
+    const args = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav' });
+
+    expect(args).toEqual(['--model', '/m.bin', '--file', '/a.wav', '--no-timestamps', '--print-progress']);
+  });
+
+  it('passes the vocabulary prompt only when there is one', () => {
+    expect(buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav', prompt: '   ' })).not.toContain(
+      '--prompt',
+    );
+
+    const args = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav', prompt: 'Vraylar, Latuda.' });
+    expect(args.at(-2)).toBe('--prompt');
+    expect(args.at(-1)).toBe('Vraylar, Latuda.');
+  });
+
+  /** No transcode step exists, so nothing may quietly reintroduce one. */
+  it('never mentions ffmpeg', () => {
+    expect(buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav' }).join(' ')).not.toMatch(/ffmpeg/i);
+  });
+});
+
+describe('buildVocabularyPrompt', () => {
+  it('renders the terms as a sentence whisper can bias on', () => {
+    expect(buildVocabularyPrompt(['Vraylar', 'lamotrigine'])).toBe(
+      'Clinical terms that may come up: Vraylar, lamotrigine.',
+    );
+  });
+
+  it('is empty for an empty list, and ignores blank entries', () => {
+    expect(buildVocabularyPrompt([])).toBe('');
+    expect(buildVocabularyPrompt(['  ', ''])).toBe('');
+    expect(buildVocabularyPrompt([' Latuda '])).toBe('Clinical terms that may come up: Latuda.');
+  });
+
+  /**
+   * The truncation the packet asks for. Whisper's `initial_prompt` shares the
+   * text context window: an over-long one is cut mid-word inside whisper.cpp,
+   * where nothing surfaces it. Truncating by whole terms keeps the failure
+   * visible in the list rather than hidden in the binary.
+   */
+  it('truncates a long list to the token budget, on a term boundary', () => {
+    const terms = Array.from({ length: 400 }, (_, index) => `medication-name-${String(index)}`);
+    const prompt = buildVocabularyPrompt(terms);
+
+    expect(approximateTokens(prompt)).toBeLessThanOrEqual(MAX_STT_PROMPT_TOKENS);
+    expect(prompt.endsWith('.')).toBe(true);
+    expect(prompt).toContain('medication-name-0,');
+    expect(prompt).not.toContain('medication-name-399');
+    // Cut between terms, never inside one.
+    expect(prompt.slice(0, -1).split(', ').at(-1)).toMatch(/^medication-name-\d+$/);
+  });
+});
+
+describe('parseProgress', () => {
+  it('reads whisper.cpp progress callbacks off stderr', () => {
+    expect(parseProgress(STDERR_SAMPLE)).toEqual([0.1, 0.2, 1]);
+  });
+
+  it('ignores lines that carry no progress', () => {
+    expect(parseProgress('whisper_model_load: n_vocab = 51866\n')).toEqual([]);
+  });
+});
+
+describe('parseTranscript', () => {
+  it('joins whisper stdout into one block of prose', () => {
+    const stdout = ' Okay, John Smith today.\n He is sleeping better.\n\n';
+    expect(parseTranscript(stdout)).toBe('Okay, John Smith today. He is sleeping better.');
+  });
+
+  it('drops non-speech annotations and any stray timestamps', () => {
+    const stdout = [
+      '[00:00:00.000 --> 00:00:03.000]  Sleeping better.',
+      '[BLANK_AUDIO]',
+      '(soft music)',
+    ].join('\n');
+    expect(parseTranscript(stdout)).toBe('Sleeping better.');
+  });
+});
+
+describe('classifyFailure', () => {
+  it('recognises a model that will not load', () => {
+    expect(classifyFailure('error: failed to initialize whisper context')).toBe('whisper_model_missing');
+  });
+
+  it('recognises audio it could not read', () => {
+    expect(classifyFailure('error: failed to open the audio file')).toBe('audio_decode_failed');
+  });
+
+  it('falls back to a plain failure', () => {
+    expect(classifyFailure('segmentation fault')).toBe('transcription_failed');
+  });
+});
+
+describe('timeoutFor', () => {
+  it('scales with the length of the recording', () => {
+    expect(timeoutFor(0)).toBe(TRANSCRIBE_BASE_TIMEOUT_MS);
+    expect(timeoutFor(600)).toBe(TRANSCRIBE_BASE_TIMEOUT_MS + 3_600_000);
+  });
+});
+
+describe('WhisperCppSttProvider.transcribe', () => {
+  const request = { wavPath: '/tmp/session.wav', durationSeconds: 12, vocabulary: ['Vraylar'] };
+
+  it('streams progress, then the transcript', async () => {
+    const calls: SpawnCall[] = [];
+    const events = await collect(
+      provider((child) => {
+        child.stderr.write(STDERR_SAMPLE);
+        child.stdout.write(' Sleeping better, fewer intrusive thoughts.\n');
+        child.emit('close', 0, null);
+      }, calls).transcribe(request),
+    );
+
+    expect(events.filter((event) => event.type === 'progress').map((event) => event.fraction)).toEqual([
+      0.1, 0.2, 1,
+    ]);
+    expect(events.at(-1)).toEqual({
+      type: 'transcript',
+      text: 'Sleeping better, fewer intrusive thoughts.',
+    });
+    expect(calls[0]?.command).toBe('whisper-cli');
+    expect(calls[0]?.args).toContain('--prompt');
+  });
+
+  it('never moves the progress bar backwards', async () => {
+    const events = await collect(
+      provider((child) => {
+        child.stderr.write('progress =  40%\n');
+        child.stderr.write('progress =  40%\nprogress =  30%\n');
+        child.stdout.write('Something was said.\n');
+        child.emit('close', 0, null);
+      }).transcribe(request),
+    );
+
+    expect(events.filter((event) => event.type === 'progress').map((event) => event.fraction)).toEqual([
+      0.4, 1,
+    ]);
+  });
+
+  it('maps a missing binary to whisper_missing', async () => {
+    const failing = provider((child) => {
+      const error = new Error('spawn whisper-cli ENOENT') as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      child.emit('error', error);
+    });
+
+    await expect(collect(failing.transcribe(request))).rejects.toMatchObject({
+      name: 'AiError',
+      code: 'whisper_missing',
+    });
+  });
+
+  it('maps a missing model file to whisper_model_missing before spawning anything', async () => {
+    const calls: SpawnCall[] = [];
+    const missing = provider(
+      (child) => {
+        child.emit('close', 0, null);
+      },
+      calls,
+      () => join(dir, 'not-downloaded.bin'),
+    );
+
+    await expect(collect(missing.transcribe(request))).rejects.toMatchObject({
+      code: 'whisper_model_missing',
+    });
+    expect(calls).toHaveLength(0);
+  });
+
+  it('maps a non-zero exit to the failure its stderr describes', async () => {
+    const failing = provider((child) => {
+      child.stderr.write('error: failed to open the audio file\n');
+      child.emit('close', 1, null);
+    });
+
+    await expect(collect(failing.transcribe(request))).rejects.toMatchObject({
+      code: 'audio_decode_failed',
+    });
+  });
+
+  it('treats a clean exit with no words as transcription_empty', async () => {
+    const silent = provider((child) => {
+      child.stdout.write('[BLANK_AUDIO]\n');
+      child.emit('close', 0, null);
+    });
+
+    await expect(collect(silent.transcribe(request))).rejects.toMatchObject({
+      code: 'transcription_empty',
+    });
+  });
+
+  it('kills whisper and reports a timeout when it never finishes', async () => {
+    let child: FakeChild | undefined;
+    const stuck = new WhisperCppSttProvider({
+      resolveBinary: () => 'whisper-cli',
+      resolveModel: () => modelPath,
+      spawnImpl: fakeSpawn((spawned) => {
+        child = spawned;
+        spawned.stderr.write('progress =  10%\n');
+      }),
+      timeoutMs: 30,
+    });
+
+    await expect(collect(stuck.transcribe(request))).rejects.toMatchObject({
+      code: 'transcription_timeout',
+    });
+    expect(child?.killed).toBe(true);
+  });
+
+  /**
+   * The consumer breaking out of the loop — she closed the tab — has to reach
+   * the child process. Otherwise whisper keeps grinding through a 40-minute
+   * file for a stream nobody is reading.
+   */
+  it('kills whisper when the consumer stops reading', async () => {
+    let child: FakeChild | undefined;
+    const running = new WhisperCppSttProvider({
+      resolveBinary: () => 'whisper-cli',
+      resolveModel: () => modelPath,
+      spawnImpl: fakeSpawn((spawned) => {
+        child = spawned;
+        spawned.stderr.write('progress =  10%\n');
+      }),
+      timeoutMs: 5000,
+    });
+
+    for await (const event of running.transcribe(request)) {
+      expect(event.type).toBe('progress');
+      break;
+    }
+
+    expect(child?.killed).toBe(true);
+  });
+
+  it('throws an AiError, so the route reports it like any other local-AI failure', async () => {
+    const failing = provider((child) => {
+      child.emit('close', 3, null);
+    });
+
+    await expect(collect(failing.transcribe(request))).rejects.toBeInstanceOf(AiError);
+  });
+});
+
+describe('WhisperCppSttProvider.describe', () => {
+  it('reports the binary present when it runs, and the model when it is on disk', async () => {
+    const described = await provider((child) => {
+      child.emit('close', 0, null);
+    }).describe();
+
+    expect(described).toEqual({
+      binaryPresent: true,
+      modelPresent: true,
+      binary: 'whisper-cli',
+      model: modelPath,
+    });
+  });
+
+  it('reports the binary missing when the spawn fails', async () => {
+    const described = await provider((child) => {
+      child.emit('error', new Error('ENOENT'));
+    }).describe();
+
+    expect(described.binaryPresent).toBe(false);
+  });
+
+  it('reports the model missing when the file is not there', async () => {
+    const described = await provider(
+      (child) => {
+        child.emit('close', 0, null);
+      },
+      [],
+      () => join(dir, 'absent.bin'),
+    ).describe();
+
+    expect(described.modelPresent).toBe(false);
+    expect(described.model).toContain('absent.bin');
+  });
+});

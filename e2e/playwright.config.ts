@@ -19,6 +19,26 @@ const baseURL = `http://127.0.0.1:${String(port)}`;
  */
 const executablePath = process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE'];
 
+/**
+ * A microphone the capture spec can record from (M5).
+ *
+ * Chromium plays the WAV below into a fake input device and auto-accepts the
+ * permission prompt, so `getUserMedia` → `AudioContext` → `AudioWorkletNode`
+ * runs for real — the only part of the recording path a headless run can
+ * substitute is the physical microphone. The file is synthetic and contains no
+ * speech; `e2e/fixtures/audio/README.md` says why.
+ */
+const fakeMicrophone = [
+  // `--use-fake-device-for-media-stream`, not the `-media-capture` spelling the
+  // M5 packet quoted: that switch does not exist in Chromium, and `getUserMedia`
+  // answers "Requested device not found" — which looks exactly like a headless
+  // machine having no microphone, so the spec would have been quietly deleted
+  // as unrunnable rather than fixed.
+  '--use-fake-device-for-media-stream',
+  '--use-fake-ui-for-media-stream',
+  `--use-file-for-fake-audio-capture=${join(import.meta.dirname, 'fixtures', 'audio', 'dictation-10s.wav')}`,
+];
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -29,7 +49,10 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
-    ...(executablePath ? { launchOptions: { executablePath } } : {}),
+    launchOptions: {
+      args: fakeMicrophone,
+      ...(executablePath ? { executablePath } : {}),
+    },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

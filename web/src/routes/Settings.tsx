@@ -1,4 +1,7 @@
 import {
+  KEEP_AUDIO_SETTING,
+  MAX_VOCABULARY_TERMS,
+  STT_VOCABULARY_SETTING,
   CLINICIAN_CREDENTIAL_SETTING,
   CLINICIAN_LICENCE_SETTING,
   CLINICIAN_NAME_SETTING,
@@ -80,7 +83,109 @@ export function Settings(): React.JSX.Element {
       </Link>
 
       <ClinicianDetails />
+      <RecordingSettings />
     </Screen>
+  );
+}
+
+/**
+ * What happens when she dictates: the words whisper should expect, and whether
+ * the recording is kept.
+ *
+ * Both are here rather than buried because both are privacy-shaped. The
+ * vocabulary list is the one knob that fixes Whisper's known weak spot —
+ * medication names — and `keep_audio` decides whether the rawest form of a
+ * session stays on the disk after the note exists.
+ */
+function RecordingSettings(): React.JSX.Element {
+  const load = useCallback((signal: AbortSignal) => getSettings(signal), []);
+  const settings = useLoader(load);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (settings.state.status === 'loading') return <p className="small state-note">Loading settings…</p>;
+  if (settings.state.status === 'error') {
+    return (
+      <p className="small state-note error-state" role="alert">
+        {settings.state.message}{' '}
+        <button type="button" className="btn small btn-quick" onClick={settings.reload}>
+          Try again
+        </button>
+      </p>
+    );
+  }
+
+  const current = settings.state.data as SettingsRecord;
+  const stored = current[STT_VOCABULARY_SETTING];
+  const vocabulary = Array.isArray(stored) ? stored.filter((term) => typeof term === 'string') : [];
+  const keepAudio = current[KEEP_AUDIO_SETTING] === true;
+
+  return (
+    <form
+      className="card card-rows lede"
+      data-testid="recording-settings"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        // One term per line, blanks dropped: a textarea is what a list of
+        // medication names is actually pasted into.
+        const terms = String(form.get(STT_VOCABULARY_SETTING) ?? '')
+          .split('\n')
+          .map((term) => term.trim())
+          .filter((term) => term !== '')
+          .slice(0, MAX_VOCABULARY_TERMS);
+
+        void (async () => {
+          try {
+            await putSettings({
+              [STT_VOCABULARY_SETTING]: terms,
+              [KEEP_AUDIO_SETTING]: form.get(KEEP_AUDIO_SETTING) === 'on',
+            });
+            setSaved(true);
+            setError(null);
+          } catch (thrown) {
+            setError(errorMessage(thrown));
+          }
+        })();
+      }}
+    >
+      <h2 className="lede">Recording</h2>
+
+      <label className="label" htmlFor="stt-vocabulary">
+        Words to listen for, one per line
+      </label>
+      <p className="small note-meta">
+        Medication and clinical names are what transcription gets wrong most often. Anything listed here is
+        given to the transcriber before it starts.
+      </p>
+      <textarea
+        id="stt-vocabulary"
+        name={STT_VOCABULARY_SETTING}
+        rows={6}
+        placeholder={'Vraylar\nLatuda\nlamotrigine'}
+        defaultValue={vocabulary.join('\n')}
+      />
+
+      <label className="row gap-12 keep-audio">
+        <input type="checkbox" name={KEEP_AUDIO_SETTING} defaultChecked={keepAudio} />
+        <span>
+          <span className="opt-title">Keep the recording after transcribing</span>
+          <span className="small note-meta keep-audio-sub">
+            Off by default. The note and the transcript are kept either way; the audio file is the rawest form
+            of the session, and it is stored unencrypted in your data folder as a WAV.
+          </span>
+        </span>
+      </label>
+
+      {error !== null && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      <button type="submit" className="btn btn-primary" data-testid="save-recording">
+        {saved ? 'Saved' : 'Save recording settings'}
+      </button>
+    </form>
   );
 }
 

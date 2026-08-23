@@ -522,13 +522,30 @@ describe('adding a patient and a typed note', () => {
     expect(screen.getByTestId('process-note')).toHaveProperty('disabled', false);
   });
 
-  it('offers recording beside the typed notes, but leaves it for M5', async () => {
+  /**
+   * Recording is live now (M5), and it sits beside the typed notes rather than
+   * replacing them: she both writes and occasionally dictates, and both reach
+   * the same drafting call.
+   *
+   * jsdom has no AudioWorklet, which makes this the "browser cannot record"
+   * path — and the assertion that matters is what it offers instead. The
+   * answer is always typing. It is never the Web Speech API, which can send
+   * audio to Google (CLAUDE.md hard rule 1).
+   */
+  it('offers recording beside the typed notes, and falls back to typing where it cannot run', async () => {
     installFakeApi({ formats: [progressNote], patients: [john] });
     renderApp(`/capture/${john.id}`);
 
     const record = (await screen.findByText('Record audio')).closest('button');
-    expect(record).toHaveProperty('disabled', true);
-    expect(record?.getAttribute('title')).toBe('Recording arrives in a later milestone');
+    expect(record).toHaveProperty('disabled', false);
+    expect(screen.getByTestId('summary-input')).toBeTruthy();
+
+    fireEvent.click(record as HTMLButtonElement);
+
+    expect(await screen.findByTestId('capture-error')).toHaveProperty(
+      'textContent',
+      expect.stringContaining('Type the summary instead'),
+    );
   });
 });
 

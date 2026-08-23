@@ -170,16 +170,32 @@ export interface LlmDescription {
 }
 
 export interface TranscribeRequest {
+  /** A 16-bit PCM WAV on disk. Nothing transcodes it; whisper reads it as-is. */
   readonly wavPath: string;
+  /** Read from the WAV's own header, and what the timeout is scaled from. */
+  readonly durationSeconds: number;
+  /** `stt_vocabulary` from Settings, rendered into whisper's `--prompt`. */
   readonly vocabulary: readonly string[];
 }
 
 export type SttEvent =
+  /** `fraction` is 0–1 through the recording. whisper reports whole percents. */
   | { readonly type: 'progress'; readonly fraction: number; readonly message: string }
   | { readonly type: 'transcript'; readonly text: string };
 
+/** For `/api/health` and M7's setup checklist: is whisper actually installed? */
+export interface SttDescription {
+  readonly binaryPresent: boolean;
+  readonly modelPresent: boolean;
+  /** What was probed, so the setup screen can name the path that failed. */
+  readonly binary: string;
+  readonly model: string;
+}
+
 export interface SttProvider {
+  /** Streams progress, then yields the transcript. Throws `AiError`. */
   transcribe(request: TranscribeRequest): AsyncIterable<SttEvent>;
+  describe(): Promise<SttDescription>;
 }
 
 export interface AiProviders {

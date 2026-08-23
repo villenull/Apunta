@@ -981,8 +981,8 @@ select:focus {
   flex: 1;
 }
 
-/* Disabled affordances: options a later packet fills in (M4 refine chat,
-   M5 recording, M6 template/example upload) render, but cannot be used. */
+/* Disabled affordances: options a later packet fills in (M6 template/example
+   upload) render, but cannot be used. */
 .btn:disabled,
 .btn-option:disabled,
 .icon-btn:disabled,
@@ -1047,9 +1047,77 @@ select:disabled {
 }
 
 /*
+ * The recorder, in place of the "Record audio" option while it runs.
+ * `prototype/capture.html` centres it and gives it the red dot and the serif
+ * timer; the pulse is the one addition, because a still dot and a running
+ * timer look the same as a frozen screen.
+ */
+.record-ui {
+  text-align: center;
+  padding: 32px 0;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.record-mic {
+  width: 26px;
+  height: 26px;
+  color: var(--danger);
+}
+
+.record-dot.recording {
+  animation: record-pulse 1.6s ease-in-out infinite;
+}
+
+.record-label {
+  margin: 4px 0 20px;
+}
+
+.record-actions {
+  justify-content: center;
+}
+
+@keyframes record-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.72;
+  }
+}
+
+/* A pulsing dot is a status indicator, not decoration — but it must not be
+   the only one, and it must not move for anyone who asked it not to. */
+@media (prefers-reduced-motion: reduce) {
+  .record-dot.recording {
+    animation: none;
+  }
+}
+
+/* The keep-audio toggle: a checkbox with a sentence of consequence under it. */
+.keep-audio {
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.keep-audio input {
+  width: auto;
+  margin-top: 3px;
+}
+
+.keep-audio-sub {
+  display: block;
+  margin-top: 2px;
+}
+
+/*
  * Capture's typed input. Framed like a .btn-option so the two ways in read as
- * a pair, but it is not a choice: the recording option (M5) and the typed
- * notes both feed the same drafting call.
+ * a pair, but it is not a choice: a recording and the typed notes both feed
+ * the same drafting call.
  */
 .capture-typed {
   border: 0.5px solid var(--border);

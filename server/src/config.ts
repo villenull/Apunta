@@ -17,6 +17,12 @@ export const DEFAULT_PORT = 7717;
 
 export const DB_FILENAME = 'apunta.db';
 
+/** Recordings land here while they are transcribed (M5). */
+export const AUDIO_DIRNAME = 'audio';
+
+/** Where the setup script downloads `ggml-large-v3-turbo-q5_0.bin` (PLAN §2). */
+export const MODELS_DIRNAME = 'models';
+
 export const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
 
 export const DEFAULT_FAKE_STREAM_DELAY_MS = 12;
@@ -52,6 +58,10 @@ export interface AppConfig {
   readonly dataDir: string;
   /** The SQLite file itself, inside `dataDir`. */
   readonly dbFile: string;
+  /** Uploaded recordings, inside `dataDir`. Created on first upload (M5). */
+  readonly audioDir: string;
+  /** Where the whisper.cpp GGUF lives by default, inside `dataDir` (M5). */
+  readonly modelsDir: string;
   /** Numbered `.sql` migrations, shipped next to the server code. */
   readonly migrationsDir: string;
   /** `APUNTA_FAKE_AI=1` — deterministic providers, no local AI tooling needed. */
@@ -100,6 +110,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port,
     dataDir,
     dbFile: join(dataDir, DB_FILENAME),
+    audioDir: join(dataDir, AUDIO_DIRNAME),
+    modelsDir: join(dataDir, MODELS_DIRNAME),
     // `serverRoot` is `server/` whether we are running from `src/` under tsx or
     // from the built `dist/`, so the .sql files are found either way.
     migrationsDir: join(serverRoot, 'migrations'),
@@ -111,8 +123,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   };
 }
 
-/** The data dir holds the database (and later, audio scratch files). */
+/** The data dir holds the database, the audio scratch files and the STT model. */
 export function ensureDataDir(dataDir: string): string {
   mkdirSync(dataDir, { recursive: true });
   return dataDir;
+}
+
+/**
+ * Made on demand rather than at boot: a practice that never records should not
+ * find an empty `audio/` folder in its data directory wondering what it is.
+ */
+export function ensureDir(dir: string): string {
+  mkdirSync(dir, { recursive: true });
+  return dir;
 }

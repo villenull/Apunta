@@ -46,7 +46,7 @@ function buildInit(options: RequestOptions): RequestInit {
   // A `FormData` body is passed straight through with **no** content-type
   // header: the browser has to set it itself, because only it knows the
   // multipart boundary it generated. Setting one by hand produces a body the
-  // server cannot parse (M6's uploads).
+  // server cannot parse — format uploads and recordings both.
   const payload =
     body === undefined
       ? {}

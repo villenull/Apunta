@@ -10,24 +10,41 @@
  * gate on M3, because three of the failure modes below are silent: the note
  * arrives, it validates, and it is wrong.
  *
+ * `--audio` adds the M5 half: a real whisper.cpp run over a WAV, printed with
+ * its timing. Point it at a dictation you recorded yourself — the checked-in
+ * fixture is synthetic tones with no speech in it, so it will come back as
+ * nonsense, which is the honest result rather than a bug.
+ *
  * Options:
  *   --fixture <name>   an e2e/fixtures/eval/*.txt stem (default: the longest)
  *   --model <tag>      override the configured/auto-picked model
  *   --format intake    use the intake instructions instead of progress
  *   --runs <n>         repeat n times; the repetition bug is intermittent
+ *   --audio [path]     transcribe a WAV with whisper.cpp first and print it
+ *                      (default: e2e/fixtures/audio/dictation-10s.wav)
+ *   --audio-only       stop after transcribing; never touch Ollama
+ *   --from-audio       draft the note from the transcript instead of the
+ *                      text fixture — the whole M5 path, end to end
+ *   --vocabulary a,b   terms for whisper's --prompt, as Settings would supply
  */
 
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const AI_DIST = join(root, 'server', 'dist', 'ai');
+const SHARED_DIST = join(root, 'shared', 'dist', 'index.js');
 
-let OllamaProvider, defaultModelForMachine, defaultInstructionsFor;
+let OllamaProvider, defaultModelForMachine, defaultInstructionsFor, WhisperCppSttProvider;
+let defaultDataDir, parseWavHeader, WHISPER_MODEL_FILENAME;
 try {
-  ({ OllamaProvider, defaultModelForMachine } = await import(join(AI_DIST, 'index.js')));
+  ({ OllamaProvider, defaultModelForMachine, WhisperCppSttProvider } = await import(
+    join(AI_DIST, 'index.js')
+  ));
   ({ defaultInstructionsFor } = await import(join(AI_DIST, 'default-instructions.js')));
+  ({ defaultDataDir } = await import(join(root, 'server', 'dist', 'config.js')));
+  ({ parseWavHeader, WHISPER_MODEL_FILENAME } = await import(SHARED_DIST));
 } catch (error) {
   fail(
     `could not load the built server from ${AI_DIST}\n` +
@@ -56,9 +73,26 @@ if (stray.length > 0) {
   );
 }
 
+const has = (name) => argv.includes(`--${name}`);
+/** A flag whose value is optional: `--audio` and `--audio path` both work. */
+const optionalArg = (name) => {
+  const value = arg(name);
+  return value === undefined || value.startsWith('--') ? null : value;
+};
+
 const FIXTURES = join(root, 'e2e', 'fixtures', 'eval');
+const DEFAULT_WAV = join(root, 'e2e', 'fixtures', 'audio', 'dictation-10s.wav');
 const runs = Number(arg('runs') ?? 1);
 const intake = arg('format') === 'intake';
+
+const audioOnly = has('audio-only');
+const fromAudio = has('from-audio');
+const wantsAudio = has('audio') || audioOnly || fromAudio;
+const wavPath = optionalArg('audio') ?? DEFAULT_WAV;
+const vocabulary = (arg('vocabulary') ?? '')
+  .split(',')
+  .map((term) => term.trim())
+  .filter((term) => term !== '');
 
 const fixtureName = arg('fixture');
 const fixtureFile = fixtureName
@@ -80,6 +114,97 @@ function longestFixture() {
     .filter((f) => f.endsWith('.txt'))
     .map((f) => ({ f, size: readFileSync(join(FIXTURES, f), 'utf8').length }))
     .sort((a, b) => b.size - a.size)[0]?.f;
+}
+
+// --- speech to text (M5) ---------------------------------------------------
+
+/**
+ * One real whisper.cpp run: what it heard, and how long it took.
+ *
+ * Nothing here transcodes: the WAV goes straight to `whisper-cli`, exactly as
+ * `POST /api/transcribe` does with what the browser recorded. The real-time
+ * factor is the number worth reading — the model is ~1× real time on a fast
+ * CPU, so a 20-minute dictation should land in about 20 minutes, not an hour.
+ */
+async function transcribeAudio() {
+  const binary = process.env.APUNTA_WHISPER_BINARY ?? 'whisper-cli';
+  const model = process.env.APUNTA_WHISPER_MODEL ?? join(defaultDataDir(), 'models', WHISPER_MODEL_FILENAME);
+
+  let bytes;
+  try {
+    bytes = readFileSync(wavPath);
+  } catch {
+    fail(`no audio file at ${wavPath}`);
+  }
+  const format = parseWavHeader(new Uint8Array(bytes), statSync(wavPath).size);
+
+  console.log(`audio     ${wavPath}`);
+  console.log(
+    `          ${format.durationSeconds.toFixed(1)}s, ${format.sampleRate} Hz, ` +
+      `${format.channels === 1 ? 'mono' : `${format.channels} ch`}, ${(bytes.length / 1024).toFixed(0)} KB`,
+  );
+  console.log(`whisper   ${binary}`);
+  console.log(`model     ${model}`);
+  if (vocabulary.length > 0) console.log(`vocab     ${vocabulary.join(', ')}`);
+  if (wavPath === DEFAULT_WAV) {
+    console.log(
+      '\n  note: the checked-in fixture is synthetic tones with no speech in it —\n' +
+        '        expect nonsense. Use --audio <your-own.wav> for a real check.',
+    );
+  }
+  console.log('');
+
+  const provider = new WhisperCppSttProvider({
+    resolveBinary: () => binary,
+    resolveModel: () => model,
+  });
+
+  const described = await provider.describe();
+  if (!described.binaryPresent) {
+    fail(`whisper binary "${binary}" is not runnable. Install whisper.cpp, or set APUNTA_WHISPER_BINARY.`);
+  }
+  if (!described.modelPresent) {
+    fail(`no model at ${model}. Run the setup script, or set APUNTA_WHISPER_MODEL.`);
+  }
+
+  const started = Date.now();
+  let transcript = '';
+  try {
+    for await (const event of provider.transcribe({
+      wavPath,
+      durationSeconds: format.durationSeconds,
+      vocabulary,
+    })) {
+      if (event.type === 'progress') {
+        process.stdout.write(`  transcribing ${Math.round(event.fraction * 100)}%\r`);
+      } else {
+        transcript = event.text;
+      }
+    }
+  } catch (error) {
+    console.error(`\n  FAILED: ${error?.message ?? String(error)}`);
+    process.exit(1);
+  }
+
+  const wallSeconds = (Date.now() - started) / 1000;
+  console.log(`\n${'─'.repeat(72)}`);
+  console.log(transcript);
+  console.log('─'.repeat(72));
+  console.log(
+    `${transcript.split(/\s+/).filter(Boolean).length} words in ${wallSeconds.toFixed(1)}s — ` +
+      `${(format.durationSeconds / wallSeconds).toFixed(2)}× real time ` +
+      `(${format.durationSeconds.toFixed(1)}s of audio)\n`,
+  );
+  return transcript;
+}
+
+let dictationFromAudio = null;
+if (wantsAudio) {
+  dictationFromAudio = await transcribeAudio();
+  if (audioOnly) {
+    console.log('Transcription run passed.');
+    process.exit(0);
+  }
 }
 
 const SECTIONS = intake
@@ -141,7 +266,9 @@ async function once() {
       instructions: defaultInstructionsFor(FORMAT_NAME, SECTIONS),
       formatName: FORMAT_NAME,
       sections: SECTIONS,
-      typedNotes: dictation,
+      // `--from-audio` is the M5 path end to end: what whisper heard is a
+      // transcript, and the prompt labels it as one — it is not her writing.
+      ...(fromAudio && dictationFromAudio ? { transcript: dictationFromAudio } : { typedNotes: dictation }),
     })) {
       if (event.type === 'status') process.stdout.write(`  ${event.message}\r`);
       else if (event.type === 'sections') {

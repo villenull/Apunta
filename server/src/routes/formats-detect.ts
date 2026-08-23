@@ -2,6 +2,7 @@ import {
   approximateTokens,
   DetectKindSchema,
   MAX_DETECT_FILES,
+  MAX_UPLOAD_BYTES,
   SectionsSchema,
   type DetectFormatResponse,
   type DetectKind,
@@ -119,7 +120,22 @@ async function readUpload(request: FastifyRequest, maxFiles: number): Promise<Up
   const fields: Record<string, string> = {};
   let tooMany = false;
 
-  for await (const part of request.parts()) {
+  // Narrowed from the app-wide ceiling in `app.ts`, which is sized for a
+  // 60-minute recording. A document upload is 10 MB and a handful of short
+  // fields; nothing on this path has any business being larger.
+  const parts = request.parts({
+    limits: {
+      fileSize: MAX_UPLOAD_BYTES,
+      files: maxFiles + 1,
+      fields: 4,
+      parts: 8,
+      fieldSize: 256,
+      fieldNameSize: 64,
+      headerPairs: 64,
+    },
+  });
+
+  for await (const part of parts) {
     if (part.type === 'file') {
       // An over-limit file is drained and discarded rather than thrown on
       // immediately: abandoning the iterator mid-part destroys the stream

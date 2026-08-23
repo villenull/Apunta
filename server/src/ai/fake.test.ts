@@ -239,12 +239,21 @@ describe('FakeSttProvider', () => {
   it('reports progress and then a transcript', async () => {
     const events: string[] = [];
     let transcript = '';
-    for await (const event of new FakeSttProvider().transcribe({ wavPath: '/tmp/a.wav', vocabulary: [] })) {
+    const request = { wavPath: '/tmp/a.wav', durationSeconds: 12, vocabulary: [] };
+    for await (const event of new FakeSttProvider().transcribe(request)) {
       events.push(event.type);
       if (event.type === 'transcript') transcript = event.text;
     }
     expect(events).toEqual(['progress', 'progress', 'progress', 'progress', 'transcript']);
     expect(transcript).toContain('John Smith');
+  });
+
+  /** Hard rule 3: fake mode is a working app, so nothing in it reports missing. */
+  it('reports whisper as present, so fake mode is not a half-broken setup', async () => {
+    await expect(new FakeSttProvider().describe()).resolves.toMatchObject({
+      binaryPresent: true,
+      modelPresent: true,
+    });
   });
 });
 

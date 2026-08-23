@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
-import { MAX_DETECT_FILES, MAX_UPLOAD_BYTES } from '@apunta/shared';
+import { MAX_AUDIO_BYTES, MAX_DETECT_FILES } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 
@@ -21,6 +21,7 @@ import { registerPatientRoutes } from './routes/patients.js';
 import { registerPlanRoutes } from './routes/plans.js';
 import { registerPrepRoutes } from './routes/prep.js';
 import { registerSettingsRoutes } from './routes/settings.js';
+import { registerTranscribeRoute } from './routes/transcribe.js';
 
 export interface BuildAppOptions {
   config?: AppConfig;
@@ -65,31 +66,38 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       app.log.warn(detail, message);
     });
 
-  registerErrorHandler(app);
-
   /**
-   * File uploads (M6's format detection and skill import; M5's audio).
+   * One multipart registration, because the plugin is global and registering
+   * it twice throws.
    *
-   * Everything but `fileSize` is *tighter* than the plugin's defaults, and
-   * `fileSize` is raised deliberately to the packet's 10 MB. Uploads are held
-   * in memory and never written to disk: `saveRequestFiles()` and
-   * `part.toFile()` would put a clinical note in a temp directory, and an
-   * ESLint rule keeps both names out of `server/`.
+   * These limits are the app-wide ceiling, not any route's policy: a
+   * 60-minute recording is ~115 MB of PCM, so the ceiling cannot be the 10 MB
+   * that document upload wants. Each route narrows this to what it actually
+   * accepts by passing its own limits to `request.parts()` — see
+   * `routes/formats-detect.ts` and `routes/transcribe.ts`. A route that
+   * forgets to narrow gets the ceiling, which is why the ceiling is still a
+   * limit and not `Infinity`.
+   *
+   * Audio is streamed to disk; documents are held in memory and never written
+   * there. `saveRequestFiles()` and `part.toFile()` would put a clinical note
+   * in a temp directory, and an ESLint rule keeps both names out of `server/`.
    */
   await app.register(multipart, {
     limits: {
-      fileSize: MAX_UPLOAD_BYTES,
+      fileSize: MAX_AUDIO_BYTES,
       // One above what any route accepts, so the route sees the extra file
       // and can answer "upload at most 3" rather than having busboy abort the
       // stream mid-part — which surfaces as an unexplained 500.
       files: MAX_DETECT_FILES + 1,
-      fields: 4,
-      parts: 8,
-      fieldSize: 256,
+      fields: 8,
+      parts: 16,
+      fieldSize: 1024 * 1024,
       fieldNameSize: 64,
       headerPairs: 64,
     },
   });
+
+  registerErrorHandler(app);
 
   registerHealthRoute(app, config, db, providers);
   registerPatientRoutes(app, db);
@@ -100,6 +108,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerFormatDetectRoutes(app, providers);
   registerSettingsRoutes(app, db);
   registerGenerateRoute(app, db, providers);
+  registerTranscribeRoute(app, config, db, providers);
   registerChatRoutes(app, db, providers);
   registerPlanRoutes(app, db, providers);
   registerPrepRoutes(app, db, providers);

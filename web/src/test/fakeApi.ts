@@ -261,8 +261,12 @@ const HEALTHY: HealthResponse = {
   fakeAi: true,
   db: { path: '/tmp/apunta/apunta.db', migrationLevel: 1 },
   ollama: { reachable: true, model: 'fake-llm', modelPresent: true },
-  whisper: { binaryPresent: false, modelPresent: false },
-  ffmpeg: { present: false },
+  whisper: {
+    binaryPresent: true,
+    modelPresent: true,
+    binary: 'fake-whisper',
+    model: 'fake-whisper-model',
+  },
 };
 
 function apiError(status: number, code: string, message: string): Response {
@@ -280,6 +284,8 @@ export interface FakeApiOptions {
    * event, never an HTTP status.
    */
   generateError?: { code: string; message: string };
+  /** The same, for `POST /api/transcribe` — "whisper is not installed" (M5). */
+  transcribeError?: { code: string; message: string };
   /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
   suggestError?: { code: string; message: string };
   /** Make `POST /api/patients/:id/prep` fail inside the stream. */
@@ -321,6 +327,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
     vi.fn(async (path: string, init: RequestInit = {}): Promise<Response> => {
       const method = init.method ?? 'GET';
       calls.push(`${method} ${path}`);
+      // A multipart upload (M5) has a FormData body, not a JSON string.
       const body: Record<string, unknown> =
         typeof init.body === 'string' ? (JSON.parse(init.body) as Record<string, unknown>) : {};
 
@@ -346,6 +353,32 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
       if (path === '/api/settings') {
         if (method === 'PUT') state.settings = { ...state.settings, ...body };
         return json(state.settings);
+      }
+
+      /**
+       * `POST /api/transcribe` (M5): a multipart upload, then the *same*
+       * frames `/api/generate` streams, prefixed by whisper's progress —
+       * because on the server it is literally the same drafting code.
+       */
+      if (path === '/api/transcribe' && method === 'POST') {
+        if (options.transcribeError) return sse([{ event: 'error', data: options.transcribeError }]);
+        const form = init.body as FormData;
+        const format = state.formats.find((candidate) => candidate.id === form.get('format_id'));
+        if (!format) return apiError(404, 'not_found', 'Note format not found');
+        const transcript = 'Sleeping better since the wind-down routine, fewer intrusive thoughts.';
+        const note = makeNote(String(form.get('patient_id')), {
+          format_id: format.id,
+          title: format.name,
+          content: draftContent(format.sections, transcript),
+          created_at: stamp(),
+          updated_at: stamp(),
+        });
+        state.notes = [note, ...state.notes];
+        return sse([
+          { event: 'progress', data: { fraction: 0.5, message: 'Transcribing…' } },
+          { event: 'progress', data: { fraction: 1, message: 'Transcribing…' } },
+          ...draftFrames(format.sections, transcript, note),
+        ]);
       }
 
       if (path === '/api/formats' && method === 'GET') return json({ formats: state.formats });
