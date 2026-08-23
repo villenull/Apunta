@@ -6,6 +6,10 @@ import {
   type NoteFormat,
   type Patient,
   type PatientListItem,
+  type PlanGoal,
+  type SessionBrief,
+  type SessionBriefContent,
+  type TreatmentPlan,
 } from '@apunta/shared';
 import { vi } from 'vitest';
 
@@ -26,6 +30,10 @@ export interface FakeApiState {
   formats: NoteFormat[];
   /** Refine-chat turns, across every note. */
   messages: ChatMessage[];
+  /** Treatment plan versions, newest version last (M9). */
+  plans: TreatmentPlan[];
+  goals: PlanGoal[];
+  briefs: SessionBrief[];
 }
 
 export interface FakeApi {
@@ -97,6 +105,58 @@ export function makeNote(patientId: string, overrides: Partial<Note> = {}): Note
     created_at: '2026-08-08T09:00:00.000Z',
     updated_at: '2026-08-08T09:00:00.000Z',
     published_at: null,
+    ...overrides,
+  };
+}
+
+export function makePlan(patientId: string, overrides: Partial<TreatmentPlan> = {}): TreatmentPlan {
+  return {
+    id: fakeId(),
+    patient_id: patientId,
+    version: 1,
+    status: 'draft',
+    created_at: '2026-08-01T09:00:00.000Z',
+    activated_at: null,
+    review_due: null,
+    review_interval_days: 90,
+    diagnoses: [],
+    presenting_problem: '',
+    strengths: '',
+    modality: '',
+    frequency: '',
+    discharge_criteria: '',
+    effective_from: null,
+    effective_to: null,
+    clinician_name: '',
+    clinician_credential: '',
+    clinician_licence: '',
+    clinician_npi: '',
+    attested_at: null,
+    attestation_text: '',
+    client_participation: 'not_recorded',
+    client_participation_on: null,
+    client_participation_note: '',
+    superseded_by: null,
+    ...overrides,
+  };
+}
+
+export function makeGoal(planId: string, overrides: Partial<PlanGoal> = {}): PlanGoal {
+  const status = overrides.status ?? 'accepted';
+  return {
+    id: fakeId(),
+    plan_id: planId,
+    ordinal: 0,
+    statement: 'John sleeps well enough to get through a workday.',
+    objectives: [],
+    interventions: [],
+    target_date: null,
+    status,
+    source: status === 'proposed' ? 'model_suggested' : 'clinician_authored',
+    evidence: [],
+    carried_from_goal_id: null,
+    created_at: '2026-08-01T09:05:00.000Z',
+    accepted_at: status === 'proposed' ? null : '2026-08-01T09:05:00.000Z',
     ...overrides,
   };
 }
@@ -213,11 +273,24 @@ export interface FakeApiOptions {
    * event, never an HTTP status.
    */
   generateError?: { code: string; message: string };
+  /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
+  suggestError?: { code: string; message: string };
+  /** Make `POST /api/patients/:id/prep` fail inside the stream. */
+  prepError?: { code: string; message: string };
 }
 
 /** Installs a `fetch` that answers the endpoints the SPA uses, and returns its state. */
 export function installFakeApi(initial: Partial<FakeApiState> = {}, options: FakeApiOptions = {}): FakeApi {
-  const state: FakeApiState = { patients: [], notes: [], formats: [], messages: [], ...initial };
+  const state: FakeApiState = {
+    patients: [],
+    notes: [],
+    formats: [],
+    messages: [],
+    plans: [],
+    goals: [],
+    briefs: [],
+    ...initial,
+  };
   const calls: string[] = [];
   let sequence = 0;
 
@@ -377,6 +450,238 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
             updated_at: stamp(),
           }),
         );
+      }
+
+      // --- M9: the treatment plan and session prep ----------------------
+
+      const route = path.split('?')[0] ?? path;
+      const query = new URLSearchParams(path.split('?')[1] ?? '');
+
+      function planFor(patientId: string): TreatmentPlan | undefined {
+        return [...state.plans]
+          .filter((plan) => plan.patient_id === patientId)
+          .sort((a, b) => b.version - a.version)[0];
+      }
+
+      function goalsFor(planId: string): PlanGoal[] {
+        return state.goals.filter((goal) => goal.plan_id === planId);
+      }
+
+      const versionsMatch = /^\/api\/patients\/([^/]+)\/plan\/versions$/.exec(route);
+      if (versionsMatch) {
+        const patientId = versionsMatch[1] ?? '';
+        return json({
+          versions: state.plans
+            .filter((plan) => plan.patient_id === patientId)
+            .sort((a, b) => b.version - a.version),
+        });
+      }
+
+      const suggestMatch = /^\/api\/patients\/([^/]+)\/plan\/suggest$/.exec(route);
+      if (suggestMatch && method === 'POST') {
+        const patientId = suggestMatch[1] ?? '';
+        if (options.suggestError) return sse([{ event: 'error', data: options.suggestError }]);
+
+        let plan = planFor(patientId);
+        if (!plan) {
+          plan = makePlan(patientId);
+          state.plans = [...state.plans, plan];
+        }
+        const note = state.notes.find((candidate) => candidate.patient_id === patientId);
+        const proposed = makeGoal(plan.id, {
+          statement: 'John keeps a sleep log between sessions.',
+          status: 'proposed',
+          objectives: [
+            {
+              statement: 'John will bring a completed sleep log to each session.',
+              measure: 'the log itself',
+              baseline: 'improved sleep since last session',
+              target_value: '',
+              target_date: null,
+              source: 'model_suggested',
+            },
+          ],
+          evidence:
+            note === undefined
+              ? []
+              : [
+                  {
+                    note_id: note.id,
+                    note_date: note.created_at,
+                    section: 'Subjective',
+                    excerpt: 'improved sleep since last session',
+                  },
+                ],
+        });
+        state.goals = [...state.goals, proposed];
+
+        return sse([
+          { event: 'status', data: { stage: 'reading-notes', message: 'Reading note 1 of 1…' } },
+          { event: 'goal', data: { goal: proposed } },
+          {
+            event: 'done',
+            data: {
+              goals: [proposed],
+              lookback: {
+                cap: 5,
+                notes_read: note === undefined ? 0 : 1,
+                oldest_note_date: note?.created_at ?? null,
+                newest_note_date: note?.created_at ?? null,
+                skipped_note_ids: [],
+              },
+              dropped: 0,
+            },
+          },
+        ]);
+      }
+
+      const planMatch = /^\/api\/patients\/([^/]+)\/plan$/.exec(route);
+      if (planMatch) {
+        const patientId = planMatch[1] ?? '';
+        if (method === 'POST') {
+          const previous = planFor(patientId);
+          const created = makePlan(patientId, { version: (previous?.version ?? 0) + 1 });
+          state.plans = [...state.plans, created];
+          for (const goal of previous ? goalsFor(previous.id) : []) {
+            if (goal.status !== 'accepted' && goal.status !== 'met') continue;
+            state.goals = [
+              ...state.goals,
+              makeGoal(created.id, {
+                ...goal,
+                id: fakeId(),
+                plan_id: created.id,
+                carried_from_goal_id: goal.id,
+              }),
+            ];
+          }
+          return json({ plan: created, goals: goalsFor(created.id) }, 201);
+        }
+        const wanted = query.get('version');
+        const plan =
+          wanted === null
+            ? planFor(patientId)
+            : state.plans.find(
+                (candidate) => candidate.patient_id === patientId && candidate.version === Number(wanted),
+              );
+        if (wanted !== null && !plan) return apiError(404, 'not_found', 'No such plan version');
+        return json(plan ? { plan, goals: goalsFor(plan.id) } : { plan: null, goals: [] });
+      }
+
+      const exportMatch = /^\/api\/plans\/([^/]+)\/export$/.exec(route);
+      if (exportMatch) {
+        return new Response('TREATMENT PLAN\n\nPatient: John Smith\n', {
+          status: 200,
+          headers: { 'content-type': 'text/plain' },
+        });
+      }
+
+      const activateMatch = /^\/api\/plans\/([^/]+)\/activate$/.exec(route);
+      if (activateMatch && method === 'POST') {
+        const planId = activateMatch[1] ?? '';
+        const plan = state.plans.find((candidate) => candidate.id === planId);
+        if (!plan) return apiError(404, 'not_found', 'Plan not found');
+        const activated: TreatmentPlan = {
+          ...plan,
+          status: 'active',
+          activated_at: stamp(),
+          attested_at: stamp(),
+          attestation_text: 'I authored and reviewed this treatment plan.',
+          effective_from: '2026-08-23',
+          review_due: '2026-11-21',
+        };
+        state.plans = state.plans.map((candidate) => (candidate.id === planId ? activated : candidate));
+        return json({ plan: activated, goals: goalsFor(planId) });
+      }
+
+      const goalMatch = /^\/api\/plans\/([^/]+)\/goals\/([^/]+)$/.exec(route);
+      if (goalMatch) {
+        const goalId = goalMatch[2] ?? '';
+        const goal = state.goals.find((candidate) => candidate.id === goalId);
+        if (!goal) return apiError(404, 'not_found', 'Goal not found');
+        if (method === 'DELETE') {
+          state.goals = state.goals.filter((candidate) => candidate.id !== goalId);
+          return new Response(null, { status: 204 });
+        }
+        const status = (body['status'] as PlanGoal['status'] | undefined) ?? goal.status;
+        const updated: PlanGoal = {
+          ...goal,
+          ...(typeof body['statement'] === 'string' ? { statement: body['statement'] } : {}),
+          ...(Array.isArray(body['objectives'])
+            ? { objectives: body['objectives'] as PlanGoal['objectives'] }
+            : {}),
+          ...(Array.isArray(body['interventions'])
+            ? { interventions: body['interventions'] as string[] }
+            : {}),
+          status,
+          accepted_at: status === 'proposed' ? null : (goal.accepted_at ?? stamp()),
+        };
+        state.goals = state.goals.map((candidate) => (candidate.id === goalId ? updated : candidate));
+        return json(updated);
+      }
+
+      const goalsMatch = /^\/api\/plans\/([^/]+)\/goals$/.exec(route);
+      if (goalsMatch && method === 'POST') {
+        const created = makeGoal(goalsMatch[1] ?? '', { statement: String(body['statement'] ?? '') });
+        state.goals = [...state.goals, created];
+        return json(created, 201);
+      }
+
+      const planPatchMatch = /^\/api\/plans\/([^/]+)$/.exec(route);
+      if (planPatchMatch && method === 'PATCH') {
+        const planId = planPatchMatch[1] ?? '';
+        const plan = state.plans.find((candidate) => candidate.id === planId);
+        if (!plan) return apiError(404, 'not_found', 'Plan not found');
+        const updated = { ...plan, ...(body as Partial<TreatmentPlan>) };
+        state.plans = state.plans.map((candidate) => (candidate.id === planId ? updated : candidate));
+        return json(updated);
+      }
+
+      const prepSaveMatch = /^\/api\/patients\/([^/]+)\/prep\/save$/.exec(route);
+      if (prepSaveMatch && method === 'POST') {
+        const content = body['content'] as SessionBriefContent;
+        const brief: SessionBrief = {
+          id: fakeId(),
+          patient_id: prepSaveMatch[1] ?? '',
+          generated_at: String(body['generated_at']),
+          content,
+          source_note_ids: content.lines.map((line) => line.note_id),
+          saved: true,
+          created_at: stamp(),
+        };
+        state.briefs = [brief, ...state.briefs];
+        return json(brief, 201);
+      }
+
+      const prepMatch = /^\/api\/patients\/([^/]+)\/prep$/.exec(route);
+      if (prepMatch) {
+        const patientId = prepMatch[1] ?? '';
+        if (method === 'GET') {
+          return json({ briefs: state.briefs.filter((brief) => brief.patient_id === patientId) });
+        }
+        if (options.prepError) return sse([{ event: 'error', data: options.prepError }]);
+
+        const notes = state.notes.filter((note) => note.patient_id === patientId);
+        const lines = notes.slice(0, 5).map((note) => ({
+          note_id: note.id,
+          note_date: note.created_at,
+          note_title: note.title,
+          text: note.content.split('\n')[0] ?? '',
+        }));
+        const lookback = {
+          cap: 5,
+          notes_read: lines.length,
+          oldest_note_date: lines.at(-1)?.note_date ?? null,
+          newest_note_date: lines[0]?.note_date ?? null,
+          skipped_note_ids: [],
+        };
+        return sse([
+          { event: 'status', data: { stage: 'reading-notes', message: 'Reading note 1 of 1…' } },
+          ...lines.map((line) => ({ event: 'line', data: { line } })),
+          {
+            event: 'brief',
+            data: { generated_at: '2026-08-23T09:00:00.000Z', content: { lines, lookback } },
+          },
+        ]);
       }
 
       return apiError(404, 'not_found', `No fake route for ${method} ${path}`);

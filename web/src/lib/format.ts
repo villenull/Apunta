@@ -59,3 +59,26 @@ export function notePreview(content: string): string {
 export function noteCountLabel(count: number): string {
   return `${String(count)} note${count === 1 ? '' : 's'}`;
 }
+
+/**
+ * A calendar date (`YYYY-MM-DD`) as the app writes dates elsewhere.
+ *
+ * Parsed field by field rather than through `new Date(iso)`: that constructor
+ * reads a bare date as UTC midnight, which renders as the day before for
+ * anyone west of Greenwich — and these are the dates a plan is audited
+ * against.
+ */
+export function formatPlanDate(date: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return date;
+  const [, year, month, day] = match;
+  return DATE_FORMAT.format(new Date(Number(year), Number(month) - 1, Number(day)));
+}
+
+/** "in 12 days" / "12 days ago" / "today", for the review-due line. */
+export function formatDayGap(daysUntil: number): string {
+  if (daysUntil === 0) return 'today';
+  const magnitude = Math.abs(daysUntil);
+  const unit = magnitude === 1 ? 'day' : 'days';
+  return daysUntil > 0 ? `in ${String(magnitude)} ${unit}` : `${String(magnitude)} ${unit} ago`;
+}

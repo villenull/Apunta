@@ -14,3 +14,22 @@ export { createPatient, deletePatient, getPatient, listPatients, updatePatient }
 export { createNote, deleteNote, listNotes, publishNote, unpublishNote, updateNote } from './notes.js';
 
 export { createFormat, deleteFormat, listFormats, updateFormat } from './formats.js';
+
+export { getSettings, putSettings } from './settings.js';
+
+export {
+  activatePlan,
+  createGoal,
+  deleteGoal,
+  exportPlan,
+  getPlan,
+  listPlanVersions,
+  startPlanVersion,
+  suggestGoals,
+  updateGoal,
+  updatePlan,
+} from './plan.js';
+export type { SuggestHandlers } from './plan.js';
+
+export { listBriefings, prepareBriefing, saveBriefing } from './prep.js';
+export type { PrepHandlers } from './prep.js';

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   firstName,
+  formatDayGap,
   formatEditedDate,
   formatNoteDate,
+  formatPlanDate,
   initials,
   noteCountLabel,
   notePreview,
@@ -63,5 +65,28 @@ describe('noteCountLabel', () => {
     expect(noteCountLabel(0)).toBe('0 notes');
     expect(noteCountLabel(1)).toBe('1 note');
     expect(noteCountLabel(3)).toBe('3 notes');
+  });
+});
+
+describe('formatPlanDate', () => {
+  it('renders a calendar date as the day it says, in any timezone', () => {
+    // `new Date('2026-08-12')` is UTC midnight, which is 11 August west of
+    // Greenwich. A review date that moves by a day is a review date that is
+    // wrong on the document a payer reads.
+    expect(formatPlanDate('2026-08-12')).toBe('Aug 12, 2026');
+  });
+
+  it('passes anything that is not a calendar date straight through', () => {
+    expect(formatPlanDate('')).toBe('');
+    expect(formatPlanDate('soon')).toBe('soon');
+  });
+});
+
+describe('formatDayGap', () => {
+  it('reads as a person would say it', () => {
+    expect(formatDayGap(0)).toBe('today');
+    expect(formatDayGap(1)).toBe('in 1 day');
+    expect(formatDayGap(12)).toBe('in 12 days');
+    expect(formatDayGap(-11)).toBe('11 days ago');
   });
 });

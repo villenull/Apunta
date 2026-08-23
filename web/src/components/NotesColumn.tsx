@@ -9,7 +9,10 @@ export interface NotesColumnProps {
   patient: PatientListItem | null;
   notes: LoadState<Note[]>;
   activeNoteId: string | null;
+  /** Which of the three things the main pane is showing (M9 adds two). */
+  view: 'notes' | 'plan' | 'prep';
   onSelect: (noteId: string) => void;
+  onOpenView: (view: 'plan' | 'prep') => void;
   onRetry: () => void;
   onDeletePatient: () => void;
 }
@@ -19,7 +22,9 @@ export function NotesColumn({
   patient,
   notes,
   activeNoteId,
+  view,
   onSelect,
+  onOpenView,
   onRetry,
   onDeletePatient,
 }: NotesColumnProps): React.JSX.Element {
@@ -55,6 +60,33 @@ export function NotesColumn({
             New note
           </button>
         )}
+        {/* The work around a session, next to the notes that follow one.
+            Two separate objects: the plan is a record she authors, the
+            briefing is a reading aid generated on demand. */}
+        {patient && (
+          <div className="col-actions">
+            <button
+              type="button"
+              className={view === 'plan' ? 'col-action-btn active' : 'col-action-btn'}
+              data-testid="open-plan"
+              onClick={() => {
+                onOpenView('plan');
+              }}
+            >
+              Treatment plan
+            </button>
+            <button
+              type="button"
+              className={view === 'prep' ? 'col-action-btn active' : 'col-action-btn'}
+              data-testid="open-prep"
+              onClick={() => {
+                onOpenView('prep');
+              }}
+            >
+              Prepare for session
+            </button>
+          </div>
+        )}
         {patient && (
           <NoteList
             patient={patient}
@@ -69,7 +101,9 @@ export function NotesColumn({
   );
 }
 
-type NoteListProps = Omit<NotesColumnProps, 'patient' | 'onDeletePatient'> & { patient: PatientListItem };
+type NoteListProps = Omit<NotesColumnProps, 'patient' | 'onDeletePatient' | 'view' | 'onOpenView'> & {
+  patient: PatientListItem;
+};
 
 function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListProps): React.JSX.Element {
   if (notes.status === 'loading') return <p className="small state-note">Loading notes…</p>;

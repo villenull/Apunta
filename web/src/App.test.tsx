@@ -115,6 +115,44 @@ describe('workspace', () => {
   });
 });
 
+describe('the work around a session', () => {
+  beforeEach(() => {
+    installFakeApi({
+      formats: [progressNote],
+      patients: [john, maria],
+      notes: [johnsDraft, johnsIntake],
+    });
+  });
+
+  /**
+   * The plan and a briefing are separate objects reached from the same column:
+   * one is a record she authors, the other a reading aid generated on demand.
+   */
+  it('opens the treatment plan beside the notes', async () => {
+    renderApp(`/?patient=${john.id}`);
+
+    fireEvent.click(await screen.findByTestId('open-plan'));
+
+    expect(await screen.findByTestId('plan-view')).toBeTruthy();
+    expect(screen.getByTestId('empty-no-plan').textContent).toContain('No treatment plan for John Smith yet');
+    // The notes are still one click away.
+    expect(screen.getByTestId('note-list')).toBeTruthy();
+  });
+
+  it('opens a session briefing, and returns to a note when a line is followed', async () => {
+    renderApp(`/?patient=${john.id}`);
+
+    fireEvent.click(await screen.findByTestId('open-prep'));
+    const citation = (await screen.findAllByTestId('prep-citation'))[0] as HTMLElement;
+
+    fireEvent.click(citation);
+
+    // Following a citation lands on that note, which means leaving prep.
+    expect(await screen.findByTestId('note-body')).toBeTruthy();
+    expect(screen.queryByTestId('prep-view')).toBeNull();
+  });
+});
+
 describe('note editing', () => {
   const note = makeNote(john.id);
 

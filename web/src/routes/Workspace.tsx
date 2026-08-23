@@ -8,6 +8,8 @@ import { DocumentIcon, PeopleIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
 import { NoteView } from '../components/NoteView.js';
 import { PatientsColumn } from '../components/PatientsColumn.js';
+import { PlanView } from '../components/PlanView.js';
+import { PrepView } from '../components/PrepView.js';
 import { useLoader } from '../hooks/useLoader.js';
 
 /**
@@ -22,6 +24,10 @@ export function Workspace(): React.JSX.Element {
   const [params, setParams] = useSearchParams();
   const patientId = params.get('patient');
   const noteId = params.get('note');
+  // `view` is the main pane's mode: her notes, the plan, or a briefing. In the
+  // query string like the rest, so a reload keeps her where she was.
+  const rawView = params.get('view');
+  const view: 'notes' | 'plan' | 'prep' = rawView === 'plan' || rawView === 'prep' ? rawView : 'notes';
   const [actionError, setActionError] = useState<string | null>(null);
 
   const loadPatients = useCallback((signal: AbortSignal) => listPatients(signal), []);
@@ -63,7 +69,17 @@ export function Workspace(): React.JSX.Element {
   const selectNote = useCallback(
     (id: string) => {
       if (patientId === null) return;
+      // Following a citation out of the plan or a briefing lands on the note,
+      // which means leaving that view.
       setParams({ patient: patientId, note: id });
+    },
+    [patientId, setParams],
+  );
+
+  const openView = useCallback(
+    (next: 'plan' | 'prep') => {
+      if (patientId === null) return;
+      setParams({ patient: patientId, view: next });
     },
     [patientId, setParams],
   );
@@ -120,8 +136,10 @@ export function Workspace(): React.JSX.Element {
         <NotesColumn
           patient={patient}
           notes={notes.state}
-          activeNoteId={note?.id ?? null}
+          activeNoteId={view === 'notes' ? (note?.id ?? null) : null}
+          view={view}
           onSelect={selectNote}
+          onOpenView={openView}
           onRetry={notes.reload}
           onDeletePatient={() => {
             if (patient) void handleDeletePatient(patient);
@@ -143,6 +161,10 @@ export function Workspace(): React.JSX.Element {
           )}
           {patient === null ? (
             <NoPatientSelected />
+          ) : view === 'plan' ? (
+            <PlanView key={`plan-${patient.id}`} patient={patient} onOpenNote={selectNote} />
+          ) : view === 'prep' ? (
+            <PrepView key={`prep-${patient.id}`} patient={patient} onOpenNote={selectNote} />
           ) : note === null ? (
             <NoNoteSelected patient={patient} />
           ) : (
