@@ -71,6 +71,76 @@ thing she turned down.
 
 Worth revisiting once she has used it, and only on her say-so.
 
+**One explicit carve-out.** A reminder that a plan's `review_due` has passed is
+date arithmetic on the plan itself — it reads no note and draws no connection
+between the two. It is permitted, and it should exist: services rendered
+against a lapsed plan is the highest-consequence failure in this area, and the
+"no goal tracking" rule above would otherwise forbid the guard against it by
+accident. The rule is about the app not connecting *goals to notes*, not about
+the app forgetting how dates work.
+
+**On the "golden thread"** — the expectation that diagnosis, plan, notes and
+billing corroborate each other — the research is clear that it is not the
+app's job, for an architectural reason rather than a clinical one: the notes
+are pasted as plain text into a separate records system, so a `goal_id`
+linking a note row to a goal row would live in a local SQLite file no auditor
+will ever see, and would not survive the paste. What is actually checked is
+whether the note *text* references the plan's goals, which is prose she writes.
+Her decision costs her a convenience, not a compliance capability.
+
+## What the payer standard actually requires
+
+`docs/research/m9-plan-requirements-2026-08.md` researched the standard this
+packet asserts. **Read it before touching the schema** — the tables below were
+drafted before it existed and were missing three things that cannot be
+backfilled cheaply. Note its method caveat: outbound fetches were blocked, so
+findings come from search extracts of the named primary documents and are
+tagged `[verified]` / `[single]` / `[inferred]`. Treat `[inferred]` items as
+things the owner confirms with her own payer, not as settled fact.
+
+The three that change the schema:
+
+1. **Diagnosis.** Nothing in Apunta's data model holds one — `patients` has a
+   name and an identifier. Diagnosis is the anchor of medical necessity and the
+   most consistently stated payer requirement; goals are expected to link to
+   it. It belongs on the **plan version**, not the patient, or a superseded
+   plan silently rewrites what the diagnosis was at the time. **The model must
+   never propose a diagnosis or a code** — an ICD-10 code from a model is
+   precisely the inference the owner ruled out, with billing consequences
+   attached.
+2. **Service modality and frequency**, at plan level. Currently implicit
+   inside per-goal interventions, which is not where an auditor looks.
+3. **Clinician identity and attestation**, snapshotted onto the version at
+   activation — name, credential, licence, NPI — plus an attestation date and a
+   recorded client-participation state.
+
+And one that is a design error rather than an omission: **objectives are
+drafted as bare strings in a JSON array, so the schema cannot express a
+measurable objective at all.** Measurability attaches to the objective, not the
+goal. Objectives become objects with a statement, a baseline, a measure, and
+their own target date. Goals also need `carried_from_goal_id` — deliverable 4
+promises to show what changed across a review, and that lineage does not exist
+without it.
+
+## Signatures, given an app with no accounts
+
+Payers commonly expect a signed plan. Apunta has no login, no user accounts and
+no audit trail, by design — so under ESIGN/UETA it cannot make a typed name
+*attributable to the signer*, which is the condition that makes an electronic
+signature mean anything. A drawn signature is strictly worse: it stores a
+reusable signature image in an unencrypted local file and buys no attribution.
+
+So Apunta captures a **dated attestation**, and the signature itself belongs to
+the records system where the note already goes. Clinician identity lives in
+Settings and is snapshotted onto the version at activation; client
+participation is a recorded state (`reviewed_with_client`, `declined` with a
+reason, `signed_elsewhere`) because the regulations accommodate documented
+alternatives; export renders a printable signature block. Label it honestly in
+the UI: *"Attested in Apunta — sign the copy in your records system."*
+
+**Ask her first:** whether her records system already holds the signed plan. A
+yes makes this whole area simpler.
+
 ## The context problem (read before designing prep)
 
 Prep wants to read several notes. The model has a 16K context, and **Ollama
@@ -91,16 +161,24 @@ the UI how far back it read.
 1. **Schema** (`server/migrations/`):
    - `treatment_plans` — id, patient_id, version (int), status
      (`draft|active|superseded`), created_at, activated_at (nullable),
-     review_due (nullable date), content (JSON), superseded_by (nullable).
+     review_due (nullable date), content (JSON), superseded_by (nullable),
+     **diagnoses** (JSON — code, system, description, primary flag),
+     **modality** and **frequency** (TEXT), **clinician** (JSON — name,
+     credential, licence, NPI, snapshotted at activation), **attested_at**
+     and **client_participation** (`reviewed_with_client|declined|signed_elsewhere`
+     with an optional reason), effective_from / effective_to.
      A plan review creates a new version; the previous row stays. "What was
      the plan in March" is a question that gets asked, and payer-facing
-     documents need a dated revision history.
-   - `plan_goals` — id, plan_id, ordinal, statement, objectives (JSON array),
-     interventions (JSON array), measure (TEXT — how progress is judged),
-     target_date (nullable), status (`proposed|accepted|met|discontinued`),
-     evidence (JSON — note ids with quoted excerpts), created_at.
-     `proposed` is the unaccepted state above; only `accepted` and later
-     states are part of the plan.
+     documents need a dated revision history — which is also why diagnosis
+     and clinician identity live on the version rather than the patient.
+   - `plan_goals` — id, plan_id, ordinal, statement, objectives (JSON array of
+     **objects**: statement, baseline, measure, target_date — not bare
+     strings, since measurability attaches to the objective),
+     interventions (JSON array), target_date (nullable), status
+     (`proposed|accepted|met|discontinued`), evidence (JSON — note ids with
+     quoted excerpts), carried_from_goal_id (nullable — lineage across a
+     review), created_at. `proposed` is the unaccepted state above; only
+     `accepted` and later states are part of the plan.
    - `session_briefs` — id, patient_id, generated_at, content (JSON),
      source_note_ids (JSON), saved (bool). Rows exist only once she saves;
      an unsaved brief is never written.
@@ -140,6 +218,9 @@ the UI how far back it read.
 - Integration: prep with 0 notes, 1 note, and more notes than the cap;
   assert the per-note stage runs separately and no single call approaches the
   context limit; assert nothing is persisted unless saved.
+- The model never proposes a diagnosis or an ICD-10 code: assert it, do not
+  merely instruct it. That is billing-consequential inference, and the schema
+  for plan suggestion must not contain a diagnosis field at all.
 - The streaming endpoints get a **real-socket test**, not only `app.inject` —
   see `server/src/routes/generate.test.ts`, and the SSE trap in
   `server/src/http/sse.ts` that injected tests could not catch.
