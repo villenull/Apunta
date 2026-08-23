@@ -42,6 +42,24 @@ function renderApp(path = '/'): void {
   );
 }
 
+/**
+ * Put files on a real `<input type="file">`, the way Playwright's
+ * `setInputFiles` does. jsdom has no file picker and `input.files` is
+ * read-only, so the property is redefined and a `change` fired — which is
+ * exactly the path a drop takes too, since the dropzone writes the same state.
+ */
+function upload(input: HTMLElement, files: readonly File[]): void {
+  const list: Record<number, File> & { length: number; item: (index: number) => File | null } = {
+    length: files.length,
+    item: (index) => files[index] ?? null,
+  };
+  files.forEach((file, index) => {
+    list[index] = file;
+  });
+  Object.defineProperty(input, 'files', { value: list as unknown as FileList, configurable: true });
+  fireEvent.change(input);
+}
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -274,7 +292,7 @@ describe('first run', () => {
     });
   });
 
-  it('keeps the upload paths visible but not usable until M6', async () => {
+  it('will not upload until a file has been chosen', async () => {
     installFakeApi({ formats: [] });
     renderApp('/onboarding/format');
 
@@ -282,6 +300,150 @@ describe('first run', () => {
 
     expect(screen.getByText('Drop a .docx or .pdf template here')).toBeDefined();
     expect(screen.getByTestId('format-continue')).toHaveProperty('disabled', true);
+  });
+
+  it('reads a format out of an uploaded template and offers it for confirmation', async () => {
+    const api = installFakeApi({ formats: [], patients: [] });
+    renderApp('/onboarding/format');
+
+    fireEvent.click(await screen.findByText('Upload a blank template'));
+    upload(screen.getByTestId('area-template-input'), [
+      new File(['Subjective\n\nObjective\n\nAssessment\n\nPlan\n'], 'template.txt', {
+        type: 'text/plain',
+      }),
+    ]);
+    fireEvent.click(screen.getByTestId('format-continue'));
+
+    const chips = await screen.findByTestId('section-chips');
+    expect(within(chips).getByText('Assessment')).toBeDefined();
+    fireEvent.click(screen.getByTestId('save-format'));
+
+    expect(await screen.findByRole('heading', { name: 'Add patient' })).toBeDefined();
+    expect(api.state.formats[0]).toMatchObject({
+      sections: ['Subjective', 'Objective', 'Assessment', 'Plan'],
+      source: 'template',
+    });
+  });
+
+  it('offers the manual path when a file cannot be read', async () => {
+    installFakeApi({ formats: [] });
+    renderApp('/onboarding/format');
+
+    fireEvent.click(await screen.findByText('Upload a blank template'));
+    upload(screen.getByTestId('area-template-input'), [
+      new File(['%PDF-1.4 scanned pages'], 'scan.pdf', { type: 'application/pdf' }),
+    ]);
+    fireEvent.click(screen.getByTestId('format-continue'));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('picture');
+    fireEvent.click(within(alert).getByRole('button', { name: 'Describe it myself' }));
+    expect(screen.getByTestId('area-manual')).toBeDefined();
+  });
+
+  it('needs two example notes, not one', async () => {
+    installFakeApi({ formats: [] });
+    renderApp('/onboarding/format');
+
+    fireEvent.click(await screen.findByText('Upload a few example notes'));
+    upload(screen.getByTestId('area-examples-input'), [
+      new File(['Subjective\nbody\n'], 'one.txt', { type: 'text/plain' }),
+    ]);
+    expect(screen.getByTestId('format-continue')).toHaveProperty('disabled', true);
+
+    upload(screen.getByTestId('area-examples-input'), [
+      new File(['Subjective\nbody\n'], 'one.txt', { type: 'text/plain' }),
+      new File(['Subjective\nbody\n'], 'two.txt', { type: 'text/plain' }),
+    ]);
+    expect(screen.getByTestId('format-continue')).toHaveProperty('disabled', false);
+  });
+});
+
+describe('the format editor', () => {
+  let editorApi: ReturnType<typeof installFakeApi>;
+
+  function openEditor(): void {
+    editorApi = installFakeApi({ formats: [makeFormat('Progress note', ['Subjective', 'Plan'])] });
+    renderApp('/settings');
+  }
+
+  it('renames a section, reorders it, and saves', async () => {
+    openEditor();
+
+    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+
+    const chips = await screen.findByTestId('section-chips');
+    fireEvent.click(within(chips).getByRole('button', { name: 'Rename Subjective' }));
+    fireEvent.change(within(chips).getByLabelText('New name for Subjective'), {
+      target: { value: 'Presenting concern' },
+    });
+    fireEvent.keyDown(within(chips).getByLabelText('New name for Subjective'), { key: 'Enter' });
+
+    // Up/down rather than drag: one click, and it is the whole keyboard story.
+    fireEvent.click(within(chips).getByRole('button', { name: 'Move Plan up' }));
+    fireEvent.click(screen.getByTestId('save-format'));
+
+    await waitFor(() => {
+      expect(editorApi.state.formats[0]?.sections).toEqual(['Plan', 'Presenting concern']);
+    });
+  });
+
+  it('refuses a rename that collides with another section', async () => {
+    openEditor();
+    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+
+    const chips = await screen.findByTestId('section-chips');
+    fireEvent.click(within(chips).getByRole('button', { name: 'Rename Subjective' }));
+    fireEvent.change(within(chips).getByLabelText('New name for Subjective'), {
+      target: { value: 'plan' },
+    });
+    fireEvent.keyDown(within(chips).getByLabelText('New name for Subjective'), { key: 'Enter' });
+
+    expect((await screen.findByRole('alert')).textContent).toContain('already a section');
+  });
+
+  it('says that section edits only affect future drafts', async () => {
+    openEditor();
+    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+
+    expect(
+      await screen.findByText(/keep the sections they were written with/, { exact: false }),
+    ).toBeDefined();
+  });
+
+  it('imports a skill file into the instructions and warns about its references', async () => {
+    openEditor();
+    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+
+    const panel = await screen.findByTestId('instructions-panel');
+    upload(within(panel).getByTestId('skill-file-input'), [
+      new File(['---\nname: x\n---\n\nUse "client", not "patient".\n'], 'SKILL.md', {
+        type: 'text/markdown',
+      }),
+    ]);
+
+    await waitFor(() => {
+      expect(within(panel).getByLabelText('Instructions')).toHaveProperty(
+        'value',
+        'Use "client", not "patient".',
+      );
+    });
+    expect(within(panel).getByTestId('import-references').textContent).toContain('references/FORMS.md');
+    expect(within(panel).getByTestId('import-report').textContent).toContain('frontmatter removed');
+
+    fireEvent.click(screen.getByTestId('save-format'));
+    await waitFor(() => {
+      expect(editorApi.state.formats[0]?.instructions).toBe('Use "client", not "patient".');
+    });
+  });
+
+  it('leaves instructions blank to mean "use the built-in default"', async () => {
+    openEditor();
+    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+
+    const panel = await screen.findByTestId('instructions-panel');
+    expect(within(panel).getByLabelText('Instructions')).toHaveProperty('value', '');
+    expect(panel.textContent).toContain('leave blank to use the built-in default');
   });
 });
 

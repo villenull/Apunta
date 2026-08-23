@@ -34,6 +34,8 @@ export interface FakeApiState {
   plans: TreatmentPlan[];
   goals: PlanGoal[];
   briefs: SessionBrief[];
+  /** The open key → JSON settings map (`GET|PUT /api/settings`). */
+  settings: Record<string, unknown>;
 }
 
 export interface FakeApi {
@@ -67,7 +69,11 @@ export function makePatient(name: string, overrides: Partial<PatientListItem> = 
   };
 }
 
-export function makeFormat(name: string, sections: string[]): NoteFormat {
+export function makeFormat(
+  name: string,
+  sections: string[],
+  overrides: Partial<NoteFormat> = {},
+): NoteFormat {
   return {
     id: fakeId(),
     name,
@@ -75,6 +81,7 @@ export function makeFormat(name: string, sections: string[]): NoteFormat {
     instructions: '',
     source: 'manual',
     created_at: '2026-07-01T09:00:00.000Z',
+    ...overrides,
   };
 }
 
@@ -289,6 +296,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
     plans: [],
     goals: [],
     briefs: [],
+    settings: {},
     ...initial,
   };
   const calls: string[] = [];
@@ -335,12 +343,82 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         return sse(draftFrames(format.sections, typed, note, empty));
       }
 
+      if (path === '/api/settings') {
+        if (method === 'PUT') state.settings = { ...state.settings, ...body };
+        return json(state.settings);
+      }
+
       if (path === '/api/formats' && method === 'GET') return json({ formats: state.formats });
 
       if (path === '/api/formats' && method === 'POST') {
-        const format = makeFormat(String(body['name']), body['sections'] as string[]);
+        const format = makeFormat(String(body['name']), body['sections'] as string[], {
+          source: (body['source'] as NoteFormat['source'] | undefined) ?? 'manual',
+        });
         state.formats = [...state.formats, format];
         return json(format, 201);
+      }
+
+      // --- M6: reading a format out of an upload -------------------------
+      //
+      // Multipart, so `init.body` is a `FormData` and the JSON branch above
+      // saw nothing. The answer is derived from the uploaded file's *text*,
+      // not from a constant, so a test that asserts on the chips is asserting
+      // that the file was read — the same reason the real fake provider scans
+      // headings before falling back.
+      if (path === '/api/formats/detect' && method === 'POST') {
+        const form = init.body instanceof FormData ? init.body : new FormData();
+        const uploaded = form.getAll('files').filter((entry): entry is File => entry instanceof File);
+        if (uploaded.length === 0) return apiError(400, 'bad_request', 'Choose a file.');
+
+        const text = (await Promise.all(uploaded.map((file) => file.text()))).join('\n');
+        if (/^%PDF|^\x89PNG/.test(text)) {
+          return apiError(400, 'bad_request', "That's a picture. Apunta can't read text out of an image.");
+        }
+        const found = text
+          .split('\n')
+          .map((line) => /^([A-Z][A-Za-z /'-]{2,40}):?\s*$/.exec(line.trim())?.[1])
+          .filter((heading): heading is string => heading !== undefined);
+        const sections = found.length > 0 ? found : ['Subjective', 'Objective', 'Assessment', 'Plan'];
+        return json({
+          name: /intake/i.test(text) ? 'Intake note' : 'Progress note',
+          sections,
+          files: uploaded.length,
+          truncated: false,
+        });
+      }
+
+      if (path === '/api/formats/flatten-skill' && method === 'POST') {
+        const form = init.body instanceof FormData ? init.body : new FormData();
+        const file = form.get('file');
+        if (!(file instanceof File)) return apiError(400, 'bad_request', 'Choose a SKILL.md file.');
+        const source = await file.text();
+        return json({
+          instructions: source.replace(/^---\n[\s\S]*?\n---\n/, '').trim(),
+          removed: {
+            frontmatter: source.startsWith('---'),
+            commandBlocks: 0,
+            toolLines: 1,
+            mechanics: 0,
+            emptiedHeadings: 0,
+          },
+          referencedFiles: ['references/FORMS.md'],
+          approxTokens: Math.ceil(source.length / 3.5),
+        });
+      }
+
+      const formatMatch = /^\/api\/formats\/([^/]+)$/.exec(path);
+      if (formatMatch && method === 'PATCH') {
+        const formatId = formatMatch[1] ?? '';
+        const format = state.formats.find((candidate) => candidate.id === formatId);
+        if (!format) return apiError(404, 'not_found', 'Note format not found');
+        const updated: NoteFormat = {
+          ...format,
+          ...(typeof body['name'] === 'string' ? { name: body['name'] } : {}),
+          ...(Array.isArray(body['sections']) ? { sections: body['sections'] as string[] } : {}),
+          ...(typeof body['instructions'] === 'string' ? { instructions: body['instructions'] } : {}),
+        };
+        state.formats = state.formats.map((candidate) => (candidate.id === formatId ? updated : candidate));
+        return json(updated);
       }
 
       if (path === '/api/patients' && method === 'GET') return json({ patients: state.patients });

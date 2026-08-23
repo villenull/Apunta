@@ -13,7 +13,14 @@ export { createPatient, deletePatient, getPatient, listPatients, updatePatient }
 
 export { createNote, deleteNote, listNotes, publishNote, unpublishNote, updateNote } from './notes.js';
 
-export { createFormat, deleteFormat, listFormats, updateFormat } from './formats.js';
+export {
+  createFormat,
+  deleteFormat,
+  detectFormat,
+  flattenSkill,
+  listFormats,
+  updateFormat,
+} from './formats.js';
 
 export { getSettings, putSettings } from './settings.js';
 

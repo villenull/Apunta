@@ -1466,3 +1466,102 @@ select:disabled {
 .plan-details-block .plan-details {
   padding: 12px 0 0;
 }
+
+/* ------------------------------------------------ M6: format onboarding */
+
+/*
+ * The dropzone's file input is the real control — it is what a keyboard, a
+ * screen reader and Playwright reach — so it is hidden from sight without
+ * being hidden from the accessibility tree. `display: none` would take it out
+ * of both.
+ */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dropzone {
+  display: block;
+  cursor: pointer;
+}
+
+.dropzone-over {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.upload-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  color: var(--text-secondary);
+}
+
+/*
+ * A section chip is now name + actions. The name is a button because renaming
+ * is what clicking it does; it keeps the chip's own typography rather than a
+ * button's so the row still reads as a chip.
+ */
+.chip-name {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: text;
+  flex: 1;
+  min-width: 0;
+}
+
+.chip-rename {
+  font-size: 14px;
+  padding: 2px 6px;
+}
+
+.chip-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Up/down rather than drag — see web/src/routes/OnboardingPreview.tsx. */
+.chip-move {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.instructions-textarea {
+  width: 100%;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.import-skill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.import-report {
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  padding: 10px 12px;
+  color: var(--text-secondary);
+}
+
+.warn-note {
+  color: var(--text-primary);
+}
