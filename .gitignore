@@ -23,3 +23,6 @@ data/
 
 .DS_Store
 *.log
+
+# Git worktrees for parallel packets — never committed.
+.claude/worktrees/
