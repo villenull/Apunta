@@ -20,26 +20,24 @@ import { CheckIcon, CloseIcon, PencilIcon, TrashIcon } from './icons.js';
  * §3.4).
  */
 
-export interface PlanGoalCardProps {
-  goal: PlanGoal;
-  /** Historical versions are read-only: they are the record of what was. */
-  readOnly: boolean;
-  busy: boolean;
-  onUpdate: (goal: PlanGoal, patch: Parameters<typeof identity>[0]) => void;
-  onDelete: (goal: PlanGoal) => void;
-  /** Follow a citation through to the note it came from. */
-  onOpenNote: (noteId: string) => void;
-}
-
-/** Only here to give the patch parameter above a name TypeScript can read. */
-function identity(patch: {
+/** What an edit or an accept sends. The same shape `PATCH .../goals/:id` takes. */
+export interface GoalPatch {
   statement?: string;
   objectives?: PlanObjective[];
   interventions?: string[];
   target_date?: string | null;
   status?: PlanGoal['status'];
-}): typeof patch {
-  return patch;
+}
+
+export interface PlanGoalCardProps {
+  goal: PlanGoal;
+  /** Historical versions are read-only: they are the record of what was. */
+  readOnly: boolean;
+  busy: boolean;
+  onUpdate: (goal: PlanGoal, patch: GoalPatch) => void;
+  onDelete: (goal: PlanGoal) => void;
+  /** Follow a citation through to the note it came from. */
+  onOpenNote: (noteId: string) => void;
 }
 
 const BLANK = '—';
@@ -201,7 +199,7 @@ export function PlanGoalCard({
 interface GoalEditorProps {
   goal: PlanGoal;
   onCancel: () => void;
-  onSave: (patch: ReturnType<typeof identity>) => void;
+  onSave: (patch: GoalPatch) => void;
 }
 
 /**

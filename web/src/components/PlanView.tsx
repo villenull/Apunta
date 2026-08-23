@@ -4,7 +4,6 @@ import {
   type PlanGoal,
   type PlanResponse,
   type TreatmentPlan,
-  type UpdateGoalRequest,
   type UpdatePlanRequest,
 } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -346,7 +345,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                 onOpenNote={onOpenNote}
                 onUpdate={(target, patch) => {
                   void run(async () => {
-                    await updateGoal(target.plan_id, target.id, patch as UpdateGoalRequest);
+                    await updateGoal(target.plan_id, target.id, patch);
                     reload();
                   });
                 }}
@@ -419,7 +418,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                   onOpenNote={onOpenNote}
                   onUpdate={(target, patch) => {
                     void run(async () => {
-                      await updateGoal(target.plan_id, target.id, patch as UpdateGoalRequest);
+                      await updateGoal(target.plan_id, target.id, patch);
                       reload();
                     });
                   }}

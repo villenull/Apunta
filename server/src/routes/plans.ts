@@ -202,6 +202,10 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
     const input = parseBody(ActivatePlanRequestSchema, request.body ?? {});
     const plan = requirePlan(db, id);
     if (plan.status === 'superseded') throw conflict('A superseded plan version cannot be reactivated.');
+    // Re-activating would move `effective_from` and re-date the attestation on
+    // a version that is already in force — rewriting when it took effect, and
+    // what she attested to, on the record a payer reads against a service date.
+    if (plan.status === 'active') throw conflict('This version is already in force.');
 
     const effectiveFrom = input?.effective_from ?? today();
     const reviewDue =

@@ -531,6 +531,36 @@ describe('reviews and versions', () => {
    * The one carve-out from "nothing connects goals to notes": comparing a date
    * she chose to today reads no note and connects nothing.
    */
+  it('refuses to re-activate a version that is already in force', async () => {
+    const first = await startPlan();
+    await harness.app.inject({ method: 'POST', url: `/api/plans/${first.id}/activate`, payload: {} });
+
+    // Re-activating would move `effective_from` and re-date the attestation on
+    // the record a payer reads against a service date.
+    const again = await harness.app.inject({
+      method: 'POST',
+      url: `/api/plans/${first.id}/activate`,
+      payload: {},
+    });
+    expect(again.statusCode).toBe(409);
+  });
+
+  it('keeps a goal’s evidence when she edits it', async () => {
+    await seedNote(harness.app, patient.id, format.id, SLEEP_NOTE);
+    await suggest();
+    const proposed = (await readPlan()).goals[0] as PlanGoal;
+    expect(proposed.evidence.length).toBeGreaterThan(0);
+
+    const edited = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/plans/${proposed.plan_id}/goals/${proposed.id}`,
+      payload: { status: 'accepted', statement: 'Rewritten in her own words.' },
+    });
+
+    // What it was drafted from does not change because she reworded it.
+    expect(edited.json<PlanGoal>().evidence).toEqual(proposed.evidence);
+  });
+
   it('carries the review date, and nothing derived from the notes', async () => {
     await seedNote(harness.app, patient.id, format.id, SLEEP_NOTE);
     const first = await startPlan();

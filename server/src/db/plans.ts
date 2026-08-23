@@ -427,6 +427,9 @@ export function updatePlanGoal(db: Database, id: string, patch: UpdateGoalInput)
     ...next,
     objectives: JSON.stringify(next.objectives),
     interventions: JSON.stringify(next.interventions),
+    // `evidence` is deliberately not in the UPDATE: what a goal was drafted
+    // from does not change when she edits it, and losing it on an edit would
+    // quietly strip the citation from a goal that still stands on it.
     evidence: JSON.stringify(next.evidence),
   });
 
