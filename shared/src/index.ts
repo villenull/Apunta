@@ -1,4 +1,11 @@
-export { boundedText, IdSchema, MAX_BODY_CHARS, optionalText, TimestampSchema } from './common.js';
+export {
+  approximateTokens,
+  boundedText,
+  IdSchema,
+  MAX_BODY_CHARS,
+  optionalText,
+  TimestampSchema,
+} from './common.js';
 
 export { ApiErrorCodeSchema, ApiErrorSchema } from './errors.js';
 export type { ApiError, ApiErrorCode } from './errors.js';
@@ -36,6 +43,20 @@ export type {
   NoteFormatListResponse,
   UpdateNoteFormatRequest,
 } from './note-format.js';
+
+export {
+  DetectFormatResponseSchema,
+  DetectKindSchema,
+  MAX_DETECT_CHARS,
+  MAX_DETECT_FILES,
+  MAX_SKILL_BYTES,
+  MAX_UPLOAD_BYTES,
+  MIN_EXTRACTED_CHARS,
+  SKILL_TOKEN_BUDGET,
+  SkillFlattenCountsSchema,
+  SkillFlattenResponseSchema,
+} from './detect.js';
+export type { DetectFormatResponse, DetectKind, SkillFlattenCounts, SkillFlattenResponse } from './detect.js';
 
 export {
   CreateNoteRequestSchema,

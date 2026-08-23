@@ -258,9 +258,26 @@ export function fakeRefine(
   return { reply: 'Updated the note based on that.', updatedSections: { ...current } };
 }
 
+/** The prototype's SOAP progress note. */
+const FAKE_SOAP = ['Subjective', 'Objective', 'Assessment', 'Plan'];
+
+/** The prototype's intake note, whose keys `ANXIETY_INTAKE` above already uses. */
+const FAKE_INTAKE = ['Presenting problem', 'History', 'Formulation', 'Plan'];
+
 /**
- * Deterministic section detection: pick out anything that looks like a
- * heading, and fall back to the prototype's SOAP format when nothing does.
+ * Deterministic section detection.
+ *
+ * The packet specifies "SOAP for anything containing 'Subjective', else a
+ * fixed intake shape", and that is exactly the **fallback** below. What runs
+ * first is a heading scan over the extracted text, and the difference matters
+ * for what the tests above it can prove: with the fallback alone, an extractor
+ * that returned an empty string would still produce a plausible four-chip
+ * answer, and every integration and Playwright assertion about "uploading a
+ * template shows its sections" would pass against a pipeline that never read
+ * the file. Scanning first means the chips on screen came out of the document.
+ *
+ * Both branches are pure functions of the input, so fake mode stays as
+ * repeatable as CI needs (hard rule 3).
  */
 export function fakeDetectFormat(request: DetectFormatRequest): DetectedFormat {
   const found: string[] = [];
@@ -278,8 +295,9 @@ export function fakeDetectFormat(request: DetectFormatRequest): DetectedFormat {
     if (found.length === 40) break;
   }
 
-  const sections = found.length > 0 ? found : ['Subjective', 'Objective', 'Assessment', 'Plan'];
-  const name = /intake/i.test(request.text) ? 'Intake note' : 'Progress note';
+  const fallback = /subjective/i.test(request.text) ? FAKE_SOAP : FAKE_INTAKE;
+  const sections = found.length > 0 ? found : fallback;
+  const name = /intake|presenting problem/i.test(request.text) ? 'Intake note' : 'Progress note';
   return { name, sections };
 }
 
