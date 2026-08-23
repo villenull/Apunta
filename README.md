@@ -11,7 +11,7 @@ with the published lock enforced server-side. The app still runs with no AI
 installed at all (`APUNTA_FAKE_AI=1`). Audio capture (M5) is next.**
 Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
-[`docs/agents/`](docs/agents/README.md) in order M0 → M8.
+[`docs/agents/`](docs/agents/README.md) in order M0 → M9.
 
 ## Picking this up on another machine
 
