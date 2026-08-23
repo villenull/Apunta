@@ -81,6 +81,15 @@ export default tseslint.config(
     },
   },
   {
+    // Developer CLI tools whose whole job is printing a report to the person
+    // who ran them. `no-console` stays on everywhere else, where it does real
+    // work: it is part of keeping note content out of logs (hard rule 2).
+    files: ['scripts/**/*.mjs'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+  {
     files: ['web/**/*.{ts,tsx}'],
     languageOptions: {
       globals: { ...globals.browser },

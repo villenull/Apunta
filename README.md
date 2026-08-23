@@ -5,9 +5,9 @@ summaries into structured clinical notes. The UI runs in a browser tab; all
 AI processing (transcription and note drafting) runs on the local PC with
 free, open-weight models — nothing leaves the machine.
 
-**Status: the app works end to end without AI (M2) — the prototype's
-workspace, capture, settings and format onboarding screens are React running
-against the real API. Note drafting (M3) is next.**
+**Status: typed notes are drafted by a local model (M3) — capture streams a
+draft section by section, and the app still runs with no AI installed at all
+(`APUNTA_FAKE_AI=1`). The refine chat (M4) is next.**
 Start at
 [`docs/PLAN.md`](docs/PLAN.md); coding agents pick up work packets from
 [`docs/agents/`](docs/agents/README.md) in order M0 → M8.
@@ -38,18 +38,26 @@ npm test             # 150 tests — confirms the checkout is sound
 | M0 scaffold | done — monorepo, toolchain, CI, egress guard, placeholder SPA |
 | M1 data + API | done — migrations, SQLite, every non-AI endpoint, seed script |
 | M2 web shell | done — prototype ported to React: workspace, capture, settings, manual format onboarding |
-| M3 AI providers | **next** — provider layer, fakes, Ollama drafting, typed note → draft |
-| M4–M8 | planned; packets written in `docs/agents/` |
+| M3 AI providers | done — provider layer, fakes, Ollama drafting with enforced schema, typed note → streamed draft |
+| M4 refine chat | **next** — streaming chat over a draft, highlight-refs, publish lock |
+| M5–M8 | planned; packets written in `docs/agents/` |
 
 Ready and waiting for the packets that need them: the evaluation corpus in
-`e2e/fixtures/eval/` (M7) and drafted note-drafting instructions in
-`docs/note-instructions/` (M3).
+`e2e/fixtures/eval/` (M7), and the research in `docs/research/` — a privacy
+audit, a data-at-rest design, and the voice-without-inference design that M6
+is held to.
+
+**Before trusting a draft on a real Mac, run `npm run smoke:live`.** The whole
+automated suite uses fake providers, so it proves the plumbing and nothing
+about the model. That script is the only check that puts a real dictation
+through a real Ollama — and it has never been run, because this project has
+been built entirely in a Linux container with no Ollama in it.
 
 ### To continue with a coding agent
 
 Open a session on this repo and give it:
 
-> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M3-ai-providers.md, then
+> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M4-refine-chat.md, then
 > implement that packet exactly. All work stays on the current branch — do
 > not create a feature branch or open a PR. Keep commits small and stop when
 > every acceptance criterion passes locally (lint, typecheck, tests, build,
@@ -76,7 +84,13 @@ needed. `npm start` builds everything and serves the whole app from
 Prettier), `npm run typecheck`, `npm test` (Vitest, all workspaces) and `npm
 run e2e` (Playwright/Chromium — it builds first and boots the server in fake-AI
 mode on port 7788 with a temp data dir); `npm run format` fixes formatting and
-`npm run smoke:live` is the manual real-model check, stubbed until M3/M5.
+`npm run smoke:live` drafts a real note through a real Ollama and checks it
+for the failure modes fakes cannot show — a repetition loop under constrained
+decoding, a prompt long enough that Ollama truncated the instructions off the
+front, generation that stopped at the token limit, and weights whose engine
+ignores the schema entirely. It takes `--fixture`, `--model`, `--format
+intake` and `--runs n`; the loop it looks for is intermittent, so `--runs 5`
+is the honest check.
 `npm run seed` fills the database with the prototype's sample practice (John
 Smith and friends) so there is something to click through; it leaves a
 database that already has data alone unless you pass `-- --reset`.
