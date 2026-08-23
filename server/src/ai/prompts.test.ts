@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { UNCLEAR_MARKER } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -57,6 +58,16 @@ describe('default instructions', () => {
   it('carry a few-shot example with an empty section', () => {
     expect(PROGRESS_NOTE_INSTRUCTIONS).toContain('"Objective": ""');
     expect(INTAKE_NOTE_INSTRUCTIONS).toContain('"Formulation": ""');
+  });
+
+  /**
+   * The editor styles this marker distinctly, which only works if the model is
+   * still told to write exactly this string (owner design question 11).
+   */
+  it('write the same unclear-dictation marker the editor highlights', () => {
+    for (const instructions of [PROGRESS_NOTE_INSTRUCTIONS, INTAKE_NOTE_INSTRUCTIONS]) {
+      expect(instructions).toContain(UNCLEAR_MARKER);
+    }
   });
 
   it('keep the banned-boilerplate list exactly as written', () => {

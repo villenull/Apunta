@@ -20,6 +20,18 @@ import { z } from 'zod';
 /** A section body long enough for any real note, short enough to bound memory. */
 export const MAX_SECTION_CHARS = 20_000;
 
+/**
+ * What the model writes where the recording was muddy
+ * (`docs/note-instructions/*-instructions.md`, "When something is unclear").
+ *
+ * The practice owner chose this marker over a variant that warned her before
+ * she copied, having been shown the risk that one could slip into a filed
+ * record (design question 11). Nothing gates on it; the editor styles it
+ * distinctly instead, which is why the string is shared rather than a literal
+ * in the instructions alone.
+ */
+export const UNCLEAR_MARKER = '[unclear in dictation]';
+
 /** One body per section name, in the format's order. */
 export type Sections = Record<string, string>;
 

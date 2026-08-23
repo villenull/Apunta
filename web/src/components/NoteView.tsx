@@ -1,4 +1,4 @@
-import type { Note, PatientListItem } from '@apunta/shared';
+import type { ChatNoteUpdatedEvent, Note, NoteFormat, PatientListItem } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -10,36 +10,49 @@ import {
 } from '../api/index.js';
 import { copyText } from '../lib/clipboard.js';
 import { formatEditedDate, formatNoteDate, wasEdited } from '../lib/format.js';
-import { AutoGrowTextarea } from './AutoGrowTextarea.js';
 import { CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
+import { NoteBody } from './NoteBody.js';
 import { RefineColumn } from './RefineColumn.js';
 
 /** Long enough that a sentence saves as one edit, short enough to feel instant. */
 const SAVE_DEBOUNCE_MS = 400;
 /** How long the Copy button reads "Copied", as in the prototype. */
 const COPIED_FLASH_MS = 1400;
+/** How long the editor stays lit after the chat rewrote the note. */
+const REFINED_FLASH_MS = 1200;
 
 export interface NoteViewProps {
   patient: PatientListItem;
   note: Note;
+  /** The note's format, for its section list. Null while formats are loading. */
+  format: NoteFormat | null;
   /** Called with every note the server hands back, so the columns stay in step. */
   onNoteChanged: (note: Note) => void;
   onNoteDeleted: (noteId: string) => void;
 }
 
 /**
- * The note editor and its (M4) refine column — `renderNoteView` in
+ * The note editor and its refine column — `renderNoteView` in
  * `prototype/patients.html`.
  *
  * **Render this with `key={note.id}`.** The editor holds the body text locally
  * so typing is not a round trip per keystroke; the key is what resets it when
  * the user switches notes, and what flushes an unsaved edit on the way out.
  */
-export function NoteView({ patient, note, onNoteChanged, onNoteDeleted }: NoteViewProps): React.JSX.Element {
+export function NoteView({
+  patient,
+  note,
+  format,
+  onNoteChanged,
+  onNoteDeleted,
+}: NoteViewProps): React.JSX.Element {
   const [text, setText] = useState(note.content);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The excerpt she highlighted, waiting to be attached to a chat message. */
+  const [refQuote, setRefQuote] = useState<string | null>(null);
+  const [refined, setRefined] = useState(false);
 
   // The timers and the save queue outlive any single render.
   const noteRef = useRef(note);
@@ -47,6 +60,7 @@ export function NoteView({ patient, note, onNoteChanged, onNoteDeleted }: NoteVi
   const timerRef = useRef<number | null>(null);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   const onNoteChangedRef = useRef(onNoteChanged);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     noteRef.current = note;
@@ -84,6 +98,14 @@ export function NoteView({ patient, note, onNoteChanged, onNoteDeleted }: NoteVi
     [persist],
   );
 
+  const cancelPending = useCallback((): void => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    pendingRef.current = null;
+  }, []);
+
   const flush = useCallback((): Promise<void> => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
@@ -111,6 +133,25 @@ export function NoteView({ patient, note, onNoteChanged, onNoteDeleted }: NoteVi
       void enqueue(value);
     }, SAVE_DEBOUNCE_MS);
   }
+
+  /**
+   * The chat rewrote the note. The server has already saved it, so a debounced
+   * edit still in flight would write the old text back over it — drop it, and
+   * light the editor for a moment so the change is not silent.
+   */
+  const handleNoteUpdated = useCallback(
+    (event: ChatNoteUpdatedEvent) => {
+      cancelPending();
+      setText(event.note.content);
+      onNoteChangedRef.current(event.note);
+      setError(null);
+      setRefined(true);
+      window.setTimeout(() => {
+        setRefined(false);
+      }, REFINED_FLASH_MS);
+    },
+    [cancelPending],
+  );
 
   async function handleCopy(): Promise<void> {
     await copyText(text);
@@ -144,9 +185,7 @@ export function NoteView({ patient, note, onNoteChanged, onNoteDeleted }: NoteVi
     setBusy(true);
     try {
       await deleteNoteRequest(note.id);
-      pendingRef.current = null;
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-      timerRef.current = null;
+      cancelPending();
       onNoteDeleted(note.id);
     } catch (thrown) {
       setError(errorMessage(thrown));
@@ -218,25 +257,34 @@ export function NoteView({ patient, note, onNoteChanged, onNoteDeleted }: NoteVi
           </p>
         )}
 
-        <div className="note-editor-body">
-          <AutoGrowTextarea
-            className={published ? 'note-editable is-published' : 'note-editable'}
-            data-testid="note-body"
-            aria-label="Note body"
-            spellCheck
-            value={text}
-            readOnly={published}
-            onChange={(event) => {
-              handleChange(event.target.value);
-            }}
-            onBlur={() => {
-              void flush();
-            }}
-          />
-        </div>
+        <NoteBody
+          ref={bodyRef}
+          value={text}
+          sections={format?.sections ?? []}
+          readOnly={published}
+          refined={refined}
+          onChange={handleChange}
+          onBlur={() => {
+            void flush();
+          }}
+          onSelect={(selected) => {
+            // Only a real selection raises the chip. A collapsed caret leaves
+            // the last one standing, as the prototype does — she clears it
+            // with the ×, or by sending.
+            if (selected !== '') setRefQuote(selected);
+          }}
+        />
       </div>
 
-      <RefineColumn />
+      <RefineColumn
+        key={note.id}
+        note={note}
+        refQuote={refQuote}
+        onClearRefQuote={() => {
+          setRefQuote(null);
+        }}
+        onNoteUpdated={handleNoteUpdated}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import type { ChatMessage, Note } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +8,7 @@ import {
   draftContent,
   installFakeApi,
   installFakeClipboard,
+  makeChatMessage,
   makeFormat,
   makeNote,
   makePatient,
@@ -97,15 +99,6 @@ describe('workspace', () => {
 
     expect((await screen.findByTestId('note-title')).textContent).toBe('Intake note');
     expect(screen.getByTestId('note-meta').textContent).toContain('John Smith · created');
-  });
-
-  it('renders the refine column as a disabled placeholder for M4', async () => {
-    renderApp(`/?patient=${john.id}&note=${johnsDraft.id}`);
-
-    expect(await screen.findByText('Refine with AI')).toBeDefined();
-    expect(screen.getByTestId('refine-placeholder').textContent).toContain('AI arrives in a later milestone');
-    expect(screen.getByLabelText('Ask a question or give feedback')).toHaveProperty('disabled', true);
-    expect(screen.getByRole('button', { name: 'Shorter' })).toHaveProperty('disabled', true);
   });
 
   it('deletes a patient after confirming, and empties the workspace', async () => {
@@ -336,6 +329,211 @@ describe('adding a patient and a typed note', () => {
     const record = (await screen.findByText('Record audio')).closest('button');
     expect(record).toHaveProperty('disabled', true);
     expect(record?.getAttribute('title')).toBe('Recording arrives in a later milestone');
+  });
+});
+
+/**
+ * The refine chat — the practice owner's primary repair path (design question
+ * 4), so these are the flows that matter most on this screen.
+ */
+describe('refine chat', () => {
+  const NOTE_TEXT = [
+    'Subjective: Improved sleep.',
+    'Objective: Alert and engaged.',
+    'Assessment: Progressing.',
+    'Plan: Continue weekly sessions. Introduce grounding exercises.',
+  ].join('\n\n');
+
+  function openNote(overrides: Partial<Note> = {}, messages: ChatMessage[] = []): Note {
+    const note = makeNote(john.id, { format_id: progressNote.id, content: NOTE_TEXT, ...overrides });
+    installFakeApi({
+      formats: [progressNote],
+      patients: [john],
+      notes: [note],
+      messages: messages.map((message) => ({ ...message, note_id: note.id })),
+    });
+    renderApp(`/?patient=${john.id}&note=${note.id}`);
+    return note;
+  }
+
+  it('shows the thread the note was created with, and its empty-state otherwise', async () => {
+    const note = makeNote(john.id, { format_id: progressNote.id, content: NOTE_TEXT });
+    installFakeApi({
+      formats: [progressNote],
+      patients: [john],
+      notes: [note],
+      messages: [makeChatMessage(note.id, 'assistant', "Here's a first pass based on your dictation.")],
+    });
+    renderApp(`/?patient=${john.id}&note=${note.id}`);
+
+    expect(await screen.findByText("Here's a first pass based on your dictation.")).toBeDefined();
+    expect(screen.queryByText('Ask a question about this note, or give feedback to refine it.')).toBeNull();
+  });
+
+  it('offers the prototype’s empty-state line when nothing has been said', async () => {
+    openNote();
+    expect(
+      await screen.findByText('Ask a question about this note, or give feedback to refine it.'),
+    ).toBeDefined();
+  });
+
+  it('sends a message on Enter and rewrites the note in place', async () => {
+    openNote();
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+    const input = screen.getByTestId('chat-input');
+
+    fireEvent.change(input, { target: { value: 'Make the plan shorter' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(await screen.findByText('Make the plan shorter')).toBeDefined();
+    expect(await screen.findByText('Shortened the Plan section.')).toBeDefined();
+    await waitFor(() => {
+      expect(body.value).toContain('Plan: Continue weekly sessions and grounding exercises.');
+    });
+    expect(body.value).not.toContain('Introduce grounding exercises');
+    // The composer is clear again, ready for the next turn.
+    expect(input).toHaveProperty('value', '');
+  });
+
+  it("sends the quick action's full phrase, not its label", async () => {
+    openNote();
+    await screen.findByTestId('note-body');
+
+    fireEvent.click(screen.getByRole('button', { name: 'More clinical' }));
+
+    // "Shorter" or "More clinical" alone is a label, not an instruction, and
+    // every one of these buttons is one click from rewriting a clinical note.
+    const thread = await screen.findByTestId('chat-thread');
+    await waitFor(() => {
+      expect(thread.textContent).toContain('Use a more clinical tone');
+    });
+    expect(within(thread).queryByText('More clinical')).toBeNull();
+  });
+
+  it('answers a question without touching the note', async () => {
+    openNote();
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'What is in the plan?' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    expect(await screen.findByText(/that detail isn't currently in the note/)).toBeDefined();
+    expect(body.value).toBe(NOTE_TEXT);
+  });
+
+  it('refuses to change a published note, in the prototype’s words', async () => {
+    openNote({ status: 'published', published_at: '2026-08-09T09:00:00.000Z' });
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    expect(await screen.findByText(/This note is published, so I won’t change it/)).toBeDefined();
+    expect(body.value).toBe(NOTE_TEXT);
+  });
+
+  it('raises a chip for a highlighted excerpt, sends it, and clears it', async () => {
+    openNote();
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    body.setSelectionRange(0, 'Subjective: Improved sleep.'.length);
+    fireEvent.select(body);
+
+    expect((await screen.findByTestId('ref-chip')).textContent).toContain('Subjective: Improved sleep.');
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Tighten this' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    // It travels with the message and is gone from the composer afterwards.
+    await waitFor(() => {
+      expect(screen.queryByTestId('ref-chip')).toBeNull();
+    });
+    const quote = await screen.findByText('“Subjective: Improved sleep.”');
+    expect(quote.className).toBe('chat-quote');
+  });
+
+  it('dismisses the chip with the ×', async () => {
+    openNote();
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    body.setSelectionRange(0, 10);
+    fireEvent.select(body);
+    fireEvent.click(await screen.findByLabelText('Clear highlighted excerpt'));
+
+    expect(screen.queryByTestId('ref-chip')).toBeNull();
+  });
+
+  it('truncates a long excerpt in the chip, as the prototype does at 70 characters', async () => {
+    const long = 'x'.repeat(200);
+    openNote({ content: `Subjective: ${long}` });
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    body.setSelectionRange(0, body.value.length);
+    fireEvent.select(body);
+
+    const chip = (await screen.findByTestId('ref-chip')).textContent ?? '';
+    expect(chip).toContain('…');
+    expect(chip.length).toBeLessThan(80);
+  });
+
+  it('says so when the local AI is not running, and keeps the note intact', async () => {
+    const note = makeNote(john.id, { format_id: progressNote.id, content: NOTE_TEXT });
+    installFakeApi(
+      { formats: [progressNote], patients: [john], notes: [note] },
+      { chatError: { code: 'ollama_unreachable', message: "Apunta can't reach the local AI — see Setup." } },
+    );
+    renderApp(`/?patient=${john.id}&note=${note.id}`);
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    expect((await screen.findByTestId('chat-error')).textContent).toContain("can't reach the local AI");
+    expect(body.value).toBe(NOTE_TEXT);
+  });
+});
+
+/**
+ * The two things in a note body that must be visible without interrupting her
+ * (design questions 5 and 11). Neither gates anything.
+ */
+describe('editor markers', () => {
+  it('names an empty section and marks its header, without blocking anything', async () => {
+    const note = makeNote(john.id, {
+      format_id: progressNote.id,
+      content: 'Subjective: Improved sleep.\n\nObjective:\n\nAssessment: Progressing.\n\nPlan: Weekly.',
+    });
+    installFakeApi({ formats: [progressNote], patients: [john], notes: [note] });
+    renderApp(`/?patient=${john.id}&note=${note.id}`);
+
+    expect((await screen.findByTestId('empty-sections')).textContent).toBe(
+      'Nothing recorded in Objective — add or leave blank.',
+    );
+    const marks = within(screen.getByTestId('note-highlights')).getAllByText('Objective:');
+    expect(marks[0]?.className).toContain('marker-empty-section');
+    // Copy is not gated on it: her blanks are deliberate.
+    expect(screen.getByTestId('copy-button')).toHaveProperty('disabled', false);
+    expect(screen.getByTestId('publish-button')).toHaveProperty('disabled', false);
+  });
+
+  it('marks the unclear-dictation flag distinctly and never warns about it', async () => {
+    const note = makeNote(john.id, {
+      format_id: progressNote.id,
+      content: [
+        'Subjective: Possibly propranolol [unclear in dictation].',
+        'Objective: Alert.',
+        'Assessment: Progressing.',
+        'Plan: Weekly.',
+      ].join('\n\n'),
+    });
+    installFakeApi({ formats: [progressNote], patients: [john], notes: [note] });
+    renderApp(`/?patient=${john.id}&note=${note.id}`);
+
+    await screen.findByTestId('note-body');
+    const mark = within(screen.getByTestId('note-highlights')).getByText('[unclear in dictation]');
+    expect(mark.tagName).toBe('MARK');
+    expect(mark.className).toContain('marker-unclear');
+    expect(screen.queryByTestId('empty-sections')).toBeNull();
   });
 });
 

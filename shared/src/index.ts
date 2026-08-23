@@ -90,6 +90,7 @@ export {
   sectionsJsonSchema,
   sectionsToText,
   textToSections,
+  UNCLEAR_MARKER,
 } from './sections.js';
 export type { DetectedFormat, JsonSchemaObject, RefineResult, Sections } from './sections.js';
 

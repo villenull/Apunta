@@ -12,7 +12,7 @@ import { useLoader } from '../hooks/useLoader.js';
 
 /**
  * The workspace — `prototype/patients.html`. Three columns: patients, that
- * patient's notes, and the note itself beside the (M4) refine column.
+ * patient's notes, and the note itself beside the refine column.
  *
  * Which patient and note are open lives in the query string rather than in
  * component state, so the capture screen can hand a freshly created draft back
@@ -44,6 +44,13 @@ export function Workspace(): React.JSX.Element {
   const note =
     notes.state.status === 'ready'
       ? (notes.state.data.find((candidate) => candidate.id === noteId) ?? null)
+      : null;
+  // The note's format supplies its section list, which the editor needs to
+  // tell an empty section from a gap. Formats are already loaded here for the
+  // first-run redirect, so this costs no extra request.
+  const noteFormat =
+    formats.state.status === 'ready' && note !== null
+      ? (formats.state.data.find((candidate) => candidate.id === note.format_id) ?? null)
       : null;
 
   const selectPatient = useCallback(
@@ -143,6 +150,7 @@ export function Workspace(): React.JSX.Element {
               key={note.id}
               patient={patient}
               note={note}
+              format={noteFormat}
               onNoteChanged={handleNoteChanged}
               onNoteDeleted={handleNoteDeleted}
             />

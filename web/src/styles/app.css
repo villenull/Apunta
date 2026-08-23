@@ -339,6 +339,90 @@
   flex: 1;
   overflow-y: auto;
   padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * The editor is two stacked layers: a backdrop that highlights empty sections
+ * and `[unclear in dictation]` markers, and the textarea itself on top with a
+ * transparent background, so the marks read like a marker pen under her text.
+ *
+ * They stay in register because they share `.note-editable` typography, both
+ * have zero padding and no border, and the textarea never scrolls internally
+ * (it auto-grows; this pane is what scrolls). Nothing in the backdrop may add
+ * or remove a character — see web/src/lib/markers.ts.
+ */
+.note-editable-wrap {
+  position: relative;
+  flex: 1 0 auto;
+}
+
+.note-highlights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  color: transparent;
+  overflow: hidden;
+}
+
+.note-editable-wrap > textarea.note-editable {
+  position: relative;
+}
+
+.marker {
+  color: transparent;
+  border-radius: 3px;
+}
+
+/*
+ * She chose the unclear marker over a warn-before-copy variant, knowing one
+ * could slip into a filed record. Nothing interrupts her; it is simply very
+ * hard to miss on screen.
+ */
+.marker-unclear {
+  background: var(--danger-tint);
+  box-shadow: inset 0 -1.5px 0 var(--danger);
+}
+
+/* A blank section is deliberate output, so this marks it without alarming. */
+.marker-empty-section {
+  background: var(--accent-tint);
+  box-shadow: inset 0 -1.5px 0 var(--accent);
+}
+
+.empty-sections-note {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  color: var(--accent-hover);
+  background: var(--accent-tint);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  margin-bottom: 14px;
+}
+
+/* The chat rewrote the note: light the editor briefly so it is not silent. */
+@keyframes note-refined {
+  from {
+    background: var(--accent-tint);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.note-editable-wrap.is-refined {
+  animation: note-refined 1.2s ease-out;
+  border-radius: var(--radius);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-editable-wrap.is-refined {
+    animation: none;
+    background: var(--accent-tint);
+    border-radius: var(--radius);
+  }
 }
 
 /*
@@ -363,6 +447,9 @@
   resize: none;
   overflow: hidden;
   font-family: inherit;
+  /* Textareas break long words by default; the backdrop div must too, or the
+     two layers wrap differently and the marks slide off her text. */
+  overflow-wrap: break-word;
 }
 
 .note-editable:focus {
@@ -399,6 +486,92 @@
   flex: 1;
   overflow-y: auto;
   padding: 18px 20px;
+}
+
+.chat-msg {
+  margin-bottom: 14px;
+  max-width: 92%;
+}
+
+.chat-msg.user {
+  margin-left: auto;
+}
+
+.chat-bubble {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  /* A reply may come back with paragraphs in it; the prototype's canned
+     strings never did. */
+  white-space: pre-wrap;
+}
+
+.chat-msg.user .chat-bubble {
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 3px;
+}
+
+.chat-msg.ai .chat-bubble {
+  background: var(--surface-muted);
+  border: 0.5px solid var(--border);
+  border-bottom-left-radius: 3px;
+}
+
+.chat-quote {
+  font-size: 12px;
+  opacity: 0.85;
+  border-left: 2px solid rgba(255, 255, 255, 0.5);
+  padding-left: 8px;
+  margin-bottom: 6px;
+  font-style: italic;
+}
+
+.chat-msg.ai .chat-quote {
+  border-left-color: var(--border-strong);
+}
+
+.chat-thinking {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.chat-error {
+  margin: 0 14px 8px;
+}
+
+/* The highlighted excerpt, waiting to be attached to the next message. */
+.ref-chip {
+  margin: 0 14px 8px;
+  padding: 7px 10px;
+  background: var(--accent-tint);
+  border: 0.5px solid var(--accent);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--accent-hover);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.ref-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+}
+
+.ref-chip button {
+  background: none;
+  border: none;
+  color: var(--accent-hover);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
 }
 
 .chat-input-row {

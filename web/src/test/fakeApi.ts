@@ -1,4 +1,12 @@
-import type { HealthResponse, Note, NoteFormat, Patient, PatientListItem } from '@apunta/shared';
+import {
+  PUBLISHED_REFUSAL,
+  type ChatMessage,
+  type HealthResponse,
+  type Note,
+  type NoteFormat,
+  type Patient,
+  type PatientListItem,
+} from '@apunta/shared';
 import { vi } from 'vitest';
 
 /**
@@ -16,6 +24,8 @@ export interface FakeApiState {
   patients: PatientListItem[];
   notes: Note[];
   formats: NoteFormat[];
+  /** Refine-chat turns, across every note. */
+  messages: ChatMessage[];
 }
 
 export interface FakeApi {
@@ -57,6 +67,22 @@ export function makeFormat(name: string, sections: string[]): NoteFormat {
     instructions: '',
     source: 'manual',
     created_at: '2026-07-01T09:00:00.000Z',
+  };
+}
+
+export function makeChatMessage(
+  noteId: string,
+  role: ChatMessage['role'],
+  text: string,
+  refQuote: string | null = null,
+): ChatMessage {
+  return {
+    id: fakeId(),
+    note_id: noteId,
+    role,
+    text,
+    ref_quote: refQuote,
+    created_at: '2026-08-08T09:00:00.000Z',
   };
 }
 
@@ -137,6 +163,31 @@ export function draftContent(
     .join('\n\n');
 }
 
+/**
+ * What `POST /api/notes/:id/chat` does, mirroring the server closely enough to
+ * be worth testing against: a rewrite when she asks for one, an answer when
+ * she asks a question, and the prototype's refusal on a published note.
+ *
+ * The published lock is applied here, not left to the caller, because that is
+ * where the real server applies it — a fake that let a published note be
+ * rewritten would make every published-lock assertion prove nothing.
+ */
+export function fakeRefine(note: Note, message: string): { reply: string; content: string | null } {
+  const outcome = message.includes('?')
+    ? { reply: "Based on the note, that detail isn't currently in the note.", content: null }
+    : {
+        reply: 'Shortened the Plan section.',
+        content: note.content.replace(/Plan:.*$/s, 'Plan: Continue weekly sessions and grounding exercises.'),
+      };
+
+  // The lock, applied the way the server applies it: a rewrite of a published
+  // note is discarded, and so is the reply describing it.
+  if (note.status === 'published' && outcome.content !== null) {
+    return { reply: PUBLISHED_REFUSAL, content: null };
+  }
+  return outcome;
+}
+
 const HEALTHY: HealthResponse = {
   ok: true,
   version: '0.0.0',
@@ -154,6 +205,8 @@ function apiError(status: number, code: string, message: string): Response {
 export interface FakeApiOptions {
   /** Overrides for `GET /api/health` — the AI banner reads this. */
   health?: Partial<HealthResponse>;
+  /** Make `POST /api/notes/:id/chat` fail inside the stream, as the server does. */
+  chatError?: { code: string; message: string };
   /**
    * Make `POST /api/generate` fail *inside* the stream, the way the server
    * does once the 200 is committed — "Ollama is not running" is an `error`
@@ -164,7 +217,7 @@ export interface FakeApiOptions {
 
 /** Installs a `fetch` that answers the endpoints the SPA uses, and returns its state. */
 export function installFakeApi(initial: Partial<FakeApiState> = {}, options: FakeApiOptions = {}): FakeApi {
-  const state: FakeApiState = { patients: [], notes: [], formats: [], ...initial };
+  const state: FakeApiState = { patients: [], notes: [], formats: [], messages: [], ...initial };
   const calls: string[] = [];
   let sequence = 0;
 
@@ -254,6 +307,36 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         });
         state.notes = [created, ...state.notes];
         return json(created, 201);
+      }
+
+      const chatMatch = /^\/api\/notes\/([^/]+)\/chat$/.exec(path);
+      if (chatMatch) {
+        const note = noteById(chatMatch[1] ?? '');
+        if (!note) return apiError(404, 'not_found', 'Note not found');
+        if (method === 'GET') {
+          return json({ messages: state.messages.filter((message) => message.note_id === note.id) });
+        }
+        if (options.chatError) return sse([{ event: 'error', data: options.chatError }]);
+
+        const text = String(body['message'] ?? '');
+        const quote = body['ref_quote'] == null ? null : String(body['ref_quote']);
+        const user = makeChatMessage(note.id, 'user', text, quote);
+        state.messages = [...state.messages, user];
+
+        const frames: { event: string; data: unknown }[] = [{ event: 'message', data: { message: user } }];
+        const outcome = fakeRefine(note, text);
+        for (const word of outcome.reply.split(' ')) {
+          frames.push({ event: 'token', data: { text: `${word} ` } });
+        }
+        const assistant = makeChatMessage(note.id, 'assistant', outcome.reply);
+        state.messages = [...state.messages, assistant];
+        frames.push({ event: 'message', data: { message: assistant } });
+
+        if (outcome.content !== null) {
+          const updated = replaceNote({ ...note, content: outcome.content, updated_at: stamp() });
+          frames.push({ event: 'note-updated', data: { note: updated, empty_sections: [] } });
+        }
+        return sse(frames);
       }
 
       const publishMatch = /^\/api\/notes\/([^/]+)\/(publish|unpublish)$/.exec(path);
