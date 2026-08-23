@@ -1,4 +1,4 @@
-import type { Note, NoteFormat, Patient, PatientListItem } from '@apunta/shared';
+import type { HealthResponse, Note, NoteFormat, Patient, PatientListItem } from '@apunta/shared';
 import { vi } from 'vitest';
 
 /**
@@ -79,12 +79,91 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
 
+/**
+ * An SSE body, streamed one frame at a time.
+ *
+ * A single pre-built string would arrive as one chunk and the reader would
+ * never see the draft assembling — which is the thing the capture screen
+ * exists to show, so it is the thing the tests have to be able to observe.
+ */
+function sse(frames: readonly { event: string; data: unknown }[]): Response {
+  const encoder = new TextEncoder();
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const frame of frames) {
+        controller.enqueue(encoder.encode(`event: ${frame.event}\ndata: ${JSON.stringify(frame.data)}\n\n`));
+      }
+      controller.close();
+    },
+  });
+  return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+}
+
+/**
+ * What `POST /api/generate` streams back, mirroring the server: a status, one
+ * `token` event per section carrying *decoded* text, then the saved note.
+ * The section bodies are derived from the request so a test can assert that
+ * what streamed is what was saved.
+ */
+export function draftFrames(
+  sections: readonly string[],
+  typed: string,
+  note: Note,
+  emptySections: readonly string[] = [],
+): { event: string; data: unknown }[] {
+  const frames: { event: string; data: unknown }[] = [
+    { event: 'status', data: { stage: 'drafting', message: 'Drafting the note…' } },
+  ];
+  for (const section of sections) {
+    if (emptySections.includes(section)) continue;
+    for (const word of `${section} from: ${typed}`.split(' ')) {
+      frames.push({ event: 'token', data: { section, text: `${word} ` } });
+    }
+  }
+  frames.push({ event: 'note', data: { note, empty_sections: [...emptySections] } });
+  return frames;
+}
+
+/** `sectionsToText`, as the server writes it: an empty body keeps its header. */
+export function draftContent(
+  sections: readonly string[],
+  typed: string,
+  emptySections: readonly string[] = [],
+): string {
+  return sections
+    .map((section) =>
+      emptySections.includes(section) ? `${section}:` : `${section}: ${section} from: ${typed}`,
+    )
+    .join('\n\n');
+}
+
+const HEALTHY: HealthResponse = {
+  ok: true,
+  version: '0.0.0',
+  fakeAi: true,
+  db: { path: '/tmp/apunta/apunta.db', migrationLevel: 1 },
+  ollama: { reachable: true, model: 'fake-llm', modelPresent: true },
+  whisper: { binaryPresent: false, modelPresent: false },
+  ffmpeg: { present: false },
+};
+
 function apiError(status: number, code: string, message: string): Response {
   return json({ error: code, message }, status);
 }
 
-/** Installs a `fetch` that answers the endpoints M2 uses, and returns its state. */
-export function installFakeApi(initial: Partial<FakeApiState> = {}): FakeApi {
+export interface FakeApiOptions {
+  /** Overrides for `GET /api/health` — the AI banner reads this. */
+  health?: Partial<HealthResponse>;
+  /**
+   * Make `POST /api/generate` fail *inside* the stream, the way the server
+   * does once the 200 is committed — "Ollama is not running" is an `error`
+   * event, never an HTTP status.
+   */
+  generateError?: { code: string; message: string };
+}
+
+/** Installs a `fetch` that answers the endpoints the SPA uses, and returns its state. */
+export function installFakeApi(initial: Partial<FakeApiState> = {}, options: FakeApiOptions = {}): FakeApi {
   const state: FakeApiState = { patients: [], notes: [], formats: [], ...initial };
   const calls: string[] = [];
   let sequence = 0;
@@ -110,6 +189,25 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}): FakeApi {
       calls.push(`${method} ${path}`);
       const body: Record<string, unknown> =
         typeof init.body === 'string' ? (JSON.parse(init.body) as Record<string, unknown>) : {};
+
+      if (path === '/api/health') return json({ ...HEALTHY, ...options.health });
+
+      if (path === '/api/generate' && method === 'POST') {
+        if (options.generateError) return sse([{ event: 'error', data: options.generateError }]);
+        const format = state.formats.find((candidate) => candidate.id === body['format_id']);
+        if (!format) return apiError(404, 'not_found', 'Note format not found');
+        const typed = String(body['typed_notes'] ?? '');
+        const empty = format.sections.slice(-1).filter(() => /grief/i.test(typed));
+        const note = makeNote(String(body['patient_id']), {
+          format_id: format.id,
+          title: format.name,
+          content: draftContent(format.sections, typed, empty),
+          created_at: stamp(),
+          updated_at: stamp(),
+        });
+        state.notes = [note, ...state.notes];
+        return sse(draftFrames(format.sections, typed, note, empty));
+      }
 
       if (path === '/api/formats' && method === 'GET') return json({ formats: state.formats });
 

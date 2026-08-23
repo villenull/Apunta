@@ -14,9 +14,22 @@
 
 /* ---------------------------------------------------------------- shells */
 
+/*
+ * The workspace wraps the three columns so the AI banner (M3) can sit above
+ * them without being squeezed into a column. The shell keeps the viewport
+ * height when there is no banner, and gives up exactly the banner's height
+ * when there is.
+ */
+.workspace {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
 .app-shell {
   display: flex;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   max-width: max(1180px, 74vw);
   margin: 0 auto;
   border-left: 0.5px solid var(--border);
@@ -891,4 +904,76 @@ select:disabled {
   font-size: 13px;
   color: var(--text-secondary);
   margin-top: 2px;
+}
+
+/*
+ * The draft taking shape on the capture screen (M3).
+ *
+ * The model's stream is JSON, so the server decodes it and sends per-section
+ * text; this renders it in the same `Section: body` shape the note editor
+ * will show a moment later, so nothing appears to change on the way there.
+ */
+.draft-progress {
+  margin-top: 16px;
+}
+
+.draft-preview {
+  margin-top: 8px;
+  padding: 14px;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}
+
+.draft-preview p {
+  margin: 0 0 12px;
+}
+
+.draft-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.draft-section {
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+/*
+ * "Apunta can't reach the local AI" (M3 deliverable 8). A banner, not a
+ * blocker: everything except drafting still works without the model, and the
+ * full setup wizard is M7.
+ */
+.ai-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--danger-tint);
+  border-bottom: 0.5px solid var(--border);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ai-banner p {
+  margin: 0;
+  flex: 1;
+}
+
+.ai-banner-dismiss {
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.ai-banner-dismiss:hover {
+  color: var(--text-primary);
 }

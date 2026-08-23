@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
-import { createNote, errorMessage, getPatient, listFormats } from '../api/index.js';
+import { errorMessage, generateNote, getPatient, listFormats } from '../api/index.js';
 import { KeyboardIcon, MicIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
@@ -12,16 +12,17 @@ const RECORDING_TOOLTIP = 'Recording arrives in a later milestone';
 /**
  * `prototype/capture.html` — the format, and how the session gets in.
  *
- * One deliberate difference from the prototype: the options are not a
- * either/or picker that swaps the screen. The practice owner said she both
- * speaks a session aloud *and* writes rough notes
+ * Two deliberate differences from the prototype:
+ *
+ * The options are not an either/or picker that swaps the screen. The practice
+ * owner both writes rough notes and occasionally speaks a session aloud
  * (`docs/feedback/2026-08-22-owner-answers.md`), so M5 will feed a recording
- * and typed notes to the same drafting call. Building the toggle now would
+ * and her typed notes to the same drafting call. Building the toggle now would
  * only be something for M5 to tear out.
  *
- * M2 implements the typed path, and saves the typed text as the note's body.
- * M3 replaces that with /api/generate, which drafts the note from the same
- * text; the screen around it does not change.
+ * And "Process note" now calls `/api/generate`, which drafts the note with the
+ * local model and streams it back. Typed notes are the primary path, not a
+ * placeholder: "mostly written, speaking is occasional".
  */
 export function Capture(): React.JSX.Element {
   const { patientId = '' } = useParams();
@@ -37,24 +38,57 @@ export function Capture(): React.JSX.Element {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  /** Section name → body so far. Filled in by `token` events as they arrive. */
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const abortRef = useRef<AbortController | null>(null);
 
   const available = formats.state.status === 'ready' ? formats.state.data : [];
-  const formatId = chosenFormatId ?? available[0]?.id ?? '';
+  const format = available.find((candidate) => candidate.id === chosenFormatId) ?? available[0];
+  const formatId = format?.id ?? '';
 
   async function handleProcess(): Promise<void> {
     if (busy || formatId === '' || text.trim().length === 0) return;
     setBusy(true);
     setError(null);
+    setDraft({});
+    setStatus('Contacting the local AI…');
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
-      const note = await createNote({ patient_id: patientId, format_id: formatId, content: text });
+      const { note } = await generateNote(
+        { patient_id: patientId, format_id: formatId, typed_notes: text },
+        {
+          onStatus: (event) => {
+            setStatus(event.message);
+            // A retry starts the note over, so the half-written one on screen
+            // is no longer what the model is producing.
+            if (event.stage === 'retrying') setDraft({});
+          },
+          onToken: (event) => {
+            setDraft((current) => ({
+              ...current,
+              [event.section]: (current[event.section] ?? '') + event.text,
+            }));
+          },
+        },
+        controller.signal,
+      );
       await navigate(`/?patient=${patientId}&note=${note.id}`, { replace: true });
     } catch (thrown) {
       setError(errorMessage(thrown));
+      setStatus(null);
       setBusy(false);
+    } finally {
+      abortRef.current = null;
     }
   }
 
   const heading = patient.state.status === 'ready' ? `New note for ${patient.state.data.name}` : 'New note';
+  const sections = format?.sections ?? [];
+  const drafting = busy && Object.keys(draft).length > 0;
 
   return (
     <Screen back={{ to: `/?patient=${patientId}`, label: 'Patients' }}>
@@ -74,15 +108,15 @@ export function Capture(): React.JSX.Element {
         <select
           id="note-format"
           value={formatId}
-          disabled={available.length === 0}
+          disabled={available.length === 0 || busy}
           onChange={(event) => {
             setChosenFormatId(event.target.value);
           }}
         >
           {formats.state.status === 'loading' && <option value="">Loading…</option>}
-          {available.map((format) => (
-            <option key={format.id} value={format.id}>
-              {format.name}
+          {available.map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>
+              {candidate.name}
             </option>
           ))}
         </select>
@@ -127,6 +161,7 @@ export function Capture(): React.JSX.Element {
                 aria-label="Session summary"
                 data-testid="summary-input"
                 value={text}
+                readOnly={busy}
                 onChange={(event) => {
                   setText(event.target.value);
                 }}
@@ -134,6 +169,23 @@ export function Capture(): React.JSX.Element {
               />
             </div>
           </div>
+
+          {busy && (
+            <div className="draft-progress" data-testid="draft-progress">
+              <p className="small muted" role="status" data-testid="draft-status">
+                {status ?? 'Drafting…'}
+              </p>
+              {drafting && (
+                <div className="draft-preview" data-testid="draft-preview">
+                  {sections.map((section) => (
+                    <p key={section}>
+                      <span className="draft-section">{section}:</span> {draft[section] ?? ''}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {error !== null && (
             <p className="form-error" role="alert">
@@ -150,7 +202,7 @@ export function Capture(): React.JSX.Element {
               void handleProcess();
             }}
           >
-            {busy ? 'Saving…' : 'Process note'}
+            {busy ? 'Drafting…' : 'Process note'}
           </button>
         </>
       )}

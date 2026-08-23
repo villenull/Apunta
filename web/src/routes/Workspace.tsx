@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router';
 
 import { deletePatient, errorMessage, listFormats, listNotes, listPatients } from '../api/index.js';
+import { AiBanner } from '../components/AiBanner.js';
 import { DocumentIcon, PeopleIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
 import { NoteView } from '../components/NoteView.js';
@@ -99,51 +100,54 @@ export function Workspace(): React.JSX.Element {
   }
 
   return (
-    <div className="app-shell">
-      <PatientsColumn
-        patients={patients.state}
-        activePatientId={patient?.id ?? null}
-        onSelect={selectPatient}
-        onRetry={patients.reload}
-      />
+    <div className="workspace">
+      <AiBanner />
+      <div className="app-shell">
+        <PatientsColumn
+          patients={patients.state}
+          activePatientId={patient?.id ?? null}
+          onSelect={selectPatient}
+          onRetry={patients.reload}
+        />
 
-      <NotesColumn
-        patient={patient}
-        notes={notes.state}
-        activeNoteId={note?.id ?? null}
-        onSelect={selectNote}
-        onRetry={notes.reload}
-        onDeletePatient={() => {
-          if (patient) void handleDeletePatient(patient);
-        }}
-      />
+        <NotesColumn
+          patient={patient}
+          notes={notes.state}
+          activeNoteId={note?.id ?? null}
+          onSelect={selectNote}
+          onRetry={notes.reload}
+          onDeletePatient={() => {
+            if (patient) void handleDeletePatient(patient);
+          }}
+        />
 
-      <div className="col col-main" data-testid="main-pane">
-        {/* Formats are loaded to decide the first-run redirect; if that call
+        <div className="col col-main" data-testid="main-pane">
+          {/* Formats are loaded to decide the first-run redirect; if that call
             fails, say so rather than quietly behaving as if formats exist. */}
-        {formats.state.status === 'error' && (
-          <p className="form-error" role="alert">
-            {formats.state.message}
-          </p>
-        )}
-        {actionError !== null && (
-          <p className="form-error" role="alert">
-            {actionError}
-          </p>
-        )}
-        {patient === null ? (
-          <NoPatientSelected />
-        ) : note === null ? (
-          <NoNoteSelected patient={patient} />
-        ) : (
-          <NoteView
-            key={note.id}
-            patient={patient}
-            note={note}
-            onNoteChanged={handleNoteChanged}
-            onNoteDeleted={handleNoteDeleted}
-          />
-        )}
+          {formats.state.status === 'error' && (
+            <p className="form-error" role="alert">
+              {formats.state.message}
+            </p>
+          )}
+          {actionError !== null && (
+            <p className="form-error" role="alert">
+              {actionError}
+            </p>
+          )}
+          {patient === null ? (
+            <NoPatientSelected />
+          ) : note === null ? (
+            <NoNoteSelected patient={patient} />
+          ) : (
+            <NoteView
+              key={note.id}
+              patient={patient}
+              note={note}
+              onNoteChanged={handleNoteChanged}
+              onNoteDeleted={handleNoteDeleted}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

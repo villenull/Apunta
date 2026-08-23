@@ -89,6 +89,20 @@ export async function requestJson<T>(
   return parser.parse(await response.json());
 }
 
+/**
+ * Request a streaming endpoint. The caller reads `response.body` itself.
+ *
+ * A non-2xx still comes back as an `ApiRequestError` carrying the server's
+ * message, because `/api/generate` validates the request *before* it opens the
+ * stream — so "no such patient" is an ordinary 404 with a JSON body, and only
+ * failures after that point arrive as events inside the stream.
+ */
+export async function requestStream(path: string, options: RequestOptions = {}): Promise<Response> {
+  const response = await send(path, options);
+  if (!response.ok) throw await toError(response);
+  return response;
+}
+
 /** Request an endpoint that answers 204 (or whose body we do not need). */
 export async function requestVoid(path: string, options: RequestOptions = {}): Promise<void> {
   const response = await send(path, options);

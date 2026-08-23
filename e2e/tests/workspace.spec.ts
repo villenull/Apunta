@@ -62,15 +62,23 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);
     await expect(page.getByTestId('empty-no-note')).toContainText(`No note selected for ${patientName}`);
 
-    // --- Capture: type a summary, which becomes the draft body --------------
+    // --- Capture: type a summary, watch it drafted, land on the note --------
     await page.getByRole('button', { name: 'New note' }).click();
     await expect(page.getByTestId('capture-heading')).toHaveText(`New note for ${patientName}`);
     await page.getByLabel('Note format').selectOption({ label: formatName });
     await page.getByTestId('summary-input').fill('Sleep improved, intrusive thoughts less frequent.');
     await page.getByTestId('process-note').click();
 
+    // The draft is visible while it is still being written, and it is prose:
+    // with structured output on, the model's own stream is raw JSON, so if the
+    // decoding regressed the therapist would watch `{"Subjective": "…` here.
+    const preview = page.getByTestId('draft-preview');
+    await expect(preview).toContainText('Subjective:');
+    await expect(preview).not.toContainText('{"');
+
     const body = page.getByTestId('note-body');
-    await expect(body).toHaveValue('Sleep improved, intrusive thoughts less frequent.');
+    await expect(body).toContainText('Subjective: Patient reports improved sleep');
+    await expect(body).toContainText('Plan: Continue weekly sessions.');
     await expect(page.getByTestId('note-title')).toHaveText(formatName);
     await expect(page.getByTestId('note-list')).toContainText('Draft');
 
@@ -194,6 +202,38 @@ test.describe('the workspace', () => {
     await expect(page.locator('.col-patients')).toBeVisible();
     await expect(page.locator('.col-notes')).toBeVisible();
     await expect(page.locator('.note-editor-col')).toBeVisible();
+  });
+});
+
+test.describe('when the local AI is not there', () => {
+  /**
+   * The server runs in fake-AI mode here, which always reports a healthy
+   * model, so the unhealthy answer is faked at the network boundary — the same
+   * technique the first-run spec uses, and for the same reason: other specs are
+   * mid-flow against this database.
+   */
+  test('shows a dismissible banner and leaves the rest of the app working', async ({ page, request }) => {
+    const patientName = uniqueName('E2E Patient');
+    await request.post('/api/formats', { data: { name: uniqueName('E2E format'), sections: ['Plan'] } });
+    await request.post('/api/patients', { data: { name: patientName } });
+
+    await page.route('**/api/health', async (route) => {
+      const response = await route.fetch();
+      const health = (await response.json()) as { ollama: Record<string, unknown> };
+      await route.fulfill({
+        json: { ...health, ollama: { reachable: false, model: null, modelPresent: false } },
+      });
+    });
+
+    await page.goto('/');
+
+    const banner = page.getByTestId('ai-banner');
+    await expect(banner).toContainText("Apunta can't reach the local AI — see Setup");
+    // Not a blocker: the practice is still there behind it.
+    await expect(page.getByTestId('patient-list')).toContainText(patientName);
+
+    await banner.getByLabel('Dismiss').click();
+    await expect(banner).toBeHidden();
   });
 });
 

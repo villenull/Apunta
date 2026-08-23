@@ -3,7 +3,14 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App.js';
-import { installFakeApi, installFakeClipboard, makeFormat, makeNote, makePatient } from './test/fakeApi.js';
+import {
+  draftContent,
+  installFakeApi,
+  installFakeClipboard,
+  makeFormat,
+  makeNote,
+  makePatient,
+} from './test/fakeApi.js';
 
 /**
  * Screen-level tests for the ported prototype: the flows a user actually
@@ -259,19 +266,67 @@ describe('adding a patient and a typed note', () => {
     expect(api.state.patients).toHaveLength(1);
   });
 
-  it('types a summary into a new draft and selects it in the workspace', async () => {
+  it('drafts a typed summary into a new note and selects it in the workspace', async () => {
+    const typed = 'Sleep better this week, still anxious about work.';
     const api = installFakeApi({ formats: [progressNote], patients: [john] });
     renderApp(`/capture/${john.id}`);
 
     expect(await screen.findByText(`New note for ${john.name}`)).toBeDefined();
-    fireEvent.change(screen.getByTestId('summary-input'), {
-      target: { value: 'Sleep better this week, still anxious about work.' },
-    });
+    fireEvent.change(screen.getByTestId('summary-input'), { target: { value: typed } });
     fireEvent.click(screen.getByTestId('process-note'));
 
     const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
-    expect(body.value).toBe('Sleep better this week, still anxious about work.');
+    expect(body.value).toBe(draftContent(progressNote.sections, typed));
     expect(api.state.notes).toHaveLength(1);
+    // The draft came from /api/generate, not from M2's direct note creation.
+    expect(api.calls).toContain('POST /api/generate');
+    expect(api.calls).not.toContain('POST /api/notes');
+  });
+
+  /**
+   * The prototype's feel, and the reason the server decodes the model's JSON
+   * rather than forwarding it: the therapist watches the note take shape, not
+   * escaped JSON scrolling past.
+   */
+  it('shows the draft assembling before it lands on the workspace', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderApp(`/capture/${john.id}`);
+
+    await screen.findByText(`New note for ${john.name}`);
+    fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Sleep improved.' } });
+    fireEvent.click(screen.getByTestId('process-note'));
+
+    const preview = await screen.findByTestId('draft-preview');
+    expect(preview.textContent).toContain('Subjective:');
+    expect(preview.textContent).toContain('Sleep improved.');
+    expect(preview.textContent).not.toContain('{"');
+
+    // And then it lands.
+    expect(await screen.findByTestId('note-body')).toBeDefined();
+  });
+
+  it('keeps the summary and explains itself when the local AI is not running', async () => {
+    installFakeApi(
+      { formats: [progressNote], patients: [john] },
+      {
+        generateError: {
+          code: 'ollama_unreachable',
+          message: "Apunta can't reach the local AI — see Setup.",
+        },
+      },
+    );
+    renderApp(`/capture/${john.id}`);
+
+    await screen.findByText(`New note for ${john.name}`);
+    fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Sleep improved.' } });
+    fireEvent.click(screen.getByTestId('process-note'));
+
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      expect.stringContaining("can't reach the local AI"),
+    );
+    expect((screen.getByTestId('summary-input') as HTMLTextAreaElement).value).toBe('Sleep improved.');
+    expect(screen.getByTestId('process-note')).toHaveProperty('disabled', false);
   });
 
   it('offers recording beside the typed notes, but leaves it for M5', async () => {
