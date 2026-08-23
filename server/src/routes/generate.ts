@@ -39,7 +39,7 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
     const format = getFormat(db, input.format_id);
     if (!format) throw notFound('Note format not found');
 
-    const stream = openSse(request, reply);
+    const stream = openSse(reply);
 
     let sections: Sections | null = null;
     let stats: LlmStats | null = null;

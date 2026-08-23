@@ -235,3 +235,50 @@ describe('POST /api/generate — the local AI is not running', () => {
     }
   });
 });
+
+/**
+ * The same endpoint over a real socket.
+ *
+ * `app.inject` never opens one: light-my-request simulates the request, so the
+ * lifecycle events Node emits on a real connection never fire. That gap hid a
+ * bug where every stream ended having sent nothing — `openSse` watched
+ * `request.raw` for 'close', which since Node 16 means "the request body has
+ * been fully read" rather than "the client went away". Fastify parses the body
+ * before the handler runs, so every POST looked disconnected within
+ * milliseconds while the browser sat waiting.
+ *
+ * Injected tests all passed. Only a real listen catches it, so this suite pays
+ * for one.
+ */
+describe('POST /api/generate over a real connection', () => {
+  it('streams tokens and finishes with the note', async () => {
+    const address = await harness.app.listen({ port: 0, host: '127.0.0.1' });
+
+    try {
+      const response = await fetch(`${address}/api/generate`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          patient_id: patient.id,
+          format_id: format.id,
+          typed_notes: 'Sleep improved, intrusive thoughts less frequent.',
+        }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('content-type')).toContain('text/event-stream');
+
+      const events = parseSse(await response.text());
+
+      // The regression: this used to be empty.
+      expect(events.length).toBeGreaterThan(0);
+      expect(events.some((event) => event.name === 'token')).toBe(true);
+
+      const final = events.at(-1);
+      expect(final?.name).toBe('note');
+      expect((final?.data['note'] as Note | undefined)?.patient_id).toBe(patient.id);
+    } finally {
+      await harness.app.close();
+    }
+  });
+});

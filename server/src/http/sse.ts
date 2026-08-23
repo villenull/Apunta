@@ -1,4 +1,4 @@
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply } from 'fastify';
 
 /**
  * Server-sent events, the transport for every streaming endpoint (PLAN §4):
@@ -16,12 +16,24 @@ export interface SseStream {
   readonly closed: boolean;
 }
 
-export function openSse(request: FastifyRequest, reply: FastifyReply): SseStream {
+export function openSse(reply: FastifyReply): SseStream {
   reply.hijack();
 
   let clientGone = false;
-  request.raw.on('close', () => {
-    clientGone = true;
+
+  // Watch the *response*, not the request.
+  //
+  // `request.raw` is an IncomingMessage, and since Node 16 its 'close' event
+  // means "the request has been completed" — i.e. the body has been fully
+  // read — not "the client went away". Fastify parses the JSON body before the
+  // handler runs, so listening there marks every POST as disconnected within
+  // milliseconds, while the browser is still connected and waiting. The stream
+  // then ends having sent nothing.
+  //
+  // ServerResponse 'close' fires when the response finishes *or* the
+  // connection dies early; `writableEnded` tells the two apart.
+  reply.raw.on('close', () => {
+    if (!reply.raw.writableEnded) clientGone = true;
   });
 
   reply.raw.writeHead(200, {
