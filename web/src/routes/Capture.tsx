@@ -76,6 +76,19 @@ export function Capture(): React.JSX.Element {
   const format = available.find((candidate) => candidate.id === chosenFormatId) ?? available[0];
   const formatId = format?.id ?? '';
 
+  /**
+   * The current values, readable from a callback the recorder captured an hour
+   * ago.
+   *
+   * `onLimit` fires at the 60-minute cap and processes what was recorded, but
+   * the closure it lives in was built when she pressed record — so reading
+   * `text` from it would upload the typed notes as they were *before* the
+   * session, and reading `formatId` would send an empty one if the format list
+   * had not loaded yet at that moment.
+   */
+  const latest = useRef({ text, formatId, busy });
+  latest.current = { text, formatId, busy };
+
   // A recording is a live microphone and an open audio graph, so leaving the
   // screen has to close them rather than leave the tab's mic light on.
   useEffect(
@@ -166,13 +179,15 @@ export function Capture(): React.JSX.Element {
 
   /** Send whatever she has — the recording, the typed notes, or both. */
   async function process(recorded: Blob | null = wav): Promise<void> {
-    const typed = text.trim();
-    if (busy || formatId === '' || (recorded === null && typed.length === 0)) return;
+    const { text: notes, formatId: chosen, busy: running } = latest.current;
+    const typed = notes.trim();
+    if (running || chosen === '' || (recorded === null && typed.length === 0)) return;
 
     setBusy(true);
     setError(null);
     setDraft({});
     setStatus(recorded === null ? 'Contacting the local AI…' : 'Transcribing…');
+    latest.current = { ...latest.current, busy: true };
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -181,16 +196,16 @@ export function Capture(): React.JSX.Element {
       const { note } =
         recorded === null
           ? await generateNote(
-              { patient_id: patientId, format_id: formatId, typed_notes: text },
+              { patient_id: patientId, format_id: chosen, typed_notes: notes },
               draftHandlers(),
               controller.signal,
             )
           : await transcribeRecording(
               {
                 patient_id: patientId,
-                format_id: formatId,
+                format_id: chosen,
                 audio: recorded,
-                ...(typed.length > 0 ? { typed_notes: text } : {}),
+                ...(typed.length > 0 ? { typed_notes: notes } : {}),
               },
               {
                 ...draftHandlers(),
