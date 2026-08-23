@@ -6,6 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import {
   emptySectionNames,
   MAX_AUDIO_BYTES,
+  MIN_RECORDING_SECONDS,
   parseWavHeader,
   TranscribeFieldsSchema,
   WavFormatError,
@@ -251,14 +252,23 @@ async function receiveUpload(request: FastifyRequest, config: AppConfig): Promis
  * child process that would fail obscurely a minute later.
  */
 function readWavFormat(upload: Upload): WavFormat {
+  let format: WavFormat;
   try {
-    return parseWavHeader(upload.head, upload.bytes);
+    format = parseWavHeader(upload.head, upload.bytes);
   } catch (error) {
     if (error instanceof WavFormatError) {
       throw aiError('audio_unsupported', `upload is not a readable WAV: ${error.message}`);
     }
     throw error;
   }
+
+  // A WAV with no samples means the microphone produced nothing — muted, or
+  // the wrong input device. Saying that is more use than whisper's opinion of
+  // an empty file.
+  if (format.durationSeconds < MIN_RECORDING_SECONDS) {
+    throw aiError('transcription_empty', `recording holds ${String(format.dataBytes)} bytes of audio`);
+  }
+  return format;
 }
 
 async function readHead(path: string): Promise<Uint8Array> {

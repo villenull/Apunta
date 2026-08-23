@@ -36,18 +36,26 @@ export interface RequestOptions {
   method?: HttpMethod;
   /** Serialized as JSON. */
   body?: unknown;
+  /**
+   * A multipart body, sent as-is. `POST /api/transcribe` uploads a recording
+   * this way (M5); the browser writes the boundary, so no content-type header
+   * is set here — one would break the request.
+   */
+  form?: FormData;
   signal?: AbortSignal;
 }
 
 const NETWORK_ERROR_MESSAGE = 'Could not reach the Apunta server. Is it still running?';
 
 function buildInit(options: RequestOptions): RequestInit {
-  const { method = 'GET', body, signal } = options;
+  const { method = 'GET', body, form, signal } = options;
   return {
     method,
-    ...(body === undefined
-      ? {}
-      : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }),
+    ...(form !== undefined
+      ? { body: form }
+      : body === undefined
+        ? {}
+        : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }),
     ...(signal ? { signal } : {}),
   };
 }

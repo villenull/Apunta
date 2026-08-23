@@ -96,6 +96,21 @@ export default tseslint.config(
     },
   },
   {
+    // The AudioWorklet module (M5) runs in its own global scope — no window,
+    // no DOM, and two globals nothing else has. It lives in `web/public/` so
+    // it reaches the browser byte for byte, which also means ESLint sees it as
+    // a plain script rather than as part of the bundle.
+    files: ['web/public/*.js'],
+    languageOptions: {
+      globals: {
+        AudioWorkletProcessor: 'readonly',
+        registerProcessor: 'readonly',
+        sampleRate: 'readonly',
+        currentTime: 'readonly',
+      },
+    },
+  },
+  {
     // Tests need to name the very URLs production code may not contain.
     files: ['**/*.test.{ts,tsx}', 'e2e/**/*.ts'],
     rules: { 'no-restricted-syntax': 'off' },

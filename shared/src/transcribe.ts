@@ -101,6 +101,15 @@ export const DEFAULT_KEEP_AUDIO = false;
 /** Hard stop. A 60-minute recording is ~115 MB of PCM held in the tab. */
 export const MAX_RECORDING_SECONDS = 60 * 60;
 
+/**
+ * Below this there is nothing to transcribe.
+ *
+ * A recording this short is a mis-click or a microphone that produced no
+ * frames at all — the muted-input case — and saying so beats handing whisper
+ * an empty file and reporting whatever it makes of it.
+ */
+export const MIN_RECORDING_SECONDS = 0.2;
+
 /** Where the UI warns that the recording is getting long, without stopping it. */
 export const WARN_RECORDING_SECONDS = 30 * 60;
 

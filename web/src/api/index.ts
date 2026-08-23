@@ -6,6 +6,9 @@ export { fetchHealth } from './health.js';
 export { generateNote, GenerateError } from './generate.js';
 export type { GenerateHandlers } from './generate.js';
 
+export { transcribeRecording } from './transcribe.js';
+export type { TranscribeHandlers, TranscribeInput } from './transcribe.js';
+
 export { listChatMessages, sendChatMessage } from './chat.js';
 export type { ChatHandlers } from './chat.js';
 
