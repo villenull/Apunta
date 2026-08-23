@@ -650,6 +650,70 @@ describe('GET /api/plans/:id/export', () => {
   });
 });
 
+describe('what reaches the log', () => {
+  /**
+   * The plan and prep paths carry more clinical text than anything built so
+   * far — a note, its excerpts, and the goals drafted from them — which makes
+   * a log line the easiest place for real patient material to escape
+   * (`docs/research/privacy-audit-2026-08.md` H1).
+   */
+  it('writes shapes, counts and codes, and never a note, an excerpt or a goal', async () => {
+    const logs: string[] = [];
+    const stubbed = await createTestApp({ providers: recordingProviders(), logs });
+    try {
+      const stubPatient = await seedPatient(stubbed.app, 'John Smith');
+      const stubFormat = await seedFormat(stubbed.app);
+      await seedNote(stubbed.app, stubPatient.id, stubFormat.id, SLEEP_NOTE);
+
+      await stubbed.app.inject({
+        method: 'POST',
+        url: `/api/patients/${stubPatient.id}/plan/suggest`,
+        payload: {},
+      });
+      await stubbed.app.inject({ method: 'POST', url: `/api/patients/${stubPatient.id}/prep`, payload: {} });
+
+      const written = logs.join('\n');
+      expect(written).toContain('note summarised');
+      expect(written).toContain('promptTokens');
+
+      // Nothing from the note, the excerpts it yielded, or the goals drafted.
+      expect(written).not.toContain('intrusive thoughts');
+      expect(written).not.toContain('improved sleep');
+      expect(written).not.toContain('sleeps well enough');
+      expect(written).not.toContain('anxiety management');
+    } finally {
+      await stubbed.close();
+    }
+  });
+
+  it('reports a failure by code and shape, with the note nowhere in it', async () => {
+    const logs: string[] = [];
+    const providers = recordingProviders({
+      summariseNote: () => {
+        throw new Error('the model fell over');
+      },
+    });
+    const stubbed = await createTestApp({ providers, logs });
+    try {
+      const stubPatient = await seedPatient(stubbed.app, 'John Smith');
+      const stubFormat = await seedFormat(stubbed.app);
+      await seedNote(stubbed.app, stubPatient.id, stubFormat.id, SLEEP_NOTE);
+
+      await stubbed.app.inject({
+        method: 'POST',
+        url: `/api/patients/${stubPatient.id}/plan/suggest`,
+        payload: {},
+      });
+
+      const written = logs.join('\n');
+      expect(written).toContain('plan suggestion failed');
+      expect(written).not.toContain('intrusive thoughts');
+    } finally {
+      await stubbed.close();
+    }
+  });
+});
+
 describe('POST /api/patients/:id/plan/suggest over a real connection', () => {
   it('streams proposed goals to a client that is actually connected', async () => {
     await seedNote(harness.app, patient.id, format.id, SLEEP_NOTE);

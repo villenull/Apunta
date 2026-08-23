@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 
 import fastifyStatic from '@fastify/static';
 import type { Database } from 'better-sqlite3';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 
 import { createProviders } from './ai/index.js';
 import type { AiProviders } from './ai/types.js';
@@ -21,8 +21,12 @@ import { registerSettingsRoutes } from './routes/settings.js';
 
 export interface BuildAppOptions {
   config?: AppConfig;
-  /** Pass `false` in tests to keep the output quiet. */
-  logger?: boolean;
+  /**
+   * Pass `false` in tests to keep the output quiet — or a pino options object
+   * with a `stream`, which is how the privacy suites read back exactly what
+   * the server would have written to a log file.
+   */
+  logger?: FastifyServerOptions['logger'];
   /**
    * An already-open database. When omitted, `buildApp` opens (and migrates)
    * the one named by the config and closes it again when the app closes.

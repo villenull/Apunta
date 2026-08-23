@@ -30,6 +30,14 @@ export interface TestAppOptions {
    * fail — passes a recording provider here.
    */
   readonly providers?: AiProviders;
+  /**
+   * Collect the server's log output here, one JSON line per entry.
+   *
+   * The plan and prep paths carry more clinical text than anything else in the
+   * app, so "no note content in a log" is a property worth asserting rather
+   * than reading for.
+   */
+  readonly logs?: string[];
 }
 
 export async function createTestApp(options: TestAppOptions = {}): Promise<TestApp> {
@@ -45,10 +53,20 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<TestA
   // The suite drives the same database the app does, so a test can assert on
   // rows (cascades especially) that no endpoint exposes.
   const { db } = openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir });
+  const collected = options.logs;
   const app = await buildApp({
     config,
     db,
-    logger: false,
+    logger: collected
+      ? {
+          level: 'info',
+          stream: {
+            write(line: string) {
+              collected.push(line);
+            },
+          },
+        }
+      : false,
     ...(options.providers ? { providers: options.providers } : {}),
   });
   await app.ready();
