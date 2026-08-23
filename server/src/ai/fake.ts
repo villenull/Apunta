@@ -23,6 +23,7 @@ import type {
   LlmResult,
   LlmStats,
   RefineNoteRequest,
+  SttDescription,
   SttEvent,
   SttProvider,
   SummariseNoteRequest,
@@ -284,10 +285,25 @@ export function fakeDetectFormat(request: DetectFormatRequest): DetectedFormat {
 }
 
 /**
- * The STT fake. Real whisper.cpp is M5; this exists now so the interface is
- * defined and `APUNTA_FAKE_AI=1` covers the whole app rather than half of it.
+ * The STT fake: what `APUNTA_FAKE_AI=1` transcribes with.
+ *
+ * The transcript is fixed rather than derived from the audio (or, as the packet
+ * suggested, from its filename — which is a UUID here, so it would derive
+ * nothing). Determinism is the point: the canned dictation below is the one
+ * `FakeLlmProvider` recognises as John Smith's sleep/anxiety note, so record →
+ * transcribe → draft produces a real note end to end on a machine with no AI
+ * tooling at all. Every word of it is the prototype's sample practice.
  */
 export class FakeSttProvider implements SttProvider {
+  describe(): Promise<SttDescription> {
+    return Promise.resolve({
+      binaryPresent: true,
+      modelPresent: true,
+      binary: 'fake-whisper',
+      model: 'fake-whisper-model',
+    });
+  }
+
   async *transcribe(request: TranscribeRequest): AsyncIterable<SttEvent> {
     for (const fraction of [0.25, 0.5, 0.75, 1]) {
       yield { type: 'progress', fraction, message: 'Transcribing…' };

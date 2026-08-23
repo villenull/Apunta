@@ -57,6 +57,22 @@ const MESSAGES: Record<AiErrorCode, string> = {
     'The AI got stuck repeating itself instead of writing the note. Try again — if it keeps happening, try a different model in Settings.',
   timeout: 'The AI took too long to answer. It may still be loading the model — try again in a moment.',
   ollama_error: 'The local AI reported an error. Check Setup, then try again.',
+
+  // Speech-to-text (M5). The recording still exists in the browser when one of
+  // these fires, so every message ends somewhere she can act.
+  whisper_missing:
+    "Apunta can't find whisper on this machine, so it can't transcribe the recording. Run the setup script, or set the whisper path in Settings.",
+  whisper_model_missing:
+    "Apunta's transcription model isn't installed yet. Run the setup script to download it, then try again.",
+  audio_unsupported:
+    'That recording is in a format Apunta cannot transcribe. Record it again from this screen.',
+  audio_decode_failed:
+    'The recording could not be read — it may have been cut off mid-save. Please record it again.',
+  transcription_failed: 'Transcribing the recording failed. Try again — if it keeps happening, check Setup.',
+  transcription_timeout:
+    'Transcribing took too long and was stopped. A shorter recording will go through; a very long one may need a faster machine.',
+  transcription_empty:
+    'No speech was picked up in that recording. Check that the right microphone is selected, then record again.',
 };
 
 export function aiError(code: AiErrorCode, detail?: string): AiError {

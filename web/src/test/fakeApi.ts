@@ -254,8 +254,12 @@ const HEALTHY: HealthResponse = {
   fakeAi: true,
   db: { path: '/tmp/apunta/apunta.db', migrationLevel: 1 },
   ollama: { reachable: true, model: 'fake-llm', modelPresent: true },
-  whisper: { binaryPresent: false, modelPresent: false },
-  ffmpeg: { present: false },
+  whisper: {
+    binaryPresent: true,
+    modelPresent: true,
+    binary: 'fake-whisper',
+    model: 'fake-whisper-model',
+  },
 };
 
 function apiError(status: number, code: string, message: string): Response {

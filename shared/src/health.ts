@@ -2,8 +2,15 @@ import { z } from 'zod';
 
 /**
  * Shape of `GET /api/health`. Every dependency check is reported separately so
- * the UI can tell the user exactly which local tool is missing. M1 reports the
- * database for real; the AI checks stay hard-coded to `false` until M3/M5.
+ * the UI can tell the user exactly which local tool is missing, and M7's setup
+ * wizard turns it into a checklist. M1 reported the database, M3 made Ollama
+ * real, M5 does whisper.
+ *
+ * There is no `ffmpeg` key. M5 records 16 kHz mono WAV in the browser and
+ * `whisper-cli` decodes it directly, so ffmpeg is not a dependency of the
+ * running app at all — and a health check that reported it would paint a
+ * perfectly working machine red for a tool it never calls
+ * (`docs/research/m8-bundling-2026-08.md` §11).
  */
 export const HealthResponseSchema = z.object({
   ok: z.boolean(),
@@ -23,9 +30,9 @@ export const HealthResponseSchema = z.object({
   whisper: z.object({
     binaryPresent: z.boolean(),
     modelPresent: z.boolean(),
-  }),
-  ffmpeg: z.object({
-    present: z.boolean(),
+    /** What was probed, so the setup screen can name the path that failed. */
+    binary: z.string(),
+    model: z.string(),
   }),
 });
 

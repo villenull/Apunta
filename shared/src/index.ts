@@ -49,6 +49,43 @@ export type { CreateNoteRequest, Note, NoteListResponse, NoteStatus, UpdateNoteR
 export { CreateTranscriptInputSchema, TranscriptSchema, TranscriptSourceSchema } from './transcript.js';
 export type { CreateTranscriptInput, Transcript, TranscriptSource } from './transcript.js';
 
+export {
+  AUDIO_BYTES_PER_SECOND,
+  DEFAULT_KEEP_AUDIO,
+  DEFAULT_WHISPER_BINARY,
+  KEEP_AUDIO_SETTING,
+  MAX_AUDIO_BYTES,
+  MAX_RECORDING_SECONDS,
+  MAX_STT_PROMPT_TOKENS,
+  MAX_VOCABULARY_TERM_CHARS,
+  MAX_VOCABULARY_TERMS,
+  STT_ERROR_CODES,
+  STT_VOCABULARY_SETTING,
+  TRANSCRIBE_EVENT_NAMES,
+  TranscribeFieldsSchema,
+  TranscribeProgressEventSchema,
+  VocabularySchema,
+  WARN_RECORDING_SECONDS,
+  WHISPER_BINARY_SETTING,
+  WHISPER_MODEL_FILENAME,
+  WHISPER_MODEL_SETTING,
+} from './transcribe.js';
+export type { TranscribeEventName, TranscribeFields, TranscribeProgressEvent } from './transcribe.js';
+
+export {
+  AUDIO_BITS_PER_SAMPLE,
+  AUDIO_CHANNELS,
+  AUDIO_SAMPLE_RATE,
+  encodeWav,
+  floatToPcm16,
+  parseWavHeader,
+  WAV_CONTENT_TYPE,
+  WAV_HEADER_BYTES,
+  WavFormatError,
+  wavHeader,
+} from './wav.js';
+export type { WavFormat } from './wav.js';
+
 export { ChatMessageSchema, ChatRoleSchema, CreateChatMessageInputSchema } from './chat-message.js';
 export type { ChatMessage, ChatRole, CreateChatMessageInput } from './chat-message.js';
 

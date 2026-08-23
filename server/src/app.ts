@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs';
 
+import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
+import { MAX_AUDIO_BYTES } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 
@@ -18,6 +20,7 @@ import { registerPatientRoutes } from './routes/patients.js';
 import { registerPlanRoutes } from './routes/plans.js';
 import { registerPrepRoutes } from './routes/prep.js';
 import { registerSettingsRoutes } from './routes/settings.js';
+import { registerTranscribeRoute } from './routes/transcribe.js';
 
 export interface BuildAppOptions {
   config?: AppConfig;
@@ -62,6 +65,15 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
       app.log.warn(detail, message);
     });
 
+  /**
+   * Recordings arrive as multipart (`POST /api/transcribe`), streamed to disk
+   * rather than buffered — a 60-minute dictation is ~115 MB of PCM. The limits
+   * are the server's own guard: a client is not one.
+   */
+  await app.register(fastifyMultipart, {
+    limits: { files: 1, fileSize: MAX_AUDIO_BYTES, fields: 8, fieldSize: 1024 * 1024 },
+  });
+
   registerErrorHandler(app);
 
   registerHealthRoute(app, config, db, providers);
@@ -70,6 +82,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerFormatRoutes(app, db);
   registerSettingsRoutes(app, db);
   registerGenerateRoute(app, db, providers);
+  registerTranscribeRoute(app, config, db, providers);
   registerChatRoutes(app, db, providers);
   registerPlanRoutes(app, db, providers);
   registerPrepRoutes(app, db, providers);

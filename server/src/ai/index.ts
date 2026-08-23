@@ -5,7 +5,9 @@ import { getSetting } from '../db/settings.js';
 import { FakeLlmProvider, FakeSttProvider } from './fake.js';
 import { defaultModelForMachine } from './model-picker.js';
 import { OllamaProvider } from './ollama.js';
+import { resolveWhisperBinary, resolveWhisperModel } from './stt-settings.js';
 import type { AiProviders } from './types.js';
+import { WhisperCppSttProvider } from './whisper.js';
 
 /**
  * One factory, one switch: `APUNTA_FAKE_AI=1` gives the deterministic
@@ -35,7 +37,10 @@ export function createProviders(
       resolveModel: () => resolveModel(db),
       ...(log ? { log } : {}),
     }),
-    stt: new FakeSttProvider(),
+    stt: new WhisperCppSttProvider({
+      resolveBinary: () => resolveWhisperBinary(db),
+      resolveModel: () => resolveWhisperModel(db, config.modelsDir),
+    }),
   };
 }
 
@@ -49,6 +54,19 @@ export function resolveModel(db: Database): string {
 
 export { AiError, aiError, UNREACHABLE_MESSAGE } from './errors.js';
 export { FakeLlmProvider, FakeSttProvider } from './fake.js';
+export {
+  resolveKeepAudio,
+  resolveVocabulary,
+  resolveWhisperBinary,
+  resolveWhisperModel,
+} from './stt-settings.js';
+export {
+  buildVocabularyPrompt,
+  buildWhisperArgs,
+  parseProgress,
+  parseTranscript,
+  WhisperCppSttProvider,
+} from './whisper.js';
 export {
   assertGgufWeights,
   assertSupportedModelName,
