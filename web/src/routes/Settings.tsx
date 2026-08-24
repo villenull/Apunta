@@ -182,7 +182,7 @@ function RecordingSettings(): React.JSX.Element {
           {error}
         </p>
       )}
-      <button type="submit" className="btn btn-primary" data-testid="save-recording">
+      <button type="submit" className="btn btn-primary btn-block form-actions" data-testid="save-recording">
         {saved ? 'Saved' : 'Save recording settings'}
       </button>
     </form>
@@ -320,7 +320,7 @@ function ClinicianDetails(): React.JSX.Element {
           {error}
         </p>
       )}
-      <button type="submit" className="btn btn-primary" data-testid="save-clinician">
+      <button type="submit" className="btn btn-primary btn-block form-actions" data-testid="save-clinician">
         {saved ? 'Saved' : 'Save details'}
       </button>
     </form>

@@ -426,4 +426,37 @@ test.describe('settings', () => {
       'Subjective, Plan, Assessment',
     );
   });
+
+  /**
+   * Geometry, because no other kind of test sees this.
+   *
+   * A card's inputs are `inline-block` and a `.btn` is `inline-flex`, so a
+   * submit button placed straight after the last field flows onto the same
+   * line and lands on top of it. Every other field escapes only because a
+   * block-level helper paragraph happens to follow it — which makes the bug
+   * arrive by deleting a sentence. Both of these forms shipped with it.
+   */
+  const cardForms = [
+    { card: 'clinician-settings', save: 'save-clinician' },
+    { card: 'recording-settings', save: 'save-recording' },
+  ];
+
+  for (const { card, save } of cardForms) {
+    test(`keeps the ${card} submit button clear of the last field`, async ({ page }) => {
+      await page.goto('/settings');
+      const button = page.getByTestId(card).getByTestId(save);
+      await expect(button).toBeVisible();
+
+      const box = await button.boundingBox();
+      const previousBottom = await page.getByTestId(card).evaluate((element, id) => {
+        let previous = element.querySelector(`[data-testid="${id}"]`)?.previousElementSibling ?? null;
+        while (previous !== null && previous.getBoundingClientRect().height === 0) {
+          previous = previous.previousElementSibling;
+        }
+        return previous?.getBoundingClientRect().bottom ?? 0;
+      }, save);
+
+      expect(box?.y ?? 0).toBeGreaterThan(previousBottom);
+    });
+  }
 });
