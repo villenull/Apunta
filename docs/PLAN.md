@@ -51,7 +51,7 @@ flowchart LR
   SPA -- "/api/* JSON + SSE" --> API
   SPA -- "16 kHz mono WAV<br/>(recorded in the tab)" --> API
   API --> DB
-  API -- "OpenAI-compatible /v1 + /api/chat(format)" --> OLL
+  API -- "Ollama native /api/chat(format)" --> OLL
   API -- spawn --> WSP
 ```
 
@@ -60,12 +60,19 @@ flowchart LR
   both), `e2e/` (Playwright).
 - **Server** binds `127.0.0.1` only. In production mode it serves `web/dist`
   and the JSON API; in dev, Vite (:5173) proxies `/api` to :7717.
-- **Ollama** is the default LLM runtime (OpenAI-compatible API). The app
-  never shells out to `ollama` for inference — HTTP only — but may use it to
-  list/pull models. llama.cpp `llama-server` must also work by pointing the
-  base URL at it (same API shape); don't depend on Ollama-only quirks except
-  the documented `format` parameter path, which has an OpenAI-compatible
-  `response_format: {type: "json_schema"}` equivalent.
+- **Ollama** is the LLM runtime, over its **native API** — `/api/chat`,
+  `/api/tags`, `/api/show`. The app never shells out to `ollama` for
+  inference; HTTP only.
+
+  **It is not OpenAI-compatible, and this was a deliberate choice.**
+  `/v1/chat/completions` strands the answer in `reasoning` on the models
+  targeted here (ollama#15288), and `ChatHandler` is the only handler with
+  thinking-aware `format` application (ollama#17544). An earlier version of
+  this document claimed the runtime was swappable because the API was
+  OpenAI-shaped; that claim was wrong and it reached M8's packet before it
+  was caught. Pointing the base URL at `llama.cpp`'s `llama-server` does
+  **not** work today — it is a provider rewrite, tracked as its own packet.
+  See `docs/research/m8-shell-and-runtime-2026-08.md`.
 - **STT** runs server-side, with **no transcoder anywhere**: the browser
   records 16 kHz mono through `new AudioContext({ sampleRate: 16000 })` and an
   `AudioWorkletNode`, writes the 44-byte RIFF header itself, and uploads that
@@ -317,10 +324,18 @@ concurrently would collide in the same working tree. See
 **M7 vs M8.** M7 makes the app work on a developer's Mac via a setup script.
 M8 makes it installable by someone who has never opened a terminal: no
 Homebrew, no Node, no git clone, no Ollama install — one download, one drag,
-one progress bar. M8 bundles `llama-server` (llama.cpp) rather than requiring
-Ollama, which is why PLAN §2 insists the app only ever speak the
-OpenAI-compatible API. M8 cannot be built or verified in CI (it needs macOS),
-so its final acceptance is a manual run on the owner's Mac.
+one progress bar. M8 bundles **the runtime the app actually speaks** — Ollama.
+
+An earlier version of this paragraph said M8 bundles `llama-server`, "which is
+why PLAN §2 insists the app only ever speak the OpenAI-compatible API." That
+reasoning ran in a circle: the wish to bundle `llama-server` produced the §2
+constraint, and the §2 constraint was then cited as the justification for
+bundling `llama-server`. Neither end was ever checked against the code, which
+has spoken Ollama's native API since M3. Replacing the runtime is a provider
+rewrite and has its own packet.
+
+M8 cannot be built or verified in CI (it needs macOS), so its final acceptance
+is a manual run on the owner's Mac.
 
 ## 8. Deferred (do not build now)
 

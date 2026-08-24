@@ -3,10 +3,14 @@
 Append-only. Agents add a row when they make or change a notable technical
 decision (including deviations from a work packet).
 
+A row that later turns out to be wrong keeps its text and gains a
+**superseded** marker pointing at the row that corrects it. The original
+reasoning is the record; the marker is so nobody builds on it again.
+
 | Date | Decision | Why | Where |
 | --- | --- | --- | --- |
 | 2026-08-22 | Local server + browser UI; in-browser WebGPU inference rejected as primary | On target hardware, a server runs 12B-class models (full quality tier above the ~4B in-browser ceiling), 3–5x faster, always warm; UI stays a Chrome tab either way | research §1 |
-| 2026-08-22 | Ollama default runtime, llama.cpp-compatible via OpenAI-style API | Easiest install; MLX speedups on Apple Silicon; structured outputs; never use its cloud tier | research §2 |
+| 2026-08-22 | Ollama default runtime, llama.cpp-compatible via OpenAI-style API | Easiest install; MLX speedups on Apple Silicon; structured outputs; never use its cloud tier. **The "OpenAI-style API" half is wrong — superseded 2026-08-24, see below** | research §2 |
 | 2026-08-22 | STT server-side via whisper.cpp (large-v3-turbo Q5); browser Web Speech API banned | Web Speech default mode ships audio to Google — privacy violation; whisper.cpp is fast on Metal with vocabulary biasing | research §3 |
 | 2026-08-22 | Claude skill flattened into per-format `instructions`, no skills runtime | Ports cleanly to a system prompt; runtime machinery doesn't; stateless prompting avoids drift | docs/skill-porting.md |
 | 2026-08-22 | No login in v1; single-tenant SQLite; UUID keys + clean HTTP API kept product-ready | Owner decision (2026-08-22 Q&A); "possible product someday" | PLAN §1 |
@@ -23,7 +27,7 @@ decision (including deviations from a work packet).
 | 2026-08-22 | Model tiers pinned to explicit tags; large tier boundary moved 32GB → 36GB | `gemma4:latest` resolves to E4B not 12B; Metal caps usable GPU memory at ~75% of unified RAM, so a 24GB model leaves no headroom on a 32GB Mac | PLAN §2 |
 | 2026-08-22 | Eval report leads with fabrication rate, which gates scoring | An omission is recoverable in the refine chat; a fabrication looks finished and gets published | M7, e2e/fixtures/eval/rubric.md |
 | 2026-08-22 | Non-technical installer split out as M8 rather than expanded inside M7 | Owner needs the therapist to install it herself. Bundled runtimes + signing + first-run download UI is a packet's worth of work; folding it into M7 would have made M7 unshippable | docs/agents/M8-installer.md |
-| 2026-08-22 | Packaged app bundles `llama-server` (llama.cpp, MIT) instead of requiring Ollama | A double-clickable install cannot ask a non-technical user to install Homebrew and Ollama first; the app only ever speaks the OpenAI-compatible API, so the runtime is swappable. Ollama stays the developer-setup default | M8 |
+| 2026-08-22 | Packaged app bundles `llama-server` (llama.cpp, MIT) instead of requiring Ollama | A double-clickable install cannot ask a non-technical user to install Homebrew and Ollama first; the app only ever speaks the OpenAI-compatible API, so the runtime is swappable. Ollama stays the developer-setup default. **Premise false — superseded 2026-08-24, see below** | M8 |
 | 2026-08-22 | No auto-updater and no telemetry in the packaged app | Hard rule 1 has no exception for update checks — a background version ping is still an outbound call. Updates are user-initiated only | M8 |
 | 2026-08-22 | E2E server runs on port 7788, not 7717 | Lets the suite run while a dev server is up, and keeps the temp `APUNTA_DATA_DIR` well away from real data | e2e/playwright.config.ts |
 | 2026-08-22 | `better-sqlite3` 13.0.3 with `@types/better-sqlite3` 9.6.0 (the newest published types, one major behind) | The runtime API the types describe is unchanged in 12/13; the alternative was hand-writing declarations. Revisit if DefinitelyTyped catches up | M1, server/package.json |
@@ -175,3 +179,6 @@ decision (including deviations from a work packet).
 | 2026-08-24 | A failed request gets a `role="alert"` toast with no auto-dismiss; only confirmations fade | The one thing an app holding clinical records must never do is look like it saved something it did not, and a message that removes itself after four seconds is a message she can miss | M7, web/src/components/Toast.tsx |
 | 2026-08-24 | Tab titles name the screen and never a patient | A tab title is read over a shoulder, shown in the window switcher, and written into browser history | M7, web/src/hooks/useDocumentTitle.ts |
 | 2026-08-24 | The manual verification checklist is `docs/MANUAL-VERIFICATION.md`, not a PR description | The packet said to record it in the PR; this project has no PRs, and a checklist the owner works through on her Mac has to live somewhere she can open, tick and come back to | M7, docs/MANUAL-VERIFICATION.md |
+| 2026-08-24 | **Supersedes the two 2026-08-22 rows marked superseded above ("Ollama default runtime…" and "Packaged app bundles `llama-server`…"): the app does not speak an OpenAI-compatible API.** Every LLM call goes to Ollama's native `/api/chat`, `/api/tags` and `/api/show` | The 2026-08-22 row recording `/api/chat` over `/v1/chat/completions` was correct; two neighbouring rows kept asserting the opposite, and M8's packet was written from the wrong one. A swap to `llama-server` is a provider rewrite the size of M3 — a second `format` implementation, a different stats/error/health surface, and no analogue for the retry ladder's third rung — not a repackaging | M8, `docs/research/m8-shell-and-runtime-2026-08.md` |
+| 2026-08-24 | The runtime swap is removed from M8; M8 bundles whatever runtime the provider actually speaks | Left in M8 it would have made the therapist the sole user of an untested provider, shipped in the packet that has the least verification available to it | `docs/agents/M8-installer.md` |
+| 2026-08-24 | The swap is nevertheless worth doing later, on its own merits, as its own packet | `llama-server` answers an over-long prompt with a typed HTTP 400 carrying `n_prompt_tokens`/`n_ctx`. Ollama truncates from the head in silence, and five separate design compromises in this codebase exist only to work around that silence | `docs/research/m8-shell-and-runtime-2026-08.md` §1 |
