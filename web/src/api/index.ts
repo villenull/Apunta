@@ -20,7 +20,14 @@ export type { TranscribeHandlers, TranscribeInput } from './transcribe.js';
 export { listChatMessages, sendChatMessage } from './chat.js';
 export type { ChatHandlers } from './chat.js';
 
-export { createPatient, deletePatient, getPatient, listPatients, updatePatient } from './patients.js';
+export {
+  createPatient,
+  deletePatient,
+  getPatient,
+  listPatients,
+  setPatientArchived,
+  updatePatient,
+} from './patients.js';
 
 export { createNote, deleteNote, listNotes, publishNote, unpublishNote, updateNote } from './notes.js';
 

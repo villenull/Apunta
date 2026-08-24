@@ -10,6 +10,7 @@ import {
 } from '../api/index.js';
 import { copyText } from '../lib/clipboard.js';
 import { formatEditedDate, formatNoteDate, wasEdited } from '../lib/format.js';
+import { ConfirmDialog } from './ConfirmDialog.js';
 import { CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
 import { NoteBody } from './NoteBody.js';
 import { RefineColumn } from './RefineColumn.js';
@@ -49,6 +50,7 @@ export function NoteView({
   const [text, setText] = useState(note.content);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** The excerpt she highlighted, waiting to be attached to a chat message. */
   const [refQuote, setRefQuote] = useState<string | null>(null);
@@ -181,7 +183,6 @@ export function NoteView({
   }
 
   async function handleDelete(): Promise<void> {
-    if (!window.confirm('Delete this note? This cannot be undone.')) return;
     setBusy(true);
     try {
       await deleteNoteRequest(note.id);
@@ -216,7 +217,7 @@ export function NoteView({
               aria-label="Delete note"
               disabled={busy}
               onClick={() => {
-                void handleDelete();
+                setConfirmingDelete(true);
               }}
             >
               <TrashIcon className="icon icon-xs" />
@@ -285,6 +286,29 @@ export function NoteView({
         }}
         onNoteUpdated={handleNoteUpdated}
       />
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Delete this note?"
+          confirmLabel="Delete note"
+          body={
+            <>
+              <p>The note, its transcript and the refine conversation all go. It cannot be undone here.</p>
+              <p>
+                If you have already pasted this note into your records system, that copy is untouched — and so
+                is any backup written before now.
+              </p>
+            </>
+          }
+          onCancel={() => {
+            setConfirmingDelete(false);
+          }}
+          onConfirm={() => {
+            setConfirmingDelete(false);
+            void handleDelete();
+          }}
+        />
+      )}
     </div>
   );
 }

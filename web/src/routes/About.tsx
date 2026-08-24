@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { fetchHealth } from '../api/index.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
 /**
  * About and privacy (M7 deliverable 5) — the local-only guarantee in plain
@@ -18,6 +19,7 @@ import { useLoader } from '../hooks/useLoader.js';
  * (`docs/research/data-at-rest-2026-08.md` §4.2, §2.5).
  */
 export function About(): React.JSX.Element {
+  useDocumentTitle('About');
   const load = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
   const health = useLoader(load);
   const data = health.state.status === 'ready' ? health.state.data : null;

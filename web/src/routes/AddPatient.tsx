@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router';
 
 import { createPatient, errorMessage } from '../api/index.js';
 import { Screen } from '../components/TopBar.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
 /** `prototype/add-patient.html` — name plus an optional internal reference. */
 export function AddPatient(): React.JSX.Element {
+  useDocumentTitle('New patient');
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');

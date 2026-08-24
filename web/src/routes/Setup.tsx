@@ -5,6 +5,7 @@ import { fetchBackupStatus, fetchHealth } from '../api/index.js';
 import { CheckIcon, CloseIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { copyText } from '../lib/clipboard.js';
 import {
   FULLY_LOCAL,
@@ -30,6 +31,7 @@ import {
  * syncs (`docs/research/data-at-rest-2026-08.md` §9).
  */
 export function Setup(): React.JSX.Element {
+  useDocumentTitle('Setup');
   const loadHealth = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
   const health = useLoader(loadHealth);
 

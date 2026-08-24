@@ -2,14 +2,24 @@ import type { Note, PatientListItem } from '@apunta/shared';
 import { useCallback, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router';
 
-import { deletePatient, errorMessage, listFormats, listNotes, listPatients } from '../api/index.js';
+import {
+  deletePatient,
+  errorMessage,
+  listFormats,
+  listNotes,
+  listPatients,
+  setPatientArchived,
+} from '../api/index.js';
 import { AiBanner } from '../components/AiBanner.js';
+import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { DocumentIcon, PeopleIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
 import { NoteView } from '../components/NoteView.js';
 import { PatientsColumn } from '../components/PatientsColumn.js';
 import { PlanView } from '../components/PlanView.js';
 import { PrepView } from '../components/PrepView.js';
+import { Toast } from '../components/Toast.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLoader } from '../hooks/useLoader.js';
 
 /**
@@ -29,8 +39,17 @@ export function Workspace(): React.JSX.Element {
   const rawView = params.get('view');
   const view: 'notes' | 'plan' | 'prep' = rawView === 'plan' || rawView === 'prep' ? rawView : 'notes';
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PatientListItem | null>(null);
 
-  const loadPatients = useCallback((signal: AbortSignal) => listPatients(signal), []);
+  // No patient name in the tab title: it is read over a shoulder, shown in the
+  // window switcher, and written into browser history.
+  useDocumentTitle('Patients');
+
+  const loadPatients = useCallback(
+    (signal: AbortSignal) => listPatients(signal, showArchived),
+    [showArchived],
+  );
   const patients = useLoader(loadPatients);
 
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
@@ -105,11 +124,29 @@ export function Workspace(): React.JSX.Element {
   );
 
   async function handleDeletePatient(target: PatientListItem): Promise<void> {
-    if (!window.confirm(`Delete ${target.name} and every note for them? This cannot be undone.`)) return;
     try {
       await deletePatient(target.id);
       setActionError(null);
       setParams({});
+      reloadPatients();
+    } catch (thrown) {
+      setActionError(errorMessage(thrown));
+    }
+  }
+
+  /**
+   * Archiving is the answer to "I am not seeing this person any more", and it
+   * is the one the app should make easy: it hides the row and deletes nothing.
+   * Deleting stays available and stays behind a dialog that says what it
+   * cannot reach.
+   */
+  async function handleSetArchived(target: PatientListItem, archived: boolean): Promise<void> {
+    try {
+      await setPatientArchived(target.id, archived);
+      setActionError(null);
+      // Archiving the open patient would leave the middle column showing
+      // someone the list no longer has.
+      if (archived && !showArchived && target.id === patientId) setParams({});
       reloadPatients();
     } catch (thrown) {
       setActionError(errorMessage(thrown));
@@ -129,8 +166,13 @@ export function Workspace(): React.JSX.Element {
         <PatientsColumn
           patients={patients.state}
           activePatientId={patient?.id ?? null}
+          showArchived={showArchived}
           onSelect={selectPatient}
           onRetry={patients.reload}
+          onToggleArchived={setShowArchived}
+          onSetArchived={(target, archived) => {
+            void handleSetArchived(target, archived);
+          }}
         />
 
         <NotesColumn
@@ -142,7 +184,7 @@ export function Workspace(): React.JSX.Element {
           onOpenView={openView}
           onRetry={notes.reload}
           onDeletePatient={() => {
-            if (patient) void handleDeletePatient(patient);
+            if (patient) setPendingDelete(patient);
           }}
         />
 
@@ -152,11 +194,6 @@ export function Workspace(): React.JSX.Element {
           {formats.state.status === 'error' && (
             <p className="form-error" role="alert">
               {formats.state.message}
-            </p>
-          )}
-          {actionError !== null && (
-            <p className="form-error" role="alert">
-              {actionError}
             </p>
           )}
           {patient === null ? (
@@ -179,6 +216,45 @@ export function Workspace(): React.JSX.Element {
           )}
         </div>
       </div>
+
+      {actionError !== null && (
+        <Toast
+          message={actionError}
+          onDismiss={() => {
+            setActionError(null);
+          }}
+        />
+      )}
+
+      {pendingDelete !== null && (
+        <ConfirmDialog
+          title={`Delete ${pendingDelete.name}?`}
+          confirmLabel={`Delete ${pendingDelete.name}`}
+          body={
+            <>
+              <p>
+                This removes {pendingDelete.name}, every note for them, the transcripts of those notes, and
+                the refine conversations. It cannot be undone here.
+              </p>
+              <p>
+                It also cannot reach copies that already exist elsewhere: a backup you have written, a Time
+                Machine copy, or the records system you pasted the finished notes into.
+              </p>
+              <p>
+                If you only want them out of the list, <strong>Archive</strong> does that and deletes nothing.
+              </p>
+            </>
+          }
+          onCancel={() => {
+            setPendingDelete(null);
+          }}
+          onConfirm={() => {
+            const target = pendingDelete;
+            setPendingDelete(null);
+            void handleDeletePatient(target);
+          }}
+        />
+      )}
     </div>
   );
 }

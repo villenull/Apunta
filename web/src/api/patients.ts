@@ -9,13 +9,26 @@ import {
 
 import { requestJson, requestVoid } from './client.js';
 
-export async function listPatients(signal?: AbortSignal): Promise<PatientListItem[]> {
+/**
+ * `includeArchived` is a query flag rather than a second endpoint: an archived
+ * patient is still a patient, and the workspace hides them by default because
+ * a list of everyone she has ever seen is not the list she works from.
+ */
+export async function listPatients(
+  signal?: AbortSignal,
+  includeArchived = false,
+): Promise<PatientListItem[]> {
   const { patients } = await requestJson(
-    '/api/patients',
+    includeArchived ? '/api/patients?include_archived=1' : '/api/patients',
     PatientListResponseSchema,
     signal ? { signal } : {},
   );
   return patients;
+}
+
+/** Archiving hides; it never deletes. Restoring is the same call inverted. */
+export async function setPatientArchived(id: string, archived: boolean): Promise<Patient> {
+  return requestJson(`/api/patients/${id}`, PatientSchema, { method: 'PATCH', body: { archived } });
 }
 
 export async function getPatient(id: string, signal?: AbortSignal): Promise<Patient> {

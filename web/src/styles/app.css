@@ -1780,3 +1780,151 @@ select:disabled {
 .backup-stale {
   color: var(--danger);
 }
+
+/* ------------------------------------------------ polish pass (M7 d5) */
+
+/*
+ * Keyboard focus.
+ *
+ * The prototype has no focus styling at all, so tabbing through the app was
+ * invisible — and the app is a form-heavy tool used one-handed while reading
+ * from something else, which is exactly where the keyboard matters. This uses
+ * `:focus-visible`, not `:focus`, so a mouse click does not leave a ring
+ * behind on every button.
+ *
+ * The ring is the accent colour at 2px with a 2px offset, so it reads on the
+ * cream background and on the tinted cards alike, and it is drawn with
+ * `outline` rather than `box-shadow` so it survives Windows high-contrast
+ * mode.
+ */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.list-item:focus-visible,
+.note-item:focus-visible,
+.col-action-btn:focus-visible {
+  outline-offset: -2px;
+}
+
+/* A confirmation dialog, replacing window.confirm. */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(38, 38, 32, 0.32);
+}
+
+.modal {
+  width: 100%;
+  max-width: 460px;
+  padding: 20px;
+  box-shadow: 0 8px 40px rgba(38, 38, 32, 0.18);
+}
+
+.modal-body p {
+  margin: 0 0 8px;
+}
+
+.modal-body p:last-child {
+  margin-bottom: 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #9c3f30;
+  border-color: #9c3f30;
+}
+
+/* A failed request, said out loud rather than tucked into a corner. */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  box-shadow: 0 6px 28px rgba(38, 38, 32, 0.16);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.toast-error {
+  background: var(--danger-tint);
+  border-color: var(--danger);
+}
+
+.toast-dismiss {
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.toast-dismiss:hover {
+  color: var(--text-primary);
+}
+
+/* Archive: hidden from the working list, deleted from nothing. */
+
+.patient-entry {
+  position: relative;
+}
+
+.patient-entry .patient-archive-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  background: var(--surface);
+}
+
+.patient-entry:hover .patient-archive-btn,
+.patient-entry:focus-within .patient-archive-btn {
+  opacity: 1;
+}
+
+.patient-entry.is-archived .list-item .name {
+  color: var(--text-secondary);
+}
+
+.col-archived-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 0.5px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+}

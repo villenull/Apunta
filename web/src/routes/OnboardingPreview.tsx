@@ -5,6 +5,7 @@ import { createFormat, errorMessage, updateFormat } from '../api/index.js';
 import { CloseIcon } from '../components/icons.js';
 import { InstructionsPanel } from '../components/InstructionsPanel.js';
 import { Screen } from '../components/TopBar.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { duplicateSection } from '../lib/sections.js';
 import { asFormatDraft } from './formatDraft.js';
 
@@ -22,6 +23,7 @@ import { asFormatDraft } from './formatDraft.js';
  * `docs/decisions.md`.
  */
 export function OnboardingPreview(): React.JSX.Element {
+  useDocumentTitle('Note format');
   const location = useLocation();
   const navigate = useNavigate();
   const draft = asFormatDraft(location.state);

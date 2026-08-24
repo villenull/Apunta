@@ -120,16 +120,50 @@ describe('workspace', () => {
   });
 
   it('deletes a patient after confirming, and empties the workspace', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     renderApp(`/?patient=${maria.id}`);
 
     fireEvent.click(await screen.findByLabelText('Delete Maria Ruiz'));
 
+    // The dialog says what deleting cannot reach, which is the half that
+    // "this cannot be undone" gets backwards.
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog.textContent).toContain('Time Machine');
+    expect(dialog.textContent).toContain('Archive');
+
+    fireEvent.click(screen.getByTestId('confirm-accept'));
+
     await waitFor(() => {
       expect(screen.queryByText('Maria Ruiz')).toBeNull();
     });
-    expect(confirmSpy).toHaveBeenCalled();
     expect(screen.getByText('Select a patient to see their notes')).toBeDefined();
+  });
+
+  it('closes the confirmation on Escape without deleting anything', async () => {
+    renderApp(`/?patient=${maria.id}`);
+
+    fireEvent.click(await screen.findByLabelText('Delete Maria Ruiz'));
+    expect(await screen.findByRole('dialog')).toBeDefined();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(screen.getByText('Maria Ruiz')).toBeDefined();
+  });
+
+  /** Archiving is the answer to "not seeing them any more"; it deletes nothing. */
+  it('archives a patient out of the working list and can show them again', async () => {
+    renderApp(`/?patient=${maria.id}`);
+
+    fireEvent.click(await screen.findByTestId(`archive-${maria.id}`));
+    await waitFor(() => {
+      expect(screen.queryByText('Maria Ruiz')).toBeNull();
+    });
+
+    fireEvent.click(screen.getByTestId('show-archived'));
+    expect(await screen.findByText('Maria Ruiz')).toBeDefined();
+    expect(screen.getByTestId(`archive-${maria.id}`).textContent).toBe('Restore');
   });
 });
 
@@ -227,16 +261,44 @@ describe('note editing', () => {
   });
 
   it('deletes a note only after the confirm, and clears the selection', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     await openNote();
 
     fireEvent.click(screen.getByLabelText('Delete note'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByTestId('note-title')).toBeDefined();
 
-    confirmSpy.mockReturnValue(true);
     fireEvent.click(screen.getByLabelText('Delete note'));
+    fireEvent.click(screen.getByTestId('confirm-accept'));
 
     expect(await screen.findByTestId('empty-no-note')).toBeDefined();
+  });
+});
+
+describe('an action that fails', () => {
+  /**
+   * The one thing an app holding clinical records must never do is look like
+   * it did something it did not. A failed delete used to write a line into a
+   * corner of the main pane, where it competed with the note.
+   */
+  it('says so in a toast that does not remove itself', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john, maria] });
+    renderApp(`/?patient=${maria.id}`);
+
+    await screen.findByLabelText('Delete Maria Ruiz');
+    // The patient disappears from under the delete: the request 404s.
+    api.state.patients = api.state.patients.filter((candidate) => candidate.id !== maria.id);
+
+    fireEvent.click(screen.getByLabelText('Delete Maria Ruiz'));
+    fireEvent.click(screen.getByTestId('confirm-accept'));
+
+    const toast = await screen.findByTestId('toast-error');
+    expect(toast.getAttribute('role')).toBe('alert');
+    expect(toast.textContent).toContain('Patient not found');
+
+    fireEvent.click(within(toast).getByLabelText('Dismiss'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('toast-error')).toBeNull();
+    });
   });
 });
 

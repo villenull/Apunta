@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!--
+    The Apunta mark from web/src/components/icons.tsx: a scribble resolving
+    into a line. Served from web/public/ so it reaches the browser byte for
+    byte and is bundled with the app — no CDN, no external asset, no request
+    that leaves the machine (CLAUDE.md hard rule 1). The accent colour is
+    written out because a favicon is rendered outside the page and cannot see
+    the CSS custom property.
+  -->
+  <rect width="24" height="24" rx="5" fill="#f6f4ef"/>
+  <g fill="none" stroke="#1f6f63" stroke-width="1.6" stroke-linecap="round">
+    <path d="M2.5 12c1-3 2-4 3-2s1 5 3 3 1-6 3-3 1 5 3 2"/>
+    <path d="M14.5 12h7"/>
+  </g>
+</svg>

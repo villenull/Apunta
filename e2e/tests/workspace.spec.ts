@@ -106,19 +106,18 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('publish-button')).toHaveText('Publish');
     await expect(page.getByTestId('note-body')).not.toHaveAttribute('readonly', '');
 
-    page.once('dialog', (dialog) => {
-      expect(dialog.message()).toBe('Delete this note? This cannot be undone.');
-      void dialog.accept();
-    });
+    // M7 replaced window.confirm with an in-app dialog, so the copy can say
+    // what deleting does *not* reach as well as what it does.
     await page.getByLabel('Delete note').click();
+    await expect(page.getByRole('dialog')).toContainText('records system');
+    await page.getByTestId('confirm-accept').click();
     await expect(page.getByTestId('empty-no-note')).toBeVisible();
     await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);
 
     // --- Delete the patient, and the workspace is unselected again ----------
-    page.once('dialog', (dialog) => {
-      void dialog.accept();
-    });
     await page.getByLabel(`Delete ${patientName}`).click();
+    await expect(page.getByRole('dialog')).toContainText('Time Machine');
+    await page.getByTestId('confirm-accept').click();
     await expect(page.getByTestId('empty-no-patient')).toBeVisible();
     await expect(page.getByTestId('patient-list')).not.toContainText(patientName);
   });

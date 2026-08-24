@@ -533,7 +533,17 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         return json(updated);
       }
 
-      if (path === '/api/patients' && method === 'GET') return json({ patients: state.patients });
+      if (path.startsWith('/api/patients') && method === 'GET' && path.split('?')[0] === '/api/patients') {
+        // Archived patients are hidden unless asked for, exactly as the server
+        // does it — a fake that always returned everyone would make the
+        // archive toggle untestable.
+        const includeArchived = path.includes('include_archived=1');
+        return json({
+          patients: includeArchived
+            ? state.patients
+            : state.patients.filter((candidate) => candidate.archived_at === null),
+        });
+      }
 
       if (path === '/api/patients' && method === 'POST') {
         const patient = makePatient(String(body['name']));
@@ -556,6 +566,14 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
           state.patients = state.patients.filter((candidate) => candidate.id !== patientId);
           state.notes = state.notes.filter((note) => note.patient_id !== patientId);
           return new Response(null, { status: 204 });
+        }
+        if (method === 'PATCH' && typeof body['archived'] === 'boolean') {
+          const updated = { ...patient, archived_at: body['archived'] === true ? stamp() : null };
+          state.patients = state.patients.map((candidate) =>
+            candidate.id === patientId ? updated : candidate,
+          );
+          const { note_count: _archivedCount, ...archivedRest } = updated;
+          return json(archivedRest satisfies Patient);
         }
         const { note_count: _count, ...rest } = patient;
         return json(rest satisfies Patient);

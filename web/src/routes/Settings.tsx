@@ -20,6 +20,7 @@ import { BackupCard } from '../components/BackupCard.js';
 import { PlusIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import type { FormatDraft } from './formatDraft.js';
 
 /**
@@ -29,6 +30,7 @@ import type { FormatDraft } from './formatDraft.js';
  * already the name-plus-sections form, and M6 grows it further.
  */
 export function Settings(): React.JSX.Element {
+  useDocumentTitle('Settings');
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
   const formats = useLoader(loadFormats);
 

@@ -13,6 +13,7 @@ import {
 import { KeyboardIcon, MicIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { formatTimer, Recorder, recorderMessage, RecorderError } from '../lib/recorder.js';
 
 /**
@@ -39,6 +40,7 @@ import { formatTimer, Recorder, recorderMessage, RecorderError } from '../lib/re
 type RecordingState = 'idle' | 'starting' | 'recording' | 'recorded';
 
 export function Capture(): React.JSX.Element {
+  useDocumentTitle('New note');
   const { patientId = '' } = useParams();
   const navigate = useNavigate();
 

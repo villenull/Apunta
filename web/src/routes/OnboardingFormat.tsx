@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { detectFormat, errorMessage } from '../api/index.js';
 import { ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
+import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { duplicateSection, parseSections } from '../lib/sections.js';
 import { asFormatDraft, type FormatDraft } from './formatDraft.js';
 
@@ -17,6 +18,7 @@ type Choice = 'template' | 'examples' | 'manual';
  * message on the other two points back at it.
  */
 export function OnboardingFormat(): React.JSX.Element {
+  useDocumentTitle('Note format');
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = asFormatDraft(location.state)?.returnTo ?? '/patients/new';
