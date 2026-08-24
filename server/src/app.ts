@@ -11,6 +11,7 @@ import type { AiProviders } from './ai/types.js';
 import { loadConfig, type AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { registerErrorHandler } from './http/errors.js';
+import { registerBackupRoutes } from './routes/backup.js';
 import { registerChatRoutes } from './routes/chat.js';
 import { registerFormatDetectRoutes } from './routes/formats-detect.js';
 import { registerFormatRoutes } from './routes/formats.js';
@@ -112,6 +113,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerChatRoutes(app, db, providers);
   registerPlanRoutes(app, db, providers);
   registerPrepRoutes(app, db, providers);
+  registerBackupRoutes(app, config, db);
 
   const hasBuiltSpa = existsSync(config.webDistDir);
   if (hasBuiltSpa) {

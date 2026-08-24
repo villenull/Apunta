@@ -123,9 +123,27 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   };
 }
 
-/** The data dir holds the database, the audio scratch files and the STT model. */
+/**
+ * Where the app is served. `host` is the literal type `'127.0.0.1'`, so the
+ * loopback address is written out rather than interpolated — which is also
+ * what keeps this line inside the lint rule that bans non-loopback URLs.
+ */
+export function appUrl(config: Pick<AppConfig, 'port'>): string {
+  return `http://127.0.0.1:${String(config.port)}`;
+}
+
+/**
+ * The data dir holds the database, the audio scratch files and the STT model.
+ *
+ * `0700`, not Node's default `0755`. Harmless while the folder sits inside
+ * `~/Library` (which is already `0700`), and wrong the moment
+ * `APUNTA_DATA_DIR` points at an external drive or `/Users/Shared` — which is
+ * a documented, supported knob (`docs/research/data-at-rest-2026-08.md` §2.2).
+ * `mkdirSync` only applies the mode when it creates the directory, so an
+ * existing one is left as it is rather than silently re-permissioned.
+ */
 export function ensureDataDir(dataDir: string): string {
-  mkdirSync(dataDir, { recursive: true });
+  mkdirSync(dataDir, { recursive: true, mode: 0o700 });
   return dataDir;
 }
 

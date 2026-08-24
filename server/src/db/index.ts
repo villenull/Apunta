@@ -34,6 +34,24 @@ export function openDatabase({ file, migrationsDir }: OpenDatabaseOptions): Open
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');
 
+  // Three pragmas from `docs/research/data-at-rest-2026-08.md` §9.
+  //
+  // `temp_store = MEMORY` keeps SQLite's scratch files out of `TMPDIR`. The
+  // working set here is kilobytes, so it costs nothing, and the alternative is
+  // a directory nothing in this project manages holding fragments of clinical
+  // notes — or, if `TMPDIR` is unset under a LaunchAgent, `/var/tmp` (§2.3).
+  //
+  // `secure_delete` overwrites freed pages instead of leaving deleted note
+  // text in the file. It is hygiene, not a security boundary: APFS snapshots
+  // and Time Machine keep the old bytes regardless, which is why the honest
+  // sentence in the delete confirmation matters more than this line does.
+  //
+  // `journal_size_limit` stops the WAL — which holds recently written note
+  // text — growing without bound after a large write.
+  db.pragma('temp_store = MEMORY');
+  db.pragma('secure_delete = ON');
+  db.pragma('journal_size_limit = 6291456');
+
   const migrations = migrate(db, migrationsDir);
   return { db, migrations };
 }
