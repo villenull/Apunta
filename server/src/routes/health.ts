@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import type { AiProviders } from '../ai/types.js';
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
+import { fileVaultStatus } from '../platform/filevault.js';
 
 /**
  * Every dependency, asked rather than assumed.
@@ -18,13 +19,22 @@ import { migrationLevel } from '../db/index.js';
  * records 16 kHz mono WAV and `whisper-cli` reads it directly. A machine
  * without ffmpeg installed is a machine that works
  * (`docs/research/m8-bundling-2026-08.md` §11).
+ *
+ * M7 adds FileVault, which is not an AI dependency and not something the app
+ * can install — but it is the one item on the setup checklist whose absence
+ * makes "nothing leaves this Mac" untrue, so it is asked rather than assumed.
+ * The probe is cached and portable by omission; see `platform/filevault.ts`.
  */
 export async function buildHealthResponse(
   config: AppConfig,
   db: Database,
   providers: AiProviders,
 ): Promise<HealthResponse> {
-  const [llm, stt] = await Promise.all([providers.llm.describe(), providers.stt.describe()]);
+  const [llm, stt, fileVault] = await Promise.all([
+    providers.llm.describe(),
+    providers.stt.describe(),
+    fileVaultStatus(),
+  ]);
   return {
     ok: true,
     version: config.version,
@@ -37,6 +47,7 @@ export async function buildHealthResponse(
       binary: stt.binary,
       model: stt.model,
     },
+    fileVault,
   };
 }
 

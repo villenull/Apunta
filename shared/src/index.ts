@@ -10,8 +10,8 @@ export {
 export { ApiErrorCodeSchema, ApiErrorSchema } from './errors.js';
 export type { ApiError, ApiErrorCode } from './errors.js';
 
-export { HealthResponseSchema } from './health.js';
-export type { HealthResponse } from './health.js';
+export { FileVaultStateSchema, FileVaultStatusSchema, HealthResponseSchema } from './health.js';
+export type { FileVaultState, FileVaultStatus, HealthResponse } from './health.js';
 
 export {
   CreatePatientRequestSchema,
@@ -294,6 +294,7 @@ export {
   BACKUP_STALE_DAYS,
   BackupFileSchema,
   BackupManifestSchema,
+  BackupStatusResponseSchema,
   BackupStatusSchema,
   backupFilename,
   backupFilenameDate,
@@ -320,12 +321,14 @@ export {
   RestoreBackupRequestSchema,
   RestoreBackupResponseSchema,
   safeFilePart,
+  VerifiedRestoreResponseSchema,
   SYNC_ROOT_RELATIVE_PATHS,
 } from './backup.js';
 export type {
   BackupFile,
   BackupManifest,
   BackupStatus,
+  BackupStatusResponse,
   CreateBackupRequest,
   CreateBackupResponse,
   DestinationAdvice,
@@ -333,6 +336,7 @@ export type {
   EncryptionMeta,
   RestoreBackupRequest,
   RestoreBackupResponse,
+  VerifiedRestoreResponse,
 } from './backup.js';
 
 export { planDocumentText } from './plan-document.js';

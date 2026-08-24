@@ -14,6 +14,7 @@ const stub = {
     binary: 'whisper-cli',
     model: '/tmp/models/ggml-large-v3-turbo-q5_0.bin',
   },
+  fileVault: { state: 'not_applicable' as const, detail: 'disk encryption is not checked on linux' },
 };
 
 describe('HealthResponseSchema', () => {
@@ -37,5 +38,22 @@ describe('HealthResponseSchema', () => {
 
   it('rejects unknown value types', () => {
     expect(HealthResponseSchema.safeParse({ ...stub, ok: 'yes' }).success).toBe(false);
+  });
+
+  /**
+   * FileVault has five states and "we could not tell" is one of them. A schema
+   * that only allowed on/off would force an unreadable machine to be reported
+   * as unencrypted, which is the one wrong answer here
+   * (`docs/research/data-at-rest-2026-08.md` ranked risk 2).
+   */
+  it('lets FileVault be unknown rather than forcing a false negative', () => {
+    for (const state of ['on', 'off', 'deferred', 'unknown', 'not_applicable']) {
+      expect(HealthResponseSchema.safeParse({ ...stub, fileVault: { state, detail: '' } }).success).toBe(
+        true,
+      );
+    }
+    expect(
+      HealthResponseSchema.safeParse({ ...stub, fileVault: { state: 'probably', detail: '' } }).success,
+    ).toBe(false);
   });
 });

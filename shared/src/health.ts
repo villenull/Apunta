@@ -1,6 +1,24 @@
 import { z } from 'zod';
 
 /**
+ * Disk encryption, from `fdesetup status` on darwin (M7 deliverable 2).
+ *
+ * `not_applicable` everywhere else, and `unknown` when the command could not
+ * be read — never `off`. Reporting an unread state as "off" would teach the
+ * one person this check exists for to ignore it
+ * (`docs/research/data-at-rest-2026-08.md` ranked risk 2).
+ */
+export const FileVaultStateSchema = z.enum(['on', 'off', 'deferred', 'unknown', 'not_applicable']);
+export type FileVaultState = z.infer<typeof FileVaultStateSchema>;
+
+export const FileVaultStatusSchema = z.object({
+  state: FileVaultStateSchema,
+  /** The first line of what the machine actually said, for the setup screen. */
+  detail: z.string(),
+});
+export type FileVaultStatus = z.infer<typeof FileVaultStatusSchema>;
+
+/**
  * Shape of `GET /api/health`. Every dependency check is reported separately so
  * the UI can tell the user exactly which local tool is missing, and M7's setup
  * wizard turns it into a checklist. M1 reported the database, M3 made Ollama
@@ -34,6 +52,13 @@ export const HealthResponseSchema = z.object({
     binary: z.string(),
     model: z.string(),
   }),
+  /**
+   * Not an AI dependency, and the only item here the app cannot fix for her —
+   * but it is the one thing standing between a stolen laptop and every
+   * clinical record on it, so the setup screen refuses to call the app private
+   * while it is off.
+   */
+  fileVault: FileVaultStatusSchema,
 });
 
 export type HealthResponse = z.infer<typeof HealthResponseSchema>;
