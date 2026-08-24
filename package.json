@@ -20,7 +20,7 @@
     "dev": "npm run build:shared && concurrently -n server,web -c green,cyan \"npm run dev --workspace @apunta/server\" \"npm run dev --workspace @apunta/web\"",
     "dev:fake": "cross-env APUNTA_FAKE_AI=1 npm run dev",
     "start": "npm run build && node server/dist/index.js",
-    "lint": "eslint . && prettier --check . && node scripts/check-no-external-urls.mjs",
+    "lint": "eslint . && prettier --check . && node scripts/check-no-external-urls.mjs && node scripts/collect-licenses.mjs --check",
     "format": "prettier --write .",
     "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
     "test": "npm run build:shared && vitest run",
@@ -29,7 +29,8 @@
     "e2e": "npm run e2e --workspace @apunta/e2e",
     "eval": "npm run build:shared && npm run eval --workspace @apunta/server --",
     "seed": "npm run build:shared && npm run seed --workspace @apunta/server --",
-    "smoke:live": "node scripts/smoke-live.mjs"
+    "smoke:live": "node scripts/smoke-live.mjs",
+    "licenses": "node scripts/collect-licenses.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

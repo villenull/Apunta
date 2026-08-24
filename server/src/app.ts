@@ -17,6 +17,7 @@ import { registerFormatDetectRoutes } from './routes/formats-detect.js';
 import { registerFormatRoutes } from './routes/formats.js';
 import { registerGenerateRoute } from './routes/generate.js';
 import { registerHealthRoute } from './routes/health.js';
+import { registerLicensesRoute } from './routes/licenses.js';
 import { registerNoteRoutes } from './routes/notes.js';
 import { registerPatientRoutes } from './routes/patients.js';
 import { registerPlanRoutes } from './routes/plans.js';
@@ -101,6 +102,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerErrorHandler(app);
 
   registerHealthRoute(app, config, db, providers);
+  registerLicensesRoute(app, config);
   registerPatientRoutes(app, db);
   registerNoteRoutes(app, db);
   registerFormatRoutes(app, db);

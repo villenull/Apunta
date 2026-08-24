@@ -12,6 +12,16 @@ export interface OpenDatabaseOptions {
   readonly file: string;
   /** Directory holding the numbered `.sql` migrations. */
   readonly migrationsDir: string;
+  /**
+   * Where `better_sqlite3.node` is, when it is not where npm put it (M8).
+   *
+   * Apple's bundle layout wants a Mach-O in `Contents/Helpers/`, not in
+   * `Contents/Resources/` beside the bundled JavaScript — putting compiled
+   * code in `Resources/` is the failure mode Apple's own guidance calls out.
+   * So the packaged app names the addon rather than letting the module
+   * search for it. Undefined everywhere else.
+   */
+  readonly nativeBinding?: string | undefined;
 }
 
 export interface OpenedDatabase {
@@ -26,10 +36,14 @@ export interface OpenedDatabase {
  * `foreign_keys` must be turned on per connection — SQLite defaults it off,
  * and every cascade in the schema depends on it.
  */
-export function openDatabase({ file, migrationsDir }: OpenDatabaseOptions): OpenedDatabase {
+export function openDatabase(options: OpenDatabaseOptions): OpenedDatabase {
+  const { file, migrationsDir } = options;
   if (file !== ':memory:') mkdirSync(dirname(file), { recursive: true });
 
-  const db = new BetterSqlite3(file);
+  const db =
+    options.nativeBinding === undefined
+      ? new BetterSqlite3(file)
+      : new BetterSqlite3(file, { nativeBinding: options.nativeBinding });
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');

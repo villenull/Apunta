@@ -3,6 +3,8 @@ export type { HttpMethod, Parser, RequestOptions } from './client.js';
 
 export { fetchHealth } from './health.js';
 
+export { fetchLicenses } from './licenses.js';
+
 export {
   cancelRestore,
   createBackup,

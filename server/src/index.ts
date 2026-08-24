@@ -1,4 +1,5 @@
 import { applyPendingRestore, maybeRunDailyBackup } from './backup/index.js';
+import { OllamaProcess } from './ai/ollama-process.js';
 import { buildApp } from './app.js';
 import { openBrowser } from './boot.js';
 import { appUrl, ensureDataDir, loadConfig } from './config.js';
@@ -20,10 +21,42 @@ ensureDataDir(config.dataDir);
  */
 const restored = applyPendingRestore(config.dataDir);
 
-const { db } = openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir });
+const { db } = openDatabase({
+  file: config.dbFile,
+  migrationsDir: config.migrationsDir,
+  nativeBinding: config.sqliteBinding,
+});
 const app = await buildApp({ config, db });
 app.addHook('onClose', () => {
   db.close();
+});
+
+/**
+ * The bundled AI runtime (M8).
+ *
+ * Nothing happens here on a developer machine: `APUNTA_OLLAMA_BIN` is unset,
+ * Homebrew runs Ollama as a service, and starting a second one would fight it.
+ * In the packaged app there is no service, so the server starts the runtime —
+ * and, because it is an `onClose` hook, stops it again. That is the whole of
+ * "quitting stops the server and any model processes cleanly, no orphans":
+ * the app shell kills one child, `node`, and `node` takes the runtime with it.
+ */
+const runtime = new OllamaProcess({
+  binary: config.ollamaBin,
+  modelsDir: config.modelsDir,
+  baseUrl: config.ollamaUrl,
+  log: (message, detail) => {
+    app.log.warn(detail ?? {}, message);
+  },
+});
+const started = runtime.start();
+if (started.status === 'started') {
+  app.log.info({ pid: started.pid }, 'started the bundled AI runtime');
+} else if (started.status === 'failed') {
+  app.log.error({ reason: started.reason }, 'the bundled AI runtime could not be started');
+}
+app.addHook('onClose', async () => {
+  await runtime.stop();
 });
 
 if (restored.applied) {

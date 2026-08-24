@@ -41,6 +41,12 @@ function loopbackOnly(url: string): string {
   return url;
 }
 
+/** An unset variable and an empty one mean the same thing: not configured. */
+function nonEmpty(raw: string | undefined): string | undefined {
+  const value = raw?.trim();
+  return value === undefined || value === '' ? undefined : value;
+}
+
 function readDelay(raw: string | undefined): number {
   if (raw === undefined || raw === '') return DEFAULT_FAKE_STREAM_DELAY_MS;
   const value = Number(raw);
@@ -74,6 +80,32 @@ export interface AppConfig {
   readonly fakeStreamDelayMs: number;
   /** Where the local Ollama listens. Loopback only — the egress guard sees to that. */
   readonly ollamaUrl: string;
+  /**
+   * `APUNTA_OLLAMA_BIN` — the runtime bundled inside `Apunta.app` (M8).
+   *
+   * Undefined on a developer machine, where Homebrew runs Ollama as a service
+   * and the server must not start a second one. Set in the packaged app, where
+   * there is no Homebrew and no service, and the server owns the runtime the
+   * same way it already owns `whisper-cli`.
+   */
+  readonly ollamaBin: string | undefined;
+  /**
+   * `APUNTA_SQLITE_BINDING` — where `better_sqlite3.node` lives (M8).
+   *
+   * Apple's bundle layout puts a Mach-O in `Contents/Helpers/`, not in
+   * `Contents/Resources/` next to the bundled JavaScript, so the packaged app
+   * has to name the addon explicitly. Undefined everywhere else, where npm's
+   * layout is the answer.
+   */
+  readonly sqliteBinding: string | undefined;
+  /**
+   * `THIRD-PARTY-LICENSES.md`, served to the About page.
+   *
+   * Shipping other people's binaries carries obligations, and a licence file
+   * only in the repository is not shipped. `APUNTA_LICENSES_FILE` points the
+   * packaged app at its own copy in `Contents/Resources/`.
+   */
+  readonly licensesFile: string;
   /** Built SPA. Served in production; absent during `npm run dev`. */
   readonly webDistDir: string;
   readonly version: string;
@@ -118,6 +150,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     fakeAi: env['APUNTA_FAKE_AI'] === '1',
     fakeStreamDelayMs: readDelay(env['APUNTA_FAKE_STREAM_DELAY_MS']),
     ollamaUrl: loopbackOnly(env['APUNTA_OLLAMA_URL']?.trim() || DEFAULT_OLLAMA_URL),
+    ollamaBin: nonEmpty(env['APUNTA_OLLAMA_BIN']),
+    sqliteBinding: nonEmpty(env['APUNTA_SQLITE_BINDING']),
+    licensesFile: nonEmpty(env['APUNTA_LICENSES_FILE']) ?? join(repoRoot, 'THIRD-PARTY-LICENSES.md'),
     webDistDir: join(repoRoot, 'web', 'dist'),
     version: pkg.version ?? '0.0.0',
   };

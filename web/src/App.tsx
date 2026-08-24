@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import { About } from './routes/About.js';
 import { AddPatient } from './routes/AddPatient.js';
 import { Capture } from './routes/Capture.js';
+import { Licenses } from './routes/Licenses.js';
 import { OnboardingFormat } from './routes/OnboardingFormat.js';
 import { OnboardingPreview } from './routes/OnboardingPreview.js';
 import { Settings } from './routes/Settings.js';
@@ -23,6 +24,7 @@ export function App(): React.JSX.Element {
       <Route path="/settings" element={<Settings />} />
       <Route path="/setup" element={<Setup />} />
       <Route path="/about" element={<About />} />
+      <Route path="/licenses" element={<Licenses />} />
       <Route path="/onboarding/format" element={<OnboardingFormat />} />
       <Route path="/onboarding/preview" element={<OnboardingPreview />} />
       <Route path="*" element={<Navigate to="/" replace />} />

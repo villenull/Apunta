@@ -95,6 +95,19 @@ export function About(): React.JSX.Element {
         </p>
       </div>
 
+      <div className="card card-rows lede">
+        <h3 className="heading-tight">What Apunta is built from</h3>
+        <p className="small note-meta">
+          The AI that writes and the program that reads your recordings were written by other people and are
+          included inside Apunta. Their licences ask that the notice travels with the app:{' '}
+          <Link to="/licenses">the licences are here</Link>.
+        </p>
+        <p className="small note-meta">
+          The AI models themselves are not part of Apunta. Your Mac downloaded them once, from the people who
+          made them, under their terms — Apunta keeps no copy of its own and never passes them on.
+        </p>
+      </div>
+
       <p className="small note-meta lede">
         Missing pieces and what to run: <Link to="/setup">Setup</Link>.
       </p>

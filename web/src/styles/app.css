@@ -1928,3 +1928,25 @@ select:disabled {
   color: var(--text-secondary);
   cursor: pointer;
 }
+
+/*
+ * The third-party licence text (M8). A `pre` because it is licence text
+ * verbatim — line breaks and indentation are part of the notice — but wrapped
+ * rather than scrolled sideways, because nobody reads 200 KB of licences in a
+ * horizontal scroller.
+ */
+.licenses-text {
+  margin: 0;
+  padding: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--surface-muted);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
