@@ -23,6 +23,16 @@ export const AUDIO_DIRNAME = 'audio';
 /** Where the setup script downloads `ggml-large-v3-turbo-q5_0.bin` (PLAN §2). */
 export const MODELS_DIRNAME = 'models';
 
+/**
+ * Where the bundled AI runtime keeps its weights (M8).
+ *
+ * Its own directory rather than sharing `models/` with the speech model: the
+ * runtime owns a blob store with its own layout, and a stray `.bin` beside it
+ * is at best confusing. It also makes uninstalling one folder rather than a
+ * hunt through `~/.ollama`.
+ */
+export const OLLAMA_DIRNAME = 'ollama';
+
 export const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
 
 export const DEFAULT_FAKE_STREAM_DELAY_MS = 12;
@@ -68,6 +78,8 @@ export interface AppConfig {
   readonly audioDir: string;
   /** Where the whisper.cpp GGUF lives by default, inside `dataDir` (M5). */
   readonly modelsDir: string;
+  /** The bundled runtime's weight store, inside `dataDir` (M8). */
+  readonly ollamaModelsDir: string;
   /** Numbered `.sql` migrations, shipped next to the server code. */
   readonly migrationsDir: string;
   /** `APUNTA_FAKE_AI=1` — deterministic providers, no local AI tooling needed. */
@@ -152,6 +164,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dbFile: join(dataDir, DB_FILENAME),
     audioDir: join(dataDir, AUDIO_DIRNAME),
     modelsDir: join(dataDir, MODELS_DIRNAME),
+    ollamaModelsDir: join(dataDir, OLLAMA_DIRNAME),
     // `serverRoot` is `server/` whether we are running from `src/` under tsx or
     // from the built `dist/`, so the .sql files are found either way.
     migrationsDir: join(serverRoot, 'migrations'),

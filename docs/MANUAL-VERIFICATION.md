@@ -2,9 +2,12 @@
 
 Apunta was built end to end inside a Linux container. Everything in it that
 touches macOS — the setup script, the FileVault check, opening a browser, the
-LaunchAgent, and the model itself — has been **written and syntax-checked but
-never run**. This is the list of what that leaves open, in the order worth
-doing it, with the exact command for each.
+LaunchAgent, the installer, the app shell, and the model itself — has been
+**written and syntax-checked but never run**. The Swift shell has never even
+been *compiled*: there is no Swift toolchain off macOS, and no AppKit.
+
+This is the list of what that leaves open, in the order worth doing it, with
+the exact command for each.
 
 Nothing here is a bug report. It is the set of claims this project is making
 that no machine has confirmed yet.
@@ -198,15 +201,132 @@ APUNTA_EVAL_MODELS=gemma4:12b-it-qat,qwen3.5:4b-q4_K_M npm run eval
 
 ---
 
-## 7. Two things to record while you are there
+## 7. The installer — M8
 
-Both are for M8, and both are cheap to capture once the Mac is in front of you
-(`docs/research/m8-bundling-2026-08.md` §11):
+**Nothing in this section has ever run.** The Swift app shell has never been
+compiled: there is no Swift toolchain in the container it was written in, and
+AppKit does not exist off macOS. `scripts/package-mac.sh` has never executed a
+line beyond its own refusal. Everything below is therefore a first run, not a
+regression check, and a surprise here is a finding rather than a bug report.
+
+What *was* verified before it shipped, so you know where the line is: the pins
+(Node 24.19.0 and `ollama-darwin.tgz` by SHA-256, read from their publishers),
+the contents of the Ollama tarball, the minimum macOS version read out of the
+shipped binaries' `LC_BUILD_VERSION`, every licence in
+`THIRD-PARTY-LICENSES.md`, and all of the first-run *logic* — disk arithmetic,
+model tier, checksum, download resume — which has 114 unit tests.
+
+### 7.1 Build it
+
+```sh
+npm run package:mac -- --dry-run    # read the plan first
+npm run package:mac
+```
+
+| Check | ☐ | What "wrong" looks like |
+| --- | --- | --- |
+| The dry run prints ten steps and builds nothing | ☐ | — |
+| `swiftc` is present without installing Xcode | ☐ | The "no new toolchain" claim was wrong and the shell needs a rethink. `xcode-select --install` then `swiftc --version` |
+| The Swift shell compiles | ☐ | **Most likely thing on this page to fail.** ~700 lines of AppKit that no compiler has ever seen |
+| `whisper.cpp` compiles from the pinned tag | ☐ | cmake missing, or the tag moved |
+| The build never mentions ffmpeg | ☐ | `WHISPER_COMMON_FFMPEG` crept back in |
+| `codesign --verify --deep --strict` passes | ☐ | Something is unsigned or was modified after signing |
+| `dist-mac/Apunta.dmg` exists | ☐ | — |
+| **Write down the .dmg's size** | ☐ | Estimated at 170–200 MB, against the packet's "roughly ~100 MB" guideline. The estimate is arithmetic on measured component sizes, not a built artifact |
+
+Then, out of curiosity rather than necessity:
+
+```sh
+npm run package:mac -- --drop-mlx
+```
+
+| Check | ☐ | Notes |
+| --- | --- | --- |
+| It still starts, and still drafts a note | ☐ | Apunta never uses MLX-format models — Ollama's MLX engine ignores the JSON schema. If dropping the runners is safe it saves ~380 MB uncompressed and this becomes the default |
+
+### 7.2 Install it the way she will
+
+Ideally on a Mac that has never had Homebrew, Node or Ollama.
+
+| Check | ☐ | Notes |
+| --- | --- | --- |
+| The `.dmg` opens and shows Apunta beside an Applications shortcut | ☐ | |
+| **The Gatekeeper dialog says what `docs/INSTALL.md` §2 says it says** | ☐ | The single most important row here. Wrong instructions dead-end exactly the person this packet exists for. Photograph each screen and correct the doc from the photos |
+| System Settings → Privacy & Security → **Open Anyway** is present and works | ☐ | If Control-click → Open is somehow still available on her macOS, say so — the docs assume it is gone |
+| The menu-bar icon appears | ☐ | An accessory app has no Dock icon on purpose |
+| **Every helper actually spawns** | ☐ | The ad-hoc-signing failure mode is "the app opens and does nothing". If the first-run window never appears, this is why |
+| macOS never asks for microphone permission in Apunta's name | ☐ | The mic is the browser's. If it asks, `Info.plist` needs `NSMicrophoneUsageDescription` with an honest sentence |
+
+### 7.3 First run
+
+| Check | ☐ | Notes |
+| --- | --- | --- |
+| The window names the model it chose and the memory it read | ☐ | Check the number against this Mac |
+| It names the publisher and links their terms **before** downloading | ☐ | This is what keeps the weights at arm's length |
+| The disk figure matches what Finder says is free | ☐ | Decimal GB on both sides |
+| The progress bar moves, and the time remaining is roughly right | ☐ | |
+| It finishes and opens the browser by itself | ☐ | |
+| **Record a note and get a draft, without ever opening Terminal** | ☐ | The whole packet, in one row |
+
+### 7.4 The failure paths
+
+Each of these has a sentence written for it. Confirm the sentence appears and
+that **Try again** works.
+
+| Check | ☐ | How to cause it |
+| --- | --- | --- |
+| Not enough disk | ☐ | Fill the disk, or temporarily point `APUNTA_DATA_DIR` at a small volume |
+| Network lost mid-download | ☐ | Turn off wi-fi during the speech-model download |
+| **Killed mid-download, then relaunched — it resumes** | ☐ | Force Quit during the download. Acceptance criterion |
+| Cancelled by pressing Stop | ☐ | Nothing lost; the next run continues |
+| A corrupted download | ☐ | Truncate the `.part` file in `models/` by hand. It should refuse, delete it, and start clean |
+| A tag that no longer exists | ☐ | Only if `ollama pull` 404s. The message says retrying will not help, which is true |
+
+### 7.5 Quit, relaunch, and no orphans
+
+| Check | ☐ | Notes |
+| --- | --- | --- |
+| Quit from the menu bar, then `pgrep -fl 'ollama|whisper-cli|Apunta'` prints nothing | ☐ | The one behaviour most likely to be quietly wrong |
+| Relaunch: it reuses the models and starts in seconds | ☐ | No second download |
+| Double-clicking Apunta while it is running re-opens the tab rather than starting a second copy | ☐ | |
+| If port 7717 is taken, it picks another and opens that | ☐ | Start a dev server first, then the app |
+
+### 7.6 The privacy claim, on the real artifact
+
+| Check | ☐ | Command |
+| --- | --- | --- |
+| The running app talks to nothing but loopback | ☐ | With Apunta open and idle: `lsof -nP -i -a -p $(pgrep -f 'Apunta.app/Contents/MacOS/Apunta')` |
+| The AI runtime talks to nothing but loopback once the models are down | ☐ | Same, for `pgrep -f Contents/Helpers/ollama` |
+| No log file anywhere in the data folder | ☐ | `find "$HOME/Library/Application Support/Apunta" -name '*.log'` |
+| About → the licences are here shows the licence file | ☐ | Proves the notice travelled with the app |
+
+### 7.7 Uninstall
+
+```sh
+bash scripts/uninstall-macos.sh --dry-run
+bash scripts/uninstall-macos.sh
+```
+
+| Check | ☐ | Notes |
+| --- | --- | --- |
+| The app, the models and the LaunchAgent are gone | ☐ | |
+| The notes folder is still there | ☐ | The default must never delete notes |
+| `--everything` asks twice before deleting notes | ☐ | |
+| Nothing is left behind afterwards | ☐ | `ls ~/Library/LaunchAgents`, `ls "$HOME/Library/Application Support"` |
+
+---
+
+## 8. Two things to record while you are there
+
+Both are still open, and both are cheap to capture once the Mac is in front of
+you (`docs/research/m8-bundling-2026-08.md` §11).
 
 | Item | ☐ |
 | --- | --- |
-| For each RAM tier's model: the GGUF repo, filename, byte size, SHA-256 and weights licence. Append to `docs/research/macos-setup-verification.md` | ☐ |
-| A SHA-256 for `ggml-large-v3-turbo-q5_0.bin`, computed after verifying the published SHA-1. M8's downloader should not verify a 547 MB file with SHA-1 | ☐ |
+| For each RAM tier's model: the real download size, so `installer/src/catalog.ts`'s `approxBytes` stops being a guess. `ollama pull` prints it | ☐ |
+| A SHA-256 for `ggml-large-v3-turbo-q5_0.bin`, computed after the published SHA-1 matches, then pinned in `installer/src/catalog.ts` as `sha256`. M8's downloader should not verify a 547 MB file with SHA-1 alone | ☐ |
+| Whether the three model tags still exist in Ollama's library, and what licence each one's page actually names. `THIRD-PARTY-LICENSES.md` says these are unread | ☐ |
+| SQLite's public-domain statement, from `sqlite.org/copyright.html` — the one quotation in the licence file without a same-session source | ☐ |
 
 ---
 

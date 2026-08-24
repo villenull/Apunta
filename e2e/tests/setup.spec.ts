@@ -95,4 +95,28 @@ test.describe('the setup wizard', () => {
     await expect(body).toContainText('FileVault');
     await expect(page.getByTestId('about-db-path')).toContainText('apunta.db');
   });
+
+  /**
+   * M8 deliverable 6. Apunta bundles other people's programs, and MIT and BSD
+   * both require the notice to travel with the distribution — a licence file
+   * that only exists in the repository has not travelled anywhere. This is the
+   * path from "About" to the actual text, through the running server.
+   */
+  test('About links the licences, and the licences are really there', async ({ page }) => {
+    await page.goto('/about');
+
+    await page.getByRole('link', { name: 'the licences are here' }).click();
+    await expect(page).toHaveURL(/\/licenses$/);
+    await expect(page.getByRole('heading', { name: 'What Apunta is built from' })).toBeVisible();
+
+    const text = page.getByTestId('licenses-text');
+    await expect(text).toBeVisible();
+    // The components that carry an obligation, and the text that satisfies it.
+    await expect(text).toContainText('MIT License');
+    await expect(text).toContainText('Ollama');
+    await expect(text).toContainText('whisper.cpp');
+    await expect(text).toContainText('Node.js');
+    // And the honest half: what nobody has read yet is named.
+    await expect(text).toContainText('What has not been verified');
+  });
 });

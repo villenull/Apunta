@@ -9,13 +9,28 @@ Work packets: `docs/agents/`.
 
 1. **Privacy is the product.** No outbound network calls at runtime, ever —
    only `127.0.0.1`/`localhost`. Never use the browser SpeechRecognition /
-   Web Speech API (it can send audio to Google). No telemetry, no CDN assets
-   at runtime (bundle everything), no external fonts.
+   Web Speech API (it can send audio to Google). No telemetry, no crash
+   reporting, no update check, no CDN assets at runtime (bundle everything),
+   no external fonts.
+
+   **One exception, and it is the only one: model acquisition.** The installer
+   / first-run component — never the server, never the browser tab — may
+   download model weights, provided it (a) runs only when the user explicitly
+   starts it, (b) contacts only hosts on the pinned allow-list in
+   `installer/src/catalog.ts` (recorded in `docs/decisions.md`), (c) sends no
+   user data, no note content, no machine identifier and no query string
+   beyond the file path, (d) verifies every download against a pinned
+   checksum, and (e) does not run again once the models are there. The
+   server's egress guard is not relaxed for this and never should be: the
+   downloader is a separate short-lived process, and a test asserts that
+   nothing in `server/`, `web/` or `shared/` imports it. Anything else that
+   wants the network is forbidden, including "check for updates".
 2. Real patient text never goes in fixtures, tests, or commits. Use the
    prototype's sample data (John Smith etc.).
 3. `APUNTA_FAKE_AI=1` must always keep the entire app runnable and
    demoable with zero AI tooling installed. CI runs everything in fake mode.
-4. Server logic stays OS-portable; only `scripts/` may assume macOS/Homebrew.
+4. Server logic stays OS-portable; only `scripts/` and `macos/` (the app
+   shell) may assume macOS/Homebrew.
 5. Don't widen scope beyond your packet. Deferred list: `docs/PLAN.md` §8.
 
 ## Commands
@@ -36,6 +51,12 @@ Work packets: `docs/agents/`.
   `--dry-run` works anywhere); `scripts/preflight-macos.sh` is its read-only
   counterpart. Neither has ever run on a Mac —
   see `docs/MANUAL-VERIFICATION.md`
+- `npm run package:mac` — builds `Apunta.app` and `Apunta.dmg` (macOS only; it
+  refuses elsewhere, and `APUNTA_PACKAGE_ALLOW_NON_MACOS=1 ... -- --dry-run`
+  prints the plan). `scripts/uninstall-macos.sh` is the reverse.
+  `docs/INSTALL.md` is the non-technical guide; none of it has run on a Mac
+- `npm run licenses` — regenerates the npm half of `THIRD-PARTY-LICENSES.md`;
+  `npm run lint` fails when it is stale, or on a copyleft dependency
 
 ## Conventions
 

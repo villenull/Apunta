@@ -1,4 +1,5 @@
 import { statfsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
 import { formatBytes } from './bytes.js';
 
@@ -77,11 +78,20 @@ export function checkDiskSpace(input: DiskCheckInput): DiskCheck {
  * `APUNTA_DATA_DIR`, the boot volume's free space is the wrong answer.
  */
 export function freeBytesFor(path: string): number | null {
-  try {
-    const stats = statfsSync(path);
-    const free = Number(stats.bavail) * Number(stats.bsize);
-    return Number.isFinite(free) && free >= 0 ? free : null;
-  } catch {
-    return null;
+  // On a first run the data directory may not exist yet, and `statfs` on a
+  // path that is not there throws. The volume is the same either way, so walk
+  // up to the nearest ancestor that does exist rather than reporting "cannot
+  // tell" for the ordinary case.
+  let current = resolve(path);
+  for (;;) {
+    try {
+      const stats = statfsSync(current);
+      const free = Number(stats.bavail) * Number(stats.bsize);
+      return Number.isFinite(free) && free >= 0 ? free : null;
+    } catch {
+      const parent = dirname(current);
+      if (parent === current) return null;
+      current = parent;
+    }
   }
 }

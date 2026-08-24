@@ -1,7 +1,10 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { DEFAULT_MODEL, LARGE_MODEL, SMALL_MODEL } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
-import { checkDiskSpace, DISK_HEADROOM_BYTES } from './disk.js';
+import { checkDiskSpace, DISK_HEADROOM_BYTES, freeBytesFor } from './disk.js';
 import { buildPlan, describeWeightsProvenance, explainChoice } from './plan.js';
 
 const GB = 1000 * 1000 * 1000;
@@ -109,6 +112,24 @@ describe('describeWeightsProvenance', () => {
     expect(sentence).toContain(plan.model.publisher);
     expect(sentence).toContain(plan.model.licence.url);
     expect(sentence).toContain('does not host or copy');
+  });
+});
+
+describe('freeBytesFor', () => {
+  /**
+   * On a first run the data directory does not exist yet, and `statfs` on a
+   * path that is not there throws. Reporting "cannot tell" for the ordinary
+   * case would skip the disk check on every fresh install — which is the one
+   * install where it matters.
+   */
+  it('answers for a directory that does not exist yet, by asking its volume', () => {
+    const free = freeBytesFor(join(tmpdir(), 'apunta-not-created-yet', 'models'));
+    expect(free).not.toBeNull();
+    expect(free ?? 0).toBeGreaterThan(0);
+  });
+
+  it('answers for a directory that does exist', () => {
+    expect(freeBytesFor(tmpdir()) ?? 0).toBeGreaterThan(0);
   });
 });
 

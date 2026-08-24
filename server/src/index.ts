@@ -43,7 +43,7 @@ app.addHook('onClose', () => {
  */
 const runtime = new OllamaProcess({
   binary: config.ollamaBin,
-  modelsDir: config.modelsDir,
+  modelsDir: config.ollamaModelsDir,
   baseUrl: config.ollamaUrl,
   log: (message, detail) => {
     app.log.warn(detail ?? {}, message);
