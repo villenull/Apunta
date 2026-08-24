@@ -16,6 +16,7 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 
 import { errorMessage, getSettings, listFormats, putSettings } from '../api/index.js';
+import { BackupCard } from '../components/BackupCard.js';
 import { PlusIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
@@ -84,6 +85,12 @@ export function Settings(): React.JSX.Element {
 
       <ClinicianDetails />
       <RecordingSettings />
+      <BackupCard />
+
+      <p className="small note-meta lede">
+        <Link to="/setup">Setup</Link> lists what Apunta needs on this Mac. <Link to="/about">About</Link>{' '}
+        says what it does with your notes, and what it does not protect you from.
+      </p>
     </Screen>
   );
 }

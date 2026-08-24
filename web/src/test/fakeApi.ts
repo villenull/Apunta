@@ -357,6 +357,61 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
 
       if (path === '/api/backup' && method === 'GET') return json({ ...BACKUP_STATUS, ...options.backup });
 
+      if (path === '/api/backup' && method === 'POST') {
+        const encrypted = typeof body['passphrase'] === 'string' && body['passphrase'] !== '';
+        return json(
+          {
+            file: {
+              filename: 'apunta-backup-2026-08-24.zip',
+              path: '/tmp/apunta/backups/apunta-backup-2026-08-24.zip',
+              bytes: 65_536,
+              created_at: NOW,
+              encrypted,
+            },
+            manifest: {
+              format: 1,
+              app_version: '0.0.0',
+              generated_at: NOW,
+              migration_level: 2,
+              sqlite_version: '3.53.4',
+              db_bytes: 40_960,
+              db_sha256: 'f'.repeat(64),
+              integrity_check: 'ok',
+              counts: { patients: 2, notes: 4 },
+              encrypted,
+            },
+            destination: BACKUP_STATUS.destination,
+            pruned: [],
+          },
+          201,
+        );
+      }
+
+      if (path === '/api/backup/restore' && method === 'POST') {
+        return json({
+          staged: true,
+          manifest: {
+            format: 1,
+            app_version: '0.0.0',
+            generated_at: NOW,
+            migration_level: 2,
+            sqlite_version: '3.53.4',
+            db_bytes: 40_960,
+            db_sha256: 'f'.repeat(64),
+            integrity_check: 'ok',
+            counts: { patients: 2, notes: 4 },
+            encrypted: false,
+          },
+          safety_copy: '/tmp/apunta/apunta.db.before-restore-2026-08-24',
+        });
+      }
+
+      if (path === '/api/backup/restore' && method === 'DELETE') return new Response(null, { status: 204 });
+
+      if (path === '/api/backup/verified' && method === 'POST') {
+        return json({ last_verified_restore: NOW });
+      }
+
       if (path === '/api/generate' && method === 'POST') {
         if (options.generateError) return sse([{ event: 'error', data: options.generateError }]);
         const format = state.formats.find((candidate) => candidate.id === body['format_id']);
