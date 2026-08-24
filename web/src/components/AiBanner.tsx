@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Link } from 'react-router';
 
 import { fetchHealth } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
@@ -14,6 +15,9 @@ import { useLoader } from '../hooks/useLoader.js';
  * It is dismissible per page load, deliberately not remembered: the state it
  * describes is one a user fixes in a minute by starting Ollama, and a banner
  * that stays dismissed after that would be lying.
+ *
+ * M7 gave "see Setup" somewhere to go: `/setup` lists every local dependency
+ * with the exact command for the missing ones.
  */
 export function AiBanner(): React.JSX.Element | null {
   const loadHealth = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
@@ -28,13 +32,17 @@ export function AiBanner(): React.JSX.Element | null {
   if (ollama.reachable && ollama.modelPresent) return null;
 
   const message = ollama.reachable
-    ? `Apunta can't find the AI model${ollama.model === null ? '' : ` (${ollama.model})`} — see Setup`
-    : "Apunta can't reach the local AI — see Setup";
+    ? `Apunta can't find the AI model${ollama.model === null ? '' : ` (${ollama.model})`} — see`
+    : "Apunta can't reach the local AI — see";
 
   return (
     <div className="ai-banner" role="status" data-testid="ai-banner">
       <p>
-        {message}. Everything except drafting a new note still works.{' '}
+        {message}{' '}
+        <Link to="/setup" data-testid="ai-banner-setup">
+          Setup
+        </Link>
+        . Everything except drafting a new note still works.{' '}
         <button
           type="button"
           className="btn small btn-quick"

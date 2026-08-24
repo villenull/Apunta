@@ -230,6 +230,18 @@ export const BackupStatusSchema = z.object({
 });
 export type BackupStatus = z.infer<typeof BackupStatusSchema>;
 
+/**
+ * What `GET /api/backup` actually answers.
+ *
+ * `pending_restore` is a property of this machine's filesystem right now — a
+ * restore staged and waiting for the next start — rather than of any backup,
+ * which is why it sits on the response and not on `BackupStatus`.
+ */
+export const BackupStatusResponseSchema = BackupStatusSchema.extend({
+  pending_restore: z.boolean(),
+});
+export type BackupStatusResponse = z.infer<typeof BackupStatusResponseSchema>;
+
 /** Long enough to matter, and refused rather than silently weakened. */
 export const MIN_BACKUP_PASSPHRASE = 12;
 
@@ -274,6 +286,10 @@ export const RestoreBackupResponseSchema = z.object({
   safety_copy: z.string(),
 });
 export type RestoreBackupResponse = z.infer<typeof RestoreBackupResponseSchema>;
+
+/** `POST /api/backup/verified` — she tried a restore by hand and it worked. */
+export const VerifiedRestoreResponseSchema = z.object({ last_verified_restore: z.string() });
+export type VerifiedRestoreResponse = z.infer<typeof VerifiedRestoreResponseSchema>;
 
 /** `apunta-backup-2026-08-24.zip` for the first of the day, `-2.zip` after that. */
 export function backupFilename(date: Date, sequence = 1): string {

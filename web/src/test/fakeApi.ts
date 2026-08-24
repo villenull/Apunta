@@ -267,6 +267,26 @@ const HEALTHY: HealthResponse = {
     binary: 'fake-whisper',
     model: 'fake-whisper-model',
   },
+  // The fake stack runs on whatever CI runs on, so disk encryption is a
+  // question about a Mac that is not here. `not_applicable` is the honest
+  // answer and the one that keeps the setup checklist green in fake mode.
+  fileVault: { state: 'not_applicable', detail: 'disk encryption is not checked on linux' },
+};
+
+/** `GET /api/backup` in fake mode: a data-dir destination and no archives yet. */
+const BACKUP_STATUS = {
+  directory: '/tmp/apunta/backups',
+  destination: { risk: 'data-dir' as const, path: '/tmp/apunta/backups', warning: '' },
+  last_backup_at: null,
+  last_backup_file: null,
+  last_backup_error: null,
+  stale: true,
+  last_verified_restore: null,
+  backups: [],
+  counts: { patients: 0, notes: 0 },
+  oldest_note_at: null,
+  db_bytes: 40960,
+  pending_restore: false,
 };
 
 function apiError(status: number, code: string, message: string): Response {
@@ -274,8 +294,10 @@ function apiError(status: number, code: string, message: string): Response {
 }
 
 export interface FakeApiOptions {
-  /** Overrides for `GET /api/health` — the AI banner reads this. */
+  /** Overrides for `GET /api/health` — the AI banner and /setup read this. */
   health?: Partial<HealthResponse>;
+  /** Overrides for `GET /api/backup` — the Settings backup card reads this. */
+  backup?: Record<string, unknown>;
   /** Make `POST /api/notes/:id/chat` fail inside the stream, as the server does. */
   chatError?: { code: string; message: string };
   /**
@@ -332,6 +354,8 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         typeof init.body === 'string' ? (JSON.parse(init.body) as Record<string, unknown>) : {};
 
       if (path === '/api/health') return json({ ...HEALTHY, ...options.health });
+
+      if (path === '/api/backup' && method === 'GET') return json({ ...BACKUP_STATUS, ...options.backup });
 
       if (path === '/api/generate' && method === 'POST') {
         if (options.generateError) return sse([{ event: 'error', data: options.generateError }]);

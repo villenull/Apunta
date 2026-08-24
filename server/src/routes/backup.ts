@@ -5,9 +5,10 @@ import {
   LAST_VERIFIED_RESTORE_SETTING,
   RestoreBackupRequestSchema,
   backupFilenameDate,
-  type BackupStatus,
+  type BackupStatusResponse,
   type CreateBackupResponse,
   type RestoreBackupResponse,
+  type VerifiedRestoreResponse,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
@@ -44,7 +45,7 @@ import { parseBody } from '../http/validate.js';
  * (`docs/decisions.md`, M6).
  */
 export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db: Database): void {
-  app.get('/api/backup', async (): Promise<BackupStatus & { pending_restore: boolean }> => {
+  app.get('/api/backup', async (): Promise<BackupStatusResponse> => {
     return { ...backupStatus(db, config), pending_restore: hasPendingRestore(config.dataDir) };
   });
 
@@ -117,7 +118,7 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
    * that the hypothesis was tested, and it is the only thing that turns the
    * once-a-year prompt in Settings off (`data-at-rest-2026-08.md` §5.6).
    */
-  app.post('/api/backup/verified', async (): Promise<{ last_verified_restore: string }> => {
+  app.post('/api/backup/verified', async (): Promise<VerifiedRestoreResponse> => {
     const at = new Date().toISOString();
     putSettings(db, { [LAST_VERIFIED_RESTORE_SETTING]: at });
     return { last_verified_restore: at };

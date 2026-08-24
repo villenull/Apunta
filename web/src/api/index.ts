@@ -3,6 +3,14 @@ export type { HttpMethod, Parser, RequestOptions } from './client.js';
 
 export { fetchHealth } from './health.js';
 
+export {
+  cancelRestore,
+  createBackup,
+  fetchBackupStatus,
+  markRestoreVerified,
+  restoreBackup,
+} from './backup.js';
+
 export { generateNote, GenerateError } from './generate.js';
 export type { GenerateHandlers } from './generate.js';
 
