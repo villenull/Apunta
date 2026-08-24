@@ -9,6 +9,11 @@ blob-report/
 test-results/
 .playwright/
 
+# Backup archives and eval reports — both can contain clinical material.
+# An archive holds every note; an eval report quotes the fixtures.
+apunta-backup-*.zip
+eval-report.md
+
 # local data + env
 data/
 *.db
