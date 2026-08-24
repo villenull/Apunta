@@ -8,7 +8,9 @@ finished note into whatever records system you actually use.
 **Nothing you write in it leaves the machine.** The AI runs on your Mac. There
 is no account, no server, no analytics, and no update check. The program is not
 permitted to make an outbound connection at all — if some future change tried,
-it would fail rather than succeed quietly.
+it would fail rather than succeed quietly. The one exception is the first run,
+which downloads the AI models once, from the people who made them, and then
+never uses the internet again.
 
 ---
 
@@ -47,6 +49,11 @@ not protect you from.
 ---
 
 ## Setting it up on a Mac
+
+> **If someone gave you an `Apunta.dmg`, none of this applies to you.** Read
+> [`docs/INSTALL.md`](docs/INSTALL.md) instead: double-click, drag, follow a
+> progress bar, no Terminal. What follows is the developer path — cloning the
+> repository and running it from source.
 
 Three steps. The first one is a download that takes a while; the other two are
 quick.
@@ -201,7 +208,7 @@ transcription (16 kHz WAV recorded in the browser, so nothing has to transcode
 it). Fake providers make the whole app runnable and CI-testable with no AI
 tooling installed.
 
-Node 22+ (`.nvmrc` pins the major). `npm install` once at the root — four
+Node 22+ (`.nvmrc` pins the major). `npm install` once at the root — five
 workspaces install together.
 
 | Command | What it does |
@@ -216,6 +223,8 @@ workspaces install together.
 | `npm run e2e` | Playwright, against the built app in fake mode on :7788 |
 | `npm run eval` | The model-quality harness. `-- --fake` is the CI self-check |
 | `npm run smoke:live` | A real dictation through a real Ollama. Manual |
+| `npm run package:mac` | Build `Apunta.app` and `Apunta.dmg`. macOS only; it refuses elsewhere |
+| `npm run licenses` | Regenerate the npm half of `THIRD-PARTY-LICENSES.md` |
 
 Useful env: `APUNTA_PORT`, `APUNTA_DATA_DIR`, `APUNTA_FAKE_AI=1`,
 `APUNTA_NO_OPEN=1` (do not open a browser on start), and
@@ -235,7 +244,7 @@ Useful env: `APUNTA_PORT`, `APUNTA_DATA_DIR`, `APUNTA_FAKE_AI=1`,
 | M6 formats | done — format onboarding, detection from templates and examples, skill import |
 | M9 treatment plan + prep | done — versioned payer-facing plan, model-drafted goals she accepts or discards, session briefings |
 | M7 setup, polish, eval | done here — setup script, first-run wizard, FileVault check, backup and restore, polish, eval harness |
-| M8 installer | next — a double-clickable `.dmg`, bundled runtimes, no terminal |
+| M8 installer | built here, **none of it ever run** — a double-clickable `.dmg`, bundled Node + Ollama + whisper-cli, a Swift menu-bar shell, first-run model download. Everything macOS-specific awaits the Mac: see `docs/MANUAL-VERIFICATION.md` §7 |
 
 ### The two things automated tests cannot tell you
 
@@ -267,7 +276,11 @@ to settle each one.
 | `server/src/eval/` | The model-quality harness behind `npm run eval` |
 | `web/` | React + Vite SPA |
 | `e2e/` | Playwright specs, and the eval corpus in `e2e/fixtures/eval/` |
-| `scripts/` | The only place allowed to assume macOS: setup, preflight, LaunchAgent |
+| `installer/` | First-run setup logic — disk check, model tier, resumable download, checksum. Runs under the bundled `node`, speaks NDJSON to the app shell, never imported by the running app |
+| `macos/` | The `Apunta.app` shell: a status item, one child process, a progress window and `open`. Swift/AppKit, ~700 lines, no arithmetic |
+| `scripts/` | Allowed to assume macOS, with `macos/`: setup, preflight, LaunchAgent, packaging, uninstall |
+| `docs/INSTALL.md` | The install guide for the therapist. No commands in it |
+| `THIRD-PARTY-LICENSES.md` | Every licence Apunta ships, in full, and what has not been read |
 | `docs/PLAN.md` | Master plan: architecture, data model, API, AI pipeline, milestones |
 | `docs/agents/` | Self-contained work packets for coding agents, with acceptance criteria |
 | `docs/research/` | The verified research behind the stack, privacy and packaging choices |
@@ -285,10 +298,13 @@ to settle each one.
 Everything lives on one branch, which is also the default branch. Give a new
 session:
 
-> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M8-installer.md, then implement
+> Read docs/PLAN.md, CLAUDE.md, and docs/agents/<packet>.md, then implement
 > that packet exactly. All work stays on the current branch — no feature
 > branch, no PR. Keep commits small and stop when every acceptance criterion
 > passes locally (lint, typecheck, tests, build, e2e), then push.
+
+Every packet M0–M9 has landed. What is left is not a packet: it is a Mac.
+`docs/MANUAL-VERIFICATION.md` is the list, and its §7 is the installer.
 
 CI is GitHub Actions on ubuntu-latest, everything in fake mode:
 lint → typecheck → tests → build → the eval harness self-check → Playwright.

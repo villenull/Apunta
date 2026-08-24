@@ -223,13 +223,18 @@ run node "$REPO_ROOT/scripts/collect-licenses.mjs" --check
 # app carries two JavaScript files rather than a node_modules tree. The native
 # addon is deliberately left out and placed as a real file: a Mach-O cannot be
 # bundled into JavaScript, and it has to sit somewhere codesign will see it.
+#
+# `.mjs`, not `.js`. Both bundles are ES modules, and Node decides that from
+# the extension or from the nearest `package.json` — of which there is none
+# inside an app bundle. A `.js` file holding `import` statements is a syntax
+# error at startup, which is the whole app failing to boot.
 run npx --yes esbuild "$REPO_ROOT/server/dist/index.js" \
   --bundle --platform=node --format=esm --target=node24 \
   --external:better-sqlite3 \
-  --outfile="$WORK_DIR/server/index.js"
+  --outfile="$WORK_DIR/server/index.mjs"
 run npx --yes esbuild "$REPO_ROOT/installer/dist/main.js" \
   --bundle --platform=node --format=esm --target=node24 \
-  --outfile="$WORK_DIR/setup/setup.js"
+  --outfile="$WORK_DIR/setup/setup.mjs"
 
 # ===========================================================================
 step "Fetching the runtimes"
@@ -328,12 +333,35 @@ run mkdir -p "$APP/Contents/Helpers/ollama" "$APP/Contents/Helpers/whisper"
 run cp -R "$WORK_DIR/ollama/." "$APP/Contents/Helpers/ollama/"
 run cp "$WORK_DIR/whisper.cpp/build/bin/whisper-cli" "$APP/Contents/Helpers/whisper/whisper-cli"
 
-# The native addon, as a real file in a place codesign treats as code.
+# `better-sqlite3` is the one dependency esbuild does not bundle, and it needs
+# two things in two places.
+#
+#   1. Its JavaScript, as a real package. esbuild leaves `import
+#      'better-sqlite3'` in the bundle, so Node has to be able to resolve it —
+#      and it resolves by walking up from the importing file, which is why the
+#      package lands in `Contents/Resources/node_modules/`. Bundling it instead
+#      does not work: its loader calls `require()` with a computed path, which
+#      an ESM bundle cannot honour.
+#   2. Its compiled addon, as a Mach-O in `Contents/Helpers/`, because a
+#      Mach-O in `Resources/` is the placement Apple's own guidance warns
+#      produces signing problems that only surface at notarization.
+#
+# The two are joined by `APUNTA_SQLITE_BINDING`, which the server passes as
+# better-sqlite3's `nativeBinding` option — so its loader takes the
+# explicit-path branch and never searches `build/Release` at all.
 BETTER_SQLITE3="$REPO_ROOT/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
 if [ "$DRY_RUN" = 0 ] && [ ! -f "$BETTER_SQLITE3" ]; then
   die "better_sqlite3.node is not built. Run: npm rebuild better-sqlite3"
 fi
 run cp "$BETTER_SQLITE3" "$APP/Contents/Helpers/better_sqlite3.node"
+
+SQLITE_PKG="$APP/Contents/Resources/node_modules/better-sqlite3"
+run mkdir -p "$APP/Contents/Resources/node_modules"
+run cp -R "$REPO_ROOT/node_modules/better-sqlite3" "$SQLITE_PKG"
+# Everything that is not the JavaScript: a second copy of the addon (possibly
+# built for the wrong architecture), the prebuilt binaries it would search
+# first, and ~10 MB of SQLite C sources nothing at runtime reads.
+run rm -rf "$SQLITE_PKG/build" "$SQLITE_PKG/prebuilds" "$SQLITE_PKG/deps" "$SQLITE_PKG/src"
 
 run cp -R "$WORK_DIR/server" "$APP/Contents/Resources/server"
 run cp -R "$WORK_DIR/setup" "$APP/Contents/Resources/setup"

@@ -13,8 +13,9 @@ import Foundation
 ///     Contents/Helpers/ollama/ollama         the AI runtime, with its dylibs
 ///     Contents/Helpers/whisper/whisper-cli   the transcriber
 ///     Contents/Helpers/better_sqlite3.node   the database addon
-///     Contents/Resources/server/index.js     Apunta's own server, bundled
-///     Contents/Resources/setup/setup.js      first-run setup, bundled
+///     Contents/Resources/server/index.mjs    Apunta's own server, bundled
+///     Contents/Resources/setup/setup.mjs     first-run setup, bundled
+///     Contents/Resources/node_modules/       better-sqlite3's JavaScript only
 ///     Contents/Resources/web/                the built browser app
 ///     Contents/Resources/THIRD-PARTY-LICENSES.md
 ///
@@ -57,11 +58,11 @@ enum Paths {
     }
 
     static var serverScript: URL {
-        resources.appendingPathComponent("server/index.js")
+        resources.appendingPathComponent("server/index.mjs")
     }
 
     static var setupScript: URL {
-        resources.appendingPathComponent("setup/setup.js")
+        resources.appendingPathComponent("setup/setup.mjs")
     }
 
     static var webDist: URL {

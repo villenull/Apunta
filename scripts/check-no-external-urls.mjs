@@ -62,7 +62,7 @@ const SOURCE_EXTENSIONS = new Set([
  *
  * `installer/src/catalog.ts` is the one file in the product permitted to name
  * a non-loopback host, and these are the only three it may name. Inside the
- * packaged app that file has been bundled into `setup/setup.js`, so this is
+ * packaged app that file has been bundled into `setup/setup.mjs`, so this is
  * where the claim is checked against the artifact rather than the source.
  *
  * Kept in step with `ALLOWED_DOWNLOAD_HOSTS` by `catalog.test.ts`, which pins
@@ -79,7 +79,7 @@ function isDownloadHost(url) {
 
 /** Only the bundled setup entry point may name a download host. */
 function allowsDownloadHosts(file) {
-  return /(^|\/)setup\/setup\.js$/.test(file) || /(^|\/)installer\//.test(file);
+  return /(^|\/)setup\/setup\.mjs$/.test(file) || /(^|\/)installer\//.test(file);
 }
 
 const SKIP_DIRECTORIES = new Set(['node_modules', '.git']);

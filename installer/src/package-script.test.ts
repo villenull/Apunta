@@ -150,6 +150,33 @@ describe('what the script pins', () => {
   });
 });
 
+describe('the one dependency esbuild cannot bundle', () => {
+  /**
+   * `better-sqlite3`'s loader calls `require()` with a computed path, which an
+   * ESM bundle cannot honour — so it stays external, and Node has to be able
+   * to resolve it from the bundled server. Getting this wrong produces an app
+   * that builds cleanly and dies on its first database call.
+   */
+  it('ships the package where Node will find it, and the addon where codesign will', () => {
+    expect(source).toContain('--external:better-sqlite3');
+    expect(source).toContain('Contents/Resources/node_modules');
+    expect(source).toContain('$APP/Contents/Helpers/better_sqlite3.node');
+  });
+
+  it('does not ship a second copy of the addon for Node to find first', () => {
+    expect(source).toMatch(/rm -rf "\$SQLITE_PKG\/build" "\$SQLITE_PKG\/prebuilds"/);
+  });
+
+  it('is joined to the addon by the environment variable the server reads', () => {
+    const paths = readFileSync(join(repoRoot, 'macos', 'Apunta', 'Paths.swift'), 'utf8');
+    expect(paths).toContain('APUNTA_SQLITE_BINDING');
+    const config = readFileSync(join(repoRoot, 'server', 'src', 'config.ts'), 'utf8');
+    expect(config).toContain("env['APUNTA_SQLITE_BINDING']");
+    const db = readFileSync(join(repoRoot, 'server', 'src', 'db', 'index.ts'), 'utf8');
+    expect(db).toContain('nativeBinding');
+  });
+});
+
 describe('signing', () => {
   /**
    * Deferred distribution signing does not excuse this. On Apple Silicon an
@@ -185,6 +212,22 @@ describe('the app shell', () => {
     readFileSync(join(repoRoot, 'macos', 'Apunta', `${name}.swift`), 'utf8'),
   );
   const allSwift = swift.join('\n');
+
+  /**
+   * Both bundles are ES modules, and Node decides that from the file
+   * extension or the nearest `package.json` — of which there is none inside an
+   * app bundle. A `.js` file holding `import` statements is a syntax error at
+   * startup: the whole app failing to boot, on a Mac, after everything else
+   * worked.
+   */
+  it('names the bundles .mjs, in the script and in the shell alike', () => {
+    expect(source).toContain('server/index.mjs');
+    expect(source).toContain('setup/setup.mjs');
+    const paths = readFileSync(join(repoRoot, 'macos', 'Apunta', 'Paths.swift'), 'utf8');
+    expect(paths).toContain('server/index.mjs');
+    expect(paths).toContain('setup/setup.mjs');
+    expect(paths).not.toMatch(/appendingPathComponent\("(server\/index|setup\/setup)\.js"\)/);
+  });
 
   it('is compiled from exactly the files the script names', () => {
     for (const name of ['Paths', 'ServerProcess', 'SetupRunner', 'SetupWindow', 'AppDelegate', 'main']) {
