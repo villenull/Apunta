@@ -1,45 +1,33 @@
 import { execFileSync } from 'node:child_process';
 import { platform } from 'node:os';
 
+import { isSupportedModelName, modelForMemory } from '@apunta/shared';
+
 import { aiError } from './errors.js';
 
 /**
  * Which model to run, and which models must be refused.
  *
- * The tiers are PLAN §2's table, pinned to explicit tags. Never `:latest` and
- * never a bare family name: `gemma4:latest` resolves to E4B, not 12B.
+ * The tiers themselves — the tags and the RAM boundaries — moved to
+ * `shared/src/models.ts` in M8, because the first-run installer picks a model
+ * from the same table and a second copy would drift. What stays here is the
+ * part that needs the server: reading this machine's memory, and turning a
+ * refusal into an `AiError` the API already knows how to render.
+ *
+ * Everything M3 imported from this module still resolves from this module.
  */
 
-export const LARGE_MODEL = 'qwen3.6:35b-a3b';
-/** The default on the target Mac. */
-export const DEFAULT_MODEL = 'gemma4:12b-it-qat';
-export const SMALL_MODEL = 'qwen3.5:4b-q4_K_M';
+export {
+  DEFAULT_MODEL,
+  DEFAULT_TIER_GIB,
+  isSupportedModelName,
+  LARGE_MODEL,
+  LARGE_TIER_GIB,
+  modelForMemory,
+  SMALL_MODEL,
+} from '@apunta/shared';
 
 const GIB = 1024 ** 3;
-/** Metal caps usable GPU memory near 75% of unified RAM, so 24GB needs 36GB. */
-const LARGE_TIER_GIB = 36;
-const DEFAULT_TIER_GIB = 16;
-
-/**
- * A non-GGUF weight flavour in the tag name.
- *
- * Ollama routes GGUF weights to llama.cpp, where `format` becomes a
- * grammar-constrained sampler, and safetensors/MLX weights to the MLX runner,
- * which **silently ignores `format`** (ollama#16563, still open). Structured
- * output is the load-bearing assumption of the whole pipeline and MLX is the
- * default engine flavour on Apple Silicon, so this would fail with no error on
- * exactly the machine we target.
- *
- * The M3 packet's `/-(mlx|nvfp4)\b/` misses `-mxfp8` and `-bf16`, both of
- * which now ship in the library. This is still only half the guard: a name
- * denylist always lags the naming, so `assertGgufWeights` below checks
- * `details.format` from `GET /api/tags`, which is authoritative.
- */
-const NON_GGUF_TAG = /-(mlx|nvfp4|mxfp8|bf16)\b/i;
-
-export function isSupportedModelName(model: string): boolean {
-  return !NON_GGUF_TAG.test(model);
-}
 
 /** Throws `unsupported_model_tag` for an MLX/safetensors-flavoured tag. */
 export function assertSupportedModelName(model: string): void {
@@ -81,14 +69,6 @@ export function machineMemoryGib(): number | null {
   } catch {
     return null;
   }
-}
-
-/** PLAN §2's RAM table. Overridden by the `llm_model` setting. */
-export function modelForMemory(memoryGib: number | null): string {
-  if (memoryGib === null) return SMALL_MODEL;
-  if (memoryGib >= LARGE_TIER_GIB) return LARGE_MODEL;
-  if (memoryGib >= DEFAULT_TIER_GIB) return DEFAULT_MODEL;
-  return SMALL_MODEL;
 }
 
 export function defaultModelForMachine(): string {

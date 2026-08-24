@@ -122,6 +122,29 @@ export default tseslint.config(
     },
   },
   {
+    // **The one exemption from the outbound-URL rule, and the only one.**
+    //
+    // `installer/src/catalog.ts` is the pinned list of what first-run setup
+    // downloads: the speech model's file, and the pages naming the writing
+    // models' terms. It is scoped to that single file rather than to
+    // `installer/**` so the exemption cannot spread by accident — every other
+    // file in the package is held to the same rule as `server/` and `web/`.
+    //
+    // Why this is sound, and where the line is: this code runs **before the
+    // app does**, in a short-lived process the shell spawns for setup, never
+    // in the Fastify server and never while a note exists. The server's egress
+    // guard is untouched and still rejects every non-loopback host. Setup-time
+    // model acquisition is the single carve-out CLAUDE.md hard rule 1 names;
+    // "check for updates" and anything else is still forbidden.
+    //
+    // Mentioning a URL is not the same as being able to reach one, so the real
+    // constraint is `ALLOWED_DOWNLOAD_HOSTS` in that file: `assertAllowedHost`
+    // refuses anything else at call time, and `catalog.test.ts` asserts both
+    // the allow-list and that no *other* file in `installer/` names a host.
+    files: ['installer/src/catalog.ts'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+  {
     files: ['web/**/*.{ts,tsx}'],
     languageOptions: {
       globals: { ...globals.browser },

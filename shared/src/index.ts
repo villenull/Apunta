@@ -10,6 +10,16 @@ export {
 export { ApiErrorCodeSchema, ApiErrorSchema } from './errors.js';
 export type { ApiError, ApiErrorCode } from './errors.js';
 
+export {
+  DEFAULT_MODEL,
+  DEFAULT_TIER_GIB,
+  isSupportedModelName,
+  LARGE_MODEL,
+  LARGE_TIER_GIB,
+  modelForMemory,
+  SMALL_MODEL,
+} from './models.js';
+
 export { FileVaultStateSchema, FileVaultStatusSchema, HealthResponseSchema } from './health.js';
 export type { FileVaultState, FileVaultStatus, HealthResponse } from './health.js';
 
