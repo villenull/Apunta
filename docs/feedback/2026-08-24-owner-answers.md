@@ -9,6 +9,13 @@ Halaxy.** Halaxy is used mostly outside the United States, which contradicted
 an assumption nobody had ever written down — and M9 had already been built on
 it.
 
+> **Three claims in the analysis below are wrong.** They were written the same
+> night from general knowledge, before the Mexican requirements were
+> researched. The answers themselves stand; the *consequences* drawn from them
+> did not survive `docs/research/mexico-clinical-records-2026-08.md`. See
+> **Corrections** at the end. The original text is left intact — this is a
+> record of what was believed at the time.
+
 ## Answers
 
 | # | Question | Answer |
@@ -111,3 +118,66 @@ was removed in macOS Sequoia and must not be documented.
 - The new `statedAbsence` eval case, and fixture 01's now-blank Assessment —
   a rubric rule that had been ranking fabrication above restraint was
   inverted, and she is the one who can say whether the blank reads right.
+
+## Corrections (added 2026-08-24, after research)
+
+### The privacy law named above no longer exists
+
+LFPDPPP — the 2010 law — **was abrogated**. A new *Ley Federal de Protección de
+Datos Personales en Posesión de los Particulares* was published in the DOF on
+20 March 2025 and took force the next day. **INAI is gone**; its
+data-protection functions passed to the Secretaría Anticorrupción y Buen
+Gobierno. The new Reglamento was still unpublished as of mid-2026, so the 2011
+Reglamento's operational detail — including breach notification — is of
+uncertain current force.
+
+Cite the 2025 law in anything new. Do not cite INAI as the authority.
+
+### "The compliant shape" was an overclaim
+
+The claim above — that never sending a byte off the machine makes this *the
+compliant shape* for her practice — is wrong, and pleasingly so rather than
+awkwardly: it flatters the architecture past what the law says.
+
+Local-only storage removes the *encargado* and cross-border transfer analysis
+**for Apunta's copy**. It touches **none** of her duties as *responsable*. Her
+system of record is Halaxy — a foreign cloud — so her practice's compliance
+posture is set there, not here. The architecture is an advantage for Apunta,
+not a compliance position for her.
+
+It does strengthen the FileVault argument, since the new law expects security
+measures proportionate to sensitivity. But Mexico appears to have **no
+encryption safe harbour**: FileVault buys an argument, not an exemption from
+breach notification.
+
+### ICD-10-CM is not simply wrong
+
+Stated above as a straightforward error. It is not. **DSM-5-TR prints ICD-10-CM
+codes**, and DSM-5-TR is what Mexican psychologists actually read from. CIE-10
+is compulsory for national statistics, not for her own file, and coding is
+**optional** for a self-pay practice.
+
+So the fix is to *widen* the enum — `cie-10 | cie-11 | dsm-5-tr | icd-10-cm` —
+not to swap one code system for another.
+
+### What the research changes about M9 more broadly
+
+Two findings matter more than the identifier fixes:
+
+- **NOM-004-SSA3-2012 requires far less than M9 built.** Date, time, full name,
+  signature; diagnosis, prognosis, treatment; five years from the last *acto
+  médico*; no erasures. There is **no plan document, no measurable objective,
+  no target date, no review date and no attestation** anywhere in it.
+- **The plan's audience changes.** No Mexican payer asks for it. The only party
+  that does is the SMP ethics code — and it requires that **the client** consent
+  to the *plan de trabajo* and to changes in it. So the plan is a document she
+  agrees with her client, not one she files with an insurer. `client_participation`
+  becomes the most important field in the schema rather than a compliance
+  afterthought.
+
+### One new question for her
+
+Owner answer 4 concluded that English notes "change nothing". That holds
+clinically, but CFPC art. 271 requires a translation if a record is ever
+produced in a legal proceeding. Worth telling her, since it is cheap to know
+and expensive to discover.
