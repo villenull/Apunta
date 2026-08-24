@@ -26,12 +26,18 @@ import { getSetting } from '../db/settings.js';
  * rule `llm_model` follows.
  */
 
-/** `whisper-cli`, or whatever absolute path Settings names. */
-export function resolveWhisperBinary(db: Database): string {
+/**
+ * `whisper-cli`, or whatever absolute path Settings names.
+ *
+ * Three layers, most specific first: the `whisper_binary` setting, then the
+ * one bundled inside `Apunta.app` (M8 — there is no Homebrew and nothing on
+ * `PATH` there), then `whisper-cli` off `PATH` for a developer machine.
+ */
+export function resolveWhisperBinary(db: Database, bundled?: string | undefined): string {
   const configured = getSetting<unknown>(db, WHISPER_BINARY_SETTING);
-  return typeof configured === 'string' && configured.trim() !== ''
-    ? configured.trim()
-    : DEFAULT_WHISPER_BINARY;
+  if (typeof configured === 'string' && configured.trim() !== '') return configured.trim();
+  if (bundled !== undefined && bundled.trim() !== '') return bundled.trim();
+  return DEFAULT_WHISPER_BINARY;
 }
 
 /** The GGUF file, defaulting to `<data dir>/models/<filename>` (PLAN §2). */

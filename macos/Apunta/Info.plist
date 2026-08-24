@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Apunta</string>
+	<key>CFBundleDisplayName</key>
+	<string>Apunta</string>
+	<key>CFBundleExecutable</key>
+	<string>Apunta</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.apunta.app</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<!--
+	  Menu-bar only. Apunta's interface is a browser tab; a Dock icon would be
+	  an icon that does nothing.
+	-->
+	<key>LSUIElement</key>
+	<true/>
+	<!--
+	  14.0, read out of the shipped binaries rather than guessed: every
+	  Mach-O in ollama-darwin.tgz carries LC_BUILD_VERSION minos 14.0.0.
+	  Setting this lower would replace a clear "this app requires a newer
+	  macOS" dialog with a dyld failure at spawn time and no UI at all.
+	-->
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<!--
+	  Apple Silicon only. llama.cpp's macOS x64 build is Metal-off, and a
+	  CPU-only 12B model is not a product. An Intel Mac gets a clear macOS
+	  error instead of a slow broken experience.
+	-->
+	<key>LSArchitecturePriority</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<!--
+	  Deliberately absent: NSMicrophoneUsageDescription. The microphone is the
+	  browser's, and the browser has its own permission prompt. This app never
+	  touches audio. (Worth re-checking on the Mac — if macOS ever prompts in
+	  Apunta's name, this key has to come back with an honest sentence.)
+
+	  Also deliberately absent: any NSAppTransportSecurity exception. The only
+	  connection this app makes is to 127.0.0.1, which ATS permits.
+	-->
+	<key>NSHumanReadableCopyright</key>
+	<string>Apunta. Third-party licences are inside the app, under About.</string>
+</dict>
+</plist>

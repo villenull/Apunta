@@ -38,7 +38,7 @@ export function createProviders(
       ...(log ? { log } : {}),
     }),
     stt: new WhisperCppSttProvider({
-      resolveBinary: () => resolveWhisperBinary(db),
+      resolveBinary: () => resolveWhisperBinary(db, config.whisperBin),
       resolveModel: () => resolveWhisperModel(db, config.modelsDir),
     }),
   };

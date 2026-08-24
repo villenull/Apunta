@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Empty on purpose, and it should stay that way.
+
+	  Apple's instruction is to use only the entitlements that are absolutely
+	  necessary, and spawning a *signed* child process needs none: if every
+	  Mach-O in the bundle carries the same signature, library validation is
+	  satisfied and posix_spawn works. The myth that a helper needs an
+	  entitlement usually traces back to someone shipping an unsigned one.
+
+	  Two that may turn out to be needed, in this order, and only if something
+	  actually fails on the Mac:
+
+	    com.apple.security.cs.allow-jit
+	        on the AI runtime only — Metal shader compilation can allocate
+	        executable memory. Add it to the helper's own plist, never to the
+	        app's.
+
+	    com.apple.security.cs.disable-library-validation
+	        on `node` only, and only if better_sqlite3.node ends up signed by
+	        a different identity. Signing it ourselves should make this
+	        unnecessary, and Apple's own guidance says not to disable library
+	        validation for executables that do not host plug-ins.
+
+	  One that must never appear: com.apple.security.get-task-allow. Its
+	  presence fails notarization outright.
+	-->
+</dict>
+</plist>

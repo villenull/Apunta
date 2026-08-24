@@ -31,3 +31,7 @@ data/
 
 # Git worktrees for parallel packets — never committed.
 .claude/worktrees/
+
+# Built macOS app and disk image (M8). Large, machine-specific, and
+# rebuilt from source by scripts/package-mac.sh.
+dist-mac/

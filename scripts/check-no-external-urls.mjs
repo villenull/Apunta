@@ -25,13 +25,62 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Source trees whose non-JS files ESLint never sees. */
-const SOURCE_ROOTS = ['web/src', 'web/index.html', 'web/public', 'server/migrations'];
+/**
+ * Source trees whose non-JS files ESLint never sees.
+ *
+ * `macos/` is here because the app shell is Swift, and ESLint has no opinion
+ * about Swift at all. The shell may hand a URL to the browser when someone
+ * clicks a link, and it may talk to 127.0.0.1 — it may not fetch anything
+ * itself, and this is what says so.
+ */
+const SOURCE_ROOTS = ['web/src', 'web/index.html', 'web/public', 'server/migrations', 'macos'];
 
-/** Shipped browser assets. Absent before a build; that is not a failure. */
-const BUILD_ROOTS = ['web/dist'];
+/**
+ * Shipped assets. Absent before a build; that is not a failure.
+ *
+ * The packaged app's `Contents/Resources` is the stronger half of this check:
+ * it is the actual artifact that reaches her Mac, and scanning it catches a
+ * URL that arrived through a dependency or a build step, which no
+ * source-level rule can see.
+ */
+const BUILD_ROOTS = ['web/dist', 'dist-mac/Apunta.app/Contents/Resources'];
 
-const SOURCE_EXTENSIONS = new Set(['.css', '.html', '.svg', '.json', '.sql', '.webmanifest']);
+const SOURCE_EXTENSIONS = new Set([
+  '.css',
+  '.html',
+  '.svg',
+  '.json',
+  '.sql',
+  '.webmanifest',
+  '.swift',
+  '.plist',
+  '.entitlements',
+]);
+
+/**
+ * The model-download allow-list, asserted rather than assumed.
+ *
+ * `installer/src/catalog.ts` is the one file in the product permitted to name
+ * a non-loopback host, and these are the only three it may name. Inside the
+ * packaged app that file has been bundled into `setup/setup.js`, so this is
+ * where the claim is checked against the artifact rather than the source.
+ *
+ * Kept in step with `ALLOWED_DOWNLOAD_HOSTS` by `catalog.test.ts`, which pins
+ * the same three names.
+ */
+const DOWNLOAD_HOSTS = ['huggingface.co', 'registry.ollama.ai', 'ollama.com'];
+
+/** Files that are licence text rather than code. A notice is not a request. */
+const LICENCE_TEXT = /(^|\/)(THIRD-PARTY-LICENSES\.md|licenses\/)/;
+
+function isDownloadHost(url) {
+  return DOWNLOAD_HOSTS.some((host) => new RegExp(`^https://${host.replaceAll('.', '\\.')}(/|$)`).test(url));
+}
+
+/** Only the bundled setup entry point may name a download host. */
+function allowsDownloadHosts(file) {
+  return /(^|\/)setup\/setup\.js$/.test(file) || /(^|\/)installer\//.test(file);
+}
 
 const SKIP_DIRECTORIES = new Set(['node_modules', '.git']);
 
@@ -53,6 +102,10 @@ const ALLOWED = [
   // `new URL()` to see whether it parses. A template placeholder cannot be a
   // host, and nothing fetches it.
   /^https?:\/\/\[\$\{/,
+  // The DOCTYPE every macOS property list carries. `plutil`, `codesign` and
+  // CoreFoundation all parse plists with a built-in DTD and never fetch this;
+  // Apple's own templates emit it verbatim.
+  /^http:\/\/www\.apple\.com\/DTDs\/PropertyList-1\.0\.dtd$/,
 ];
 
 /**
@@ -91,9 +144,11 @@ function* walk(path) {
 function findings(file) {
   const text = stripComments(readFileSync(file, 'utf8'));
   const hits = [];
+  const downloadsAllowed = allowsDownloadHosts(file);
   for (const match of text.matchAll(URL_PATTERN)) {
     const url = match[0].replace(/[.,;:]+$/, '');
     if (isLoopback(url) || ALLOWED.some((allowed) => allowed.test(url))) continue;
+    if (downloadsAllowed && isDownloadHost(url)) continue;
     const line = text.slice(0, match.index).split('\n').length;
     hits.push({ line, url });
   }
@@ -112,7 +167,9 @@ for (const root of SOURCE_ROOTS) {
 for (const root of BUILD_ROOTS) {
   for (const file of walk(join(repoRoot, root))) {
     // Binary assets would produce noise, not findings.
-    if (/\.(png|jpe?g|gif|woff2?|ttf|otf|ico|webp|mp[34]|wav)$/i.test(file)) continue;
+    if (/\.(png|jpe?g|gif|woff2?|ttf|otf|ico|webp|mp[34]|wav|bin|dylib|so|node)$/i.test(file)) continue;
+    // Reproducing a licence is an obligation, not an outbound request.
+    if (LICENCE_TEXT.test(file)) continue;
     for (const hit of findings(file)) problems.push({ file, ...hit });
   }
 }

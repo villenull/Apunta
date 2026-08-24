@@ -90,6 +90,14 @@ export interface AppConfig {
    */
   readonly ollamaBin: string | undefined;
   /**
+   * `APUNTA_WHISPER_BIN` — the `whisper-cli` bundled inside `Apunta.app` (M8).
+   *
+   * Used only when the `whisper_binary` setting is empty, so a path she has
+   * chosen in Settings still wins. Undefined on a developer machine, where
+   * `whisper-cli` is on `PATH`.
+   */
+  readonly whisperBin: string | undefined;
+  /**
    * `APUNTA_SQLITE_BINDING` — where `better_sqlite3.node` lives (M8).
    *
    * Apple's bundle layout puts a Mach-O in `Contents/Helpers/`, not in
@@ -151,9 +159,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     fakeStreamDelayMs: readDelay(env['APUNTA_FAKE_STREAM_DELAY_MS']),
     ollamaUrl: loopbackOnly(env['APUNTA_OLLAMA_URL']?.trim() || DEFAULT_OLLAMA_URL),
     ollamaBin: nonEmpty(env['APUNTA_OLLAMA_BIN']),
+    whisperBin: nonEmpty(env['APUNTA_WHISPER_BIN']),
     sqliteBinding: nonEmpty(env['APUNTA_SQLITE_BINDING']),
     licensesFile: nonEmpty(env['APUNTA_LICENSES_FILE']) ?? join(repoRoot, 'THIRD-PARTY-LICENSES.md'),
-    webDistDir: join(repoRoot, 'web', 'dist'),
+    webDistDir: nonEmpty(env['APUNTA_WEB_DIST']) ?? join(repoRoot, 'web', 'dist'),
     version: pkg.version ?? '0.0.0',
   };
 }
