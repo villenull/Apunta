@@ -40,6 +40,13 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The eval's own positive control. Fake mode does not measure the model —
+      # it measures whether the scorer can still see a fabrication at all. A
+      # blind harness and a clean model produce the same table, so this step
+      # fails when the canned notes stop tripping F1, F6 and H4.
+      - name: Eval harness self-check
+        run: npm run eval -- --fake --runs 1 > /dev/null
+
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4

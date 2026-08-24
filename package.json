@@ -26,6 +26,7 @@
     "test:watch": "vitest",
     "build": "npm run build:shared && npm run build --workspace @apunta/server && npm run build --workspace @apunta/web",
     "e2e": "npm run e2e --workspace @apunta/e2e",
+    "eval": "npm run build:shared && npm run eval --workspace @apunta/server --",
     "seed": "npm run build:shared && npm run seed --workspace @apunta/server --",
     "smoke:live": "node scripts/smoke-live.mjs"
   },

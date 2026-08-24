@@ -1,0 +1,190 @@
+import { INTAKE_NOTE_INSTRUCTIONS, PROGRESS_NOTE_INSTRUCTIONS } from '../ai/default-instructions.js';
+import { FakeLlmProvider } from '../ai/fake.js';
+import { NUM_CTX, OllamaProvider } from '../ai/ollama.js';
+import type { LlmProvider, LlmStats } from '../ai/types.js';
+import { DEFAULT_OLLAMA_URL } from '../config.js';
+import { denominators, draftSourceFor, loadCorpus, type Fixture } from './corpus.js';
+import { renderReport, type ModelReport } from './report.js';
+import { failedNote, scoreNote, type NoteScore, type RunStats } from './score.js';
+
+/**
+ * The driver: every fixture through a model, N times, scored.
+ *
+ * Sequential on purpose. The point of the run is to measure one model's
+ * behaviour on this hardware, and two concurrent generations on one Metal GPU
+ * measure contention instead.
+ */
+
+/**
+ * How close to `num_ctx` counts as "the prompt filled the window".
+ *
+ * Ollama truncates an over-long prompt **from the head**, dropping the
+ * instructions and keeping the patient material, and answers fluently with no
+ * error. That note is the exact confident fabrication this eval exists to
+ * measure, and it would score as a pass. So a run whose `prompt_eval_count`
+ * lands near the ceiling is treated as a failed run, not as a result
+ * (`docs/research/m3-preflight-2026-08.md`).
+ */
+const CONTEXT_FULL_MARGIN = 64;
+
+export interface RunOptions {
+  readonly models: readonly string[];
+  readonly runs: number;
+  readonly fake: boolean;
+  readonly fixtureFilter?: string | undefined;
+  readonly directory?: string | undefined;
+  readonly ollamaUrl?: string | undefined;
+  readonly onProgress?: (line: string) => void;
+}
+
+export interface RunResult {
+  readonly markdown: string;
+  readonly models: readonly ModelReport[];
+  readonly fixtures: readonly Fixture[];
+}
+
+export function instructionsFor(fixture: Fixture): string {
+  return fixture.format === 'intake' ? INTAKE_NOTE_INSTRUCTIONS : PROGRESS_NOTE_INSTRUCTIONS;
+}
+
+export function formatNameFor(fixture: Fixture): string {
+  return fixture.format === 'intake' ? 'Intake note' : 'Progress note';
+}
+
+export async function runEval(options: RunOptions): Promise<RunResult> {
+  const startedAt = new Date();
+  const started = Date.now();
+
+  const all = loadCorpus(options.directory);
+  const fixtures =
+    options.fixtureFilter === undefined
+      ? all
+      : all.filter((fixture) => fixture.filename.includes(options.fixtureFilter ?? ''));
+  if (fixtures.length === 0) throw new Error(`no fixture matches "${options.fixtureFilter ?? ''}"`);
+
+  const models: ModelReport[] = [];
+
+  for (const model of options.models) {
+    const provider = options.fake
+      ? new FakeLlmProvider({ streamDelayMs: 0 })
+      : new OllamaProvider({
+          baseUrl: options.ollamaUrl ?? DEFAULT_OLLAMA_URL,
+          resolveModel: () => model,
+        });
+
+    const scores: NoteScore[] = [];
+    for (const fixture of fixtures) {
+      for (let run = 1; run <= options.runs; run += 1) {
+        options.onProgress?.(`${model} · ${fixture.filename} · run ${String(run)}`);
+        scores.push(await scoreOneRun(provider, fixture, model, run));
+      }
+    }
+    models.push({ model, runs: options.runs, scores });
+  }
+
+  return {
+    markdown: renderReport({
+      fixtures,
+      denominators: denominators(fixtures),
+      models,
+      fake: options.fake,
+      startedAt,
+      elapsedMs: Date.now() - started,
+    }),
+    models,
+    fixtures,
+  };
+}
+
+async function scoreOneRun(
+  provider: LlmProvider,
+  fixture: Fixture,
+  model: string,
+  run: number,
+): Promise<NoteScore> {
+  const began = Date.now();
+  try {
+    const { sections, stats } = await generateOnce(provider, fixture);
+    return scoreNote(fixture, sections, {
+      model,
+      run,
+      stats: toRunStats(stats, Date.now() - began),
+    });
+  } catch (error) {
+    return failedNote(fixture, model, run, error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function generateOnce(
+  provider: LlmProvider,
+  fixture: Fixture,
+): Promise<{ sections: Record<string, string>; stats: LlmStats }> {
+  const stream = provider.generateNote({
+    instructions: instructionsFor(fixture),
+    sections: fixture.sections,
+    formatName: formatNameFor(fixture),
+    ...draftSourceFor(fixture),
+  });
+
+  for await (const event of stream) {
+    if (event.type === 'sections') return { sections: event.sections, stats: event.stats };
+  }
+  throw new Error('the provider finished without producing a note');
+}
+
+export interface Sensitivity {
+  readonly bannedStrings: number;
+  readonly gatingConclusions: number;
+  readonly filledBlanks: number;
+  readonly cleanFixtures: number;
+  readonly deflects: boolean;
+}
+
+/**
+ * Does the harness actually deflect?
+ *
+ * A clean report and a blind harness produce the same table, and nothing in
+ * that table tells them apart. The eval corpus README calls this out as the
+ * failure most likely to be shipped: "if arm C does not fire, the harness is
+ * blind, and no conclusion about arm B is admissible."
+ *
+ * Fake mode is the hermetic version of that positive control. The fake
+ * provider answers with the prototype's canned sample notes — "Continue weekly
+ * sessions", "No prior therapy. Family history of anxiety", "responding well
+ * to current CBT approach" — which is, by accident and then on purpose,
+ * exactly the material these fixtures are built to catch. So a fake run must
+ * produce F1 hits, gating F6 hits and filled blanks, **and** must leave some
+ * fixtures clean: a scorer that gated everything would also pass a
+ * fires-on-everything check.
+ */
+export function sensitivity(models: readonly ModelReport[]): Sensitivity {
+  const scores = models.flatMap((model) => model.scores);
+  const bannedStrings = scores.filter((score) => score.bannedHits.length > 0).length;
+  const gatingConclusions = scores.filter((score) =>
+    score.gating.includes('F6 unsupported conclusion'),
+  ).length;
+  const filledBlanks = scores
+    .flatMap((score) => score.sections)
+    .filter((section) => section.blankOutcome === 'filled').length;
+  const cleanFixtures = scores.filter((score) => score.gating.length === 0).length;
+
+  return {
+    bannedStrings,
+    gatingConclusions,
+    filledBlanks,
+    cleanFixtures,
+    deflects: bannedStrings > 0 && gatingConclusions > 0 && filledBlanks > 0 && cleanFixtures > 0,
+  };
+}
+
+export function toRunStats(stats: LlmStats, wallMs: number): RunStats {
+  return {
+    promptTokens: stats.promptTokens,
+    outputTokens: stats.outputTokens,
+    evalNanos: stats.evalNanos,
+    doneReason: stats.doneReason,
+    attempts: stats.attempts,
+    wallMs,
+    contextFull: stats.promptTokens >= NUM_CTX - CONTEXT_FULL_MARGIN,
+  };
+}
