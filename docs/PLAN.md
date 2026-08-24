@@ -182,7 +182,7 @@ and receives a full revised sections object back.
 
 ## 4. API surface (all under `/api`)
 
-- `GET /api/health` → `{ ok, ollama: {reachable, model, modelPresent}, whisper: {binaryPresent, modelPresent, binary, model} }` — no `ffmpeg` key: the app does not use it (M5)
+- `GET /api/health` → `{ ok, ollama: {reachable, model, modelPresent}, whisper: {binaryPresent, modelPresent, binary, model}, fileVault: {state, detail} }` — no `ffmpeg` key: the app does not use it (M5). `fileVault` is `fdesetup status` on darwin, cached, `not_applicable` elsewhere (M7)
 - `GET|POST /api/patients`, `GET|PATCH|DELETE /api/patients/:id`
 - `GET /api/patients/:id/notes`, `POST /api/notes`, `GET|PATCH|DELETE /api/notes/:id`
 - `POST /api/notes/:id/publish`, `POST /api/notes/:id/unpublish`
@@ -209,6 +209,11 @@ and receives a full revised sections object back.
 - `POST /api/patients/:id/prep` → SSE briefing, persisted only via
   `POST /api/patients/:id/prep/save`; `GET /api/patients/:id/prep` lists the
   briefings she kept
+- `GET /api/backup` (destination, last result, archives, what the practice
+  holds), `POST /api/backup` (write one now; optional `directory` and
+  `passphrase`), `POST /api/backup/restore` (**stages** a restore, applied at
+  the next start), `DELETE /api/backup/restore` (cancel it),
+  `POST /api/backup/verified` (she tried a hand restore and it worked) — M7
 
 Request/response shapes are zod schemas in `shared/`, used for server
 validation, client types, and (for LLM outputs) JSON-schema generation.
@@ -271,7 +276,7 @@ interface SttProvider {
 | API integration | Vitest + fastify.inject | every endpoint against real SQLite (temp dir) + fake providers; egress guard; published-lock semantics | yes |
 | E2E | Playwright (Chromium) | full user flows in fake-AI mode: first-run → format onboarding → add patient → typed note → draft → refine → publish → copy; audio flow via Chromium fake mic (`--use-fake-device-for-media-capture`, `--use-file-for-fake-audio-capture` with a checked-in WAV) | yes |
 | Live smoke | script (`npm run smoke:live`) | real Ollama + whisper on the dev Mac: transcribe fixture WAV, draft a note, assert schema-valid + all sections present | manual |
-| Quality eval | script (`npm run eval`) | M7: N fixture transcripts through the real model; structural fidelity checks (all sections, no empty sections, no fabricated quotes) per candidate model | manual |
+| Quality eval | script (`npm run eval`) | 20 fixture transcripts x N runs through the real model, scored against `e2e/fixtures/eval/rubric.md`. The report leads with **fabrication rate**; a blank section is correct output, not an empty-section failure | manual (`-- --fake` in CI, as the scorer's own positive control) |
 
 CI is GitHub Actions on ubuntu-latest (fake providers make Linux fine):
 lint → typecheck → unit+integration → build → Playwright. All must pass

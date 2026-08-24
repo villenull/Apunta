@@ -28,7 +28,14 @@ Work packets: `docs/agents/`.
   database (`npm run seed -- --reset` replaces existing content)
 - `npm run lint` / `npm run typecheck` / `npm test` — must all pass
 - `npm run e2e` — Playwright (builds first, runs server in fake mode)
+- `npm run eval` — model-quality harness over `e2e/fixtures/eval/`; the report
+  leads with fabrication rate. `-- --fake` is the CI self-check (it passes when
+  the scorer *deflects* on the canned notes, not when everything is clean)
 - `npm run smoke:live` — manual, needs real Ollama + whisper installed
+- `bash scripts/setup-macos.sh` — installs the local AI stack (macOS only,
+  `--dry-run` works anywhere); `scripts/preflight-macos.sh` is its read-only
+  counterpart. Neither has ever run on a Mac —
+  see `docs/MANUAL-VERIFICATION.md`
 
 ## Conventions
 
