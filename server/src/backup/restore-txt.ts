@@ -27,6 +27,13 @@ export interface RestoreTextInput {
   readonly dataDir: string;
   /** Present only for an encrypted archive. */
   readonly encrypted: boolean;
+  /** Whether the archive actually has a `plans/` folder to describe. */
+  readonly hasPlans?: boolean;
+}
+
+/** "1 note", "3 notes". A file that says "1 notes" reads as unmaintained. */
+function count(value: number, singular: string, plural = `${singular}s`): string {
+  return `${String(value)} ${value === 1 ? singular : plural}`;
 }
 
 export function renderRestoreText(input: RestoreTextInput): string {
@@ -40,7 +47,7 @@ export function renderRestoreText(input: RestoreTextInput): string {
     '==========================',
     '',
     `This is an Apunta backup made on ${generated}.`,
-    `It holds ${String(notes)} notes for ${String(patients)} patients.`,
+    `It holds ${count(notes, 'note')} for ${count(patients, 'patient')}.`,
     '',
     'There are three ways to use it. Try them in order — the first is the',
     'easiest, the last one works even if Apunta no longer exists.',
@@ -103,9 +110,13 @@ export function renderRestoreText(input: RestoreTextInput): string {
     'Word, or anything else, today and in twenty years. Nothing is needed to',
     'read them.',
     '',
-    'The "plans" folder holds each treatment plan version the same way, one',
-    'document per version, exactly as it would have been printed.',
-    '',
+    ...(input.hasPlans === true
+      ? [
+          'The "plans" folder holds each treatment plan version the same way, one',
+          'document per version, exactly as it would have been printed.',
+          '',
+        ]
+      : []),
     `"${DATA_JSON_FILENAME}" holds the same information in a form a programmer can`,
     'load, for the case where the notes need to go into a different system.',
     '',
@@ -114,7 +125,7 @@ export function renderRestoreText(input: RestoreTextInput): string {
     '',
     `  ${DB_ENTRY_NAME}        the notes as Apunta stores them — this is what gets restored`,
     '  notes/           one plain text file per note',
-    '  plans/           one document per treatment plan version',
+    ...(input.hasPlans === true ? ['  plans/           one document per treatment plan version'] : []),
     `  ${DATA_JSON_FILENAME}        everything again, as structured data`,
     `  ${MANIFEST_FILENAME}    what this backup is, and the checks that passed`,
     '  RESTORE.txt      this file',

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -371,5 +372,67 @@ describe('runBackup', () => {
     } finally {
       rmSync(join(home, 'Documents', 'Apunta backups'), { recursive: true, force: true });
     }
+  });
+});
+
+/**
+ * The claim `RESTORE.txt` makes about itself.
+ *
+ * An encrypted archive is only defensible because it can be opened without
+ * Apunta, and that promise is a ~20-line script printed inside the file. A
+ * script that is *described* and does not run is worse than no encryption: it
+ * turns "I can always get this back" into a belief nobody tested.
+ *
+ * So this extracts the script from the archive exactly as a person would —
+ * copy the text between the dashed lines, save it as `decrypt.mjs`, run it —
+ * and checks the zip it writes really is the backup.
+ */
+describe('the decrypt script printed inside RESTORE.txt', () => {
+  it('opens an encrypted archive with nothing but Node', () => {
+    const passphrase = 'the passphrase from her password manager';
+    const created = createBackup({
+      db,
+      dataDir,
+      directory: join(dataDir, 'backups'),
+      appVersion: '0',
+      passphrase,
+    });
+
+    const restoreText = strFromU8(entries(created.path)[RESTORE_FILENAME] ?? new Uint8Array());
+    const start = restoreText.indexOf('\n', restoreText.indexOf('--- decrypt.mjs')) + 1;
+    const end = restoreText.indexOf('--- end of decrypt.mjs ---');
+    const script = restoreText.slice(start, end);
+    expect(script).toContain('createDecipheriv');
+
+    const work = mkdtempSync(join(tmpdir(), 'apunta-decrypt-'));
+    try {
+      const scriptPath = join(work, 'decrypt.mjs');
+      writeFileSync(scriptPath, script);
+      execFileSync('node', [scriptPath, created.path, passphrase], { cwd: work, stdio: 'pipe' });
+
+      const recovered = join(work, 'apunta-backup-decrypted.zip');
+      expect(existsSync(recovered)).toBe(true);
+
+      const inner = unzipSync(readFileSync(recovered));
+      expect(Object.keys(inner)).toContain(DB_ENTRY_NAME);
+      expect(Object.keys(inner)).toContain(MANIFEST_FILENAME);
+      const manifest = JSON.parse(strFromU8(inner[MANIFEST_FILENAME] ?? new Uint8Array())) as {
+        db_sha256: string;
+      };
+      expect(manifest.db_sha256).toBe(created.manifest.db_sha256);
+    } finally {
+      rmSync(work, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  it('describes a plans folder only when the archive has one', () => {
+    const created = createBackup({ db, dataDir, directory: join(dataDir, 'backups'), appVersion: '0' });
+    const text = strFromU8(entries(created.path)[RESTORE_FILENAME] ?? new Uint8Array());
+
+    // The seeded practice has no plan versions, so nothing should promise one.
+    expect(Object.keys(entries(created.path)).some((name) => name.startsWith('plans/'))).toBe(false);
+    expect(text).not.toContain('The "plans" folder');
+    // And the counts read as English rather than as a template.
+    expect(text).toContain('4 notes for 3 patients');
   });
 });

@@ -129,7 +129,7 @@ What is **not** tested is any of it on a real practice on a real disk.
 | `shasum -a 256 apunta.db` matches the fingerprint in `manifest.json` | ☐ | |
 | Choosing `~/Documents` as the destination shows the iCloud warning | ☐ | Depends on §1 items 2 and 3 |
 | An encrypted backup opens with the passphrase | ☐ | |
-| **The standalone `decrypt.mjs` in RESTORE.txt actually decrypts it** | ☐ | Copy the script out of RESTORE.txt, run `node decrypt.mjs <backup>.zip "<passphrase>"`. Written and unit-tested against the same crypto, never run as a standalone file |
+| The standalone `decrypt.mjs` in RESTORE.txt decrypts it on **this** Mac | ☐ | Already verified in the test suite: the script is extracted from a real archive, written to a file, and run — it produces a zip whose manifest fingerprint matches. What is unconfirmed is only that macOS's `unzip` and Node behave the same way. `node decrypt.mjs <backup>.zip "<passphrase>"` |
 | The daily automatic backup happens on the first launch of a day | ☐ | Settings shows the time |
 
 **Then do the restore by hand, once, on a spare copy.** Follow RESTORE.txt

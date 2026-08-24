@@ -108,10 +108,14 @@ export function createBackup(options: CreateBackupOptions): CreatedBackup {
       encrypted: options.passphrase !== undefined,
     };
 
+    const plans = planEntries(options.db);
     const restoreText = renderRestoreText({
       manifest,
       dataDir: options.dataDir,
       encrypted: manifest.encrypted,
+      // Described only when it is there. A file that promises a folder the zip
+      // does not contain is a file nobody trusts the rest of.
+      hasPlans: plans.length > 0,
     });
 
     const body: Record<string, Uint8Array> = {
@@ -119,7 +123,7 @@ export function createBackup(options: CreateBackupOptions): CreatedBackup {
       [DATA_JSON_FILENAME]: strToU8(JSON.stringify(dumpDatabase(options.db, level, now), null, 2)),
       [MANIFEST_FILENAME]: strToU8(JSON.stringify(manifest, null, 2)),
     };
-    for (const entry of [...noteEntries(options.db), ...planEntries(options.db)]) {
+    for (const entry of [...noteEntries(options.db), ...plans]) {
       body[entry.path] = strToU8(entry.text);
     }
 
