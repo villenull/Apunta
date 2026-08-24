@@ -33,6 +33,51 @@ that stops before the macOS-only steps). Final acceptance is a **manual run
 on the owner's Mac**, and the packet ships with a checklist for that run. Say
 clearly in your report which criteria are verified and which await the Mac.
 
+## Correction: the runtime swap is not this packet
+
+This packet was written asserting that the app "already talks to an
+OpenAI-compatible API", so swapping Ollama for `llama-server` would be
+repackaging. **That is false**, and it is worth knowing where it came from:
+`docs/decisions.md` row 26 says the app "only ever speaks the OpenAI-compatible
+API, so the runtime is swappable", while row 22 — four rows above it — records
+the opposite as a deliberate M3 decision. The packet inherited the wrong half.
+
+What the app actually speaks is Ollama's native API: `/api/chat`, `/api/tags`
+and `/api/show`. `/v1/chat/completions` was rejected on evidence (it stranded
+the answer in `reasoning` on the targeted models, ollama#15288), and
+`/api/generate` too (`ChatHandler` is the only endpoint with thinking-aware
+`format` handling, ollama#17544, open).
+
+So a `llama-server` swap is **a provider rewrite the size of M3**, not a
+packaging choice: SSE instead of NDJSON, different stats, errors, health and
+model-naming, `num_ctx` becomes a launch flag, and the retry ladder's third
+rung has no analogue. Doing it inside M8 would also make the therapist the
+sole user of an untested provider, since the packet keeps Ollama for
+developers.
+
+**It belongs in its own packet, replacing the Ollama provider rather than
+adding a second one** — see `docs/research/m8-shell-and-runtime-2026-08.md`.
+The research makes a genuinely strong case for doing it eventually: unlike
+Ollama, `llama-server` returns a typed HTTP 400 `exceed_context_size_error`
+with `n_prompt_tokens`/`n_ctx` instead of silently truncating the prompt from
+the head, and that single silent failure is what five separate design
+compromises in this codebase exist to work around. But not here.
+
+**M8 bundles whatever the app speaks when M8 runs.**
+
+One thing that must survive any future migration: llama.cpp's server documents
+a `response_format` shape its own parser reads as an empty schema — no grammar,
+HTTP 200, unconstrained prose. Apunta re-validates every model response against
+its zod schema regardless of what the runtime claims to enforce. That
+discipline is what makes both runtimes safe. Do not remove it.
+
+## Read before you start
+
+`docs/research/m8-shell-and-runtime-2026-08.md` — the research behind every
+correction above, with its findings tagged `[verified]` / `[single]` /
+`[inferred]` and a list of what it could not reach. Treat `[inferred]` items as
+things to confirm on the Mac, not as settled fact.
+
 ## Deliverables
 
 ### 1. Zero external dependencies in the shipped app
@@ -40,15 +85,22 @@ clearly in your report which criteria are verified and which await the Mac.
 The packaged app must not require Homebrew, Node, Ollama, or anything else
 preinstalled. Bundle inside the app:
 
-- **`llama-server`** (llama.cpp, MIT) as the LLM runtime instead of Ollama.
-  The app already talks to an OpenAI-compatible API and PLAN §2 requires
-  llama.cpp to work, so this validates that portability rather than
-  contradicting it. Ollama stays the documented choice for developer setup.
-- **`whisper-cli`** (whisper.cpp, MIT) for transcription.
-- **`ffmpeg`** for audio conversion — use an LGPL build and check what its
-  license obliges you to ship (see deliverable 6).
-- **The Node runtime**, or a single compiled server binary (Node SEA), so
-  the server runs with nothing installed.
+- **The LLM runtime the app actually speaks when M8 runs.** Today that is
+  **Ollama**, not `llama-server` — see *Correction: the runtime swap is not
+  this packet* below. Bundle whichever one the provider talks to at the time;
+  do not port the provider here.
+- **`whisper-cli`** (whisper.cpp, MIT) for transcription. Build it **without**
+  `WHISPER_COMMON_FFMPEG` so the ffmpeg dependency cannot creep back in
+  through the build flags.
+- **The Node runtime as a bundled stock binary** — *not* Node SEA. SEA is
+  still stability 1.1, native addons need a temp-file `process.dlopen()`, and
+  `__filename === process.execPath` breaks path assumptions. `better-sqlite3`
+  is a native module and it is where this fails.
+
+ffmpeg is **not** bundled. Nothing in the app has invoked it since M5: the
+browser records 16 kHz mono WAV and `whisper-cli` decodes through miniaudio.
+There is a test named `never mentions ffmpeg`. The LGPL obligation this packet
+was written to satisfy has been deleted rather than met.
 
 All binaries must be arm64 (Apple Silicon) at minimum. State plainly whether
 you are also shipping x86_64 or a universal binary, and why.
@@ -62,12 +114,23 @@ browser tab — do not turn this into a webview app.
 A **menu-bar (status item) app** is the intended shape: the icon shows
 running state, and its menu offers Open Apunta, Stop, and Quit.
 
-Choose the shell technology yourself and record the choice with reasoning in
-`docs/decisions.md`. Tauri v2 is the recommended starting point (small
-bundles, first-class signing/notarization tooling, tray support); Electron is
-the fallback if staying entirely in TypeScript matters more than download
-size. Whichever you pick, justify it against bundle size, toolchain cost, and
-maintenance burden.
+**Recommended shape: a plain Swift/AppKit status-item app** — neither Tauri nor
+Electron. `swiftc` ships in the Command Line Tools the build already needs to
+compile `whisper-cli`, nothing in AppKit phones home, and single-instance is
+free for a bundled `.app`. Tauri is the fallback (a Rust toolchain is a real
+tax on a TypeScript codebase, and tauri#11992 is still open after 20 months);
+Electron is the wrong shape for a status item that opens a browser tab.
+
+This is only viable because **the first-run logic moves out of the shell** —
+see deliverable 3. What is left for the shell is a status item, one child
+process, a progress window and `open`. If you deviate, record the choice with
+reasoning in `docs/decisions.md` and justify it against bundle size, toolchain
+cost, and maintenance burden.
+
+**The shell spawns exactly one child: `node`.** The server owns the model
+processes. That collapses the no-orphans requirement below to a single kill
+rather than process-tree bookkeeping — do not let the shell spawn model
+binaries directly.
 
 Behavior:
 
@@ -90,6 +153,18 @@ window that:
    which model it chose and why.
 4. On success, launches straight into the app.
 
+**Write the logic in TypeScript, run by the bundled `node`; the native window
+is a thin view over it.** Disk-space math, RAM tier selection, checksum
+verification and download-resume bookkeeping all belong there. This is not a
+style preference: the acceptance criteria below require that logic to be
+unit-tested without macOS, and neither Swift nor Rust runs in this project's
+Linux CI. Logic written in the shell language is logic that cannot be tested
+until it reaches her Mac.
+
+Reuse `modelForMemory()` from `server/src/ai/model-picker.ts` rather than
+reimplementing the tier table — M7's setup script picks the model from that
+same table, and two implementations will drift.
+
 Failure handling is the point of this deliverable. Network loss mid-download,
 a corrupted file, a full disk, and a download the user cancels must all
 produce a plain-language explanation and a working Retry — never a stack
@@ -102,14 +177,26 @@ trace, never an instruction to use Terminal.
 - The installer itself stays small (roughly ~100MB): models download on
   first run rather than being bundled, which also keeps model licensing at
   arm's length since we never redistribute weights.
-- **Code signing and notarization**: unsigned apps are blocked by Gatekeeper
-  with a scary dialog, which defeats this packet's entire purpose. Signing
-  requires an Apple Developer Program membership ($99/year) that the owner
-  must decide on. Build the signing and notarization steps into the script,
-  driven by environment variables, so they run when credentials exist and are
-  skipped with a clear warning when they do not. Document both paths,
-  including the right-click→Open workaround for the unsigned case and why it
-  is a poor substitute.
+- **Code signing and notarization are deferred** (owner decision, 2026-08-24).
+  He will walk her through the first install himself, so the unsigned path is
+  acceptable for now and the Apple Developer Program membership ($99/year) is
+  a later decision. Still build the signing and notarization steps into the
+  script, driven by environment variables, so they run when credentials exist
+  and are skipped with a clear warning when they do not.
+
+  Two things the deferral does **not** excuse:
+
+  - **Ad-hoc sign every bundled Mach-O at build time** (`codesign -s -`), even
+    unsigned-for-distribution. On Apple Silicon an unsigned arm64 helper may
+    refuse to execute at all, so `node`, the LLM runtime and `whisper-cli` can
+    fail at spawn *after* Gatekeeper has been cleared — the app opens and does
+    nothing, which is the worst failure shape available. It costs nothing and
+    is the correct first step of the signed flow later.
+  - **Right-click → Open no longer works.** Apple removed that bypass in macOS
+    Sequoia; the path is now System Settings → Privacy & Security → Open
+    Anyway. `INSTALL.md` must describe what she will actually see. **Verify
+    this on her Mac before it ships in user-facing copy** — wrong instructions
+    here dead-end exactly the person this packet exists for.
 
 ### 5. No auto-update, no telemetry
 
@@ -122,11 +209,22 @@ shell framework's built-in updater.
 ### 6. Licenses and attribution
 
 Shipping other people's binaries carries obligations. Produce
-`THIRD-PARTY-LICENSES.md` covering every bundled binary and library, and
-verify what the ffmpeg build you chose requires — LGPL builds have conditions
-around linking and source availability that must actually be satisfied, not
-waved at. If a bundled component's license cannot be cleanly satisfied,
-report that rather than shipping it; do not treat this as a formality.
+`THIRD-PARTY-LICENSES.md` covering every bundled binary and library. The
+ffmpeg/LGPL question this section was written for is **gone** — nothing bundles
+ffmpeg any more. What replaces it (research §6.1), all easy to miss:
+
+- **BoringSSL's mixed notices** inside the Node binary.
+- **Node's own dependency licence file** (~157 KB) reproduced verbatim.
+- **miniaudio and stb_vorbis**, which now matter *more* than before: they are
+  what decodes audio inside `whisper-cli` since ffmpeg left.
+
+Model weights stay at arm's length because they are downloaded on first run
+and never redistributed — but that reasoning holds only under three
+conditions: name and link the model's licence **before** downloading it, pin
+the download host allow-list, and never mirror weights ourselves.
+
+If a bundled component's license cannot be cleanly satisfied, report that
+rather than shipping it; do not treat this as a formality.
 
 Surface the licenses in the app's About page alongside the existing privacy
 statement.
@@ -159,7 +257,9 @@ Verifiable here:
 - The packaging script fails loudly and clearly when run on a non-Mac rather
   than producing a broken artifact.
 
-Requires the owner's Mac (ship as a manual checklist in the PR description):
+Requires the owner's Mac (ship as a manual checklist in `docs/INSTALL.md` or a
+sibling doc — this project has one branch and no PRs, so there is no PR
+description to put it in):
 
 - `npm run package:mac` produces a `.dmg`.
 - On a Mac that has never had Homebrew, Node, or Ollama: install from the
