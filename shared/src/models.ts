@@ -14,7 +14,13 @@
  */
 
 export const LARGE_MODEL = 'qwen3.6:35b-a3b';
-/** The default on the target Mac. */
+/**
+ * The middle tier. **Not** what the owner's Mac runs: that is an 8 GB M2, which
+ * lands on `SMALL_MODEL` and will keep doing so — the machine is not being
+ * replaced. Metal caps usable GPU memory near 75% of unified RAM, so a 12B at
+ * Q4 (~7 GB) does not fit in ~6 GB usable and the tier boundary is physics
+ * rather than preference.
+ */
 export const DEFAULT_MODEL = 'gemma4:12b-it-qat';
 export const SMALL_MODEL = 'qwen3.5:4b-q4_K_M';
 

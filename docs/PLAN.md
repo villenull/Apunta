@@ -97,7 +97,7 @@ neighbouring-tag list, and a pre-ship verification script:
 | RAM | Literal Ollama tag | Size | Notes |
 | --- | --- | --- | --- |
 | ≥ 36GB | `qwen3.6:35b-a3b` | 24GB | best quality, 256K ctx |
-| 16–35GB | `gemma4:12b-it-qat` | 7.2GB | **the default on the target Mac** |
+| 16–35GB | `gemma4:12b-it-qat` | 7.2GB | the middle tier — *not* the owner's machine |
 | < 16GB | `qwen3.5:4b-q4_K_M` | 3.4GB | small-model fallback |
 
 > ⚠️ **Never use an `-mlx` (or `-nvfp4`) tag.** Ollama's MLX engine *silently
