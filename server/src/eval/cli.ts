@@ -1,6 +1,8 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { basename } from 'node:path';
 
 import { installEgressGuard } from '../egress-guard.js';
+import { approximateTokens } from '../ai/prompts.js';
 import { defaultModelForMachine } from '../ai/model-picker.js';
 import { runEval, sensitivity } from './run.js';
 
@@ -25,11 +27,14 @@ interface Args {
   models: string[];
   fixture?: string | undefined;
   out?: string | undefined;
+  /** file paths by format, from --instructions */
+  instructionFiles: Partial<Record<'progress' | 'intake', string>>;
 }
 
 function parseArgs(argv: readonly string[]): Args {
   const args: Args = {
     fake: process.env['APUNTA_FAKE_AI'] === '1',
+    instructionFiles: {},
     runs: 3,
     models: (process.env['APUNTA_EVAL_MODELS'] ?? '')
       .split(',')
@@ -55,6 +60,19 @@ function parseArgs(argv: readonly string[]): Args {
           .filter((m) => m !== '');
         index += 1;
         break;
+      case '--instructions': {
+        // `--instructions her.txt` (progress) or `--instructions intake=her.txt`.
+        const eq = (value ?? '').indexOf('=');
+        const format = eq === -1 ? 'progress' : (value ?? '').slice(0, eq);
+        const file = eq === -1 ? (value ?? '') : (value ?? '').slice(eq + 1);
+        if ((format !== 'progress' && format !== 'intake') || file === '') {
+          console.error('--instructions takes FILE or progress=FILE or intake=FILE');
+          process.exit(2);
+        }
+        args.instructionFiles[format] = file;
+        index += 1;
+        break;
+      }
       case '--fixture':
         args.fixture = value;
         index += 1;
@@ -98,6 +116,11 @@ function printUsage(): void {
       '  --runs N           runs per fixture per model (default 3)',
       '  --models a,b       compare models; same as APUNTA_EVAL_MODELS=a,b',
       '  --fixture 07       only fixtures whose filename contains this',
+      '  --instructions F   drafting instructions to measure instead of the built-in',
+      '                     defaults — the file replaces them entirely, exactly as a',
+      "                     format's Instructions field does in the app. FILE applies",
+      '                     to progress notes; intake=FILE to intakes. The report',
+      '                     header names the file so the run cannot pass as a baseline.',
       '  --out FILE         also write the markdown report here',
       '',
       'Note the `--`. Without it npm swallows the flags and you get the defaults',
@@ -116,10 +139,40 @@ async function main(): Promise<void> {
     console.error('Running against the fake provider. This proves the harness, not the model.\n');
   }
 
+  const loaded: { progress?: string; intake?: string } = {};
+  const noteParts: string[] = [];
+  for (const [format, file] of Object.entries(args.instructionFiles) as ['progress' | 'intake', string][]) {
+    let text = '';
+    try {
+      text = readFileSync(file, 'utf8').trim();
+    } catch (error) {
+      console.error(
+        `--instructions: could not read ${file}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      process.exit(2);
+    }
+    if (text === '') {
+      // Blank would silently fall back to the defaults — the one outcome that
+      // looks like a custom run and isn't.
+      console.error(`--instructions: ${file} is empty`);
+      process.exit(2);
+    }
+    const tokens = approximateTokens(text);
+    if (tokens > 4000) {
+      console.error(
+        `warning: ${file} is ~${String(tokens)} tokens. Instructions share the 16K context
+` + 'with the transcript; a very long block crowds out the material it governs.',
+      );
+    }
+    loaded[format] = text;
+    noteParts.push(`${format}: ${basename(file)} (~${String(tokens)} tokens)`);
+  }
+
   const result = await runEval({
     models,
     runs: args.runs,
     fake: args.fake,
+    ...(noteParts.length === 0 ? {} : { instructions: loaded, instructionsNote: noteParts.join(' · ') }),
     ...(args.fixture === undefined ? {} : { fixtureFilter: args.fixture }),
     onProgress: (line) => {
       // stderr, so `npm run eval > report.md` gets only the report.

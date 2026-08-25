@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { assertFixture, denominators, draftSourceFor, loadCorpus, type Fixture } from './corpus.js';
 import { loadLexicon, stem } from './lexicon.js';
 import { f6Core, h1Narrated, h1Placeholder } from './patterns.js';
-import { runEval, sensitivity } from './run.js';
+import { instructionsFor, runEval, sensitivity } from './run.js';
 import { scoreNote } from './score.js';
 
 const corpus = loadCorpus();
@@ -19,6 +19,25 @@ function fixture(prefix: string): Fixture {
 function sectionsOf(target: Fixture, bodies: Record<string, string>): Sections {
   return Object.fromEntries(target.sections.map((name) => [name, bodies[name] ?? ''])) as Sections;
 }
+
+describe('instructionsFor with an owner override', () => {
+  const progress = { name: '01', format: 'progress', sections: [], transcript: 't' } as unknown as Fixture;
+  const intake = { name: '02', format: 'intake', sections: [], transcript: 't' } as unknown as Fixture;
+
+  it('replaces the default entirely, exactly as note_formats.instructions does', () => {
+    expect(instructionsFor(progress, { progress: 'Write as she does.' })).toBe('Write as she does.');
+  });
+
+  it('routes by format, so an intake override never leaks into a progress note', () => {
+    const out = instructionsFor(progress, { intake: 'Intake only.' });
+    expect(out).not.toContain('Intake only.');
+    expect(instructionsFor(intake, { intake: 'Intake only.' })).toBe('Intake only.');
+  });
+
+  it('treats blank as absent — the silent-fallback case the CLI refuses earlier', () => {
+    expect(instructionsFor(progress, { progress: '   ' })).toBe(instructionsFor(progress));
+  });
+});
 
 describe('the corpus', () => {
   it('is twenty fixtures with matching expectations', () => {

@@ -26,6 +26,8 @@ export interface ReportInput {
   readonly denominators: Denominators;
   readonly models: readonly ModelReport[];
   readonly fake: boolean;
+  /** Set when owner-supplied instructions replaced the defaults. */
+  readonly instructionsNote?: string | undefined;
   readonly startedAt: Date;
   readonly elapsedMs: number;
 }
@@ -39,6 +41,15 @@ export function renderReport(input: ReportInput): string {
       `${(input.elapsedMs / 1000).toFixed(1)}s`,
     '',
   ];
+
+  if (input.instructionsNote !== undefined) {
+    lines.push(
+      '> **Custom instructions.** ' + input.instructionsNote,
+      '> A number here is about *this* configuration; it is not comparable to a',
+      '> default-instructions baseline without saying so.',
+      '',
+    );
+  }
 
   if (input.fake) {
     lines.push(

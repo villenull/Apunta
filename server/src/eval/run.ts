@@ -32,6 +32,10 @@ export interface RunOptions {
   readonly runs: number;
   readonly fake: boolean;
   readonly fixtureFilter?: string | undefined;
+  /** Owner-supplied drafting instructions to measure in place of the defaults. */
+  readonly instructions?: InstructionsOverride | undefined;
+  /** One line for the report header saying what `instructions` was. */
+  readonly instructionsNote?: string | undefined;
   readonly directory?: string | undefined;
   readonly ollamaUrl?: string | undefined;
   readonly onProgress?: (line: string) => void;
@@ -43,7 +47,24 @@ export interface RunResult {
   readonly fixtures: readonly Fixture[];
 }
 
-export function instructionsFor(fixture: Fixture): string {
+/**
+ * Per-format instruction overrides — the owner's own drafting instructions,
+ * measured instead of assumed.
+ *
+ * Same semantics as `ai/default-instructions.ts` `instructionsFor`, which is
+ * what production applies to `note_formats.instructions`: a non-empty override
+ * replaces the default *entirely*; blank means the default. The eval must
+ * measure exactly the configuration that ships, or its number is about some
+ * third thing that nobody runs.
+ */
+export interface InstructionsOverride {
+  readonly progress?: string | undefined;
+  readonly intake?: string | undefined;
+}
+
+export function instructionsFor(fixture: Fixture, override?: InstructionsOverride): string {
+  const custom = fixture.format === 'intake' ? override?.intake : override?.progress;
+  if (custom !== undefined && custom.trim() !== '') return custom.trim();
   return fixture.format === 'intake' ? INTAKE_NOTE_INSTRUCTIONS : PROGRESS_NOTE_INSTRUCTIONS;
 }
 
@@ -76,7 +97,7 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
     for (const fixture of fixtures) {
       for (let run = 1; run <= options.runs; run += 1) {
         options.onProgress?.(`${model} · ${fixture.filename} · run ${String(run)}`);
-        scores.push(await scoreOneRun(provider, fixture, model, run));
+        scores.push(await scoreOneRun(provider, fixture, model, run, options.instructions));
       }
     }
     models.push({ model, runs: options.runs, scores });
@@ -88,6 +109,7 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
       denominators: denominators(fixtures),
       models,
       fake: options.fake,
+      instructionsNote: options.instructionsNote,
       startedAt,
       elapsedMs: Date.now() - started,
     }),
@@ -101,10 +123,11 @@ async function scoreOneRun(
   fixture: Fixture,
   model: string,
   run: number,
+  override?: InstructionsOverride,
 ): Promise<NoteScore> {
   const began = Date.now();
   try {
-    const { sections, stats } = await generateOnce(provider, fixture);
+    const { sections, stats } = await generateOnce(provider, fixture, override);
     return scoreNote(fixture, sections, {
       model,
       run,
@@ -118,9 +141,10 @@ async function scoreOneRun(
 async function generateOnce(
   provider: LlmProvider,
   fixture: Fixture,
+  override?: InstructionsOverride,
 ): Promise<{ sections: Record<string, string>; stats: LlmStats }> {
   const stream = provider.generateNote({
-    instructions: instructionsFor(fixture),
+    instructions: instructionsFor(fixture, override),
     sections: fixture.sections,
     formatName: formatNameFor(fixture),
     ...draftSourceFor(fixture),
