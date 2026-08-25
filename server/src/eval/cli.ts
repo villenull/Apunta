@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, isAbsolute, resolve } from 'node:path';
 
 import { installEgressGuard } from '../egress-guard.js';
 import { approximateTokens } from '../ai/prompts.js';
@@ -142,9 +142,12 @@ async function main(): Promise<void> {
   const loaded: { progress?: string; intake?: string } = {};
   const noteParts: string[] = [];
   for (const [format, file] of Object.entries(args.instructionFiles) as ['progress' | 'intake', string][]) {
+    // npm runs this script inside server/, but the person typing the command
+    // is standing at the repo root. INIT_CWD is where they actually were.
+    const path = isAbsolute(file) ? file : resolve(process.env['INIT_CWD'] ?? process.cwd(), file);
     let text = '';
     try {
-      text = readFileSync(file, 'utf8').trim();
+      text = readFileSync(path, 'utf8').trim();
     } catch (error) {
       console.error(
         `--instructions: could not read ${file}: ${error instanceof Error ? error.message : String(error)}`,
