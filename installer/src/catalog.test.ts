@@ -99,11 +99,12 @@ describe('the speech model entry', () => {
     expect(SPEECH_MODEL.url).toContain(SPEECH_MODEL.filename);
   });
 
-  it('pins the published SHA-1, and admits the SHA-256 is not ours yet', () => {
+  it('pins the published SHA-1 and our own SHA-256', () => {
     expect(SPEECH_MODEL.sha1).toMatch(/^[0-9a-f]{40}$/);
-    // Upstream publishes SHA-1 only. `docs/MANUAL-VERIFICATION.md` carries the
-    // row that computes a SHA-256 on the Mac and pins it here.
-    expect(SPEECH_MODEL.sha256).toBeNull();
+    // Upstream publishes SHA-1 only. The SHA-256 is Apunta's own, computed in
+    // M10 after the SHA-1 matched, and the exact value is asserted so a
+    // regenerated catalog cannot quietly swap the file it certifies.
+    expect(SPEECH_MODEL.sha256).toBe('394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2');
   });
 });
 

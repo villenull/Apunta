@@ -78,8 +78,8 @@ export interface SpeechModelEntry {
    */
   readonly sha1: string;
   /**
-   * Apunta's own SHA-256, computed on the owner's Mac after the SHA-1 above
-   * matched, and pinned here afterwards. Null until that happens; the
+   * Apunta's own SHA-256, computed after the SHA-1 above matched, and pinned
+   * here afterwards (M10, on the partner's Linux machine, 2026-08-26). The
    * downloader verifies whatever is present and says which hash it used.
    */
   readonly sha256: string | null;
@@ -107,7 +107,7 @@ export const SPEECH_MODEL: SpeechModelEntry = {
   filename: WHISPER_MODEL_FILENAME,
   url: `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER_MODEL_FILENAME}`,
   sha1: 'e050f7970618a659205450ad97eb95a18d69c9ee',
-  sha256: null,
+  sha256: '394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2',
   approxBytes: 547 * MIB,
   licence: {
     name: 'MIT (OpenAI Whisper)',
@@ -156,8 +156,13 @@ export const WRITING_MODELS: Readonly<Record<string, WritingModelEntry>> = {
   [SMALL_MODEL]: {
     tag: SMALL_MODEL,
     publisher: 'Alibaba (the Qwen team)',
-    approxBytes: 3 * GIB,
-    licence: { name: 'Apache-2.0', url: 'https://ollama.com/library/qwen3.5', verified: false },
+    // Measured, not guessed: the registry manifest's config + layer sizes for
+    // this tag summed to 3,389,983,735 bytes on 2026-08-26 (M10). Rounded up
+    // so the disk check keeps a margin.
+    approxBytes: 3.2 * GIB,
+    // The licence blob the tag actually ships was read on the same day: it is
+    // the Apache License 2.0 text (`ollama show qwen3.5:4b-q4_K_M --license`).
+    licence: { name: 'Apache-2.0', url: 'https://ollama.com/library/qwen3.5', verified: true },
   },
 };
 
