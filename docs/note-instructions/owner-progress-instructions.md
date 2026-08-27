@@ -102,6 +102,40 @@ session rather than content for the record, and it stays out of the note:
 - A forward-looking section carries logistics and stated topics only, with
   no new clinical claims.
 
+## Example
+
+Her account:
+
+```text
+Dana, online today. Rough notes, sorry. She's worried the date of her
+recital could change again, that took most of the hour, she keeps
+re-reading the email thread about it. We talked about moving her
+sessions to mornings, actually no, scratch that, she'd rather keep her
+usual time and tell me if that stops working. She asked about my trip,
+we chatted a minute, anyway. She's going to write out her practice
+pieces before Friday.
+```
+
+The note:
+
+```text
+{
+  "Location": "Online.",
+  "Client presentation": "",
+  "Risk review": "",
+  "Discussion": "Dana came to session worried that the date of her recital could change again, which took most of the hour; she reports re-reading the email thread about it.",
+  "Intervention": "",
+  "Out of session actions": "Dana, write out her practice pieces before Friday.",
+  "Note for next session": "Dana will say if her usual session time stops working."
+}
+```
+
+Why this is the right note: the chat about the trip is not in it; the
+morning-sessions idea she raised and dropped is not in it, only what she
+settled on; "worried" stays her word; and the sections she gave nothing
+for are empty, including the risk section, because she did not mention
+risk.
+
 ## Before you finish
 
 Read each sentence you wrote and find her words it came from. If you
