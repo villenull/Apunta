@@ -589,16 +589,16 @@ All of the code and documentation in SQLite has been dedicated to the public
 domain by the authors. All code authors, and representatives of the companies
 they work for, have signed affidavits dedicating their contributions to the
 public domain and originals of those signed affidavits are stored in a firesafe
-at the main offices of Hwaci. Anyone is free to copy, modify, publish, use,
-compile, sell, or distribute the original SQLite code, either in source code
-form or as a compiled binary, for any purpose, commercial or non-commercial,
-and by any means.
+at the main offices of Hwaci. All contributors are citizens of countries that
+allow creative works to be dedicated into the public domain. Anyone is free to
+copy, modify, publish, use, compile, sell, or distribute the original SQLite
+code, either in source code form or as a compiled binary, for any purpose,
+commercial or non-commercial, and by any means.
 ```
 
-*(That text is quoted from prior knowledge of SQLite's copyright page;
-`sqlite.org` was not reachable from the machine this file was assembled on.
-It is the only quotation here that was not read from its source in the same
-session — see the last section.)*
+*(Read from `https://www.sqlite.org/copyright.html` itself on 2026-08-26,
+during M10. The from-memory version this file carried until then was missing
+the "All contributors are citizens…" sentence.)*
 
 ---
 
@@ -3886,20 +3886,18 @@ The externally maintained libraries used by Node.js are:
 # What has not been verified
 
 The rule in this project is that an unread licence is named as unread rather
-than assumed. Four things:
+than assumed. Where an item below has since been settled, it says when and by
+what evidence rather than disappearing:
 
-1. **SQLite's public-domain statement** above is quoted from prior knowledge,
-   not read this session — `sqlite.org` was not reachable from the container
-   this file was assembled in. It is uncontroversial and stable, but it is the
-   one quotation here without a same-session primary source. Confirm at
-   `https://www.sqlite.org/copyright.html`.
-2. **The writing models' terms.** Apunta names each model's publisher and
-   links its library page before downloading, which is what the arm's-length
-   argument needs. Nobody in this project has read the Gemma Terms of Use or
-   confirmed that the Qwen tiers are Apache-2.0 — `ai.google.dev` and
-   `huggingface.co` were both unreachable. `docs/MANUAL-VERIFICATION.md`
-   carries the row. The tags themselves have never been checked against a live
-   registry either.
+1. **SQLite's public-domain statement** — settled. Read from
+   `https://www.sqlite.org/copyright.html` on 2026-08-26 (M10) and corrected
+   above: the from-memory version had dropped one sentence.
+2. **The writing models' terms** — partly settled. On 2026-08-26 all three
+   tags were checked against the live registry and exist, and the licence blob
+   shipped with `qwen3.5:4b-q4_K_M` — the tier the owner's Mac runs — was read
+   via `ollama show --license`: it is the Apache License 2.0 text. Nobody has
+   yet read the Gemma Terms of Use or the licences shipped with the two larger
+   tiers, which no machine in this project has pulled.
 3. **whisper.cpp's exact pinned tag.** The licence is MIT at `master` and has
    been for the life of the project, but `scripts/package-mac.sh` compiles a
    pinned tag and the tag's own `LICENSE` should be read on the Mac that

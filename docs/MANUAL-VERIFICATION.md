@@ -323,10 +323,10 @@ you (`docs/research/m8-bundling-2026-08.md` §11).
 
 | Item | ☐ |
 | --- | --- |
-| For each RAM tier's model: the real download size, so `installer/src/catalog.ts`'s `approxBytes` stops being a guess. `ollama pull` prints it | ☐ |
-| A SHA-256 for `ggml-large-v3-turbo-q5_0.bin`, computed after the published SHA-1 matches, then pinned in `installer/src/catalog.ts` as `sha256`. M8's downloader should not verify a 547 MB file with SHA-1 alone | ☐ |
-| Whether the three model tags still exist in Ollama's library, and what licence each one's page actually names. `THIRD-PARTY-LICENSES.md` says these are unread | ☐ |
-| SQLite's public-domain statement, from `sqlite.org/copyright.html` — the one quotation in the licence file without a same-session source | ☐ |
+| For each RAM tier's model: the real download size, so `installer/src/catalog.ts`'s `approxBytes` stops being a guess. `ollama pull` prints it | ☑ small tier only (M10, 2026-08-26): 3,389,983,735 bytes from the registry manifest, pinned. The 12B and 35B still await a machine that pulls them |
+| A SHA-256 for `ggml-large-v3-turbo-q5_0.bin`, computed after the published SHA-1 matches, then pinned in `installer/src/catalog.ts` as `sha256`. M8's downloader should not verify a 547 MB file with SHA-1 alone | ☑ done in M10 — SHA-1 matched, SHA-256 `394221709c…` pinned and asserted by a test |
+| Whether the three model tags still exist in Ollama's library, and what licence each one's page actually names. `THIRD-PARTY-LICENSES.md` says these are unread | ☑ tags: all three exist (registry manifests, 2026-08-26). Licence: read for the small tier only (Apache-2.0, via `ollama show --license`); Gemma terms and the 35B's blob still unread |
+| SQLite's public-domain statement, from `sqlite.org/copyright.html` — the one quotation in the licence file without a same-session source | ☑ read live in M10; the quote was missing a sentence and is now corrected in `THIRD-PARTY-LICENSES.md` |
 
 ---
 
