@@ -3,7 +3,10 @@
 Local-first therapy-notes app: React SPA in a browser tab, Fastify server on
 127.0.0.1, SQLite storage, all AI local (Ollama LLM + whisper.cpp STT).
 Master plan: `docs/PLAN.md`. Design reference: `prototype/` (do not modify).
-Work packets: `docs/agents/`.
+Work packets: `docs/agents/` — **all build packets (M0–M9) are complete; the
+open packet is `M10-live-validation.md`**, which needs a machine with a live
+Ollama. If you are on one and were given no other instructions, that packet
+is the work.
 
 ## Hard rules
 

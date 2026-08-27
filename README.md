@@ -295,10 +295,14 @@ to settle each one.
 > working, why acting on it damages commit history, and the protocol that
 > avoids it.
 
-Everything lives on one branch, which is also the default branch. Give a new
-session:
+Everything lives on one branch, which is also the default branch.
 
-> Read docs/PLAN.md, CLAUDE.md, and docs/agents/<packet>.md, then implement
+**The next packet is [`docs/agents/M10-live-validation.md`](docs/agents/M10-live-validation.md)** —
+first contact with a real model. It requires a machine with a live Ollama,
+which cloud containers do not have; a session on such a machine that arrives
+with no other instructions should take that packet. Give a new session:
+
+> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M10-live-validation.md, then implement
 > that packet exactly. All work stays on the current branch — no feature
 > branch, no PR. Keep commits small and stop when every acceptance criterion
 > passes locally (lint, typecheck, tests, build, e2e), then push.
