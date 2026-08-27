@@ -551,9 +551,13 @@ describe('adding a patient and a typed note', () => {
     fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Sleep improved.' } });
     fireEvent.click(screen.getByTestId('process-note'));
 
+    // The preview exists before its sections have streamed in, so wait for
+    // the content, not just the element.
     const preview = await screen.findByTestId('draft-preview');
     expect(preview.textContent).toContain('Subjective:');
-    expect(preview.textContent).toContain('Sleep improved.');
+    await waitFor(() => {
+      expect(preview.textContent).toContain('Sleep improved.');
+    });
     expect(preview.textContent).not.toContain('{"');
 
     // And then it lands.

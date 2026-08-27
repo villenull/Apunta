@@ -49,7 +49,11 @@ function dryRun(args: readonly string[] = []): RunResult {
   try {
     const output = execFileSync('bash', [script, '--dry-run', '--yes', '--no-color', ...args], {
       encoding: 'utf8',
-      env: { ...process.env, APUNTA_SETUP_ALLOW_NON_MACOS: '1' },
+      // The dead port keeps the walk deterministic: on a machine with a live
+      // Ollama, the real probe succeeds and step 5 stops printing the
+      // `brew services start` command this suite asserts on (found on M10's
+      // Linux machine, where Ollama actually answers).
+      env: { ...process.env, APUNTA_SETUP_ALLOW_NON_MACOS: '1', APUNTA_OLLAMA_URL: 'http://127.0.0.1:9' },
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 30_000,
     });

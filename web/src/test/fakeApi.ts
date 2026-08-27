@@ -181,12 +181,22 @@ function json(body: unknown, status = 200): Response {
  */
 function sse(frames: readonly { event: string; data: unknown }[]): Response {
   const encoder = new TextEncoder();
+  let index = 0;
   const body = new ReadableStream<Uint8Array>({
-    start(controller) {
-      for (const frame of frames) {
-        controller.enqueue(encoder.encode(`event: ${frame.event}\ndata: ${JSON.stringify(frame.data)}\n\n`));
+    async pull(controller) {
+      const frame = frames[index];
+      if (frame === undefined) {
+        controller.close();
+        return;
       }
-      controller.close();
+      index += 1;
+      // A real macrotask between frames, not just separate enqueues: enqueued
+      // synchronously, the whole stream reaches the reader as one burst on a
+      // fast machine, React batches it into a single render, and the
+      // assembling-draft state the capture tests assert on never exists in
+      // the DOM (found on M10's Linux machine).
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      controller.enqueue(encoder.encode(`event: ${frame.event}\ndata: ${JSON.stringify(frame.data)}\n\n`));
     },
   });
   return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } });

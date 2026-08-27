@@ -70,7 +70,10 @@ WHISPER_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER
 WHISPER_SHA1="e050f7970618a659205450ad97eb95a18d69c9ee"
 WHISPER_MIB=547
 
-OLLAMA_URL="http://127.0.0.1:11434"
+# Overridable for the same reason the server honours it (M2): tests probe a
+# port that is guaranteed dead, so a live Ollama on the machine running the
+# suite cannot flip the dry run onto its "already answering" branch.
+OLLAMA_URL="${APUNTA_OLLAMA_URL:-http://127.0.0.1:11434}"
 NODE_MIN_MAJOR=22
 
 # --- options ----------------------------------------------------------------
