@@ -185,8 +185,12 @@ async function main(): Promise<void> {
 
   process.stdout.write(`${result.markdown}\n`);
   if (args.out !== undefined) {
-    writeFileSync(args.out, `${result.markdown}\n`, 'utf8');
-    console.error(`\nwrote ${args.out}`);
+    // Resolved exactly as --instructions is: against where npm was invoked,
+    // not the workspace cwd. Unresolved, `--out docs/eval-reports/x.md` lands
+    // in (or dies on) `server/docs/` — after the whole run has finished.
+    const out = isAbsolute(args.out) ? args.out : resolve(process.env['INIT_CWD'] ?? process.cwd(), args.out);
+    writeFileSync(out, `${result.markdown}\n`, 'utf8');
+    console.error(`\nwrote ${out}`);
   }
 
   /**
