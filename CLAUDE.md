@@ -3,10 +3,12 @@
 Local-first therapy-notes app: React SPA in a browser tab, Fastify server on
 127.0.0.1, SQLite storage, all AI local (Ollama LLM + whisper.cpp STT).
 Master plan: `docs/PLAN.md`. Design reference: `prototype/` (do not modify).
-Work packets: `docs/agents/` — **all build packets (M0–M9) are complete; the
-open packet is `M10-live-validation.md`**, which needs a machine with a live
-Ollama. If you are on one and were given no other instructions, that packet
-is the work.
+Work packets: `docs/agents/` — **all packets (M0–M10) are complete.** M10
+ran on a live Linux machine on 2026-08-27
+(`docs/eval-reports/2026-08-M10-report.md`). What remains needs either a
+Mac (`docs/MANUAL-VERIFICATION.md`) or the practice owner's answers (M10
+report, last section); the one packet-shaped job left open is an
+intake-side instruction distillation, per that report.
 
 ## Hard rules
 

@@ -2,9 +2,14 @@
 
 Apunta was built end to end inside a Linux container. Everything in it that
 touches macOS — the setup script, the FileVault check, opening a browser, the
-LaunchAgent, the installer, the app shell, and the model itself — has been
-**written and syntax-checked but never run**. The Swift shell has never even
-been *compiled*: there is no Swift toolchain off macOS, and no AppKit.
+LaunchAgent, the installer, the app shell — has been **written and
+syntax-checked but never run**. The Swift shell has never even been
+*compiled*: there is no Swift toolchain off macOS, and no AppKit.
+
+The model itself is no longer on that list: M10 ran the shipping 4B on a
+live Linux machine — smoke 5/5, two full evals, and the config pack below —
+see `docs/eval-reports/`. Model behaviour transfers; everything
+macOS-specific still awaits the Mac.
 
 This is the list of what that leaves open, in the order worth doing it, with
 the exact command for each.
@@ -327,6 +332,58 @@ you (`docs/research/m8-bundling-2026-08.md` §11).
 | A SHA-256 for `ggml-large-v3-turbo-q5_0.bin`, computed after the published SHA-1 matches, then pinned in `installer/src/catalog.ts` as `sha256`. M8's downloader should not verify a 547 MB file with SHA-1 alone | ☑ done in M10 — SHA-1 matched, SHA-256 `394221709c…` pinned and asserted by a test |
 | Whether the three model tags still exist in Ollama's library, and what licence each one's page actually names. `THIRD-PARTY-LICENSES.md` says these are unread | ☑ tags: all three exist (registry manifests, 2026-08-26). Licence: read for the small tier only (Apache-2.0, via `ollama show --license`); Gemma terms and the 35B's blob still unread |
 | SQLite's public-domain statement, from `sqlite.org/copyright.html` — the one quotation in the licence file without a same-session source | ☑ read live in M10; the quote was missing a sentence and is now corrected in `THIRD-PARTY-LICENSES.md` |
+
+---
+
+## 9. The config pack, and how it was made (M10, 2026-08-27)
+
+The zip her Mac restores on first run. Built on the partner's Linux machine
+against the production server (`server/dist`), in fake-AI mode — creating a
+format and a backup never touches a model. Every step below was executed,
+and the restore was then verified for real: the same zip staged through
+`POST /api/backup/restore` on a second fresh data dir came back with the
+format, its instructions, and the model setting intact.
+
+The recipe, repeatable on any machine with the repo:
+
+1. `npm run build`, then start the server against an empty data dir:
+   `APUNTA_DATA_DIR=/tmp/apunta-pack APUNTA_FAKE_AI=1 node server/dist/index.js`
+   and open `http://127.0.0.1:7717`.
+2. The first-run screen is the format onboarding. Choose **Describe it
+   myself** and enter name `Progress note` and sections, comma-separated and
+   in this order: `Location, Client presentation, Risk review, Discussion,
+   Intervention, Out of session actions, Note for next session`. Continue,
+   check the seven sections, **Looks right, save**.
+3. The next screen asks for a patient. **Do not add one** — the pack must
+   carry zero patients. Go to `/settings` instead.
+4. Settings → Note formats → **Edit** → paste the full text of
+   `docs/note-instructions/owner-progress-instructions.md` into the
+   **Instructions** field → **Save changes**. (The file replaces the
+   built-in defaults entirely; it must carry its own anti-fabrication core,
+   and it does.)
+5. Pin the model. There is no Settings field for it, deliberately, so:
+   `curl -X PUT 127.0.0.1:7717/api/settings -H "content-type: application/json"
+   -d '{"llm_model":"qwen3.5:4b-q4_K_M"}'`
+6. Her transcription vocabulary would go in Settings → Recording → *Words to
+   listen for*. Not provided as of this writing, so the pack ships without
+   it — add it and re-back-up when she supplies the list.
+7. Settings → Back up and restore → **Back up now**. The zip appears in
+   `<data dir>/backups/apunta-backup-<date>.zip`; its `manifest.json` must
+   say `"patients": 0` and `"note_formats": 1`. If you back up more than
+   once, the app records `last_backup_*` bookkeeping settings; empty them
+   (`PUT /api/settings` with `""` values, which the app reads as "never")
+   and re-cut so the pack does not carry another machine's paths.
+
+The pack produced this way (manifest db sha256 `2b7c9249…`, 2026-08-27,
+instruction revision 3 — the measured 40.0% configuration) is at
+`~/Apunta-config-pack/apunta-config-pack.zip` on the partner's machine. On her Mac: Settings → Back up and restore → restore from that
+file, quit and reopen. `whisper_binary` is deliberately not in the pack —
+each machine sets its own; the bundled app needs none.
+
+| Check | ☐ | Notes |
+| --- | --- | --- |
+| Pack restores on the Mac with format + instructions + model pin intact | ☐ | Verified Linux→Linux in M10; the Mac pass is what this row is for |
+| Her vocabulary list added and the pack re-cut | ☐ | Blocked on her list |
 
 ---
 

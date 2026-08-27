@@ -245,12 +245,17 @@ Useful env: `APUNTA_PORT`, `APUNTA_DATA_DIR`, `APUNTA_FAKE_AI=1`,
 | M9 treatment plan + prep | done — versioned payer-facing plan, model-drafted goals she accepts or discards, session briefings |
 | M7 setup, polish, eval | done here — setup script, first-run wizard, FileVault check, backup and restore, polish, eval harness |
 | M8 installer | built here, **none of it ever run** — a double-clickable `.dmg`, bundled Node + Ollama + whisper-cli, a Swift menu-bar shell, first-run model download. Everything macOS-specific awaits the Mac: see `docs/MANUAL-VERIFICATION.md` §7 |
+| M10 live validation | done on a live Linux machine (2026-08-27) — smoke 5/5 on the shipping 4B, baseline + tuned evals committed, the owner's instructions revised twice against measured fabrication, config pack built and restore-verified. `docs/eval-reports/2026-08-M10-report.md` |
 
 ### The two things automated tests cannot tell you
 
 **The model.** Everything in CI runs against fake providers. That proves the
-plumbing and nothing whatever about model quality. `npm run smoke:live -- --runs 5`
-is the first real evidence, and `npm run eval` is the measured version:
+plumbing and nothing whatever about model quality. The real-model evidence
+now exists: M10 ran the shipping 4B live (CPU-only Linux, Ollama 0.32.15 —
+the bundled release). The smoke passed 5/5 with no repetition and no schema
+failures, and the measured version is in
+[`docs/eval-reports/`](docs/eval-reports/) — baseline vs the owner's tuned
+instructions, with the M10 report alongside. To reproduce:
 
 ```sh
 npm run eval -- --runs 3 --out eval-report.md
@@ -259,7 +264,8 @@ npm run eval -- --runs 3 --out eval-report.md
 It puts all twenty fixtures in `e2e/fixtures/eval/` through the real model and
 scores each note against `rubric.md`. The report **leads with fabrication
 rate** — an omission is recoverable in the refine chat; a fabrication looks
-finished and gets published.
+finished and gets published. On the 4B that number is not zero: see the
+reports before trusting a draft class the eval says this model gets wrong.
 
 **The Mac.** This project has been built entirely in a Linux container.
 [`docs/MANUAL-VERIFICATION.md`](docs/MANUAL-VERIFICATION.md) is the list of
@@ -297,18 +303,16 @@ to settle each one.
 
 Everything lives on one branch, which is also the default branch.
 
-**The next packet is [`docs/agents/M10-live-validation.md`](docs/agents/M10-live-validation.md)** —
-first contact with a real model. It requires a machine with a live Ollama,
-which cloud containers do not have; a session on such a machine that arrives
-with no other instructions should take that packet. Give a new session:
+Every packet M0–M10 has landed — M10 (first contact with a real model) ran
+on a live Linux machine on 2026-08-27; its report is
+[`docs/eval-reports/2026-08-M10-report.md`](docs/eval-reports/2026-08-M10-report.md),
+and the four questions it leaves for the practice owner are at the end of it.
 
-> Read docs/PLAN.md, CLAUDE.md, and docs/agents/M10-live-validation.md, then implement
-> that packet exactly. All work stays on the current branch — no feature
-> branch, no PR. Keep commits small and stop when every acceptance criterion
-> passes locally (lint, typecheck, tests, build, e2e), then push.
-
-Every packet M0–M9 has landed. What is left is not a packet: it is a Mac.
-`docs/MANUAL-VERIFICATION.md` is the list, and its §7 is the installer.
+What is left is not a packet: it is a Mac. `docs/MANUAL-VERIFICATION.md` is
+the list, and its §7 is the installer. The one packet-shaped job that could
+precede the Mac is an intake-side pass of the instruction-distillation
+discipline M10 applied to progress notes — the eval shows the four failing
+intake fixtures belong to the default intake instructions, not to her file.
 
 CI is GitHub Actions on ubuntu-latest, everything in fake mode:
 lint → typecheck → tests → build → the eval harness self-check → Playwright.
