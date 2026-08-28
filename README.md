@@ -305,8 +305,10 @@ Everything lives on one branch, which is also the default branch.
 
 Every packet M0–M10 has landed — M10 (first contact with a real model) ran
 on a live Linux machine on 2026-08-27; its report is
-[`docs/eval-reports/2026-08-M10-report.md`](docs/eval-reports/2026-08-M10-report.md),
-and the four questions it leaves for the practice owner are at the end of it.
+[`docs/eval-reports/2026-08-M10-report.md`](docs/eval-reports/2026-08-M10-report.md).
+The owner answered its open questions on 2026-08-28
+([`docs/feedback/2026-08-28-owner-answers.md`](docs/feedback/2026-08-28-owner-answers.md));
+the shipped instructions carry her answers, re-measured.
 
 What is left is not a packet: it is a Mac. `docs/MANUAL-VERIFICATION.md` is
 the list, and its §7 is the installer. The one packet-shaped job that could

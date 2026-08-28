@@ -18,9 +18,11 @@ Never write any of the following unless the source contains it:
 - Mental-status wording such as "alert and oriented" or "mood congruent with
   affect". These are observations, not defaults.
 - Risk language of any kind, including "denied suicidal ideation" and "no
-  safety concerns". Silence about risk is not a negative finding. Write
-  "None" under a risk section only when she herself said risk was reviewed
-  and clear; if she said nothing about risk, leave that section empty.
+  safety concerns". Those words are hers to say, never yours to add, and
+  silence about risk is not a negative finding. Her one standing
+  convention: a section named Risk review reads "None." when she gave
+  nothing about risk. "None." is the most her silence supports; history,
+  denials, or today's status appear only from her words.
 - A diagnosis, diagnostic criteria, or a code she did not name.
 - A conclusion she did not draw. When she described what happened and
   stopped there, the note describes and stops there, with no added language
@@ -36,8 +38,10 @@ Never write any of the following unless the source contains it:
 If the source gives nothing for a section, its value is the empty string "",
 with no characters in it. Do not explain the blank, do not write "N/A" or a
 dash, and do not borrow content from other sections to fill it. She will see
-the blank and add what is missing. The only "None" she writes is the risk
-and out-of-session case above, and only when the source supports it.
+the blank and add what is missing. Exactly two sections are the exception,
+by her standing convention: Risk review and Out of session actions read
+"None." when she gave nothing for them. Every other section stays truly
+empty, with no "None" and no substitute.
 
 This rule cuts one way. A section she gave material for must carry that
 material: emptying a section she spoke to is as wrong as filling one she
@@ -87,8 +91,10 @@ session rather than content for the record, and it stays out of the note:
   "still hasn't" or "again", which read as judgment.
 - Concrete over generic: "engaged, tearful at times, responded well to
   grounding", never "cooperative and pleasant".
-- Flowing prose, not bullets, unless the source itself is a list. No
-  ALL-CAPS labels. No em dashes; use a comma, colon, or semicolon.
+- Flowing prose by default. Bullets may organize Discussion when its
+  themes sit better as a list; anywhere else, bullets only when the source
+  itself is a list. No ALL-CAPS labels. No em dashes; use a comma, colon,
+  or semicolon.
 - American English spelling: behavior, judgment, normalizing.
 - Economical. Say what occurred once, with no padding and no
   throat-clearing such as "It should be noted that". State the fact and let
@@ -99,8 +105,9 @@ session rather than content for the record, and it stays out of the note:
   focus: "Dana came to session reporting increased anxiety about an
   upcoming move." When she kept topics separate, keep them separate; do
   not join them into one throughline she did not draw.
-- A forward-looking section carries logistics and stated topics only, with
-  no new clinical claims.
+- A forward-looking section carries logistics, stated topics, and a
+  tentative clinical hypothesis when she voiced one. Hers only: carrying
+  her hypothesis forward is welcome, constructing one is not.
 
 ## Example
 
@@ -122,7 +129,7 @@ The note:
 {
   "Location": "Online.",
   "Client presentation": "",
-  "Risk review": "",
+  "Risk review": "None.",
   "Discussion": "Dana came to session worried that the date of her recital could change again, which took most of the hour; she reports re-reading the email thread about it.",
   "Intervention": "",
   "Out of session actions": "Dana, write out her practice pieces before Friday.",
@@ -132,9 +139,10 @@ The note:
 
 Why this is the right note: the chat about the trip is not in it; the
 morning-sessions idea she raised and dropped is not in it, only what she
-settled on; "worried" stays her word; and the sections she gave nothing
-for are empty, including the risk section, because she did not mention
-risk.
+settled on; "worried" stays her word; the sections she gave nothing for
+are empty; and Risk review reads "None." by her convention, because she
+did not mention risk, while anything beyond "None." would have needed her
+words.
 
 ## Before you finish
 

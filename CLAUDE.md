@@ -5,10 +5,11 @@ Local-first therapy-notes app: React SPA in a browser tab, Fastify server on
 Master plan: `docs/PLAN.md`. Design reference: `prototype/` (do not modify).
 Work packets: `docs/agents/` — **all packets (M0–M10) are complete.** M10
 ran on a live Linux machine on 2026-08-27
-(`docs/eval-reports/2026-08-M10-report.md`). What remains needs either a
-Mac (`docs/MANUAL-VERIFICATION.md`) or the practice owner's answers (M10
-report, last section); the one packet-shaped job left open is an
-intake-side instruction distillation, per that report.
+(`docs/eval-reports/2026-08-M10-report.md`), and the owner's answers landed
+2026-08-28 (`docs/feedback/2026-08-28-owner-answers.md` — applied and
+re-measured). What remains needs a Mac (`docs/MANUAL-VERIFICATION.md`), her
+transcription vocabulary list (promised, not yet sent), or a new packet:
+the intake-side instruction distillation, per the M10 report.
 
 ## Hard rules
 
