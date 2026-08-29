@@ -256,6 +256,26 @@ describe('buildRefinePrompt', () => {
     expect(prompt.user).toContain('She says:');
   });
 
+  /**
+   * Found live in M10's human pass: the UI's "More clinical" quick action
+   * made the 4B add "alert and oriented" and "affect congruent with reported
+   * mood" — the never-write list's own named examples — to a note that said
+   * neither. A register request outranked the faithfulness rules until the
+   * refine prompt named the conflict explicitly.
+   */
+  it('tells the model a tone request changes wording, never content', () => {
+    const prompt = buildRefinePrompt({
+      instructions: '',
+      sections: SOAP,
+      noteText: 'Objective: Engaged, made eye contact.',
+      history: [],
+      message: 'Use a more clinical tone',
+    });
+    expect(prompt.system).toContain('changes wording only');
+    expect(prompt.system).toContain('never permission to add an observation');
+    expect(prompt.system).toContain('may only surface material already in the note');
+  });
+
   /** The lock lives in the server, where it cannot be talked out of. */
   it('never mentions the published lock', () => {
     const prompt = buildRefinePrompt({
