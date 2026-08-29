@@ -4,6 +4,7 @@ import {
   emptySectionNames,
   PUBLISHED_REFUSAL,
   sectionsToText,
+  textToSections,
   type ChatMessage,
   type ChatMessageListResponse,
   type Note,
@@ -13,10 +14,12 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
+import { guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
 import type { AiProviders, ChatTurn, LlmStats } from '../ai/types.js';
 import { createChatMessage, listChatMessagesForNote } from '../db/chat-messages.js';
 import { getFormat } from '../db/formats.js';
 import { getNote, updateNote } from '../db/notes.js';
+import { listTranscriptsForNote } from '../db/transcripts.js';
 import { notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
@@ -155,6 +158,22 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       return;
     }
 
+    if (updatedSections !== null) {
+      // The boilerplate lock, the published lock's sibling (found necessary
+      // in M10's live pass): a revision may not gain a stock clinical
+      // assertion that neither the note nor her stored dictation contains.
+      // Checked against the transcripts on disk, never the model's account
+      // of them — the same session showed it confabulating provenance.
+      const previous = textToSections(note.content, format.sections);
+      const sources = listTranscriptsForNote(db, note.id).map((t) => t.raw_text);
+      const guarded = guardRefinedSections(previous, updatedSections, sources);
+      if (guarded.blocked.length > 0) {
+        replyText = `${replyText}\n\n${guardNotice(guarded.blocked)}`;
+        logBlocked(request, guarded.blocked.length);
+      }
+      updatedSections = guarded.sections;
+    }
+
     const assistantMessage = persistReply(db, note.id, replyText);
     stream.send('message', { message: assistantMessage });
 
@@ -163,14 +182,15 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       // so a refined note is identical in shape to a freshly drafted one —
       // which is what keeps the round trip through `textToSections` stable
       // over many turns of revision.
-      const rewritten = updateNote(db, note.id, {
-        content: sectionsToText(updatedSections, format.sections),
-      });
-      if (rewritten) {
-        stream.send('note-updated', {
-          note: rewritten,
-          empty_sections: emptySectionNames(updatedSections, format.sections),
-        });
+      const content = sectionsToText(updatedSections, format.sections);
+      if (content !== note.content) {
+        const rewritten = updateNote(db, note.id, { content });
+        if (rewritten) {
+          stream.send('note-updated', {
+            note: rewritten,
+            empty_sections: emptySectionNames(updatedSections, format.sections),
+          });
+        }
       }
     }
     stream.end();
@@ -233,6 +253,11 @@ function toAiError(error: unknown): AiError {
  */
 function logFailure(request: FastifyRequest, failure: AiError): void {
   request.log.error({ code: failure.code, detail: failure.detail }, 'note refinement failed');
+}
+
+/** A count, never the phrase and never the section name — shape only. */
+function logBlocked(request: FastifyRequest, sections: number): void {
+  request.log.info({ blockedSections: sections }, 'refinement partially blocked by the boilerplate lock');
 }
 
 function logStats(request: FastifyRequest, stats: LlmStats): void {

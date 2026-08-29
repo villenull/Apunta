@@ -11,6 +11,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { getNote } from '../db/notes.js';
+import { createTranscript } from '../db/transcripts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 
 /**
@@ -195,6 +196,43 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(final?.data['empty_sections']).toEqual(['Objective']);
     // The header still travels: she fills the blank in on the far side.
     expect(String((final?.data['note'] as Note).content)).toContain('Objective:');
+  });
+
+  /**
+   * The boilerplate lock, end to end. The fake's "clinical tone" branch
+   * replays M10's live incident — injecting "Alert and oriented" into
+   * Objective — and the route is expected to revert it, append the server's
+   * own sentence to the reply, and leave the note untouched.
+   */
+  it('blocks a revision that invents boilerplate, and says so in the reply', async () => {
+    const note = await freshNote();
+
+    const { events } = await chat(harness.app, note.id, { message: 'Use a more clinical tone' });
+
+    const reply = assistantReply(events);
+    expect(reply).toContain('Apunta blocked part of this revision.');
+    expect(reply).toContain('Objective was kept as it was');
+    expect(reply).toContain('"Alert and oriented"');
+
+    // The only changed section was the blocked one, so the note is untouched
+    // and no note-updated event goes out.
+    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
+  });
+
+  it('lets the same boilerplate through when her stored dictation contains it', async () => {
+    const note = await freshNote();
+    createTranscript(harness.db, {
+      note_id: note.id,
+      source: 'audio',
+      raw_text: 'He was alert and oriented today, tracked everything I said.',
+    });
+
+    const { events } = await chat(harness.app, note.id, { message: 'Use a more clinical tone' });
+
+    expect(assistantReply(events)).not.toContain('Apunta blocked');
+    expect(events.map((event) => event.name)).toContain('note-updated');
+    expect(getNote(harness.db, note.id)?.content).toContain('Alert and oriented.');
   });
 
   it('sends the recent thread back as history on the next turn', async () => {

@@ -662,6 +662,8 @@ She says:
 
 Now expand it again.
 
+Whatever she asked for, this revision may not add observations, findings, or clinical phrasing beyond what the note above already contains, and may not drop anything she did not ask to have removed. A tone or register request restyles her words, adding nothing and losing nothing. If part of the request would need new clinical content, leave that part undone and say so in "reply".
+
 Reply with a single JSON object with exactly the keys "reply" and "updatedSections", and nothing else.",
 }
 `;

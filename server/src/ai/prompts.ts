@@ -193,6 +193,14 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
   parts.push('', 'She says:', '', request.message.trim());
   parts.push(
     '',
+    // Repeated here, beside her request, because the system prompt alone
+    // demonstrably loses to a tone request on a small model (found live in
+    // M10's human pass). Class names only — a quoted example phrase becomes
+    // primed vocabulary the moment "clinical" is requested. And stated in
+    // both directions, because the first wording of this rule taught the
+    // model to delete her sleep numbers as "a measurement".
+    'Whatever she asked for, this revision may not add observations, findings, or clinical phrasing beyond what the note above already contains, and may not drop anything she did not ask to have removed. A tone or register request restyles her words, adding nothing and losing nothing. If part of the request would need new clinical content, leave that part undone and say so in "reply".',
+    '',
     'Reply with a single JSON object with exactly the keys "reply" and "updatedSections", and nothing else.',
   );
 

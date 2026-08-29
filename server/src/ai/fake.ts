@@ -236,6 +236,18 @@ export function fakeRefine(
     return next;
   };
 
+  // Reproduces M10's live finding on demand: a tone request that tries to
+  // inject the never-write list's own first example. The route's boilerplate
+  // lock is expected to block it, and CI keeps proving that end to end.
+  if (/clinical|formal/i.test(message)) {
+    const key = sections.find((section) => section.toLowerCase() === 'objective');
+    if (key !== undefined) {
+      return {
+        reply: 'Restyled the Objective section in a clinical register.',
+        updatedSections: set('objective', `Alert and oriented. ${(current[key] ?? '').trim()}`.trim()),
+      };
+    }
+  }
   if (/plan/i.test(message) && has('plan')) {
     return {
       reply: 'Shortened the Plan section.',

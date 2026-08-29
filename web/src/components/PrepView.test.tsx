@@ -91,7 +91,13 @@ describe('PrepView', () => {
     expect(api.state.briefs).toHaveLength(0);
     expect(screen.getByTestId('prep-view').textContent).toContain('not saved unless you keep it');
 
-    fireEvent.click(screen.getByTestId('keep-brief'));
+    // The lines render before the stream's final `brief` frame arrives, and
+    // Keep is disabled until that frame lands — click a button, not a hope.
+    const keep = screen.getByTestId('keep-brief') as HTMLButtonElement;
+    await waitFor(() => {
+      expect(keep.disabled).toBe(false);
+    });
+    fireEvent.click(keep);
 
     await waitFor(() => {
       expect(api.state.briefs).toHaveLength(1);

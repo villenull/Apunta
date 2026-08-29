@@ -274,6 +274,13 @@ describe('buildRefinePrompt', () => {
     expect(prompt.system).toContain('changes wording only');
     expect(prompt.system).toContain('never permission to add an observation');
     expect(prompt.system).toContain('may only surface material already in the note');
+    // And again in the user turn, beside her request, where a small model
+    // actually looks — the system-prompt version alone measurably lost.
+    // Stated in both directions: the first wording taught the model to
+    // delete dictated numbers as "a measurement".
+    expect(prompt.user).toContain('may not add observations, findings, or clinical phrasing');
+    expect(prompt.user).toContain('may not drop anything she did not ask to have removed');
+    expect(prompt.user.indexOf('Whatever she asked for')).toBeGreaterThan(prompt.user.indexOf('She says:'));
   });
 
   /** The lock lives in the server, where it cannot be talked out of. */
