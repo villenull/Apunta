@@ -1,4 +1,10 @@
-import type { ChatNoteUpdatedEvent, Note, NoteFormat, PatientListItem } from '@apunta/shared';
+import {
+  textToSections,
+  type ChatNoteUpdatedEvent,
+  type Note,
+  type NoteFormat,
+  type PatientListItem,
+} from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -14,6 +20,7 @@ import { ConfirmDialog } from './ConfirmDialog.js';
 import { CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
 import { NoteBody } from './NoteBody.js';
 import { RefineColumn } from './RefineColumn.js';
+import { ThinkingDots } from './ThinkingDots.js';
 
 /** Long enough that a sentence saves as one edit, short enough to feel instant. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -55,6 +62,10 @@ export function NoteView({
   /** The excerpt she highlighted, waiting to be attached to a chat message. */
   const [refQuote, setRefQuote] = useState<string | null>(null);
   const [refined, setRefined] = useState(false);
+  /** A refine request is in flight: the editor breathes and says updating…. */
+  const [refining, setRefining] = useState(false);
+  /** Which sections the last rewrite changed, named for a moment. */
+  const [changedSections, setChangedSections] = useState<readonly string[]>([]);
 
   // The timers and the save queue outlive any single render.
   const noteRef = useRef(note);
@@ -144,15 +155,21 @@ export function NoteView({
   const handleNoteUpdated = useCallback(
     (event: ChatNoteUpdatedEvent) => {
       cancelPending();
+      // Name what actually changed, so the flash can say which sections moved.
+      const sectionNames = format?.sections ?? [];
+      const before = textToSections(noteRef.current.content, sectionNames);
+      const after = textToSections(event.note.content, sectionNames);
+      setChangedSections(sectionNames.filter((name) => (before[name] ?? '') !== (after[name] ?? '')));
       setText(event.note.content);
       onNoteChangedRef.current(event.note);
       setError(null);
       setRefined(true);
       window.setTimeout(() => {
         setRefined(false);
+        setChangedSections([]);
       }, REFINED_FLASH_MS);
     },
-    [cancelPending],
+    [cancelPending, format],
   );
 
   async function handleCopy(): Promise<void> {
@@ -196,6 +213,12 @@ export function NoteView({
 
   const published = note.status === 'published';
 
+  /** "Discussion", "Discussion and Plan", "Discussion, Risk review and Plan". */
+  function joinSectionNames(names: readonly string[]): string {
+    if (names.length <= 1) return names[0] ?? '';
+    return `${names.slice(0, -1).join(', ')} and ${String(names.at(-1))}`;
+  }
+
   return (
     <div className="note-chat-split">
       <div className="note-editor-col">
@@ -210,6 +233,16 @@ export function NoteView({
             <h2 data-testid="note-title">{note.title}</h2>
           </div>
           <div className="row gap-8 note-actions">
+            {refining && (
+              <span className="note-updating-hint" data-testid="note-updating-hint">
+                <ThinkingDots label="Updating the note…" />
+              </span>
+            )}
+            {!refining && refined && changedSections.length > 0 && (
+              <span className="note-updated-hint" data-testid="note-updated-hint">
+                Updated {joinSectionNames(changedSections)}
+              </span>
+            )}
             <button
               type="button"
               className="btn small btn-compact-icon"
@@ -264,6 +297,7 @@ export function NoteView({
           sections={format?.sections ?? []}
           readOnly={published}
           refined={refined}
+          refining={refining}
           onChange={handleChange}
           onBlur={() => {
             void flush();
@@ -285,6 +319,7 @@ export function NoteView({
           setRefQuote(null);
         }}
         onNoteUpdated={handleNoteUpdated}
+        onRefiningChange={setRefining}
       />
 
       {confirmingDelete && (

@@ -1,0 +1,95 @@
+/*
+ * Refine choreography — the states that keep the chat honest about the note.
+ *
+ * The model writes its reply before it rewrites the sections, so the reply
+ * text finishes seconds before the note visibly changes — and a reply that
+ * says "done" over a note that has not moved reads as finished (live testing,
+ * 2026-08-28). These states close the gap: from send until the stream ends
+ * the note carries a calm "may be rewritten" breath and an Updating… hint,
+ * and when the rewrite lands, the sections that actually changed flash for a
+ * moment where they sit.
+ *
+ * Timings compose `styles/motion.css` (150–250ms, standard easing, nothing
+ * bouncy). Two durations are deliberately outside those tokens: the breathing
+ * loop (2.6s — an ambient loop at transition speed would read as urgent, not
+ * calm; compare thinking-cycle's 1.1s) and the 1.2s flash fade, which matches
+ * the editor's established `note-refined` flash and REFINED_FLASH_MS. Under
+ * prefers-reduced-motion everything settles to a static tint.
+ */
+
+/* --- While a refine request is in flight: the note may be rewritten --- */
+
+/* Sits in the note header's action row, out of the text. ThinkingDots inside
+   carries the motion; this only places and fades it in. */
+.note-updating-hint {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  animation: hint-fade-in var(--motion-base) var(--motion-ease);
+}
+
+@keyframes hint-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * The breath: the whole editable area swells to a soft accent tint and back,
+ * slowly. Chosen over a moving shimmer gradient — a travelling highlight
+ * implies progress it cannot know, and it is busier over a page of clinical
+ * text. The keyframes start and end transparent so entering the state is
+ * inherently gentle, and the base transition catches the exit so leaving
+ * mid-breath fades rather than snaps.
+ */
+.note-editable-wrap {
+  transition: background-color var(--motion-slow) var(--motion-ease);
+}
+
+.note-editable-wrap.is-refining {
+  border-radius: var(--radius);
+  animation: note-refining-breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes note-refining-breathe {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: var(--accent-tint);
+  }
+}
+
+/* --- When the rewrite lands: name what moved --- */
+
+/*
+ * The editor's existing whole-body flash (`is-refined`, app.css) says the
+ * note changed; this line beside the actions says WHICH sections did —
+ * "Updated Discussion and Plan" — and fades with the flash. Chosen over a
+ * per-section mark overlay: naming the change is as informative as painting
+ * it, and it cannot drift out of alignment with the textarea.
+ */
+.note-updated-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  animation: hint-fade-in var(--motion-base) var(--motion-ease);
+}
+
+/* --- Reduced motion: the same states, held still --- */
+
+@media (prefers-reduced-motion: reduce) {
+  .note-updating-hint,
+  .note-updated-hint {
+    animation: none;
+  }
+
+  .note-editable-wrap.is-refining {
+    animation: none;
+    background-color: var(--accent-tint);
+  }
+}

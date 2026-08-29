@@ -10,6 +10,8 @@ export interface NoteBodyProps {
   readOnly: boolean;
   /** True for a moment after the chat rewrote the note, to signal the change. */
   refined: boolean;
+  /** A refine request is in flight: the note breathes to say it may change. */
+  refining: boolean;
   onChange: (value: string) => void;
   onBlur: () => void;
   /** Selection changed: the workspace turns it into a highlight chip. */
@@ -37,6 +39,7 @@ export function NoteBody({
   sections,
   readOnly,
   refined,
+  refining,
   onChange,
   onBlur,
   onSelect,
@@ -53,7 +56,12 @@ export function NoteBody({
         </p>
       )}
 
-      <div className={refined ? 'note-editable-wrap is-refined' : 'note-editable-wrap'}>
+      <div
+        className={['note-editable-wrap', refined ? 'is-refined' : '', refining ? 'is-refining' : '']
+          .filter(Boolean)
+          .join(' ')}
+        data-testid={refining ? 'note-updating' : undefined}
+      >
         <div className="note-editable note-highlights" aria-hidden="true" data-testid="note-highlights">
           {/* Keyed by position: the runs are a pure function of the text, and
               every one of them changes when it does. */}

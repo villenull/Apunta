@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { errorMessage, listChatMessages, sendChatMessage } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { SendIcon } from './icons.js';
+import { ThinkingDots } from './ThinkingDots.js';
 
 /**
  * The quick actions from `prototype/patients.html`.
@@ -30,6 +31,13 @@ export interface RefineColumnProps {
   onClearRefQuote: () => void;
   /** The model rewrote the note: the editor and the notes list both move. */
   onNoteUpdated: (event: ChatNoteUpdatedEvent) => void;
+  /**
+   * A refine request is in flight, so the note may be about to change. The
+   * editor uses this to breathe and say "updating…" — the reply text often
+   * finishes seconds before the rewrite arrives, and without this the chat
+   * reads as done while the note sits still (live finding, 2026-08-28).
+   */
+  onRefiningChange?: (refining: boolean) => void;
 }
 
 /**
@@ -49,6 +57,7 @@ export function RefineColumn({
   refQuote,
   onClearRefQuote,
   onNoteUpdated,
+  onRefiningChange,
 }: RefineColumnProps): React.JSX.Element {
   const noteId = note.id;
   const loadThread = useCallback((signal: AbortSignal) => listChatMessages(noteId, signal), [noteId]);
@@ -101,6 +110,7 @@ export function RefineColumn({
     setDraft('');
     onClearRefQuote();
     setSending(true);
+    onRefiningChange?.(true);
     setError(null);
     setStreaming('');
     setStatus(null);
@@ -141,6 +151,7 @@ export function RefineColumn({
       thread.reload();
     } finally {
       abortRef.current = null;
+      onRefiningChange?.(false);
       if (!controller.signal.aborted) {
         setSending(false);
         setStatus(null);
@@ -180,7 +191,13 @@ export function RefineColumn({
         {streaming !== null && (
           <div className="chat-msg ai" data-testid="chat-streaming">
             <div className="chat-bubble">
-              {streaming === '' ? <span className="chat-thinking">{status ?? 'Thinking…'}</span> : streaming}
+              {streaming === '' ? (
+                <span className="chat-thinking">
+                  <ThinkingDots label={status ?? 'Thinking…'} />
+                </span>
+              ) : (
+                streaming
+              )}
             </div>
           </div>
         )}
