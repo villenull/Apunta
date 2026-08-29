@@ -161,11 +161,18 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     if (updatedSections !== null) {
       // The boilerplate lock, the published lock's sibling (found necessary
       // in M10's live pass): a revision may not gain a stock clinical
-      // assertion that neither the note nor her stored dictation contains.
-      // Checked against the transcripts on disk, never the model's account
-      // of them — the same session showed it confabulating provenance.
+      // assertion that neither the note, her stored dictation, nor her own
+      // request contains. Checked against the transcripts on disk, never the
+      // model's account of them — the same session showed it confabulating
+      // provenance. Her message is an allowed source because "add that he
+      // denied SI today" is her writing the note through the chat, which is
+      // the whole point of the chat.
       const previous = textToSections(note.content, format.sections);
-      const sources = listTranscriptsForNote(db, note.id).map((t) => t.raw_text);
+      const sources = [
+        ...listTranscriptsForNote(db, note.id).map((t) => t.raw_text),
+        input.message,
+        ...(input.ref_quote == null ? [] : [input.ref_quote]),
+      ];
       const guarded = guardRefinedSections(previous, updatedSections, sources);
       if (guarded.blocked.length > 0) {
         replyText = `${replyText}\n\n${guardNotice(guarded.blocked)}`;

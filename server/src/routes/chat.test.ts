@@ -220,6 +220,20 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
   });
 
+  it('lets boilerplate through when her own message asked for it in those words', async () => {
+    const note = await freshNote();
+
+    // Her request contains the phrase, so it is her writing, not the model's
+    // invention — the fake's clinical branch injects it and the lock must
+    // let her words through.
+    const { events } = await chat(harness.app, note.id, {
+      message: 'Make it formal, and note he was alert and oriented',
+    });
+
+    expect(assistantReply(events)).not.toContain('Apunta blocked');
+    expect(getNote(harness.db, note.id)?.content).toContain('Alert and oriented.');
+  });
+
   it('lets the same boilerplate through when her stored dictation contains it', async () => {
     const note = await freshNote();
     createTranscript(harness.db, {
