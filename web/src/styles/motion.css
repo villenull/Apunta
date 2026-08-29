@@ -15,6 +15,36 @@
   --motion-ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
+/* --- Entrances --- */
+
+/*
+ * The one way anything arrives: a quick fade with a 3px rise. Route screens
+ * use it through `.route-transition` (App.tsx re-keys the wrapper per path);
+ * app.css composes the same keyframes for smaller arrivals, so everything
+ * that appears, appears the same way. There is deliberately no exit
+ * animation — leaving is instant, which keeps navigation from feeling gated.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.route-transition {
+  animation: rise-in var(--motion-base) var(--motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-transition {
+    animation: none;
+  }
+}
+
 /* --- The thinking dots (components/ThinkingDots.tsx) --- */
 
 .thinking {

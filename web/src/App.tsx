@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router';
+import { Navigate, Route, Routes, useLocation } from 'react-router';
 
 import { About } from './routes/About.js';
 import { AddPatient } from './routes/AddPatient.js';
@@ -16,18 +16,31 @@ import { Workspace } from './routes/Workspace.js';
  * deliberately not ported.
  */
 export function App(): React.JSX.Element {
+  const location = useLocation();
+
   return (
-    <Routes>
-      <Route path="/" element={<Workspace />} />
-      <Route path="/patients/new" element={<AddPatient />} />
-      <Route path="/capture/:patientId" element={<Capture />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/setup" element={<Setup />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/licenses" element={<Licenses />} />
-      <Route path="/onboarding/format" element={<OnboardingFormat />} />
-      <Route path="/onboarding/preview" element={<OnboardingPreview />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    /*
+     * Keyed by pathname so every screen change remounts the wrapper and
+     * replays `.route-transition` (styles/motion.css): a quick fade and a 3px
+     * rise, part of the sanctioned motion pass (owner-proxy feedback,
+     * 2026-08-28 — the prototype's instant cuts read as the app not
+     * responding). Pathname only, not the full location: picking a patient or
+     * a note changes the query string, and re-fading the whole workspace on
+     * every list click would be exactly the theatre this app avoids.
+     */
+    <div key={location.pathname} className="route-transition">
+      <Routes>
+        <Route path="/" element={<Workspace />} />
+        <Route path="/patients/new" element={<AddPatient />} />
+        <Route path="/capture/:patientId" element={<Capture />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/setup" element={<Setup />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/licenses" element={<Licenses />} />
+        <Route path="/onboarding/format" element={<OnboardingFormat />} />
+        <Route path="/onboarding/preview" element={<OnboardingPreview />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   );
 }

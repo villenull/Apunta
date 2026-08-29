@@ -11,6 +11,7 @@ import {
   type GenerateHandlers,
 } from '../api/index.js';
 import { KeyboardIcon, MicIcon } from '../components/icons.js';
+import { ThinkingDots } from '../components/ThinkingDots.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
@@ -381,7 +382,11 @@ export function Capture(): React.JSX.Element {
 
           {busy && (
             <div className="draft-progress" data-testid="draft-progress">
-              <p className="small muted" role="status" data-testid="draft-status">
+              {/* The dots are the app's universal thinking signal (owner-proxy
+                  feedback, 2026-08-28); they sit beside the server's live
+                  status line rather than replacing it. */}
+              <p className="small muted draft-status" role="status" data-testid="draft-status">
+                <ThinkingDots />
                 {status ?? 'Drafting…'}
               </p>
               {drafting && (

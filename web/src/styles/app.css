@@ -63,11 +63,20 @@
   flex-shrink: 0;
 }
 
+/*
+ * The wordmark. The prototype set "Apunta" capitalised; the owner-proxy chose
+ * a lowercase mark (2026-08-28), so the type is tuned to carry that: the same
+ * serif, a notch larger, tracked slightly open and on a single line so it
+ * reads as a set mark rather than a lowercased word. Markup supplies the
+ * lowercase text — the accessible name should be what the brand actually is.
+ */
 .brand {
   font-family: var(--font-serif);
   font-weight: 600;
-  font-size: 16px;
-  letter-spacing: -0.01em;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--text-primary);
 }
 
 .topbar .back {
@@ -674,7 +683,7 @@ select:focus {
   border: 0.5px solid var(--border-strong);
   background: var(--surface);
   color: var(--text-primary);
-  transition: background 0.15s ease;
+  /* Hover/press transitions live in the motion-polish section at the end. */
 }
 
 .btn:hover {
@@ -1949,4 +1958,138 @@ select:disabled {
   color: var(--text-primary);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* ------------------------------------- brand + motion polish (2026-08-28) */
+
+/*
+ * The live-testing pass. The owner-proxy's verdict on the prototype-faithful
+ * build was that it felt crude: clicks changed things with no acknowledgment,
+ * screens cut instantly, the AI thought invisibly. What follows is the
+ * sanctioned deviation from the prototype's static feel — calm clinical
+ * motion only, composed entirely from the tokens in styles/motion.css and
+ * the palette above. Nothing here scales, springs, or bounces.
+ */
+
+/*
+ * The workspace brand header: the wordmark sits above the patient list as
+ * the app's identity, and "Patients" drops to a small label beneath it so
+ * the list still names itself. The add button keeps to the label's line.
+ */
+.col-header-brand {
+  align-items: flex-end;
+}
+
+.brand-block {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.brand-block h3 {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+/*
+ * Hover eases instead of snapping. One vocabulary for every button-like
+ * control; focus-visible is drawn with `outline`, which is deliberately not
+ * in this list, so keyboard focus still appears instantly.
+ */
+.btn,
+.icon-btn,
+.btn-option,
+.new-note-btn,
+.list-item,
+.note-item,
+.col-action-btn,
+.link-button,
+.chip-remove,
+.ai-banner-dismiss,
+.toast-dismiss {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    opacity var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+/*
+ * A press acknowledges the click: solid controls settle down one pixel while
+ * held. A translate, not a scale — acknowledgment, not theatre. Text-like
+ * controls (link buttons, the × dismissals) ease color only, above.
+ */
+.btn:active:not(:disabled),
+.icon-btn:active:not(:disabled),
+.btn-option:active:not(:disabled),
+.new-note-btn:active:not(:disabled),
+.list-item:active:not(:disabled),
+.note-item:active:not(:disabled),
+.col-action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* The archive button is centred with a transform; the press composes with it
+   rather than replacing it (which would fling the button to the row's top). */
+.patient-entry .patient-archive-btn:active:not(:disabled) {
+  transform: translateY(calc(-50% + 1px));
+}
+
+/*
+ * The capture screen's draft, arriving rather than popping: the progress
+ * block and the assembling preview compose the shared entrance from
+ * styles/motion.css. Purely cosmetic — the stream renders identically.
+ */
+.draft-progress,
+.draft-preview,
+.draft-preview p {
+  animation: rise-in var(--motion-base) var(--motion-ease);
+}
+
+/* The live status line with the thinking dots beside it. */
+.draft-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Everything above settles instantly for anyone who asked it to. Hover and
+   press feedback remain — as the immediate states they were before this pass. */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .icon-btn,
+  .btn-option,
+  .new-note-btn,
+  .list-item,
+  .note-item,
+  .col-action-btn,
+  .link-button,
+  .chip-remove,
+  .ai-banner-dismiss,
+  .toast-dismiss {
+    transition: none;
+  }
+
+  .btn:active:not(:disabled),
+  .icon-btn:active:not(:disabled),
+  .btn-option:active:not(:disabled),
+  .new-note-btn:active:not(:disabled),
+  .list-item:active:not(:disabled),
+  .note-item:active:not(:disabled),
+  .col-action-btn:active:not(:disabled) {
+    transform: none;
+  }
+
+  .patient-entry .patient-archive-btn:active:not(:disabled) {
+    transform: translateY(-50%);
+  }
+
+  .draft-progress,
+  .draft-preview,
+  .draft-preview p {
+    animation: none;
+  }
 }

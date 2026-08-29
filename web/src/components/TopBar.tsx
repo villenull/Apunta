@@ -16,7 +16,10 @@ export function TopBar({ back }: TopBarProps): React.JSX.Element {
     return (
       <div className="topbar">
         <MarkIcon />
-        <span className="brand">Apunta</span>
+        {/* Lowercase wordmark, matching the workspace column header — the
+            owner-proxy's chosen brand treatment (2026-08-28) over the
+            prototype's capitalised label. */}
+        <span className="brand">apunta</span>
       </div>
     );
   }
