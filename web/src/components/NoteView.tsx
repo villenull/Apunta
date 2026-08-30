@@ -295,7 +295,10 @@ export function NoteView({
           ref={bodyRef}
           value={text}
           sections={format?.sections ?? []}
-          readOnly={published}
+          // Locked while a rewrite may be in flight (owner-proxy, 2026-08-30):
+          // an edit typed into a note the model is about to replace would be
+          // silently lost, so while the editor breathes it does not take input.
+          readOnly={published || refining}
           refined={refined}
           refining={refining}
           onChange={handleChange}

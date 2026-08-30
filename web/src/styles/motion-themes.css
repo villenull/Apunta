@@ -1,0 +1,266 @@
+/*
+ * Five motion languages, side by side, for the owner-proxy to feel and pick
+ * (2026-08-30). Each is a `data-motion` value on <html>; the switcher pill
+ * (components/MotionSwitcher.tsx) sets it and persists the choice in
+ * localStorage. TEMPORARY EVALUATION RIG: once a language is chosen, its
+ * rules fold into motion.css, the others and the switcher are deleted, and
+ * nothing here ships to the practice owner's Mac.
+ *
+ * The honest states — the note's refining breath, the thinking dots, the
+ * "Updated …" naming — are information and keep working in every language;
+ * these themes restyle how things arrive, hover, and press. No language may
+ * gate interactivity, and every animation dies under prefers-reduced-motion
+ * via the base files' rules (these themes only re-tune, they never re-enable).
+ *
+ * The five, from stillest to most alive:
+ *   ia         — motion as silence: nothing arrives animated, hovers are flat
+ *   notion     — invisible ease: soft, slightly slower, loading shimmers
+ *   linear     — speed as aesthetic: ~120ms, dialog scale, list stagger
+ *   superhuman — spatial: panes slide in from the side they belong to
+ *   craft      — tactile: springy overshoot, cards lift, flashes bloom
+ */
+
+/* ---------------------------------------------------------------- ia --- */
+
+:root[data-motion='ia'] {
+  --motion-fast: 0ms;
+  --motion-base: 0ms;
+  --motion-slow: 120ms;
+}
+
+:root[data-motion='ia'] .route-transition,
+:root[data-motion='ia'] .draft-progress,
+:root[data-motion='ia'] .draft-preview,
+:root[data-motion='ia'] .draft-preview p {
+  animation: none;
+}
+
+:root[data-motion='ia'] .btn:active,
+:root[data-motion='ia'] .icon-btn:active {
+  transform: none;
+}
+
+/* The one motion iA keeps: thought. Slower, quieter dots. */
+:root[data-motion='ia'] .thinking-dot {
+  animation-duration: 1.6s;
+}
+
+/* ------------------------------------------------------------ notion --- */
+
+:root[data-motion='notion'] {
+  --motion-fast: 180ms;
+  --motion-base: 240ms;
+  --motion-slow: 320ms;
+  --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Loading text becomes a quiet shimmer instead of an announcement. */
+:root[data-motion='notion'] .state-note,
+:root[data-motion='notion'] .chat-placeholder {
+  background: linear-gradient(
+    100deg,
+    var(--text-muted) 40%,
+    var(--border, #ccc) 50%,
+    var(--text-muted) 60%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: notion-shimmer 2.2s linear infinite;
+}
+
+@keyframes notion-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+:root[data-motion='notion'] .list-item:hover,
+:root[data-motion='notion'] .note-item:hover {
+  transition-duration: var(--motion-slow);
+}
+
+/* ------------------------------------------------------------ linear --- */
+
+:root[data-motion='linear'] {
+  --motion-fast: 90ms;
+  --motion-base: 120ms;
+  --motion-slow: 160ms;
+  --motion-ease: cubic-bezier(0.25, 0, 0.2, 1);
+}
+
+:root[data-motion='linear'] .modal {
+  animation: linear-dialog-in var(--motion-base) var(--motion-ease);
+}
+
+:root[data-motion='linear'] .modal-backdrop {
+  animation: hint-fade-in var(--motion-base) var(--motion-ease);
+}
+
+@keyframes linear-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Rows cascade in, barely: 12 rows cover the visible column. */
+:root[data-motion='linear'] .note-item,
+:root[data-motion='linear'] .patient-entry {
+  animation: rise-in var(--motion-base) var(--motion-ease) backwards;
+}
+
+:root[data-motion='linear'] .note-item:nth-child(2),
+:root[data-motion='linear'] .patient-entry:nth-child(2) {
+  animation-delay: 18ms;
+}
+:root[data-motion='linear'] .note-item:nth-child(3),
+:root[data-motion='linear'] .patient-entry:nth-child(3) {
+  animation-delay: 36ms;
+}
+:root[data-motion='linear'] .note-item:nth-child(4),
+:root[data-motion='linear'] .patient-entry:nth-child(4) {
+  animation-delay: 54ms;
+}
+:root[data-motion='linear'] .note-item:nth-child(5),
+:root[data-motion='linear'] .patient-entry:nth-child(5) {
+  animation-delay: 72ms;
+}
+:root[data-motion='linear'] .note-item:nth-child(n + 6),
+:root[data-motion='linear'] .patient-entry:nth-child(n + 6) {
+  animation-delay: 90ms;
+}
+
+/* -------------------------------------------------------- superhuman --- */
+
+:root[data-motion='superhuman'] {
+  --motion-fast: 140ms;
+  --motion-base: 190ms;
+  --motion-slow: 240ms;
+  --motion-ease: cubic-bezier(0.3, 0, 0.15, 1);
+}
+
+/* Panes come from the side they live on. */
+:root[data-motion='superhuman'] .col-patients {
+  animation: slide-from-left var(--motion-slow) var(--motion-ease);
+}
+
+:root[data-motion='superhuman'] .note-editor-col {
+  animation: slide-from-right var(--motion-slow) var(--motion-ease);
+}
+
+:root[data-motion='superhuman'] .chat-col {
+  animation: slide-from-right calc(var(--motion-slow) + 40ms) var(--motion-ease);
+}
+
+@keyframes slide-from-left {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes slide-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------- craft --- */
+
+:root[data-motion='craft'] {
+  --motion-fast: 170ms;
+  --motion-base: 260ms;
+  --motion-slow: 340ms;
+  /* The one overshoot in the whole app: things settle like objects. */
+  --motion-ease: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+:root[data-motion='craft'] .route-transition {
+  animation-name: craft-rise;
+}
+
+@keyframes craft-rise {
+  from {
+    opacity: 0;
+    transform: translateY(7px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:root[data-motion='craft'] .note-item,
+:root[data-motion='craft'] .list-item,
+:root[data-motion='craft'] .card {
+  transition:
+    transform var(--motion-base) var(--motion-ease),
+    box-shadow var(--motion-base) var(--motion-ease),
+    background-color var(--motion-fast) ease;
+}
+
+:root[data-motion='craft'] .note-item:hover,
+:root[data-motion='craft'] .list-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
+}
+
+:root[data-motion='craft'] .btn:active,
+:root[data-motion='craft'] .icon-btn:active {
+  transform: scale(0.97);
+}
+
+:root[data-motion='craft'] .note-editable-wrap.is-refined {
+  animation-duration: 1.6s;
+}
+
+/* ------------------------------------------------- the switcher pill --- */
+
+.motion-switcher {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 90;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #ddd);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+}
+
+.motion-switcher button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.motion-switcher button[aria-pressed='true'] {
+  background: var(--accent, #4e7a63);
+  color: #fff;
+}

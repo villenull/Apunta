@@ -7,6 +7,7 @@ import './styles/tokens.css';
 import './styles/app.css';
 import './styles/motion.css';
 import './styles/choreography.css';
+import './styles/motion-themes.css';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('#root is missing from index.html');
