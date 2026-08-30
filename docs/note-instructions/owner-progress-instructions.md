@@ -108,6 +108,9 @@ session rather than content for the record, and it stays out of the note:
 - A forward-looking section carries logistics, stated topics, and a
   tentative clinical hypothesis when she voiced one. Hers only: carrying
   her hypothesis forward is welcome, constructing one is not.
+- A stated decision about session cadence, when or how often sessions
+  will happen, belongs in the forward-looking section. Give it a sentence
+  of its own there; never merge it into another action, and never drop it.
 
 ## Example
 
