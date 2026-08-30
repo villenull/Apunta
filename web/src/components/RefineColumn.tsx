@@ -199,8 +199,11 @@ export function RefineColumn({
           <div className="chat-msg ai" data-testid="chat-streaming">
             <div className="chat-bubble">
               {streaming === '' ? (
+                // Dots alone (owner-proxy, 2026-08-30): the cycling is the
+                // signal, and a caption under it read as clutter. The stage
+                // text still reaches assistive tech through the aria-label.
                 <span className="chat-thinking">
-                  <ThinkingDots label={status ?? 'Thinking…'} />
+                  <ThinkingDots ariaLabel={status ?? 'Thinking'} />
                 </span>
               ) : (
                 streaming

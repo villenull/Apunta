@@ -4,9 +4,21 @@
  * thinking should visibly breathe). Styles live in `styles/motion.css`;
  * under `prefers-reduced-motion` the dots hold steady instead of cycling.
  */
-export function ThinkingDots({ label }: { label?: string }): React.JSX.Element {
+export function ThinkingDots({
+  label,
+  ariaLabel,
+}: {
+  label?: string;
+  /** Spoken description when the visible label is omitted on purpose. */
+  ariaLabel?: string;
+}): React.JSX.Element {
   return (
-    <span className="thinking" role="status" aria-label={label ?? 'Working'} data-testid="thinking-dots">
+    <span
+      className="thinking"
+      role="status"
+      aria-label={ariaLabel ?? label ?? 'Working'}
+      data-testid="thinking-dots"
+    >
       <span className="thinking-dot" />
       <span className="thinking-dot" />
       <span className="thinking-dot" />
