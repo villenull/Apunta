@@ -82,10 +82,13 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('note-title')).toHaveText(formatName);
     await expect(page.getByTestId('note-list')).toContainText('Draft');
 
-    // The refine thread opens itself, so the chat is never a blank column.
+    // The chat lives behind its launcher now; opened, the refine thread has
+    // already introduced itself, so it is never a blank panel.
+    await page.getByTestId('chat-fab').click();
     await expect(page.getByTestId('chat-thread')).toContainText(
       "Here's a first pass based on your dictation.",
     );
+    await page.getByTestId('chat-close').click();
 
     // --- Edit the body; the header picks up the edit -------------------------
     const edited = 'Subjective: Sleep improved.\n\nPlan: Continue weekly sessions.';
@@ -188,6 +191,7 @@ test.describe('the workspace', () => {
 
     const body = page.getByTestId('note-body');
     const thread = page.getByTestId('chat-thread');
+    await page.getByTestId('chat-fab').click();
     await expect(thread).toContainText('Ask a question about this note, or give feedback to refine it.');
 
     // --- Highlight-to-reference: the secondary affordance, still shipped ----

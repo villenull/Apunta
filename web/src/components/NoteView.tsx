@@ -17,7 +17,7 @@ import {
 import { copyText } from '../lib/clipboard.js';
 import { formatEditedDate, formatNoteDate, wasEdited } from '../lib/format.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
-import { CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
+import { ChatIcon, CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
 import { NoteBody } from './NoteBody.js';
 import { RefineColumn } from './RefineColumn.js';
 import { ThinkingDots } from './ThinkingDots.js';
@@ -28,6 +28,21 @@ const SAVE_DEBOUNCE_MS = 400;
 const COPIED_FLASH_MS = 1400;
 /** How long the editor stays lit after the chat rewrote the note. */
 const REFINED_FLASH_MS = 1200;
+
+/**
+ * The chat launcher's open state survives note switches (this view remounts
+ * per note) and reloads, so the chat feels like one ongoing surface rather
+ * than a panel that keeps shutting itself. jsdom has no localStorage.
+ */
+const CHAT_OPEN_KEY = 'apunta-chat-open';
+
+function chatStorage(): Storage | null {
+  try {
+    return window.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export interface NoteViewProps {
   patient: PatientListItem;
@@ -64,6 +79,7 @@ export function NoteView({
   const [refined, setRefined] = useState(false);
   /** A refine request is in flight: the editor breathes and says updating…. */
   const [refining, setRefining] = useState(false);
+  const [chatOpen, setChatOpen] = useState(() => chatStorage()?.getItem(CHAT_OPEN_KEY) === '1');
   /** Which sections the last rewrite changed, named for a moment. */
   const [changedSections, setChangedSections] = useState<readonly string[]>([]);
 
@@ -308,11 +324,33 @@ export function NoteView({
           onSelect={(selected) => {
             // Only a real selection raises the chip. A collapsed caret leaves
             // the last one standing, as the prototype does — she clears it
-            // with the ×, or by sending.
-            if (selected !== '') setRefQuote(selected);
+            // with the ×, or by sending. Highlighting is aimed at the chat,
+            // so it opens the panel the chip lives in.
+            if (selected !== '') {
+              setRefQuote(selected);
+              setChatOpen(true);
+              chatStorage()?.setItem(CHAT_OPEN_KEY, '1');
+            }
           }}
         />
       </div>
+
+      <button
+        type="button"
+        className="chat-fab"
+        aria-label={chatOpen ? 'Close the refine chat' : 'Open the refine chat'}
+        aria-expanded={chatOpen}
+        data-testid="chat-fab"
+        onClick={() => {
+          setChatOpen((open) => {
+            chatStorage()?.setItem(CHAT_OPEN_KEY, open ? '0' : '1');
+            return !open;
+          });
+        }}
+      >
+        {/* While a refine runs behind a closed panel, the launcher thinks. */}
+        {refining ? <ThinkingDots ariaLabel="Updating the note" /> : <ChatIcon className="icon" />}
+      </button>
 
       <RefineColumn
         key={note.id}
@@ -323,6 +361,11 @@ export function NoteView({
         }}
         onNoteUpdated={handleNoteUpdated}
         onRefiningChange={setRefining}
+        hidden={!chatOpen}
+        onClose={() => {
+          setChatOpen(false);
+          chatStorage()?.setItem(CHAT_OPEN_KEY, '0');
+        }}
       />
 
       {confirmingDelete && (

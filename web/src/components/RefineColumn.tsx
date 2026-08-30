@@ -45,6 +45,13 @@ export interface RefineColumnProps {
    * reads as done while the note sits still (live finding, 2026-08-28).
    */
   onRefiningChange?: (refining: boolean) => void;
+  /**
+   * The chat floats behind a launcher (owner-proxy, 2026-08-30). Closed is a
+   * class, never an unmount: this component's cleanup aborts an in-flight
+   * refine, so unmounting on close would cancel work she just asked for.
+   */
+  hidden?: boolean;
+  onClose?: () => void;
 }
 
 /**
@@ -65,6 +72,8 @@ export function RefineColumn({
   onClearRefQuote,
   onNoteUpdated,
   onRefiningChange,
+  hidden = false,
+  onClose,
 }: RefineColumnProps): React.JSX.Element {
   const noteId = note.id;
   const loadThread = useCallback((signal: AbortSignal) => listChatMessages(noteId, signal), [noteId]);
@@ -169,9 +178,20 @@ export function RefineColumn({
   const empty = messages.length === 0 && streaming === null;
 
   return (
-    <div className="chat-col">
-      <div className="chat-header">
+    <div className={hidden ? 'chat-col is-closed' : 'chat-col'} data-testid="chat-panel">
+      <div className="chat-header row between">
         <h3>Refine with AI</h3>
+        {onClose !== undefined && (
+          <button
+            type="button"
+            className="btn small btn-compact-icon"
+            aria-label="Close chat"
+            data-testid="chat-close"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        )}
       </div>
 
       <div className="chat-thread" ref={threadRef} data-testid="chat-thread">

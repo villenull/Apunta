@@ -30,7 +30,8 @@
   display: flex;
   flex: 1;
   min-height: 0;
-  max-width: max(1180px, 74vw);
+  /* 87vw leaves half the old margins (owner-proxy, 2026-08-30). */
+  max-width: max(1180px, 87vw);
   margin: 0 auto;
   border-left: 0.5px solid var(--border);
   border-right: 0.5px solid var(--border);
@@ -101,15 +102,20 @@
   height: 100%;
 }
 
+/*
+ * Quarter, quarter, half (owner-proxy, 2026-08-30) — and the editor keeps
+ * that half whether or not a note is open, since the chat now floats over
+ * the page instead of splitting the main column.
+ */
 .col-patients {
-  width: 240px;
+  width: 25%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
   background: var(--surface-muted);
 }
 
 .col-notes {
-  width: 280px;
+  width: 25%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
 }
@@ -310,18 +316,72 @@
 }
 
 .note-editor-col {
-  flex: 1.3;
-  display: flex;
-  flex-direction: column;
-  border-right: 0.5px solid var(--border);
-  min-width: 0;
-}
-
-.chat-col {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/*
+ * The refine chat floats like a support widget (owner-proxy, 2026-08-30):
+ * a round launcher bottom-right, and the same chat column as a card above
+ * it when open. The panel stays MOUNTED while closed — unmounting aborts an
+ * in-flight refine (RefineColumn's cleanup) — so closed is a class, never a
+ * conditional render. The launcher carries the thinking dots while a refine
+ * runs, so a closed chat still shows the work.
+ */
+.chat-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 80;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.chat-fab:hover {
+  transform: translateY(-1px);
+}
+
+.chat-fab .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.chat-fab .thinking-dot {
+  background: #fff;
+}
+
+.chat-col {
+  position: fixed;
+  right: 20px;
+  bottom: 84px;
+  z-index: 81;
+  width: min(400px, calc(100vw - 40px));
+  height: min(70vh, 640px);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+  animation: rise-in var(--motion-base) var(--motion-ease);
+}
+
+.chat-col.is-closed {
+  display: none;
 }
 
 .note-editor-header {

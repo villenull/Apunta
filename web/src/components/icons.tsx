@@ -44,6 +44,19 @@ export function PlusIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
+export function ChatIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H12l-4.6 3.4a.6.6 0 0 1-.95-.48V17H6.5A2.5 2.5 0 0 1 4 14.5v-8Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
 export function BackIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>

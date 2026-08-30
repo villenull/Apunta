@@ -382,12 +382,11 @@ export function Capture(): React.JSX.Element {
 
           {busy && (
             <div className="draft-progress" data-testid="draft-progress">
-              {/* The dots are the app's universal thinking signal (owner-proxy
-                  feedback, 2026-08-28); they sit beside the server's live
-                  status line rather than replacing it. */}
+              {/* Dots alone (owner-proxy, 2026-08-30): the cycling is the
+                  signal. The server's live stage text still reaches assistive
+                  tech as the dots' spoken name. */}
               <p className="small muted draft-status" role="status" data-testid="draft-status">
-                <ThinkingDots />
-                {status ?? 'Drafting…'}
+                <ThinkingDots ariaLabel={status ?? 'Drafting'} />
               </p>
               {drafting && (
                 <div className="draft-preview" data-testid="draft-preview">
