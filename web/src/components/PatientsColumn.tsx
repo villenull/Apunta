@@ -36,7 +36,7 @@ export function PatientsColumn({
     <div className="col col-patients">
       {/*
         The app's identity lives here, top-left: the mark and the lowercase
-        "apunta" wordmark the owner-proxy chose (2026-08-28), with "Patients"
+        "Apunta" wordmark (owner-proxy: capitalized, 2026-08-30), with "Patients"
         kept beneath as a small label so the list still names itself. The
         prototype put only the column title here; this is part of the same
         sanctioned brand-and-motion pass.
@@ -45,7 +45,7 @@ export function PatientsColumn({
         <div className="brand-block">
           <div className="row gap-8">
             <MarkIcon className="mark mark-sm" />
-            <span className="brand">apunta</span>
+            <span className="brand">Apunta</span>
           </div>
           <h3>Patients</h3>
         </div>

@@ -316,7 +316,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
     const existing = currentGoals(db, id);
 
     const stream = openSse(reply);
-    stream.send('status', { stage: 'connecting', message: 'Contacting the local AI…' });
+    stream.send('status', { stage: 'connecting', message: 'Thinking…' });
 
     // Declared without a value: every path out of the `catch` below returns,
     // so these are read only when the read actually finished.

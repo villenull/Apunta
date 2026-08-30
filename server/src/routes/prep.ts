@@ -58,7 +58,7 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
     const notes = listNotesForPatient(db, id).slice(0, cap);
 
     const stream = openSse(reply);
-    stream.send('status', { stage: 'connecting', message: 'Contacting the local AI…' });
+    stream.send('status', { stage: 'connecting', message: 'Thinking…' });
 
     let lines: BriefLine[] = [];
     // Assigned in the try; every path out of the catch returns.

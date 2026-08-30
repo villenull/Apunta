@@ -189,7 +189,7 @@ export function Capture(): React.JSX.Element {
     setBusy(true);
     setError(null);
     setDraft({});
-    setStatus(recorded === null ? 'Contacting the local AI…' : 'Transcribing…');
+    setStatus(recorded === null ? 'Thinking…' : 'Transcribing…');
     latest.current = { ...latest.current, busy: true };
 
     const controller = new AbortController();

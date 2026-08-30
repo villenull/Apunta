@@ -233,7 +233,7 @@ export class OllamaProvider implements LlmProvider {
 
   async *generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
     const model = this.resolveModel();
-    yield status('connecting', 'Contacting the local AI…');
+    yield status('connecting', 'Thinking…');
     await this.requireUsableModel(model);
 
     const prompt = buildGeneratePrompt(request);
@@ -268,7 +268,7 @@ export class OllamaProvider implements LlmProvider {
 
   async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
     const model = this.resolveModel();
-    yield status('connecting', 'Contacting the local AI…');
+    yield status('connecting', 'Thinking…');
     await this.requireUsableModel(model);
 
     const prompt = buildRefinePrompt(request);
