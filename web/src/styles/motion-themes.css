@@ -57,12 +57,7 @@
 /* Loading text becomes a quiet shimmer instead of an announcement. */
 :root[data-motion='notion'] .state-note,
 :root[data-motion='notion'] .chat-placeholder {
-  background: linear-gradient(
-    100deg,
-    var(--text-muted) 40%,
-    var(--border, #ccc) 50%,
-    var(--text-muted) 60%
-  );
+  background: linear-gradient(100deg, var(--text-muted) 40%, var(--border, #ccc) 50%, var(--text-muted) 60%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
