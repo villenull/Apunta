@@ -186,6 +186,15 @@ describe('fakeRefine', () => {
     expect(result.updatedSections).toBeNull();
   });
 
+  it("routes the What's missing? quick action to the question branch", () => {
+    // The exact phrase `RefineColumn` sends. Its old imperative form fell
+    // through every question check and rewrote the note in live testing, so
+    // this pins the phrase to the branch that answers without editing.
+    const result = fakeRefine('What is missing from this note?', current, SOAP);
+    expect(result.updatedSections).toBeNull();
+    expect(result.reply).toContain('Based on the note');
+  });
+
   it('acknowledges a highlighted excerpt in its answer', () => {
     const result = fakeRefine('Does this cover it?', current, SOAP, 'Continue weekly.');
     expect(result.reply).toContain('the section you highlighted');

@@ -693,6 +693,23 @@ describe('refine chat', () => {
     expect(within(thread).queryByText('More clinical')).toBeNull();
   });
 
+  it('sends the "What\'s missing?" chip as a question, and the note stands still', async () => {
+    openNote();
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    fireEvent.click(screen.getByRole('button', { name: "What's missing?" }));
+
+    // The message carries a question mark on purpose: without one, the model
+    // and the published-note question detector both read the chip as an edit
+    // command, and in live testing it rewrote a note nobody asked to change.
+    const thread = await screen.findByTestId('chat-thread');
+    await waitFor(() => {
+      expect(thread.textContent).toContain('What is missing from this note?');
+    });
+    expect(await screen.findByText(/that detail isn't currently in the note/)).toBeDefined();
+    expect(body.value).toBe(NOTE_TEXT);
+  });
+
   it('answers a question without touching the note', async () => {
     openNote();
     const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
