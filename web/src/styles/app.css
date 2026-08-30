@@ -330,8 +330,17 @@
  * conditional render. The launcher carries the thinking dots while a refine
  * runs, so a closed chat still shows the work.
  */
+.note-chat-split {
+  position: relative;
+}
+
+/* The launcher yields to the open card, which carries its own close. */
+.note-chat-split.chat-docked .chat-fab {
+  display: none;
+}
+
 .chat-fab {
-  position: fixed;
+  position: absolute;
   right: 20px;
   bottom: 20px;
   z-index: 80;
@@ -362,16 +371,21 @@
   background: #fff;
 }
 
+/*
+ * Open, the card sits IN the flex row rather than over it: a panel floated
+ * above the editor intercepted the very text the refine loop is about —
+ * Playwright caught it stealing clicks before any human did — and an
+ * absolute card with a fixed editor margin crushed the editor to 158px at
+ * laptop widths. In-flow, both squeeze honestly at every width, and the
+ * card keeps its floating look through the inset, the radius and the
+ * shadow.
+ */
 .chat-col {
-  position: fixed;
-  right: 20px;
-  bottom: 84px;
-  z-index: 81;
-  width: min(400px, calc(100vw - 40px));
-  height: min(70vh, 640px);
+  flex: 0 1 400px;
+  min-width: 240px;
+  margin: 14px;
   display: flex;
   flex-direction: column;
-  min-width: 0;
   background: var(--surface);
   border: 0.5px solid var(--border);
   border-radius: 14px;
@@ -382,6 +396,10 @@
 
 .chat-col.is-closed {
   display: none;
+}
+
+.note-editor-col {
+  min-width: 320px;
 }
 
 .note-editor-header {

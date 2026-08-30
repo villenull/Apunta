@@ -70,7 +70,12 @@ test.describe('recording a session', () => {
     await page.getByTestId('record-stop').click();
 
     // "Transcribing… 25%" — whisper's progress, or the fake's stand-in for it.
-    await expect(page.getByTestId('draft-status')).toContainText(/Transcribing…/);
+    // Visibly the status is dots alone (owner-proxy, 2026-08-30); the stage
+    // text is the dots' accessible name, and that is where it is asserted.
+    await expect(page.getByTestId('draft-status').getByTestId('thinking-dots')).toHaveAttribute(
+      'aria-label',
+      /Transcribing…/,
+    );
 
     // The draft is visible while it is still being written, and it is prose:
     // if the JSON decoding regressed she would watch `{"Subjective": "…` here.

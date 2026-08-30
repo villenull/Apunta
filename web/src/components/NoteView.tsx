@@ -236,7 +236,7 @@ export function NoteView({
   }
 
   return (
-    <div className="note-chat-split">
+    <div className={chatOpen ? 'note-chat-split chat-docked' : 'note-chat-split'}>
       <div className="note-editor-col">
         <div className="note-editor-header row between">
           <div>
