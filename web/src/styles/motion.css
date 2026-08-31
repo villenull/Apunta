@@ -1,18 +1,23 @@
 /*
- * Motion vocabulary — calm clinical (owner-proxy answers, 2026-08-28).
+ * The app's motion language — Linear's, at half its speed.
  *
- * Quick fades and gentle slides, 150–250ms, standard easing, nothing bouncy.
- * Every animated affordance in the app draws from these tokens; component
- * stylesheets may compose them but never invent their own timings. Under
- * prefers-reduced-motion everything settles instantly and the thinking dots
- * hold steady instead of cycling.
+ * Chosen from a five-way live comparison (owner-proxy, 2026-08-30): crisp
+ * standard easing, a dialog that scales in, list rows that cascade by a
+ * hair. Linear's own ~120ms base read as too quick to see here, so every
+ * duration and stagger step is doubled: the character is Linear's, the pace
+ * is deliberately slower.
+ *
+ * Everything animated in the app draws from these tokens. Component
+ * stylesheets compose them and never invent their own timings, so the app
+ * has one pace rather than a dozen. Under prefers-reduced-motion every
+ * entrance is dropped and the thinking dots hold steady.
  */
 
 :root {
-  --motion-fast: 150ms;
-  --motion-base: 200ms;
-  --motion-slow: 250ms;
-  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-fast: 180ms;
+  --motion-base: 240ms;
+  --motion-slow: 320ms;
+  --motion-ease: cubic-bezier(0.25, 0, 0.2, 1);
 }
 
 /* --- Entrances --- */
@@ -35,12 +40,91 @@
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .route-transition {
   animation: rise-in var(--motion-base) var(--motion-ease);
 }
 
+/*
+ * Picking a note is a navigation too, even though only the query string
+ * moves and the route wrapper deliberately ignores it. The editor remounts
+ * on `key={note.id}` (Workspace.tsx), so the same entrance replays for the
+ * note itself — asked for directly (owner-proxy, 2026-08-30).
+ */
+.note-editor-col {
+  animation: rise-in var(--motion-base) var(--motion-ease);
+}
+
+/* A dialog scales the last 2%, which is Linear's tell. */
+.modal {
+  animation: dialog-in var(--motion-base) var(--motion-ease);
+}
+
+.modal-backdrop {
+  animation: fade-in var(--motion-base) var(--motion-ease);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Rows cascade in by a hair. Five steps cover what the eye reads as a group;
+ * everything past the fifth shares the last delay, so a long list never
+ * turns the cascade into a wait.
+ */
+.note-item,
+.patient-entry {
+  animation: rise-in var(--motion-base) var(--motion-ease) backwards;
+}
+
+.note-item:nth-child(2),
+.patient-entry:nth-child(2) {
+  animation-delay: 36ms;
+}
+
+.note-item:nth-child(3),
+.patient-entry:nth-child(3) {
+  animation-delay: 72ms;
+}
+
+.note-item:nth-child(4),
+.patient-entry:nth-child(4) {
+  animation-delay: 108ms;
+}
+
+.note-item:nth-child(5),
+.patient-entry:nth-child(5) {
+  animation-delay: 144ms;
+}
+
+.note-item:nth-child(n + 6),
+.patient-entry:nth-child(n + 6) {
+  animation-delay: 180ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .route-transition {
+  .route-transition,
+  .note-editor-col,
+  .modal,
+  .modal-backdrop,
+  .note-item,
+  .patient-entry {
     animation: none;
   }
 }

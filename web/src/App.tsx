@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 
-import { MotionSwitcher } from './components/MotionSwitcher.js';
 import { About } from './routes/About.js';
 import { AddPatient } from './routes/AddPatient.js';
 import { Capture } from './routes/Capture.js';
@@ -30,8 +29,6 @@ export function App(): React.JSX.Element {
      * every list click would be exactly the theatre this app avoids.
      */
     <div key={location.pathname} className="route-transition">
-      {/* Temporary: the five-way motion evaluation rig. Deleted with the pick. */}
-      <MotionSwitcher />
       <Routes>
         <Route path="/" element={<Workspace />} />
         <Route path="/patients/new" element={<AddPatient />} />
