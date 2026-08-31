@@ -1,6 +1,6 @@
 import { MAX_DETECT_FILES } from '@apunta/shared';
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 
 import { detectFormat, errorMessage } from '../api/index.js';
 import { ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
@@ -210,6 +210,22 @@ export function OnboardingFormat(): React.JSX.Element {
           Reading the file and working out its sections. Nothing is saved until you say it looks right.
         </p>
       )}
+
+      {/*
+        The way back in after a disaster, and the way a prepared practice
+        starts (found in the day-one rehearsal, 2026-08-30). This screen is
+        the whole app until a format exists, and it had no links at all — so
+        someone restoring onto a new Mac, with every note sitting in a backup
+        file, was asked to invent a note format instead. Restore lives in
+        Settings; this is the door to it.
+      */}
+      <p className="small note-meta onboarding-restore">
+        Already have an Apunta backup, or a settings file someone prepared for you?{' '}
+        <Link to="/settings" data-testid="onboarding-restore">
+          Restore it instead
+        </Link>
+        .
+      </p>
     </Screen>
   );
 }

@@ -99,6 +99,31 @@ to press. The most common is simply the internet dropping.
 
 When it finishes, Apunta opens by itself in your browser.
 
+### If you were given a settings file
+
+Apunta then asks you to add your note format. If someone prepared Apunta for
+you, they will have given you a file ending in **.zip** — it holds your note
+format and how you like your notes written, and nothing else: no patients, no
+notes.
+
+Apunta only restores from files kept in its own backups folder, so the file
+has to be put there first. It is a folder macOS normally hides, so:
+
+1. On that first screen, click **Restore it instead** at the bottom. Apunta
+   shows you the exact folder it uses, under **Backups go to**. Select that
+   line and copy it.
+2. Open **Finder**. In the menu bar choose **Go → Go to Folder…**, paste what
+   you copied, and press Return. A folder opens — it may be empty.
+3. Drag the **.zip** file you were given into it.
+4. Go back to Apunta and reload the page. The file is now listed under
+   **Archives**, with a **Restore** button beside it. Click that.
+
+Apunta will ask you to quit and open it again. When it comes back, your
+format is there and you can start at section 4.
+
+This is the same screen you would use to bring your notes back onto a new
+Mac, from a backup made in section 7.
+
 ---
 
 ## 4. Using it, day to day

@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 import { DB_ENTRY_NAME, MANIFEST_FILENAME, PENDING_RESTORE_DIRNAME } from '@apunta/shared';
 import type { BackupStatus, CreateBackupResponse, RestoreBackupResponse } from '@apunta/shared';
@@ -203,5 +203,65 @@ describe('the archive itself', () => {
       db: { migrationLevel: number };
     }>();
     expect(manifest.migration_level).toBe(health.db.migrationLevel);
+  });
+});
+
+/**
+ * The day-one dead end (rehearsal, 2026-08-30): a practice is handed a config
+ * pack, or restores a download a browser renamed, and the app refuses it by
+ * name — with no other way in, because uploads are deliberately not accepted.
+ * Inside the backup folder the practice's own hand decides what belongs;
+ * outside it, the strict name is what stops this reading arbitrary files.
+ */
+describe('POST /api/backup/restore — which files it will take', () => {
+  it('stages an archive whose name is not one Apunta would have written', async () => {
+    const harness = await createTestApp();
+    try {
+      const created = await harness.app.inject({ method: 'POST', url: '/api/backup', payload: {} });
+      const { file } = created.json() as { file: { filename: string; path: string } };
+      const handedOver = join(dirname(file.path), 'apunta-config-pack.zip');
+      copyFileSync(file.path, handedOver);
+
+      const response = await harness.app.inject({
+        method: 'POST',
+        url: '/api/backup/restore',
+        payload: { file: 'apunta-config-pack.zip' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect((response.json() as { staged: boolean }).staged).toBe(true);
+    } finally {
+      await harness.close();
+    }
+  });
+
+  it('refuses to climb out of the backup folder', async () => {
+    const harness = await createTestApp();
+    try {
+      for (const file of ['../apunta-backup-2026-08-30.zip', 'nested/apunta-backup-2026-08-30.zip']) {
+        const response = await harness.app.inject({
+          method: 'POST',
+          url: '/api/backup/restore',
+          payload: { file },
+        });
+        expect(response.statusCode, file).toBe(404);
+      }
+    } finally {
+      await harness.close();
+    }
+  });
+
+  it('still demands our own filename when given an absolute path', async () => {
+    const harness = await createTestApp();
+    try {
+      const response = await harness.app.inject({
+        method: 'POST',
+        url: '/api/backup/restore',
+        payload: { file: '/etc/hosts' },
+      });
+      expect(response.statusCode).toBe(400);
+    } finally {
+      await harness.close();
+    }
   });
 });

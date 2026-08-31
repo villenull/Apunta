@@ -248,7 +248,22 @@ function BackupList({
   onRestore: (file: BackupFile) => void;
 }): React.JSX.Element {
   if (files.length === 0) {
-    return <p className="small note-meta">No archives in that folder yet.</p>;
+    /*
+     * The empty state has to teach the way in, because there is no other one
+     * (day-one rehearsal, 2026-08-30). Restoring is offered per archive found
+     * in the folder above, and the app deliberately accepts no uploads — a
+     * 500 MB multipart would put a whole practice through a temp file. So a
+     * backup that arrived some other way, on a memory stick or from whoever
+     * set this up, is invisible until it is moved into that folder, and
+     * saying nothing left that person stuck on a screen with no restore
+     * control at all.
+     */
+    return (
+      <p className="small note-meta" data-testid="backup-empty">
+        No archives in that folder yet. A backup file put into the folder above — one you were given, or one
+        from an old Mac — appears here, with a Restore button beside it.
+      </p>
+    );
   }
 
   return (

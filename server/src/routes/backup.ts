@@ -1,4 +1,4 @@
-import { isAbsolute, join } from 'node:path';
+import { basename, isAbsolute, join } from 'node:path';
 
 import {
   CreateBackupRequestSchema,
@@ -126,10 +126,22 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
 }
 
 /**
- * A bare filename means "one of mine, in the backup folder". An absolute path
- * is allowed so an archive restored from an external disk does not have to be
- * copied first — but it must still look like one of ours, which keeps this
- * from becoming a "read me any file on the disk" endpoint.
+ * A bare filename means "a file in the backup folder". An absolute path is
+ * allowed so an archive on an external disk does not have to be copied first.
+ *
+ * The two are trusted differently, because only one of them can point
+ * anywhere. An absolute path must still carry Apunta's own filename, which is
+ * what keeps this from becoming a "read me any file on the disk" endpoint. A
+ * bare name is confined to the backup folder instead: it may not contain a
+ * directory component at all, so it cannot climb out, and inside that folder
+ * the practice's own hand is the authority on what belongs there.
+ *
+ * That distinction is the fix for a day-one dead end (2026-08-30): a config
+ * pack handed over on a memory stick, or a download a browser renamed to
+ * "… (1).zip", was refused by name even when sitting in the right folder,
+ * with no other way to restore it. The archive is still the real gate —
+ * `stageRestore` validates the manifest and refuses anything that is not
+ * genuinely one of ours.
  */
 function resolveArchivePath(db: Database, config: AppConfig, file: string): string {
   if (isAbsolute(file)) {
@@ -139,8 +151,8 @@ function resolveArchivePath(db: Database, config: AppConfig, file: string): stri
     }
     return file;
   }
-  if (backupFilenameDate(file) === null) {
-    throw notFound(`${file} is not an Apunta backup filename.`);
+  if (basename(file) !== file || !file.toLowerCase().endsWith('.zip')) {
+    throw notFound(`${file} is not a backup file in the backup folder.`);
   }
   return join(resolveBackupDir(db, config.dataDir), file);
 }

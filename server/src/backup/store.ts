@@ -51,6 +51,41 @@ export function describeDestination(directory: string, dataDir: string): Destina
 }
 
 /** Every Apunta archive in a folder, newest first. Anything else there is ignored. */
+/**
+ * Everything in the folder that could be restored, not only what this app
+ * wrote (day-one rehearsal, 2026-08-30).
+ *
+ * `listBackups` is keyed to Apunta's own filenames because it feeds the
+ * pruner, and the pruner deletes. But restoring has the opposite duty: a
+ * practice puts a file here precisely because it came from somewhere else —
+ * an old Mac, a memory stick, whoever set the app up — and a browser that
+ * appended " (1)" to the download, or a hand that renamed it, must not make
+ * an otherwise valid backup invisible with no way to reach it. So restore
+ * offers every zip in the folder and lets the archive itself be the judge:
+ * `stageRestore` validates the manifest and refuses anything that is not
+ * genuinely one of ours.
+ *
+ * Nothing here reaches the pruner, which still only ever removes files it
+ * can prove it created.
+ */
+export function listRestorableBackups(directory: string): BackupFile[] {
+  if (!existsSync(directory)) return [];
+  const files: BackupFile[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.zip')) continue;
+    const path = join(directory, entry.name);
+    const stats = statSync(path);
+    files.push({
+      filename: entry.name,
+      path,
+      bytes: stats.size,
+      created_at: new Date(stats.mtimeMs).toISOString(),
+      encrypted: isEncrypted(path),
+    });
+  }
+  return files.sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
 export function listBackups(directory: string): BackupFile[] {
   if (!existsSync(directory)) return [];
   const files: BackupFile[] = [];

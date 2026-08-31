@@ -2214,3 +2214,9 @@ select:disabled {
   background: var(--surface);
   cursor: pointer;
 }
+
+/* The restore door on the first-run screen: present, not competing. */
+.onboarding-restore {
+  text-align: center;
+  margin-top: 4px;
+}

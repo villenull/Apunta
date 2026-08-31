@@ -837,6 +837,26 @@ describe('editor markers', () => {
   });
 });
 
+describe('first run, with nothing set up yet', () => {
+  /*
+   * The day-one rehearsal (2026-08-30) found this screen was the entire app
+   * until a format existed, and it carried no links: a practice restoring
+   * onto a new Mac — every note sitting in a backup file — was asked to
+   * invent a note format instead. Restore lives in Settings.
+   */
+  it('offers a way to restore a backup instead of building a format', async () => {
+    installFakeApi({ formats: [] });
+    renderApp('/');
+
+    // With no formats, the app opens on onboarding rather than the workspace.
+    expect(await screen.findByText('Add your note format')).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('onboarding-restore'));
+
+    expect(await screen.findByText('Back up and restore')).toBeDefined();
+  });
+});
+
 describe('settings', () => {
   it('lists formats with their sections and links each one to the editor', async () => {
     installFakeApi({ formats: [progressNote] });

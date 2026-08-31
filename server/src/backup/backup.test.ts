@@ -32,6 +32,7 @@ import { seedDatabase } from '../seed.js';
 import { createBackup } from './archive.js';
 import { applyPendingRestore, hasPendingRestore, readArchive, stageRestore } from './restore.js';
 import { runBackup } from './index.js';
+import { listRestorableBackups, pruneBackups } from './store.js';
 
 /**
  * The backup suite.
@@ -434,5 +435,46 @@ describe('the decrypt script printed inside RESTORE.txt', () => {
     expect(text).not.toContain('The "plans" folder');
     // And the counts read as English rather than as a template.
     expect(text).toContain('4 notes for 3 patients');
+  });
+});
+
+/**
+ * Restoring and pruning look at the same folder with opposite duties, and the
+ * day-one rehearsal (2026-08-30) showed what happens when one listing serves
+ * both: a config pack placed there by hand was invisible, because it did not
+ * carry Apunta's own filename. Relaxing the shared listing would have put
+ * that same file in the pruner's blast radius, so the two are separate.
+ */
+describe('a backup that did not come from this app', () => {
+  it('is offered for restore even though it is named something else', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'apunta-foreign-'));
+    writeFileSync(join(dir, 'apunta-backup-2026-08-30.zip'), 'ours');
+    writeFileSync(join(dir, 'apunta-config-pack.zip'), 'handed over');
+    // What a browser does to a second download of the same file.
+    writeFileSync(join(dir, 'apunta-backup-2026-08-30 (1).zip'), 'downloaded twice');
+    writeFileSync(join(dir, 'notes.txt'), 'not an archive at all');
+
+    const names = listRestorableBackups(dir).map((file) => file.filename);
+
+    expect(names).toContain('apunta-config-pack.zip');
+    expect(names).toContain('apunta-backup-2026-08-30 (1).zip');
+    expect(names).toContain('apunta-backup-2026-08-30.zip');
+    expect(names).not.toContain('notes.txt');
+
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('is never deleted by the pruner, which only removes what it made', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'apunta-foreign-prune-'));
+    // Enough same-day archives of ours that pruning definitely has work to do.
+    for (let index = 0; index < 12; index += 1) {
+      writeFileSync(join(dir, `apunta-backup-2026-08-${String(10 + index)}.zip`), 'ours');
+    }
+    writeFileSync(join(dir, 'apunta-config-pack.zip'), 'handed over');
+
+    pruneBackups(dir);
+
+    expect(existsSync(join(dir, 'apunta-config-pack.zip'))).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
   });
 });
