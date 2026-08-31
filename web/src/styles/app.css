@@ -322,6 +322,18 @@
 .note-chat-split {
   display: flex;
   height: 100%;
+  /* The chat card positions itself in this box's bottom-right corner. */
+  position: relative;
+  /*
+   * The editor's entrance translates it ten pixels down before settling.
+   * Unclipped, those pixels overflow the column for the length of the
+   * animation, a scrollbar flashes in and out, and its width shoves the
+   * layout sideways — read as the whole screen shaking on every note click
+   * (owner-proxy, 2026-08-30; measured as `scrollHeight > clientHeight`
+   * only mid-animation). Everything in here scrolls internally, so clipping
+   * the overflow costs nothing.
+   */
+  overflow: hidden;
 }
 
 .note-editor-col {
@@ -339,10 +351,6 @@
  * conditional render. The launcher carries the thinking dots while a refine
  * runs, so a closed chat still shows the work.
  */
-.note-chat-split {
-  position: relative;
-}
-
 /* The launcher yields to the open card, which carries its own close. */
 .note-chat-split.chat-docked .chat-fab {
   display: none;
@@ -374,6 +382,9 @@
 .chat-fab .icon {
   width: 22px;
   height: 22px;
+  /* `.icon` sets a grey; on the accent disc the icon is the button's own
+     colour, so it pops and stays legible whatever the accent becomes. */
+  color: inherit;
 }
 
 .chat-fab .thinking-dot {
@@ -572,13 +583,18 @@
   color: var(--accent-hover);
 }
 
+/*
+ * Titleless (owner-proxy, 2026-08-30), so this is a thin bar carrying the
+ * close control alone — right-aligned, and shallow, because the space a
+ * heading used to justify now belongs to the conversation.
+ */
 .chat-header {
-  padding: 16px 22px;
+  padding: 10px 12px;
   border-bottom: 0.5px solid var(--border);
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 
 .chat-thread {
@@ -2182,4 +2198,19 @@ select:disabled {
   .draft-preview p {
     animation: none;
   }
+}
+
+/* Settings → Appearance: the colour well sits on the row with its reset. */
+.accent-row {
+  align-items: center;
+}
+
+.accent-row input[type='color'] {
+  width: 52px;
+  height: 34px;
+  padding: 2px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
 }

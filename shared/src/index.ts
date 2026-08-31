@@ -143,7 +143,14 @@ export type {
   ChatTokenEvent,
 } from './chat.js';
 
-export { SettingKeySchema, SettingsSchema, UpdateSettingsRequestSchema } from './settings.js';
+export {
+  ACCENT_COLOR_SETTING,
+  DEFAULT_ACCENT_COLOR,
+  isAccentColor,
+  SettingKeySchema,
+  SettingsSchema,
+  UpdateSettingsRequestSchema,
+} from './settings.js';
 export type { Settings, UpdateSettingsRequest } from './settings.js';
 
 export {

@@ -18,3 +18,24 @@ export type Settings = z.infer<typeof SettingsSchema>;
 /** `PUT /api/settings` merges: keys present are written, everything else is untouched. */
 export const UpdateSettingsRequestSchema = SettingsSchema;
 export type UpdateSettingsRequest = z.infer<typeof UpdateSettingsRequestSchema>;
+
+/**
+ * The accent colour, so the practice can look like itself (owner-proxy,
+ * 2026-08-30). One setting drives the whole palette: `--accent-hover` and
+ * `--accent-tint` are mixed from it in `tokens.css`, so nothing has to be
+ * chosen twice or kept in step by hand.
+ */
+export const ACCENT_COLOR_SETTING = 'accent_color';
+
+/** The prototype's green, and what an unset or unusable value falls back to. */
+export const DEFAULT_ACCENT_COLOR = '#1f6f63';
+
+/**
+ * Settings values are free-form JSON, so this reads whatever is in the row
+ * and keeps only what is safely paintable. A six-digit hex is the whole
+ * grammar on purpose: anything richer is a CSS expression, and a settings
+ * row should never be able to inject one into a stylesheet.
+ */
+export function isAccentColor(value: unknown): value is string {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+}

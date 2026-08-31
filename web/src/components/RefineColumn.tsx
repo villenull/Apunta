@@ -55,7 +55,8 @@ export interface RefineColumnProps {
 }
 
 /**
- * "Refine with AI" — the right half of `prototype/patients.html`.
+ * The refine chat — the right half of `prototype/patients.html`, now a
+ * floating card rather than a column.
  *
  * This is the owner's primary repair path, not a co-equal feature: asked what
  * she reaches for when a paragraph is wrong, she chose describing the problem
@@ -179,8 +180,10 @@ export function RefineColumn({
 
   return (
     <div className={hidden ? 'chat-col is-closed' : 'chat-col'} data-testid="chat-panel">
+      {/* No heading (owner-proxy, 2026-08-30): the panel is unmistakably a
+          chat, and a title inside a small floating card is a line of the
+          conversation's height spent saying what it plainly is. */}
       <div className="chat-header row between">
-        <h3>Refine with AI</h3>
         {onClose !== undefined && (
           <button
             type="button"

@@ -60,7 +60,24 @@
  * note itself — asked for directly (owner-proxy, 2026-08-30).
  */
 .note-editor-col {
-  animation: rise-in var(--motion-base) var(--motion-ease);
+  animation: note-rise var(--motion-base) var(--motion-ease);
+}
+
+/*
+ * A longer rise than the 3px everything else uses: this one was asked for
+ * because it should be *seen* (owner-proxy, 2026-08-30). It is safe to make
+ * it travel because `.note-chat-split` clips the overflow it would otherwise
+ * create — see the note there.
+ */
+@keyframes note-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* A dialog scales the last 2%, which is Linear's tell. */

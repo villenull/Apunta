@@ -850,4 +850,47 @@ describe('settings', () => {
     expect(await screen.findByText('Edit note format')).toBeDefined();
     expect(screen.getByLabelText('Format name')).toHaveProperty('value', 'Progress note');
   });
+
+  /**
+   * The accent is the one colour the practice chooses. It is stored as a
+   * setting and painted onto the root element, where `tokens.css` mixes the
+   * hover and tint shades out of it.
+   */
+  it('saves a chosen accent colour and paints it on the document', async () => {
+    const api = installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const picker = (await screen.findByLabelText('Accent colour')) as HTMLInputElement;
+    expect(picker.value).toBe('#1f6f63');
+
+    // Moving the picker previews immediately; saving is what stores it.
+    fireEvent.change(picker, { target: { value: '#8b2f6b' } });
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#8b2f6b');
+    expect(api.state.settings['accent_color']).toBeUndefined();
+
+    fireEvent.click(screen.getByTestId('save-appearance'));
+
+    await waitFor(() => {
+      expect(api.state.settings['accent_color']).toBe('#8b2f6b');
+    });
+  });
+
+  it('puts the original green back, and forgets an unsaved preview', async () => {
+    const api = installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const picker = (await screen.findByLabelText('Accent colour')) as HTMLInputElement;
+    fireEvent.change(picker, { target: { value: '#123456' } });
+    fireEvent.click(screen.getByTestId('reset-accent'));
+
+    await waitFor(() => {
+      expect(api.state.settings['accent_color']).toBe('#1f6f63');
+    });
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#1f6f63');
+
+    // Leaving the screen drops a preview nobody saved.
+    fireEvent.change(picker, { target: { value: '#abcdef' } });
+    cleanup();
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#1f6f63');
+  });
 });

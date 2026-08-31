@@ -1,4 +1,9 @@
+import { ACCENT_COLOR_SETTING } from '@apunta/shared';
+import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
+
+import { getSettings } from './api/index.js';
+import { applyAccentColor } from './lib/accent.js';
 
 import { About } from './routes/About.js';
 import { AddPatient } from './routes/AddPatient.js';
@@ -17,6 +22,25 @@ import { Workspace } from './routes/Workspace.js';
  */
 export function App(): React.JSX.Element {
   const location = useLocation();
+
+  /*
+   * The practice's accent, painted once at startup. A failure here is
+   * deliberately silent: the app is entirely usable in its default colours,
+   * and every screen that actually needs settings reports its own failure.
+   */
+  useEffect(() => {
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        applyAccentColor((await getSettings(controller.signal))[ACCENT_COLOR_SETTING]);
+      } catch {
+        // Default colours it is.
+      }
+    })();
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   return (
     /*

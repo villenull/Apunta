@@ -19,9 +19,19 @@
   --text-primary: #262620;
   --text-secondary: #6e6c60;
   --text-muted: #a5a296;
+  /*
+   * The accent is the one colour the practice can change (Settings →
+   * Appearance writes `--accent` onto the root element). Its two relatives
+   * are mixed from it rather than stored, so a new accent brings its own
+   * hover and tint instead of leaving the old green behind in every active
+   * row. The literals above each mix are the pre-`color-mix` fallback and
+   * are the exact values this file shipped with.
+   */
   --accent: #1f6f63;
   --accent-hover: #17554b;
+  --accent-hover: color-mix(in srgb, var(--accent) 77%, #000);
   --accent-tint: #e4efec;
+  --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
   --danger: #b54b3a;
   --danger-tint: #f7e9e5;
   --radius: 10px;
