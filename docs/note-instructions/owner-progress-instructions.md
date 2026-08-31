@@ -69,6 +69,31 @@ session rather than content for the record, and it stays out of the note:
 - Options discussed and set aside. A plan records what was decided;
   something she raised and then declined does not appear in it.
 
+## What belongs in each section
+
+Written from her own section-by-section patterns. A format may not have every
+section named here, and one this list does not name simply follows the rest of
+this document — so nothing below is an instruction to invent a section.
+
+- **Location** — where the session happened, in a word or two. Empty if she
+  did not say.
+- **Client presentation** — how the client seemed to her: engagement, affect,
+  one notable observation, in a line. Her observations only. What the client
+  *told* her is not presentation and belongs in the discussion section
+  instead. If she described nothing about how they seemed, this is empty.
+- **Risk review** — what she reviewed about risk, in her words: any history
+  she named first, then today's status. When she describes a review, record
+  it. The bare "None." belongs only to a session where she said nothing about
+  risk at all, and it never stands in for a review she actually carried out.
+- **Discussion** — what was talked about, opening with the client's name and
+  an attribution verb, the session's stated focus first. Most of what she
+  reports the client saying belongs here rather than anywhere else.
+- **Intervention** — what she did, named rather than described.
+- **Out of session actions** — what happens before the next session, split by
+  person when both have a task.
+- **Note for next session** — forward-looking logistics and the topics she
+  named, including any decision about how often sessions happen.
+
 ## Her voice
 
 - Use the client's first name, never "the client" or "the patient". Use the

@@ -387,6 +387,21 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
       // A proposal with no citable evidence is not offered at all.
       if (statement === '' || evidence.length === 0 || seen.has(statement.toLowerCase())) {
         dropped += 1;
+        // Shape only — counts and the indices the model cited, never a word
+        // of the goal or the note. Without this, a run that drops everything
+        // is indistinguishable from a model that proposed nothing, which is
+        // exactly the hole a live run fell into (2026-08-30): the screen said
+        // "No suggestions waiting" after a minute of work on three goals.
+        logDroppedGoal(request, {
+          blank: statement === '',
+          duplicate: statement !== '' && seen.has(statement.toLowerCase()),
+          citations: goal.evidence.length,
+          resolved: evidence.length,
+          citedNotes: goal.evidence.map((citation) => citation.note),
+          citedExcerpts: goal.evidence.map((citation) => citation.excerpt),
+          offeredNotes: materials.map((material) => material.index),
+          excerptCounts: materials.map((material) => material.excerpts.length),
+        });
         continue;
       }
       seen.add(statement.toLowerCase());
@@ -491,6 +506,19 @@ function resolveEvidence(goal: SuggestedGoal, materials: readonly NoteMaterial[]
     });
   }
   return evidence;
+}
+
+/**
+ * Why a suggested goal was discarded, in numbers.
+ *
+ * Every field here is a count or an index. The goal's words and the note's
+ * words are patient material and never reach a log (CLAUDE.md hard rule 2,
+ * `docs/research/privacy-audit-2026-08.md` H1) — but "the model cited note 7
+ * when it was shown notes 1 to 5" is shape, and it is the difference between
+ * a diagnosable bug and a feature that silently returns nothing.
+ */
+function logDroppedGoal(request: FastifyRequest, detail: Record<string, unknown>): void {
+  request.log.info(detail, 'suggested goal dropped');
 }
 
 function toAiError(error: unknown): AiError {

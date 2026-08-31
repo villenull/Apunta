@@ -52,6 +52,12 @@ the intake-side instruction distillation, per the M10 report.
 - `npm run eval` — model-quality harness over `e2e/fixtures/eval/`; the report
   leads with fabrication rate. `-- --fake` is the CI self-check (it passes when
   the scorer *deflects* on the canned notes, not when everything is clean)
+- `npm run check:format` — manual, needs a running Apunta on a real model:
+  drafts `e2e/fixtures/her-format/` through whatever format that Apunta has
+  and flags routing failures (reported speech in the observation section, a
+  risk review flattened to "None.", a dropped cadence decision). Not an eval —
+  no rubric, no score; `npm run eval` remains the faithfulness instrument.
+  `APUNTA_CHECK_URL=http://127.0.0.1:7720` points it at another instance
 - `npm run smoke:live` — manual, needs real Ollama + whisper installed
 - `bash scripts/setup-macos.sh` — installs the local AI stack (macOS only,
   `--dry-run` works anywhere); `scripts/preflight-macos.sh` is its read-only
