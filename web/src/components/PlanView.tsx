@@ -143,6 +143,21 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
 
       const read = done.lookback.notes_read;
       const oldest = done.lookback.oldest_note_date;
+      /*
+       * A run can end with nothing to show for two unrelated reasons, and
+       * until now both rendered as "No suggestions waiting." — which reads as
+       * "the AI had no ideas" after a minute of visible work (live run,
+       * 2026-08-30). Either the model proposed nothing, or it proposed goals
+       * that could not be traced back to a note and the server discarded
+       * them. She can act on the first (the notes are too thin yet) and
+       * should simply be told about the second.
+       */
+      const outcome =
+        done.goals.length > 0
+          ? ''
+          : done.dropped > 0
+            ? ` ${String(done.dropped)} ${done.dropped === 1 ? 'draft goal was' : 'draft goals were'} written and then discarded, because ${done.dropped === 1 ? 'it' : 'they'} could not be traced to anything in those notes. Nothing was added to the plan.`
+            : ' Nothing was drafted from them: there is not much recorded in these notes yet.';
       setLookbackNote(
         read === 0
           ? 'There are no notes for this patient yet, so there was nothing to draft from.'
@@ -152,7 +167,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
               done.lookback.skipped_note_ids.length > 0
                 ? ` ${String(done.lookback.skipped_note_ids.length)} could not be read.`
                 : ''
-            }`,
+            }${outcome}`,
       );
       // Goals arrived through the stream; the plan row may be new.
       reload();

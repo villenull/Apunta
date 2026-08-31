@@ -260,3 +260,41 @@ describe('PlanView', () => {
     expect(attestation.textContent).toContain('Not yet attested');
   });
 });
+
+/**
+ * Two unrelated ways a run ends with nothing, which used to render as one
+ * shrug ("No suggestions waiting.") after a minute of visible work.
+ */
+describe('when a suggestion run produces nothing', () => {
+  it('says the notes were thin when the model drafted nothing', async () => {
+    const patient = makePatient('John Smith', { note_count: 1 });
+    installFakeApi(
+      { patients: [patient], notes: [makeNote(patient.id)] },
+      { suggestNothing: { dropped: 0 } },
+    );
+
+    render(<PlanView patient={patient} onOpenNote={() => {}} />);
+    fireEvent.click(await screen.findByTestId('draft-goals'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('lookback-note').textContent).toContain('not much recorded');
+    });
+  });
+
+  it('says so plainly when drafts were written and discarded', async () => {
+    const patient = makePatient('John Smith', { note_count: 1 });
+    installFakeApi(
+      { patients: [patient], notes: [makeNote(patient.id)] },
+      { suggestNothing: { dropped: 3 } },
+    );
+
+    render(<PlanView patient={patient} onOpenNote={() => {}} />);
+    fireEvent.click(await screen.findByTestId('draft-goals'));
+
+    await waitFor(() => {
+      const text = screen.getByTestId('lookback-note').textContent ?? '';
+      expect(text).toContain('discarded');
+      expect(text).toContain('could not be traced');
+    });
+  });
+});

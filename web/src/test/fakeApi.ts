@@ -320,6 +320,12 @@ export interface FakeApiOptions {
   transcribeError?: { code: string; message: string };
   /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
   suggestError?: { code: string; message: string };
+  /**
+   * End a suggestion run with nothing to show. `dropped` separates the two
+   * ways that happens: the model proposed nothing (0), or it proposed goals
+   * the server could not trace to a note and discarded them.
+   */
+  suggestNothing?: { dropped: number };
   /** Make `POST /api/patients/:id/prep` fail inside the stream. */
   prepError?: { code: string; message: string };
 }
@@ -699,6 +705,27 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
       if (suggestMatch && method === 'POST') {
         const patientId = suggestMatch[1] ?? '';
         if (options.suggestError) return sse([{ event: 'error', data: options.suggestError }]);
+
+        if (options.suggestNothing) {
+          const read = state.notes.find((candidate) => candidate.patient_id === patientId);
+          return sse([
+            { event: 'status', data: { stage: 'reading-notes', message: 'Reading note 1 of 1…' } },
+            {
+              event: 'done',
+              data: {
+                goals: [],
+                lookback: {
+                  cap: 5,
+                  notes_read: read === undefined ? 0 : 1,
+                  oldest_note_date: read?.created_at ?? null,
+                  newest_note_date: read?.created_at ?? null,
+                  skipped_note_ids: [],
+                },
+                dropped: options.suggestNothing.dropped,
+              },
+            },
+          ]);
+        }
 
         let plan = planFor(patientId);
         if (!plan) {
