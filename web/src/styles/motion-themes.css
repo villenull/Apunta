@@ -231,8 +231,12 @@
 
 .motion-switcher {
   position: fixed;
-  /* Bottom-left: the right corner belongs to the chat launcher. */
-  left: 12px;
+  /*
+   * Bottom-centre: the right corner belongs to the chat launcher and the
+   * left one covered the settings link in the patients column.
+   */
+  left: 50%;
+  transform: translateX(-50%);
   bottom: 12px;
   z-index: 90;
   display: flex;

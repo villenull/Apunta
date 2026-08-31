@@ -194,6 +194,11 @@ test.describe('the workspace', () => {
     await page.getByTestId('chat-fab').click();
     await expect(thread).toContainText('Ask a question about this note, or give feedback to refine it.');
 
+    // The card floats over the note's corner, so reaching the text means
+    // putting it away first — and highlighting brings it straight back.
+    await page.getByTestId('chat-close').click();
+    await expect(page.getByTestId('chat-panel')).toBeHidden();
+
     // --- Highlight-to-reference: the secondary affordance, still shipped ----
     await body.click();
     await body.evaluate((element: HTMLTextAreaElement) => {
@@ -202,6 +207,9 @@ test.describe('the workspace', () => {
       // `select` event dispatched at the element.
       document.dispatchEvent(new Event('selectionchange'));
     });
+    // Highlighting is aimed at the chat, so the panel reopens itself — the
+    // excerpt chip lives inside it and would otherwise be raised unseen.
+    await expect(page.getByTestId('chat-panel')).toBeVisible();
     await expect(page.getByTestId('ref-chip')).toContainText('Subjective: Patient reports improved');
 
     await page.getByTestId('chat-input').fill('What is missing from this?');
