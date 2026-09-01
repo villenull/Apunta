@@ -110,3 +110,20 @@ One scenario still fails and is documented rather than smoothed over
 deletes a clinical fact and explains the deletion with a false claim about
 the source. That one wants the transcript in the call or a server-side diff,
 not another sentence.
+
+## Volume, briefly
+
+A practice of 300 notes across 12 patients, to see whether anything degrades
+before her Mac ever does: patient list 4.9 ms, one patient's notes 0.7 ms,
+a full backup 33 ms at 185 KB, database 396 KB. Nothing here is a risk at
+ten times the size — the only slow part of this app is the model, and that
+was already measured. SQLite is doing exactly what it was chosen for.
+
+## The encrypted backup, and the last-resort path
+
+Both exercised for the first time. An encrypted archive was made, the
+`decrypt.mjs` in its RESTORE.txt copied out by hand exactly as that file
+instructs, and the decrypted database matched its manifest fingerprint with
+every readable `notes/<patient>/<date>.txt` present. What was wrong was the
+failure: a mistyped passphrase answered with a Node crypto stack trace, at
+the one moment this script is ever used. It now says so in English.
