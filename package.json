@@ -29,6 +29,7 @@
     "e2e": "npm run e2e --workspace @apunta/e2e",
     "eval": "npm run build:shared && npm run eval --workspace @apunta/server --",
     "check:format": "node scripts/check-note-format.mjs",
+    "check:refine": "node scripts/check-refine.mjs",
     "seed": "npm run build:shared && npm run seed --workspace @apunta/server --",
     "smoke:live": "node scripts/smoke-live.mjs",
     "licenses": "node scripts/collect-licenses.mjs",

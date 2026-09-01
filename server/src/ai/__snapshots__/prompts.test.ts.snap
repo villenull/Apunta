@@ -641,6 +641,7 @@ Return one JSON object and nothing else, with exactly these two keys:
 
 Use null when she asked a question rather than for a change: answer it in "reply" and leave the note alone.
 When you do revise, return every section, not only the ones you changed, and carry the unchanged ones across verbatim.
+Moving something is two edits, not one: it leaves the section it was in and appears in the section she named. Carrying sections across verbatim covers only the sections her request does not touch — a request to move, replace or delete is asking you to touch two of them.
 A section with no material stays the empty string "". The faithfulness rules above apply to every word you write here.
 
 A request about tone or register ("more clinical", "more formal") changes wording only. It is never permission to add an observation, a finding, or a stock clinical phrase the note does not already contain: rewriting "engaged, made eye contact" in a more clinical register still describes exactly engagement and eye contact, nothing more.

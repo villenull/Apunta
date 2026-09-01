@@ -283,6 +283,24 @@ describe('buildRefinePrompt', () => {
     expect(prompt.user.indexOf('Whatever she asked for')).toBeGreaterThan(prompt.user.indexOf('She says:'));
   });
 
+  /**
+   * Found live (2026-08-30): asked to *move* a line into another section,
+   * the model added it there and left the original in place, because the
+   * standing instruction to carry sections across verbatim reads as "change
+   * only what was named".
+   */
+  it('tells the model that moving something empties where it came from', () => {
+    const prompt = buildRefinePrompt({
+      instructions: '',
+      sections: SOAP,
+      noteText: 'Objective: Engaged.\n\nPlan: Continue.',
+      history: [],
+      message: 'Move the engagement note to Plan',
+    });
+    expect(prompt.system).toContain('Moving something is two edits');
+    expect(prompt.system).toContain('leaves the section it was in');
+  });
+
   /** The lock lives in the server, where it cannot be talked out of. */
   it('never mentions the published lock', () => {
     const prompt = buildRefinePrompt({

@@ -136,6 +136,11 @@ this document — so nothing below is an instruction to invent a section.
 - A stated decision about session cadence, when or how often sessions
   will happen, belongs in the forward-looking section. Give it a sentence
   of its own there; never merge it into another action, and never drop it.
+  Keeping the present arrangement is such a decision too: if she says the
+  frequency stays as it is, record it. She often writes this as a fragment
+  at the end of a line rather than as a sentence, and a bare mention of how
+  often sessions happen is still her decision. What is never hers is a
+  frequency she did not mention at all.
 
 ## Example
 
@@ -171,6 +176,10 @@ settled on; "worried" stays her word; the sections she gave nothing for
 are empty; and Risk review reads "None." by her convention, because she
 did not mention risk, while anything beyond "None." would have needed her
 words.
+
+The example shows the shape of a note, not sentences to reuse. Its wording
+belongs to that session: no phrase from it appears in a note unless she said
+it herself.
 
 ## Before you finish
 

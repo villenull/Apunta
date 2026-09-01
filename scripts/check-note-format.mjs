@@ -68,11 +68,34 @@ function splitSections(content, sections) {
 }
 
 /**
+ * Sentences the instructions demonstrate, pulled out of their own worked
+ * example so this never goes stale when the example is rewritten.
+ *
+ * A few-shot example is the strongest single lever on a small model and also
+ * its most tempting source of words: the example's own forward-looking line
+ * turned up, name-substituted, in a note whose source said nothing like it
+ * (2026-08-31). That is invented content, and the SOAP corpus cannot see it —
+ * it only bans phrases from *its* few-shot pair.
+ */
+function exampleSentences(instructions) {
+  const sentences = [];
+  for (const match of instructions.matchAll(/"[A-Z][A-Za-z ]+":\s*"([^"]{25,})"/g)) {
+    const value = match[1];
+    for (const part of value.split(/(?<=[.;])\s+/)) {
+      const words = part.trim().split(/\s+/);
+      // Long enough to be a borrowed sentence rather than a shared idiom.
+      if (words.length >= 6) sentences.push(words.slice(1).join(' ').toLowerCase());
+    }
+  }
+  return sentences;
+}
+
+/**
  * Each rule is a failure that actually happened, not a style preference.
  * They are intentionally blunt: a flag says "read this note", never "this
  * note is wrong".
  */
-function flagsFor(source, sections) {
+function flagsFor(source, sections, borrowed = []) {
   const flags = [];
   const at = (name) => (sections[name] ?? '').trim();
   const presentation = at('Client presentation');
@@ -92,6 +115,14 @@ function flagsFor(source, sections) {
   }
   if (/denied|safety|self harm/.test(said) && risk === 'None.') {
     flags.push('a risk review she carried out was flattened to "None."');
+  }
+  // The note wearing the instructions' own example, which she never said.
+  const written = Object.values(sections).join(' ').toLowerCase();
+  for (const sentence of borrowed) {
+    if (written.includes(sentence) && !source.toLowerCase().includes(sentence)) {
+      flags.push('wording copied from the worked example in the instructions');
+      break;
+    }
   }
   return flags;
 }
@@ -119,6 +150,8 @@ if (!patient) {
   process.exit(2);
 }
 
+const borrowed = exampleSentences(format.instructions ?? '');
+
 console.error(`Format: ${format.name} — ${format.sections.join(', ')}`);
 console.error(`Model:  ${health.ollama.model}\n`);
 
@@ -141,7 +174,7 @@ for (const name of names) {
     }),
   });
   const content = noteFromStream(await response.text());
-  const flags = flagsFor(source, splitSections(content, format.sections));
+  const flags = flagsFor(source, splitSections(content, format.sections), borrowed);
   total += flags.length;
   summary.push({ name, flags });
 

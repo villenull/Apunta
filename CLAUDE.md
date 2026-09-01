@@ -58,6 +58,11 @@ the intake-side instruction distillation, per the M10 report.
   risk review flattened to "None.", a dropped cadence decision). Not an eval —
   no rubric, no score; `npm run eval` remains the faithfulness instrument.
   `APUNTA_CHECK_URL=http://127.0.0.1:7720` points it at another instance
+- `npm run check:refine` — manual, needs a running Apunta on a real model:
+  sends adversarial requests through the refine chat (tone, expand, move,
+  question-after-edits) and flags invented content, lost facts, a question
+  that rewrote the note, and a move that only copied. Reports separately when
+  the server's boilerplate lock had to catch the model
 - `npm run smoke:live` — manual, needs real Ollama + whisper installed
 - `bash scripts/setup-macos.sh` — installs the local AI stack (macOS only,
   `--dry-run` works anywhere); `scripts/preflight-macos.sh` is its read-only
