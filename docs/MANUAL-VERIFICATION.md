@@ -136,8 +136,8 @@ What is **not** tested is any of it on a real practice on a real disk.
 | `plans/` holds one document per plan version | ☐ | |
 | `shasum -a 256 apunta.db` matches the fingerprint in `manifest.json` | ☐ | |
 | Choosing `~/Documents` as the destination shows the iCloud warning | ☐ | Depends on §1 items 2 and 3 |
-| An encrypted backup opens with the passphrase | ☐ | |
-| The standalone `decrypt.mjs` in RESTORE.txt decrypts it on **this** Mac | ☐ | Already verified in the test suite: the script is extracted from a real archive, written to a file, and run — it produces a zip whose manifest fingerprint matches. What is unconfirmed is only that macOS's `unzip` and Node behave the same way. `node decrypt.mjs <backup>.zip "<passphrase>"` |
+| An encrypted backup opens with the passphrase | ☑ Linux, 2026-09-01 — the Mac pass is what this row is still for | |
+| The standalone `decrypt.mjs` in RESTORE.txt decrypts it on **this** Mac | ☑ Linux, 2026-09-01 — copied out of a real archive by hand exactly as the file instructs, decrypted, and the resulting database matched its manifest fingerprint. The readable `notes/<patient>/<date>.txt` files were all there, which is the "Apunta is gone in 2035" path working. **Still unconfirmed on macOS**, whose `unzip` is what this row exists for. A wrong passphrase used to answer with a Node crypto stack trace and now says so in English | `node decrypt.mjs <backup>.zip "<passphrase>"` |
 | The daily automatic backup happens on the first launch of a day | ☐ | Settings shows the time |
 
 **Then do the restore by hand, once, on a spare copy.** Follow RESTORE.txt

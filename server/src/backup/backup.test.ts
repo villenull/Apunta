@@ -31,6 +31,7 @@ import { openDatabase, type Database } from '../db/index.js';
 import { seedDatabase } from '../seed.js';
 import { createBackup } from './archive.js';
 import { applyPendingRestore, hasPendingRestore, readArchive, stageRestore } from './restore.js';
+import { DECRYPT_SCRIPT } from './restore-txt.js';
 import { runBackup } from './index.js';
 import { listRestorableBackups, pruneBackups } from './store.js';
 
@@ -389,6 +390,20 @@ describe('runBackup', () => {
  * and checks the zip it writes really is the backup.
  */
 describe('the decrypt script printed inside RESTORE.txt', () => {
+  /**
+   * The wrong passphrase is the likeliest thing to happen to this script, at
+   * the least forgiving moment: someone restoring a practice from a backup,
+   * without the app. It used to answer with a Node crypto stack trace about
+   * authentication tags (verified 2026-09-01), which says nothing to the
+   * person reading it.
+   */
+  it('says what a wrong passphrase means, rather than throwing crypto internals', () => {
+    expect(DECRYPT_SCRIPT).toContain('That passphrase did not open this backup.');
+    expect(DECRYPT_SCRIPT).toContain('The backup itself is fine');
+    expect(DECRYPT_SCRIPT).toContain('Nobody can recover the passphrase for you');
+    expect(DECRYPT_SCRIPT).toContain('process.exit(1)');
+  });
+
   it('opens an encrypted archive with nothing but Node', () => {
     const passphrase = 'the passphrase from her password manager';
     const created = createBackup({

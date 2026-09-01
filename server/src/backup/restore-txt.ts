@@ -196,10 +196,20 @@ const key = scryptSync(passphrase, Buffer.from(meta.salt_base64, 'base64'), meta
 });
 const decipher = createDecipheriv(meta.algorithm, key, Buffer.from(meta.iv_base64, 'base64'));
 decipher.setAuthTag(Buffer.from(meta.auth_tag_base64, 'base64'));
-const plain = Buffer.concat([
-  decipher.update(readFileSync(join(work, '${ENCRYPTED_PAYLOAD_NAME}'))),
-  decipher.final(),
-]);
+let plain;
+try {
+  plain = Buffer.concat([
+    decipher.update(readFileSync(join(work, '${ENCRYPTED_PAYLOAD_NAME}'))),
+    decipher.final(),
+  ]);
+} catch {
+  // The only realistic cause is a wrong passphrase, and this is the moment
+  // someone is least able to read a stack trace about authentication tags.
+  console.error('That passphrase did not open this backup.');
+  console.error('The backup itself is fine. Check for typing mistakes, or try another passphrase you may have used.');
+  console.error('Nobody can recover the passphrase for you, so without it there is nothing further to try.');
+  process.exit(1);
+}
 
 writeFileSync('apunta-backup-decrypted.zip', plain);
 console.log('wrote apunta-backup-decrypted.zip —', plain.length, 'bytes');
