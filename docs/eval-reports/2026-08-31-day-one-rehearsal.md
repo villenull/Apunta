@@ -82,4 +82,31 @@ that report rather than smoothed over.
 - **A refine that adds without removing.** Asked to *move* the walking to
   another section, the chat copied it and left the original, then explained
   that Discussion was empty "because no clinical content was provided" —
-  which was false. The refine path still has no automated coverage.
+  which was false. **Fixed and verified** (2026-08-31); the refine path now
+  has coverage, below.
+
+## The refine harness, and what it caught immediately
+
+`npm run check:refine` — seven adversarial scenarios through the real
+endpoint, one per fault found by hand this week. Its first run failed two,
+and both were the anti-fabrication rules eating what they exist to protect:
+
+- **She could not add her own observation.** Asked to record that he was
+  alert and oriented — her words, her session — the model refused, citing a
+  dictation it was never shown. The user-turn guard written on 2026-08-28
+  said a revision may not add anything "beyond what the note above already
+  contains", which is that refusal in writing.
+- **A question rewrote the note.** Answered well, and changed the note
+  anyway.
+
+Both fixed, and the harness reports the lock firing **zero** times, so this
+is the model behaving rather than the server catching it. A third attempt
+broke two passing scenarios and was reverted: on this model each added rule
+perturbs another, and the honest stopping point is the measured best rather
+than the longest prompt.
+
+One scenario still fails and is documented rather than smoothed over
+(`e2e/fixtures/refine/README.md`): asked to shorten a section, the model
+deletes a clinical fact and explains the deletion with a false claim about
+the source. That one wants the transcript in the call or a server-side diff,
+not another sentence.
