@@ -8,6 +8,34 @@ anything is installed on her machine.
 for what ships: the server binds `127.0.0.1` and speaks to nothing else.
 Nothing here changes a line of the app.
 
+## Done, and working (2026-09-01)
+
+Set up on the partner's PC and verified end to end. The tailnet is
+`villenull.github`; the machine is `fbi-pc.tail48f824.ts.net`, and the app is
+published to the tailnet only:
+
+```sh
+tailscale serve --bg 7717      # https://fbi-pc.tail48f824.ts.net/ -> 127.0.0.1:7717
+tailscale serve status
+tailscale serve --https=443 off   # to stop sharing
+```
+
+Verified over the real HTTPS URL: a trusted certificate (curl accepted it
+with no override, HTTP/2), `/api/health` answering with the model reachable,
+the SPA and its assets loading, and a draft **streaming** — first frame
+immediately, 29 frames across 21.8 s — so the note assembles live for her
+rather than landing in one lump.
+
+`ss -ltn` afterwards: the app on `127.0.0.1:7717`, Tailscale on the tailnet
+address at :443, and nothing on `0.0.0.0`. The app's own invariant held.
+
+**One snag worth recording**, because the error does not name the fix:
+`tailscale serve` hangs with no output and writes no config when the tailnet
+lacks HTTPS certificates. `tailscale cert <machine>.<tailnet>.ts.net` is what
+says so out loud — *"your Tailscale account does not support getting TLS
+certs"*. Enable HTTPS Certificates under Admin console → DNS, then serve
+works immediately. MagicDNS alone is not enough.
+
 ## What was verified on this machine (2026-08-31)
 
 - **A reverse proxy in front of the app needs no code change.** The server
