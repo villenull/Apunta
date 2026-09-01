@@ -61,3 +61,31 @@ APUNTA_CHECK_URL=http://127.0.0.1:7720 npm run check:refine
 
 Nine model round trips, so a couple of minutes on a small local model. It
 prints every reply, because the flags are the smaller half of what it is for.
+
+## Known open: shortening drops a fact
+
+`shorten-keeps-facts` fails as of 2026-09-01, and the failure is worth stating
+precisely because it is not the obvious one. Asked to shorten a section, the
+model removed "up from four in June" — a clinical fact — and explained itself:
+
+> "I have shortened the Subjective section by removing the specific comparison
+> to June's sleep duration, as that detail was not present in your original
+> dictation."
+
+The detail was in the note it was editing. The refine prompt never shows a
+dictation, only the note; the format's drafting instructions talk about "the
+dictation" throughout, so the model treats the note as a claim it cannot
+verify and prunes what it cannot source. It then reports the deletion as a
+correction.
+
+Three prompt attempts did not fix it, and the third made two other scenarios
+worse — the whack-a-mole this model does when a long instruction gains another
+rule. The attempts are in this file's git history. Stated plainly: **an edit
+she asks for can quietly remove a fact, with a confident and false explanation
+attached.** Her review before publishing is what stands between that and the
+record.
+
+The likely real fix is structural rather than another sentence: either the
+refine call carries the transcript alongside the note so "not in the source"
+becomes checkable, or the server diffs facts out of a revision the way the
+boilerplate lock diffs phrases in.

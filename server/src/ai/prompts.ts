@@ -170,6 +170,8 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
     `  "updatedSections" — the complete revised note as an object with exactly the keys ${quotedKeys(request.sections)}, or null.`,
     '',
     'Use null when she asked a question rather than for a change: answer it in "reply" and leave the note alone.',
+    'A question about the note — what is missing from it, what a section says, why one is empty — is answered and nothing else. Return "updatedSections": null even when you can see something you would change, and offer that change in words instead. She asked what is there, not for it to be different.',
+    'Her message is source material. When she tells you something about the session — a fact, an observation, the wording she wants — it is hers, and it goes into the note as if she had typed it there herself. The rules above bar what neither the note nor her message gives you; they never bar her own words back to her.',
     'When you do revise, return every section, not only the ones you changed, and carry the unchanged ones across verbatim.',
     'Moving something is two edits, not one: it leaves the section it was in and appears in the section she named. Carrying sections across verbatim covers only the sections her request does not touch — a request to move, replace or delete is asking you to touch two of them.',
     'A section with no material stays the empty string "". The faithfulness rules above apply to every word you write here.',
@@ -200,7 +202,9 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
     // primed vocabulary the moment "clinical" is requested. And stated in
     // both directions, because the first wording of this rule taught the
     // model to delete her sleep numbers as "a measurement".
-    'Whatever she asked for, this revision may not add observations, findings, or clinical phrasing beyond what the note above already contains, and may not drop anything she did not ask to have removed. A tone or register request restyles her words, adding nothing and losing nothing. If part of the request would need new clinical content, leave that part undone and say so in "reply".',
+    'Whatever she asked for, this revision may not add observations, findings, or clinical phrasing that neither the note above nor her message gives you, and may not drop anything she did not ask to have removed. A tone or register request restyles her words, adding nothing and losing nothing. If part of the request would need clinical content from neither of those places, leave that part undone and say so in "reply".',
+    'What she states in her message is hers and goes in, even wording the rules above would refuse from anywhere else: she is the clinician writing her own note, and this is her telling you what it says.',
+    'If her message only asks about the note rather than asking for a change, answer it and return "updatedSections": null.',
     '',
     'Reply with a single JSON object with exactly the keys "reply" and "updatedSections", and nothing else.',
   );

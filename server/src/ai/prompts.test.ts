@@ -279,6 +279,9 @@ describe('buildRefinePrompt', () => {
     // Stated in both directions: the first wording taught the model to
     // delete dictated numbers as "a measurement".
     expect(prompt.user).toContain('may not add observations, findings, or clinical phrasing');
+    // Her own words are the one thing that rule may never refuse.
+    expect(prompt.user).toContain('neither the note above nor her message gives you');
+    expect(prompt.user).toContain('What she states in her message is hers');
     expect(prompt.user).toContain('may not drop anything she did not ask to have removed');
     expect(prompt.user.indexOf('Whatever she asked for')).toBeGreaterThan(prompt.user.indexOf('She says:'));
   });
@@ -299,6 +302,27 @@ describe('buildRefinePrompt', () => {
     });
     expect(prompt.system).toContain('Moving something is two edits');
     expect(prompt.system).toContain('leaves the section it was in');
+  });
+
+  /**
+   * Both found by `npm run check:refine` on its first real run (2026-08-31):
+   * a bare question rewrote the note while answering it, and the model
+   * refused an observation she asked for in her own words, on the grounds
+   * that the dictation did not contain it. The second is the anti-fabrication
+   * rule eating the therapist's own authorship.
+   */
+  it('answers a question without changing the note, and takes her word as source', () => {
+    const prompt = buildRefinePrompt({
+      instructions: '',
+      sections: SOAP,
+      noteText: 'Objective: Engaged.',
+      history: [],
+      message: 'What is missing from this note?',
+    });
+    expect(prompt.system).toContain('answered and nothing else');
+    expect(prompt.system).toContain('She asked what is there, not for it to be different');
+    expect(prompt.system).toContain('Her message is source material');
+    expect(prompt.system).toContain('never bar her own words back to her');
   });
 
   /** The lock lives in the server, where it cannot be talked out of. */
