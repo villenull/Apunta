@@ -9,7 +9,10 @@ ran on a live Linux machine on 2026-08-27
 2026-08-28 (`docs/feedback/2026-08-28-owner-answers.md` — applied and
 re-measured). What remains needs a Mac (`docs/MANUAL-VERIFICATION.md`), her
 transcription vocabulary list (promised, not yet sent), or a new packet:
-the intake-side instruction distillation, per the M10 report.
+the intake-side instruction distillation, per the M10 report. **M11**
+(importing her Claude conversations) is designed and deliberately not built —
+it is gated on the confidentiality decision, not on code, and only its
+read-only probe exists.
 
 ## Hard rules
 
@@ -63,6 +66,10 @@ the intake-side instruction distillation, per the M10 report.
   question-after-edits) and flags invented content, lost facts, a question
   that rewrote the note, and a move that only copied. Reports separately when
   the server's boilerplate lock had to catch the model
+- `npm run probe:claude -- <export.zip|folder>` — manual: reports the *shape*
+  of a Claude data export (file names, keys, roles, counts, date range) and
+  deliberately none of its content, so M11's inferred schema can be checked
+  against a real one. See `docs/agents/M11-claude-import.md`
 - `npm run smoke:live` — manual, needs real Ollama + whisper installed
 - `bash scripts/setup-macos.sh` — installs the local AI stack (macOS only,
   `--dry-run` works anywhere); `scripts/preflight-macos.sh` is its read-only

@@ -40,6 +40,11 @@ signed or run in the Linux CI container**. Its agent produces the tooling and
 verifies what static checks allow; final acceptance is a manual run on the
 owner's Mac against the checklist in the packet.
 
+M11 is gated on something no rewrite fixes: it reads an export of the owner's
+own Claude account, which holds far more than patient material, and it waits
+on the confidentiality decision rather than on an implementation. Only its
+read-only probe is built.
+
 **Every packet inherits:** the hard rules in CLAUDE.md, the definition of
 done, and the testing expectations in docs/PLAN.md §6. Acceptance criteria
 listed in a packet are additional to that baseline.
