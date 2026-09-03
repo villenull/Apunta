@@ -3,8 +3,10 @@ import {
   GenerateNoteEventSchema,
   GenerateStatusEventSchema,
   GenerateTokenEventSchema,
+  TranscribePreviewResponseSchema,
   TranscribeProgressEventSchema,
   type GenerateNoteEvent,
+  type TranscribePreviewResponse,
   type TranscribeProgressEvent,
 } from '@apunta/shared';
 
@@ -85,4 +87,33 @@ export async function transcribeRecording(
 
   if (result === null) throw new Error('The recording stream ended before the note was saved.');
   return result;
+}
+
+/**
+ * `POST /api/transcribe/preview` — the provisional words shown while she is
+ * still speaking.
+ *
+ * Separate from `transcribeRecording` above in every sense: it creates
+ * nothing, its result is never stored, and a failure is not worth telling her
+ * about — the preview is reassurance, and a reassurance that breaks should go
+ * quiet rather than raise an alarm about a recording that is going fine. So
+ * this resolves with `null` instead of throwing.
+ */
+export async function previewTranscript(
+  audio: Blob,
+  signal?: AbortSignal,
+): Promise<TranscribePreviewResponse | null> {
+  const body = new FormData();
+  body.append('audio', audio, 'preview.wav');
+  try {
+    const response = await fetch('/api/transcribe/preview', {
+      method: 'POST',
+      body,
+      ...(signal ? { signal } : {}),
+    });
+    if (!response.ok) return null;
+    return TranscribePreviewResponseSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
 }

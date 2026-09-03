@@ -7,6 +7,7 @@ import {
   emptySectionNames,
   MAX_AUDIO_BYTES,
   MIN_RECORDING_SECONDS,
+  type TranscribePreviewResponse,
   parseWavHeader,
   TranscribeFieldsSchema,
   WavFormatError,
@@ -53,6 +54,63 @@ export function registerTranscribeRoute(
   db: Database,
   providers: AiProviders,
 ): void {
+  /**
+   * `POST /api/transcribe/preview` — provisional words while she is still
+   * speaking, so the screen can show that the microphone is being heard.
+   *
+   * Deliberately not part of the recording pipeline. It creates nothing,
+   * touches no patient and no note, and its text is never stored: when she
+   * stops, `/api/transcribe` above transcribes the finished file once more and
+   * that transcript is the one that becomes a note. This endpoint exists for
+   * reassurance, which is why it can afford to be approximate and why nothing
+   * downstream reads what it returns.
+   *
+   * It is stateless on purpose. Each call carries the whole recording so far
+   * and the audio is deleted before the response is written, so a preview
+   * leaves nothing behind to clean up or to leak — the alternative, a
+   * server-side accumulator per recording session, is a pile of temporary
+   * audio files whose lifetime nobody owns.
+   */
+  app.post('/api/transcribe/preview', async (request): Promise<TranscribePreviewResponse> => {
+    const upload = await receiveUpload(request, config);
+    try {
+      // Not `readWavFormat`: that helper throws on a recording too short to
+      // transcribe, which is the right answer for a finished recording and the
+      // wrong one here. Early in a recording there is often nothing yet, and
+      // that is a preview which has not caught up rather than a failure. An
+      // unreadable upload is still an error, and stays one.
+      let wav: WavFormat;
+      try {
+        wav = parseWavHeader(upload.head, upload.bytes);
+      } catch (error) {
+        if (error instanceof WavFormatError) throw badRequest('That audio could not be read as a WAV.');
+        throw error;
+      }
+      if (wav.durationSeconds < MIN_RECORDING_SECONDS) {
+        return { text: '', seconds: wav.durationSeconds };
+      }
+
+      request.log.info(
+        { bytes: upload.bytes, seconds: Math.round(wav.durationSeconds) },
+        'preview transcription',
+      );
+
+      let text = '';
+      for await (const event of providers.stt.transcribe({
+        wavPath: upload.path,
+        durationSeconds: wav.durationSeconds,
+        vocabulary: resolveVocabulary(db),
+      })) {
+        if (event.type === 'transcript') text = event.text;
+      }
+      // Shape only. The words are the most sensitive thing this app handles.
+      return { text, seconds: wav.durationSeconds };
+    } finally {
+      // Always, on every path: a preview never keeps its audio.
+      await discard(upload.path);
+    }
+  });
+
   app.post('/api/transcribe', async (request, reply) => {
     const upload = await receiveUpload(request, config);
 

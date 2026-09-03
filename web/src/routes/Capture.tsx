@@ -1,4 +1,9 @@
-import { MAX_RECORDING_SECONDS, WARN_RECORDING_SECONDS } from '@apunta/shared';
+import {
+  MAX_RECORDING_SECONDS,
+  PREVIEW_INTERVAL_MS,
+  PREVIEW_MAX_SECONDS,
+  WARN_RECORDING_SECONDS,
+} from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
@@ -7,6 +12,7 @@ import {
   generateNote,
   getPatient,
   listFormats,
+  previewTranscript,
   transcribeRecording,
   type GenerateHandlers,
 } from '../api/index.js';
@@ -73,6 +79,18 @@ export function Capture(): React.JSX.Element {
   const [wav, setWav] = useState<Blob | null>(null);
 
   const recorder = useRef<Recorder | null>(null);
+  /**
+   * The live half of the recording UI (owner-proxy, 2026-09-01): provisional
+   * words, and a level that moves the moment she speaks.
+   *
+   * `level` answers "is this hearing me" immediately. `preview` answers "are
+   * the words coming out right", but cannot answer it for several seconds —
+   * whisper loads a 547 MB model before it can hear anything — so the two are
+   * separate on purpose rather than one indicator that starts late.
+   */
+  const [level, setLevel] = useState(0);
+  const [preview, setPreview] = useState('');
+  const previewBusy = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const available = formats.state.status === 'ready' ? formats.state.data : [];
@@ -102,6 +120,43 @@ export function Capture(): React.JSX.Element {
     [],
   );
 
+  /**
+   * Refresh the provisional words while she speaks.
+   *
+   * Every refresh re-uploads the recording so far and pays whisper's model
+   * load again, so this is deliberately slow-moving and stops once the
+   * recording is long enough that the microphone has clearly proved itself.
+   * A refresh already in flight is never doubled up, and a failure goes quiet:
+   * the preview is reassurance, and reassurance that raises an alarm about a
+   * recording which is going fine would be worse than no preview at all.
+   */
+  useEffect(() => {
+    if (recording !== 'recording') return;
+
+    const timer = window.setInterval(() => {
+      const active = recorder.current;
+      if (!active || previewBusy.current) return;
+      if (active.seconds > PREVIEW_MAX_SECONDS) return;
+      const snapshot = active.snapshot();
+      if (snapshot === null) return;
+
+      previewBusy.current = true;
+      void previewTranscript(snapshot)
+        .then((result) => {
+          // Still recording? A result that lands after she stopped belongs to
+          // a screen that has moved on.
+          if (result !== null && recorder.current !== null) setPreview(result.text);
+        })
+        .finally(() => {
+          previewBusy.current = false;
+        });
+    }, PREVIEW_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [recording]);
+
   const draftHandlers = (): GenerateHandlers => ({
     onStatus: (event) => {
       setStatus(event.message);
@@ -122,6 +177,8 @@ export function Capture(): React.JSX.Element {
     setError(null);
     setNotice(null);
     setSeconds(0);
+    setLevel(0);
+    setPreview('');
     setRecording('starting');
 
     const active = new Recorder({
@@ -139,6 +196,7 @@ export function Capture(): React.JSX.Element {
         );
         void stopRecording();
       },
+      onLevel: setLevel,
       onError: (failure) => {
         setError(recorderMessage(failure));
         recorder.current?.cancel();
@@ -293,6 +351,36 @@ export function Capture(): React.JSX.Element {
                 <p className="muted record-label" role="status">
                   Recording…
                 </p>
+
+                {/*
+                  Two answers to "is this working", on the two timescales the
+                  app can actually deliver: the meter moves with her voice
+                  immediately, and the words arrive when whisper has had time
+                  to hear them (owner-proxy, 2026-09-01).
+                */}
+                <div
+                  className="record-level"
+                  data-testid="record-level"
+                  aria-hidden="true"
+                  style={{ ['--level' as string]: String(Math.min(1, level * 2.5)) }}
+                >
+                  <span className="record-level-fill" />
+                </div>
+
+                <div className="record-preview" data-testid="record-preview">
+                  {preview === '' ? (
+                    <p className="small muted record-preview-waiting">
+                      <ThinkingDots ariaLabel="Listening" /> Listening…
+                    </p>
+                  ) : (
+                    <>
+                      <p className="record-preview-text">{preview}</p>
+                      <p className="small muted record-preview-note">
+                        Rough, and still catching up. The note is written from the finished recording.
+                      </p>
+                    </>
+                  )}
+                </div>
                 <button
                   type="button"
                   className="btn btn-primary"

@@ -2220,3 +2220,64 @@ select:disabled {
   text-align: center;
   margin-top: 4px;
 }
+
+/* --------------------------------------------- the live recording feedback */
+
+/*
+ * The level meter. It exists to answer "is this hearing me" in the seconds
+ * before any words can appear — whisper has to load a 547 MB model first — so
+ * it is driven straight from the audio frames rather than from anything the
+ * server says.
+ */
+.record-level {
+  width: 100%;
+  max-width: 260px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+  margin: 10px 0 4px;
+}
+
+.record-level-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transform: scaleX(var(--level, 0));
+  transform-origin: left center;
+  /* Fast enough to feel like her voice, slow enough not to strobe. */
+  transition: transform 90ms linear;
+}
+
+/* The provisional words. Deliberately quieter than the note itself: this is
+   not the record, and it should not look like one. */
+.record-preview {
+  width: 100%;
+  max-width: 460px;
+  min-height: 46px;
+  margin-top: 6px;
+  text-align: left;
+}
+
+.record-preview-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.record-preview-note,
+.record-preview-waiting {
+  margin: 6px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .record-level-fill {
+    transition: none;
+  }
+}

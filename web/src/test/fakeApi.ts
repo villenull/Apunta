@@ -318,6 +318,8 @@ export interface FakeApiOptions {
   generateError?: { code: string; message: string };
   /** The same, for `POST /api/transcribe` — "whisper is not installed" (M5). */
   transcribeError?: { code: string; message: string };
+  /** What `POST /api/transcribe/preview` returns while she is still speaking. */
+  previewText?: string;
   /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
   suggestError?: { code: string; message: string };
   /**
@@ -455,6 +457,12 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
        * frames `/api/generate` streams, prefixed by whisper's progress —
        * because on the server it is literally the same drafting code.
        */
+      // The live preview during a recording: provisional text, no side
+      // effects. `options.previewText` lets a test say what came back.
+      if (path === '/api/transcribe/preview' && method === 'POST') {
+        return json({ text: options.previewText ?? 'provisional words so far', seconds: 3 });
+      }
+
       if (path === '/api/transcribe' && method === 'POST') {
         if (options.transcribeError) return sse([{ event: 'error', data: options.transcribeError }]);
         const form = init.body as FormData;

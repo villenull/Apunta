@@ -99,8 +99,16 @@ export {
   WHISPER_BINARY_SETTING,
   WHISPER_MODEL_FILENAME,
   WHISPER_MODEL_SETTING,
+  PREVIEW_INTERVAL_MS,
+  PREVIEW_MAX_SECONDS,
+  TranscribePreviewResponseSchema,
 } from './transcribe.js';
-export type { TranscribeEventName, TranscribeFields, TranscribeProgressEvent } from './transcribe.js';
+export type {
+  TranscribeEventName,
+  TranscribeFields,
+  TranscribePreviewResponse,
+  TranscribeProgressEvent,
+} from './transcribe.js';
 
 export {
   AUDIO_BITS_PER_SAMPLE,

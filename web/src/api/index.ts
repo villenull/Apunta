@@ -16,7 +16,7 @@ export {
 export { generateNote, GenerateError } from './generate.js';
 export type { GenerateHandlers } from './generate.js';
 
-export { transcribeRecording } from './transcribe.js';
+export { previewTranscript, transcribeRecording } from './transcribe.js';
 export type { TranscribeHandlers, TranscribeInput } from './transcribe.js';
 
 export { listChatMessages, sendChatMessage } from './chat.js';

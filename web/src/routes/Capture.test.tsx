@@ -1,5 +1,5 @@
-import { MAX_RECORDING_SECONDS, WAV_CONTENT_TYPE } from '@apunta/shared';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MAX_RECORDING_SECONDS, PREVIEW_INTERVAL_MS, WAV_CONTENT_TYPE } from '@apunta/shared';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,6 +44,10 @@ vi.mock('../lib/recorder.js', async (importOriginal) => {
       stopped();
       // 44 bytes of header and a little audio: what the real recorder returns.
       return Promise.resolve(new Blob([new Uint8Array(1000)], { type: WAV_CONTENT_TYPE }));
+    }
+    /** The recording so far, which the live preview re-transcribes. */
+    snapshot(): Blob | null {
+      return new Blob([new Uint8Array(1000)], { type: WAV_CONTENT_TYPE });
     }
     cancel(): void {}
   }
@@ -248,5 +252,49 @@ describe('recording on the capture screen', () => {
     // Nothing was re-sent, and "Process note" has nothing to send either.
     expect(api.calls.filter((call) => call === 'POST /api/transcribe')).toHaveLength(1);
     expect(screen.getByTestId('process-note')).toHaveProperty('disabled', true);
+  });
+});
+
+/**
+ * The live half of the recording UI (owner-proxy, 2026-09-01). Its whole job
+ * is reassurance: the meter answers "is this hearing me" from the audio
+ * frames themselves, and the provisional words answer "are they coming out
+ * right" once whisper has had time to load and listen.
+ */
+describe('while the recording is still going', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows a level meter and a waiting line before any words arrive', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderCapture();
+    await startRecording();
+
+    expect(screen.getByTestId('record-level')).toBeTruthy();
+    // Nothing transcribed yet, so it says it is listening rather than
+    // pretending to have heard something.
+    expect(screen.getByTestId('record-preview').textContent).toContain('Listening');
+  });
+
+  it('shows the provisional words, and says they are not the note', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] }, { previewText: 'steady week so far' });
+    renderCapture();
+    await startRecording();
+
+    // The refresh is on an interval; drive it rather than waiting 12 seconds.
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_INTERVAL_MS + 100);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('record-preview').textContent).toContain('steady week so far');
+    });
+    expect(screen.getByTestId('record-preview').textContent).toContain('written from the finished recording');
   });
 });

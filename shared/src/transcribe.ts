@@ -115,3 +115,38 @@ export const WARN_RECORDING_SECONDS = 30 * 60;
  * The 60-minute cap at 16 kHz mono 16-bit is ~115 MB; this rounds up.
  */
 export const MAX_AUDIO_BYTES = 128 * 1024 * 1024;
+
+// --- the live preview during a recording -----------------------------------
+
+/**
+ * The provisional text shown while she is still speaking.
+ *
+ * It exists to answer one question — "is this hearing me?" — and it is not the
+ * record: when she stops, the whole file is transcribed once more and *that*
+ * transcript is what becomes the note. The preview may therefore revise itself
+ * as more speech arrives, which is normal for streaming recognition and the
+ * reason nothing downstream reads it.
+ *
+ * Whisper's cost here is almost entirely model loading — measured at ~8 s
+ * regardless of whether the audio is one second or thirty (2026-09-01, this
+ * machine) — so a refresh is expensive and the interval below is deliberately
+ * not "every second". Nothing about this path is free.
+ */
+export const PREVIEW_INTERVAL_MS = 12_000;
+
+/**
+ * After this much audio the preview stops refreshing.
+ *
+ * Each refresh re-uploads the whole recording so far, so the cost grows with
+ * the recording while the reassurance it buys does not: by the time she has
+ * been speaking for four minutes she knows the microphone works.
+ */
+export const PREVIEW_MAX_SECONDS = 4 * 60;
+
+export const TranscribePreviewResponseSchema = z.object({
+  /** Provisional, possibly empty when there is not yet speech to hear. */
+  text: z.string(),
+  /** Seconds of audio this text came from, for the UI to caption honestly. */
+  seconds: z.number().nonnegative(),
+});
+export type TranscribePreviewResponse = z.infer<typeof TranscribePreviewResponseSchema>;

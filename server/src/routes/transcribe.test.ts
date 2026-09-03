@@ -398,3 +398,44 @@ describe('POST /api/transcribe over a real connection', () => {
     }
   });
 });
+
+/**
+ * The live preview (2026-09-01). It exists so the screen can show that the
+ * microphone is being heard; it is not the record, and the invariant worth
+ * testing is that it leaves nothing behind — no note, no transcript row, and
+ * no audio file.
+ */
+describe('POST /api/transcribe/preview', () => {
+  async function preview(app: FastifyInstance, file: Buffer): Promise<{ statusCode: number; body: unknown }> {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/transcribe/preview',
+      payload: multipart({}, file),
+      headers: { 'content-type': `multipart/form-data; boundary=${BOUNDARY}` },
+    });
+    return { statusCode: response.statusCode, body: response.json() };
+  }
+
+  it('returns provisional text and leaves nothing behind', async () => {
+    const before = audioFiles(harness.config.audioDir);
+    const notesBefore = listNotesForPatient(harness.db, patient.id).length;
+
+    const { statusCode, body } = await preview(harness.app, wav(3));
+
+    expect(statusCode).toBe(200);
+    const result = body as { text: string; seconds: number };
+    expect(typeof result.text).toBe('string');
+    expect(result.seconds).toBeGreaterThan(0);
+
+    // No note, no transcript row, and the audio is gone again.
+    expect(listNotesForPatient(harness.db, patient.id).length).toBe(notesBefore);
+    expect(audioFiles(harness.config.audioDir)).toEqual(before);
+  });
+
+  it('says nothing rather than erroring before there is speech to hear', async () => {
+    const { statusCode, body } = await preview(harness.app, wav(0.05));
+
+    expect(statusCode).toBe(200);
+    expect((body as { text: string }).text).toBe('');
+  });
+});

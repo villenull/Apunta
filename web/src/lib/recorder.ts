@@ -137,6 +137,16 @@ export interface RecorderHandlers {
   onLimit?: () => void;
   /** The microphone went away mid-recording. */
   onError?: (error: RecorderError) => void;
+  /**
+   * Peak amplitude of the frames just captured, 0..1.
+   *
+   * The preview below takes several seconds to produce its first words —
+   * whisper has to load before it can hear anything — and silence on screen
+   * in the meantime undoes the reassurance the preview exists to give. This
+   * is the immediate half of that answer, and it costs one pass over frames
+   * the worklet has already handed us.
+   */
+  onLevel?: (peak: number) => void;
 }
 
 /**
@@ -216,6 +226,21 @@ export class Recorder {
   }
 
   /** Stop, and answer with the WAV. Safe to call once. */
+  /**
+   * The recording so far, as a WAV, without stopping.
+   *
+   * The live preview re-transcribes the whole recording on each refresh
+   * rather than stitching independent chunks together: whisper's cost is
+   * dominated by loading its model, not by the length of the audio, so
+   * "everything so far" is barely more expensive than "the last ten seconds"
+   * and it reads far better — a chunk boundary in the middle of a word is
+   * exactly the sort of thing that would make her distrust the transcript.
+   */
+  snapshot(): Blob | null {
+    if (this.buffer === null || this.buffer.seconds <= 0) return null;
+    return this.buffer.toWav();
+  }
+
   async stop(): Promise<Blob> {
     if (!this.buffer) throw new RecorderError('failed', 'stop() before start()');
     this.stopped = true;
@@ -237,6 +262,14 @@ export class Recorder {
   }
 
   private receive(frames: Float32Array): void {
+    if (this.handlers.onLevel) {
+      let peak = 0;
+      for (const sample of frames) {
+        const magnitude = sample < 0 ? -sample : sample;
+        if (magnitude > peak) peak = magnitude;
+      }
+      this.handlers.onLevel(peak > 1 ? 1 : peak);
+    }
     const buffer = this.buffer;
     if (!buffer || this.stopped) return;
 
