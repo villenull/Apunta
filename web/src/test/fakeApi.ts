@@ -269,6 +269,7 @@ const HEALTHY: HealthResponse = {
   ok: true,
   version: '0.0.0',
   fakeAi: true,
+  bundled: false,
   db: { path: '/tmp/apunta/apunta.db', migrationLevel: 1 },
   ollama: { reachable: true, model: 'fake-llm', modelPresent: true },
   whisper: {

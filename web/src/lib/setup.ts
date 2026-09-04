@@ -31,10 +31,21 @@ export interface SetupCheck {
 
 export const SETUP_SCRIPT_COMMAND = 'bash scripts/setup-macos.sh';
 
+/**
+ * What she does inside `Apunta.app`, where there is no Terminal and no
+ * Homebrew: the app owns its runtime, and its first-run window downloads
+ * whatever model is missing (`docs/INSTALL.md`). A Terminal command there is
+ * not just unhelpful — it is a command she cannot run.
+ */
+export const REOPEN_TO_DOWNLOAD =
+  'Quit Apunta and open it again — the setup window comes back and downloads what is missing.';
+export const REOPEN = 'Quit Apunta and open it again — it starts its own copy.';
+
 /** The prototype's sentence, and the thing it is not allowed to say too early. */
 export const FULLY_LOCAL = "You're fully local — nothing leaves this Mac.";
 
 export function setupChecks(health: HealthResponse, backup?: BackupStatus | null): SetupCheck[] {
+  const { bundled } = health;
   const checks: SetupCheck[] = [
     {
       id: 'ollama',
@@ -43,24 +54,28 @@ export function setupChecks(health: HealthResponse, backup?: BackupStatus | null
       detail: health.ollama.reachable
         ? 'answering on 127.0.0.1:11434'
         : 'nothing is answering on 127.0.0.1:11434',
-      fix: 'brew services start ollama',
-      fixIsCommand: true,
+      fix: bundled ? REOPEN : 'brew services start ollama',
+      fixIsCommand: !bundled,
     },
     {
       id: 'model',
       label: 'The writing model is downloaded',
       state: modelState(health),
       detail: modelDetail(health),
-      fix: health.ollama.model === null ? SETUP_SCRIPT_COMMAND : `ollama pull ${health.ollama.model}`,
-      fixIsCommand: true,
+      fix: bundled
+        ? REOPEN_TO_DOWNLOAD
+        : health.ollama.model === null
+          ? SETUP_SCRIPT_COMMAND
+          : `ollama pull ${health.ollama.model}`,
+      fixIsCommand: !bundled,
     },
     {
       id: 'whisper',
       label: 'whisper.cpp is installed',
       state: health.whisper.binaryPresent ? 'ok' : 'missing',
       detail: health.whisper.binaryPresent ? health.whisper.binary : `${health.whisper.binary} was not found`,
-      fix: 'brew install whisper-cpp',
-      fixIsCommand: true,
+      fix: bundled ? REOPEN : 'brew install whisper-cpp',
+      fixIsCommand: !bundled,
       note: 'Only needed to record audio. Typed notes work without it.',
     },
     {
@@ -68,9 +83,11 @@ export function setupChecks(health: HealthResponse, backup?: BackupStatus | null
       label: 'The listening model is downloaded',
       state: health.whisper.modelPresent ? 'ok' : 'missing',
       detail: health.whisper.modelPresent ? health.whisper.model : `${health.whisper.model} is not there yet`,
-      fix: SETUP_SCRIPT_COMMAND,
-      fixIsCommand: true,
-      note: 'About 550 MB. The setup script downloads it and checks it arrived intact.',
+      fix: bundled ? REOPEN_TO_DOWNLOAD : SETUP_SCRIPT_COMMAND,
+      fixIsCommand: !bundled,
+      note: bundled
+        ? 'About 550 MB. Apunta downloads it and checks it arrived intact.'
+        : 'About 550 MB. The setup script downloads it and checks it arrived intact.',
     },
     fileVaultCheck(health),
   ];

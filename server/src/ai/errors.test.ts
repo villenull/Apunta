@@ -5,7 +5,9 @@ import { AiError, aiError, isConnectionFailure, UNREACHABLE_MESSAGE } from './er
 describe('AiError', () => {
   it('carries a message written for a therapist, not a stack trace', () => {
     expect(aiError('ollama_unreachable').message).toContain(UNREACHABLE_MESSAGE);
-    expect(aiError('model_missing').message).toContain('setup script');
+    // Never a command: the packaged app has no Terminal, and Setup knows which world it is in.
+    expect(aiError('model_missing').message).toContain('see Setup');
+    expect(aiError('model_missing').message).not.toContain('script');
     expect(aiError('invalid_output').message).not.toMatch(/schema|zod|parse/i);
   });
 

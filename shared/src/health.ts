@@ -34,6 +34,13 @@ export const HealthResponseSchema = z.object({
   ok: z.boolean(),
   version: z.string(),
   fakeAi: z.boolean(),
+  /**
+   * True inside `Apunta.app`, where the AI runtime ships with the app and the
+   * first-run window downloads the models; false on a source checkout, where
+   * the setup script does. The setup screen's advice differs completely
+   * between the two — a Terminal command is the wrong answer for her.
+   */
+  bundled: z.boolean(),
   db: z.object({
     /** Absolute path of the SQLite file, so the UI can tell the user where their data lives. */
     path: z.string(),

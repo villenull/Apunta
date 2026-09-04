@@ -37,8 +37,10 @@ export const UNREACHABLE_MESSAGE = "Apunta can't reach the local AI — see Setu
 
 const MESSAGES: Record<AiErrorCode, string> = {
   ollama_unreachable: `${UNREACHABLE_MESSAGE}. Ollama does not appear to be running on this machine.`,
-  model_missing:
-    "Apunta's AI model isn't installed yet. Run the setup script to download it, then try again.",
+  // "See Setup" rather than a command: the right way to get a model differs
+  // between the packaged app and a source checkout, and the Setup screen is
+  // the one place that knows which of the two it is in.
+  model_missing: "Apunta's AI model isn't installed yet — see Setup, which says how to get it.",
   non_gguf_model:
     'The configured model is not a GGUF build, and Apunta cannot make it follow the note format reliably. Choose a GGUF model in Settings.',
   unsupported_model_tag:
@@ -61,9 +63,9 @@ const MESSAGES: Record<AiErrorCode, string> = {
   // Speech-to-text (M5). The recording still exists in the browser when one of
   // these fires, so every message ends somewhere she can act.
   whisper_missing:
-    "Apunta can't find whisper on this machine, so it can't transcribe the recording. Run the setup script, or set the whisper path in Settings.",
+    "Apunta can't find whisper on this machine, so it can't transcribe the recording. See Setup, or set the whisper path in Settings.",
   whisper_model_missing:
-    "Apunta's transcription model isn't installed yet. Run the setup script to download it, then try again.",
+    "Apunta's transcription model isn't installed yet — see Setup, which says how to get it.",
   audio_unsupported:
     'That recording is in a format Apunta cannot transcribe. Record it again from this screen.',
   audio_decode_failed:

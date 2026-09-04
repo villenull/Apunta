@@ -1,12 +1,13 @@
 import type { BackupStatus, HealthResponse } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
-import { FULLY_LOCAL, hasBlockingProblem, isFullyLocal, setupChecks } from './setup.js';
+import { FULLY_LOCAL, hasBlockingProblem, isFullyLocal, REOPEN_TO_DOWNLOAD, setupChecks } from './setup.js';
 
 const HEALTHY: HealthResponse = {
   ok: true,
   version: '0.0.0',
   fakeAi: false,
+  bundled: false,
   db: { path: '/data/apunta.db', migrationLevel: 2 },
   ollama: { reachable: true, model: 'gemma4:12b-it-qat', modelPresent: true },
   whisper: {
@@ -54,6 +55,27 @@ describe('the checklist', () => {
     expect(byId['ollama']?.fix).toBe('brew services start ollama');
     expect(byId['whisper']?.fix).toBe('brew install whisper-cpp');
     expect(byId['whisper-model']?.fix).toBe('bash scripts/setup-macos.sh');
+  });
+
+  it('tells her to reopen the app, never to open a Terminal, when the runtime shipped with the app', () => {
+    // Inside Apunta.app there is no Homebrew and no script; the first-run
+    // window downloads what is missing (docs/INSTALL.md). Every fix here has
+    // to be something she can do from the Dock.
+    const checks = setupChecks(
+      health({
+        bundled: true,
+        ollama: { reachable: false, model: 'qwen3.5:4b-q4_K_M', modelPresent: false },
+        whisper: { ...HEALTHY.whisper, binaryPresent: false, modelPresent: false },
+      }),
+    );
+    const byId = Object.fromEntries(checks.map((check) => [check.id, check]));
+
+    expect(byId['model']?.fix).toBe(REOPEN_TO_DOWNLOAD);
+    expect(byId['whisper-model']?.fix).toBe(REOPEN_TO_DOWNLOAD);
+    for (const id of ['ollama', 'model', 'whisper', 'whisper-model']) {
+      expect(byId[id]?.fixIsCommand).toBe(false);
+      expect(byId[id]?.fix).toContain('Quit Apunta and open it again');
+    }
   });
 
   it('does not claim the model is missing while Ollama is unreachable', () => {

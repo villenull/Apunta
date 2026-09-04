@@ -39,6 +39,8 @@ export async function buildHealthResponse(
     ok: true,
     version: config.version,
     fakeAi: config.fakeAi,
+    // The bundled runtime is the one thing only the packaged app sets (M8).
+    bundled: config.ollamaBin !== undefined,
     db: { path: config.dbFile, migrationLevel: migrationLevel(db) },
     ollama: { reachable: llm.reachable, model: llm.model, modelPresent: llm.modelPresent },
     whisper: {

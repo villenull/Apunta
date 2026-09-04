@@ -67,6 +67,7 @@ export function Setup(): React.JSX.Element {
       {health.state.status === 'ready' && (
         <SetupBody
           checks={setupChecks(health.state.data, backup.state.status === 'ready' ? backup.state.data : null)}
+          bundled={health.state.data.bundled}
           onRecheck={recheck}
         />
       )}
@@ -76,9 +77,12 @@ export function Setup(): React.JSX.Element {
 
 function SetupBody({
   checks,
+  bundled,
   onRecheck,
 }: {
   checks: SetupCheck[];
+  /** Inside Apunta.app there is no Terminal to run the script in, so the card that offers it stays away. */
+  bundled: boolean;
   onRecheck: () => void;
 }): React.JSX.Element {
   const ready = isFullyLocal(checks);
@@ -101,7 +105,7 @@ function SetupBody({
         Check again
       </button>
 
-      {hasBlockingProblem(checks) && (
+      {hasBlockingProblem(checks) && !bundled && (
         <div className="card card-rows lede">
           <h3 className="heading-tight">Or do all of it at once</h3>
           <p className="small note-meta">

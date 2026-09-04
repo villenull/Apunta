@@ -55,6 +55,25 @@ describe('the setup screen', () => {
     expect(screen.getByTestId('setup-script-command').textContent).toBe('bash scripts/setup-macos.sh');
   });
 
+  it('offers no Terminal command inside the packaged app, where there is none to run', async () => {
+    installFakeApi(
+      {},
+      {
+        health: {
+          bundled: true,
+          ollama: { reachable: true, model: 'qwen3.5:4b-q4_K_M', modelPresent: false },
+        },
+      },
+    );
+    renderSetup();
+
+    // The fix is a sentence she can act on from the Dock, not a command.
+    expect((await screen.findByTestId('setup-fix-model')).textContent).toContain(
+      'Quit Apunta and open it again',
+    );
+    expect(screen.queryByTestId('setup-script-command')).toBeNull();
+  });
+
   it('recovers on re-check when the machine is fixed underneath it', async () => {
     // The wizard's whole job: she starts Ollama in another window and presses
     // the button, and the screen has to notice.
@@ -67,6 +86,7 @@ describe('the setup screen', () => {
             ok: true,
             version: '0.0.0',
             fakeAi: false,
+            bundled: false,
             db: { path: '/data/apunta.db', migrationLevel: 2 },
             ollama: { reachable, model: 'gemma4:12b-it-qat', modelPresent: reachable },
             whisper: {

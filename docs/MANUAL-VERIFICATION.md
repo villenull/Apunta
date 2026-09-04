@@ -286,6 +286,7 @@ that **Try again** works.
 | Cancelled by pressing Stop | ☐ | Nothing lost; the next run continues |
 | A corrupted download | ☐ | Truncate the `.part` file in `models/` by hand. It should refuse, delete it, and start clean |
 | A tag that no longer exists | ☐ | Only if `ollama pull` 404s. The message says retrying will not help, which is true |
+| The Setup page inside the app names no Terminal command | ☐ | Delete a model file and relaunch, then open Setup: every red row says to quit and reopen Apunta, and the "Or do all of it at once" card is absent. (On a source checkout the script is still offered — `bundled` in `/api/health` is what decides, and only the app shell sets `APUNTA_OLLAMA_BIN`) |
 
 ### 7.5 Quit, relaunch, and no orphans
 
