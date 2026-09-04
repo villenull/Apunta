@@ -39,7 +39,10 @@ The checks are few and mechanical, each tied to an incident above:
 
 - **noRewrite** — a question must be answered, not acted on.
 - **forbids** — a phrase that must not appear in the note afterwards.
-- **keeps** — a fact that was there before and must survive the edit.
+- **keeps** — a fact that was there before and must survive the edit. Judged
+  the way the fact lock judges it: word for word, or by the fact itself, so
+  "six and a half" is kept by "six and one-half" or "6.5". A tone request
+  rewrites numbers into the clinical register, and that is not a loss.
 - **requires** — something she asked for in her own words, which the lock must
   never block: her message is an allowed source.
 - **moves** — text must leave the section it was in *and* reach the named one.

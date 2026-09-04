@@ -31,6 +31,26 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+/**
+ * The fact lock's own tokeniser, so `keeps` judges a fact the way the server
+ * does: "six and a half" is kept by "six and one-half" or "6.5", because the
+ * clinical register rewrites numbers and that is not a loss. Read from the
+ * built server, which a running Apunta implies.
+ */
+const { factTokens } = await import(join(root, 'server', 'dist', 'ai', 'fact-guard.js')).catch(() => {
+  console.error("This needs the built server (npm run build): it borrows the fact lock's tokeniser.");
+  process.exit(2);
+});
+
+/** A `keeps` phrase survives if it is still there word for word, or if every fact in it is. */
+function stillHas(note, text) {
+  if (note.toLowerCase().includes(text.toLowerCase())) return true;
+  const facts = [...factTokens(text).keys()];
+  if (facts.length === 0) return false;
+  const present = factTokens(note);
+  return facts.every((fact) => present.has(fact));
+}
 const fixture = JSON.parse(readFileSync(join(root, 'e2e', 'fixtures', 'refine', 'scenarios.json'), 'utf8'));
 const BASE = process.env['APUNTA_CHECK_URL'] ?? 'http://127.0.0.1:7717';
 
@@ -155,7 +175,7 @@ for (const scenario of fixture.scenarios) {
       if (lower.includes(text.toLowerCase())) problems.push(`${label}: the note gained "${text}"`);
     }
     for (const text of turn.keeps ?? []) {
-      if (!lower.includes(text.toLowerCase())) problems.push(`${label}: "${text}" was lost`);
+      if (!stillHas(current, text)) problems.push(`${label}: "${text}" was lost`);
     }
     for (const text of turn.requires ?? []) {
       if (!lower.includes(text.toLowerCase())) problems.push(`${label}: her own "${text}" never arrived`);

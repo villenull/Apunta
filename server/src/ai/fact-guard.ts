@@ -230,10 +230,15 @@ function numberWordsAt(words: readonly string[], index: number): { token: string
     }
   }
 
-  // "six and a half" — one fact, not "6" and a stray word.
+  // "six and a half", "six and one-half", "six point five" — one fact each,
+  // not "6" and a stray word. The clinical register reaches for the second.
   const tail = words.slice(index + consumed, index + consumed + 3).map(bare);
-  if (tail[0] === 'and' && tail[1] === 'a' && tail[2] === 'half') {
+  if (tail[0] === 'and' && (tail[1] === 'a' || tail[1] === 'one') && tail[2] === 'half') {
     return { token: `${String(value)}.5`, consumed: consumed + 3 };
+  }
+  const decimal = tail[0] === 'point' && tail[1] !== undefined ? NUMBER_WORDS[tail[1]] : undefined;
+  if (decimal !== undefined && decimal < 10) {
+    return { token: `${String(value)}.${String(decimal)}`, consumed: consumed + 2 };
   }
   return { token: String(value), consumed };
 }
