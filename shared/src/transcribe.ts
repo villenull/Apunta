@@ -137,9 +137,16 @@ export const MAX_AUDIO_BYTES = 128 * 1024 * 1024;
  * So a refresh sends only the last `PREVIEW_WINDOW_SECONDS`, which keeps it
  * at one short pass whatever the recording's length.
  */
-/** The first refresh, early enough that the first words arrive within a few seconds. */
-export const PREVIEW_FIRST_MS = 3_000;
-/** The gap after each refresh completes. Refreshes never overlap. */
+/** The first refresh: a second of speech is enough to show something. */
+export const PREVIEW_FIRST_MS = 1_000;
+/**
+ * The gap after a refresh completes while the recording is still shorter
+ * than the window — refreshes are cheapest then, and reassurance matters
+ * most. Refreshes never overlap, so a slow machine simply sees them further
+ * apart.
+ */
+export const PREVIEW_EARLY_INTERVAL_MS = 1_500;
+/** The gap once the caption is rolling. */
 export const PREVIEW_INTERVAL_MS = 5_000;
 /** How much of the tail a refresh transcribes: a rolling caption, not a running transcript. */
 export const PREVIEW_WINDOW_SECONDS = 15;

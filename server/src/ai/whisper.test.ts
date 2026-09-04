@@ -108,15 +108,17 @@ async function collect(events: AsyncIterable<SttEvent>): Promise<SttEvent[]> {
 
 describe('previewAudioContext', () => {
   it('covers the clip plus a margin, in whisper-cli-friendly steps of 64', () => {
-    expect(previewAudioContext(4)).toBe(320);
-    expect(previewAudioContext(15)).toBe(896);
-    // The 11-second clip measured on 2026-09-04: 640 gave the full window's
-    // transcript, 512 hallucinated a repeat. This lands safely above both.
+    // Measured 2026-09-04 on real speech: 448 was clean on 5 s where 320
+    // looped; 704 was clean on 11 s where 512 hallucinated a repeat.
+    expect(previewAudioContext(5)).toBe(448);
     expect(previewAudioContext(11)).toBe(704);
+    expect(previewAudioContext(15)).toBe(960);
   });
 
-  it('never goes below the floor or above the full window', () => {
-    expect(previewAudioContext(0.5)).toBe(256);
+  it('never goes below the floor the short clips need, or above the full window', () => {
+    // 256 looped on 1.5 s and 2.5 s of speech; 384 did not.
+    expect(previewAudioContext(1)).toBe(384);
+    expect(previewAudioContext(2.5)).toBe(384);
     expect(previewAudioContext(60)).toBe(1500);
   });
 });

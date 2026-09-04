@@ -1,5 +1,6 @@
 import {
   MAX_RECORDING_SECONDS,
+  PREVIEW_EARLY_INTERVAL_MS,
   PREVIEW_FIRST_MS,
   PREVIEW_INTERVAL_MS,
   PREVIEW_MAX_SECONDS,
@@ -162,7 +163,9 @@ export function Capture(): React.JSX.Element {
           if (!cancelled && result !== null && recorder.current !== null) setPreview(result.text);
         })
         .finally(() => {
-          if (!cancelled) schedule(PREVIEW_INTERVAL_MS);
+          if (cancelled) return;
+          const early = (recorder.current?.seconds ?? 0) < PREVIEW_WINDOW_SECONDS;
+          schedule(early ? PREVIEW_EARLY_INTERVAL_MS : PREVIEW_INTERVAL_MS);
         });
     };
     schedule(PREVIEW_FIRST_MS);

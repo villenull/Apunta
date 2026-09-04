@@ -19,6 +19,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { aiError } from '../ai/errors.js';
+import { collapseRepeats } from '../ai/preview-text.js';
 import { resolveKeepAudio, resolveVocabulary } from '../ai/stt-settings.js';
 import type { AiProviders } from '../ai/types.js';
 import { ensureDir, type AppConfig } from '../config.js';
@@ -106,7 +107,10 @@ export function registerTranscribeRoute(
         if (event.type === 'transcript') text = event.text;
       }
       // Shape only. The words are the most sensitive thing this app handles.
-      return { text, seconds: wav.durationSeconds };
+      // A looped phrase is collapsed here and only here: the preview is
+      // rough by contract, and the note's transcript is never edited by a
+      // heuristic.
+      return { text: collapseRepeats(text), seconds: wav.durationSeconds };
     } finally {
       // Always, on every path: a preview never keeps its audio.
       await discard(upload.path);

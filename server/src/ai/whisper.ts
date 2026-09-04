@@ -86,7 +86,10 @@ export function buildWhisperArgs(input: {
 /** Whisper's encoder frames per second of audio: 1500 for its 30-second window. */
 const AUDIO_CONTEXT_PER_SECOND = 50;
 const AUDIO_CONTEXT_FULL = 1500;
-const AUDIO_CONTEXT_MIN = 256;
+/** Below this the decoder loops on short clips — measured, see `previewAudioContext`. */
+const AUDIO_CONTEXT_MIN = 384;
+/** Seconds of headroom over the clip. Two was not enough at five seconds; three is. */
+const AUDIO_CONTEXT_MARGIN_SECONDS = 3;
 
 /**
  * An encoder context fitted to a short clip, for the live preview only.
@@ -100,9 +103,15 @@ const AUDIO_CONTEXT_MIN = 256;
  * the time; with the context *shorter* than the audio it hallucinated a
  * repeat. Hence two seconds of margin, a floor, and the full window as the
  * ceiling. The transcript that becomes a note never goes through this.
+ *
+ * The floor and the margin are both measured, on the same speech: a context
+ * too tight for the clip makes the decoder *loop* ("And so my fellow. And so
+ * my fellow. And so my fellow.") — 256 looped on 1.5 s and 2.5 s, 320 looped
+ * on 5 s, while 384 was clean on all three and 448 on 5 s. Greedy decoding
+ * and padding the clip with silence changed nothing; only the context did.
  */
 export function previewAudioContext(durationSeconds: number): number {
-  const wanted = (durationSeconds + 2) * AUDIO_CONTEXT_PER_SECOND;
+  const wanted = (durationSeconds + AUDIO_CONTEXT_MARGIN_SECONDS) * AUDIO_CONTEXT_PER_SECOND;
   const rounded = Math.ceil(wanted / 64) * 64;
   return Math.min(AUDIO_CONTEXT_FULL, Math.max(AUDIO_CONTEXT_MIN, rounded));
 }
