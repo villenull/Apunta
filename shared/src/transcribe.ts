@@ -150,17 +150,25 @@ export const MAX_AUDIO_BYTES = 128 * 1024 * 1024;
  * So a refresh sends only the last `PREVIEW_WINDOW_SECONDS`, which keeps it
  * at one short pass whatever the recording's length.
  */
-/** The first refresh: a second of speech is enough to show something. */
-export const PREVIEW_FIRST_MS = 1_000;
+/** The first refresh: under a second of speech is a word or two, and that is reassurance. */
+export const PREVIEW_FIRST_MS = 800;
 /**
  * The gap after a refresh completes is the time that refresh took, clamped
  * between these two: whisper gets at most half the machine, and a fast
  * model or a fast Mac is rewarded with a caption that keeps up, while a
  * slow one simply sees refreshes further apart. Refreshes never overlap.
+ * The floor is not lower on purpose: each refresh re-transcribes a slightly
+ * different window, so a caption refreshed twice a second jitters — words
+ * change under her eyes — where one refreshed every 0.7 s or so reads as
+ * live (owner, 2026-09-04, on the small model).
  */
 export const PREVIEW_MIN_GAP_MS = 400;
 export const PREVIEW_INTERVAL_MS = 5_000;
-/** How much of the tail a refresh transcribes: a rolling caption, not a running transcript. */
+/**
+ * How much of the tail a refresh transcribes: a rolling caption, not a
+ * running transcript. Fifteen seconds keeps a couple of sentences on
+ * screen; on the small model the longer pass costs a quarter of a second.
+ */
 export const PREVIEW_WINDOW_SECONDS = 15;
 
 /**
