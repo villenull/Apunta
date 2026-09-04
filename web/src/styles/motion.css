@@ -56,28 +56,38 @@
 /*
  * Picking a note is a navigation too, even though only the query string
  * moves and the route wrapper deliberately ignores it. The editor remounts
- * on `key={note.id}` (Workspace.tsx), so the same entrance replays for the
- * note itself — asked for directly (owner-proxy, 2026-08-30).
+ * on `key={note.id}` (Workspace.tsx), and its blocks cascade in from the top
+ * exactly the way the note list's rows do when a patient is picked — the
+ * meta line, then the title, the actions, the body, and last the chat
+ * circle. The first version rose 10px as one block; the owner-proxy asked
+ * for this instead (2026-09-04): "it should cascade down, like the notes do
+ * when I click a patient." The body is one text area, so the cascade runs
+ * over the editor's blocks rather than the note's sections.
  */
-.note-editor-col {
-  animation: note-rise var(--motion-base) var(--motion-ease);
+.note-editor-col .note-editor-header .note-meta,
+.note-editor-col .note-editor-header h2,
+.note-editor-col .note-actions,
+.note-editor-col .form-error,
+.note-editor-col .note-editor-body,
+.note-editor-col .chat-fab {
+  animation: rise-in var(--motion-base) var(--motion-ease) backwards;
 }
 
-/*
- * A longer rise than the 3px everything else uses: this one was asked for
- * because it should be *seen* (owner-proxy, 2026-08-30). It is safe to make
- * it travel because `.note-chat-split` clips the overflow it would otherwise
- * create — see the note there.
- */
-@keyframes note-rise {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.note-editor-col .note-editor-header h2 {
+  animation-delay: 36ms;
+}
+
+.note-editor-col .note-actions {
+  animation-delay: 72ms;
+}
+
+.note-editor-col .form-error,
+.note-editor-col .note-editor-body {
+  animation-delay: 108ms;
+}
+
+.note-editor-col .chat-fab {
+  animation-delay: 144ms;
 }
 
 /* A dialog scales the last 2%, which is Linear's tell. */
@@ -137,7 +147,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .route-transition,
-  .note-editor-col,
+  .note-editor-col .note-editor-header .note-meta,
+  .note-editor-col .note-editor-header h2,
+  .note-editor-col .note-actions,
+  .note-editor-col .form-error,
+  .note-editor-col .note-editor-body,
+  .note-editor-col .chat-fab,
   .modal,
   .modal-backdrop,
   .note-item,
