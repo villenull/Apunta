@@ -12,6 +12,8 @@ import {
 import type { FastifyInstance } from 'fastify';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { aiError } from '../ai/errors.js';
+import type { SttEvent, SttProvider } from '../ai/types.js';
 import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
 import { WhisperCppSttProvider } from '../ai/whisper.js';
 import { buildApp } from '../app.js';
@@ -430,6 +432,34 @@ describe('POST /api/transcribe/preview', () => {
     // No note, no transcript row, and the audio is gone again.
     expect(listNotesForPatient(harness.db, patient.id).length).toBe(notesBefore);
     expect(audioFiles(harness.config.audioDir)).toEqual(before);
+  });
+
+  it('answers no words, not an error, when whisper hears nothing in the clip', async () => {
+    // The first refresh often carries under a second of silence; a finished
+    // recording with no speech is a failure she must hear about, a preview
+    // with none is "nothing yet".
+    const silent: SttProvider = {
+      // eslint-disable-next-line require-yield
+      async *transcribe(): AsyncIterable<SttEvent> {
+        throw aiError('transcription_empty', 'whisper-cli exited 0 with no transcript');
+      },
+      describe: () =>
+        Promise.resolve({ binaryPresent: true, modelPresent: true, binary: 'stub', model: 'stub' }),
+    };
+    const app = await buildApp({
+      config: harness.config,
+      db: harness.db,
+      logger: false,
+      providers: { llm: new FakeLlmProvider({ streamDelayMs: 0 }), stt: silent },
+    });
+
+    try {
+      const { statusCode, body } = await preview(app, wav(3));
+      expect(statusCode).toBe(200);
+      expect((body as { text: string }).text).toBe('');
+    } finally {
+      await app.close();
+    }
   });
 
   it('says nothing rather than erroring before there is speech to hear', async () => {

@@ -313,17 +313,28 @@ export function Capture(): React.JSX.Element {
   const drafting = busy && Object.keys(draft).length > 0;
   const canProcess = wav !== null || text.trim().length > 0;
 
+  // A patient the server no longer knows — deleted from another tab, most
+  // likely — gets no microphone: a recording made here could never be saved
+  // (seen live 2026-09-04, a full dictation lost to a stale tab).
+  if (patient.state.status === 'error') {
+    return (
+      <Screen back={{ to: '/', label: 'Patients' }}>
+        <h2 className="heading-tight" data-testid="capture-heading">
+          New note
+        </h2>
+        <p className="form-error" role="alert" data-testid="capture-missing-patient">
+          {patient.state.message} This patient may have been deleted, so nothing recorded here could be saved.{' '}
+          <Link to="/">Back to patients</Link>
+        </p>
+      </Screen>
+    );
+  }
+
   return (
     <Screen back={{ to: `/?patient=${patientId}`, label: 'Patients' }}>
       <h2 className="heading-tight" data-testid="capture-heading">
         {heading}
       </h2>
-      {patient.state.status === 'error' && (
-        <p className="form-error" role="alert">
-          {patient.state.message}
-        </p>
-      )}
-
       <div className="field field-narrow lede">
         <label className="label" htmlFor="note-format">
           Note format

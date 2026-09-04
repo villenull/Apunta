@@ -18,7 +18,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
-import { aiError } from '../ai/errors.js';
+import { AiError, aiError } from '../ai/errors.js';
 import { collapseRepeats } from '../ai/preview-text.js';
 import { resolveKeepAudio, resolveVocabulary } from '../ai/stt-settings.js';
 import type { AiProviders } from '../ai/types.js';
@@ -97,14 +97,22 @@ export function registerTranscribeRoute(
       );
 
       let text = '';
-      for await (const event of providers.stt.transcribe({
-        wavPath: upload.path,
-        durationSeconds: wav.durationSeconds,
-        vocabulary: resolveVocabulary(db),
-        // The fast, rough pass. Only here — never for a transcript that is kept.
-        preview: true,
-      })) {
-        if (event.type === 'transcript') text = event.text;
+      try {
+        for await (const event of providers.stt.transcribe({
+          wavPath: upload.path,
+          durationSeconds: wav.durationSeconds,
+          vocabulary: resolveVocabulary(db),
+          // The fast, rough pass. Only here — never for a transcript that is kept.
+          preview: true,
+        })) {
+          if (event.type === 'transcript') text = event.text;
+        }
+      } catch (error) {
+        // The first refresh often carries under a second of silence, and
+        // whisper's honest answer to that is no words. For a finished
+        // recording that is a failure she must hear about; for a preview it
+        // is "nothing yet", and neither an error nor a stack trace in the log.
+        if (!(error instanceof AiError && error.code === 'transcription_empty')) throw error;
       }
       // Shape only. The words are the most sensitive thing this app handles.
       // A looped phrase is collapsed here and only here: the preview is

@@ -116,6 +116,18 @@ describe('recording on the capture screen', () => {
     expect(api.calls).not.toContain('POST /api/generate');
   });
 
+  it('offers no microphone for a patient the server no longer knows', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    render(
+      <MemoryRouter initialEntries={['/capture/01a00000-0000-7000-8000-000000000000']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect((await screen.findByTestId('capture-missing-patient')).textContent).toContain('Back to patients');
+    expect(screen.queryByTestId('record-start')).toBeNull();
+  });
+
   it('sends what she typed alongside the recording', async () => {
     installFakeApi({ formats: [progressNote], patients: [john] });
     const uploads: FormData[] = [];
