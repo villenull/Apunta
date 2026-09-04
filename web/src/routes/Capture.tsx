@@ -1,7 +1,9 @@
 import {
   MAX_RECORDING_SECONDS,
+  PREVIEW_FIRST_MS,
   PREVIEW_INTERVAL_MS,
   PREVIEW_MAX_SECONDS,
+  PREVIEW_WINDOW_SECONDS,
   WARN_RECORDING_SECONDS,
 } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -84,13 +86,13 @@ export function Capture(): React.JSX.Element {
    * words, and a level that moves the moment she speaks.
    *
    * `level` answers "is this hearing me" immediately. `preview` answers "are
-   * the words coming out right", but cannot answer it for several seconds —
-   * whisper loads a 547 MB model before it can hear anything — so the two are
+   * the words coming out right", but cannot answer it for a few seconds —
+   * whisper's encoder takes its time even on a short clip — so the two are
    * separate on purpose rather than one indicator that starts late.
    */
   const [level, setLevel] = useState(0);
   const [preview, setPreview] = useState('');
-  const previewBusy = useRef(false);
+  const [previewPaused, setPreviewPaused] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const available = formats.state.status === 'ready' ? formats.state.data : [];
@@ -123,37 +125,51 @@ export function Capture(): React.JSX.Element {
   /**
    * Refresh the provisional words while she speaks.
    *
-   * Every refresh re-uploads the recording so far and pays whisper's model
-   * load again, so this is deliberately slow-moving and stops once the
-   * recording is long enough that the microphone has clearly proved itself.
-   * A refresh already in flight is never doubled up, and a failure goes quiet:
-   * the preview is reassurance, and reassurance that raises an alarm about a
-   * recording which is going fine would be worse than no preview at all.
+   * The first refresh goes early, so the first words arrive within a few
+   * seconds; each one after that is scheduled when the previous has come
+   * back, so refreshes never overlap and a slow machine simply sees them
+   * further apart. Each carries only the last few seconds of audio — a
+   * rolling caption — and after four minutes the preview says it has paused
+   * rather than freeze in a way that looks like the microphone did. A failure
+   * goes quiet: the preview is reassurance, and reassurance that raises an
+   * alarm about a recording which is going fine would be worse than none.
    */
   useEffect(() => {
     if (recording !== 'recording') return;
+    setPreviewPaused(false);
 
-    const timer = window.setInterval(() => {
+    let cancelled = false;
+    let timer = 0;
+    const schedule = (ms: number): void => {
+      timer = window.setTimeout(run, ms);
+    };
+    const run = (): void => {
       const active = recorder.current;
-      if (!active || previewBusy.current) return;
-      if (active.seconds > PREVIEW_MAX_SECONDS) return;
-      const snapshot = active.snapshot();
-      if (snapshot === null) return;
-
-      previewBusy.current = true;
+      if (cancelled || !active) return;
+      if (active.seconds > PREVIEW_MAX_SECONDS) {
+        setPreviewPaused(true);
+        return;
+      }
+      const snapshot = active.snapshot(PREVIEW_WINDOW_SECONDS);
+      if (snapshot === null) {
+        schedule(PREVIEW_INTERVAL_MS);
+        return;
+      }
       void previewTranscript(snapshot)
         .then((result) => {
           // Still recording? A result that lands after she stopped belongs to
           // a screen that has moved on.
-          if (result !== null && recorder.current !== null) setPreview(result.text);
+          if (!cancelled && result !== null && recorder.current !== null) setPreview(result.text);
         })
         .finally(() => {
-          previewBusy.current = false;
+          if (!cancelled) schedule(PREVIEW_INTERVAL_MS);
         });
-    }, PREVIEW_INTERVAL_MS);
+    };
+    schedule(PREVIEW_FIRST_MS);
 
     return () => {
-      window.clearInterval(timer);
+      cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [recording]);
 
@@ -376,7 +392,9 @@ export function Capture(): React.JSX.Element {
                     <>
                       <p className="record-preview-text">{preview}</p>
                       <p className="small muted record-preview-note">
-                        Rough, and still catching up. The note is written from the finished recording.
+                        {previewPaused
+                          ? 'Preview paused — the microphone has proved itself. The note is written from the finished recording.'
+                          : 'The last few seconds, roughly. The note is written from the finished recording.'}
                       </p>
                     </>
                   )}

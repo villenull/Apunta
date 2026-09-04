@@ -65,8 +65,8 @@ export function registerTranscribeRoute(
    * reassurance, which is why it can afford to be approximate and why nothing
    * downstream reads what it returns.
    *
-   * It is stateless on purpose. Each call carries the whole recording so far
-   * and the audio is deleted before the response is written, so a preview
+   * It is stateless on purpose. Each call carries the last few seconds of the
+   * recording and the audio is deleted before the response is written, so a preview
    * leaves nothing behind to clean up or to leak — the alternative, a
    * server-side accumulator per recording session, is a pile of temporary
    * audio files whose lifetime nobody owns.
@@ -100,6 +100,8 @@ export function registerTranscribeRoute(
         wavPath: upload.path,
         durationSeconds: wav.durationSeconds,
         vocabulary: resolveVocabulary(db),
+        // The fast, rough pass. Only here — never for a transcript that is kept.
+        preview: true,
       })) {
         if (event.type === 'transcript') text = event.text;
       }

@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { statSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
 
 import { MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
 
@@ -47,6 +48,12 @@ export interface WhisperOptions {
   readonly resolveModel: () => string;
   /** Injected by tests; production always uses `node:child_process`. */
   readonly spawnImpl?: Spawn;
+  /**
+   * Threads for whisper-cli, whose own default is four. Every core is the
+   * production answer — on this machine eight halved the encoder's time
+   * (2026-09-04) — and tests pin a number so the command line is stable.
+   */
+  readonly threads?: number;
   /** Overrides the computed timeout. Tests use it; nothing else does. */
   readonly timeoutMs?: number;
 }
@@ -64,11 +71,40 @@ export function buildWhisperArgs(input: {
   readonly modelPath: string;
   readonly wavPath: string;
   readonly prompt?: string | undefined;
+  readonly threads?: number | undefined;
+  /** Only the live preview sets this; see `previewAudioContext`. */
+  readonly audioContext?: number | undefined;
 }): string[] {
   const args = ['--model', input.modelPath, '--file', input.wavPath, '--no-timestamps', '--print-progress'];
   const prompt = (input.prompt ?? '').trim();
   if (prompt !== '') args.push('--prompt', prompt);
+  if (input.threads !== undefined) args.push('--threads', String(input.threads));
+  if (input.audioContext !== undefined) args.push('--audio-ctx', String(input.audioContext));
   return args;
+}
+
+/** Whisper's encoder frames per second of audio: 1500 for its 30-second window. */
+const AUDIO_CONTEXT_PER_SECOND = 50;
+const AUDIO_CONTEXT_FULL = 1500;
+const AUDIO_CONTEXT_MIN = 256;
+
+/**
+ * An encoder context fitted to a short clip, for the live preview only.
+ *
+ * Whisper's encoder always processes a padded 30-second window, so a
+ * three-second clip costs what a thirty-second one does — ~4 s on this
+ * machine's eight threads, and the reason the first words used to take
+ * twenty seconds to appear. `--audio-ctx` shrinks the window. Measured on
+ * real speech (2026-09-04): with the context covering the audio plus a
+ * margin, the transcript was identical to the full window's at under half
+ * the time; with the context *shorter* than the audio it hallucinated a
+ * repeat. Hence two seconds of margin, a floor, and the full window as the
+ * ceiling. The transcript that becomes a note never goes through this.
+ */
+export function previewAudioContext(durationSeconds: number): number {
+  const wanted = (durationSeconds + 2) * AUDIO_CONTEXT_PER_SECOND;
+  const rounded = Math.ceil(wanted / 64) * 64;
+  return Math.min(AUDIO_CONTEXT_FULL, Math.max(AUDIO_CONTEXT_MIN, rounded));
 }
 
 /**
@@ -183,7 +219,13 @@ export class WhisperCppSttProvider implements SttProvider {
     }
 
     const prompt = buildVocabularyPrompt(request.vocabulary);
-    const args = buildWhisperArgs({ modelPath: model, wavPath: request.wavPath, prompt });
+    const args = buildWhisperArgs({
+      modelPath: model,
+      wavPath: request.wavPath,
+      prompt,
+      threads: this.options.threads ?? availableParallelism(),
+      ...(request.preview === true ? { audioContext: previewAudioContext(request.durationSeconds) } : {}),
+    });
     const timeoutMs = this.options.timeoutMs ?? timeoutFor(request.durationSeconds);
 
     const child = this.spawnImpl(binary, args, { stdio: ['ignore', 'pipe', 'pipe'] as const });

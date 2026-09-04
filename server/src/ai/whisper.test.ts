@@ -14,6 +14,7 @@ import type { SttEvent } from './types.js';
 import {
   buildVocabularyPrompt,
   buildWhisperArgs,
+  previewAudioContext,
   classifyFailure,
   parseProgress,
   parseTranscript,
@@ -105,7 +106,32 @@ async function collect(events: AsyncIterable<SttEvent>): Promise<SttEvent[]> {
   return seen;
 }
 
+describe('previewAudioContext', () => {
+  it('covers the clip plus a margin, in whisper-cli-friendly steps of 64', () => {
+    expect(previewAudioContext(4)).toBe(320);
+    expect(previewAudioContext(15)).toBe(896);
+    // The 11-second clip measured on 2026-09-04: 640 gave the full window's
+    // transcript, 512 hallucinated a repeat. This lands safely above both.
+    expect(previewAudioContext(11)).toBe(704);
+  });
+
+  it('never goes below the floor or above the full window', () => {
+    expect(previewAudioContext(0.5)).toBe(256);
+    expect(previewAudioContext(60)).toBe(1500);
+  });
+});
+
 describe('buildWhisperArgs', () => {
+  it('passes the thread count, and a fitted audio context only when given one', () => {
+    const args = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav', threads: 8, audioContext: 320 });
+    expect(args[args.indexOf('--threads') + 1]).toBe('8');
+    expect(args[args.indexOf('--audio-ctx') + 1]).toBe('320');
+    // The transcript that becomes a note never carries a shrunken context.
+    expect(buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav', threads: 8 })).not.toContain(
+      '--audio-ctx',
+    );
+  });
+
   it('names the model and the file, asks for prose and for progress', () => {
     const args = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav' });
 

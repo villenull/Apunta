@@ -1,4 +1,10 @@
-import { MAX_RECORDING_SECONDS, PREVIEW_INTERVAL_MS, WAV_CONTENT_TYPE } from '@apunta/shared';
+import {
+  MAX_RECORDING_SECONDS,
+  PREVIEW_FIRST_MS,
+  PREVIEW_INTERVAL_MS,
+  PREVIEW_MAX_SECONDS,
+  WAV_CONTENT_TYPE,
+} from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -45,8 +51,8 @@ vi.mock('../lib/recorder.js', async (importOriginal) => {
       // 44 bytes of header and a little audio: what the real recorder returns.
       return Promise.resolve(new Blob([new Uint8Array(1000)], { type: WAV_CONTENT_TYPE }));
     }
-    /** The recording so far, which the live preview re-transcribes. */
-    snapshot(): Blob | null {
+    /** The recording so far, or its tail, which the live preview transcribes. */
+    snapshot(_lastSeconds?: number): Blob | null {
       return new Blob([new Uint8Array(1000)], { type: WAV_CONTENT_TYPE });
     }
     cancel(): void {}
@@ -286,9 +292,9 @@ describe('while the recording is still going', () => {
     renderCapture();
     await startRecording();
 
-    // The refresh is on an interval; drive it rather than waiting 12 seconds.
+    // The first refresh is on a timer; drive it rather than waiting for it.
     await act(async () => {
-      vi.advanceTimersByTime(PREVIEW_INTERVAL_MS + 100);
+      vi.advanceTimersByTime(PREVIEW_FIRST_MS + 100);
       await Promise.resolve();
     });
 
@@ -296,5 +302,31 @@ describe('while the recording is still going', () => {
       expect(screen.getByTestId('record-preview').textContent).toContain('steady week so far');
     });
     expect(screen.getByTestId('record-preview').textContent).toContain('written from the finished recording');
+  });
+
+  it('says it has paused once the recording is long enough, rather than looking stuck', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] }, { previewText: 'steady week so far' });
+    renderCapture();
+    await startRecording();
+
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_FIRST_MS + 100);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('record-preview').textContent).toContain('steady week so far');
+    });
+
+    // Past the limit, the next refresh pauses the preview and says so; the
+    // words she already has stay on screen.
+    elapsed = PREVIEW_MAX_SECONDS + 1;
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_INTERVAL_MS + 100);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('record-preview').textContent).toContain('Preview paused');
+    });
+    expect(screen.getByTestId('record-preview').textContent).toContain('steady week so far');
   });
 });

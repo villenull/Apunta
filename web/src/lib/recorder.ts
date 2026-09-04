@@ -118,13 +118,24 @@ export class PcmBuffer {
     this.samples += usable.length;
   }
 
-  /** Everything recorded so far, as the WAV the server transcribes. */
-  toWav(): Blob {
-    const pcm = new Int16Array(this.samples);
+  /** Everything recorded so far — or, with `lastSeconds`, just the tail — as the WAV the server transcribes. */
+  toWav(lastSeconds?: number): Blob {
+    const keep =
+      lastSeconds === undefined
+        ? this.samples
+        : Math.min(this.samples, Math.ceil(lastSeconds * this.sampleRate));
+    const pcm = new Int16Array(keep);
+    let skip = this.samples - keep;
     let offset = 0;
     for (const chunk of this.chunks) {
-      pcm.set(chunk, offset);
-      offset += chunk.length;
+      if (skip >= chunk.length) {
+        skip -= chunk.length;
+        continue;
+      }
+      const part = skip > 0 ? chunk.subarray(skip) : chunk;
+      skip = 0;
+      pcm.set(part, offset);
+      offset += part.length;
     }
     return new Blob([encodeWav(pcm, this.sampleRate)], { type: WAV_CONTENT_TYPE });
   }
@@ -225,21 +236,23 @@ export class Recorder {
     }
   }
 
-  /** Stop, and answer with the WAV. Safe to call once. */
   /**
-   * The recording so far, as a WAV, without stopping.
+   * The recording so far — or just its tail — as a WAV, without stopping.
    *
-   * The live preview re-transcribes the whole recording on each refresh
-   * rather than stitching independent chunks together: whisper's cost is
-   * dominated by loading its model, not by the length of the audio, so
-   * "everything so far" is barely more expensive than "the last ten seconds"
-   * and it reads far better — a chunk boundary in the middle of a word is
-   * exactly the sort of thing that would make her distrust the transcript.
+   * The live preview asks for the last few seconds only. Whisper's cost is
+   * one encoder pass per 30-second window however short the clip (measured
+   * 2026-09-04 — it is not model loading, which takes 60 ms), so "everything
+   * so far" would grow by a window at a time while the reassurance it buys
+   * did not. A rolling window keeps a refresh at one short pass. Its first
+   * word may be cut at the window's edge; the caption says the words are
+   * rough.
    */
-  snapshot(): Blob | null {
+  snapshot(lastSeconds?: number): Blob | null {
     if (this.buffer === null || this.buffer.seconds <= 0) return null;
-    return this.buffer.toWav();
+    return this.buffer.toWav(lastSeconds);
   }
+
+  /** Stop, and answer with the WAV. Safe to call once. */
 
   async stop(): Promise<Blob> {
     if (!this.buffer) throw new RecorderError('failed', 'stop() before start()');

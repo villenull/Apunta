@@ -99,8 +99,10 @@ export {
   WHISPER_BINARY_SETTING,
   WHISPER_MODEL_FILENAME,
   WHISPER_MODEL_SETTING,
+  PREVIEW_FIRST_MS,
   PREVIEW_INTERVAL_MS,
   PREVIEW_MAX_SECONDS,
+  PREVIEW_WINDOW_SECONDS,
   TranscribePreviewResponseSchema,
 } from './transcribe.js';
 export type {

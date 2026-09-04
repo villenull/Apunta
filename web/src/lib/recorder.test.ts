@@ -32,6 +32,18 @@ describe('PcmBuffer', () => {
     expect(buffer.seconds).toBeCloseTo(1.5, 5);
   });
 
+  it('can hand over just the tail, for the rolling preview', async () => {
+    const buffer = new PcmBuffer();
+    buffer.push(new Float32Array(AUDIO_SAMPLE_RATE * 4)); // four seconds
+    buffer.push(new Float32Array(AUDIO_SAMPLE_RATE * 2)); // two more
+
+    expect((await headerOf(buffer.toWav(3))).durationSeconds).toBeCloseTo(3, 5);
+    // Asking for more than there is gives what there is.
+    expect((await headerOf(buffer.toWav(30))).durationSeconds).toBeCloseTo(6, 5);
+    // And the untailed WAV is still everything.
+    expect((await headerOf(buffer.toWav())).durationSeconds).toBeCloseTo(6, 5);
+  });
+
   it('writes whatever rate the browser gave us into the header', async () => {
     // A browser that refuses a 16 kHz context still produces a usable file:
     // whisper.cpp resamples internally, so the rate only has to be honest.

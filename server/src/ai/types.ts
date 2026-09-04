@@ -176,6 +176,12 @@ export interface TranscribeRequest {
   readonly durationSeconds: number;
   /** `stt_vocabulary` from Settings, rendered into whisper's `--prompt`. */
   readonly vocabulary: readonly string[];
+  /**
+   * A rough, fast pass for the live preview: the audio context is fitted to
+   * the clip instead of whisper's padded 30-second window. Never set for the
+   * transcript that becomes a note.
+   */
+  readonly preview?: boolean;
 }
 
 export type SttEvent =

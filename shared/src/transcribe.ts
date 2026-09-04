@@ -127,19 +127,31 @@ export const MAX_AUDIO_BYTES = 128 * 1024 * 1024;
  * as more speech arrives, which is normal for streaming recognition and the
  * reason nothing downstream reads it.
  *
- * Whisper's cost here is almost entirely model loading — measured at ~8 s
- * regardless of whether the audio is one second or thirty (2026-09-01, this
- * machine) — so a refresh is expensive and the interval below is deliberately
- * not "every second". Nothing about this path is free.
+ * What a refresh costs, measured (2026-09-04, this machine, CPU only): whisper
+ * loads its model in ~60 ms; the cost is the encoder, which always works on a
+ * padded 30-second window — ~8 s at whisper-cli's default four threads, ~4 s
+ * on eight — however short the clip. A resident whisper process would save
+ * nothing. Two things do: threads, and an audio context fitted to the clip
+ * (`server/src/ai/whisper.ts`), which on real speech gave the identical
+ * transcript in under half the time as long as the context covers the audio.
+ * So a refresh sends only the last `PREVIEW_WINDOW_SECONDS`, which keeps it
+ * at one short pass whatever the recording's length.
  */
-export const PREVIEW_INTERVAL_MS = 12_000;
+/** The first refresh, early enough that the first words arrive within a few seconds. */
+export const PREVIEW_FIRST_MS = 3_000;
+/** The gap after each refresh completes. Refreshes never overlap. */
+export const PREVIEW_INTERVAL_MS = 5_000;
+/** How much of the tail a refresh transcribes: a rolling caption, not a running transcript. */
+export const PREVIEW_WINDOW_SECONDS = 15;
 
 /**
  * After this much audio the preview stops refreshing.
  *
- * Each refresh re-uploads the whole recording so far, so the cost grows with
- * the recording while the reassurance it buys does not: by the time she has
- * been speaking for four minutes she knows the microphone works.
+ * Not for cost — a refresh is one short pass whatever the length — but
+ * because the preview is reassurance, and four minutes in she has it; what
+ * remains would be a laptop running whisper flat out for the rest of an
+ * hour's dictation. The screen says it has paused, so a caption that stops
+ * moving is not mistaken for a microphone that has.
  */
 export const PREVIEW_MAX_SECONDS = 4 * 60;
 
