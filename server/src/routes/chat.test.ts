@@ -13,6 +13,7 @@ import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { getNote } from '../db/notes.js';
 import { createTranscript } from '../db/transcripts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
+import { UNCHANGED_NOTICE, withoutServerSentences } from './chat.js';
 
 /**
  * `POST /api/notes/:id/chat` against a real SQLite file and the fake provider.
@@ -276,6 +277,8 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(reply).toContain('Apunta held back part of this revision.');
     expect(reply).toContain('Subjective was kept as it was');
     expect(reply).toContain('"four hours a night in June"');
+    // The lock's notice is the explanation; the no-change line would only repeat it.
+    expect(reply).not.toContain(UNCHANGED_NOTICE);
     expect(events.map((event) => event.name)).not.toContain('note-updated');
     expect(getNote(harness.db, note.id)?.content).toBe(FACT_NOTE);
   });
@@ -311,6 +314,53 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
 
     expect(assistantReply(events)).toContain('Apunta held back part of this revision.');
     expect(getNote(harness.db, note.id)?.content).toBe(FACT_NOTE);
+  });
+
+  /**
+   * Seen live on 2026-09-04: asked to shorten a second time, the model
+   * returned no revision and repeated, word for word, its earlier claim to
+   * have removed a sentence. The fake's default branch is the same shape — a
+   * reply that says "Updated" over identical sections — and the route has to
+   * put the true thing under it.
+   */
+  it('says so when an instruction changed nothing, so the reply cannot claim an edit', async () => {
+    const note = await freshNote();
+
+    const { events } = await chat(harness.app, note.id, { message: 'Tidy this up a little' });
+
+    expect(assistantReply(events)).toContain(UNCHANGED_NOTICE);
+    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
+  });
+
+  it('lets a question change nothing without remarking on it', async () => {
+    const note = await freshNote();
+
+    const { events } = await chat(harness.app, note.id, { message: 'Is the assessment clear enough?' });
+
+    expect(assistantReply(events)).not.toContain(UNCHANGED_NOTICE);
+  });
+
+  it('strips every server sentence from a reply before it goes back as history', () => {
+    // The model is never told about the locks; a notice in its own history
+    // is exactly that telling, and it fed the live failure above.
+    const reply = 'Shortened the Subjective section.';
+    expect(
+      withoutServerSentences(
+        `${reply}\n\nApunta held back part of this revision. Subjective was kept as it was.`,
+      ),
+    ).toBe(reply);
+    expect(
+      withoutServerSentences(
+        `${reply}\n\nApunta blocked part of this revision. Objective was kept as it was.`,
+      ),
+    ).toBe(reply);
+    expect(withoutServerSentences(`${reply}\n\n${UNCHANGED_NOTICE}`)).toBe(reply);
+    expect(withoutServerSentences(reply)).toBe(reply);
+    // A model sentence that merely mentions Apunta is not a server sentence.
+    expect(withoutServerSentences('Apunta already has that in the Plan section.')).toBe(
+      'Apunta already has that in the Plan section.',
+    );
   });
 
   it('sends the recent thread back as history on the next turn', async () => {

@@ -171,6 +171,12 @@ for (const scenario of fixture.scenarios) {
     if (turn.noRewrite === true && (rewritten || current !== previous)) {
       problems.push(`${label}: a question rewrote the note`);
     }
+    if (turn.honest === true && current === previous && !reply.includes('Apunta did not change the note')) {
+      problems.push(`${label}: the note did not change and the reply did not say so`);
+    }
+    if (current === previous && reply.includes('Apunta did not change the note')) {
+      console.log('  · the note did not change, and the server said so under the reply');
+    }
     for (const text of turn.forbids ?? []) {
       if (lower.includes(text.toLowerCase())) problems.push(`${label}: the note gained "${text}"`);
     }

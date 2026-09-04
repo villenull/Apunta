@@ -46,6 +46,10 @@ The checks are few and mechanical, each tied to an incident above:
 - **requires** — something she asked for in her own words, which the lock must
   never block: her message is an allowed source.
 - **moves** — text must leave the section it was in *and* reach the named one.
+- **honest** — if the note did not change, the reply must say so. The server
+  appends "Apunta did not change the note" to any instruction that left the
+  note as it was, because the model's reply may describe an edit that never
+  happened (seen live, 2026-09-04: the turn after a held-back shortening).
 
 ## All content is fabricated
 
@@ -96,6 +100,11 @@ fact she names may go, and a request to remove something in so many words
 switches the lock off for that turn. A highlighted passage is not a way
 through — pointing at a sentence and saying "shorter" is not permission to
 lose what it says.
+
+The model never sees a server sentence: lock notices and the no-change line
+are stripped from the thread before it goes back as history. Left in, the
+notice told the model about the lock — and produced a second-turn reply that
+claimed an edit with no revision behind it.
 
 The harness reports the fact lock firing separately from the boilerplate
 lock, for the same reason: a turn that passes because the server kept a

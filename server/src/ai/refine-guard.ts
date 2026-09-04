@@ -108,5 +108,8 @@ export function guardNotice(blocked: readonly BlockedRevision[]): string {
     (b) =>
       `${b.section} was kept as it was: the revision would have added "${b.phrase}", which is not in the note or your dictation.`,
   );
-  return `Apunta blocked part of this revision. ${parts.join(' ')}`;
+  return `${GUARD_NOTICE_OPENING} ${parts.join(' ')}`;
 }
+
+/** The notice's first sentence — what the thread is stripped of before the model sees it again. */
+export const GUARD_NOTICE_OPENING = 'Apunta blocked part of this revision.';

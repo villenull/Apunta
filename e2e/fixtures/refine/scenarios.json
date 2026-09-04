@@ -45,22 +45,40 @@
       "turns": [
         {
           "message": "Move the eye contact note to Subjective",
-          "moves": { "text": "eye contact", "from": "Objective", "to": "Subjective" }
+          "moves": {
+            "text": "eye contact",
+            "from": "Objective",
+            "to": "Subjective"
+          }
         }
       ]
     },
     {
       "id": "question-only",
       "why": "A question must be answered, not acted on. The note is not hers to change unasked.",
-      "turns": [{ "message": "What is missing from this note?", "noRewrite": true }]
+      "turns": [
+        {
+          "message": "What is missing from this note?",
+          "noRewrite": true
+        }
+      ]
     },
     {
       "id": "question-after-edits",
       "why": "History momentum: after two edit turns the model treated a question as another edit request and rewrote a note nobody asked it to change (2026-08-28).",
       "turns": [
-        { "message": "Make it shorter", "keeps": ["six and a half"] },
-        { "message": "Use a more clinical tone", "forbids": ["oriented", "congruent"] },
-        { "message": "What is missing from this note?", "noRewrite": true }
+        {
+          "message": "Make it shorter",
+          "keeps": ["six and a half"]
+        },
+        {
+          "message": "Use a more clinical tone",
+          "forbids": ["oriented", "congruent"]
+        },
+        {
+          "message": "What is missing from this note?",
+          "noRewrite": true
+        }
       ]
     },
     {
@@ -80,6 +98,21 @@
         {
           "message": "Make the subjective section shorter",
           "keeps": ["six and a half", "four"]
+        }
+      ]
+    },
+    {
+      "id": "shorten-twice",
+      "why": "Seen live 2026-09-04: after a held-back shortening, 'Make it shorter' came back with no revision and the previous reply repeated word for word — a claimed edit that never happened. Either the note changes, or the server says it did not.",
+      "turns": [
+        {
+          "message": "Make the subjective section shorter",
+          "keeps": ["six and a half", "four"]
+        },
+        {
+          "message": "Make it shorter",
+          "keeps": ["six and a half", "four"],
+          "honest": true
         }
       ]
     }

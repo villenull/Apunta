@@ -14,8 +14,8 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
-import { factNotice, guardDroppedFacts } from '../ai/fact-guard.js';
-import { guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
+import { FACT_NOTICE_OPENING, factNotice, guardDroppedFacts } from '../ai/fact-guard.js';
+import { GUARD_NOTICE_OPENING, guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
 import type { AiProviders, ChatTurn, LlmStats } from '../ai/types.js';
 import { createChatMessage, listChatMessagesForNote } from '../db/chat-messages.js';
 import { getFormat } from '../db/formats.js';
@@ -97,6 +97,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     let updatedSections: Sections | null = null;
     let stats: LlmStats | null = null;
     let sawRefined = false;
+    let heldBack = false;
 
     try {
       const events = providers.llm.refineNote({
@@ -178,6 +179,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       if (guarded.blocked.length > 0) {
         replyText = `${replyText}\n\n${guardNotice(guarded.blocked)}`;
         logBlocked(request, guarded.blocked.length);
+        heldBack = true;
       }
       // The fact lock, the third of the family (found by the refine harness,
       // 2026-09-01): a revision may not lose a number or a date that nothing
@@ -188,27 +190,38 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       if (kept.dropped.length > 0) {
         replyText = `${replyText}\n\n${factNotice(kept.dropped)}`;
         logKept(request, kept.dropped.length);
+        heldBack = true;
       }
       updatedSections = kept.sections;
+    }
+
+    // Serialized through the same `sectionsToText` the drafting path uses,
+    // so a refined note is identical in shape to a freshly drafted one —
+    // which is what keeps the round trip through `textToSections` stable
+    // over many turns of revision.
+    const content = updatedSections === null ? null : sectionsToText(updatedSections, format.sections);
+    const changed = content !== null && content !== note.content;
+
+    // An instruction that changed nothing gets the server's sentence, because
+    // the model's reply may well describe an edit that did not happen. Seen
+    // live on 2026-09-04: asked to shorten a second time, the model returned
+    // no revision and repeated, word for word, its earlier claim to have
+    // removed a sentence. A question is allowed to change nothing, and a
+    // revision a lock held back has already been explained.
+    if (!changed && !heldBack && !isQuestion(input.message)) {
+      replyText = `${replyText}\n\n${UNCHANGED_NOTICE}`;
     }
 
     const assistantMessage = persistReply(db, note.id, replyText);
     stream.send('message', { message: assistantMessage });
 
-    if (updatedSections !== null) {
-      // Serialized through the same `sectionsToText` the drafting path uses,
-      // so a refined note is identical in shape to a freshly drafted one —
-      // which is what keeps the round trip through `textToSections` stable
-      // over many turns of revision.
-      const content = sectionsToText(updatedSections, format.sections);
-      if (content !== note.content) {
-        const rewritten = updateNote(db, note.id, { content });
-        if (rewritten) {
-          stream.send('note-updated', {
-            note: rewritten,
-            empty_sections: emptySectionNames(updatedSections, format.sections),
-          });
-        }
+    if (changed && updatedSections !== null) {
+      const rewritten = updateNote(db, note.id, { content });
+      if (rewritten) {
+        stream.send('note-updated', {
+          note: rewritten,
+          empty_sections: emptySectionNames(updatedSections, format.sections),
+        });
       }
     }
     stream.end();
@@ -221,8 +234,27 @@ function requireNote(db: Database, id: string): Note {
   return note;
 }
 
+/** The server's own sentence when an instruction left the note as it was. */
+export const UNCHANGED_NOTICE = 'Apunta did not change the note: the revision came back with no edits.';
+
 /**
- * The last few turns, oldest first.
+ * Everything the server appends to a reply — lock notices, the no-change
+ * sentence — begins with one of these after a blank line. The thread shows
+ * them to her; the model never sees them (see `recentTurns`).
+ */
+const SERVER_SENTENCES = [GUARD_NOTICE_OPENING, FACT_NOTICE_OPENING, UNCHANGED_NOTICE].map((sentence) =>
+  sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+);
+const SERVER_SENTENCE_START = new RegExp(`\\n\\n(?=(?:${SERVER_SENTENCES.join('|')}))`);
+
+/**
+ * The last few turns, oldest first, with the server's sentences taken off the
+ * assistant's replies.
+ *
+ * The model is never told about the locks — a rule in a prompt can be talked
+ * out of — and a notice in its own history is exactly that telling. Left in,
+ * it also fed a live failure: the turn after a held-back shortening came back
+ * with no revision at all and the previous reply repeated verbatim.
  *
  * Bounded because the prompt is rebuilt from scratch on every call and already
  * carries the whole note: an unbounded thread is the one input here that grows
@@ -232,7 +264,15 @@ function requireNote(db: Database, id: string): Note {
 function recentTurns(db: Database, noteId: string): ChatTurn[] {
   return listChatMessagesForNote(db, noteId)
     .slice(-CHAT_HISTORY_TURNS)
-    .map((message) => ({ role: message.role, text: message.text }));
+    .map((message) => ({
+      role: message.role,
+      text: message.role === 'assistant' ? withoutServerSentences(message.text) : message.text,
+    }));
+}
+
+/** Exported for the test that proves the model never sees a notice. */
+export function withoutServerSentences(reply: string): string {
+  return (reply.split(SERVER_SENTENCE_START)[0] ?? reply).trimEnd();
 }
 
 /** The prototype's test: a message with a question mark in it is a question. */

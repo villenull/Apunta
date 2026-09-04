@@ -296,5 +296,8 @@ export function factNotice(dropped: readonly DroppedFact[]): string {
     (d) =>
       `${d.section} was kept as it was: the change would have lost "${d.phrase}", and nothing in your message asked to remove it.`,
   );
-  return `Apunta held back part of this revision. ${parts.join(' ')} To take something out, say so and name it.`;
+  return `${FACT_NOTICE_OPENING} ${parts.join(' ')} To take something out, say so and name it.`;
 }
+
+/** The notice's first sentence — what the thread is stripped of before the model sees it again. */
+export const FACT_NOTICE_OPENING = 'Apunta held back part of this revision.';
