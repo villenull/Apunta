@@ -69,6 +69,19 @@ export const WHISPER_MODEL_SETTING = 'whisper_model';
 export const WHISPER_MODEL_FILENAME = 'ggml-large-v3-turbo-q5_0.bin';
 
 /**
+ * An optional, smaller whisper model for the live preview only.
+ *
+ * The preview's floor is whisper's encoder, and on the note's model that is
+ * about a second per refresh on a CPU (2026-09-04). A small model runs the
+ * same pass in a fraction of that — `ggml-small` in ~0.3–0.6 s with the same
+ * words on clear speech, `ggml-base` faster and rougher — which is what puts
+ * the caption a second behind her voice rather than two. The note's
+ * transcript never uses it. Unset, or pointing at a file that is not there,
+ * the preview simply runs on the note's model.
+ */
+export const WHISPER_PREVIEW_MODEL_SETTING = 'whisper_preview_model';
+
+/**
  * Terms fed to whisper's `--prompt`. Medication and clinical names are
  * Whisper's known weak spot and the one knob that biases it (research §3).
  */
@@ -140,13 +153,12 @@ export const MAX_AUDIO_BYTES = 128 * 1024 * 1024;
 /** The first refresh: a second of speech is enough to show something. */
 export const PREVIEW_FIRST_MS = 1_000;
 /**
- * The gap after a refresh completes while the recording is still shorter
- * than the window — refreshes are cheapest then, and reassurance matters
- * most. Refreshes never overlap, so a slow machine simply sees them further
- * apart.
+ * The gap after a refresh completes is the time that refresh took, clamped
+ * between these two: whisper gets at most half the machine, and a fast
+ * model or a fast Mac is rewarded with a caption that keeps up, while a
+ * slow one simply sees refreshes further apart. Refreshes never overlap.
  */
-export const PREVIEW_EARLY_INTERVAL_MS = 1_500;
-/** The gap once the caption is rolling. */
+export const PREVIEW_MIN_GAP_MS = 400;
 export const PREVIEW_INTERVAL_MS = 5_000;
 /** How much of the tail a refresh transcribes: a rolling caption, not a running transcript. */
 export const PREVIEW_WINDOW_SECONDS = 15;

@@ -1,9 +1,9 @@
 import {
   MAX_RECORDING_SECONDS,
-  PREVIEW_EARLY_INTERVAL_MS,
   PREVIEW_FIRST_MS,
   PREVIEW_INTERVAL_MS,
   PREVIEW_MAX_SECONDS,
+  PREVIEW_MIN_GAP_MS,
   PREVIEW_WINDOW_SECONDS,
   WARN_RECORDING_SECONDS,
 } from '@apunta/shared';
@@ -156,6 +156,7 @@ export function Capture(): React.JSX.Element {
         schedule(PREVIEW_INTERVAL_MS);
         return;
       }
+      const started = performance.now();
       void previewTranscript(snapshot)
         .then((result) => {
           // Still recording? A result that lands after she stopped belongs to
@@ -164,8 +165,10 @@ export function Capture(): React.JSX.Element {
         })
         .finally(() => {
           if (cancelled) return;
-          const early = (recorder.current?.seconds ?? 0) < PREVIEW_WINDOW_SECONDS;
-          schedule(early ? PREVIEW_EARLY_INTERVAL_MS : PREVIEW_INTERVAL_MS);
+          // Rest for as long as the refresh took: whisper gets at most half
+          // the machine, and a fast machine gets a caption that keeps up.
+          const took = performance.now() - started;
+          schedule(Math.min(PREVIEW_INTERVAL_MS, Math.max(PREVIEW_MIN_GAP_MS, took)));
         });
     };
     schedule(PREVIEW_FIRST_MS);

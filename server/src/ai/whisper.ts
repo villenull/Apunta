@@ -46,6 +46,13 @@ export interface WhisperOptions {
   readonly resolveBinary: () => string;
   /** Absolute path of the GGUF model file. */
   readonly resolveModel: () => string;
+  /**
+   * A smaller model for the live preview only, or null. Read per call like
+   * the others. A configured file that is not there falls back to the
+   * note's model without a word: the preview must never be the thing that
+   * errors.
+   */
+  readonly resolvePreviewModel?: () => string | null;
   /** Injected by tests; production always uses `node:child_process`. */
   readonly spawnImpl?: Spawn;
   /**
@@ -226,10 +233,12 @@ export class WhisperCppSttProvider implements SttProvider {
     if (!fileExists(model)) {
       throw aiError('whisper_model_missing', `no model file at the configured path (${model.length} chars)`);
     }
+    const previewModel = request.preview === true ? (this.options.resolvePreviewModel?.() ?? null) : null;
+    const chosen = previewModel !== null && fileExists(previewModel) ? previewModel : model;
 
     const prompt = buildVocabularyPrompt(request.vocabulary);
     const args = buildWhisperArgs({
-      modelPath: model,
+      modelPath: chosen,
       wavPath: request.wavPath,
       prompt,
       threads: this.options.threads ?? availableParallelism(),

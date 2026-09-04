@@ -8,6 +8,7 @@ import {
   WHISPER_BINARY_SETTING,
   WHISPER_MODEL_FILENAME,
   WHISPER_MODEL_SETTING,
+  WHISPER_PREVIEW_MODEL_SETTING,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import { join } from 'node:path';
@@ -46,6 +47,12 @@ export function resolveWhisperModel(db: Database, modelsDir: string): string {
   return typeof configured === 'string' && configured.trim() !== ''
     ? configured.trim()
     : join(modelsDir, WHISPER_MODEL_FILENAME);
+}
+
+/** The smaller model the live preview may run on, or null for "the note's model". */
+export function resolveWhisperPreviewModel(db: Database): string | null {
+  const configured = getSetting<unknown>(db, WHISPER_PREVIEW_MODEL_SETTING);
+  return typeof configured === 'string' && configured.trim() !== '' ? configured.trim() : null;
 }
 
 /**

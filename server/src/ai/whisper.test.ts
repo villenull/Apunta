@@ -259,6 +259,49 @@ describe('WhisperCppSttProvider.transcribe', () => {
     expect(calls[0]?.args).toContain('--prompt');
   });
 
+  it('runs a preview on the smaller model when one is configured and present, and the note on the main one', async () => {
+    const small = join(dir, 'ggml-small.bin');
+    writeFileSync(small, 'a small model, allegedly');
+    const calls: SpawnCall[] = [];
+    const stt = new WhisperCppSttProvider({
+      resolveBinary: () => 'whisper-cli',
+      resolveModel: () => modelPath,
+      resolvePreviewModel: () => small,
+      spawnImpl: fakeSpawn((child) => {
+        child.stdout.write(' words\n');
+        child.emit('close', 0, null);
+      }, calls),
+      timeoutMs: 2000,
+    });
+
+    await collect(stt.transcribe({ ...request, preview: true }));
+    await collect(stt.transcribe(request));
+
+    const modelOf = (call: SpawnCall | undefined): string | undefined =>
+      call?.args[call.args.indexOf('--model') + 1];
+    expect(modelOf(calls[0])).toBe(small);
+    expect(modelOf(calls[1])).toBe(modelPath);
+  });
+
+  it('falls back to the main model, silently, when the preview model is not there', async () => {
+    const calls: SpawnCall[] = [];
+    const stt = new WhisperCppSttProvider({
+      resolveBinary: () => 'whisper-cli',
+      resolveModel: () => modelPath,
+      resolvePreviewModel: () => join(dir, 'not-downloaded.bin'),
+      spawnImpl: fakeSpawn((child) => {
+        child.stdout.write(' words\n');
+        child.emit('close', 0, null);
+      }, calls),
+      timeoutMs: 2000,
+    });
+
+    const events = await collect(stt.transcribe({ ...request, preview: true }));
+
+    expect(events.at(-1)?.type).toBe('transcript');
+    expect(calls[0]?.args).toContain(modelPath);
+  });
+
   it('never moves the progress bar backwards', async () => {
     const events = await collect(
       provider((child) => {
