@@ -62,11 +62,12 @@ APUNTA_CHECK_URL=http://127.0.0.1:7720 npm run check:refine
 Nine model round trips, so a couple of minutes on a small local model. It
 prints every reply, because the flags are the smaller half of what it is for.
 
-## Known open: shortening drops a fact
+## Closed: shortening dropped a fact
 
-`shorten-keeps-facts` fails as of 2026-09-01, and the failure is worth stating
-precisely because it is not the obvious one. Asked to shorten a section, the
-model removed "up from four in June" — a clinical fact — and explained itself:
+`shorten-keeps-facts` failed from 2026-09-01 to 2026-09-04, and the failure is
+worth stating precisely because it was not the obvious one. Asked to shorten
+a section, the model removed "up from four in June" — a clinical fact — and
+explained itself:
 
 > "I have shortened the Subjective section by removing the specific comparison
 > to June's sleep duration, as that detail was not present in your original
@@ -74,18 +75,32 @@ model removed "up from four in June" — a clinical fact — and explained itsel
 
 The detail was in the note it was editing. The refine prompt never shows a
 dictation, only the note; the format's drafting instructions talk about "the
-dictation" throughout, so the model treats the note as a claim it cannot
-verify and prunes what it cannot source. It then reports the deletion as a
-correction.
+dictation" throughout, so the model treated the note as a claim it could not
+verify, pruned what it could not source, and reported the deletion as a
+correction. Three prompt attempts did not fix it, and the third made two other
+scenarios worse — the whack-a-mole this model does when a long instruction
+gains another rule. The attempts are in this file's git history.
 
-Three prompt attempts did not fix it, and the third made two other scenarios
-worse — the whack-a-mole this model does when a long instruction gains another
-rule. The attempts are in this file's git history. Stated plainly: **an edit
-she asks for can quietly remove a fact, with a confident and false explanation
-attached.** Her review before publishing is what stands between that and the
-record.
+What closed it is structural, not another sentence: **the fact lock**
+(`server/src/ai/fact-guard.ts`), the third of the server's locks. It diffs
+facts *out of* a revision the way the boilerplate lock diffs phrases *in*.
+"Fact" is deliberately narrow — numbers, months, weekdays, the classes a regex
+finds with high precision — and the check is note-wide, so a fact that moves
+between sections or is written another way ("4" for "four", "Jun" for "June")
+passes. A section that would lose one is kept as it was, the server says so in
+its own words under the model's reply, and her message is the way through: a
+fact she names may go, and a request to remove something in so many words
+switches the lock off for that turn. A highlighted passage is not a way
+through — pointing at a sentence and saying "shorter" is not permission to
+lose what it says.
 
-The likely real fix is structural rather than another sentence: either the
-refine call carries the transcript alongside the note so "not in the source"
-becomes checkable, or the server diffs facts out of a revision the way the
-boilerplate lock diffs phrases in.
+The harness reports the fact lock firing separately from the boilerplate
+lock, for the same reason: a turn that passes because the server kept a
+section is a different fact from a turn that passes because the model behaved.
+
+Known misses, accepted for precision: a number that also appears elsewhere in
+the note (the check is a set, not a count), "one" (a pronoun far more often
+than a quantity), negations and names (they need a reader), and a shortening
+that rewrites "every two weeks" as "fortnightly", which reads as a loss and
+will hold the section back until she says the word. Her review before
+publishing is still the last line, as it was before.

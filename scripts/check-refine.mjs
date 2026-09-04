@@ -102,6 +102,7 @@ const patient = await (await post('/api/patients', { name: 'John Smith' })).json
 
 let failures = 0;
 let blocked = 0;
+let kept = 0;
 const summary = [];
 
 for (const scenario of fixture.scenarios) {
@@ -137,6 +138,10 @@ for (const scenario of fixture.scenarios) {
     if (reply.includes('Apunta blocked part of this revision')) {
       blocked += 1;
       console.log('  · the boilerplate lock fired: the model tried, the server refused');
+    }
+    if (reply.includes('Apunta held back part of this revision')) {
+      kept += 1;
+      console.log('  · the fact lock fired: the model dropped a fact, the server kept the section');
     }
 
     if (turn.noRewrite === true && (rewritten || current !== previous)) {
@@ -174,5 +179,8 @@ for (const { id, problems } of summary) {
 console.log(`\n${String(failures)} problem(s) across ${String(fixture.scenarios.length)} scenarios.`);
 console.log(
   `The boilerplate lock fired ${String(blocked)} time(s) — those turns passed because the server caught the model, not because it behaved.`,
+);
+console.log(
+  `The fact lock fired ${String(kept)} time(s) — a section was kept because the revision would have lost a number or a date.`,
 );
 console.log('The notes stay in the database; delete that patient to clear them.');

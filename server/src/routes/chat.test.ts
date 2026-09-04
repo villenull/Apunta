@@ -66,6 +66,17 @@ const NOTE_TEXT = [
   'Plan: Continue weekly sessions. Introduce grounding exercises for use between sessions.',
 ].join('\n\n');
 
+/** A note with a fact in Subjective's second sentence — what the fake's "shorter" branch drops. */
+const FACT_NOTE = [
+  'Subjective: Patient reports improved sleep since last session. Up from four hours a night in June.',
+  'Objective: Alert and engaged in session.',
+  'Assessment: Continued progress on anxiety management goals.',
+  'Plan: Continue weekly sessions. Introduce grounding exercises for use between sessions.',
+].join('\n\n');
+
+/** The same shape with nothing in the second sentence a lock should mind losing. */
+const CHATTY_NOTE = FACT_NOTE.replace('Up from four hours a night in June.', 'Feels hopeful about work.');
+
 let harness: TestApp;
 let patient: Patient;
 let format: NoteFormat;
@@ -247,6 +258,59 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(assistantReply(events)).not.toContain('Apunta blocked');
     expect(events.map((event) => event.name)).toContain('note-updated');
     expect(getNote(harness.db, note.id)?.content).toContain('Alert and oriented.');
+  });
+
+  /**
+   * The fact lock, end to end. The fake's "shorter" branch replays the refine
+   * harness's 2026-09-01 finding — shortening Subjective to its first sentence
+   * and calling the rest unsourced — and the route is expected to keep the
+   * section when the dropped sentence held a fact, say so in its own words
+   * under the model's, and leave the note untouched.
+   */
+  it('keeps a section that a shortening would strip a fact from, and says so', async () => {
+    const note = await freshNote(FACT_NOTE);
+
+    const { events } = await chat(harness.app, note.id, { message: 'Make it shorter' });
+
+    const reply = assistantReply(events);
+    expect(reply).toContain('Apunta held back part of this revision.');
+    expect(reply).toContain('Subjective was kept as it was');
+    expect(reply).toContain('"four hours a night in June"');
+    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(getNote(harness.db, note.id)?.content).toBe(FACT_NOTE);
+  });
+
+  it('lets the shortening through when there was no fact to lose', async () => {
+    const note = await freshNote(CHATTY_NOTE);
+
+    const { events } = await chat(harness.app, note.id, { message: 'Make it shorter' });
+
+    expect(assistantReply(events)).not.toContain('Apunta held back');
+    expect(events.map((event) => event.name)).toContain('note-updated');
+    expect(getNote(harness.db, note.id)?.content).not.toContain('Feels hopeful about work.');
+  });
+
+  it('lets a fact go when she asks for the removal in so many words', async () => {
+    const note = await freshNote(FACT_NOTE);
+
+    const { events } = await chat(harness.app, note.id, {
+      message: 'Make it shorter — take out the June comparison',
+    });
+
+    expect(assistantReply(events)).not.toContain('Apunta held back');
+    expect(getNote(harness.db, note.id)?.content).not.toContain('four hours a night in June');
+  });
+
+  it('does not treat a highlighted passage as permission to lose what it says', async () => {
+    const note = await freshNote(FACT_NOTE);
+
+    const { events } = await chat(harness.app, note.id, {
+      message: 'Make it shorter',
+      ref_quote: 'Up from four hours a night in June.',
+    });
+
+    expect(assistantReply(events)).toContain('Apunta held back part of this revision.');
+    expect(getNote(harness.db, note.id)?.content).toBe(FACT_NOTE);
   });
 
   it('sends the recent thread back as history on the next turn', async () => {

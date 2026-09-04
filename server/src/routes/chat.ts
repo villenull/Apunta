@@ -14,6 +14,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
+import { factNotice, guardDroppedFacts } from '../ai/fact-guard.js';
 import { guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
 import type { AiProviders, ChatTurn, LlmStats } from '../ai/types.js';
 import { createChatMessage, listChatMessagesForNote } from '../db/chat-messages.js';
@@ -178,7 +179,17 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         replyText = `${replyText}\n\n${guardNotice(guarded.blocked)}`;
         logBlocked(request, guarded.blocked.length);
       }
-      updatedSections = guarded.sections;
+      // The fact lock, the third of the family (found by the refine harness,
+      // 2026-09-01): a revision may not lose a number or a date that nothing
+      // in her message named or asked to remove. Her highlighted passage is
+      // deliberately not a source here — pointing at a sentence and saying
+      // "shorter" is not permission to lose what it says.
+      const kept = guardDroppedFacts(previous, guarded.sections, input.message);
+      if (kept.dropped.length > 0) {
+        replyText = `${replyText}\n\n${factNotice(kept.dropped)}`;
+        logKept(request, kept.dropped.length);
+      }
+      updatedSections = kept.sections;
     }
 
     const assistantMessage = persistReply(db, note.id, replyText);
@@ -265,6 +276,11 @@ function logFailure(request: FastifyRequest, failure: AiError): void {
 /** A count, never the phrase and never the section name — shape only. */
 function logBlocked(request: FastifyRequest, sections: number): void {
   request.log.info({ blockedSections: sections }, 'refinement partially blocked by the boilerplate lock');
+}
+
+/** Likewise a count: the phrase here is note content and never reaches a log. */
+function logKept(request: FastifyRequest, sections: number): void {
+  request.log.info({ keptSections: sections }, 'refinement partially held back by the fact lock');
 }
 
 function logStats(request: FastifyRequest, stats: LlmStats): void {

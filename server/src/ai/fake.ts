@@ -254,6 +254,21 @@ export function fakeRefine(
       updatedSections: set('plan', 'Continue weekly sessions and grounding exercises.'),
     };
   }
+  // Reproduces the refine harness's 2026-09-01 finding on demand: asked to
+  // shorten, the model keeps the first sentence of Subjective, prunes the rest
+  // as something it "cannot source", and reports the deletion as a correction.
+  // Whether that loses a fact depends on the note — which is exactly what the
+  // route's fact lock decides, and CI keeps proving end to end.
+  if (/shorter|shorten|concise|condense/i.test(message) && has('subjective')) {
+    const key = sections.find((section) => section.toLowerCase() === 'subjective') as string;
+    const body = (current[key] ?? '').trim();
+    const first = /^[^.!?]*[.!?]/.exec(body)?.[0] ?? body;
+    return {
+      reply:
+        'Shortened the Subjective section, removing detail that was not present in your original dictation.',
+      updatedSections: set('subjective', first.trim()),
+    };
+  }
   if (/sleep|subjective/i.test(message) && has('subjective')) {
     const key = sections.find((section) => section.toLowerCase() === 'subjective') as string;
     const body = `${(current[key] ?? '').trim()} Also noted improved appetite this week.`.trim();
