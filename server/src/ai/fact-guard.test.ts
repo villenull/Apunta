@@ -25,6 +25,11 @@ describe('factTokens', () => {
     expect([...factTokens('one of the things he raised').keys()]).toEqual([]);
   });
 
+  it('reads a hyphenated quantity the same as a spaced one, because a clinical rewrite hyphenates', () => {
+    expect([...factTokens('six-and-a-half hours').keys()]).toEqual(['6.5']);
+    expect([...factTokens('a twenty-five-minute walk').keys()]).toEqual(['25']);
+  });
+
   it('keeps digit groups apart and drops leading zeros', () => {
     expect([...factTokens('GAD-7 was 12/21 at 08:30').keys()]).toEqual(['7', '12', '21', '8', '30']);
     expect([...factTokens('6.5 hours').keys()]).toEqual(['6.5']);

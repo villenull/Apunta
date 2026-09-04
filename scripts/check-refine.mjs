@@ -34,6 +34,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const fixture = JSON.parse(readFileSync(join(root, 'e2e', 'fixtures', 'refine', 'scenarios.json'), 'utf8'));
 const BASE = process.env['APUNTA_CHECK_URL'] ?? 'http://127.0.0.1:7717';
 
+/** `-- --only tone-request shorten-keeps-facts` runs just those scenarios; the default is all of them. */
+const only = new Set(process.argv.slice(2).filter((arg) => arg !== '--only'));
+
 if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(BASE)) {
   console.error(`Refusing to talk to ${BASE}: this only ever speaks to a local Apunta.`);
   process.exit(2);
@@ -106,6 +109,7 @@ let kept = 0;
 const summary = [];
 
 for (const scenario of fixture.scenarios) {
+  if (only.size > 0 && !only.has(scenario.id)) continue;
   const note = await (
     await post('/api/notes', {
       patient_id: patient.id,

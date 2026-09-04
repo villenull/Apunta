@@ -141,8 +141,12 @@ const PHRASE_WORDS = 6;
  * facts and are stripped first.
  */
 export function factTokens(text: string): Map<string, string> {
+  // Hyphens between letters are spaces here, so "six-and-a-half" and
+  // "twenty-five" read the same as their spaced forms — a clinical-register
+  // rewrite hyphenates freely, and that is not a change of fact.
   const words = text
     .replace(/^\s*(?:\d+[.)]|[-*•])\s+/gm, '')
+    .replace(/(?<=[a-z])-(?=[a-z])/gi, ' ')
     .split(/\s+/)
     .filter((word) => word !== '');
   const found = new Map<string, string>();
@@ -205,35 +209,25 @@ function calendarToken(word: string): string | null {
  * it used, or null when the word is not a number word.
  */
 function numberWordsAt(words: readonly string[], index: number): { token: string; consumed: number } | null {
-  const parts = bare(words[index] as string)
-    .split('-')
-    .filter((part) => part !== '');
-  if (parts.length === 0 || parts.length > 2) return null;
-
-  const first = NUMBER_WORDS[parts[0] as string];
+  const first = NUMBER_WORDS[bare(words[index] as string)];
   if (first === undefined) return null;
   let value = first;
   let consumed = 1;
 
   const isTens = (n: number): boolean => n >= 20 && n <= 90 && n % 10 === 0;
-  const unitOf = (part: string | undefined): number | null => {
-    if (part === undefined) return null;
+  const unitOf = (part: string): number | null => {
     if (part === 'one') return 1;
     const unit = NUMBER_WORDS[part];
     return unit !== undefined && unit < 10 ? unit : null;
   };
 
+  // "twenty five" — and "twenty-five", whose hyphen became a space above.
   if (isTens(first)) {
-    // "twenty-five" in one word, or "twenty five" across two.
-    const hyphenated = unitOf(parts[1]);
-    const spaced = parts.length === 1 ? unitOf(bare(words[index + 1] ?? '')) : null;
-    if (hyphenated !== null) value += hyphenated;
-    else if (spaced !== null) {
-      value += spaced;
+    const unit = unitOf(bare(words[index + 1] ?? ''));
+    if (unit !== null) {
+      value += unit;
       consumed = 2;
     }
-  } else if (parts.length === 2) {
-    return null;
   }
 
   // "six and a half" — one fact, not "6" and a stray word.
