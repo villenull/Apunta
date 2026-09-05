@@ -3,6 +3,7 @@ import {
   encodeWav,
   floatToPcm16,
   MAX_RECORDING_SECONDS,
+  MIN_RECORDING_SECONDS,
   WAV_CONTENT_TYPE,
 } from '@apunta/shared';
 
@@ -87,9 +88,18 @@ export function classifyMediaError(error: unknown): RecorderFailure {
  * 2–5 minute dictation warrants. The cap is enforced here rather than only on
  * the timer, so a clock that drifts or a tab that sleeps cannot get past it.
  */
+/** A pause is a run of tenths of a second under this peak; ordinary room noise stays under it. */
+const QUIET_PEAK = 0.03;
+const BUCKETS_PER_SECOND = 10;
+/** Four tenths of a second of quiet is a breath between sentences, not a gap between words. */
+const PAUSE_BUCKETS = 4;
+
 export class PcmBuffer {
   private readonly chunks: Int16Array[] = [];
   private samples = 0;
+  private readonly levels: number[] = [];
+  private bucketPeak = 0;
+  private bucketFill = 0;
 
   constructor(
     readonly sampleRate: number = AUDIO_SAMPLE_RATE,
@@ -116,28 +126,87 @@ export class PcmBuffer {
     const usable = frames.length > room ? frames.subarray(0, room) : frames;
     this.chunks.push(floatToPcm16(usable));
     this.samples += usable.length;
+    this.track(usable);
   }
 
-  /** Everything recorded so far — or, with `lastSeconds`, just the tail — as the WAV the server transcribes. */
-  toWav(lastSeconds?: number): Blob {
-    const keep =
-      lastSeconds === undefined
-        ? this.samples
-        : Math.min(this.samples, Math.ceil(lastSeconds * this.sampleRate));
-    const pcm = new Int16Array(keep);
-    let skip = this.samples - keep;
+  /** Everything recorded so far — or the seconds in `range` — as the WAV the server transcribes. */
+  toWav(range?: { from: number; to: number }): Blob {
+    const clamp = (value: number, low: number, high: number): number => Math.min(high, Math.max(low, value));
+    const start = range ? clamp(Math.floor(range.from * this.sampleRate), 0, this.samples) : 0;
+    const end = range ? clamp(Math.ceil(range.to * this.sampleRate), start, this.samples) : this.samples;
+    const pcm = new Int16Array(end - start);
     let offset = 0;
+    let position = 0;
     for (const chunk of this.chunks) {
-      if (skip >= chunk.length) {
-        skip -= chunk.length;
-        continue;
-      }
-      const part = skip > 0 ? chunk.subarray(skip) : chunk;
-      skip = 0;
+      const chunkStart = position;
+      const chunkEnd = position + chunk.length;
+      position = chunkEnd;
+      if (chunkEnd <= start) continue;
+      if (chunkStart >= end) break;
+      const part = chunk.subarray(Math.max(0, start - chunkStart), Math.min(chunk.length, end - chunkStart));
       pcm.set(part, offset);
       offset += part.length;
     }
     return new Blob([encodeWav(pcm, this.sampleRate)], { type: WAV_CONTENT_TYPE });
+  }
+
+  /**
+   * Where a preview chunk may end, in seconds: the middle of the longest
+   * pause between `after` and `before`, so the cut falls between words rather
+   * than through one. Null when she has not paused there.
+   */
+  cutPoint(after: number, before: number): number | null {
+    const [from, to] = this.bucketRange(after, before);
+    if (to - from < 5) return null;
+    let bestStart = -1;
+    let bestLength = 0;
+    let runStart = -1;
+    for (let index = from; index <= to; index += 1) {
+      const quiet = index < to && (this.levels[index] ?? 1) < QUIET_PEAK;
+      if (quiet) {
+        if (runStart < 0) runStart = index;
+      } else if (runStart >= 0) {
+        const length = index - runStart;
+        if (length > bestLength) {
+          bestLength = length;
+          bestStart = runStart;
+        }
+        runStart = -1;
+      }
+    }
+    return bestLength >= PAUSE_BUCKETS ? (bestStart + bestLength / 2) / BUCKETS_PER_SECOND : null;
+  }
+
+  /** The quietest tenth of a second between `after` and `before`, for a cut she never paused for. */
+  quietestPoint(after: number, before: number): number | null {
+    const [from, to] = this.bucketRange(after, before);
+    if (to - from < 1) return null;
+    let quietest = from;
+    for (let index = from; index < to; index += 1) {
+      if ((this.levels[index] ?? 1) < (this.levels[quietest] ?? 1)) quietest = index;
+    }
+    return (quietest + 0.5) / BUCKETS_PER_SECOND;
+  }
+
+  private bucketRange(after: number, before: number): [number, number] {
+    const from = Math.max(0, Math.ceil(after * BUCKETS_PER_SECOND));
+    const to = Math.min(this.levels.length, Math.floor(before * BUCKETS_PER_SECOND));
+    return [from, to];
+  }
+
+  /** Peak per tenth of a second, kept alongside the samples for `cutPoint`. */
+  private track(frames: Float32Array): void {
+    const bucketSamples = this.sampleRate / BUCKETS_PER_SECOND;
+    for (const sample of frames) {
+      const magnitude = sample < 0 ? -sample : sample;
+      if (magnitude > this.bucketPeak) this.bucketPeak = magnitude;
+      this.bucketFill += 1;
+      if (this.bucketFill >= bucketSamples) {
+        this.levels.push(this.bucketPeak);
+        this.bucketPeak = 0;
+        this.bucketFill = 0;
+      }
+    }
   }
 }
 
@@ -236,20 +305,32 @@ export class Recorder {
     }
   }
 
-  /**
-   * The recording so far — or just its tail — as a WAV, without stopping.
-   *
-   * The live preview asks for the last few seconds only. Whisper's cost is
-   * one encoder pass per 30-second window however short the clip (measured
-   * 2026-09-04 — it is not model loading, which takes 60 ms), so "everything
-   * so far" would grow by a window at a time while the reassurance it buys
-   * did not. A rolling window keeps a refresh at one short pass. Its first
-   * word may be cut at the window's edge; the caption says the words are
-   * rough.
-   */
-  snapshot(lastSeconds?: number): Blob | null {
+  /** The whole recording so far as a WAV, without stopping. */
+  snapshot(): Blob | null {
     if (this.buffer === null || this.buffer.seconds <= 0) return null;
-    return this.buffer.toWav(lastSeconds);
+    return this.buffer.toWav();
+  }
+
+  /**
+   * The seconds from `from` to `to` as a WAV, without stopping — what the
+   * live preview transcribes: the chunk up to a pause when it commits, and
+   * the tail since the last commit otherwise. Whisper's cost is one encoder
+   * pass per window however short the clip, so the preview keeps its clips
+   * short and its block growing rather than re-reading everything. Null when
+   * there is less than a fifth of a second in the range.
+   */
+  slice(from: number, to: number): Blob | null {
+    if (this.buffer === null || to - from < MIN_RECORDING_SECONDS) return null;
+    return this.buffer.toWav({ from, to });
+  }
+
+  /** Where a preview chunk may end: see `PcmBuffer.cutPoint`. */
+  cutPoint(after: number, before: number): number | null {
+    return this.buffer?.cutPoint(after, before) ?? null;
+  }
+
+  quietestPoint(after: number, before: number): number | null {
+    return this.buffer?.quietestPoint(after, before) ?? null;
   }
 
   /** Stop, and answer with the WAV. Safe to call once. */

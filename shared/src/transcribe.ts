@@ -172,22 +172,31 @@ export const PREVIEW_FIRST_MS = 800;
 export const PREVIEW_MIN_GAP_MS = 400;
 export const PREVIEW_INTERVAL_MS = 5_000;
 /**
- * How much of the tail a refresh transcribes: a rolling caption, not a
- * running transcript. Fifteen seconds keeps a couple of sentences on
- * screen; on the small model the longer pass costs a quarter of a second.
+ * The preview grows as she speaks, and its cost does not.
+ *
+ * Each refresh transcribes only the audio since the last *committed* point.
+ * Once that stretch is this long, the next pause in her speech (the recorder
+ * keeps a level history) becomes the cut: the chunk up to it is transcribed
+ * once more, appended to the block for good, and never re-read. If she talks
+ * without pausing, the cut is forced at the quietest tenth of a second once
+ * the stretch reaches `PREVIEW_COMMIT_FORCE_SECONDS`, so a refresh never
+ * carries more than about forty seconds. Asked for by the owner
+ * (2026-09-05): the whole dictation on screen, scrolling, not the last few
+ * lines.
  */
-export const PREVIEW_WINDOW_SECONDS = 15;
+export const PREVIEW_COMMIT_AFTER_SECONDS = 20;
+export const PREVIEW_COMMIT_FORCE_SECONDS = 40;
 
 /**
- * After this much audio the preview stops refreshing.
+ * After this much audio the preview slows to a walking pace.
  *
- * Not for cost — a refresh is one short pass whatever the length — but
- * because the preview is reassurance, and four minutes in she has it; what
- * remains would be a laptop running whisper flat out for the rest of an
- * hour's dictation. The screen says it has paused, so a caption that stops
- * moving is not mistaken for a microphone that has.
+ * Not for cost per refresh — a refresh is one short chunk whatever the
+ * length — but because reassurance is had by then, and what remains would
+ * be a laptop running whisper half the time for the rest of an hour's
+ * dictation. The block keeps growing, every `PREVIEW_SLOW_GAP_MS`.
  */
 export const PREVIEW_MAX_SECONDS = 4 * 60;
+export const PREVIEW_SLOW_GAP_MS = 10_000;
 
 export const TranscribePreviewResponseSchema = z.object({
   /** Provisional, possibly empty when there is not yet speech to hear. */

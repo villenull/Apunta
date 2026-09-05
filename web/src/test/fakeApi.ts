@@ -325,6 +325,8 @@ export interface FakeApiOptions {
   transcribeError?: { code: string; message: string };
   /** What `POST /api/transcribe/preview` returns while she is still speaking. */
   previewText?: string;
+  /** The same, one per call in order (the last repeats), for a preview that grows. */
+  previewTexts?: string[];
   /** What `POST /api/import/claude` answers for any upload (M11). */
   importPreview?: ClaudeImportPreview;
   /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
@@ -341,6 +343,7 @@ export interface FakeApiOptions {
 
 /** Installs a `fetch` that answers the endpoints the SPA uses, and returns its state. */
 export function installFakeApi(initial: Partial<FakeApiState> = {}, options: FakeApiOptions = {}): FakeApi {
+  let previewCalls = 0;
   const state: FakeApiState = {
     patients: [],
     notes: [],
@@ -468,7 +471,13 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
       // The live preview during a recording: provisional text, no side
       // effects. `options.previewText` lets a test say what came back.
       if (path === '/api/transcribe/preview' && method === 'POST') {
-        return json({ text: options.previewText ?? 'provisional words so far', seconds: 3 });
+        const texts = options.previewTexts;
+        const text =
+          texts !== undefined && texts.length > 0
+            ? (texts[Math.min(previewCalls, texts.length - 1)] as string)
+            : (options.previewText ?? 'provisional words so far');
+        previewCalls += 1;
+        return json({ text, seconds: 3 });
       }
 
       if (path === '/api/transcribe' && method === 'POST') {

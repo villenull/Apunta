@@ -32,16 +32,34 @@ describe('PcmBuffer', () => {
     expect(buffer.seconds).toBeCloseTo(1.5, 5);
   });
 
-  it('can hand over just the tail, for the rolling preview', async () => {
+  it('can hand over any stretch of seconds, for the growing preview', async () => {
     const buffer = new PcmBuffer();
     buffer.push(new Float32Array(AUDIO_SAMPLE_RATE * 4)); // four seconds
     buffer.push(new Float32Array(AUDIO_SAMPLE_RATE * 2)); // two more
 
-    expect((await headerOf(buffer.toWav(3))).durationSeconds).toBeCloseTo(3, 5);
-    // Asking for more than there is gives what there is.
-    expect((await headerOf(buffer.toWav(30))).durationSeconds).toBeCloseTo(6, 5);
-    // And the untailed WAV is still everything.
+    expect((await headerOf(buffer.toWav({ from: 1, to: 3 }))).durationSeconds).toBeCloseTo(2, 5);
+    // A range that straddles the chunk boundary, and one past the end.
+    expect((await headerOf(buffer.toWav({ from: 3.5, to: 5 }))).durationSeconds).toBeCloseTo(1.5, 5);
+    expect((await headerOf(buffer.toWav({ from: 5, to: 30 }))).durationSeconds).toBeCloseTo(1, 5);
     expect((await headerOf(buffer.toWav())).durationSeconds).toBeCloseTo(6, 5);
+  });
+
+  it('finds the pause between two sentences, and the quietest moment when there is none', () => {
+    const buffer = new PcmBuffer();
+    const loud = (seconds: number): Float32Array => new Float32Array(AUDIO_SAMPLE_RATE * seconds).fill(0.3);
+    const quiet = (seconds: number): Float32Array =>
+      new Float32Array(AUDIO_SAMPLE_RATE * seconds).fill(0.002);
+    buffer.push(loud(2));
+    buffer.push(quiet(1)); // a breath, from 2.0 to 3.0
+    buffer.push(loud(2));
+
+    const cut = buffer.cutPoint(0, 5) as number;
+    expect(cut).toBeGreaterThan(2.3);
+    expect(cut).toBeLessThan(2.7);
+    // Nothing quiet enough in the first two seconds, so no pause to cut at.
+    expect(buffer.cutPoint(0, 1.9)).toBeNull();
+    // But a quietest moment always exists.
+    expect(buffer.quietestPoint(0, 1.9)).not.toBeNull();
   });
 
   it('writes whatever rate the browser gave us into the header', async () => {

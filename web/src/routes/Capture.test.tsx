@@ -3,6 +3,7 @@ import {
   PREVIEW_FIRST_MS,
   PREVIEW_INTERVAL_MS,
   PREVIEW_MAX_SECONDS,
+  PREVIEW_SLOW_GAP_MS,
   WAV_CONTENT_TYPE,
 } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -33,6 +34,8 @@ let handlers: RecorderHandlers = {};
 let stopped: () => void = () => {};
 let elapsed = 0;
 let startFailure: Error | null = null;
+/** Where the mock recorder says she paused, for the preview's commit; null for no pause. */
+let cutAt: number | null = null;
 
 vi.mock('../lib/recorder.js', async (importOriginal) => {
   const actual = await importOriginal<typeof RecorderModule>();
@@ -51,9 +54,19 @@ vi.mock('../lib/recorder.js', async (importOriginal) => {
       // 44 bytes of header and a little audio: what the real recorder returns.
       return Promise.resolve(new Blob([new Uint8Array(1000)], { type: WAV_CONTENT_TYPE }));
     }
-    /** The recording so far, or its tail, which the live preview transcribes. */
-    snapshot(_lastSeconds?: number): Blob | null {
+    /** The whole recording, for the note. */
+    snapshot(): Blob | null {
       return new Blob([new Uint8Array(1000)], { type: WAV_CONTENT_TYPE });
+    }
+    /** A stretch of it, which the live preview transcribes. */
+    slice(_from: number, _to: number): Blob | null {
+      return new Blob([new Uint8Array(1000)], { type: WAV_CONTENT_TYPE });
+    }
+    cutPoint(_after: number, _before: number): number | null {
+      return cutAt;
+    }
+    quietestPoint(_after: number, _before: number): number | null {
+      return null;
     }
     cancel(): void {}
   }
@@ -82,6 +95,7 @@ beforeEach(() => {
   stopped = () => {};
   elapsed = 0;
   startFailure = null;
+  cutAt = null;
 });
 
 afterEach(() => {
@@ -316,8 +330,11 @@ describe('while the recording is still going', () => {
     expect(screen.getByTestId('record-preview').textContent).toContain('written from the finished recording');
   });
 
-  it('says it has paused once the recording is long enough, rather than looking stuck', async () => {
-    installFakeApi({ formats: [progressNote], patients: [john] }, { previewText: 'steady week so far' });
+  it('grows the block: words committed at a pause stay, and the tail keeps coming', async () => {
+    installFakeApi(
+      { formats: [progressNote], patients: [john] },
+      { previewTexts: ['steady week', 'steady week so far,', 'then the plan'] },
+    );
     renderCapture();
     await startRecording();
 
@@ -326,19 +343,54 @@ describe('while the recording is still going', () => {
       await Promise.resolve();
     });
     await waitFor(() => {
-      expect(screen.getByTestId('record-preview').textContent).toContain('steady week so far');
+      expect(screen.getByTestId('record-preview-text').textContent).toContain('steady week');
     });
 
-    // Past the limit, the next refresh pauses the preview and says so; the
-    // words she already has stay on screen.
-    elapsed = PREVIEW_MAX_SECONDS + 1;
+    // Twenty-five seconds in, with a pause at twelve: the next refresh commits
+    // the chunk up to the pause, and the one after appends the tail to it.
+    elapsed = 25;
+    cutAt = 12;
     await act(async () => {
       vi.advanceTimersByTime(PREVIEW_INTERVAL_MS + 100);
       await Promise.resolve();
     });
     await waitFor(() => {
-      expect(screen.getByTestId('record-preview').textContent).toContain('Preview paused');
+      expect(screen.getByTestId('record-preview-text').textContent).toBe('steady week so far,');
     });
-    expect(screen.getByTestId('record-preview').textContent).toContain('steady week so far');
+
+    cutAt = null;
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_INTERVAL_MS + 100);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('record-preview-text').textContent).toBe('steady week so far, then the plan');
+    });
+  });
+
+  it('keeps growing after four minutes, only slower', async () => {
+    installFakeApi(
+      { formats: [progressNote], patients: [john] },
+      { previewTexts: ['early words', 'later words'] },
+    );
+    renderCapture();
+    await startRecording();
+
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_FIRST_MS + 100);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('record-preview-text').textContent).toContain('early words');
+    });
+
+    elapsed = PREVIEW_MAX_SECONDS + 1;
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_SLOW_GAP_MS + 100);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('record-preview-text').textContent).toContain('later words');
+    });
   });
 });

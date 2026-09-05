@@ -1,10 +1,12 @@
 import {
   MAX_RECORDING_SECONDS,
+  PREVIEW_COMMIT_AFTER_SECONDS,
+  PREVIEW_COMMIT_FORCE_SECONDS,
   PREVIEW_FIRST_MS,
   PREVIEW_INTERVAL_MS,
   PREVIEW_MAX_SECONDS,
   PREVIEW_MIN_GAP_MS,
-  PREVIEW_WINDOW_SECONDS,
+  PREVIEW_SLOW_GAP_MS,
   WARN_RECORDING_SECONDS,
 } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -93,7 +95,9 @@ export function Capture(): React.JSX.Element {
    */
   const [level, setLevel] = useState(0);
   const [preview, setPreview] = useState('');
-  const [previewPaused, setPreviewPaused] = useState(false);
+  /** Words committed for good, and the second of audio they run up to. */
+  const committed = useRef({ text: '', at: 0 });
+  const previewBox = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const available = formats.state.status === 'ready' ? formats.state.data : [];
@@ -124,51 +128,84 @@ export function Capture(): React.JSX.Element {
   );
 
   /**
-   * Refresh the provisional words while she speaks.
+   * Refresh the provisional words while she speaks, and let them grow.
    *
-   * The first refresh goes early, so the first words arrive within a few
-   * seconds; each one after that is scheduled when the previous has come
-   * back, so refreshes never overlap and a slow machine simply sees them
-   * further apart. Each carries only the last few seconds of audio — a
-   * rolling caption — and after four minutes the preview says it has paused
-   * rather than freeze in a way that looks like the microphone did. A failure
-   * goes quiet: the preview is reassurance, and reassurance that raises an
-   * alarm about a recording which is going fine would be worse than none.
+   * Each refresh transcribes only the audio since the last *committed* point.
+   * Once that stretch is long enough, the next pause in her speech becomes a
+   * cut: the chunk up to it is transcribed once more, appended to the block
+   * for good, and never re-read — so the words already on screen stop
+   * changing, the cost of a refresh stays flat however long she talks, and
+   * the cut falls between words rather than through one. If she never pauses,
+   * the cut is forced at the quietest moment once the stretch is long.
+   *
+   * The first refresh goes early; each one after that is scheduled when the
+   * previous returns, so refreshes never overlap. After four minutes they
+   * slow to a walking pace rather than stop. A failure goes quiet: the
+   * preview is reassurance, and reassurance that raises an alarm about a
+   * recording which is going fine would be worse than none.
    */
   useEffect(() => {
     if (recording !== 'recording') return;
-    setPreviewPaused(false);
+    committed.current = { text: '', at: 0 };
+    setPreview('');
 
     let cancelled = false;
     let timer = 0;
     const schedule = (ms: number): void => {
       timer = window.setTimeout(run, ms);
     };
+    const settle = (started: number, now: number): void => {
+      if (cancelled) return;
+      // Rest for as long as the refresh took: whisper gets at most half the
+      // machine, and a fast machine gets a caption that keeps up.
+      let gap = Math.min(PREVIEW_INTERVAL_MS, Math.max(PREVIEW_MIN_GAP_MS, performance.now() - started));
+      if (now > PREVIEW_MAX_SECONDS) gap = Math.max(gap, PREVIEW_SLOW_GAP_MS);
+      schedule(gap);
+    };
     const run = (): void => {
       const active = recorder.current;
       if (cancelled || !active) return;
-      if (active.seconds > PREVIEW_MAX_SECONDS) {
-        setPreviewPaused(true);
-        return;
-      }
-      const snapshot = active.snapshot(PREVIEW_WINDOW_SECONDS);
-      if (snapshot === null) {
-        schedule(PREVIEW_INTERVAL_MS);
-        return;
-      }
+      const now = active.seconds;
+      const done = committed.current;
+      const pending = now - done.at;
       const started = performance.now();
-      void previewTranscript(snapshot)
+
+      if (pending >= PREVIEW_COMMIT_AFTER_SECONDS) {
+        const searchFrom = done.at + PREVIEW_COMMIT_AFTER_SECONDS / 2;
+        const cut =
+          active.cutPoint(searchFrom, now - 1) ??
+          (pending >= PREVIEW_COMMIT_FORCE_SECONDS
+            ? (active.quietestPoint(searchFrom, now - 1) ?? now - 1)
+            : null);
+        const chunk = cut === null ? null : active.slice(done.at, cut);
+        if (cut !== null && chunk !== null) {
+          void previewTranscript(chunk)
+            .then((result) => {
+              if (cancelled || result === null || recorder.current === null) return;
+              committed.current = { text: joinWords(done.text, result.text), at: cut };
+              setPreview(committed.current.text);
+            })
+            .finally(() => {
+              settle(started, now);
+            });
+          return;
+        }
+      }
+
+      const tail = active.slice(done.at, now);
+      if (tail === null) {
+        schedule(PREVIEW_MIN_GAP_MS);
+        return;
+      }
+      void previewTranscript(tail)
         .then((result) => {
           // Still recording? A result that lands after she stopped belongs to
           // a screen that has moved on.
-          if (!cancelled && result !== null && recorder.current !== null) setPreview(result.text);
+          if (cancelled || result === null || recorder.current === null) return;
+          setPreview(joinWords(committed.current.text, result.text));
         })
         .finally(() => {
-          if (cancelled) return;
-          // Rest for as long as the refresh took: whisper gets at most half
-          // the machine, and a fast machine gets a caption that keeps up.
-          const took = performance.now() - started;
-          schedule(Math.min(PREVIEW_INTERVAL_MS, Math.max(PREVIEW_MIN_GAP_MS, took)));
+          settle(started, now);
         });
     };
     schedule(PREVIEW_FIRST_MS);
@@ -178,6 +215,12 @@ export function Capture(): React.JSX.Element {
       window.clearTimeout(timer);
     };
   }, [recording]);
+
+  // The block follows the words: newest at the bottom, always in view.
+  useEffect(() => {
+    const box = previewBox.current;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [preview]);
 
   const draftHandlers = (): GenerateHandlers => ({
     onStatus: (event) => {
@@ -407,11 +450,11 @@ export function Capture(): React.JSX.Element {
                     </p>
                   ) : (
                     <>
-                      <p className="record-preview-text">{preview}</p>
+                      <div className="record-preview-text" ref={previewBox} data-testid="record-preview-text">
+                        {preview}
+                      </div>
                       <p className="small muted record-preview-note">
-                        {previewPaused
-                          ? 'Preview paused — the microphone has proved itself. The note is written from the finished recording.'
-                          : 'The last few seconds, roughly. The note is written from the finished recording.'}
+                        Everything so far, roughly. The note is written from the finished recording.
                       </p>
                     </>
                   )}
@@ -546,4 +589,11 @@ export function Capture(): React.JSX.Element {
       )}
     </Screen>
   );
+}
+
+/** Committed words, then the tail — with a space, never a stray one. */
+function joinWords(head: string, tail: string): string {
+  const a = head.trim();
+  const b = tail.trim();
+  return a === '' ? b : b === '' ? a : `${a} ${b}`;
 }

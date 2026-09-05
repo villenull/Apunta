@@ -2261,11 +2261,25 @@ select:disabled {
   text-align: left;
 }
 
+/*
+ * The provisional words: fainter and italic, the way a live transcription
+ * reads elsewhere — it is a preliminary rendering until she stops. The box
+ * grows with the dictation and scrolls once it is taller than a few lines
+ * (owner, 2026-09-05).
+ */
 .record-preview-text {
   font-size: 14px;
   line-height: 1.5;
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  font-style: italic;
   margin: 0;
+  max-height: 9em;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle, #e6e3da);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  white-space: pre-wrap;
 }
 
 .record-preview-note,
