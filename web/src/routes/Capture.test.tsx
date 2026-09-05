@@ -307,13 +307,18 @@ describe('while the recording is still going', () => {
     renderCapture();
     await startRecording();
 
-    // Silence: the dot is at rest. A frame with sound in it moves it.
+    // Silence, and the room's own noise: the dot is at rest. Any voice lifts
+    // it clearly past half; it does not report a level.
     const dot = screen.getByTestId('record-dot');
+    expect(dot.style.getPropertyValue('--level')).toBe('0');
+    act(() => {
+      handlers.onLevel?.(0.01);
+    });
     expect(dot.style.getPropertyValue('--level')).toBe('0');
     act(() => {
       handlers.onLevel?.(0.2);
     });
-    expect(Number(dot.style.getPropertyValue('--level'))).toBeCloseTo(0.5, 5);
+    expect(Number(dot.style.getPropertyValue('--level'))).toBeGreaterThan(0.5);
     expect(screen.queryByTestId('record-level')).toBeNull();
     // Nothing transcribed yet, so it says it is listening rather than
     // pretending to have heard something.

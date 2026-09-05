@@ -94,6 +94,8 @@ export function Capture(): React.JSX.Element {
    * separate on purpose rather than one indicator that starts late.
    */
   const [level, setLevel] = useState(0);
+  /** The smoothed voice level behind the dot, and when it last reached the screen. */
+  const voice = useRef({ smoothed: 0, shownAt: 0, shown: 0 });
   const [preview, setPreview] = useState('');
   /** Words committed for good, and the second of audio they run up to. */
   const committed = useRef({ text: '', at: 0 });
@@ -243,6 +245,7 @@ export function Capture(): React.JSX.Element {
     setNotice(null);
     setSeconds(0);
     setLevel(0);
+    voice.current = { smoothed: 0, shownAt: 0, shown: 0 };
     setPreview('');
     setRecording('starting');
 
@@ -261,7 +264,27 @@ export function Capture(): React.JSX.Element {
         );
         void stopRecording();
       },
-      onLevel: setLevel,
+      onLevel: (peak) => {
+        // The dot answers "is this hearing me", not "how loud": below the
+        // noise floor it rests; sound lifts it at once and lets it settle
+        // over about a second, so word gaps do not make it twitch.
+        const heard = peak < VOICE_FLOOR ? 0 : peak;
+        const state = voice.current;
+        state.smoothed =
+          heard > state.smoothed
+            ? state.smoothed + (heard - state.smoothed) * 0.5
+            : state.smoothed * VOICE_DECAY;
+        const now = performance.now();
+        const presence = presenceOf(state.smoothed);
+        // The lift from rest never waits for the frame budget: her first
+        // word is the answer the dot exists to give.
+        const lifting = state.shown === 0 && presence > 0;
+        if (lifting || state.shownAt === 0 || now - state.shownAt >= VOICE_FRAME_MS) {
+          state.shownAt = now;
+          state.shown = presence;
+          setLevel(presence);
+        }
+      },
       onError: (failure) => {
         setError(recorderMessage(failure));
         recorder.current?.cancel();
@@ -428,7 +451,7 @@ export function Capture(): React.JSX.Element {
                 <div
                   className="record-dot recording"
                   data-testid="record-dot"
-                  style={{ ['--level' as string]: String(Math.min(1, level * 2.5)) }}
+                  style={{ ['--level' as string]: String(level) }}
                 >
                   <MicIcon className="icon record-mic" />
                 </div>
@@ -592,4 +615,22 @@ function joinWords(head: string, tail: string): string {
   const a = head.trim();
   const b = tail.trim();
   return a === '' ? b : b === '' ? a : `${a} ${b}`;
+}
+
+/** Peaks under this are the room, not her: the same floor the recorder uses to find a pause. */
+const VOICE_FLOOR = 0.03;
+/** Per audio frame (about 8 ms): the dot loses a sixth of its lift every hundred milliseconds. */
+const VOICE_DECAY = 0.985;
+/** The screen is updated at most this often; the CSS transition smooths the rest. */
+const VOICE_FRAME_MS = 40;
+
+/**
+ * How much the dot shows for a smoothed level: nothing for silence, and for
+ * any voice at all clearly more than half — louder is only a little bigger.
+ * The user does not care whether the input is at 25% or 80%, only whether
+ * something is being picked up.
+ */
+function presenceOf(smoothed: number): number {
+  if (smoothed < 0.01) return 0;
+  return Math.min(1, 0.55 + 0.45 * Math.min(1, smoothed / 0.25));
 }

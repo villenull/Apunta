@@ -1192,9 +1192,10 @@ select:disabled {
   background: color-mix(in srgb, var(--danger-tint) calc(var(--level) * 100%), var(--surface-muted));
   box-shadow: 0 0 0 1px var(--border);
   transform: scale(calc(1 + var(--level) * 0.45));
+  /* Slow enough to read as breathing, quick enough to answer her first word. */
   transition:
-    transform 90ms ease-out,
-    background-color 140ms ease-out;
+    transform 220ms ease-out,
+    background-color 260ms ease-out;
 }
 
 .record-label {

@@ -51,6 +51,17 @@ body {
   height: 100%;
 }
 
+/*
+ * The page's scrollbar comes and goes as content grows past the viewport —
+ * the growing dictation block, a screen taller than the last — and on a
+ * classic-scrollbar platform its width shoved the whole layout sideways
+ * each time (owner, 2026-09-05: "a quick twitch, left to right"). Reserve
+ * the gutter always; on overlay scrollbars this costs nothing.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
