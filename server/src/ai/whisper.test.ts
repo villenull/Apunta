@@ -14,11 +14,13 @@ import type { SttEvent } from './types.js';
 import {
   buildVocabularyPrompt,
   buildWhisperArgs,
-  parseTimings,
-  previewAudioContext,
   classifyFailure,
   parseProgress,
+  parseTimings,
   parseTranscript,
+  previewAudioContext,
+  STT_LEAD_IN,
+  sttPrompt,
   timeoutFor,
   TRANSCRIBE_BASE_TIMEOUT_MS,
   WhisperCppSttProvider,
@@ -138,7 +140,9 @@ describe('buildWhisperArgs', () => {
   it('names the model and the file, asks for prose and for progress', () => {
     const args = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav' });
 
-    expect(args).toEqual(['--model', '/m.bin', '--file', '/a.wav', '--no-timestamps', '--print-progress']);
+    // Timestamps on: the no-timestamps decoding dropped a sentence of a real dictation (2026-09-05).
+    expect(args).toEqual(['--model', '/m.bin', '--file', '/a.wav', '--print-progress']);
+    expect(args).not.toContain('--no-timestamps');
   });
 
   it('passes the vocabulary prompt only when there is one', () => {
@@ -154,6 +158,15 @@ describe('buildWhisperArgs', () => {
   /** No transcode step exists, so nothing may quietly reintroduce one. */
   it('never mentions ffmpeg', () => {
     expect(buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav' }).join(' ')).not.toMatch(/ffmpeg/i);
+  });
+});
+
+describe('sttPrompt', () => {
+  it('always opens with the punctuated lead-in, and adds her vocabulary after it', () => {
+    expect(sttPrompt([])).toBe(STT_LEAD_IN);
+    expect(sttPrompt(['Vraylar'])).toBe(`${STT_LEAD_IN} Clinical terms that may come up: Vraylar.`);
+    // Style, not content: nothing clinical, nothing that could be heard as a name.
+    expect(STT_LEAD_IN).toMatch(/^[A-Z].*\.$/);
   });
 });
 

@@ -97,6 +97,19 @@ the three identical fixture-20 notes above already showed.
 
 - It settles the live incident: a "scratch that" now produces a note with
   only the corrected figure, and no sentence about a correction.
+- It does **not** settle an inline correction inside reported speech. A live
+  dictation the same evening — "he's sleeping about four hours a night,
+  scratch that, it's more like six hours now, four was back in February" —
+  still drafted as *"four hours a night, which he later corrected to more
+  like six hours now"*, with the reminder present. Fixture 04 is a false
+  start ("that was last session, start over"), which the model now handles;
+  a number corrected mid-sentence, with the old number restated as history a
+  breath later, it does not. A rewording that named who was correcting whom
+  was tried on that transcript and the one from the day before: it removed
+  the "corrected" sentence on one, kept the retracted number on the other,
+  and let an aside into the note and the worked example's sentence into the
+  plan on the first. Not shipped. The case stays open; the likely answer is
+  not another sentence.
 - It does not touch retractions said in ways the marker list does not know.
   A miss costs one sentence of behaviour the model already mostly has; a
   false positive perturbs a whole note, so the list stays narrow. Add to it

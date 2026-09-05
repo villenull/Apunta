@@ -76,7 +76,12 @@ export interface WhisperOptions {
 /**
  * The command line, built in one place so the unit tests can read it.
  *
- * `--no-timestamps` because we want prose, not a subtitle file;
+ * Timestamps stay ON, and `parseTranscript` strips them. They were off until
+ * 2026-09-05, "because we want prose, not a subtitle file" — and on a real
+ * 83-second dictation that mode dropped a whole sentence, the plan decision
+ * ("we talked about dropping to every other week, actually no, hold on"),
+ * while the same model on the same file with timestamps kept every word.
+ * `--no-timestamps` is a different decoding, not a different print-out.
  * `--print-progress` because it is the only progress signal whisper.cpp emits
  * and a 20-minute dictation must not look like a hang; `--prompt` because
  * medication names are Whisper's known weak spot and vocabulary biasing is the
@@ -90,7 +95,7 @@ export function buildWhisperArgs(input: {
   /** Only the live preview sets this; see `previewAudioContext`. */
   readonly audioContext?: number | undefined;
 }): string[] {
-  const args = ['--model', input.modelPath, '--file', input.wavPath, '--no-timestamps', '--print-progress'];
+  const args = ['--model', input.modelPath, '--file', input.wavPath, '--print-progress'];
   const prompt = (input.prompt ?? '').trim();
   if (prompt !== '') args.push('--prompt', prompt);
   if (input.threads !== undefined) args.push('--threads', String(input.threads));
@@ -140,6 +145,23 @@ export function previewAudioContext(durationSeconds: number): number {
  * `MAX_STT_PROMPT_TOKENS` — an over-long prompt is silently cut mid-word by
  * whisper.cpp otherwise, which is how a truncation bug hides.
  */
+/**
+ * The first words whisper reads, before any audio.
+ *
+ * Whisper writes in the style of its prompt. Left empty, the timestamped
+ * decoding of a real dictation came back entirely lowercase without a single
+ * full stop (2026-09-05); with one punctuated, capitalised sentence in front
+ * it came back as prose. The sentence is deliberately empty of content — no
+ * clinical term, no name — so it can bias style and nothing else.
+ */
+export const STT_LEAD_IN = "Okay, notes from today's session.";
+
+/** The lead-in, then her vocabulary if she has any. Never empty. */
+export function sttPrompt(vocabulary: readonly string[]): string {
+  const terms = buildVocabularyPrompt(vocabulary);
+  return terms === '' ? STT_LEAD_IN : `${STT_LEAD_IN} ${terms}`;
+}
+
 export function buildVocabularyPrompt(vocabulary: readonly string[]): string {
   const terms = vocabulary.map((term) => term.trim()).filter((term) => term !== '');
   if (terms.length === 0) return '';
@@ -264,7 +286,7 @@ export class WhisperCppSttProvider implements SttProvider {
     const previewModel = request.preview === true ? (this.options.resolvePreviewModel?.() ?? null) : null;
     const chosen = previewModel !== null && fileExists(previewModel) ? previewModel : model;
 
-    const prompt = buildVocabularyPrompt(request.vocabulary);
+    const prompt = sttPrompt(request.vocabulary);
     const args = buildWhisperArgs({
       modelPath: chosen,
       wavPath: request.wavPath,
