@@ -143,8 +143,44 @@ export function buildGeneratePrompt(request: GenerateNoteRequest): ChatPrompt {
     sourceGlossary(request),
   ].join('\n');
 
-  const user = [...sourceBlocks(request), tailReminder(request.sections)].join('\n\n');
+  const source = `${request.typedNotes ?? ''}\n${request.transcript ?? ''}`;
+  const user = [
+    ...sourceBlocks(request),
+    ...retractionReminderFor(source),
+    tailReminder(request.sections),
+  ].join('\n\n');
   return { system, user };
+}
+
+/**
+ * The retraction rule, restated in the user turn — but only when the source
+ * shows a retraction.
+ *
+ * The instructions already say a retracted version leaves no trace, and the
+ * worked example shows one. On this model that was not enough: a live
+ * dictation on 2026-09-04 ("four out of seven... scratch that, two out of
+ * seven") came back as "four out of seven, though he corrects this to two"
+ * — both numbers kept, and the correction pinned on the patient. The refine
+ * path learned the same lesson twice over: a rule in the system block loses
+ * to the source text under it, and the same rule beside the source wins.
+ *
+ * Measured on the corpus (2026-09-05, 3 runs each): put beside every source,
+ * the sentence cleared the retraction fixture and, on a fixture with no
+ * retraction in it, made the model open with an "anxiety" the source never
+ * mentions — a longer prompt sends the decoder down a different path, and
+ * that is the whole of it. So the sentence appears only when the source
+ * contains a retraction, and every other source gets the prompt it had
+ * before, byte for byte.
+ */
+export const RETRACTION_REMINDER =
+  'Where she takes something back as she speaks — "scratch that", "actually no", "that was last session" — the note carries only what replaced it. The earlier version does not appear, and the note never says that anyone corrected anything.';
+
+/** The ways a retraction is said aloud. Deliberately narrow: a miss costs one sentence, a false positive perturbs a whole note. */
+const RETRACTION_MARKERS =
+  /\b(?:scratch that|strike that|forget that|never ?mind|actually,? no\b|no,? wait\b|wait,? no\b|that'?s wrong|that was last (?:session|week|time)|start (?:over|again)|let me start again)\b/i;
+
+export function retractionReminderFor(source: string): string[] {
+  return RETRACTION_MARKERS.test(source) ? [RETRACTION_REMINDER] : [];
 }
 
 /**

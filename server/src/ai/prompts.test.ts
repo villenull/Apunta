@@ -30,6 +30,8 @@ import {
   buildSummariseNotePrompt,
   orderSections,
   outputFormatBlock,
+  RETRACTION_REMINDER,
+  retractionReminderFor,
   tailReminder,
 } from './prompts.js';
 
@@ -125,6 +127,31 @@ describe('outputFormatBlock', () => {
 
   it('quotes a section name containing a quote or a colon', () => {
     expect(outputFormatBlock(['Risk: "safety"'])).toContain('"Risk: \\"safety\\""');
+  });
+});
+
+describe('the retraction reminder', () => {
+  it('sits in the user turn beside a source that takes something back', () => {
+    const prompt = buildGeneratePrompt({
+      instructions: 'Write a note.',
+      sections: ['Subjective', 'Plan'],
+      transcript: 'We agreed weekly, actually no, scratch that, fortnightly.',
+    });
+    expect(prompt.user).toContain(RETRACTION_REMINDER);
+    // The JSON restatement stays last, where a head truncation cannot reach it.
+    expect(prompt.user.trimEnd().endsWith('and nothing else.')).toBe(true);
+    expect(prompt.system).not.toContain(RETRACTION_REMINDER);
+  });
+
+  it('stays out of a source with no retraction in it, so that prompt is unchanged', () => {
+    const prompt = buildGeneratePrompt({
+      instructions: 'Write a note.',
+      sections: ['Subjective', 'Plan'],
+      typedNotes: 'Sleeping better. Plan unchanged, weekly.',
+    });
+    expect(prompt.user).not.toContain(RETRACTION_REMINDER);
+    expect(retractionReminderFor('no correction here, he never minds the noise')).toEqual([]);
+    expect(retractionReminderFor('four out of seven, no wait, two out of seven')).toHaveLength(1);
   });
 });
 
