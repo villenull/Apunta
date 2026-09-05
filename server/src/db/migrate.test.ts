@@ -52,9 +52,9 @@ describe('migrate', () => {
     const file = join(dataDir, 'apunta.db');
     const { db, migrations } = openDatabase({ file, migrationsDir });
 
-    expect(migrations.applied).toEqual([1, 2]);
-    expect(migrations.level).toBe(2);
-    expect(appliedVersions(db)).toEqual([1, 2]);
+    expect(migrations.applied).toEqual([1, 2, 3]);
+    expect(migrations.level).toBe(3);
+    expect(appliedVersions(db)).toEqual([1, 2, 3]);
 
     const tables = (
       db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all() as {
@@ -98,7 +98,7 @@ describe('migrate', () => {
     const second = openDatabase({ file, migrationsDir });
 
     expect(second.migrations.applied).toEqual([]);
-    expect(second.migrations.level).toBe(2);
+    expect(second.migrations.level).toBe(3);
     expect(
       (
         second.db.prepare('SELECT applied_at FROM schema_migrations WHERE version = 1').get() as {

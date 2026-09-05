@@ -93,6 +93,17 @@ export function Settings(): React.JSX.Element {
       <AppearanceSettings />
       <BackupCard />
 
+      <div className="card card-rows lede">
+        <h3 className="heading-tight">Import from Claude</h3>
+        <p className="small note-meta">
+          If you have talked sessions through with Claude, its data export can become patients and notes here
+          — each one shown to you first, and only your own words imported.
+        </p>
+        <Link to="/import" className="btn" data-testid="settings-import">
+          Import from Claude
+        </Link>
+      </div>
+
       <p className="small note-meta lede">
         <Link to="/setup">Setup</Link> lists what Apunta needs on this Mac. <Link to="/about">About</Link>{' '}
         says what it does with your notes, and what it does not protect you from.

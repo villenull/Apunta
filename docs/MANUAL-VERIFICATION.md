@@ -271,6 +271,8 @@ Ideally on a Mac that has never had Homebrew, Node or Ollama.
 | The disk figure matches what Finder says is free | ☐ | Decimal GB on both sides |
 | The progress bar moves, and the time remaining is roughly right | ☐ | |
 | It finishes and opens the browser by itself | ☐ | |
+| It lists three downloads, the preview model between the two others | ☐ | `ggml-small.bin`, ~466 MB, under "The model that shows your words as you speak" (added 2026-09-05; never run on a Mac) |
+| After first run, dictation shows words within a couple of seconds | ☐ | That is the small model working; on the big one alone the first words take ~2 s longer. `/api/health` does not report which — the server log line `transcription finished` names the model |
 | **Record a note and get a draft, without ever opening Terminal** | ☐ | The whole packet, in one row |
 
 ### 7.4 The failure paths

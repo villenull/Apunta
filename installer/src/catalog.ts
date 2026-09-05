@@ -1,4 +1,10 @@
-import { DEFAULT_MODEL, LARGE_MODEL, SMALL_MODEL, WHISPER_MODEL_FILENAME } from '@apunta/shared';
+import {
+  DEFAULT_MODEL,
+  LARGE_MODEL,
+  SMALL_MODEL,
+  WHISPER_MODEL_FILENAME,
+  WHISPER_PREVIEW_MODEL_FILENAME,
+} from '@apunta/shared';
 
 /**
  * Everything the first run downloads, pinned.
@@ -109,6 +115,27 @@ export const SPEECH_MODEL: SpeechModelEntry = {
   sha1: 'e050f7970618a659205450ad97eb95a18d69c9ee',
   sha256: '394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2',
   approxBytes: 547 * MIB,
+  licence: {
+    name: 'MIT (OpenAI Whisper)',
+    url: 'https://huggingface.co/ggerganov/whisper.cpp',
+    verified: true,
+  },
+};
+
+/**
+ * The preview's model: the words she sees while still speaking. Not the
+ * record — the note is transcribed by `SPEECH_MODEL` — so a smaller model is
+ * the right trade, and `small` gave the same words as the big one in a
+ * third of the time on the same speech (2026-09-04). Same publisher, same
+ * repository, same licence. The SHA-1 is whisper.cpp's published one; the
+ * SHA-256 was computed after it matched (2026-09-05).
+ */
+export const PREVIEW_SPEECH_MODEL: SpeechModelEntry = {
+  filename: WHISPER_PREVIEW_MODEL_FILENAME,
+  url: `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER_PREVIEW_MODEL_FILENAME}`,
+  sha1: '55356645c2b361a969dfd0ef2c5a50d530afd8d5',
+  sha256: '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+  approxBytes: 466 * MIB,
   licence: {
     name: 'MIT (OpenAI Whisper)',
     url: 'https://huggingface.co/ggerganov/whisper.cpp',

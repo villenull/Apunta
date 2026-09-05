@@ -8,6 +8,7 @@ import {
   WHISPER_BINARY_SETTING,
   WHISPER_MODEL_FILENAME,
   WHISPER_MODEL_SETTING,
+  WHISPER_PREVIEW_MODEL_FILENAME,
   WHISPER_PREVIEW_MODEL_SETTING,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
@@ -49,10 +50,17 @@ export function resolveWhisperModel(db: Database, modelsDir: string): string {
     : join(modelsDir, WHISPER_MODEL_FILENAME);
 }
 
-/** The smaller model the live preview may run on, or null for "the note's model". */
-export function resolveWhisperPreviewModel(db: Database): string | null {
+/**
+ * The smaller model the live preview runs on: the setting if she has one,
+ * else the file the installer puts beside the main model. Either may be
+ * absent — the provider falls back to the note's model when the file is not
+ * there, so this never has to know.
+ */
+export function resolveWhisperPreviewModel(db: Database, modelsDir: string): string {
   const configured = getSetting<unknown>(db, WHISPER_PREVIEW_MODEL_SETTING);
-  return typeof configured === 'string' && configured.trim() !== '' ? configured.trim() : null;
+  return typeof configured === 'string' && configured.trim() !== ''
+    ? configured.trim()
+    : join(modelsDir, WHISPER_PREVIEW_MODEL_FILENAME);
 }
 
 /**

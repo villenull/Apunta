@@ -71,7 +71,7 @@ That is once, ever. From then on Apunta opens normally.
 
 ## 3. Setting up, once
 
-The first time Apunta runs, it needs to download the two AI models it uses. A
+The first time Apunta runs, it needs to download the AI models it uses — two for listening (a small one that shows your words as you speak, a large one that writes the transcript) and one for writing. A
 window appears telling you:
 
 - **which writing model it chose and why.** Apunta looks at how much memory
@@ -86,7 +86,7 @@ window appears telling you:
 
 Click **Download**.
 
-**This takes a while.** The two models are between 4 GB and 23 GB depending on
+**This takes a while.** The models are between 4 GB and 23 GB in total depending on
 your Mac. On a normal home connection expect **twenty minutes to two hours**.
 The bar shows how far along it is and roughly how much time is left.
 

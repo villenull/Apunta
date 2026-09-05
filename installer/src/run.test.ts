@@ -1,3 +1,4 @@
+import { DEFAULT_MODEL } from '@apunta/shared';
 import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -7,7 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { SPEECH_MODEL } from './catalog.js';
 import type { SetupEvent } from './protocol.js';
 import { partPathFor } from './resume.js';
-import { runSetup, speechModelPath, type SetupEnvironment } from './run.js';
+import { previewModelPath, runSetup, speechModelPath, type SetupEnvironment } from './run.js';
 
 /**
  * The whole first run, orchestrated, against a fake runtime and a fake
@@ -40,6 +41,8 @@ function harness(
     freeBytes?: number | null;
     memoryGib?: number | null;
     speechModelPresent?: boolean;
+    /** Defaults to the speech model's presence: the two files arrive together. */
+    previewModelPresent?: boolean;
   } = {},
 ): Harness {
   dir = mkdtempSync(join(tmpdir(), 'apunta-setup-'));
@@ -47,6 +50,9 @@ function harness(
   mkdirSync(modelsDir, { recursive: true });
   if (options.speechModelPresent === true) {
     writeFileSync(speechModelPath(modelsDir), MODEL_BODY);
+  }
+  if ((options.previewModelPresent ?? options.speechModelPresent) === true) {
+    writeFileSync(previewModelPath(modelsDir), MODEL_BODY);
   }
 
   const events: SetupEvent[] = [];
@@ -175,6 +181,27 @@ describe('runSetup', () => {
    * A damaged download is deleted rather than kept: a retry that resumed onto
    * bad bytes would append good ones to them for ever.
    */
+  it('downloads the preview model as its own step, verified like the other', async () => {
+    // The speech model is there, the preview's is not: the run reaches for
+    // it under its own id, and the fake server's bytes fail the pinned
+    // checksum — which is the refusal the step must make, not a success it
+    // cannot have.
+    const { events, environment, requested } = harness({
+      speechModelPresent: true,
+      previewModelPresent: false,
+      pulled: [DEFAULT_MODEL],
+    });
+
+    const ok = await runSetup(environment);
+
+    expect(ok).toBe(false);
+    expect(requested.some((url) => url.endsWith('/ggml-small.bin'))).toBe(true);
+    const steps = eventsOf(events, 'step');
+    expect(steps.find((step) => step.id === 'speech_model')?.status).toBe('skipped');
+    expect(steps.find((step) => step.id === 'preview_model')?.status).toBe('started');
+    expect(eventsOf(events, 'failed')[0]?.code).toBe('checksum_mismatch');
+  });
+
   it('deletes a download that fails its checksum, and says so in plain words', async () => {
     const { events, environment, modelsDir } = harness({ pulled: ['gemma4:12b-it-qat'] });
 

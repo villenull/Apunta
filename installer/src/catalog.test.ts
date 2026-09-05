@@ -8,6 +8,7 @@ import {
   ALLOWED_DOWNLOAD_HOSTS,
   assertAllowedHost,
   DisallowedHostError,
+  PREVIEW_SPEECH_MODEL,
   SPEECH_MODEL,
   WRITING_MODELS,
   writingModel,
@@ -105,6 +106,16 @@ describe('the speech model entry', () => {
     // M10 after the SHA-1 matched, and the exact value is asserted so a
     // regenerated catalog cannot quietly swap the file it certifies.
     expect(SPEECH_MODEL.sha256).toBe('394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2');
+  });
+
+  it('pins the preview model the same way, from the same publisher', () => {
+    expect(PREVIEW_SPEECH_MODEL.url).toContain('/ggerganov/whisper.cpp/');
+    expect(PREVIEW_SPEECH_MODEL.url).toContain(PREVIEW_SPEECH_MODEL.filename);
+    expect(PREVIEW_SPEECH_MODEL.filename).toBe('ggml-small.bin');
+    expect(PREVIEW_SPEECH_MODEL.sha1).toMatch(/^[0-9a-f]{40}$/);
+    expect(PREVIEW_SPEECH_MODEL.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(PREVIEW_SPEECH_MODEL.approxBytes).toBeLessThan(SPEECH_MODEL.approxBytes);
+    expect(PREVIEW_SPEECH_MODEL.licence).toEqual(SPEECH_MODEL.licence);
   });
 });
 

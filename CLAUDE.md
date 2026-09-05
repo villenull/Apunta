@@ -10,9 +10,11 @@ ran on a live Linux machine on 2026-08-27
 re-measured). What remains needs a Mac (`docs/MANUAL-VERIFICATION.md`), her
 transcription vocabulary list (promised, not yet sent), or a new packet:
 the intake-side instruction distillation, per the M10 report. **M11**
-(importing her Claude conversations) is designed and deliberately not built —
-it is gated on the confidentiality decision, not on code, and only its
-read-only probe exists.
+(importing her Claude conversations) is built — `Settings → Import from
+Claude`, proposals only, nothing written unreviewed — against an *inferred*
+export schema. Running it on her real export stays gated on the
+confidentiality decision; run `npm run probe:claude` on the real export
+first to check the schema.
 
 ## Hard rules
 

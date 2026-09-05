@@ -1,8 +1,11 @@
 # M11 — importing her Claude conversations
 
 **Depends on:** M1 (patients, notes), M6 (formats). Independent of the model.
-**Status:** designed, not built. Deliberately gated — see *Before any of this
-runs* below.
+**Status:** built 2026-09-05 — server, screen and tests, against the
+*inferred* export schema below. Running it on her real export stays gated on
+the confidentiality decision (see *Before any of this runs*), and the probe
+should be run on the real export first, because the schema is a guess until
+it is not.
 
 ## What was asked for
 
@@ -124,6 +127,31 @@ record.
 - Whether she ever had Claude draft notes she then used as-is. If so, some
   assistant text *is* her record, and stage 3's default needs a per-note
   escape hatch rather than a global one.
+
+## What was built (2026-09-05)
+
+- `server/src/import/zip.ts` — a minimal ZIP reader on `node:zlib`, so the
+  export is opened by ~80 lines of our own code rather than a dependency.
+- `server/src/import/claude.ts` — the tolerant reader (top-level array or a
+  wrapper key; `sender` or `role`; `text` or content blocks), proposals from
+  `human` turns only, candidate people from her existing patients first and
+  recurring proper nouns second, and nothing from a model.
+- `POST /api/import/claude` — the upload, read in memory and kept nowhere;
+  answers proposals. `POST /api/import/claude/accept` — writes only what she
+  accepted, one transaction, each note a draft dated when she talked to
+  Claude with a transcript row of source `import` whose first line names
+  the source conversation (migration 003 widened the CHECK).
+- `Settings → Import from Claude` (`web/src/routes/Import.tsx`) — choose the
+  file; tick which recurring names are patients and fix their spelling;
+  assign each conversation to a person or skip it; trim her words; press
+  the one button that says how many notes it will write. Claude's replies
+  are behind a fold marked *never imported*.
+- Fixture: `e2e/fixtures/claude-export/` — five fabricated conversations in
+  the inferred shape, including a recipe, so a test can prove personal
+  material never becomes a patient.
+
+Still open, and only a real export can close it: the schema itself.
+`npm run probe:claude -- <export.zip>` prints its shape and nothing else.
 
 ## Acceptance
 

@@ -2,8 +2,13 @@ import { z } from 'zod';
 
 import { IdSchema, MAX_BODY_CHARS, optionalText, TimestampSchema } from './common.js';
 
-/** Where a transcript came from: a recording (M5) or the typed-note path (M3). */
-export const TranscriptSourceSchema = z.enum(['audio', 'typed']);
+/**
+ * Where a transcript came from: a recording (M5), the typed-note path (M3), or
+ * her own words in a Claude conversation (M11) — kept apart because a note
+ * whose raw material was typed to a chatbot is a different thing from one
+ * dictated after a session, and the record should say which.
+ */
+export const TranscriptSourceSchema = z.enum(['audio', 'typed', 'import']);
 export type TranscriptSource = z.infer<typeof TranscriptSourceSchema>;
 
 /**

@@ -2,7 +2,7 @@ import { statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describeProgress, progressSnapshot } from './bytes.js';
-import { SPEECH_MODEL } from './catalog.js';
+import { PREVIEW_SPEECH_MODEL, SPEECH_MODEL, type SpeechModelEntry } from './catalog.js';
 import { verifyFile } from './checksum.js';
 import { freeBytesFor } from './disk.js';
 import { commitDownload, discardDownload, downloadWithResume } from './download.js';
@@ -46,6 +46,7 @@ export interface SetupEnvironment {
 
 export interface ProbedState {
   readonly speechModelPresent: boolean;
+  readonly previewModelPresent: boolean;
   readonly writingModelPresent: boolean;
   readonly freeBytes: number | null;
   readonly runtimeReachable: boolean;
@@ -56,6 +57,11 @@ const DEFAULT_RUNTIME_WAIT_MS = 30_000;
 /** Where the speech model lives once it is downloaded. */
 export function speechModelPath(modelsDir: string): string {
   return join(modelsDir, SPEECH_MODEL.filename);
+}
+
+/** Where the preview's smaller model lives, beside it. */
+export function previewModelPath(modelsDir: string): string {
+  return join(modelsDir, PREVIEW_SPEECH_MODEL.filename);
 }
 
 /**
@@ -92,6 +98,7 @@ export async function probeState(environment: SetupEnvironment): Promise<ProbedS
 
   return {
     speechModelPresent: fileIsPresent(speechModelPath(environment.modelsDir)),
+    previewModelPresent: fileIsPresent(previewModelPath(environment.modelsDir)),
     writingModelPresent,
     freeBytes: (environment.freeBytesImpl ?? freeBytesFor)(environment.dataDir),
     runtimeReachable,
@@ -115,6 +122,7 @@ export async function makePlan(environment: SetupEnvironment): Promise<PlanWithS
     memoryGib: environment.memoryGib,
     modelOverride: environment.modelOverride,
     speechModelPresent: true,
+    previewModelPresent: true,
     writingModelPresent: true,
     freeBytes: null,
   });
@@ -125,6 +133,7 @@ export async function makePlan(environment: SetupEnvironment): Promise<PlanWithS
     memoryGib: environment.memoryGib,
     modelOverride: environment.modelOverride,
     speechModelPresent: state.speechModelPresent,
+    previewModelPresent: state.previewModelPresent,
     writingModelPresent: state.writingModelPresent,
     freeBytes: state.freeBytes,
   });
@@ -170,7 +179,9 @@ export async function runSetup(environment: SetupEnvironment): Promise<boolean> 
       }
       environment.emit({ event: 'step', id: step.id, status: 'started', label: step.label });
       if (step.id === 'speech_model') {
-        await downloadSpeechModel(environment);
+        await downloadSpeechFile(environment, SPEECH_MODEL, 'speech_model');
+      } else if (step.id === 'preview_model') {
+        await downloadSpeechFile(environment, PREVIEW_SPEECH_MODEL, 'preview_model');
       } else {
         environment.emit({
           event: 'message',
@@ -191,12 +202,17 @@ export async function runSetup(environment: SetupEnvironment): Promise<boolean> 
   }
 }
 
-async function downloadSpeechModel(environment: SetupEnvironment): Promise<void> {
-  const destination = speechModelPath(environment.modelsDir);
-  const checksum = SPEECH_MODEL.sha256 ?? SPEECH_MODEL.sha1;
+/** One whisper file, verified against its pinned checksum; the two speech models differ only in entry and step. */
+async function downloadSpeechFile(
+  environment: SetupEnvironment,
+  entry: SpeechModelEntry,
+  stepId: 'speech_model' | 'preview_model',
+): Promise<void> {
+  const destination = join(environment.modelsDir, entry.filename);
+  const checksum = entry.sha256 ?? entry.sha1;
 
   const result = await downloadWithResume({
-    url: SPEECH_MODEL.url,
+    url: entry.url,
     destination,
     checksum,
     signal: environment.signal,
@@ -206,7 +222,7 @@ async function downloadSpeechModel(environment: SetupEnvironment): Promise<void>
       const snapshot = progressSnapshot(progress);
       environment.emit({
         event: 'progress',
-        id: 'speech_model',
+        id: stepId,
         completedBytes: snapshot.completedBytes,
         totalBytes: snapshot.totalBytes,
         percent: snapshot.percent,
@@ -226,14 +242,14 @@ async function downloadSpeechModel(environment: SetupEnvironment): Promise<void>
 
   environment.emit({
     event: 'step',
-    id: 'speech_model',
+    id: stepId,
     status: 'verifying',
     label: 'Checking the download',
   });
 
   const verification = await verifyFile(
     `${destination}.part`,
-    { sha1: SPEECH_MODEL.sha1, sha256: SPEECH_MODEL.sha256 },
+    { sha1: entry.sha1, sha256: entry.sha256 },
     environment.signal,
   );
 
@@ -242,7 +258,7 @@ async function downloadSpeechModel(environment: SetupEnvironment): Promise<void>
     if (verification.checked.length === 0) {
       // A catalogue entry with no checksum at all. Refusing is the only safe
       // answer: an unverified 574 MB file is exactly what a checksum is for.
-      throw setupError('checksum_mismatch', 'no checksum is pinned for the speech model');
+      throw setupError('checksum_mismatch', `no checksum is pinned for ${entry.filename}`);
     }
     throw setupError(
       'checksum_mismatch',

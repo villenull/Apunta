@@ -1,7 +1,7 @@
 import { DEFAULT_TIER_GIB, LARGE_TIER_GIB, modelForMemory } from '@apunta/shared';
 
 import { formatBytes } from './bytes.js';
-import { SPEECH_MODEL, writingModel } from './catalog.js';
+import { PREVIEW_SPEECH_MODEL, SPEECH_MODEL, writingModel } from './catalog.js';
 import { checkDiskSpace } from './disk.js';
 import type { ChosenModel, DiskReport, PlanEvent, PlannedStep } from './protocol.js';
 
@@ -25,6 +25,7 @@ export interface PlanInput {
   /** `llm_model` from Settings, or a `--model` override. Beats the table. */
   readonly modelOverride?: string | null;
   readonly speechModelPresent: boolean;
+  readonly previewModelPresent: boolean;
   readonly writingModelPresent: boolean;
   /** Free bytes on the volume holding the data directory, or null. */
   readonly freeBytes: number | null;
@@ -80,6 +81,12 @@ export function buildPlan(input: PlanInput): PlanEvent {
       label: 'The model that reads your recordings',
       needed: !input.speechModelPresent,
       approxBytes: SPEECH_MODEL.approxBytes,
+    },
+    {
+      id: 'preview_model',
+      label: 'The model that shows your words as you speak',
+      needed: !input.previewModelPresent,
+      approxBytes: PREVIEW_SPEECH_MODEL.approxBytes,
     },
     {
       id: 'writing_model',

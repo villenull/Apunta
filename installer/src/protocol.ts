@@ -18,7 +18,7 @@ import { SETUP_ERROR_CODES } from './errors.js';
  * one `JSONSerialization` call per line.
  */
 
-export const SETUP_STEP_IDS = ['speech_model', 'writing_model'] as const;
+export const SETUP_STEP_IDS = ['speech_model', 'preview_model', 'writing_model'] as const;
 export type SetupStepId = (typeof SETUP_STEP_IDS)[number];
 
 export const LicenceReferenceSchema = z.object({

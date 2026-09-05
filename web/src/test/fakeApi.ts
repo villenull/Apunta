@@ -1,12 +1,14 @@
 import {
-  PUBLISHED_REFUSAL,
   type ChatMessage,
+  type ClaudeImportAcceptRequest,
+  type ClaudeImportPreview,
   type HealthResponse,
   type Note,
   type NoteFormat,
   type Patient,
   type PatientListItem,
   type PlanGoal,
+  PUBLISHED_REFUSAL,
   type SessionBrief,
   type SessionBriefContent,
   type TreatmentPlan,
@@ -34,6 +36,8 @@ export interface FakeApiState {
   plans: TreatmentPlan[];
   goals: PlanGoal[];
   briefs: SessionBrief[];
+  /** What `POST /api/import/claude/accept` received, in order (M11). */
+  imports: ClaudeImportAcceptRequest[];
   /** The open key → JSON settings map (`GET|PUT /api/settings`). */
   settings: Record<string, unknown>;
 }
@@ -321,6 +325,8 @@ export interface FakeApiOptions {
   transcribeError?: { code: string; message: string };
   /** What `POST /api/transcribe/preview` returns while she is still speaking. */
   previewText?: string;
+  /** What `POST /api/import/claude` answers for any upload (M11). */
+  importPreview?: ClaudeImportPreview;
   /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
   suggestError?: { code: string; message: string };
   /**
@@ -343,6 +349,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
     plans: [],
     goals: [],
     briefs: [],
+    imports: [],
     settings: {},
     ...initial,
   };
@@ -568,6 +575,33 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
             ? state.patients
             : state.patients.filter((candidate) => candidate.archived_at === null),
         });
+      }
+
+      if (path === '/api/import/claude' && method === 'POST') {
+        return json(
+          options.importPreview ?? {
+            conversations: [],
+            candidates: [],
+            totals: { conversations: 0, messages: 0, skipped: 0 },
+            date_range: { from: null, to: null },
+          },
+        );
+      }
+
+      if (path === '/api/import/claude/accept' && method === 'POST') {
+        const accepted = body as unknown as ClaudeImportAcceptRequest;
+        state.imports = [...state.imports, accepted];
+        const names = new Set(
+          accepted.items.map((item) => item.patient_id ?? item.patient_name.toLowerCase()),
+        );
+        return json(
+          {
+            patients_created: accepted.items.filter((item) => item.patient_id === null).length > 0 ? 1 : 0,
+            notes_created: accepted.items.length,
+            patient_ids: [...names].map((_, index) => `01a00000-0000-7000-8000-00000000000${String(index)}`),
+          },
+          201,
+        );
       }
 
       if (path === '/api/patients' && method === 'POST') {

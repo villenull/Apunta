@@ -1,0 +1,237 @@
+[
+  {
+    "uuid": "c-0001",
+    "name": "John session notes",
+    "created_at": "2026-03-04T18:12:00Z",
+    "updated_at": "2026-03-04T18:12:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "c-0001-m0",
+        "sender": "human",
+        "text": "Session with John Smith today. He reports sleeping about six hours most nights, up from four in February. Intrusive thoughts less frequent. We agreed to stay weekly and start grounding exercises.",
+        "created_at": "2026-03-04T18:12:00Z",
+        "updated_at": "2026-03-04T18:12:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Session with John Smith today. He reports sleeping about six hours most nights, up from four in February. Intrusive thoughts less frequent. We agreed to stay weekly and start grounding exercises."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "c-0001-m1",
+        "sender": "assistant",
+        "text": "Here is a possible progress note.\n\nSubjective: John reports improved sleep...",
+        "created_at": "2026-03-04T18:12:00Z",
+        "updated_at": "2026-03-04T18:12:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Here is a possible progress note.\n\nSubjective: John reports improved sleep..."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "c-0001-m2",
+        "sender": "human",
+        "text": "Make it shorter please.",
+        "created_at": "2026-03-04T18:12:00Z",
+        "updated_at": "2026-03-04T18:12:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Make it shorter please."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "c-0001-m3",
+        "sender": "assistant",
+        "text": "Subjective: Sleep improved to ~6h. Intrusive thoughts reduced.",
+        "created_at": "2026-03-04T18:12:00Z",
+        "updated_at": "2026-03-04T18:12:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Subjective: Sleep improved to ~6h. Intrusive thoughts reduced."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  },
+  {
+    "uuid": "c-0002",
+    "name": "Jane check-in",
+    "created_at": "2026-03-11T09:40:00Z",
+    "updated_at": "2026-03-11T09:40:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "c-0002-m0",
+        "sender": "human",
+        "text": "Quick one about Jane Doe: phone check-in, she cancelled Thursday, says work is overwhelming, no risk concerns, we'll pick up next week.",
+        "created_at": "2026-03-11T09:40:00Z",
+        "updated_at": "2026-03-11T09:40:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Quick one about Jane Doe: phone check-in, she cancelled Thursday, says work is overwhelming, no risk concerns, we'll pick up next week."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "c-0002-m1",
+        "sender": "assistant",
+        "text": "Noted. Would you like this as a note?",
+        "created_at": "2026-03-11T09:40:00Z",
+        "updated_at": "2026-03-11T09:40:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Noted. Would you like this as a note?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  },
+  {
+    "uuid": "c-0003",
+    "name": "John again",
+    "created_at": "2026-03-18T18:05:00Z",
+    "updated_at": "2026-03-18T18:05:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "c-0003-m0",
+        "sender": "human",
+        "text": "John Smith, session 4. Sleep steady at six hours. Started the grounding exercises, used them twice this week. Mood brighter. Plan unchanged.",
+        "created_at": "2026-03-18T18:05:00Z",
+        "updated_at": "2026-03-18T18:05:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "John Smith, session 4. Sleep steady at six hours. Started the grounding exercises, used them twice this week. Mood brighter. Plan unchanged."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "c-0003-m1",
+        "sender": "assistant",
+        "text": "Understood.",
+        "created_at": "2026-03-18T18:05:00Z",
+        "updated_at": "2026-03-18T18:05:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Understood."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  },
+  {
+    "uuid": "c-0004",
+    "name": "Recipe ideas",
+    "created_at": "2026-03-20T20:00:00Z",
+    "updated_at": "2026-03-20T20:00:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "c-0004-m0",
+        "sender": "human",
+        "text": "What can I cook with chickpeas and spinach?",
+        "created_at": "2026-03-20T20:00:00Z",
+        "updated_at": "2026-03-20T20:00:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "What can I cook with chickpeas and spinach?"
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "c-0004-m1",
+        "sender": "assistant",
+        "text": "A quick curry works well...",
+        "created_at": "2026-03-20T20:00:00Z",
+        "updated_at": "2026-03-20T20:00:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "A quick curry works well..."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  },
+  {
+    "uuid": "c-0005",
+    "name": "Untitled",
+    "created_at": "2026-03-25T17:30:00Z",
+    "updated_at": "2026-03-25T17:30:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "c-0005-m0",
+        "sender": "human",
+        "text": "Thinking about Emily's situation, she mentioned her sister again, it keeps coming up. Emily says she feels stuck. Not sure how to approach it next time.",
+        "created_at": "2026-03-25T17:30:00Z",
+        "updated_at": "2026-03-25T17:30:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "Thinking about Emily's situation, she mentioned her sister again, it keeps coming up. Emily says she feels stuck. Not sure how to approach it next time."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      },
+      {
+        "uuid": "c-0005-m1",
+        "sender": "assistant",
+        "text": "That sounds like a recurring theme...",
+        "created_at": "2026-03-25T17:30:00Z",
+        "updated_at": "2026-03-25T17:30:00Z",
+        "content": [
+          {
+            "type": "text",
+            "text": "That sounds like a recurring theme..."
+          }
+        ],
+        "attachments": [],
+        "files": []
+      }
+    ]
+  }
+]

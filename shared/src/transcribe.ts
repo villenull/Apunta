@@ -80,6 +80,13 @@ export const WHISPER_MODEL_FILENAME = 'ggml-large-v3-turbo-q5_0.bin';
  * the preview simply runs on the note's model.
  */
 export const WHISPER_PREVIEW_MODEL_SETTING = 'whisper_preview_model';
+/**
+ * What the installer downloads for the preview, and what the server looks for
+ * in the models folder when the setting above is empty. `small` rather than
+ * `base`: on the same speech it gave the big model's words and punctuation
+ * in a third of a second, where `base` was faster and rougher (2026-09-04).
+ */
+export const WHISPER_PREVIEW_MODEL_FILENAME = 'ggml-small.bin';
 
 /**
  * Terms fed to whisper's `--prompt`. Medication and clinical names are

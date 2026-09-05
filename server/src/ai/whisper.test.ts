@@ -14,6 +14,7 @@ import type { SttEvent } from './types.js';
 import {
   buildVocabularyPrompt,
   buildWhisperArgs,
+  parseTimings,
   previewAudioContext,
   classifyFailure,
   parseProgress,
@@ -185,6 +186,27 @@ describe('buildVocabularyPrompt', () => {
     expect(prompt).not.toContain('medication-name-399');
     // Cut between terms, never inside one.
     expect(prompt.slice(0, -1).split(', ').at(-1)).toMatch(/^medication-name-\d+$/);
+  });
+});
+
+describe('parseTimings', () => {
+  it("reads whisper.cpp's closing timings and fallback counts, as numbers", () => {
+    const stderr = [
+      'whisper_print_timings:     load time =    56.31 ms',
+      'whisper_print_timings:     fallbacks =   2 p /   1 h',
+      'whisper_print_timings:   encode time =  8441.42 ms /     2 runs (  4220.71 ms per run)',
+      'whisper_print_timings:   batchd time =  1200.00 ms /   397 runs (     3.02 ms per run)',
+      'whisper_print_timings:    total time = 42743.18 ms',
+    ].join('\n');
+    expect(parseTimings(stderr)).toEqual({
+      loadMs: 56,
+      fallbacksLowProbability: 2,
+      fallbacksHighEntropy: 1,
+      encodeMs: 8441,
+      batchdMs: 1200,
+      totalMs: 42743,
+    });
+    expect(parseTimings('nothing here')).toEqual({});
   });
 });
 

@@ -69,6 +69,13 @@ WHISPER_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER
 # so this is shasum -a 1, not -a 256.
 WHISPER_SHA1="e050f7970618a659205450ad97eb95a18d69c9ee"
 WHISPER_MIB=547
+# The smaller model the live preview runs on while she is still speaking; the
+# note itself is always transcribed by the model above. Same repository and
+# publisher; SHA-1 from whisper.cpp's models/README.md.
+PREVIEW_MODEL="ggml-small.bin"
+PREVIEW_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${PREVIEW_MODEL}"
+PREVIEW_SHA1="55356645c2b361a969dfd0ef2c5a50d530afd8d5"
+PREVIEW_MIB=466
 
 # Overridable for the same reason the server honours it (M2): tests probe a
 # port that is guaranteed dead, so a live Ollama on the machine running the
@@ -387,6 +394,43 @@ else
     fi
   else
     warn "skipped. Recording will not work until this file exists."
+  fi
+fi
+
+# ===========================================================================
+step "Downloading the preview model"
+# ===========================================================================
+PREVIEW_FILE="$MODELS_DIR/$PREVIEW_MODEL"
+preview_ok() {
+  [ -f "$PREVIEW_FILE" ] || return 1
+  actual=$(shasum -a 1 "$PREVIEW_FILE" 2>/dev/null | cut -d' ' -f1)
+  [ "$actual" = "$PREVIEW_SHA1" ]
+}
+
+if [ "$SKIP_MODELS" = 1 ]; then
+  warn "skipped (--skip-models)"
+elif [ "$DRY_RUN" = 0 ] && preview_ok; then
+  ok "$PREVIEW_MODEL is already there and its checksum matches"
+else
+  note "$PREVIEW_MODEL — about ${PREVIEW_MIB} MB. It shows her words while she is"
+  note "still speaking; without it the preview runs on the big model, slower."
+  if confirm "Download it now?"; then
+    run mkdir -p "$MODELS_DIR"
+    run curl -fL --retry 3 --progress-bar -o "$PREVIEW_FILE.part" "$PREVIEW_URL" \
+      || problem "downloading the preview model failed"
+    if [ "$DRY_RUN" = 0 ] && [ -f "$PREVIEW_FILE.part" ]; then
+      actual=$(shasum -a 1 "$PREVIEW_FILE.part" | cut -d' ' -f1)
+      if [ "$actual" = "$PREVIEW_SHA1" ]; then
+        run mv "$PREVIEW_FILE.part" "$PREVIEW_FILE"
+        ok "downloaded and verified"
+      else
+        rm -f "$PREVIEW_FILE.part"
+        problem "checksum mismatch — expected $PREVIEW_SHA1, got $actual"
+        note "The download was discarded. The preview still works without it."
+      fi
+    fi
+  else
+    warn "skipped. The live preview will use the big model, which is slower to show words."
   fi
 fi
 

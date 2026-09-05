@@ -74,7 +74,7 @@ describe('the NDJSON protocol', () => {
     expect(decodeEvent('{"event":"unknown"}')).toBeNull();
   });
 
-  it('names both steps, so the window can list them before it starts', () => {
-    expect([...SETUP_STEP_IDS]).toEqual(['speech_model', 'writing_model']);
+  it('names every step, so the window can list them before it starts', () => {
+    expect([...SETUP_STEP_IDS]).toEqual(['speech_model', 'preview_model', 'writing_model']);
   });
 });

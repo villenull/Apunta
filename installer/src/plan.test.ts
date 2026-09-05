@@ -13,6 +13,7 @@ function planFor(overrides: Partial<Parameters<typeof buildPlan>[0]> = {}) {
   return buildPlan({
     memoryGib: 32,
     speechModelPresent: false,
+    previewModelPresent: false,
     writingModelPresent: false,
     freeBytes: 200 * GB,
     ...overrides,
@@ -34,7 +35,7 @@ describe('buildPlan', () => {
   });
 
   it('is ready when both models are already there', () => {
-    const plan = planFor({ speechModelPresent: true, writingModelPresent: true });
+    const plan = planFor({ speechModelPresent: true, previewModelPresent: true, writingModelPresent: true });
     expect(plan.ready).toBe(true);
     expect(plan.disk.requiredBytes).toBe(0);
     expect(plan.steps.every((step) => !step.needed)).toBe(true);

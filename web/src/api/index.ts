@@ -5,6 +5,8 @@ export { fetchHealth } from './health.js';
 
 export { fetchLicenses } from './licenses.js';
 
+export { acceptClaudeImport, previewClaudeImport } from './import.js';
+
 export {
   cancelRestore,
   createBackup,

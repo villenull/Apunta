@@ -1,6 +1,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { statSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
+import { basename } from 'node:path';
 
 import { MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
 
@@ -63,6 +64,13 @@ export interface WhisperOptions {
   readonly threads?: number;
   /** Overrides the computed timeout. Tests use it; nothing else does. */
   readonly timeoutMs?: number;
+  /**
+   * Shape-only diagnostics per transcription: seconds of audio, which model,
+   * whisper's own timings and its fallback counts. Never a word of the
+   * transcript. Found necessary on 2026-09-04, when a 47-second recording
+   * took 43 seconds to transcribe and nothing in the log could say why.
+   */
+  readonly log?: (message: string, detail: Record<string, unknown>) => void;
 }
 
 /**
@@ -165,6 +173,26 @@ export function parseTranscript(stdout: string): string {
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * whisper.cpp's closing timings on stderr, as numbers: `fallbacks = 2 p / 1 h`
+ * (temperature retries for low probability and high entropy), and the
+ * per-stage milliseconds. A recording that takes far longer than its encoder
+ * passes should is explained by these, and by nothing else in the log.
+ */
+export function parseTimings(stderr: string): Record<string, number> {
+  const timings: Record<string, number> = {};
+  const fallbacks = /fallbacks\s*=\s*(\d+)\s*p\s*\/\s*(\d+)\s*h/.exec(stderr);
+  if (fallbacks) {
+    timings['fallbacksLowProbability'] = Number(fallbacks[1]);
+    timings['fallbacksHighEntropy'] = Number(fallbacks[2]);
+  }
+  for (const stage of ['load', 'mel', 'encode', 'decode', 'batchd', 'prompt', 'total']) {
+    const match = new RegExp(`${stage} time\\s*=\\s*([\\d.]+) ms`).exec(stderr);
+    if (match) timings[`${stage}Ms`] = Math.round(Number(match[1]));
+  }
+  return timings;
 }
 
 /** stderr → progress fractions, in order, deduplicated. */
@@ -303,6 +331,13 @@ export class WhisperCppSttProvider implements SttProvider {
       // whisper usually reports 100% itself; this is for the builds that stop
       // at 90-something, so the bar never freezes just short of the end.
       if (lastFraction < 1) events.push({ type: 'progress', fraction: 1, message: 'Transcribing…' });
+      this.options.log?.('transcription finished', {
+        seconds: Math.round(request.durationSeconds),
+        preview: request.preview === true,
+        model: basename(chosen),
+        threads: args[args.indexOf('--threads') + 1] ?? null,
+        ...parseTimings(stderr),
+      });
       events.push({ type: 'transcript', text });
       events.close();
     });

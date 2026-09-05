@@ -99,6 +99,7 @@ export {
   WHISPER_BINARY_SETTING,
   WHISPER_MODEL_FILENAME,
   WHISPER_MODEL_SETTING,
+  WHISPER_PREVIEW_MODEL_FILENAME,
   WHISPER_PREVIEW_MODEL_SETTING,
   PREVIEW_FIRST_MS,
   PREVIEW_INTERVAL_MS,
@@ -370,3 +371,22 @@ export type {
 
 export { planDocumentText } from './plan-document.js';
 export type { PlanDocumentInput } from './plan-document.js';
+
+export {
+  ClaudeImportAcceptItemSchema,
+  ClaudeImportAcceptRequestSchema,
+  ClaudeImportAcceptResponseSchema,
+  ClaudeImportPreviewSchema,
+  ImportCandidateSchema,
+  ImportedConversationSchema,
+  importedNoteTitle,
+  MAX_IMPORT_BYTES,
+} from './import.js';
+export type {
+  ClaudeImportAcceptItem,
+  ClaudeImportAcceptRequest,
+  ClaudeImportAcceptResponse,
+  ClaudeImportPreview,
+  ImportCandidate,
+  ImportedConversation,
+} from './import.js';
