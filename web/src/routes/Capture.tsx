@@ -418,7 +418,18 @@ export function Capture(): React.JSX.Element {
           <div className="stack">
             {recording === 'recording' ? (
               <div className="record-ui" data-testid="record-panel">
-                <div className="record-dot recording">
+                {/*
+                  The dot is the meter: faint and still when nothing is heard,
+                  swelling and colouring with her voice — the one answer to
+                  "is this hearing me" on the timescale of her voice itself
+                  (owner, 2026-09-05; the bar it replaces looked like a
+                  stray widget).
+                */}
+                <div
+                  className="record-dot recording"
+                  data-testid="record-dot"
+                  style={{ ['--level' as string]: String(Math.min(1, level * 2.5)) }}
+                >
                   <MicIcon className="icon record-mic" />
                 </div>
                 <p className="timer" data-testid="record-timer">
@@ -427,21 +438,6 @@ export function Capture(): React.JSX.Element {
                 <p className="muted record-label" role="status">
                   Recording…
                 </p>
-
-                {/*
-                  Two answers to "is this working", on the two timescales the
-                  app can actually deliver: the meter moves with her voice
-                  immediately, and the words arrive when whisper has had time
-                  to hear them (owner-proxy, 2026-09-01).
-                */}
-                <div
-                  className="record-level"
-                  data-testid="record-level"
-                  aria-hidden="true"
-                  style={{ ['--level' as string]: String(Math.min(1, level * 2.5)) }}
-                >
-                  <span className="record-level-fill" />
-                </div>
 
                 <div className="record-preview" data-testid="record-preview">
                   {preview === '' ? (

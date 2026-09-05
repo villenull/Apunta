@@ -302,12 +302,19 @@ describe('while the recording is still going', () => {
     vi.useRealTimers();
   });
 
-  it('shows a level meter and a waiting line before any words arrive', async () => {
+  it('breathes with her voice through the dot, and says it is listening before any words arrive', async () => {
     installFakeApi({ formats: [progressNote], patients: [john] });
     renderCapture();
     await startRecording();
 
-    expect(screen.getByTestId('record-level')).toBeTruthy();
+    // Silence: the dot is at rest. A frame with sound in it moves it.
+    const dot = screen.getByTestId('record-dot');
+    expect(dot.style.getPropertyValue('--level')).toBe('0');
+    act(() => {
+      handlers.onLevel?.(0.2);
+    });
+    expect(Number(dot.style.getPropertyValue('--level'))).toBeCloseTo(0.5, 5);
+    expect(screen.queryByTestId('record-level')).toBeNull();
     // Nothing transcribed yet, so it says it is listening rather than
     // pretending to have heard something.
     expect(screen.getByTestId('record-preview').textContent).toContain('Listening');

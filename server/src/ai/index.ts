@@ -5,7 +5,12 @@ import { getSetting } from '../db/settings.js';
 import { FakeLlmProvider, FakeSttProvider } from './fake.js';
 import { defaultModelForMachine } from './model-picker.js';
 import { OllamaProvider } from './ollama.js';
-import { resolveWhisperBinary, resolveWhisperModel, resolveWhisperPreviewModel } from './stt-settings.js';
+import {
+  resolveSttLanguage,
+  resolveWhisperBinary,
+  resolveWhisperModel,
+  resolveWhisperPreviewModel,
+} from './stt-settings.js';
 import type { AiProviders } from './types.js';
 import { WhisperCppSttProvider } from './whisper.js';
 
@@ -42,6 +47,7 @@ export function createProviders(
       resolveBinary: () => resolveWhisperBinary(db, config.whisperBin),
       resolveModel: () => resolveWhisperModel(db, config.modelsDir),
       resolvePreviewModel: () => resolveWhisperPreviewModel(db, config.modelsDir),
+      resolveLanguage: () => resolveSttLanguage(db),
     }),
   };
 }

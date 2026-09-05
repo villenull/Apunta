@@ -1181,8 +1181,20 @@ select:disabled {
   color: var(--danger);
 }
 
+/*
+ * The dot is the level meter: at rest it is a faint grey disc; with her
+ * voice it swells and warms towards the recording red. `--level` is set
+ * from the audio frames themselves (Capture.tsx), so it moves on the
+ * timescale of her voice, not of whisper.
+ */
 .record-dot.recording {
-  animation: record-pulse 1.6s ease-in-out infinite;
+  --level: 0;
+  background: color-mix(in srgb, var(--danger-tint) calc(var(--level) * 100%), var(--surface-muted));
+  box-shadow: 0 0 0 1px var(--border);
+  transform: scale(calc(1 + var(--level) * 0.45));
+  transition:
+    transform 90ms ease-out,
+    background-color 140ms ease-out;
 }
 
 .record-label {
@@ -2229,30 +2241,6 @@ select:disabled {
  * it is driven straight from the audio frames rather than from anything the
  * server says.
  */
-.record-level {
-  width: 100%;
-  max-width: 260px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--border);
-  overflow: hidden;
-  margin: 10px 0 4px;
-}
-
-.record-level-fill {
-  display: block;
-  height: 100%;
-  width: 100%;
-  border-radius: 999px;
-  background: var(--accent);
-  transform: scaleX(var(--level, 0));
-  transform-origin: left center;
-  /* Fast enough to feel like her voice, slow enough not to strobe. */
-  transition: transform 90ms linear;
-}
-
-/* The provisional words. Deliberately quieter than the note itself: this is
-   not the record, and it should not look like one. */
 .record-preview {
   width: 100%;
   max-width: 460px;
@@ -2291,7 +2279,4 @@ select:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .record-level-fill {
-    transition: none;
-  }
 }

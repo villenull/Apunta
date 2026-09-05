@@ -1,9 +1,11 @@
 import {
   DEFAULT_KEEP_AUDIO,
+  DEFAULT_STT_LANGUAGE,
   DEFAULT_WHISPER_BINARY,
   KEEP_AUDIO_SETTING,
   MAX_VOCABULARY_TERM_CHARS,
   MAX_VOCABULARY_TERMS,
+  STT_LANGUAGE_SETTING,
   STT_VOCABULARY_SETTING,
   WHISPER_BINARY_SETTING,
   WHISPER_MODEL_FILENAME,
@@ -87,6 +89,14 @@ export function resolveVocabulary(db: Database): string[] {
     if (terms.length === MAX_VOCABULARY_TERMS) break;
   }
   return terms;
+}
+
+/** The language whisper expects: a short code like `en` or `es`, or `auto` to detect. */
+export function resolveSttLanguage(db: Database): string {
+  const stored = getSetting<unknown>(db, STT_LANGUAGE_SETTING);
+  return typeof stored === 'string' && /^(?:auto|[a-z]{2,3})$/.test(stored.trim().toLowerCase())
+    ? stored.trim().toLowerCase()
+    : DEFAULT_STT_LANGUAGE;
 }
 
 /** Keep the recording after it has been transcribed? Off unless she says so. */

@@ -110,6 +110,15 @@ export const MAX_STT_PROMPT_TOKENS = 200;
  * the transcript and the note both survive it, and an app whose premise is
  * that nothing leaves the machine should not leave more on it than it needs.
  */
+/**
+ * The language whisper is told to expect. Pinned rather than detected: with
+ * detection, every preview clip pays a detection pass first and a short clip
+ * can be guessed wrong. `auto` restores detection for a practice that
+ * dictates in more than one language.
+ */
+export const STT_LANGUAGE_SETTING = 'stt_language';
+export const DEFAULT_STT_LANGUAGE = 'en';
+
 export const KEEP_AUDIO_SETTING = 'keep_audio';
 export const DEFAULT_KEEP_AUDIO = false;
 
@@ -164,12 +173,11 @@ export const PREVIEW_FIRST_MS = 800;
  * between these two: whisper gets at most half the machine, and a fast
  * model or a fast Mac is rewarded with a caption that keeps up, while a
  * slow one simply sees refreshes further apart. Refreshes never overlap.
- * The floor is not lower on purpose: each refresh re-transcribes a slightly
- * different window, so a caption refreshed twice a second jitters — words
- * change under her eyes — where one refreshed every 0.7 s or so reads as
- * live (owner, 2026-09-04, on the small model).
+ * With a rolling window a floor this low made the whole caption jitter
+ * (2026-09-04); now only the uncommitted tail can change, so the floor is
+ * where the machine, not the eye, sets the limit.
  */
-export const PREVIEW_MIN_GAP_MS = 400;
+export const PREVIEW_MIN_GAP_MS = 250;
 export const PREVIEW_INTERVAL_MS = 5_000;
 /**
  * The preview grows as she speaks, and its cost does not.
@@ -184,8 +192,8 @@ export const PREVIEW_INTERVAL_MS = 5_000;
  * (2026-09-05): the whole dictation on screen, scrolling, not the last few
  * lines.
  */
-export const PREVIEW_COMMIT_AFTER_SECONDS = 20;
-export const PREVIEW_COMMIT_FORCE_SECONDS = 40;
+export const PREVIEW_COMMIT_AFTER_SECONDS = 10;
+export const PREVIEW_COMMIT_FORCE_SECONDS = 20;
 
 /**
  * After this much audio the preview slows to a walking pace.

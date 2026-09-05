@@ -82,6 +82,7 @@ export type { CreateTranscriptInput, Transcript, TranscriptSource } from './tran
 
 export {
   DEFAULT_KEEP_AUDIO,
+  DEFAULT_STT_LANGUAGE,
   DEFAULT_WHISPER_BINARY,
   KEEP_AUDIO_SETTING,
   MAX_AUDIO_BYTES,
@@ -91,6 +92,7 @@ export {
   MAX_VOCABULARY_TERMS,
   MIN_RECORDING_SECONDS,
   STT_ERROR_CODES,
+  STT_LANGUAGE_SETTING,
   STT_VOCABULARY_SETTING,
   TRANSCRIBE_EVENT_NAMES,
   TranscribeFieldsSchema,

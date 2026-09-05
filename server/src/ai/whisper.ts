@@ -3,7 +3,7 @@ import { statSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { basename } from 'node:path';
 
-import { MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
+import { DEFAULT_STT_LANGUAGE, MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
 
 import { aiError } from './errors.js';
 import { approximateTokens } from './prompts.js';
@@ -54,6 +54,8 @@ export interface WhisperOptions {
    * errors.
    */
   readonly resolvePreviewModel?: () => string | null;
+  /** `en`, `es`… or `auto`. Read per call. Pinned by default: detection costs every clip a pass. */
+  readonly resolveLanguage?: () => string;
   /** Injected by tests; production always uses `node:child_process`. */
   readonly spawnImpl?: Spawn;
   /**
@@ -94,12 +96,22 @@ export function buildWhisperArgs(input: {
   readonly threads?: number | undefined;
   /** Only the live preview sets this; see `previewAudioContext`. */
   readonly audioContext?: number | undefined;
+  /** A language code, or `auto` to let whisper detect it per clip. */
+  readonly language?: string | undefined;
+  /**
+   * Greedy decoding — one beam, one candidate — for the preview only. The
+   * note's transcript keeps whisper's beam search; a rough caption does not
+   * need it and reads sooner without it.
+   */
+  readonly greedy?: boolean | undefined;
 }): string[] {
   const args = ['--model', input.modelPath, '--file', input.wavPath, '--print-progress'];
   const prompt = (input.prompt ?? '').trim();
   if (prompt !== '') args.push('--prompt', prompt);
   if (input.threads !== undefined) args.push('--threads', String(input.threads));
   if (input.audioContext !== undefined) args.push('--audio-ctx', String(input.audioContext));
+  if (input.language !== undefined) args.push('--language', input.language);
+  if (input.greedy === true) args.push('--beam-size', '1', '--best-of', '1');
   return args;
 }
 
@@ -292,7 +304,10 @@ export class WhisperCppSttProvider implements SttProvider {
       wavPath: request.wavPath,
       prompt,
       threads: this.options.threads ?? availableParallelism(),
-      ...(request.preview === true ? { audioContext: previewAudioContext(request.durationSeconds) } : {}),
+      language: this.options.resolveLanguage?.() ?? DEFAULT_STT_LANGUAGE,
+      ...(request.preview === true
+        ? { audioContext: previewAudioContext(request.durationSeconds), greedy: true }
+        : {}),
     });
     const timeoutMs = this.options.timeoutMs ?? timeoutFor(request.durationSeconds);
 

@@ -127,6 +127,21 @@ describe('previewAudioContext', () => {
 });
 
 describe('buildWhisperArgs', () => {
+  it('pins the language, and decodes greedily only for a preview', () => {
+    const preview = buildWhisperArgs({
+      modelPath: '/m.bin',
+      wavPath: '/a.wav',
+      language: 'en',
+      greedy: true,
+    });
+    expect(preview[preview.indexOf('--language') + 1]).toBe('en');
+    expect(preview[preview.indexOf('--beam-size') + 1]).toBe('1');
+    expect(preview[preview.indexOf('--best-of') + 1]).toBe('1');
+    const note = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav', language: 'auto' });
+    expect(note[note.indexOf('--language') + 1]).toBe('auto');
+    expect(note).not.toContain('--beam-size');
+  });
+
   it('passes the thread count, and a fitted audio context only when given one', () => {
     const args = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav', threads: 8, audioContext: 320 });
     expect(args[args.indexOf('--threads') + 1]).toBe('8');
@@ -316,6 +331,10 @@ describe('WhisperCppSttProvider.transcribe', () => {
       call?.args[call.args.indexOf('--model') + 1];
     expect(modelOf(calls[0])).toBe(small);
     expect(modelOf(calls[1])).toBe(modelPath);
+    // The preview decodes greedily and in the pinned language; the note keeps beam search.
+    expect(calls[0]?.args).toContain('--beam-size');
+    expect(calls[1]?.args).not.toContain('--beam-size');
+    expect(calls[1]?.args).toContain('--language');
   });
 
   it('falls back to the main model, silently, when the preview model is not there', async () => {
