@@ -68,7 +68,7 @@ describe('applyRetractions', () => {
   });
 
   it('ignores a quote that sits too far before the marker', () => {
-    // Twelve words is the limit; "He did the thought records" ends 29 words before "Actually, no".
+    // Sixteen words is the limit; "He did the thought records" ends 29 words before "Actually, no".
     const { applied } = applyRetractions(SLEEP, [
       { withdrawn: 'He did the thought records', replacement: '' },
     ]);

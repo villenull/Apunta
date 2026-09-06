@@ -183,14 +183,25 @@ export function retractionReminderFor(source: string): string[] {
 /**
  * The quoting call that runs before a draft when the transcript has a spoken
  * retraction in it (`retractions.ts`). The model quotes; the server decides
- * what to cut. Measured on seven live dictations: it quoted the retracted
- * claim verbatim every time, and also listed several things she never took
- * back — which is why the server's checks exist, and why this prompt does not
- * try to talk it out of that.
+ * what to cut.
+ *
+ * Measured on seven live dictations with the provider's own decoding. Without
+ * the examples the model quoted the retracted claim on four of them and, on
+ * the others, quoted the *replacement* as the thing withdrawn or the marker
+ * itself; with one example (a corrected number) it quoted tight spans but lost
+ * the withdrawn-statement case ("…scratch that, that was last session"). With
+ * one example of each kind it found all seven, quoting the number rather than
+ * the sentence around it. It still lists things she never took back — the
+ * homework, the aside — every time; that is what the server's checks are for,
+ * and an example cannot leak into a note because only a verbatim quote is
+ * ever cut.
  */
 export function buildExtractRetractionsPrompt(transcript: string): ChatPrompt {
   const system = [
     'A therapist dictated her session notes. As she spoke she sometimes took something back, with phrases like "scratch that", "actually no", "no wait", "hold on", "that was last session" or "start over". List every such correction. For each one, quote the exact words she took back — the statement the correction replaces, copied verbatim from the dictation, usually just before the phrase — and the exact words that replaced it, also verbatim, or an empty string if she simply withdrew it. Quote; never paraphrase. If she took nothing back, return an empty list.',
+    '',
+    'Example dictation: "She has been to the gym twice this week, no wait, three times. Her sister visited on Sunday. She said the move is going badly, scratch that, that was her brother."',
+    'Example answer: {"corrections": [{"withdrawn": "twice this week", "replacement": "three times"}, {"withdrawn": "the move is going badly", "replacement": ""}]}',
     '',
     '## Output format',
     '',

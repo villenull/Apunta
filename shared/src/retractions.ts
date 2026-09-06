@@ -69,12 +69,18 @@ export interface AppliedRetraction {
 }
 
 /**
- * A quote counts only if it ends this close to the marker, in words. The
- * model lists things she never took back — the risk statement, the homework —
- * and on seven live dictations every one of those sat further back than this
- * while every true retraction sat at zero to ten.
+ * A quote counts only if it ends this close to the marker, in words.
+ *
+ * Nearest wins between quotes, so this limit matters only when the model has
+ * not quoted the true retraction: it is what stops a listing from further
+ * back — the risk statement, the homework — being cut in its place. On the
+ * live dictations the true quote ended zero to fourteen words before the
+ * marker (fourteen: "…four out of seven days of the week or something like
+ * that. And the other thing that we picked up was actually, scratch that");
+ * the false listings sat at eight, fourteen, fifteen, twenty-four and
+ * thirty-seven, and the nearest-wins rule, not this limit, set them aside.
  */
-export const MAX_RETRACTION_GAP_WORDS = 12;
+export const MAX_RETRACTION_GAP_WORDS = 16;
 
 /** Longer than this is a paragraph, not a retracted claim. */
 export const MAX_WITHDRAWN_WORDS = 40;

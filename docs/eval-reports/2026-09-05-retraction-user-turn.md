@@ -109,7 +109,9 @@ the three identical fixture-20 notes above already showed.
   the "corrected" sentence on one, kept the retracted number on the other,
   and let an aside into the note and the worked example's sentence into the
   plan on the first. Not shipped. The case stays open; the likely answer is
-  not another sentence.
+  not another sentence. **Closed the next day, and it was not a sentence:**
+  see `2026-09-06-retraction-pass.md` — the retraction is cut out of the
+  transcript by the server before the draft, on a quote the model supplies.
 - It does not touch retractions said in ways the marker list does not know.
   A miss costs one sentence of behaviour the model already mostly has; a
   false positive perturbs a whole note, so the list stays narrow. Add to it

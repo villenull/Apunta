@@ -15,6 +15,11 @@ Claude`, proposals only, nothing written unreviewed — against an *inferred*
 export schema. Running it on her real export stays gated on the
 confidentiality decision; run `npm run probe:claude` on the real export
 first to check the schema.
+**Spoken retractions** ("four hours, scratch that, six") are cut out of a
+transcript before drafting by the server, on a quote the model supplies and
+only where the transcript bears it out (`server/src/ai/retractions.ts`,
+`docs/eval-reports/2026-09-06-retraction-pass.md`); what was cut is listed
+under the first-pass message in the note's chat.
 
 ## Hard rules
 

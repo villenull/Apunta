@@ -163,6 +163,9 @@ describe('buildExtractRetractionsPrompt', () => {
     expect(prompt.user).toBe(transcript);
     expect(prompt.system).toContain('copied verbatim');
     expect(prompt.system).toContain('{"corrections": [{"withdrawn": "...", "replacement": "..."}]}');
+    // One example of each kind — a corrected number and a withdrawn statement.
+    expect(prompt.system).toContain('{"withdrawn": "twice this week", "replacement": "three times"}');
+    expect(prompt.system).toContain('{"withdrawn": "the move is going badly", "replacement": ""}');
   });
 });
 
