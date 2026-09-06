@@ -99,9 +99,13 @@ export function buildWhisperArgs(input: {
   /** A language code, or `auto` to let whisper detect it per clip. */
   readonly language?: string | undefined;
   /**
-   * Greedy decoding — one beam, one candidate — for the preview only. The
-   * note's transcript keeps whisper's beam search; a rough caption does not
-   * need it and reads sooner without it.
+   * Greedy decoding — one beam, one candidate, no temperature fallback — for
+   * the preview only. The note's transcript keeps whisper's beam search and
+   * its retries; a rough caption does not need them and reads sooner without
+   * them. The fallback was measured on a live dictation: a three-second clip
+   * right after a commit failed whisper's probability check, ran five hotter
+   * retries and took 3.9 s instead of 0.3 s — and what a hot retry produces
+   * on a clip that short is noise, shown until the next refresh replaced it.
    */
   readonly greedy?: boolean | undefined;
 }): string[] {
@@ -111,7 +115,7 @@ export function buildWhisperArgs(input: {
   if (input.threads !== undefined) args.push('--threads', String(input.threads));
   if (input.audioContext !== undefined) args.push('--audio-ctx', String(input.audioContext));
   if (input.language !== undefined) args.push('--language', input.language);
-  if (input.greedy === true) args.push('--beam-size', '1', '--best-of', '1');
+  if (input.greedy === true) args.push('--beam-size', '1', '--best-of', '1', '--no-fallback');
   return args;
 }
 

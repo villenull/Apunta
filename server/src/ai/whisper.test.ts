@@ -137,9 +137,11 @@ describe('buildWhisperArgs', () => {
     expect(preview[preview.indexOf('--language') + 1]).toBe('en');
     expect(preview[preview.indexOf('--beam-size') + 1]).toBe('1');
     expect(preview[preview.indexOf('--best-of') + 1]).toBe('1');
+    expect(preview).toContain('--no-fallback');
     const note = buildWhisperArgs({ modelPath: '/m.bin', wavPath: '/a.wav', language: 'auto' });
     expect(note[note.indexOf('--language') + 1]).toBe('auto');
     expect(note).not.toContain('--beam-size');
+    expect(note).not.toContain('--no-fallback');
   });
 
   it('passes the thread count, and a fitted audio context only when given one', () => {
