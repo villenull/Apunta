@@ -1,6 +1,7 @@
 import {
   FIRST_PASS_MESSAGE,
   sectionsToText,
+  type AppliedRetraction,
   type Note,
   type NoteFormat,
   type Sections,
@@ -9,6 +10,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
+import { retractionNotice } from '../ai/retractions.js';
 import type { AiProviders, DraftSource, LlmStats } from '../ai/types.js';
 import { createChatMessage } from '../db/chat-messages.js';
 import { createNote } from '../db/notes.js';
@@ -29,6 +31,8 @@ export interface DraftOutcome {
   /** The validated note, or null when the provider produced nothing usable. */
   readonly sections: Sections | null;
   readonly stats: LlmStats | null;
+  /** Spoken retractions the provider cut from the transcript before drafting. */
+  readonly retractions: readonly AppliedRetraction[];
   /** Set when the draft failed; the `error` event has already been sent. */
   readonly failure: AiError | null;
 }
@@ -51,6 +55,7 @@ export async function streamDraft(params: {
 
   let sections: Sections | null = null;
   let stats: LlmStats | null = null;
+  let retractions: readonly AppliedRetraction[] = [];
 
   try {
     const events = providers.llm.generateNote({
@@ -74,26 +79,30 @@ export async function streamDraft(params: {
       } else if (event.type === 'sections') {
         sections = event.sections;
         stats = event.stats;
+      } else if (event.type === 'retractions') {
+        retractions = event.applied;
+        // Counts only: what was cut is patient material.
+        request.log.info({ applied: event.applied.length, offered: event.offered }, 'retractions applied');
       }
     }
   } catch (error) {
     const failure = toAiError(error);
     logFailure(request, failure, 'note drafting failed');
     stream.send('error', { code: failure.code, message: failure.message });
-    return { sections: null, stats: null, failure };
+    return { sections: null, stats: null, retractions: [], failure };
   }
 
-  if (stream.closed) return { sections, stats, failure: null };
+  if (stream.closed) return { sections, stats, retractions, failure: null };
 
   if (sections === null) {
     const failure = aiError('empty_response', 'the provider finished without producing a note');
     logFailure(request, failure, 'note drafting failed');
     stream.send('error', { code: failure.code, message: failure.message });
-    return { sections: null, stats: null, failure };
+    return { sections: null, stats: null, retractions: [], failure };
   }
 
   if (stats) logStats(request, stats);
-  return { sections, stats, failure: null };
+  return { sections, stats, retractions, failure: null };
 }
 
 /** One recording, as it should be recorded against the note it produced. */
@@ -132,6 +141,7 @@ export function persistDraft(
   input: PersistDraftInput,
   format: NoteFormat,
   sections: Sections,
+  retractions: readonly AppliedRetraction[] = [],
 ): Note {
   const note = createNote(db, {
     patient_id: input.patient_id,
@@ -156,10 +166,17 @@ export function persistDraft(
     });
   }
 
+  // What was cut before drafting is told to her here, in her own words, where
+  // the note's history lives — and stripped from what the model sees of that
+  // history (`chat.ts`), so a retracted claim cannot come back through it.
+  const opening =
+    retractions.length === 0
+      ? FIRST_PASS_MESSAGE
+      : `${FIRST_PASS_MESSAGE}\n\n${retractionNotice(retractions)}`;
   createChatMessage(db, {
     note_id: note.id,
     role: 'assistant',
-    text: FIRST_PASS_MESSAGE,
+    text: opening,
     ref_quote: null,
   });
   return note;

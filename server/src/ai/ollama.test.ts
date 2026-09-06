@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { AiError } from './errors.js';
 import { NUM_CTX, OllamaProvider } from './ollama.js';
+import { RETRACTION_REMINDER } from './prompts.js';
 import type { LlmEvent } from './types.js';
 
 /**
@@ -552,5 +553,81 @@ describe('OllamaProvider.describe', () => {
     await expect(
       new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).describe(),
     ).resolves.toMatchObject({ reachable: false, modelPresent: false });
+  });
+});
+
+describe('OllamaProvider.generateNote — spoken retractions', () => {
+  const SPOKEN =
+    "John says he's sleeping about four hours a night. Scratch that. It's more like six hours now. Mood is better.";
+  const CORRECTIONS = {
+    corrections: [
+      { withdrawn: 'sleeping about four hours a night', replacement: "It's more like six hours now" },
+      // Listed, never taken back: the server must leave it alone.
+      { withdrawn: 'Mood is better', replacement: '' },
+    ],
+  };
+  const request = { instructions: '', formatName: 'Progress note', sections: SOAP, transcript: SPOKEN };
+
+  function draftingUserTurn(calls: ChatCall[]): string {
+    const body = calls[1]?.body as { messages: { role: string; content: string }[] } | undefined;
+    return body?.messages[1]?.content ?? '';
+  }
+
+  it('asks the model to quote first, cuts only what the transcript bears out, and drafts from the rest', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [{ content: JSON.stringify(CORRECTIONS) }, { content: JSON.stringify(GOOD) }],
+    });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
+    );
+
+    expect(calls).toHaveLength(2);
+    expect(calls[0]?.body).toMatchObject({ stream: false });
+    expect((calls[0]?.body as { format: { properties: object } }).format.properties).toHaveProperty(
+      'corrections',
+    );
+
+    const user = draftingUserTurn(calls);
+    expect(user).toContain("It's more like six hours now");
+    expect(user).toContain('Mood is better');
+    expect(user).not.toContain('four hours');
+    expect(user).not.toContain('Scratch that');
+    // Nothing taken back is left in the source, so the prompt is the plain one.
+    expect(user).not.toContain(RETRACTION_REMINDER);
+
+    expect(events.some((event) => event.type === 'status' && event.stage === 'correcting')).toBe(true);
+    expect(events.find((event) => event.type === 'retractions')).toMatchObject({
+      applied: [
+        { withdrawn: 'sleeping about four hours a night', replacement: "It's more like six hours now" },
+      ],
+      offered: 2,
+    });
+    expect(events.at(-1)?.type).toBe('sections');
+  });
+
+  it('drafts from the transcript as transcribed, reminder beside it, when the quoting call answers nonsense', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [{ content: 'not json' }, { content: JSON.stringify(GOOD) }],
+    });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
+    );
+
+    const user = draftingUserTurn(calls);
+    expect(user).toContain('four hours');
+    expect(user).toContain(RETRACTION_REMINDER);
+    expect(events.find((event) => event.type === 'retractions')).toMatchObject({ applied: [], offered: 0 });
+    expect(events.at(-1)?.type).toBe('sections');
+  });
+
+  it('makes no quoting call for a transcript with nothing taken back', async () => {
+    const { fetchImpl, calls } = stub({ chats: [{ content: JSON.stringify(GOOD) }] });
+    await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote({
+        ...request,
+        transcript: 'John slept six hours a night this week.',
+      }),
+    );
+    expect(calls).toHaveLength(1);
   });
 });

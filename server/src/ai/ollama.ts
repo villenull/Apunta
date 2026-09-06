@@ -10,6 +10,8 @@ import {
   PlanSuggestionSchema,
   planSuggestionJsonSchema,
   refineJsonSchema,
+  RetractionCorrectionsSchema,
+  retractionCorrectionsJsonSchema,
   sectionsJsonSchema,
   type BriefComposition,
   type DetectedFormat,
@@ -18,6 +20,7 @@ import {
   type NoteSummary,
   type PlanSuggestion,
   type RefineResult,
+  type RetractionCorrection,
   type Sections,
 } from '@apunta/shared';
 import type { z } from 'zod';
@@ -31,6 +34,7 @@ import {
   approximateTokens,
   buildComposeBriefPrompt,
   buildDetectFormatPrompt,
+  buildExtractRetractionsPrompt,
   buildGeneratePrompt,
   buildRefinePrompt,
   buildSuggestPlanPrompt,
@@ -38,6 +42,7 @@ import {
   orderSections,
   type ChatPrompt,
 } from './prompts.js';
+import { applyRetractions, hasRetraction } from './retractions.js';
 import type {
   ComposeBriefRequest,
   DetectFormatRequest,
@@ -236,7 +241,19 @@ export class OllamaProvider implements LlmProvider {
     yield status('connecting', 'Thinking…');
     await this.requireUsableModel(model);
 
-    const prompt = buildGeneratePrompt(request);
+    // A spoken retraction is cut out of the transcript before the drafting
+    // model sees it (`retractions.ts`). The model quotes, the server cuts.
+    let drafted = request;
+    const transcript = request.transcript ?? '';
+    if (hasRetraction(transcript)) {
+      yield status('correcting', 'Applying your corrections…');
+      const corrections = await this.extractRetractions(model, transcript);
+      const outcome = applyRetractions(transcript, corrections);
+      yield { type: 'retractions', applied: outcome.applied, offered: corrections.length };
+      drafted = { ...request, transcript: outcome.text };
+    }
+
+    const prompt = buildGeneratePrompt(drafted);
     this.assertFits(prompt.system, prompt.user);
 
     const schema = buildSectionsSchema(request.sections);
@@ -428,6 +445,40 @@ export class OllamaProvider implements LlmProvider {
       throw aiError('invalid_output', describeShapeMismatch(parsed, ['name', 'sections']));
     }
     return validated.data;
+  }
+
+  /**
+   * The quoting call before a draft with a retraction in it.
+   *
+   * Not on the ladder, and never fatal on content: an answer that is not the
+   * shape asked for means the draft goes ahead from the transcript as
+   * transcribed, with the reminder beside it as before. A transport failure
+   * propagates — the draft that follows would hit the same one.
+   */
+  private async extractRetractions(model: string, transcript: string): Promise<RetractionCorrection[]> {
+    const prompt = buildExtractRetractionsPrompt(transcript);
+    this.assertFits(prompt.system, prompt.user);
+
+    const think = (await this.supportsThinking(model)) ? false : undefined;
+    const response = await this.postChat(model, {
+      messages: [
+        { role: 'system', content: prompt.system },
+        { role: 'user', content: prompt.user },
+      ],
+      format: retractionCorrectionsJsonSchema(),
+      think,
+      stream: false,
+      seed: 0,
+    });
+
+    try {
+      const chunk = (await response.json()) as ChatChunk;
+      const { text } = stripCodeFence(chunk.message?.content ?? '');
+      const validated = RetractionCorrectionsSchema.safeParse(JSON.parse(text));
+      return validated.success ? validated.data.corrections : [];
+    } catch {
+      return [];
+    }
   }
 
   // --- the retry ladder --------------------------------------------------

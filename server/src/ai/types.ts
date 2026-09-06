@@ -5,6 +5,7 @@ import type {
   NoteSummary,
   PlanSuggestion,
   Sections,
+  AppliedRetraction,
 } from '@apunta/shared';
 
 /**
@@ -78,6 +79,11 @@ export type LlmEvent =
    */
   | { readonly type: 'token'; readonly section: string; readonly text: string }
   | { readonly type: 'sections'; readonly sections: Sections; readonly stats: LlmStats }
+  /**
+   * Spoken retractions the provider cut from the transcript before drafting
+   * (`retractions.ts`); `offered` is how many the model listed, for the log.
+   */
+  | { readonly type: 'retractions'; readonly applied: readonly AppliedRetraction[]; readonly offered: number }
   | {
       readonly type: 'refined';
       readonly reply: string;

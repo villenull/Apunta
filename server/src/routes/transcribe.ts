@@ -154,7 +154,7 @@ export function registerTranscribeRoute(
       const transcript = await runTranscription(providers, db, stream, upload.path, wav);
       if (transcript === null || stream.closed) return;
 
-      const { sections } = await streamDraft({
+      const { sections, retractions } = await streamDraft({
         providers,
         format,
         source: { typedNotes: input.typed_notes, transcript },
@@ -185,6 +185,7 @@ export function registerTranscribeRoute(
         },
         format,
         sections,
+        retractions,
       );
       audioPath = null;
 

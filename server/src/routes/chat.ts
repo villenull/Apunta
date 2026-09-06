@@ -16,6 +16,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { AiError, aiError } from '../ai/errors.js';
 import { FACT_NOTICE_OPENING, factNotice, guardDroppedFacts } from '../ai/fact-guard.js';
 import { GUARD_NOTICE_OPENING, guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
+import { RETRACTION_NOTICE_OPENING } from '../ai/retractions.js';
 import type { AiProviders, ChatTurn, LlmStats } from '../ai/types.js';
 import { createChatMessage, listChatMessagesForNote } from '../db/chat-messages.js';
 import { getFormat } from '../db/formats.js';
@@ -242,9 +243,12 @@ export const UNCHANGED_NOTICE = 'Apunta did not change the note: the revision ca
  * sentence — begins with one of these after a blank line. The thread shows
  * them to her; the model never sees them (see `recentTurns`).
  */
-const SERVER_SENTENCES = [GUARD_NOTICE_OPENING, FACT_NOTICE_OPENING, UNCHANGED_NOTICE].map((sentence) =>
-  sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-);
+const SERVER_SENTENCES = [
+  GUARD_NOTICE_OPENING,
+  FACT_NOTICE_OPENING,
+  UNCHANGED_NOTICE,
+  RETRACTION_NOTICE_OPENING,
+].map((sentence) => sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 const SERVER_SENTENCE_START = new RegExp(`\\n\\n(?=(?:${SERVER_SENTENCES.join('|')}))`);
 
 /**

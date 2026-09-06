@@ -34,7 +34,7 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
 
     const stream = openSse(reply);
 
-    const { sections } = await streamDraft({
+    const { sections, retractions } = await streamDraft({
       providers,
       format,
       source: { typedNotes: input.typed_notes, transcript: input.transcript },
@@ -48,7 +48,7 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
     }
 
     stream.send('status', { stage: 'saving', message: 'Saving the draft…' });
-    const note = persistDraft(db, input, format, sections);
+    const note = persistDraft(db, input, format, sections, retractions);
 
     stream.send('note', {
       note,

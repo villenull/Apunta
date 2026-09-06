@@ -11,6 +11,7 @@ import {
 } from '@apunta/shared';
 
 import { instructionsFor } from './default-instructions.js';
+import { hasRetraction } from './retractions.js';
 import type {
   ComposeBriefRequest,
   DetectFormatRequest,
@@ -175,12 +176,27 @@ export function buildGeneratePrompt(request: GenerateNoteRequest): ChatPrompt {
 export const RETRACTION_REMINDER =
   'Where she takes something back as she speaks — "scratch that", "actually no", "that was last session" — the note carries only what replaced it. The earlier version does not appear, and the note never says that anyone corrected anything.';
 
-/** The ways a retraction is said aloud. Deliberately narrow: a miss costs one sentence, a false positive perturbs a whole note. */
-const RETRACTION_MARKERS =
-  /\b(?:scratch that|strike that|forget that|never ?mind|actually,? no\b|no,? wait\b|wait,? no\b|that'?s wrong|that was last (?:session|week|time)|start (?:over|again)|let me start again)\b/i;
-
 export function retractionReminderFor(source: string): string[] {
-  return RETRACTION_MARKERS.test(source) ? [RETRACTION_REMINDER] : [];
+  return hasRetraction(source) ? [RETRACTION_REMINDER] : [];
+}
+
+/**
+ * The quoting call that runs before a draft when the transcript has a spoken
+ * retraction in it (`retractions.ts`). The model quotes; the server decides
+ * what to cut. Measured on seven live dictations: it quoted the retracted
+ * claim verbatim every time, and also listed several things she never took
+ * back — which is why the server's checks exist, and why this prompt does not
+ * try to talk it out of that.
+ */
+export function buildExtractRetractionsPrompt(transcript: string): ChatPrompt {
+  const system = [
+    'A therapist dictated her session notes. As she spoke she sometimes took something back, with phrases like "scratch that", "actually no", "no wait", "hold on", "that was last session" or "start over". List every such correction. For each one, quote the exact words she took back — the statement the correction replaces, copied verbatim from the dictation, usually just before the phrase — and the exact words that replaced it, also verbatim, or an empty string if she simply withdrew it. Quote; never paraphrase. If she took nothing back, return an empty list.',
+    '',
+    '## Output format',
+    '',
+    'Reply with a single JSON object of the form {"corrections": [{"withdrawn": "...", "replacement": "..."}]} and nothing else.',
+  ].join('\n');
+  return { system, user: transcript };
 }
 
 /**

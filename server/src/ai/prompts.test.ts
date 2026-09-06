@@ -24,6 +24,7 @@ import {
   approximateTokens,
   buildComposeBriefPrompt,
   buildDetectFormatPrompt,
+  buildExtractRetractionsPrompt,
   buildGeneratePrompt,
   buildRefinePrompt,
   buildSuggestPlanPrompt,
@@ -152,6 +153,16 @@ describe('the retraction reminder', () => {
     expect(prompt.user).not.toContain(RETRACTION_REMINDER);
     expect(retractionReminderFor('no correction here, he never minds the noise')).toEqual([]);
     expect(retractionReminderFor('four out of seven, no wait, two out of seven')).toHaveLength(1);
+  });
+});
+
+describe('buildExtractRetractionsPrompt', () => {
+  it('asks for verbatim quotes, restates the shape, and passes the transcript through untouched', () => {
+    const transcript = 'Four hours, scratch that, six hours.';
+    const prompt = buildExtractRetractionsPrompt(transcript);
+    expect(prompt.user).toBe(transcript);
+    expect(prompt.system).toContain('copied verbatim');
+    expect(prompt.system).toContain('{"corrections": [{"withdrawn": "...", "replacement": "..."}]}');
   });
 });
 

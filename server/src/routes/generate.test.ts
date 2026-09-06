@@ -1,11 +1,12 @@
 import { listTranscriptsForNote } from '../db/transcripts.js';
-import type { Note, NoteFormat, Patient } from '@apunta/shared';
+import { FIRST_PASS_MESSAGE, type Note, type NoteFormat, type Patient } from '@apunta/shared';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../app.js';
 import { OllamaProvider } from '../ai/ollama.js';
 import { FakeSttProvider } from '../ai/fake.js';
+import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { listNotesForPatient } from '../db/notes.js';
 import { createTestApp, seedFormat, seedPatient, type TestApp } from '../test/harness.js';
 
@@ -233,6 +234,33 @@ describe('POST /api/generate — the local AI is not running', () => {
     } finally {
       await app.close();
     }
+  });
+});
+
+describe('POST /api/generate — spoken retractions', () => {
+  it('cuts what she took back before drafting, and tells her so in the opening message', async () => {
+    const { events } = await generate(harness.app, {
+      patient_id: patient.id,
+      format_id: format.id,
+      transcript:
+        'Okay, John Smith today. He walked to the shop twice this week, scratch that, three times this week. His sister visited.',
+    });
+
+    expect(events.some((event) => event.name === 'status' && event.data['stage'] === 'correcting')).toBe(
+      true,
+    );
+    const note = events.at(-1)?.data['note'] as Note;
+    expect(note.content).toMatch(/three times this week/i);
+    expect(note.content).not.toContain('twice');
+
+    const [opening] = listChatMessagesForNote(harness.db, note.id);
+    expect(opening?.role).toBe('assistant');
+    expect(opening?.text).toContain(FIRST_PASS_MESSAGE);
+    expect(opening?.text).toContain(
+      'left out “He walked to the shop twice this week” in favour of “three times this week”',
+    );
+    // The transcript row keeps her words as transcribed, retraction and all.
+    expect(listTranscriptsForNote(harness.db, note.id)[0]?.raw_text).toContain('scratch that');
   });
 });
 

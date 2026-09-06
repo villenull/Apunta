@@ -346,3 +346,26 @@ describe('the faked M9 stages', () => {
     expect(brief.lines[0]?.text).toBe('Sleeping better.');
   });
 });
+
+describe('FakeLlmProvider.generateNote — spoken retractions', () => {
+  it('cuts what she took back before drafting, on the same checks as the real provider', async () => {
+    const events = await drain(
+      provider.generateNote({
+        instructions: '',
+        formatName: 'Progress note',
+        sections: SOAP,
+        transcript:
+          'Okay, John Smith today. He walked to the shop twice this week, scratch that, three times this week. His sister visited.',
+      }),
+    );
+    expect(events.some((event) => event.type === 'status' && event.stage === 'correcting')).toBe(true);
+    expect(events.find((event) => event.type === 'retractions')).toMatchObject({
+      applied: [{ withdrawn: 'He walked to the shop twice this week', replacement: 'three times this week' }],
+    });
+    const subjective = finalSections(events)['Subjective'] ?? '';
+    expect(subjective).toMatch(/three times this week/i);
+    expect(subjective).toContain('His sister visited');
+    expect(subjective).not.toContain('twice');
+    expect(subjective).not.toContain('scratch that');
+  });
+});

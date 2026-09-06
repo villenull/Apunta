@@ -373,6 +373,15 @@ export type {
   VerifiedRestoreResponse,
 } from './backup.js';
 
+export {
+  MAX_RETRACTION_GAP_WORDS,
+  MAX_WITHDRAWN_WORDS,
+  RetractionCorrectionSchema,
+  RetractionCorrectionsSchema,
+  retractionCorrectionsJsonSchema,
+} from './retractions.js';
+export type { AppliedRetraction, RetractionCorrection, RetractionCorrections } from './retractions.js';
+
 export { planDocumentText } from './plan-document.js';
 export type { PlanDocumentInput } from './plan-document.js';
 

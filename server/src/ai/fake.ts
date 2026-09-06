@@ -7,12 +7,14 @@ import {
   type DetectedFormat,
   type NoteSummary,
   type PlanSuggestion,
+  type RetractionCorrection,
   type Sections,
   type SuggestedGoal,
 } from '@apunta/shared';
 
 import { JsonStringStreamDecoder } from './json-stream.js';
 import { orderSections } from './prompts.js';
+import { applyRetractions, hasRetraction, retractionMarkerMatches } from './retractions.js';
 import type {
   ComposeBriefRequest,
   DetectFormatRequest,
@@ -146,6 +148,27 @@ export function fakeSectionsFor(request: GenerateNoteRequest): Sections {
   return sections;
 }
 
+/**
+ * The fake's answer to the quoting call: the clause before each marker, back
+ * to the previous sentence end or comma, and the clause after it. Enough to
+ * exercise the server's checks and the notice, and deterministic on its input.
+ */
+export function fakeExtractRetractions(transcript: string): RetractionCorrection[] {
+  const corrections: RetractionCorrection[] = [];
+  for (const marker of retractionMarkerMatches(transcript)) {
+    const before = transcript.slice(0, marker.index).replace(/[\s,.;:]+$/, '');
+    const withdrawn =
+      before
+        .split(/[.!?,;:]\s*/)
+        .pop()
+        ?.trim() ?? '';
+    const after = transcript.slice(marker.index + marker.text.length);
+    const replacement = (/^[\s,.;:]*([^.!?]*)/.exec(after)?.[1] ?? '').trim();
+    if (withdrawn !== '') corrections.push({ withdrawn, replacement });
+  }
+  return corrections;
+}
+
 /** JSON, split so each chunk ends after a word — what a token stream looks like. */
 function wordChunks(text: string): string[] {
   return text.match(/[^ ]*[ ]|[^ ]+/g) ?? [text];
@@ -168,7 +191,17 @@ export class FakeLlmProvider implements LlmProvider {
   }
 
   async *generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
-    const sections = orderSections(fakeSectionsFor(request), request.sections);
+    // The same pass the real provider runs, on the same server-side checks.
+    let drafted = request;
+    const transcript = request.transcript ?? '';
+    if (hasRetraction(transcript)) {
+      yield { type: 'status', stage: 'correcting', message: 'Applying your corrections…' };
+      const corrections = fakeExtractRetractions(transcript);
+      const outcome = applyRetractions(transcript, corrections);
+      yield { type: 'retractions', applied: outcome.applied, offered: corrections.length };
+      drafted = { ...request, transcript: outcome.text };
+    }
+    const sections = orderSections(fakeSectionsFor(drafted), request.sections);
     yield { type: 'status', stage: 'drafting', message: 'Drafting the note…' };
     yield* this.streamJson(JSON.stringify(sections));
     yield { type: 'sections', sections, stats: FAKE_STATS };
