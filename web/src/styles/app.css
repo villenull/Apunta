@@ -502,6 +502,84 @@
   box-shadow: inset 0 -1.5px 0 var(--accent);
 }
 
+/* A word the bundled dictionary does not know, on either spelling layer. The
+   text on that layer is transparent; the line is not. */
+.misspelt {
+  text-decoration: underline wavy var(--danger);
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+}
+
+.spelling-menu {
+  position: absolute;
+  z-index: 40;
+  min-width: 160px;
+  padding: 6px;
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spelling-menu-item {
+  text-align: left;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.spelling-menu-suggestion {
+  font-weight: 600;
+}
+
+.spelling-menu-item:hover {
+  background: var(--accent-tint);
+  color: var(--accent-hover);
+}
+
+.spelling-menu-none {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.spelling-menu-rule {
+  height: 0.5px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+/* A plain textarea with the spelling layer under it (the capture screen). */
+.spell-wrap {
+  position: relative;
+}
+
+.spell-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  color: transparent;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  border-color: transparent;
+}
+
+.spell-wrap > textarea.spell-input {
+  position: relative;
+  background: transparent;
+}
+
 .empty-sections-note {
   flex-shrink: 0;
   font-size: 12.5px;

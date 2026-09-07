@@ -62,6 +62,14 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   fitted to the clip and hands the words back into the box for her to edit;
   nothing is sent until she presses the arrow. The send arrow is full accent
   with a white glyph.
+- **Spell check in the tab** (2026-09-07): the note body and the capture
+  screen's typed-notes box mark misspelt words with a wavy line and offer
+  suggestions on a click, from a bundled Australian-English Hunspell
+  dictionary read by `nspell` in the tab (`web/src/lib/speller.ts`). The
+  browser's own checker is off on those fields — Chrome's "enhanced" mode
+  would send the text to Google. The patient's name, her transcription
+  vocabulary and her "Add to dictionary" words (`spelling_words` setting)
+  are never flagged. Not yet covered: the chat box and other short fields.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
@@ -122,6 +130,11 @@ config pack). `docs/INSTALL.md` is her guide; also unrun. The preview model
   the justification before building it.
 
 ### Small things seen live, unfixed
+
+- The spell check covers the note body and the typed-notes box; the chat
+  composer and the patient-name field still rely on the browser's checker.
+  A Settings list for the "Add to dictionary" words does not exist yet; the
+  setting is a plain JSON array (`spelling_words`).
 
 - Whisper appends **"Thank you."** on the silence at the end of a recording
   (2026-09-07). Harmless so far; a trailing-segment strip would fix it, but

@@ -2,6 +2,8 @@ import { ACCENT_COLOR_SETTING } from '@apunta/shared';
 import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 
+import { SpellingProvider } from './components/SpellingProvider.js';
+
 import { getSettings } from './api/index.js';
 import { applyAccentColor } from './lib/accent.js';
 
@@ -54,19 +56,21 @@ export function App(): React.JSX.Element {
      * every list click would be exactly the theatre this app avoids.
      */
     <div key={location.pathname} className="route-transition">
-      <Routes>
-        <Route path="/" element={<Workspace />} />
-        <Route path="/patients/new" element={<AddPatient />} />
-        <Route path="/capture/:patientId" element={<Capture />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/import" element={<Import />} />
-        <Route path="/setup" element={<Setup />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/licenses" element={<Licenses />} />
-        <Route path="/onboarding/format" element={<OnboardingFormat />} />
-        <Route path="/onboarding/preview" element={<OnboardingPreview />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <SpellingProvider>
+        <Routes>
+          <Route path="/" element={<Workspace />} />
+          <Route path="/patients/new" element={<AddPatient />} />
+          <Route path="/capture/:patientId" element={<Capture />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/import" element={<Import />} />
+          <Route path="/setup" element={<Setup />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/licenses" element={<Licenses />} />
+          <Route path="/onboarding/format" element={<OnboardingFormat />} />
+          <Route path="/onboarding/preview" element={<OnboardingPreview />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </SpellingProvider>
     </div>
   );
 }

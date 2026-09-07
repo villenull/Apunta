@@ -12,6 +12,7 @@ import {
 } from '../api/index.js';
 import { KeyboardIcon, MicIcon } from '../components/icons.js';
 import { LiveRecording } from '../components/LiveRecording.js';
+import { SpellcheckTextarea } from '../components/SpellcheckTextarea.js';
 import { ThinkingDots } from '../components/ThinkingDots.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
@@ -338,15 +339,14 @@ export function Capture(): React.JSX.Element {
                   <div className="opt-sub">Quick summary in your own words</div>
                 </div>
               </div>
-              <textarea
+              <SpellcheckTextarea
                 placeholder="Type your session summary..."
                 aria-label="Session summary"
                 data-testid="summary-input"
                 value={text}
                 readOnly={busy}
-                onChange={(event) => {
-                  setText(event.target.value);
-                }}
+                onChange={setText}
+                allowWords={patient.state.status === 'ready' ? [patient.state.data.name] : []}
                 autoFocus
               />
             </div>

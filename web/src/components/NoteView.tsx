@@ -317,6 +317,7 @@ export function NoteView({
           readOnly={published || refining}
           refined={refined}
           refining={refining}
+          allowWords={[patient.name]}
           onChange={handleChange}
           onBlur={() => {
             void flush();

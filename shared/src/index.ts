@@ -385,6 +385,13 @@ export {
 } from './retractions.js';
 export type { AppliedRetraction, RetractionCorrection, RetractionCorrections } from './retractions.js';
 
+export {
+  MAX_SPELLING_WORD_CHARS,
+  MAX_SPELLING_WORDS,
+  SPELLING_WORDS_SETTING,
+  spellingWordsFrom,
+} from './spelling.js';
+
 export { planDocumentText } from './plan-document.js';
 export type { PlanDocumentInput } from './plan-document.js';
 
