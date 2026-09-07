@@ -1,6 +1,7 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-07 (evening).** This is the one document to point a fresh session at.
+**Updated 2026-09-07 (evening), at `31e0334` with CI green and nothing
+uncommitted.** This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
 you close or open an item, edit it here, in the same commit.
@@ -150,12 +151,17 @@ Every item comes with a full script when it needs his voice.
    composer, say a change ("add that he is on sertraline, twenty milligrams");
    the panel should look exactly like recording a note, words and all; press
    "Stop dictating"; the words land in the box, then send.
-2. **Backup and restore round trip** from Settings, including the wrong
+2. **The spell check on a real note**: type a typo into a draft
+   ("recieved", "definately"), check the wavy mark, click it, take a
+   suggestion. "Add to dictionary" on a name or a medication should stop it
+   being flagged in every note from then on. It has been checked in a browser
+   and by an end-to-end test, never by her or by him on a note he cares about.
+3. **Backup and restore round trip** from Settings, including the wrong
    passphrase.
-3. **Import dry run** with `e2e/fixtures/claude-export/sample-export.zip`.
-4. **A long recording** (10+ minutes) for the preview's slow-gap mode after
+4. **Import dry run** with `e2e/fixtures/claude-export/sample-export.zip`.
+5. **A long recording** (10+ minutes) for the preview's slow-gap mode after
    four minutes, and the final transcription time.
-5. Paste-into-Halaxy — human-only, whenever he has Halaxy open.
+6. Paste-into-Halaxy — human-only, whenever he has Halaxy open.
 
 ## Running things on the partner's PC
 
