@@ -43,9 +43,13 @@ test.describe('dictating into the chat', () => {
     await expect(mic).toHaveAttribute('aria-label', 'Dictate a message');
     await mic.click();
     await expect(mic).toHaveAttribute('aria-label', 'Stop dictating');
+    // The capture screen's panel, inside the chat: the dot, the timer and the
+    // provisional words as whisper hears them.
+    await expect(page.getByTestId('record-panel')).toBeVisible();
+    await expect(page.getByTestId('record-preview-text')).toContainText('John Smith');
     // Let the fake microphone play for a second or two so there is a clip to send.
-    await expect(page.getByTestId('chat-mic-timer')).toHaveText(/00:0[2-9]/);
-    await mic.click();
+    await expect(page.getByTestId('record-timer')).toHaveText(/00:0[2-9]/);
+    await page.getByTestId('record-stop').click();
 
     const input = page.getByTestId('chat-input');
     await expect(input).toHaveValue(/John Smith/);

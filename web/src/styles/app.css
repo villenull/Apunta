@@ -760,6 +760,41 @@
   }
 }
 
+/* The recording panel inside the floating chat card: the capture screen's,
+   scaled to a card a third the width. */
+.chat-col .record-ui {
+  flex-shrink: 0;
+  margin: 0 14px 8px;
+  padding: 14px 12px 12px;
+}
+
+.chat-col .record-dot {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 8px;
+}
+
+.chat-col .record-mic {
+  width: 18px;
+  height: 18px;
+}
+
+.chat-col .timer {
+  font-size: 18px;
+}
+
+.chat-col .record-preview {
+  max-width: none;
+}
+
+.chat-col .record-preview-text {
+  max-height: 6em;
+}
+
+.chat-col .record-ui .btn {
+  margin-top: 10px;
+}
+
 /* --------------------------------------------------------- forms + cards */
 
 .card {
@@ -863,6 +898,12 @@ select:focus {
 
 .btn-primary:hover {
   background: var(--accent-hover);
+}
+
+/* `.icon` colours itself for the grey-on-white case; on a filled button the
+   glyph takes the button's white (the send arrow read as grey, 2026-09-07). */
+.btn-primary .icon {
+  color: inherit;
 }
 
 .btn-danger-text {

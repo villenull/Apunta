@@ -1,6 +1,6 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-07.** This is the one document to point a fresh session at.
+**Updated 2026-09-07 (evening).** This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
 you close or open an item, edit it here, in the same commit.
@@ -53,9 +53,15 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
 - **Her seven-section format measured** (`npm run check:format`) and the
   refine chat measured adversarially (`npm run check:refine`).
 - **Dictating into the refine chat** (2026-09-07): a microphone in the
-  composer; `POST /api/transcribe/dictation` runs the note model with the
-  context fitted to the clip and hands the words back for her to edit. The
-  send arrow is now full accent with a white glyph.
+  composer. While it listens the chat shows the capture screen's own
+  recording panel — the dot that breathes with her voice, the timer, the
+  provisional words growing as a block — because both now render
+  `components/LiveRecording.tsx` on top of `hooks/useLiveRecording.ts`,
+  which owns the recorder and the preview loop for both screens. On stop,
+  `POST /api/transcribe/dictation` runs the note model with the context
+  fitted to the clip and hands the words back into the box for her to edit;
+  nothing is sent until she presses the arrow. The send arrow is full accent
+  with a white glyph.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
@@ -128,8 +134,9 @@ config pack). `docs/INSTALL.md` is her guide; also unrun. The preview model
 Every item comes with a full script when it needs his voice.
 
 1. **Dictate into the chat**: open any draft, press the microphone in the
-   composer, say a change ("add that he is on sertraline, twenty milligrams"),
-   press it again; the words land in the box, then send.
+   composer, say a change ("add that he is on sertraline, twenty milligrams");
+   the panel should look exactly like recording a note, words and all; press
+   "Stop dictating"; the words land in the box, then send.
 2. **Backup and restore round trip** from Settings, including the wrong
    passphrase.
 3. **Import dry run** with `e2e/fixtures/claude-export/sample-export.zip`.

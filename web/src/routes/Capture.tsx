@@ -1,14 +1,4 @@
-import {
-  MAX_RECORDING_SECONDS,
-  PREVIEW_COMMIT_AFTER_SECONDS,
-  PREVIEW_COMMIT_FORCE_SECONDS,
-  PREVIEW_FIRST_MS,
-  PREVIEW_INTERVAL_MS,
-  PREVIEW_MAX_SECONDS,
-  PREVIEW_MIN_GAP_MS,
-  PREVIEW_SLOW_GAP_MS,
-  WARN_RECORDING_SECONDS,
-} from '@apunta/shared';
+import { WARN_RECORDING_SECONDS } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
@@ -17,16 +7,17 @@ import {
   generateNote,
   getPatient,
   listFormats,
-  previewTranscript,
   transcribeRecording,
   type GenerateHandlers,
 } from '../api/index.js';
 import { KeyboardIcon, MicIcon } from '../components/icons.js';
+import { LiveRecording } from '../components/LiveRecording.js';
 import { ThinkingDots } from '../components/ThinkingDots.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { formatTimer, Recorder, recorderMessage, RecorderError } from '../lib/recorder.js';
+import { useLiveRecording } from '../hooks/useLiveRecording.js';
+import { formatTimer } from '../lib/recorder.js';
 
 /**
  * `prototype/capture.html` — the format, and how the session gets in.
@@ -49,8 +40,6 @@ import { formatTimer, Recorder, recorderMessage, RecorderError } from '../lib/re
  * audio to Google, which is the hardest rule in this project.
  */
 
-type RecordingState = 'idle' | 'starting' | 'recording' | 'recorded';
-
 export function Capture(): React.JSX.Element {
   useDocumentTitle('New note');
   const { patientId = '' } = useParams();
@@ -70,8 +59,6 @@ export function Capture(): React.JSX.Element {
   /** Section name → body so far. Filled in by `token` events as they arrive. */
   const [draft, setDraft] = useState<Record<string, string>>({});
 
-  const [recording, setRecording] = useState<RecordingState>('idle');
-  const [seconds, setSeconds] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   /**
    * The finished WAV, held until the note is saved.
@@ -83,24 +70,24 @@ export function Capture(): React.JSX.Element {
    */
   const [wav, setWav] = useState<Blob | null>(null);
 
-  const recorder = useRef<Recorder | null>(null);
-  /**
-   * The live half of the recording UI (owner-proxy, 2026-09-01): provisional
-   * words, and a level that moves the moment she speaks.
-   *
-   * `level` answers "is this hearing me" immediately. `preview` answers "are
-   * the words coming out right", but cannot answer it for a few seconds —
-   * whisper's encoder takes its time even on a short clip — so the two are
-   * separate on purpose rather than one indicator that starts late.
-   */
-  const [level, setLevel] = useState(0);
-  /** The smoothed voice level behind the dot, and when it last reached the screen. */
-  const voice = useRef({ smoothed: 0, shownAt: 0, shown: 0 });
-  const [preview, setPreview] = useState('');
-  /** Words committed for good, and the second of audio they run up to. */
-  const committed = useRef({ text: '', at: 0 });
-  const previewBox = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  /**
+   * The live half of the recording (owner-proxy, 2026-09-01): provisional
+   * words, and a level that moves the moment she speaks. Shared with the
+   * refine chat's microphone since 2026-09-07; `useLiveRecording` owns the
+   * recorder, this screen owns what becomes of the WAV.
+   */
+  const live = useLiveRecording({
+    onError: setError,
+    onNotice: setNotice,
+    warnAfterSeconds: WARN_RECORDING_SECONDS,
+    onLimit: () => {
+      void stopRecording();
+    },
+  });
+  const recording = live.phase;
+  const seconds = live.seconds;
 
   const available = formats.state.status === 'ready' ? formats.state.data : [];
   const format = available.find((candidate) => candidate.id === chosenFormatId) ?? available[0];
@@ -119,110 +106,14 @@ export function Capture(): React.JSX.Element {
   const latest = useRef({ text, formatId, busy });
   latest.current = { text, formatId, busy };
 
-  // A recording is a live microphone and an open audio graph, so leaving the
-  // screen has to close them rather than leave the tab's mic light on.
+  // Leaving the screen mid-draft must stop the model; the microphone is the
+  // hook's to close.
   useEffect(
     () => () => {
-      recorder.current?.cancel();
       abortRef.current?.abort();
     },
     [],
   );
-
-  /**
-   * Refresh the provisional words while she speaks, and let them grow.
-   *
-   * Each refresh transcribes only the audio since the last *committed* point.
-   * Once that stretch is long enough, the next pause in her speech becomes a
-   * cut: the chunk up to it is transcribed once more, appended to the block
-   * for good, and never re-read — so the words already on screen stop
-   * changing, the cost of a refresh stays flat however long she talks, and
-   * the cut falls between words rather than through one. If she never pauses,
-   * the cut is forced at the quietest moment once the stretch is long.
-   *
-   * The first refresh goes early; each one after that is scheduled when the
-   * previous returns, so refreshes never overlap. After four minutes they
-   * slow to a walking pace rather than stop. A failure goes quiet: the
-   * preview is reassurance, and reassurance that raises an alarm about a
-   * recording which is going fine would be worse than none.
-   */
-  useEffect(() => {
-    if (recording !== 'recording') return;
-    committed.current = { text: '', at: 0 };
-    setPreview('');
-
-    let cancelled = false;
-    let timer = 0;
-    const schedule = (ms: number): void => {
-      timer = window.setTimeout(run, ms);
-    };
-    const settle = (started: number, now: number): void => {
-      if (cancelled) return;
-      // Rest for as long as the refresh took: whisper gets at most half the
-      // machine, and a fast machine gets a caption that keeps up.
-      let gap = Math.min(PREVIEW_INTERVAL_MS, Math.max(PREVIEW_MIN_GAP_MS, performance.now() - started));
-      if (now > PREVIEW_MAX_SECONDS) gap = Math.max(gap, PREVIEW_SLOW_GAP_MS);
-      schedule(gap);
-    };
-    const run = (): void => {
-      const active = recorder.current;
-      if (cancelled || !active) return;
-      const now = active.seconds;
-      const done = committed.current;
-      const pending = now - done.at;
-      const started = performance.now();
-
-      if (pending >= PREVIEW_COMMIT_AFTER_SECONDS) {
-        const searchFrom = done.at + PREVIEW_COMMIT_AFTER_SECONDS / 2;
-        const cut =
-          active.cutPoint(searchFrom, now - 1) ??
-          (pending >= PREVIEW_COMMIT_FORCE_SECONDS
-            ? (active.quietestPoint(searchFrom, now - 1) ?? now - 1)
-            : null);
-        const chunk = cut === null ? null : active.slice(done.at, cut);
-        if (cut !== null && chunk !== null) {
-          void previewTranscript(chunk)
-            .then((result) => {
-              if (cancelled || result === null || recorder.current === null) return;
-              committed.current = { text: joinWords(done.text, result.text), at: cut };
-              setPreview(committed.current.text);
-            })
-            .finally(() => {
-              settle(started, now);
-            });
-          return;
-        }
-      }
-
-      const tail = active.slice(done.at, now);
-      if (tail === null) {
-        schedule(PREVIEW_MIN_GAP_MS);
-        return;
-      }
-      void previewTranscript(tail)
-        .then((result) => {
-          // Still recording? A result that lands after she stopped belongs to
-          // a screen that has moved on.
-          if (cancelled || result === null || recorder.current === null) return;
-          setPreview(joinWords(committed.current.text, result.text));
-        })
-        .finally(() => {
-          settle(started, now);
-        });
-    };
-    schedule(PREVIEW_FIRST_MS);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [recording]);
-
-  // The block follows the words: newest at the bottom, always in view.
-  useEffect(() => {
-    const box = previewBox.current;
-    if (box) box.scrollTop = box.scrollHeight;
-  }, [preview]);
 
   const draftHandlers = (): GenerateHandlers => ({
     onStatus: (event) => {
@@ -240,90 +131,24 @@ export function Capture(): React.JSX.Element {
   });
 
   async function startRecording(): Promise<void> {
-    if (busy || recording !== 'idle') return;
+    if (busy || wav !== null || recording !== 'idle') return;
     setError(null);
     setNotice(null);
-    setSeconds(0);
-    setLevel(0);
-    voice.current = { smoothed: 0, shownAt: 0, shown: 0 };
-    setPreview('');
-    setRecording('starting');
-
-    const active = new Recorder({
-      onProgress: (elapsed) => {
-        setSeconds(elapsed);
-        if (elapsed >= WARN_RECORDING_SECONDS) {
-          setNotice(
-            `This recording is over ${String(Math.floor(WARN_RECORDING_SECONDS / 60))} minutes. Apunta stops at ${String(Math.floor(MAX_RECORDING_SECONDS / 60))}.`,
-          );
-        }
-      },
-      onLimit: () => {
-        setNotice(
-          `Recording stopped at ${String(Math.floor(MAX_RECORDING_SECONDS / 60))} minutes, the longest Apunta takes.`,
-        );
-        void stopRecording();
-      },
-      onLevel: (peak) => {
-        // The dot answers "is this hearing me", not "how loud": below the
-        // noise floor it rests; sound lifts it at once and lets it settle
-        // over about a second, so word gaps do not make it twitch.
-        const heard = peak < VOICE_FLOOR ? 0 : peak;
-        const state = voice.current;
-        state.smoothed =
-          heard > state.smoothed
-            ? state.smoothed + (heard - state.smoothed) * 0.5
-            : state.smoothed * VOICE_DECAY;
-        const now = performance.now();
-        const presence = presenceOf(state.smoothed);
-        // The lift from rest never waits for the frame budget: her first
-        // word is the answer the dot exists to give.
-        const lifting = state.shown === 0 && presence > 0;
-        if (lifting || state.shownAt === 0 || now - state.shownAt >= VOICE_FRAME_MS) {
-          state.shownAt = now;
-          state.shown = presence;
-          setLevel(presence);
-        }
-      },
-      onError: (failure) => {
-        setError(recorderMessage(failure));
-        recorder.current?.cancel();
-        recorder.current = null;
-        setRecording('idle');
-      },
-    });
-
-    try {
-      await active.start();
-      recorder.current = active;
-      setRecording('recording');
-    } catch (thrown) {
-      setError(recorderMessage(thrown));
-      setRecording('idle');
-      if (!(thrown instanceof RecorderError)) throw thrown;
-    }
+    await live.start();
   }
 
   async function stopRecording(): Promise<void> {
-    const active = recorder.current;
-    if (!active) return;
-    recorder.current = null;
-
-    const recorded = await active.stop();
-    setSeconds(active.seconds);
+    const recorded = await live.stop();
+    if (recorded === null) return;
     setWav(recorded);
-    setRecording('recorded');
     await process(recorded);
   }
 
   function discardRecording(): void {
-    recorder.current?.cancel();
-    recorder.current = null;
+    live.cancel();
     setWav(null);
-    setSeconds(0);
     setNotice(null);
     setError(null);
-    setRecording('idle');
   }
 
   /** Send whatever she has — the recording, the typed notes, or both. */
@@ -440,44 +265,12 @@ export function Capture(): React.JSX.Element {
         <>
           <div className="stack">
             {recording === 'recording' ? (
-              <div className="record-ui" data-testid="record-panel">
-                {/*
-                  The dot is the meter: faint and still when nothing is heard,
-                  swelling and colouring with her voice — the one answer to
-                  "is this hearing me" on the timescale of her voice itself
-                  (owner, 2026-09-05; the bar it replaces looked like a
-                  stray widget).
-                */}
-                <div
-                  className="record-dot recording"
-                  data-testid="record-dot"
-                  style={{ ['--level' as string]: String(level) }}
-                >
-                  <MicIcon className="icon record-mic" />
-                </div>
-                <p className="timer" data-testid="record-timer">
-                  {formatTimer(seconds)}
-                </p>
-                <p className="muted record-label" role="status">
-                  Recording…
-                </p>
-
-                <div className="record-preview" data-testid="record-preview">
-                  {preview === '' ? (
-                    <p className="small muted record-preview-waiting">
-                      <ThinkingDots ariaLabel="Listening" /> Listening…
-                    </p>
-                  ) : (
-                    <>
-                      <div className="record-preview-text" ref={previewBox} data-testid="record-preview-text">
-                        {preview}
-                      </div>
-                      <p className="small muted record-preview-note">
-                        Everything so far, roughly. The note is written from the finished recording.
-                      </p>
-                    </>
-                  )}
-                </div>
+              <LiveRecording
+                level={live.level}
+                seconds={seconds}
+                preview={live.preview}
+                previewNote="Everything so far, roughly. The note is written from the finished recording."
+              >
                 <button
                   type="button"
                   className="btn btn-primary"
@@ -488,7 +281,7 @@ export function Capture(): React.JSX.Element {
                 >
                   Stop and process
                 </button>
-              </div>
+              </LiveRecording>
             ) : wav !== null && !busy ? (
               <div className="record-ui" data-testid="record-done">
                 <p className="muted record-label">
@@ -608,29 +401,4 @@ export function Capture(): React.JSX.Element {
       )}
     </Screen>
   );
-}
-
-/** Committed words, then the tail — with a space, never a stray one. */
-function joinWords(head: string, tail: string): string {
-  const a = head.trim();
-  const b = tail.trim();
-  return a === '' ? b : b === '' ? a : `${a} ${b}`;
-}
-
-/** Peaks under this are the room, not her: the same floor the recorder uses to find a pause. */
-const VOICE_FLOOR = 0.03;
-/** Per audio frame (about 8 ms): the dot loses a sixth of its lift every hundred milliseconds. */
-const VOICE_DECAY = 0.985;
-/** The screen is updated at most this often; the CSS transition smooths the rest. */
-const VOICE_FRAME_MS = 40;
-
-/**
- * How much the dot shows for a smoothed level: nothing for silence, and for
- * any voice at all clearly more than half — louder is only a little bigger.
- * The user does not care whether the input is at 25% or 80%, only whether
- * something is being picked up.
- */
-function presenceOf(smoothed: number): number {
-  if (smoothed < 0.01) return 0;
-  return Math.min(1, 0.55 + 0.45 * Math.min(1, smoothed / 0.25));
 }

@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { PREVIEW_FIRST_MS } from '@apunta/shared';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as RecorderModule from '../lib/recorder.js';
@@ -16,6 +17,7 @@ import { NOTHING_HEARD_MESSAGE, RefineColumn } from './RefineColumn.js';
 
 let handlers: RecorderHandlers = {};
 let startFailure: Error | null = null;
+let elapsed = 0;
 
 vi.mock('../lib/recorder.js', async (importOriginal) => {
   const actual = await importOriginal<typeof RecorderModule>();
@@ -24,13 +26,22 @@ vi.mock('../lib/recorder.js', async (importOriginal) => {
       handlers = given;
     }
     get seconds(): number {
-      return 0;
+      return elapsed;
     }
     start(): Promise<void> {
       return startFailure ? Promise.reject(startFailure) : Promise.resolve();
     }
     stop(): Promise<Blob> {
       return Promise.resolve(new Blob([new Uint8Array(1000)], { type: 'audio/wav' }));
+    }
+    slice(_from: number, _to: number): Blob | null {
+      return new Blob([new Uint8Array(1000)], { type: 'audio/wav' });
+    }
+    cutPoint(_after: number, _before: number): number | null {
+      return null;
+    }
+    quietestPoint(_after: number, _before: number): number | null {
+      return null;
     }
     cancel(): void {}
   }
@@ -56,6 +67,7 @@ function renderChat(): void {
 beforeEach(() => {
   handlers = {};
   startFailure = null;
+  elapsed = 3;
 });
 
 afterEach(() => {
@@ -143,6 +155,48 @@ describe('dictating into the composer', () => {
 
     await screen.findByText(/microphone/i);
     expect(screen.getByTestId('chat-mic').getAttribute('aria-label')).toBe('Dictate a message');
+  });
+
+  it('shows the capture screen’s panel while listening: the dot, the timer and the growing words', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    installFakeApi(
+      { formats: [progressNote], patients: [john], notes: [draft] },
+      { previewText: 'add that he is sleeping', dictationText: 'Add that he is sleeping better.' },
+    );
+    renderChat();
+
+    fireEvent.click(screen.getByTestId('chat-mic'));
+    await screen.findByTestId('record-panel');
+    expect(screen.getByTestId('record-preview').textContent).toContain('Listening');
+
+    const dot = screen.getByTestId('record-dot');
+    expect(dot.style.getPropertyValue('--level')).toBe('0');
+    act(() => {
+      handlers.onLevel?.(0.2);
+    });
+    expect(Number(dot.style.getPropertyValue('--level'))).toBeGreaterThan(0.5);
+
+    // The first refresh is on a timer; drive it rather than waiting for it.
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_FIRST_MS + 100);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('record-preview-text').textContent).toContain('add that he is sleeping');
+    });
+    expect(screen.getByTestId('record-preview').textContent).toContain('written from the finished recording');
+    // The quick actions step aside while the panel is up.
+    expect(screen.queryByText('Shorter')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('record-stop'));
+    await waitFor(() => {
+      expect((screen.getByTestId('chat-input') as HTMLInputElement).value).toBe(
+        'Add that he is sleeping better.',
+      );
+    });
+    expect(screen.queryByTestId('record-panel')).toBeNull();
+    expect(screen.getByText('Shorter')).toBeTruthy();
+    vi.useRealTimers();
   });
 
   it('keeps the send arrow live with an empty box, and an empty send does nothing', async () => {

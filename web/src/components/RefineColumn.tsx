@@ -7,13 +7,12 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { dictateClip, errorMessage, listChatMessages, sendChatMessage } from '../api/index.js';
+import { useLiveRecording } from '../hooks/useLiveRecording.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { formatTimer, Recorder, RecorderError, recorderMessage } from '../lib/recorder.js';
+import { formatTimer } from '../lib/recorder.js';
 import { MicIcon, SendIcon } from './icons.js';
+import { LiveRecording } from './LiveRecording.js';
 import { ThinkingDots } from './ThinkingDots.js';
-
-/** The composer's microphone: idle, listening, or waiting on whisper. */
-type Dictation = { state: 'idle' } | { state: 'recording'; seconds: number } | { state: 'transcribing' };
 
 /** What the composer says when whisper heard no words in the clip. */
 export const NOTHING_HEARD_MESSAGE =
@@ -99,23 +98,36 @@ export function RefineColumn({
   const [status, setStatus] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dictation, setDictation] = useState<Dictation>({ state: 'idle' });
+  /** Whisper has the clip; the words are on their way to the box. */
+  const [transcribing, setTranscribing] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const recorderRef = useRef<Recorder | null>(null);
   const updateThread = thread.update;
+
+  /**
+   * Dictating into the composer (owner-proxy, 2026-09-07): the capture
+   * screen's recorder, dot and growing transcript, a clip instead of a
+   * session, and the words land in the box for her to read and edit before
+   * anything is sent. Whisper runs on the server as always; nothing here
+   * touches a browser speech API.
+   */
+  const live = useLiveRecording({
+    onError: setError,
+    stopAfterSeconds: MAX_DICTATION_SECONDS,
+    onLimit: () => {
+      void finishDictation();
+    },
+  });
 
   // Switching notes or closing the tab mid-reply must stop the model, not
   // leave it generating into a stream nobody is reading: the server watches
-  // for the disconnect and aborts its call to Ollama. A microphone left open
-  // goes the same way.
+  // for the disconnect and aborts its call to Ollama. The microphone is the
+  // hook's to close.
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      recorderRef.current?.cancel();
-      recorderRef.current = null;
     };
   }, []);
 
@@ -195,49 +207,18 @@ export function RefineColumn({
     }
   }
 
-  /**
-   * Dictating into the composer (owner-proxy, 2026-09-07): the same recorder
-   * as the capture screen, a clip instead of a session, and the words land in
-   * the box for her to read and edit before anything is sent. Whisper runs
-   * on the server as always; nothing here touches a browser speech API.
-   */
   async function startDictation(): Promise<void> {
-    if (recorderRef.current !== null || sending) return;
+    if (sending || live.phase !== 'idle') return;
     setError(null);
-
-    const active = new Recorder({
-      onProgress: (seconds) => {
-        setDictation({ state: 'recording', seconds });
-        // A chat message is a sentence or two; a longer thought belongs in the note.
-        if (seconds >= MAX_DICTATION_SECONDS) void finishDictation();
-      },
-      onError: (failure) => {
-        setError(recorderMessage(failure));
-        recorderRef.current?.cancel();
-        recorderRef.current = null;
-        setDictation({ state: 'idle' });
-      },
-    });
-
-    try {
-      await active.start();
-      recorderRef.current = active;
-      setDictation({ state: 'recording', seconds: 0 });
-    } catch (thrown) {
-      setError(recorderMessage(thrown));
-      setDictation({ state: 'idle' });
-      if (!(thrown instanceof RecorderError)) throw thrown;
-    }
+    await live.start();
   }
 
   async function finishDictation(): Promise<void> {
-    const active = recorderRef.current;
-    if (active === null) return;
-    recorderRef.current = null;
-    setDictation({ state: 'transcribing' });
+    const clip = await live.stop();
+    if (clip === null) return;
+    setTranscribing(true);
 
     try {
-      const clip = await active.stop();
       const heard = (await dictateClip(clip)).text.trim();
       if (heard === '') {
         setError(NOTHING_HEARD_MESSAGE);
@@ -248,10 +229,12 @@ export function RefineColumn({
     } catch (thrown) {
       setError(errorMessage(thrown));
     } finally {
-      setDictation({ state: 'idle' });
+      setTranscribing(false);
       inputRef.current?.focus();
     }
   }
+
+  const listening = live.phase !== 'idle';
 
   const empty = messages.length === 0 && streaming === null;
 
@@ -328,21 +311,41 @@ export function RefineColumn({
         </div>
       )}
 
-      <div className="quick-actions">
-        {QUICK_ACTIONS.map((action) => (
+      {live.phase === 'recording' ? (
+        <LiveRecording
+          level={live.level}
+          seconds={live.seconds}
+          preview={live.preview}
+          previewNote="Everything so far, roughly. Your message is written from the finished recording."
+        >
           <button
-            key={action.label}
             type="button"
-            className="btn small btn-quick"
-            disabled={sending}
+            className="btn btn-primary"
+            data-testid="record-stop"
             onClick={() => {
-              void send(action.message);
+              void finishDictation();
             }}
           >
-            {action.label}
+            Stop dictating
           </button>
-        ))}
-      </div>
+        </LiveRecording>
+      ) : (
+        <div className="quick-actions">
+          {QUICK_ACTIONS.map((action) => (
+            <button
+              key={action.label}
+              type="button"
+              className="btn small btn-quick"
+              disabled={sending}
+              onClick={() => {
+                void send(action.message);
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="chat-input-row">
         <input
@@ -364,23 +367,23 @@ export function RefineColumn({
         />
         <button
           type="button"
-          className={dictation.state === 'recording' ? 'btn btn-mic is-recording' : 'btn btn-mic'}
-          aria-label={dictation.state === 'recording' ? 'Stop dictating' : 'Dictate a message'}
-          aria-pressed={dictation.state === 'recording'}
+          className={listening ? 'btn btn-mic is-recording' : 'btn btn-mic'}
+          aria-label={listening ? 'Stop dictating' : 'Dictate a message'}
+          aria-pressed={listening}
           data-testid="chat-mic"
-          disabled={sending || dictation.state === 'transcribing'}
+          disabled={sending || transcribing}
           onClick={() => {
-            void (dictation.state === 'recording' ? finishDictation() : startDictation());
+            void (listening ? finishDictation() : startDictation());
           }}
         >
-          {dictation.state === 'recording' ? (
+          {listening ? (
             <>
               <span className="chat-mic-dot" aria-hidden="true" />
               <span className="chat-mic-timer" data-testid="chat-mic-timer">
-                {formatTimer(dictation.seconds)}
+                {formatTimer(live.seconds)}
               </span>
             </>
-          ) : dictation.state === 'transcribing' ? (
+          ) : transcribing ? (
             <ThinkingDots ariaLabel="Transcribing" />
           ) : (
             <MicIcon className="icon icon-sm" />
