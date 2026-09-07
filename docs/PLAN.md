@@ -1,7 +1,10 @@
 # Apunta — Master Plan
 
-**Read this first.** Every coding agent working on this repo starts here, then
-reads `/CLAUDE.md` (conventions) and its own work packet in `docs/agents/`.
+**All packets (M0–M11) are built, and the project is now in live testing.
+A session picking the work up starts at `docs/HANDOFF.md`** — what is built,
+what is open, and who each open item waits on — then `/CLAUDE.md`
+(conventions). This plan is the design and the milestone history behind that:
+read §7–8 for where the milestones landed and what was deliberately deferred.
 
 ## 1. What we are building
 
