@@ -1,5 +1,9 @@
 # Apunta — agent guide
 
+**Picking up where the last session left off? Read `docs/HANDOFF.md` first** —
+what is built, what is open and who it waits on, and how to run the live
+instance. Keep it current in the same commit as the change.
+
 Local-first therapy-notes app: React SPA in a browser tab, Fastify server on
 127.0.0.1, SQLite storage, all AI local (Ollama LLM + whisper.cpp STT).
 Master plan: `docs/PLAN.md`. Design reference: `prototype/` (do not modify).

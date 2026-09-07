@@ -22,8 +22,12 @@ Consequences to respect:
 - If the push is rejected as non-fast-forward, `git pull --rebase` and push
   again. Never force-push.
 
-**How to launch an agent on a packet:** start a fresh session on this repo
-and give it this prompt (swap the packet name):
+**All packets are complete (2026-09-07).** To continue the project rather
+than a packet, start a fresh session with: *"Read CLAUDE.md and
+docs/HANDOFF.md, then continue from 'What is open'."*
+
+**How to launch an agent on a packet** (kept for the record): start a fresh
+session on this repo and give it this prompt (swap the packet name):
 
 > Read docs/PLAN.md, CLAUDE.md, and docs/agents/M3-ai-providers.md, then
 > implement that packet exactly. All work stays on the current branch —
