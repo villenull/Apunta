@@ -1,7 +1,13 @@
 import { z } from 'zod';
 
 /** Machine-readable error codes the API returns. */
-export const ApiErrorCodeSchema = z.enum(['bad_request', 'not_found', 'conflict', 'internal_error']);
+export const ApiErrorCodeSchema = z.enum([
+  'bad_request',
+  'not_found',
+  'conflict',
+  'ai_unavailable',
+  'internal_error',
+]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCodeSchema>;
 
 /**

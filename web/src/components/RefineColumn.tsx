@@ -1,10 +1,23 @@
-import type { ChatMessage, ChatNoteUpdatedEvent, Note } from '@apunta/shared';
+import {
+  MAX_DICTATION_SECONDS,
+  type ChatMessage,
+  type ChatNoteUpdatedEvent,
+  type Note,
+} from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { errorMessage, listChatMessages, sendChatMessage } from '../api/index.js';
+import { dictateClip, errorMessage, listChatMessages, sendChatMessage } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { SendIcon } from './icons.js';
+import { formatTimer, Recorder, RecorderError, recorderMessage } from '../lib/recorder.js';
+import { MicIcon, SendIcon } from './icons.js';
 import { ThinkingDots } from './ThinkingDots.js';
+
+/** The composer's microphone: idle, listening, or waiting on whisper. */
+type Dictation = { state: 'idle' } | { state: 'recording'; seconds: number } | { state: 'transcribing' };
+
+/** What the composer says when whisper heard no words in the clip. */
+export const NOTHING_HEARD_MESSAGE =
+  'Apunta didn’t catch any words. Try again, a little closer to the microphone.';
 
 /**
  * The quick actions from `prototype/patients.html`.
@@ -86,17 +99,23 @@ export function RefineColumn({
   const [status, setStatus] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dictation, setDictation] = useState<Dictation>({ state: 'idle' });
 
   const threadRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const recorderRef = useRef<Recorder | null>(null);
   const updateThread = thread.update;
 
   // Switching notes or closing the tab mid-reply must stop the model, not
   // leave it generating into a stream nobody is reading: the server watches
-  // for the disconnect and aborts its call to Ollama.
+  // for the disconnect and aborts its call to Ollama. A microphone left open
+  // goes the same way.
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+      recorderRef.current?.cancel();
+      recorderRef.current = null;
     };
   }, []);
 
@@ -173,6 +192,64 @@ export function RefineColumn({
         setSending(false);
         setStatus(null);
       }
+    }
+  }
+
+  /**
+   * Dictating into the composer (owner-proxy, 2026-09-07): the same recorder
+   * as the capture screen, a clip instead of a session, and the words land in
+   * the box for her to read and edit before anything is sent. Whisper runs
+   * on the server as always; nothing here touches a browser speech API.
+   */
+  async function startDictation(): Promise<void> {
+    if (recorderRef.current !== null || sending) return;
+    setError(null);
+
+    const active = new Recorder({
+      onProgress: (seconds) => {
+        setDictation({ state: 'recording', seconds });
+        // A chat message is a sentence or two; a longer thought belongs in the note.
+        if (seconds >= MAX_DICTATION_SECONDS) void finishDictation();
+      },
+      onError: (failure) => {
+        setError(recorderMessage(failure));
+        recorderRef.current?.cancel();
+        recorderRef.current = null;
+        setDictation({ state: 'idle' });
+      },
+    });
+
+    try {
+      await active.start();
+      recorderRef.current = active;
+      setDictation({ state: 'recording', seconds: 0 });
+    } catch (thrown) {
+      setError(recorderMessage(thrown));
+      setDictation({ state: 'idle' });
+      if (!(thrown instanceof RecorderError)) throw thrown;
+    }
+  }
+
+  async function finishDictation(): Promise<void> {
+    const active = recorderRef.current;
+    if (active === null) return;
+    recorderRef.current = null;
+    setDictation({ state: 'transcribing' });
+
+    try {
+      const clip = await active.stop();
+      const heard = (await dictateClip(clip)).text.trim();
+      if (heard === '') {
+        setError(NOTHING_HEARD_MESSAGE);
+      } else {
+        // Appended, never replacing: she may have typed half of it already.
+        setDraft((current) => (current.trim() === '' ? heard : `${current.trimEnd()} ${heard}`));
+      }
+    } catch (thrown) {
+      setError(errorMessage(thrown));
+    } finally {
+      setDictation({ state: 'idle' });
+      inputRef.current?.focus();
     }
   }
 
@@ -269,6 +346,7 @@ export function RefineColumn({
 
       <div className="chat-input-row">
         <input
+          ref={inputRef}
           type="text"
           placeholder="Ask a question or give feedback..."
           aria-label="Ask a question or give feedback"
@@ -286,10 +364,37 @@ export function RefineColumn({
         />
         <button
           type="button"
-          className="btn btn-primary"
+          className={dictation.state === 'recording' ? 'btn btn-mic is-recording' : 'btn btn-mic'}
+          aria-label={dictation.state === 'recording' ? 'Stop dictating' : 'Dictate a message'}
+          aria-pressed={dictation.state === 'recording'}
+          data-testid="chat-mic"
+          disabled={sending || dictation.state === 'transcribing'}
+          onClick={() => {
+            void (dictation.state === 'recording' ? finishDictation() : startDictation());
+          }}
+        >
+          {dictation.state === 'recording' ? (
+            <>
+              <span className="chat-mic-dot" aria-hidden="true" />
+              <span className="chat-mic-timer" data-testid="chat-mic-timer">
+                {formatTimer(dictation.seconds)}
+              </span>
+            </>
+          ) : dictation.state === 'transcribing' ? (
+            <ThinkingDots ariaLabel="Transcribing" />
+          ) : (
+            <MicIcon className="icon icon-sm" />
+          )}
+        </button>
+        {/* Full colour whatever the box holds: dimmed for an empty box, the
+            arrow read as grey on faint green (owner-proxy, 2026-09-07). An
+            empty send is simply nothing. */}
+        <button
+          type="button"
+          className="btn btn-primary btn-send"
           aria-label="Send"
           data-testid="chat-send"
-          disabled={sending || draft.trim() === ''}
+          disabled={sending}
           onClick={() => {
             void send(draft);
           }}

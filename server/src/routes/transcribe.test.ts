@@ -5,6 +5,7 @@ import {
   AUDIO_SAMPLE_RATE,
   encodeWav,
   KEEP_AUDIO_SETTING,
+  MAX_DICTATION_SECONDS,
   type Note,
   type NoteFormat,
   type Patient,
@@ -13,7 +14,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { aiError } from '../ai/errors.js';
-import type { SttEvent, SttProvider } from '../ai/types.js';
+import type { SttEvent, SttProvider, TranscribeRequest } from '../ai/types.js';
 import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
 import { WhisperCppSttProvider } from '../ai/whisper.js';
 import { buildApp } from '../app.js';
@@ -467,5 +468,107 @@ describe('POST /api/transcribe/preview', () => {
 
     expect(statusCode).toBe(200);
     expect((body as { text: string }).text).toBe('');
+  });
+});
+
+/**
+ * Dictating into the refine chat (2026-09-07): a clip in, text out, and the
+ * same "leaves nothing behind" invariant as the preview — plus, unlike the
+ * preview, whisper's own words when it cannot do the job.
+ */
+describe('POST /api/transcribe/dictation', () => {
+  async function dictate(app: FastifyInstance, file: Buffer): Promise<{ statusCode: number; body: unknown }> {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/transcribe/dictation',
+      payload: multipart({}, file, 'dictation.wav'),
+      headers: { 'content-type': `multipart/form-data; boundary=${BOUNDARY}` },
+    });
+    return { statusCode: response.statusCode, body: response.json() };
+  }
+
+  async function withStt(stt: SttProvider, run: (app: FastifyInstance) => Promise<void>): Promise<void> {
+    const app = await buildApp({
+      config: harness.config,
+      db: harness.db,
+      logger: false,
+      providers: { llm: new FakeLlmProvider({ streamDelayMs: 0 }), stt },
+    });
+    try {
+      await run(app);
+    } finally {
+      await app.close();
+    }
+  }
+
+  it('hands back the words, creates nothing, and keeps no audio', async () => {
+    const before = audioFiles(harness.config.audioDir);
+    const notesBefore = listNotesForPatient(harness.db, patient.id).length;
+
+    const { statusCode, body } = await dictate(harness.app, wav(4));
+
+    expect(statusCode).toBe(200);
+    expect((body as { text: string }).text).toContain('John Smith');
+    expect((body as { seconds: number }).seconds).toBeCloseTo(4, 1);
+    expect(listNotesForPatient(harness.db, patient.id).length).toBe(notesBefore);
+    expect(audioFiles(harness.config.audioDir)).toEqual(before);
+  });
+
+  it('asks for the note model with the audio context fitted to the clip, not the preview pass', async () => {
+    const seen: TranscribeRequest[] = [];
+    const spy: SttProvider = {
+      async *transcribe(request): AsyncIterable<SttEvent> {
+        seen.push(request);
+        yield { type: 'transcript', text: 'Add that he is sleeping better.' };
+      },
+      describe: () =>
+        Promise.resolve({ binaryPresent: true, modelPresent: true, binary: 'stub', model: 'stub' }),
+    };
+    await withStt(spy, async (app) => {
+      const { statusCode, body } = await dictate(app, wav(3));
+      expect(statusCode).toBe(200);
+      expect((body as { text: string }).text).toBe('Add that he is sleeping better.');
+    });
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.fitted).toBe(true);
+    expect(seen[0]?.preview).toBeUndefined();
+  });
+
+  it('answers no words when whisper heard none, and 400s a clip too long for a message', async () => {
+    const silent: SttProvider = {
+      // eslint-disable-next-line require-yield
+      async *transcribe(): AsyncIterable<SttEvent> {
+        throw aiError('transcription_empty', 'whisper-cli exited 0 with no transcript');
+      },
+      describe: () =>
+        Promise.resolve({ binaryPresent: true, modelPresent: true, binary: 'stub', model: 'stub' }),
+    };
+    await withStt(silent, async (app) => {
+      const { statusCode, body } = await dictate(app, wav(3));
+      expect(statusCode).toBe(200);
+      expect((body as { text: string }).text).toBe('');
+    });
+
+    const { statusCode } = await dictate(harness.app, wav(MAX_DICTATION_SECONDS + 1));
+    expect(statusCode).toBe(400);
+  });
+
+  it('tells her in whisper’s own words when it cannot transcribe, as a 503', async () => {
+    const missing: SttProvider = {
+      // eslint-disable-next-line require-yield
+      async *transcribe(): AsyncIterable<SttEvent> {
+        throw aiError('whisper_missing', 'no whisper-cli on PATH');
+      },
+      describe: () =>
+        Promise.resolve({ binaryPresent: false, modelPresent: true, binary: 'stub', model: 'stub' }),
+    };
+    await withStt(missing, async (app) => {
+      const { statusCode, body } = await dictate(app, wav(3));
+      expect(statusCode).toBe(503);
+      expect(body).toMatchObject({
+        error: 'ai_unavailable',
+        message: aiError('whisper_missing', '').message,
+      });
+    });
   });
 });

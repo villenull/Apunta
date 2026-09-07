@@ -311,7 +311,9 @@ export class WhisperCppSttProvider implements SttProvider {
       language: this.options.resolveLanguage?.() ?? DEFAULT_STT_LANGUAGE,
       ...(request.preview === true
         ? { audioContext: previewAudioContext(request.durationSeconds), greedy: true }
-        : {}),
+        : request.fitted === true
+          ? { audioContext: previewAudioContext(request.durationSeconds) }
+          : {}),
     });
     const timeoutMs = this.options.timeoutMs ?? timeoutFor(request.durationSeconds);
 

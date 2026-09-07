@@ -6,7 +6,9 @@ import { pipeline } from 'node:stream/promises';
 import {
   emptySectionNames,
   MAX_AUDIO_BYTES,
+  MAX_DICTATION_SECONDS,
   MIN_RECORDING_SECONDS,
+  type TranscribeDictationResponse,
   type TranscribePreviewResponse,
   parseWavHeader,
   TranscribeFieldsSchema,
@@ -25,7 +27,7 @@ import type { AiProviders } from '../ai/types.js';
 import { ensureDir, type AppConfig } from '../config.js';
 import { getFormat } from '../db/formats.js';
 import { uuidv7 } from '../db/uuid.js';
-import { badRequest, notFound } from '../http/errors.js';
+import { badRequest, HttpError, notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { parseBody } from '../http/validate.js';
 import { logFailure, persistDraft, streamDraft, toAiError } from './draft.js';
@@ -121,6 +123,66 @@ export function registerTranscribeRoute(
       return { text: collapseRepeats(text), seconds: wav.durationSeconds };
     } finally {
       // Always, on every path: a preview never keeps its audio.
+      await discard(upload.path);
+    }
+  });
+
+  /**
+   * `POST /api/transcribe/dictation` — a sentence or two spoken into the
+   * refine chat's composer, handed back as text for her to read, edit and
+   * send.
+   *
+   * Like the preview it creates nothing and keeps no audio. Unlike the
+   * preview these are words she will act on, so they get the note's model,
+   * beam search and fallbacks, with only the audio context fitted to the
+   * clip; and a failure is hers to hear — whisper missing, the model missing,
+   * a clip that could not be read — through the same typed errors the
+   * capture screen shows.
+   */
+  app.post('/api/transcribe/dictation', async (request): Promise<TranscribeDictationResponse> => {
+    const upload = await receiveUpload(request, config);
+    try {
+      let wav: WavFormat;
+      try {
+        wav = parseWavHeader(upload.head, upload.bytes);
+      } catch (error) {
+        if (error instanceof WavFormatError) throw badRequest('That audio could not be read as a WAV.');
+        throw error;
+      }
+      if (wav.durationSeconds < MIN_RECORDING_SECONDS) return { text: '', seconds: wav.durationSeconds };
+      if (wav.durationSeconds > MAX_DICTATION_SECONDS) {
+        throw badRequest(
+          `A dictated message can be up to ${String(Math.floor(MAX_DICTATION_SECONDS / 60))} minutes long.`,
+        );
+      }
+
+      request.log.info(
+        { bytes: upload.bytes, seconds: Math.round(wav.durationSeconds) },
+        'dictation transcription',
+      );
+
+      let text = '';
+      try {
+        for await (const event of providers.stt.transcribe({
+          wavPath: upload.path,
+          durationSeconds: wav.durationSeconds,
+          vocabulary: resolveVocabulary(db),
+          fitted: true,
+        })) {
+          if (event.type === 'transcript') text = event.text;
+        }
+      } catch (error) {
+        // No speech in the clip is an answer, not a failure: the composer
+        // says it heard nothing, and she tries again. Anything else is told
+        // in whisper's own words — a generic 500 would hide "not installed".
+        if (error instanceof AiError && error.code === 'transcription_empty')
+          return { text: '', seconds: wav.durationSeconds };
+        if (error instanceof AiError) throw new HttpError(503, 'ai_unavailable', error.message);
+        throw error;
+      }
+      return { text, seconds: wav.durationSeconds };
+    } finally {
+      // As for the preview: nothing dictated into the chat is ever kept as audio.
       await discard(upload.path);
     }
   });

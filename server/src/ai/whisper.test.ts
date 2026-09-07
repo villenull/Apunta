@@ -339,6 +339,30 @@ describe('WhisperCppSttProvider.transcribe', () => {
     expect(calls[1]?.args).toContain('--language');
   });
 
+  it('fits the audio context to a dictated clip but keeps the note model, beam search and fallbacks', async () => {
+    const small = join(dir, 'ggml-small.bin');
+    writeFileSync(small, 'a small model, allegedly');
+    const calls: SpawnCall[] = [];
+    const stt = new WhisperCppSttProvider({
+      resolveBinary: () => 'whisper-cli',
+      resolveModel: () => modelPath,
+      resolvePreviewModel: () => small,
+      spawnImpl: fakeSpawn((child) => {
+        child.stdout.write(' words\n');
+        child.emit('close', 0, null);
+      }, calls),
+      timeoutMs: 2000,
+    });
+
+    await collect(stt.transcribe({ ...request, durationSeconds: 8, fitted: true }));
+
+    const args = calls[0]?.args ?? [];
+    expect(args[args.indexOf('--model') + 1]).toBe(modelPath);
+    expect(args).toContain('--audio-ctx');
+    expect(args).not.toContain('--beam-size');
+    expect(args).not.toContain('--no-fallback');
+  });
+
   it('falls back to the main model, silently, when the preview model is not there', async () => {
     const calls: SpawnCall[] = [];
     const stt = new WhisperCppSttProvider({

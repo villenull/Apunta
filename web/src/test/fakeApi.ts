@@ -327,6 +327,10 @@ export interface FakeApiOptions {
   previewText?: string;
   /** The same, one per call in order (the last repeats), for a preview that grows. */
   previewTexts?: string[];
+  /** What `POST /api/transcribe/dictation` hands back for a clip spoken into the chat. */
+  dictationText?: string;
+  /** Make it fail instead — whisper absent, say — with the server's status and message. */
+  dictationError?: { status: number; code: string; message: string };
   /** What `POST /api/import/claude` answers for any upload (M11). */
   importPreview?: ClaudeImportPreview;
   /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
@@ -478,6 +482,16 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
             : (options.previewText ?? 'provisional words so far');
         previewCalls += 1;
         return json({ text, seconds: 3 });
+      }
+
+      // A clip dictated into the refine chat: text back, nothing created.
+      if (path === '/api/transcribe/dictation' && method === 'POST') {
+        const failure = options.dictationError;
+        if (failure) return apiError(failure.status, failure.code, failure.message);
+        return json({
+          text: options.dictationText ?? 'Add that he is sleeping better this week.',
+          seconds: 3,
+        });
       }
 
       if (path === '/api/transcribe' && method === 'POST') {

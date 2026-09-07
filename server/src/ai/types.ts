@@ -188,6 +188,13 @@ export interface TranscribeRequest {
    * transcript that becomes a note.
    */
   readonly preview?: boolean;
+  /**
+   * A short clip dictated into the refine chat: the note's model, beam search
+   * and fallbacks as for a note, with only the audio context fitted to the
+   * clip, so a ten-second instruction does not pay for a thirty-second
+   * window. Never set for the transcript that becomes a note.
+   */
+  readonly fitted?: boolean;
 }
 
 export type SttEvent =

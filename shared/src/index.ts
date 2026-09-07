@@ -86,6 +86,7 @@ export {
   DEFAULT_WHISPER_BINARY,
   KEEP_AUDIO_SETTING,
   MAX_AUDIO_BYTES,
+  MAX_DICTATION_SECONDS,
   MAX_RECORDING_SECONDS,
   MAX_STT_PROMPT_TOKENS,
   MAX_VOCABULARY_TERM_CHARS,
@@ -110,11 +111,13 @@ export {
   PREVIEW_MAX_SECONDS,
   PREVIEW_MIN_GAP_MS,
   PREVIEW_SLOW_GAP_MS,
+  TranscribeDictationResponseSchema,
   TranscribePreviewResponseSchema,
 } from './transcribe.js';
 export type {
   TranscribeEventName,
   TranscribeFields,
+  TranscribeDictationResponse,
   TranscribePreviewResponse,
   TranscribeProgressEvent,
 } from './transcribe.js';

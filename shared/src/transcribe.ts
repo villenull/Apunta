@@ -145,6 +145,22 @@ export const WARN_RECORDING_SECONDS = 30 * 60;
  */
 export const MAX_AUDIO_BYTES = 128 * 1024 * 1024;
 
+// --- dictating into the refine chat ----------------------------------------
+
+/**
+ * A chat instruction is a sentence or two, not a session. The composer stops
+ * itself here; a longer thought belongs in the note, through the capture
+ * screen.
+ */
+export const MAX_DICTATION_SECONDS = 3 * 60;
+
+export const TranscribeDictationResponseSchema = z.object({
+  /** What she said, as the note's model heard it; empty when it heard no speech. */
+  text: z.string(),
+  seconds: z.number().nonnegative(),
+});
+export type TranscribeDictationResponse = z.infer<typeof TranscribeDictationResponseSchema>;
+
 // --- the live preview during a recording -----------------------------------
 
 /**

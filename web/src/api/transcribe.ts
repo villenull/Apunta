@@ -3,14 +3,16 @@ import {
   GenerateNoteEventSchema,
   GenerateStatusEventSchema,
   GenerateTokenEventSchema,
+  TranscribeDictationResponseSchema,
   TranscribePreviewResponseSchema,
   TranscribeProgressEventSchema,
   type GenerateNoteEvent,
+  type TranscribeDictationResponse,
   type TranscribePreviewResponse,
   type TranscribeProgressEvent,
 } from '@apunta/shared';
 
-import { requestStream } from './client.js';
+import { requestJson, requestStream } from './client.js';
 import { GenerateError, type GenerateHandlers } from './generate.js';
 import { readEvents } from './sse.js';
 
@@ -116,4 +118,22 @@ export async function previewTranscript(
   } catch {
     return null;
   }
+}
+
+/**
+ * `POST /api/transcribe/dictation` — a sentence or two spoken into the refine
+ * chat, back as text for her to read, edit and send.
+ *
+ * Unlike the preview this throws: these are words she will act on, and "the
+ * microphone worked but whisper is not installed" is something to tell her,
+ * in the server's own words.
+ */
+export async function dictateClip(audio: Blob, signal?: AbortSignal): Promise<TranscribeDictationResponse> {
+  const body = new FormData();
+  body.append('audio', audio, 'dictation.wav');
+  return requestJson('/api/transcribe/dictation', TranscribeDictationResponseSchema, {
+    method: 'POST',
+    body,
+    ...(signal ? { signal } : {}),
+  });
 }

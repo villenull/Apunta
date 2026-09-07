@@ -701,6 +701,65 @@
   flex: 1;
 }
 
+/* The send arrow: the darker accent and a white glyph, never dimmed for an
+   empty box — grey-on-faint-green was the one complaint about this row
+   (owner-proxy, 2026-09-07). */
+.chat-input-row .btn-send {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #fff;
+  padding: 10px 12px;
+}
+
+.chat-input-row .btn-send:hover {
+  background: color-mix(in srgb, var(--accent) 60%, #000);
+  border-color: color-mix(in srgb, var(--accent) 60%, #000);
+}
+
+/* The microphone between the box and the arrow: quiet until pressed, then a
+   red dot and a timer while it listens, the thinking dots while whisper
+   works. */
+.chat-input-row .btn-mic {
+  padding: 10px 12px;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.chat-input-row .btn-mic.is-recording {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-tint);
+}
+
+.chat-mic-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  animation: chat-mic-pulse 1.2s ease-in-out infinite;
+}
+
+.chat-mic-timer {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes chat-mic-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-mic-dot {
+    animation: none;
+  }
+}
+
 /* --------------------------------------------------------- forms + cards */
 
 .card {
