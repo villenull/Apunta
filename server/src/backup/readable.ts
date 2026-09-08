@@ -30,10 +30,31 @@ export interface ReadableEntry {
 /** `notes/John Smith/2026-08-08 Progress note.txt` */
 export function noteEntries(db: Database): ReadableEntry[] {
   const entries: ReadableEntry[] = [];
+  const paths = new Set<string>();
   for (const patient of listPatients(db, { includeArchived: true })) {
     const folder = patientFolder(patient);
     for (const note of listNotesForPatient(db, patient.id)) {
-      entries.push({ path: `notes/${folder}/${noteFilename(note)}`, text: noteFileText(note) });
+      const basePath = `notes/${folder}/${noteFilename(note)}`;
+      let path = basePath;
+      if (paths.has(path)) {
+        // A client can have two notes with the same title on the same day.
+        // Keep the usual readable name for the first one, then reserve enough
+        // room for the full id so no note can be silently replaced in the zip.
+        const base = noteFilename(note).slice(0, -'.txt'.length);
+        const suffix = ` (${note.id})`;
+        const room = Math.max(1, 80 - suffix.length);
+        path = `notes/${folder}/${base.slice(0, room).trimEnd()}${suffix}.txt`;
+      }
+      // The UUID makes this collision-free even when two titles sanitize to
+      // the same filename. This guard is defensive if the data ever violates
+      // the UUID uniqueness invariant.
+      let fallback = 2;
+      while (paths.has(path)) {
+        path = `notes/${folder}/${note.id}-${String(fallback)}.txt`;
+        fallback += 1;
+      }
+      paths.add(path);
+      entries.push({ path, text: noteFileText(note) });
     }
   }
   return entries;
