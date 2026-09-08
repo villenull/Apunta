@@ -107,6 +107,7 @@ export function RefineColumn({
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const dictationAbortRef = useRef<AbortController | null>(null);
   const updateThread = thread.update;
 
   /**
@@ -131,6 +132,7 @@ export function RefineColumn({
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+      dictationAbortRef.current?.abort();
     };
   }, []);
 
@@ -224,9 +226,12 @@ export function RefineColumn({
     const clip = await live.stop();
     if (clip === null) return;
     setTranscribing(true);
+    const controller = new AbortController();
+    dictationAbortRef.current = controller;
 
     try {
-      const heard = (await dictateClip(clip)).text.trim();
+      const heard = (await dictateClip(clip, controller.signal)).text.trim();
+      if (controller.signal.aborted) return;
       if (heard === '') {
         setError(NOTHING_HEARD_MESSAGE);
       } else {
@@ -234,10 +239,14 @@ export function RefineColumn({
         setDraft((current) => (current.trim() === '' ? heard : `${current.trimEnd()} ${heard}`));
       }
     } catch (thrown) {
+      if (controller.signal.aborted) return;
       setError(errorMessage(thrown));
     } finally {
+      if (dictationAbortRef.current === controller) dictationAbortRef.current = null;
       setTranscribing(false);
-      inputRef.current?.focus();
+      if (!controller.signal.aborted) {
+        inputRef.current?.focus();
+      }
     }
   }
 
@@ -257,7 +266,11 @@ export function RefineColumn({
             className="btn small btn-compact-icon"
             aria-label="Close chat"
             data-testid="chat-close"
-            onClick={onClose}
+            onClick={() => {
+              live.cancel();
+              dictationAbortRef.current?.abort();
+              onClose();
+            }}
           >
             ×
           </button>

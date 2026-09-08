@@ -2,7 +2,15 @@ import type { Sections } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import { AiError } from './errors.js';
-import { NUM_CTX, OllamaProvider } from './ollama.js';
+import {
+  NUM_CTX,
+  NUM_PREDICT_BRIEF,
+  NUM_PREDICT_DETECT,
+  NUM_PREDICT_PLAN,
+  NUM_PREDICT_RETRACTIONS,
+  NUM_PREDICT_SUMMARY,
+  OllamaProvider,
+} from './ollama.js';
 import { RETRACTION_REMINDER } from './prompts.js';
 import type { LlmEvent } from './types.js';
 
@@ -438,10 +446,52 @@ describe('OllamaProvider.detectFormat', () => {
       }),
     ).rejects.toMatchObject({ code: 'invalid_output' });
   });
+
+  it('uses the bounded helper output ceiling', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [{ content: JSON.stringify({ name: 'Progress note', sections: SOAP }) }],
+    });
+    await new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).detectFormat({
+      kind: 'template',
+      text: 'Subjective:\nObjective:\nAssessment:\nPlan:',
+    });
+    expect((calls[0]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_DETECT);
+  });
 });
 
 describe('OllamaProvider — the M9 two-stage calls', () => {
   const SUMMARY = { points: ['Sleeping better.'], excerpts: ['getting six hours most nights'] };
+
+  it('uses bounded output ceilings for each helper operation', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [
+        { content: JSON.stringify(SUMMARY) },
+        {
+          content: JSON.stringify({
+            goals: [{ statement: 'Sleep improves.', objectives: [], interventions: [], evidence: [] }],
+          }),
+        },
+        { content: JSON.stringify({ lines: [{ note: 0, text: 'Sleeping better.' }] }) },
+      ],
+    });
+    const providerUnderTest = new OllamaProvider({ resolveModel: () => MODEL, fetchImpl });
+
+    await providerUnderTest.summariseNote({ noteText: 'Subjective: sleeping better.', sections: SOAP });
+    await providerUnderTest.suggestPlanGoals({
+      diagnoses: [],
+      modality: '',
+      frequency: '',
+      existingGoals: [],
+      notes: [{ index: 0, date: '2026-08-01', excerpts: ['sleeping better'] }],
+    });
+    await providerUnderTest.composeBrief({
+      notes: [{ index: 0, date: '2026-08-01', title: 'Progress note', points: ['Sleeping better.'] }],
+    });
+
+    expect((calls[0]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_SUMMARY);
+    expect((calls[1]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_PLAN);
+    expect((calls[2]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_BRIEF);
+  });
 
   it('summarises one note and reports what the call cost', async () => {
     const result = await provider({ chats: [{ content: JSON.stringify(SUMMARY) }] }).summariseNote({
@@ -583,6 +633,7 @@ describe('OllamaProvider.generateNote — spoken retractions', () => {
 
     expect(calls).toHaveLength(2);
     expect(calls[0]?.body).toMatchObject({ stream: false });
+    expect((calls[0]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_RETRACTIONS);
     expect((calls[0]?.body as { format: { properties: object } }).format.properties).toHaveProperty(
       'corrections',
     );

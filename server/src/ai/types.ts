@@ -199,6 +199,8 @@ export interface TranscribeRequest {
    * window. Never set for the transcript that becomes a note.
    */
   readonly fitted?: boolean;
+  /** The browser can cancel preview/dictation; providers must stop child work. */
+  readonly signal?: AbortSignal;
 }
 
 export type SttEvent =

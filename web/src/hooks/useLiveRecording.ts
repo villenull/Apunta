@@ -82,11 +82,15 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   /** Words committed for good, and the second of audio they run up to. */
   const committed = useRef({ text: '', at: 0 });
   const limited = useRef(false);
+  /** The active preview request must stop before final transcription starts. */
+  const previewAbort = useRef<AbortController | null>(null);
 
   // A recording is a live microphone and an open audio graph, so leaving the
   // screen has to close them rather than leave the tab's mic light on.
   useEffect(
     () => () => {
+      previewAbort.current?.abort();
+      previewAbort.current = null;
       recorder.current?.cancel();
       recorder.current = null;
     },
@@ -145,13 +149,16 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
             : null);
         const chunk = cut === null ? null : active.slice(done.at, cut);
         if (cut !== null && chunk !== null) {
-          void previewTranscript(chunk)
+          const controller = new AbortController();
+          previewAbort.current = controller;
+          void previewTranscript(chunk, controller.signal)
             .then((result) => {
               if (cancelled || result === null || recorder.current === null) return;
               committed.current = { text: joinWords(done.text, result.text), at: cut };
               setPreview(committed.current.text);
             })
             .finally(() => {
+              if (previewAbort.current === controller) previewAbort.current = null;
               settle(started, now);
             });
           return;
@@ -163,7 +170,9 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
         schedule(PREVIEW_MIN_GAP_MS);
         return;
       }
-      void previewTranscript(tail)
+      const controller = new AbortController();
+      previewAbort.current = controller;
+      void previewTranscript(tail, controller.signal)
         .then((result) => {
           // Still recording? A result that lands after she stopped belongs to
           // a screen that has moved on.
@@ -171,6 +180,7 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
           setPreview(joinWords(committed.current.text, result.text));
         })
         .finally(() => {
+          if (previewAbort.current === controller) previewAbort.current = null;
           settle(started, now);
         });
     };
@@ -179,6 +189,8 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      previewAbort.current?.abort();
+      previewAbort.current = null;
     };
   }, [phase]);
 
@@ -261,6 +273,10 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   const stop = useCallback(async (): Promise<Blob | null> => {
     const active = recorder.current;
     if (active === null) return null;
+    // Abort before awaiting Recorder.stop(): final transcription should not
+    // overlap a stale preview child reading the previous slice.
+    previewAbort.current?.abort();
+    previewAbort.current = null;
     recorder.current = null;
     const wav = await active.stop();
     setSeconds(active.seconds);
@@ -269,6 +285,8 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   }, []);
 
   const cancel = useCallback((): void => {
+    previewAbort.current?.abort();
+    previewAbort.current = null;
     recorder.current?.cancel();
     recorder.current = null;
     setSeconds(0);

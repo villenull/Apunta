@@ -93,6 +93,7 @@ export {
   buildWhisperArgs,
   parseProgress,
   parseTranscript,
+  whisperThreads,
   WhisperCppSttProvider,
 } from './whisper.js';
 export {
@@ -105,5 +106,14 @@ export {
   modelForMemory,
   SMALL_MODEL,
 } from './model-picker.js';
-export { NUM_CTX, NUM_PREDICT, OllamaProvider } from './ollama.js';
+export {
+  NUM_CTX,
+  NUM_PREDICT,
+  NUM_PREDICT_BRIEF,
+  NUM_PREDICT_DETECT,
+  NUM_PREDICT_PLAN,
+  NUM_PREDICT_RETRACTIONS,
+  NUM_PREDICT_SUMMARY,
+  OllamaProvider,
+} from './ollama.js';
 export type * from './types.js';

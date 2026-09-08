@@ -85,6 +85,18 @@ export const NUM_CTX = 16_384;
  */
 export const NUM_PREDICT = 3072;
 
+/**
+ * Small JSON helpers do not need the note/refine ceiling. Keeping these
+ * operation-specific prevents an accidental long generation from reserving
+ * the same KV budget as a full note, while `done_reason=length` remains a
+ * hard validation failure below.
+ */
+export const NUM_PREDICT_DETECT = 256;
+export const NUM_PREDICT_RETRACTIONS = 768;
+export const NUM_PREDICT_SUMMARY = 768;
+export const NUM_PREDICT_PLAN = 1536;
+export const NUM_PREDICT_BRIEF = 1024;
+
 /** How long silence lasts before the UI is told the model is still loading. */
 const LOADING_STATUS_AFTER_MS = 2500;
 
@@ -120,6 +132,7 @@ interface ChatAttempt {
   /** `undefined` omits the field entirely, which is the documented workaround. */
   readonly think: boolean | undefined;
   readonly seed: number;
+  readonly numPredict: number;
 }
 
 interface StreamOutcome {
@@ -130,6 +143,7 @@ interface StreamOutcome {
   readonly outputTokens: number;
   readonly evalNanos: number;
   readonly loadNanos: number;
+  readonly numPredict: number;
 }
 
 interface FinalFrame {
@@ -332,6 +346,7 @@ export class OllamaProvider implements LlmProvider {
       NoteSummarySchema,
       ['points', 'excerpts'],
       (value) => [...value.points, ...value.excerpts],
+      NUM_PREDICT_SUMMARY,
     );
   }
 
@@ -343,6 +358,7 @@ export class OllamaProvider implements LlmProvider {
       PlanSuggestionSchema,
       ['goals'],
       (value) => value.goals.flatMap((goal) => [goal.statement, ...goal.interventions]),
+      NUM_PREDICT_PLAN,
     );
   }
 
@@ -354,6 +370,7 @@ export class OllamaProvider implements LlmProvider {
       BriefCompositionSchema,
       ['lines'],
       (value) => value.lines.map((line) => line.text),
+      NUM_PREDICT_BRIEF,
     );
   }
 
@@ -373,6 +390,7 @@ export class OllamaProvider implements LlmProvider {
     schema: z.ZodType<T>,
     keys: readonly string[],
     freeText: (value: T) => readonly string[],
+    numPredict: number,
   ): Promise<LlmResult<T>> {
     const model = this.resolveModel();
     await this.requireUsableModel(model);
@@ -396,6 +414,7 @@ export class OllamaProvider implements LlmProvider {
       user: prompt.user,
       format,
       validate,
+      numPredict,
     });
 
     for (;;) {
@@ -420,6 +439,7 @@ export class OllamaProvider implements LlmProvider {
       format: detectedFormatJsonSchema(),
       think,
       stream: false,
+      numPredict: NUM_PREDICT_DETECT,
     });
 
     let chunk: ChatChunk;
@@ -469,6 +489,7 @@ export class OllamaProvider implements LlmProvider {
       think,
       stream: false,
       seed: 0,
+      numPredict: NUM_PREDICT_RETRACTIONS,
     });
 
     try {
@@ -500,6 +521,7 @@ export class OllamaProvider implements LlmProvider {
     user: string;
     format: JsonSchemaObject;
     validate: (value: unknown) => T;
+    numPredict?: number;
   }): AsyncGenerator<LlmEvent, { value: T; stats: LlmStats }> {
     const thinkingModel = await this.supportsThinking(options.model);
     let think: boolean | undefined = thinkingModel ? false : undefined;
@@ -531,6 +553,7 @@ export class OllamaProvider implements LlmProvider {
         format: options.format,
         think,
         seed: attempt - 1,
+        numPredict: options.numPredict ?? this.numPredict,
       });
 
       try {
@@ -586,7 +609,7 @@ export class OllamaProvider implements LlmProvider {
     if (outcome.doneReason === 'length') {
       throw aiError(
         'output_truncated',
-        `done_reason=length after ${String(outcome.outputTokens)} tokens (num_predict ${String(this.numPredict)})`,
+        `done_reason=length after ${String(outcome.outputTokens)} tokens (num_predict ${String(outcome.numPredict)})`,
       );
     }
 
@@ -638,6 +661,7 @@ export class OllamaProvider implements LlmProvider {
       think: boolean | undefined;
       stream: boolean;
       seed?: number;
+      numPredict?: number;
     },
     signal?: AbortSignal,
   ): Promise<Response> {
@@ -650,7 +674,7 @@ export class OllamaProvider implements LlmProvider {
       options: {
         temperature: 0,
         num_ctx: this.numCtx,
-        num_predict: this.numPredict,
+        num_predict: body.numPredict ?? this.numPredict,
         // Seed 0 on the first attempt makes `smoke:live` and M7's eval
         // reproducible. A retry moves it on: at temperature 0 an unchanged
         // prompt and an unchanged seed reproduce the same failure exactly.
@@ -749,6 +773,7 @@ export class OllamaProvider implements LlmProvider {
           think: attempt.think,
           stream: true,
           seed: attempt.seed,
+          numPredict: attempt.numPredict,
         },
         controller.signal,
       );
@@ -810,6 +835,7 @@ export class OllamaProvider implements LlmProvider {
         outputTokens: final.eval_count ?? 0,
         evalNanos: final.eval_duration ?? 0,
         loadNanos: final.load_duration ?? 0,
+        numPredict: attempt.numPredict,
       };
     })()
       .then((value) => {

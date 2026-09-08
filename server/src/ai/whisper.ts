@@ -59,9 +59,9 @@ export interface WhisperOptions {
   /** Injected by tests; production always uses `node:child_process`. */
   readonly spawnImpl?: Spawn;
   /**
-   * Threads for whisper-cli, whose own default is four. Every core is the
-   * production answer — on this machine eight halved the encoder's time
-   * (2026-09-04) — and tests pin a number so the command line is stable.
+   * Optional override for the thread policy. Tests pin a number so the
+   * command line is stable; production uses half the scheduler-visible cores
+   * for preview/fitted dictation and all cores for the authoritative final.
    */
   readonly threads?: number;
   /** Overrides the computed timeout. Tests use it; nothing else does. */
@@ -307,7 +307,7 @@ export class WhisperCppSttProvider implements SttProvider {
       modelPath: chosen,
       wavPath: request.wavPath,
       prompt,
-      threads: this.options.threads ?? availableParallelism(),
+      threads: this.options.threads ?? whisperThreads(request.preview === true || request.fitted === true),
       language: this.options.resolveLanguage?.() ?? DEFAULT_STT_LANGUAGE,
       ...(request.preview === true
         ? { audioContext: previewAudioContext(request.durationSeconds), greedy: true }
@@ -319,6 +319,15 @@ export class WhisperCppSttProvider implements SttProvider {
 
     const child = this.spawnImpl(binary, args, { stdio: ['ignore', 'pipe', 'pipe'] as const });
     const events = new EventQueue<SttEvent>();
+    const abortChild = (): void => {
+      // Preview and dictation are user-cancelable. Closing the browser fetch
+      // must reach the child rather than leaving Whisper consuming CPU until
+      // its normal timeout.
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+      events.close();
+    };
+    request.signal?.addEventListener('abort', abortChild, { once: true });
+    if (request.signal?.aborted) abortChild();
 
     let stdout = '';
     let stderr = '';
@@ -355,6 +364,7 @@ export class WhisperCppSttProvider implements SttProvider {
 
     child.on('close', (code, signal) => {
       clearTimeout(timer);
+      request.signal?.removeEventListener('abort', abortChild);
       if (signal === 'SIGKILL') {
         // The timeout (or a client disconnect) already decided the outcome.
         events.close();
@@ -392,6 +402,7 @@ export class WhisperCppSttProvider implements SttProvider {
       // failed. Leaving whisper chewing on a 40-minute file into a stream
       // nobody reads is exactly the kind of thing that makes a laptop hot.
       clearTimeout(timer);
+      request.signal?.removeEventListener('abort', abortChild);
       if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
     }
   }
@@ -417,6 +428,17 @@ export class WhisperCppSttProvider implements SttProvider {
       child.on('close', settle(true));
     });
   }
+}
+
+/**
+ * Keep provisional work from consuming every CPU while the recording UI and
+ * a final/dictation pass may be active. The final note transcription keeps
+ * the full scheduler-visible budget because it is the authoritative pass and
+ * runs after recording stops.
+ */
+export function whisperThreads(contention: boolean): number {
+  const cores = availableParallelism();
+  return contention ? Math.max(1, Math.floor(cores / 2)) : cores;
 }
 
 /** The wall-clock budget for one file. Generous; a hung child is the enemy. */

@@ -76,6 +76,7 @@ export function registerTranscribeRoute(
    */
   app.post('/api/transcribe/preview', async (request): Promise<TranscribePreviewResponse> => {
     const upload = await receiveUpload(request, config);
+    const cancellation = requestCancellation(request);
     try {
       // Not `readWavFormat`: that helper throws on a recording too short to
       // transcribe, which is the right answer for a finished recording and the
@@ -106,6 +107,7 @@ export function registerTranscribeRoute(
           vocabulary: resolveVocabulary(db),
           // The fast, rough pass. Only here — never for a transcript that is kept.
           preview: true,
+          signal: cancellation.signal,
         })) {
           if (event.type === 'transcript') text = event.text;
         }
@@ -122,6 +124,7 @@ export function registerTranscribeRoute(
       // heuristic.
       return { text: collapseRepeats(text), seconds: wav.durationSeconds };
     } finally {
+      cancellation.cleanup();
       // Always, on every path: a preview never keeps its audio.
       await discard(upload.path);
     }
@@ -141,6 +144,7 @@ export function registerTranscribeRoute(
    */
   app.post('/api/transcribe/dictation', async (request): Promise<TranscribeDictationResponse> => {
     const upload = await receiveUpload(request, config);
+    const cancellation = requestCancellation(request);
     try {
       let wav: WavFormat;
       try {
@@ -168,6 +172,7 @@ export function registerTranscribeRoute(
           durationSeconds: wav.durationSeconds,
           vocabulary: resolveVocabulary(db),
           fitted: true,
+          signal: cancellation.signal,
         })) {
           if (event.type === 'transcript') text = event.text;
         }
@@ -182,6 +187,7 @@ export function registerTranscribeRoute(
       }
       return { text, seconds: wav.durationSeconds };
     } finally {
+      cancellation.cleanup();
       // As for the preview: nothing dictated into the chat is ever kept as audio.
       await discard(upload.path);
     }
@@ -319,6 +325,24 @@ interface Upload {
   /** The first `HEADER_PROBE_BYTES` of the saved file, for the header parse. */
   readonly head: Uint8Array;
   readonly fields: Record<string, string>;
+}
+
+/** Abort child inference when a preview/dictation fetch is canceled. */
+function requestCancellation(request: FastifyRequest): { signal: AbortSignal; cleanup: () => void } {
+  const controller = new AbortController();
+  const abortIfDisconnected = (): void => {
+    if (request.raw.aborted) controller.abort();
+  };
+  const abort = (): void => controller.abort();
+  request.raw.once('aborted', abort);
+  request.raw.once('close', abortIfDisconnected);
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      request.raw.off('aborted', abort);
+      request.raw.off('close', abortIfDisconnected);
+    },
+  };
 }
 
 /**

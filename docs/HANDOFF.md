@@ -91,6 +91,15 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   only generated content. No model training, retrieval, raw reference PDF,
   outbound call, or database change is involved. Synthetic acceptance cases
   live in `e2e/fixtures/clinical-knowledge/`.
+- **Inference lifecycle and efficiency pass** (2026-09-08): the configured
+  absolute live `whisper-cli` path was reconciled with the PATH-only audit;
+  preview/fitted dictation now use half-core Whisper contention limits, final
+  transcription keeps the full-core authoritative path, and stale preview or
+  dictation requests abort through to their child process. Small JSON Ollama
+  helpers have bounded output ceilings while note/refine retain 3,072 and
+  still reject `done_reason=length`. Linux synthetic evidence and its quality
+  limits are in `docs/eval-reports/2026-09-08-inference-efficiency.md`;
+  these timings are not Mac claims.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can

@@ -1,7 +1,7 @@
 import type { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 
@@ -23,6 +23,7 @@ import {
   sttPrompt,
   timeoutFor,
   TRANSCRIBE_BASE_TIMEOUT_MS,
+  whisperThreads,
   WhisperCppSttProvider,
 } from './whisper.js';
 
@@ -287,6 +288,14 @@ describe('timeoutFor', () => {
   });
 });
 
+describe('whisperThreads', () => {
+  it('uses half the scheduler-visible cores for contention work and all for final work', () => {
+    const cores = availableParallelism();
+    expect(whisperThreads(true)).toBe(Math.max(1, Math.floor(cores / 2)));
+    expect(whisperThreads(false)).toBe(cores);
+  });
+});
+
 describe('WhisperCppSttProvider.transcribe', () => {
   const request = { wavPath: '/tmp/session.wav', durationSeconds: 12, vocabulary: ['Vraylar'] };
 
@@ -309,6 +318,7 @@ describe('WhisperCppSttProvider.transcribe', () => {
     });
     expect(calls[0]?.command).toBe('whisper-cli');
     expect(calls[0]?.args).toContain('--prompt');
+    expect(calls[0]?.args[calls[0]?.args.indexOf('--threads') + 1]).toBe('8');
   });
 
   it('runs a preview on the smaller model when one is configured and present, and the note on the main one', async () => {
@@ -337,6 +347,8 @@ describe('WhisperCppSttProvider.transcribe', () => {
     expect(calls[0]?.args).toContain('--beam-size');
     expect(calls[1]?.args).not.toContain('--beam-size');
     expect(calls[1]?.args).toContain('--language');
+    expect(calls[0]?.args[calls[0]?.args.indexOf('--threads') + 1]).toBe('4');
+    expect(calls[1]?.args[calls[1]?.args.indexOf('--threads') + 1]).toBe('8');
   });
 
   it('fits the audio context to a dictated clip but keeps the note model, beam search and fallbacks', async () => {
@@ -487,6 +499,29 @@ describe('WhisperCppSttProvider.transcribe', () => {
       expect(event.type).toBe('progress');
       break;
     }
+
+    expect(child?.killed).toBe(true);
+  });
+
+  it('kills whisper when a preview or dictation request is aborted', async () => {
+    let child: FakeChild | undefined;
+    const controller = new AbortController();
+    const running = new WhisperCppSttProvider({
+      resolveBinary: () => 'whisper-cli',
+      resolveModel: () => modelPath,
+      spawnImpl: fakeSpawn((spawned) => {
+        child = spawned;
+      }),
+      timeoutMs: 5000,
+    });
+
+    const events = running.transcribe({ ...request, signal: controller.signal });
+    const first = events[Symbol.asyncIterator]();
+    const pending = first.next();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    controller.abort();
+    await pending;
+    await first.return?.();
 
     expect(child?.killed).toBe(true);
   });
