@@ -627,9 +627,11 @@ describe('refine chat', () => {
     'Plan: Continue weekly sessions. Introduce grounding exercises.',
   ].join('\n\n');
 
+  let activeApi: ReturnType<typeof installFakeApi>;
+
   function openNote(overrides: Partial<Note> = {}, messages: ChatMessage[] = []): Note {
     const note = makeNote(john.id, { format_id: progressNote.id, content: NOTE_TEXT, ...overrides });
-    installFakeApi({
+    activeApi = installFakeApi({
       formats: [progressNote],
       patients: [john],
       notes: [note],
@@ -676,6 +678,56 @@ describe('refine chat', () => {
     expect(body.value).not.toContain('Introduce grounding exercises');
     // The composer is clear again, ready for the next turn.
     expect(input).toHaveProperty('value', '');
+  });
+
+  it('flushes a just-typed note before refining, so the rewrite uses fresh text', async () => {
+    const note = openNote();
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+    const freshText = NOTE_TEXT.replace(
+      'Subjective: Improved sleep.',
+      'Subjective: Fresh text from the editor.',
+    );
+    const updatePath = `/api/notes/${note.id}`;
+    const chatPath = `/api/notes/${note.id}/chat`;
+
+    // Hold the note PATCH open. A send that only starts the flush, rather than
+    // awaiting it, will reach chat while this request is still unresolved.
+    const originalFetch = globalThis.fetch;
+    let releaseUpdate!: () => void;
+    const updateReleased = new Promise<void>((resolve) => {
+      releaseUpdate = resolve;
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (path: string, init: RequestInit = {}) => {
+        const response = await originalFetch(path, init);
+        if (path === updatePath && init.method === 'PATCH') await updateReleased;
+        return response;
+      }),
+    );
+
+    fireEvent.change(body, { target: { value: freshText } });
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    await waitFor(() => {
+      expect(activeApi.calls).toContain(`PATCH ${updatePath}`);
+    });
+    expect(activeApi.calls).not.toContain(`POST ${chatPath}`);
+    releaseUpdate();
+    await waitFor(() => {
+      expect(activeApi.calls).toContain(`POST ${chatPath}`);
+    });
+
+    // Wait beyond the normal 400ms debounce: without the pre-send flush, its
+    // old whole-note snapshot lands after the chat rewrite and overwrites it.
+    await new Promise((resolve) => window.setTimeout(resolve, 450));
+    await waitFor(() => {
+      expect(body.value).toContain('Subjective: Fresh text from the editor.');
+      expect(body.value).toContain('Plan: Continue weekly sessions and grounding exercises.');
+      expect(body.value).not.toContain('Introduce grounding exercises');
+    });
+    expect(activeApi.state.notes.find((candidate) => candidate.id === note.id)?.content).toBe(body.value);
   });
 
   it("sends the quick action's full phrase, not its label", async () => {

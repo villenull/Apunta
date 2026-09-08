@@ -78,6 +78,28 @@ export function updateNote(db: Database, id: string, patch: UpdateNoteInput): No
   return next;
 }
 
+/**
+ * A refine-chat content revision, applied only while the note is still a draft.
+ *
+ * The chat's published lock is tested when the refine *starts*, but a real
+ * model runs for seconds and she may file the note inside that window. Writing
+ * the finished rewrite then would slip fresh text into a published clinical
+ * record behind the lock's back. The status test rides *inside* the UPDATE, so
+ * the check and the write are one indivisible statement — no read-then-write
+ * gap for a publish to land in — and the write simply no-ops, returning
+ * `undefined`, when the note published while the model was thinking.
+ */
+export function updateDraftNoteContent(db: Database, id: string, content: string): Note | undefined {
+  const result = db
+    .prepare(
+      `UPDATE notes SET content = @content, updated_at = @updated_at
+        WHERE id = @id AND status = 'draft'`,
+    )
+    .run({ id, content, updated_at: new Date().toISOString() });
+  if (result.changes === 0) return undefined;
+  return getNote(db, id);
+}
+
 /** Sets `status` and `published_at` together — the schema requires they agree. */
 export function setNotePublished(
   db: Database,

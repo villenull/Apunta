@@ -1,5 +1,7 @@
 import type { Sections } from '@apunta/shared';
 
+import { positiveRiskTokens, riskTokens } from './clinical-phrases.js';
+
 /**
  * The refine path's third lock: a revision may not quietly drop a fact.
  *
@@ -15,11 +17,20 @@ import type { Sections } from '@apunta/shared';
  *
  * The check is a diff, in the opposite direction from the boilerplate lock's:
  * that one stops stock phrases appearing from nowhere; this one stops facts
- * disappearing to nowhere. "Fact" is deliberately narrow — the classes a
- * regex can find with high precision and that are clinically load-bearing
- * when lost: **numbers** (digits, number words, "six and a half"), **months**
- * and **weekdays**. Not negations, not names, not medication — those need a
- * reader, and a lock that guesses blocks edits she asked for.
+ * disappearing to nowhere. Two kinds of fact are protected, both by the same
+ * survives/named/removal machinery:
+ *
+ *   - **Countable and calendar facts** — the original class, and still the
+ *     bulk of it: **numbers** (digits, number words, "six and a half"),
+ *     **months** and **weekdays**. See `factTokens`.
+ *   - **Non-numeric load-bearing facts** — added 2026-09-07 for the classes
+ *     a shortening most dangerously silences: **explicit risk negations**
+ *     ("denied SI", "no safety concerns"), **medications** (a curated psych
+ *     formulary plus anything sitting beside a dose), and **names** the note
+ *     leans on (titled — "Dr. Alvarez" — and relationship-anchored — "her son
+ *     Michael"). See `protectedFactTokens`. Kept narrow on purpose: bare
+ *     capitalised words are *not* treated as names, because at that breadth a
+ *     lock guesses and blocks edits she asked for.
  *
  * Two things make it a lock and not a nuisance:
  *
@@ -37,8 +48,12 @@ import type { Sections } from '@apunta/shared';
  * Known misses, accepted for precision: a number that also appears elsewhere
  * in the note (set semantics, not counts); "one", excluded because it is a
  * pronoun far more often than a quantity; and a shortening that turns "every
- * two weeks" into "fortnightly", which reads as a loss. Her review before
- * publishing is still the last line, as it was before.
+ * two weeks" into "fortnightly", which reads as a loss. For the non-numeric
+ * classes: a medication outside the curated list and never written beside a
+ * dose; a bare first name mid-sentence (usually the patient, who recurs and is
+ * not the thing a shortening drops); and a brand-name rewritten to its generic
+ * where no alias is mapped. Her review before publishing is still the last
+ * line, as it was before.
  */
 
 /** Number words that are almost always quantities. "one" is left out on purpose. */
@@ -190,6 +205,259 @@ function bare(word: string): string {
   return word.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
 }
 
+/**
+ * The non-numeric facts a shortening most dangerously silences: risk
+ * negations, medications, and load-bearing names. Returned in the same
+ * token→phrase shape as `factTokens` so the drop lock's survives/named/removal
+ * machinery covers them without change. Kept separate from `factTokens` — that
+ * export has an exact numeric/calendar contract its callers rely on — and
+ * merged only inside the guard, via `allFactTokens`.
+ */
+export function protectedFactTokens(text: string): Map<string, string> {
+  const found = new Map<string, string>();
+  const add = (token: string, phrase: string): void => {
+    if (!found.has(token)) found.set(token, phrase);
+  };
+  // Risk negations, tagged by the risk they address so paraphrase is not loss.
+  for (const [token, phrase] of riskTokens(text)) add(token, phrase);
+  for (const [token, phrase] of positiveRiskTokens(text)) add(token, phrase);
+  for (const [token, phrase] of medicationTokens(text)) add(token, phrase);
+  for (const [token, phrase] of nameTokens(text)) add(token, phrase);
+  return found;
+}
+
+/**
+ * A curated psychiatric formulary — the generics a therapy practice references
+ * most, with the common brand names mapped onto their generic so "Zoloft" and
+ * "sertraline" are one fact. Deliberately not exhaustive: a medication outside
+ * the list is still caught when it sits beside a dose (see `medicationTokens`).
+ */
+const MEDICATION_ALIASES: Readonly<Record<string, string>> = {
+  zoloft: 'sertraline',
+  prozac: 'fluoxetine',
+  lexapro: 'escitalopram',
+  celexa: 'citalopram',
+  paxil: 'paroxetine',
+  luvox: 'fluvoxamine',
+  effexor: 'venlafaxine',
+  cymbalta: 'duloxetine',
+  pristiq: 'desvenlafaxine',
+  wellbutrin: 'bupropion',
+  remeron: 'mirtazapine',
+  lamictal: 'lamotrigine',
+  depakote: 'valproate',
+  tegretol: 'carbamazepine',
+  seroquel: 'quetiapine',
+  abilify: 'aripiprazole',
+  risperdal: 'risperidone',
+  zyprexa: 'olanzapine',
+  ativan: 'lorazepam',
+  klonopin: 'clonazepam',
+  xanax: 'alprazolam',
+  valium: 'diazepam',
+  buspar: 'buspirone',
+  vistaril: 'hydroxyzine',
+  ambien: 'zolpidem',
+  ritalin: 'methylphenidate',
+  concerta: 'methylphenidate',
+  vyvanse: 'lisdexamfetamine',
+  strattera: 'atomoxetine',
+  adderall: 'amphetamine',
+};
+
+const MEDICATION_GENERICS: readonly string[] = [
+  'sertraline',
+  'fluoxetine',
+  'escitalopram',
+  'citalopram',
+  'paroxetine',
+  'fluvoxamine',
+  'venlafaxine',
+  'duloxetine',
+  'desvenlafaxine',
+  'bupropion',
+  'mirtazapine',
+  'trazodone',
+  'lithium',
+  'lamotrigine',
+  'valproate',
+  'valproic',
+  'carbamazepine',
+  'quetiapine',
+  'aripiprazole',
+  'risperidone',
+  'olanzapine',
+  'lorazepam',
+  'clonazepam',
+  'alprazolam',
+  'diazepam',
+  'buspirone',
+  'hydroxyzine',
+  'zolpidem',
+  'methylphenidate',
+  'lisdexamfetamine',
+  'atomoxetine',
+  'amphetamine',
+  'naltrexone',
+  'prazosin',
+  'propranolol',
+  'gabapentin',
+  'pregabalin',
+  'clonidine',
+  'guanfacine',
+  'amitriptyline',
+  'nortriptyline',
+  'doxepin',
+  'vortioxetine',
+  'vilazodone',
+  'brexpiprazole',
+  'cariprazine',
+  'lurasidone',
+  'ziprasidone',
+  'asenapine',
+  'topiramate',
+  'oxcarbazepine',
+  'levetiracetam',
+  'metformin',
+  'levothyroxine',
+  'amlodipine',
+  'losartan',
+  'atorvastatin',
+  'omeprazole',
+  'pantoprazole',
+  'ibuprofen',
+  'acetaminophen',
+  'aspirin',
+];
+
+const MEDICATIONS = new Set<string>([...MEDICATION_GENERICS, ...Object.keys(MEDICATION_ALIASES)]);
+
+/** A word carrying a dose unit tells us its neighbour is a medication, not prose. */
+const DOSED_MEDICATION = /\b([A-Za-z][A-Za-z'-]{3,})\s+\d+(?:\.\d+)?\s*(?:mg|mcg|µg|g|ml|units?|iu)\b/gi;
+
+/** Words that can sit before a dose without being the drug's name. */
+const NOT_A_DRUG_NAME = new Set([
+  'about',
+  'approx',
+  'approximately',
+  'around',
+  'taking',
+  'takes',
+  'took',
+  'started',
+  'start',
+  'increased',
+  'decreased',
+  'reduced',
+  'raised',
+  'given',
+  'dose',
+  'dosage',
+  'daily',
+  'nightly',
+  'total',
+  'another',
+  'with',
+  'plus',
+  'from',
+  'patient',
+  'client',
+  'reports',
+  'reported',
+  'has',
+  'had',
+  'is',
+  'was',
+  'over',
+  'under',
+  'still',
+  'now',
+  'sleep',
+  'sleeping',
+  'walk',
+  'walking',
+  'running',
+  'working',
+  'reading',
+  'writing',
+  'feeling',
+  'eating',
+  'drinking',
+  'morning',
+  'evening',
+  'weekly',
+  'session',
+  'sessions',
+  'therapy',
+  'treatment',
+  'anxiety',
+  'depression',
+  'pain',
+]);
+
+/**
+ * Medications named in a text, keyed `med:<generic>` so a brand and its generic
+ * are the same fact. Two sources: the curated formulary, and any word sitting
+ * immediately before a dose.
+ */
+export function medicationTokens(text: string): Map<string, string> {
+  const found = new Map<string, string>();
+  const add = (name: string, phrase: string): void => {
+    const key = `med:${name}`;
+    if (!found.has(key)) found.set(key, phrase);
+  };
+
+  for (const word of text.split(/\s+/)) {
+    const w = bare(word);
+    if (MEDICATIONS.has(w)) add(MEDICATION_ALIASES[w] ?? w, word.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, ''));
+  }
+
+  for (const match of text.matchAll(DOSED_MEDICATION)) {
+    const name = (match[1] as string).toLowerCase();
+    const known = bare(name);
+    if (NOT_A_DRUG_NAME.has(known)) continue;
+    add(MEDICATION_ALIASES[known] ?? known, match[0].trim());
+  }
+
+  return found;
+}
+
+/**
+ * Names a note leans on — kept deliberately high-precision. A titled name
+ * ("Dr. Alvarez") or one anchored to a relationship ("her son Michael")
+ * counts; a bare capitalised word does not, because at that breadth the lock
+ * would guess and revert edits she asked for. The token is the given name,
+ * lowercased, so a title added or dropped is not itself a loss.
+ */
+const TITLED_NAME = /\b(?:Dr|Mr|Mrs|Ms|Miss|Prof|Sr|Sra|Srta|Dra|Fr|Rev)\.?\s+([A-Z][a-zà-ÿ]+)\b/g;
+const RELATED_NAME =
+  /\b(?:son|daughter|wife|husband|partner|spouse|mother|father|mom|mum|dad|brother|sister|boss|manager|supervisor|therapist|psychiatrist|counsell?or|physician|doctor|friend|colleague|co-?worker|boyfriend|girlfriend|fianc[ée]e?|neighbou?r|roommate|landlord)(?:'s)?[,:]?\s+(?:named\s+)?([A-Z][a-zà-ÿ]+)\b/gi;
+const SPANISH_RELATED_NAME =
+  /\b(?:su|el|la)\s+(?:hijo|hija|esposo|esposa|pareja|madre|padre|hermano|hermana|terapeuta|médic[oa]|amig[oa])(?:'s)?[,:]?\s+(?:llamad[oa]\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)\b/g;
+
+export function nameTokens(text: string): Map<string, string> {
+  const found = new Map<string, string>();
+  const add = (given: string, phrase: string): void => {
+    const key = `name:${given.toLowerCase()}`;
+    if (!found.has(key)) found.set(key, phrase.trim());
+  };
+  for (const match of text.matchAll(TITLED_NAME)) add(match[1] as string, match[0]);
+  for (const match of text.matchAll(RELATED_NAME)) add(match[1] as string, match[0]);
+  for (const match of text.matchAll(SPANISH_RELATED_NAME)) add(match[1] as string, match[0]);
+  return found;
+}
+
+/**
+ * Every fact token in a text — countable and calendar (`factTokens`) plus the
+ * non-numeric load-bearing classes (`protectedFactTokens`). The numeric layer
+ * wins a key collision, keeping its phrasing in the notice.
+ */
+function allFactTokens(text: string): Map<string, string> {
+  const found = factTokens(text);
+  for (const [token, phrase] of protectedFactTokens(text)) if (!found.has(token)) found.set(token, phrase);
+  return found;
+}
+
 function calendarToken(word: string): string | null {
   const stripped = word.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, '');
   const lower = stripped.toLowerCase();
@@ -264,8 +532,9 @@ export function guardDroppedFacts(previous: Sections, updated: Sections, message
   if (REMOVAL_REQUEST.test(message)) return { sections: { ...updated }, dropped: [] };
 
   const survives = new Set<string>();
-  for (const text of Object.values(updated)) for (const token of factTokens(text).keys()) survives.add(token);
-  const named = new Set(factTokens(message).keys());
+  for (const text of Object.values(updated))
+    for (const token of allFactTokens(text).keys()) survives.add(token);
+  const named = new Set(allFactTokens(message).keys());
 
   const sections: Record<string, string> = { ...updated };
   const dropped: DroppedFact[] = [];
@@ -275,7 +544,7 @@ export function guardDroppedFacts(previous: Sections, updated: Sections, message
     const revised = updated[name] ?? '';
     if (revised === before) continue;
 
-    for (const [token, phrase] of factTokens(before)) {
+    for (const [token, phrase] of allFactTokens(before)) {
       if (survives.has(token) || named.has(token)) continue;
       sections[name] = before;
       dropped.push({ section: name, phrase });

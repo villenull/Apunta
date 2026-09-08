@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { factNotice, factTokens, guardDroppedFacts } from './fact-guard.js';
+import {
+  factNotice,
+  factTokens,
+  guardDroppedFacts,
+  medicationTokens,
+  nameTokens,
+  protectedFactTokens,
+} from './fact-guard.js';
 
 /**
  * Born from the refine harness's first run (2026-09-01): asked to shorten,
@@ -156,6 +163,74 @@ describe('guardDroppedFacts', () => {
     const result = guardDroppedFacts(previous, { ...previous }, 'Make it shorter');
     expect(result.sections).toEqual(previous);
     expect(result.dropped).toHaveLength(0);
+  });
+
+  it('preserves explicit risk negations when shortening drops the risk sentence', () => {
+    const before = { Assessment: 'Progressing. Denies SI/HI and no safety concerns today.' };
+    const result = guardDroppedFacts(before, { Assessment: 'Progressing.' }, 'Make the assessment shorter');
+    expect(result.sections.Assessment).toBe(before.Assessment);
+    expect(result.dropped).toEqual([{ section: 'Assessment', phrase: 'Denies SI' }]);
+  });
+
+  it('recognizes risk-negation paraphrases as the same load-bearing fact', () => {
+    const before = { Assessment: 'Patient denies SI and self-harm.' };
+    const result = guardDroppedFacts(
+      before,
+      { Assessment: 'No current suicidal ideation; self-injurious behavior was denied.' },
+      'Shorten without changing meaning',
+    );
+    expect(result.sections.Assessment).toEqual(
+      'No current suicidal ideation; self-injurious behavior was denied.',
+    );
+    expect(result.dropped).toHaveLength(0);
+  });
+
+  it('keeps a positive risk finding too, without conflating it with a negation', () => {
+    const before = { Assessment: 'Patient reports passive suicidal thoughts.' };
+    const result = guardDroppedFacts(before, { Assessment: 'Progress continues.' }, 'Shorten this section');
+    expect(result.sections.Assessment).toBe(before.Assessment);
+    expect(result.dropped).toHaveLength(1);
+  });
+
+  it('preserves medications across brand/generic rewrites and catches an unnamed dosed drug', () => {
+    expect([...medicationTokens('Started Zoloft 50 mg daily and takes fluox-a-teen 20 mg.').keys()]).toEqual([
+      'med:sertraline',
+      'med:fluox-a-teen',
+    ]);
+    const before = { Plan: 'Continue Zoloft 50 mg daily.' };
+    const result = guardDroppedFacts(
+      before,
+      { Plan: 'Continue sertraline daily.' },
+      'Use a shorter clinical wording',
+    );
+    // The medication survives by alias, while the dose is separately retained
+    // by the numeric fact lock and therefore keeps this section unchanged.
+    expect(result.sections.Plan).toBe(before.Plan);
+    expect(result.dropped).toEqual([{ section: 'Plan', phrase: '50 mg daily' }]);
+  });
+
+  it('preserves titled and relationship-anchored names, including punctuation', () => {
+    expect([...nameTokens('Discussed with Dr. Alvarez; her daughter, Maria, called.').keys()]).toEqual([
+      'name:alvarez',
+      'name:maria',
+    ]);
+    const before = { Subjective: 'Dr. Alvarez spoke with her daughter, Maria, about the referral.' };
+    const result = guardDroppedFacts(
+      before,
+      { Subjective: 'Discussed the referral.' },
+      'Tighten the sentence',
+    );
+    expect(result.sections.Subjective).toBe(before.Subjective);
+    expect(result.dropped[0]?.phrase).toBe('Dr. Alvarez');
+  });
+
+  it('does not turn ordinary prose with a numeric-looking unit into a medication fact', () => {
+    const before = { Subjective: 'Walking 5 mg is not a phrase used in this note.' };
+    const result = guardDroppedFacts(before, { Subjective: 'The wording is 5 mg awkward.' }, 'Shorten');
+    expect(result.dropped).toHaveLength(0);
+    expect([...protectedFactTokens('Walking 5 mg is not a phrase used in this note.').keys()]).not.toContain(
+      'med:walking',
+    );
   });
 });
 

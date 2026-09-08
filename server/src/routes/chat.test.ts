@@ -9,8 +9,10 @@ import {
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
+import type { LlmEvent, RefineNoteRequest } from '../ai/types.js';
 import { listChatMessagesForNote } from '../db/chat-messages.js';
-import { getNote } from '../db/notes.js';
+import { getNote, setNotePublished } from '../db/notes.js';
 import { createTranscript } from '../db/transcripts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 import { UNCHANGED_NOTICE, withoutServerSentences } from './chat.js';
@@ -173,6 +175,27 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(events.map((event) => event.name)).not.toContain('note-updated');
     expect(assistantReply(events)).toContain('Based on the note');
     expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
+  });
+
+  /**
+   * A question never edits, even on a draft. "Can you shorten the plan?" reads
+   * to the model as an instruction and comes back with a rewrite attached — the
+   * fake returns exactly that, as it does for the published-lock case below.
+   * The server discards the rewrite: a message she asked rather than instructed
+   * must not silently overwrite the note.
+   */
+  it('never applies a rewrite the model attaches to a question', async () => {
+    const note = await freshNote();
+
+    const { events } = await chat(harness.app, note.id, { message: 'Can you shorten the plan?' });
+
+    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
+    // The reply still reaches her — she only asked a question.
+    expect(assistantReply(events)).not.toBe('');
+    // …and the no-change sentence is not appended: a question is allowed to
+    // leave the note alone without the server remarking on it.
+    expect(assistantReply(events)).not.toContain(UNCHANGED_NOTICE);
   });
 
   it('refines whatever the editor currently shows, not what was drafted', async () => {
@@ -437,6 +460,56 @@ describe('POST /api/notes/:id/chat — the published lock', () => {
 
     expect(events.at(-1)?.name).toBe('note-updated');
     expect(getNote(harness.db, note.id)?.content).toContain('Continue weekly sessions and grounding');
+  });
+});
+
+/**
+ * The publish-during-refine race. The refine reads the note as a draft, then —
+ * in the gap before its rewrite arrives, which a real model holds open for
+ * seconds — a second request files the note. The finished rewrite must not land
+ * on the now-published record: that would slip fresh text past the published
+ * lock, which was only tested at the *start* of the refine.
+ */
+describe('POST /api/notes/:id/chat — a publish that lands mid-refine', () => {
+  /** A fake whose refine fires a hook just before its rewrite, to stand in for the racing publish. */
+  class RacingLlmProvider extends FakeLlmProvider {
+    constructor(private readonly beforeRewrite: () => void) {
+      super({ streamDelayMs: 0 });
+    }
+
+    override async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+      this.beforeRewrite();
+      yield* super.refineNote(request);
+    }
+  }
+
+  it('discards the rewrite and leaves the filed note untouched', async () => {
+    let publishNow: () => void = () => {};
+    const local = await createTestApp({
+      providers: { llm: new RacingLlmProvider(() => publishNow()), stt: new FakeSttProvider() },
+    });
+    try {
+      const racePatient = await seedPatient(local.app, 'John Smith');
+      const raceFormat = await seedFormat(local.app);
+      const note = await seedNote(local.app, racePatient.id, raceFormat.id, NOTE_TEXT);
+      // The race, made deterministic: the note is filed the instant the refine
+      // begins, before the model's rewrite comes back.
+      publishNow = (): void => {
+        setNotePublished(local.db, note.id, true);
+      };
+
+      const { events } = await chat(local.app, note.id, { message: 'Make the plan shorter' });
+
+      // The rewrite is thrown away: no note-updated, the record stays published
+      // with the content it was filed with.
+      expect(events.map((event) => event.name)).not.toContain('note-updated');
+      expect(assistantReply(events)).toBe(PUBLISHED_REFUSAL);
+      const stored = getNote(local.db, note.id);
+      expect(stored?.status).toBe('published');
+      expect(stored?.content).toBe(NOTE_TEXT);
+    } finally {
+      await local.close();
+    }
   });
 });
 

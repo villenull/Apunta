@@ -136,21 +136,26 @@ describe('FakeLlmProvider.refineNote', () => {
     SOAP,
   );
 
-  it('mirrors the prototype’s canned logic', async () => {
+  it('expands the plan without dropping any existing material', async () => {
     const events = await drain(
       provider.refineNote({
         instructions: '',
         sections: SOAP,
         noteText,
         history: [],
-        message: 'Make the plan shorter',
+        message: 'Expand the plan section',
       }),
     );
     const last = events.at(-1);
     expect(last?.type).toBe('refined');
     if (last?.type !== 'refined') throw new Error('unreachable');
-    expect(last.reply).toBe('Shortened the Plan section.');
-    expect(last.updatedSections?.['Plan']).toBe('Continue weekly sessions and grounding exercises.');
+    expect(last.reply).toBe('Expanded the Plan section using details already in the note.');
+    expect(last.updatedSections?.['Plan']).toContain(
+      'Continue weekly sessions and introduce grounding exercises between sessions.',
+    );
+    expect(last.updatedSections?.['Plan']?.length).toBeGreaterThan(
+      'Continue weekly sessions and introduce grounding exercises between sessions.'.length,
+    );
   });
 
   it('streams the reply and never a half-written note', async () => {
@@ -160,7 +165,7 @@ describe('FakeLlmProvider.refineNote', () => {
         sections: SOAP,
         noteText,
         history: [],
-        message: 'Make the plan shorter',
+        message: 'Expand the plan section',
       }),
     );
     expect(Object.keys(streamed(events))).toEqual(['reply']);
@@ -179,6 +184,21 @@ describe('fakeRefine', () => {
     const result = fakeRefine('Add something about her sleep', current, SOAP);
     expect(result.reply).toBe('Added that to the Subjective section.');
     expect(result.updatedSections?.['Subjective']).toContain('improved appetite');
+  });
+
+  it('covers the four quick-action payloads and their semantic outcomes', () => {
+    const shorter = fakeRefine('Make it shorter', current, SOAP);
+    expect(shorter.updatedSections?.Subjective).toBe('Patient reports improved sleep.');
+
+    const clinical = fakeRefine('Use a more clinical tone', current, SOAP);
+    expect(clinical.updatedSections?.Objective).toContain('Alert and oriented.');
+
+    const expanded = fakeRefine('Expand the plan section', current, SOAP);
+    expect(expanded.updatedSections?.Plan).toBe('Continue weekly. Continue weekly.');
+    expect(expanded.updatedSections?.Plan?.length).toBeGreaterThan(current.Plan?.length ?? 0);
+
+    const missing = fakeRefine('What is missing from this note?', current, SOAP);
+    expect(missing.updatedSections).toBeNull();
   });
 
   it('answers a question without touching the note', () => {

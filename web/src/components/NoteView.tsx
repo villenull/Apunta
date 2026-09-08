@@ -159,6 +159,7 @@ export function NoteView({
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
+      if (pendingRef.current === value) pendingRef.current = null;
       void enqueue(value);
     }, SAVE_DEBOUNCE_MS);
   }
@@ -356,6 +357,7 @@ export function NoteView({
       <RefineColumn
         key={note.id}
         note={note}
+        onFlushPendingEdit={flush}
         refQuote={refQuote}
         onClearRefQuote={() => {
           setRefQuote(null);

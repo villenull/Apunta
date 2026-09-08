@@ -20,7 +20,7 @@ import { RETRACTION_NOTICE_OPENING } from '../ai/retractions.js';
 import type { AiProviders, ChatTurn, LlmStats } from '../ai/types.js';
 import { createChatMessage, listChatMessagesForNote } from '../db/chat-messages.js';
 import { getFormat } from '../db/formats.js';
-import { getNote, updateNote } from '../db/notes.js';
+import { getNote, updateDraftNoteContent } from '../db/notes.js';
 import { listTranscriptsForNote } from '../db/transcripts.js';
 import { notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
@@ -161,6 +161,17 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       return;
     }
 
+    // A question is a question, never an edit. A message she phrased as one
+    // ("can you shorten the plan?") can still come back from the model with a
+    // rewrite attached — the model reads it as an instruction. Applying that
+    // would let a draft be silently rewritten by something she only asked
+    // about, so the rewrite is discarded and she keeps the reply. The published
+    // lock above refuses the same disguised edit; on a draft there is nothing
+    // to refuse, so the note is simply left as it was.
+    if (isQuestion(input.message)) {
+      updatedSections = null;
+    }
+
     if (updatedSections !== null) {
       // The boilerplate lock, the published lock's sibling (found necessary
       // in M10's live pass): a revision may not gain a stock clinical
@@ -213,17 +224,26 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       replyText = `${replyText}\n\n${UNCHANGED_NOTICE}`;
     }
 
+    let rewritten: Note | undefined;
+    if (changed && updatedSections !== null) {
+      // Conditional on the note still being a draft: she may have filed it in
+      // the seconds the model spent thinking, and the finished rewrite must not
+      // land on a published record behind the lock's back. A write that no-ops
+      // for that reason emits no `note-updated` — her filed note is unchanged.
+      // Replace the model's claim with the same refusal used by the published
+      // lock, so the thread tells the truth about the race too.
+      rewritten = updateDraftNoteContent(db, note.id, content);
+      if (rewritten === undefined) replyText = PUBLISHED_REFUSAL;
+    }
+
     const assistantMessage = persistReply(db, note.id, replyText);
     stream.send('message', { message: assistantMessage });
 
-    if (changed && updatedSections !== null) {
-      const rewritten = updateNote(db, note.id, { content });
-      if (rewritten) {
-        stream.send('note-updated', {
-          note: rewritten,
-          empty_sections: emptySectionNames(updatedSections, format.sections),
-        });
-      }
+    if (rewritten !== undefined && updatedSections !== null) {
+      stream.send('note-updated', {
+        note: rewritten,
+        empty_sections: emptySectionNames(updatedSections, format.sections),
+      });
     }
     stream.end();
   });

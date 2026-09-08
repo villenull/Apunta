@@ -1,7 +1,7 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-07 (evening), at `31e0334` with CI green and nothing
-uncommitted.** This is the one document to point a fresh session at.
+**Updated 2026-09-07 (evening), after the refine-safety integration gate.**
+This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
 you close or open an item, edit it here, in the same commit.
@@ -71,6 +71,14 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   would send the text to Google. The patient's name, her transcription
   vocabulary and her "Add to dictionary" words (`spelling_words` setting)
   are never flagged. Not yet covered: the chat box and other short fields.
+- **Refine safety integration** (2026-09-07): a question (including the
+  "What's missing?" quick action) never applies a model-attached rewrite;
+  the editor flushes its pending debounce before chat snapshots the note; and
+  a rewrite that finishes after a concurrent publish is discarded by a
+  draft-only database update. The server-side locks also preserve numbers,
+  dates, explicit risk findings, medications and high-confidence names while
+  blocking ungrounded clinical boilerplate. Fake mode's Expand plan path
+  exercises the same preservation invariant.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
@@ -142,6 +150,14 @@ config pack). `docs/INSTALL.md` is her guide; also unrun. The preview model
   only cut it if her recordings show it too.
 - The two-tab test: two recordings at once starve each other's previews
   (CPU). Not a bug to fix; a thing to know.
+- Refine safety guards are intentionally high-precision heuristics. They can
+  miss an unfamiliar medication or an unanchored name, and can hold back a
+  shortening when an existing risk, medication or anchored name is removed
+  without an explicit request. Review the displayed notice and the full note
+  before publishing; the guards are a second line, not a clinical validator.
+- The editor flush-before-chat path prevents stale-note rewrites, but a
+  failed local save still leaves the chat request available against the last
+  server copy; verify the save error before relying on that reply.
 
 ### The testing docket for the owner's proxy (his PC, no Mac needed)
 

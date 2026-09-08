@@ -222,11 +222,17 @@ test.describe('the workspace', () => {
     // A question changes nothing.
     await expect(body).toContainText('Introduce grounding exercises');
 
-    // --- A quick action rewrites the note, visibly -------------------------
+    // --- Expand plan sends the full payload and preserves grounded material -
+    const planBeforeExpand = await body.inputValue();
+    const expandRequest = page.waitForRequest(
+      (request) => request.url().includes(`/api/notes/${note.id}/chat`) && request.method() === 'POST',
+    );
     await page.getByRole('button', { name: 'Expand plan' }).click();
+    expect((await expandRequest).postDataJSON()).toMatchObject({ message: 'Expand the plan section' });
     await expect(thread).toContainText('Expand the plan section');
-    await expect(body).toContainText('Plan: Continue weekly sessions and grounding exercises.');
-    await expect(body).not.toContainText('Introduce grounding exercises');
+    await expect(body).toContainText('Plan: Continue weekly sessions.');
+    await expect(body).toContainText('Introduce grounding exercises for use between sessions.');
+    await expect.poll(async () => (await body.inputValue()).length).toBeGreaterThan(planBeforeExpand.length);
     // The notes-column preview moved with it.
     await expect(page.getByTestId('note-list')).toContainText('Subjective: Patient reports improved');
 
@@ -237,7 +243,9 @@ test.describe('the workspace', () => {
     await page.getByTestId('chat-input').fill('Make the plan much shorter');
     await page.getByTestId('chat-send').click();
     await expect(thread).toContainText('This note is published, so I won’t change it.');
-    await expect(body).toContainText('Plan: Continue weekly sessions and grounding exercises.');
+    await expect(body).toContainText(
+      'Plan: Continue weekly sessions. Introduce grounding exercises for use between sessions.',
+    );
 
     // --- Unlock, and the same request goes through ------------------------
     await page.getByTestId('publish-button').click();

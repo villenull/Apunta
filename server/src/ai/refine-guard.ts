@@ -1,5 +1,7 @@
 import type { Sections } from '@apunta/shared';
 
+import { clinicalAssertionTokens } from './clinical-phrases.js';
+
 /**
  * The refine path's server-side faithfulness check (found necessary in M10's
  * live human pass, 2026-08-28).
@@ -21,32 +23,13 @@ import type { Sections } from '@apunta/shared';
  * section keeps its previous text while the rest of the revision goes
  * through.
  *
- * The list is deliberately short and high-precision. A false positive here
- * blocks an edit she asked for, which teaches her the chat is broken; a miss
- * costs one boilerplate phrase her review pass can catch. Grow it only with
- * phrases that are (a) stock clinical assertions, (b) clinically load-bearing
- * if false, and (c) unlikely in her own free dictation.
+ * The list lives in `clinical-phrases.ts`, shared with the drop lock. It is
+ * broad but every entry is anchored to a clinical collocation: because the
+ * lock fires only on a NEW, ungrounded phrase, breadth is free on text she
+ * dictated and costs only a phrase that reads as an unearned finding. Grow it
+ * only with phrases that are (a) stock clinical assertions, (b) clinically
+ * load-bearing if false, and (c) unlikely in her own free dictation.
  */
-const STOCK_CLINICAL_ASSERTIONS: readonly RegExp[] = [
-  // Mental-status boilerplate — observations, not defaults.
-  /\balert and (?:fully )?oriented\b/i,
-  /\boriented\s*(?:x|times)\s*[1-4]\b/i,
-  /\b(?:mood|affect)\s+(?:was\s+|is\s+)?congruent\b/i,
-  /\bcongruent with (?:his |her |their )?(?:reported |stated )?(?:mood|affect|speech)\b/i,
-  /\bwithin normal limits\b/i,
-  /\bno acute distress\b/i,
-  /\bwell[- ]groomed\b/i,
-  /\bpsychomotor\b/i,
-  /\b(?:insight and judgment|judgment and insight)\b/i,
-  // Risk assertions — silence is never a negative finding, and a risk
-  // statement that was not dictated is the most dangerous sentence a note
-  // can gain.
-  /\bdenie[sd]\s+(?:any\s+)?(?:current\s+)?(?:suicidal|self[- ]harm|homicidal)/i,
-  /\bno (?:safety concerns?|acute risk|risk indicators)\b/i,
-  // The shorthand must be uppercase — "SI"/"HI" as clinical abbreviations,
-  // never the words "si"/"hi" — while the "no" may open a sentence.
-  /\b[Nn]o (?:SI|HI)\b/,
-];
 
 export interface BlockedRevision {
   /** The section whose revision was discarded. */
@@ -88,12 +71,14 @@ export function guardRefinedSections(
 }
 
 function newAssertion(before: string, revised: string, sources: readonly string[]): string | null {
-  for (const pattern of STOCK_CLINICAL_ASSERTIONS) {
-    const match = revised.match(pattern);
-    if (!match) continue;
-    if (pattern.test(before)) continue;
-    if (sources.some((source) => pattern.test(source))) continue;
-    return match[0];
+  const beforeTokens = clinicalAssertionTokens(before);
+  const sourceTokens = new Set<string>();
+  for (const source of sources)
+    for (const token of clinicalAssertionTokens(source).keys()) sourceTokens.add(token);
+
+  for (const [token, phrase] of clinicalAssertionTokens(revised)) {
+    if (beforeTokens.has(token) || sourceTokens.has(token)) continue;
+    return phrase;
   }
   return null;
 }

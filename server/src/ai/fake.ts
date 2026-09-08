@@ -281,6 +281,21 @@ export function fakeRefine(
       };
     }
   }
+  if (/expand.*plan/i.test(message) && has('plan')) {
+    const key = sections.find((section) => section.toLowerCase() === 'plan') as string;
+    const body = (current[key] ?? '').trim();
+    return {
+      // Keep the complete existing plan and elaborate only by recombining its
+      // own words. This deliberately makes fake mode exercise the same
+      // semantic invariant as the real route: Expand must never discard a
+      // dictated detail or invent an intervention from nowhere.
+      reply: 'Expanded the Plan section using details already in the note.',
+      updatedSections: set('plan', body === '' ? body : `${body} ${body}`),
+    };
+  }
+  // Keep ordinary free-form shortening deterministic for existing callers;
+  // the dedicated Expand plan action above is the path with the preservation
+  // invariant.
   if (/plan/i.test(message) && has('plan')) {
     return {
       reply: 'Shortened the Plan section.',

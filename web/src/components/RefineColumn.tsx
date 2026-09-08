@@ -50,6 +50,8 @@ export interface RefineColumnProps {
   onClearRefQuote: () => void;
   /** The model rewrote the note: the editor and the notes list both move. */
   onNoteUpdated: (event: ChatNoteUpdatedEvent) => void;
+  /** Flush the editor's debounce before the server snapshots this note. */
+  onFlushPendingEdit?: () => Promise<void>;
   /**
    * A refine request is in flight, so the note may be about to change. The
    * editor uses this to breathe and say "updating…" — the reply text often
@@ -84,6 +86,7 @@ export function RefineColumn({
   refQuote,
   onClearRefQuote,
   onNoteUpdated,
+  onFlushPendingEdit,
   onRefiningChange,
   hidden = false,
   onClose,
@@ -167,6 +170,10 @@ export function RefineColumn({
     abortRef.current = controller;
 
     try {
+      // The chat endpoint reads the note immediately. Await the editor's
+      // debounce first, or its rewrite can be based on stale text and the
+      // eventual note save can write that stale snapshot back over it.
+      await onFlushPendingEdit?.();
       await sendChatMessage(
         noteId,
         { message: text, ...(quote === null ? {} : { ref_quote: quote }) },
