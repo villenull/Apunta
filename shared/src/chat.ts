@@ -34,9 +34,12 @@ export type ChatMessageListResponse = z.infer<typeof ChatMessageListResponseSche
  *
  * `message` arrives twice: once for the persisted user turn (so the browser
  * can swap its optimistic bubble for the real row, ids and `ref_quote`
- * included) and once for the assistant's. `note-updated` follows only when the
- * model rewrote a note that is still a draft. The stream ends after the
- * assistant's `message`, its `note-updated`, or an `error`.
+ * included) and once for the assistant's. For an edit, `note-updated` is sent
+ * before the assistant's `message`, only after the guarded draft write has
+ * committed; the browser may wait for that event to render before showing the
+ * assistant's completion claim. Questions and refused edits have no
+ * `note-updated`; the stream ends after the assistant's `message` or an
+ * `error`.
  */
 export const CHAT_EVENT_NAMES = ['status', 'token', 'message', 'note-updated', 'error'] as const;
 export type ChatEventName = (typeof CHAT_EVENT_NAMES)[number];

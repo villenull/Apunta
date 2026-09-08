@@ -1,6 +1,7 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-07 (evening), after the en-US spellchecker gate.**
+**Updated 2026-09-08 (release gate), after the inference-efficiency and
+output-truncation reviews.**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -97,20 +98,37 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   transcription keeps the full-core authoritative path, and stale preview or
   dictation requests abort through to their child process. Small JSON Ollama
   helpers have bounded output ceilings while note/refine retain 3,072 and
-  still reject `done_reason=length`. Linux synthetic evidence and its quality
-  limits are in `docs/eval-reports/2026-09-08-inference-efficiency.md`;
-  these timings are not Mac claims.
+  every helper rejects `done_reason=length`. Linux synthetic evidence and its
+  quality limits are in `docs/eval-reports/2026-09-08-inference-efficiency.md`;
+  these timings are not Mac claims. The release review also corrected the
+  non-streaming detector and retraction-quote paths so a truncated JSON
+  response cannot be accepted as a valid result.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
   try the app from her MacBook before anything is installed on it
   (`docs/dev-notes/remote-testing.md`). Not a change to the app.
 
-Eval, current: corpus fabrication 30.0% (18/60) on the owner's instructions
-with the retraction pass; the true baseline before it was 35.0%
-(`docs/eval-reports/2026-09-05-retraction-user-turn.md` explains why the
-older 40.0% is not comparable). The eval takes 1–2 h of CPU; never run it
-while someone is testing on the same machine.
+Eval, current evidence: the fully measured tuned 4B corpus is 35.0% (21/60).
+The retraction report's fixture-04 conditional arm moves its three runs from
+gated to clean and therefore projects 30.0% (18/60) for the corpus; it was not
+a fresh full-corpus rerun. Keep that distinction in release notes and do not
+call 30.0% a new end-to-end measurement. The eval takes 1–2 h of CPU; never
+run it while someone is testing on the same machine.
+
+Release gate, 2026-09-08 (Linux, fabricated fixtures only): `build:shared`,
+all workspace typechecks, lint/format/URL/license checks, 1,111 unit tests,
+production build, and 38 Playwright tests passed. Real local stack smoke was
+2/2 schema-valid on `qwen3.5:4b-q4_K_M` (prompt 2,840, output 359, one attempt,
+`done_reason=stop`); the checked-in 10-second tone WAV produced “Thank you.”
+in 5.5 seconds, which is process/model overhead rather than speech quality.
+`check:format` had one known cadence flag; `check:refine` had 0 problems across
+8 scenarios (locks fired 3 times as intended). The before/after interpretation
+is deliberately narrow: Ollama smoke was 6.4/3.6/3.6 seconds before versus
+4.0/3.5 seconds after, so no speedup is claimed; the isolated 8-thread preview
+was 0.49 seconds warm versus 0.54 seconds for the selected 4-thread policy,
+which is a contention tradeoff, not a faster-preview claim. See the full table
+in `docs/eval-reports/2026-09-08-inference-efficiency.md`.
 
 The clinical-knowledge gate has hermetic unit and route coverage under
 `server/src/ai/clinical-knowledge/`; it was not treated as a real-model eval.
@@ -207,23 +225,36 @@ Every item comes with a full script when it needs his voice.
 
 ## Running things on the partner's PC
 
-The live instance is a production build on `127.0.0.1:7717`, data in
+The live instance is a detached production build on `127.0.0.1:7717`, data in
 `~/.local/share/apunta` (`apunta.db`, `audio/`, `models/`, `bin/whisper-cli`),
 log at `/tmp/claude-1000/apunta-live.log` (shape-only by design: bytes,
-seconds, token counts, never words). Both the app and Ollama die with the
-session that started them.
+seconds, token counts, never words). The Linux release process is detached
+from the agent terminal under the user systemd session; the Mac LaunchAgent
+still awaits the checklist below.
 
 ```sh
 # Ollama (the systemd unit needs an interactive polkit prompt; run it as the user)
 OLLAMA_MODELS=/var/lib/ollama OLLAMA_HOST=127.0.0.1:11434 setsid nohup ollama serve > /tmp/claude-1000/ollama.log 2>&1 &
 
 # The app — web-only changes need `npm run build --workspace @apunta/web` and a reload;
-# server changes need the build and a restart (kill the pid from `ss -ltnp | grep 7717`)
-cd ~ && APUNTA_NO_OPEN=1 NODE_USE_SYSTEM_CA=1 setsid nohup node ~/Projects/Apunta/server/dist/index.js >> /tmp/claude-1000/apunta-live.log 2>&1 &
+# server changes need the build and a restart only while no recording is active.
+cd /home/huyke/orca/workspaces/Apunta/Apunta
+npm run build
+# Confirm no whisper child is active, then TERM the pid from `ss -ltnp | grep 7717`.
+APUNTA_NO_OPEN=1 NODE_ENV=production setsid nohup node server/dist/index.js >> /tmp/claude-1000/apunta-live.log 2>&1 </dev/null &
+curl -fsS http://127.0.0.1:7717/api/health
 
 # The gate, in this order; verify by exit code, never by reading piped output
 npm run build:shared && npm run typecheck && npm run lint && npm test && npm run build && npm run e2e
 ```
+
+The 2026-09-08 deployment preserved the existing database, audio directory,
+settings and model paths; health returned fake AI off, migration level 3,
+Ollama reachable/model present, Whisper binary/model present, and SQLite
+integrity `ok`. It is reachable at `http://127.0.0.1:7717`. This is Linux
+evidence only: no Mac shell, Metal, FileVault, LaunchAgent, installer,
+standalone decrypt script, or `.dmg` run is claimed; complete
+`docs/MANUAL-VERIFICATION.md` §1–§9 before real notes reach the Mac.
 
 Never restart the server while a recording is in flight (the log's last line
 tells you), and never run the gate or the eval while he is testing: whisper

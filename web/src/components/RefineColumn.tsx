@@ -49,7 +49,7 @@ export interface RefineColumnProps {
   refQuote: string | null;
   onClearRefQuote: () => void;
   /** The model rewrote the note: the editor and the notes list both move. */
-  onNoteUpdated: (event: ChatNoteUpdatedEvent) => void;
+  onNoteUpdated: (event: ChatNoteUpdatedEvent) => void | Promise<void>;
   /** Flush the editor's debounce before the server snapshots this note. */
   onFlushPendingEdit?: () => Promise<void>;
   /**

@@ -113,7 +113,14 @@ function stub(options: StubOptions): { fetchImpl: typeof globalThis.fetch; calls
     if (sent['stream'] === false) {
       // `detectFormat` does not stream, so Ollama answers with one object.
       return new Response(
-        JSON.stringify({ model: MODEL, message: { content: reply.content ?? '' }, done: true }),
+        JSON.stringify({
+          model: MODEL,
+          message: { content: reply.content ?? '' },
+          done: true,
+          done_reason: reply.doneReason ?? 'stop',
+          prompt_eval_count: reply.promptTokens ?? 1200,
+          eval_count: 240,
+        }),
         { status: 200, headers: { 'content-type': 'application/json' } },
       );
     }
@@ -457,6 +464,14 @@ describe('OllamaProvider.detectFormat', () => {
     });
     expect((calls[0]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_DETECT);
   });
+
+  it('rejects a truncated helper response instead of parsing partial JSON', async () => {
+    await expect(
+      provider({
+        chats: [{ content: '{"name":"Progress', doneReason: 'length' }],
+      }).detectFormat({ kind: 'template', text: 'Subjective:' }),
+    ).rejects.toMatchObject({ code: 'output_truncated' });
+  });
 });
 
 describe('OllamaProvider — the M9 two-stage calls', () => {
@@ -669,6 +684,13 @@ describe('OllamaProvider.generateNote — spoken retractions', () => {
     expect(user).toContain(RETRACTION_REMINDER);
     expect(events.find((event) => event.type === 'retractions')).toMatchObject({ applied: [], offered: 0 });
     expect(events.at(-1)?.type).toBe('sections');
+  });
+
+  it('rejects a truncated retraction quote response rather than losing correction evidence', async () => {
+    const error = await expectAiError(
+      provider({ chats: [{ content: '{"corrections":[', doneReason: 'length' }] }).generateNote(request),
+    );
+    expect(error.code).toBe('output_truncated');
   });
 
   it('makes no quoting call for a transcript with nothing taken back', async () => {

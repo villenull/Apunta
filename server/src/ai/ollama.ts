@@ -448,6 +448,9 @@ export class OllamaProvider implements LlmProvider {
     } catch (error) {
       throw aiError('ollama_error', `could not read the /api/chat response: ${String(error)}`);
     }
+    if (chunk.done_reason === 'length') {
+      throw aiError('output_truncated', `detectFormat stopped at num_predict ${String(NUM_PREDICT_DETECT)}`);
+    }
     const { text } = stripCodeFence(chunk.message?.content ?? '');
     if (text.trim() === '') throw aiError('empty_response', 'detectFormat returned no content');
 
@@ -492,8 +495,19 @@ export class OllamaProvider implements LlmProvider {
       numPredict: NUM_PREDICT_RETRACTIONS,
     });
 
+    let chunk: ChatChunk;
     try {
-      const chunk = (await response.json()) as ChatChunk;
+      chunk = (await response.json()) as ChatChunk;
+    } catch {
+      return [];
+    }
+    if (chunk.done_reason === 'length') {
+      throw aiError(
+        'output_truncated',
+        `retraction extraction stopped at num_predict ${String(NUM_PREDICT_RETRACTIONS)}`,
+      );
+    }
+    try {
       const { text } = stripCodeFence(chunk.message?.content ?? '');
       const validated = RetractionCorrectionsSchema.safeParse(JSON.parse(text));
       return validated.success ? validated.data.corrections : [];

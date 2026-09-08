@@ -129,4 +129,7 @@ are independent backend facts.
 - targeted Ollama/Whisper/Refine tests: 79 passed
 - transcription route tests: 22 passed
 - post-change real provider smoke: 2/2 schema-valid
-
+- Release review added explicit `done_reason=length` rejection to the two
+  non-streaming JSON paths (format detection and retraction quoting); targeted
+  provider tests cover both, so a partial helper response cannot be accepted
+  as valid JSON or silently discard correction evidence.
