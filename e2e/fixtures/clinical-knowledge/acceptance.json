@@ -1,0 +1,28 @@
+{
+  "partialMse": {
+    "format": "Fictional progress format",
+    "sections": ["Subjective", "Presentation", "Interventions", "Risk", "Plan"],
+    "source": "Fictional client spoke rapidly and reported feeling anxious. The therapist used cognitive restructuring in session.",
+    "mustPreserve": ["rapid speech", "anxious", "cognitive restructuring"],
+    "mustNotInfer": ["orientation", "hallucinations", "risk", "judgment", "exposure"]
+  },
+  "noEvidence": {
+    "format": "Fictional intake format",
+    "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+    "source": "Fictional client described a difficult week and agreed to return next Tuesday.",
+    "blankSections": ["History", "Formulation"],
+    "mustNotCreate": ["Presentation", "MSE", "diagnosis", "risk"]
+  },
+  "discussion": {
+    "format": "Fictional discussion format",
+    "sections": ["Discussion"],
+    "facts": [
+      "Fictional client discussed sleep at home.",
+      "Fictional client reported waking early.",
+      "Fictional client mentioned a library book."
+    ],
+    "expectedTitles": ["Daily routines and functioning", "Other discussion"],
+    "preserveExactlyOnce": true,
+    "mustNotClaim": ["diagnosis", "causality", "severity", "risk"]
+  }
+}

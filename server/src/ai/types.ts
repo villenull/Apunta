@@ -32,6 +32,8 @@ export interface GenerateNoteRequest extends DraftSource {
   readonly sections: readonly string[];
   /** Only used to pick a default when `instructions` is empty. */
   readonly formatName?: string | undefined;
+  /** Deterministic, section-scoped vocabulary guidance; never source text. */
+  readonly clinicalGuidance?: string | undefined;
 }
 
 export interface ChatTurn {
@@ -49,6 +51,8 @@ export interface RefineNoteRequest {
   readonly message: string;
   /** The excerpt she highlighted, if any (M4). */
   readonly refQuote?: string | undefined;
+  /** Deterministic, section-scoped vocabulary guidance; never source text. */
+  readonly clinicalGuidance?: string | undefined;
 }
 
 export interface DetectFormatRequest {

@@ -11,6 +11,13 @@ export { ApiErrorCodeSchema, ApiErrorSchema } from './errors.js';
 export type { ApiError, ApiErrorCode } from './errors.js';
 
 export {
+  CLINICAL_GUIDANCE_VERSION,
+  INTERVENTION_MODALITIES,
+  PRESENTATION_MSE_DOMAINS,
+} from './clinical-guidance.js';
+export type { InterventionModality, PresentationMseDomainName } from './clinical-guidance.js';
+
+export {
   DEFAULT_MODEL,
   DEFAULT_TIER_GIB,
   isSupportedModelName,

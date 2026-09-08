@@ -52,6 +52,8 @@ export class RecordingLlmProvider implements LlmProvider {
   readonly drafts: GenerateNoteRequest[] = [];
   /** M6: what the detect endpoint actually handed the model. */
   readonly detections: DetectFormatRequest[] = [];
+  /** Refine calls carry the same section-scoped guidance as first drafts. */
+  readonly refines: RefineNoteRequest[] = [];
 
   private readonly inner = new FakeLlmProvider({ streamDelayMs: 0 });
 
@@ -63,6 +65,7 @@ export class RecordingLlmProvider implements LlmProvider {
   }
 
   refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+    this.refines.push(request);
     return this.inner.refineNote(request);
   }
 

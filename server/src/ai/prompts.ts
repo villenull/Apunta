@@ -11,6 +11,7 @@ import {
 } from '@apunta/shared';
 
 import { instructionsFor } from './default-instructions.js';
+import { renderClinicalKnowledgeGuide } from './clinical-knowledge/integration.js';
 import { hasRetraction } from './retractions.js';
 import type {
   ComposeBriefRequest,
@@ -54,6 +55,10 @@ export interface ChatPrompt {
   readonly system: string;
   readonly user: string;
 }
+
+/** A final, source-first guard shared by generation and refine prompts. */
+export const FAITHFULNESS_CLOSE =
+  'Faithfulness close: local guidance changes wording and routing only, never content. Trace every sentence to the current source, note, or therapist message; unsupported or absent sections stay empty, and no diagnosis, causality, severity, risk, or intervention may be added.';
 
 /** `"Subjective", "Objective", "Assessment", "Plan"` — quoted so odd names survive. */
 function quotedKeys(sections: readonly string[]): string {
@@ -136,12 +141,17 @@ function sourceBlocks(request: {
 
 export function buildGeneratePrompt(request: GenerateNoteRequest): ChatPrompt {
   const instructions = instructionsFor(request.instructions, request.formatName ?? '', request.sections);
+  const clinicalGuidance =
+    request.clinicalGuidance ?? renderClinicalKnowledgeGuide(request.formatName, request.sections);
   const system = [
     instructions.trimEnd(),
     '',
     outputFormatBlock(request.sections),
+    ...(clinicalGuidance.trim() === '' ? [] : ['', clinicalGuidance.trim()]),
     '',
     sourceGlossary(request),
+    '',
+    FAITHFULNESS_CLOSE,
   ].join('\n');
 
   const source = `${request.typedNotes ?? ''}\n${request.transcript ?? ''}`;
@@ -221,6 +231,8 @@ export function buildExtractRetractionsPrompt(transcript: string): ChatPrompt {
  */
 export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
   const instructions = instructionsFor(request.instructions, request.formatName ?? '', request.sections);
+  const clinicalGuidance =
+    request.clinicalGuidance ?? renderClinicalKnowledgeGuide(request.formatName, request.sections);
   const system = [
     instructions.trimEnd(),
     '',
@@ -241,6 +253,9 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
     '',
     'A request about tone or register ("more clinical", "more formal") changes wording only. It is never permission to add an observation, a finding, or a stock clinical phrase the note does not already contain: rewriting "engaged, made eye contact" in a more clinical register still describes exactly engagement and eye contact, nothing more.',
     'A request to expand a section may only surface material already in the note, the source, or this conversation. If her request cannot be met without adding something the rules above forbid, change what can be changed, and say what you left alone and why in "reply".',
+    ...(clinicalGuidance.trim() === '' ? [] : ['', clinicalGuidance.trim()]),
+    '',
+    FAITHFULNESS_CLOSE,
   ].join('\n');
 
   const parts: string[] = ['The note as it currently stands:', '', request.noteText];

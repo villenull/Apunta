@@ -208,6 +208,33 @@ describe('buildGeneratePrompt', () => {
     expect(prompt.system).toContain('her written notes are correct');
   });
 
+  it('adds only section-scoped clinical guidance and keeps reference documents out', () => {
+    const prompt = buildGeneratePrompt({
+      instructions: 'Owner-authored fictional format instructions.',
+      formatName: 'Fictional progress format',
+      sections: ['Subjective', 'Presentation', 'Interventions', 'Discussion', 'Risk'],
+      typedNotes: 'Fictional client spoke rapidly. The therapist used cognitive restructuring.',
+    });
+    expect(prompt.system).toContain('Presentation/MSE routing');
+    expect(prompt.system).toContain('Intervention routing');
+    expect(prompt.system).toContain('Discussion routing');
+    expect(prompt.system).not.toMatch(/\.pdf|MSE examples|Cheat Sheet|patient/i);
+    expect(
+      prompt.system.endsWith('no diagnosis, causality, severity, risk, or intervention may be added.'),
+    ).toBe(true);
+  });
+
+  it('omits guidance when the caller explicitly supplies an empty guide', () => {
+    const prompt = buildGeneratePrompt({
+      instructions: 'Owner-authored fictional format instructions.',
+      sections: ['Plan'],
+      clinicalGuidance: '',
+      typedNotes: 'Fictional client agreed to return.',
+    });
+    expect(prompt.system).not.toContain('Local clinical vocabulary guidance');
+    expect(prompt.system).toContain('Faithfulness close');
+  });
+
   /**
    * Ollama truncates from the head, so the system prompt is what gets dropped
    * when a prompt overflows. The tail reminder is the only part of the contract
@@ -234,7 +261,17 @@ describe('buildGeneratePrompt', () => {
         '',
         outputFormatBlock(SOAP),
         '',
+        '## Local clinical vocabulary guidance',
+        'Vocabulary version: 2026-09-07.1.',
+        '',
+        'Presentation/MSE routing: use the authored section "Objective" only for findings explicitly observed, measured, or reported in the current source.',
+        'MSE domains are a checklist, not a completion quota: appearance/behaviour, speech, mood, affect, perception, thought process, thought content, cognition/sensorium, insight/judgment.',
+        'Do not turn silence into a normal or negative finding. Preserve uncertainty and source attribution; omit an unsupported or unclear finding.',
+        'Plan routing: use the authored section "Plan" only for stated future actions, follow-up, or interventions; do not add a modality or technique that the source does not state.',
+        '',
         'Where the instructions above say "the dictation", they mean the source material below. There is no recording for this session: the source is the therapist\'s own written notes, so it carries no transcription errors and her wording is exact.',
+        '',
+        'Faithfulness close: local guidance changes wording and routing only, never content. Trace every sentence to the current source, note, or therapist message; unsupported or absent sections stay empty, and no diagnosis, causality, severity, risk, or intervention may be added.',
       ].join('\n'),
     );
   });
@@ -325,6 +362,7 @@ describe('buildRefinePrompt', () => {
     expect(prompt.user).toContain('What she states in her message is hers');
     expect(prompt.user).toContain('may not drop anything she did not ask to have removed');
     expect(prompt.user.indexOf('Whatever she asked for')).toBeGreaterThan(prompt.user.indexOf('She says:'));
+    expect(prompt.system).toContain('Faithfulness close');
   });
 
   /**

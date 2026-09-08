@@ -14,6 +14,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
+import { applyDiscussionThemes, renderClinicalKnowledgeGuide } from '../ai/clinical-knowledge/integration.js';
 import { FACT_NOTICE_OPENING, factNotice, guardDroppedFacts } from '../ai/fact-guard.js';
 import { GUARD_NOTICE_OPENING, guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
 import { RETRACTION_NOTICE_OPENING } from '../ai/retractions.js';
@@ -105,6 +106,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         instructions: format.instructions,
         formatName: format.name,
         sections: format.sections,
+        clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
         noteText: note.content,
         history,
         message: input.message,
@@ -126,7 +128,10 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         } else if (event.type === 'refined') {
           sawRefined = true;
           replyText = event.reply;
-          updatedSections = event.updatedSections;
+          updatedSections =
+            event.updatedSections === null
+              ? null
+              : applyDiscussionThemes(event.updatedSections, format.sections);
           stats = event.stats;
         }
       }

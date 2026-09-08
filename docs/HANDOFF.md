@@ -1,6 +1,6 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-07 (evening), after the refine-safety integration gate.**
+**Updated 2026-09-07 (evening), after the clinical-knowledge integration gate.**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -79,6 +79,14 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   dates, explicit risk findings, medications and high-confidence names while
   blocking ungrounded clinical boilerplate. Fake mode's Expand plan path
   exercises the same preservation invariant.
+- **Clinical-knowledge integration gate** (2026-09-07): local, versioned
+  Presentation/MSE and intervention vocabulary is rendered only for authored
+  section aliases and never supplies a finding or treatment. Discussion is
+  grouped by deterministic neutral themes only when a named Discussion section
+  exists; every supplied fact is retained exactly once, and headings are the
+  only generated content. No model training, retrieval, raw reference PDF,
+  outbound call, or database change is involved. Synthetic acceptance cases
+  live in `e2e/fixtures/clinical-knowledge/`.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
@@ -90,6 +98,11 @@ with the retraction pass; the true baseline before it was 35.0%
 (`docs/eval-reports/2026-09-05-retraction-user-turn.md` explains why the
 older 40.0% is not comparable). The eval takes 1–2 h of CPU; never run it
 while someone is testing on the same machine.
+
+The clinical-knowledge gate has hermetic unit and route coverage under
+`server/src/ai/clinical-knowledge/`; it was not treated as a real-model eval.
+Run the standard fake-AI gates before any manual model measurement, and never
+start the long real eval while live testing is active.
 
 ## What is open
 

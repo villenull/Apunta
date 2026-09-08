@@ -40,7 +40,14 @@ Do not add any other key. Do not use markdown, headings, or bullet characters.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 
-Where the instructions above say "the dictation", they mean the source material below. There is no recording for this session: the source is the therapist's own written notes, so it carries no transcription errors and her wording is exact.",
+## Local clinical vocabulary guidance
+Vocabulary version: 2026-09-07.1.
+
+Plan routing: use the authored section "Plan" only for stated future actions, follow-up, or interventions; do not add a modality or technique that the source does not state.
+
+Where the instructions above say "the dictation", they mean the source material below. There is no recording for this session: the source is the therapist's own written notes, so it carries no transcription errors and her wording is exact.
+
+Faithfulness close: local guidance changes wording and routing only, never content. Trace every sentence to the current source, note, or therapist message; unsupported or absent sections stay empty, and no diagnosis, causality, severity, risk, or intervention may be added.",
   "user": "Therapist's written notes — her own words, written by her. Authoritative:
 
 Sleep improved, intrusive thoughts less frequent. Engaged. Keep weekly, add grounding.
@@ -111,7 +118,19 @@ Do not add any other key. Do not use markdown, headings, or bullet characters.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 
-Where the instructions above say "the dictation", they mean the source material below. There is no recording for this session: the source is the therapist's own written notes, so it carries no transcription errors and her wording is exact.",
+## Local clinical vocabulary guidance for "Supervision log"
+Vocabulary version: 2026-09-07.1.
+
+Presentation/MSE routing: use the authored section "Presentation" only for findings explicitly observed, measured, or reported in the current source.
+MSE domains are a checklist, not a completion quota: appearance/behaviour, speech, mood, affect, perception, thought process, thought content, cognition/sensorium, insight/judgment.
+Do not turn silence into a normal or negative finding. Preserve uncertainty and source attribution; omit an unsupported or unclear finding.
+Intervention routing: use the authored section "Interventions" only for an intervention explicitly described in the current source.
+Closed vocabulary labels (never a recommendation): EMDR, CBT, CBT for children, ACT, Solution-focused/Narrative Therapy, Psychodynamic therapy, DBT-C, Behavioral therapy, DBT.
+Do not infer a modality from a symptom, goal, generic skill, recommendation, future plan, hypothetical, or negated action; do not expand a named modality into unstated techniques.
+
+Where the instructions above say "the dictation", they mean the source material below. There is no recording for this session: the source is the therapist's own written notes, so it carries no transcription errors and her wording is exact.
+
+Faithfulness close: local guidance changes wording and routing only, never content. Trace every sentence to the current source, note, or therapist message; unsupported or absent sections stay empty, and no diagnosis, causality, severity, risk, or intervention may be added.",
   "user": "Therapist's written notes — her own words, written by her. Authoritative:
 
 Sleep improved, intrusive thoughts less frequent. Engaged. Keep weekly, add grounding.
@@ -298,7 +317,14 @@ Do not add any other key. Do not use markdown, headings, or bullet characters.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 
-Where the instructions above say "the dictation", they mean the transcript below.",
+## Local clinical vocabulary guidance for "Intake note"
+Vocabulary version: 2026-09-07.1.
+
+Plan routing: use the authored section "Plan" only for stated future actions, follow-up, or interventions; do not add a modality or technique that the source does not state.
+
+Where the instructions above say "the dictation", they mean the transcript below.
+
+Faithfulness close: local guidance changes wording and routing only, never content. Trace every sentence to the current source, note, or therapist message; unsupported or absent sections stay empty, and no diagnosis, causality, severity, risk, or intervention may be added.",
   "user": "Dictation transcript — speech-to-text of the same session. It may contain transcription errors, especially in names, medications and clinical terms:
 
 Intake with Maria Ruiz. She came in after her mother died in March.
@@ -470,7 +496,17 @@ Do not add any other key. Do not use markdown, headings, or bullet characters.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 
-Where the instructions above say "the dictation", they mean the source material below. There is no recording for this session: the source is the therapist's own written notes, so it carries no transcription errors and her wording is exact.",
+## Local clinical vocabulary guidance for "Progress note"
+Vocabulary version: 2026-09-07.1.
+
+Presentation/MSE routing: use the authored section "Objective" only for findings explicitly observed, measured, or reported in the current source.
+MSE domains are a checklist, not a completion quota: appearance/behaviour, speech, mood, affect, perception, thought process, thought content, cognition/sensorium, insight/judgment.
+Do not turn silence into a normal or negative finding. Preserve uncertainty and source attribution; omit an unsupported or unclear finding.
+Plan routing: use the authored section "Plan" only for stated future actions, follow-up, or interventions; do not add a modality or technique that the source does not state.
+
+Where the instructions above say "the dictation", they mean the source material below. There is no recording for this session: the source is the therapist's own written notes, so it carries no transcription errors and her wording is exact.
+
+Faithfulness close: local guidance changes wording and routing only, never content. Trace every sentence to the current source, note, or therapist message; unsupported or absent sections stay empty, and no diagnosis, causality, severity, risk, or intervention may be added.",
   "user": "Therapist's written notes — her own words, written by her. Authoritative:
 
 Sleep improved, intrusive thoughts less frequent. Engaged. Keep weekly, add grounding.
@@ -647,7 +683,17 @@ Moving something is two edits, not one: it leaves the section it was in and appe
 A section with no material stays the empty string "". The faithfulness rules above apply to every word you write here.
 
 A request about tone or register ("more clinical", "more formal") changes wording only. It is never permission to add an observation, a finding, or a stock clinical phrase the note does not already contain: rewriting "engaged, made eye contact" in a more clinical register still describes exactly engagement and eye contact, nothing more.
-A request to expand a section may only surface material already in the note, the source, or this conversation. If her request cannot be met without adding something the rules above forbid, change what can be changed, and say what you left alone and why in "reply".",
+A request to expand a section may only surface material already in the note, the source, or this conversation. If her request cannot be met without adding something the rules above forbid, change what can be changed, and say what you left alone and why in "reply".
+
+## Local clinical vocabulary guidance
+Vocabulary version: 2026-09-07.1.
+
+Presentation/MSE routing: use the authored section "Objective" only for findings explicitly observed, measured, or reported in the current source.
+MSE domains are a checklist, not a completion quota: appearance/behaviour, speech, mood, affect, perception, thought process, thought content, cognition/sensorium, insight/judgment.
+Do not turn silence into a normal or negative finding. Preserve uncertainty and source attribution; omit an unsupported or unclear finding.
+Plan routing: use the authored section "Plan" only for stated future actions, follow-up, or interventions; do not add a modality or technique that the source does not state.
+
+Faithfulness close: local guidance changes wording and routing only, never content. Trace every sentence to the current source, note, or therapist message; unsupported or absent sections stay empty, and no diagnosis, causality, severity, risk, or intervention may be added.",
   "user": "The note as it currently stands:
 
 Plan: Continue weekly.

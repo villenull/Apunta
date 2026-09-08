@@ -10,6 +10,11 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
+import {
+  applyDiscussionThemes,
+  renderClinicalKnowledgeGuide,
+  sectionForRole,
+} from '../ai/clinical-knowledge/integration.js';
 import { retractionNotice } from '../ai/retractions.js';
 import type { AiProviders, DraftSource, LlmStats } from '../ai/types.js';
 import { createChatMessage } from '../db/chat-messages.js';
@@ -56,12 +61,14 @@ export async function streamDraft(params: {
   let sections: Sections | null = null;
   let stats: LlmStats | null = null;
   let retractions: readonly AppliedRetraction[] = [];
+  const discussionSection = sectionForRole(format.sections, 'discussion');
 
   try {
     const events = providers.llm.generateNote({
       instructions: format.instructions,
       formatName: format.name,
       sections: format.sections,
+      clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
       typedNotes: source.typedNotes,
       transcript: source.transcript,
     });
@@ -75,10 +82,19 @@ export async function streamDraft(params: {
       if (event.type === 'status') {
         stream.send('status', { stage: event.stage, message: event.message });
       } else if (event.type === 'token') {
+        if (discussionSection !== null && event.section === discussionSection) {
+          // Discussion is deterministically regrouped after schema validation;
+          // hold only that section so the visible stream remains byte-for-byte
+          // equal to the persisted note. Other sections stay live.
+          continue;
+        }
         stream.send('token', { section: event.section, text: event.text });
       } else if (event.type === 'sections') {
-        sections = event.sections;
+        sections = applyDiscussionThemes(event.sections, format.sections);
         stats = event.stats;
+        if (discussionSection !== null) {
+          stream.send('token', { section: discussionSection, text: sections[discussionSection] ?? '' });
+        }
       } else if (event.type === 'retractions') {
         retractions = event.applied;
         // Counts only: what was cut is patient material.

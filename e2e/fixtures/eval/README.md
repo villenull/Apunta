@@ -255,6 +255,13 @@ harness in CI rather than three hours into a manual run.
 
 ## Extending the corpus
 
+The separate identifier-free synthetic acceptance cases in
+`e2e/fixtures/clinical-knowledge/` cover the local clinical-knowledge routing
+gate. They are intentionally not mixed into this 20-fixture model corpus:
+their purpose is deterministic section routing, explicit-evidence abstention,
+and exact Discussion fact preservation, not model-quality scoring. Do not add
+real notes or reference-PDF extracts to either directory.
+
 Keep the axes balanced. If you add a fixture:
 
 - Give it a difficulty this corpus does not already have, and say which in

@@ -147,6 +147,28 @@ describe('POST /api/generate — the happy path', () => {
     });
     expect((events.at(-1)?.data['note'] as Note).title).toBe('Friday session');
   });
+
+  it('keeps Discussion formatting identical between the stream and saved note', async () => {
+    const discussionFormat = await seedFormat(harness.app, {
+      name: 'Fictional discussion format',
+      sections: ['Discussion'],
+    });
+    const { events } = await generate(harness.app, {
+      patient_id: patient.id,
+      format_id: discussionFormat.id,
+      typed_notes:
+        'Fictional client discussed sleep at home. Fictional client reported waking early. Fictional client mentioned a library book.',
+    });
+    const note = events.at(-1)?.data['note'] as Note;
+    const discussionTokens = events
+      .filter((event) => event.name === 'token' && event.data['section'] === 'Discussion')
+      .map((event) => String(event.data['text']))
+      .join('');
+    expect(discussionTokens).toBe(
+      '### Daily routines and functioning\nFictional client discussed sleep at home.\nFictional client reported waking early.\n\n### Other discussion\nFictional client mentioned a library book.',
+    );
+    expect(note.content).toContain(`Discussion: ${discussionTokens}`);
+  });
 });
 
 describe('POST /api/generate — rejected before the stream opens', () => {

@@ -61,6 +61,26 @@ export function resolveModel(db: Database): string {
 }
 
 export { AiError, aiError, UNREACHABLE_MESSAGE } from './errors.js';
+export {
+  applyDiscussionThemes,
+  renderClinicalKnowledgeGuide,
+  sectionForRole,
+  sectionRole,
+} from './clinical-knowledge/integration.js';
+export {
+  DISCUSSION_FALLBACK_TITLE,
+  groupDiscussionThemes,
+  renderDiscussionThemes,
+  splitDiscussionRawNotes,
+} from './clinical-knowledge/discussion-themes.js';
+export {
+  documentInterventions,
+  extractInterventionLabels,
+  INTERVENTION_KNOWLEDGE,
+  mapInterventions,
+  NO_INFERENCE_CASES,
+} from './clinical-knowledge/interventions.js';
+export { PRESENTATION_MSE_KNOWLEDGE, renderPresentationMse } from './clinical-knowledge/presentation.js';
 export { FakeLlmProvider, FakeSttProvider } from './fake.js';
 export {
   resolveKeepAudio,
