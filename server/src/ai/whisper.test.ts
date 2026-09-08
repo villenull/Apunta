@@ -318,7 +318,7 @@ describe('WhisperCppSttProvider.transcribe', () => {
     });
     expect(calls[0]?.command).toBe('whisper-cli');
     expect(calls[0]?.args).toContain('--prompt');
-    expect(calls[0]?.args[calls[0]?.args.indexOf('--threads') + 1]).toBe('8');
+    expect(calls[0]?.args[calls[0]?.args.indexOf('--threads') + 1]).toBe(String(whisperThreads(false)));
   });
 
   it('runs a preview on the smaller model when one is configured and present, and the note on the main one', async () => {
@@ -347,8 +347,8 @@ describe('WhisperCppSttProvider.transcribe', () => {
     expect(calls[0]?.args).toContain('--beam-size');
     expect(calls[1]?.args).not.toContain('--beam-size');
     expect(calls[1]?.args).toContain('--language');
-    expect(calls[0]?.args[calls[0]?.args.indexOf('--threads') + 1]).toBe('4');
-    expect(calls[1]?.args[calls[1]?.args.indexOf('--threads') + 1]).toBe('8');
+    expect(calls[0]?.args[calls[0]?.args.indexOf('--threads') + 1]).toBe(String(whisperThreads(true)));
+    expect(calls[1]?.args[calls[1]?.args.indexOf('--threads') + 1]).toBe(String(whisperThreads(false)));
   });
 
   it('fits the audio context to a dictated clip but keeps the note model, beam search and fallbacks', async () => {
