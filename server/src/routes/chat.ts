@@ -100,6 +100,12 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     let stats: LlmStats | null = null;
     let sawRefined = false;
     let heldBack = false;
+    // An edit reply is a completion claim. Keep it out of the visible chat
+    // until the guarded write has committed; otherwise the model can say it
+    // fixed the note while the editor is still showing the old text. Questions
+    // remain streamable because their answer is useful before any note write.
+    const bufferReplyTokens = !isQuestion(input.message);
+    let bufferedReply = '';
 
     try {
       const events = providers.llm.refineNote({
@@ -124,7 +130,10 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
           // The decoder emits `reply` for the streamable field; a section name
           // here would mean the shape changed under us, so ignore it rather
           // than render half a rewrite into the chat bubble.
-          if (event.section === 'reply') stream.send('token', { text: event.text });
+          if (event.section === 'reply') {
+            if (bufferReplyTokens) bufferedReply += event.text;
+            else stream.send('token', { text: event.text });
+          }
         } else if (event.type === 'refined') {
           sawRefined = true;
           replyText = event.reply;
@@ -241,15 +250,19 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       if (rewritten === undefined) replyText = PUBLISHED_REFUSAL;
     }
 
-    const assistantMessage = persistReply(db, note.id, replyText);
-    stream.send('message', { message: assistantMessage });
-
     if (rewritten !== undefined && updatedSections !== null) {
+      // The note has been committed before this event is sent. Clients apply
+      // it before releasing the assistant completion, so the visible success
+      // follows the rendered note rather than racing it.
       stream.send('note-updated', {
         note: rewritten,
         empty_sections: emptySectionNames(updatedSections, format.sections),
       });
     }
+
+    if (bufferedReply !== '') stream.send('token', { text: bufferedReply });
+    const assistantMessage = persistReply(db, note.id, replyText);
+    stream.send('message', { message: assistantMessage });
     stream.end();
   });
 }

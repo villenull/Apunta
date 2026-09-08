@@ -54,10 +54,10 @@ describe('sendChatMessage', () => {
     stubStream(
       frame('message', { message: userTurn }) +
         frame('status', { stage: 'drafting', message: 'Thinking…' }) +
+        frame('note-updated', { note: rewritten, empty_sections: ['Objective'] }) +
         frame('token', { text: 'Shortened ' }) +
         frame('token', { text: 'the Plan section.' }) +
-        frame('message', { message: assistantTurn }) +
-        frame('note-updated', { note: rewritten, empty_sections: ['Objective'] }),
+        frame('message', { message: assistantTurn }),
       7, // split mid-frame: the reader must reassemble across chunks
     );
 
@@ -75,8 +75,9 @@ describe('sendChatMessage', () => {
         },
         onToken: (text) => tokens.push(text),
         onMessage: (message) => roles.push(message.role),
-        onNoteUpdated: (event) => {
+        onNoteUpdated: async (event) => {
           updated = event.note.content;
+          await Promise.resolve();
         },
       },
     );

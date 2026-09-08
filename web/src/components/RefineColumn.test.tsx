@@ -1,4 +1,4 @@
-import { PREVIEW_FIRST_MS } from '@apunta/shared';
+import { PREVIEW_FIRST_MS, type ChatNoteUpdatedEvent } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,14 +52,14 @@ const progressNote = makeFormat('Progress note', ['Subjective', 'Plan']);
 const john = makePatient('John Smith', { note_count: 1 });
 const draft = makeNote(john.id, { content: 'Subjective: Improved sleep.\n\nPlan: Continue weekly.' });
 
-function renderChat(): void {
+function renderChat(onNoteUpdated: (event: ChatNoteUpdatedEvent) => void | Promise<void> = () => {}): void {
   render(
     <RefineColumn
       key={draft.id}
       note={draft}
       refQuote={null}
       onClearRefQuote={() => {}}
-      onNoteUpdated={() => {}}
+      onNoteUpdated={onNoteUpdated}
     />,
   );
 }
@@ -209,5 +209,28 @@ describe('dictating into the composer', () => {
     await waitFor(() => {
       expect(api.state.messages).toHaveLength(0);
     });
+  });
+});
+
+describe('refine completion ordering', () => {
+  it('holds the assistant completion until the committed note is rendered', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
+    let release!: () => void;
+    const applied = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const onNoteUpdated = vi.fn(() => applied);
+    renderChat(onNoteUpdated);
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    await waitFor(() => expect(onNoteUpdated).toHaveBeenCalledTimes(1));
+    // A delayed render must keep the successful assistant bubble from
+    // claiming completion while the editor is still applying the rewrite.
+    expect(screen.queryByText('Shortened the Plan section.')).toBeNull();
+
+    release();
+    expect(await screen.findByText('Shortened the Plan section.')).toBeDefined();
   });
 });

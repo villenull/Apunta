@@ -10,6 +10,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
+import { aiError } from '../ai/errors.js';
 import type { LlmEvent, RefineNoteRequest } from '../ai/types.js';
 import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { getNote, setNotePublished } from '../db/notes.js';
@@ -62,6 +63,10 @@ function assistantReply(events: SseEvent[]): string {
   return messages(events).find((message) => message.role === 'assistant')?.text ?? '';
 }
 
+function noteUpdated(events: SseEvent[]): SseEvent | undefined {
+  return events.findLast((event) => event.name === 'note-updated');
+}
+
 const NOTE_TEXT = [
   'Subjective: Patient reports improved sleep since last session.',
   'Objective: Alert and engaged in session.',
@@ -111,7 +116,9 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(statusCode).toBe(200);
     const names = events.map((event) => event.name);
     expect(names).toContain('token');
-    expect(names.at(-1)).toBe('note-updated');
+    expect(names.at(-2)).toBe('token');
+    expect(names.at(-1)).toBe('message');
+    expect(names.lastIndexOf('note-updated')).toBeLessThan(names.lastIndexOf('message'));
     expect(names).not.toContain('error');
 
     // The reply streams as prose, never as the JSON the model actually emits.
@@ -122,7 +129,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(streamed).toBe('Shortened the Plan section.');
     expect(streamed).not.toContain('{"');
 
-    const updated = events.at(-1)?.data['note'] as Note;
+    const updated = noteUpdated(events)?.data['note'] as Note;
     expect(updated.content).toContain('Plan: Continue weekly sessions and grounding exercises.');
     expect(updated.content).not.toContain('Introduce grounding exercises');
     // Untouched sections come back verbatim.
@@ -137,6 +144,75 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(thread.map((message) => message.role)).toEqual(['user', 'assistant']);
     expect(thread[0]?.text).toBe('Make the plan shorter');
     expect(thread[1]?.text).toBe('Shortened the Plan section.');
+  });
+
+  it('waits for a delayed provider, then emits the committed note before edit completion', async () => {
+    let release!: () => void;
+    const providerReady = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    class DelayedLlmProvider extends FakeLlmProvider {
+      override async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+        yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+        await providerReady;
+        yield* super.refineNote(request);
+      }
+    }
+
+    const local = await createTestApp({
+      providers: { llm: new DelayedLlmProvider(), stt: new FakeSttProvider() },
+    });
+    try {
+      const localPatient = await seedPatient(local.app, 'John Smith');
+      const localFormat = await seedFormat(local.app);
+      const note = await seedNote(local.app, localPatient.id, localFormat.id, NOTE_TEXT);
+      const pending = chat(local.app, note.id, { message: 'Make the plan shorter' });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(getNote(local.db, note.id)?.content).toBe(NOTE_TEXT);
+      release();
+
+      const { events } = await pending;
+      const names = events.map((event) => event.name);
+      const updateIndex = names.indexOf('note-updated');
+      const tokenIndex = names.indexOf('token');
+      const assistantIndex = names.indexOf('message', names.indexOf('message') + 1);
+      expect(updateIndex).toBeGreaterThan(-1);
+      expect(updateIndex).toBeLessThan(tokenIndex);
+      expect(updateIndex).toBeLessThan(assistantIndex);
+      expect((noteUpdated(events)?.data['note'] as Note).content).toContain(
+        'Continue weekly sessions and grounding exercises.',
+      );
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('drops buffered edit success when a delayed provider fails', async () => {
+    class FailingLlmProvider extends FakeLlmProvider {
+      override async *refineNote(_request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+        yield { type: 'token', section: 'reply', text: 'Fixed the note.' };
+        throw aiError('ollama_error', 'synthetic delayed failure');
+      }
+    }
+
+    const local = await createTestApp({
+      providers: { llm: new FailingLlmProvider(), stt: new FakeSttProvider() },
+    });
+    try {
+      const localPatient = await seedPatient(local.app, 'John Smith');
+      const localFormat = await seedFormat(local.app);
+      const note = await seedNote(local.app, localPatient.id, localFormat.id, NOTE_TEXT);
+      const { events } = await chat(local.app, note.id, { message: 'Make the plan shorter' });
+
+      expect(events.map((event) => event.name)).toContain('error');
+      expect(events.map((event) => event.name)).not.toContain('token');
+      expect(events.map((event) => event.name)).not.toContain('note-updated');
+      expect(messages(events).map((message) => message.role)).toEqual(['user']);
+      expect(getNote(local.db, note.id)?.content).toBe(NOTE_TEXT);
+    } finally {
+      await local.close();
+    }
   });
 
   it('echoes the persisted user turn before the assistant answers', async () => {
@@ -212,7 +288,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
 
     const { events } = await chat(harness.app, note.id, { message: 'Make the plan shorter' });
 
-    const updated = events.at(-1)?.data['note'] as Note;
+    const updated = noteUpdated(events)?.data['note'] as Note;
     // The sentence she typed a moment ago is in the revision, which it could
     // only be if the *current* note went to the model rather than the draft.
     expect(updated.content).toContain('She had walked here in the rain.');
@@ -226,7 +302,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
 
     const { events } = await chat(harness.app, note.id, { message: 'Make the plan shorter' });
 
-    const final = events.at(-1);
+    const final = noteUpdated(events);
     expect(final?.name).toBe('note-updated');
     expect(final?.data['empty_sections']).toEqual(['Objective']);
     // The header still travels: she fills the blank in on the far side.
@@ -458,7 +534,7 @@ describe('POST /api/notes/:id/chat — the published lock', () => {
 
     const { events } = await chat(harness.app, note.id, { message: 'Make the plan shorter' });
 
-    expect(events.at(-1)?.name).toBe('note-updated');
+    expect(events.map((event) => event.name)).toContain('note-updated');
     expect(getNote(harness.db, note.id)?.content).toContain('Continue weekly sessions and grounding');
   });
 });
@@ -629,7 +705,7 @@ describe('POST /api/notes/:id/chat over a real connection', () => {
       expect(events.length).toBeGreaterThan(0);
       expect(events.some((event) => event.name === 'token')).toBe(true);
 
-      const final = events.at(-1);
+      const final = noteUpdated(events);
       expect(final?.name).toBe('note-updated');
       expect(String((final?.data['note'] as Note).content)).toContain(
         'Plan: Continue weekly sessions and grounding exercises.',

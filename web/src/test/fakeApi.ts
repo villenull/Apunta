@@ -688,17 +688,22 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
 
         const frames: { event: string; data: unknown }[] = [{ event: 'message', data: { message: user } }];
         const outcome = fakeRefine(note, text);
-        for (const word of outcome.reply.split(' ')) {
-          frames.push({ event: 'token', data: { text: `${word} ` } });
+        if (outcome.content !== null) {
+          const updated = replaceNote({ ...note, content: outcome.content, updated_at: stamp() });
+          // Keep this fake's stream contract aligned with the real route:
+          // commit and render the note before releasing a successful reply.
+          frames.push({ event: 'note-updated', data: { note: updated, empty_sections: [] } });
+        }
+        if (outcome.content === null && note.status === 'published' && !text.includes('?')) {
+          // The published lock never asks the model to stream an edit.
+        } else {
+          for (const word of outcome.reply.split(' ')) {
+            frames.push({ event: 'token', data: { text: `${word} ` } });
+          }
         }
         const assistant = makeChatMessage(note.id, 'assistant', outcome.reply);
         state.messages = [...state.messages, assistant];
         frames.push({ event: 'message', data: { message: assistant } });
-
-        if (outcome.content !== null) {
-          const updated = replaceNote({ ...note, content: outcome.content, updated_at: stamp() });
-          frames.push({ event: 'note-updated', data: { note: updated, empty_sections: [] } });
-        }
         return sse(frames);
       }
 

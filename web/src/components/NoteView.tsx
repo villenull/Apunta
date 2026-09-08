@@ -5,7 +5,7 @@ import {
   type NoteFormat,
   type PatientListItem,
 } from '@apunta/shared';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   deleteNote as deleteNoteRequest,
@@ -90,11 +90,30 @@ export function NoteView({
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   const onNoteChangedRef = useRef(onNoteChanged);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  /** Releases the chat stream only after the committed rewrite is painted. */
+  const noteUpdateAckRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     noteRef.current = note;
     onNoteChangedRef.current = onNoteChanged;
   });
+
+  useLayoutEffect(() => {
+    const ack = noteUpdateAckRef.current;
+    if (ack !== null) {
+      noteUpdateAckRef.current = null;
+      ack();
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      // Do not strand a stream if the user switches notes while its committed
+      // update is waiting for a layout pass.
+      noteUpdateAckRef.current?.();
+      noteUpdateAckRef.current = null;
+    };
+  }, []);
 
   /**
    * Persist the body. A published note is unpublished first: the server refuses
@@ -170,21 +189,24 @@ export function NoteView({
    * light the editor for a moment so the change is not silent.
    */
   const handleNoteUpdated = useCallback(
-    (event: ChatNoteUpdatedEvent) => {
+    (event: ChatNoteUpdatedEvent): Promise<void> => {
       cancelPending();
-      // Name what actually changed, so the flash can say which sections moved.
-      const sectionNames = format?.sections ?? [];
-      const before = textToSections(noteRef.current.content, sectionNames);
-      const after = textToSections(event.note.content, sectionNames);
-      setChangedSections(sectionNames.filter((name) => (before[name] ?? '') !== (after[name] ?? '')));
-      setText(event.note.content);
-      onNoteChangedRef.current(event.note);
-      setError(null);
-      setRefined(true);
-      window.setTimeout(() => {
-        setRefined(false);
-        setChangedSections([]);
-      }, REFINED_FLASH_MS);
+      return new Promise<void>((resolve) => {
+        noteUpdateAckRef.current = resolve;
+        // Name what actually changed, so the flash can say which sections moved.
+        const sectionNames = format?.sections ?? [];
+        const before = textToSections(noteRef.current.content, sectionNames);
+        const after = textToSections(event.note.content, sectionNames);
+        setChangedSections(sectionNames.filter((name) => (before[name] ?? '') !== (after[name] ?? '')));
+        setText(event.note.content);
+        onNoteChangedRef.current(event.note);
+        setError(null);
+        setRefined(true);
+        window.setTimeout(() => {
+          setRefined(false);
+          setChangedSections([]);
+        }, REFINED_FLASH_MS);
+      });
     },
     [cancelPending, format],
   );

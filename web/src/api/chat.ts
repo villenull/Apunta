@@ -37,7 +37,8 @@ export interface ChatHandlers {
    */
   onMessage?: (message: ChatMessage) => void;
   /** The rewritten note, already saved. Never fires for a published note. */
-  onNoteUpdated?: (event: ChatNoteUpdatedEvent) => void;
+  /** May resolve after the editor has rendered the committed note. */
+  onNoteUpdated?: (event: ChatNoteUpdatedEvent) => void | Promise<void>;
 }
 
 /**
@@ -77,7 +78,7 @@ export async function sendChatMessage(
         break;
       }
       case 'note-updated':
-        handlers.onNoteUpdated?.(ChatNoteUpdatedEventSchema.parse(frame.data));
+        await handlers.onNoteUpdated?.(ChatNoteUpdatedEventSchema.parse(frame.data));
         break;
       case 'error':
         throw new GenerateError(ChatErrorEventSchema.parse(frame.data));
