@@ -26,6 +26,7 @@ import { listTranscriptsForNote } from '../db/transcripts.js';
 import { notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
+import { tryMoveOnlyRefine } from './refine-fast-path.js';
 
 /**
  * The refine chat — `POST /api/notes/:id/chat` (SSE) and the thread behind it.
@@ -93,6 +94,57 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     if (locked && !isQuestion(input.message)) {
       finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
       return;
+    }
+
+    // A single, explicitly quoted move is safe to perform without model
+    // generation. The parser is intentionally strict; every rejected or
+    // ambiguous request falls through to the existing refine path below.
+    const fastPath = tryMoveOnlyRefine(input.message, note.content, format.sections);
+    if (fastPath.matched) {
+      if (stream.closed) {
+        stream.end();
+        return;
+      }
+
+      const previous = textToSections(note.content, format.sections);
+      const sources = [
+        ...listTranscriptsForNote(db, note.id).map((t) => t.raw_text),
+        input.message,
+        ...(input.ref_quote == null ? [] : [input.ref_quote]),
+      ];
+      const guarded = guardRefinedSections(previous, fastPath.sections, sources);
+      const kept = guardDroppedFacts(previous, guarded.sections, input.message);
+
+      // Moving existing, quoted text should pass both locks. Keep this check
+      // explicit nevertheless: if a future guard learns that the operation
+      // violates a clinical or fact invariant, this request takes the normal
+      // model path instead of bypassing that protection.
+      if (guarded.blocked.length === 0 && kept.dropped.length === 0) {
+        stream.send('status', { stage: 'drafting', message: 'Applying the move…' });
+        if (stream.closed) {
+          stream.end();
+          return;
+        }
+        const rewritten = updateDraftNoteContent(db, note.id, fastPath.content);
+        if (rewritten === undefined) {
+          finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
+          return;
+        }
+        if (stream.closed) {
+          stream.end();
+          return;
+        }
+
+        stream.send('note-updated', {
+          note: rewritten,
+          empty_sections: emptySectionNames(fastPath.sections, format.sections),
+        });
+        const replyText = `Moved the quoted text from ${fastPath.source} to ${fastPath.target}.`;
+        stream.send('token', { text: replyText });
+        stream.send('message', { message: persistReply(db, note.id, replyText) });
+        stream.end();
+        return;
+      }
     }
 
     let replyText = '';
