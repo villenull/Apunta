@@ -5,8 +5,9 @@ import type { Speller } from './spelling.js';
 /**
  * The dictionary, loaded once per tab from the app's own origin.
  *
- * Australian English — the practice's spelling ("behaviour", "counselling") —
- * as a Hunspell pair bundled with the app: two files fetched from
+ * American English — the practice's spelling ("behavior", "counseling") —
+ * as a maintained Hunspell pair from `dictionary-en`, bundled with the app:
+ * two files fetched from
  * `127.0.0.1` like any other asset, never from anywhere else, and read by
  * `nspell` entirely in the tab. Nothing typed leaves the machine to be
  * checked, which is the whole reason this exists (`shared/src/spelling.ts`).
@@ -15,8 +16,8 @@ import type { Speller } from './spelling.js';
  * them into the build; the dictionary package itself only exports a Node
  * reader.
  */
-const AFF_URL = new URL('../../../node_modules/dictionary-en-au/index.aff', import.meta.url).href;
-const DIC_URL = new URL('../../../node_modules/dictionary-en-au/index.dic', import.meta.url).href;
+const AFF_URL = new URL('../../../node_modules/dictionary-en/index.aff', import.meta.url).href;
+const DIC_URL = new URL('../../../node_modules/dictionary-en/index.dic', import.meta.url).href;
 
 let pending: Promise<Speller> | null = null;
 

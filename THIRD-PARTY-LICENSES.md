@@ -843,7 +843,7 @@ on a GPL, AGPL, LGPL, SSPL or BUSL package appearing in the shipped tree.
 | `core-util-is` | 1.0.3 | MIT | Copyright Node.js contributors. All rights reserved. |
 | `depd` | 2.0.0 | MIT | Copyright (c) 2014-2018 Douglas Christopher Wilson |
 | `dequal` | 2.0.3 | MIT | Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com) |
-| `dictionary-en-au` | 3.0.0 | (MIT AND BSD) | COPYRIGHT, SOURCES, and CREDITS: |
+| `dictionary-en` | 4.0.0 | (MIT AND BSD) | COPYRIGHT, SOURCES, and CREDITS: |
 | `dingbat-to-unicode` | 1.0.1 | BSD-2-Clause | Author: Michael Williamson <mike@zwobble.org> |
 | `duck` | 0.1.12 | BSD | Copyright (c) 2013, Michael Williamson |
 | `escape-html` | 1.0.3 | MIT | Copyright (c) 2012-2013 TJ Holowaychuk |

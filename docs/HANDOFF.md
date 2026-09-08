@@ -1,6 +1,6 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-07 (evening), after the clinical-knowledge integration gate.**
+**Updated 2026-09-07 (evening), after the en-US spellchecker gate.**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -65,12 +65,16 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   with a white glyph.
 - **Spell check in the tab** (2026-09-07): the note body and the capture
   screen's typed-notes box mark misspelt words with a wavy line and offer
-  suggestions on a click, from a bundled Australian-English Hunspell
-  dictionary read by `nspell` in the tab (`web/src/lib/speller.ts`). The
-  browser's own checker is off on those fields — Chrome's "enhanced" mode
-  would send the text to Google. The patient's name, her transcription
-  vocabulary and her "Add to dictionary" words (`spelling_words` setting)
-  are never flagged. Not yet covered: the chat box and other short fields.
+  suggestions on a click, from the maintained, permissively licensed,
+  bundled American-English Hunspell dictionary `dictionary-en` read by
+  `nspell` in the tab (`web/src/lib/speller.ts`). The browser's own checker
+  is off on those fields — Chrome's "enhanced" mode would send the text to
+  Google. The patient's name, her transcription vocabulary and her "Add to
+  dictionary" words (`spelling_words` setting) are never flagged. Unit and
+  end-to-end regression coverage uses synthetic text, including American
+  spellings (`criticized`, `behavior`, `organize`, `center`) and the expected
+  rejection of `criticised`. Not yet covered: the chat box and other short
+  fields.
 - **Refine safety integration** (2026-09-07): a question (including the
   "What's missing?" quick action) never applies a model-attached rewrite;
   the editor flushes its pending debounce before chat snapshots the note; and

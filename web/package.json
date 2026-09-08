@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@apunta/shared": "*",
-    "dictionary-en-au": "^3.0.0",
+    "dictionary-en": "^4.0.0",
     "nspell": "^2.1.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

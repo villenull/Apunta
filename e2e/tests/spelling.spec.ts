@@ -12,20 +12,24 @@ interface Created {
 }
 
 test('marks a typo in the note body and corrects it from the menu', async ({ page, request }) => {
+  const sttTerm = 'Zxqvterm';
+  const addedTerm = 'Qvplum';
+  await request.put('/api/settings', { data: { stt_vocabulary: [sttTerm], spelling_words: [addedTerm] } });
   const format = (await (
     await request.post('/api/formats', {
       data: { name: uniqueName('E2E spelling format'), sections: ['Subjective', 'Plan'] },
     })
   ).json()) as Created;
   const patient = (await (
-    await request.post('/api/patients', { data: { name: uniqueName('E2E Spelling Patient') } })
+    await request.post('/api/patients', { data: { name: 'Zebediah Quill' } })
   ).json()) as Created;
   const note = (await (
     await request.post('/api/notes', {
       data: {
         patient_id: patient.id,
         format_id: format.id,
-        content: 'Subjective: Teh client slept well.\n\nPlan: Continue weekly.',
+        content:
+          'Subjective: Teh client criticized behavior; organize the center, not criticised. Zebediah Quill used Zxqvterm and Qvplum.\n\nPlan: Continue weekly.',
       },
     })
   ).json()) as Created;
@@ -34,7 +38,7 @@ test('marks a typo in the note body and corrects it from the menu', async ({ pag
 
   const body = page.getByTestId('note-body');
   const marks = page.locator('.misspelt');
-  await expect(marks).toHaveText(['Teh']);
+  await expect(marks).toHaveText(['Teh', 'criticised']);
   // The browser's own checker is off: this is the app's, from its own origin.
   await expect(body).toHaveAttribute('spellcheck', 'false');
 
@@ -52,6 +56,8 @@ test('marks a typo in the note body and corrects it from the menu', async ({ pag
   await expect(menu).toBeVisible();
   await menu.getByRole('menuitem', { name: 'The' }).click();
 
-  await expect(body).toHaveValue('Subjective: The client slept well.\n\nPlan: Continue weekly.');
-  await expect(marks).toHaveCount(0);
+  await expect(body).toHaveValue(
+    'Subjective: The client criticized behavior; organize the center, not criticised. Zebediah Quill used Zxqvterm and Qvplum.\n\nPlan: Continue weekly.',
+  );
+  await expect(marks).toHaveText(['criticised']);
 });
