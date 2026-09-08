@@ -1,7 +1,7 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-08 (release gate), after the inference-efficiency and
-output-truncation reviews.**
+**Updated 2026-09-08 (source clarification), after the inference-efficiency
+and output-truncation reviews.**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -135,6 +135,11 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   moves.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
+  The owner clarified that her existing notes span Claude chats **and
+  Halaxy**. Her Halaxy account is a **practitioner account, not an admin**;
+  do not infer that she can use a practice export. See the wife-facing
+  [existing-notes migration guide](import-existing-notes.md) for the current
+  source checklists and public-doc research (accessed 2026-09-08).
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
   try the app from her MacBook before anything is installed on it
   (`docs/dev-notes/remote-testing.md`). Not a change to the app.
@@ -176,6 +181,16 @@ Grouped by what each item waits on.
   account). Then `npm run probe:claude -- <export.zip>` to check the schema,
   then `Settings → Import from Claude` on the real export. Nothing about
   this can be done by a session; do not start it.
+- **Halaxy source authorization and shape**: public Halaxy documentation
+  describes a per-patient clinical-record zip in the UK guide and a full
+  practice-data zip that is account-owner/permission-gated in the AU guide.
+  It does not establish what this practitioner account can export, what the
+  configured practice includes, or the zip's clinical-note/attachment field
+  mapping. The practice admin must confirm authorized scope, role permission,
+  exact format, dates/client identifiers, versions/drafts/archived records,
+  and attachment preservation. Apunta has no Halaxy importer; do not build a
+  guessed parser or silently drop PDFs/attachments. Use synthetic fixtures
+  only after the real format shape is clarified.
 - **Her transcription vocabulary list** (names, medications, terms). When it
   arrives: `PUT /api/settings` `stt_vocabulary` on the live instance and on
   the config pack (`~/Apunta-config-pack/`, see `docs/MANUAL-VERIFICATION.md`
