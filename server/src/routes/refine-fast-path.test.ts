@@ -110,6 +110,35 @@ describe('strict deterministic move-only refine fast path', () => {
     expect(result.content).toContain('denies SI');
   });
 
+  it.each([
+    [
+      'moves a negation-bearing word',
+      'Subjective: Patient is not suicidal.\n\nPlan: Continue weekly.',
+      'suicidal',
+    ],
+    [
+      'moves a clause from its subject',
+      'Subjective: Patient denies suicidal ideation.\n\nPlan: Continue weekly.',
+      'denies suicidal ideation',
+    ],
+    [
+      'moves a qualifier from its assertion',
+      'Subjective: No safety concerns today.\n\nPlan: Continue weekly.',
+      'safety concerns',
+    ],
+  ])('falls back instead of cutting clinical context: %s', (_label, note, phrase) => {
+    expect(matched(`Move "${phrase}" from Subjective to Plan`, note)).toEqual({
+      matched: false,
+      reason: 'phrase_not_exactly_once',
+    });
+  });
+
+  it('allows a complete standalone sentence after another sentence', () => {
+    const note = 'Subjective: Patient is improving. Patient denies SI.\n\nPlan: Continue weekly.';
+    const result = matched('Move "Patient denies SI." from Subjective to Plan', note);
+    expect(result.matched).toBe(true);
+  });
+
   it('rejects duplicate section headers instead of guessing which span to edit', () => {
     const duplicate = `${NOTE}\n\nSubjective: another copy.`;
     expect(matched(`Move "${PHRASE}" from Subjective to Plan`, duplicate)).toEqual({

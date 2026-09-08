@@ -103,6 +103,36 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   these timings are not Mac claims. The release review also corrected the
   non-streaming detector and retraction-quote paths so a truncated JSON
   response cannot be accepted as a valid result.
+- **Independent GPU/release review** (2026-09-08): the Linux ROCm candidate
+  was rebuilt with `$ORIGIN` runpaths and installed, without replacing the
+  CPU binary, at
+  `~/.local/share/apunta/bin/whisper-rocm-371b5a7561823ab2-hip/whisper-cli`.
+  Its ggml/whisper shared libraries are beside it; `ldd` resolves those local
+  copies and ROCm's system libraries under `/opt/rocm/lib`, with no `/tmp`
+  dependency. The candidate is whisper.cpp commit
+  `371b5a7561823ab2bb32142d2751e35e7534727b` and SHA-256
+  `edb46abf800e5b93d0c1dc1410299d25b33705c7b2e79513fe65a4ca62174e3f`.
+  The final detached app now points its `whisper_binary` setting at this
+  candidate; the CPU binary remains intact at its original path for rollback.
+  Three sequential preview and three final runs per binary on the checked-in
+  public 11-second JFK WAV matched the expected transcript after timestamp
+  stripping; CPU/GPU preview wall ranges were 700–709/357–443 ms and final
+  ranges were 4,827–5,523/424–456 ms. This is one public fixture, not clinical
+  equivalence or a global 11× claim; no local synthetic speech generator was
+  available, and the fixture contains no clinical terms or numeric token.
+  Temporary-port (`17717`) app smoke with a fresh DB passed real Whisper
+  preview/dictation and one real Whisper→Ollama draft; SQLite integrity was
+  `ok`, and no tested content appeared in the shape-only log. The original
+  CPU binary remains at `~/.local/share/apunta/bin/whisper-cli`; rollback is
+  `curl -fsS -X PUT http://127.0.0.1:7717/api/settings -H
+  'content-type: application/json' --data '{"whisper_binary":"/home/huyke/.local/share/apunta/bin/whisper-cli"}'`.
+- **Move-only refine safety review** (2026-09-08): the deterministic shortcut
+  now accepts only a complete standalone sentence (or the complete section
+  body), so a word or clause cannot be detached from a negation or qualifier;
+  dangerous examples such as moving `suicidal` from `not suicidal` fall back
+  to the model path. The focused parser/route suite covers 60 cases, including
+  clinical-context cuts, exact span conservation and standalone-sentence
+  moves.
 - **Import from Claude** (M11): built against an inferred export schema;
   `npm run probe:claude` reports a real export's shape without its content.
 - **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
@@ -117,8 +147,9 @@ call 30.0% a new end-to-end measurement. The eval takes 1–2 h of CPU; never
 run it while someone is testing on the same machine.
 
 Release gate, 2026-09-08 (Linux, fabricated fixtures only): `build:shared`,
-all workspace typechecks, lint/format/URL/license checks, 1,111 unit tests,
-production build, and 38 Playwright tests passed. Real local stack smoke was
+all workspace typechecks, lint/format/URL/license checks, 1,173 unit tests,
+production build, and 38 Playwright tests passed. (The first parallel e2e
+attempt had one timing flake; the repeat completed all 38.) Real local stack smoke was
 2/2 schema-valid on `qwen3.5:4b-q4_K_M` (prompt 2,840, output 359, one attempt,
 `done_reason=stop`); the checked-in 10-second tone WAV produced “Thank you.”
 in 5.5 seconds, which is process/model overhead rather than speech quality.

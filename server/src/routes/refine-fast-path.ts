@@ -98,6 +98,14 @@ export function tryMoveOnlyRefine(
   if (containsPhrase(targetBody, parsed.phrase)) return { matched: false, reason: 'already_in_target' };
 
   const sourceHit = sourceHits[0] as number;
+  // A word-boundary match is not enough for a clinical move: moving the word
+  // "suicidal" out of "not suicidal" would preserve the token while changing
+  // the meaning of the sentence. Require the quoted text to be a complete
+  // sentence (or the complete body when the note has no sentence punctuation)
+  // so conjunctions, qualifiers, and negation cannot be detached from it.
+  if (!isStandaloneUnit(sourceBody, sourceHit, parsed.phrase.length)) {
+    return { matched: false, reason: 'phrase_not_exactly_once' };
+  }
   const without = removePhrase(sourceBody, sourceHit, parsed.phrase.length);
   const withMove = appendPhrase(targetBody, parsed.phrase);
   const edits = [
@@ -200,6 +208,18 @@ function wordBoundary(text: string, start: number, length: number): boolean {
     !(first !== undefined && word.test(first) && before !== undefined && word.test(before)) &&
     !(last !== undefined && word.test(last) && after !== undefined && word.test(after))
   );
+}
+
+function isStandaloneUnit(body: string, start: number, length: number): boolean {
+  const before = body.slice(0, start).trim();
+  const after = body.slice(start + length).trim();
+  if (before === '' && after === '') return true;
+
+  // If either side exists, the quoted span must be a sentence bounded by
+  // sentence punctuation. This intentionally rejects clause-level moves.
+  if (before !== '' && !/[.!?]$/.test(before)) return false;
+  if (after !== '' && !/[.!?]$/.test(body.slice(start, start + length).trim())) return false;
+  return true;
 }
 
 function removePhrase(body: string, start: number, length: number): string {

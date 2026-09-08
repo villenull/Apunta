@@ -85,6 +85,10 @@ cmake_args=(
   -S "$SRC"
   -B "$BUILD"
   -DCMAKE_BUILD_TYPE=Release
+  # Keep build-tree binaries relocatable: the candidate is copied into a
+  # versioned data-dir folder, so a /tmp build path must never be embedded in
+  # its runtime search path.
+  -DCMAKE_BUILD_RPATH_USE_ORIGIN=ON
   -DWHISPER_BUILD_TESTS=OFF
   -DWHISPER_BUILD_SERVER=OFF
   -DWHISPER_BUILD_EXAMPLES=ON
