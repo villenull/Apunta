@@ -1,9 +1,24 @@
-import { ACCENT_COLOR_SETTING, DEFAULT_ACCENT_COLOR, type Settings as SettingsRecord } from '@apunta/shared';
+import {
+  ACCENT_COLOR_SETTING,
+  ANIMATIONS_SETTING,
+  DEFAULT_ACCENT_COLOR,
+  FONT_SIZE_SETTING,
+  FONT_SIZES,
+  type FontSize,
+  type Settings as SettingsRecord,
+} from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import { errorMessage, getSettings, listFormats, putSettings } from '../api/index.js';
 import { accentColorOrDefault, applyAccentColor } from '../lib/accent.js';
+import {
+  animationsEnabled,
+  applyAnimations,
+  applyAppearance,
+  applyFontSize,
+  fontSizeOrDefault,
+} from '../lib/appearance.js';
 import { BackupCard } from '../components/BackupCard.js';
 import { PlusIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
@@ -26,6 +41,10 @@ export function Settings(): React.JSX.Element {
 
   return (
     <Screen back={{ to: '/', label: 'Patients' }}>
+      {/* Order (owner, 2026-09-21): Appearance, Note formats, Backup, then
+          the rest as before. */}
+      <AppearanceSettings />
+
       <h2 className="lede">Note formats</h2>
 
       <div className="card card-rows lede" data-testid="format-list">
@@ -66,14 +85,20 @@ export function Settings(): React.JSX.Element {
               </Link>
             </div>
           ))}
+        {/* The card's last row, not a button floating between cards. */}
+        {formats.state.status === 'ready' && (
+          <Link
+            to="/onboarding/format"
+            state={newFormat}
+            className="patient-row format-add-row"
+            data-testid="add-format"
+          >
+            <PlusIcon className="icon icon-sm" />
+            Add another format
+          </Link>
+        )}
       </div>
 
-      <Link to="/onboarding/format" state={newFormat} className="btn btn-block">
-        <PlusIcon className="icon icon-sm" />
-        Add another format
-      </Link>
-
-      <AppearanceSettings />
       <BackupCard />
 
       <div className="card card-rows lede">
@@ -96,41 +121,48 @@ export function Settings(): React.JSX.Element {
 }
 
 /**
- * The accent colour (owner-proxy, 2026-08-30).
+ * Appearance: the accent colour (owner-proxy, 2026-08-30), text size and
+ * animations (owner, 2026-09-21).
  *
- * The picker previews as it moves, because a colour described in a form and
- * a colour on the screen are different things — but a preview is not a
- * choice, so leaving without saving puts the stored accent back.
+ * Every control previews as it moves, because a colour or a size described
+ * in a form and one on the screen are different things — but a preview is
+ * not a choice, so leaving without saving puts the stored look back.
  */
 function AppearanceSettings(): React.JSX.Element {
   const load = useCallback((signal: AbortSignal) => getSettings(signal), []);
   const settings = useLoader(load);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fontSize, setFontSize] = useState<FontSize | null>(null);
+  const [animations, setAnimations] = useState<boolean | null>(null);
 
   /*
-   * The colour actually stored, which is what an abandoned preview must be
+   * The settings actually stored, which is what an abandoned preview must be
    * put back to. It is a ref because the unmount cleanup below reads it long
    * after the render that learned it — and it is written from a dependency
    * on the loaded *value*, never on every render: seeding it from the
    * loader's cached data each time meant a save was immediately forgotten,
    * and leaving the screen reverted the colour she had just chosen.
    */
-  const savedRef = useRef<string | null>(null);
-  const loaded =
-    settings.state.status === 'ready'
-      ? accentColorOrDefault((settings.state.data as SettingsRecord)[ACCENT_COLOR_SETTING])
-      : null;
+  const savedRef = useRef<SettingsRecord | null>(null);
+  const stored = settings.state.status === 'ready' ? (settings.state.data as SettingsRecord) : null;
+  const loaded = stored === null ? null : accentColorOrDefault(stored[ACCENT_COLOR_SETTING]);
 
   useEffect(() => {
-    if (loaded !== null && savedRef.current === null) savedRef.current = loaded;
-  }, [loaded]);
+    if (stored !== null && savedRef.current === null) {
+      savedRef.current = {
+        [ACCENT_COLOR_SETTING]: stored[ACCENT_COLOR_SETTING] ?? null,
+        [FONT_SIZE_SETTING]: stored[FONT_SIZE_SETTING] ?? null,
+        [ANIMATIONS_SETTING]: stored[ANIMATIONS_SETTING] ?? null,
+      };
+    }
+  }, [stored]);
 
   // A preview outlives this screen otherwise: she picks a colour, navigates
-  // away without saving, and the app keeps wearing a colour nothing stored.
+  // away without saving, and the app keeps wearing a look nothing stored.
   useEffect(() => {
     return () => {
-      applyAccentColor(savedRef.current);
+      if (savedRef.current !== null) applyAppearance(savedRef.current);
     };
   }, []);
 
@@ -146,12 +178,17 @@ function AppearanceSettings(): React.JSX.Element {
     );
   }
 
-  const save = (value: string): void => {
+  const shownSize = fontSize ?? fontSizeOrDefault(stored?.[FONT_SIZE_SETTING]);
+  const shownAnimations = animations ?? animationsEnabled(stored?.[ANIMATIONS_SETTING]);
+
+  const save = (patch: SettingsRecord): void => {
     void (async () => {
       try {
-        await putSettings({ [ACCENT_COLOR_SETTING]: value });
-        savedRef.current = value;
-        applyAccentColor(value);
+        await putSettings(patch);
+        savedRef.current = { ...(savedRef.current ?? {}), ...patch };
+        // Everything else saved is already on screen as its preview; only
+        // the reset button saves a colour the picker is not showing.
+        if (ACCENT_COLOR_SETTING in patch) applyAccentColor(patch[ACCENT_COLOR_SETTING]);
         setSaved(true);
         setError(null);
       } catch (thrown) {
@@ -167,7 +204,11 @@ function AppearanceSettings(): React.JSX.Element {
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
-        save(String(form.get(ACCENT_COLOR_SETTING) ?? DEFAULT_ACCENT_COLOR));
+        save({
+          [ACCENT_COLOR_SETTING]: String(form.get(ACCENT_COLOR_SETTING) ?? DEFAULT_ACCENT_COLOR),
+          [FONT_SIZE_SETTING]: shownSize,
+          [ANIMATIONS_SETTING]: shownAnimations,
+        });
       }}
     >
       <h2 className="lede">Appearance</h2>
@@ -194,12 +235,53 @@ function AppearanceSettings(): React.JSX.Element {
           className="btn small btn-quick"
           data-testid="reset-accent"
           onClick={() => {
-            save(DEFAULT_ACCENT_COLOR);
+            save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
           }}
         >
           Reset to the original green
         </button>
       </div>
+
+      <fieldset className="appearance-field">
+        <legend className="label">Text size</legend>
+        <div className="row gap-8 size-options" role="radiogroup" aria-label="Text size">
+          {FONT_SIZES.map((size) => (
+            <button
+              key={size}
+              type="button"
+              role="radio"
+              aria-checked={shownSize === size}
+              className={shownSize === size ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
+              data-testid={`font-size-${size}`}
+              onClick={() => {
+                setSaved(false);
+                setFontSize(size);
+                applyFontSize(size);
+              }}
+            >
+              {FONT_SIZE_LABELS[size]}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="appearance-field">
+        <legend className="label">Animations</legend>
+        <label className="row gap-8 small">
+          <input
+            type="checkbox"
+            checked={shownAnimations}
+            data-testid="animations-toggle"
+            onChange={(event) => {
+              setSaved(false);
+              setAnimations(event.target.checked);
+              applyAnimations(event.target.checked);
+            }}
+          />
+          <span>Screens and lists move as they appear</span>
+        </label>
+        <p className="small note-meta">Off by default when your computer is set to reduce motion.</p>
+      </fieldset>
 
       {error !== null && (
         <p className="form-error" role="alert">
@@ -212,3 +294,10 @@ function AppearanceSettings(): React.JSX.Element {
     </form>
   );
 }
+
+const FONT_SIZE_LABELS: Readonly<Record<FontSize, string>> = {
+  small: 'Small',
+  default: 'Default',
+  large: 'Large',
+  'extra-large': 'Extra large',
+};

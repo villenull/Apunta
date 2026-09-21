@@ -70,6 +70,16 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   fitted to the clip and hands the words back into the box for her to edit;
   nothing is sent until she presses the arrow. The send arrow is full accent
   with a white glyph.
+- **Settings, reordered** (2026-09-21, owner): Appearance, then Note
+  formats (with "Add another format" as the card's last row), then Backup,
+  then Import from Claude and the Setup/About line as before. Appearance
+  has the accent colour, **text size** (Small / Default / Large / Extra
+  large: one `--font-scale` token multiplies every `font-size` in the
+  stylesheets) and **animations** on/off (a `no-motion` root class; unset
+  follows the system's reduced-motion). All three are server settings
+  applied at startup like the colour, so a brief flash of the default
+  colour and size on load remains; the system's reduced-motion applies
+  before the first frame.
 - **Spell check in the tab** (2026-09-07): the note body and the capture
   screen's typed-notes box mark misspelt words with a wavy line and offer
   suggestions on a click, from the maintained, permissively licensed,

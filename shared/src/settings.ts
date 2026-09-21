@@ -39,3 +39,30 @@ export const DEFAULT_ACCENT_COLOR = '#1f6f63';
 export function isAccentColor(value: unknown): value is string {
   return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
 }
+
+/**
+ * Text size, app-wide (owner, 2026-09-21). One multiplier, `--font-scale`,
+ * sits on every `font-size` in the stylesheets, so text grows together and
+ * the spacing around it stays put. Not in the prototype.
+ */
+export const FONT_SIZE_SETTING = 'font_size';
+export const FONT_SIZES = ['small', 'default', 'large', 'extra-large'] as const;
+export type FontSize = (typeof FONT_SIZES)[number];
+export const DEFAULT_FONT_SIZE: FontSize = 'default';
+export const FONT_SCALE: Readonly<Record<FontSize, number>> = {
+  small: 0.9,
+  default: 1,
+  large: 1.15,
+  'extra-large': 1.3,
+};
+
+export function isFontSize(value: unknown): value is FontSize {
+  return typeof value === 'string' && (FONT_SIZES as readonly string[]).includes(value);
+}
+
+/**
+ * Animations on or off, app-wide (owner, 2026-09-21). A boolean once she has
+ * chosen; unset means "follow the system", which is off when the OS asks for
+ * reduced motion. Not in the prototype.
+ */
+export const ANIMATIONS_SETTING = 'animations';

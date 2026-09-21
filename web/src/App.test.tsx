@@ -966,6 +966,94 @@ describe('settings', () => {
     });
   });
 
+  it('orders the screen Appearance, Note formats, Backup, then Import', async () => {
+    installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const appearance = await screen.findByTestId('appearance-settings');
+    const formats = await screen.findByTestId('format-list');
+    const backup = await screen.findByTestId('backup-card');
+    const importLink = screen.getByTestId('settings-import');
+    const follows = (a: Node, b: Node): boolean =>
+      (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    expect(follows(appearance, formats)).toBe(true);
+    expect(follows(formats, backup)).toBe(true);
+    expect(follows(backup, importLink)).toBe(true);
+
+    // "Add another format" is the format card's last row.
+    const add = within(formats).getByTestId('add-format');
+    expect(add.textContent).toContain('Add another format');
+    expect(formats.lastElementChild).toBe(add);
+  });
+
+  it('previews and saves a text size by scaling one root token', async () => {
+    const api = installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const large = await screen.findByTestId('font-size-large');
+    expect(screen.getByTestId('font-size-default').getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(large);
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.15');
+    expect(api.state.settings['font_size']).toBeUndefined();
+
+    fireEvent.click(screen.getByTestId('save-appearance'));
+    await waitFor(() => {
+      expect(api.state.settings['font_size']).toBe('large');
+    });
+
+    // Back to default removes the override rather than writing 1.
+    fireEvent.click(screen.getByTestId('font-size-default'));
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
+    // Leaving without saving puts the stored size back.
+    cleanup();
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.15');
+    document.documentElement.style.removeProperty('--font-scale');
+  });
+
+  it('turns animations off app-wide and remembers it', async () => {
+    const api = installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const toggle = (await screen.findByTestId('animations-toggle')) as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    fireEvent.click(toggle);
+    expect(document.documentElement.classList.contains('no-motion')).toBe(true);
+
+    fireEvent.click(screen.getByTestId('save-appearance'));
+    await waitFor(() => {
+      expect(api.state.settings['animations']).toBe(false);
+    });
+    document.documentElement.classList.remove('no-motion');
+  });
+
+  it('applies saved text size and animations at startup', async () => {
+    installFakeApi({ formats: [progressNote], settings: { font_size: 'extra-large', animations: false } });
+    renderApp('/');
+
+    await waitFor(() => {
+      expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.3');
+    });
+    expect(document.documentElement.classList.contains('no-motion')).toBe(true);
+    document.documentElement.style.removeProperty('--font-scale');
+    document.documentElement.classList.remove('no-motion');
+  });
+
+  it('defaults animations to off when the system asks for reduced motion', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({ matches: query === '(prefers-reduced-motion: reduce)', media: query })),
+    );
+    installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const toggle = (await screen.findByTestId('animations-toggle')) as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    await waitFor(() => {
+      expect(document.documentElement.classList.contains('no-motion')).toBe(true);
+    });
+    document.documentElement.classList.remove('no-motion');
+  });
+
   it('puts the original green back, and forgets an unsaved preview', async () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');

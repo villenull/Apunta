@@ -188,7 +188,7 @@
 
 .thinking-label {
   margin-left: 6px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   opacity: 0.7;
 }
 
@@ -208,4 +208,30 @@
     animation: none;
     opacity: 0.6;
   }
+}
+
+/*
+ * Animations off (Settings → Appearance, owner 2026-09-21; also the default
+ * when the system asks for reduced motion — `web/src/lib/appearance.ts`).
+ * Everything stops, and the few things whose motion carried meaning keep a
+ * static form of it, as under the reduced-motion queries above: the thinking
+ * dots hold at a readable opacity, and a note being or just rewritten keeps
+ * its tint.
+ */
+:root.no-motion *,
+:root.no-motion *::before,
+:root.no-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+:root.no-motion .thinking-dot {
+  opacity: 0.6;
+}
+
+:root.no-motion .note-editable-wrap.is-refining,
+:root.no-motion .note-editable-wrap.is-refined {
+  background-color: var(--accent-tint);
+  border-radius: var(--radius);
 }

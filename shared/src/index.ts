@@ -172,13 +172,19 @@ export type {
 
 export {
   ACCENT_COLOR_SETTING,
+  ANIMATIONS_SETTING,
   DEFAULT_ACCENT_COLOR,
+  DEFAULT_FONT_SIZE,
+  FONT_SCALE,
+  FONT_SIZE_SETTING,
+  FONT_SIZES,
   isAccentColor,
+  isFontSize,
   SettingKeySchema,
   SettingsSchema,
   UpdateSettingsRequestSchema,
 } from './settings.js';
-export type { Settings, UpdateSettingsRequest } from './settings.js';
+export type { FontSize, Settings, UpdateSettingsRequest } from './settings.js';
 
 export {
   buildRefineSchema,

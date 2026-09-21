@@ -83,7 +83,7 @@
 .brand {
   font-family: var(--font-serif);
   font-weight: 600;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale));
   letter-spacing: 0.02em;
   line-height: 1;
   color: var(--text-primary);
@@ -91,7 +91,7 @@
 
 .topbar .back {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   display: flex;
   align-items: center;
   gap: 4px;
@@ -145,7 +145,7 @@
 }
 
 .col-header h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: var(--text-secondary);
@@ -210,16 +210,16 @@
 .list-item .avatar {
   width: 30px;
   height: 30px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
 }
 
 .list-item .name {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 500;
 }
 
 .list-item .sub {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--text-muted);
 }
 
@@ -232,7 +232,7 @@
   border-radius: 8px;
   border: 1px dashed var(--border-strong);
   color: var(--accent);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 500;
   cursor: pointer;
   background: none;
@@ -268,18 +268,18 @@
 }
 
 .note-item .note-title {
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale));
   font-weight: 500;
 }
 
 .note-item .note-date {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--text-muted);
   margin-top: 1px;
 }
 
 .note-item .note-preview {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   color: var(--text-secondary);
   margin-top: 3px;
   overflow: hidden;
@@ -538,7 +538,7 @@
 .spelling-menu-item {
   text-align: left;
   font: inherit;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale));
   color: var(--text-primary);
   background: none;
   border: none;
@@ -559,7 +559,7 @@
 .spelling-menu-none {
   margin: 0;
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-muted);
 }
 
@@ -593,7 +593,7 @@
 
 .empty-sections-note {
   flex-shrink: 0;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   color: var(--accent-hover);
   background: var(--accent-tint);
   border-radius: var(--radius);
@@ -630,7 +630,7 @@
  * on the page: no frame, no resize handle, height driven by content.
  */
 .note-editable {
-  font-size: 14.5px;
+  font-size: calc(14.5px * var(--font-scale));
   line-height: 1.7;
   color: var(--text-primary);
   white-space: pre-wrap;
@@ -704,7 +704,7 @@
 .chat-bubble {
   padding: 9px 12px;
   border-radius: 12px;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--font-scale));
   line-height: 1.45;
   /* A reply may come back with paragraphs in it; the prototype's canned
      strings never did. */
@@ -724,7 +724,7 @@
 }
 
 .chat-quote {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   opacity: 0.85;
   border-left: 2px solid rgba(255, 255, 255, 0.5);
   padding-left: 8px;
@@ -752,7 +752,7 @@
   background: var(--accent-tint);
   border: 0.5px solid var(--accent);
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   color: var(--accent-hover);
   display: flex;
   justify-content: space-between;
@@ -772,7 +772,7 @@
   border: none;
   color: var(--accent-hover);
   cursor: pointer;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1;
   flex-shrink: 0;
   padding: 0;
@@ -829,7 +829,7 @@
 }
 
 .chat-mic-timer {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   font-variant-numeric: tabular-nums;
 }
 
@@ -869,7 +869,7 @@
 }
 
 .chat-col .timer {
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
 }
 
 .chat-col .record-preview {
@@ -918,7 +918,7 @@
 }
 
 .label {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 500;
   color: var(--text-secondary);
   margin-bottom: 6px;
@@ -940,7 +940,7 @@ select {
   border-radius: var(--radius);
   padding: 10px 12px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   background: var(--surface-muted);
   color: var(--text-primary);
 }
@@ -966,7 +966,7 @@ select:focus {
   border-radius: var(--radius);
   padding: 10px 16px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   font-weight: 500;
   cursor: pointer;
   border: 0.5px solid var(--border-strong);
@@ -1031,11 +1031,11 @@ select:focus {
 
 .btn-option .opt-title {
   font-weight: 500;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 
 .btn-option .opt-sub {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-secondary);
   margin-top: 2px;
 }
@@ -1074,7 +1074,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   flex-shrink: 0;
 }
 
@@ -1089,6 +1089,42 @@ select:focus {
 
 .patient-row:last-child {
   border-bottom: none;
+}
+
+/* "Add another format": the format card's last row, in the accent. */
+.format-add-row {
+  justify-content: flex-start;
+  gap: 8px;
+  color: var(--accent);
+  font-size: calc(14px * var(--font-scale));
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.format-add-row:hover {
+  color: var(--accent-hover);
+}
+
+/* Settings → Appearance: text size and animations, under the colour. */
+.appearance-field {
+  border: none;
+  padding: 0;
+  margin: 18px 0 0;
+  min-width: 0;
+}
+
+.appearance-field legend {
+  padding: 0;
+}
+
+.size-options {
+  flex-wrap: wrap;
+}
+
+.size-options .btn.is-selected {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent-hover);
 }
 
 .dropzone {
@@ -1110,7 +1146,7 @@ select:focus {
   padding: 9px 12px;
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   margin-bottom: 6px;
   background: var(--surface-muted);
   gap: 8px;
@@ -1123,7 +1159,7 @@ select:focus {
 }
 
 .badge {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   padding: 3px 9px;
   border-radius: 20px;
   background: var(--accent-tint);
@@ -1143,7 +1179,7 @@ select:focus {
 }
 
 .timer {
-  font-size: 24px;
+  font-size: calc(24px * var(--font-scale));
   font-weight: 600;
   font-family: var(--font-serif);
 }
@@ -1186,7 +1222,7 @@ select:focus {
 }
 
 .col-search input {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   padding: 8px 10px;
 }
 
@@ -1228,7 +1264,7 @@ select:focus {
 
 .btn-quick {
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
 }
 
 .quick-actions {
@@ -1312,12 +1348,12 @@ select:disabled {
 .state-note {
   padding: 12px;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
 }
 
 .form-error {
   color: var(--danger);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   margin-top: 10px;
 }
 
@@ -1327,7 +1363,7 @@ select:disabled {
 
 .format-name {
   font-weight: 500;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
 }
 
 /* The area an onboarding option reveals under itself. */
@@ -1439,11 +1475,11 @@ select:disabled {
 /* .opt-title/.opt-sub are scoped to .btn-option in the prototype's CSS. */
 .capture-typed .opt-title {
   font-weight: 500;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 
 .capture-typed .opt-sub {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-secondary);
   margin-top: 2px;
 }
@@ -1466,7 +1502,7 @@ select:disabled {
   border-radius: var(--radius);
   background: var(--surface);
   font-family: var(--font-serif);
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1.65;
   color: var(--text-primary);
   white-space: pre-wrap;
@@ -1497,7 +1533,7 @@ select:disabled {
   padding: 10px 16px;
   background: var(--danger-tint);
   border-bottom: 0.5px solid var(--border);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-secondary);
 }
 
@@ -1511,7 +1547,7 @@ select:disabled {
   background: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   line-height: 1;
   padding: 2px 6px;
 }
@@ -1548,7 +1584,7 @@ select:disabled {
   background: none;
   color: var(--accent);
   font-family: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   font-weight: 500;
   cursor: pointer;
 }
@@ -1603,7 +1639,7 @@ select:disabled {
   border: 0.5px solid var(--border-strong);
   border-radius: 8px;
   font-family: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-primary);
   background: var(--surface);
 }
@@ -1634,7 +1670,7 @@ select:disabled {
 /* Date arithmetic on a date she chose — not an opinion about her work. */
 .plan-review-due {
   padding: 8px var(--gutter-x);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-secondary);
 }
 
@@ -1661,14 +1697,14 @@ select:disabled {
 
 .plan-goal-statement {
   font-family: var(--font-serif);
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   margin-top: 4px;
 }
 
 /* Smaller than the goal it belongs to: the goal is the heading of the pair. */
 .plan-objective p,
 .prep-goal p {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 
 /* A suggestion. Not the plan, and it must not look like it. */
@@ -1722,7 +1758,7 @@ select:disabled {
 
 .plan-evidence blockquote {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-secondary);
   font-style: italic;
 }
@@ -1780,7 +1816,7 @@ select:disabled {
 
 .prep-line {
   margin-bottom: 10px;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
 }
 
 /*
@@ -1824,7 +1860,7 @@ select:disabled {
 .plan-details-block > summary {
   cursor: pointer;
   font-family: var(--font-serif);
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   color: var(--text-primary);
 }
 
@@ -1891,7 +1927,7 @@ select:disabled {
 }
 
 .chip-rename {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   padding: 2px 6px;
 }
 
@@ -1904,14 +1940,14 @@ select:disabled {
 
 /* Up/down rather than drag — see web/src/routes/OnboardingPreview.tsx. */
 .chip-move {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   line-height: 1;
 }
 
 .instructions-textarea {
   width: 100%;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   line-height: 1.5;
   resize: vertical;
 }
@@ -1972,7 +2008,7 @@ select:disabled {
 
 .setup-row-label {
   margin: 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   color: var(--text-primary);
 }
 
@@ -2017,14 +2053,14 @@ select:disabled {
   background: var(--surface-muted);
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-primary);
 }
 
 .setup-command code {
   flex: 1;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--font-scale));
   word-break: break-all;
 }
 
@@ -2037,7 +2073,7 @@ select:disabled {
   padding: 14px 16px;
   margin: 0 0 12px;
   font-family: var(--font-serif);
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
 }
 
 .setup-verdict.is-ready {
@@ -2061,7 +2097,7 @@ select:disabled {
   gap: 12px;
   padding: 8px 0;
   border-bottom: 0.5px solid var(--border);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
 }
 
 .backup-list li:last-child {
@@ -2075,7 +2111,7 @@ select:disabled {
   background: var(--danger-tint);
   border: 0.5px solid var(--danger);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
 }
 
 .backup-stale {
@@ -2173,7 +2209,7 @@ select:disabled {
   background: var(--surface);
   border: 0.5px solid var(--border-strong);
   box-shadow: 0 6px 28px rgba(38, 38, 32, 0.16);
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--text-primary);
 }
 
@@ -2187,7 +2223,7 @@ select:disabled {
   background: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   line-height: 1;
   padding: 0 2px;
 }
@@ -2259,7 +2295,7 @@ select:disabled {
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   line-height: 1.6;
   color: var(--text-primary);
   white-space: pre-wrap;
@@ -2294,7 +2330,7 @@ select:disabled {
 }
 
 .brand-block h3 {
-  font-size: 11px;
+  font-size: calc(11px * var(--font-scale));
   letter-spacing: 0.06em;
 }
 
@@ -2434,7 +2470,7 @@ select:disabled {
  * (owner, 2026-09-05).
  */
 .record-preview-text {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale));
   line-height: 1.5;
   color: var(--text-muted);
   font-style: italic;
