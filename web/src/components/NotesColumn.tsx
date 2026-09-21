@@ -9,10 +9,10 @@ export interface NotesColumnProps {
   patient: PatientListItem | null;
   notes: LoadState<Note[]>;
   activeNoteId: string | null;
-  /** Which of the three things the main pane is showing (M9 adds two). */
-  view: 'notes' | 'plan' | 'prep';
+  /** Which of the four things the main pane is showing (M9 adds two, M12 one). */
+  view: 'notes' | 'plan' | 'prep' | 'brainstorm';
   onSelect: (noteId: string) => void;
-  onOpenView: (view: 'plan' | 'prep') => void;
+  onOpenView: (view: 'plan' | 'prep' | 'brainstorm') => void;
   onRetry: () => void;
   onDeletePatient: () => void;
 }
@@ -65,6 +65,16 @@ export function NotesColumn({
             briefing is a reading aid generated on demand. */}
         {patient && (
           <div className="col-actions">
+            <button
+              type="button"
+              className={view === 'brainstorm' ? 'col-action-btn active' : 'col-action-btn'}
+              data-testid="open-brainstorm"
+              onClick={() => {
+                onOpenView('brainstorm');
+              }}
+            >
+              Brainstorm
+            </button>
             <button
               type="button"
               className={view === 'plan' ? 'col-action-btn active' : 'col-action-btn'}

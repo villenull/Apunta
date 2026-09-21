@@ -171,6 +171,37 @@ export type {
 } from './chat.js';
 
 export {
+  BRAINSTORM_EVENT_NAMES,
+  BRAINSTORM_HISTORY_TURNS,
+  BrainstormContextEventSchema,
+  BrainstormContextSchema,
+  BrainstormErrorEventSchema,
+  BrainstormMessageEventSchema,
+  BrainstormMessageSchema,
+  BrainstormNoteSchema,
+  BrainstormReplySchema,
+  BrainstormRequestSchema,
+  BrainstormStatusEventSchema,
+  BrainstormThreadResponseSchema,
+  BrainstormTokenEventSchema,
+  brainstormJsonSchema,
+} from './brainstorm.js';
+export type {
+  BrainstormContext,
+  BrainstormContextEvent,
+  BrainstormErrorEvent,
+  BrainstormEventName,
+  BrainstormMessage,
+  BrainstormMessageEvent,
+  BrainstormNote,
+  BrainstormReply,
+  BrainstormRequest,
+  BrainstormStatusEvent,
+  BrainstormThreadResponse,
+  BrainstormTokenEvent,
+} from './brainstorm.js';
+
+export {
   ACCENT_COLOR_SETTING,
   ANIMATIONS_SETTING,
   DEFAULT_ACCENT_COLOR,

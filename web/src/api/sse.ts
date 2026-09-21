@@ -23,7 +23,10 @@ export async function* readEvents(
 
   try {
     for (;;) {
-      const { done, value } = await reader.read();
+      // An abort must interrupt a hung read, not wait for the server to speak
+      // next: without the race, stopping a reply leaves the reader — and the
+      // send awaiting it — pending forever.
+      const { done, value } = await (signal ? raceAbort(reader.read(), signal) : reader.read());
       if (done) break;
       buffer += utf8.decode(value, { stream: true });
 
@@ -41,6 +44,15 @@ export async function* readEvents(
     // release the connection rather than leave the server working into it.
     reader.cancel().catch(() => {});
   }
+}
+
+/** Reject when the signal fires, so an abort wins over a read that never settles. */
+function raceAbort<T>(read: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise<T>((resolve, reject) => {
+    signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+    read.then(resolve, reject);
+  });
 }
 
 function parseFrame(raw: string): SseFrame | null {

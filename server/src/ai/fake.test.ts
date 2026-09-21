@@ -2,6 +2,7 @@ import { sectionsToText, type Sections } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
+  fakeBrainstorm,
   fakeComposeBrief,
   fakeDetectFormat,
   fakeRefine,
@@ -224,6 +225,29 @@ describe('fakeRefine', () => {
     const result = fakeRefine('Tidy it up', current, SOAP);
     expect(result.reply).toBe('Updated the note based on that.');
     expect(result.updatedSections).toEqual(current);
+  });
+});
+
+describe('fakeBrainstorm', () => {
+  it('names what went in, so the path proves its grounding', () => {
+    expect(
+      fakeBrainstorm({
+        patientName: 'John Smith',
+        notes: [{ title: 'Progress note', date: '2026-09-18', text: 'Subjective: Better.' }],
+        history: [],
+        message: 'Where are we?',
+      }),
+    ).toContain('John Smith');
+  });
+
+  it('streams one reply field through the real decoder and ends discussed', async () => {
+    const events = await drain(
+      provider.discussPatient({ patientName: 'John Smith', notes: [], history: [], message: 'Hello?' }),
+    );
+    expect(streamed(events)['reply']).toContain('no notes yet');
+    const last = events.at(-1);
+    if (last?.type !== 'discussed') throw new Error('the stream did not end with a discussed event');
+    expect(last.reply).toBe(streamed(events)['reply']);
   });
 });
 

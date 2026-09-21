@@ -12,6 +12,7 @@ import {
   updatePatient,
 } from '../api/index.js';
 import { AiBanner } from '../components/AiBanner.js';
+import { BrainstormView } from '../components/BrainstormView.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { DocumentIcon, PeopleIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
@@ -35,10 +36,12 @@ export function Workspace(): React.JSX.Element {
   const [params, setParams] = useSearchParams();
   const patientId = params.get('patient');
   const noteId = params.get('note');
-  // `view` is the main pane's mode: her notes, the plan, or a briefing. In the
-  // query string like the rest, so a reload keeps her where she was.
+  // `view` is the main pane's mode: her notes, a brainstorm, the plan, or a
+  // briefing. In the query string like the rest, so a reload keeps her where
+  // she was.
   const rawView = params.get('view');
-  const view: 'notes' | 'plan' | 'prep' = rawView === 'plan' || rawView === 'prep' ? rawView : 'notes';
+  const view: 'notes' | 'plan' | 'prep' | 'brainstorm' =
+    rawView === 'plan' || rawView === 'prep' || rawView === 'brainstorm' ? rawView : 'notes';
   const [actionError, setActionError] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<PatientListItem | null>(null);
@@ -97,7 +100,7 @@ export function Workspace(): React.JSX.Element {
   );
 
   const openView = useCallback(
-    (next: 'plan' | 'prep') => {
+    (next: 'plan' | 'prep' | 'brainstorm') => {
       if (patientId === null) return;
       setParams({ patient: patientId, view: next });
     },
@@ -216,6 +219,8 @@ export function Workspace(): React.JSX.Element {
             <PlanView key={`plan-${patient.id}`} patient={patient} onOpenNote={selectNote} />
           ) : view === 'prep' ? (
             <PrepView key={`prep-${patient.id}`} patient={patient} onOpenNote={selectNote} />
+          ) : view === 'brainstorm' ? (
+            <BrainstormView key={`brainstorm-${patient.id}`} patient={patient} />
           ) : note === null ? (
             <NoNoteSelected patient={patient} />
           ) : (
@@ -248,7 +253,7 @@ export function Workspace(): React.JSX.Element {
             <>
               <p>
                 This removes {pendingDelete.name}, every note for them, the transcripts of those notes, and
-                the refine conversations. It cannot be undone here.
+                the refine and brainstorm conversations. It cannot be undone here.
               </p>
               <p>
                 It also cannot reach copies that already exist elsewhere: a backup you have written, a Time

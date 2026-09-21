@@ -222,6 +222,22 @@ describe('the work around a session', () => {
     expect(await screen.findByTestId('note-body')).toBeTruthy();
     expect(screen.queryByTestId('prep-view')).toBeNull();
   });
+
+  it('opens a brainstorm above the treatment plan, with nothing written anywhere', async () => {
+    renderApp(`/?patient=${john.id}`);
+
+    const actions = (await screen.findByTestId('open-brainstorm')).parentElement;
+    expect(actions?.firstElementChild?.getAttribute('data-testid')).toBe('open-brainstorm');
+
+    fireEvent.click(screen.getByTestId('open-brainstorm'));
+
+    expect(await screen.findByTestId('brainstorm-view')).toBeTruthy();
+    expect(screen.getByTestId('open-brainstorm').className).toContain('active');
+    // The notes are still one click away, and nothing here links into them.
+    expect(screen.getByTestId('note-list')).toBeTruthy();
+    expect(screen.queryByTestId('brainstorm-reply')).toBeNull();
+    expect((await screen.findByTestId('brainstorm-empty')).textContent).toContain('never written');
+  });
 });
 
 describe('note editing', () => {

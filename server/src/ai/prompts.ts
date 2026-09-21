@@ -14,6 +14,7 @@ import { instructionsFor } from './default-instructions.js';
 import { renderClinicalKnowledgeGuide } from './clinical-knowledge/integration.js';
 import { hasRetraction } from './retractions.js';
 import type {
+  BrainstormRequest,
   ComposeBriefRequest,
   DetectFormatRequest,
   GenerateNoteRequest,
@@ -285,6 +286,71 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
     'If her message only asks about the note rather than asking for a change, answer it and return "updatedSections": null.',
     '',
     'Reply with a single JSON object with exactly the keys "reply" and "updatedSections", and nothing else.',
+  );
+
+  return { system, user: parts.join('\n') };
+}
+
+/**
+ * One note as the brainstorm prompt shows it — and as the route budgets it.
+ * A single renderer for both, so the budget never drifts from the prompt.
+ */
+export function brainstormNoteBlock(note: { title: string; date: string; text: string }): string {
+  return [`### ${note.title} (${note.date})`, '', note.text].join('\n');
+}
+
+/**
+ * `discussPatient` (M12): freeform thinking with the therapist about one
+ * patient, with that patient's recent notes as context.
+ *
+ * The faithfulness stance is the whole prompt, not a line in it: the model is
+ * told to keep what the notes say apart from general clinical ideas, and to
+ * say plainly when something is not in the notes rather than invent history.
+ * It is also told what this conversation is not — no diagnosis, and nothing
+ * that reads as a record entry — because a thinking aid that drafts the
+ * record unasked is the failure being designed against. The tail restates the
+ * contract beside her message, where it survives a head truncation.
+ */
+export function buildBrainstormPrompt(request: BrainstormRequest): ChatPrompt {
+  const system = [
+    `You are thinking with a psychotherapist about one of her patients, ${request.patientName}. This is a private working conversation, not a clinical record: nothing said here is filed anywhere, and you never write anything that reads as a record entry — no note, no plan, no summary for filing.`,
+    '',
+    'Her recent notes on this patient, newest first, follow below. Keep two things apart: what those notes actually say, and general clinical ideas. When you draw on an idea that is not in the notes, say so.',
+    '',
+    'When she asks about something the notes do not cover, say plainly that it is not in the notes rather than filling it in. Never invent session history, observations, or facts about this patient. You do not diagnose.',
+    '',
+    '## Output format',
+    '',
+    'Return one JSON object and nothing else, with exactly this key:',
+    '',
+    '  "reply" — your reply to the therapist, in plain prose. Markdown is welcome (short headings, bold, lists); nothing else is read.',
+    '',
+    'Do not add any other key.',
+  ].join('\n');
+
+  const parts: string[] = [
+    request.notes.length === 0
+      ? `There are no notes for ${request.patientName} yet. Think only from what she tells you in this conversation, and say so when you have nothing to stand on.`
+      : 'The notes as they currently stand, newest first:',
+  ];
+  for (const note of request.notes) {
+    parts.push('', brainstormNoteBlock(note));
+  }
+
+  if (request.history.length > 0) {
+    parts.push(
+      '',
+      'Earlier in this conversation:',
+      '',
+      request.history.map((turn) => `${turn.role === 'user' ? 'Therapist' : 'You'}: ${turn.text}`).join('\n'),
+    );
+  }
+  parts.push('', 'She says:', '', request.message.trim());
+  parts.push(
+    '',
+    'Whatever she asked for, keep what the notes above say apart from general clinical ideas, and say plainly when something is not in them rather than inventing it.',
+    '',
+    'Reply with a single JSON object with exactly the key "reply", and nothing else.',
   );
 
   return { system, user: parts.join('\n') };

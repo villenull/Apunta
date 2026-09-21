@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { AiError } from './errors.js';
 import {
   NUM_CTX,
+  NUM_PREDICT_BRAINSTORM,
   NUM_PREDICT_BRIEF,
   NUM_PREDICT_DETECT,
   NUM_PREDICT_PLAN,
@@ -432,6 +433,58 @@ describe('OllamaProvider.refineNote', () => {
     const last = events.at(-1);
     if (last?.type !== 'refined') throw new Error('unreachable');
     expect(last.updatedSections).toBeNull();
+  });
+});
+
+describe('OllamaProvider.discussPatient', () => {
+  it('streams the reply and ends discussed, with nothing revised', async () => {
+    const events = await drain(
+      provider({
+        chats: [{ content: JSON.stringify({ reply: 'That is not in the notes.' }) }],
+      }).discussPatient({
+        patientName: 'John Smith',
+        notes: [{ title: 'Progress note', date: '2026-09-18', text: 'Subjective: Sleeping better.' }],
+        history: [],
+        message: 'Did he mention medication?',
+      }),
+    );
+
+    const last = events.at(-1);
+    if (last?.type !== 'discussed') throw new Error('unreachable');
+    expect(last.reply).toBe('That is not in the notes.');
+
+    const streamedKeys = new Set(
+      events.filter((event) => event.type === 'token').map((event) => event.section),
+    );
+    expect([...streamedKeys]).toEqual(['reply']);
+  });
+
+  it('rejects a response that is not one reply', async () => {
+    await expect(
+      drain(
+        provider({
+          chats: [{ content: JSON.stringify({ reply: 'Fine.', updatedSections: null }) }],
+        }).discussPatient({
+          patientName: 'John Smith',
+          notes: [],
+          history: [],
+          message: 'Hello?',
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'invalid_output' });
+  });
+
+  it('uses the brainstorm output ceiling', async () => {
+    const { fetchImpl, calls } = stub({ chats: [{ content: JSON.stringify({ reply: 'Thinking.' }) }] });
+    await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).discussPatient({
+        patientName: 'John Smith',
+        notes: [],
+        history: [],
+        message: 'Hello?',
+      }),
+    );
+    expect((calls[0]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_BRAINSTORM);
   });
 });
 

@@ -60,7 +60,7 @@ export function registerPatientRoutes(app: FastifyInstance, db: Database): void 
     return updated;
   });
 
-  /** Cascades: the patient's notes, their transcripts and their chat go too. */
+  /** Cascades: the patient's notes, their transcripts and their refine and brainstorm chat go too. */
   app.delete('/api/patients/:id', async (request, reply) => {
     const { id } = parseParams(IdParamsSchema, request.params);
     if (!deletePatient(db, id)) throw notFound('Patient not found');

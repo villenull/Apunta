@@ -62,8 +62,8 @@ export function About(): React.JSX.Element {
         <p className="small note-meta">
           That file is your drafting history. It is not your clinical record — the record lives in whatever
           system you paste the finished note into. It is still worth backing up, because the rough notes, the
-          transcripts and the refine conversations exist nowhere else. <Link to="/settings">Settings</Link>{' '}
-          has &ldquo;Backup&rdquo;.
+          transcripts and the refine and brainstorm conversations exist nowhere else.{' '}
+          <Link to="/settings">Settings</Link> has &ldquo;Backup&rdquo;.
         </p>
       </div>
 

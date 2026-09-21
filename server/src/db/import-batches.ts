@@ -51,8 +51,9 @@ export function importBatchExists(db: Database, id: string): boolean {
 
 /**
  * Take a run back: delete its notes, then the patients it created that are
- * left with nothing — no other note, treatment plan or session brief. A note
- * she has finalized since is hers now and stays, and so does its patient.
+ * left with nothing — no other note, treatment plan, session brief or
+ * brainstorm conversation. A note she has finalized since is hers now and
+ * stays, and so does its patient.
  * One transaction; the batch itself goes too, so a second undo is a 404.
  */
 export function undoImportBatch(db: Database, id: string): ImportUndoResponse {
@@ -81,8 +82,9 @@ export function undoImportBatch(db: Database, id: string): ImportUndoResponse {
       const attached = db
         .prepare(
           `SELECT (SELECT COUNT(*) FROM notes WHERE patient_id = @id)
-                + (SELECT COUNT(*) FROM treatment_plans WHERE patient_id = @id)
-                + (SELECT COUNT(*) FROM session_briefs WHERE patient_id = @id) AS count`,
+                 + (SELECT COUNT(*) FROM treatment_plans WHERE patient_id = @id)
+                 + (SELECT COUNT(*) FROM session_briefs WHERE patient_id = @id)
+                 + (SELECT COUNT(*) FROM brainstorm_messages WHERE patient_id = @id) AS count`,
         )
         .get({ id: patientId }) as { count: number };
       if (attached.count > 0) {

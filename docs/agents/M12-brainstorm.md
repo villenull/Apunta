@@ -1,7 +1,7 @@
 # M12 — Brainstorm
 
 **Depends on:** M3 (the Ollama provider), M9 (the briefing's note lookback).
-**Status:** in progress (2026-09-21).
+**Status:** done (2026-09-21).
 
 ## Goal
 

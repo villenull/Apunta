@@ -1,4 +1,6 @@
 import {
+  BrainstormReplySchema,
+  brainstormJsonSchema,
   BriefCompositionSchema,
   briefCompositionJsonSchema,
   buildRefineSchema,
@@ -32,6 +34,7 @@ import { JsonStringStreamDecoder, stripCodeFence } from './json-stream.js';
 import { assertGgufWeights, assertSupportedModelName, defaultModelForMachine } from './model-picker.js';
 import {
   approximateTokens,
+  buildBrainstormPrompt,
   buildComposeBriefPrompt,
   buildDetectFormatPrompt,
   buildExtractRetractionsPrompt,
@@ -44,6 +47,7 @@ import {
 } from './prompts.js';
 import { applyRetractions, hasRetraction } from './retractions.js';
 import type {
+  BrainstormRequest,
   ComposeBriefRequest,
   DetectFormatRequest,
   GenerateNoteRequest,
@@ -96,6 +100,7 @@ export const NUM_PREDICT_RETRACTIONS = 768;
 export const NUM_PREDICT_SUMMARY = 768;
 export const NUM_PREDICT_PLAN = 1536;
 export const NUM_PREDICT_BRIEF = 1024;
+export const NUM_PREDICT_BRAINSTORM = 1536;
 
 /** How long silence lasts before the UI is told the model is still loading. */
 const LOADING_STATUS_AFTER_MS = 2500;
@@ -326,6 +331,39 @@ export class OllamaProvider implements LlmProvider {
     });
 
     yield { type: 'refined', reply: value.reply, updatedSections: value.updatedSections, stats };
+  }
+
+  /**
+   * M12: a brainstorm reply is one string, not a note revision, so the schema
+   * is one key and the only streamed field is `reply`. Same ladder, same
+   * truncation checks, same failure shapes as every other streaming call —
+   * deliberately, so this path cannot fail in a way the others have already
+   * learned to report.
+   */
+  async *discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent> {
+    const model = this.resolveModel();
+    yield status('connecting', 'Thinking…');
+    await this.requireUsableModel(model);
+
+    const prompt = buildBrainstormPrompt(request);
+    this.assertFits(prompt.system, prompt.user);
+
+    const validate = (value: unknown): string => {
+      const parsed = BrainstormReplySchema.safeParse(value);
+      if (!parsed.success) throw new ShapeMismatch(describeShapeMismatch(value, ['reply']));
+      return parsed.data.reply;
+    };
+
+    const { value, stats } = yield* this.runLadder<string>({
+      model,
+      system: prompt.system,
+      user: prompt.user,
+      format: brainstormJsonSchema(),
+      validate,
+      numPredict: NUM_PREDICT_BRAINSTORM,
+    });
+
+    yield { type: 'discussed', reply: value, stats };
   }
 
   // --- M9: two-stage plan drafting and session prep -----------------------

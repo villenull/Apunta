@@ -3,6 +3,7 @@ import type { BriefComposition, DetectedFormat, NoteSummary, PlanSuggestion, Sec
 import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
 import type {
   AiProviders,
+  BrainstormRequest,
   ComposeBriefRequest,
   DetectFormatRequest,
   GenerateNoteRequest,
@@ -54,6 +55,8 @@ export class RecordingLlmProvider implements LlmProvider {
   readonly detections: DetectFormatRequest[] = [];
   /** Refine calls carry the same section-scoped guidance as first drafts. */
   readonly refines: RefineNoteRequest[] = [];
+  /** Brainstorm calls carry the patient name, the notes offered, and the thread. */
+  readonly discussions: BrainstormRequest[] = [];
 
   private readonly inner = new FakeLlmProvider({ streamDelayMs: 0 });
 
@@ -67,6 +70,11 @@ export class RecordingLlmProvider implements LlmProvider {
   refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
     this.refines.push(request);
     return this.inner.refineNote(request);
+  }
+
+  discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent> {
+    this.discussions.push(request);
+    return this.inner.discussPatient(request);
   }
 
   detectFormat(request: DetectFormatRequest): Promise<DetectedFormat> {

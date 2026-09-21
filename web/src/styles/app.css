@@ -790,6 +790,15 @@
   flex: 1;
 }
 
+/* Brainstorm's composer is a textarea, not an input: Enter sends and
+   Shift+Enter breaks the line. Same row, same height behaviour. */
+.chat-input-row textarea {
+  flex: 1;
+  resize: none;
+  min-height: 44px;
+  font-size: calc(14px * var(--font-scale));
+}
+
 /* The send arrow: the darker accent and a white glyph, never dimmed for an
    empty box — grey-on-faint-green was the one complaint about this row
    (owner-proxy, 2026-09-07). */
@@ -1570,6 +1579,78 @@ select:disabled {
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
+}
+
+/*
+ * Brainstorm (M12): the same right-pane recipe as plan and prep — a header,
+ * a context line, a thread that owns the scroll, and the composer pinned at
+ * the bottom. Bubbles reuse the chat column's own classes; the Markdown
+ * inside them only tightens paragraph spacing.
+ */
+.brainstorm-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.brainstorm-thread {
+  flex: 1;
+  min-height: 0;
+}
+
+.brainstorm-context {
+  padding: 8px var(--gutter-x) 0;
+  flex-shrink: 0;
+}
+
+.brainstorm-context > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-block;
+}
+
+.brainstorm-context > summary::-webkit-details-marker {
+  display: none;
+}
+
+.brainstorm-context-notes {
+  margin: 6px 0 8px;
+  padding-left: 18px;
+}
+
+.chat-bubble .md-paragraph {
+  margin: 0 0 8px;
+}
+
+.chat-bubble .md-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble .md-heading {
+  font-size: calc(14px * var(--font-scale));
+  margin: 0 0 6px;
+}
+
+.chat-bubble .md-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.chat-bubble .md-quote {
+  margin: 0 0 8px;
+  padding-left: 8px;
+  border-left: 2px solid var(--border-strong);
+}
+
+.chat-bubble .md-code {
+  font-size: calc(12px * var(--font-scale));
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  white-space: pre;
+  margin: 0 0 8px;
 }
 
 .plan-view > .plan-section,

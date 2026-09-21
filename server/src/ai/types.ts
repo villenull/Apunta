@@ -60,6 +60,22 @@ export interface DetectFormatRequest {
   readonly text: string;
 }
 
+/** One note offered to a brainstorm call, newest first. */
+export interface BrainstormNoteInput {
+  readonly title: string;
+  /** `YYYY-MM-DD`, so the model can place it in time. */
+  readonly date: string;
+  /** Exactly what the editor shows for that note. */
+  readonly text: string;
+}
+
+export interface BrainstormRequest {
+  readonly patientName: string;
+  readonly notes: readonly BrainstormNoteInput[];
+  readonly history: readonly ChatTurn[];
+  readonly message: string;
+}
+
 /** What the final Ollama frame reports about the call. Logged on every request. */
 export interface LlmStats {
   readonly model: string;
@@ -93,7 +109,13 @@ export type LlmEvent =
       readonly reply: string;
       readonly updatedSections: Sections | null;
       readonly stats: LlmStats;
-    };
+    }
+  /**
+   * A brainstorm reply (M12): freeform discussion, and there is no note to
+   * revise, so no `updatedSections` — the route that reads this has no write
+   * path at all.
+   */
+  | { readonly type: 'discussed'; readonly reply: string; readonly stats: LlmStats };
 
 /**
  * The material one note contributes to a second-stage call (M9).
@@ -156,6 +178,8 @@ export interface LlmProvider {
   generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent>;
   /** Streams the assistant's reply, then yields it with any rewritten sections (M4). */
   refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent>;
+  /** Streams a brainstorm reply, then yields it (M12). Nothing is revised. */
+  discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent>;
   /** Reads a template or an example note and names its sections (M6). */
   detectFormat(request: DetectFormatRequest): Promise<DetectedFormat>;
   /** Stage one of both M9 paths: one note in, a small structured object out. */

@@ -25,6 +25,9 @@ export type { TranscribeHandlers, TranscribeInput } from './transcribe.js';
 export { listChatMessages, sendChatMessage } from './chat.js';
 export type { ChatHandlers } from './chat.js';
 
+export { clearBrainstorm, listBrainstorm, sendBrainstormMessage } from './brainstorm.js';
+export type { BrainstormHandlers } from './brainstorm.js';
+
 export {
   createPatient,
   deletePatient,

@@ -1,6 +1,6 @@
 # Apunta — Master Plan
 
-**All packets (M0–M11) are built, and the project is now in live testing.
+**All packets (M0–M12) are built, and the project is now in live testing.
 A session picking the work up starts at `docs/HANDOFF.md`** — what is built,
 what is open, and who each open item waits on — then `/CLAUDE.md`
 (conventions). This plan is the design and the milestone history behind that:

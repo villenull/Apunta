@@ -22,6 +22,8 @@ import {
 import { NUM_CTX } from './ollama.js';
 import {
   approximateTokens,
+  brainstormNoteBlock,
+  buildBrainstormPrompt,
   buildComposeBriefPrompt,
   buildDetectFormatPrompt,
   buildExtractRetractionsPrompt,
@@ -452,6 +454,79 @@ describe('buildDetectFormatPrompt', () => {
     expect(
       buildDetectFormatPrompt({ kind: 'template', text: 'Subjective:\nObjective:\nAssessment:\nPlan:' }),
     ).toMatchSnapshot();
+  });
+});
+
+describe('buildBrainstormPrompt', () => {
+  const NOTE = { title: 'Progress note', date: '2026-09-18', text: 'Subjective: Sleeping better.' };
+
+  it('renders one block per note, newest first, and labels the turns', () => {
+    const prompt = buildBrainstormPrompt({
+      patientName: 'John Smith',
+      notes: [NOTE],
+      history: [{ role: 'user', text: 'He cancelled twice.' }],
+      message: 'What stands out?',
+    });
+    expect(prompt.system).toContain('John Smith');
+    expect(prompt.user).toContain('### Progress note (2026-09-18)');
+    expect(prompt.user).toContain('Sleeping better.');
+    expect(prompt.user).toContain('Therapist: He cancelled twice.');
+    expect(prompt.user).toContain('She says:');
+  });
+
+  it('carries the whole faithfulness stance, in the system and beside her message', () => {
+    const prompt = buildBrainstormPrompt({
+      patientName: 'John Smith',
+      notes: [NOTE],
+      history: [],
+      message: 'Why?',
+    });
+    expect(prompt.system).toContain('say plainly');
+    expect(prompt.system).toContain('not in the notes');
+    expect(prompt.user).toContain('say plainly');
+    expect(prompt.user).toContain('not in them');
+    expect(prompt.system).toContain('Never invent session history');
+    expect(prompt.system).toContain('You do not diagnose');
+    expect(prompt.system).toContain('never write anything that reads as a record entry');
+    expect(prompt.system).toContain('"reply"');
+    expect(prompt.user.trimEnd().endsWith('and nothing else.')).toBe(true);
+  });
+
+  it('says there are no notes yet instead of showing an empty context', () => {
+    const prompt = buildBrainstormPrompt({
+      patientName: 'John Smith',
+      notes: [],
+      history: [],
+      message: 'Hello?',
+    });
+    expect(prompt.user).toContain('There are no notes for John Smith yet.');
+    expect(prompt.user).not.toContain('###');
+  });
+
+  it('keeps five ordinary notes inside the budget the provider enforces', () => {
+    const notes = Array.from({ length: 5 }, (_, index) => ({
+      title: 'Progress note',
+      date: `2026-09-${String(10 + index).padStart(2, '0')}`,
+      text: `Subjective: ${'The patient described the week in detail. '.repeat(40)}`,
+    }));
+    const prompt = buildBrainstormPrompt({
+      patientName: 'John Smith',
+      notes,
+      history: [],
+      message: 'Where are we?',
+    });
+    expect(approximateTokens(prompt.system) + approximateTokens(prompt.user)).toBeLessThan(NUM_CTX * 0.75);
+  });
+
+  it('budgets exactly what the prompt shows, block for block', () => {
+    expect(brainstormNoteBlock(NOTE)).toBe('### Progress note (2026-09-18)\n\nSubjective: Sleeping better.');
+    const prompt = buildBrainstormPrompt({
+      patientName: 'John Smith',
+      notes: [NOTE],
+      history: [],
+      message: 'Hi.',
+    });
+    expect(prompt.user).toContain(brainstormNoteBlock(NOTE));
   });
 });
 

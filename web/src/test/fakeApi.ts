@@ -1,4 +1,5 @@
 import {
+  type BrainstormMessage,
   type ChatMessage,
   type ClaudeImportReport,
   type ImportBatch,
@@ -32,6 +33,8 @@ export interface FakeApiState {
   formats: NoteFormat[];
   /** Refine-chat turns, across every note. */
   messages: ChatMessage[];
+  /** Brainstorm turns, across every patient (M12). */
+  brainstorm: BrainstormMessage[];
   /** Treatment plan versions, newest version last (M9). */
   plans: TreatmentPlan[];
   goals: PlanGoal[];
@@ -103,6 +106,20 @@ export function makeChatMessage(
     role,
     text,
     ref_quote: refQuote,
+    created_at: '2026-08-08T09:00:00.000Z',
+  };
+}
+
+export function makeBrainstormMessage(
+  patientId: string,
+  role: BrainstormMessage['role'],
+  text: string,
+): BrainstormMessage {
+  return {
+    id: fakeId(),
+    patient_id: patientId,
+    role,
+    text,
     created_at: '2026-08-08T09:00:00.000Z',
   };
 }
@@ -317,6 +334,8 @@ export interface FakeApiOptions {
   backup?: Record<string, unknown>;
   /** Make `POST /api/notes/:id/chat` fail inside the stream, as the server does. */
   chatError?: { code: string; message: string };
+  /** The same, for `POST /api/patients/:id/brainstorm` (M12). */
+  brainstormError?: { code: string; message: string };
   /**
    * Make `POST /api/generate` fail *inside* the stream, the way the server
    * does once the 200 is committed — "Ollama is not running" is an `error`
@@ -370,6 +389,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
     notes: [],
     formats: [],
     messages: [],
+    brainstorm: [],
     plans: [],
     goals: [],
     briefs: [],
@@ -388,6 +408,10 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
 
   function noteById(id: string): Note | undefined {
     return state.notes.find((note) => note.id === id);
+  }
+
+  function patientById(id: string): PatientListItem | undefined {
+    return state.patients.find((patient) => patient.id === id);
   }
 
   function replaceNote(updated: Note): Note {
@@ -754,6 +778,52 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         }
         const assistant = makeChatMessage(note.id, 'assistant', outcome.reply);
         state.messages = [...state.messages, assistant];
+        frames.push({ event: 'message', data: { message: assistant } });
+        return sse(frames);
+      }
+
+      // --- M12: Brainstorm, one thread per patient -----------------------
+
+      const brainstormMatch = /^\/api\/patients\/([^/]+)\/brainstorm$/.exec(path);
+      if (brainstormMatch) {
+        const patient = patientById(brainstormMatch[1] ?? '');
+        if (!patient) return apiError(404, 'not_found', 'Patient not found');
+        const thread = (): { messages: BrainstormMessage[]; context: unknown } => ({
+          messages: state.brainstorm.filter((message) => message.patient_id === patient.id),
+          context: {
+            notes: state.notes
+              .filter((note) => note.patient_id === patient.id)
+              .slice(0, 5)
+              .map((note) => ({ id: note.id, title: note.title, date: note.created_at.slice(0, 10) })),
+            cap: 5,
+            dropped_note_ids: [],
+          },
+        });
+        if (method === 'GET') return json(thread());
+        if (method === 'DELETE') {
+          state.brainstorm = state.brainstorm.filter((message) => message.patient_id !== patient.id);
+          return json(thread());
+        }
+        if (options.brainstormError) return sse([{ event: 'error', data: options.brainstormError }]);
+
+        const text = String(body['message'] ?? '');
+        const user = makeBrainstormMessage(patient.id, 'user', text);
+        state.brainstorm = [...state.brainstorm, user];
+
+        const included = state.notes.filter((note) => note.patient_id === patient.id).length;
+        const reply =
+          `Thinking with ${included === 0 ? 'no notes yet' : `the ${String(included)} notes`} for ` +
+          `${patient.name}: “${text}” is worth sitting with.`;
+        const assistant = makeBrainstormMessage(patient.id, 'assistant', reply);
+        state.brainstorm = [...state.brainstorm, assistant];
+
+        const frames: { event: string; data: unknown }[] = [
+          { event: 'message', data: { message: user } },
+          { event: 'context', data: { context: thread().context } },
+        ];
+        for (const word of reply.split(' ')) {
+          frames.push({ event: 'token', data: { text: `${word} ` } });
+        }
         frames.push({ event: 'message', data: { message: assistant } });
         return sse(frames);
       }

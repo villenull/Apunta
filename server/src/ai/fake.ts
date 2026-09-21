@@ -16,6 +16,7 @@ import { JsonStringStreamDecoder } from './json-stream.js';
 import { orderSections } from './prompts.js';
 import { applyRetractions, hasRetraction, retractionMarkerMatches } from './retractions.js';
 import type {
+  BrainstormRequest,
   ComposeBriefRequest,
   DetectFormatRequest,
   GenerateNoteRequest,
@@ -222,6 +223,15 @@ export class FakeLlmProvider implements LlmProvider {
     yield { type: 'refined', reply, updatedSections, stats: FAKE_STATS };
   }
 
+  /** A brainstorm reply: one thought, grounded in what went in. */
+  async *discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent> {
+    const reply = fakeBrainstorm(request);
+
+    yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+    yield* this.streamJson(JSON.stringify({ reply }));
+    yield { type: 'discussed', reply, stats: FAKE_STATS };
+  }
+
   detectFormat(request: DetectFormatRequest): Promise<DetectedFormat> {
     return Promise.resolve(fakeDetectFormat(request));
   }
@@ -252,6 +262,17 @@ export class FakeLlmProvider implements LlmProvider {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** One canned brainstorm thought, naming what went in so tests can see the grounding. */
+export function fakeBrainstorm(request: BrainstormRequest): string {
+  const count = request.notes.length;
+  const basis = count === 0 ? 'no notes yet' : count === 1 ? 'the one note' : `the ${String(count)} notes`;
+  return (
+    `Thinking with ${basis} for ${request.patientName}: “${request.message}” is worth sitting with. ` +
+    'What in the notes supports it, and what would need a session to find out? ' +
+    'Say plainly when something is not in the notes rather than filling it in.'
+  );
 }
 
 /** Split out so the canned behaviour is directly unit-testable. */

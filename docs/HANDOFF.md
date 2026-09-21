@@ -157,6 +157,22 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   to the model path. The focused parser/route suite covers 60 cases, including
   clinical-context cuts, exact span conservation and standalone-sentence
   moves.
+- **Brainstorm** (M12, 2026-09-21): a per-patient chat with the local model,
+  opened from "Brainstorm" above "Treatment plan" into `?view=brainstorm`.
+  Open discussion with the recent notes as context — newest first, capped by
+  the briefing's lookback (default 5), the whole prompt budgeted to the
+  context window (oldest turns go first, then oldest notes, whole notes only;
+  a note too long to fit alone is left out and named). A collapsible Context
+  line says which notes the model was given. One saved conversation per
+  patient (SQLite, cascades on delete, kept on archive, keeps an import
+  patient on undo), "New conversation" behind a confirm. Nothing from it is
+  ever written into a note, plan, briefing or patient — the endpoint has no
+  write path to any of them, asserted against the database — and the prompt
+  tells the model to keep the notes apart from general ideas and to say when
+  something is not in the notes rather than guess. Replies render as Markdown
+  through an in-house renderer that builds React text nodes only, so no reply
+  can smuggle in an element. Enter sends, Shift+Enter breaks the line, Stop
+  abandons the reply; fake mode streams a canned thought.
 - **Import from Claude** (M11): **automatic** since 2026-09-21, by the
   owner's choice. Imports every patient with a session since a cutoff
   (default 2026-07-01) with their whole history, one draft per session
