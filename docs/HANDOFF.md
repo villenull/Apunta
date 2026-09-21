@@ -70,10 +70,15 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   fitted to the clip and hands the words back into the box for her to edit;
   nothing is sent until she presses the arrow. The send arrow is full accent
   with a white glyph.
-- **Settings, reordered** (2026-09-21, owner): Appearance, then Note
-  formats (with "Add another format" as the card's last row), then Backup,
-  then Import from Claude and the Setup/About line as before. Appearance
-  has the accent colour, **text size** (Small / Default / Large / Extra
+- **Settings, reordered then redesigned labels-only** (2026-09-21, owner):
+  Appearance (Colour, Font size, Animations switch — no hint text, the label
+  alone suffices), then Note formats (with "Add another format" as the
+  card's last row), then a one-line Backup card ("Last backup: … · Back up
+  now · Restore", speaking up only when stale or failing), then Import from
+  Claude as a link row, then a folded-shut Advanced disclosure holding the
+  backup folder/passphrase/archives/restore-tested/retention and
+  Setup/About/Licences. Text appears only where omitting it risks her data.
+  Appearance has the accent colour, **text size** (Small / Default / Large / Extra
   large: one `--font-scale` token multiplies every `font-size` in the
   stylesheets) and **animations** on/off (a `no-motion` root class; unset
   follows the system's reduced-motion). All three are server settings

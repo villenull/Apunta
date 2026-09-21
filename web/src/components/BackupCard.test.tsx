@@ -1,8 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { BackupCard } from './BackupCard.js';
+import { BackupAdvanced, BackupCard, useBackup } from './BackupCard.js';
 import { installFakeApi } from '../test/fakeApi.js';
 
 afterEach(() => {
@@ -11,10 +11,21 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** Both halves on one state, as Settings renders them (the card, then Advanced). */
+function Harness(): React.JSX.Element {
+  const backup = useBackup();
+  return (
+    <>
+      <BackupCard backup={backup} onRestore={() => {}} />
+      <BackupAdvanced backup={backup} />
+    </>
+  );
+}
+
 function renderCard(): void {
   render(
     <MemoryRouter>
-      <BackupCard />
+      <Harness />
     </MemoryRouter>,
   );
 }
@@ -24,7 +35,7 @@ describe('the backup card', () => {
     installFakeApi();
     renderCard();
 
-    expect((await screen.findByTestId('backup-last')).textContent).toContain('No backup has been made yet');
+    expect((await screen.findByTestId('backup-last')).textContent).toContain('No backup yet');
   });
 
   /**
@@ -36,9 +47,9 @@ describe('the backup card', () => {
     renderCard();
 
     const line = await screen.findByTestId('backup-last');
-    expect(line.textContent).toContain('2026-08-01');
-    expect(line.textContent).toContain('more than 7 days ago');
+    expect(line.textContent).toMatch(/Last backup: \d+ days ago/);
     expect(line.className).toContain('backup-stale');
+    expect(screen.getByTestId('backup-stale').textContent).toBe('No backup for over 7 days.');
   });
 
   it('surfaces a failed attempt as a failure', async () => {
@@ -99,7 +110,9 @@ describe('the backup card', () => {
     );
     renderCard();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Restore' }));
+    fireEvent.click(
+      within(await screen.findByTestId('backup-list')).getByRole('button', { name: 'Restore' }),
+    );
     await waitFor(() => {
       expect(screen.getByTestId('backup-action-message').textContent).toContain(
         'Quit Apunta and open it again',
@@ -114,7 +127,7 @@ describe('the backup card', () => {
     installFakeApi({}, { backup: { pending_restore: true } });
     renderCard();
 
-    expect((await screen.findByTestId('backup-pending')).textContent).toContain('Quit Apunta');
+    expect((await screen.findByTestId('backup-pending')).textContent).toContain('quit Apunta');
     expect(screen.getByRole('button', { name: 'Cancel it' })).toBeTruthy();
   });
 
@@ -122,9 +135,7 @@ describe('the backup card', () => {
     installFakeApi();
     renderCard();
 
-    expect((await screen.findByTestId('backup-verify-nudge')).textContent).toContain(
-      'A backup nobody has restored is a guess',
-    );
+    expect((await screen.findByTestId('backup-verify-nudge')).textContent).toContain('Restore never tested');
   });
 
   it('stops asking once she says she has', async () => {
@@ -155,8 +166,57 @@ describe('the backup card', () => {
 
     const summary = await screen.findByTestId('retention-summary');
     expect(summary.textContent).toContain('847 notes for 12 patients');
+    expect(summary.textContent).toContain('300 transcripts');
     expect(summary.textContent).toContain('going back to 2026-01-04');
     expect(summary.textContent).toContain('3.0 MB');
     expect(screen.queryByRole('button', { name: /delete/i })).toBeNull();
+  });
+
+  it('keeps the main card to one line when all is well', async () => {
+    installFakeApi(
+      {},
+      {
+        backup: {
+          last_backup_at: new Date(Date.now() - 3 * 3600_000).toISOString(),
+          stale: false,
+          last_backup_error: null,
+        },
+      },
+    );
+    renderCard();
+
+    const card = await screen.findByTestId('backup-card');
+    expect(within(card).getByTestId('backup-last').textContent).toBe('Last backup: 3 hours ago');
+    expect(within(card).getByTestId('backup-now')).toBeTruthy();
+    expect(within(card).getByTestId('backup-restore')).toBeTruthy();
+    // No warnings, and none of the details, on the main card.
+    expect(within(card).queryByRole('alert')).toBeNull();
+    expect(within(card).queryByTestId('backup-directory')).toBeNull();
+    expect(within(card).queryByTestId('backup-list')).toBeNull();
+  });
+
+  it('says the folder shares a disk with the notes when it does, and not otherwise', async () => {
+    installFakeApi();
+    renderCard();
+    expect((await screen.findByTestId('backup-same-disk')).textContent).toContain('USB drive');
+    cleanup();
+
+    installFakeApi(
+      {},
+      { backup: { destination: { risk: 'external', path: '/Volumes/Backup/Apunta', warning: '' } } },
+    );
+    renderCard();
+    await screen.findByTestId('backup-directory');
+    expect(screen.queryByTestId('backup-same-disk')).toBeNull();
+  });
+
+  it('warns about losing a passphrase only once one is typed', async () => {
+    installFakeApi();
+    renderCard();
+
+    const input = await screen.findByLabelText('Passphrase');
+    expect(screen.queryByTestId('backup-passphrase-warning')).toBeNull();
+    fireEvent.change(input, { target: { value: 'correct horse battery' } });
+    expect(screen.getByTestId('backup-passphrase-warning').textContent).toContain('cannot be opened');
   });
 });

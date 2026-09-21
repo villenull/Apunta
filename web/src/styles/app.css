@@ -1091,42 +1091,6 @@ select:focus {
   border-bottom: none;
 }
 
-/* "Add another format": the format card's last row, in the accent. */
-.format-add-row {
-  justify-content: flex-start;
-  gap: 8px;
-  color: var(--accent);
-  font-size: calc(14px * var(--font-scale));
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.format-add-row:hover {
-  color: var(--accent-hover);
-}
-
-/* Settings → Appearance: text size and animations, under the colour. */
-.appearance-field {
-  border: none;
-  padding: 0;
-  margin: 18px 0 0;
-  min-width: 0;
-}
-
-.appearance-field legend {
-  padding: 0;
-}
-
-.size-options {
-  flex-wrap: wrap;
-}
-
-.size-options .btn.is-selected {
-  background: var(--accent-tint);
-  border-color: var(--accent);
-  color: var(--accent-hover);
-}
-
 .dropzone {
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--radius);
@@ -2426,19 +2390,202 @@ select:disabled {
   }
 }
 
-/* Settings → Appearance: the colour well sits on the row with its reset. */
-.accent-row {
-  align-items: center;
+/*
+ * Settings (redesign, owner 2026-09-21): one card style, label-left /
+ * control-right rows, one quiet action per card, and everything rarely
+ * needed under a closed Advanced disclosure.
+ */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
 }
 
-.accent-row input[type='color'] {
-  width: 52px;
-  height: 34px;
+.card.settings-card {
+  padding: 18px var(--gutter-x);
+}
+
+.settings-title {
+  font-family: var(--font-serif);
+  font-size: calc(17px * var(--font-scale));
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.settings-subtitle {
+  font-size: calc(14px * var(--font-scale));
+  margin: 0 0 10px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-height: 44px;
+  padding: 6px 0;
+  font-size: calc(14px * var(--font-scale));
+}
+
+.settings-row + .settings-row {
+  border-top: 0.5px solid var(--border);
+}
+
+.settings-label {
+  font-size: calc(14px * var(--font-scale));
+  color: var(--text-primary);
+}
+
+.settings-row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-row-actions input[type='color'] {
+  width: 44px;
+  height: 30px;
   padding: 2px;
   border: 0.5px solid var(--border-strong);
   border-radius: 8px;
   background: var(--surface);
   cursor: pointer;
+}
+
+.size-options .btn.is-selected {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+/* A switch, drawn on a native checkbox so keyboard and forms still work. */
+.settings-switch {
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--border-strong);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease);
+}
+
+.settings-switch::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(38, 38, 32, 0.2);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.settings-switch:checked {
+  background: var(--accent);
+}
+
+.settings-switch:checked::before {
+  transform: translateX(16px);
+}
+
+.settings-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* "Add another format": the format card's last row, in the accent. */
+.format-add-row {
+  justify-content: flex-start;
+  gap: 8px;
+  color: var(--accent);
+  font-size: calc(14px * var(--font-scale));
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.format-add-row:hover {
+  color: var(--accent-hover);
+}
+
+.settings-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: inherit;
+  text-decoration: none;
+}
+
+.settings-link-row .settings-title {
+  margin: 0;
+}
+
+.settings-link-row:hover {
+  color: var(--accent-hover);
+}
+
+.settings-advanced > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.settings-advanced > summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-advanced > summary::after {
+  content: '›';
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.settings-advanced[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.settings-group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 0.5px solid var(--border);
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.settings-field input {
+  width: 100%;
+}
+
+.settings-path {
+  font-size: calc(13px * var(--font-scale));
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.settings-links {
+  display: flex;
+  gap: 16px;
+  font-size: calc(14px * var(--font-scale));
 }
 
 /* The restore door on the first-run screen: present, not competing. */

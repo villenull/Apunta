@@ -924,7 +924,8 @@ describe('first run, with nothing set up yet', () => {
 
     fireEvent.click(screen.getByTestId('onboarding-restore'));
 
-    expect(await screen.findByText('Back up and restore')).toBeDefined();
+    const card = await screen.findByTestId('backup-card');
+    expect(within(card).getByText('Backup')).toBeDefined();
   });
 });
 
@@ -951,7 +952,7 @@ describe('settings', () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
-    const picker = (await screen.findByLabelText('Accent colour')) as HTMLInputElement;
+    const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
     expect(picker.value).toBe('#1f6f63');
 
     // Moving the picker previews immediately; saving is what stores it.
@@ -1058,7 +1059,7 @@ describe('settings', () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
-    const picker = (await screen.findByLabelText('Accent colour')) as HTMLInputElement;
+    const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
     fireEvent.change(picker, { target: { value: '#123456' } });
     fireEvent.click(screen.getByTestId('reset-accent'));
 

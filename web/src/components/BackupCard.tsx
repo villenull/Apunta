@@ -1,4 +1,4 @@
-import { BACKUP_STALE_DAYS, MIN_BACKUP_PASSPHRASE, type BackupFile } from '@apunta/shared';
+import { BACKUP_STALE_DAYS, type BackupFile, type BackupStatusResponse } from '@apunta/shared';
 import { useCallback, useState } from 'react';
 
 import {
@@ -9,231 +9,308 @@ import {
   markRestoreVerified,
   restoreBackup,
 } from '../api/index.js';
-import { useLoader } from '../hooks/useLoader.js';
+import { useLoader, type LoadState } from '../hooks/useLoader.js';
+import { formatRelativeTime } from '../lib/format.js';
 
 /**
- * Settings → Back up and restore (M7 deliverable 4).
+ * Settings → Backup (M7 deliverable 4), in two parts since the Settings
+ * redesign (owner, 2026-09-21): a one-line card on the main screen, and the
+ * details under Advanced.
  *
  * The research ranks "the backup does not exist, or exists and cannot be
- * restored" as the most likely way this practice loses its data — the only
- * item on that list where the harm is certain rather than conditional. Three
- * things follow, and they are what this card is for:
+ * restored" as the most likely way this practice loses its data, so what
+ * stays on the main screen is exactly what guards against that: when the
+ * last backup ran, a warning when it is stale or failed, a warning when the
+ * folder syncs to a cloud, a waiting restore, and Back up now / Restore.
+ * Everything else — the folder, the passphrase, the archives, the verify
+ * nudge, the size of what is kept — is one click away under Advanced.
  *
- * - **the last result is always on screen**, including a failure. A backup
- *   that silently did not happen is the failure being defended against, so a
- *   stale timestamp is shown in colour and an error is shown as an error.
- * - **the destination is named and judged.** ~/Desktop and ~/Documents are the
- *   two folders iCloud syncs by default, so the obvious save location uploads
- *   clinical records to Apple.
- * - **restoring is offered, and it is honest about needing a restart.** The
- *   database is held open while the app runs, so the swap happens at the next
- *   start.
- *
- * The copy deliberately does not say "your backup is this file" — the record
- * lives in the system she pastes into. This file is her drafting history
- * (`docs/research/data-at-rest-2026-08.md` §6.3.5).
+ * The daily automatic backup is the server's and is untouched by any of this.
  */
-export function BackupCard(): React.JSX.Element {
+
+/** Which half of the screen an action came from, so its result shows there. */
+type Origin = 'card' | 'advanced';
+
+export interface BackupControls {
+  readonly status: LoadState<BackupStatusResponse>;
+  readonly reload: () => void;
+  readonly busy: boolean;
+  readonly error: { readonly origin: Origin; readonly text: string } | null;
+  readonly message: { readonly origin: Origin; readonly text: string } | null;
+  readonly directory: string;
+  readonly setDirectory: (value: string) => void;
+  readonly passphrase: string;
+  readonly setPassphrase: (value: string) => void;
+  readonly run: (origin: Origin, action: () => Promise<string>) => void;
+}
+
+/** The backup state both halves share. */
+export function useBackup(): BackupControls {
   const load = useCallback((signal: AbortSignal) => fetchBackupStatus(signal), []);
   const status = useLoader(load);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<BackupControls['error']>(null);
+  const [message, setMessage] = useState<BackupControls['message']>(null);
   const [directory, setDirectory] = useState('');
   const [passphrase, setPassphrase] = useState('');
+  const reload = status.reload;
 
-  if (status.state.status === 'loading') {
-    return <p className="small state-note">Loading backup status…</p>;
-  }
-  if (status.state.status === 'error') {
-    return (
-      <p className="small state-note error-state" role="alert">
-        {status.state.message}{' '}
-        <button type="button" className="btn small btn-quick" onClick={status.reload}>
-          Try again
-        </button>
-      </p>
-    );
-  }
+  const run = useCallback(
+    (origin: Origin, action: () => Promise<string>): void => {
+      setBusy(true);
+      setError(null);
+      setMessage(null);
+      void action().then(
+        (text) => {
+          setBusy(false);
+          setMessage({ origin, text });
+          reload();
+        },
+        (thrown: unknown) => {
+          setBusy(false);
+          setError({ origin, text: errorMessage(thrown) });
+        },
+      );
+    },
+    [reload],
+  );
 
-  const data = status.state.data;
+  return {
+    status: status.state,
+    reload,
+    busy,
+    error,
+    message,
+    directory,
+    setDirectory,
+    passphrase,
+    setPassphrase,
+    run,
+  };
+}
 
-  function run(action: () => Promise<string>): void {
-    setBusy(true);
-    setError(null);
-    setMessage(null);
-    void action().then(
-      (note) => {
-        setBusy(false);
-        setMessage(note);
-        status.reload();
-      },
-      (thrown: unknown) => {
-        setBusy(false);
-        setError(errorMessage(thrown));
-      },
-    );
-  }
+function backUp(backup: BackupControls, origin: Origin, toFolder: boolean): void {
+  backup.run(origin, async () => {
+    const directory = backup.directory.trim();
+    const result = await createBackup({
+      ...(toFolder && directory !== '' ? { directory, remember: true } : {}),
+      ...(backup.passphrase === '' ? {} : { passphrase: backup.passphrase }),
+    });
+    backup.setPassphrase('');
+    const pruned = result.pruned.length === 0 ? '' : ` ${String(result.pruned.length)} older removed.`;
+    return `Backed up: ${String(result.manifest.counts['notes'] ?? 0)} notes, ${formatBytes(
+      result.file.bytes,
+    )}, checked and intact.${pruned}`;
+  });
+}
+
+function Outcome({ backup, origin }: { backup: BackupControls; origin: Origin }): React.JSX.Element {
+  return (
+    <>
+      {backup.error?.origin === origin && (
+        <p className="form-error" role="alert" data-testid="backup-action-error">
+          {backup.error.text}
+        </p>
+      )}
+      {backup.message?.origin === origin && (
+        <p className="small state-note" role="status" data-testid="backup-action-message">
+          {backup.message.text}
+        </p>
+      )}
+    </>
+  );
+}
+
+/** The main-screen card: one line, and a warning only when something is wrong. */
+export function BackupCard({
+  backup,
+  onRestore,
+}: {
+  backup: BackupControls;
+  /** Restoring picks an archive, and the archives live under Advanced. */
+  onRestore: () => void;
+}): React.JSX.Element {
+  const { status } = backup;
 
   return (
-    <div className="card card-rows lede" data-testid="backup-card">
-      <h2 className="lede">Back up and restore</h2>
-      <p className="small note-meta">
-        Apunta is where you draft. Your finished note lives in the records system you paste it into. What is
-        only here — the rough notes, the transcripts, the refine conversations — exists nowhere else, which is
-        what these backups are for.
-      </p>
-
-      {data.pending_restore && (
-        <p className="backup-warning" role="alert" data-testid="backup-pending">
-          A restore is waiting. <strong>Quit Apunta and open it again</strong> to finish it. Your current
-          notes will be kept beside the restored ones.{' '}
-          <button
-            type="button"
-            className="btn small btn-quick"
-            disabled={busy}
-            onClick={() => {
-              run(async () => {
-                await cancelRestore();
-                return 'The restore was cancelled. Nothing changed.';
-              });
-            }}
-          >
-            Cancel it
+    <section className="card settings-card" data-testid="backup-card">
+      <h2 className="settings-title">Backup</h2>
+      {status.status === 'loading' && <p className="small state-note">Loading…</p>}
+      {status.status === 'error' && (
+        <p className="small state-note error-state" role="alert">
+          {status.message}{' '}
+          <button type="button" className="btn small btn-quick" onClick={backup.reload}>
+            Try again
           </button>
         </p>
       )}
+      {status.status === 'ready' && (
+        <>
+          <div className="settings-row">
+            <span className={status.data.stale ? 'backup-stale' : undefined} data-testid="backup-last">
+              {status.data.last_backup_at === null
+                ? 'No backup yet'
+                : `Last backup: ${formatRelativeTime(status.data.last_backup_at)}`}
+            </span>
+            <span className="settings-row-actions">
+              <button
+                type="button"
+                className="btn small btn-primary"
+                disabled={backup.busy}
+                data-testid="backup-now"
+                onClick={() => {
+                  backUp(backup, 'card', false);
+                }}
+              >
+                {backup.busy ? 'Working…' : 'Back up now'}
+              </button>
+              <button type="button" className="btn small" data-testid="backup-restore" onClick={onRestore}>
+                Restore
+              </button>
+            </span>
+          </div>
 
-      <p className={data.stale ? 'backup-stale' : 'small note-meta'} data-testid="backup-last">
-        {data.last_backup_at === null
-          ? 'No backup has been made yet.'
-          : `Last backup ${data.last_backup_at.slice(0, 16).replace('T', ' ')} UTC.`}
-        {data.stale && data.last_backup_at !== null
-          ? ` That is more than ${String(BACKUP_STALE_DAYS)} days ago.`
-          : ''}
-      </p>
+          {status.data.stale && status.data.last_backup_at !== null && (
+            <p className="backup-warning" role="alert" data-testid="backup-stale">
+              No backup for over {String(BACKUP_STALE_DAYS)} days.
+            </p>
+          )}
+          {status.data.last_backup_error !== null && (
+            <p className="form-error" role="alert" data-testid="backup-error">
+              The last backup failed: {status.data.last_backup_error}
+            </p>
+          )}
+          {status.data.destination.warning !== '' && (
+            <p className="backup-warning" data-testid="backup-destination-warning">
+              {status.data.destination.warning}
+            </p>
+          )}
+          {status.data.pending_restore && (
+            <p className="backup-warning" role="alert" data-testid="backup-pending">
+              A restore is waiting: quit Apunta and open it again to finish.{' '}
+              <button
+                type="button"
+                className="btn small btn-quick"
+                disabled={backup.busy}
+                onClick={() => {
+                  backup.run('card', async () => {
+                    await cancelRestore();
+                    return 'Restore cancelled. Nothing changed.';
+                  });
+                }}
+              >
+                Cancel it
+              </button>
+            </p>
+          )}
+          <Outcome backup={backup} origin="card" />
+        </>
+      )}
+    </section>
+  );
+}
 
-      {data.last_backup_error !== null && (
-        <p className="form-error" role="alert" data-testid="backup-error">
-          The last attempt failed: {data.last_backup_error}
+/** Advanced → Backup: the folder, the passphrase, the archives, the numbers. */
+export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JSX.Element | null {
+  if (backup.status.status !== 'ready') return null;
+  const data = backup.status.data;
+
+  return (
+    <div className="settings-group" data-testid="backup-advanced">
+      <h3 className="settings-subtitle">Backup</h3>
+
+      <div className="settings-field">
+        <span className="label">Folder</span>
+        <span className="settings-path" data-testid="backup-directory">
+          {data.directory}
+        </span>
+      </div>
+      {data.destination.risk === 'data-dir' && (
+        <p className="small note-meta" data-testid="backup-same-disk">
+          These backups are on the same disk as your notes; a USB drive is safer.
         </p>
       )}
 
-      <p className="small note-meta" data-testid="backup-directory">
-        Backups go to <span className="setup-fix-steps">{data.directory}</span>
-      </p>
+      <div className="settings-field">
+        <label className="label" htmlFor="backup-directory-input">
+          Change folder
+        </label>
+        <input
+          id="backup-directory-input"
+          value={backup.directory}
+          placeholder="/Volumes/Backup/Apunta"
+          onChange={(event) => {
+            backup.setDirectory(event.target.value);
+          }}
+        />
+      </div>
 
-      {data.destination.warning !== '' && (
-        <p className="backup-warning" data-testid="backup-destination-warning">
-          {data.destination.warning}
-        </p>
-      )}
+      <div className="settings-field">
+        <label className="label" htmlFor="backup-passphrase">
+          Passphrase
+        </label>
+        <input
+          id="backup-passphrase"
+          type="password"
+          value={backup.passphrase}
+          autoComplete="off"
+          onChange={(event) => {
+            backup.setPassphrase(event.target.value);
+          }}
+        />
+        {backup.passphrase !== '' && (
+          <p className="small backup-stale" data-testid="backup-passphrase-warning">
+            Lose this passphrase and the backup cannot be opened by anyone.
+          </p>
+        )}
+      </div>
 
-      <p className="small note-meta">
-        That folder is on this Mac, so it survives a mistake in the app but not a lost laptop. A second copy
-        on an encrypted external disk is what covers the rest.
-      </p>
-
-      <label className="label" htmlFor="backup-directory-input">
-        Save to a different folder (full path, optional)
-      </label>
-      <input
-        id="backup-directory-input"
-        value={directory}
-        placeholder="/Volumes/Backup/Apunta"
-        onChange={(event) => {
-          setDirectory(event.target.value);
-        }}
-      />
-
-      <label className="label" htmlFor="backup-passphrase">
-        Passphrase for that folder (optional)
-      </label>
-      <input
-        id="backup-passphrase"
-        type="password"
-        value={passphrase}
-        autoComplete="off"
-        onChange={(event) => {
-          setPassphrase(event.target.value);
-        }}
-      />
-      <p className="small note-meta">
-        Only needed for a backup that leaves this Mac. An encrypted disk is the better answer where you have
-        one — macOS remembers the key and there is nothing to type. If you set a passphrase here and lose it,
-        the backup cannot be opened by anyone, including us. At least {String(MIN_BACKUP_PASSPHRASE)}{' '}
-        characters, and put it in your password manager now.
-      </p>
-
-      {error !== null && (
-        <p className="form-error" role="alert" data-testid="backup-action-error">
-          {error}
-        </p>
-      )}
-      {message !== null && (
-        <p className="small state-note" role="status" data-testid="backup-action-message">
-          {message}
-        </p>
-      )}
-
-      <button
-        type="button"
-        className="btn btn-primary btn-block form-actions"
-        disabled={busy}
-        data-testid="backup-now"
-        onClick={() => {
-          run(async () => {
-            const result = await createBackup({
-              ...(directory.trim() === '' ? {} : { directory: directory.trim(), remember: true }),
-              ...(passphrase === '' ? {} : { passphrase }),
-            });
-            setPassphrase('');
-            const pruned =
-              result.pruned.length === 0 ? '' : ` ${String(result.pruned.length)} older ones were removed.`;
-            return `Backed up to ${result.file.filename} — ${formatBytes(result.file.bytes)}, ${String(
-              result.manifest.counts['notes'] ?? 0,
-            )} notes, checked and intact.${pruned}`;
-          });
-        }}
-      >
-        {busy ? 'Working…' : 'Back up now'}
-      </button>
+      <div className="settings-actions">
+        <button
+          type="button"
+          className="btn small"
+          disabled={backup.busy}
+          data-testid="backup-to-folder"
+          onClick={() => {
+            backUp(backup, 'advanced', true);
+          }}
+        >
+          Back up
+        </button>
+      </div>
 
       <BackupList
         files={data.backups}
-        busy={busy}
+        busy={backup.busy}
         onRestore={(file) => {
-          run(async () => {
+          backup.run('advanced', async () => {
             const result = await restoreBackup({
               file: file.filename,
-              ...(passphrase === '' ? {} : { passphrase }),
+              ...(backup.passphrase === '' ? {} : { passphrase: backup.passphrase }),
             });
-            setPassphrase('');
-            return `Ready to restore the backup from ${result.manifest.generated_at.slice(
-              0,
-              10,
-            )}. Quit Apunta and open it again to finish. Your current notes will be kept at ${result.safety_copy}.`;
+            backup.setPassphrase('');
+            return `Restore of ${result.manifest.generated_at.slice(0, 10)} is ready. Quit Apunta and open it again to finish; your current notes are kept at ${result.safety_copy}.`;
           });
         }}
       />
+      <Outcome backup={backup} origin="advanced" />
 
-      <VerifyRestoreNudge
+      <VerifyRestore
         lastVerified={data.last_verified_restore}
-        busy={busy}
+        busy={backup.busy}
         onConfirm={() => {
-          run(async () => {
+          backup.run('advanced', async () => {
             await markRestoreVerified();
-            return 'Noted. Worth doing again in a year.';
+            return 'Noted.';
           });
         }}
       />
 
-      <RetentionSummary
-        counts={data.counts}
-        oldest={data.oldest_note_at}
-        bytes={data.db_bytes}
-        path={data.directory}
-      />
+      <p className="small note-meta" data-testid="retention-summary">
+        Stored: {String(data.counts['notes'] ?? 0)} notes for {String(data.counts['patients'] ?? 0)} patients
+        {data.oldest_note_at === null ? '' : `, going back to ${data.oldest_note_at.slice(0, 10)}`},{' '}
+        {String(data.counts['transcripts'] ?? 0)} transcripts, {formatBytes(data.db_bytes)}.
+      </p>
     </div>
   );
 }
@@ -249,62 +326,51 @@ function BackupList({
 }): React.JSX.Element {
   if (files.length === 0) {
     /*
-     * The empty state has to teach the way in, because there is no other one
-     * (day-one rehearsal, 2026-08-30). Restoring is offered per archive found
-     * in the folder above, and the app deliberately accepts no uploads — a
-     * 500 MB multipart would put a whole practice through a temp file. So a
-     * backup that arrived some other way, on a memory stick or from whoever
-     * set this up, is invisible until it is moved into that folder, and
-     * saying nothing left that person stuck on a screen with no restore
-     * control at all.
+     * The empty state still has to teach the way in (day-one rehearsal,
+     * 2026-08-30): restoring is offered per archive in the folder, and a
+     * backup that arrived on a memory stick is invisible until it is moved
+     * there. One sentence, because without it she is stuck.
      */
     return (
       <p className="small note-meta" data-testid="backup-empty">
-        No archives in that folder yet. A backup file put into the folder above — one you were given, or one
-        from an old Mac — appears here, with a Restore button beside it.
+        No archives yet. Put a backup file in the folder above to restore it.
       </p>
     );
   }
 
   return (
-    <>
-      <h3 className="heading-tight">Archives</h3>
-      <ul className="backup-list" data-testid="backup-list">
-        {files.map((file) => (
-          <li key={file.filename}>
-            <span>
-              {file.filename}
-              <span className="note-meta">
-                {' '}
-                — {formatBytes(file.bytes)}
-                {file.encrypted ? ', encrypted' : ''}
-              </span>
+    <ul className="backup-list" data-testid="backup-list">
+      {files.map((file) => (
+        <li key={file.filename}>
+          <span>
+            {file.filename}
+            <span className="note-meta">
+              {' '}
+              · {formatBytes(file.bytes)}
+              {file.encrypted ? ', encrypted' : ''}
             </span>
-            <button
-              type="button"
-              className="btn small btn-quick"
-              disabled={busy}
-              onClick={() => {
-                onRestore(file);
-              }}
-            >
-              Restore
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
+          </span>
+          <button
+            type="button"
+            className="btn small btn-quick"
+            disabled={busy}
+            onClick={() => {
+              onRestore(file);
+            }}
+          >
+            Restore
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
 /**
- * "A backup that has never been restored is a hypothesis" (§5.6).
- *
- * Once, quietly, not a nag: it appears when no restore has ever been checked
- * or the last check is over a year old, and it goes away when she says she
- * tried it.
+ * "A backup that has never been restored is a hypothesis" (§5.6). Once a
+ * year at most, and gone when she says she has tried one.
  */
-function VerifyRestoreNudge({
+function VerifyRestore({
   lastVerified,
   busy,
   onConfirm,
@@ -312,60 +378,22 @@ function VerifyRestoreNudge({
   lastVerified: string | null;
   busy: boolean;
   onConfirm: () => void;
-}): React.JSX.Element | null {
+}): React.JSX.Element {
   const yearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
-  const recent = lastVerified !== null && Date.parse(lastVerified) > yearAgo;
-  if (recent) {
+  if (lastVerified !== null && Date.parse(lastVerified) > yearAgo) {
     return (
       <p className="small note-meta" data-testid="backup-verified">
-        You last checked a restore actually works on {lastVerified?.slice(0, 10)}.
+        Restore last tested {lastVerified.slice(0, 10)}.
       </p>
     );
   }
-
   return (
     <p className="small note-meta" data-testid="backup-verify-nudge">
-      Once, on a spare copy, open one of these archives and follow RESTORE.txt inside it. A backup nobody has
-      restored is a guess.{' '}
+      Restore never tested: open an archive and follow its RESTORE.txt.{' '}
       <button type="button" className="btn small btn-quick" disabled={busy} onClick={onConfirm}>
         I have done this
       </button>
     </p>
-  );
-}
-
-/**
- * What "keep everything" has grown into (§6.3.1).
- *
- * Numbers on a screen, no prompting and no judgement. Her decision to keep
- * every note stands; this exists so it stays a decision rather than a default
- * nobody has looked at since 2026. Nothing here deletes anything.
- */
-function RetentionSummary({
-  counts,
-  oldest,
-  bytes,
-  path,
-}: {
-  counts: Record<string, number>;
-  oldest: string | null;
-  bytes: number;
-  path: string;
-}): React.JSX.Element {
-  return (
-    <>
-      <h3 className="heading-tight">What is in here</h3>
-      <p className="small note-meta" data-testid="retention-summary">
-        {String(counts['notes'] ?? 0)} notes for {String(counts['patients'] ?? 0)} patients
-        {oldest === null ? '' : `, going back to ${oldest.slice(0, 10)}`}.{' '}
-        {String(counts['transcripts'] ?? 0)} transcripts. {formatBytes(bytes)} on disk.
-      </p>
-      <p className="small note-meta">
-        Nothing here is ever deleted on a timer. Deleting a patient does remove their notes, transcripts and
-        chat history — but it cannot reach a backup already written, a Time Machine copy, or the records
-        system you pasted into. Backups live in {path}.
-      </p>
-    </>
   );
 }
 

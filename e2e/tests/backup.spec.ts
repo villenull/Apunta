@@ -29,25 +29,29 @@ test.describe('back up and restore', () => {
     await page.getByTestId('backup-now').click();
 
     await expect(page.getByTestId('backup-action-message')).toContainText('checked and intact');
+    // The archives live under Advanced.
+    await page.getByTestId('settings-advanced').locator('summary').click();
     await expect(page.getByTestId('backup-list')).toContainText('apunta-backup-');
     // The last-backup line stops saying there has never been one.
-    await expect(page.getByTestId('backup-last')).not.toContainText('No backup has been made yet');
+    await expect(page.getByTestId('backup-last')).not.toContainText('No backup yet');
   });
 
-  test('names the folder and does not call it enough on its own', async ({ page }) => {
+  test('keeps the folder under Advanced and asks once whether a restore was tried', async ({ page }) => {
     await page.goto('/settings');
 
+    // The main card is one line: no folder, no archives, no prose.
+    await expect(page.getByTestId('backup-card')).not.toContainText('backups');
+    await page.getByTestId('settings-advanced').locator('summary').click();
+
     await expect(page.getByTestId('backup-directory')).toContainText('backups');
-    await expect(page.getByTestId('backup-card')).toContainText('not a lost laptop');
     // And it asks, once, whether a restore has ever actually been tried.
-    await expect(page.getByTestId('backup-verify-nudge')).toContainText(
-      'A backup nobody has restored is a guess',
-    );
+    await expect(page.getByTestId('backup-verify-nudge')).toContainText('Restore never tested');
   });
 
   test('a staged restore says to quit and reopen rather than pretending it happened', async ({ page }) => {
     await page.goto('/settings');
     await page.getByTestId('backup-now').click();
+    await page.getByTestId('settings-advanced').locator('summary').click();
     await expect(page.getByTestId('backup-list')).toContainText('apunta-backup-');
 
     await page.getByTestId('backup-list').getByRole('button', { name: 'Restore' }).first().click();
@@ -64,8 +68,9 @@ test.describe('back up and restore', () => {
 
   test('shows what keeping everything has grown into, and offers no way to delete it', async ({ page }) => {
     await page.goto('/settings');
+    await page.getByTestId('settings-advanced').locator('summary').click();
 
     await expect(page.getByTestId('retention-summary')).toContainText('notes for');
-    await expect(page.getByTestId('backup-card')).toContainText('Nothing here is ever deleted on a timer');
+    await expect(page.getByRole('button', { name: /delete/i })).toHaveCount(0);
   });
 });

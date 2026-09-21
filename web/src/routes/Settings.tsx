@@ -19,7 +19,7 @@ import {
   applyFontSize,
   fontSizeOrDefault,
 } from '../lib/appearance.js';
-import { BackupCard } from '../components/BackupCard.js';
+import { BackupAdvanced, BackupCard, useBackup } from '../components/BackupCard.js';
 import { PlusIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
@@ -27,7 +27,13 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import type { FormatDraft } from './formatDraft.js';
 
 /**
- * `prototype/settings.html` — the note formats the practice writes against.
+ * `prototype/settings.html`, redesigned (owner, 2026-09-21): only what she
+ * uses on the main screen — Appearance, Note formats, Backup, Import — and
+ * everything else under one closed **Advanced** disclosure. Controls carry a
+ * label and no explanation; a line of text appears only when leaving it out
+ * could cost her data (a stale or failed backup, a sync-watched folder, a
+ * passphrase that cannot be recovered). The reasons live in the code and in
+ * `docs/decisions.md`.
  *
  * "Edit" reuses the onboarding confirm screen as the format editor: it is
  * already the name-plus-sections form, and M6 grows it further.
@@ -36,86 +42,106 @@ export function Settings(): React.JSX.Element {
   useDocumentTitle('Settings');
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
   const formats = useLoader(loadFormats);
+  const backup = useBackup();
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const newFormat: FormatDraft = { name: '', sections: [], returnTo: '/settings' };
 
   return (
     <Screen back={{ to: '/', label: 'Patients' }}>
-      {/* Order (owner, 2026-09-21): Appearance, Note formats, Backup, then
-          the rest as before. */}
-      <AppearanceSettings />
+      <div className="settings">
+        <AppearanceSettings />
 
-      <h2 className="lede">Note formats</h2>
-
-      <div className="card card-rows lede" data-testid="format-list">
-        {formats.state.status === 'loading' && <p className="small state-note">Loading formats…</p>}
-        {formats.state.status === 'error' && (
-          <p className="small state-note error-state" role="alert">
-            {formats.state.message}{' '}
-            <button type="button" className="btn small btn-quick" onClick={formats.reload}>
-              Try again
-            </button>
-          </p>
-        )}
-        {formats.state.status === 'ready' && formats.state.data.length === 0 && (
-          <p className="small state-note">No note formats yet.</p>
-        )}
-        {formats.state.status === 'ready' &&
-          formats.state.data.map((format) => (
-            <div className="patient-row" key={format.id}>
-              <div>
-                <p className="format-name">{format.name}</p>
-                <p className="small note-meta">{format.sections.join(', ')}</p>
+        <section className="card settings-card" data-testid="format-list">
+          <h2 className="settings-title">Note formats</h2>
+          {formats.state.status === 'loading' && <p className="small state-note">Loading…</p>}
+          {formats.state.status === 'error' && (
+            <p className="small state-note error-state" role="alert">
+              {formats.state.message}{' '}
+              <button type="button" className="btn small btn-quick" onClick={formats.reload}>
+                Try again
+              </button>
+            </p>
+          )}
+          {formats.state.status === 'ready' &&
+            formats.state.data.map((format) => (
+              <div className="patient-row settings-list-row" key={format.id}>
+                <div>
+                  <p className="format-name">{format.name}</p>
+                  <p className="small note-meta">{format.sections.join(', ')}</p>
+                </div>
+                <Link
+                  to="/onboarding/preview"
+                  className="small note-meta"
+                  state={
+                    {
+                      name: format.name,
+                      sections: format.sections,
+                      returnTo: '/settings',
+                      formatId: format.id,
+                      source: format.source,
+                      instructions: format.instructions,
+                    } satisfies FormatDraft
+                  }
+                >
+                  Edit
+                </Link>
               </div>
-              <Link
-                to="/onboarding/preview"
-                className="small note-meta"
-                state={
-                  {
-                    name: format.name,
-                    sections: format.sections,
-                    returnTo: '/settings',
-                    formatId: format.id,
-                    source: format.source,
-                    instructions: format.instructions,
-                  } satisfies FormatDraft
-                }
-              >
-                Edit
-              </Link>
-            </div>
-          ))}
-        {/* The card's last row, not a button floating between cards. */}
-        {formats.state.status === 'ready' && (
-          <Link
-            to="/onboarding/format"
-            state={newFormat}
-            className="patient-row format-add-row"
-            data-testid="add-format"
-          >
-            <PlusIcon className="icon icon-sm" />
-            Add another format
+            ))}
+          {/* The card's last row, not a button floating between cards. */}
+          {formats.state.status === 'ready' && (
+            <Link
+              to="/onboarding/format"
+              state={newFormat}
+              className="patient-row settings-list-row format-add-row"
+              data-testid="add-format"
+            >
+              <PlusIcon className="icon icon-sm" />
+              Add another format
+            </Link>
+          )}
+        </section>
+
+        <BackupCard
+          backup={backup}
+          onRestore={() => {
+            // The archives are under Advanced: open it and go there.
+            setAdvancedOpen(true);
+            requestAnimationFrame(() => {
+              document.getElementById('backup-archives')?.scrollIntoView({ block: 'start' });
+            });
+          }}
+        />
+
+        <section className="card settings-card">
+          <Link to="/import" className="settings-link-row" data-testid="settings-import">
+            <span className="settings-title">Import from Claude</span>
+            <span aria-hidden="true">›</span>
           </Link>
-        )}
+        </section>
+
+        <details
+          className="card settings-card settings-advanced"
+          data-testid="settings-advanced"
+          open={advancedOpen}
+          onToggle={(event) => {
+            setAdvancedOpen(event.currentTarget.open);
+          }}
+        >
+          <summary className="settings-title">Advanced</summary>
+          <div id="backup-archives">
+            <BackupAdvanced backup={backup} />
+          </div>
+          <div className="settings-group">
+            <h3 className="settings-subtitle">App</h3>
+            <nav className="settings-links">
+              <Link to="/setup">Setup</Link>
+              <Link to="/about">About</Link>
+              <Link to="/licenses">Licences</Link>
+            </nav>
+          </div>
+        </details>
       </div>
-
-      <BackupCard />
-
-      <div className="card card-rows lede">
-        <h3 className="heading-tight">Import from Claude</h3>
-        <p className="small note-meta">
-          If you have talked sessions through with Claude, its data export can become patients and notes here
-          — each one shown to you first, and only your own words imported.
-        </p>
-        <Link to="/import" className="btn" data-testid="settings-import">
-          Import from Claude
-        </Link>
-      </div>
-
-      <p className="small note-meta lede">
-        <Link to="/setup">Setup</Link> lists what Apunta needs on this Mac. <Link to="/about">About</Link>{' '}
-        says what it does with your notes, and what it does not protect you from.
-      </p>
     </Screen>
   );
 }
@@ -199,7 +225,7 @@ function AppearanceSettings(): React.JSX.Element {
 
   return (
     <form
-      className="card card-rows lede"
+      className="card settings-card"
       data-testid="appearance-settings"
       onSubmit={(event) => {
         event.preventDefault();
@@ -211,40 +237,45 @@ function AppearanceSettings(): React.JSX.Element {
         });
       }}
     >
-      <h2 className="lede">Appearance</h2>
+      <h2 className="settings-title">Appearance</h2>
 
-      <label className="label" htmlFor="accent-color">
-        Accent colour
-      </label>
-      <p className="small note-meta">
-        Used for buttons, the selected patient and note, and anything the app is asking you to look at.
-      </p>
-      <div className="row gap-12 accent-row">
-        <input
-          id="accent-color"
-          name={ACCENT_COLOR_SETTING}
-          type="color"
-          defaultValue={loaded ?? DEFAULT_ACCENT_COLOR}
-          onChange={(event) => {
-            setSaved(false);
-            applyAccentColor(event.target.value);
-          }}
-        />
-        <button
-          type="button"
-          className="btn small btn-quick"
-          data-testid="reset-accent"
-          onClick={() => {
-            save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
-          }}
-        >
-          Reset to the original green
-        </button>
+      <div className="settings-row">
+        <label className="settings-label" htmlFor="accent-color">
+          Colour
+        </label>
+        <span className="settings-row-actions">
+          <input
+            id="accent-color"
+            name={ACCENT_COLOR_SETTING}
+            type="color"
+            defaultValue={loaded ?? DEFAULT_ACCENT_COLOR}
+            onChange={(event) => {
+              setSaved(false);
+              applyAccentColor(event.target.value);
+            }}
+          />
+          <button
+            type="button"
+            className="btn small btn-quick"
+            data-testid="reset-accent"
+            onClick={() => {
+              save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
+            }}
+          >
+            Reset
+          </button>
+        </span>
       </div>
 
-      <fieldset className="appearance-field">
-        <legend className="label">Text size</legend>
-        <div className="row gap-8 size-options" role="radiogroup" aria-label="Text size">
+      <div className="settings-row">
+        <span className="settings-label" id="font-size-label">
+          Font size
+        </span>
+        <span
+          className="settings-row-actions size-options"
+          role="radiogroup"
+          aria-labelledby="font-size-label"
+        >
           {FONT_SIZES.map((size) => (
             <button
               key={size}
@@ -262,35 +293,38 @@ function AppearanceSettings(): React.JSX.Element {
               {FONT_SIZE_LABELS[size]}
             </button>
           ))}
-        </div>
-      </fieldset>
+        </span>
+      </div>
 
-      <fieldset className="appearance-field">
-        <legend className="label">Animations</legend>
-        <label className="row gap-8 small">
-          <input
-            type="checkbox"
-            checked={shownAnimations}
-            data-testid="animations-toggle"
-            onChange={(event) => {
-              setSaved(false);
-              setAnimations(event.target.checked);
-              applyAnimations(event.target.checked);
-            }}
-          />
-          <span>Screens and lists move as they appear</span>
+      <div className="settings-row">
+        <label className="settings-label" htmlFor="animations-toggle">
+          Animations
         </label>
-        <p className="small note-meta">Off by default when your computer is set to reduce motion.</p>
-      </fieldset>
+        <input
+          id="animations-toggle"
+          type="checkbox"
+          role="switch"
+          className="settings-switch"
+          checked={shownAnimations}
+          data-testid="animations-toggle"
+          onChange={(event) => {
+            setSaved(false);
+            setAnimations(event.target.checked);
+            applyAnimations(event.target.checked);
+          }}
+        />
+      </div>
 
       {error !== null && (
         <p className="form-error" role="alert">
           {error}
         </p>
       )}
-      <button type="submit" className="btn btn-primary btn-block form-actions" data-testid="save-appearance">
-        {saved ? 'Saved' : 'Save appearance'}
-      </button>
+      <div className="settings-actions">
+        <button type="submit" className="btn btn-primary small" data-testid="save-appearance">
+          {saved ? 'Saved' : 'Save'}
+        </button>
+      </div>
     </form>
   );
 }

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   firstName,
   formatDayGap,
+  formatRelativeTime,
   formatEditedDate,
   formatInstantAsDate,
   formatNoteDate,
@@ -96,5 +97,16 @@ describe('formatInstantAsDate', () => {
   it('reads an instant as the local day it fell on, with no "Today"', () => {
     expect(formatInstantAsDate('2026-08-12T15:00:00.000Z')).toBe('Aug 12, 2026');
     expect(formatInstantAsDate('nonsense')).toBe('nonsense');
+  });
+});
+
+describe('formatRelativeTime', () => {
+  const now = new Date('2026-09-21T12:00:00.000Z');
+  it('reads as a person would say it', () => {
+    expect(formatRelativeTime('2026-09-21T11:59:40.000Z', now)).toBe('just now');
+    expect(formatRelativeTime('2026-09-21T11:59:00.000Z', now)).toBe('1 minute ago');
+    expect(formatRelativeTime('2026-09-21T09:00:00.000Z', now)).toBe('3 hours ago');
+    expect(formatRelativeTime('2026-09-20T09:00:00.000Z', now)).toBe('yesterday');
+    expect(formatRelativeTime('2026-09-14T12:00:00.000Z', now)).toBe('7 days ago');
   });
 });

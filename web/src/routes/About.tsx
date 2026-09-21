@@ -63,7 +63,7 @@ export function About(): React.JSX.Element {
           That file is your drafting history. It is not your clinical record — the record lives in whatever
           system you paste the finished note into. It is still worth backing up, because the rough notes, the
           transcripts and the refine conversations exist nowhere else. <Link to="/settings">Settings</Link>{' '}
-          has &ldquo;Back up and restore&rdquo;.
+          has &ldquo;Backup&rdquo;.
         </p>
       </div>
 

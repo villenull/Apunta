@@ -176,7 +176,7 @@ function backupDestinationCheck(backup: BackupStatus | null | undefined): SetupC
     label: 'Backups stay on this Mac',
     state: 'missing',
     detail: `backups are being written to ${backup.destination.path}`,
-    fix: 'Settings → Back up and restore → change the folder',
+    fix: 'Settings → Advanced → Backup → change the folder',
     note: backup.destination.warning,
   };
 }

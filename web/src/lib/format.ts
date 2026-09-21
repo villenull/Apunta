@@ -95,3 +95,15 @@ export function formatDayGap(daysUntil: number): string {
   const unit = magnitude === 1 ? 'day' : 'days';
   return daysUntil > 0 ? `in ${String(magnitude)} ${unit}` : `${String(magnitude)} ${unit} ago`;
 }
+
+/** "just now", "5 minutes ago", "3 hours ago", "yesterday", "4 days ago". */
+export function formatRelativeTime(iso: string, now: Date = new Date()): string {
+  const minutes = Math.max(0, Math.floor((now.getTime() - Date.parse(iso)) / 60_000));
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${String(minutes)} ${minutes === 1 ? 'minute' : 'minutes'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${String(hours)} ${hours === 1 ? 'hour' : 'hours'} ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'yesterday';
+  return `${String(days)} days ago`;
+}
