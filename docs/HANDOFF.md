@@ -48,10 +48,15 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   `docs/eval-reports/2026-09-06-retraction-pass.md`): "four hours, scratch
   that, six" is cut out of the transcript before drafting, by the server, on
   a quote the model supplies. Fixture 04 clean; five live takes clean.
-- **Live dictation preview** as a growing block (commit-at-pause, small
-  whisper model, fitted audio context, greedy, no fallback) and the record
-  dot as a presence meter. `--no-timestamps` was found to drop speech; the
-  transcript path keeps timestamps and a punctuated lead-in prompt.
+- **Live dictation preview** as a growing block (commit-at-pause, fitted
+  audio context, greedy, no fallback) and the record dot as a presence meter.
+  Since 2026-09-20 the preview and the note's transcript run on one
+  English-only file, `ggml-tiny.en.bin` (~75 MB): dictation here is English
+  only, and the preview is not the record, so first run downloads one whisper
+  model instead of two (`docs/decisions.md`, 2026-09-20). That file has not
+  been run against a real whisper binary anywhere yet — see "what is open".
+  `--no-timestamps` was found to drop speech; the transcript path keeps
+  timestamps and a punctuated lead-in prompt.
 - **Her seven-section format measured** (`npm run check:format`) and the
   refine chat measured adversarially (`npm run check:refine`).
 - **Dictating into the refine chat** (2026-09-07): a microphone in the
@@ -117,9 +122,12 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   Three sequential preview and three final runs per binary on the checked-in
   public 11-second JFK WAV matched the expected transcript after timestamp
   stripping; CPU/GPU preview wall ranges were 700–709/357–443 ms and final
-  ranges were 4,827–5,523/424–456 ms. This is one public fixture, not clinical
-  equivalence or a global 11× claim; no local synthetic speech generator was
-  available, and the fixture contains no clinical terms or numeric token.
+  ranges were 4,827–5,523/424–456 ms, on the models current that day
+  (`large-v3-turbo` for the note, `ggml-small` for the preview); nothing has
+  been re-timed since the 2026-09-20 switch to `tiny.en`, so do not read those
+  numbers as today's. This is one public fixture, not clinical equivalence or
+  a global 11× claim; no local synthetic speech generator was available, and
+  the fixture contains no clinical terms or numeric token.
   Temporary-port (`17717`) app smoke with a fresh DB passed real Whisper
   preview/dictation and one real Whisper→Ollama draft; SQLite integrity was
   `ok`, and no tested content appeared in the shape-only log. The original
@@ -204,8 +212,26 @@ Grouped by what each item waits on.
 Nothing in `scripts/` or `macos/` or `installer/` has run on a Mac. Work
 down `docs/MANUAL-VERIFICATION.md` §1–§9 (preflight, setup script, the app,
 backup/restore, LaunchAgent, eval, the installer and `.dmg`, uninstall, the
-config pack). `docs/INSTALL.md` is her guide; also unrun. The preview model
-(`ggml-small.bin`) is in the installer catalogue and the setup script.
+config pack). `docs/INSTALL.md` is her guide; also unrun. The speech model in
+the installer catalogue and the setup script is now a single English-only
+`ggml-tiny.en.bin` (~75 MB, 77,704,715 bytes) serving **both** the live preview
+and the note's transcript; `installer/src/plan.ts` marks the preview step not
+needed when the filenames match, so §7.3's first-run window should list two
+downloads, not three, and count the whisper file once.
+
+**That switch has never been exercised against a real whisper binary** — not on
+her Mac, and not on the Linux test PC. What is verified is the pin (the
+published SHA-1 and Apunta's SHA-256 both match a real 77,704,715-byte copy of
+the file, checked on Linux 2026-09-20) and the unit/installer tests in fake
+mode. No transcription has been produced by `tiny.en` in this project. Also
+unmeasured: **its word-error rate on clinical vocabulary.** `tiny.en` is the
+weakest whisper checkpoint and medication names are Whisper's known weak spot
+(PLAN §2), and no model in this project has ever had its WER measured on her
+terms — so the accuracy cost of dropping from `large-v3-turbo` to `tiny.en` is
+unknown, not small. The `initial_prompt` vocabulary bias is the only knob, and
+her vocabulary list has not arrived. First real dictations decide whether this
+holds; if they do not, the one-line reverse is `WHISPER_MODEL_FILENAME` in
+`shared/src/transcribe.ts` plus the matching `catalog.ts` entry.
 
 ### Model-quality work, packet-sized (measure before and after; report in `docs/eval-reports/`)
 

@@ -1,6 +1,6 @@
 import type { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -39,7 +39,7 @@ import {
 
 /** Real captured shape of `whisper-cli --print-progress` output on stderr. */
 const STDERR_SAMPLE = [
-  'whisper_init_from_file_with_params_no_state: loading model from ggml-large-v3-turbo-q5_0.bin',
+  'whisper_init_from_file_with_params_no_state: loading model from ggml-tiny.en.bin',
   'whisper_print_progress_callback: progress =  10%',
   'whisper_print_progress_callback: progress =  20%',
   'whisper_print_progress_callback: progress = 100%',
@@ -84,11 +84,20 @@ function fakeSpawn(drive: (child: FakeChild) => void, calls: SpawnCall[] = []) {
 
 let dir: string;
 let modelPath: string;
+/**
+ * Both files are named `ggml-tiny.en.bin`, as they are in the shipped app; the
+ * preview lives in its own subdirectory so a test can still tell which path
+ * each `--model` argument used.
+ */
+let previewModelPath: string;
 
 beforeAll(() => {
   dir = mkdtempSync(join(tmpdir(), 'apunta-whisper-'));
-  modelPath = join(dir, 'ggml-large-v3-turbo-q5_0.bin');
+  modelPath = join(dir, 'ggml-tiny.en.bin');
   writeFileSync(modelPath, 'not really a model, but a real file');
+  previewModelPath = join(dir, 'preview', 'ggml-tiny.en.bin');
+  mkdirSync(join(dir, 'preview'), { recursive: true });
+  writeFileSync(previewModelPath, 'a preview model, allegedly');
 });
 
 afterAll(() => {
@@ -322,13 +331,11 @@ describe('WhisperCppSttProvider.transcribe', () => {
   });
 
   it('runs a preview on the smaller model when one is configured and present, and the note on the main one', async () => {
-    const small = join(dir, 'ggml-small.bin');
-    writeFileSync(small, 'a small model, allegedly');
     const calls: SpawnCall[] = [];
     const stt = new WhisperCppSttProvider({
       resolveBinary: () => 'whisper-cli',
       resolveModel: () => modelPath,
-      resolvePreviewModel: () => small,
+      resolvePreviewModel: () => previewModelPath,
       spawnImpl: fakeSpawn((child) => {
         child.stdout.write(' words\n');
         child.emit('close', 0, null);
@@ -341,7 +348,7 @@ describe('WhisperCppSttProvider.transcribe', () => {
 
     const modelOf = (call: SpawnCall | undefined): string | undefined =>
       call?.args[call.args.indexOf('--model') + 1];
-    expect(modelOf(calls[0])).toBe(small);
+    expect(modelOf(calls[0])).toBe(previewModelPath);
     expect(modelOf(calls[1])).toBe(modelPath);
     // The preview decodes greedily and in the pinned language; the note keeps beam search.
     expect(calls[0]?.args).toContain('--beam-size');
@@ -352,13 +359,11 @@ describe('WhisperCppSttProvider.transcribe', () => {
   });
 
   it('fits the audio context to a dictated clip but keeps the note model, beam search and fallbacks', async () => {
-    const small = join(dir, 'ggml-small.bin');
-    writeFileSync(small, 'a small model, allegedly');
     const calls: SpawnCall[] = [];
     const stt = new WhisperCppSttProvider({
       resolveBinary: () => 'whisper-cli',
       resolveModel: () => modelPath,
-      resolvePreviewModel: () => small,
+      resolvePreviewModel: () => previewModelPath,
       spawnImpl: fakeSpawn((child) => {
         child.stdout.write(' words\n');
         child.emit('close', 0, null);

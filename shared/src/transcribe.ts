@@ -64,29 +64,33 @@ export const STT_ERROR_CODES = [
 export const WHISPER_BINARY_SETTING = 'whisper_binary';
 export const DEFAULT_WHISPER_BINARY = 'whisper-cli';
 
-/** Defaults to `<data dir>/models/<WHISPER_MODEL_FILENAME>` (PLAN §2). */
+/**
+ * Defaults to `<data dir>/models/<WHISPER_MODEL_FILENAME>` (PLAN §2).
+ *
+ * Dictation and notes are English-only, so the note model is the English-only
+ * `ggml-tiny.en` — the smallest whisper that still reads clear speech, and
+ * the same file the live preview runs on (below).
+ */
 export const WHISPER_MODEL_SETTING = 'whisper_model';
-export const WHISPER_MODEL_FILENAME = 'ggml-large-v3-turbo-q5_0.bin';
+export const WHISPER_MODEL_FILENAME = 'ggml-tiny.en.bin';
 
 /**
- * An optional, smaller whisper model for the live preview only.
+ * The whisper model for the live preview.
  *
- * The preview's floor is whisper's encoder, and on the note's model that is
- * about a second per refresh on a CPU (2026-09-04). A small model runs the
- * same pass in a fraction of that — `ggml-small` in ~0.3–0.6 s with the same
- * words on clear speech, `ggml-base` faster and rougher — which is what puts
- * the caption a second behind her voice rather than two. The note's
- * transcript never uses it. Unset, or pointing at a file that is not there,
- * the preview simply runs on the note's model.
+ * It is the *same* English-only `ggml-tiny.en` as the note model: the preview
+ * is not the record — when she stops, the whole file is transcribed once more
+ * into the note — and on English-only dictation a separate, larger preview
+ * model was weight the preview path never kept. Unset, or pointing at a file
+ * that is not there, the preview runs on the note's model, which is also
+ * `tiny.en`.
  */
 export const WHISPER_PREVIEW_MODEL_SETTING = 'whisper_preview_model';
 /**
  * What the installer downloads for the preview, and what the server looks for
- * in the models folder when the setting above is empty. `small` rather than
- * `base`: on the same speech it gave the big model's words and punctuation
- * in a third of a second, where `base` was faster and rougher (2026-09-04).
+ * in the models folder when the setting above is empty. The English-only
+ * `tiny.en`, the same file as the note's model.
  */
-export const WHISPER_PREVIEW_MODEL_FILENAME = 'ggml-small.bin';
+export const WHISPER_PREVIEW_MODEL_FILENAME = 'ggml-tiny.en.bin';
 
 /**
  * Terms fed to whisper's `--prompt`. Medication and clinical names are

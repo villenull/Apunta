@@ -102,20 +102,21 @@ describe('the speech model entry', () => {
 
   it('pins the published SHA-1 and our own SHA-256', () => {
     expect(SPEECH_MODEL.sha1).toMatch(/^[0-9a-f]{40}$/);
-    // Upstream publishes SHA-1 only. The SHA-256 is Apunta's own, computed in
-    // M10 after the SHA-1 matched, and the exact value is asserted so a
-    // regenerated catalog cannot quietly swap the file it certifies.
-    expect(SPEECH_MODEL.sha256).toBe('394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2');
+    // Upstream publishes SHA-1 only. The SHA-256 is Apunta's own, computed
+    // after the SHA-1 matched (2026-09-20), and the exact value is asserted so
+    // a regenerated catalog cannot quietly swap the file it certifies.
+    expect(SPEECH_MODEL.sha256).toBe('921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f');
   });
 
-  it('pins the preview model the same way, from the same publisher', () => {
+  it('pins the preview to the same English-only file as the note, from the same publisher', () => {
+    expect(PREVIEW_SPEECH_MODEL.filename).toBe('ggml-tiny.en.bin');
     expect(PREVIEW_SPEECH_MODEL.url).toContain('/ggerganov/whisper.cpp/');
     expect(PREVIEW_SPEECH_MODEL.url).toContain(PREVIEW_SPEECH_MODEL.filename);
-    expect(PREVIEW_SPEECH_MODEL.filename).toBe('ggml-small.bin');
     expect(PREVIEW_SPEECH_MODEL.sha1).toMatch(/^[0-9a-f]{40}$/);
     expect(PREVIEW_SPEECH_MODEL.sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(PREVIEW_SPEECH_MODEL.approxBytes).toBeLessThan(SPEECH_MODEL.approxBytes);
-    expect(PREVIEW_SPEECH_MODEL.licence).toEqual(SPEECH_MODEL.licence);
+    // Dictation is English-only and tiny.en is small enough to serve both the
+    // preview and the note, so these describe literally the same download.
+    expect(PREVIEW_SPEECH_MODEL).toEqual(SPEECH_MODEL);
   });
 });
 

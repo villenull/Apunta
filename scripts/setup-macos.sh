@@ -59,7 +59,7 @@ SMALL_TAG="qwen3.5:4b-q4_K_M"
 LARGE_TIER_GIB=36
 DEFAULT_TIER_GIB=16
 
-WHISPER_MODEL="ggml-large-v3-turbo-q5_0.bin"
+WHISPER_MODEL="ggml-tiny.en.bin"
 # From whisper.cpp's own models/download-ggml-model.sh: src is the ggerganov
 # HF repo (NOT ggml-org — the GitHub org was renamed, the model repo was not),
 # and the path is resolve/main/ggml-<model>.bin. -L is required: the resolve
@@ -67,15 +67,17 @@ WHISPER_MODEL="ggml-large-v3-turbo-q5_0.bin"
 WHISPER_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER_MODEL}"
 # Published in whisper.cpp's models/README.md. There is no published SHA-256,
 # so this is shasum -a 1, not -a 256.
-WHISPER_SHA1="e050f7970618a659205450ad97eb95a18d69c9ee"
-WHISPER_MIB=547
-# The smaller model the live preview runs on while she is still speaking; the
-# note itself is always transcribed by the model above. Same repository and
-# publisher; SHA-1 from whisper.cpp's models/README.md.
-PREVIEW_MODEL="ggml-small.bin"
+WHISPER_SHA1="c78c86eb1a8faa21b369bcd33207cc90d64ae9df"
+WHISPER_MIB=75
+# The live preview runs on the same English-only file: dictation is
+# English-only and tiny.en is small enough that serving the note and the
+# preview from one download is the right trade. Kept as its own pair of
+# constants so a future larger preview is a one-line change. Same repository
+# and publisher; SHA-1 from whisper.cpp's models/README.md.
+PREVIEW_MODEL="ggml-tiny.en.bin"
 PREVIEW_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${PREVIEW_MODEL}"
-PREVIEW_SHA1="55356645c2b361a969dfd0ef2c5a50d530afd8d5"
-PREVIEW_MIB=466
+PREVIEW_SHA1="c78c86eb1a8faa21b369bcd33207cc90d64ae9df"
+PREVIEW_MIB=75
 
 # Overridable for the same reason the server honours it (M2): tests probe a
 # port that is guaranteed dead, so a live Ollama on the machine running the
@@ -409,11 +411,15 @@ preview_ok() {
 
 if [ "$SKIP_MODELS" = 1 ]; then
   warn "skipped (--skip-models)"
+elif [ "$PREVIEW_MODEL" = "$WHISPER_MODEL" ]; then
+  # English-only dictation: the preview and the note are one file, and the
+  # speech-model step above has already downloaded and verified it.
+  ok "$PREVIEW_MODEL is the same file the note is transcribed with"
 elif [ "$DRY_RUN" = 0 ] && preview_ok; then
   ok "$PREVIEW_MODEL is already there and its checksum matches"
 else
   note "$PREVIEW_MODEL — about ${PREVIEW_MIB} MB. It shows her words while she is"
-  note "still speaking; without it the preview runs on the big model, slower."
+  note "still speaking; without it the preview runs on the note's model."
   if confirm "Download it now?"; then
     run mkdir -p "$MODELS_DIR"
     run curl -fL --retry 3 --progress-bar -o "$PREVIEW_FILE.part" "$PREVIEW_URL" \

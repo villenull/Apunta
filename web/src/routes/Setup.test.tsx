@@ -42,7 +42,7 @@ describe('the setup screen', () => {
             binaryPresent: false,
             modelPresent: false,
             binary: '/opt/homebrew/bin/whisper-cli',
-            model: '/data/models/ggml-large-v3-turbo-q5_0.bin',
+            model: '/data/models/ggml-tiny.en.bin',
           },
         },
       },
@@ -93,7 +93,7 @@ describe('the setup screen', () => {
               binaryPresent: true,
               modelPresent: true,
               binary: '/opt/homebrew/bin/whisper-cli',
-              model: '/data/models/ggml-large-v3-turbo-q5_0.bin',
+              model: '/data/models/ggml-tiny.en.bin',
             },
             fileVault: { state: 'on', detail: 'FileVault is On.' },
           };

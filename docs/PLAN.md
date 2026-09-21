@@ -119,9 +119,14 @@ Two further corrections from that verification: pin explicit tags, never
 is deliberate — Metal caps usable GPU memory at ~75% of unified RAM, so a
 24GB model leaves no headroom on a 32GB Mac.
 
-STT: `whisper-large-v3-turbo` Q5_0 GGUF (~574MB) for whisper.cpp. Always pass
-an `initial_prompt` built from the user's vocabulary list (Settings) —
-medication and clinical terms are Whisper's known weak spot.
+STT: `ggml-tiny.en.bin` (~75 MB) for whisper.cpp — the English-only `tiny.en`
+checkpoint, and the *same* file for both the live preview and the note's
+transcript. Dictation here is English-only, and the preview is not the record
+(the whole recording is transcribed once more when she stops), so one file
+serves both paths and first run downloads it once. Always pass an
+`initial_prompt` built from the user's vocabulary list (Settings) — medication
+and clinical terms are Whisper's known weak spot, and `tiny.en` is the weakest
+checkpoint, so that bias matters more here, not less.
 
 LLM calls: temperature 0, context request ≥ 16K (`num_ctx` — Ollama's 4096
 default silently truncates), structured output enforced by JSON schema **and**

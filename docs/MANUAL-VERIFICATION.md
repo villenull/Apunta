@@ -88,7 +88,8 @@ bash scripts/setup-macos.sh
 | The RAM tier it prints matches this Mac | ☐ | `sysctl -n hw.memsize` returned something unexpected |
 | The tag it picked still exists on ollama.com | ☐ | **The three tags were never confirmed against a live registry.** `ollama pull` 404s |
 | `ollama pull` completes | ☐ | — |
-| The speech model downloads and its SHA-1 matches | ☐ | **The Hugging Face URL was never fetched.** A 404, or a checksum mismatch meaning the published file changed |
+| `ggml-tiny.en.bin` downloads and its SHA-1 matches | ☐ | **The script has never fetched the Hugging Face URL.** A 404, or a checksum mismatch meaning the published file changed. The pin itself is real: a copy of this file on the Linux machine has the published SHA-1 `c78c86eb1a…` (2026-09-20) |
+| The preview step says it is the same file, and downloads nothing | ☐ | It downloads `tiny.en` a second time. `PREVIEW_MODEL` and `WHISPER_MODEL` are the same filename, and `setup-macos.sh` short-circuits on that |
 | Re-running it changes nothing and takes seconds | ☐ | Idempotency is broken somewhere |
 | `npm start` then opens a working app | ☐ | — |
 
@@ -271,8 +272,9 @@ Ideally on a Mac that has never had Homebrew, Node or Ollama.
 | The disk figure matches what Finder says is free | ☐ | Decimal GB on both sides |
 | The progress bar moves, and the time remaining is roughly right | ☐ | |
 | It finishes and opens the browser by itself | ☐ | |
-| It lists three downloads, the preview model between the two others | ☐ | `ggml-small.bin`, ~466 MB, under "The model that shows your words as you speak" (added 2026-09-05; never run on a Mac) |
-| After first run, dictation shows words within a couple of seconds | ☐ | That is the small model working; on the big one alone the first words take ~2 s longer. `/api/health` does not report which — the server log line `transcription finished` names the model |
+| It lists **two** downloads: the speech model and the writing model | ☐ | `ggml-tiny.en.bin`, ~75 MB, and the tier's Ollama tag. The step "The model that shows your words as you speak" is still listed, and must show as **not needed** — the preview runs on the same `tiny.en` file the note does, so it is downloaded once under the speech step (2026-09-20; never run on a Mac) |
+| The disk figure counts the whisper file once, not twice | ☐ | `installer/src/plan.ts` drops the preview step from `requiredBytes` when the two filenames match. ~75 MB of whisper, not ~150 MB |
+| After first run, dictation shows words within a couple of seconds | ☐ | `tiny.en` is the smallest whisper, so the first words should be quick — but no per-model preview latency has been measured on a Mac, and there is no larger model to compare against any more. `/api/health` does not report which model ran; the server log line `transcription finished` names it |
 | **Record a note and get a draft, without ever opening Terminal** | ☐ | The whole packet, in one row |
 
 ### 7.4 The failure paths
@@ -332,7 +334,7 @@ you (`docs/research/m8-bundling-2026-08.md` §11).
 | Item | ☐ |
 | --- | --- |
 | For each RAM tier's model: the real download size, so `installer/src/catalog.ts`'s `approxBytes` stops being a guess. `ollama pull` prints it | ☑ small tier only (M10, 2026-08-26): 3,389,983,735 bytes from the registry manifest, pinned. The 12B and 35B still await a machine that pulls them |
-| A SHA-256 for `ggml-large-v3-turbo-q5_0.bin`, computed after the published SHA-1 matches, then pinned in `installer/src/catalog.ts` as `sha256`. M8's downloader should not verify a 547 MB file with SHA-1 alone | ☑ done in M10 — SHA-1 matched, SHA-256 `394221709c…` pinned and asserted by a test |
+| A SHA-256 for `ggml-tiny.en.bin`, computed after the published SHA-1 matches, then pinned in `installer/src/catalog.ts` as `sha256`. M8's downloader should not verify a model file with SHA-1 alone — whisper.cpp publishes SHA-1 only | ☑ done 2026-09-20 on Linux, on a real 77,704,715-byte download: whisper.cpp's published SHA-1 `c78c86eb1a8faa21b369bcd33207cc90d64ae9df` matched, and Apunta's own SHA-256 `921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f` was computed from it and is pinned for both the note and the preview entry, asserted by a test. (The superseded turbo model's `394221709c…` was pinned the same way in M10.) Still to do on the Mac: confirm the downloader's own verification passes end to end there |
 | Whether the three model tags still exist in Ollama's library, and what licence each one's page actually names. `THIRD-PARTY-LICENSES.md` says these are unread | ☑ tags: all three exist (registry manifests, 2026-08-26). Licence: read for the small tier only (Apache-2.0, via `ollama show --license`); Gemma terms and the 35B's blob still unread |
 | SQLite's public-domain statement, from `sqlite.org/copyright.html` — the one quotation in the licence file without a same-session source | ☑ read live in M10; the quote was missing a sentence and is now corrected in `THIRD-PARTY-LICENSES.md` |
 

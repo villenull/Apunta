@@ -14,7 +14,7 @@ const HEALTHY: HealthResponse = {
     binaryPresent: true,
     modelPresent: true,
     binary: '/opt/homebrew/bin/whisper-cli',
-    model: '/data/models/ggml-large-v3-turbo-q5_0.bin',
+    model: '/data/models/ggml-tiny.en.bin',
   },
   fileVault: { state: 'on', detail: 'FileVault is On.' },
 };

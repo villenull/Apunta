@@ -13,7 +13,7 @@ const stub = {
     binaryPresent: false,
     modelPresent: false,
     binary: 'whisper-cli',
-    model: '/tmp/models/ggml-large-v3-turbo-q5_0.bin',
+    model: '/tmp/models/ggml-tiny.en.bin',
   },
   fileVault: { state: 'not_applicable' as const, detail: 'disk encryption is not checked on linux' },
 };

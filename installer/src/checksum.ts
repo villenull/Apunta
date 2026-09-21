@@ -5,12 +5,11 @@ import { createReadStream } from 'node:fs';
  * Checking that what arrived is what was published.
  *
  * Two hashes, for one honest reason: whisper.cpp publishes **SHA-1 only** for
- * `ggml-large-v3-turbo-q5_0.bin`, so SHA-1 is what can be checked against
- * upstream on the first download. SHA-1 is a weak hash for a 574 MB file, so
- * `docs/MANUAL-VERIFICATION.md` carries a row: compute the SHA-256 once on the
- * Mac after the SHA-1 matches, pin it in `catalog.ts`, and from then on both
- * are checked. The SHA-256 will be **Apunta's**, not upstream's, and the
- * licences document says so.
+ * `ggml-tiny.en.bin`, so SHA-1 is what can be checked against upstream on the
+ * first download. SHA-1 is a weak hash even for a 75 MB file, so Apunta
+ * computes the SHA-256 once the SHA-1 matches, pins it in `catalog.ts`, and
+ * from then on both are checked. The SHA-256 is **Apunta's**, not upstream's,
+ * and the licences document says so.
  */
 
 export type ChecksumAlgorithm = 'sha1' | 'sha256';

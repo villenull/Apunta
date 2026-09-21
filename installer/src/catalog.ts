@@ -85,15 +85,16 @@ export interface SpeechModelEntry {
   readonly sha1: string;
   /**
    * Apunta's own SHA-256, computed after the SHA-1 above matched, and pinned
-   * here afterwards (M10, on the partner's Linux machine, 2026-08-26). The
-   * downloader verifies whatever is present and says which hash it used.
+   * here afterwards — `tiny.en`'s on 2026-09-20, the superseded turbo model's
+   * in M10, both on the partner's Linux machine. The downloader verifies
+   * whatever is present and says which hash it used.
    */
   readonly sha256: string | null;
   /**
-   * 547 MiB, from whisper.cpp's `models/README.md`. Approximate: the exact
-   * byte count is whatever `Content-Length` says on the day, and the
-   * downloader uses that once it has it. This number only has to be good
-   * enough to refuse the download on a full disk before it starts.
+   * 75 MiB, from whisper.cpp's `models/README.md` (measured 77,704,715 bytes).
+   * Approximate: the exact byte count is whatever `Content-Length` says on the
+   * day, and the downloader uses that once it has it. This number only has to
+   * be good enough to refuse the download on a full disk before it starts.
    */
   readonly approxBytes: number;
   readonly licence: LicenceReference;
@@ -103,18 +104,20 @@ const MIB = 1024 * 1024;
 const GIB = 1024 * MIB;
 
 /**
- * The speech model.
+ * The speech model — the one file used for both the note and the live preview.
  *
- * The Hugging Face owner is `ggerganov`, not `ggml-org` — the GitHub
- * organisation was renamed and the model repository was not. Getting that
- * wrong is a 404.
+ * Dictation and notes are English-only, so this is the English-only
+ * `ggml-tiny.en`: the smallest whisper, and fast enough that the same file
+ * serves the preview and the final transcript. The Hugging Face owner is
+ * `ggerganov`, not `ggml-org` — the GitHub organisation was renamed and the
+ * model repository was not. Getting that wrong is a 404.
  */
 export const SPEECH_MODEL: SpeechModelEntry = {
   filename: WHISPER_MODEL_FILENAME,
   url: `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER_MODEL_FILENAME}`,
-  sha1: 'e050f7970618a659205450ad97eb95a18d69c9ee',
-  sha256: '394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2',
-  approxBytes: 547 * MIB,
+  sha1: 'c78c86eb1a8faa21b369bcd33207cc90d64ae9df',
+  sha256: '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+  approxBytes: 75 * MIB,
   licence: {
     name: 'MIT (OpenAI Whisper)',
     url: 'https://huggingface.co/ggerganov/whisper.cpp',
@@ -124,18 +127,20 @@ export const SPEECH_MODEL: SpeechModelEntry = {
 
 /**
  * The preview's model: the words she sees while still speaking. Not the
- * record — the note is transcribed by `SPEECH_MODEL` — so a smaller model is
- * the right trade, and `small` gave the same words as the big one in a
- * third of the time on the same speech (2026-09-04). Same publisher, same
- * repository, same licence. The SHA-1 is whisper.cpp's published one; the
- * SHA-256 was computed after it matched (2026-09-05).
+ * record — the note is transcribed by `SPEECH_MODEL` — but on English-only
+ * dictation the same English-only `tiny.en` serves both, so this entry names
+ * the very same file. Keeping it as its own entry is what lets the plan and
+ * the window link the preview to a step; the installer downloads the file
+ * once (see `plan.ts`). Same publisher, same repository, same licence. The
+ * SHA-1 is whisper.cpp's published one; the SHA-256 was computed after it
+ * matched (2026-09-20).
  */
 export const PREVIEW_SPEECH_MODEL: SpeechModelEntry = {
   filename: WHISPER_PREVIEW_MODEL_FILENAME,
   url: `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER_PREVIEW_MODEL_FILENAME}`,
-  sha1: '55356645c2b361a969dfd0ef2c5a50d530afd8d5',
-  sha256: '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
-  approxBytes: 466 * MIB,
+  sha1: 'c78c86eb1a8faa21b369bcd33207cc90d64ae9df',
+  sha256: '921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f',
+  approxBytes: 75 * MIB,
   licence: {
     name: 'MIT (OpenAI Whisper)',
     url: 'https://huggingface.co/ggerganov/whisper.cpp',

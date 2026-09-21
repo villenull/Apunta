@@ -20,7 +20,7 @@ export const DB_FILENAME = 'apunta.db';
 /** Recordings land here while they are transcribed (M5). */
 export const AUDIO_DIRNAME = 'audio';
 
-/** Where the setup script downloads `ggml-large-v3-turbo-q5_0.bin` (PLAN §2). */
+/** Where the setup script downloads `ggml-tiny.en.bin` (PLAN §2). */
 export const MODELS_DIRNAME = 'models';
 
 /**

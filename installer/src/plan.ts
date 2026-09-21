@@ -69,6 +69,20 @@ export function explainChoice(memoryGib: number | null, tag: string, overridden:
   );
 }
 
+/**
+ * Whether the preview is a file of its own.
+ *
+ * Dictation is English-only, so the preview and the note both run on
+ * `tiny.en` and share one file. The `speech_model` step downloads it; the
+ * `preview_model` step must not reach for it a second time, so it is marked
+ * not needed — which also stops `requiredBytes` counting the file twice.
+ */
+const PREVIEW_SHARES_SPEECH_FILE = PREVIEW_SPEECH_MODEL.filename === SPEECH_MODEL.filename;
+
+function previewNeedsItsOwnDownload(previewModelPresent: boolean): boolean {
+  return !PREVIEW_SHARES_SPEECH_FILE && !previewModelPresent;
+}
+
 export function buildPlan(input: PlanInput): PlanEvent {
   const override = input.modelOverride?.trim();
   const overridden = typeof override === 'string' && override !== '';
@@ -85,7 +99,7 @@ export function buildPlan(input: PlanInput): PlanEvent {
     {
       id: 'preview_model',
       label: 'The model that shows your words as you speak',
-      needed: !input.previewModelPresent,
+      needed: previewNeedsItsOwnDownload(input.previewModelPresent),
       approxBytes: PREVIEW_SPEECH_MODEL.approxBytes,
     },
     {

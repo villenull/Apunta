@@ -18,7 +18,7 @@ import { previewModelPath, runSetup, speechModelPath, type SetupEnvironment } fr
 
 const BASE = 'http://127.0.0.1:11434';
 const TB = 1000 ** 4;
-const MODEL_BODY = Buffer.from('not really 574 MB of weights');
+const MODEL_BODY = Buffer.from('not really 75 MB of weights');
 
 interface Harness {
   readonly events: SetupEvent[];
@@ -41,18 +41,15 @@ function harness(
     freeBytes?: number | null;
     memoryGib?: number | null;
     speechModelPresent?: boolean;
-    /** Defaults to the speech model's presence: the two files arrive together. */
-    previewModelPresent?: boolean;
   } = {},
 ): Harness {
   dir = mkdtempSync(join(tmpdir(), 'apunta-setup-'));
   const modelsDir = join(dir, 'models');
   mkdirSync(modelsDir, { recursive: true });
   if (options.speechModelPresent === true) {
+    // The preview and the note share one English-only file, so writing it
+    // once is what both steps see.
     writeFileSync(speechModelPath(modelsDir), MODEL_BODY);
-  }
-  if ((options.previewModelPresent ?? options.speechModelPresent) === true) {
-    writeFileSync(previewModelPath(modelsDir), MODEL_BODY);
   }
 
   const events: SetupEvent[] = [];
@@ -178,27 +175,27 @@ describe('runSetup', () => {
   });
 
   /**
-   * A damaged download is deleted rather than kept: a retry that resumed onto
-   * bad bytes would append good ones to them for ever.
+   * English-only dictation means the preview and the note run on the same
+   * `tiny.en` file. The installer must fetch it once, under `speech_model`,
+   * and mark the preview step satisfied rather than reaching for the same
+   * bytes a second time.
    */
-  it('downloads the preview model as its own step, verified like the other', async () => {
-    // The speech model is there, the preview's is not: the run reaches for
-    // it under its own id, and the fake server's bytes fail the pinned
-    // checksum — which is the refusal the step must make, not a success it
-    // cannot have.
-    const { events, environment, requested } = harness({
-      speechModelPresent: true,
-      previewModelPresent: false,
-      pulled: [DEFAULT_MODEL],
-    });
+  it('downloads the shared whisper file once, for both the note and the preview', async () => {
+    const { events, environment, modelsDir, requested } = harness({ pulled: [DEFAULT_MODEL] });
 
     const ok = await runSetup(environment);
 
+    // The fake server's bytes fail the pinned checksum, so the run stops at
+    // the first whisper step — but it reaches for the file exactly once.
     expect(ok).toBe(false);
-    expect(requested.some((url) => url.endsWith('/ggml-small.bin'))).toBe(true);
-    const steps = eventsOf(events, 'step');
-    expect(steps.find((step) => step.id === 'speech_model')?.status).toBe('skipped');
-    expect(steps.find((step) => step.id === 'preview_model')?.status).toBe('started');
+    expect(previewModelPath(modelsDir)).toBe(speechModelPath(modelsDir));
+    const whisperRequests = requested.filter((url) => url.includes('huggingface'));
+    expect(whisperRequests).toHaveLength(1);
+    expect(whisperRequests[0]?.endsWith('/ggml-tiny.en.bin')).toBe(true);
+
+    const plan = eventsOf(events, 'plan')[0];
+    expect(plan?.steps.find((step) => step.id === 'speech_model')?.needed).toBe(true);
+    expect(plan?.steps.find((step) => step.id === 'preview_model')?.needed).toBe(false);
     expect(eventsOf(events, 'failed')[0]?.code).toBe('checksum_mismatch');
   });
 

@@ -70,7 +70,7 @@ and three rules keep it that way:
 
 | Model | Published by | Terms |
 | --- | --- | --- |
-| `ggml-large-v3-turbo-q5_0.bin` (speech) | OpenAI's Whisper weights, converted by whisper.cpp | MIT — `https://github.com/openai/whisper` |
+| `ggml-tiny.en.bin` (speech — both the live preview and the note's transcript) | OpenAI's Whisper weights, converted by whisper.cpp | MIT — `https://github.com/openai/whisper` |
 | `gemma4:12b-it-qat` (writing, default tier) | Google | the publisher's terms, on `https://ollama.com/library/gemma4` |
 | `qwen3.6:35b-a3b` (writing, large tier) | Alibaba (the Qwen team) | the publisher's terms, on `https://ollama.com/library/qwen3.6` |
 | `qwen3.5:4b-q4_K_M` (writing, small tier) | Alibaba (the Qwen team) | the publisher's terms, on `https://ollama.com/library/qwen3.5` |

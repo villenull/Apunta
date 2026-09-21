@@ -84,9 +84,9 @@ DEFAULT_TAG="gemma4:12b-it-qat"; DEFAULT_GB="7.2"
 SMALL_TAG="qwen3.5:4b-q4_K_M";   SMALL_GB="3.4"
 LARGE_TIER_GIB=36
 DEFAULT_TIER_GIB=16
-WHISPER_MODEL="ggml-large-v3-turbo-q5_0.bin"
-WHISPER_SHA1="e050f7970618a659205450ad97eb95a18d69c9ee"
-WHISPER_MIB=547
+WHISPER_MODEL="ggml-tiny.en.bin"
+WHISPER_SHA1="c78c86eb1a8faa21b369bcd33207cc90d64ae9df"
+WHISPER_MIB=75
 OLLAMA_DEFAULT_URL="http://127.0.0.1:11434"
 MIN_MACOS_MAJOR=13   # llama.cpp release binaries target macOS 13.3
 NODE_MIN_MAJOR=22    # package.json "engines"
@@ -105,7 +105,7 @@ Apunta macOS pre-flight — read-only. Changes nothing, installs nothing.
 
   --data-dir PATH   check this data directory instead of the default
                     (same meaning as the APUNTA_DATA_DIR environment variable)
-  --checksum        also SHA-1 the whisper model file (adds ~10s for 547 MB)
+  --checksum        also SHA-1 the whisper model file (adds a moment for 75 MB)
   --no-color        plain text, no ANSI colour
   --verbose         show the raw output of commands that failed
   --help            this message
