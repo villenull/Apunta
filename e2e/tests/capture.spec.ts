@@ -88,38 +88,4 @@ test.describe('recording a session', () => {
     await expect(body).toContainText('Subjective: Patient reports improved sleep');
     await expect(page.getByTestId('note-list')).toContainText(format);
   });
-
-  /**
-   * The recording settings, saved against the real API.
-   *
-   * The vocabulary list is the one lever on Whisper's known weak spot
-   * (medication names), and `keep_audio` decides whether the rawest form of a
-   * session stays on disk — both are worth a round trip rather than a unit
-   * test against a fake store.
-   */
-  test('saves the vocabulary list and the keep-audio choice', async ({ page }) => {
-    await page.goto('/settings');
-
-    const form = page.getByTestId('recording-settings');
-    await expect(form).toBeVisible();
-
-    await form.getByLabel('Words to listen for, one per line').fill('Vraylar\nlamotrigine\n\n');
-    await form.getByRole('checkbox').check();
-    await form.getByTestId('save-recording').click();
-    await expect(form.getByTestId('save-recording')).toHaveText('Saved');
-
-    const stored = await page.evaluate(async () => {
-      const response = await fetch('/api/settings');
-      return (await response.json()) as Record<string, unknown>;
-    });
-
-    expect(stored['stt_vocabulary']).toEqual(['Vraylar', 'lamotrigine']);
-    expect(stored['keep_audio']).toBe(true);
-
-    // Put it back: the suite shares one database, and a later spec should not
-    // inherit "keep the audio" from this one.
-    await form.getByRole('checkbox').uncheck();
-    await form.getByTestId('save-recording').click();
-    await expect(form.getByTestId('save-recording')).toHaveText('Saved');
-  });
 });

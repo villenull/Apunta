@@ -227,6 +227,14 @@ Grouped by what each item waits on.
   it arrives: `PUT /api/settings` `stt_vocabulary` on the live instance and on
   the config pack (`~/Apunta-config-pack/`, see `docs/MANUAL-VERIFICATION.md`
   §9), then re-cut the pack.
+  **There is no UI way to act on it any more:** Settings → Recording (the
+  *Words to listen for* list and *Keep the recording after transcribing*)
+  and Settings → Your details were removed from the screen on 2026-09-21 at
+  the owner's request (`docs/decisions.md`). Only the UI went; the settings,
+  the API and any stored values are untouched, so a vocabulary already saved
+  still reaches whisper and the rest fall back to their defaults (keep audio
+  off, plan review every 90 days, 5 notes read for a briefing). Putting the
+  list in is `PUT /api/settings` only, or reverting that commit's web half.
 - **Her first real dictations**, which are the only source allowed to grow
   the retraction-marker list (`RETRACTION_MARKER_SOURCE`) and the vocabulary.
 - **Her Tailscale invite**, so she can test from her laptop.

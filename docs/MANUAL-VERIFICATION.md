@@ -369,9 +369,12 @@ The recipe, repeatable on any machine with the repo:
 5. Pin the model. There is no Settings field for it, deliberately, so:
    `curl -X PUT 127.0.0.1:7717/api/settings -H "content-type: application/json"
    -d '{"llm_model":"qwen3.5:4b-q4_K_M"}'`
-6. Her transcription vocabulary would go in Settings → Recording → *Words to
-   listen for*. Not provided as of this writing, so the pack ships without
-   it — add it and re-back-up when she supplies the list.
+6. Her transcription vocabulary goes in `stt_vocabulary`:
+   `curl -X PUT 127.0.0.1:7717/api/settings -H "content-type: application/json"
+   -d '{"stt_vocabulary":["term one","term two"]}'`. The Settings → Recording
+   screen that used to take it was removed on 2026-09-21 at the owner's
+   request. Not provided as of this writing, so the pack ships without it —
+   add it and re-back-up when she supplies the list.
 7. Settings → Back up and restore → **Back up now**. The zip appears in
    `<data dir>/backups/apunta-backup-<date>.zip`; its `manifest.json` must
    say `"patients": 0` and `"note_formats": 1`. If you back up more than

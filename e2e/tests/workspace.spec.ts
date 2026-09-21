@@ -453,12 +453,11 @@ test.describe('settings', () => {
    * submit button placed straight after the last field flows onto the same
    * line and lands on top of it. Every other field escapes only because a
    * block-level helper paragraph happens to follow it — which makes the bug
-   * arrive by deleting a sentence. Both of these forms shipped with it.
+   * arrive by deleting a sentence. The two forms that shipped with it (your
+   * details, recording) left the screen on 2026-09-21; the one card form
+   * still there keeps the guard.
    */
-  const cardForms = [
-    { card: 'clinician-settings', save: 'save-clinician' },
-    { card: 'recording-settings', save: 'save-recording' },
-  ];
+  const cardForms = [{ card: 'appearance-settings', save: 'save-appearance' }];
 
   for (const { card, save } of cardForms) {
     test(`keeps the ${card} submit button clear of the last field`, async ({ page }) => {

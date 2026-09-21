@@ -1404,22 +1404,6 @@ select:disabled {
   }
 }
 
-/* The keep-audio toggle: a checkbox with a sentence of consequence under it. */
-.keep-audio {
-  align-items: flex-start;
-  cursor: pointer;
-}
-
-.keep-audio input {
-  width: auto;
-  margin-top: 3px;
-}
-
-.keep-audio-sub {
-  display: block;
-  margin-top: 2px;
-}
-
 /*
  * Capture's typed input. Framed like a .btn-option so the two ways in read as
  * a pair, but it is not a choice: a recording and the typed notes both feed
