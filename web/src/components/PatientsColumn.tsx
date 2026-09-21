@@ -15,6 +15,8 @@ export interface PatientsColumnProps {
   onRetry: () => void;
   onToggleArchived: (show: boolean) => void;
   onSetArchived: (patient: PatientListItem, archived: boolean) => void;
+  /** Save a name — how she clears a "name guessed — check" flag left by the Claude import. */
+  onRename: (patient: PatientListItem, name: string) => void;
 }
 
 /** Left column of `prototype/patients.html`: search, add, and the patient list. */
@@ -26,6 +28,7 @@ export function PatientsColumn({
   onRetry,
   onToggleArchived,
   onSetArchived,
+  onRename,
 }: PatientsColumnProps): React.JSX.Element {
   const [query, setQuery] = useState('');
 
@@ -76,6 +79,7 @@ export function PatientsColumn({
           onRetry={onRetry}
           onToggleArchived={onToggleArchived}
           onSetArchived={onSetArchived}
+          onRename={onRename}
         />
       </div>
 
@@ -117,7 +121,10 @@ function PatientList({
   onSelect,
   onRetry,
   onSetArchived,
+  onRename,
 }: PatientsColumnProps & { query: string }): React.JSX.Element {
+  const [checking, setChecking] = useState<{ id: string; name: string } | null>(null);
+
   if (patients.status === 'loading') return <p className="small state-note">Loading patients…</p>;
 
   if (patients.status === 'error') {
@@ -168,6 +175,43 @@ function PatientList({
                 </div>
               </div>
             </button>
+            {patient.name_guessed === true && checking?.id !== patient.id && (
+              <button
+                type="button"
+                className="btn small btn-quick"
+                data-testid={`check-name-${patient.id}`}
+                title="The Claude import guessed this name from a conversation title"
+                onClick={() => {
+                  setChecking({ id: patient.id, name: patient.name });
+                }}
+              >
+                Name guessed — check
+              </button>
+            )}
+            {checking?.id === patient.id && (
+              <form
+                className="row gap-8"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const name = checking.name.trim();
+                  if (name === '') return;
+                  onRename(patient, name);
+                  setChecking(null);
+                }}
+              >
+                <input
+                  type="text"
+                  value={checking.name}
+                  aria-label={`Name for ${patient.name}`}
+                  onChange={(event) => {
+                    setChecking({ id: patient.id, name: event.target.value });
+                  }}
+                />
+                <button type="submit" className="btn small" data-testid={`save-name-${patient.id}`}>
+                  Save name
+                </button>
+              </form>
+            )}
             <button
               type="button"
               className="btn small btn-quick patient-archive-btn"

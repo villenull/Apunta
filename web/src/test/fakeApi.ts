@@ -1,7 +1,7 @@
 import {
   type ChatMessage,
-  type ClaudeImportAcceptRequest,
-  type ClaudeImportPreview,
+  type ClaudeImportReport,
+  type ImportBatch,
   type HealthResponse,
   type Note,
   type NoteFormat,
@@ -36,8 +36,10 @@ export interface FakeApiState {
   plans: TreatmentPlan[];
   goals: PlanGoal[];
   briefs: SessionBrief[];
-  /** What `POST /api/import/claude/accept` received, in order (M11). */
-  imports: ClaudeImportAcceptRequest[];
+  /** The form fields each `POST /api/import/claude/run` sent, in order (M11). */
+  imports: Record<string, string>[];
+  /** Past import runs (`GET /api/import/batches`); undo removes one. */
+  batches: ImportBatch[];
   /** The open key → JSON settings map (`GET|PUT /api/settings`). */
   settings: Record<string, unknown>;
 }
@@ -331,8 +333,8 @@ export interface FakeApiOptions {
   dictationText?: string;
   /** Make it fail instead — whisper absent, say — with the server's status and message. */
   dictationError?: { status: number; code: string; message: string };
-  /** What `POST /api/import/claude` answers for any upload (M11). */
-  importPreview?: ClaudeImportPreview;
+  /** What `POST /api/import/claude/preview` answers for any upload (M11); the run answers it with a batch id. */
+  importReport?: ClaudeImportReport;
   /** Make `POST /api/patients/:id/plan/suggest` fail inside the stream. */
   suggestError?: { code: string; message: string };
   /**
@@ -344,6 +346,21 @@ export interface FakeApiOptions {
   /** Make `POST /api/patients/:id/prep` fail inside the stream. */
   prepError?: { code: string; message: string };
 }
+
+const EMPTY_IMPORT_REPORT: ClaudeImportReport = {
+  batch_id: null,
+  source: 'assistant',
+  cutoff: '2026-07-01',
+  patients: [],
+  patients_to_create: 0,
+  notes: 0,
+  unmatched_names: [],
+  already_imported: 0,
+  sessions_without_body: 0,
+  skipped: [],
+  totals: { conversations: 0, messages: 0, unreadable: 0, abandoned: 0, attachments: 0 },
+  date_range: { from: null, to: null },
+};
 
 /** Installs a `fetch` that answers the endpoints the SPA uses, and returns its state. */
 export function installFakeApi(initial: Partial<FakeApiState> = {}, options: FakeApiOptions = {}): FakeApi {
@@ -357,6 +374,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
     goals: [],
     briefs: [],
     imports: [],
+    batches: [],
     settings: {},
     ...initial,
   };
@@ -600,31 +618,56 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         });
       }
 
-      if (path === '/api/import/claude' && method === 'POST') {
-        return json(
-          options.importPreview ?? {
-            conversations: [],
-            candidates: [],
-            totals: { conversations: 0, messages: 0, skipped: 0 },
-            date_range: { from: null, to: null },
-          },
-        );
+      if (path === '/api/import/claude/preview' && method === 'POST') {
+        return json(options.importReport ?? EMPTY_IMPORT_REPORT);
       }
 
-      if (path === '/api/import/claude/accept' && method === 'POST') {
-        const accepted = body as unknown as ClaudeImportAcceptRequest;
-        state.imports = [...state.imports, accepted];
-        const names = new Set(
-          accepted.items.map((item) => item.patient_id ?? item.patient_name.toLowerCase()),
-        );
+      if (path === '/api/import/claude/run' && method === 'POST') {
+        const fields: Record<string, string> = {};
+        if (init.body instanceof FormData) {
+          for (const [key, value] of init.body.entries()) if (typeof value === 'string') fields[key] = value;
+        }
+        state.imports = [...state.imports, fields];
+        const exclude = new Set(JSON.parse(fields['exclude'] ?? '[]') as string[]);
+        const planned = options.importReport ?? EMPTY_IMPORT_REPORT;
+        const patients = planned.patients.filter((patient) => !exclude.has(patient.key));
+        const batchId = `01a00000-0000-7000-8000-0000000000b${String(state.batches.length)}`;
+        const notes = patients.reduce((sum, patient) => sum + patient.notes, 0);
+        state.batches = [
+          {
+            id: batchId,
+            source: planned.source,
+            created_at: stamp(),
+            notes,
+            patients: patients.filter((p) => p.patient_id === null).length,
+          },
+          ...state.batches,
+        ];
         return json(
           {
-            patients_created: accepted.items.filter((item) => item.patient_id === null).length > 0 ? 1 : 0,
-            notes_created: accepted.items.length,
-            patient_ids: [...names].map((_, index) => `01a00000-0000-7000-8000-00000000000${String(index)}`),
+            ...planned,
+            batch_id: batchId,
+            patients,
+            notes,
+            patients_to_create: patients.filter((p) => p.patient_id === null).length,
           },
           201,
         );
+      }
+
+      if (path === '/api/import/batches' && method === 'GET') return json({ batches: state.batches });
+
+      const undoMatch = /^\/api\/import\/batches\/([^/]+)\/undo$/.exec(path);
+      if (undoMatch && method === 'POST') {
+        const batch = state.batches.find((candidate) => candidate.id === undoMatch[1]);
+        if (!batch) return apiError(404, 'not_found', 'That import has already been undone.');
+        state.batches = state.batches.filter((candidate) => candidate !== batch);
+        return json({
+          notes_deleted: batch.notes,
+          patients_deleted: batch.patients,
+          notes_kept: 0,
+          patients_kept: 0,
+        });
       }
 
       if (path === '/api/patients' && method === 'POST') {
@@ -656,6 +699,14 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
           );
           const { note_count: _archivedCount, ...archivedRest } = updated;
           return json(archivedRest satisfies Patient);
+        }
+        if (method === 'PATCH' && typeof body['name'] === 'string') {
+          const renamed = { ...patient, name: body['name'], name_guessed: false };
+          state.patients = state.patients.map((candidate) =>
+            candidate.id === patientId ? renamed : candidate,
+          );
+          const { note_count: _renamedCount, ...renamedRest } = renamed;
+          return json(renamedRest satisfies Patient);
         }
         const { note_count: _count, ...rest } = patient;
         return json(rest satisfies Patient);

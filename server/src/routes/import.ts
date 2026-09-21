@@ -1,165 +1,213 @@
 import {
-  ClaudeImportAcceptRequestSchema,
+  DEFAULT_IMPORT_CUTOFF,
+  ImportCutoffSchema,
   importedNoteTitle,
+  ImportNoteSourceSchema,
   MAX_IMPORT_BYTES,
-  type ClaudeImportAcceptResponse,
-  type ClaudeImportPreview,
-  type Patient,
+  MAX_IMPORT_PATIENTS,
+  parsePatientList,
+  type ClaudeImportReport,
+  type ImportBatchListResponse,
+  type ImportUndoResponse,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { listFormats } from '../db/formats.js';
+import {
+  addBatchNote,
+  addBatchPatient,
+  createImportBatch,
+  importBatchExists,
+  listImportBatches,
+  undoImportBatch,
+} from '../db/import-batches.js';
 import { createNote } from '../db/notes.js';
-import { createPatient, getPatient, listPatients } from '../db/patients.js';
+import { createPatient, listPatients } from '../db/patients.js';
 import { createTranscript } from '../db/transcripts.js';
 import { badRequest, notFound } from '../http/errors.js';
-import { parseBody } from '../http/validate.js';
-import { buildPreview, ImportFormatError, openExport } from '../import/claude.js';
+import {
+  importedKeys,
+  ImportFormatError,
+  openExport,
+  planImport,
+  type ImportOptions,
+  type ImportPlan,
+  type ReadExport,
+} from '../import/claude.js';
 
 /**
- * Importing her Claude conversations (M11).
+ * Importing her Claude conversations (M11), automatically — the owner's
+ * choice on 2026-09-21, over per-note review.
  *
- * Two endpoints, and the shape between them is the whole design:
+ * `POST /api/import/claude/preview` and `POST /api/import/claude/run` take
+ * the same upload — the export, her optional list of names, the cutoff, the
+ * note source, and the patients she unticked — and compute the same plan
+ * (`planImport`). The preview writes nothing. The run writes exactly that
+ * plan in one transaction, as one batch: drafts only, each with a transcript
+ * row of source `import` naming the conversation, the session and its
+ * message ids, which is also what lets a second run skip what the first
+ * wrote. The export is read in the request's memory and kept nowhere: the
+ * browser sends it again for the run rather than the server holding a copy.
  *
- * `POST /api/import/claude` takes the export she chose in the browser, reads
- * it in memory, and answers with *proposals* — every conversation with her
- * words in it, and who each may be about. Nothing is written and nothing is
- * kept: the upload lives in this request's memory and is gone with it. The
- * archive holds everything she ever said to Claude, most of it nobody's
- * business, and the only copy of it stays where she put it.
+ * `GET /api/import/batches` lists past runs; `POST /api/import/batches/:id/undo`
+ * takes one back.
  *
- * `POST /api/import/claude/accept` writes what she accepted, and only that,
- * as ordinary patients and notes. Each note keeps its provenance as a
- * transcript row of source `import`, which is also what makes her imported
- * words an allowed source for the refine chat's locks.
- *
- * Every diagnostic on this path is shape: counts, never a name.
+ * Every log line on this path is shape: counts, never a name.
  */
 export function registerImportRoutes(app: FastifyInstance, db: Database): void {
-  app.post('/api/import/claude', async (request): Promise<ClaudeImportPreview> => {
+  app.post('/api/import/claude/preview', async (request): Promise<ClaudeImportReport> => {
     const upload = await receiveExport(request);
-    let read;
-    try {
-      read = openExport(upload.bytes, upload.filename);
-    } catch (error) {
-      if (error instanceof ImportFormatError) throw badRequest(error.message);
-      throw error;
-    }
-    const preview = buildPreview(
-      read,
-      listPatients(db, { includeArchived: true }).map((patient) => ({ id: patient.id, name: patient.name })),
-    );
+    const plan = planFor(db, upload);
     request.log.info(
-      {
-        bytes: upload.bytes.length,
-        conversations: preview.totals.conversations,
-        proposals: preview.conversations.length,
-        candidates: preview.candidates.length,
-      },
+      { bytes: upload.bytes.length, notes: plan.report.notes, patients: plan.report.patients.length },
       'claude export previewed',
     );
-    return preview;
+    return { batch_id: null, ...plan.report };
   });
 
-  app.post('/api/import/claude/accept', async (request, reply): Promise<ClaudeImportAcceptResponse> => {
-    const input = parseBody(ClaudeImportAcceptRequestSchema, request.body);
+  app.post('/api/import/claude/run', async (request, reply): Promise<ClaudeImportReport> => {
+    const upload = await receiveExport(request);
     const format = listFormats(db)[0];
     if (!format)
       throw badRequest('Create a note format before importing, so the notes have somewhere to go.');
 
-    // One transaction: either everything she accepted lands, or nothing does.
-    const write = db.transaction((): ClaudeImportAcceptResponse => {
-      const byName = new Map<string, Patient>();
-      for (const existing of listPatients(db, { includeArchived: true }))
-        byName.set(existing.name.toLowerCase(), existing);
-      let patientsCreated = 0;
-      const landed = new Set<string>();
+    // Planned and written in one transaction, so what is skipped as already
+    // imported is judged against the database this run writes to.
+    const report = db.transaction((): ClaudeImportReport => {
+      const plan = planFor(db, upload);
+      if (plan.notes.length === 0) return { batch_id: null, ...plan.report };
 
-      for (const item of input.items) {
-        let patient: Patient | undefined;
-        if (item.patient_id !== null) {
-          patient = getPatient(db, item.patient_id);
-          if (!patient) throw notFound('Patient not found');
-        } else {
-          // A new name that matches a patient she already has is that
-          // patient: two "John Smith"s in the list is worse than one.
-          patient = byName.get(item.patient_name.toLowerCase());
-          if (!patient) {
-            patient = createPatient(db, { name: item.patient_name });
-            byName.set(patient.name.toLowerCase(), patient);
-            patientsCreated += 1;
-          }
-        }
-
+      const batchId = createImportBatch(db, upload.options.source);
+      const patientIds = plan.report.patients.map((planned) => {
+        if (planned.patient_id !== null) return planned.patient_id;
+        const created = createPatient(db, { name: planned.name, nameGuessed: planned.name_guessed });
+        addBatchPatient(db, batchId, created.id);
+        return created.id;
+      });
+      for (const planned of plan.notes) {
         const note = createNote(db, {
-          patient_id: patient.id,
+          patient_id: patientIds[planned.patient] as string,
           format_id: format.id,
-          title: importedNoteTitle(item.title, item.recorded_at),
-          content: item.text,
-          ...(item.recorded_at === null ? {} : { created_at: item.recorded_at }),
+          title: importedNoteTitle(planned.recordedAt),
+          content: planned.body,
+          ...(planned.recordedAt === null ? {} : { created_at: planned.recordedAt }),
         });
         createTranscript(db, {
           note_id: note.id,
           source: 'import',
-          raw_text: provenance(item.conversation_id, item.title, item.recorded_at) + item.text,
+          raw_text: `${planned.provenance}\n\n${planned.body}`,
         });
-        landed.add(patient.id);
+        addBatchNote(db, batchId, note.id);
       }
-
       return {
-        patients_created: patientsCreated,
-        notes_created: input.items.length,
-        patient_ids: [...landed],
+        batch_id: batchId,
+        ...plan.report,
+        patients: plan.report.patients.map((planned, index) => ({
+          ...planned,
+          patient_id: patientIds[index] as string,
+        })),
       };
-    });
+    })();
 
-    const result = write();
     request.log.info(
       {
-        notes: result.notes_created,
-        patientsCreated: result.patients_created,
-        patients: result.patient_ids.length,
+        notes: report.notes,
+        patientsCreated: report.patients_to_create,
+        patients: report.patients.length,
+        skipped: report.skipped.length,
       },
       'claude conversations imported',
     );
-    reply.code(201);
+    reply.code(report.batch_id === null ? 200 : 201);
+    return report;
+  });
+
+  app.get('/api/import/batches', (): ImportBatchListResponse => ({ batches: listImportBatches(db) }));
+
+  app.post<{ Params: { id: string } }>('/api/import/batches/:id/undo', (request): ImportUndoResponse => {
+    if (!importBatchExists(db, request.params.id)) throw notFound('That import has already been undone.');
+    const result = undoImportBatch(db, request.params.id);
+    request.log.info(result, 'claude import undone');
     return result;
   });
 }
 
-/** The transcript's first line: where this came from, so the origin of an imported note is always answerable. */
-function provenance(conversationId: string, title: string, recordedAt: string | null): string {
-  const name = title.trim() === '' ? 'an untitled conversation' : `"${title.trim()}"`;
-  const when = recordedAt === null ? '' : `, recorded ${recordedAt.slice(0, 10)}`;
-  return `[Imported from Claude conversation ${name} (${conversationId})${when}]\n\n`;
+function planFor(db: Database, upload: ExportUpload): ImportPlan {
+  const transcripts = db
+    .prepare(
+      `SELECT t.raw_text, n.patient_id FROM transcripts t JOIN notes n ON n.id = t.note_id
+        WHERE t.source = 'import'`,
+    )
+    .all() as { raw_text: string; patient_id: string }[];
+  return planImport(upload.read, {
+    ...upload.options,
+    existing: listPatients(db, { includeArchived: true }).map((patient) => ({
+      id: patient.id,
+      name: patient.name,
+    })),
+    imported: importedKeys(transcripts),
+    headings: listFormats(db).flatMap((format) => format.sections),
+  });
 }
 
 interface ExportUpload {
   readonly bytes: Buffer;
-  readonly filename: string;
+  readonly read: ReadExport;
+  readonly options: Pick<ImportOptions, 'names' | 'source' | 'cutoff' | 'exclude'>;
 }
 
-/** The whole file into memory, and nowhere else. */
+/** The whole file into memory, and nowhere else; the form fields beside it. */
 async function receiveExport(request: FastifyRequest): Promise<ExportUpload> {
   if (!request.isMultipart()) throw badRequest('Send the export as multipart/form-data with one file.');
 
-  let upload: ExportUpload | null = null;
+  let file: { bytes: Buffer; filename: string } | null = null;
+  const fields = new Map<string, string>();
   const parts = request.parts({
-    limits: { files: 1, fileSize: MAX_IMPORT_BYTES, fields: 4, fieldSize: 1024 },
+    limits: { files: 1, fileSize: MAX_IMPORT_BYTES, fields: 8, fieldSize: 64 * 1024 },
   });
   for await (const part of parts) {
-    if (part.type !== 'file') continue;
-    if (upload !== null) {
+    if (part.type !== 'file') {
+      if (typeof part.value === 'string') fields.set(part.fieldname, part.value);
+      continue;
+    }
+    if (file !== null) {
       part.file.resume();
       continue;
     }
     const chunks: Buffer[] = [];
     for await (const chunk of part.file) chunks.push(chunk as Buffer);
     if (part.file.truncated) throw badRequest('That export is too large to read in one go.');
-    upload = { bytes: Buffer.concat(chunks), filename: part.filename };
+    file = { bytes: Buffer.concat(chunks), filename: part.filename };
   }
-  if (upload === null || upload.bytes.length === 0)
+  if (file === null || file.bytes.length === 0)
     throw badRequest('No file arrived. Choose the export Claude sent you.');
-  return upload;
+
+  const names = parsePatientList(fields.get('names') ?? '');
+  if (names.length > MAX_IMPORT_PATIENTS)
+    throw badRequest(`List at most ${String(MAX_IMPORT_PATIENTS)} names.`);
+  const source = ImportNoteSourceSchema.safeParse(fields.get('source') ?? 'assistant');
+  if (!source.success) throw badRequest('The note source must be "assistant" or "human".');
+  const cutoff = ImportCutoffSchema.safeParse(fields.get('cutoff') ?? DEFAULT_IMPORT_CUTOFF);
+  if (!cutoff.success) throw badRequest('Use a cutoff date like 2026-07-01.');
+  let exclude: string[] = [];
+  try {
+    const parsed = JSON.parse(fields.get('exclude') ?? '[]') as unknown;
+    if (Array.isArray(parsed)) exclude = parsed.filter((key): key is string => typeof key === 'string');
+  } catch {
+    throw badRequest('Could not read the list of unticked patients.');
+  }
+
+  let read: ReadExport;
+  try {
+    read = openExport(file.bytes, file.filename);
+  } catch (error) {
+    if (error instanceof ImportFormatError) throw badRequest(error.message);
+    throw error;
+  }
+  return {
+    bytes: file.bytes,
+    read,
+    options: { names, source: source.data, cutoff: cutoff.data, exclude: new Set(exclude) },
+  };
 }

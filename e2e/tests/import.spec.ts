@@ -1,48 +1,39 @@
 import { fileURLToPath } from 'node:url';
 
-import { expect, test, uniqueName } from '../support/fixtures';
+import { expect, test } from '../support/fixtures';
 
 /**
- * Importing a Claude export, end to end through the real server (M11).
+ * Importing a Claude export automatically, end to end through the real
+ * server (M11). The fixture is fabricated with the prototype's names; see
+ * `server/src/import/claude.test.ts` for what each conversation in it is for.
  *
- * The fixture is a fabricated export with the prototype's names. What this
- * proves that the unit tests cannot: the file goes up through the browser's
- * multipart path, the proposals come back, a person can be renamed and others
- * unticked, and what lands in the patient list is exactly what was accepted —
- * two notes for one renamed patient, nothing for the recipe or for the
- * people she unticked.
+ * What this proves that the unit tests cannot: the file and the settings go
+ * up through the browser's multipart path twice (preview, then run), a
+ * patient she unticks is not written, the patients land in the list with a
+ * guessed name flagged, and the one-click undo takes the whole run back.
  */
-const EXPORT = fileURLToPath(new URL('../fixtures/claude-export/sample-export.zip', import.meta.url));
+const EXPORT = fileURLToPath(new URL('../fixtures/claude-export/patient-chats.json', import.meta.url));
 
 test.describe('importing from Claude', () => {
-  test('turns accepted conversations into a patient with notes, and nothing else', async ({ page }) => {
-    const name = uniqueName('Imported Person');
-
+  test('imports the patients seen since the cutoff, and undoes it in one click', async ({ page }) => {
     await page.goto('/settings');
     await page.getByTestId('settings-import').click();
     await expect(page.getByRole('heading', { name: 'Import from Claude' })).toBeVisible();
+    await expect(page.getByTestId('import-cutoff')).toHaveValue('2026-07-01');
 
     await page.getByTestId('import-file').setInputFiles(EXPORT);
-    await expect(page.getByTestId('import-summary')).toContainText('5 conversations');
+    await page.getByTestId('import-check').click();
+    await expect(page.getByTestId('import-summary')).toContainText('7 notes across 3 patients');
 
-    // Three names were offered. Rename the one that is a patient, untick the
-    // others; the recipe was never assigned to anyone.
-    await page.getByLabel('Name for John Smith').fill(name);
-    await page.getByLabel('Import Jane Doe as a patient').uncheck();
-    await page.getByLabel('Import Emily as a patient').uncheck();
-    await expect(page.getByTestId('import-accept')).toHaveText('Import 2 notes');
+    // A glance, not a review: untick one, and the button says what is left.
+    await page.getByLabel('Import Maria (2)').uncheck();
+    await expect(page.getByTestId('import-run')).toHaveText('Import 5 notes');
+    await page.getByTestId('import-run').click();
+    await expect(page.getByTestId('import-done')).toContainText('5 notes for 2 patients');
+    await expect(page.getByTestId('import-skipped')).toContainText('not a patient history');
+    await expect(page.getByTestId('import-skipped')).not.toContainText('Garden');
 
-    // Claude's replies are visible on request and marked as not imported.
-    await expect(page.getByText('What Claude replied — shown, never imported').first()).toBeVisible();
-
-    await page.getByTestId('import-accept').click();
-    await expect(page.getByTestId('import-done')).toContainText('2 notes for 1 patient (1 new)');
-
-    await page.getByRole('link', { name: 'Go to patients' }).click();
-    await page.getByText(name).click();
-    const list = page.getByTestId('note-list');
-    await expect(list).toContainText('John session notes');
-    await expect(list).toContainText('John again');
-    await expect(list).not.toContainText('Recipe');
+    await page.getByTestId('import-undo').click();
+    await expect(page.getByTestId('import-undone')).toContainText('5 notes and 2 patients removed');
   });
 });

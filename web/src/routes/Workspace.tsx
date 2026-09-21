@@ -9,6 +9,7 @@ import {
   listNotes,
   listPatients,
   setPatientArchived,
+  updatePatient,
 } from '../api/index.js';
 import { AiBanner } from '../components/AiBanner.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
@@ -153,6 +154,16 @@ export function Workspace(): React.JSX.Element {
     }
   }
 
+  async function handleRename(target: PatientListItem, name: string): Promise<void> {
+    try {
+      await updatePatient(target.id, { name });
+      setActionError(null);
+      reloadPatients();
+    } catch (thrown) {
+      setActionError(errorMessage(thrown));
+    }
+  }
+
   // First run: with no note format defined there is nothing to draft into, so
   // the app opens on onboarding instead of an empty workspace.
   if (formats.state.status === 'ready' && formats.state.data.length === 0) {
@@ -172,6 +183,9 @@ export function Workspace(): React.JSX.Element {
           onToggleArchived={setShowArchived}
           onSetArchived={(target, archived) => {
             void handleSetArchived(target, archived);
+          }}
+          onRename={(target, name) => {
+            void handleRename(target, name);
           }}
         />
 

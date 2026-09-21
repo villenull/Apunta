@@ -1,27 +1,37 @@
-import type { ClaudeImportPreview, ImportCandidate, ImportedConversation } from '@apunta/shared';
+import type {
+  ClaudeImportReport,
+  ImportNameSource,
+  ImportNoteSource,
+  ImportPatientPlan,
+  ImportSkippedConversation,
+  ImportSkipReason,
+} from '@apunta/shared';
 
 import { readZip, ZipFormatError } from './zip.js';
 
 /**
- * Reading a Claude data export into proposals (M11).
+ * Reading a Claude data export into an import plan (M11).
  *
- * Three rules from `docs/agents/M11-claude-import.md` are enforced here and
- * nowhere else, so they cannot be argued with downstream:
+ * The owner chose an automatic import over per-note review (2026-09-21), so
+ * the rules that keep it honest live here, in pure functions with tests:
  *
- * - **Her words are the record. Claude's are not.** A proposal's body is the
- *   `human` turns, verbatim and in order. The assistant's turns are carried
- *   separately for her to look at, and are never the default.
- * - **A conversation date is not a session date.** What the export calls
- *   `created_at` is when she talked to Claude; it travels as `recorded_at`.
- * - **Identification is not the model's job.** Candidate people come from the
- *   patients she has already entered (matched by name) and from recurring
- *   proper nouns offered as *possible* people. Nothing here infers.
+ * - **The thread she ended up on.** Edited and regenerated messages fork a
+ *   conversation; `liveThread` follows the parent links from the latest
+ *   message back, and the abandoned forks are counted, never imported.
+ * - **One note per session.** Her pattern is one long conversation per
+ *   patient; `splitSessions` cuts it at every gap over `SESSION_GAP_HOURS`.
+ *   Each session's date is when she talked to Claude — *recorded*, never
+ *   asserted as the session date.
+ * - **Skip rather than guess.** `assignConversation` gives a conversation to
+ *   a patient on her list only when the match is unambiguous.
+ * - **Verbatim.** A note is Claude's last reply in the session (the default:
+ *   she drafted her notes with Claude) or her own messages, as written.
+ *   Nothing is summarised and no model is involved.
  *
- * The export's schema is inferred, not known — this repository has never
- * seen a real one (`npm run probe:claude` exists to check). So the reader is
- * tolerant: it accepts the file at the top level or under a key, `sender` or
- * `role`, `text` or a list of content blocks, and skips what it cannot read
- * while counting it, rather than failing the whole archive on one odd row.
+ * The reader is tolerant: it accepts the file at the top level or under a
+ * key, `sender` or `role`, `text` or a list of content blocks, and skips what
+ * it cannot read while counting it, rather than failing the whole archive on
+ * one odd row.
  */
 
 export class ImportFormatError extends Error {
@@ -32,21 +42,29 @@ export class ImportFormatError extends Error {
 }
 
 export interface RawTurn {
+  /** The export's message id, when it has one — provenance and re-import detection hang off it. */
+  readonly id: string | null;
   readonly role: 'human' | 'assistant';
+  /** Verbatim; may be empty for a message that carried only an attachment. */
   readonly text: string;
   readonly at: string | null;
+  /** Files attached to the message (`attachments` and `files` together). Counted, never imported. */
+  readonly attachments: number;
 }
 
 export interface RawConversation {
   readonly id: string;
   readonly title: string;
   readonly createdAt: string | null;
+  /** The messages on the conversation's live thread, in order — see `liveThread`. */
   readonly turns: readonly RawTurn[];
+  /** Messages left out because they sit on a branch she abandoned by editing or regenerating. */
+  readonly abandoned: number;
 }
 
 export interface ReadExport {
   readonly conversations: readonly RawConversation[];
-  /** Turns read, across every conversation. */
+  /** Readable turns on the live threads, across every conversation. */
   readonly messages: number;
   /** Conversations with nothing readable in them. */
   readonly skipped: number;
@@ -100,17 +118,19 @@ export function readConversations(json: unknown): ReadExport {
       skipped += 1;
       return;
     }
-    const turns = readTurns(record);
-    if (turns.length === 0) {
+    const { turns, abandoned } = readTurns(record);
+    const readable = turns.filter((turn) => turn.text !== '').length;
+    if (readable === 0) {
       skipped += 1;
       return;
     }
-    messages += turns.length;
+    messages += readable;
     conversations.push({
       id: firstString(record, ['uuid', 'id', 'conversation_id']) ?? `conversation-${String(index + 1)}`,
       title: firstString(record, ['name', 'title']) ?? '',
       createdAt: isoDate(firstValue(record, ['created_at', 'createdAt', 'create_time'])),
       turns,
+      abandoned,
     });
   });
 
@@ -128,20 +148,75 @@ function conversationList(json: unknown): unknown[] | null {
   return null;
 }
 
-function readTurns(conversation: Record<string, unknown>): RawTurn[] {
+interface LinkedTurn extends RawTurn {
+  readonly parent: string | null;
+}
+
+function readTurns(conversation: Record<string, unknown>): { turns: RawTurn[]; abandoned: number } {
   const raw = firstValue(conversation, ['chat_messages', 'messages']);
-  if (!Array.isArray(raw)) return [];
-  const turns: RawTurn[] = [];
+  if (!Array.isArray(raw)) return { turns: [], abandoned: 0 };
+  const linked: LinkedTurn[] = [];
   for (const item of raw) {
     const message = asRecord(item);
     if (message === null) continue;
     const role = turnRole(message);
     if (role === null) continue;
     const text = turnText(message).trim();
-    if (text === '') continue;
-    turns.push({ role, text, at: isoDate(firstValue(message, ['created_at', 'createdAt', 'create_time'])) });
+    const attachments = listLength(message['attachments']) + listLength(message['files']);
+    if (text === '' && attachments === 0) continue;
+    linked.push({
+      id: firstString(message, ['uuid', 'id']),
+      parent: firstString(message, ['parent_message_uuid', 'parent_id', 'parent']),
+      role,
+      text,
+      at: isoDate(firstValue(message, ['created_at', 'createdAt', 'create_time'])),
+      attachments,
+    });
   }
-  return turns;
+  const thread = liveThread(linked);
+  return {
+    turns: thread.map(({ parent: _parent, ...turn }) => turn),
+    abandoned: linked.length - thread.length,
+  };
+}
+
+/**
+ * The thread she ended up on, when the export records one.
+ *
+ * Editing a message or regenerating a reply in Claude forks the conversation,
+ * and the export keeps both forks in one flat array, each message naming its
+ * parent. Array order would splice the abandoned fork into the note. So where
+ * parent links are present, start from the conversation's latest message and
+ * walk the parents back: that chain is what she was looking at last. Where
+ * they are absent — no message names a parent that is also in the
+ * conversation — array order is all there is, and it is used as is.
+ */
+export function liveThread<T extends { id: string | null; parent: string | null; at: string | null }>(
+  messages: readonly T[],
+): T[] {
+  const byId = new Map<string, T>();
+  for (const message of messages) if (message.id !== null) byId.set(message.id, message);
+  const linked = messages.some((m) => m.parent !== null && m.parent !== m.id && byId.has(m.parent));
+  if (!linked) return [...messages];
+
+  // The latest message, by timestamp; on a tie (or no timestamps), the later one in the array.
+  let tip: T | undefined;
+  for (const message of messages) {
+    if (message.id === null) continue;
+    if (tip === undefined || (message.at ?? '') >= (tip.at ?? '')) tip = message;
+  }
+  const chain: T[] = [];
+  const seen = new Set<string>();
+  for (let at = tip; at !== undefined && at.id !== null && !seen.has(at.id);) {
+    seen.add(at.id);
+    chain.push(at);
+    at = at.parent === null ? undefined : byId.get(at.parent);
+  }
+  return chain.reverse();
+}
+
+function listLength(value: unknown): number {
+  return Array.isArray(value) ? value.length : 0;
 }
 
 function turnRole(message: Record<string, unknown>): 'human' | 'assistant' | null {
@@ -175,80 +250,411 @@ function turnText(message: Record<string, unknown>): string {
   return '';
 }
 
-// --- Proposals -------------------------------------------------------------
-
-export interface KnownPatient {
-  readonly id: string;
-  readonly name: string;
-}
-
-/** What the screen shows: every conversation with her words in it, and who it may be about. */
-export function buildPreview(read: ReadExport, known: readonly KnownPatient[]): ClaudeImportPreview {
-  const withHerWords = read.conversations.filter((c) => c.turns.some((t) => t.role === 'human'));
-  const skipped = read.skipped + (read.conversations.length - withHerWords.length);
-
-  const candidates = findCandidates(withHerWords, known);
-  const conversations: ImportedConversation[] = withHerWords.map((conversation) => {
-    const text = `${conversation.title}\n${humanText(conversation)}`;
-    return {
-      id: conversation.id,
-      title: conversation.title,
-      recorded_at: conversation.createdAt ?? conversation.turns[0]?.at ?? null,
-      human_text: humanText(conversation),
-      assistant_text: conversation.turns
-        .filter((t) => t.role === 'assistant')
-        .map((t) => t.text)
-        .join('\n\n'),
-      people: candidates
-        .filter((candidate) => mentions(text, candidate.name))
-        .map((candidate) => candidate.name),
-      turns: conversation.turns.length,
-    };
-  });
-
-  const dates = conversations
-    .map((c) => c.recorded_at)
-    .filter((d): d is string => d !== null)
-    .sort();
-  return {
-    conversations,
-    candidates,
-    totals: { conversations: read.conversations.length, messages: read.messages, skipped },
-    date_range: { from: dates[0] ?? null, to: dates.at(-1) ?? null },
-  };
-}
-
-function humanText(conversation: RawConversation): string {
-  return conversation.turns
-    .filter((t) => t.role === 'human')
-    .map((t) => t.text)
-    .join('\n\n');
-}
+// --- Sessions ----------------------------------------------------------------
 
 /**
- * Does the text name this person? The full name as a whole word, or the
- * first name alone when it is long enough not to be a syllable: "John Smith"
- * matches "John came in", "Jo" does not match "Joanna".
+ * A gap longer than this between two messages starts a new session.
+ *
+ * She keeps one long conversation per patient and comes back to it after
+ * each session, so a conversation is months of sittings end to end. Six
+ * hours is longer than any one sitting runs — a note drafted over a lunch
+ * break or between two appointments stays whole — and shorter than the
+ * time between two sessions with the same person, which in this practice
+ * is days. A split in the wrong place costs her one merge or one skip in
+ * review; the date on each piece is only ever labelled *recorded*.
  */
-export function mentions(text: string, name: string): boolean {
-  const full = name.trim();
-  if (full === '') return false;
-  if (wholeWord(text, full)) return true;
-  const first = full.split(/\s+/)[0] ?? '';
-  return first.length >= 3 && first !== full && wholeWord(text, first);
+export const SESSION_GAP_HOURS = 6;
+const SESSION_GAP_MS = SESSION_GAP_HOURS * 60 * 60 * 1000;
+
+/**
+ * The conversation cut at every gap longer than `SESSION_GAP_HOURS`. A
+ * message without a timestamp stays in the session it follows.
+ */
+export function splitSessions(turns: readonly RawTurn[]): RawTurn[][] {
+  const sessions: RawTurn[][] = [];
+  let current: RawTurn[] = [];
+  let last: number | null = null;
+  for (const turn of turns) {
+    const at = turn.at === null ? null : Date.parse(turn.at);
+    if (at !== null && last !== null && at - last > SESSION_GAP_MS && current.length > 0) {
+      sessions.push(current);
+      current = [];
+    }
+    current.push(turn);
+    if (at !== null) last = at;
+  }
+  if (current.length > 0) sessions.push(current);
+  return sessions;
 }
 
-function wholeWord(text: string, phrase: string): boolean {
-  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'iu').test(text);
+// --- Matching ----------------------------------------------------------------
+
+/** A listed name mentioned fewer times than this is a passing mention, not her patient's chat. */
+export const MIN_MENTIONS = 3;
+
+/**
+ * When two listed names both appear, the leader must be mentioned at least
+ * this many times as often as the runner-up for the conversation to count as
+ * the leader's. Below that it is ambiguous and is not imported.
+ */
+export const DOMINANCE = 3;
+
+export type Assignment =
+  | { readonly kind: 'assigned'; readonly patient: number; readonly by: 'title' | 'text' }
+  | { readonly kind: 'skipped'; readonly reason: 'no_match' | 'weak_match' | 'ambiguous' };
+
+/**
+ * Which name on her list a conversation is about — or none. Spelled out here
+ * and nowhere else, and it prefers skipping to guessing:
+ *
+ * 1. **The title.** If exactly one listed name is in the conversation's
+ *    title, it is that patient's — unless another listed name is mentioned
+ *    more often in the conversation itself, which makes it ambiguous. Two
+ *    listed names in the title are ambiguous.
+ * 2. **The text**, both sides of the live thread. Count each listed name's
+ *    mentions. None at all: `no_match`. A leader that does not reach
+ *    `DOMINANCE` times the runner-up: `ambiguous`. A clear leader mentioned
+ *    fewer than `MIN_MENTIONS` times: `weak_match`. Otherwise, the leader's.
+ *
+ * A mention is the name as a whole word starting with a capital — "Will"
+ * counts, "will" does not — and a listed full name also counts its first
+ * name alone, unless another listed name shares that first name.
+ */
+export function assignConversation(
+  conversation: Pick<RawConversation, 'title' | 'turns'>,
+  names: readonly string[],
+): Assignment {
+  const patterns = names.map((name) => mentionPattern(name, names));
+  const inTitle = patterns.map((pattern) => countMentions(conversation.title, pattern));
+  const text = conversation.turns.map((turn) => turn.text).join('\n');
+  const inText = patterns.map((pattern) => countMentions(text, pattern));
+
+  const titled = inTitle.flatMap((count, index) => (count > 0 ? [index] : []));
+  if (titled.length > 1) return { kind: 'skipped', reason: 'ambiguous' };
+  if (titled.length === 1) {
+    const patient = titled[0] as number;
+    const own = inText[patient] ?? 0;
+    const outnumbered = inText.some((count, index) => index !== patient && count > own);
+    return outnumbered
+      ? { kind: 'skipped', reason: 'ambiguous' }
+      : { kind: 'assigned', patient, by: 'title' };
+  }
+
+  const ranked = inText.map((count, index) => ({ count, index })).sort((a, b) => b.count - a.count);
+  const top = ranked[0];
+  const second = ranked[1]?.count ?? 0;
+  if (top === undefined || top.count === 0) return { kind: 'skipped', reason: 'no_match' };
+  if (second > 0 && top.count < DOMINANCE * second) return { kind: 'skipped', reason: 'ambiguous' };
+  if (top.count < MIN_MENTIONS) return { kind: 'skipped', reason: 'weak_match' };
+  return { kind: 'assigned', patient: top.index, by: 'text' };
+}
+
+/** The words that count as a mention of `name`, longest first, as one case-insensitive pattern. */
+function mentionPattern(name: string, everyone: readonly string[]): RegExp | null {
+  const full = name.trim().replace(/\s+/g, ' ');
+  if (full === '') return null;
+  const forms = [full];
+  const first = full.split(' ')[0] ?? '';
+  const shared = everyone.some(
+    (other) =>
+      other.trim().toLowerCase() !== full.toLowerCase() &&
+      (other.trim().split(/\s+/)[0] ?? '').toLowerCase() === first.toLowerCase(),
+  );
+  if (first !== full && first.length >= 3 && !shared) forms.push(first);
+  const alternatives = forms.map((form) => form.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'));
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternatives.join('|')})(?![\\p{L}\\p{N}])`, 'giu');
+}
+
+function countMentions(text: string, pattern: RegExp | null): number {
+  if (pattern === null) return 0;
+  let count = 0;
+  for (const match of text.matchAll(pattern)) {
+    const initial = match[0].charAt(0);
+    if (initial !== initial.toLowerCase()) count += 1;
+  }
+  return count;
+}
+
+// --- Provenance --------------------------------------------------------------
+
+/**
+ * The first line of an imported note's transcript: where it came from, down
+ * to the messages, so the origin of an imported note is always answerable and
+ * a second run can tell what the first one already wrote.
+ */
+export function provenanceLine(input: {
+  readonly conversationId: string;
+  readonly title: string;
+  readonly session: number;
+  readonly sessions: number;
+  readonly recordedAt: string | null;
+  readonly source: ImportNoteSource;
+  readonly messageIds: readonly string[];
+  readonly attachments: number;
+}): string {
+  const title = input.title.replace(/\s+/g, ' ').trim();
+  const name = title === '' ? 'an untitled conversation' : `"${title}"`;
+  const when = input.recordedAt === null ? '' : `, recorded ${input.recordedAt.slice(0, 10)}`;
+  const from = input.source === 'assistant' ? "Claude's last reply" : 'your own messages';
+  const files =
+    input.attachments === 0
+      ? ''
+      : `; ${String(input.attachments)} attached ${input.attachments === 1 ? 'file' : 'files'} not imported`;
+  return (
+    `[Imported from Claude conversation ${name} (${input.conversationId}), ` +
+    `session ${String(input.session)} of ${String(input.sessions)}${when}; ` +
+    `note from ${from}${files}; messages: ${input.messageIds.join(' ')}]`
+  );
+}
+
+/** What earlier runs imported, read back from their transcripts' first lines. */
+export interface ImportedKeys {
+  /** Session keys (message ids) already imported. */
+  readonly messages: ReadonlySet<string>;
+  /** Conversations imported whole by the first version of this importer, which kept no message ids. */
+  readonly conversations: ReadonlySet<string>;
+  /** The patient each previously imported conversation landed on, so a re-run keeps adding to them. */
+  readonly patients: ReadonlyMap<string, string>;
+}
+
+export function importedKeys(
+  transcripts: Iterable<{ readonly raw_text: string; readonly patient_id: string }>,
+): ImportedKeys {
+  const messages = new Set<string>();
+  const conversations = new Set<string>();
+  const patients = new Map<string, string>();
+  for (const { raw_text: raw, patient_id: patientId } of transcripts) {
+    const line = raw.split('\n', 1)[0] ?? '';
+    const conversation =
+      /^\[Imported from Claude conversation (?:".*"|an untitled conversation) \(([^()\s]+)\)/.exec(line)?.[1];
+    if (conversation === undefined) continue;
+    patients.set(conversation, patientId);
+    const listed = /; messages: ([^\]]*)\]$/.exec(line)?.[1];
+    if (listed === undefined) conversations.add(conversation);
+    else for (const id of listed.split(' ')) if (id !== '') messages.add(id);
+  }
+  return { messages, conversations, patients };
+}
+
+// --- Is this a patient's conversation? -------------------------------------------
+
+/**
+ * A patient qualifies when she has seen them since the cutoff: at least one
+ * session of theirs has a message on or after that day (UTC). The cutoff picks
+ * *patients*, not sessions — a qualifying patient is imported with every
+ * session, however old.
+ */
+export function activeSince(turns: readonly RawTurn[], cutoff: string): boolean {
+  return turns.some((turn) => turn.at !== null && turn.at.slice(0, 10) >= cutoff);
 }
 
 /**
- * Words that are capitalised for reasons other than being someone's name.
- * Short, and only what shows up in a therapist's notes: a longer list would
- * start deciding who is a person, which is her call.
+ * Her patients are each one long conversation she comes back to after every
+ * session; a chat about anything else is almost always one sitting. Fewer
+ * sessions than this is not a patient's history.
+ */
+export const MIN_SESSIONS = 2;
+
+/**
+ * Headings a clinical note is written under, beyond the practice's own
+ * formats (read from the database at import time). Matched as the start of a
+ * heading line, case-insensitively, so "Presenting concerns" and "Risk
+ * assessment" count. Short on purpose: each entry is a word Claude puts at
+ * the head of a section in a therapy note, not one that merely occurs in one.
+ */
+export const COMMON_NOTE_HEADINGS: readonly string[] = [
+  'Subjective',
+  'Objective',
+  'Assessment',
+  'Plan',
+  'Data',
+  'Presenting',
+  'Mental status',
+  'Mental state',
+  'MSE',
+  'Risk',
+  'Safety',
+  'Interventions',
+  'Intervention',
+  'Session summary',
+  'Summary of session',
+  'Progress',
+  'Response to',
+  'Goals',
+  'Treatment plan',
+  'Formulation',
+  'Observations',
+  'Clinical impression',
+  'Diagnosis',
+  'Homework',
+  'Next session',
+  'Follow-up',
+  'Themes',
+];
+
+/** A reply is note-shaped when it has at least this many distinct headings… */
+export const MIN_HEADINGS_PER_REPLY = 2;
+/** …and a conversation is clinical when at least this many of its sessions have a note-shaped reply. */
+export const MIN_CLINICAL_SESSIONS = 2;
+
+/**
+ * The distinct known headings in a reply. A heading is a line that starts
+ * with one — after optional Markdown `#`s, bold markers or a list bullet —
+ * and then ends, or goes on with a colon or dash. "Plan: continue weekly"
+ * is a heading; "We talked about her plan to move" is not.
+ */
+export function noteHeadings(text: string, headings: readonly string[]): Set<string> {
+  const found = new Set<string>();
+  for (const raw of text.split('\n')) {
+    const line = raw
+      .trim()
+      .replace(/^(?:#{1,6}\s*|[-*•]\s+)?/, '')
+      .replace(/^(?:\*\*|__)/, '')
+      .trim();
+    if (line === '') continue;
+    for (const heading of headings) {
+      const escaped = heading.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (escaped === '') continue;
+      // The heading, then optionally a few more words of heading, then the end of the line or a separator.
+      const pattern = new RegExp(
+        `^${escaped}(?![\\p{L}\\p{N}])(?:[\\p{L}\\p{N} /&()'-]{0,40}?)(?:\\*\\*|__)?\\s*(?:$|[:–—-])`,
+        'iu',
+      );
+      if (pattern.test(line)) found.add(heading.toLowerCase());
+    }
+  }
+  return found;
+}
+
+/** Claude's replies look like clinical notes, in at least `MIN_CLINICAL_SESSIONS` sessions. */
+export function looksClinical(
+  sessions: readonly (readonly RawTurn[])[],
+  headings: readonly string[],
+): boolean {
+  let shaped = 0;
+  for (const session of sessions) {
+    const noteLike = session.some(
+      (turn) => turn.role === 'assistant' && noteHeadings(turn.text, headings).size >= MIN_HEADINGS_PER_REPLY,
+    );
+    if (noteLike) shaped += 1;
+  }
+  return shaped >= MIN_CLINICAL_SESSIONS;
+}
+
+/**
+ * Words that start a title for reasons other than being someone's name. The
+ * title's first capitalised word that is none of these, and is mentioned in
+ * the conversation itself, is the guessed name. Anything this list misses is
+ * caught by the other tests, flagged "name guessed — check", and one untick
+ * away in the summary.
  */
 const NOT_A_NAME = new Set([
+  // Title words.
+  'session',
+  'sessions',
+  'note',
+  'notes',
+  'patient',
+  'patients',
+  'client',
+  'clients',
+  'therapy',
+  'therapist',
+  'counselling',
+  'counseling',
+  'progress',
+  'clinical',
+  'draft',
+  'drafts',
+  'summary',
+  'update',
+  'updates',
+  'follow',
+  'followup',
+  'case',
+  'weekly',
+  'intake',
+  'initial',
+  'assessment',
+  'plan',
+  'treatment',
+  'review',
+  'report',
+  'letter',
+  'referral',
+  'supervision',
+  'soap',
+  'dap',
+  'birp',
+  'girp',
+  'mse',
+  'cbt',
+  'dbt',
+  'act',
+  'emdr',
+  'ifs',
+  'writing',
+  'write',
+  'chat',
+  'conversation',
+  'untitled',
+  'new',
+  'help',
+  'question',
+  'questions',
+  'ideas',
+  'template',
+  'format',
+  'discussion',
+  // Clinical topics that head a title.
+  'anxiety',
+  'depression',
+  'trauma',
+  'grief',
+  'couples',
+  'couple',
+  'family',
+  'child',
+  'teen',
+  'adolescent',
+  'anger',
+  'panic',
+  'sleep',
+  'stress',
+  'mental',
+  'health',
+  'risk',
+  'safety',
+  'mood',
+  // Function words.
+  'the',
+  'a',
+  'an',
+  'my',
+  'our',
+  'your',
+  'for',
+  'with',
+  'about',
+  'and',
+  'of',
+  're',
+  'on',
+  'to',
+  'in',
+  'from',
+  'how',
+  'what',
+  'why',
+  'can',
+  'i',
+  'we',
+  'this',
+  'next',
+  'last',
+  'first',
+  'second',
+  // Calendar.
   'january',
   'february',
   'march',
@@ -261,6 +667,18 @@ const NOT_A_NAME = new Set([
   'october',
   'november',
   'december',
+  'jan',
+  'feb',
+  'mar',
+  'apr',
+  'jun',
+  'jul',
+  'aug',
+  'sep',
+  'sept',
+  'oct',
+  'nov',
+  'dec',
   'monday',
   'tuesday',
   'wednesday',
@@ -268,121 +686,315 @@ const NOT_A_NAME = new Set([
   'friday',
   'saturday',
   'sunday',
+  'today',
+  'tomorrow',
+  'yesterday',
+  'week',
+  'month',
+  // Names that are not people.
   'claude',
   'apunta',
   'chatgpt',
-  'ok',
-  'okay',
-  'yes',
-  'no',
-  'thanks',
-  'thank',
-  'please',
-  'hi',
-  'hello',
-  'subjective',
-  'objective',
-  'assessment',
-  'plan',
-  'discussion',
-  'risk',
-  'intervention',
-  'session',
-  'location',
-  'client',
-  'patient',
-  'note',
-  'notes',
-  'summary',
-  'cbt',
-  'dbt',
-  'act',
-  'emdr',
-  'gad',
-  'phq',
+  'halaxy',
 ]);
 
-interface Mention {
-  count: number;
-  midSentence: boolean;
-  conversations: Set<string>;
+/**
+ * A patient name from the conversation's title, or null when it cannot be
+ * told with confidence: the first word that starts with a capital, is a
+ * word (letters, an inner hyphen or apostrophe), is not on the list above,
+ * and is itself mentioned in the conversation — a title Claude generated
+ * from her first message names someone who is in it.
+ */
+export function nameFromTitle(title: string, text: string): string | null {
+  for (const raw of title.split(/[\s,.;:!?()[\]{}"/|–—]+/)) {
+    const word = raw.replace(/['’]s$/u, '').replace(/^[-'’]+|[-'’]+$/gu, '');
+    if (!/^\p{Lu}[\p{Ll}\p{Lu}]*(?:[-'’]\p{L}+)*$/u.test(word)) continue;
+    if (word.length < 2 || NOT_A_NAME.has(word.toLowerCase())) continue;
+    if (/^\p{Lu}+$/u.test(word) && word.length > 1) continue; // an acronym, not a name
+    return countMentions(text, mentionPattern(word, [word])) > 0 ? word : null;
+  }
+  return null;
+}
+
+// --- The plan ------------------------------------------------------------------
+
+export interface KnownPatient {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface ImportOptions {
+  /** Her optional list: names to confirm and spell with, never a restriction. */
+  readonly names: readonly string[];
+  /** Every patient already in Apunta, archived or not. */
+  readonly existing: readonly KnownPatient[];
+  readonly imported: ImportedKeys;
+  readonly source: ImportNoteSource;
+  /** `YYYY-MM-DD`: import patients with a session on or after this day. */
+  readonly cutoff: string;
+  /** The practice's format section names; `COMMON_NOTE_HEADINGS` are always added. */
+  readonly headings: readonly string[];
+  /** Patient keys she unticked in the summary. */
+  readonly exclude?: ReadonlySet<string>;
+}
+
+export interface PlannedNote {
+  /** Index into the report's `patients`. */
+  readonly patient: number;
+  readonly recordedAt: string | null;
+  readonly body: string;
+  readonly provenance: string;
+}
+
+export interface ImportPlan {
+  readonly report: Omit<ClaudeImportReport, 'batch_id'>;
+  readonly notes: readonly PlannedNote[];
+}
+
+interface Qualified {
+  readonly conversation: RawConversation;
+  readonly sessions: readonly RawTurn[][];
+  readonly name: {
+    readonly source: ImportNameSource;
+    readonly value: string;
+    readonly patientId: string | null;
+  };
 }
 
 /**
- * People the conversations may be about, most trustworthy first.
+ * Everything the import would write, computed without writing: the preview
+ * shows it, the run writes exactly it. Deterministic in its inputs, so the
+ * summary she glanced at before pressing the button is what the button does.
  *
- * Patients she has already entered come first, matched by name. Then
- * recurring proper nouns: a capitalised word seen at least twice, at least
- * once somewhere other than the start of a sentence (where every word is
- * capitalised), that is not on the short list above. A two-word name
- * absorbs its first name, so "John Smith" is offered once, not as "John"
- * and "Smith" as well.
+ * A conversation is imported only when it clears every test, in this order,
+ * and the first it fails is the reason reported: activity since the cutoff,
+ * at least `MIN_SESSIONS` sessions, Claude's replies shaped like notes, and
+ * a confident name. A conversation imported by an earlier run keeps its
+ * patient; otherwise the name comes from her list (see `assignConversation`),
+ * falling back to the title (see `nameFromTitle`).
  */
-export function findCandidates(
-  conversations: readonly RawConversation[],
-  known: readonly KnownPatient[],
-): ImportCandidate[] {
-  const texts = conversations.map((c) => ({ id: c.id, text: `${c.title}\n${humanText(c)}` }));
-  const candidates: ImportCandidate[] = [];
-  const taken = new Set<string>();
-
-  for (const patient of known) {
-    const matched = texts.filter((t) => mentions(t.text, patient.name));
-    if (matched.length === 0) continue;
-    candidates.push({ name: patient.name, conversations: matched.length, patient_id: patient.id });
-    taken.add(patient.name.toLowerCase());
-    for (const part of patient.name.toLowerCase().split(/\s+/)) taken.add(part);
+export function planImport(read: ReadExport, options: ImportOptions): ImportPlan {
+  const headings = [
+    ...new Set([...options.headings, ...COMMON_NOTE_HEADINGS].map((h) => h.trim()).filter(Boolean)),
+  ];
+  const existingById = new Map(options.existing.map((patient) => [patient.id, patient]));
+  const existingByName = new Map<string, KnownPatient>();
+  for (const patient of options.existing) {
+    const key = patient.name.trim().toLowerCase();
+    if (!existingByName.has(key)) existingByName.set(key, patient);
   }
 
-  const singles = new Map<string, Mention>();
-  const pairs = new Map<string, Mention>();
-  for (const { id, text } of texts) {
-    // Titles and turns are separate sentences; a line break ends one too.
-    const pattern = /(^|[^\p{L}\p{N}'])([A-Z][a-z]{2,})(?:'s)?(?:\s+([A-Z][a-z]{2,})(?:'s)?)?/gmu;
-    for (const match of text.matchAll(pattern)) {
-      const before = match[1] ?? '';
-      const start = match.index ?? 0;
-      const preceding = text.slice(0, start + before.length).replace(/\s+$/, '');
-      const midSentence = preceding !== '' && !/[.!?:\n]$/.test(preceding);
-      const first = match[2] ?? '';
-      const second = match[3];
-      tally(singles, first, id, midSentence);
-      if (second !== undefined && !NOT_A_NAME.has(second.toLowerCase()))
-        tally(pairs, `${first} ${second}`, id, midSentence);
+  const skipped: ImportSkippedConversation[] = [];
+  const qualified: Qualified[] = [];
+  let abandoned = 0;
+  const dates: string[] = [];
+
+  for (const conversation of read.conversations) {
+    abandoned += conversation.abandoned;
+    const first = conversation.turns.find((turn) => turn.at !== null)?.at ?? conversation.createdAt;
+    const last = conversation.turns.findLast((turn) => turn.at !== null)?.at ?? first;
+    if (first !== null) dates.push(first);
+    if (last !== null) dates.push(last);
+    const sessions = splitSessions(conversation.turns);
+    const skip = (reason: ImportSkipReason): void => {
+      skipped.push({
+        reason,
+        recorded_at: first,
+        last_at: last,
+        messages: conversation.turns.filter((turn) => turn.text !== '').length,
+        sessions: sessions.length,
+      });
+    };
+
+    if (!activeSince(conversation.turns, options.cutoff)) {
+      skip('before_cutoff');
+      continue;
     }
+    if (sessions.length < MIN_SESSIONS) {
+      skip('single_session');
+      continue;
+    }
+    if (!looksClinical(sessions, headings)) {
+      skip('not_clinical');
+      continue;
+    }
+
+    const previous = options.imported.patients.get(conversation.id);
+    const previousPatient = previous === undefined ? undefined : existingById.get(previous);
+    if (previousPatient !== undefined) {
+      qualified.push({
+        conversation,
+        sessions,
+        name: { source: 'previous', value: previousPatient.name, patientId: previousPatient.id },
+      });
+      continue;
+    }
+
+    const listed = assignConversation(conversation, options.names);
+    if (listed.kind === 'assigned') {
+      const value = options.names[listed.patient] as string;
+      const match = existingByName.get(value.toLowerCase());
+      qualified.push({
+        conversation,
+        sessions,
+        name: { source: 'list', value: match?.name ?? value, patientId: match?.id ?? null },
+      });
+      continue;
+    }
+    if (listed.reason === 'ambiguous') {
+      skip('ambiguous');
+      continue;
+    }
+    const guessed = nameFromTitle(conversation.title, conversation.turns.map((turn) => turn.text).join('\n'));
+    if (guessed === null) {
+      skip('no_name');
+      continue;
+    }
+    qualified.push({ conversation, sessions, name: { source: 'title', value: guessed, patientId: null } });
   }
 
-  const offered: { name: string; conversations: number }[] = [];
-  for (const [name, mention] of pairs) {
-    const [first = ''] = name.split(' ');
-    const alone = singles.get(first);
-    const count = mention.count + (alone?.count ?? 0);
-    const mid = mention.midSentence || (alone?.midSentence ?? false);
-    const seen = new Set([...mention.conversations, ...(alone?.conversations ?? [])]);
-    if (count < 2 || !mid || NOT_A_NAME.has(first.toLowerCase())) continue;
-    if (taken.has(name.toLowerCase()) || taken.has(first.toLowerCase())) continue;
-    offered.push({ name, conversations: seen.size });
-    taken.add(name.toLowerCase());
-    taken.add(first.toLowerCase());
-    for (const part of name.toLowerCase().split(' ')) taken.add(part);
-  }
-  for (const [name, mention] of singles) {
-    if (mention.count < 2 || !mention.midSentence || NOT_A_NAME.has(name.toLowerCase())) continue;
-    if (taken.has(name.toLowerCase())) continue;
-    offered.push({ name, conversations: mention.conversations.size });
-    taken.add(name.toLowerCase());
+  // One patient per list name or existing patient; one per conversation for a guess. Two
+  // conversations guessing the same name are not merged: each gets a numbered suffix, and
+  // both are flagged — and an existing patient of that name is not assumed to be either.
+  const guessCounts = new Map<string, number>();
+  for (const { name } of qualified)
+    if (name.source === 'title')
+      guessCounts.set(name.value.toLowerCase(), (guessCounts.get(name.value.toLowerCase()) ?? 0) + 1);
+  const guessSeen = new Map<string, number>();
+
+  const patients: ImportPatientPlan[] = [];
+  const patientIndex = new Map<string, number>();
+  const notes: PlannedNote[] = [];
+  let alreadyImported = 0;
+  let withoutBody = 0;
+  let attachments = 0;
+  const matchedNames = new Set<string>();
+
+  for (const { conversation, sessions, name } of qualified) {
+    matchedNames.add(name.value.toLowerCase());
+    let key: string;
+    let plan: Omit<ImportPatientPlan, 'conversations' | 'notes'>;
+    if (name.source === 'title') {
+      const lower = name.value.toLowerCase();
+      const clashes = (guessCounts.get(lower) ?? 0) > 1;
+      const existing = clashes ? undefined : existingByName.get(lower);
+      key = `title:${conversation.id}`;
+      if (existing !== undefined) {
+        plan = { key, name: existing.name, source: 'existing', patient_id: existing.id, name_guessed: false };
+      } else {
+        const n = (guessSeen.get(lower) ?? 0) + 1;
+        guessSeen.set(lower, n);
+        plan = {
+          key,
+          name: clashes ? `${name.value} (${String(n)})` : name.value,
+          source: 'title',
+          patient_id: null,
+          name_guessed: true,
+        };
+      }
+    } else {
+      key = name.patientId !== null ? `patient:${name.patientId}` : `list:${name.value.toLowerCase()}`;
+      plan = { key, name: name.value, source: name.source, patient_id: name.patientId, name_guessed: false };
+    }
+
+    if (options.exclude?.has(key) === true) {
+      const first = conversation.turns.find((turn) => turn.at !== null)?.at ?? conversation.createdAt;
+      skipped.push({
+        reason: 'excluded',
+        recorded_at: first,
+        last_at: conversation.turns.findLast((turn) => turn.at !== null)?.at ?? first,
+        messages: conversation.turns.filter((turn) => turn.text !== '').length,
+        sessions: sessions.length,
+      });
+      continue;
+    }
+
+    let index = patientIndex.get(key);
+    if (index === undefined) {
+      index = patients.length;
+      patientIndex.set(key, index);
+      patients.push({ ...plan, conversations: 0, notes: 0 });
+    }
+    const patient = patients[index] as ImportPatientPlan;
+    patient.conversations += 1;
+
+    sessions.forEach((session, at) => {
+      const ids = session.flatMap((turn) => (turn.id === null ? [] : [turn.id]));
+      const recordedAt =
+        session.find((turn) => turn.at !== null)?.at ?? (at === 0 ? conversation.createdAt : null);
+      const keys = ids.length > 0 ? ids : [`${conversation.id}@${String(at + 1)}`];
+      if (
+        options.imported.conversations.has(conversation.id) ||
+        keys.some((id) => options.imported.messages.has(id))
+      ) {
+        alreadyImported += 1;
+        return;
+      }
+      const body = sessionBody(session, options.source);
+      if (body === '') {
+        withoutBody += 1;
+        return;
+      }
+      const files = session.reduce((sum, turn) => sum + turn.attachments, 0);
+      attachments += files;
+      patient.notes += 1;
+      notes.push({
+        patient: index,
+        recordedAt,
+        body,
+        provenance: provenanceLine({
+          conversationId: conversation.id,
+          title: conversation.title,
+          session: at + 1,
+          sessions: sessions.length,
+          recordedAt,
+          source: options.source,
+          messageIds: keys,
+          attachments: files,
+        }),
+      });
+    });
   }
 
-  offered.sort((a, b) => b.conversations - a.conversations || a.name.localeCompare(b.name));
-  return [...candidates, ...offered.map((o) => ({ ...o, patient_id: null }))];
+  // A patient with nothing new to write is not created, and not shown as if it were.
+  const shown = patients.filter((patient) => patient.notes > 0);
+  const renumber = new Map(shown.map((patient) => [patients.indexOf(patient), shown.indexOf(patient)]));
+
+  dates.sort();
+  skipped.sort((a, b) => (a.recorded_at ?? '').localeCompare(b.recorded_at ?? ''));
+  return {
+    notes: notes.map((note) => ({ ...note, patient: renumber.get(note.patient) as number })),
+    report: {
+      source: options.source,
+      cutoff: options.cutoff,
+      patients: shown,
+      patients_to_create: shown.filter((patient) => patient.patient_id === null).length,
+      notes: notes.length,
+      unmatched_names: options.names.filter((name) => !matchedNames.has(name.toLowerCase())),
+      already_imported: alreadyImported,
+      sessions_without_body: withoutBody,
+      skipped,
+      totals: {
+        conversations: read.conversations.length + read.skipped,
+        messages: read.messages,
+        unreadable: read.skipped,
+        abandoned,
+        attachments,
+      },
+      date_range: { from: dates[0] ?? null, to: dates.at(-1) ?? null },
+    },
+  };
 }
 
-function tally(map: Map<string, Mention>, name: string, conversationId: string, midSentence: boolean): void {
-  const entry = map.get(name) ?? { count: 0, midSentence: false, conversations: new Set<string>() };
-  entry.count += 1;
-  entry.midSentence = entry.midSentence || midSentence;
-  entry.conversations.add(conversationId);
-  map.set(name, entry);
+/**
+ * The note, verbatim: Claude's last reply in the session (her latest accepted
+ * revision), or her own messages in order. Nothing is stripped or rewritten —
+ * she edits the draft in Apunta like any other.
+ */
+export function sessionBody(session: readonly RawTurn[], source: ImportNoteSource): string {
+  const side = session.filter((turn) => turn.role === source && turn.text !== '');
+  if (source === 'assistant') return side.at(-1)?.text ?? '';
+  return side.map((turn) => turn.text).join('\n\n');
 }
 
 // --- Small helpers -----------------------------------------------------------

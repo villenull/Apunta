@@ -1,0 +1,621 @@
+[
+  {
+    "uuid": "conv-john",
+    "name": "John — session notes",
+    "summary": "",
+    "created_at": "2026-05-12T17:00:00Z",
+    "updated_at": "2026-07-14T17:06:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "john-01",
+        "text": "Session with John today. Sleep about five hours, intrusive thoughts most days. Started grounding.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Session with John today. Sleep about five hours, intrusive thoughts most days. Started grounding."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-05-12T17:00:00Z",
+        "updated_at": "2026-05-12T17:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "john-02",
+        "text": "**Subjective:** John reports sleeping about five hours.\n\n**Assessment:** Ongoing intrusive thoughts.\n\n**Plan:** Weekly; grounding practice.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** John reports sleeping about five hours.\n\n**Assessment:** Ongoing intrusive thoughts.\n\n**Plan:** Weekly; grounding practice."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-05-12T17:01:00Z",
+        "updated_at": "2026-05-12T17:01:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "john-01"
+      },
+      {
+        "uuid": "john-03",
+        "text": "John again. Sleep six hours now. Fewer intrusive thoughts.",
+        "content": [
+          {
+            "type": "text",
+            "text": "John again. Sleep six hours now. Fewer intrusive thoughts."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-06-09T17:00:00Z",
+        "updated_at": "2026-06-09T17:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "john-02"
+      },
+      {
+        "uuid": "john-04a",
+        "text": "**Subjective:** ABANDONED DRAFT about John.\n\n**Plan:** Weekly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** ABANDONED DRAFT about John.\n\n**Plan:** Weekly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-06-09T17:01:00Z",
+        "updated_at": "2026-06-09T17:01:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "john-03"
+      },
+      {
+        "uuid": "john-04b",
+        "text": "**Subjective:** John reports sleeping six hours.\n\n**Assessment:** Intrusive thoughts reduced.\n\n**Plan:** Continue weekly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** John reports sleeping six hours.\n\n**Assessment:** Intrusive thoughts reduced.\n\n**Plan:** Continue weekly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-06-09T17:03:00Z",
+        "updated_at": "2026-06-09T17:03:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "john-03"
+      },
+      {
+        "uuid": "john-05",
+        "text": "John, first session after the break. Sleep steady. Worksheet attached.",
+        "content": [
+          {
+            "type": "text",
+            "text": "John, first session after the break. Sleep steady. Worksheet attached."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-14T17:00:00Z",
+        "updated_at": "2026-07-14T17:00:00Z",
+        "attachments": [
+          {
+            "file_name": "worksheet.txt",
+            "file_size": 120,
+            "file_type": "txt",
+            "extracted_content": "Grounding worksheet for John Smith."
+          }
+        ],
+        "files": [],
+        "parent_message_uuid": "john-04b"
+      },
+      {
+        "uuid": "john-06",
+        "text": "**Subjective:** John reports steady sleep.\n\n**Assessment:** Stable.\n\n**Plan:** Fortnightly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** John reports steady sleep.\n\n**Assessment:** Stable.\n\n**Plan:** Fortnightly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-14T17:02:00Z",
+        "updated_at": "2026-07-14T17:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "john-05"
+      },
+      {
+        "uuid": "john-07",
+        "text": "Shorter please.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Shorter please."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-14T17:05:00Z",
+        "updated_at": "2026-07-14T17:05:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "john-06"
+      },
+      {
+        "uuid": "john-08",
+        "text": "**Subjective:** Sleep steady.\n\n**Plan:** Fortnightly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Sleep steady.\n\n**Plan:** Fortnightly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-14T17:06:00Z",
+        "updated_at": "2026-07-14T17:06:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "john-07"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-maria-a",
+    "name": "Maria",
+    "summary": "",
+    "created_at": "2026-07-02T10:00:00Z",
+    "updated_at": "2026-07-09T10:02:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "ma-01",
+        "text": "Maria today: low mood, work stress, no safety concerns.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Maria today: low mood, work stress, no safety concerns."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-02T10:00:00Z",
+        "updated_at": "2026-07-02T10:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "ma-02",
+        "text": "**Presenting concerns:** Maria describes low mood.\n\n**Risk:** No safety concerns.\n\n**Interventions:** Behavioural activation.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Presenting concerns:** Maria describes low mood.\n\n**Risk:** No safety concerns.\n\n**Interventions:** Behavioural activation."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-02T10:02:00Z",
+        "updated_at": "2026-07-02T10:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "ma-01"
+      },
+      {
+        "uuid": "ma-03",
+        "text": "Maria follow-up, mood lifting.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Maria follow-up, mood lifting."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-09T10:00:00Z",
+        "updated_at": "2026-07-09T10:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "ma-02"
+      },
+      {
+        "uuid": "ma-04",
+        "text": "**Presenting concerns:** Maria reports mood lifting.\n\n**Risk:** None reported.\n\n**Interventions:** Activity scheduling.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Presenting concerns:** Maria reports mood lifting.\n\n**Risk:** None reported.\n\n**Interventions:** Activity scheduling."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-09T10:02:00Z",
+        "updated_at": "2026-07-09T10:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "ma-03"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-maria-b",
+    "name": "Maria — couples work",
+    "summary": "",
+    "created_at": "2026-07-03T15:00:00Z",
+    "updated_at": "2026-07-17T15:02:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "mb-01",
+        "text": "Maria and her partner, first joint session.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Maria and her partner, first joint session."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-03T15:00:00Z",
+        "updated_at": "2026-07-03T15:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "mb-02",
+        "text": "**Subjective:** Maria and partner describe conflict.\n\n**Assessment:** Communication difficulties.\n\n**Plan:** Fortnightly joint sessions.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Maria and partner describe conflict.\n\n**Assessment:** Communication difficulties.\n\n**Plan:** Fortnightly joint sessions."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-03T15:02:00Z",
+        "updated_at": "2026-07-03T15:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "mb-01"
+      },
+      {
+        "uuid": "mb-03",
+        "text": "Maria and partner again.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Maria and partner again."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-17T15:00:00Z",
+        "updated_at": "2026-07-17T15:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "mb-02"
+      },
+      {
+        "uuid": "mb-04",
+        "text": "**Subjective:** Maria reports fewer arguments.\n\n**Assessment:** Improving.\n\n**Plan:** Continue.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Maria reports fewer arguments.\n\n**Assessment:** Improving.\n\n**Plan:** Continue."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-17T15:02:00Z",
+        "updated_at": "2026-07-17T15:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "mb-03"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-garden",
+    "name": "Garden planning with Emily",
+    "summary": "",
+    "created_at": "2026-07-05T09:00:00Z",
+    "updated_at": "2026-08-01T09:01:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "g-01",
+        "text": "Emily wants tomatoes and basil this year. What should we plant in July?",
+        "content": [
+          {
+            "type": "text",
+            "text": "Emily wants tomatoes and basil this year. What should we plant in July?"
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-05T09:00:00Z",
+        "updated_at": "2026-07-05T09:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "g-02",
+        "text": "Tomatoes, basil and beans all do well. Water in the morning.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Tomatoes, basil and beans all do well. Water in the morning."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-05T09:01:00Z",
+        "updated_at": "2026-07-05T09:01:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "g-01"
+      },
+      {
+        "uuid": "g-03",
+        "text": "Emily says the basil is wilting.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Emily says the basil is wilting."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-12T09:00:00Z",
+        "updated_at": "2026-07-12T09:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "g-02"
+      },
+      {
+        "uuid": "g-04",
+        "text": "Plan: move it to partial shade and water less often.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Plan: move it to partial shade and water less often."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-12T09:01:00Z",
+        "updated_at": "2026-07-12T09:01:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "g-03"
+      },
+      {
+        "uuid": "g-05",
+        "text": "Emily picked the first tomatoes today.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Emily picked the first tomatoes today."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-08-01T09:00:00Z",
+        "updated_at": "2026-08-01T09:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "g-04"
+      },
+      {
+        "uuid": "g-06",
+        "text": "Lovely. Pick them when they are fully red.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Lovely. Pick them when they are fully red."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-08-01T09:01:00Z",
+        "updated_at": "2026-08-01T09:01:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "g-05"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-ana",
+    "name": "Ana Torres intake",
+    "summary": "",
+    "created_at": "2026-07-20T11:00:00Z",
+    "updated_at": "2026-07-20T11:02:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "a-01",
+        "text": "Intake for Ana Torres today.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Intake for Ana Torres today."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-20T11:00:00Z",
+        "updated_at": "2026-07-20T11:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "a-02",
+        "text": "**Subjective:** Ana reports anxiety.\n\n**Assessment:** Generalised anxiety.\n\n**Plan:** Weekly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Ana reports anxiety.\n\n**Assessment:** Generalised anxiety.\n\n**Plan:** Weekly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-20T11:02:00Z",
+        "updated_at": "2026-07-20T11:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "a-01"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-noname",
+    "name": "Session notes",
+    "summary": "",
+    "created_at": "2026-07-06T13:00:00Z",
+    "updated_at": "2026-07-13T13:02:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "n-01",
+        "text": "The client came in late today.",
+        "content": [
+          {
+            "type": "text",
+            "text": "The client came in late today."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-06T13:00:00Z",
+        "updated_at": "2026-07-06T13:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "n-02",
+        "text": "**Subjective:** Client reports a hard week.\n\n**Assessment:** Stable.\n\n**Plan:** Weekly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Client reports a hard week.\n\n**Assessment:** Stable.\n\n**Plan:** Weekly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-06T13:02:00Z",
+        "updated_at": "2026-07-06T13:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "n-01"
+      },
+      {
+        "uuid": "n-03",
+        "text": "Same client, next week.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Same client, next week."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-07-13T13:00:00Z",
+        "updated_at": "2026-07-13T13:00:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "n-02"
+      },
+      {
+        "uuid": "n-04",
+        "text": "**Subjective:** Client reports a better week.\n\n**Assessment:** Improving.\n\n**Plan:** Weekly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Client reports a better week.\n\n**Assessment:** Improving.\n\n**Plan:** Weekly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-07-13T13:02:00Z",
+        "updated_at": "2026-07-13T13:02:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "n-03"
+      }
+    ]
+  },
+  {
+    "uuid": "conv-jane",
+    "name": "Jane Doe",
+    "summary": "",
+    "created_at": "2026-03-11T09:40:00Z",
+    "updated_at": "2026-03-18T09:42:00Z",
+    "account": {
+      "uuid": "acct-0000"
+    },
+    "chat_messages": [
+      {
+        "uuid": "j-01",
+        "text": "Jane Doe, phone check-in.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Jane Doe, phone check-in."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-03-11T09:40:00Z",
+        "updated_at": "2026-03-11T09:40:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "00000000-0000-4000-8000-000000000000"
+      },
+      {
+        "uuid": "j-02",
+        "text": "**Subjective:** Jane reports work stress.\n\n**Risk:** None.\n\n**Plan:** Next week.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Jane reports work stress.\n\n**Risk:** None.\n\n**Plan:** Next week."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-03-11T09:42:00Z",
+        "updated_at": "2026-03-11T09:42:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "j-01"
+      },
+      {
+        "uuid": "j-03",
+        "text": "Jane Doe, in person.",
+        "content": [
+          {
+            "type": "text",
+            "text": "Jane Doe, in person."
+          }
+        ],
+        "sender": "human",
+        "created_at": "2026-03-18T09:40:00Z",
+        "updated_at": "2026-03-18T09:40:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "j-02"
+      },
+      {
+        "uuid": "j-04",
+        "text": "**Subjective:** Jane reports less stress.\n\n**Risk:** None.\n\n**Plan:** Fortnightly.",
+        "content": [
+          {
+            "type": "text",
+            "text": "**Subjective:** Jane reports less stress.\n\n**Risk:** None.\n\n**Plan:** Fortnightly."
+          }
+        ],
+        "sender": "assistant",
+        "created_at": "2026-03-18T09:42:00Z",
+        "updated_at": "2026-03-18T09:42:00Z",
+        "attachments": [],
+        "files": [],
+        "parent_message_uuid": "j-03"
+      }
+    ]
+  }
+]

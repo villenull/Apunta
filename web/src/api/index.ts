@@ -5,7 +5,8 @@ export { fetchHealth } from './health.js';
 
 export { fetchLicenses } from './licenses.js';
 
-export { acceptClaudeImport, previewClaudeImport } from './import.js';
+export { listImportBatches, previewClaudeImport, runClaudeImport, undoImportBatch } from './import.js';
+export type { ClaudeImportInput } from './import.js';
 
 export {
   cancelRestore,

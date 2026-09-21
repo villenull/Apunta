@@ -9,6 +9,11 @@ export const PatientSchema = z.object({
   identifier: z.string().nullable(),
   created_at: TimestampSchema,
   archived_at: TimestampSchema.nullable(),
+  /**
+   * Created by the Claude import from a conversation title rather than a name
+   * she gave: shown as "name guessed — check" until she saves a name for them.
+   */
+  name_guessed: z.boolean().optional(),
 });
 export type Patient = z.infer<typeof PatientSchema>;
 

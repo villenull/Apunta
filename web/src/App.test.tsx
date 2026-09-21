@@ -167,6 +167,21 @@ describe('workspace', () => {
   });
 });
 
+describe('a patient the Claude import named from a title', () => {
+  it('is flagged in the list until she saves a name for them', async () => {
+    const guessed = makePatient('Ana', { name_guessed: true });
+    installFakeApi({ formats: [progressNote], patients: [guessed] });
+    renderApp('/');
+
+    fireEvent.click(await screen.findByTestId(`check-name-${guessed.id}`));
+    fireEvent.change(screen.getByLabelText('Name for Ana'), { target: { value: 'Ana Torres' } });
+    fireEvent.click(screen.getByTestId(`save-name-${guessed.id}`));
+
+    expect(await screen.findByText('Ana Torres')).toBeDefined();
+    expect(screen.queryByTestId(`check-name-${guessed.id}`)).toBeNull();
+  });
+});
+
 describe('the work around a session', () => {
   beforeEach(() => {
     installFakeApi({
