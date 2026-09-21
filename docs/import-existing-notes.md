@@ -114,11 +114,11 @@ What each imported note looks like:
 - If a session had a file attached, the note says so; the file itself stays
   in Claude.
 
-Patients named from a chat title show **"Name guessed — check"** in your
-patient list. Click it, fix the name if needed, and press **Save name**; the
-mark goes away. If two chats both start with the same name, Apunta does not
-assume they are the same person: you get "Maria (1)" and "Maria (2)", both
-marked, and you rename them.
+Some patients are named from the chat's title, so check the names in your
+patient list. To fix one, hover over the patient, click **Rename**, type the
+name and press **Save**. If two chats both start with the same name, Apunta
+does not assume they are the same person: you get "Maria (1)" and
+"Maria (2)", and you rename them.
 
 Running the import again is safe. Sessions already imported are skipped, so
 nothing is doubled — it only adds sessions that are new since last time, on
@@ -135,7 +135,7 @@ Earlier imports can be undone later from the same screen, under
 - **It does not read the chats as a person would.** A chat about a friend
   that happens to look like clinical notes could be imported, and a real
   patient's chat with an unusual title could be skipped. The summary and
-  the "Name guessed — check" marks are there to catch the first; move the
+  a look down your patient list are there to catch the first; move the
   date or add names to your list to catch the second.
 - **It does not summarise or rewrite anything.** Each note is Claude's reply,
   or your messages, word for word. Edit it in Apunta like any other draft.

@@ -167,18 +167,22 @@ describe('workspace', () => {
   });
 });
 
-describe('a patient the Claude import named from a title', () => {
-  it('is flagged in the list until she saves a name for them', async () => {
+describe('renaming a patient', () => {
+  it('shows no import badge, and renames from the row', async () => {
     const guessed = makePatient('Ana', { name_guessed: true });
     installFakeApi({ formats: [progressNote], patients: [guessed] });
     renderApp('/');
 
-    fireEvent.click(await screen.findByTestId(`check-name-${guessed.id}`));
+    await screen.findByText('Ana');
+    // The owner asked for the "name guessed — check" badge to go (2026-09-21).
+    expect(screen.queryByText(/name guessed/i)).toBeNull();
+
+    fireEvent.click(screen.getByTestId(`rename-${guessed.id}`));
     fireEvent.change(screen.getByLabelText('Name for Ana'), { target: { value: 'Ana Torres' } });
     fireEvent.click(screen.getByTestId(`save-name-${guessed.id}`));
 
     expect(await screen.findByText('Ana Torres')).toBeDefined();
-    expect(screen.queryByTestId(`check-name-${guessed.id}`)).toBeNull();
+    expect(screen.queryByLabelText('Name for Ana Torres')).toBeNull();
   });
 });
 

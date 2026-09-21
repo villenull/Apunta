@@ -149,8 +149,10 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   must have 2+ sessions, note-shaped replies and a confident name (optional
   list, else the title); anything else is skipped and reported by reason,
   date and count only. Every run is an undoable batch, re-runs skip what
-  is already imported, title-guessed names show "Name guessed — check" in
-  the patient list. The real export's shape was probed (one
+  is already imported. Title-guessed names are still flagged in the database
+  (`patients.name_guessed`) but, at the owner's request (2026-09-21), the
+  list no longer shows a badge; any patient can be renamed from the row's
+  hover **Rename** action, which also clears the flag. The real export's shape was probed (one
   `conversations.json`, 508 conversations, the inferred schema holds);
   `npm run probe:claude` now also reports per-conversation size, attachment
   use, branch points and how the 6-hour gap and the cutoff cut the export —
@@ -326,7 +328,7 @@ Every item comes with a full script when it needs his voice.
    passphrase.
 4. **Import dry run** with `e2e/fixtures/claude-export/patient-chats.json`:
    expect 7 notes for John, Maria (1) and Maria (2), four skipped; untick
-   one, import, check "Name guessed — check" in the list, then undo.
+   one, import, rename a guessed patient from the row's **Rename**, then undo.
    The Playwright spec for this was updated but not run (no browsers on
    the partner's PC on 2026-09-21).
 5. **A long recording** (10+ minutes) for the preview's slow-gap mode after

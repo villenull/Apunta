@@ -9,8 +9,8 @@ import { expect, test } from '../support/fixtures';
  *
  * What this proves that the unit tests cannot: the file and the settings go
  * up through the browser's multipart path twice (preview, then run), a
- * patient she unticks is not written, the patients land in the list with a
- * guessed name flagged, and the one-click undo takes the whole run back.
+ * patient she unticks is not written, the patients land in the list, and
+ * the one-click undo takes the whole run back.
  */
 const EXPORT = fileURLToPath(new URL('../fixtures/claude-export/patient-chats.json', import.meta.url));
 

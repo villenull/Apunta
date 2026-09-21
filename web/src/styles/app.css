@@ -2191,18 +2191,32 @@ select:disabled {
   position: relative;
 }
 
-.patient-entry .patient-archive-btn {
+.patient-entry-actions {
   position: absolute;
   right: 10px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  gap: 4px;
   opacity: 0;
+}
+
+.patient-entry-actions .btn {
   background: var(--surface);
 }
 
-.patient-entry:hover .patient-archive-btn,
-.patient-entry:focus-within .patient-archive-btn {
+.patient-entry:hover .patient-entry-actions,
+.patient-entry:focus-within .patient-entry-actions {
   opacity: 1;
+}
+
+.patient-rename {
+  padding: 0 10px 8px;
+}
+
+.patient-rename input {
+  flex: 1;
+  min-width: 0;
 }
 
 .patient-entry.is-archived .list-item .name {
@@ -2313,12 +2327,6 @@ select:disabled {
   transform: translateY(1px);
 }
 
-/* The archive button is centred with a transform; the press composes with it
-   rather than replacing it (which would fling the button to the row's top). */
-.patient-entry .patient-archive-btn:active:not(:disabled) {
-  transform: translateY(calc(-50% + 1px));
-}
-
 /*
  * The capture screen's draft, arriving rather than popping: the progress
  * block and the assembling preview compose the shared entrance from
@@ -2362,10 +2370,6 @@ select:disabled {
   .note-item:active:not(:disabled),
   .col-action-btn:active:not(:disabled) {
     transform: none;
-  }
-
-  .patient-entry .patient-archive-btn:active:not(:disabled) {
-    transform: translateY(-50%);
   }
 
   .draft-progress,

@@ -15,7 +15,10 @@ export interface PatientsColumnProps {
   onRetry: () => void;
   onToggleArchived: (show: boolean) => void;
   onSetArchived: (patient: PatientListItem, archived: boolean) => void;
-  /** Save a name — how she clears a "name guessed — check" flag left by the Claude import. */
+  /**
+   * Save a new name. Imported names may be misspelt; saving also clears the
+   * import's `name_guessed` flag, which the list no longer shows.
+   */
   onRename: (patient: PatientListItem, name: string) => void;
 }
 
@@ -123,7 +126,7 @@ function PatientList({
   onSetArchived,
   onRename,
 }: PatientsColumnProps & { query: string }): React.JSX.Element {
-  const [checking, setChecking] = useState<{ id: string; name: string } | null>(null);
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
 
   if (patients.status === 'loading') return <p className="small state-note">Loading patients…</p>;
 
@@ -175,53 +178,60 @@ function PatientList({
                 </div>
               </div>
             </button>
-            {patient.name_guessed === true && checking?.id !== patient.id && (
-              <button
-                type="button"
-                className="btn small btn-quick"
-                data-testid={`check-name-${patient.id}`}
-                title="The Claude import guessed this name from a conversation title"
-                onClick={() => {
-                  setChecking({ id: patient.id, name: patient.name });
-                }}
-              >
-                Name guessed — check
-              </button>
+            {/* Hover actions, like the prototype's list: renaming is for a name
+                the Claude import misspelt or guessed (owner, 2026-09-21). */}
+            {renaming?.id !== patient.id && (
+              <div className="patient-entry-actions">
+                <button
+                  type="button"
+                  className="btn small btn-quick"
+                  data-testid={`rename-${patient.id}`}
+                  onClick={() => {
+                    setRenaming({ id: patient.id, name: patient.name });
+                  }}
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  className="btn small btn-quick"
+                  data-testid={`archive-${patient.id}`}
+                  onClick={() => {
+                    onSetArchived(patient, !archived);
+                  }}
+                >
+                  {archived ? 'Restore' : 'Archive'}
+                </button>
+              </div>
             )}
-            {checking?.id === patient.id && (
+            {renaming?.id === patient.id && (
               <form
-                className="row gap-8"
+                className="row gap-8 patient-rename"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  const name = checking.name.trim();
+                  const name = renaming.name.trim();
                   if (name === '') return;
-                  onRename(patient, name);
-                  setChecking(null);
+                  if (name !== patient.name || patient.name_guessed === true) onRename(patient, name);
+                  setRenaming(null);
                 }}
               >
                 <input
                   type="text"
-                  value={checking.name}
+                  value={renaming.name}
                   aria-label={`Name for ${patient.name}`}
+                  autoFocus
                   onChange={(event) => {
-                    setChecking({ id: patient.id, name: event.target.value });
+                    setRenaming({ id: patient.id, name: event.target.value });
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') setRenaming(null);
                   }}
                 />
                 <button type="submit" className="btn small" data-testid={`save-name-${patient.id}`}>
-                  Save name
+                  Save
                 </button>
               </form>
             )}
-            <button
-              type="button"
-              className="btn small btn-quick patient-archive-btn"
-              data-testid={`archive-${patient.id}`}
-              onClick={() => {
-                onSetArchived(patient, !archived);
-              }}
-            >
-              {archived ? 'Restore' : 'Archive'}
-            </button>
           </div>
         );
       })}
