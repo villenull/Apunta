@@ -1,7 +1,7 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-08 (source clarification), after the inference-efficiency
-and output-truncation reviews.**
+**Updated 2026-09-20, after the first real `tiny.en` transcripts and the
+decision to keep it (`docs/eval-reports/2026-09-20-tiny-en-clinical-vocabulary.md`).**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -53,8 +53,9 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   Since 2026-09-20 the preview and the note's transcript run on one
   English-only file, `ggml-tiny.en.bin` (~75 MB): dictation here is English
   only, and the preview is not the record, so first run downloads one whisper
-  model instead of two (`docs/decisions.md`, 2026-09-20). That file has not
-  been run against a real whisper binary anywhere yet — see "what is open".
+  model instead of two (`docs/decisions.md`, 2026-09-20). It was measured on
+  real whisper the same day: weak on drug names, kept knowingly. See "What is
+  open".
   `--no-timestamps` was found to drop speech; the transcript path keeps
   timestamps and a punctuated lead-in prompt.
 - **Her seven-section format measured** (`npm run check:format`) and the
@@ -199,8 +200,16 @@ Grouped by what each item waits on.
   and attachment preservation. Apunta has no Halaxy importer; do not build a
   guessed parser or silently drop PDFs/attachments. Use synthetic fixtures
   only after the real format shape is clarified.
-- **Her transcription vocabulary list** (names, medications, terms). When it
-  arrives: `PUT /api/settings` `stt_vocabulary` on the live instance and on
+- **Her transcription vocabulary list** (names, medications, terms):
+  promised, not yet sent, and **now the cheapest mitigation measured** for
+  `tiny.en`, not a nice-to-have. On the 2026-09-20 synthetic test, six prompted
+  terms took exact drug/clinical recall from 1/7 to 3/7 and more than halved
+  WER (14.1% → 6.5%), with no new model and no download
+  (`docs/eval-reports/2026-09-20-tiny-en-clinical-vocabulary.md`). Its limit:
+  the hint is a closed set. `akathisia` was not listed and failed in every
+  arm at every model size, so a term she does not think to list stays wrong.
+  Ask her for the terms she actually says, jargon as well as drug names. When
+  it arrives: `PUT /api/settings` `stt_vocabulary` on the live instance and on
   the config pack (`~/Apunta-config-pack/`, see `docs/MANUAL-VERIFICATION.md`
   §9), then re-cut the pack.
 - **Her first real dictations**, which are the only source allowed to grow
@@ -219,19 +228,21 @@ and the note's transcript; `installer/src/plan.ts` marks the preview step not
 needed when the filenames match, so §7.3's first-run window should list two
 downloads, not three, and count the whisper file once.
 
-**That switch has never been exercised against a real whisper binary** — not on
-her Mac, and not on the Linux test PC. What is verified is the pin (the
-published SHA-1 and Apunta's SHA-256 both match a real 77,704,715-byte copy of
-the file, checked on Linux 2026-09-20) and the unit/installer tests in fake
-mode. No transcription has been produced by `tiny.en` in this project. Also
-unmeasured: **its word-error rate on clinical vocabulary.** `tiny.en` is the
-weakest whisper checkpoint and medication names are Whisper's known weak spot
-(PLAN §2), and no model in this project has ever had its WER measured on her
-terms — so the accuracy cost of dropping from `large-v3-turbo` to `tiny.en` is
-unknown, not small. The `initial_prompt` vocabulary bias is the only knob, and
-her vocabulary list has not arrived. First real dictations decide whether this
-holds; if they do not, the one-line reverse is `WHISPER_MODEL_FILENAME` in
-`shared/src/transcribe.ts` plus the matching `catalog.ts` entry.
+**That switch has now run on the Linux test PC (2026-09-20), never on her
+Mac.** The pin is verified: the published SHA-1 and Apunta's SHA-256 match a
+real 77,704,715-byte copy. The first real `tiny.en` transcripts were measured
+on synthetic TTS audio
+(`docs/eval-reports/2026-09-20-tiny-en-clinical-vocabulary.md`): prose,
+doses and the risk negation came through, but **1 of 7 drug/clinical terms**
+was exact on today's configuration, and the misses are fluent ("Thus, Byron
+15 milligrams" for buspirone). The owner **kept `tiny.en` knowingly**
+(`docs/decisions.md`, 2026-09-20): she is a psychotherapist, not a
+prescriber, and drug names are rare in her notes. Do not "fix" this without
+new evidence from her real dictations. That audio was a clean synthetic
+floor, so her real dictations decide whether the call holds. If it does not,
+the revert path is in the report: `WHISPER_MODEL_FILENAME` in
+`shared/src/transcribe.ts`, the `catalog.ts` entry and its hashes, and the
+setup/preflight scripts.
 
 ### Model-quality work, packet-sized (measure before and after; report in `docs/eval-reports/`)
 
