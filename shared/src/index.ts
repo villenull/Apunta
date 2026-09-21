@@ -430,3 +430,5 @@ export type {
   ImportSkipReason,
   ImportUndoResponse,
 } from './import.js';
+
+export { isLabelText, leadingLabel, MAX_LABEL_CHARS } from './note-labels.js';

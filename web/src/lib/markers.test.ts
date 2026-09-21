@@ -32,9 +32,38 @@ describe('markNoteText', () => {
     expect(marked.map((segment) => segment.text)).toEqual(['Objective:']);
   });
 
-  it('leaves a section header alone when it has a body', () => {
-    const segments = markNoteText('Objective: Alert and engaged.', SECTIONS);
-    expect(segments.every((segment) => segment.kind === 'plain')).toBe(true);
+  it('shows a section header with a body as a label, not as empty', () => {
+    expect(markNoteText('Objective: Alert and engaged.', SECTIONS)).toEqual([
+      { kind: 'label', text: 'Objective:' },
+      { kind: 'plain', text: ' Alert and engaged.' },
+    ]);
+  });
+
+  it('marks a short leading label on any line, after a bullet too', () => {
+    const segments = markNoteText(
+      'Location: Online\nPresentation/MSE: Alert\n- Risk review: None\n  Mood (self-report): 6/10',
+      SECTIONS,
+    );
+    expect(segments.filter((segment) => segment.kind === 'label').map((segment) => segment.text)).toEqual([
+      'Location:',
+      'Presentation/MSE:',
+      'Risk review:',
+      'Mood (self-report):',
+    ]);
+  });
+
+  it('does not mark times, links, sentences or long runs as labels', () => {
+    const lines = [
+      '10:30 session start',
+      'https://example.invalid/sheet',
+      'He said it plainly. Then: nothing more.',
+      'She described the week, which was hard: poor sleep.',
+      'A very long run of words that is far too long to be a label: text',
+      'Ratio:3',
+    ];
+    for (const line of lines) {
+      expect(markNoteText(line, SECTIONS).some((segment) => segment.kind === 'label')).toBe(false);
+    }
   });
 
   it('marks every unclear-dictation flag, keeping the text’s own casing', () => {
@@ -50,14 +79,14 @@ describe('markNoteText', () => {
   });
 
   it('merges adjacent plain runs so the backdrop is not one span per line', () => {
-    const segments = markNoteText('Subjective: One.\nStill one.\nAnd one.', SECTIONS);
+    const segments = markNoteText('One.\nStill one.\nAnd one.', SECTIONS);
     expect(segments).toHaveLength(1);
     expect(segments[0]?.kind).toBe('plain');
   });
 
   it('marks nothing when the format has no sections yet', () => {
     const text = 'Subjective:\n\nPlan:';
-    expect(markNoteText(text, []).every((segment) => segment.kind === 'plain')).toBe(true);
+    expect(markNoteText(text, []).some((segment) => segment.kind === 'empty-section')).toBe(false);
   });
 });
 

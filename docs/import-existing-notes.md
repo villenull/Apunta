@@ -138,7 +138,12 @@ Earlier imports can be undone later from the same screen, under
   a look down your patient list are there to catch the first; move the
   date or add names to your list to catch the second.
 - **It does not summarise or rewrite anything.** Each note is Claude's reply,
-  or your messages, word for word. Edit it in Apunta like any other draft.
+  or your messages, word for word. Only Claude's formatting marks go: no
+  asterisks, `#` or link addresses, so a copy into Halaxy is clean text.
+  A heading or a bold label such as **Location:** becomes a plain
+  `Location:` line, and Apunta shows a short label like that at the start of
+  a line in bold. Bullets become `- `; numbered lists stay as they were.
+  Edit it in Apunta like any other draft.
 - **Attachments and images are not imported.** They are counted and the
   note says so; they stay in Claude.
 - When you edited a message or asked Claude to try again, only the version

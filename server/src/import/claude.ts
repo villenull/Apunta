@@ -7,6 +7,7 @@ import type {
   ImportSkipReason,
 } from '@apunta/shared';
 
+import { plainFromMarkdown } from './markdown.js';
 import { readZip, ZipFormatError } from './zip.js';
 
 /**
@@ -987,14 +988,16 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
 }
 
 /**
- * The note, verbatim: Claude's last reply in the session (her latest accepted
- * revision), or her own messages in order. Nothing is stripped or rewritten —
- * she edits the draft in Apunta like any other.
+ * The note: Claude's last reply in the session (her latest accepted
+ * revision), or her own messages in order. The words are hers or Claude's,
+ * unchanged; only the Markdown around them goes (`markdown.ts`), so the note,
+ * its copy into Halaxy and every prompt it later reaches are plain text.
  */
 export function sessionBody(session: readonly RawTurn[], source: ImportNoteSource): string {
   const side = session.filter((turn) => turn.role === source && turn.text !== '');
-  if (source === 'assistant') return side.at(-1)?.text ?? '';
-  return side.map((turn) => turn.text).join('\n\n');
+  const text =
+    source === 'assistant' ? (side.at(-1)?.text ?? '') : side.map((turn) => turn.text).join('\n\n');
+  return plainFromMarkdown(text);
 }
 
 // --- Small helpers -----------------------------------------------------------

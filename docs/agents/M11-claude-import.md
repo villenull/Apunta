@@ -182,7 +182,8 @@ pasted list. What changed, and what replaced the refusals above:
 - **Body.** Claude's last reply in the session by default — the "per-note
   escape hatch" the open questions anticipated became the default because
   that is how she wrote her notes. Her own messages remain a setting.
-  Verbatim either way; no model.
+  Verbatim either way; no model. Since 2026-09-21 Claude's Markdown is
+  stripped to plain text at import (`server/src/import/markdown.ts`).
 - **Which conversations.** All of: a session on or after the cutoff
   (default 2026-07-01; the qualifying patient's *whole* history comes),
   2+ sessions, note-shaped replies (≥2 headings in ≥2 sessions), and a

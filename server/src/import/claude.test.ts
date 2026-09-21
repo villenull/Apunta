@@ -191,8 +191,12 @@ describe('sessionBody', () => {
     turn('human', 'Shorter please.'),
     turn('assistant', 'Final draft.'),
   ];
-  it("takes Claude's last reply, verbatim", () => {
+  it("takes Claude's last reply", () => {
     expect(sessionBody(session, 'assistant')).toBe('Final draft.');
+  });
+  it('without its Markdown', () => {
+    const styled = [turn('assistant', '## Risk review\n**Location:** Online\n* Continue *weekly*')];
+    expect(sessionBody(styled, 'assistant')).toBe('Risk review:\nLocation: Online\n- Continue weekly');
   });
   it('or her own messages, in order', () => {
     expect(sessionBody(session, 'human')).toBe('Draft a note.\n\nShorter please.');
@@ -356,7 +360,8 @@ describe('planImport', () => {
     expect(john.map((n) => n.recordedAt?.slice(0, 10))).toEqual(['2026-05-12', '2026-06-09', '2026-07-14']);
     // Claude's last reply in each session, the live branch, verbatim.
     expect(john[1]?.body).toContain('John reports sleeping six hours.');
-    expect(john[2]?.body).toBe('**Subjective:** Sleep steady.\n\n**Plan:** Fortnightly.');
+    // Claude's Markdown is gone; the labels stay, as plain `Label:` lines.
+    expect(john[2]?.body).toBe('Subjective: Sleep steady.\n\nPlan: Fortnightly.');
     expect(notes.map((n) => n.body).join('\n')).not.toContain('ABANDONED');
     expect(report.totals.abandoned).toBe(1);
     expect(report.totals.attachments).toBe(1);

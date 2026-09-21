@@ -502,6 +502,17 @@
   box-shadow: inset 0 -1.5px 0 var(--accent);
 }
 
+/*
+ * A leading "Label:" reads bold. Not font-weight — a bolder glyph is wider
+ * and would slide this layer out of register with the textarea — but the
+ * label's own glyphs drawn here, stroked, under the textarea's identical ones.
+ */
+.marker-label {
+  background: none;
+  color: var(--text-primary);
+  -webkit-text-stroke: 0.5px var(--text-primary);
+}
+
 /* A word the bundled dictionary does not know, on either spelling layer. The
    text on that layer is transparent; the line is not. */
 .misspelt {

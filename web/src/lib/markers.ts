@@ -1,4 +1,4 @@
-import { emptySectionNames, textToSections, UNCLEAR_MARKER } from '@apunta/shared';
+import { emptySectionNames, leadingLabel, textToSections, UNCLEAR_MARKER } from '@apunta/shared';
 
 /**
  * The two things in a note body that need to catch the eye, and neither of
@@ -21,8 +21,15 @@ import { emptySectionNames, textToSections, UNCLEAR_MARKER } from '@apunta/share
  * Consequently these segments add no characters of their own — anything that
  * changed the text's length would slide the backdrop out of register with the
  * real characters above it.
+ *
+ * **A leading `Label:` reads bold** (owner, 2026-09-21): `Location: Online`,
+ * `Risk review: None`, a format's `Plan:`. Bold glyphs are wider, so the
+ * weight cannot change without sliding the layers apart; instead the backdrop
+ * draws the label's own glyphs, stroked, directly under the textarea's — the
+ * same width, a heavier line. The rule for what counts as a label is
+ * `leadingLabel` in `shared/`, which the Claude import also writes to.
  */
-export type NoteSegmentKind = 'plain' | 'unclear' | 'empty-section';
+export type NoteSegmentKind = 'plain' | 'unclear' | 'empty-section' | 'label';
 
 export interface NoteSegment {
   readonly kind: NoteSegmentKind;
@@ -54,7 +61,14 @@ export function markNoteText(text: string, sections: readonly string[]): NoteSeg
       // A section header with nothing under it: the whole (short) line.
       segments.push({ kind: 'empty-section', text: line });
     } else {
-      pushUnclear(segments, line);
+      const found = leadingLabel(line);
+      if (found === null) {
+        pushUnclear(segments, line);
+      } else {
+        push(segments, 'plain', found.prefix);
+        push(segments, 'label', found.label);
+        pushUnclear(segments, line.slice(found.prefix.length + found.label.length));
+      }
     }
     if (index < lines.length - 1) push(segments, 'plain', '\n');
   });

@@ -158,6 +158,13 @@ describe('POST /api/import/claude/run', () => {
     expect(transcript?.raw_text).toMatch(
       /^\[Imported from Claude conversation "John — session notes" \(conv-john\), session 1 of 3, recorded 2026-05-12; note from Claude's last reply; messages: john-01 john-02\]/,
     );
+
+    // Claude's Markdown never reaches a note or its transcript.
+    for (const note of notes) {
+      expect(note.content).not.toContain('**');
+      const raw = listTranscriptsForNote(harness.db, note.id)[0]?.raw_text ?? '';
+      expect(raw.split('\n').slice(2).join('\n')).toBe(note.content);
+    }
   });
 
   it('writes nothing twice when run again', async () => {
@@ -226,9 +233,16 @@ describe('undoing an import', () => {
     expect(result.body).toEqual({ notes_deleted: 7, patients_deleted: 3, notes_kept: 0, patients_kept: 0 });
     expect(patients().map((p) => p.id)).toEqual([mine.id]);
     expect((await undo(batchId)).statusCode).toBe(404);
+    // The provenance lines went with the notes, so nothing marks those
+    // sessions as imported any more.
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM transcripts').get()).toEqual({ n: 0 });
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM import_batch_patients').get()).toEqual({ n: 0 });
 
-    // And the import can run again after an undo.
-    expect((await post('run')).body.notes).toBe(7);
+    // And the import can run again after an undo, from scratch.
+    const again = await post('run');
+    expect(again.body.notes).toBe(7);
+    expect(again.body.already_imported).toBe(0);
+    expect(again.body.patients_to_create).toBe(3);
   });
 
   it('keeps a note she has finalized since, and its patient', async () => {
