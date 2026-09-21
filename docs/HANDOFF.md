@@ -1,7 +1,7 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-20, after the first real `tiny.en` transcripts and the
-decision to keep it (`docs/eval-reports/2026-09-20-tiny-en-clinical-vocabulary.md`).**
+**Updated 2026-09-21, after the Claude import became automatic (owner's
+choice; `docs/decisions.md`, 2026-09-21).**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -142,8 +142,20 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   to the model path. The focused parser/route suite covers 60 cases, including
   clinical-context cuts, exact span conservation and standalone-sentence
   moves.
-- **Import from Claude** (M11): built against an inferred export schema;
-  `npm run probe:claude` reports a real export's shape without its content.
+- **Import from Claude** (M11): **automatic** since 2026-09-21, by the
+  owner's choice. Imports every patient with a session since a cutoff
+  (default 2026-07-01) with their whole history, one draft per session
+  (6-hour gap), Claude's last reply as the body by default. A conversation
+  must have 2+ sessions, note-shaped replies and a confident name (optional
+  list, else the title); anything else is skipped and reported by reason,
+  date and count only. Every run is an undoable batch, re-runs skip what
+  is already imported, title-guessed names show "Name guessed — check" in
+  the patient list. The real export's shape was probed (one
+  `conversations.json`, 508 conversations, the inferred schema holds);
+  `npm run probe:claude` now also reports per-conversation size, attachment
+  use, branch points and how the 6-hour gap and the cutoff cut the export —
+  read that on the real file before the first real run, since every
+  threshold was set on synthetic fixtures.
   The owner clarified that her existing notes span Claude chats **and
   Halaxy**. Her Halaxy account is a **practitioner account, not an admin**;
   do not infer that she can use a practice export. See the wife-facing
@@ -187,9 +199,12 @@ Grouped by what each item waits on.
 ### Waits on the owner
 
 - **The confidentiality decision** on her Claude export (M11 reads her whole
-  account). Then `npm run probe:claude -- <export.zip>` to check the schema,
-  then `Settings → Import from Claude` on the real export. Nothing about
-  this can be done by a session; do not start it.
+  account). Then the orchestrator runs `npm run probe:claude -- <export.zip>`
+  and checks the new per-conversation section (sessions per conversation,
+  "active since 2026-07-01 … with 2+ sessions" should be near her ~25
+  patients), then she follows `docs/import-existing-notes.md` step 2. No
+  session may open, list or run anything against the real export
+  (`~/apunta-migration/`); build and test on synthetic fixtures only.
 - **Halaxy source authorization and shape**: public Halaxy documentation
   describes a per-patient clinical-record zip in the UK guide and a full
   practice-data zip that is account-owner/permission-gated in the AU guide.
@@ -301,7 +316,11 @@ Every item comes with a full script when it needs his voice.
    and by an end-to-end test, never by her or by him on a note he cares about.
 3. **Backup and restore round trip** from Settings, including the wrong
    passphrase.
-4. **Import dry run** with `e2e/fixtures/claude-export/sample-export.zip`.
+4. **Import dry run** with `e2e/fixtures/claude-export/patient-chats.json`:
+   expect 7 notes for John, Maria (1) and Maria (2), four skipped; untick
+   one, import, check "Name guessed — check" in the list, then undo.
+   The Playwright spec for this was updated but not run (no browsers on
+   the partner's PC on 2026-09-21).
 5. **A long recording** (10+ minutes) for the preview's slow-gap mode after
    four minutes, and the final transcription time.
 6. Paste-into-Halaxy — human-only, whenever he has Halaxy open.

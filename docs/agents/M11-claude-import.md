@@ -2,7 +2,9 @@
 
 **Depends on:** M1 (patients, notes), M6 (formats). Independent of the model.
 **Status:** built 2026-09-05 — server, screen and tests, against the
-*inferred* export schema below. Running it on her real export stays gated on
+*inferred* export schema below. **Reworked 2026-09-21 into an automatic
+import** at the owner's request — see *Automatic import (2026-09-21)* at the
+end, which supersedes stages 2–4 and the human-turns-only default. Running it on her real export stays gated on
 the confidentiality decision (see *Before any of this runs*), and the probe
 should be run on the real export first, because the schema is a guess until
 it is not.
@@ -160,3 +162,40 @@ be in there · no proposal is written without her accepting it · no imported
 note contains assistant text she did not choose · every imported note names
 its source conversation · the archive is untouched and uncopied · the whole
 run works with the network off.
+
+## Automatic import (2026-09-21)
+
+The real export was probed by the owner's orchestrator: one zip holding only
+`conversations.json`, 508 conversations (Jan 2025 → Sep 2026), the inferred
+keys confirmed, `sender` either `human` or `assistant`. She keeps one long
+conversation per patient and drafted her notes with Claude, so the final
+note is usually Claude's reply. Per-proposal review of ~25 long histories
+was impractical, and she asked for everyone seen since July rather than a
+pasted list. What changed, and what replaced the refusals above:
+
+- **Sessions.** A conversation is split at gaps over 6 hours
+  (`SESSION_GAP_HOURS`); each session is one draft, dated when she talked to
+  Claude (still *recorded*, never asserted as the session date).
+- **Branches.** `liveThread` follows `parent_message_uuid` back from the
+  latest message; abandoned edits and regenerations are counted, not
+  imported. Array order when links are absent.
+- **Body.** Claude's last reply in the session by default — the "per-note
+  escape hatch" the open questions anticipated became the default because
+  that is how she wrote her notes. Her own messages remain a setting.
+  Verbatim either way; no model.
+- **Which conversations.** All of: a session on or after the cutoff
+  (default 2026-07-01; the qualifying patient's *whole* history comes),
+  2+ sessions, note-shaped replies (≥2 headings in ≥2 sessions), and a
+  confident name — her optional list first (`assignConversation`), else the
+  title (`nameFromTitle`). The model is still not involved.
+- **Nothing lands unreviewed** is replaced by safeguards that cost her no
+  time: drafts only; provenance per session with message ids; a batch per
+  run with one-click undo (migration 004); idempotent re-runs; title-guessed
+  names flagged on the patient (`name_guessed`) until she saves a name; a
+  one-screen patient list with ticks before the button; a skipped report of
+  reasons, dates and counts, never titles or text.
+- **Recurring proper nouns** (stage 2.2) are gone; nothing offers possible
+  people any more.
+
+`npm run probe:claude` now reports the per-conversation numbers the
+thresholds depend on. Read them on the real export before the first run.

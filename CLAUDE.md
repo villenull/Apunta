@@ -15,10 +15,12 @@ re-measured). What remains needs a Mac (`docs/MANUAL-VERIFICATION.md`), her
 transcription vocabulary list (promised, not yet sent), or a new packet:
 the intake-side instruction distillation, per the M10 report. **M11**
 (importing her Claude conversations) is built — `Settings → Import from
-Claude`, proposals only, nothing written unreviewed — against an *inferred*
-export schema. Running it on her real export stays gated on the
-confidentiality decision; run `npm run probe:claude` on the real export
-first to check the schema.
+Claude` — and since 2026-09-21 **automatic** by the owner's choice: every
+patient seen since a cutoff, one draft per session, each run an undoable
+batch (`docs/decisions.md`, 2026-09-21). The export's shape has been probed;
+running it on her real export stays gated on the confidentiality decision.
+Never open or run anything against her real export — synthetic fixtures
+only.
 **Spoken retractions** ("four hours, scratch that, six") are cut out of a
 transcript before drafting by the server, on a quote the model supplies and
 only where the transcript bears it out (`server/src/ai/retractions.ts`,

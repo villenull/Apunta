@@ -21,8 +21,8 @@ handling a real export:
 - Do not email an export, upload it to Claude/ChatGPT or another cloud agent,
   paste its contents into a support chat, or put it in a repository, fixture,
   or commit. Do not send Halaxy credentials or API keys to anyone.
-- Review every proposed patient, date, note body, and attachment before it is
-  accepted. An export date is not automatically the date of a clinical
+- Read each imported note before relying on it. Claude imports arrive as
+  drafts; an export date is not automatically the date of a clinical
   session.
 
 There is no Halaxy importer in Apunta today. Do not rename a Halaxy PDF or
@@ -56,74 +56,102 @@ material as well.
 Source: [Anthropic — Export your Claude data](https://support.claude.com/en/articles/9450526-export-your-claude-data)
 (accessed 2026-09-08).
 
-### 2. Review it in Apunta
+### 2. Import it into Apunta
 
-Only after the confidentiality decision is explicit, open Apunta and choose
-**Settings → Import from Claude**. Choose either the Claude zip or the
-`conversations.json` file inside it. Apunta reads the selected file locally
-for the preview request; the upload is held in memory for that request and
-is not copied into Apunta's data directory. Nothing is written by the
-preview.
+Only after the confidentiality decision is explicit. Apunta imports
+automatically: it does not ask you to read each note first. Instead, every
+note arrives as a draft you can read and fix at your own pace, and the whole
+import can be taken back with one click.
 
-The review screen is deliberately conservative:
+1. **Make sure you have a note format** (Apunta asks for one the first time
+   you open it). Imported notes need one to live in.
+2. **Open Settings → Import from Claude** and choose the zip Claude sent
+   you, or the `conversations.json` file inside it. The file is read on this
+   Mac, for that moment only, and is not copied into Apunta.
+3. **Check the date.** Apunta imports every patient you have seen since that
+   day, with *all* of their notes — the older ones too. It starts at
+   1 July 2026; move it earlier to bring in patients you have not seen since.
+4. **Optionally, list your patients' names**, one per line. You do not have to:
+   without a list, Apunta takes each name from the chat's title. A list helps
+   when a title does not name the person, and gives the spelling you want. If
+   one of your patients' names is also an ordinary word (Will, Grace, May),
+   write it as you would in a note.
+5. **Leave "Each note is" on Claude's last reply** — the note you ended up
+   with in each session. Choose "Your own messages" only if you want what you
+   typed to Claude instead.
+6. **Press "Check what will be imported".** You get one short screen: how
+   many patients will be created, how many notes, how many chats were
+   skipped, and the list of patients, each with a tick. **Untick anyone who
+   is obviously not a patient.** It takes a second; there is no note text to
+   read here.
+7. **Press Import.** The report says what was created for whom, and why the
+   other chats were skipped. If anything looks wrong, press **Undo this
+   import**.
 
-- It proposes one possible note per conversation that has readable human
-  turns. It uses your human turns in order as the default body. Claude's
-  replies are shown only if you open the fold and are never imported by
-  default.
-- Existing Apunta patients are matched by name first. Other recurring,
-  capitalised names are only offered as possible people. You must decide
-  whether a name is a patient, correct its spelling, and assign each
-  conversation or choose **nobody — skip this one**.
-- Edit or trim each body before accepting it. The button states the exact
-  number of notes that will be written; nothing is written until you press
-  it. Accepted notes are ordinary Apunta drafts and keep a transcript row
-  identifying their source conversation.
-- The date is labelled **recorded**: it is when the conversation was dated
-  in the export, not a guessed clinical-session date. Correct it later only
-  when you know the session date.
+How Apunta decides a chat is one of your patients — all of these, or it is
+left alone:
 
-### What the current Claude import accepts — and does not promise
+- you talked in it **on or after the date** you chose;
+- you came back to it on **at least two separate occasions** (a pause of more
+  than six hours starts a new session, and each session becomes its own
+  note);
+- in at least two sessions, Claude's reply **looks like a clinical note** —
+  it has headings such as Subjective, Assessment, Plan, Risk or
+  Interventions, or the section names of your own format;
+- a **name** can be told: one of the names on your list clearly stands out
+  in the chat, or the chat's title starts with a name. Two names from your
+  list with neither standing out means the chat is skipped.
 
-The importer was built against an inferred schema because no real Claude
-export has been used. It currently accepts a zip containing a file named
-`conversations.json`, or a JSON file directly. Its tolerant reader recognizes
-some top-level wrappers, `sender`/`role`, and text or simple text content
-blocks. That is an implementation detail, not a guarantee that every future
-Claude export will match it.
+What each imported note looks like:
 
-Before using a real export, run this local, shape-only command after the
-confidentiality decision:
+- It is a **draft**, never finalized. Nothing is signed off for you.
+- Its title is **"Imported session"** and the day you talked to Claude. That
+  day is when you wrote the note, which may not be the day of the session —
+  correct it if you know better.
+- Its transcript starts with a line naming the Claude chat, which session of
+  it this was, and whether the note came from Claude's reply or your own
+  messages.
+- If a session had a file attached, the note says so; the file itself stays
+  in Claude.
+
+Patients named from a chat title show **"Name guessed — check"** in your
+patient list. Click it, fix the name if needed, and press **Save name**; the
+mark goes away. If two chats both start with the same name, Apunta does not
+assume they are the same person: you get "Maria (1)" and "Maria (2)", both
+marked, and you rename them.
+
+Running the import again is safe. Sessions already imported are skipped, so
+nothing is doubled — it only adds sessions that are new since last time, on
+the same patient as before.
+
+**Undo** removes the notes that import created, and the patients it created
+if nothing else is attached to them. It never touches patients or notes you
+made yourself, and it keeps any imported note you have finalized since.
+Earlier imports can be undone later from the same screen, under
+**Earlier imports**.
+
+### What the Claude import does not do
+
+- **It does not read the chats as a person would.** A chat about a friend
+  that happens to look like clinical notes could be imported, and a real
+  patient's chat with an unusual title could be skipped. The summary and
+  the "Name guessed — check" marks are there to catch the first; move the
+  date or add names to your list to catch the second.
+- **It does not summarise or rewrite anything.** Each note is Claude's reply,
+  or your messages, word for word. Edit it in Apunta like any other draft.
+- **Attachments and images are not imported.** They are counted and the
+  note says so; they stay in Claude.
+- When you edited a message or asked Claude to try again, only the version
+  you ended up with is imported.
+- The skipped list shows why, when and how long, and never the chat's title
+  or words.
+
+Before using a real export, your partner can run this local, shape-only
+command, which prints counts and dates and no text, titles or names:
 
 ```text
 npm run probe:claude -- /path/to/export.zip
 ```
-
-The probe prints archive file names, keys, roles, counts, text lengths, and
-date ranges, but deliberately prints no message text, chat titles, or people
-names. Compare
-its shape with the M11 packet before opening the import screen. If it reports
-an unexpected shape, stop; do not edit the parser by guesswork.
-
-Important limitations:
-
-- A long chat is not split into sessions or summarised. Multiple chats can
-  therefore become multiple drafts for the same patient, and one chat can
-  contain several sessions. The import does not consolidate them.
-- Name matching is a review aid, not identity proof. Similar names, first
-  names, aliases, and conversations about someone who is not a patient can
-  still be offered or missed.
-- There is no general duplicate detector. Repeating an accepted conversation
-  can create another draft. Keep the source conversation id and your review
-  log, and do not accept the same conversation twice.
-- Conversation timestamps are preserved as recorded dates only. Missing or
-  malformed dates remain undated; no session date is inferred from prose.
-- The current proposal is text-only. Attachments, images, and other archive
-  entries are not a supported note body or attachment workflow. Stop and
-  report the shape rather than accepting a file if the probe shows them are
-  clinically important; they must not be silently dropped.
-- Unknown or unreadable conversation rows may be skipped and counted. A
-  successful preview is not proof that every item in the archive was read.
 
 ## Checklist B — Halaxy
 
@@ -215,9 +243,9 @@ Until the admin confirms those points, there is no safe Halaxy import to run.
 
 ## What can happen in Apunta today
 
-- Claude: after authorization, the existing **Settings → Import from Claude**
-  flow can preview a supported zip/JSON shape and turn individually accepted
-  human-authored conversation text into Apunta drafts.
+- Claude: after authorization, **Settings → Import from Claude** imports
+  every patient seen since a date you choose, one draft per session, and
+  can be undone in one click.
 - Halaxy: Apunta has no Halaxy-specific importer. A Halaxy PDF, individual
   clinical-record zip, practice-export zip, CSV, or image cannot be selected
   as a supported Apunta import today. Keep it as the source record and wait
