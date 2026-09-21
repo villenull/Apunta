@@ -10,7 +10,10 @@
  * importer's schema is a guess. This turns the guess into a fact first.
  *
  * **It prints no message text, no titles and no names.** Field names, counts,
- * roles and dates only. That restraint is not politeness: the archive holds
+ * roles and dates only — the per-conversation statistics identify a
+ * conversation by its rank, never its title. `server/src/import/probe.test.ts`
+ * runs it on the fixtures and asserts that none of their text, titles,
+ * names or file names reaches the output. That restraint is not politeness: the archive holds
  * everything its owner has ever discussed with Claude, most of which is
  * nobody's business and some of which is other people's health information.
  * A probe that echoed content would be the first thing in this project to
@@ -82,6 +85,138 @@ function describeDates(values) {
   return `${stamps[0].slice(0, 10)} → ${stamps[stamps.length - 1].slice(0, 10)}`;
 }
 
+/** The importer's session gap and default cutoff (server/src/import/claude.ts, shared/src/import.ts). */
+const SESSION_GAP_MS = 6 * 60 * 60 * 1000;
+const DEFAULT_CUTOFF = '2026-07-01';
+const MESSAGE_BUCKETS = [
+  [1, 1],
+  [2, 5],
+  [6, 10],
+  [11, 25],
+  [26, 50],
+  [51, 100],
+  [101, 200],
+  [201, Infinity],
+];
+
+function bucketLabel([low, high]) {
+  if (high === Infinity) return `${String(low)}+`;
+  return low === high ? String(low) : `${String(low)}–${String(high)}`;
+}
+
+function tallyBuckets(counts, buckets) {
+  return buckets.map((bucket) => ({
+    label: bucketLabel(bucket),
+    count: counts.filter((n) => n >= bucket[0] && n <= bucket[1]).length,
+  }));
+}
+
+function textLength(message) {
+  if (typeof message?.text === 'string') return message.text.length;
+  if (Array.isArray(message?.content)) {
+    return message.content.reduce(
+      (sum, block) => sum + (typeof block?.text === 'string' ? block.text.length : 0),
+      0,
+    );
+  }
+  return 0;
+}
+
+function day(iso) {
+  return typeof iso === 'string' && !Number.isNaN(Date.parse(iso))
+    ? new Date(iso).toISOString().slice(0, 10)
+    : '?';
+}
+
+/**
+ * Per-conversation shape: how long conversations are, which are the biggest
+ * (by rank, count, size and dates — never a title), how attachments are
+ * used, where the message array branches, and how the importer's session
+ * gap and default cutoff would cut it. Numbers and dates only.
+ */
+function describeConversations(conversations) {
+  const rows = conversations.map((conversation) => {
+    const messages = conversation.chat_messages ?? conversation.messages;
+    const stamps = messages
+      .map((m) => m?.created_at)
+      .filter((v) => typeof v === 'string' && !Number.isNaN(Date.parse(v)))
+      .sort();
+    let sessions = stamps.length > 0 ? 1 : 0;
+    for (let i = 1; i < stamps.length; i += 1) {
+      if (Date.parse(stamps[i]) - Date.parse(stamps[i - 1]) > SESSION_GAP_MS) sessions += 1;
+    }
+    let branchPoints = 0;
+    for (let i = 1; i < messages.length; i += 1) {
+      const parent = messages[i]?.parent_message_uuid;
+      if (typeof parent === 'string' && parent !== messages[i - 1]?.uuid) branchPoints += 1;
+    }
+    return {
+      messages: messages.length,
+      chars: messages.reduce((sum, m) => sum + textLength(m), 0),
+      first: stamps[0] ?? null,
+      last: stamps.at(-1) ?? null,
+      sessions,
+      branchPoints,
+      list: messages,
+    };
+  });
+
+  console.log('  messages per conversation:');
+  for (const { label, count } of tallyBuckets(
+    rows.map((r) => r.messages),
+    MESSAGE_BUCKETS,
+  )) {
+    console.log(`    ${label.padStart(8)}: ${String(count)}`);
+  }
+
+  console.log('  top 30 conversations by message count (rank, messages, characters, first → last):');
+  const top = [...rows].sort((a, b) => b.messages - a.messages).slice(0, 30);
+  top.forEach((row, index) => {
+    console.log(
+      `    #${String(index + 1).padStart(2)}  ${String(row.messages).padStart(5)} msgs  ${String(row.chars).padStart(9)} chars  ${day(row.first)} → ${day(row.last)}  ${String(row.sessions)} sessions`,
+    );
+  });
+
+  const all = rows.flatMap((r) => r.list);
+  const withAttachments = all.filter((m) => Array.isArray(m?.attachments) && m.attachments.length > 0);
+  const attachments = withAttachments.flatMap((m) => m.attachments);
+  const extracted = attachments.filter(
+    (a) => typeof a?.extracted_content === 'string' && a.extracted_content.trim() !== '',
+  );
+  const withFiles = all.filter((m) => Array.isArray(m?.files) && m.files.length > 0);
+  console.log('  attachments:');
+  console.log(
+    `    messages with attachments: ${String(withAttachments.length)} (${String(attachments.length)} attachments)`,
+  );
+  console.log(`    attachments with non-empty extracted_content: ${String(extracted.length)}`);
+  console.log(
+    `    messages with files: ${String(withFiles.length)} (${String(withFiles.reduce((n, m) => n + m.files.length, 0))} files)`,
+  );
+
+  const branched = rows.filter((r) => r.branchPoints > 0);
+  console.log(
+    `  branch points (parent is not the previous message): ${String(rows.reduce((n, r) => n + r.branchPoints, 0))} across ${String(branched.length)} conversations`,
+  );
+
+  console.log(`  sessions at a ${String(SESSION_GAP_MS / 3_600_000)}-hour gap, per conversation:`);
+  for (const { label, count } of tallyBuckets(
+    rows.map((r) => r.sessions),
+    [
+      [0, 0],
+      [1, 1],
+      [2, 5],
+      [6, 20],
+      [21, Infinity],
+    ],
+  )) {
+    console.log(`    ${label.padStart(8)}: ${String(count)}`);
+  }
+  const active = rows.filter((r) => r.last !== null && day(r.last) >= DEFAULT_CUTOFF);
+  console.log(
+    `  active since ${DEFAULT_CUTOFF}: ${String(active.length)} conversations, ${String(active.filter((r) => r.sessions >= 2).length)} of them with 2+ sessions`,
+  );
+}
+
 const { root, cleanup } = openExport(target);
 try {
   const files = walk(root);
@@ -144,6 +279,9 @@ try {
       }
     }
 
+    const conversations = items.filter((item) => Array.isArray(item?.chat_messages ?? item?.messages));
+    if (conversations.length > 0) describeConversations(conversations);
+
     for (const dateKey of ['created_at', 'updated_at']) {
       const values = items.map((item) => item?.[dateKey]).filter(Boolean);
       if (values.length > 0) console.log(`  ${dateKey}: ${describeDates(values)}`);
@@ -151,7 +289,7 @@ try {
   }
 
   console.log('\nNo message text, title or name was printed, by design.');
-  console.log('Next: docs/agents/M11-claude-import.md, stage 2.');
+  console.log('Next: docs/import-existing-notes.md, step 2.');
 } finally {
   cleanup();
 }
