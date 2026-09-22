@@ -112,7 +112,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // Deliberately given no `db`: an uploaded template or example note is never
   // persisted, and a missing parameter makes that a type error.
   registerFormatDetectRoutes(app, providers);
-  registerSettingsRoutes(app, db);
+  registerSettingsRoutes(app, db, config);
   registerGenerateRoute(app, db, providers);
   registerTranscribeRoute(app, config, db, providers);
   registerChatRoutes(app, db, providers);

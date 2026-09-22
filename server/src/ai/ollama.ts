@@ -142,8 +142,7 @@ export function brainstormPromptTokens(numCtx: number = NUM_CTX): number {
 export interface OllamaProviderOptions {
   /** Loopback only — the egress guard rejects anything else. */
   readonly baseUrl?: string;
-  /** Read fresh per call, so a Settings change takes effect without a restart. */
-  readonly resolveModel?: () => string;
+  readonly resolveModel?: () => string | Promise<string>;
   readonly numCtx?: number;
   readonly numPredict?: number;
   /** Ollama's default is 5m; a therapist writing a batch would pay a cold load each time. */
@@ -203,7 +202,7 @@ interface TagsModel {
 
 export class OllamaProvider implements LlmProvider {
   private readonly baseUrl: string;
-  private readonly resolveModel: () => string;
+  private readonly resolveModel: () => string | Promise<string>;
   private readonly numCtx: number;
   private readonly numPredict: number;
   private readonly keepAlive: string;
@@ -229,7 +228,7 @@ export class OllamaProvider implements LlmProvider {
   // --- health ------------------------------------------------------------
 
   async describe(): Promise<LlmDescription> {
-    const model = this.resolveModel();
+    const model = await this.resolveModel();
     try {
       const response = await this.fetchImpl(`${this.baseUrl}/api/tags`, {
         signal: AbortSignal.timeout(2500),
@@ -260,7 +259,7 @@ export class OllamaProvider implements LlmProvider {
   /**
    * Only send top-level `think` to a model that has the capability: sending it
    * to one that does not is a hard HTTP 400, which is the first thing a user
-   * hits after overriding `llm_model` in Settings.
+   * hits after choosing an incompatible local model in Settings.
    */
   private async supportsThinking(model: string): Promise<boolean> {
     const cached = this.thinkingSupport.get(model);
@@ -285,7 +284,7 @@ export class OllamaProvider implements LlmProvider {
   // --- drafting ----------------------------------------------------------
 
   async *generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
-    const model = this.resolveModel();
+    const model = await this.resolveModel();
     yield status('connecting', 'Thinking…');
     await this.requireUsableModel(model);
 
@@ -332,7 +331,7 @@ export class OllamaProvider implements LlmProvider {
   }
 
   async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
-    const model = this.resolveModel();
+    const model = await this.resolveModel();
     yield status('connecting', 'Thinking…');
     await this.requireUsableModel(model);
 
@@ -370,7 +369,7 @@ export class OllamaProvider implements LlmProvider {
    * learned to report.
    */
   async *discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent> {
-    const model = this.resolveModel();
+    const model = await this.resolveModel();
     yield status('connecting', 'Thinking…');
     await this.requireUsableModel(model);
 
@@ -459,7 +458,7 @@ export class OllamaProvider implements LlmProvider {
     freeText: (value: T) => readonly string[],
     numPredict: number,
   ): Promise<LlmResult<T>> {
-    const model = this.resolveModel();
+    const model = await this.resolveModel();
     await this.requireUsableModel(model);
     this.assertFits(prompt.system, prompt.user);
 
@@ -491,7 +490,7 @@ export class OllamaProvider implements LlmProvider {
   }
 
   async detectFormat(request: DetectFormatRequest): Promise<DetectedFormat> {
-    const model = this.resolveModel();
+    const model = await this.resolveModel();
     await this.requireUsableModel(model);
 
     const prompt = buildDetectFormatPrompt(request);

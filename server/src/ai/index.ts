@@ -1,9 +1,8 @@
 import type { Database } from 'better-sqlite3';
 
 import type { AppConfig } from '../config.js';
-import { getSetting } from '../db/settings.js';
 import { FakeLlmProvider, FakeSttProvider } from './fake.js';
-import { defaultModelForMachine } from './model-picker.js';
+import { resolveModel as resolveProfileModel } from './profiles.js';
 import { OllamaProvider } from './ollama.js';
 import {
   resolveSttLanguage,
@@ -16,13 +15,9 @@ import { WhisperCppSttProvider } from './whisper.js';
 
 /**
  * One factory, one switch: `APUNTA_FAKE_AI=1` gives the deterministic
- * providers, anything else talks to a local Ollama.
- *
- * The model is resolved per call rather than captured here, so changing
- * `llm_model` in Settings takes effect on the next draft instead of the next
- * restart.
+ * providers, anything else talks to local Ollama. The profile resolver reads
+ * Settings on every call so changing the choice takes effect immediately.
  */
-export const LLM_MODEL_SETTING = 'llm_model';
 
 export function createProviders(
   config: AppConfig,
@@ -39,7 +34,7 @@ export function createProviders(
   return {
     llm: new OllamaProvider({
       baseUrl: config.ollamaUrl,
-      resolveModel: () => resolveModel(db),
+      resolveModel: () => resolveProfileModel(db, { baseUrl: config.ollamaUrl }),
       ...(log ? { log } : {}),
     }),
     stt: new WhisperCppSttProvider({
@@ -52,14 +47,20 @@ export function createProviders(
   };
 }
 
-/** The configured model, or the tier the machine's RAM puts it in (PLAN §2). */
-export function resolveModel(db: Database): string {
-  const configured = getSetting<unknown>(db, LLM_MODEL_SETTING);
-  return typeof configured === 'string' && configured.trim() !== ''
-    ? configured.trim()
-    : defaultModelForMachine();
-}
 
+export {
+  LLM_AVAILABLE_PROFILES_SETTING,
+  LLM_EFFECTIVE_PROFILE_SETTING,
+  LLM_PROFILE_SETTING,
+  LLM_PROFILES,
+  clearLlmProfileCache,
+  isLocalModelTag,
+  profileModel,
+  resolveLlmProfile,
+  resolveModel,
+  settingsWithLlmProfiles,
+} from './profiles.js';
+export type { LlmProfile } from '@apunta/shared';
 export { AiError, aiError, UNREACHABLE_MESSAGE } from './errors.js';
 export {
   applyDiscussionSubheadings,

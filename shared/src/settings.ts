@@ -19,6 +19,11 @@ export type Settings = z.infer<typeof SettingsSchema>;
 export const UpdateSettingsRequestSchema = SettingsSchema;
 export type UpdateSettingsRequest = z.infer<typeof UpdateSettingsRequestSchema>;
 
+/** The two local language-model choices exposed in Settings. */
+export const LlmProfileSchema = z.enum(['quick', 'thorough']);
+export type LlmProfile = z.infer<typeof LlmProfileSchema>;
+export const LLM_PROFILE_SETTING = 'llm_profile';
+
 /**
  * The accent colour, so the practice can look like itself (owner-proxy,
  * 2026-08-30). One setting drives the whole palette: `--accent-hover` and

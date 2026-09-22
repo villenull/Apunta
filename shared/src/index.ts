@@ -232,11 +232,13 @@ export {
   FONT_SIZES,
   isAccentColor,
   isFontSize,
+  LLM_PROFILE_SETTING,
+  LlmProfileSchema,
   SettingKeySchema,
   SettingsSchema,
   UpdateSettingsRequestSchema,
 } from './settings.js';
-export type { FontSize, Settings, UpdateSettingsRequest } from './settings.js';
+export type { FontSize, LlmProfile, Settings, UpdateSettingsRequest } from './settings.js';
 
 export {
   buildRefineSchema,
