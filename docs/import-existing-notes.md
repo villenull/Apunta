@@ -25,9 +25,9 @@ handling a real export:
   drafts; an export date is not automatically the date of a clinical
   session.
 
-There is no Halaxy importer in Apunta today. Do not rename a Halaxy PDF or
-zip to make it look like a Claude export; that cannot make it safe or
-compatible.
+Apunta can import note text from Halaxy PDFs. The steps are in Checklist B
+below; do not rename a Halaxy PDF or zip to make it look like a Claude
+export.
 
 ## Checklist A — Claude
 
@@ -166,121 +166,19 @@ npm run probe:claude -- /path/to/export.zip
 
 ## Checklist B — Halaxy
 
-Halaxy documents two different kinds of export, with different permissions.
-Your account is understood to be a **practitioner account, not an account
-admin**. The public documentation does not establish that your particular
-practitioner role can use either export, see every patient, or export every
-record. Practice settings, region, patient relationships, note privacy, and
-account-owner permissions can change what is available.
+Apunta imports note text from Halaxy PDFs. It does not sign in to Halaxy or
+send the records anywhere.
 
-### Individual patient clinical-record export (documented, but verify role/region)
+1. In Halaxy, print the patient's clinical notes and save a PDF in the
+   local-only folder from Safety first. Choose **one text-based PDF per
+   patient**.
+2. In Apunta, open **Settings → Import from Halaxy** and choose the PDFs.
+   Scanned or image-only PDFs are refused; Apunta does not use OCR.
+3. Check the preview carefully: confirm the patient name, check that there is
+   one note per session, untick anything wrong, and read every warning.
+4. Press **Import** when the preview is right.
+5. If anything is wrong, press **Undo** for that import and correct the PDF
+   before trying again.
 
-Halaxy's United Kingdom help guide documents a per-patient clinical-record
-zip containing clinical notes, appointment notes, prescriptions, orders,
-patient forms, clinical tools, and attached files:
-
-1. Open the patient's profile, **Clinical Notes**, and any clinical note.
-2. Choose **Actions → Print clinical note**.
-3. Set **Content** to **All patient notes/files**, then choose **Export**.
-4. Open **Actions → Download clinical notes** and wait for the export to
-   finish.
-5. Use the download icon to save the zip to the local-only folder.
-
-The article does not say that this is available to every practitioner or in
-every country edition of Halaxy. It is evidence that this per-patient route
-exists in the UK help guide, not confirmation that it appears in your
-account. Do not use another person's login to reach it.
-
-For one clinical note, Halaxy also documents **Print** → preview in a new tab
-→ save as PDF. Its print preferences can control content, detail, layout, and
-letterhead. A PDF preserves the rendered document, but it is not a structured
-Apunta import file and may not preserve every underlying field or version.
-
-Sources: [Halaxy UK — Export all clinical records for a patient](https://support-uk.halaxy.com/hc/en-gb/articles/13975393634191-Export-all-clinical-records-for-a-patient) and [Halaxy UK — Print a clinical note](https://support-uk.halaxy.com/hc/en-gb/articles/13975409806991-Print-a-clinical-note) (accessed 2026-09-08).
-
-### Full practice export (admin/permission-gated)
-
-Halaxy's Australia help guide says full practice-data export is available to
-account owners and to users whose group's account owner has granted export
-permission. The account owner must request that permission by emailing
-`community@halaxy.com`. Once enabled, the documented flow is:
-
-1. **Settings → General → Data Export → Export your data now**.
-2. Select data types and, optionally, a date range.
-3. Choose **Export** and wait for the status to become **Completed**.
-4. Download the resulting zip.
-
-The public page does not provide a complete file manifest or field mapping,
-does not say which data type contains the clinical-note body in every region,
-and does not document how attachments, note versions, drafts, archived
-patients, author identity, or appointment dates map in the zip. Treat those
-as unknown until the authorized practice admin confirms them. A CSV patient
-list is not a clinical-note export: Halaxy says patient-list exports contain
-only the current page, filters, and selected columns.
-
-Sources: [Halaxy AU — Export your practice data](https://support.halaxy.com/hc/en-au/articles/6332476795535-Export-your-practice-data) and [Halaxy AU — Manage your Patient List](https://support.halaxy.com/hc/en-au/articles/6447816423695-Manage-your-Patient-List) (accessed 2026-09-08).
-
-Halaxy's public API guide is not a shortcut for this migration: only account
-owners can purchase an API subscription, and its capability table marks
-Clinical Notes as not retrievable (it shows create access, not retrieve
-access). No Apunta runtime connector or API credential flow is authorized.
-
-Source: [Halaxy AU — Guide to Halaxy API](https://support.halaxy.com/hc/en-au/articles/13014722009487-Guide-to-Halaxy-API)
-(accessed 2026-09-08).
-
-### Copy-paste request to the practice admin
-
-Send this through the practice's approved channel; do not include a password,
-API key, or patient export in the request.
-
-> Subject: Authorized clinical-note export for local Apunta migration
->
-> I am the practitioner account holder for [name/practice]. I am preparing a
-> local migration to Apunta. Please confirm what I am authorized to export and
-> handle under our practice policy and my Halaxy access level. If permitted,
-> please enable/request the appropriate Halaxy data-export permission for my
-> account, or arrange an authorized export on my behalf.
->
-> Please confirm the approved date range and patient scope, and whether the
-> export includes clinical-note text, note dates, author/practitioner,
-> appointment links, drafts and versions, archived patients, and every file
-> attachment. Please provide the exact file format and a way to download it
-> directly to a local-only, non-cloud folder. I will keep the original export,
-> review each record before creating an Apunta draft, and will not upload it to
-> an AI/cloud service. Please tell me how to verify the record/file count and
-> how to dispose of working copies under practice policy.
-
-Until the admin confirms those points, there is no safe Halaxy import to run.
-
-## What can happen in Apunta today
-
-- Claude: after authorization, **Settings → Import from Claude** imports
-  every patient seen since a date you choose, one draft per session, and
-  can be undone in one click.
-- Halaxy: Apunta has no Halaxy-specific importer. A Halaxy PDF, individual
-  clinical-record zip, practice-export zip, CSV, or image cannot be selected
-  as a supported Apunta import today. Keep it as the source record and wait
-  for an authorized, format-verified plan; never build a guessed parser.
-
-## Smallest safe next implementation (not started)
-
-Only after the practice admin authorizes the export and the exact format shape
-is known should development begin. The first implementation artifact should
-be a synthetic fixture that has the same file names/metadata structure but no
-real patient text. It must settle, before parsing code is written:
-
-1. how patient identity is represented and matched;
-2. which date is the clinical-note date versus export/created/updated dates;
-3. whether one file contains multiple notes, multiple files represent one
-   patient, and how duplicate source ids are represented;
-4. how note versions, drafts, signed/published notes, and archived patients
-   are represented; and
-5. how PDFs and attached files are retained, surfaced for review, and blocked
-   from silent loss.
-
-Then add a local preview/accept flow and tests for identity, dates, multiple
-notes, duplicate handling, malformed records, and attachment preservation
-using only synthetic fixtures. If the verified format cannot preserve an
-attachment, the importer must stop or show an explicit excluded-item
-decision; it must not quietly discard it. No outbound runtime calls,
-account scraping, permission bypass, or cloud upload is part of this work.
+Only note text is imported. Attachments, letters, images, and other files are
+not imported and stay in the source PDF or Halaxy.

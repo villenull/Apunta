@@ -7,25 +7,15 @@ instance. Keep it current in the same commit as the change.
 Local-first therapy-notes app: React SPA in a browser tab, Fastify server on
 127.0.0.1, SQLite storage, all AI local (Ollama LLM + whisper.cpp STT).
 Master plan: `docs/PLAN.md`. Design reference: `prototype/` (do not modify).
-Work packets: `docs/agents/` — **all packets (M0–M10) are complete.** M10
-ran on a live Linux machine on 2026-08-27
-(`docs/eval-reports/2026-08-M10-report.md`), and the owner's answers landed
-2026-08-28 (`docs/feedback/2026-08-28-owner-answers.md` — applied and
-re-measured). The 2026-09-22 integrated acceptance and four-model comparison
-are recorded in `docs/HANDOFF.md` and `docs/eval-reports/`. What remains needs
-a Mac (`docs/MANUAL-VERIFICATION.md`), the owner's confidentiality decision
-and first dictations, or a new packet: the intake-side instruction
-distillation from the M10 report. The promised transcription-vocabulary
-acquisition, complex-vocabulary experiments, dictionary Settings UI and
-Tailscale setup were explicitly dropped from the active backlog on 2026-09-22;
-preserve their historical evidence but do not treat them as pending work.
-**M11** (importing her Claude conversations) is built — `Settings → Import from
-Claude` — and since 2026-09-21 **automatic** by the owner's choice: every
-patient seen since a cutoff, one draft per session, each run an undoable
-batch (`docs/decisions.md`, 2026-09-21). The export's shape has been probed;
-running it on her real export stays gated on the confidentiality decision.
-Never open or run anything against her real export — synthetic fixtures
-only.
+Work packets in `docs/agents/` now run through **M13**. M11 (Claude
+conversation import), M12 (Brainstorm), and M13 (Halaxy PDF import) are
+built. The owner has approved her Claude export: its shape-only probe is
+**GO with preview**, so she may use the Settings preview, untick anything
+wrong, merge duplicates, and check draft counts before importing. Agents
+must never open or run anything against the real export; synthetic fixtures
+only. Mac work is paused for the coming months; the Linux PC remains the
+machine running the local AI server. The decontaminated instruction files are
+now adopted as the shipped defaults; the owner will be told afterwards.
 **Spoken retractions** ("four hours, scratch that, six") are cut out of a
 transcript before drafting by the server, on a quote the model supplies and
 only where the transcript bears it out (`server/src/ai/retractions.ts`,

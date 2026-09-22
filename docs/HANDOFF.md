@@ -61,7 +61,7 @@ agent history is not a prerequisite.
   scripts in his own voice; every request for a recording comes with the full
   script in the message, every time.
 
-## What is built (all packets M0–M12)
+## What is built (all packets M0–M13)
 
 Local-first therapy-notes app: React SPA, Fastify on 127.0.0.1:7717, SQLite,
 all AI local (Ollama `qwen3.5:4b-q4_K_M` for drafting, whisper.cpp for
@@ -376,19 +376,16 @@ the existing `llm_model` setting or machine default, rejects cloud-backed
 tags, resolves once per local LLM operation, and leaves no dead Settings
 control; `/api/health` reports the effective model. The current
 `qwen3.5:4b-q4_K_M` control remains the default.
-Model selection, second pass (2026-09-22): the final report is
-`docs/eval-reports/2026-09-22-model-second-pass.md`, with measured prompt
-proposals beside it in `docs/eval-reports/2026-09-22-decontam/`. Five runs per
-fixture on disposable ROCm Ollama plus single-run screens found three things:
-the deterministic scorer misattributes faithful SI/HI expansions, a father's
-pronoun and non-diagnostic `consistent with`; the audited 4B is 15% (3/20,
-two inventions), not the 35% headline. Nothing local beats it on the
-corrected instrument (9B 35%, 14B/Q8 30%, gemma3/phi4 20%; mistral 10% but
-out of hardware). The corpus cannot measure the original 35% versus 45%
-margin. Decontaminated prompts move the 4B from 35% to 15%, with one audited
-failure and no inventions, and the 9B from 40% to 20%; her `check:format` is
-zero flags for both. Proposed prompt files need owner/proxy approval; no
-production prompt or default changes yet.
+The final second pass confirms that no local model beats the shipped
+`qwen3.5:4b-q4_K_M`; keep the 4B with no model change. The decontaminated
+instruction files are now adopted as the shipped defaults (`0089c2c`, by
+owner decision). On the adopted 4B eval, fabrication is 10% (6/60), safety
+facts 65%, and schema 100%; the scorer fix is `e050eba`, so these numbers are
+not comparable to the earlier runs. `check:format` remains at 0 flags. The
+live Progress-format update was applied after a backup
+(`apunta-backup-2026-09-22-3.zip`) and verified byte for byte; Intake inherits
+the shipped default. GPU prefill is 18.7× faster than CPU. See
+`docs/eval-reports/2026-09-22-model-second-pass.md`.
 Synthetic Discussion follow-up is complete. The server now normalizes
 lowercase inline labels such as `sleep: …` into standalone short lowercase
 `label:` lines, grounds them in current-session material, and removes lone,
@@ -443,15 +440,14 @@ these real-model failures. No candidate is clinically cleared.
    preserve the raw artifacts and rerun focused acceptance on disposable
    ports before treating either finding as closed.
 3. The owner has approved confidentiality for her Claude export. The
-   shape-only probe verdict is **GO with an instruction**; read
+   shape-only probe verdict is **GO with preview**; read
    `docs/eval-reports/2026-09-22-claude-export-probe.md`. She can proceed to
    step 2 of `docs/import-existing-notes.md`, but must review the Settings
    preview, untick anything that is not a patient, merge duplicate patients,
    and check the draft counts before importing. Agents must never open, list,
    read or import the real export.
-4. Continue M13, the Halaxy PDF importer, against the authored synthetic
-   text-based PDF fixture only. Do not wait for or request a real Halaxy
-   export.
+4. Keep M13's Halaxy importer on the completed synthetic path; no real Halaxy
+   export is needed or permitted.
 5. Leave the exact-zero Whisper mitigation narrow. Do not add VAD/noise
    suppression without the missing non-silent reproducer and quiet control.
 6. Mac work is paused for the coming months by the owner's decision. Keep the
@@ -466,21 +462,16 @@ these real-model failures. No candidate is clinically cleared.
 
 Grouped by what each item waits on.
 **Explicitly removed from the active backlog (owner decision 2026-09-22):**
-complex-medical-vocabulary acquisition/experiments/optimization, a Settings
-UI for managing added dictionary words, and the Tailscale invite/remote-testing
-setup. Existing `stt_vocabulary` and `spelling_words` settings, the inline
-spell-check "Add to dictionary" behavior, the clinical-knowledge safety
-checks, and the historical measurements remain retained; none is a pending
-task.
 
-### In progress
+### Recently completed
 
-- **Halaxy PDF importer (M13).** HalaxyServer and HalaxyWeb are implementing
+- **Halaxy PDF importer (M13) is built.** HalaxyServer and HalaxyWeb implement
   the local, text-based PDF flow against a synthetic John Smith fixture:
   preview first, allow patient-name edits and note unticking, then import
   selected notes as published history in one undoable batch. Scanned or
-  imageless PDFs are rejected clearly; attachments, letters and images are
+  image-only PDFs are rejected clearly; attachments, letters and images are
   text-only non-goals. No real Halaxy export is needed or permitted.
+
 The Halaxy server/shared slice is now ready: `shared/src/halaxy.ts` defines
 the preview/request/response schemas and size limits; the local parser handles
 AU/UK date headings, repeated page furniture and page numbers, page-break
@@ -510,7 +501,7 @@ production build, 40 e2e tests and 60 fake-eval runs all exited 0.
 
 ### Approved, next action
 - **Claude export confidentiality is approved.** ClaudeProbe's shape-only
-  report is **GO with an instruction**: its focused synthetic proof is 37/37,
+  report is **GO with preview**: its focused synthetic proof is 37/37,
   including three fabricated plans and seven drafts after decoys. The real
   shape has 45 conversations with 2+ sessions, only an upper bound versus the
   owner's ~25 patients. Shape-only data cannot distinguish non-patient/
@@ -522,13 +513,12 @@ production build, 40 e2e tests and 60 fake-eval runs all exited 0.
 
 ### Waits on the owner
 
-- **Discussion subtopics in her live notes.** The 2026-09-22 implementation
-  now has the model infer genuinely distinct topics from her narration and
-  writes short lowercase `label:` lines only when there are at least two.
-  The server grounds every label in her current-session material and removes
-  a lone or unsupported label without dropping the prose. Automated synthetic
-  coverage is green; her first live draft remains the human check that the 4B
-  finds the boundaries she expects and does not over-split.
+- **Capitalized Discussion subtopic labels are in progress.** Adopter is
+  turning them on for her. The implementation infers genuinely distinct
+  topics from her narration, grounds every label in current-session material,
+  and removes a lone or unsupported label without dropping the prose. The
+  first live draft remains the human check that the 4B finds the boundaries
+  she expects and does not over-split.
 - **Her first real dictations**, which are the only source allowed to grow
   the retraction-marker list (`RETRACTION_MARKER_SOURCE`).
 
@@ -564,11 +554,12 @@ setup/preflight scripts.
 
 ### Model-quality work, packet-sized (measure before and after; report in `docs/eval-reports/`)
 
-- **Intake-side instruction distillation**, including the safety-facts
-  regression (75% → 70%): fixtures 09/10/16/19 fail on the default intake
-  instructions. The M10 report calls it the obvious next job; fold the safety
-  regression into that next whole-instruction revision and measure it with the
-  other failures, not as a standalone patch.
+- **Instruction decontamination is adopted in the shipped defaults.** The
+  adopted 4B eval measured 10% fabrication (6/60), 65% safety facts and 100%
+  schema after scorer fix `e050eba`; these numbers are not comparable with
+  earlier runs. The live Progress-format copy was updated after a backup
+  (`apunta-backup-2026-09-22-3.zip`) and verified byte for byte; Intake
+  inherits the shipped default.
 - **The worked example leaks into "Note for next session"**: her
   instructions' example ends *"Dana will say if her usual session time stops
   working"*, and a dictation with a cadence decision drafts *"John will say
