@@ -359,6 +359,16 @@ applying the requested header formatting; the explicit old-wording
 reintroduction was an authorized control, and the separate neutral request
 passed without resurrecting the withdrawn morning topic. Keep the control with
 **no automatic model switch**.
+The Thorough-model selection gate is closed with **NONE**. In a same-campaign,
+local-only ROCm eval on the RX 9070 XT (20 fixtures, one deterministic run per
+fixture), the 4B control measured 35.0% fabrication (7/20), 70% safety facts
+(14/20), and 2.3s mean draft wall time; `qwen3.5:9b` measured 45%/65%/3.1s,
+`qwen3:8b` 50%/70%/2.9s, and `qwen3:14b` 50%/65%/4.7s. All candidates failed
+the fabrication gate (and 9B/14B also safety); 14B exceeded the ~2× draft-time
+warning. The local candidates were removed, leaving only
+`qwen3.5:4b-q4_K_M` installed. See
+`docs/eval-reports/2026-09-22-thorough-model-selection.md`; no Thorough option
+ships.
 The temporary Quick/Thorough profile experiment is not shipped: ModelEval
 rejected every heavier candidate at the fabrication/safety gate, so the
 Thorough profile and placeholder were removed. The sole Quick path preserves
