@@ -15,11 +15,13 @@ const fixturePath = resolve(
   dirname(fileURLToPath(import.meta.url)),
   '../../../../e2e/fixtures/clinical-knowledge/acceptance.json',
 );
+interface DiscussionFixture {
+  facts: string[];
+  expectedTitles: string[];
+}
 const fixtures = JSON.parse(readFileSync(fixturePath, 'utf8')) as {
-  discussion: {
-    facts: string[];
-    expectedTitles: string[];
-  };
+  discussion: DiscussionFixture;
+  discussionSubtopics: DiscussionFixture;
 };
 
 describe('clinical-knowledge drafting integration', () => {
@@ -51,22 +53,37 @@ describe('clinical-knowledge drafting integration', () => {
     expect(renderClinicalKnowledgeGuide('Free form', ['Context', 'Risk'])).toBe('');
   });
 
-  it('renders Discussion themes without changing other sections or duplicating facts', () => {
+  it('leaves a single-theme Discussion as prose with no subheading', () => {
     const sections = {
       Subjective: 'A fictional client discussed sleep.',
       Discussion: fixtures.discussion.facts.join(' '),
       Plan: '',
     };
+    expect(fixtures.discussion.expectedTitles).toEqual([]);
+    const result = applyDiscussionThemes(sections, ['Subjective', 'Discussion', 'Plan']);
+    expect(result).toBe(sections);
+    expect(result.Discussion).not.toContain('#');
+  });
+
+  it('keeps several subtopics as subheadings without changing other sections or duplicating facts', () => {
+    const sections = {
+      Subjective: 'A fictional client discussed sleep.',
+      Discussion: fixtures.discussionSubtopics.facts.join(' '),
+      Plan: '',
+    };
+    const [first, second] = fixtures.discussionSubtopics.expectedTitles;
     const result = applyDiscussionThemes(sections, ['Subjective', 'Discussion', 'Plan']);
     expect(result.Subjective).toBe(sections.Subjective);
     expect(result.Plan).toBe('');
     expect(result.Discussion).toBe(
-      `### ${fixtures.discussion.expectedTitles[0]}\nFictional client discussed sleep at home.\nFictional client reported waking early.\n\n### ${fixtures.discussion.expectedTitles[1]}\nFictional client mentioned a library book.`,
+      `### ${String(first)}\nFictional client discussed sleep at home.\nFictional client reported waking early.\n\n### ${String(second)}\nFictional client described conflict with a partner.\nFictional client discussed support from a friend.`,
     );
-    for (const fact of fixtures.discussion.facts) {
+    for (const fact of fixtures.discussionSubtopics.facts) {
       expect(result.Discussion.split(fact)).toHaveLength(2);
     }
     expect(result.Discussion).not.toMatch(/diagnos|caus|severity|risk/i);
+    // The refine chat applies this again to its own output: nothing moves.
+    expect(applyDiscussionThemes(result, ['Subjective', 'Discussion', 'Plan'])).toBe(result);
   });
 
   it('leaves an unnamed Discussion-like section untouched', () => {

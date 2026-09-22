@@ -3,15 +3,19 @@
  *
  * This module is intentionally a grouper, not a clinical language model. It
  * chooses a neutral heading only when at least two source facts have a clear
- * shared topic. Source facts are returned verbatim and are never merged,
+ * shared topic, and headings at all only when at least two topics qualify: a
+ * Discussion with one theme stays prose, with no subheading. Source facts are returned verbatim and are never merged,
  * rewritten, interpreted, or deduplicated.
  */
 
 export const DISCUSSION_FALLBACK_TITLE = 'Other discussion';
 
 export interface DiscussionTheme {
-  /** A neutral, display-ready subsection heading. */
-  readonly title: string;
+  /**
+   * A neutral, display-ready subsection heading, or null when the section
+   * has no distinct subtopics and its facts stand as prose without one.
+   */
+  readonly title: string | null;
   /** Source facts, unchanged and in their original relative order. */
   readonly facts: readonly string[];
 }
@@ -121,8 +125,12 @@ function classify(fact: string): number | null {
 /**
  * Group supplied Discussion facts into neutral titled subsections.
  *
- * A named subsection is emitted only when two or more facts classify to that
- * topic. Every other fact appears exactly once under `Other discussion`.
+ * A named subsection needs two or more facts classified to that topic, and
+ * subsections are returned only when at least two topics qualify. Below that
+ * the result is one untitled group of every fact: a lone subheading, or
+ * `Other discussion` as the only one, is structure the session did not have.
+ * With several subtopics, facts that fit none appear exactly once under
+ * `Other discussion`, last; when every fact fits a subtopic there is none.
  */
 export function groupDiscussionThemes(source: DiscussionSource): readonly DiscussionTheme[] {
   const facts = sourceFacts(source);
@@ -163,6 +171,8 @@ export function groupDiscussionThemes(source: DiscussionSource): readonly Discus
     return leftIndex - rightIndex;
   });
 
+  if (themes.length < 2) return [{ title: null, facts: [...facts] }];
+
   const groupedThemeIndices = new Set(
     themes.flatMap((theme) => {
       const index = THEME_RULES.findIndex((rule) => rule.title === theme.title);
@@ -186,12 +196,49 @@ export function groupDiscussionRawNotes(rawNotes: string): readonly DiscussionTh
   return groupDiscussionThemes(rawNotes);
 }
 
+/** A subheading line this renderer (or the model) already wrote. */
+const SUBHEADING_LINE = /^\s*#{1,6}\s+(.*)$/;
+
+/**
+ * The body with any subheadings it already carries accounted for: null when
+ * it has a real subtopic heading (leave it as it is), otherwise the body with
+ * a catch-all heading that stood alone removed, ready to group afresh.
+ */
+function withoutLoneCatchAll(body: string): string | null {
+  const lines = body.split(/\r?\n/);
+  const titles = lines.flatMap((line) => {
+    const match = SUBHEADING_LINE.exec(line);
+    return match ? [(match[1] ?? '').trim().toLowerCase()] : [];
+  });
+  if (titles.length === 0) return body;
+  if (titles.some((title) => title !== DISCUSSION_FALLBACK_TITLE.toLowerCase())) return null;
+  return lines
+    .filter((line) => !SUBHEADING_LINE.test(line))
+    .join('\n')
+    .trim();
+}
+
 /**
  * Render grouped facts as titled Markdown subsections. The heading is the
  * only generated content; each fact is emitted verbatim on its own line.
+ *
+ * A Discussion without distinct subtopics comes back exactly as given, so a
+ * single-theme section keeps its prose. A body that already has subtopic
+ * headings is returned untouched: the refine chat runs this again on its own
+ * output, and regrouping would file the heading lines themselves as facts.
+ * An `Other discussion` heading standing alone (the model's, or a note drafted
+ * before this rule) is dropped and the rest grouped afresh.
  */
 export function renderDiscussionThemes(source: DiscussionSource): string {
-  return groupDiscussionThemes(source)
-    .map(({ title, facts }) => `### ${title}\n${facts.join('\n')}`)
-    .join('\n\n');
+  let body = source;
+  if (typeof source === 'string') {
+    const cleaned = withoutLoneCatchAll(source);
+    if (cleaned === null) return source;
+    body = cleaned;
+  }
+  const themes = groupDiscussionThemes(body);
+  if (themes.every(({ title }) => title === null)) {
+    return typeof body === 'string' ? body : body.join(' ');
+  }
+  return themes.map(({ title, facts }) => `### ${String(title)}\n${facts.join('\n')}`).join('\n\n');
 }

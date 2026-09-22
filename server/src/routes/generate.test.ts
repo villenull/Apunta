@@ -157,7 +157,7 @@ describe('POST /api/generate — the happy path', () => {
       patient_id: patient.id,
       format_id: discussionFormat.id,
       typed_notes:
-        'Fictional client discussed sleep at home. Fictional client reported waking early. Fictional client mentioned a library book.',
+        'Fictional client discussed sleep at home. Fictional client described conflict with a partner. Fictional client reported waking early. Fictional client discussed support from a friend. Fictional client mentioned a library book.',
     });
     const note = events.at(-1)?.data['note'] as Note;
     const discussionTokens = events
@@ -165,9 +165,27 @@ describe('POST /api/generate — the happy path', () => {
       .map((event) => String(event.data['text']))
       .join('');
     expect(discussionTokens).toBe(
-      '### Daily routines and functioning\nFictional client discussed sleep at home.\nFictional client reported waking early.\n\n### Other discussion\nFictional client mentioned a library book.',
+      '### Daily routines and functioning\nFictional client discussed sleep at home.\nFictional client reported waking early.\n\n### Context and relationships\nFictional client described conflict with a partner.\nFictional client discussed support from a friend.\n\n### Other discussion\nFictional client mentioned a library book.',
     );
     expect(note.content).toContain(`Discussion: ${discussionTokens}`);
+  });
+
+  it('drafts a single-theme Discussion as prose with no subheading', async () => {
+    const discussionFormat = await seedFormat(harness.app, {
+      name: 'Fictional discussion format',
+      sections: ['Discussion'],
+    });
+    const typed =
+      'Fictional client discussed sleep at home. Fictional client reported waking early. Fictional client mentioned a library book.';
+    const { events } = await generate(harness.app, {
+      patient_id: patient.id,
+      format_id: discussionFormat.id,
+      typed_notes: typed,
+    });
+    const note = events.at(-1)?.data['note'] as Note;
+    expect(note.content).not.toContain('#');
+    expect(note.content).not.toContain('Other discussion');
+    expect(note.content).toContain('Fictional client reported waking early.');
   });
 });
 

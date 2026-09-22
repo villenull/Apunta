@@ -21,7 +21,20 @@
       "Fictional client reported waking early.",
       "Fictional client mentioned a library book."
     ],
-    "expectedTitles": ["Daily routines and functioning", "Other discussion"],
+    "expectedTitles": [],
+    "preserveExactlyOnce": true,
+    "mustNotClaim": ["diagnosis", "causality", "severity", "risk"]
+  },
+  "discussionSubtopics": {
+    "format": "Fictional discussion format",
+    "sections": ["Discussion"],
+    "facts": [
+      "Fictional client discussed sleep at home.",
+      "Fictional client described conflict with a partner.",
+      "Fictional client reported waking early.",
+      "Fictional client discussed support from a friend."
+    ],
+    "expectedTitles": ["Daily routines and functioning", "Context and relationships"],
     "preserveExactlyOnce": true,
     "mustNotClaim": ["diagnosis", "causality", "severity", "risk"]
   }

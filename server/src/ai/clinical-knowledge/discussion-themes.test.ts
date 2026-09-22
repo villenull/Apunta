@@ -41,7 +41,7 @@ describe('groupDiscussionThemes', () => {
     ]);
   });
 
-  it('places unpaired, ambiguous, and unrelated facts in a neutral fallback', () => {
+  it('leaves unpaired, ambiguous, and unrelated facts as untitled prose', () => {
     const facts = [
       'Patient reported worry.',
       'Patient mentioned a book borrowed from the library.',
@@ -51,12 +51,8 @@ describe('groupDiscussionThemes', () => {
 
     const result = groupDiscussionThemes(facts);
 
-    expect(result).toEqual([
-      {
-        title: DISCUSSION_FALLBACK_TITLE,
-        facts,
-      },
-    ]);
+    expect(result).toEqual([{ title: null, facts }]);
+    expect(renderDiscussionThemes(facts)).toBe(facts.join(' '));
   });
 
   it('does not add clinical interpretation, causality, severity, risk, or facts', () => {
@@ -67,20 +63,14 @@ describe('groupDiscussionThemes', () => {
     ];
 
     const result = groupDiscussionThemes(facts);
-    expect(result).toEqual([{ title: DISCUSSION_FALLBACK_TITLE, facts }]);
-    expect(renderDiscussionThemes(facts)).toBe(`### ${DISCUSSION_FALLBACK_TITLE}\n${facts.join('\n')}`);
+    expect(result).toEqual([{ title: null, facts }]);
+    expect(renderDiscussionThemes(facts)).not.toContain('#');
   });
 
   it('retains duplicate source facts as separate occurrences', () => {
     const facts = ['Patient discussed sleep.', 'Patient discussed sleep.', 'Patient discussed school.'];
 
-    expect(groupDiscussionThemes(facts)).toEqual([
-      {
-        title: 'Daily routines and functioning',
-        facts: ['Patient discussed sleep.', 'Patient discussed sleep.'],
-      },
-      { title: DISCUSSION_FALLBACK_TITLE, facts: ['Patient discussed school.'] },
-    ]);
+    expect(groupDiscussionThemes(facts)).toEqual([{ title: null, facts }]);
   });
 
   it('supports raw notes by splitting sentence and line boundaries', () => {
@@ -94,11 +84,63 @@ describe('groupDiscussionThemes', () => {
     ]);
     expect(groupDiscussionThemes(rawNotes)).toEqual([
       {
-        title: 'Daily routines and functioning',
-        facts: ['Patient discussed sleep at home.', 'Patient reported waking early.'],
+        title: null,
+        facts: [
+          'Patient discussed sleep at home.',
+          'Patient reported waking early.',
+          'Patient mentioned a new book.',
+        ],
       },
-      { title: DISCUSSION_FALLBACK_TITLE, facts: ['Patient mentioned a new book.'] },
     ]);
+  });
+
+  it('gives a single-theme Discussion no subheading, catch-all or otherwise', () => {
+    const prose =
+      'Dana came to session reporting difficulty falling asleep. Dana said she has been waking at 4 a.m.\nDana mentioned a library book.';
+
+    expect(renderDiscussionThemes(prose)).toBe(prose);
+    expect(renderDiscussionThemes(prose)).not.toContain(DISCUSSION_FALLBACK_TITLE);
+  });
+
+  it('keeps several subtopics as subheadings, with no catch-all when every fact belongs to one', () => {
+    const prose =
+      'Dana described difficulty falling asleep. Dana discussed conflict with her partner. Dana reported waking once overnight. Dana discussed support from a friend.';
+
+    expect(renderDiscussionThemes(prose)).toBe(
+      [
+        '### Daily routines and functioning',
+        'Dana described difficulty falling asleep.',
+        'Dana reported waking once overnight.',
+        '',
+        '### Context and relationships',
+        'Dana discussed conflict with her partner.',
+        'Dana discussed support from a friend.',
+      ].join('\n'),
+    );
+  });
+
+  it('leaves a Discussion that already has subtopic headings as it is', () => {
+    const grouped = renderDiscussionThemes([
+      'Patient described difficulty falling asleep.',
+      'Patient discussed a demanding work environment.',
+      'Patient said sleep was more consistent this week.',
+      'Patient discussed support from a friend.',
+      'Patient mentioned a library book.',
+    ]);
+    expect(grouped).toContain(`### ${DISCUSSION_FALLBACK_TITLE}`);
+
+    // The refine chat runs the formatter again on its own output.
+    expect(renderDiscussionThemes(grouped)).toBe(grouped);
+    const edited = '### Sleep\nPatient described difficulty falling asleep.';
+    expect(renderDiscussionThemes(edited)).toBe(edited);
+  });
+
+  it('drops a catch-all heading that stands alone and regroups what is under it', () => {
+    const drafted = `### ${DISCUSSION_FALLBACK_TITLE}\nPatient discussed sleep at home.\nPatient reported waking early.`;
+
+    expect(renderDiscussionThemes(drafted)).toBe(
+      'Patient discussed sleep at home.\nPatient reported waking early.',
+    );
   });
 
   it('returns an empty Discussion result for empty input', () => {

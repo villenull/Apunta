@@ -1,7 +1,8 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-22, after the owner's own progress note became the app's
-default: first-run onboarding offers it first (one click, her sections and
+**Updated 2026-09-22, after Discussion stopped getting a lone `### Other
+discussion` subheading (subtopics only when there are two or more), and
+after the owner's own progress note became the app's default: first-run onboarding offers it first (one click, her sections and
 her instructions), `npm run seed` creates it, and a format with her seven
 sections and no instructions drafts with hers (`docs/decisions.md`,
 2026-09-22). Before that, 2026-09-21: the refine chat lost its quick actions
@@ -146,7 +147,12 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   section aliases and never supplies a finding or treatment. Discussion is
   grouped by deterministic neutral themes only when a named Discussion section
   exists; every supplied fact is retained exactly once, and headings are the
-  only generated content. No model training, retrieval, raw reference PDF,
+  only generated content. Since 2026-09-22 subheadings appear only when at
+  least two topics each have two or more sentences: a single-theme Discussion
+  stays prose, `### Other discussion` never stands alone and only holds
+  leftovers beside real subtopics, and a body that already has subtopic
+  headings (the refine chat re-applies the grouper) is left as it is
+  (`docs/decisions.md`, 2026-09-22). No model training, retrieval, raw reference PDF,
   outbound call, or database change is involved. Synthetic acceptance cases
   live in `e2e/fixtures/clinical-knowledge/`.
 - **Inference lifecycle and efficiency pass** (2026-09-08): the configured
@@ -270,6 +276,19 @@ start the long real eval while live testing is active.
 Grouped by what each item waits on.
 
 ### Waits on the owner
+
+- **Discussion subheading form, and whether the grouper finds her
+  subtopics.** She likes Discussion with subtopics under it. Today the
+  server writes them as `### Daily routines and functioning` (markdown H3,
+  title case, generic topic names), shown literally in the note textarea and
+  copied as plain text; her style source says "sparse, lowercase bold
+  subheadings" (`docs/feedback/2026-08-25-owner-style-source.md`). The form
+  was deliberately left unchanged on 2026-09-22, pending a decision. Also:
+  on three synthetic sessions drafted by the real 4B that day, the grouper
+  produced no subheadings at all, even for a session with two plainly
+  separate topics (sleep; an argument with a partner), because it needs two
+  sentences per topic and the model packed the sleep material into one. So
+  the subtopics she likes currently arrive only if the model writes them.
 
 - **The confidentiality decision** on her Claude export (M11 reads her whole
   account). Then the orchestrator runs `npm run probe:claude -- <export.zip>`

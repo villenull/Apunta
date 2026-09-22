@@ -118,8 +118,8 @@ export function renderClinicalKnowledgeGuide(
 
   if (discussion !== null) {
     lines.push(
-      `Discussion routing: keep supplied facts in the authored section ${JSON.stringify(discussion)} and, when two or more facts clearly share a broad topic, group them under a concise neutral title.`,
-      'Every supplied fact must appear exactly once and verbatim within Discussion. A title may organize facts but may not add diagnosis, causality, severity, risk, or any other clinical claim; leave one neutral catch-all subsection for facts that do not safely group.',
+      `Discussion routing: keep supplied facts in the authored section ${JSON.stringify(discussion)} and, when two or more facts clearly share a broad topic, group them under a concise neutral title. Use titles only when there are two or more such topics; a Discussion with a single theme stays prose with no title.`,
+      'Every supplied fact must appear exactly once and verbatim within Discussion. A title may organize facts but may not add diagnosis, causality, severity, risk, or any other clinical claim; when there are titled topics, facts that do not safely group go in one neutral catch-all subsection, and there is no catch-all when every fact belongs to a titled topic.',
     );
   }
 
@@ -141,7 +141,8 @@ export function renderClinicalKnowledgeGuide(
  * Apply the deterministic Discussion formatter only when the format authored
  * a Discussion-like section. Other sections and all section keys are returned
  * untouched. The formatter emits headings as the only generated content and
- * preserves each supplied body fact once.
+ * preserves each supplied body fact once; a Discussion without two distinct
+ * subtopics comes back unchanged, with no heading.
  */
 export function applyDiscussionThemes<T extends Record<string, string>>(
   sections: T,
