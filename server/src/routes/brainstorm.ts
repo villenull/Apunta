@@ -10,8 +10,10 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
-import { brainstormNoteBlock } from '../ai/prompts.js';
-import type { AiProviders, BrainstormNoteInput, ChatTurn, LlmStats } from '../ai/types.js';
+import { brainstormPromptTokens } from '../ai/ollama.js';
+import { fitNotesNewestFirst } from '../ai/prior-notes.js';
+import { buildBrainstormPrompt, omittedNotesLine } from '../ai/prompts.js';
+import type { AiProviders, BrainstormNoteInput, BrainstormRequest, ChatTurn, LlmStats } from '../ai/types.js';
 import {
   clearBrainstormMessages,
   createBrainstormMessage,
@@ -22,7 +24,6 @@ import { getPatient } from '../db/patients.js';
 import { notFound } from '../http/errors.js';
 import { openSse } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
-import { resolveLookback } from '../plan/settings.js';
 
 /**
  * Brainstorm — `GET/POST/DELETE /api/patients/:id/brainstorm` (M12).
@@ -30,8 +31,8 @@ import { resolveLookback } from '../plan/settings.js';
  * A freeform chat with the local model about one patient. A thinking aid,
  * never a record: this file has no write path to any table but
  * `brainstorm_messages`, and the stream carries no event that could revise
- * one. The model is given the patient's name and recent notes; the "Context"
- * line on screen shows exactly which notes those were.
+ * one. The model is given the patient's name and every note that fits; the
+ * "Context" line on screen shows exactly which notes those were.
  *
  * Privacy like the refine chat's: every diagnostic on this path is shape —
  * codes, lengths, counts. The notes *and* the therapist's message both go
@@ -40,31 +41,33 @@ import { resolveLookback } from '../plan/settings.js';
  */
 
 /**
- * The whole prompt — system, notes, conversation — budgeted to the context
- * window, mirroring the provider's own refusal threshold at the default
- * `num_ctx` (`NUM_CTX * PROMPT_BUDGET` in `ai/ollama.ts`). The provider's
- * `assertFits` stays the backstop: a smaller configured window still refuses
- * honestly instead of truncating the instructions off the head.
+ * The whole prompt — system, notes, conversation — budgeted to what the
+ * provider will accept at the default `num_ctx` (`brainstormPromptTokens`
+ * in `ai/ollama.ts`, 13,824). The provider's `assertFits` stays the
+ * backstop: a smaller configured window still refuses honestly instead of
+ * truncating the instructions off the head.
  */
-const BRAINSTORM_PROMPT_BUDGET = 12_288;
+const BRAINSTORM_PROMPT_BUDGET = brainstormPromptTokens();
 
 export interface AssembledBrainstormContext {
   /** What the "Context" line shows, and what the provider is actually given. */
   readonly context: BrainstormContext;
   /** The included notes as full texts, newest first. */
   readonly notes: readonly BrainstormNoteInput[];
+  /** How many notes did not fit — the model is told, so absence is not denial. */
+  readonly omittedNotes: number;
   /** The conversation turns that fit, oldest first. */
   readonly history: readonly ChatTurn[];
 }
 
 /**
- * Which notes the model gets: newest first, capped by the briefing's
- * lookback setting, then fitted to the budget.
+ * Which notes the model gets: all of them, newest first, as many as fit
+ * (`fitNotesNewestFirst`, shared with the refine chat's background).
  *
- * On overflow the oldest conversation turns go first, then the oldest notes —
- * whole notes only, never a cut mid-note. A note too long to fit alone is
- * left out, and its id is reported in `dropped_note_ids` so the screen can
- * say so rather than silently think with less than she sees.
+ * Notes come before the conversation: on overflow the oldest turns go first
+ * and only then the oldest notes. Whatever was left out is reported in
+ * `dropped_note_ids` so the screen can say so rather than silently think
+ * with less than she sees.
  */
 export function assembleBrainstormContext(
   db: Database,
@@ -72,52 +75,45 @@ export function assembleBrainstormContext(
   message: string,
   history: readonly ChatTurn[] = [],
 ): AssembledBrainstormContext {
-  const cap = resolveLookback(db);
-  const candidates = listNotesForPatient(db, patient.id).slice(0, cap);
+  const candidates = listNotesForPatient(db, patient.id);
 
-  // The system prompt is fixed for a patient; the message is not negotiable.
+  // Everything but the notes and the turns, estimated from the prompt itself,
+  // plus the "only N of M" line at its longest — paid for whether or not it
+  // turns out to be needed, so the fitted prompt can never overshoot.
   const fixed =
-    approximateTokens(`You are thinking with a psychotherapist about one of her patients, ${patient.name}.`) +
-    approximateTokens(message);
+    promptTokens({ patientName: patient.name, notes: [], history: [], message }) +
+    approximateTokens(omittedNotesLine(candidates.length, candidates.length)) +
+    1;
+  const fitted = fitNotesNewestFirst(candidates, BRAINSTORM_PROMPT_BUDGET - fixed);
+  const notes = fitted.notes.map(({ title, date, text }) => ({ title, date, text }));
+  const omittedNotes = fitted.omittedIds.length;
 
-  const notes: BrainstormNoteInput[] = [];
-  const included: BrainstormContext['notes'] = [];
-  const droppedNoteIds: string[] = [];
-  let used = fixed;
-  for (const note of candidates) {
-    const date = note.created_at.slice(0, 10);
-    const cost = approximateTokens(brainstormNoteBlock({ title: note.title, date, text: note.content }));
-    if (fixed + cost > BRAINSTORM_PROMPT_BUDGET || used + cost > BRAINSTORM_PROMPT_BUDGET) {
-      droppedNoteIds.push(note.id);
-      continue;
-    }
-    used += cost;
-    notes.push({ title: note.title, date, text: note.content });
-    included.push({ id: note.id, title: note.title, date });
-  }
-
+  // The turns are trimmed against the real prompt, oldest first.
   const turns = history.slice(-BRAINSTORM_HISTORY_TURNS);
-  while (turns.length > 0 && used + turnsTokens(turns) > BRAINSTORM_PROMPT_BUDGET) {
+  while (
+    turns.length > 0 &&
+    promptTokens({ patientName: patient.name, notes, omittedNotes, history: turns, message }) >
+      BRAINSTORM_PROMPT_BUDGET
+  ) {
     turns.shift();
-    used = fixed + notesTokens(notes) + turnsTokens(turns);
   }
 
   return {
-    context: { notes: included, cap, dropped_note_ids: droppedNoteIds },
+    context: {
+      notes: fitted.notes.map(({ id, title, date }) => ({ id, title, date })),
+      total: candidates.length,
+      dropped_note_ids: [...fitted.omittedIds],
+      most_recent: fitted.mostRecent,
+    },
     notes,
+    omittedNotes,
     history: turns,
   };
 }
 
-function notesTokens(notes: readonly BrainstormNoteInput[]): number {
-  return notes.reduce((total, note) => total + approximateTokens(brainstormNoteBlock(note)), 0);
-}
-
-function turnsTokens(turns: readonly ChatTurn[]): number {
-  return turns.reduce(
-    (total, turn) => total + approximateTokens(`${turn.role === 'user' ? 'Therapist' : 'You'}: ${turn.text}`),
-    0,
-  );
+function promptTokens(request: BrainstormRequest): number {
+  const prompt = buildBrainstormPrompt(request);
+  return approximateTokens(prompt.system) + approximateTokens(prompt.user);
 }
 
 export function registerBrainstormRoutes(app: FastifyInstance, db: Database, providers: AiProviders): void {
@@ -164,6 +160,7 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
       const events = providers.llm.discussPatient({
         patientName: patient.name,
         notes: assembled.notes,
+        omittedNotes: assembled.omittedNotes,
         history: assembled.history,
         message: input.message,
       });
@@ -242,7 +239,7 @@ function requirePatient(db: Database, id: string): Patient {
 
 /**
  * The last few turns, oldest first. Bounded because the prompt is rebuilt
- * from scratch on every call and already carries the recent notes: an
+ * from scratch on every call and already carries the notes: an
  * unbounded thread is the one input here that grows without limit, and
  * Ollama truncates from the head when it overflows — dropping the
  * instructions and keeping the patient material.

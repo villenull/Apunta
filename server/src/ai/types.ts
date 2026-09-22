@@ -61,7 +61,8 @@ export interface DetectFormatRequest {
 }
 
 /** One note offered to a brainstorm call, newest first. */
-export interface BrainstormNoteInput {
+/** One of the patient's notes as a prompt shows it: Brainstorm's context, the refine chat's background. */
+export interface PriorNoteInput {
   readonly title: string;
   /** `YYYY-MM-DD`, so the model can place it in time. */
   readonly date: string;
@@ -69,9 +70,17 @@ export interface BrainstormNoteInput {
   readonly text: string;
 }
 
+export type BrainstormNoteInput = PriorNoteInput;
+
 export interface BrainstormRequest {
   readonly patientName: string;
   readonly notes: readonly BrainstormNoteInput[];
+  /**
+   * How many of the patient's notes are not in `notes` because they did not
+   * fit, so the model can say "not in the notes I have" rather than "never
+   * happened". Zero or absent when every note went.
+   */
+  readonly omittedNotes?: number | undefined;
   readonly history: readonly ChatTurn[];
   readonly message: string;
 }

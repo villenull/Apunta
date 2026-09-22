@@ -1,5 +1,6 @@
 import {
   BRAINSTORM_HISTORY_TURNS,
+  approximateTokens,
   type BrainstormMessage,
   type BrainstormThreadResponse,
   type Note,
@@ -10,7 +11,8 @@ import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FakeSttProvider } from '../ai/fake.js';
-import { OllamaProvider } from '../ai/ollama.js';
+import { OllamaProvider, brainstormPromptTokens } from '../ai/ollama.js';
+import { buildBrainstormPrompt } from '../ai/prompts.js';
 import { listBrainstormMessages } from '../db/brainstorm.js';
 import { addBatchPatient, createImportBatch, undoImportBatch } from '../db/import-batches.js';
 import { createTranscript } from '../db/transcripts.js';
@@ -25,7 +27,7 @@ import { assembleBrainstormContext } from './brainstorm.js';
  *
  * The fake answers every discussion with one canned thought naming what went
  * in, so the tests send ordinary questions and assert on the plumbing: the
- * patient name and the newest notes reach the model, the budget trims turns
+ * patient name and every note that fits reach the model, the budget trims turns
  * before notes, and nothing but the thread is ever written.
  */
 
@@ -192,7 +194,7 @@ describe('POST /api/patients/:id/brainstorm — discussing a patient', () => {
 });
 
 describe('the context the model is given', () => {
-  it('sends the patient name and the newest notes first, capped by lookback', async () => {
+  it('sends the patient name and every note, newest first — no lookback cap', async () => {
     const providers = recordingProviders();
     const local = await createTestApp({ providers });
     try {
@@ -218,21 +220,26 @@ describe('the context the model is given', () => {
       const discussed = providers.llm.discussions;
       expect(discussed).toHaveLength(1);
       expect(discussed[0]?.patientName).toBe('John Smith');
-      // Seven notes, lookback 5: the five newest, newest first, whole.
+      // Seven notes, more than the briefing's lookback of 5: Brainstorm
+      // takes all of them (owner, 2026-09-21), newest first, whole.
       expect(discussed[0]?.notes.map((note) => note.text)).toEqual([
         'Subjective: Session 6.',
         'Subjective: Session 5.',
         'Subjective: Session 4.',
         'Subjective: Session 3.',
         'Subjective: Session 2.',
+        'Subjective: Session 1.',
+        'Subjective: Session 0.',
       ]);
+      expect(discussed[0]?.omittedNotes ?? 0).toBe(0);
 
       const stored = (
         await local.app.inject({ method: 'GET', url: `/api/patients/${localPatient.id}/brainstorm` })
       ).json<BrainstormThreadResponse>();
-      expect(stored.context.notes.map((note) => note.id)).toHaveLength(5);
-      expect(stored.context.cap).toBe(5);
+      expect(stored.context.notes.map((note) => note.id)).toHaveLength(7);
+      expect(stored.context.total).toBe(7);
       expect(stored.context.dropped_note_ids).toEqual([]);
+      expect(stored.context.most_recent).toBe(true);
     } finally {
       await local.close();
     }
@@ -300,7 +307,7 @@ describe('the context the model is given', () => {
       // does not crowd out the older ones that do fit.
       local.db
         .prepare('UPDATE notes SET created_at = ? WHERE id = ?')
-        .run('2026-09-21T12:00:00.000Z', huge.id);
+        .run('2099-01-01T00:00:00.000Z', huge.id);
 
       const { statusCode } = await discuss(local.app, localPatient.id, { message: 'What fits?' });
       expect(statusCode).toBe(200);
@@ -314,6 +321,69 @@ describe('the context the model is given', () => {
       ).json<BrainstormThreadResponse>();
       expect(stored.context.dropped_note_ids).toEqual([huge.id]);
       expect(stored.context.notes.map((note) => note.id)).not.toContain(huge.id);
+      // The newest note is missing, so the screen must not say "most recent".
+      expect(stored.context.most_recent).toBe(false);
+      expect(stored.context.total).toBe(2);
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('fits as many of the newest notes as the window allows, and says how many were left out', async () => {
+    const providers = recordingProviders();
+    const local = await createTestApp({ providers });
+    try {
+      const localPatient = await seedPatient(local.app, 'John Smith');
+      const localFormat = await seedFormat(local.app);
+      // Thirty notes of ~860 estimated tokens each: ~26,000 in all, about
+      // twice what the window holds.
+      const seeded: Note[] = [];
+      for (let index = 0; index < 30; index += 1) {
+        seeded.push(
+          await seedNote(
+            local.app,
+            localPatient.id,
+            localFormat.id,
+            `Subjective: Session ${String(index)}. ${'Slept better, walked daily. '.repeat(108)}`,
+          ),
+        );
+      }
+      for (const [index, note] of seeded.entries()) {
+        local.db
+          .prepare('UPDATE notes SET created_at = ? WHERE id = ?')
+          .run(new Date(Date.UTC(2026, 0, 1 + index, 9)).toISOString(), note.id);
+      }
+
+      const assembled = assembleBrainstormContext(local.db, localPatient, 'What has changed?');
+      const included = assembled.context.notes.length;
+      expect(included).toBeGreaterThan(10);
+      expect(included).toBeLessThan(30);
+      // The newest ones, as a run: session 29 down to 29 - (included - 1).
+      expect(assembled.notes[0]?.text).toContain('Session 29.');
+      expect(assembled.notes.at(-1)?.text).toContain(`Session ${String(30 - included)}.`);
+      expect(assembled.context.total).toBe(30);
+      expect(assembled.context.dropped_note_ids).toHaveLength(30 - included);
+      expect(assembled.context.dropped_note_ids).toContain(seeded[0]?.id);
+      expect(assembled.context.most_recent).toBe(true);
+      expect(assembled.omittedNotes).toBe(30 - included);
+
+      // What went is exactly what the provider accepts, and nearly all of it.
+      const prompt = buildBrainstormPrompt({
+        patientName: localPatient.name,
+        notes: assembled.notes,
+        omittedNotes: assembled.omittedNotes,
+        history: assembled.history,
+        message: 'What has changed?',
+      });
+      const tokens = approximateTokens(prompt.system) + approximateTokens(prompt.user);
+      expect(tokens).toBeLessThanOrEqual(brainstormPromptTokens());
+      expect(tokens).toBeGreaterThan(brainstormPromptTokens() - 1000);
+      // …and the model is told the older notes exist, so absence is not denial.
+      expect(prompt.user).toContain(`Only ${String(included)} of her 30 notes on this patient fit here`);
+
+      const { statusCode } = await discuss(local.app, localPatient.id, { message: 'What has changed?' });
+      expect(statusCode).toBe(200);
+      expect(providers.llm.discussions.at(-1)?.omittedNotes).toBe(30 - included);
     } finally {
       await local.close();
     }
@@ -325,6 +395,7 @@ describe('the context the model is given', () => {
     expect(assembled.notes).toEqual([]);
     expect(assembled.context.notes).toEqual([]);
     expect(assembled.context.dropped_note_ids).toEqual([]);
+    expect(assembled.context.total).toBe(0);
   });
 });
 

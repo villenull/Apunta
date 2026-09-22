@@ -203,14 +203,6 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
               ))}
             </ul>
           )}
-          {context.dropped_note_ids.length > 0 && (
-            <p className="small note-meta">
-              {context.dropped_note_ids.length === 1
-                ? '1 note'
-                : `${String(context.dropped_note_ids.length)} notes`}{' '}
-              left out — too long to fit.
-            </p>
-          )}
         </details>
       )}
 
@@ -327,8 +319,17 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
   );
 }
 
+/**
+ * The Context line. When notes had to be left out for space it says so, in
+ * so many words: she should never think the model read a note it did not.
+ */
 function contextSummary(context: BrainstormContext): string {
-  if (context.notes.length === 0) return 'No notes yet';
   const count = context.notes.length;
-  return `Thinking with ${String(count)} note${count === 1 ? '' : 's'}`;
+  const total = Math.max(context.total, count);
+  if (total === 0) return 'No notes yet';
+  if (count === total) return `Thinking with ${String(count)} note${count === 1 ? '' : 's'}`;
+  if (count === 0) return `No room for any of ${String(total)} notes`;
+  return context.most_recent
+    ? `Using the ${count === 1 ? 'most recent' : `${String(count)} most recent`} of ${String(total)} notes`
+    : `Using ${String(count)} of ${String(total)} notes`;
 }

@@ -110,6 +110,35 @@ const CONTEXT_OVERFLOW_MARGIN = 16;
 /** Refuse rather than let Ollama silently drop the head of the prompt. */
 const PROMPT_BUDGET = 0.75;
 
+/**
+ * What the refine prompt may be, estimated, at the default window. Equal to
+ * `NUM_CTX - NUM_PREDICT - PROMPT_HEADROOM` as it happens, so the rule below
+ * holds for it too. The chat route budgets the patient's earlier notes to it.
+ */
+export const REFINE_PROMPT_TOKENS = Math.floor(NUM_CTX * PROMPT_BUDGET);
+
+/**
+ * Room left between an estimated prompt plus its output ceiling and the end
+ * of the window, for the estimate being wrong. `approximateTokens` (3.5
+ * characters a token) measured 0.82–0.89 of the real count on dictation
+ * prose for `qwen3.5:4b` (2026-09-21), so it over-counts; this is what still
+ * stands if it were exact, and it is exceeded only below ~3.26 characters a
+ * token. Past that, `context_overflow` refuses rather than truncating.
+ */
+export const PROMPT_HEADROOM = 1024;
+
+/**
+ * Brainstorm's prompt ceiling (2026-09-21): the window, less its own output
+ * ceiling, less the headroom — 13,824 at the default window, up from the
+ * flat 75% (12,288). Brainstorm now reads every note that fits, so the room
+ * the flat fraction held back for the refine path's 3,072-token output is
+ * room for about three more notes here. The KV cache is sized by `num_ctx`,
+ * not by the prompt, so this costs no memory — only prompt-evaluation time.
+ */
+export function brainstormPromptTokens(numCtx: number = NUM_CTX): number {
+  return numCtx - NUM_PREDICT_BRAINSTORM - PROMPT_HEADROOM;
+}
+
 export interface OllamaProviderOptions {
   /** Loopback only — the egress guard rejects anything else. */
   readonly baseUrl?: string;
@@ -346,7 +375,7 @@ export class OllamaProvider implements LlmProvider {
     await this.requireUsableModel(model);
 
     const prompt = buildBrainstormPrompt(request);
-    this.assertFits(prompt.system, prompt.user);
+    this.assertFits(prompt.system, prompt.user, brainstormPromptTokens(this.numCtx));
 
     const validate = (value: unknown): string => {
       const parsed = BrainstormReplySchema.safeParse(value);
@@ -695,12 +724,12 @@ export class OllamaProvider implements LlmProvider {
 
   // --- HTTP --------------------------------------------------------------
 
-  private assertFits(system: string, user: string): void {
+  private assertFits(system: string, user: string, limit: number = this.numCtx * PROMPT_BUDGET): void {
     const tokens = approximateTokens(system) + approximateTokens(user);
-    if (tokens > this.numCtx * PROMPT_BUDGET) {
+    if (tokens > limit) {
       throw aiError(
         'input_too_long',
-        `prompt is roughly ${String(tokens)} tokens, over ${String(Math.floor(this.numCtx * PROMPT_BUDGET))}`,
+        `prompt is roughly ${String(tokens)} tokens, over ${String(Math.floor(limit))}`,
       );
     }
   }

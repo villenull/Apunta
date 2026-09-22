@@ -788,17 +788,22 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
       if (brainstormMatch) {
         const patient = patientById(brainstormMatch[1] ?? '');
         if (!patient) return apiError(404, 'not_found', 'Patient not found');
-        const thread = (): { messages: BrainstormMessage[]; context: unknown } => ({
-          messages: state.brainstorm.filter((message) => message.patient_id === patient.id),
-          context: {
-            notes: state.notes
-              .filter((note) => note.patient_id === patient.id)
-              .slice(0, 5)
-              .map((note) => ({ id: note.id, title: note.title, date: note.created_at.slice(0, 10) })),
-            cap: 5,
-            dropped_note_ids: [],
-          },
-        });
+        const thread = (): { messages: BrainstormMessage[]; context: unknown } => {
+          const notes = state.notes.filter((note) => note.patient_id === patient.id);
+          return {
+            messages: state.brainstorm.filter((message) => message.patient_id === patient.id),
+            context: {
+              notes: notes.map((note) => ({
+                id: note.id,
+                title: note.title,
+                date: note.created_at.slice(0, 10),
+              })),
+              total: notes.length,
+              dropped_note_ids: [],
+              most_recent: true,
+            },
+          };
+        };
         if (method === 'GET') return json(thread());
         if (method === 'DELETE') {
           state.brainstorm = state.brainstorm.filter((message) => message.patient_id !== patient.id);

@@ -12,12 +12,13 @@ afterEach(() => {
 
 const CONTEXT = {
   notes: [{ id: '0198c0f0-0000-7000-8000-000000000011', title: 'Progress note', date: '2026-08-08' }],
-  cap: 5,
+  total: 1,
   dropped_note_ids: [],
+  most_recent: true,
 };
 
-function threadJson(messages: unknown): Response {
-  return new Response(JSON.stringify({ messages, context: CONTEXT }), {
+function threadJson(messages: unknown, context: unknown = CONTEXT): Response {
+  return new Response(JSON.stringify({ messages, context }), {
     status: 200,
     headers: { 'content-type': 'application/json' },
   });
@@ -99,6 +100,30 @@ describe('BrainstormView', () => {
     fireEvent.click(within(context).getByText('Thinking with 1 note'));
     expect(context.textContent).toContain('Progress note');
     expect(context.textContent).toContain('2026-08-08');
+  });
+
+  it.each([
+    [{ total: 30, most_recent: true }, 'Using the 2 most recent of 30 notes'],
+    [{ total: 30, most_recent: false }, 'Using 2 of 30 notes'],
+  ])('says plainly when notes were left out for space (%o)', async (shape, line) => {
+    const patient = makePatient('John Smith');
+    const notes = [
+      { id: '0198c0f0-0000-7000-8000-000000000011', title: 'Progress note', date: '2026-08-08' },
+      { id: '0198c0f0-0000-7000-8000-000000000012', title: 'Progress note', date: '2026-08-01' },
+    ];
+    const dropped = Array.from(
+      { length: 28 },
+      (_, index) => `0198c0f0-0000-7000-8000-0000000001${String(index).padStart(2, '0')}`,
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => threadJson([], { notes, dropped_note_ids: dropped, ...shape })),
+    );
+
+    render(<BrainstormView patient={patient} />);
+
+    const context = await screen.findByTestId('brainstorm-context');
+    expect(context.textContent).toContain(line);
   });
 
   it('renders a saved reply as Markdown, and never as elements', async () => {

@@ -1,0 +1,65 @@
+import type { Note } from '@apunta/shared';
+import { describe, expect, it } from 'vitest';
+
+import { fitNotesNewestFirst, priorNoteTokens, toPriorNote } from './prior-notes.js';
+
+/** Synthetic notes, newest first, as `listNotesForPatient` returns them. */
+function note(index: number, text: string): Note {
+  const day = String(28 - index).padStart(2, '0');
+  return {
+    id: `0198c0f0-0000-7000-8000-${String(index).padStart(12, '0')}`,
+    patient_id: '0198c0f0-0000-7000-8000-00000000aaaa',
+    format_id: '0198c0f0-0000-7000-8000-00000000bbbb',
+    title: 'Progress note',
+    status: 'draft',
+    content: text,
+    created_at: `2026-08-${day}T09:00:00.000Z`,
+    updated_at: `2026-08-${day}T09:00:00.000Z`,
+    published_at: null,
+  };
+}
+
+describe('fitNotesNewestFirst', () => {
+  const small = (index: number): Note => note(index, `Subjective: Session ${String(index)}. Slept well.`);
+  const cost = priorNoteTokens(toPriorNote(small(0)));
+
+  it('takes every note when they all fit', () => {
+    const fitted = fitNotesNewestFirst([small(0), small(1), small(2)], 10_000);
+    expect(fitted.notes.map((n) => n.text)).toEqual([
+      'Subjective: Session 0. Slept well.',
+      'Subjective: Session 1. Slept well.',
+      'Subjective: Session 2. Slept well.',
+    ]);
+    expect(fitted.omittedIds).toEqual([]);
+    expect(fitted.mostRecent).toBe(true);
+    expect(fitted.notes[0]?.date).toBe('2026-08-28');
+  });
+
+  it('stops at the first note that does not fit: the newest, as a run, with no holes', () => {
+    const candidates = [small(0), small(1), note(2, `Subjective: ${'long '.repeat(40)}`), small(3)];
+    // Room for two small notes, not the long third — and the small fourth
+    // must not jump the queue, or recent history would have a hole in it.
+    const fitted = fitNotesNewestFirst(candidates, cost * 2 + 3);
+    expect(fitted.notes.map((n) => n.id)).toEqual([candidates[0]?.id, candidates[1]?.id]);
+    expect(fitted.omittedIds).toEqual([candidates[2]?.id, candidates[3]?.id]);
+    expect(fitted.mostRecent).toBe(true);
+    expect(fitted.tokens).toBe(cost * 2);
+  });
+
+  it('skips a note too long to fit even alone, and no longer calls the rest the most recent', () => {
+    const huge = note(0, `Subjective: ${'A very long session. '.repeat(500)}`);
+    const fitted = fitNotesNewestFirst([huge, small(1), small(2)], cost * 3);
+    expect(fitted.notes.map((n) => n.text)).toEqual([
+      'Subjective: Session 1. Slept well.',
+      'Subjective: Session 2. Slept well.',
+    ]);
+    expect(fitted.omittedIds).toEqual([huge.id]);
+    expect(fitted.mostRecent).toBe(false);
+  });
+
+  it('fits nothing into no room', () => {
+    const fitted = fitNotesNewestFirst([small(0)], 0);
+    expect(fitted.notes).toEqual([]);
+    expect(fitted.omittedIds).toHaveLength(1);
+  });
+});

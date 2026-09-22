@@ -52,8 +52,9 @@ const userTurn = makeTurn('user', 'What stands out?');
 const assistantTurn = makeTurn('assistant', 'Thinking with the notes: sleep is better.');
 const context = {
   notes: [{ id: '0198c0f0-0000-7000-8000-0000000000cc', title: 'Progress note', date: '2026-09-18' }],
-  cap: 5,
+  total: 1,
   dropped_note_ids: [],
+  most_recent: true,
 };
 
 afterEach(() => {

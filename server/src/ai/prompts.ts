@@ -292,10 +292,11 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
 }
 
 /**
- * One note as the brainstorm prompt shows it — and as the route budgets it.
- * A single renderer for both, so the budget never drifts from the prompt.
+ * One of the patient's notes as a prompt shows it — Brainstorm's context and
+ * the refine chat's background — and as `prior-notes.ts` budgets it. A single
+ * renderer for all three, so the budget never drifts from the prompt.
  */
-export function brainstormNoteBlock(note: { title: string; date: string; text: string }): string {
+export function priorNoteBlock(note: { title: string; date: string; text: string }): string {
   return [`### ${note.title} (${note.date})`, '', note.text].join('\n');
 }
 
@@ -315,7 +316,7 @@ export function buildBrainstormPrompt(request: BrainstormRequest): ChatPrompt {
   const system = [
     `You are thinking with a psychotherapist about one of her patients, ${request.patientName}. This is a private working conversation, not a clinical record: nothing said here is filed anywhere, and you never write anything that reads as a record entry — no note, no plan, no summary for filing.`,
     '',
-    'Her recent notes on this patient, newest first, follow below. Keep two things apart: what those notes actually say, and general clinical ideas. When you draw on an idea that is not in the notes, say so.',
+    'Her notes on this patient, newest first, follow below. Keep two things apart: what those notes actually say, and general clinical ideas. When you draw on an idea that is not in the notes, say so.',
     '',
     'When she asks about something the notes do not cover, say plainly that it is not in the notes rather than filling it in. Never invent session history, observations, or facts about this patient. You do not diagnose.',
     '',
@@ -328,13 +329,19 @@ export function buildBrainstormPrompt(request: BrainstormRequest): ChatPrompt {
     'Do not add any other key.',
   ].join('\n');
 
+  const omitted = request.omittedNotes ?? 0;
   const parts: string[] = [
-    request.notes.length === 0
-      ? `There are no notes for ${request.patientName} yet. Think only from what she tells you in this conversation, and say so when you have nothing to stand on.`
-      : 'The notes as they currently stand, newest first:',
+    request.notes.length > 0
+      ? 'The notes as they currently stand, newest first:'
+      : omitted > 0
+        ? `None of her notes on ${request.patientName} fit here. Think only from what she tells you in this conversation, and say so when you have nothing to stand on.`
+        : `There are no notes for ${request.patientName} yet. Think only from what she tells you in this conversation, and say so when you have nothing to stand on.`,
   ];
   for (const note of request.notes) {
-    parts.push('', brainstormNoteBlock(note));
+    parts.push('', priorNoteBlock(note));
+  }
+  if (request.notes.length > 0 && omitted > 0) {
+    parts.push('', omittedNotesLine(request.notes.length, omitted));
   }
 
   if (request.history.length > 0) {
@@ -354,6 +361,15 @@ export function buildBrainstormPrompt(request: BrainstormRequest): ChatPrompt {
   );
 
   return { system, user: parts.join('\n') };
+}
+
+/**
+ * Said when older notes did not fit: without it, "that is not in the notes"
+ * reads as "that never happened", and the note that says otherwise may simply
+ * be one the model was never shown.
+ */
+export function omittedNotesLine(shown: number, omitted: number): string {
+  return `Only ${String(shown)} of her ${String(shown + omitted)} notes on this patient fit here; the older ones are not shown. When something is not in these notes, say it is not in the notes you were given — it may be in an older one.`;
 }
 
 const DETECT_KIND_HINT: Record<DetectFormatRequest['kind'], string> = {

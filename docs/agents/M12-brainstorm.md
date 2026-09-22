@@ -32,6 +32,8 @@ the notes say apart from general clinical ideas.
    whole prompt (system, notes, conversation) is budgeted to the context
    window. On overflow: oldest conversation turns first, then the oldest
    notes, whole notes only, never a cut mid-note.
+   *(2026-09-21, owner: the lookback cap is gone — every note is eligible,
+   as many as fit; `docs/decisions.md`.)*
 4. **Faithfulness stance.** The prompt separates what the notes say from
    general clinical ideas, and has the model say plainly when something is
    not in the notes rather than invent history. Brainstorm never modifies a

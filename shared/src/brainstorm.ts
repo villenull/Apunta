@@ -41,16 +41,22 @@ export type BrainstormNote = z.infer<typeof BrainstormNoteSchema>;
 /**
  * Which notes the model was given, decided server-side on every turn.
  *
- * Notes are newest first and capped by the briefing's lookback setting; the
- * whole prompt is budgeted to the context window, so on overflow the oldest
- * conversation turns go first, then the oldest notes, whole notes only. A
- * note too long to fit alone is left out, and its id lands here so the screen
- * can say so rather than silently think with less than she sees.
+ * Every note is eligible (owner, 2026-09-21), newest first; the whole prompt
+ * is budgeted to the context window, so on overflow the oldest conversation
+ * turns go first, then the oldest notes, whole notes only. Whatever did not
+ * fit lands in `dropped_note_ids`, so the screen can say "Using the 12 most
+ * recent of 30 notes" rather than silently think with less than she sees.
  */
 export const BrainstormContextSchema = z.object({
   notes: z.array(BrainstormNoteSchema),
-  cap: z.number().int(),
+  /** How many notes the patient has in all. */
+  total: z.number().int(),
   dropped_note_ids: z.array(IdSchema),
+  /**
+   * True when `notes` are exactly the newest ones. False only when a note too
+   * long to fit even alone was skipped and older notes went in after it.
+   */
+  most_recent: z.boolean(),
 });
 export type BrainstormContext = z.infer<typeof BrainstormContextSchema>;
 

@@ -22,7 +22,7 @@ import {
 import { NUM_CTX } from './ollama.js';
 import {
   approximateTokens,
-  brainstormNoteBlock,
+  priorNoteBlock,
   buildBrainstormPrompt,
   buildComposeBriefPrompt,
   buildDetectFormatPrompt,
@@ -518,15 +518,27 @@ describe('buildBrainstormPrompt', () => {
     expect(approximateTokens(prompt.system) + approximateTokens(prompt.user)).toBeLessThan(NUM_CTX * 0.75);
   });
 
+  it('tells the model when older notes did not fit, and not otherwise', () => {
+    const base = { patientName: 'John Smith', notes: [NOTE], history: [], message: 'Hi.' };
+    expect(buildBrainstormPrompt(base).user).not.toContain('fit here');
+    const partial = buildBrainstormPrompt({ ...base, omittedNotes: 29 }).user;
+    expect(partial).toContain('Only 1 of her 30 notes on this patient fit here');
+    expect(partial).toContain('say it is not in the notes you were given');
+    // No notes fitted is not "no notes yet".
+    const none = buildBrainstormPrompt({ ...base, notes: [], omittedNotes: 3 }).user;
+    expect(none).toContain('None of her notes on John Smith fit here');
+    expect(none).not.toContain('no notes for John Smith yet');
+  });
+
   it('budgets exactly what the prompt shows, block for block', () => {
-    expect(brainstormNoteBlock(NOTE)).toBe('### Progress note (2026-09-18)\n\nSubjective: Sleeping better.');
+    expect(priorNoteBlock(NOTE)).toBe('### Progress note (2026-09-18)\n\nSubjective: Sleeping better.');
     const prompt = buildBrainstormPrompt({
       patientName: 'John Smith',
       notes: [NOTE],
       history: [],
       message: 'Hi.',
     });
-    expect(prompt.user).toContain(brainstormNoteBlock(NOTE));
+    expect(prompt.user).toContain(priorNoteBlock(NOTE));
   });
 });
 
