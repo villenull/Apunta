@@ -150,6 +150,122 @@ describe('the rubric markers', () => {
   });
 });
 
+/**
+ * Three false positives found by hand on 2026-09-22 (see
+ * `docs/eval-reports/2026-09-22-model-second-pass.md`). Each one zeroed a
+ * fixture for output that was faithful to the source, and each one fired on
+ * the 4B control as well as on every larger candidate — so they moved the
+ * headline number that the model choice was being made on.
+ */
+describe('attribution: F7 against the source\u2019s own shorthand', () => {
+  it('does not call the spelled-out form of a source abbreviation a novel risk term', () => {
+    // Fixture 06's source says "denies SI, denies HI"; its own `mustCapture`
+    // list requires the note to carry the denial. Spelling it out is the
+    // correct expansion, not an invented risk term.
+    const target = fixture('06');
+    expect(target.source).toMatch(/\bSI\b/);
+
+    const note = sectionsOf(target, {
+      Subjective: 'Roughly four hours of sleep, unchanged. Three weeks of work travel.',
+      Objective: 'Denies suicidal ideation. Denies homicidal ideation.',
+      Assessment: 'Worse than the last session; relapse or situational, not resolved.',
+      Plan: 'Session ran out of time before next steps were agreed.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    expect(score.gating).not.toContain('F7 novel diagnosis/risk term');
+  });
+
+  it('does not call a spelled-out risk denial novel when the source asked about it', () => {
+    // Fixture 14's clinician wrote "I did ask about self-harm and suicide
+    // directly. He said no to both, past and present." A note that says so is
+    // faithful; the lexicon has only "suicidal ideation" and "suicidal".
+    const target = fixture('14');
+    expect(target.source).toMatch(/self-harm and suicide/i);
+
+    const note = sectionsOf(target, {
+      'Presenting problem': 'He denies self-harm or suicidal ideation in the past or present.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    expect(score.gating).not.toContain('F7 novel diagnosis/risk term');
+  });
+
+  it('keeps the exemption closed, so an abbreviation does not launder a real risk term', () => {
+    const target = fixture('06');
+    const note = sectionsOf(target, {
+      Objective: 'Denies suicidal ideation. Denies homicidal ideation. A risk assessment was completed.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    expect(score.gating).toContain('F7 novel diagnosis/risk term');
+  });
+});
+
+describe('attribution: the pronoun trap belongs to the patient', () => {
+  it('does not flag a pronoun whose referent is a third party the source named', () => {
+    // Fixture 16's trap exists because the transcript never assigns the
+    // patient a gender. "their father ... any treatment he received" writes
+    // "he" about the father, and the pattern alone could not see that.
+    const target = fixture('16');
+    const note = sectionsOf(target, {
+      'Presenting problem': 'Patient describes losing their temper at home three times in the last month.',
+      History: 'Patient describes their father as having "a temper" and is unaware of any treatment he received.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    expect(score.gating).not.toContain('F1 banned string');
+  });
+
+  it('still flags a pronoun that genders the patient', () => {
+    const target = fixture('16');
+    const note = sectionsOf(target, {
+      'Presenting problem': 'He describes losing his temper at home three times in the last month.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    expect(score.gating).toContain('F1 banned string');
+    expect(score.bannedHits.join(' ').toLowerCase()).toContain('"he"');
+  });
+
+  it('still flags a possessive that attaches a third party to the patient', () => {
+    const target = fixture('16');
+    const note = sectionsOf(target, {
+      'Presenting problem': 'Her partner has started going quiet when it happens.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    expect(score.gating).toContain('F1 banned string');
+  });
+});
+
+describe('attribution: F6 and the object of the marker', () => {
+  it('does not gate a comparison against the patient\u2019s own previous state', () => {
+    const target = fixture('11');
+    const note = sectionsOf(target, {
+      Subjective: 'Sleep and mornings unchanged.',
+      Objective: 'She sat in the same position for the hour, consistent with previous sessions.',
+      Plan: 'Same time next week.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    const objective = score.sections.find((section) => section.section === 'Objective');
+    expect(objective?.f6CoreHits).toEqual([]);
+    expect(score.gating).not.toContain('F6 unsupported conclusion');
+  });
+
+  it('still gates a marker that names a condition', () => {
+    const target = fixture('11');
+    const note = sectionsOf(target, {
+      Objective: 'She sat in the same position for the hour, consistent with a panic presentation.',
+    });
+
+    const score = scoreNote(target, note, { lexicon });
+    const objective = score.sections.find((section) => section.section === 'Objective');
+    expect(objective?.f6CoreHits).toContain('consistent with');
+  });
+});
+
 describe('scoring a correct note', () => {
   /**
    * The regression this project has already paid for once: an earlier rubric

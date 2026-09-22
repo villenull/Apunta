@@ -154,6 +154,104 @@ export function failedNote(fixture: Fixture, model: string, run: number, failure
   };
 }
 
+/**
+ * F7's blind spot, and F4's: a source written in clinical shorthand and a note
+ * that spells the shorthand out are making the same claim, but the lexicon
+ * carries only the long form. A source that says "denies SI, denies HI" and a
+ * note that says "denies suicidal ideation and homicidal ideation" is the
+ * correct expansion of the source — and it was scored as *inventing* two risk
+ * terms, which gates the fixture. Two fixtures' own `mustCapture` lists
+ * require exactly that content, so the corpus contradicted itself.
+ *
+ * The map is deliberately one-directional and closed: an abbreviation in the
+ * source adds the long form the lexicon knows, and nothing else. A note that
+ * adds anything beyond the expansion is still novel.
+ */
+const SOURCE_ABBREVIATIONS: Readonly<Record<string, readonly string[]>> = {
+  si: ['suicidal ideation', 'suicidal'],
+  hi: ['homicidal ideation', 'homicidal'],
+  aud: ['alcohol use disorder'],
+  mdd: ['major depressive disorder', 'major depression', 'depressive episode'],
+  gad: ['generalized anxiety disorder', 'generalised anxiety disorder'],
+  ocd: ['obsessive-compulsive disorder', 'obsessive compulsive disorder'],
+  ptsd: ['post-traumatic stress disorder'],
+  adhd: ['attention deficit'],
+};
+
+/**
+ * The same blind spot one step out: the lexicon carries `suicidal ideation`
+ * and `suicidal`, and a source that says "I did ask about self-harm and
+ * suicide directly. He said no to both" contains neither. A note that writes
+ * "denies self-harm or suicidal ideation in the past or present" is a faithful
+ * paraphrase of the clinician's own sentence, and it was scored as inventing
+ * two risk terms — which gates the fixture. These are spelling-family
+ * equivalences only: a form of the same word root, never a clinical upgrade.
+ */
+const SOURCE_TERM_FAMILIES: ReadonlyArray<{ readonly when: RegExp; readonly add: readonly string[] }> = [
+  { when: /\bsuicid/i, add: ['suicide', 'suicidal', 'suicidal ideation', 'suicidality'] },
+  { when: /\bself[-\s]?harm/i, add: ['self-harm', 'self harm', 'selfharm'] },
+  { when: /\bhomicid/i, add: ['homicide', 'homicidal', 'homicidal ideation'] },
+];
+
+/**
+ * The source as the lexicon check should read it: the source itself, plus the
+ * long form of every abbreviation it contains and every spelling family it
+ * uses. Nothing is removed, so this can only ever *unflag* a term whose
+ * expansion or word family is literally in the source.
+ */
+export function sourceForLexicon(source: string): string {
+  const additions: string[] = [];
+  for (const [abbreviation, expansions] of Object.entries(SOURCE_ABBREVIATIONS)) {
+    if (new RegExp(`\\b${escapeRegExp(abbreviation)}\\b`, 'i').test(source)) additions.push(...expansions);
+  }
+  for (const family of SOURCE_TERM_FAMILIES) {
+    if (family.when.test(source)) additions.push(...family.add);
+  }
+  return additions.length === 0 ? source : `${source} ${additions.join(' ')}`;
+}
+
+/**
+ * Fixture 16's trap, recognised by its own pattern text: the note must not
+ * assign the patient a gender. It is a `mustNotContain` entry rather than a
+ * dedicated check because that is where the corpus keeps it.
+ */
+export const PATIENT_PRONOUN_TRAP = '\\b(?:he|him|his|she|her|hers)\\b';
+
+/**
+ * Third-party role nouns. A gendered pronoun whose referent is one of these is
+ * not the patient's pronoun: "their father ... any treatment he received"
+ * writes "he" about the father the source itself named, and the pattern alone
+ * cannot see that. A pronoun that *modifies* a role noun ("her partner") still
+ * genders the patient, so it stays a hit.
+ */
+const THIRD_PARTY_ROLES =
+  /\b(?:father|mother|dad|mum|mom|parent|brother|sister|sibling|son|daughter|child|children|husband|wife|spouse|partner|grandfather|grandmother|uncle|aunt|cousin|nephew|niece|boyfriend|girlfriend|fianc[ée]|friend|flatmate|roommate|neighbour|neighbor|manager|supervisor|colleague|boss|therapist|counsellor|counselor|gp|doctor|psychiatrist|prescriber|teacher)\b/i;
+
+/**
+ * The pronoun trap, attributed: a hit only when the pronoun has no third party
+ * to belong to. Deliberately biased toward *not* flagging — a false hit here
+ * zeroes a correct note, and the corpus's own expectation is about the
+ * patient's gender, not about every pronoun in the note.
+ */
+function patientPronounHits(noteText: string): string[] {
+  const hits: string[] = [];
+  for (const sentence of sentences(noteText)) {
+    const pronoun = /\b(?:he|him|his|she|her|hers)\b/i.exec(sentence);
+    if (pronoun === null) continue;
+    const before = sentence.slice(0, pronoun.index);
+    const after = sentence.slice(pronoun.index + pronoun[0].length);
+    // "his father", "her partner": the pronoun modifies the role noun, so the
+    // pronoun is the patient's and the note has gendered her.
+    if (new RegExp(`^\\s*${THIRD_PARTY_ROLES.source}`, 'i').test(after)) {
+      hits.push(pronoun[0]);
+      continue;
+    }
+    if (THIRD_PARTY_ROLES.test(before)) continue;
+    hits.push(pronoun[0]);
+  }
+  return hits;
+}
+
 export function scoreNote(fixture: Fixture, sections: Sections, options: ScoreOptions = {}): NoteScore {
   const order = fixture.sections;
   const noteText = sectionsToText(sections, order);
@@ -164,6 +262,7 @@ export function scoreNote(fixture: Fixture, sections: Sections, options: ScoreOp
   const statedAbsences = new Map(fixture.statedAbsence.map((entry) => [entry.section, entry]));
   const noConclusion = new Set(fixture.noConclusion);
   const allowed = new Set(fixture.novelTermAllow.map((term) => stem(term)));
+  const lexiconSource = sourceForLexicon(fixture.source);
 
   // ---- structural (20) -----------------------------------------------------
   const schema = buildSectionsSchema(order);
@@ -182,6 +281,7 @@ export function scoreNote(fixture: Fixture, sections: Sections, options: ScoreOp
       fixture,
       terms,
       allowed,
+      lexiconSource,
     }),
   );
 
@@ -197,13 +297,18 @@ export function scoreNote(fixture: Fixture, sections: Sections, options: ScoreOp
   // ---- faithfulness (40) ---------------------------------------------------
   const bannedHits: string[] = [];
   for (const source of fixture.mustNotContain) {
+    if (source === PATIENT_PRONOUN_TRAP) {
+      const pronouns = patientPronounHits(noteText);
+      if (pronouns.length > 0) bannedHits.push(`${source} -> "${pronouns.join('", "')}"`);
+      continue;
+    }
     const match = compile(source).exec(collapse(noteText));
     if (match !== null) bannedHits.push(`${source} -> "${match[0]}"`);
   }
 
   const quotedViolations = quotedSpanViolations(noteText, fixture.normalisedSource);
   const numberFlags = numberFidelityFlags(noteText, fixture.normalisedSource);
-  const medicationFlags = medicationFlagsFor(noteText, fixture.normalisedSource, terms);
+  const medicationFlags = medicationFlagsFor(noteText, lexiconSource, terms);
 
   const f6CoreHits = sectionScores.flatMap((section) => section.f6CoreHits);
   const gatingF6 = fixture.f6 === 'gating' && f6CoreHits.length > 0;
@@ -329,6 +434,8 @@ interface SectionInput {
   readonly fixture: Fixture;
   readonly terms: readonly LexiconTerm[];
   readonly allowed: ReadonlySet<string>;
+  /** The source plus the long form of every abbreviation it uses (F7, F4). */
+  readonly lexiconSource: string;
 }
 
 function scoreSection(input: SectionInput): SectionScore {
@@ -367,7 +474,9 @@ function scoreSection(input: SectionInput): SectionScore {
     for (const match of haystack.matchAll(f6Core())) {
       // The exemption is computed, never declared: a marker the clinician
       // herself used is hers, and a faithful note may repeat it (fixture 09).
-      if (!input.fixture.normalisedSource.includes(match[0].toLowerCase())) f6CoreHits.push(match[0]);
+      if (input.fixture.normalisedSource.includes(match[0].toLowerCase())) continue;
+      if (nonDiagnosticMarkerUse(haystack, match.index, match[0].length)) continue;
+      f6CoreHits.push(match[0]);
     }
     for (const match of haystack.matchAll(f6Extended())) {
       if (!input.fixture.normalisedSource.includes(match[0].toLowerCase())) f6ExtendedHits.push(match[0]);
@@ -377,8 +486,8 @@ function scoreSection(input: SectionInput): SectionScore {
   const novelTerms: { term: string; category: string }[] = [];
   if (!empty) {
     const stemmedBody = stem(trimmed);
-    const stemmedSource = stem(input.fixture.source);
-    const rawSource = input.fixture.normalisedSource;
+    const stemmedSource = stem(input.lexiconSource);
+    const rawSource = input.lexiconSource;
     for (const entry of input.terms) {
       if (entry.category === 'medication') continue; // F4's job, not F7's.
       if (input.allowed.has(stem(entry.term))) continue;
@@ -421,6 +530,25 @@ function scoreSection(input: SectionInput): SectionScore {
     // A blank body has no word count and must not be scored as "under 3 words".
     tooShort: !empty && words < 3,
   };
+}
+
+/**
+ * F6's second blind spot: what the marker is pointed at.
+ *
+ * "consistent with previous sessions" compares the patient with herself last
+ * week; "consistent with a panic presentation" names a condition. The marker
+ * list cannot tell them apart, and a core hit in a `noConclusion` section gates
+ * the fixture — so a faithful restatement of "nothing changed" was scored as an
+ * unsupported conclusion. Only a comparison against a *time*, a *session*, or
+ * the patient's own prior state is exempt; anything else is still a hit, which
+ * is why the exemption is a closed list of objects rather than a wildcard.
+ */
+const NON_DIAGNOSTIC_OBJECT =
+  /^\s*(?:the\s+)?(?:previous|prior|last|earlier|baseline|same|usual|herself|himself|themselves)\b|^\s*(?:this|that|the)\s+(?:session|week|visit|appointment|month)\b/i;
+
+function nonDiagnosticMarkerUse(haystack: string, index: number, length: number): boolean {
+  const after = haystack.slice(index + length, index + length + 48);
+  return NON_DIAGNOSTIC_OBJECT.test(after);
 }
 
 /** F2: every double-quoted span in the note must appear in the transcript. */
