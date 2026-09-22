@@ -359,6 +359,15 @@ applying the requested header formatting; the explicit old-wording
 reintroduction was an authorized control, and the separate neutral request
 passed without resurrecting the withdrawn morning topic. Keep the control with
 **no automatic model switch**.
+The Discussion/header-formatting follow-up is now fixed without inventing a
+split when the model supplies no genuine topic distinction. The parser
+recognizes lowercase inline labels such as `sleep: prose`, normalizes them to
+standalone lowercase `label:` lines, removes lone or unsupported labels and
+rejects inflectional duplicates; the guidance requires at least two
+label-only lines only when the model finds genuinely distinct topics. The
+focused Discussion/parser, integration, generate and chat suites pass
+(27 + 66 tests). See
+`docs/eval-reports/2026-09-22-discussion-subtopics-fix.md`.
 
 Whisper's narrow mitigation trims only exact digital-zero tails and rejects
 all-zero input; the focused suite is 44/44 and genuine quiet speech,
