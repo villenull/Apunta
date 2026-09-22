@@ -448,6 +448,15 @@ task.
   selected notes as published history in one undoable batch. Scanned or
   imageless PDFs are rejected clearly; attachments, letters and images are
   text-only non-goals. No real Halaxy export is needed or permitted.
+The Halaxy server/shared slice is now ready: `shared/src/halaxy.ts` defines
+the preview/request/response schemas and size limits; the local parser handles
+AU/UK date headings, repeated page furniture and page numbers, page-break
+notes, and missing patient/session text. It keeps PDFs in memory, writes
+published notes in one `source=halaxy` undo batch, and the existing undo route
+removes those published rows. The generated synthetic
+`e2e/fixtures/halaxy/john-smith.pdf` has three pages, three sessions and a
+split note; the focused server/shared suite is 26 tests. Web preview/import
+work remains in progress. No real Halaxy export was opened.
 
 ### Approved, next action
 - **Claude export confidentiality is approved.** ClaudeProbe's shape-only
