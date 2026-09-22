@@ -1,8 +1,13 @@
 import {
   ClaudeImportReportSchema,
+  HalaxyImportResponseSchema,
+  HalaxyPreviewResponseSchema,
   ImportBatchListResponseSchema,
   ImportUndoResponseSchema,
   type ClaudeImportReport,
+  type HalaxyImportRequest,
+  type HalaxyImportResponse,
+  type HalaxyPreviewResponse,
   type ImportBatchListResponse,
   type ImportNoteSource,
   type ImportUndoResponse,
@@ -45,6 +50,30 @@ export function previewClaudeImport(input: ClaudeImportInput): Promise<ClaudeImp
   });
 }
 
+
+export interface HalaxyImportInput {
+  readonly files: readonly File[];
+}
+
+function halaxyForm(files: readonly File[]): FormData {
+  const body = new FormData();
+  for (const file of files) body.append('files', file, file.name);
+  return body;
+}
+
+export function previewHalaxyImport(files: readonly File[]): Promise<HalaxyPreviewResponse> {
+  return requestJson('/api/import/halaxy/preview', HalaxyPreviewResponseSchema, {
+    method: 'POST',
+    body: halaxyForm(files),
+  });
+}
+
+export function runHalaxyImport(input: HalaxyImportRequest): Promise<HalaxyImportResponse> {
+  return requestJson('/api/import/halaxy', HalaxyImportResponseSchema, {
+    method: 'POST',
+    body: input,
+  });
+}
 export function runClaudeImport(input: ClaudeImportInput): Promise<ClaudeImportReport> {
   return requestJson('/api/import/claude/run', ClaudeImportReportSchema, {
     method: 'POST',

@@ -4,8 +4,10 @@ import {
   DEFAULT_ACCENT_COLOR,
   FONT_SIZE_SETTING,
   FONT_SIZES,
-  type FontSize,
+  LLM_PROFILE_SETTING,
+  type LlmProfile,
   type Settings as SettingsRecord,
+  type FontSize,
 } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
@@ -51,6 +53,7 @@ export function Settings(): React.JSX.Element {
     <Screen back={{ to: '/', label: 'Patients' }}>
       <div className="settings">
         <AppearanceSettings />
+        <LlmProfileSettings />
 
         <section className="card settings-card" data-testid="format-list">
           <h2 className="settings-title">Note formats</h2>
@@ -118,6 +121,10 @@ export function Settings(): React.JSX.Element {
             <span className="settings-title">Import from Claude</span>
             <span aria-hidden="true">›</span>
           </Link>
+          <Link to="/import/halaxy" className="settings-link-row" data-testid="settings-import-halaxy">
+            <span className="settings-title">Import from Halaxy</span>
+            <span aria-hidden="true">›</span>
+          </Link>
         </section>
 
         <details
@@ -143,6 +150,80 @@ export function Settings(): React.JSX.Element {
         </details>
       </div>
     </Screen>
+  );
+}
+
+function LlmProfileSettings(): React.JSX.Element | null {
+  const load = useCallback((signal: AbortSignal) => getSettings(signal), []);
+  const settings = useLoader(load);
+  const [selected, setSelected] = useState<LlmProfile | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (settings.state.status === 'loading') return <p className="small state-note">Loading AI settings…</p>;
+  if (settings.state.status === 'error') {
+    return (
+      <p className="small state-note error-state" role="alert">
+        {settings.state.message}{' '}
+        <button type="button" className="btn small btn-quick" onClick={settings.reload}>
+          Try again
+        </button>
+      </p>
+    );
+  }
+
+  const stored = settings.state.data as SettingsRecord;
+  const available = (Array.isArray(stored.llm_available_profiles)
+    ? stored.llm_available_profiles
+    : []
+  ).filter((profile): profile is LlmProfile => profile === 'quick' || profile === 'thorough');
+  if (available.length < 2) return null;
+  const effective =
+    selected ?? (stored.llm_effective_profile === 'quick' || stored.llm_effective_profile === 'thorough'
+      ? stored.llm_effective_profile
+      : available[0] ?? 'quick');
+
+  const save = (profile: LlmProfile): void => {
+    setSelected(profile);
+    setSaved(false);
+    void putSettings({ [LLM_PROFILE_SETTING]: profile })
+      .then(() => {
+        setSaved(true);
+        setError(null);
+      })
+      .catch((thrown: unknown) => setError(errorMessage(thrown)));
+  };
+
+  return (
+    <section className="card settings-card" data-testid="llm-profile-settings">
+      <h2 className="settings-title">Drafting model</h2>
+      <div className="settings-profile-options" role="radiogroup" aria-label="Drafting model">
+        {(['quick', 'thorough'] as const)
+          .filter((profile) => available.includes(profile))
+          .map((profile) => (
+            <button
+              key={profile}
+              type="button"
+              role="radio"
+              aria-checked={effective === profile}
+              className={effective === profile ? 'settings-profile is-selected' : 'settings-profile'}
+              data-testid={`llm-profile-${profile}`}
+              onClick={() => save(profile)}
+            >
+              <span className="settings-profile-name">{profile === 'quick' ? 'Quick' : 'Thorough'}</span>
+              <span className="small settings-profile-help">
+                {profile === 'quick' ? 'Faster drafts.' : 'Slower, more careful drafts.'}
+              </span>
+            </button>
+          ))}
+      </div>
+      {saved && <p className="small state-note">Saved.</p>}
+      {error !== null && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+    </section>
   );
 }
 
