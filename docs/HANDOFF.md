@@ -458,8 +458,12 @@ notes, and missing patient/session text. It keeps PDFs in memory, writes
 published notes in one `source=halaxy` undo batch, and the existing undo route
 removes those published rows. The generated synthetic
 `e2e/fixtures/halaxy/john-smith.pdf` has three pages, three sessions and a
-split note; the focused server/shared suite is 26 tests. Web preview/import
-work remains in progress. No real Halaxy export was opened.
+split note; the focused server/shared suite is 26 tests. HalaxyWeb now offers
+**Import from Halaxy** beside Claude in Settings: it accepts one or more
+text-based practitioner PDFs, previews editable patient names and sessions
+with per-note unticking and rejected-file reasons, then imports selected notes
+as published history in one undoable batch. Synthetic Playwright coverage uses
+the John Smith fixture; no real patient export was opened.
 
 ### Approved, next action
 - **Claude export confidentiality is approved.** ClaudeProbe's shape-only
