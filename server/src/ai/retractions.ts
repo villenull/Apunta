@@ -28,11 +28,10 @@ import {
 const RETRACTION_MARKER_SOURCE =
   "\\b(?:scratch that|strike that|forget that|never ?mind|actually,? no\\b|no,? wait\\b|wait,? no\\b|that'?s wrong|that was last (?:session|week|time)|start (?:over|again)|let me start again)\\b";
 
-const RETRACTION_MARKER = new RegExp(RETRACTION_MARKER_SOURCE, 'i');
 
 /** Does this source contain a spoken retraction at all? */
 export function hasRetraction(source: string): boolean {
-  return RETRACTION_MARKER.test(source);
+  return retractionMarkerMatches(source).length > 0;
 }
 
 export interface RetractionOutcome {
@@ -80,10 +79,18 @@ function wordsOf(text: string): Word[] {
 export function retractionMarkerMatches(
   text: string,
 ): Array<{ readonly index: number; readonly text: string }> {
-  return [...text.matchAll(new RegExp(RETRACTION_MARKER_SOURCE, 'gi'))].map((match) => ({
+  // Whisper sometimes inflects the spoken phrase as "scratched that". This
+  // is an ASR spelling of the existing marker, not a new marker: keep the
+  // semantic list above narrow and normalize this one token boundary here.
+  const matches = [
+    ...text.matchAll(new RegExp(RETRACTION_MARKER_SOURCE, 'gi')),
+    ...text.matchAll(/\bscratched that\b/gi),
+  ].map((match) => ({
     index: match.index,
     text: match[0],
   }));
+  matches.sort((a, b) => a.index - b.index);
+  return matches.filter((match, index) => index === 0 || match.index !== matches[index - 1]!.index);
 }
 
 function markerGroups(text: string, words: readonly Word[]): MarkerGroup[] {
