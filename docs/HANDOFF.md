@@ -359,6 +359,13 @@ applying the requested header formatting; the explicit old-wording
 reintroduction was an authorized control, and the separate neutral request
 passed without resurrecting the withdrawn morning topic. Keep the control with
 **no automatic model switch**.
+The temporary Quick/Thorough profile experiment is not shipped: ModelEval
+rejected every heavier candidate at the fabrication/safety gate, so the
+Thorough profile and placeholder were removed. The sole Quick path preserves
+the existing `llm_model` setting or machine default, rejects cloud-backed
+tags, resolves once per local LLM operation, and leaves no dead Settings
+control; `/api/health` reports the effective model. The current
+`qwen3.5:4b-q4_K_M` control remains the default.
 Synthetic Discussion follow-up is complete. The server now normalizes
 lowercase inline labels such as `sleep: …` into standalone short lowercase
 `label:` lines, grounds them in current-session material, and removes lone,
