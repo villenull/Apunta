@@ -859,37 +859,45 @@
 }
 
 /* The recording panel inside the floating chat card: the capture screen's,
-   scaled to a card a third the width. */
-.chat-col .record-ui {
+   scaled to a card a third the width. Brainstorm's composer dictates through
+   the same panel, so it wears the same scale. */
+.chat-col .record-ui,
+.brainstorm-view .record-ui {
   flex-shrink: 0;
   margin: 0 14px 8px;
   padding: 14px 12px 12px;
 }
 
-.chat-col .record-dot {
+.chat-col .record-dot,
+.brainstorm-view .record-dot {
   width: 44px;
   height: 44px;
   margin-bottom: 8px;
 }
 
-.chat-col .record-mic {
+.chat-col .record-mic,
+.brainstorm-view .record-mic {
   width: 18px;
   height: 18px;
 }
 
-.chat-col .timer {
+.chat-col .timer,
+.brainstorm-view .timer {
   font-size: calc(18px * var(--font-scale));
 }
 
-.chat-col .record-preview {
+.chat-col .record-preview,
+.brainstorm-view .record-preview {
   max-width: none;
 }
 
-.chat-col .record-preview-text {
+.chat-col .record-preview-text,
+.brainstorm-view .record-preview-text {
   max-height: 6em;
 }
 
-.chat-col .record-ui .btn {
+.chat-col .record-ui .btn,
+.brainstorm-view .record-ui .btn {
   margin-top: 10px;
 }
 
@@ -1594,6 +1602,12 @@ select:disabled {
 .brainstorm-thread {
   flex: 1;
   min-height: 0;
+}
+
+/* The textarea is taller than the refine chat's one-line box; the microphone
+   and the arrow keep the refine chat's size and sit at its foot. */
+.brainstorm-composer {
+  align-items: flex-end;
 }
 
 .brainstorm-context {

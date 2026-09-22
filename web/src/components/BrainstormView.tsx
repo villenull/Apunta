@@ -2,9 +2,11 @@ import type { BrainstormContext, BrainstormMessage, PatientListItem } from '@apu
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clearBrainstorm, errorMessage, listBrainstorm, sendBrainstormMessage } from '../api/index.js';
+import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { firstName } from '../lib/format.js';
 import { Markdown } from '../lib/markdown.js';
+import { ComposerButtons, DictationPanel } from './ComposerButtons.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
 
 /**
@@ -14,6 +16,10 @@ import { ConfirmDialog } from './ConfirmDialog.js';
  * a note, a plan or the patient's details — the endpoint has no write path
  * to any of them, and the screen offers none either: there are no citations,
  * no follow-through into notes, no way to attach a reply anywhere.
+ *
+ * The composer wears the refine chat's microphone and send arrow (owner,
+ * 2026-09-22): dictation goes through local whisper into the box, and
+ * nothing is sent until she presses the arrow.
  *
  * Enter sends and Shift+Enter breaks the line; Stop abandons the reply (the
  * user's turn stays saved, no assistant turn is written); the thread follows
@@ -46,6 +52,19 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
   const abortRef = useRef<AbortController | null>(null);
   const stickRef = useRef(true);
   const optimisticIdRef = useRef<string | null>(null);
+
+  const dictation = useDictation({
+    onStart: () => {
+      setError(null);
+    },
+    onError: setError,
+    onHeard: (heard) => {
+      setDraft((current) => appendHeard(current, heard));
+    },
+    onSettled: () => {
+      inputRef.current?.focus();
+    },
+  });
 
   // Opening the view loads the saved conversation; a send below keeps the
   // local copy current turn by turn after that.
@@ -256,13 +275,9 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
         </p>
       )}
 
-      <form
-        className="chat-input-row"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void send(draft);
-        }}
-      >
+      <DictationPanel dictation={dictation} />
+
+      <div className="chat-input-row brainstorm-composer">
         <textarea
           ref={inputRef}
           rows={2}
@@ -281,21 +296,16 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
             }
           }}
         />
-        {sending ? (
-          <button type="button" className="btn small" data-testid="brainstorm-stop" onClick={stop}>
-            Stop
-          </button>
-        ) : (
-          <button
-            type="submit"
-            className="btn small btn-primary"
-            data-testid="brainstorm-send"
-            disabled={draft.trim() === ''}
-          >
-            Send
-          </button>
-        )}
-      </form>
+        <ComposerButtons
+          dictation={dictation}
+          sending={sending}
+          testIdPrefix="brainstorm"
+          onSend={() => {
+            void send(draft);
+          }}
+          onStop={stop}
+        />
+      </div>
 
       {confirmingNew && (
         <ConfirmDialog

@@ -209,7 +209,10 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   given and, when some did not fit, says so ("Using the 12 most recent of 30
   notes"); the model is told too, so "not in the notes" is not read as "never
   happened". Not measured on a Mac: a full prompt is ~12k real tokens, so
-  the first reply on a long history waits on prompt evaluation. One saved conversation per
+  the first reply on a long history waits on prompt evaluation. Its composer
+  wears the refine chat's microphone and send arrow (owner, 2026-09-22; one
+  shared `ComposerButtons` + `useDictation`): local-whisper dictation into
+  the box, and the arrow becomes a Stop square while a reply streams. One saved conversation per
   patient (SQLite, cascades on delete, kept on archive, keeps an import
   patient on undo), "New conversation" behind a confirm. Nothing from it is
   ever written into a note, plan, briefing or patient — the endpoint has no

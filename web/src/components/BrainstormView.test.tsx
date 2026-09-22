@@ -1,8 +1,51 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
+import type * as RecorderModule from '../lib/recorder.js';
+import type { RecorderHandlers } from '../lib/recorder.js';
 import { installFakeApi, makeBrainstormMessage, makeNote, makePatient } from '../test/fakeApi.js';
 import { BrainstormView } from './BrainstormView.js';
+
+/**
+ * As in the refine chat's tests, only the `Recorder` is mocked: the clip goes
+ * through the real `dictateClip` to the fake API, and what lands in the box
+ * is what the fake server said.
+ */
+let handlers: RecorderHandlers = {};
+
+vi.mock('../lib/recorder.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof RecorderModule>();
+  class MockRecorder {
+    constructor(given: RecorderHandlers = {}) {
+      handlers = given;
+    }
+    get seconds(): number {
+      return 3;
+    }
+    start(): Promise<void> {
+      return Promise.resolve();
+    }
+    stop(): Promise<Blob> {
+      return Promise.resolve(new Blob([new Uint8Array(1000)], { type: 'audio/wav' }));
+    }
+    slice(_from: number, _to: number): Blob | null {
+      return new Blob([new Uint8Array(1000)], { type: 'audio/wav' });
+    }
+    cutPoint(_after: number, _before: number): number | null {
+      return null;
+    }
+    quietestPoint(_after: number, _before: number): number | null {
+      return null;
+    }
+    cancel(): void {}
+  }
+  return { ...actual, Recorder: MockRecorder };
+});
+
+beforeEach(() => {
+  handlers = {};
+});
 
 afterEach(() => {
   cleanup();
@@ -177,7 +220,8 @@ describe('BrainstormView', () => {
     expect(screen.queryByTestId('brainstorm-error')).toBeNull();
     expect(screen.getByTestId('brainstorm-user').textContent).toContain('Take your time');
     expect(screen.queryByTestId('brainstorm-reply')).toBeNull();
-    expect((screen.getByTestId('brainstorm-send') as HTMLButtonElement).disabled).toBe(true);
+    // The arrow is back in the Stop square's place, live again.
+    expect((screen.getByTestId('brainstorm-send') as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('reports a failure in the server’s own words and keeps nothing half-written', async () => {
@@ -235,5 +279,145 @@ describe('BrainstormView', () => {
     expect(api.state.brainstorm).toHaveLength(0);
     expect(api.state.notes).toHaveLength(1);
     expect((await screen.findByTestId('brainstorm-empty')).textContent).toContain('never written');
+  });
+});
+
+describe('BrainstormView composer', () => {
+  it('wears the refine chat’s microphone and send arrow', async () => {
+    const patient = makePatient('John Smith');
+    installFakeApi({ patients: [patient], brainstorm: [] });
+
+    render(<BrainstormView patient={patient} />);
+    await screen.findByTestId('brainstorm-empty');
+
+    const mic = screen.getByTestId('brainstorm-mic');
+    expect(mic.className).toBe('btn btn-mic');
+    expect(mic.getAttribute('aria-label')).toBe('Dictate a message');
+    expect(mic.querySelector('svg')).not.toBeNull();
+    const send = screen.getByTestId('brainstorm-send');
+    expect(send.className).toBe('btn btn-primary btn-send');
+    expect(send.getAttribute('aria-label')).toBe('Send');
+    expect(send.querySelector('svg')).not.toBeNull();
+    // The microphone comes between the box and the arrow.
+    const row = send.parentElement;
+    expect(row?.className).toContain('chat-input-row');
+    expect([...(row?.children ?? [])].map((child) => child.getAttribute('data-testid'))).toEqual([
+      'brainstorm-input',
+      'brainstorm-mic',
+      'brainstorm-send',
+    ]);
+  });
+
+  it('keeps the send arrow live with an empty box, and an empty send does nothing', async () => {
+    const patient = makePatient('John Smith');
+    const api = installFakeApi({ patients: [patient], brainstorm: [] });
+
+    render(<BrainstormView patient={patient} />);
+    await screen.findByTestId('brainstorm-empty');
+
+    const send = screen.getByTestId('brainstorm-send') as HTMLButtonElement;
+    expect(send.disabled).toBe(false);
+    fireEvent.click(send);
+    await waitFor(() => {
+      expect(api.state.brainstorm).toHaveLength(0);
+    });
+  });
+
+  it('sends what is in the box when she presses the arrow', async () => {
+    const patient = makePatient('John Smith');
+    const api = installFakeApi({ patients: [patient], notes: [makeNote(patient.id)], brainstorm: [] });
+
+    render(<BrainstormView patient={patient} />);
+    await screen.findByTestId('brainstorm-empty');
+
+    fireEvent.change(screen.getByTestId('brainstorm-input'), { target: { value: 'What stands out?' } });
+    fireEvent.click(screen.getByTestId('brainstorm-send'));
+
+    await screen.findByTestId('brainstorm-reply');
+    expect(api.state.brainstorm[0]?.text).toBe('What stands out?');
+  });
+
+  it('puts what whisper heard into the box, after anything typed, and sends nothing on its own', async () => {
+    const patient = makePatient('John Smith');
+    const api = installFakeApi(
+      { patients: [patient], brainstorm: [] },
+      { dictationText: 'what about his sleep' },
+    );
+
+    render(<BrainstormView patient={patient} />);
+    await screen.findByTestId('brainstorm-empty');
+    const input = screen.getByTestId('brainstorm-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'And' } });
+
+    fireEvent.click(screen.getByTestId('brainstorm-mic'));
+    await waitFor(() => {
+      expect(screen.getByTestId('brainstorm-mic').getAttribute('aria-label')).toBe('Stop dictating');
+    });
+    expect(screen.getByTestId('brainstorm-mic').className).toBe('btn btn-mic is-recording');
+    expect(screen.getByTestId('record-panel')).toBeDefined();
+    handlers.onProgress?.(7);
+    await waitFor(() => {
+      expect(screen.getByTestId('brainstorm-mic-timer').textContent).toBe('00:07');
+    });
+
+    fireEvent.click(screen.getByTestId('brainstorm-mic'));
+    await waitFor(() => {
+      expect(input.value).toBe('And what about his sleep');
+    });
+    expect(screen.getByTestId('brainstorm-mic').getAttribute('aria-label')).toBe('Dictate a message');
+    expect(screen.queryByTestId('record-panel')).toBeNull();
+    expect(api.state.brainstorm).toHaveLength(0);
+
+    // Enter still sends, dictated words and all.
+    fireEvent.keyDown(input, { key: 'Enter', shiftKey: false });
+    await screen.findByTestId('brainstorm-reply');
+    expect(api.state.brainstorm[0]?.text).toBe('And what about his sleep');
+  });
+
+  it('says so when whisper heard no words, and leaves the box alone', async () => {
+    const patient = makePatient('John Smith');
+    installFakeApi({ patients: [patient], brainstorm: [] }, { dictationText: '   ' });
+
+    render(<BrainstormView patient={patient} />);
+    await screen.findByTestId('brainstorm-empty');
+
+    fireEvent.click(screen.getByTestId('brainstorm-mic'));
+    await waitFor(() => {
+      expect(screen.getByTestId('brainstorm-mic').getAttribute('aria-label')).toBe('Stop dictating');
+    });
+    fireEvent.click(screen.getByTestId('brainstorm-mic'));
+
+    expect((await screen.findByTestId('brainstorm-error')).textContent).toBe(NOTHING_HEARD_MESSAGE);
+    expect((screen.getByTestId('brainstorm-input') as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('turns the arrow into a Stop square while a reply streams, and holds the microphone', async () => {
+    const patient = makePatient('John Smith');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit = {}) => {
+        if ((init.method ?? 'GET') === 'GET') return threadJson([]);
+        const stream = new ReadableStream({ start() {} });
+        return new Response(stream, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+      }),
+    );
+
+    render(<BrainstormView patient={patient} />);
+    await screen.findByTestId('brainstorm-empty');
+
+    fireEvent.change(screen.getByTestId('brainstorm-input'), { target: { value: 'Take your time' } });
+    fireEvent.click(screen.getByTestId('brainstorm-send'));
+
+    const stop = await screen.findByTestId('brainstorm-stop');
+    expect(stop.className).toBe('btn btn-primary btn-send');
+    expect(stop.getAttribute('aria-label')).toBe('Stop');
+    expect(screen.queryByTestId('brainstorm-send')).toBeNull();
+    expect((screen.getByTestId('brainstorm-mic') as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.click(stop);
+    await waitFor(() => {
+      expect(screen.queryByTestId('brainstorm-stop')).toBeNull();
+    });
+    expect((screen.getByTestId('brainstorm-mic') as HTMLButtonElement).disabled).toBe(false);
   });
 });

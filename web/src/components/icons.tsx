@@ -244,6 +244,15 @@ export function SendIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
+/** Brainstorm's Stop, in the send arrow's place while a reply streams. Not in the prototype. */
+export function StopIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" />
+    </StrokeIcon>
+  );
+}
+
 export function CloseIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>

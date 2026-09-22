@@ -1,22 +1,13 @@
-import {
-  MAX_DICTATION_SECONDS,
-  type ChatMessage,
-  type ChatNoteUpdatedEvent,
-  type Note,
-} from '@apunta/shared';
+import type { ChatMessage, ChatNoteUpdatedEvent, Note } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { dictateClip, errorMessage, listChatMessages, sendChatMessage } from '../api/index.js';
-import { useLiveRecording } from '../hooks/useLiveRecording.js';
+import { errorMessage, listChatMessages, sendChatMessage } from '../api/index.js';
+import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { formatTimer } from '../lib/recorder.js';
-import { MicIcon, SendIcon } from './icons.js';
-import { LiveRecording } from './LiveRecording.js';
+import { ComposerButtons, DictationPanel } from './ComposerButtons.js';
 import { ThinkingDots } from './ThinkingDots.js';
 
-/** What the composer says when whisper heard no words in the clip. */
-export const NOTHING_HEARD_MESSAGE =
-  'Apunta didn’t catch any words. Try again, a little closer to the microphone.';
+export { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
 
 /** The prototype truncates the highlight chip here. */
 const REF_CHIP_CHARS = 70;
@@ -79,38 +70,35 @@ export function RefineColumn({
   const [status, setStatus] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** Whisper has the clip; the words are on their way to the box. */
-  const [transcribing, setTranscribing] = useState(false);
-
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const dictationAbortRef = useRef<AbortController | null>(null);
   const updateThread = thread.update;
 
   /**
-   * Dictating into the composer (owner-proxy, 2026-09-07): the capture
-   * screen's recorder, dot and growing transcript, a clip instead of a
-   * session, and the words land in the box for her to read and edit before
-   * anything is sent. Whisper runs on the server as always; nothing here
-   * touches a browser speech API.
+   * Dictating into the composer (owner-proxy, 2026-09-07): the words land in
+   * the box for her to read and edit before anything is sent.
    */
-  const live = useLiveRecording({
+  const dictation = useDictation({
+    onStart: () => {
+      setError(null);
+    },
     onError: setError,
-    stopAfterSeconds: MAX_DICTATION_SECONDS,
-    onLimit: () => {
-      void finishDictation();
+    onHeard: (heard) => {
+      setDraft((current) => appendHeard(current, heard));
+    },
+    onSettled: () => {
+      inputRef.current?.focus();
     },
   });
 
   // Switching notes or closing the tab mid-reply must stop the model, not
   // leave it generating into a stream nobody is reading: the server watches
   // for the disconnect and aborts its call to Ollama. The microphone is the
-  // hook's to close.
+  // dictation hook's to close.
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      dictationAbortRef.current?.abort();
     };
   }, []);
 
@@ -194,42 +182,6 @@ export function RefineColumn({
     }
   }
 
-  async function startDictation(): Promise<void> {
-    if (sending || live.phase !== 'idle') return;
-    setError(null);
-    await live.start();
-  }
-
-  async function finishDictation(): Promise<void> {
-    const clip = await live.stop();
-    if (clip === null) return;
-    setTranscribing(true);
-    const controller = new AbortController();
-    dictationAbortRef.current = controller;
-
-    try {
-      const heard = (await dictateClip(clip, controller.signal)).text.trim();
-      if (controller.signal.aborted) return;
-      if (heard === '') {
-        setError(NOTHING_HEARD_MESSAGE);
-      } else {
-        // Appended, never replacing: she may have typed half of it already.
-        setDraft((current) => (current.trim() === '' ? heard : `${current.trimEnd()} ${heard}`));
-      }
-    } catch (thrown) {
-      if (controller.signal.aborted) return;
-      setError(errorMessage(thrown));
-    } finally {
-      if (dictationAbortRef.current === controller) dictationAbortRef.current = null;
-      setTranscribing(false);
-      if (!controller.signal.aborted) {
-        inputRef.current?.focus();
-      }
-    }
-  }
-
-  const listening = live.phase !== 'idle';
-
   const empty = messages.length === 0 && streaming === null;
 
   return (
@@ -245,8 +197,7 @@ export function RefineColumn({
             aria-label="Close chat"
             data-testid="chat-close"
             onClick={() => {
-              live.cancel();
-              dictationAbortRef.current?.abort();
+              dictation.cancel();
               onClose();
             }}
           >
@@ -309,25 +260,7 @@ export function RefineColumn({
         </div>
       )}
 
-      {live.phase === 'recording' && (
-        <LiveRecording
-          level={live.level}
-          seconds={live.seconds}
-          preview={live.preview}
-          previewNote="Everything so far, roughly. Your message is written from the finished recording."
-        >
-          <button
-            type="button"
-            className="btn btn-primary"
-            data-testid="record-stop"
-            onClick={() => {
-              void finishDictation();
-            }}
-          >
-            Stop dictating
-          </button>
-        </LiveRecording>
-      )}
+      <DictationPanel dictation={dictation} />
 
       <div className="chat-input-row">
         <input
@@ -347,45 +280,14 @@ export function RefineColumn({
             void send(draft);
           }}
         />
-        <button
-          type="button"
-          className={listening ? 'btn btn-mic is-recording' : 'btn btn-mic'}
-          aria-label={listening ? 'Stop dictating' : 'Dictate a message'}
-          aria-pressed={listening}
-          data-testid="chat-mic"
-          disabled={sending || transcribing}
-          onClick={() => {
-            void (listening ? finishDictation() : startDictation());
-          }}
-        >
-          {listening ? (
-            <>
-              <span className="chat-mic-dot" aria-hidden="true" />
-              <span className="chat-mic-timer" data-testid="chat-mic-timer">
-                {formatTimer(live.seconds)}
-              </span>
-            </>
-          ) : transcribing ? (
-            <ThinkingDots ariaLabel="Transcribing" />
-          ) : (
-            <MicIcon className="icon icon-sm" />
-          )}
-        </button>
-        {/* Full colour whatever the box holds: dimmed for an empty box, the
-            arrow read as grey on faint green (owner-proxy, 2026-09-07). An
-            empty send is simply nothing. */}
-        <button
-          type="button"
-          className="btn btn-primary btn-send"
-          aria-label="Send"
-          data-testid="chat-send"
-          disabled={sending}
-          onClick={() => {
+        <ComposerButtons
+          dictation={dictation}
+          sending={sending}
+          testIdPrefix="chat"
+          onSend={() => {
             void send(draft);
           }}
-        >
-          <SendIcon className="icon icon-sm" />
-        </button>
+        />
       </div>
     </div>
   );
