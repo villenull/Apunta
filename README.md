@@ -1,320 +1,221 @@
-# Apunta
+<p align="center">
+  <img src="web/public/favicon.svg" width="72" alt="Apunta icon">
+</p>
 
-Apunta turns what you say or type after a session into a structured clinical
-note, on your own Mac. You dictate or write a few rough lines, it drafts the
-note in your format, you correct it in a chat beside the text, and you copy the
-finished note into whatever records system you actually use.
+<h1 align="center">Apunta</h1>
 
-**Nothing you write in it leaves the machine.** The AI runs on your Mac. There
-is no account, no server, no analytics, and no update check. The program is not
-permitted to make an outbound connection at all — if some future change tried,
-it would fail rather than succeed quietly. The one exception is the first run,
-which downloads the AI models once, from the people who made them, and then
-never uses the internet again.
+<p align="center">
+  <strong>Local-first clinical note drafting for therapists.</strong><br>
+  Dictate or type the rough version, review the draft, refine it beside the text, and copy the finished note into the records system you already use.
+</p>
 
----
+<p align="center">
+  <a href="https://github.com/villenull/Apunta/actions/workflows/ci.yml"><img src="https://img.shields.io/badge/CI-GitHub%20Actions-1f6f63?style=flat-square" alt="CI: GitHub Actions"></a>
+  <img src="https://img.shields.io/badge/platform-macOS%2014%2B%20%7C%20Apple%20silicon-1f6f63?style=flat-square" alt="Platform: macOS 14 or newer on Apple silicon">
+  <img src="https://img.shields.io/badge/runtime-local%20AI-1f6f63?style=flat-square" alt="AI runs locally">
+  <img src="https://img.shields.io/badge/status-pre--release-bb8f3d?style=flat-square" alt="Status: pre-release">
+</p>
 
-## What it is, and what it is not
+> **Read this as a pre-release project.** Apunta has been exercised in Linux
+> development and fake-AI CI. The macOS installer, menu-bar shell and setup
+> path still need their first real Mac verification. See
+> [`docs/MANUAL-VERIFICATION.md`](docs/MANUAL-VERIFICATION.md).
 
-It **is** a drafting tool. It saves you the twenty minutes after each session
-spent turning notes into prose.
+## The short version
 
-It **is not** your clinical record. The finished note goes into your records
-system by copy and paste; Apunta keeps the drafts, the transcripts and the
-conversations you had with it about them. That material exists nowhere else,
-which is what the backups are for.
+Apunta is a drafting tool, not a clinical record system. It keeps drafts,
+transcripts and refinement conversations on the Mac, then puts the note on your
+clipboard when you publish it. Read every draft before you use it: a local
+model can still write a sentence that was never said.
 
-It has no password of its own. Anyone sitting at your unlocked Mac can open it.
-That is a deliberate trade — see *Privacy* below — and the answer to it is a
-locked screen and, if the Mac is shared with anyone, a separate macOS account
-for the practice.
+<p align="center">
+  <img src="docs/assets/readme/hero.png" alt="Apunta note workspace" width="1100">
+</p>
 
----
+## What it feels like
 
-## Privacy, in plain language
+<table>
+<tr>
+<td width="50%" valign="middle">
 
-| | |
-| --- | --- |
-| **Where the notes are** | One folder on your Mac: `~/Library/Application Support/Apunta` |
-| **Who else has a copy** | Nobody, unless you put one somewhere |
-| **What the AI is** | Two programs downloaded onto your Mac — one writes, one listens. Neither sends anything anywhere |
-| **Transcription** | Your recording is read on this Mac. Apunta deliberately does not use the browser's built-in speech recognition, because on most browsers that uploads the audio to Google |
-| **Analytics, crash reports, update checks** | None |
-| **What protects the notes if the Mac is stolen** | FileVault, macOS's disk encryption — and it is not on by default on every Mac. Apunta checks and tells you |
-| **What protects them from someone at your unlocked Mac** | Nothing in Apunta. Lock the screen |
+### 01 · Speak or type the session
 
-The *About* page inside the app says all of this too, including what it does
-not protect you from.
+Record a session summary or write rough notes in any order. Local `whisper.cpp`
+transcription shows a live, provisional preview and turns the stopped recording
+into editable source text.
 
----
+</td>
+<td width="50%">
+  <picture>
+    <source srcset="docs/assets/readme/feature-01.gif" type="image/gif">
+    <img src="docs/assets/readme/feature-01.png" alt="Recording a session summary with a live transcription preview" width="100%">
+  </picture>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="middle">
 
-## Setting it up on a Mac
+### 02 · Review the draft
 
-> **If someone gave you an `Apunta.dmg`, none of this applies to you.** Read
-> [`docs/INSTALL.md`](docs/INSTALL.md) instead: double-click, drag, follow a
-> progress bar, no Terminal. What follows is the developer path — cloning the
-> repository and running it from source.
+Apunta drafts into your chosen note format. Unclear speech stays marked;
+sections you did not cover stay blank instead of being filled with plausible
+fiction.
 
-Three steps. The first one is a download that takes a while; the other two are
-quick.
+</td>
+<td width="50%">
+  <picture>
+    <source srcset="docs/assets/readme/feature-02.gif" type="image/gif">
+    <img src="docs/assets/readme/feature-02.png" alt="Reviewing a structured draft in the note editor" width="100%">
+  </picture>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="middle">
 
-**1. Get the code and install its dependencies.** In Terminal:
+### 03 · Refine beside the note
+
+Ask for a shorter sentence, a moved section or another concrete edit in the
+chat beside the draft. The note remains yours to inspect before publishing.
+
+</td>
+<td width="50%">
+  <picture>
+    <source srcset="docs/assets/readme/feature-03.gif" type="image/gif">
+    <img src="docs/assets/readme/feature-03.png" alt="Refining a note in the chat beside the text" width="100%">
+  </picture>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="middle">
+
+### 04 · Keep patients and sessions together
+
+Organize notes by patient, with treatment plans, session briefings, backups and
+an optional per-patient brainstorm kept in the same local practice.
+
+</td>
+<td width="50%">
+  <picture>
+    <source srcset="docs/assets/readme/feature-04.gif" type="image/gif">
+    <img src="docs/assets/readme/feature-04.png" alt="Organizing patients, notes and session tools in the workspace" width="100%">
+  </picture>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="middle">
+
+### 05 · Reuse your note formats
+
+Start with the bundled progress-note format, or add your own sections from a
+blank template, examples or typed names. Change formats later in Settings.
+
+</td>
+<td width="50%">
+  <picture>
+    <source srcset="docs/assets/readme/feature-05.gif" type="image/gif">
+    <img src="docs/assets/readme/feature-05.png" alt="Choosing and customizing a reusable note format" width="100%">
+  </picture>
+</td>
+</tr>
+</table>
+
+## Privacy is a product decision
+
+- The running app talks only to `127.0.0.1` / `localhost`.
+- Writing and transcription use models stored on the Mac.
+- There is no account, analytics, crash reporting or update check.
+- The one network exception is explicit first-run model acquisition. The
+  installer downloads pinned model files from its allow-list, verifies their
+  checksums, and is not part of the running server or browser app.
+- Apunta has no password of its own. Lock the screen, use a separate macOS
+  account on a shared Mac, and enable FileVault before real notes go in.
+- Backups can contain patient data. Keep them encrypted and do not put them in
+  iCloud-synced Desktop or Documents folders.
+
+See the in-app About page and [`docs/INSTALL.md`](docs/INSTALL.md) for the
+plain-language limits and the backup/restore procedure.
+
+## Getting started
+
+### For the person using Apunta
+
+If you were given an `Apunta.dmg`, start with
+[`docs/INSTALL.md`](docs/INSTALL.md). It describes the double-click install,
+the first-run model download and macOS's warning for an ad-hoc-signed,
+unnotarized pre-release build. It requires an Apple-silicon Mac running
+macOS 14 or newer, 4–23 GB of free space depending on the selected model,
+and an internet connection for the first setup. Apunta has not yet been run
+through that guide on a Mac.
+
+### For development
 
 ```sh
 git clone https://github.com/villenull/Apunta.git
 cd Apunta
 npm install
+npm run dev:fake
 ```
 
-You need [Homebrew](https://brew.sh) and Node 22 or newer. If `node -v` says
-nothing or says something older, the setup script in step 2 installs it.
-
-**2. Install the AI, and get the models.**
-
-```sh
-bash scripts/setup-macos.sh
-```
-
-It installs Ollama and whisper.cpp, starts Ollama, picks a writing model sized
-to your Mac's memory, downloads it, downloads the speech model into Apunta's
-own folder and checks it arrived intact. It is safe to run again as many times
-as you like, and `--dry-run` shows you everything it would do without doing any
-of it.
-
-> **This script has never been run on a Mac.** It was written in a Linux
-> container that has no Homebrew in it. See
-> [`docs/MANUAL-VERIFICATION.md`](docs/MANUAL-VERIFICATION.md), which is the
-> checklist for the first real run.
-
-**3. Start it.**
+Open <http://127.0.0.1:5173>. Fake mode keeps the whole app runnable without
+Ollama, whisper.cpp or any model weights. For the production-shaped local
+server:
 
 ```sh
 npm start
 ```
 
-It builds, serves the app at <http://127.0.0.1:7717>, and opens your browser
-there.
-
-**Then, before real notes go in**, run the read-only check:
+The source path needs Node 22+. Real model setup is macOS-specific:
 
 ```sh
-bash scripts/preflight-macos.sh
+bash scripts/setup-macos.sh
 ```
 
-It looks at the things Apunta cannot fix for you — whether your disk is
-encrypted, whether iCloud is quietly syncing the folders you would naturally
-save a backup into, whether you have a Time Machine backup at all — and prints
-what to do in the order to do it.
-[`docs/PREFLIGHT.md`](docs/PREFLIGHT.md) explains every check in it.
+That script has not been run on a Mac yet. It is the explicit model-acquisition
+exception described above; `--dry-run` is safe off macOS. Before real notes,
+run the read-only checks in [`docs/PREFLIGHT.md`](docs/PREFLIGHT.md).
 
-### Optional: start it automatically
+## Development status
 
-```sh
-bash scripts/install-launchagent.sh
-```
+All planned work packets M0–M12 are built, including local drafting,
+transcription, formats, refine chat, backups, installer logic and Claude
+conversation import. The remaining release gate is evidence on a real Mac:
+the setup scripts, packaged app, menu-bar shell, FileVault checks, backup
+round-trip and uninstall path. Model quality is measured separately; CI's
+fake-AI run proves plumbing, not clinical faithfulness.
 
-Apunta then starts when you log in and is simply there at
-<http://127.0.0.1:7717>. Remove it with `--uninstall`; the command is printed
-at the end of the install so you never have to look it up.
+Read [`docs/HANDOFF.md`](docs/HANDOFF.md) for current open work,
+[`docs/MANUAL-VERIFICATION.md`](docs/MANUAL-VERIFICATION.md) for the Mac
+checklist, and [`docs/decisions.md`](docs/decisions.md) for decisions that
+change the product's boundaries.
 
----
+## Useful commands
 
-## Using it day to day
-
-1. **Add a note format** the first time — the sections your notes have. Upload
-   a blank template, upload two or three notes you have already written, or
-   type the section names.
-2. **Add a patient.** A name, and an identifier if you use one.
-3. **New note.** Record yourself talking about the session, or type the rough
-   version. Say things in any order; that is what it is for.
-4. **Read the draft.** It appears section by section. Where the recording was
-   unclear it writes `[unclear in dictation]` rather than guessing. Where you
-   said nothing about a section it leaves it blank rather than inventing
-   something to fill it.
-5. **Fix it in the chat** on the right. Highlight a sentence to talk about that
-   sentence. "Shorter." "Move that to Objective." "I never said she was
-   sleeping better."
-6. **Publish and copy.** Publishing locks the text and puts it on your
-   clipboard, ready to paste into your records system.
-
-A **treatment plan** and a **session briefing** live beside the notes for each
-patient. The model can draft goals from recent notes, but a suggestion is not
-part of the plan until you accept it, and each one arrives quoting the note it
-came from.
-
-**Read every draft before you publish it.** A model can write a sentence that
-sounds clinically right and was never said. That is the whole reason the drafts
-are yours to correct rather than yours to approve.
-
----
-
-## Backing it up
-
-**Settings → Back up and restore.** Apunta backs up once a day on its own, and
-"Back up now" does it immediately. Each backup is one zip holding:
-
-- `apunta.db` — the database, checked before the backup is called done. This is
-  what a restore uses.
-- `notes/` — every note as a plain text file, one folder per patient. Opens in
-  TextEdit in twenty years with no software at all.
-- `plans/` — each treatment plan version as the document it would be printed as.
-- `data.json` — the same information as structured data.
-- `RESTORE.txt` — how to get your notes back, written for someone who no longer
-  has Apunta.
-
-Three things worth knowing:
-
-- **The default folder is inside Apunta's own folder.** That protects you from a
-  mistake in the app, which is the common case, and Time Machine picks it up for
-  free. It does **not** protect you from losing the Mac. A second copy on an
-  encrypted external disk is what covers that.
-- **Do not save backups into Desktop or Documents.** Those are the two folders
-  iCloud syncs by default, so a backup there is uploaded to Apple — and with
-  "Optimize Mac Storage" on, macOS can replace one you never open with an empty
-  placeholder. Apunta warns you if you point it at one.
-- **Set a passphrase for anything leaving the Mac**, or better, put it on an
-  encrypted disk and let macOS hold the key. If you set a passphrase and lose
-  it, nobody can open that backup — including us.
-
-**Try a restore once.** Follow `RESTORE.txt` on a spare copy and watch the notes
-come back. A backup nobody has restored is a guess, and Settings will ask you
-once whether you have.
-
----
-
-## When something is wrong
-
-| What you see | What to do |
+| Command | Purpose |
 | --- | --- |
-| "Apunta can't reach the local AI" | Ollama is not running. `brew services start ollama`, or open **Setup** in the app, which lists everything and gives the command for each |
-| "Apunta can't find the AI model" | It has not been downloaded. `ollama pull <the tag Setup names>` |
-| Recording says whisper is missing | `brew install whisper-cpp` |
-| Recording says the speech model is missing | `bash scripts/setup-macos.sh` — it downloads it and checks the file |
-| The draft repeats a word over and over | A known failure of small models under constrained decoding. Try again; if it keeps happening, switch models in Settings and tell whoever maintains this |
-| The draft ignores your note format | The model is in the wrong weight format. Setup checks this; the fix is `ollama rm <name>` and pulling the tag Setup names |
-| Drafting is very slow | Check no other large program is holding memory. On a 32 GB Mac the middle tier is the honest choice, not the large one |
-| The page will not load at all | The server is not running. `npm start` in the Apunta folder |
-| Nothing saved and you saw a red message | It really did not save. The message says why; nothing is written until it succeeds |
-| Setup says FileVault is off | System Settings → Privacy & Security → FileVault → Turn On. Keep the recovery key somewhere that is not this Mac. Do it before real notes go in |
+| `npm run dev:fake` | Vite + Fastify development loop without AI tooling |
+| `npm run lint` | Lint, format, URL and license checks |
+| `npm run typecheck` | TypeScript checks across workspaces |
+| `npm test` | Unit and integration tests |
+| `npm run build` | Production build |
+| `npm run e2e` | Playwright against the built app in fake mode |
+| `npm run eval -- --fake` | Eval harness positive-control self-check |
+| `npm run package:mac` | Build the macOS app and DMG; macOS only |
 
----
+## Repository map
 
-## Development
-
-A TypeScript monorepo: a Fastify server bound to `127.0.0.1` serves a React SPA
-and a JSON/SSE API over SQLite, and talks only to local AI — Ollama for
-drafting and refining (schema-enforced structured output) and whisper.cpp for
-transcription (16 kHz WAV recorded in the browser, so nothing has to transcode
-it). Fake providers make the whole app runnable and CI-testable with no AI
-tooling installed.
-
-Node 22+ (`.nvmrc` pins the major). `npm install` once at the root — five
-workspaces install together.
-
-| Command | What it does |
+| Path | Role |
 | --- | --- |
-| `npm run dev` | API on :7717 (tsx watch) + Vite on :5173 proxying `/api` |
-| `npm run dev:fake` | The same with `APUNTA_FAKE_AI=1`, so no AI is needed |
-| `npm start` | Build everything and serve the app from :7717 |
-| `npm run seed` | Load the prototype's sample practice (`-- --reset` replaces) |
-| `npm run lint` | ESLint + Prettier + the non-loopback-URL scanner |
-| `npm run typecheck` | tsc across every workspace |
-| `npm test` | Vitest, all workspaces |
-| `npm run e2e` | Playwright, against the built app in fake mode on :7788 |
-| `npm run eval` | The model-quality harness. `-- --fake` is the CI self-check |
-| `npm run smoke:live` | A real dictation through a real Ollama. Manual |
-| `npm run package:mac` | Build `Apunta.app` and `Apunta.dmg`. macOS only; it refuses elsewhere |
-| `npm run licenses` | Regenerate the npm half of `THIRD-PARTY-LICENSES.md` |
+| `web/` | React + Vite browser UI |
+| `server/` | Fastify API, SQLite and local AI providers |
+| `shared/` | Zod schemas and types shared by server and web |
+| `installer/` | First-run model download and checksum verification |
+| `macos/` | Swift/AppKit menu-bar shell |
+| `e2e/` | Playwright specs and synthetic evaluation fixtures |
+| `docs/` | Installation, verification, decisions and handoff |
 
-Useful env: `APUNTA_PORT`, `APUNTA_DATA_DIR`, `APUNTA_FAKE_AI=1`,
-`APUNTA_NO_OPEN=1` (do not open a browser on start), and
-`PLAYWRIGHT_CHROMIUM_EXECUTABLE` when a sandbox already has a browser that
-`playwright install` should not replace.
+## License and status
 
-### Where the project stands
-
-| Packet | State |
-| --- | --- |
-| M0 scaffold | done — monorepo, toolchain, CI, egress guard |
-| M1 data + API | done — migrations, SQLite, every non-AI endpoint, seed script |
-| M2 web shell | done — the prototype ported to React |
-| M3 AI providers | done — provider layer, fakes, Ollama drafting with an enforced schema |
-| M4 refine chat | done — streaming chat that rewrites the note, highlight-refs, publish lock |
-| M5 audio | done — record 16 kHz WAV in the tab → whisper.cpp → transcript → draft |
-| M6 formats | done — format onboarding, detection from templates and examples, skill import |
-| M9 treatment plan + prep | done — versioned payer-facing plan, model-drafted goals she accepts or discards, session briefings |
-| M7 setup, polish, eval | done here — setup script, first-run wizard, FileVault check, backup and restore, polish, eval harness |
-| M8 installer | built here, **none of it ever run** — a double-clickable `.dmg`, bundled Node + Ollama + whisper-cli, a Swift menu-bar shell, first-run model download. Everything macOS-specific awaits the Mac: see `docs/MANUAL-VERIFICATION.md` §7 |
-| M10 live validation | done on a live Linux machine (2026-08-27) — smoke 5/5 on the shipping 4B, baseline + tuned evals committed, the owner's instructions revised twice against measured fabrication, config pack built and restore-verified. `docs/eval-reports/2026-08-M10-report.md` |
-
-### The two things automated tests cannot tell you
-
-**The model.** Everything in CI runs against fake providers. That proves the
-plumbing and nothing whatever about model quality. The real-model evidence
-now exists: M10 ran the shipping 4B live (CPU-only Linux, Ollama 0.32.15 —
-the bundled release). The smoke passed 5/5 with no repetition and no schema
-failures, and the measured version is in
-[`docs/eval-reports/`](docs/eval-reports/) — baseline vs the owner's tuned
-instructions, with the M10 report alongside. To reproduce:
-
-```sh
-npm run eval -- --runs 3 --out eval-report.md
-```
-
-It puts all twenty fixtures in `e2e/fixtures/eval/` through the real model and
-scores each note against `rubric.md`. The report **leads with fabrication
-rate** — an omission is recoverable in the refine chat; a fabrication looks
-finished and gets published. On the 4B that number is not zero: see the
-reports before trusting a draft class the eval says this model gets wrong.
-
-**The Mac.** This project has been built entirely in a Linux container.
-[`docs/MANUAL-VERIFICATION.md`](docs/MANUAL-VERIFICATION.md) is the list of
-everything macOS-specific that has been written and never run, with the command
-to settle each one.
-
-### Repository layout
-
-| Path | What it is |
-| --- | --- |
-| `shared/` | zod schemas and types shared by server and web (built to `dist/` first) |
-| `server/` | Fastify API on `127.0.0.1:7717`; serves `web/dist` in production |
-| `server/src/backup/` | The archive: `VACUUM INTO`, manifest, RESTORE.txt, staged restore |
-| `server/src/eval/` | The model-quality harness behind `npm run eval` |
-| `web/` | React + Vite SPA |
-| `e2e/` | Playwright specs, and the eval corpus in `e2e/fixtures/eval/` |
-| `installer/` | First-run setup logic — disk check, model tier, resumable download, checksum. Runs under the bundled `node`, speaks NDJSON to the app shell, never imported by the running app |
-| `macos/` | The `Apunta.app` shell: a status item, one child process, a progress window and `open`. Swift/AppKit, ~700 lines, no arithmetic |
-| `scripts/` | Allowed to assume macOS, with `macos/`: setup, preflight, LaunchAgent, packaging, uninstall |
-| `docs/INSTALL.md` | The install guide for the therapist. No commands in it |
-| `THIRD-PARTY-LICENSES.md` | Every licence Apunta ships, in full, and what has not been read |
-| `docs/PLAN.md` | Master plan: architecture, data model, API, AI pipeline, milestones |
-| `docs/agents/` | Self-contained work packets for coding agents, with acceptance criteria |
-| `docs/research/` | The verified research behind the stack, privacy and packaging choices |
-| `docs/decisions.md` | Append-only decisions log |
-| `CLAUDE.md` | Conventions, commands, and hard rules for agents working here |
-| `prototype/` | The click-through HTML/CSS design reference. No build step, no real data |
-
-### Picking this up with a coding agent
-
-> **Read [`docs/dev-notes/README.md`](docs/dev-notes/README.md) first.** It
-> explains a Stop-hook false alarm that fires while background agents are
-> working, why acting on it damages commit history, and the protocol that
-> avoids it.
-
-Everything lives on one branch, which is also the default branch.
-
-Every packet M0–M10 has landed — M10 (first contact with a real model) ran
-on a live Linux machine on 2026-08-27; its report is
-[`docs/eval-reports/2026-08-M10-report.md`](docs/eval-reports/2026-08-M10-report.md).
-The owner answered its open questions on 2026-08-28
-([`docs/feedback/2026-08-28-owner-answers.md`](docs/feedback/2026-08-28-owner-answers.md));
-the shipped instructions carry her answers, re-measured.
-
-What is left is not a packet: it is a Mac. `docs/MANUAL-VERIFICATION.md` is
-the list, and its §7 is the installer. The one packet-shaped job that could
-precede the Mac is an intake-side pass of the instruction-distillation
-discipline M10 applied to progress notes — the eval shows the four failing
-intake fixtures belong to the default intake instructions, not to her file.
-
-CI is GitHub Actions on ubuntu-latest, everything in fake mode:
-lint → typecheck → tests → build → the eval harness self-check → Playwright.
+This repository is a pre-release, private project and is currently marked
+`UNLICENSED` in `package.json`. No permission to redistribute the source or
+packaged application is granted by this README. Do not put real patient text,
+audio or exports in issues, fixtures, screenshots or commits.
