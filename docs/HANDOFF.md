@@ -334,6 +334,15 @@ the narrow marker recognizer matches `scratch that`; no retraction extraction
 ran. The subsequent 4B draft reversed the spoken correction (six → four)
 and retained withdrawn morning-meeting wording. This is a strict
 retraction/number blocker, not a pass.
+The strict-failure follow-up is now fixed in the retraction pass:
+`server/src/ai/retractions.ts` shares marker discovery between detection and
+application and recognizes Whisper's observed `scratched that` inflection
+without changing `RETRACTION_MARKER_SOURCE` or weakening verbatim/proximity
+checks. The focused synthetic suite is **16/16**; raw acceptance/model
+artifacts remain unchanged. See
+`docs/eval-reports/2026-09-22-retraction-strict-fix.md`. Re-run the focused
+acceptance on a disposable port before treating the end-to-end blocker as
+closed.
 
 The current-control Discussion matrix is **3 pass / 1 fail**: the two-topic
 case emitted zero required lowercase source-grounded label lines. The
@@ -388,15 +397,25 @@ these real-model failures. No candidate is clinically cleared.
    vocabulary work from the comparison alone.
 2. Review the strict retraction failure and the two-topic/header-formatting
    Discussion findings with synthetic fixtures before any production change.
-   Preserve the raw artifacts and rerun the focused acceptance only on
-   disposable ports.
-3. Obtain the owner's confidentiality decision before probing or opening the
-   real Claude export; use synthetic fixtures only until then.
-4. Run the Mac-only checklist in `docs/MANUAL-VERIFICATION.md`; nothing in
-   `scripts/`, `macos/` or `installer/` has run on a Mac.
+   The retraction strict-fix now recognizes the observed ASR inflection;
+   preserve the raw artifacts and rerun focused acceptance on disposable
+   ports before treating either finding as closed.
+3. The owner has approved confidentiality for her Claude export. The
+   shape-only probe verdict is **GO with an instruction**; read
+   `docs/eval-reports/2026-09-22-claude-export-probe.md`. She can proceed to
+   step 2 of `docs/import-existing-notes.md`, but must review the Settings
+   preview, untick anything that is not a patient, merge duplicate patients,
+   and check the draft counts before importing. Agents must never open, list,
+   read or import the real export.
+4. Continue M13, the Halaxy PDF importer, against the authored synthetic
+   text-based PDF fixture only. Do not wait for or request a real Halaxy
+   export.
 5. Leave the exact-zero Whisper mitigation narrow. Do not add VAD/noise
    suppression without the missing non-silent reproducer and quiet control.
-6. The hosted README still needs a real authenticated browser page check if
+6. Mac work is paused for the coming months by the owner's decision. Keep the
+   Linux PC as the machine running the local AI server; resume the Mac-only
+   checklist only when she reopens that work.
+7. The hosted README still needs a real authenticated browser page check if
    repository visibility/access changes; the API-render substitute above must
    not be relabeled as hosted acceptance.
 
@@ -412,6 +431,27 @@ spell-check "Add to dictionary" behavior, the clinical-knowledge safety
 checks, and the historical measurements remain retained; none is a pending
 task.
 
+### In progress
+
+- **Halaxy PDF importer (M13).** HalaxyServer and HalaxyWeb are implementing
+  the local, text-based PDF flow against a synthetic John Smith fixture:
+  preview first, allow patient-name edits and note unticking, then import
+  selected notes as published history in one undoable batch. Scanned or
+  imageless PDFs are rejected clearly; attachments, letters and images are
+  text-only non-goals. No real Halaxy export is needed or permitted.
+
+### Approved, next action
+- **Claude export confidentiality is approved.** ClaudeProbe's shape-only
+  report is **GO with an instruction**: its focused synthetic proof is 37/37,
+  including three fabricated plans and seven drafts after decoys. The real
+  shape has 45 conversations with 2+ sessions, only an upper bound versus the
+  owner's ~25 patients. Shape-only data cannot distinguish non-patient/
+  general/instruction chats, several conversations for one patient, or
+  over-counting from branched chats. The owner must use the Settings preview
+  to untick extras, merge duplicate patients, and check draft counts before
+  importing. Agents never open, list, read or import the real export;
+  synthetic fixtures remain the only implementation/test input.
+
 ### Waits on the owner
 
 - **Discussion subtopics in her live notes.** The 2026-09-22 implementation
@@ -421,38 +461,22 @@ task.
   a lone or unsupported label without dropping the prose. Automated synthetic
   coverage is green; her first live draft remains the human check that the 4B
   finds the boundaries she expects and does not over-split.
-
-- **The confidentiality decision** on her Claude export (M11 reads her whole
-  account). Then the orchestrator runs `npm run probe:claude -- <export.zip>`
-  and checks the new per-conversation section (sessions per conversation,
-  "active since 2026-07-01 … with 2+ sessions" should be near her ~25
-  patients), then she follows `docs/import-existing-notes.md` step 2. No
-  session may open, list or run anything against the real export
-  (`~/apunta-migration/`); build and test on synthetic fixtures only.
-- **Halaxy source authorization and shape**: public Halaxy documentation
-  describes a per-patient clinical-record zip in the UK guide and a full
-  practice-data zip that is account-owner/permission-gated in the AU guide.
-  It does not establish what this practitioner account can export, what the
-  configured practice includes, or the zip's clinical-note/attachment field
-  mapping. The practice admin must confirm authorized scope, role permission,
-  exact format, dates/client identifiers, versions/drafts/archived records,
-  and attachment preservation. Apunta has no Halaxy importer; do not build a
-  guessed parser or silently drop PDFs/attachments. Use synthetic fixtures
-  only after the real format shape is clarified.
 - **Her first real dictations**, which are the only source allowed to grow
   the retraction-marker list (`RETRACTION_MARKER_SOURCE`).
 
-### Waits on a Mac
+### Paused — Mac work (owner decision 2026-09-22)
 
-Nothing in `scripts/` or `macos/` or `installer/` has run on a Mac. Work
-down `docs/MANUAL-VERIFICATION.md` §1–§9 (preflight, setup script, the app,
-backup/restore, LaunchAgent, eval, the installer and `.dmg`, uninstall, the
-config pack). `docs/INSTALL.md` is her guide; also unrun. The speech model in
-the installer catalogue and the setup script is now a single English-only
-`ggml-tiny.en.bin` (~75 MB, 77,704,715 bytes) serving **both** the live preview
-and the note's transcript; `installer/src/plan.ts` marks the preview step not
-needed when the filenames match, so §7.3's first-run window should list two
-downloads, not three, and count the whisper file once.
+Mac acceptance is paused for the coming months, not the next step. Nothing in
+`scripts/`, `macos/` or `installer/` has run on a Mac; the checklist in
+`docs/MANUAL-VERIFICATION.md` §1–§9 and `docs/INSTALL.md` remain historical
+work to resume when the owner reopens it. The Linux PC remains the machine
+running the local AI server. The speech model in the installer catalogue and
+the setup script is now a single English-only
+`ggml-tiny.en.bin` (~75 MB, 77,704,715 bytes) serving **both** the live
+preview and the note's transcript; `installer/src/plan.ts` marks the preview
+step not needed when the filenames match, so §7.3's first-run window should
+list two downloads, not three, and count the whisper file once.
+
 
 **That switch has now run on the Linux test PC (2026-09-20), never on her
 Mac.** The pin is verified: the published SHA-1 and Apunta's SHA-256 match a
@@ -472,8 +496,11 @@ setup/preflight scripts.
 
 ### Model-quality work, packet-sized (measure before and after; report in `docs/eval-reports/`)
 
-- **Intake-side instruction distillation**: fixtures 09/10/16/19 fail on the
-  default intake instructions. The M10 report calls it the obvious next job.
+- **Intake-side instruction distillation**, including the safety-facts
+  regression (75% → 70%): fixtures 09/10/16/19 fail on the default intake
+  instructions. The M10 report calls it the obvious next job; fold the safety
+  regression into that next whole-instruction revision and measure it with the
+  other failures, not as a standalone patch.
 - **The worked example leaks into "Note for next session"**: her
   instructions' example ends *"Dana will say if her usual session time stops
   working"*, and a dictation with a cadence decision drafts *"John will say
@@ -485,8 +512,6 @@ setup/preflight scripts.
 - **Restated history invites inference**: "four was back in February"
   drafts as *"down from four in February"* (wrong way round). Drafting-model
   behaviour; see the 09-06 report's costs section.
-- **Safety facts** slipped 75% → 70% in the 08-31 instruction revision;
-  flagged for the next one.
 - **Section-at-a-time drafting**, justified in the M10 report for fixtures
   04/07; the retraction pass took 04's most common failure away, so re-check
   the justification before building it.
@@ -546,8 +571,8 @@ The live instance is a detached production build on `127.0.0.1:7717`, data in
 `~/.local/share/apunta` (`apunta.db`, `audio/`, `models/`, `bin/whisper-cli`),
 log at `/tmp/claude-1000/apunta-live.log` (shape-only by design: bytes,
 seconds, token counts, never words). The Linux release process is detached
-from the agent terminal under the user systemd session; the Mac LaunchAgent
-still awaits the checklist below.
+from the agent terminal under the user systemd session; Mac work is paused for
+the coming months and its LaunchAgent checklist is not a next step.
 
 Both Paseo workspace records currently point to this same local checkout;
 there is no second worktree to recover. Removing the Paseo workspace records
@@ -581,7 +606,8 @@ Ollama reachable/model present, Whisper binary/model present, and SQLite
 integrity `ok`. It is reachable at `http://127.0.0.1:7717`. This is Linux
 evidence only: no Mac shell, Metal, FileVault, LaunchAgent, installer,
 standalone decrypt script, or `.dmg` run is claimed; complete
-`docs/MANUAL-VERIFICATION.md` §1–§9 before real notes reach the Mac.
+`docs/MANUAL-VERIFICATION.md` §1–§9 before real notes reach the Mac when the
+owner resumes the paused Mac work.
 
 Never restart the server while a recording is in flight (the log's last line
 tells you), and never run the gate or the eval while he is testing: whisper

@@ -84,6 +84,12 @@ import can be taken back with one click.
    skipped, and the list of patients, each with a tick. **Untick anyone who
    is obviously not a patient.** It takes a second; there is no note text to
    read here.
+   The shape-only probe found 45 conversations with two or more sessions,
+   which is an upper bound rather than 45 patients: it cannot distinguish
+   general or instruction chats, several chats for one patient, or branch
+   over-counting. Review the preview carefully: untick anything that is not a
+   patient, merge duplicate patients, and check the patient and draft counts
+   before pressing Import.
 7. **Press Import.** The report says what was created for whom, and why the
    other chats were skipped. If anything looks wrong, press **Undo this
    import**.
