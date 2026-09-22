@@ -285,6 +285,115 @@ The clinical-knowledge gate has hermetic unit and route coverage under
 Run the standard fake-AI gates before any manual model measurement, and never
 start the long real eval while live testing is active.
 
+## Latest integrated round — verification and limits
+
+The 2026-09-22 integration is on
+`claude/local-browser-app-planning-0likfi` through commit `7141504`
+(`b935789` README media, `e346946` grounded Discussion subtopics,
+`3aa09d5` stale dictation-preview reconciliation, `f30c14f` README,
+`7141504` local-AI efficiency research). Local lint, typecheck, unit and
+integration tests, production build, and Playwright all passed; Playwright
+was **39/39** after installing the pinned browser. GitHub Actions run
+[`35749958171`](https://github.com/villenull/Apunta/actions/runs/35749958171)
+also passed lint, typecheck, unit/integration, build, the fake eval
+self-check, and end-to-end tests.
+
+That evidence is automated and synthetic. It does **not** establish a real
+microphone transition, the owner's speaking patterns, topic boundaries on
+her sessions, Metal/RAM/thermal behavior on the target Mac, or the quality,
+latency, memory use, schema behavior, license compatibility, or endpoint
+compatibility of any candidate model in
+`docs/research/local-ai-efficiency-2026-09-22.md`. No candidate was
+downloaded, run, or made the default.
+
+## Next session — do these in order
+
+### A. Hands-on acceptance of the integrated product changes
+
+Use only invented scripts and the prototype's John Smith/Maria Ruiz/Ana
+Torres samples. Never dictate real patient material into a test, screenshot,
+log, or issue.
+
+1. **Real dictation transition:** in New note, speak one invented sentence
+   once, pause through at least one provisional preview, then stop. Confirm
+   the provisional text is replaced by the final text without duplication.
+   Repeat with a sentence that deliberately says the same phrase twice;
+   both intentional repetitions must remain. Repeat start → stop → start and
+   cancel → start transitions; words from the earlier recording must not
+   return. Do the same once with the refine-chat microphone. The regression
+   test covers a stale response after the cursor advances, but no live
+   microphone was exercised in the integrated round.
+2. **Grounded Discussion:** create one invented single-topic note and one
+   invented note with two clearly separate topics. The first must be one
+   prose block under Discussion; the second should use short lowercase
+   `label:` lines named from the narration. Try a retraction ("work stress —
+   scratch that") and confirm the withdrawn phrase cannot become a label.
+   In refine chat, ask for a second subtopic whose name appears only in a
+   section header or older raw wording; it must not survive. Read the whole
+   note to confirm no sentence disappeared when a label was removed.
+3. **GitHub presentation:** open the pushed README on GitHub at desktop and
+   narrow/mobile width. Confirm one centered title, the hero, all five GIF
+   rows and PNG fallbacks, working documentation links, no horizontal
+   overflow, and only synthetic names. The local GitHub-Markdown render
+   already passed at 1440 px and 390 px; this is the hosted-page acceptance.
+4. Record outcomes here. A failure in these manual checks is a product bug
+   even though the automated gates above are green.
+
+### B. Controlled local-AI experiments — only after A
+
+Read `docs/research/local-ai-efficiency-2026-09-22.md` first; its evidence
+labels, candidate table, isolation rules, acceptance metrics, source
+register, and endpoint traps are part of the procedure.
+
+1. Freeze the current `qwen3.5:4b-q4_K_M`/`ggml-tiny.en.bin` control,
+   runtime version, model digest, instructions, synthetic corpus, machine
+   state, cold/warm condition, latency, peak memory, retries, and output.
+   `npm run smoke:live -- --model qwen3.5:4b-q4_K_M --runs 5` is the
+   provider/schema smoke, not the clinical-quality result.
+2. Run the **no-download vocabulary experiment first** on invented audio:
+   unchanged `tiny.en` and decoding, paired runs without a vocabulary, with
+   a short relevant vocabulary, and with plausible unspoken distractors.
+   Score WER, exact clinical entities, numbers/units, negation, additions,
+   preview stability, stop-to-final latency, and peak memory. Do not put a
+   real vocabulary into the live settings until the owner supplies and
+   approves it.
+3. Only with explicit model-acquisition authorization, compare the exact
+   official `qwen3.5:2b-q4_K_M` artifact against the frozen 4B control.
+   Bonsai follows only as `prism-ml/Bonsai-8B-gguf` /
+   `Bonsai-8B-Q1_0.gguf`; the optional smaller arm is
+   `prism-ml/Bonsai-4B-gguf` / `Bonsai-4B-Q1_0.gguf`. Before either, verify
+   the exact file and digest, Apache-2.0 license, prompt template, stop
+   tokens, JSON-schema output, context/KV behavior, and Q1_0 runtime
+   backend. A llama.cpp OpenAI-compatible endpoint is **not** a drop-in
+   replacement for Apunta's Ollama-native `/api/chat`; do not route a
+   standard run to it by assumption.
+4. For every compatible LLM arm, run the existing synthetic gates (replace
+   `<exact-tag>` only with the tag actually served by the compatible
+   runtime):
++
+   ```sh
+   npm run smoke:live -- --model <exact-tag> --runs 5
+   npm run eval -- --models <exact-tag> --runs 3 --instructions docs/note-instructions/owner-progress-instructions.md
+   npm run check:format
+   npm run check:refine
+   ```
+   Then add hand review, latency and peak-memory capture. Set
+   `APUNTA_CHECK_URL` for the two check
+   scripts to a disposable instance with a fresh data directory. The eval
+   CLI does **not** honor `APUNTA_OLLAMA_URL`; use the default service only
+   in an explicitly coordinated exclusive window, or first build a
+   throwaway runner around `runEval({ ollamaUrl: ... })`.
+5. Reject a candidate for any fabrication increase, lost or added clinical
+   fact, worse risk/negation/number retention, schema/retry regression,
+   unacceptable latency/memory, incompatible license/runtime, or failure on
+   the target Mac. Do not switch the default from measured speed or download
+   size alone. A Linux pass is screening evidence, never Mac acceptance.
+
+The next agent can immediately execute A with synthetic scripts and prepare
+the vocabulary A/B harness. Model downloads, model-server changes and any
+default switch remain gated on explicit authorization; target-Mac checks
+remain under `docs/MANUAL-VERIFICATION.md`.
+
 ## What is open
 
 Grouped by what each item waits on.
@@ -428,8 +537,8 @@ Every item comes with a full script when it needs his voice.
 4. **Import dry run** with `e2e/fixtures/claude-export/patient-chats.json`:
    expect 7 notes for John, Maria (1) and Maria (2), four skipped; untick
    one, import, rename a guessed patient from the row's **Rename**, then undo.
-   The Playwright spec for this was updated but not run (no browsers on
-   the partner's PC on 2026-09-21).
+   The Playwright coverage now passes locally and in CI; the proxy's
+   hands-on dry run remains pending.
 5. **A long recording** (10+ minutes) for the preview's slow-gap mode after
    four minutes, and the final transcription time.
 6. Paste-into-Halaxy — human-only, whenever he has Halaxy open.
@@ -442,6 +551,16 @@ log at `/tmp/claude-1000/apunta-live.log` (shape-only by design: bytes,
 seconds, token counts, never words). The Linux release process is detached
 from the agent terminal under the user systemd session; the Mac LaunchAgent
 still awaits the checklist below.
+
+Both Paseo workspace records currently point to this same local checkout;
+there is no second worktree to recover. Removing the Paseo workspace records
+must not be mistaken for backing up or deleting Apunta's data. The live
+SQLite database, WAL/SHM files, audio, encrypted backups and whisper model
+are outside Git under `~/.local/share/apunta/`; the real Claude export, local
+runbook/config pack, Ollama models and agent/session history also live
+outside this checkout. Do not delete those paths during Paseo cleanup, and
+never open the real export for verification. GitHub contains none of that
+state.
 
 ```sh
 # Ollama (the systemd unit needs an interactive polkit prompt; run it as the user)
