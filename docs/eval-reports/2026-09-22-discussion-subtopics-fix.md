@@ -16,12 +16,13 @@ Two synthetic cases preserve the findings as regression tests:
 - A two-topic Discussion returned as one prose block remains byte-for-byte
   prose (`outcome: none`). The server cannot safely infer topic boundaries from
   unlabeled prose without inventing a split. This is model behavior, not a
-  grounding/stripping bug. The clinical guidance now states the conditional
-  requirement more explicitly: when the model decides there are genuinely
-  distinct topics, it must emit at least two label-only lines; one topic still
-  must have no label. The existing real-model result therefore remains a
-  quality limitation and a human live-note check, not a claim of an automatic
-  fix.
+  grounding/stripping bug. A temporary prompt sentence explicitly requiring
+  two label-only lines was measured against the prior prompt on the real
+  `qwen3.5:4b-q4_K_M`; neither run produced labels for the synthetic two-topic
+  request. The sentence was removed because it did not improve that gate and
+  its extra prompt token was not justified by the check. The existing
+  real-model result therefore remains a quality limitation and a human
+  live-note check, not an automatic-fix claim.
 
 - Small models sometimes put prose on the same line as a plain label, such as
   `sleep: She slept better.`. The server previously recognized only standalone
@@ -37,9 +38,24 @@ all prose when labels are removed. Inflectional duplicate labels (for example,
 `sleep:` and `sleeping:`) are treated as one topic and stripped rather than
 presenting a false two-topic split.
 
-## Evidence
+## Real-model A/B check
 
-Focused tests passed after the change:
+Both runs used disposable ports (`7794` with the temporary sentence and
+`7795` without it), disposable seeded databases, and the local
+`qwen3.5:4b-q4_K_M`. `npm run check:format` reported **0 flags across 6
+fixtures** in each run. The single-topic fixtures stayed one prose block with
+no over-splitting in both runs. A direct synthetic two-topic draft also
+returned one prose block with **zero labels** in the with-sentence run; the
+same check-format corpus has no dedicated two-topic case, so this direct
+request was used for that gate. The no-sentence check-format run likewise
+produced no labels in its multi-fact Discussion. One retraction fixture's
+optional group sentence differed between runs, consistent with model
+sampling; it did not change the 0-flag result and is not attributed to the
+prompt sentence.
+
+## Focused evidence
+
+Focused tests passed after the parser change:
 
 ```
 npx vitest run server/src/ai/clinical-knowledge/discussion-subheadings.test.ts --pool=threads --maxWorkers=1
@@ -47,12 +63,14 @@ npx vitest run server/src/ai/clinical-knowledge/discussion-subheadings.test.ts -
 
 npx vitest run server/src/ai/clinical-knowledge/integration.test.ts server/src/routes/generate.test.ts server/src/routes/chat.test.ts --pool=threads --maxWorkers=1
 # 3 files, 66 tests passed
+
+npx vitest run server/src/ai/clinical-knowledge/discussion-subheadings.test.ts server/src/ai/clinical-knowledge/integration.test.ts server/src/ai/prompts.test.ts server/src/routes/generate.test.ts server/src/routes/chat.test.ts --pool=threads --maxWorkers=1
+# 5 files, 144 tests passed
 ```
 
 The new parser tests cover the two-topic unlabeled reproduction, inline label
 normalization, ordinary-colon sentence conservation, unsupported and lone
 inline-label removal without prose loss, and inflectional duplicate rejection.
-The integration test covers the strengthened conditional prompt guidance.
-No real-model rerun was needed: the parser reproduction is deterministic, and
-the existing disposable real-model artifact is sufficient evidence that the
-zero-label two-topic result is upstream model behavior.
+No additional real-model rerun is needed: the parser reproduction is
+deterministic, and the disposable A/B check above is sufficient evidence that
+the zero-label two-topic result is upstream model behavior.

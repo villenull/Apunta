@@ -98,9 +98,10 @@ function isHeadingShaped(text: string): boolean {
  * The heading on this line, or null for a line of prose.
  *
  * A plain `words:` line counts only when it is short and not the lead-in to a
- * list ("She named three things:" followed by bullets stays prose). An inline
- * label that is not bold — `Dana reports: …` — is prose too: stripping it
- * would cut her words.
+ * list ("She named three things:" followed by bullets stays prose). A
+ * lowercase inline label may carry its first sentence on the same line, but
+ * an ordinary sentence such as `Dana reports: …` remains prose so stripping
+ * it would cut her words.
  */
 function headingOn(line: string, next: string | undefined): HeadingLine | null {
   const trimmed = line.trim();

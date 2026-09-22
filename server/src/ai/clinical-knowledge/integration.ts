@@ -119,7 +119,6 @@ export function renderClinicalKnowledgeGuide(
   if (discussion !== null) {
     lines.push(
       `Discussion routing: decide from her account whether the session covered genuinely distinct topics that she kept apart. If it did, divide the section ${JSON.stringify(discussion)} into one part per topic. Each part starts on its own line with a subheading of one to four lowercase words taken from her own words for that topic, ending in a colon, and its prose follows on the next line. If the session had one topic, or its parts belong to one throughline, write ${JSON.stringify(discussion)} as a single block of prose with no subheading.`,
-      'When there are genuinely distinct topics, do not flatten them into one prose block: write at least two label-only lines, one for each topic. The server cannot safely recover a split from unlabeled prose.',
       'Never write a subheading for a single topic, never name a topic she did not discuss, and never use a general category as a subheading. A subheading only names a topic; every sentence under it follows the rules above, and material for other sections stays in them.',
     );
   }
