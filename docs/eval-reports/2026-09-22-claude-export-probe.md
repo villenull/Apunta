@@ -6,7 +6,7 @@
 
 This report contains shape, keys, counts, and dates only. It contains no conversation titles, names, message text, attachment names, or extracted content.
 
-The focused synthetic importer test also passed: `server/src/import/claude.test.ts` completed **37/37** tests. Its fabricated preview demonstrates the relevant safeguards: clinical/name filters exclude decoys, title guesses remain individually tickable, and listed names can merge conversations when the owner supplies them. It is not evidence about the real export's patient count.
+The focused synthetic importer test also passed: `server/src/import/claude.test.ts` completed **37/37** tests. Its fabricated preview asserts **3** patient plans and **7** drafts after excluding decoys; it demonstrates the relevant safeguards: clinical/name filters exclude decoys, title guesses remain individually tickable, and listed names can merge conversations when the owner supplies them. It is not evidence about the real export's patient count.
 
 ## Probe and archive shape
 
