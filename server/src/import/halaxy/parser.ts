@@ -56,13 +56,13 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
   if (headings.some((heading) => heading.line > 0 && lines[heading.line - 1]?.trim() === 'Date')) {
     warnings.push('Some date labels were close to other headings; check the session boundaries.');
   }
-  if (headings.some((heading) => /^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(lines[heading.line] ?? ''))) {
+  if (headings.some((heading) => /^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}$/.test(lines[heading.line] ?? ''))) {
     warnings.push('Some sessions had a bare date heading; check those session boundaries before importing.');
   }
   if (
     lines.some(
       (line) =>
-        /\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/.test(line) && !looksLikeDateHeading(line),
+        /\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/.test(line) && !looksLikeDateHeading(line),
     )
   ) {
     warnings.push('A date-like line inside a session was left in that session; check the session boundaries.');
@@ -124,7 +124,7 @@ function cleanLines(text: string): string[] {
 
 function findPatientName(lines: readonly string[]): string | null {
   for (const line of lines.slice(0, 20)) {
-    const match = /^(?:patient(?:\s+name)?|client(?:\s+name)?)\s*[:\-]\s*(.+)$/i.exec(line);
+    const match = /^(?:patient(?:\s+name)?|client(?:\s+name)?)\s*[:-]\s*(.+)$/i.exec(line);
     if (match?.[1]) return cleanName(match[1]);
   }
   const dateLine = lines.findIndex((line) => looksLikeDateHeading(line));
@@ -154,7 +154,7 @@ function parseHeadingDate(line: string): { date: string; title?: string } | null
   // requiring this keeps dates in the note body from becoming new sessions.
   if (line.length > 120 || /[.!?].*\d/.test(line)) return null;
   const match =
-    /^(?:(?:date|session|appointment|consult(?:ation)?|note)\s*[:\-–—]?\s*)?(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})(?:\s*[-–—:]\s*(.*))?$/i.exec(
+    /^(?:(?:date|session|appointment|consult(?:ation)?|note)\s*[:-–—]?\s*)?(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})(?:\s*[-–—:]\s*(.*))?$/i.exec(
       line,
     );
   if (match) {
