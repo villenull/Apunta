@@ -25,6 +25,8 @@ test.describe('importing from Halaxy', () => {
 
     await expect(page.getByTestId('halaxy-done')).toContainText('2 notes for 1 patient imported as published history');
     await page.getByRole('link', { name: 'Go to patients' }).click();
+    await expect(page.getByTestId('patient-list')).toContainText(patientName);
+    await page.waitForTimeout(500);
     const patientNameElement = page.getByTestId('patient-list').locator('.name').filter({ hasText: patientName });
     await expect(patientNameElement).toBeVisible();
     await patientNameElement.click();
