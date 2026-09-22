@@ -255,6 +255,11 @@ export function HalaxyImport(): React.JSX.Element {
       {batches.length > 0 && (
         <div className="card card-rows lede" data-testid="halaxy-batches">
           <h3 className="heading-tight">Earlier imports</h3>
+          {undone !== null && (
+            <p className="small note-meta" data-testid="halaxy-undone">
+              Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')} removed.
+            </p>
+          )}
           {batches.map((batch) => (
             <div className="row between" key={batch.id}>
               <span className="small">{batch.created_at.slice(0, 16).replace('T', ' ')} — {plural(batch.notes, 'note')}</span>
