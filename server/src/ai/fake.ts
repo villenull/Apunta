@@ -25,6 +25,7 @@ import type {
   LlmProvider,
   LlmResult,
   LlmStats,
+  PriorNoteInput,
   RefineNoteRequest,
   SttDescription,
   SttEvent,
@@ -216,6 +217,7 @@ export class FakeLlmProvider implements LlmProvider {
       current,
       request.sections,
       request.refQuote,
+      request.priorNotes,
     );
 
     yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
@@ -281,6 +283,7 @@ export function fakeRefine(
   current: Sections,
   sections: readonly string[],
   refQuote?: string | undefined,
+  priorNotes: readonly PriorNoteInput[] = [],
 ): { reply: string; updatedSections: Sections | null } {
   const has = (name: string): boolean => sections.some((section) => section.toLowerCase() === name);
   const set = (name: string, body: string): Sections => {
@@ -290,6 +293,28 @@ export function fakeRefine(
     return next;
   };
 
+  // The failure the prior-note lock exists for, on demand: asked to fill a
+  // gap, the model reaches into the background and copies from another
+  // note. The route is expected to hold the section back, and CI proves it.
+  const newest = priorNotes[0];
+  if (/\bfill\b/i.test(message) && !message.includes('?') && newest !== undefined) {
+    const target = sections.find((section) => (current[section] ?? '').trim() === '') ?? sections[0];
+    const lifted = /^[^:\n]*:\s*([^\n]*)/.exec(newest.text)?.[1]?.trim() ?? newest.text.trim();
+    if (target !== undefined && lifted !== '') {
+      return {
+        reply: `Filled in the ${target} section.`,
+        updatedSections: { ...current, [target]: lifted },
+      };
+    }
+  }
+  // A question about another session is answered from the background, by
+  // date, and touches nothing.
+  if (message.includes('?') && newest !== undefined && /last|previous|before|compare|agree/i.test(message)) {
+    return {
+      reply: `The note from ${newest.date} (${newest.title}) is there as background; nothing from it has gone into this note.`,
+      updatedSections: null,
+    };
+  }
   // Reproduces M10's live finding on demand: a tone request that tries to
   // inject the never-write list's own first example. The route's boilerplate
   // lock is expected to block it, and CI keeps proving that end to end.

@@ -18,6 +18,7 @@ import type {
   ComposeBriefRequest,
   DetectFormatRequest,
   GenerateNoteRequest,
+  PriorNoteInput,
   RefineNoteRequest,
   SuggestPlanGoalsRequest,
 } from './types.js';
@@ -231,6 +232,7 @@ export function buildExtractRetractionsPrompt(transcript: string): ChatPrompt {
  * to the model; it is enforced server-side, where it cannot be talked out of.
  */
 export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
+  const priorNotes = request.priorNotes ?? [];
   const instructions = instructionsFor(request.instructions, request.formatName ?? '', request.sections);
   const clinicalGuidance =
     request.clinicalGuidance ?? renderClinicalKnowledgeGuide(request.formatName, request.sections);
@@ -254,12 +256,18 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
     '',
     'A request about tone or register ("more clinical", "more formal") changes wording only. It is never permission to add an observation, a finding, or a stock clinical phrase the note does not already contain: rewriting "engaged, made eye contact" in a more clinical register still describes exactly engagement and eye contact, nothing more.',
     'A request to expand a section may only surface material already in the note, the source, or this conversation. If her request cannot be met without adding something the rules above forbid, change what can be changed, and say what you left alone and why in "reply".',
+    ...(priorNotes.length === 0 ? [] : ['', REFINE_BACKGROUND_RULE]),
     ...(clinicalGuidance.trim() === '' ? [] : ['', clinicalGuidance.trim()]),
     '',
     FAITHFULNESS_CLOSE,
   ].join('\n');
 
-  const parts: string[] = ['The note as it currently stands:', '', request.noteText];
+  // Before the note, not after: the note and her request stay nearest the
+  // answer, and the background — unchanged from turn to turn while the note
+  // is edited — is a prefix Ollama can reuse.
+  const parts: string[] =
+    priorNotes.length === 0 ? [] : [refineBackgroundBlock(priorNotes, request.noteDate), ''];
+  parts.push('The note as it currently stands:', '', request.noteText);
 
   if (request.history.length > 0) {
     parts.push(
@@ -284,11 +292,59 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
     'Whatever she asked for, this revision may not add observations, findings, or clinical phrasing that neither the note above nor her message gives you, and may not drop anything she did not ask to have removed. A tone or register request restyles her words, adding nothing and losing nothing. If part of the request would need clinical content from neither of those places, leave that part undone and say so in "reply".',
     'What she states in her message is hers and goes in, even wording the rules above would refuse from anywhere else: she is the clinician writing her own note, and this is her telling you what it says.',
     'If her message only asks about the note rather than asking for a change, answer it and return "updatedSections": null.',
+    ...(priorNotes.length === 0 ? [] : [REFINE_BACKGROUND_REMINDER]),
     '',
     'Reply with a single JSON object with exactly the keys "reply" and "updatedSections", and nothing else.',
   );
 
   return { system, user: parts.join('\n') };
+}
+
+/**
+ * The refine chat's background (2026-09-21): her other notes on this patient,
+ * so she can ask how this session compares with the last. Faithfulness-
+ * critical — the refine call edits a clinical record, and fabrication is its
+ * first failure — so the background is fenced, labelled read-only at both
+ * ends, stated in the system block, and restated beside her message, where a
+ * rule survives on this model and a rule in the system block alone does not
+ * (the tone lesson of M10). The server's prior-note lock
+ * (`prior-note-guard.ts`) stands behind all of it.
+ *
+ * Every one of these strings appears only when there is background to fence:
+ * with none, the refine prompt is byte for byte what it was before.
+ */
+export const REFINE_BACKGROUND_RULE =
+  'Her other notes on this patient may appear before the note, fenced as BACKGROUND. They are read-only: a record of other sessions, not part of the note you are revising. Use them to answer her questions about other sessions — what changed, what was agreed — and say which note, by date, an answer comes from. Nothing from them goes into this note — not a fact, a name, a number, a finding or a sentence — unless her message asks you to bring that specific thing over. A section with nothing from this session stays empty even when an earlier note has something that would fill it.';
+
+export const REFINE_BACKGROUND_START =
+  'BACKGROUND — READ ONLY. Her other notes on this patient, newest first. They are not the note you are revising, and nothing in them goes into it unless she asks for that exact thing.';
+
+export const REFINE_BACKGROUND_END = 'END OF BACKGROUND. Everything above this line is read-only.';
+
+export const REFINE_BACKGROUND_REMINDER =
+  'The BACKGROUND notes are read-only: this revision takes nothing from them — no fact, name, number or sentence — unless her message asks you to bring that thing over. Answer a question about another session in "reply", saying which note it comes from.';
+
+export function refineBackgroundBlock(notes: readonly PriorNoteInput[], noteDate?: string): string {
+  return [
+    REFINE_BACKGROUND_START,
+    ...(noteDate === undefined ? [] : [`The note you are revising is dated ${noteDate}.`]),
+    ...notes.flatMap((note) => ['', priorNoteBlock(note)]),
+    '',
+    REFINE_BACKGROUND_END,
+  ].join('\n');
+}
+
+/**
+ * What the background costs apart from the notes in it — every fenced string
+ * above, estimated as the route budgets. Each note adds `priorNoteTokens`.
+ */
+export function refineBackgroundOverheadTokens(noteDate?: string): number {
+  return (
+    approximateTokens(REFINE_BACKGROUND_RULE) +
+    approximateTokens(refineBackgroundBlock([], noteDate)) +
+    approximateTokens(REFINE_BACKGROUND_REMINDER) +
+    8
+  );
 }
 
 /**

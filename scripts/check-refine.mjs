@@ -22,6 +22,11 @@
  * blocked, because those are different facts about the app and only one of
  * them is about the model.
  *
+ * Every scenario's patient also has the fixture's `priorNotes`, which the
+ * refine chat reads as read-only background (2026-09-21); a `leaks` phrase
+ * from them reaching the note is a problem, and the prior-note lock firing is
+ * counted apart, as the other locks are.
+ *
  * It is a check, not an eval: no rubric, no score, no fabrication rate.
  * `npm run eval` remains the faithfulness instrument for drafting.
  */
@@ -121,15 +126,26 @@ const format = await (
     sections: names,
   })
 ).json();
-const patient = await (await post('/api/patients', { name: 'John Smith' })).json();
-
 let failures = 0;
 let blocked = 0;
 let kept = 0;
+let fenced = 0;
 const summary = [];
 
 for (const scenario of fixture.scenarios) {
   if (only.size > 0 && !only.has(scenario.id)) continue;
+  // A patient per scenario, with the fixture's other sessions created first:
+  // the refine chat reads a patient's other notes as background, and one
+  // scenario's edited note must not become the next one's history.
+  const patient = await (await post('/api/patients', { name: 'John Smith' })).json();
+  for (const prior of fixture.priorNotes ?? []) {
+    await post('/api/notes', {
+      patient_id: patient.id,
+      format_id: format.id,
+      content: prior.content,
+      title: prior.title,
+    });
+  }
   const note = await (
     await post('/api/notes', {
       patient_id: patient.id,
@@ -166,6 +182,19 @@ for (const scenario of fixture.scenarios) {
     if (reply.includes('Apunta held back part of this revision')) {
       kept += 1;
       console.log('  · the fact lock fired: the model dropped a fact, the server kept the section');
+    }
+    if (reply.includes('Apunta kept your other notes out of this revision')) {
+      fenced += 1;
+      console.log(
+        '  · the prior-note lock fired: the model carried in another note, the server kept the section',
+      );
+    }
+    const allowed = new Set((turn.allows ?? []).map((text) => text.toLowerCase()));
+    for (const text of fixture.leaks ?? []) {
+      if (allowed.has(text.toLowerCase())) continue;
+      if (lower.includes(text.toLowerCase()) && !previous.toLowerCase().includes(text.toLowerCase())) {
+        problems.push(`${label}: "${text}", from another session, reached the note`);
+      }
     }
 
     if (turn.noRewrite === true && (rewritten || current !== previous)) {
@@ -213,4 +242,7 @@ console.log(
 console.log(
   `The fact lock fired ${String(kept)} time(s) — a section was kept because the revision would have lost a number or a date.`,
 );
-console.log('The notes stay in the database; delete that patient to clear them.');
+console.log(
+  `The prior-note lock fired ${String(fenced)} time(s) — a section was kept because the revision would have carried in another session's note.`,
+);
+console.log('The notes stay in the database; delete those patients to clear them.');

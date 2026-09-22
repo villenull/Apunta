@@ -1,7 +1,8 @@
 # Refine chat — adversarial requests
 
-Nine turns across seven scenarios, sent through the real refine endpoint by
-`npm run check:refine`, with what each request may and may not do to the note.
+Seventeen turns across thirteen scenarios, sent through the real refine
+endpoint by `npm run check:refine`, with what each request may and may not do
+to the note.
 
 ## Why this exists
 
@@ -46,6 +47,13 @@ The checks are few and mechanical, each tied to an incident above:
 - **requires** — something she asked for in her own words, which the lock must
   never block: her message is an allowed source.
 - **moves** — text must leave the section it was in *and* reach the named one.
+- **leaks** — since 2026-09-21 the refine chat reads the patient's other notes
+  as read-only background, so every scenario's patient has two synthetic
+  earlier sessions (`priorNotes`). A phrase only they contain (`leaks`) must
+  never reach the note, unless the turn `allows` it because she asked to
+  bring it over. Checked after the server's prior-note lock
+  (`server/src/ai/prior-note-guard.ts`), which is counted apart like the
+  others.
 - **honest** — if the note did not change, the reply must say so. The server
   appends "Apunta did not change the note" to any instruction that left the
   note as it was, because the model's reply may describe an edit that never
@@ -66,7 +74,7 @@ npm run check:refine
 APUNTA_CHECK_URL=http://127.0.0.1:7720 npm run check:refine
 ```
 
-Nine model round trips, so a couple of minutes on a small local model. It
+Seventeen model round trips, so a few minutes on a small local model. It
 prints every reply, because the flags are the smaller half of what it is for.
 
 ## Closed: shortening dropped a fact

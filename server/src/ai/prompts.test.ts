@@ -33,6 +33,10 @@ import {
   buildSummariseNotePrompt,
   orderSections,
   outputFormatBlock,
+  REFINE_BACKGROUND_END,
+  REFINE_BACKGROUND_REMINDER,
+  REFINE_BACKGROUND_RULE,
+  REFINE_BACKGROUND_START,
   RETRACTION_REMINDER,
   retractionReminderFor,
   tailReminder,
@@ -321,6 +325,75 @@ describe('buildGeneratePrompt', () => {
 });
 
 describe('buildRefinePrompt', () => {
+  /**
+   * Her other notes as read-only background (2026-09-21). The refine call
+   * edits a clinical record and fabrication is its first failure, so the
+   * background is fenced and labelled at both ends, and the rule is stated
+   * in the system block *and* beside her message — where, on this model, a
+   * rule survives (the tone lesson above).
+   */
+  describe('with her other notes as background', () => {
+    const base = {
+      instructions: '',
+      formatName: 'Progress note',
+      sections: SOAP,
+      noteText: 'Subjective: Sleeping better.\n\nPlan: Continue weekly.',
+      history: [],
+      message: 'Make it shorter',
+    };
+    const PRIOR = [
+      { title: 'Progress note', date: '2026-09-11', text: 'Subjective: Sister Maria visited from Denver.' },
+      { title: 'Progress note', date: '2026-09-04', text: 'Plan: Try the breathing app twice a day.' },
+    ];
+
+    it('leaves the prompt byte for byte as it was when there is no background', () => {
+      const without = buildRefinePrompt(base);
+      expect(buildRefinePrompt({ ...base, priorNotes: [] })).toEqual(without);
+      for (const text of [REFINE_BACKGROUND_RULE, REFINE_BACKGROUND_START, REFINE_BACKGROUND_REMINDER]) {
+        expect(without.system).not.toContain(text);
+        expect(without.user).not.toContain(text);
+      }
+    });
+
+    it('fences every other note inside a read-only block, before the note being revised', () => {
+      const { system, user } = buildRefinePrompt({ ...base, priorNotes: PRIOR, noteDate: '2026-09-18' });
+      expect(system).toContain(REFINE_BACKGROUND_RULE);
+
+      const start = user.indexOf(REFINE_BACKGROUND_START);
+      const end = user.indexOf(REFINE_BACKGROUND_END);
+      const note = user.indexOf('The note as it currently stands:');
+      expect(start).toBe(0);
+      expect(end).toBeGreaterThan(start);
+      expect(note).toBeGreaterThan(end);
+      for (const prior of PRIOR) {
+        const at = user.indexOf(priorNoteBlock(prior));
+        expect(at).toBeGreaterThan(start);
+        expect(at).toBeLessThan(end);
+        // Nothing of it appears anywhere else in the prompt.
+        expect(user.lastIndexOf(prior.text)).toBe(at + priorNoteBlock(prior).indexOf(prior.text));
+      }
+      // Newest first, and the note being revised is placed in time.
+      expect(user.indexOf('2026-09-11')).toBeLessThan(user.indexOf('2026-09-04'));
+      expect(user).toContain('The note you are revising is dated 2026-09-18.');
+      expect(REFINE_BACKGROUND_START).toContain('READ ONLY');
+      expect(REFINE_BACKGROUND_START).toContain('nothing in them goes into it unless she asks');
+    });
+
+    it('restates the rule beside an ordinary edit request, after her message', () => {
+      const { user } = buildRefinePrompt({ ...base, priorNotes: PRIOR });
+      const said = user.indexOf('She says:\n\nMake it shorter');
+      const reminder = user.indexOf(REFINE_BACKGROUND_REMINDER);
+      expect(said).toBeGreaterThan(user.indexOf(REFINE_BACKGROUND_END));
+      expect(reminder).toBeGreaterThan(said);
+      expect(reminder).toBeLessThan(user.indexOf('Reply with a single JSON object'));
+      expect(REFINE_BACKGROUND_REMINDER).toContain('takes nothing from them');
+      expect(REFINE_BACKGROUND_REMINDER).toContain('unless her message asks you to bring that thing over');
+      // The standing rules beside her message are all still there.
+      expect(user).toContain('may not add observations, findings, or clinical phrasing');
+      expect(user).toContain('return "updatedSections": null');
+    });
+  });
+
   it('describes the two-key contract and allows answering without editing', () => {
     const prompt = buildRefinePrompt({
       instructions: '',
@@ -337,7 +410,7 @@ describe('buildRefinePrompt', () => {
   });
 
   /**
-   * Found live in M10's human pass: the UI's "More clinical" quick action
+   * Found live in M10's human pass: the UI's old "More clinical" quick action
    * made the 4B add "alert and oriented" and "affect congruent with reported
    * mood" — the never-write list's own named examples — to a note that said
    * neither. A register request outranked the faithfulness rules until the

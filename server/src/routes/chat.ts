@@ -1,6 +1,7 @@
 import {
   CHAT_HISTORY_TURNS,
   ChatRequestSchema,
+  approximateTokens,
   emptySectionNames,
   PUBLISHED_REFUSAL,
   sectionsToText,
@@ -16,12 +17,21 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { AiError, aiError } from '../ai/errors.js';
 import { applyDiscussionThemes, renderClinicalKnowledgeGuide } from '../ai/clinical-knowledge/integration.js';
 import { FACT_NOTICE_OPENING, factNotice, guardDroppedFacts } from '../ai/fact-guard.js';
+import { REFINE_PROMPT_TOKENS } from '../ai/ollama.js';
+import {
+  PRIOR_NOTE_NOTICE_OPENING,
+  bringOverRequested,
+  guardPriorNoteContent,
+  priorNoteNotice,
+} from '../ai/prior-note-guard.js';
+import { fitNotesNewestFirst, type FittedNote } from '../ai/prior-notes.js';
+import { buildRefinePrompt, refineBackgroundOverheadTokens } from '../ai/prompts.js';
 import { GUARD_NOTICE_OPENING, guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
 import { RETRACTION_NOTICE_OPENING } from '../ai/retractions.js';
-import type { AiProviders, ChatTurn, LlmStats } from '../ai/types.js';
+import type { AiProviders, ChatTurn, LlmStats, RefineNoteRequest } from '../ai/types.js';
 import { createChatMessage, listChatMessagesForNote } from '../db/chat-messages.js';
 import { getFormat } from '../db/formats.js';
-import { getNote, updateDraftNoteContent } from '../db/notes.js';
+import { getNote, listNotesForPatient, updateDraftNoteContent } from '../db/notes.js';
 import { listTranscriptsForNote } from '../db/transcripts.js';
 import { notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
@@ -40,6 +50,11 @@ import { tryMoveOnlyRefine } from './refine-fast-path.js';
  * **The published lock.** A published note is a filed clinical record. The
  * model is never told about the lock, because a rule in a prompt can be talked
  * out of; the server discards any rewrite of a published note instead.
+ *
+ * **Her other notes are background, never material.** The model sees the
+ * patient's other notes so she can ask how this session compares with the
+ * last; what it may not do is carry anything from them into this one unless
+ * she asks, and the prior-note lock (`ai/prior-note-guard.ts`) holds that.
  *
  * **Privacy.** Every diagnostic on this path is shape — codes, lengths,
  * counts. The note *and* the therapist's message both go through here, so it
@@ -159,17 +174,28 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     const bufferReplyTokens = !isQuestion(input.message);
     let bufferedReply = '';
 
+    const baseRequest: RefineNoteRequest = {
+      instructions: format.instructions,
+      formatName: format.name,
+      sections: format.sections,
+      clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
+      noteText: note.content,
+      history,
+      message: input.message,
+      ...(input.ref_quote == null ? {} : { refQuote: input.ref_quote }),
+    };
+    const priorNotes = fitRefineBackground(db, note, baseRequest);
+
     try {
-      const events = providers.llm.refineNote({
-        instructions: format.instructions,
-        formatName: format.name,
-        sections: format.sections,
-        clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
-        noteText: note.content,
-        history,
-        message: input.message,
-        ...(input.ref_quote == null ? {} : { refQuote: input.ref_quote }),
-      });
+      const events = providers.llm.refineNote(
+        priorNotes.length === 0
+          ? baseRequest
+          : {
+              ...baseRequest,
+              noteDate: note.created_at.slice(0, 10),
+              priorNotes: priorNotes.map(({ title, date, text }) => ({ title, date, text })),
+            },
+      );
 
       for await (const event of events) {
         // She closed the tab or switched notes: stop, and let the provider's
@@ -253,7 +279,15 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         input.message,
         ...(input.ref_quote == null ? [] : [input.ref_quote]),
       ];
-      const guarded = guardRefinedSections(previous, updatedSections, sources);
+      const priorTexts = priorNotes.map((prior) => prior.text);
+      // Asked in so many words to bring something over from another session,
+      // that session's note is her own record and a source like her dictation.
+      const bringOver = bringOverRequested(input.message);
+      const guarded = guardRefinedSections(
+        previous,
+        updatedSections,
+        bringOver ? [...sources, ...priorTexts] : sources,
+      );
       if (guarded.blocked.length > 0) {
         replyText = `${replyText}\n\n${guardNotice(guarded.blocked)}`;
         logBlocked(request, guarded.blocked.length);
@@ -270,7 +304,16 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         logKept(request, kept.dropped.length);
         heldBack = true;
       }
-      updatedSections = kept.sections;
+      // The prior-note lock, the fourth: nothing only her other notes contain
+      // enters this one unless she asked for it. Checked last, against what
+      // the other locks let through, so a section any lock kept stays kept.
+      const fenced = guardPriorNoteContent(previous, kept.sections, sources, priorTexts, input.message);
+      if (fenced.carried.length > 0) {
+        replyText = `${replyText}\n\n${priorNoteNotice(fenced.carried)}`;
+        logFenced(request, fenced.carried.length);
+        heldBack = true;
+      }
+      updatedSections = fenced.sections;
     }
 
     // Serialized through the same `sectionsToText` the drafting path uses,
@@ -319,6 +362,34 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
   });
 }
 
+/**
+ * At most this much of the refine prompt goes to her other notes, however
+ * much room is left. Every refine turn pays for the background in prompt
+ * evaluation, and every note in it is one more record the model could lift
+ * from; the questions it serves — last session, what was agreed — are about
+ * the most recent few. About eight notes of ~500 estimated tokens each.
+ */
+export const REFINE_BACKGROUND_TOKENS = 4096;
+
+/**
+ * Her other notes on this patient, newest first, fitted with Brainstorm's
+ * code (`fitNotesNewestFirst`). The note, the conversation and her message
+ * are sized first, from the real prompt; the background gets only what is
+ * left, capped above. So the note and the thread always win.
+ */
+function fitRefineBackground(db: Database, note: Note, request: RefineNoteRequest): FittedNote[] {
+  const others = listNotesForPatient(db, note.patient_id).filter((other) => other.id !== note.id);
+  if (others.length === 0) return [];
+  const prompt = buildRefinePrompt(request);
+  const fixed =
+    approximateTokens(prompt.system) +
+    approximateTokens(prompt.user) +
+    refineBackgroundOverheadTokens(note.created_at.slice(0, 10));
+  const room = Math.min(REFINE_BACKGROUND_TOKENS, REFINE_PROMPT_TOKENS - fixed);
+  if (room <= 0) return [];
+  return [...fitNotesNewestFirst(others, room).notes];
+}
+
 function requireNote(db: Database, id: string): Note {
   const note = getNote(db, id);
   if (!note) throw notFound('Note not found');
@@ -338,6 +409,7 @@ const SERVER_SENTENCES = [
   FACT_NOTICE_OPENING,
   UNCHANGED_NOTICE,
   RETRACTION_NOTICE_OPENING,
+  PRIOR_NOTE_NOTICE_OPENING,
 ].map((sentence) => sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 const SERVER_SENTENCE_START = new RegExp(`\\n\\n(?=(?:${SERVER_SENTENCES.join('|')}))`);
 
@@ -415,6 +487,11 @@ function logBlocked(request: FastifyRequest, sections: number): void {
 /** Likewise a count: the phrase here is note content and never reaches a log. */
 function logKept(request: FastifyRequest, sections: number): void {
   request.log.info({ keptSections: sections }, 'refinement partially held back by the fact lock');
+}
+
+/** A count, never the phrase: it is from another of her notes. */
+function logFenced(request: FastifyRequest, sections: number): void {
+  request.log.info({ fencedSections: sections }, 'refinement partially held back by the prior-note lock');
 }
 
 function logStats(request: FastifyRequest, stats: LlmStats): void {

@@ -452,7 +452,7 @@ export function nameTokens(text: string): Map<string, string> {
  * non-numeric load-bearing classes (`protectedFactTokens`). The numeric layer
  * wins a key collision, keeping its phrasing in the notice.
  */
-function allFactTokens(text: string): Map<string, string> {
+export function allFactTokens(text: string): Map<string, string> {
   const found = factTokens(text);
   for (const [token, phrase] of protectedFactTokens(text)) if (!found.has(token)) found.set(token, phrase);
   return found;

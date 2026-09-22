@@ -53,6 +53,15 @@ export interface RefineNoteRequest {
   readonly refQuote?: string | undefined;
   /** Deterministic, section-scoped vocabulary guidance; never source text. */
   readonly clinicalGuidance?: string | undefined;
+  /**
+   * The patient's other notes, newest first, as read-only background (2026-09-21):
+   * for answering "how does this compare to last session?", never material for
+   * the revision unless she asks. Fitted by the route; absent or empty leaves
+   * the prompt exactly as it was without them.
+   */
+  readonly priorNotes?: readonly PriorNoteInput[] | undefined;
+  /** `YYYY-MM-DD` of the note being revised, so "last session" can be placed. */
+  readonly noteDate?: string | undefined;
 }
 
 export interface DetectFormatRequest {
@@ -60,7 +69,6 @@ export interface DetectFormatRequest {
   readonly text: string;
 }
 
-/** One note offered to a brainstorm call, newest first. */
 /** One of the patient's notes as a prompt shows it: Brainstorm's context, the refine chat's background. */
 export interface PriorNoteInput {
   readonly title: string;

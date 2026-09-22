@@ -1,7 +1,9 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-21, after the Claude import became automatic (owner's
-choice; `docs/decisions.md`, 2026-09-21).**
+**Updated 2026-09-21, after the refine chat lost its quick actions and
+gained the patient's other notes as read-only background, and Brainstorm
+began reading every note that fits (owner's choices; `docs/decisions.md`,
+2026-09-21).**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -39,11 +41,23 @@ speech). CI is green on every push (GitHub Actions, fake AI mode).
 
 Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
 
-- **Three server-side locks on the refine chat**, because the 4B ignores
+- **Four server-side locks on the refine chat**, because the 4B ignores
   prompt rules under a direct command and lies about provenance: the
-  published lock, the boilerplate lock (`server/src/ai/refine-guard.ts`) and
-  the fact lock (`server/src/ai/fact-guard.ts`). Each appends a sentence to
-  the reply; those sentences are stripped from the history the model sees.
+  published lock, the boilerplate lock (`server/src/ai/refine-guard.ts`),
+  the fact lock (`server/src/ai/fact-guard.ts`) and, since 2026-09-21, the
+  prior-note lock (`server/src/ai/prior-note-guard.ts`). Each appends a
+  sentence to the reply; those sentences are stripped from the history the
+  model sees.
+- **The refine chat reads her other notes** (2026-09-21, owner): the
+  patient's other notes, newest first, go in as fenced READ-ONLY background
+  (before the note, so Ollama can reuse the prefix; at most 4,096 estimated
+  tokens, and only what the note, the thread and her message leave of the
+  refine budget — fitted by Brainstorm's `ai/prior-notes.ts`). The rule is in
+  the system block and restated beside her message. The prior-note lock
+  holds back any revised section that gains a fact or a five-word run only
+  another note contains, unless her message asks to bring something over
+  from another session ("bring … from last session"). Measured on the real
+  4B: `docs/eval-reports/2026-09-21-refine-background.md`.
 - **The retraction pass** (`server/src/ai/retractions.ts`,
   `docs/eval-reports/2026-09-06-retraction-pass.md`): "four hours, scratch
   that, six" is cut out of the transcript before drafting, by the server, on

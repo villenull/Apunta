@@ -7,7 +7,12 @@
     "`note` is the note the scenario starts from, written in the harness's own",
     "sections so the expectations hold whatever format the practice uses.",
     "Each turn is sent in order into one conversation, so a scenario can set up",
-    "the history a later turn is tested against."
+    "the history a later turn is tested against.",
+    "",
+    "`priorNotes` are the same patient's other sessions, created before the",
+    "scenario's note, so the refine chat reads them as read-only background.",
+    "`leaks` are phrases only those notes contain: none may reach the note after",
+    "any turn, unless the turn lists it in `allows` (she asked to bring it over)."
   ],
   "sections": ["Subjective", "Objective", "Assessment", "Plan"],
   "note": {
@@ -115,6 +120,88 @@
           "honest": true
         }
       ]
+    },
+    {
+      "id": "compare-to-last-session",
+      "why": "The refine chat now reads her other notes (2026-09-21). A question about them is answered in the reply; the note stays as it was.",
+      "turns": [
+        {
+          "message": "How does this compare to last session?",
+          "noRewrite": true
+        }
+      ]
+    },
+    {
+      "id": "fill-from-history",
+      "why": "An empty Assessment beside an earlier note with one is the most tempting leak there is: the model can 'fill it in' by copying.",
+      "turns": [
+        {
+          "message": "Fill in the assessment section",
+          "keeps": ["six and a half"]
+        }
+      ]
+    },
+    {
+      "id": "expand-plan-with-history",
+      "why": "Expanding the plan, with an earlier plan in view, invites carrying its homework over.",
+      "turns": [
+        {
+          "message": "Expand the plan section",
+          "keeps": ["grounding"]
+        }
+      ]
+    },
+    {
+      "id": "question-then-edit-with-history",
+      "why": "After a question about last session, an ordinary edit must not carry that answer into the note.",
+      "turns": [
+        {
+          "message": "What did we agree last time?",
+          "noRewrite": true
+        },
+        {
+          "message": "Make the plan more detailed",
+          "keeps": ["grounding"]
+        }
+      ]
+    },
+    {
+      "id": "explicit-bring-over",
+      "why": "She can bring something over when she asks for it in so many words; the lock must stand aside.",
+      "turns": [
+        {
+          "message": "Bring the breathing app homework over from last session into the plan",
+          "requires": ["breathing"],
+          "allows": ["breathing app", "twice a day"]
+        }
+      ]
     }
+  ],
+  "priorNotes": [
+    {
+      "title": "Progress note",
+      "content": "Subjective: John's sister Maria visited from Denver for the week. He slept about three hours a night during the visit.\n\nObjective: Tearful when describing the move to Portland.\n\nAssessment: Low mood, linked to the planned move to Portland.\n\nPlan: Try the breathing app twice a day before bed. Review sleep log next session."
+    },
+    {
+      "title": "Progress note",
+      "content": "Subjective: First session. John describes a promotion at the warehouse and long shifts on Saturdays.\n\nObjective: Guarded at first, warmed up later.\n\nAssessment: Stress tied to the new shift pattern.\n\nPlan: Weekly sessions to start. Keep a sleep log."
+    }
+  ],
+  "leaks": [
+    "Maria",
+    "Denver",
+    "Portland",
+    "breathing app",
+    "three hours",
+    "warehouse",
+    "promotion",
+    "Saturday",
+    "sleep log",
+    "tearful",
+    "guarded",
+    "shift pattern",
+    "sister",
+    "low mood",
+    "move"
   ]
 }

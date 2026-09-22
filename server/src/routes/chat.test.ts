@@ -1,6 +1,7 @@
 import {
   FIRST_PASS_MESSAGE,
   PUBLISHED_REFUSAL,
+  approximateTokens,
   type ChatMessage,
   type Note,
   type NoteFormat,
@@ -15,8 +16,11 @@ import type { LlmEvent, RefineNoteRequest } from '../ai/types.js';
 import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { getNote, setNotePublished } from '../db/notes.js';
 import { createTranscript } from '../db/transcripts.js';
+import { REFINE_PROMPT_TOKENS } from '../ai/ollama.js';
+import { buildRefinePrompt, REFINE_BACKGROUND_END, REFINE_BACKGROUND_REMINDER } from '../ai/prompts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
-import { UNCHANGED_NOTICE, withoutServerSentences } from './chat.js';
+import { recordingProviders } from '../test/providers.js';
+import { REFINE_BACKGROUND_TOKENS, UNCHANGED_NOTICE, withoutServerSentences } from './chat.js';
 
 /**
  * `POST /api/notes/:id/chat` against a real SQLite file and the fake provider.
@@ -89,8 +93,14 @@ let harness: TestApp;
 let patient: Patient;
 let format: NoteFormat;
 
+/**
+ * Each note gets a patient of its own: the refine chat reads a patient's
+ * other notes as background, and the prior-note lock would otherwise judge
+ * one test's rewrite against notes another test left behind.
+ */
 async function freshNote(content = NOTE_TEXT): Promise<Note> {
-  return seedNote(harness.app, patient.id, format.id, content);
+  const own = await seedPatient(harness.app, 'John Smith');
+  return seedNote(harness.app, own.id, format.id, content);
 }
 
 async function publish(noteId: string): Promise<void> {
@@ -460,6 +470,11 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
         `${reply}\n\nApunta applied the corrections you made as you spoke, before drafting: left out “four hours”.`,
       ),
     ).toBe(reply);
+    expect(
+      withoutServerSentences(
+        `${reply}\n\nApunta kept your other notes out of this revision. Plan was kept as it was.`,
+      ),
+    ).toBe(reply);
     expect(withoutServerSentences(reply)).toBe(reply);
     // A model sentence that merely mentions Apunta is not a server sentence.
     expect(withoutServerSentences('Apunta already has that in the Plan section.')).toBe(
@@ -475,6 +490,176 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
 
     const thread = listChatMessagesForNote(harness.db, note.id);
     expect(thread.map((message) => message.role)).toEqual(['user', 'assistant', 'user', 'assistant']);
+  });
+});
+
+/**
+ * Her other notes as read-only background (2026-09-21): she can ask how this
+ * session compares with the last, and nothing from them enters this note
+ * unless she asks. All sessions are synthetic.
+ */
+describe('POST /api/notes/:id/chat — her other notes as background', () => {
+  const EARLIER =
+    'Subjective: Sister Maria visited from Denver for a week.\n\nAssessment: Mood lower in the week of the move.';
+  const EARLIEST = 'Subjective: First session. Sleeping four hours.';
+  const GAPPY = NOTE_TEXT.replace(
+    'Assessment: Continued progress on anxiety management goals.',
+    'Assessment:',
+  );
+
+  async function history(
+    app: FastifyInstance,
+    content: string,
+    noteFormat: NoteFormat = format,
+  ): Promise<{ earliest: Note; earlier: Note; current: Note; other: Note }> {
+    const own = await seedPatient(app, 'John Smith');
+    const someoneElse = await seedPatient(app, 'Jane Doe');
+    const earliest = await seedNote(app, own.id, noteFormat.id, EARLIEST);
+    const earlier = await seedNote(app, own.id, noteFormat.id, EARLIER);
+    const current = await seedNote(app, own.id, noteFormat.id, content);
+    const other = await seedNote(app, someoneElse.id, noteFormat.id, 'Subjective: Someone else entirely.');
+    return { earliest, earlier, current, other };
+  }
+
+  /** Pin created_at, so "newest first" does not depend on the clock's resolution. */
+  function date(local: TestApp, note: Note, day: string): void {
+    local.db
+      .prepare('UPDATE notes SET created_at = ? WHERE id = ?')
+      .run(`2026-09-${day}T09:00:00.000Z`, note.id);
+  }
+
+  it("gives the model the patient's other notes, newest first — never this note, never another patient's", async () => {
+    const providers = recordingProviders();
+    const local = await createTestApp({ providers });
+    try {
+      const notes = await history(local.app, NOTE_TEXT, await seedFormat(local.app));
+      date(local, notes.earliest, '04');
+      date(local, notes.earlier, '11');
+      date(local, notes.current, '18');
+
+      await chat(local.app, notes.current.id, { message: 'Make it shorter' });
+
+      const sent = providers.llm.refines.at(-1);
+      expect(sent?.priorNotes?.map((prior) => prior.text)).toEqual([EARLIER, EARLIEST]);
+      expect(sent?.priorNotes?.map((prior) => prior.date)).toEqual(['2026-09-11', '2026-09-04']);
+      expect(sent?.noteDate).toBe('2026-09-18');
+      expect(sent?.noteText).toBe(NOTE_TEXT);
+
+      // The prompt the provider builds from it: fenced, and the rule restated
+      // beside this ordinary edit request.
+      const prompt = buildRefinePrompt(sent as RefineNoteRequest);
+      expect(prompt.user.indexOf(EARLIER)).toBeLessThan(prompt.user.indexOf(REFINE_BACKGROUND_END));
+      expect(prompt.user.indexOf(REFINE_BACKGROUND_REMINDER)).toBeGreaterThan(
+        prompt.user.indexOf('She says:\n\nMake it shorter'),
+      );
+      expect(prompt.user).not.toContain('Someone else entirely');
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('sends no background at all for a patient with one note', async () => {
+    const providers = recordingProviders();
+    const local = await createTestApp({ providers });
+    try {
+      const localFormat = await seedFormat(local.app);
+      const own = await seedPatient(local.app, 'John Smith');
+      const only = await seedNote(local.app, own.id, localFormat.id, NOTE_TEXT);
+      await chat(local.app, only.id, { message: 'Make it shorter' });
+      expect(providers.llm.refines.at(-1)?.priorNotes).toBeUndefined();
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('holds back a section filled from another note, and says so', async () => {
+    const notes = await history(harness.app, GAPPY);
+
+    // The fake's "fill" copies from the newest other note — the failure this
+    // lock exists for, on demand.
+    const { events } = await chat(harness.app, notes.current.id, { message: 'Fill in the gaps' });
+
+    const reply = assistantReply(events);
+    expect(reply).toContain('Apunta kept your other notes out of this revision.');
+    expect(reply).toContain('To bring something over from another session, ask for it.');
+    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(getNote(harness.db, notes.current.id)?.content).toBe(GAPPY);
+    // …and the model never sees the notice.
+    await chat(harness.app, notes.current.id, { message: 'Is the plan clear?' });
+    const last = listChatMessagesForNote(harness.db, notes.current.id).at(-3);
+    expect(withoutServerSentences(last?.text ?? '')).not.toContain('Apunta kept');
+  });
+
+  it('lets it through when she asks to bring it over from another session', async () => {
+    const notes = await history(harness.app, GAPPY);
+
+    const { events } = await chat(harness.app, notes.current.id, {
+      message: 'Fill in the gaps: bring it over from the last session',
+    });
+
+    expect(assistantReply(events)).not.toContain('Apunta kept your other notes');
+    expect(noteUpdated(events)).toBeDefined();
+    expect(getNote(harness.db, notes.current.id)?.content).toContain('Sister Maria visited from Denver');
+  });
+
+  it('answers a question about last session from the background, and changes nothing', async () => {
+    const notes = await history(harness.app, NOTE_TEXT);
+
+    const { events } = await chat(harness.app, notes.current.id, {
+      message: 'How does this compare to last session?',
+    });
+
+    expect(assistantReply(events)).toContain('as background');
+    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(getNote(harness.db, notes.current.id)?.content).toBe(NOTE_TEXT);
+  });
+
+  it('budgets the background last: the note and the whole thread always go, the other notes get what is left', async () => {
+    const providers = recordingProviders();
+    const local = await createTestApp({ providers });
+    try {
+      const localFormat = await seedFormat(local.app);
+      const own = await seedPatient(local.app, 'John Smith');
+      for (let index = 0; index < 12; index += 1) {
+        await seedNote(
+          local.app,
+          own.id,
+          format.id,
+          `Subjective: Earlier session ${String(index)}. ${'Slept better. '.repeat(120)}`,
+        );
+      }
+      const longNote = `Subjective: ${'This session in detail. '.repeat(900)}`;
+      const current = await seedNote(local.app, own.id, localFormat.id, longNote);
+      // A long thread first, all of it kept as history.
+      for (let index = 0; index < 5; index += 1) {
+        await chat(local.app, current.id, { message: `Question ${String(index)}? ${'x '.repeat(400)}` });
+      }
+      await chat(local.app, current.id, { message: 'Make it shorter' });
+
+      const sent = providers.llm.refines.at(-1) as RefineNoteRequest;
+      expect(sent.noteText).toBe(longNote);
+      expect(sent.history).toHaveLength(10);
+      const prompt = buildRefinePrompt(sent);
+      expect(approximateTokens(prompt.system) + approximateTokens(prompt.user)).toBeLessThanOrEqual(
+        REFINE_PROMPT_TOKENS,
+      );
+      const background = (sent.priorNotes ?? []).length;
+      expect(background).toBeLessThan(12);
+
+      // With room to spare, the background still stops at its own cap.
+      const roomy = await seedNote(local.app, own.id, localFormat.id, NOTE_TEXT);
+      await chat(local.app, roomy.id, { message: 'Make it shorter' });
+      const roomySent = providers.llm.refines.at(-1) as RefineNoteRequest;
+      const cost = (roomySent.priorNotes ?? []).reduce(
+        (total, prior) =>
+          total + approximateTokens(`### ${prior.title} (${prior.date})\n\n${prior.text}`) + 1,
+        0,
+      );
+      expect(cost).toBeLessThanOrEqual(REFINE_BACKGROUND_TOKENS);
+      expect((roomySent.priorNotes ?? []).length).toBeGreaterThan(background);
+    } finally {
+      await local.close();
+    }
   });
 });
 
