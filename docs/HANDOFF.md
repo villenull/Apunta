@@ -376,6 +376,12 @@ the existing `llm_model` setting or machine default, rejects cloud-backed
 tags, resolves once per local LLM operation, and leaves no dead Settings
 control; `/api/health` reports the effective model. The current
 `qwen3.5:4b-q4_K_M` control remains the default.
+The second pass found false positives in the fabrication scorer for the
+synthetic corpus (SI/HI abbreviation, pronoun attribution and
+non-diagnostic “consistent with”). The 4B's audited fabrication rate is about
+15%, not 35%, but single runs are not reproducible; the model verdict is under
+re-investigation. Do not change the default or call a larger model cleared
+until the second-pass report lands.
 Synthetic Discussion follow-up is complete. The server now normalizes
 lowercase inline labels such as `sleep: …` into standalone short lowercase
 `label:` lines, grounds them in current-session material, and removes lone,
