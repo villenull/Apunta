@@ -25,13 +25,9 @@ test.describe('importing from Halaxy', () => {
 
     await expect(page.getByTestId('halaxy-done')).toContainText('2 notes for 1 patient imported as published history');
     await page.getByRole('link', { name: 'Go to patients' }).click();
-    const patientButton = page.getByRole('button', { name: new RegExp(patientName) });
-    await expect(patientButton).toBeVisible();
-    await expect(patientButton).toBeEnabled();
-    await page.evaluate(() =>
-      Promise.all(document.getAnimations().map((animation) => animation.finished)),
-    );
-    await patientButton.click({ position: { x: 12, y: 12 } });
+    const patientNameElement = page.getByTestId('patient-list').locator('.name').filter({ hasText: patientName });
+    await expect(patientNameElement).toBeVisible();
+    await patientNameElement.click();
     const patientsResponse = await request.get('/api/patients');
     expect(patientsResponse.ok()).toBeTruthy();
     const patients = (await patientsResponse.json()) as {
