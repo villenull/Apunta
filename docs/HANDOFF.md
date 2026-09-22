@@ -1,14 +1,14 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-22, after the drafting model took over deciding whether
-Discussion has genuinely distinct subtopics: grounded model-written labels
-are normalized to short lowercase label lines, while a single topic remains
-plain prose. The owner's own progress note is the app default: first-run
-onboarding offers it first, `npm run seed` creates it, and her seven-section
-format drafts with her instructions (`docs/decisions.md`, 2026-09-22).
-Before that, 2026-09-21: the refine chat lost its quick actions and gained
-the patient's other notes as read-only background, and Brainstorm began
-reading every note that fits.**
+**Updated 2026-09-22.** Git now contains the sanitized machine-readable
+reference configuration and executable Linux recovery path needed to
+recreate the current app after a reset (`docs/RECOVERY.md`,
+`config/recovery/current-linux.json`). It records the exact current writing
+and speech weights, observed runtime versions and hashes, provider limits,
+effective settings and note instructions without patient content. Before
+that, the drafting model took over deciding whether Discussion has genuinely
+distinct subtopics: grounded model-written labels are normalized to short
+lowercase label lines, while a single topic remains plain prose.
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -16,17 +16,19 @@ you close or open an item, edit it here, in the same commit.
 
 Start a new session with:
 
-> Read CLAUDE.md and docs/HANDOFF.md, then continue from "What is open".
-> All work stays on the branch `claude/local-browser-app-planning-0likfi`:
-> no feature branches, no PRs, stage explicit paths, never force-push, and
-> push when lint, typecheck, tests, build and e2e are green.
+> Read CLAUDE.md, docs/RECOVERY.md and docs/HANDOFF.md. First establish
+> recovery readiness without opening patient data or downloading models
+> without explicit authorization. Then continue the ordered acceptance and
+> research work under "Next session". All work stays on the branch
+> `claude/local-browser-app-planning-0likfi`: no feature branches, no PRs,
+> stage explicit paths, never force-push, and push only after the relevant
+> gates are green.
 
 Read next, in this order, only as needed: `docs/PLAN.md` §7–8 (milestones,
 deferred), `docs/decisions.md` (the tail is the recent history), the newest
 report in `docs/eval-reports/`, `docs/MANUAL-VERIFICATION.md` (everything
-that needs a Mac). The Claude Code memory directory on the partner's PC
-holds session notes too, but it lives outside the repo; a session on another
-machine has only this file.
+that needs a Mac). Essential recovery state is committed; Paseo or Claude
+agent history is not a prerequisite.
 
 ## Who is who
 
@@ -298,6 +300,16 @@ was **39/39** after installing the pinned browser. GitHub Actions run
 also passed lint, typecheck, unit/integration, build, the fake eval
 self-check, and end-to-end tests.
 
+The reset-recovery round then verified the current manifest read-only,
+created and verified a fresh `/tmp` configuration from the committed
+instructions, launched that isolated database in fake mode at migration 5,
+and exercised the existing installer in no-download `plan` mode. That plan
+exposed and fixed a fractional `approxBytes` value that its integer protocol
+rightly rejected. Installer regression tests passed **32/32**, and the full
+lint, typecheck, unit/integration, build and Playwright chain passed again
+(Playwright **39/39**). No live setting, model, process or patient row was
+changed, and no weight was downloaded.
+
 That evidence is automated and synthetic. It does **not** establish a real
 microphone transition, the owner's speaking patterns, topic boundaries on
 her sessions, Metal/RAM/thermal behavior on the target Mac, or the quality,
@@ -307,6 +319,15 @@ compatibility of any candidate model in
 downloaded, run, or made the default.
 
 ## Next session — do these in order
+
+### Recovery readiness comes first
+
+Follow `docs/RECOVERY.md`. Verify the manifest against installed assets
+read-only, or create a fresh isolated data directory with `apply-config`.
+Do not copy the live database, inspect patient tables, change live settings,
+restart the live app, or acquire models without the user's explicit approval.
+The current reference has been exercised locally without downloads; full
+clean-OS/network acquisition and target-Mac recovery remain unverified.
 
 ### A. Hands-on acceptance of the integrated product changes
 

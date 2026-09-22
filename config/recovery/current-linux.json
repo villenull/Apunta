@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-22T16:25:10Z",
+  "capturedFromCommit": "37617cbd023e769b338a3bafb98ebd5f2a60ea98",
+  "scope": "Sanitized behavior-affecting configuration for the current Linux reference instance; no patients, notes, transcripts, chat, vocabulary values, backup paths, secrets, or export content.",
+  "repository": {
+    "branch": "claude/local-browser-app-planning-0likfi",
+    "nodeMinimumMajor": 22,
+    "observedNode": "26.8.2",
+    "observedNpm": "11.19.1",
+    "packageLockVersion": 3,
+    "packageLockSha256": "22c04952ed68a128ae941dff21aad04e3d57d329d6fb37597e28797039133a08"
+  },
+  "app": {
+    "port": 7717,
+    "ollamaUrl": "http://127.0.0.1:11434",
+    "fakeAi": false,
+    "migrationLevel": 5,
+    "behaviorSettings": {
+      "llm_model": null,
+      "whisper_binary": null,
+      "whisper_model": null,
+      "whisper_preview_model": null,
+      "stt_vocabulary": null,
+      "keep_audio": null
+    },
+    "effectiveDefaults": {
+      "keepAudio": false,
+      "sttLanguage": "en",
+      "whisperBinary": "whisper-cli",
+      "whisperModelRelativeToDataDir": "models/ggml-tiny.en.bin",
+      "whisperPreviewModelRelativeToDataDir": "models/ggml-tiny.en.bin"
+    },
+    "excludedObservedSettings": ["last_backup_at", "last_backup_error", "last_backup_file"]
+  },
+  "writingModel": {
+    "effectiveTag": "qwen3.5:4b-q4_K_M",
+    "selection": "Linux intentionally falls back to SMALL_MODEL because machineMemoryGib is macOS-only; the live database has no llm_model override. Recovery pins the same tag explicitly so another OS or RAM size cannot select a different tier.",
+    "ollamaVersion": "0.34.2",
+    "ollamaBinarySha256": "ca9f4d3b7538196fab8bad3842bff3aa1352a80bfaaf95391ef7dda28880928b",
+    "ollamaListId": "2a654d98e6fb",
+    "weightsBlobSha256": "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490",
+    "weightsBlobBytes": 3389971840,
+    "architecture": "qwen35",
+    "parameters": "4.7B",
+    "quantization": "Q4_K_M",
+    "advertisedContextLength": 262144,
+    "minimumOllamaVersion": "0.17.1",
+    "weightsFormat": "gguf",
+    "license": "Apache-2.0",
+    "observedLaunch": {
+      "command": "ollama serve",
+      "serviceManager": "none",
+      "environmentOverrides": [],
+      "residentModelAtCapture": null
+    },
+    "provider": {
+      "numCtx": 16384,
+      "numPredict": 3072,
+      "keepAlive": "30m",
+      "temperature": 0,
+      "seedFirstAttempt": 0,
+      "repeatPenalty": 1,
+      "promptBudgetFraction": 0.75,
+      "promptHeadroomTokens": 1024
+    }
+  },
+  "speech": {
+    "whisperCppVersion": "1.9.3-dev",
+    "observedBackend": "CPU shared libraries on the Linux reference machine; no GPU backend was established by this audit.",
+    "binarySha256": "39963aa8395951e0be54862ec614a87acf11ccb04d7ffec52c90c5a65d96dbfb",
+    "modelFilename": "ggml-tiny.en.bin",
+    "modelBytes": 77704715,
+    "modelSha1": "c78c86eb1a8faa21b369bcd33207cc90d64ae9df",
+    "modelSha256": "921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f",
+    "language": "en",
+    "previewUsesSameWeights": true,
+    "license": "MIT (OpenAI Whisper)"
+  },
+  "noteFormats": [
+    {
+      "name": "Progress note",
+      "source": "manual",
+      "sections": [
+        "Location",
+        "Client presentation",
+        "Risk review",
+        "Discussion",
+        "Intervention",
+        "Out of session actions",
+        "Note for next session"
+      ],
+      "instructionsFile": "docs/note-instructions/current-linux-progress-instructions.md",
+      "instructionsSha256": "5145d6291b7b598b5b9f2a9b775b9144e2e6acbca667eca140b81e9190b57138",
+      "note": "This is the sanitized instruction text actually stored in the live format. The newer factory file adds explicit Discussion-subtopic wording; route-level clinical guidance still supplies that behavior to the current app. Keep the distinction visible rather than silently rewriting the captured state."
+    },
+    {
+      "name": "Intake note",
+      "source": "manual",
+      "sections": ["Presenting problem", "History", "Formulation", "Plan"],
+      "instructionsFile": null,
+      "instructionsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "acquisition": {
+    "explicitUserActionRequired": true,
+    "allowedHosts": ["huggingface.co", "registry.ollama.ai", "ollama.com"],
+    "speechWeightsChecksumEnforcedByInstaller": true,
+    "writingModelCaveat": "The existing installer pulls an Ollama tag and checks presence, but Ollama does not expose the pinned registry manifest through the installer contract. Verify ollamaListId and weightsBlobSha256 after acquisition; refuse a mismatch rather than claiming byte-identical recovery.",
+    "runtimeCaveat": "Observed Linux executable hashes identify this machine, but the repository does not redistribute those executables. Reinstalling the named runtime versions may produce different binary hashes or unavailable historical builds."
+  }
+}

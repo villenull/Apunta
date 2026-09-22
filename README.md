@@ -174,6 +174,13 @@ That script has not been run on a Mac yet. It is the explicit model-acquisition
 exception described above; `--dry-run` is safe off macOS. Before real notes,
 run the read-only checks in [`docs/PREFLIGHT.md`](docs/PREFLIGHT.md).
 
+To reconstruct the exact sanitized Linux reference configuration after a
+machine reset, including model digests, runtime versions, note instructions
+and safe verification commands, start with
+[`docs/RECOVERY.md`](docs/RECOVERY.md). It uses the existing installer and
+`config/recovery/current-linux.json`; model acquisition remains an explicit
+user action.
+
 ## Development status
 
 All planned work packets M0–M12 are built, including local drafting,

@@ -129,6 +129,7 @@ describe('the writing models', () => {
         assertAllowedHost(entry.licence.url);
       }, entry.tag).not.toThrow();
       expect(entry.approxBytes, entry.tag).toBeGreaterThan(0);
+      expect(Number.isSafeInteger(entry.approxBytes), entry.tag).toBe(true);
     }
   });
 

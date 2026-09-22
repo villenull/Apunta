@@ -33,6 +33,7 @@
     "probe:claude": "node scripts/probe-claude-export.mjs",
     "seed": "npm run build:shared && npm run seed --workspace @apunta/server --",
     "smoke:live": "node scripts/smoke-live.mjs",
+    "recover:linux": "node scripts/recover-current-linux.mjs",
     "licenses": "node scripts/collect-licenses.mjs",
     "package:mac": "bash scripts/package-mac.sh"
   },

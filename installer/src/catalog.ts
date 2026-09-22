@@ -191,7 +191,7 @@ export const WRITING_MODELS: Readonly<Record<string, WritingModelEntry>> = {
     // Measured, not guessed: the registry manifest's config + layer sizes for
     // this tag summed to 3,389,983,735 bytes on 2026-08-26 (M10). Rounded up
     // so the disk check keeps a margin.
-    approxBytes: 3.2 * GIB,
+    approxBytes: Math.ceil(3.2 * GIB),
     // The licence blob the tag actually ships was read on the same day: it is
     // the Apache License 2.0 text (`ollama show qwen3.5:4b-q4_K_M --license`).
     licence: { name: 'Apache-2.0', url: 'https://ollama.com/library/qwen3.5', verified: true },
