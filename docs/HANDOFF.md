@@ -491,6 +491,9 @@ Claude batch links under foreign-key enforcement and rolls back
 transactionally; focused coverage asserts that legacy undo still works.
 Fixture extraction is egress-guarded, the bundled `unpdf` path has no worker or
 CMap URLs configured, and the parser is a static server dependency.
+The integrated project gate is now green at `690853b`: build:shared,
+typecheck, lint (including 111 licenses), 108 test files/1,390 tests,
+production build, 40 e2e tests and 60 fake-eval runs all exited 0.
 
 ### Approved, next action
 - **Claude export confidentiality is approved.** ClaudeProbe's shape-only

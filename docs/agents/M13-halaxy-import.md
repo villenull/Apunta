@@ -102,8 +102,10 @@ egress-guarded, the bundled `unpdf` dependency has no worker or CMap URLs
 configured, and parsing remains a static server dependency. Focused
 Playwright verification passed three repeated runs (**3 passed, 9.5s**) in
 fake AI on disposable port `7800`, covering patient-name click, published
-history import and undo. The full integrated project gate remains pending with
-the orchestrator.
+history import and undo. The integrated project gate then passed at
+`690853b`: build:shared, typecheck, lint (including 111 licenses), 108 test
+files/1,390 tests, production build, 40 e2e tests and 60 fake-eval runs all
+exited 0.
 
 ## Acceptance criteria
 
