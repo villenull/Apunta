@@ -383,9 +383,10 @@ owner decision). On the adopted 4B eval, fabrication is 10% (6/60), safety
 facts 65%, and schema 100%; the scorer fix is `e050eba`, so these numbers are
 not comparable to the earlier runs. `check:format` remains at 0 flags. The
 live Progress-format update was applied after a backup
-(`apunta-backup-2026-09-22-3.zip`) and verified byte for byte; Intake inherits
+(`apunta-backup-2026-09-22-4.zip`) and verified byte for byte; Intake inherits
 the shipped default. GPU prefill is 18.7× faster than CPU. See
 `docs/eval-reports/2026-09-22-model-second-pass.md`.
+The live `:7717` app still runs the pre-today build until it is redeployed.
 Synthetic Discussion follow-up is complete. The server now normalizes
 lowercase inline labels such as `sleep: …` into standalone short lowercase
 `label:` lines, grounds them in current-session material, and removes lone,
@@ -513,12 +514,12 @@ production build, 40 e2e tests and 60 fake-eval runs all exited 0.
 
 ### Waits on the owner
 
-- **Capitalized Discussion subtopic labels are in progress.** Adopter is
-  turning them on for her. The implementation infers genuinely distinct
-  topics from her narration, grounds every label in current-session material,
-  and removes a lone or unsupported label without dropping the prose. The
-  first live draft remains the human check that the 4B finds the boundaries
-  she expects and does not over-split.
+- **Capitalized Discussion subtopic labels are done.** Adopter's parser and
+  gate are complete; labels display with a capitalized first letter while
+  accepting either input case. Her live Progress format now includes the
+  subtopic paragraph after backup `apunta-backup-2026-09-22-4.zip`, verified
+  byte for byte. Intake is unchanged. Her first live draft remains the human
+  check that the 4B finds the boundaries she expects and does not over-split.
 - **Her first real dictations**, which are the only source allowed to grow
   the retraction-marker list (`RETRACTION_MARKER_SOURCE`).
 
@@ -558,7 +559,7 @@ setup/preflight scripts.
   adopted 4B eval measured 10% fabrication (6/60), 65% safety facts and 100%
   schema after scorer fix `e050eba`; these numbers are not comparable with
   earlier runs. The live Progress-format copy was updated after a backup
-  (`apunta-backup-2026-09-22-3.zip`) and verified byte for byte; Intake
+  (`apunta-backup-2026-09-22-4.zip`) and verified byte for byte; Intake
   inherits the shipped default.
 - **The worked example leaks into "Note for next session"**: her
   instructions' example ends *"Dana will say if her usual session time stops
