@@ -92,6 +92,16 @@ reuse its batch/undo mechanism rather than introducing a second one.
 only the selected patients/notes as one batch. The importer must not accept
 arbitrary paths or read from the live data directory.
 
+## Implementation notes (2026-09-22)
+
+The server/shared slice and Settings flow are implemented against the
+synthetic John Smith PDF. Migration 006 preserves pre-existing Claude batch
+links under foreign-key enforcement and rolls back transactionally; focused
+coverage asserts that legacy undo still works. Fixture extraction is
+egress-guarded, the bundled `unpdf` dependency has no worker or CMap URLs
+configured, and parsing remains a static server dependency. The remaining
+packet gate is the focused end-to-end verification of the complete flow.
+
 ## Acceptance criteria
 
 - [ ] A fabricated text-based PDF with a fake patient and multiple dated

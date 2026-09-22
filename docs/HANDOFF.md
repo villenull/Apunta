@@ -464,6 +464,11 @@ text-based practitioner PDFs, previews editable patient names and sessions
 with per-note unticking and rejected-file reasons, then imports selected notes
 as published history in one undoable batch. Synthetic Playwright coverage uses
 the John Smith fixture; no real patient export was opened.
+The final server slice also adds migration 006: it preserves pre-existing
+Claude batch links under foreign-key enforcement and rolls back
+transactionally; focused coverage asserts that legacy undo still works.
+Fixture extraction is egress-guarded, the bundled `unpdf` path has no worker or
+CMap URLs configured, and the parser is a static server dependency.
 
 ### Approved, next action
 - **Claude export confidentiality is approved.** ClaudeProbe's shape-only
