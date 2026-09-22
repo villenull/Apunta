@@ -63,6 +63,48 @@ export interface LiveRecording {
   /** Throw the recording away. */
   readonly cancel: () => void;
 }
+export interface PreviewRequest {
+  readonly kind: 'commit' | 'tail';
+  /** The audio cursor this request was based on. */
+  readonly committedAt: number;
+  /** The end of the audio sent to whisper. */
+  readonly to: number;
+}
+
+export interface PreviewResult {
+  readonly committed: { readonly text: string; readonly at: number };
+  readonly preview: string;
+}
+
+/**
+ * Apply one preview response only to the cursor that requested it.
+ *
+ * A tail is provisional and replaces the previous tail. A commit replaces
+ * that provisional view with the committed chunk. If another response has
+ * already advanced the cursor, this response is stale — appending it would
+ * briefly show a sentence twice before the next final chunk corrected it.
+ */
+export function reconcilePreviewResult(
+  current: { readonly text: string; readonly at: number },
+  request: PreviewRequest,
+  text: string,
+): PreviewResult | null {
+  if (current.at !== request.committedAt) return null;
+  if (request.kind === 'tail') {
+    return {
+      committed: current,
+      preview: joinWords(current.text, text),
+    };
+  }
+  const committed = { text: joinWords(current.text, text), at: request.to };
+  return { committed, preview: committed.text };
+}
+
+function joinWords(head: string, tail: string): string {
+  const a = head.trim();
+  const b = tail.trim();
+  return a === '' ? b : b === '' ? a : `${a} ${b}`;
+}
 
 export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   // Read through a ref so the callbacks the recorder captured when she
@@ -81,6 +123,7 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   const voice = useRef({ smoothed: 0, shownAt: 0, shown: 0 });
   /** Words committed for good, and the second of audio they run up to. */
   const committed = useRef({ text: '', at: 0 });
+  const previewGeneration = useRef(0);
   const limited = useRef(false);
   /** The active preview request must stop before final transcription starts. */
   const previewAbort = useRef<AbortController | null>(null);
@@ -116,16 +159,21 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
    */
   useEffect(() => {
     if (phase !== 'recording') return;
+    const generation = previewGeneration.current + 1;
+    previewGeneration.current = generation;
     committed.current = { text: '', at: 0 };
     setPreview('');
 
     let cancelled = false;
     let timer = 0;
+    let requestSequence = 0;
+    let activeRequest = 0;
     const schedule = (ms: number): void => {
       timer = window.setTimeout(run, ms);
     };
-    const settle = (started: number, now: number): void => {
-      if (cancelled) return;
+    const settle = (started: number, now: number, requestId: number): void => {
+      if (cancelled || activeRequest !== requestId) return;
+      activeRequest = 0;
       // Rest for as long as the refresh took: whisper gets at most half the
       // machine, and a fast machine gets a caption that keeps up.
       let gap = Math.min(PREVIEW_INTERVAL_MS, Math.max(PREVIEW_MIN_GAP_MS, performance.now() - started));
@@ -134,7 +182,7 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     };
     const run = (): void => {
       const active = recorder.current;
-      if (cancelled || !active) return;
+      if (cancelled || !active || generation !== previewGeneration.current) return;
       const now = active.seconds;
       const done = committed.current;
       const pending = now - done.at;
@@ -149,17 +197,33 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
             : null);
         const chunk = cut === null ? null : active.slice(done.at, cut);
         if (cut !== null && chunk !== null) {
+          const request = {
+            kind: 'commit' as const,
+            committedAt: done.at,
+            to: cut,
+          };
+          const requestId = ++requestSequence;
+          activeRequest = requestId;
           const controller = new AbortController();
           previewAbort.current = controller;
           void previewTranscript(chunk, controller.signal)
             .then((result) => {
-              if (cancelled || result === null || recorder.current === null) return;
-              committed.current = { text: joinWords(done.text, result.text), at: cut };
-              setPreview(committed.current.text);
+              if (
+                cancelled ||
+                generation !== previewGeneration.current ||
+                activeRequest !== requestId ||
+                result === null ||
+                recorder.current === null
+              )
+                return;
+              const next = reconcilePreviewResult(committed.current, request, result.text);
+              if (next === null) return;
+              committed.current = next.committed;
+              setPreview(next.preview);
             })
             .finally(() => {
               if (previewAbort.current === controller) previewAbort.current = null;
-              settle(started, now);
+              settle(started, now, requestId);
             });
           return;
         }
@@ -170,18 +234,34 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
         schedule(PREVIEW_MIN_GAP_MS);
         return;
       }
+      const request = {
+        kind: 'tail' as const,
+        committedAt: done.at,
+        to: now,
+      };
+      const requestId = ++requestSequence;
+      activeRequest = requestId;
       const controller = new AbortController();
       previewAbort.current = controller;
       void previewTranscript(tail, controller.signal)
         .then((result) => {
           // Still recording? A result that lands after she stopped belongs to
-          // a screen that has moved on.
-          if (cancelled || result === null || recorder.current === null) return;
-          setPreview(joinWords(committed.current.text, result.text));
+          // a screen that has moved on. A result from an older cursor is also
+          // stale: the final chunk already superseded that partial view.
+          if (
+            cancelled ||
+            generation !== previewGeneration.current ||
+            activeRequest !== requestId ||
+            result === null ||
+            recorder.current === null
+          )
+            return;
+          const next = reconcilePreviewResult(committed.current, request, result.text);
+          if (next !== null) setPreview(next.preview);
         })
         .finally(() => {
           if (previewAbort.current === controller) previewAbort.current = null;
-          settle(started, now);
+          settle(started, now, requestId);
         });
     };
     schedule(PREVIEW_FIRST_MS);
@@ -295,13 +375,6 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   }, []);
 
   return { phase, seconds, level, preview, start, stop, cancel };
-}
-
-/** Committed words, then the tail — with a space, never a stray one. */
-function joinWords(head: string, tail: string): string {
-  const a = head.trim();
-  const b = tail.trim();
-  return a === '' ? b : b === '' ? a : `${a} ${b}`;
 }
 
 /** Peaks under this are the room, not her: the same floor the recorder uses to find a pause. */
