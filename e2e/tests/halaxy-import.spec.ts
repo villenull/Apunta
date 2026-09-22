@@ -27,8 +27,20 @@ test.describe('importing from Halaxy', () => {
     await page.getByRole('link', { name: 'Go to patients' }).click();
     const patientButton = page.getByRole('button', { name: new RegExp(patientName) });
     await expect(patientButton).toBeVisible();
-    await patientButton.click({ force: true });
-    await expect(page.getByTestId('note-list')).toContainText('Prepare for session');
+    await expect(patientButton).toBeEnabled();
+    await page.evaluate(() =>
+      Promise.all(document.getAnimations().map((animation) => animation.finished)),
+    );
+    await patientButton.click({ position: { x: 12, y: 12 } });
+    const patientsResponse = await request.get('/api/patients');
+    expect(patientsResponse.ok()).toBeTruthy();
+    const patients = (await patientsResponse.json()) as {
+      patients: { name: string; note_count: number }[];
+    };
+    expect(patients.patients.find((patient) => patient.name === patientName)).toMatchObject({
+      name: patientName,
+      note_count: 2,
+    });
 
     await page.goto('/import/halaxy');
     await expect(page.getByTestId('halaxy-batches')).toBeVisible();
