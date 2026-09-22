@@ -210,7 +210,8 @@ describe('attribution: the pronoun trap belongs to the patient', () => {
     const target = fixture('16');
     const note = sectionsOf(target, {
       'Presenting problem': 'Patient describes losing their temper at home three times in the last month.',
-      History: 'Patient describes their father as having "a temper" and is unaware of any treatment he received.',
+      History:
+        'Patient describes their father as having "a temper" and is unaware of any treatment he received.',
     });
 
     const score = scoreNote(target, note, { lexicon });
