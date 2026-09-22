@@ -97,9 +97,14 @@ describe('POST /api/import/halaxy', () => {
     const created = listPatients(harness.db, { includeArchived: true });
     expect(created).toHaveLength(1);
     expect(created[0]?.name).toBe('John Smith (edited)');
-    expect(listNotesForPatient(harness.db, created[0]!.id).every((note) => note.status === 'published')).toBe(true);
+    expect(listNotesForPatient(harness.db, created[0]!.id).every((note) => note.status === 'published')).toBe(
+      true,
+    );
 
-    const undone = await harness.app.inject({ method: 'POST', url: `/api/import/batches/${body.batch_id}/undo` });
+    const undone = await harness.app.inject({
+      method: 'POST',
+      url: `/api/import/batches/${body.batch_id}/undo`,
+    });
     expect(undone.statusCode).toBe(200);
     expect(undone.json()).toMatchObject({ notes_deleted: 3, patients_deleted: 1 });
     expect(listPatients(harness.db, { includeArchived: true })).toHaveLength(0);

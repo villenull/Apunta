@@ -28,7 +28,6 @@ import {
 const RETRACTION_MARKER_SOURCE =
   "\\b(?:scratch that|strike that|forget that|never ?mind|actually,? no\\b|no,? wait\\b|wait,? no\\b|that'?s wrong|that was last (?:session|week|time)|start (?:over|again)|let me start again)\\b";
 
-
 /** Does this source contain a spoken retraction at all? */
 export function hasRetraction(source: string): boolean {
   return retractionMarkerMatches(source).length > 0;

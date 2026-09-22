@@ -11,11 +11,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { extractPdf } from '../extract/pdf.js';
 import { ExtractError } from '../extract/types.js';
-import {
-  addBatchNote,
-  addBatchPatient,
-  createImportBatch,
-} from '../db/import-batches.js';
+import { addBatchNote, addBatchPatient, createImportBatch } from '../db/import-batches.js';
 import { createNote, setNotePublished } from '../db/notes.js';
 import { createPatient } from '../db/patients.js';
 import { badRequest } from '../http/errors.js';
@@ -34,7 +30,10 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
         rejected.push({ fileName: file.filename, reason: rejectionMessage(error) });
       }
     }
-    request.log.info({ files: files.length, accepted: patients.length, rejected: rejected.length }, 'halaxy PDFs previewed');
+    request.log.info(
+      { files: files.length, accepted: patients.length, rejected: rejected.length },
+      'halaxy PDFs previewed',
+    );
     return { patients, rejected };
   });
 
@@ -43,9 +42,9 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
     if (!parsed.success) throw badRequest('The Halaxy review selection is not valid.');
     if (parsed.data.patients.length === 0) throw badRequest('Select at least one patient to import.');
     const format = db.prepare('SELECT id FROM note_formats ORDER BY created_at, id LIMIT 1').get() as
-      | { id: string }
-      | undefined;
-    if (!format) throw badRequest('Create a note format before importing, so the notes have somewhere to go.');
+      { id: string } | undefined;
+    if (!format)
+      throw badRequest('Create a note format before importing, so the notes have somewhere to go.');
     const response = db.transaction((): HalaxyImportResponse => {
       const batchId = createImportBatch(db, 'halaxy');
       const patients: HalaxyImportResponse['patients'] = [];
@@ -86,7 +85,8 @@ interface HalaxyFile {
 }
 
 async function receiveFiles(request: FastifyRequest): Promise<HalaxyFile[]> {
-  if (!request.isMultipart()) throw badRequest('Send one or more PDFs as multipart/form-data using the files field.');
+  if (!request.isMultipart())
+    throw badRequest('Send one or more PDFs as multipart/form-data using the files field.');
   const files: HalaxyFile[] = [];
   let total = 0;
   const parts = request.parts({
@@ -107,7 +107,8 @@ async function receiveFiles(request: FastifyRequest): Promise<HalaxyFile[]> {
     if (part.file.truncated) throw badRequest('A PDF is too large to read in one go.');
     const bytes = Buffer.concat(chunks);
     total += bytes.length;
-    if (total > MAX_HALAXY_TOTAL_BYTES) throw badRequest('The selected PDFs are too large to read in one go.');
+    if (total > MAX_HALAXY_TOTAL_BYTES)
+      throw badRequest('The selected PDFs are too large to read in one go.');
     files.push({ filename: part.filename, bytes });
   }
   if (files.length === 0) throw badRequest('Choose at least one Halaxy PDF.');

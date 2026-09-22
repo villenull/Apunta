@@ -30,7 +30,6 @@ describe('tidyDiscussionSubheadings', () => {
     expect(tidy(body)).toEqual({ body, headings: [], outcome: 'none' });
   });
 
-
   it('keeps two topics under her lowercase subheadings as written', () => {
     const body = [
       'sleep:',

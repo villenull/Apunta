@@ -173,15 +173,15 @@ function LlmProfileSettings(): React.JSX.Element | null {
   }
 
   const stored = settings.state.data as SettingsRecord;
-  const available = (Array.isArray(stored.llm_available_profiles)
-    ? stored.llm_available_profiles
-    : []
+  const available = (
+    Array.isArray(stored.llm_available_profiles) ? stored.llm_available_profiles : []
   ).filter((profile): profile is LlmProfile => profile === 'quick' || profile === 'thorough');
   if (available.length < 2) return null;
   const effective =
-    selected ?? (stored.llm_effective_profile === 'quick' || stored.llm_effective_profile === 'thorough'
+    selected ??
+    (stored.llm_effective_profile === 'quick' || stored.llm_effective_profile === 'thorough'
       ? stored.llm_effective_profile
-      : available[0] ?? 'quick');
+      : (available[0] ?? 'quick'));
 
   const save = (profile: LlmProfile): void => {
     setSelected(profile);

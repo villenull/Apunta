@@ -58,9 +58,8 @@ export function importBatchExists(db: Database, id: string): boolean {
  */
 export function undoImportBatch(db: Database, id: string): ImportUndoResponse {
   return db.transaction((): ImportUndoResponse => {
-    const batch = db
-      .prepare('SELECT source FROM import_batches WHERE id = ?')
-      .get(id) as { source: string } | undefined;
+    const batch = db.prepare('SELECT source FROM import_batches WHERE id = ?').get(id) as
+      { source: string } | undefined;
     const removePublished = batch?.source === 'halaxy';
     const notes = db
       .prepare(

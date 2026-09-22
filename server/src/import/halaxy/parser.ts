@@ -1,6 +1,5 @@
 import type { HalaxyPreviewNote, HalaxyPreviewPatient } from '@apunta/shared';
 
-
 const MONTHS: Record<string, number> = {
   january: 1,
   february: 2,
@@ -59,13 +58,10 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
   if (headings.some((heading) => /^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}$/.test(lines[heading.line] ?? ''))) {
     warnings.push('Some sessions had a bare date heading; check those session boundaries before importing.');
   }
-  if (
-    lines.some(
-      (line) =>
-        /\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/.test(line) && !looksLikeDateHeading(line),
-    )
-  ) {
-    warnings.push('A date-like line inside a session was left in that session; check the session boundaries.');
+  if (lines.some((line) => /\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/.test(line) && !looksLikeDateHeading(line))) {
+    warnings.push(
+      'A date-like line inside a session was left in that session; check the session boundaries.',
+    );
   }
 
   const notes: HalaxyPreviewNote[] = [];
@@ -136,7 +132,10 @@ function findPatientName(lines: readonly string[]): string | null {
 }
 
 function cleanName(value: string): string {
-  return value.replace(/\s+/g, ' ').replace(/[|,;]+$/, '').trim();
+  return value
+    .replace(/\s+/g, ' ')
+    .replace(/[|,;]+$/, '')
+    .trim();
 }
 
 function findDateHeadings(lines: readonly string[]): DateHeading[] {
@@ -189,7 +188,9 @@ function isoDate(year: number, month: number, day: number): string {
 
 function title(value: string | undefined): string | undefined {
   const cleaned = value?.trim();
-  return cleaned && !/^(?:session|appointment|consult(?:ation)?|note|date)$/i.test(cleaned) ? cleaned : undefined;
+  return cleaned && !/^(?:session|appointment|consult(?:ation)?|note|date)$/i.test(cleaned)
+    ? cleaned
+    : undefined;
 }
 
 function looksLikeDateHeading(line: string): boolean {
@@ -201,5 +202,8 @@ function isFooterLine(line: string): boolean {
 }
 
 function isHeaderLine(line: string, patientName: string): boolean {
-  return line === patientName || /^(?:halaxy|clinical notes?|patient(?:\s+name)?|client(?:\s+name)?|practice)\b/i.test(line);
+  return (
+    line === patientName ||
+    /^(?:halaxy|clinical notes?|patient(?:\s+name)?|client(?:\s+name)?|practice)\b/i.test(line)
+  );
 }

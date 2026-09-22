@@ -122,7 +122,9 @@ export function HalaxyImport(): React.JSX.Element {
         {undone !== null ? (
           <p className="lede" data-testid="halaxy-undone">
             {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')} removed.
-            {undone.notes_kept > 0 ? ` ${plural(undone.notes_kept, 'note')} you had finalized were kept.` : ''}
+            {undone.notes_kept > 0
+              ? ` ${plural(undone.notes_kept, 'note')} you had finalized were kept.`
+              : ''}
           </p>
         ) : (
           <>
@@ -257,13 +259,21 @@ export function HalaxyImport(): React.JSX.Element {
           <h3 className="heading-tight">Earlier imports</h3>
           {undone !== null && (
             <p className="small note-meta" data-testid="halaxy-undone">
-              Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')} removed.
+              Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')}{' '}
+              removed.
             </p>
           )}
           {batches.map((batch) => (
             <div className="row between" key={batch.id}>
-              <span className="small">{batch.created_at.slice(0, 16).replace('T', ' ')} — {plural(batch.notes, 'note')}</span>
-              <button type="button" className="btn small btn-quick" disabled={busy} onClick={() => void undo(batch.id)}>
+              <span className="small">
+                {batch.created_at.slice(0, 16).replace('T', ' ')} — {plural(batch.notes, 'note')}
+              </span>
+              <button
+                type="button"
+                className="btn small btn-quick"
+                disabled={busy}
+                onClick={() => void undo(batch.id)}
+              >
                 Undo
               </button>
             </div>

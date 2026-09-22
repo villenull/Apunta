@@ -56,9 +56,11 @@ function makePdf() {
     contentIds.push(add(`<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`));
     pageIds.push(add(''));
   }
-  objects[pagesObject - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+  objects[pagesObject - 1] =
+    `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
   pageIds.forEach((id, index) => {
-    objects[id - 1] = `<< /Type /Page /Parent ${pagesObject} 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${font} 0 R >> >> /Contents ${contentIds[index]} 0 R >>`;
+    objects[id - 1] =
+      `<< /Type /Page /Parent ${pagesObject} 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 ${font} 0 R >> >> /Contents ${contentIds[index]} 0 R >>`;
   });
   const chunks = ['%PDF-1.4\n'];
   const offsets = [0];
@@ -68,12 +70,22 @@ function makePdf() {
   }
   const startXref = Buffer.byteLength(chunks.join(''));
   chunks.push(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`);
-  for (let index = 1; index < offsets.length; index += 1) chunks.push(`${String(offsets[index]).padStart(10, '0')} 00000 n \n`);
-  chunks.push(`trailer\n<< /Size ${objects.length + 1} /Root ${catalog} 0 R >>\nstartxref\n${startXref}\n%%EOF\n`);
+  for (let index = 1; index < offsets.length; index += 1)
+    chunks.push(`${String(offsets[index]).padStart(10, '0')} 00000 n \n`);
+  chunks.push(
+    `trailer\n<< /Size ${objects.length + 1} /Root ${catalog} 0 R >>\nstartxref\n${startXref}\n%%EOF\n`,
+  );
   return Buffer.from(chunks.join(''));
 }
 
-const output = join(dirname(new URL(import.meta.url).pathname), '..', 'e2e', 'fixtures', 'halaxy', 'john-smith.pdf');
+const output = join(
+  dirname(new URL(import.meta.url).pathname),
+  '..',
+  'e2e',
+  'fixtures',
+  'halaxy',
+  'john-smith.pdf',
+);
 mkdirSync(dirname(output), { recursive: true });
 writeFileSync(output, makePdf());
 console.log(`Wrote synthetic Halaxy fixture (${pages.length} pages)`);

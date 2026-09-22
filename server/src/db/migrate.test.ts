@@ -157,13 +157,9 @@ describe('migrate', () => {
       'John Smith',
       '2026-01-01',
     );
-    db.prepare('INSERT INTO note_formats (id, name, sections, source, created_at) VALUES (?, ?, ?, ?, ?)').run(
-      'format-1',
-      'Progress',
-      '[]',
-      'manual',
-      '2026-01-01',
-    );
+    db.prepare(
+      'INSERT INTO note_formats (id, name, sections, source, created_at) VALUES (?, ?, ?, ?, ?)',
+    ).run('format-1', 'Progress', '[]', 'manual', '2026-01-01');
     db.prepare(
       'INSERT INTO notes (id, patient_id, format_id, title, status, content, created_at, updated_at, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).run('note-1', 'patient-1', 'format-1', 'Imported', 'draft', 'Body', '2026-01-01', '2026-01-01', null);
@@ -173,7 +169,10 @@ describe('migrate', () => {
       '2026-01-01',
     );
     db.prepare('INSERT INTO import_batch_notes (batch_id, note_id) VALUES (?, ?)').run('batch-1', 'note-1');
-    db.prepare('INSERT INTO import_batch_patients (batch_id, patient_id) VALUES (?, ?)').run('batch-1', 'patient-1');
+    db.prepare('INSERT INTO import_batch_patients (batch_id, patient_id) VALUES (?, ?)').run(
+      'batch-1',
+      'patient-1',
+    );
 
     const migration = migrations.find((item) => item.version === 6)!;
     expect(() =>
@@ -182,7 +181,9 @@ describe('migrate', () => {
         throw new Error('simulated migration failure');
       })(),
     ).toThrow('simulated migration failure');
-    expect(db.prepare('SELECT source FROM import_batches WHERE id = ?').get('batch-1')).toEqual({ source: 'assistant' });
+    expect(db.prepare('SELECT source FROM import_batches WHERE id = ?').get('batch-1')).toEqual({
+      source: 'assistant',
+    });
 
     db.transaction(() => db.exec(migration.sql))();
     expect(db.prepare('SELECT COUNT(*) AS count FROM import_batches').get()).toEqual({ count: 1 });
@@ -195,5 +196,4 @@ describe('migrate', () => {
     expect(db.prepare('SELECT COUNT(*) AS count FROM patients').get()).toEqual({ count: 0 });
     db.close();
   });
-
 });

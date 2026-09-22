@@ -193,7 +193,9 @@ function PatientList({
             >
               <div className="avatar">{initials(patient.name)}</div>
               <div>
-                <div className="name" title={patient.name}>{patient.name}</div>
+                <div className="name" title={patient.name}>
+                  {patient.name}
+                </div>
                 <div className="sub">
                   {noteCountLabel(patient.note_count)}
                   {archived ? ' · archived' : ''}
