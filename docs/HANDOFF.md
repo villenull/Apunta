@@ -481,6 +481,11 @@ text-based practitioner PDFs, previews editable patient names and sessions
 with per-note unticking and rejected-file reasons, then imports selected notes
 as published history in one undoable batch. Synthetic Playwright coverage uses
 the John Smith fixture; no real patient export was opened.
+Final synthetic Playwright evidence passed three repeated runs (**3 passed,
+9.5s**) in an isolated fake-AI worktree on disposable port `7800`, covering
+the normal `.name` click, published-history import and undo. The UI also
+received a hover-only patient-action spacing/truncation fix; screenshots used
+only synthetic patients. No real Halaxy export was opened.
 The final server slice also adds migration 006: it preserves pre-existing
 Claude batch links under foreign-key enforcement and rolls back
 transactionally; focused coverage asserts that legacy undo still works.
