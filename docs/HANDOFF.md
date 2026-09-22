@@ -19,8 +19,8 @@ Start a new session with:
 > Read CLAUDE.md, docs/RECOVERY.md and docs/HANDOFF.md. First establish
 > recovery readiness without opening patient data or downloading models
 > without explicit authorization. Then continue the ordered acceptance and
-> research work under "Next session". All work stays on the branch
-> `claude/local-browser-app-planning-0likfi`: no feature branches, no PRs,
+> research work under "Next session". All work stays on `main`: no feature
+> branches, no PRs,
 > stage explicit paths, never force-push, and push only after the relevant
 > gates are green.
 
@@ -29,6 +29,26 @@ deferred), `docs/decisions.md` (the tail is the recent history), the newest
 report in `docs/eval-reports/`, `docs/MANUAL-VERIFICATION.md` (everything
 that needs a Mac). Essential recovery state is committed; Paseo or Claude
 agent history is not a prerequisite.
+
+## The two priorities
+
+1. **Recreate today's sanitized app on a fresh PC.** Start with
+   `docs/RECOVERY.md` and `config/recovery/current-linux.json`. Git contains
+   the exact current progress-note sections and stored instructions, the
+   other non-patient configuration, runtime/model identities and checksums,
+   and an executable clean-database recovery tool. It deliberately contains
+   no confidential patients, notes, transcripts, chats, recordings, Claude
+   export, backup paths, secrets, or patient-derived vocabulary. Never copy,
+   reset, inspect or export the patient-loaded database to prove recovery.
+2. **Then improve the local AI without changing defaults prematurely.**
+   Preserve the hands-on dictation and grounded
+   Discussion/refine/retraction acceptance gate first. After that, follow
+   `docs/research/local-ai-efficiency-2026-09-22.md`: bounded synthetic
+   vocabulary experiment, frozen current 4B baseline, exact
+   `qwen3.5:2b-q4_K_M`, then compatible Bonsai candidates only with explicit
+   model-acquisition authorization. Clinical fidelity, schema behavior,
+   latency, memory, runtime/license compatibility and target-Mac evidence all
+   gate adoption. No research candidate is the current default.
 
 ## Who is who
 
@@ -289,11 +309,11 @@ start the long real eval while live testing is active.
 
 ## Latest integrated round — verification and limits
 
-The 2026-09-22 integration is on
-`claude/local-browser-app-planning-0likfi` through commit `7141504`
-(`b935789` README media, `e346946` grounded Discussion subtopics,
-`3aa09d5` stale dictation-preview reconciliation, `f30c14f` README,
-`7141504` local-AI efficiency research). Local lint, typecheck, unit and
+The 2026-09-22 feature integration was developed on the historical
+`claude/local-browser-app-planning-0likfi` branch and is now contained in
+authoritative `main`: `b935789` README media, `e346946` grounded Discussion
+subtopics, `3aa09d5` stale dictation-preview reconciliation, `f30c14f`
+README, and `7141504` local-AI efficiency research. Local lint, typecheck,
 integration tests, production build, and Playwright all passed; Playwright
 was **39/39** after installing the pinned browser. GitHub Actions run
 [`35749958171`](https://github.com/villenull/Apunta/actions/runs/35749958171)

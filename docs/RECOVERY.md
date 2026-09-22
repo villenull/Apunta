@@ -22,7 +22,7 @@ recovery verifier and configuration writer is
 The manifest separates observed state from defaults and assumptions. Its
 current reference captures:
 
-- branch `claude/local-browser-app-planning-0likfi` and the npm lockfile hash;
+- authoritative branch `main` and the npm lockfile hash;
 - Node 22 minimum, observed Node/npm versions, and lockfile version;
 - effective writing model `qwen3.5:4b-q4_K_M`, Ollama model ID, underlying
   weights-blob SHA-256 and byte count;
@@ -68,7 +68,7 @@ refuses any database containing a patient or note.
 ### 1. Clone and install the pinned application dependencies
 
 ```sh
-git clone --branch claude/local-browser-app-planning-0likfi https://github.com/villenull/Apunta.git
+git clone --branch main https://github.com/villenull/Apunta.git
 cd Apunta
 node --version                 # must be 22 or newer
 npm ci

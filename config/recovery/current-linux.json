@@ -4,7 +4,7 @@
   "capturedFromCommit": "37617cbd023e769b338a3bafb98ebd5f2a60ea98",
   "scope": "Sanitized behavior-affecting configuration for the current Linux reference instance; no patients, notes, transcripts, chat, vocabulary values, backup paths, secrets, or export content.",
   "repository": {
-    "branch": "claude/local-browser-app-planning-0likfi",
+    "branch": "main",
     "nodeMinimumMajor": 22,
     "observedNode": "26.8.2",
     "observedNpm": "11.19.1",

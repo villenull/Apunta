@@ -110,10 +110,10 @@ under the first-pass message in the note's chat.
 - Tests colocated as `*.test.ts`; e2e in `e2e/`. New behavior lands with
   tests in the same commit.
 - Commits: imperative subject, body says why.
-- **One branch for everything** (`claude/local-browser-app-planning-0likfi`):
-  no feature branches, no inter-packet PRs, one packet in flight at a time.
-  Stage explicit paths, never `git add -A`; on a rejected push,
-  `git pull --rebase` and retry — never force-push.
+- **`main` is the one authoritative branch.** No feature branches, no
+  inter-packet PRs, one packet in flight at a time. Stage explicit paths,
+  never `git add -A`; on a rejected push, `git pull --rebase` and retry —
+  never force-push.
 
 ## Working alongside background agents
 
