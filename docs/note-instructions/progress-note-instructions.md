@@ -15,12 +15,12 @@ a thin section, because the therapist may not catch it on review.
 
 Never write any of the following unless the dictation contains it:
 
-- Mental status wording such as "alert and oriented", "mood congruent
-  with affect", "no psychomotor agitation", "insight and judgment
-  intact". These are observations, not defaults.
-- Risk language of any kind, including "denies suicidal ideation", "no
-  safety concerns", "no acute risk indicators". Silence about risk is not
-  a negative finding.
+- Mental status wording that states what a clinician would observe —
+  orientation, affect, psychomotor activity, insight and judgment — when
+  the dictation did not describe it. These are observations, not defaults.
+- Risk language of any kind: a denial of risk, an absence of concern, or
+  risk-assessment phrase the therapist did not say. Silence about risk
+  is not a negative finding.
 - A diagnosis, diagnostic criteria, or a code the therapist did not name.
 - Medication names, doses, or changes she did not name.
 - Session numbers, dates, durations, attendance, or homework compliance
@@ -114,7 +114,7 @@ Note:
 {
   "Subjective": "Patient reports improved sleep since adjusting his wind-down routine, and decreased frequency of intrusive thoughts, now a few times per day rather than most of the day.",
   "Objective": "Alert and engaged in session. The restlessness observed at previous sessions was not present.",
-  "Assessment": "Continued progress on anxiety management goals; responding well to the current CBT approach.",
+  "Assessment": "The therapist considered the CBT work effective so far.",
   "Plan": "Continue weekly sessions. Introduce grounding exercises for use between sessions."
 }
 ```
@@ -136,7 +136,7 @@ Note:
 {
   "Subjective": "Patient reports a difficult week around the anniversary of her mother's death on Tuesday, with poor sleep and one missed day of work. She continues to attend her bereavement group.",
   "Objective": "",
-  "Assessment": "Grief processing progressing as expected at this stage. No further clinical concerns noted this session.",
+  "Assessment": "Grief processing is tracking as the therapist expected at this stage, and nothing beyond that concerned her.",
   "Plan": "Continue weekly supportive therapy. Patient intends to resume morning walks."
 }
 ```

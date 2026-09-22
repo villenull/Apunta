@@ -103,11 +103,15 @@ describe('default instructions', () => {
     }
   });
 
-  it('keep the banned-boilerplate list exactly as written', () => {
-    expect(PROGRESS_NOTE_INSTRUCTIONS).toContain('"denies suicidal ideation"');
-    expect(PROGRESS_NOTE_INSTRUCTIONS).toContain('"mood congruent');
-    expect(INTAKE_NOTE_INSTRUCTIONS).toContain('"denies substance use"');
-    expect(INTAKE_NOTE_INSTRUCTIONS).toContain('"No prior therapy"');
+  it('describe banned content without teaching the model the old example phrases', () => {
+    expect(PROGRESS_NOTE_INSTRUCTIONS).toContain('risk-assessment phrase');
+    expect(PROGRESS_NOTE_INSTRUCTIONS).toContain('orientation, affect, psychomotor activity');
+    expect(PROGRESS_NOTE_INSTRUCTIONS).not.toContain('"denies suicidal ideation"');
+    expect(PROGRESS_NOTE_INSTRUCTIONS).not.toContain('"mood congruent');
+    expect(INTAKE_NOTE_INSTRUCTIONS).toContain('topic recorded as absent, denied or unremarkable');
+    expect(INTAKE_NOTE_INSTRUCTIONS).toContain('did not gather something');
+    expect(INTAKE_NOTE_INSTRUCTIONS).not.toContain('"denies substance use"');
+    expect(INTAKE_NOTE_INSTRUCTIONS).not.toContain('"No prior therapy"');
   });
 
   it('stay inside the token budget a small model can hold', () => {

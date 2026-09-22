@@ -34,12 +34,12 @@ a thin section, because the therapist may not catch it on review.
 
 Never write any of the following unless the dictation contains it:
 
-- Mental status wording such as "alert and oriented", "mood congruent
-  with affect", "no psychomotor agitation", "insight and judgment
-  intact". These are observations, not defaults.
-- Risk language of any kind, including "denies suicidal ideation", "no
-  safety concerns", "no acute risk indicators". Silence about risk is not
-  a negative finding.
+- Mental status wording that states what a clinician would observe —
+  orientation, affect, psychomotor activity, insight and judgment — when
+  the dictation did not describe it. These are observations, not defaults.
+- Risk language of any kind: a denial of risk, an absence of concern, or
+  risk-assessment phrase the therapist did not say. Silence about risk
+  is not a negative finding.
 - A diagnosis, diagnostic criteria, or a code the therapist did not name.
 - Medication names, doses, or changes she did not name.
 - Session numbers, dates, durations, attendance, or homework compliance
@@ -133,7 +133,7 @@ Note:
 {
   "Subjective": "Patient reports improved sleep since adjusting his wind-down routine, and decreased frequency of intrusive thoughts, now a few times per day rather than most of the day.",
   "Objective": "Alert and engaged in session. The restlessness observed at previous sessions was not present.",
-  "Assessment": "Continued progress on anxiety management goals; responding well to the current CBT approach.",
+  "Assessment": "The therapist considered the CBT work effective so far.",
   "Plan": "Continue weekly sessions. Introduce grounding exercises for use between sessions."
 }
 \`\`\`
@@ -155,7 +155,7 @@ Note:
 {
   "Subjective": "Patient reports a difficult week around the anniversary of her mother's death on Tuesday, with poor sleep and one missed day of work. She continues to attend her bereavement group.",
   "Objective": "",
-  "Assessment": "Grief processing progressing as expected at this stage. No further clinical concerns noted this session.",
+  "Assessment": "Grief processing is tracking as the therapist expected at this stage, and nothing beyond that concerned her.",
   "Plan": "Continue weekly supportive therapy. Patient intends to resume morning walks."
 }
 \`\`\`
@@ -193,11 +193,13 @@ Never write any of the following unless the dictation contains it:
   history, trauma history, family psychiatric history, substance use,
   medical conditions, prior treatment, education, employment, housing,
   relationship or living situation.
-- Negative findings. "No prior therapy", "denies substance use", "no
-  family history", "denies suicidal ideation", "no safety concerns" are
-  clinical assertions and may only appear if the therapist said the
+- Negative findings. A topic recorded as absent, denied or unremarkable
+  is a clinical assertion and may only appear if the therapist said the
   question was asked and answered that way. A topic she did not mention
   was not necessarily asked about, and silence is never a denial.
+- If she says she did not gather something, or that she does not have it,
+  record that she did not gather it. Never turn missing background into a
+  negative finding about the patient.
 - A diagnosis, diagnostic criteria, or a code she did not name. Do not
   convert a description of symptoms into a diagnosis on your own.
 - Medication names, doses, or prescribers she did not name.
@@ -286,10 +288,11 @@ Dictation:
 New patient, John Smith. He's been anxious for about six months —
 worrying most of the day, trouble getting to sleep, tight chest, says
 it ramped up when his company reorganized and he changed roles. It's
-affecting his work, he's second-guessing everything. Never been in
-therapy before. His mother had anxiety, treated for years. No meds
-right now. This looks like generalized anxiety to me, probably kicked
-off by the work transition. We'll start weekly CBT-based sessions.
+affecting his work, he's second-guessing everything. He tried
+counselling once through work, a few sessions, and it fizzled out. No
+meds right now. This looks like an anxiety presentation to me, probably
+kicked off by the work transition. We'll start weekly CBT-based
+sessions.
 \`\`\`
 
 Note:
@@ -297,8 +300,8 @@ Note:
 \`\`\`text
 {
   "Presenting problem": "Patient presents with generalized anxiety symptoms over the past six months, including worry through most of the day, difficulty falling asleep, and chest tightness. He reports symptoms increased following a company reorganization and a change of role, and that they now affect his work, where he second-guesses his decisions.",
-  "History": "No prior therapy. Family history of anxiety; his mother was treated for anxiety over a period of years. Not currently taking any medication.",
-  "Formulation": "Symptoms consistent with generalized anxiety disorder, likely precipitated by the recent work transition.",
+  "History": "He attended a few counselling sessions through work previously, which he said fizzled out. Not currently taking any medication.",
+  "Formulation": "The therapist's provisional impression was an anxiety presentation that followed the recent work transition.",
   "Plan": "Begin weekly CBT-based sessions."
 }
 \`\`\`
@@ -359,15 +362,21 @@ may not catch it on review.
 
 Never write any of the following unless the source contains it:
 
-- Mental-status wording such as "alert and oriented" or "mood congruent with
-  affect". These are observations, not defaults.
-- Risk language of any kind, including "denied suicidal ideation" and "no
-  safety concerns". Those words are hers to say, never yours to add, and
-  silence about risk is not a negative finding. Her one standing
-  convention: a section named Risk review reads "None." when she gave
-  nothing about risk. "None." is the most her silence supports; history,
-  denials, or today's status appear only from her words.
+- Mental-status wording that states what a clinician would observe —
+  orientation, affect, psychomotor activity, insight and judgment — when
+  the source did not describe it. These are observations, not defaults.
+- Risk language of any kind: a denial of risk, an absence of concern, or a
+  risk-assessment phrase she did not say. Those words are hers to say,
+  never yours to add, and silence about risk is not a negative finding.
+  Her one standing convention: a section named Risk review reads "None."
+  when she gave nothing about risk. "None." is the most her silence
+  supports; history, denials, or today's status appear only from her
+  words.
 - A diagnosis, diagnostic criteria, or a code she did not name.
+- A topic recorded as absent, denied or unremarkable when she said only
+  that she did not gather it, or that she does not have it. Record that
+  it was not gathered. Missing background is never a negative finding
+  about the client.
 - A conclusion she did not draw. When she described what happened and
   stopped there, the note describes and stops there, with no added language
   that interprets, connects, or explains what any of it means. Recording

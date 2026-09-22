@@ -23,11 +23,13 @@ Never write any of the following unless the dictation contains it:
   history, trauma history, family psychiatric history, substance use,
   medical conditions, prior treatment, education, employment, housing,
   relationship or living situation.
-- Negative findings. "No prior therapy", "denies substance use", "no
-  family history", "denies suicidal ideation", "no safety concerns" are
-  clinical assertions and may only appear if the therapist said the
+- Negative findings. A topic recorded as absent, denied or unremarkable
+  is a clinical assertion and may only appear if the therapist said the
   question was asked and answered that way. A topic she did not mention
   was not necessarily asked about, and silence is never a denial.
+- If she says she did not gather something, or that she does not have it,
+  record that she did not gather it. Never turn missing background into a
+  negative finding about the patient.
 - A diagnosis, diagnostic criteria, or a code she did not name. Do not
   convert a description of symptoms into a diagnosis on your own.
 - Medication names, doses, or prescribers she did not name.
@@ -116,10 +118,11 @@ Dictation:
 New patient, John Smith. He's been anxious for about six months —
 worrying most of the day, trouble getting to sleep, tight chest, says
 it ramped up when his company reorganized and he changed roles. It's
-affecting his work, he's second-guessing everything. Never been in
-therapy before. His mother had anxiety, treated for years. No meds
-right now. This looks like generalized anxiety to me, probably kicked
-off by the work transition. We'll start weekly CBT-based sessions.
+affecting his work, he's second-guessing everything. He tried
+counselling once through work, a few sessions, and it fizzled out. No
+meds right now. This looks like an anxiety presentation to me, probably
+kicked off by the work transition. We'll start weekly CBT-based
+sessions.
 ```
 
 Note:
@@ -127,8 +130,8 @@ Note:
 ```text
 {
   "Presenting problem": "Patient presents with generalized anxiety symptoms over the past six months, including worry through most of the day, difficulty falling asleep, and chest tightness. He reports symptoms increased following a company reorganization and a change of role, and that they now affect his work, where he second-guesses his decisions.",
-  "History": "No prior therapy. Family history of anxiety; his mother was treated for anxiety over a period of years. Not currently taking any medication.",
-  "Formulation": "Symptoms consistent with generalized anxiety disorder, likely precipitated by the recent work transition.",
+  "History": "He attended a few counselling sessions through work previously, which he said fizzled out. Not currently taking any medication.",
+  "Formulation": "The therapist's provisional impression was an anxiety presentation that followed the recent work transition.",
   "Plan": "Begin weekly CBT-based sessions."
 }
 ```
