@@ -2301,31 +2301,33 @@ select:disabled {
 /* Archive: hidden from the working list, deleted from nothing. */
 
 .patient-entry {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.patient-entry .list-item {
-  flex: 1 1 auto;
-  min-width: 0;
+  position: relative;
 }
 
 .patient-entry-actions {
-  flex: 0 0 auto;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   gap: 4px;
-  margin-right: 10px;
   opacity: 0;
+  pointer-events: none;
 }
 
-.patient-entry-actions .btn {
-  background: var(--surface);
+.patient-entry .list-item {
+  min-width: 0;
+}
+
+.patient-entry:hover .list-item,
+.patient-entry:focus-within .list-item {
+  padding-right: 150px;
 }
 
 .patient-entry:hover .patient-entry-actions,
 .patient-entry:focus-within .patient-entry-actions {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .patient-rename {
