@@ -1,14 +1,25 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
-
+import { installEgressGuard } from '../../egress-guard.js';
 import { extractPdf } from '../../extract/pdf.js';
 import { HalaxyParseError, parseHalaxyText } from './parser.js';
+
+import { describe, expect, it } from 'vitest';
 
 const FIXTURE = join(import.meta.dirname, '..', '..', '..', '..', 'e2e', 'fixtures', 'halaxy', 'john-smith.pdf');
 
 describe('parseHalaxyText', () => {
+
+it('extracts the fixture while the runtime egress guard blocks remote fetches', async () => {
+  const restore = installEgressGuard();
+  try {
+    const text = await extractPdf(readFileSync(FIXTURE));
+    expect(text).toContain('John Smith');
+  } finally {
+    restore();
+  }
+});
   it('round-trips the synthetic multi-page export and joins a note over a page break', async () => {
     const parsed = parseHalaxyText(await extractPdf(readFileSync(FIXTURE)), 'john-smith.pdf');
     expect(parsed.patientName).toBe('John Smith');

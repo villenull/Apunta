@@ -6,6 +6,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { loadConfig } from '../config.js';
+import { undoImportBatch } from './import-batches.js';
 import { openDatabase } from './index.js';
 import { appliedVersions, loadMigrations, migrate, migrationLevel } from './migrate.js';
 
@@ -138,4 +139,61 @@ describe('migrate', () => {
 
     db.close();
   });
+  it('migrates existing import batches transactionally and preserves Claude undo', () => {
+    const file = join(dataDir, 'halaxy-migration.db');
+    const db = new BetterSqlite3(file);
+    db.pragma('foreign_keys = ON');
+    db.exec(
+      'CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TEXT NOT NULL) STRICT',
+    );
+    const migrations = loadMigrations(migrationsDir);
+    const record = db.prepare('INSERT INTO schema_migrations VALUES (?, ?, ?)');
+    for (const migration of migrations.filter((item) => item.version <= 5)) {
+      db.exec(migration.sql);
+      record.run(migration.version, migration.name, 'test');
+    }
+    db.prepare('INSERT INTO patients (id, name, created_at) VALUES (?, ?, ?)').run(
+      'patient-1',
+      'John Smith',
+      '2026-01-01',
+    );
+    db.prepare('INSERT INTO note_formats (id, name, sections, source, created_at) VALUES (?, ?, ?, ?, ?)').run(
+      'format-1',
+      'Progress',
+      '[]',
+      'manual',
+      '2026-01-01',
+    );
+    db.prepare(
+      'INSERT INTO notes (id, patient_id, format_id, title, status, content, created_at, updated_at, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run('note-1', 'patient-1', 'format-1', 'Imported', 'draft', 'Body', '2026-01-01', '2026-01-01', null);
+    db.prepare('INSERT INTO import_batches (id, source, created_at) VALUES (?, ?, ?)').run(
+      'batch-1',
+      'assistant',
+      '2026-01-01',
+    );
+    db.prepare('INSERT INTO import_batch_notes (batch_id, note_id) VALUES (?, ?)').run('batch-1', 'note-1');
+    db.prepare('INSERT INTO import_batch_patients (batch_id, patient_id) VALUES (?, ?)').run('batch-1', 'patient-1');
+
+    const migration = migrations.find((item) => item.version === 6)!;
+    expect(() =>
+      db.transaction(() => {
+        db.exec(migration.sql);
+        throw new Error('simulated migration failure');
+      })(),
+    ).toThrow('simulated migration failure');
+    expect(db.prepare('SELECT source FROM import_batches WHERE id = ?').get('batch-1')).toEqual({ source: 'assistant' });
+
+    db.transaction(() => db.exec(migration.sql))();
+    expect(db.prepare('SELECT COUNT(*) AS count FROM import_batches').get()).toEqual({ count: 1 });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM import_batch_notes').get()).toEqual({ count: 1 });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM import_batch_patients').get()).toEqual({ count: 1 });
+    expect(db.prepare('PRAGMA foreign_key_check').all()).toEqual([]);
+
+    expect(undoImportBatch(db, 'batch-1')).toMatchObject({ notes_deleted: 1, patients_deleted: 1 });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM notes').get()).toEqual({ count: 0 });
+    expect(db.prepare('SELECT COUNT(*) AS count FROM patients').get()).toEqual({ count: 0 });
+    db.close();
+  });
+
 });
