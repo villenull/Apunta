@@ -137,13 +137,32 @@ function headingOn(line: string, next: string | undefined): HeadingLine | null {
   }
 
   const plain = PLAIN_HEADING.exec(trimmed);
-  if (
-    plain &&
-    isLabelText((plain[1] ?? '').trim()) &&
-    wordsOf(plain[1] ?? '').length <= MAX_SUBHEADING_WORDS
-  ) {
-    if (next !== undefined && LIST_ITEM.test(next)) return null;
-    return { title: (plain[1] ?? '').trim(), rest: '' };
+  if (plain) {
+    const title = (plain[1] ?? '').trim();
+    if (isLabelText(title) && wordsOf(title).length <= MAX_SUBHEADING_WORDS) {
+      if (next !== undefined && LIST_ITEM.test(next)) return null;
+      return { title, rest: '' };
+    }
+  }
+
+  // Small models sometimes put the first sentence on the same line as a
+  // plain label (`sleep: She slept better.`), despite the output contract's
+  // request for a label-only line. Only a lowercase label is recognised here:
+  // an ordinary sentence such as `John reports: sleep is better.` must remain
+  // prose, not lose its lead-in when the server tidies the note.
+  const inline = /^(.+?):\s+(.+)$/.exec(trimmed);
+  if (inline) {
+    const title = (inline[1] ?? '').trim();
+    const rest = (inline[2] ?? '').trim();
+    if (
+      title !== '' &&
+      title === title.toLowerCase() &&
+      isLabelText(title) &&
+      wordsOf(title).length <= MAX_SUBHEADING_WORDS &&
+      rest !== ''
+    ) {
+      return { title, rest };
+    }
   }
   return null;
 }
@@ -318,6 +337,14 @@ export function tidyDiscussionSubheadings(body: string, options: TidyOptions): T
   if (!titles.every((title) => headingIsGrounded(title, options.source))) return prose('ungrounded');
 
   const headings = titles.map((title) => lowercaseHeading(title, options.source));
+  const topicKeys = headings.map((heading) =>
+    tokens(heading)
+      .filter((word) => !STOPWORDS.has(word))
+      .map(stem)
+      .sort()
+      .join('|'),
+  );
+  if (new Set(topicKeys).size !== topicKeys.length) return prose('invalid');
   if (new Set(headings.map((heading) => heading.toLowerCase())).size !== headings.length) {
     return prose('invalid');
   }

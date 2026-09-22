@@ -90,6 +90,8 @@ describe('clinical-knowledge drafting integration', () => {
     expect(guide).toContain('genuinely distinct topics');
     expect(guide).toContain('lowercase words taken from her own words');
     expect(guide).toContain('single block of prose with no subheading');
+    expect(guide).toContain('do not flatten them into one prose block');
+    expect(guide).toContain('server cannot safely recover a split');
     expect(guide).toContain('never use a general category');
     expect(guide).not.toMatch(/catch-all|neutral title|###/);
   });

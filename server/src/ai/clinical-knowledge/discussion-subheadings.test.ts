@@ -24,6 +24,12 @@ describe('tidyDiscussionSubheadings', () => {
     const prose = 'John reports sleeping better.\n\nJohn described an argument with his partner.';
     expect(tidy(prose)).toEqual({ body: prose, headings: [], outcome: 'none' });
   });
+  it('leaves a two-topic prose response alone when the model supplied no labels', () => {
+    const body =
+      'John reports waking once a night. He also described an argument with his partner on Sunday.';
+    expect(tidy(body)).toEqual({ body, headings: [], outcome: 'none' });
+  });
+
 
   it('keeps two topics under her lowercase subheadings as written', () => {
     const body = [
@@ -61,6 +67,30 @@ describe('tidyDiscussionSubheadings', () => {
       ].join('\n'),
     );
   });
+  it('normalises plain inline labels onto their own lines', () => {
+    const body = [
+      'sleep: John reports waking once a night.',
+      '',
+      'argument with his partner: John described an argument with his partner on Sunday.',
+    ].join('\n');
+    expect(tidy(body)).toEqual({
+      body: [
+        'sleep:',
+        'John reports waking once a night.',
+        '',
+        'argument with his partner:',
+        'John described an argument with his partner on Sunday.',
+      ].join('\n'),
+      headings: ['sleep', 'argument with his partner'],
+      outcome: 'kept',
+    });
+  });
+
+  it('keeps an ordinary sentence with a colon intact', () => {
+    const body = 'John reports: sleep is better.\n\nJohn is moving next month.';
+    expect(tidy(body)).toEqual({ body, headings: [], outcome: 'none' });
+  });
+
   it('keeps inline prose after a Markdown heading instead of dropping the fact', () => {
     const body = [
       '### Sleep: John said sleep is better.',
@@ -84,6 +114,34 @@ describe('tidyDiscussionSubheadings', () => {
       headings: [],
       outcome: 'ungrounded',
     });
+  });
+
+  it('removes an unsupported inline label without dropping its prose', () => {
+    const body = [
+      'sleep: John reports waking once a night.',
+      '',
+      'unicorn: John described an argument with his partner.',
+    ].join('\n');
+    expect(tidy(body)).toEqual({
+      body: 'John reports waking once a night. John described an argument with his partner.',
+      headings: [],
+      outcome: 'ungrounded',
+    });
+  });
+
+  it('removes a lone inline label without dropping its prose', () => {
+    const body = 'sleep: John reports waking once a night.';
+    expect(tidy(body)).toEqual({
+      body: 'John reports waking once a night.',
+      headings: [],
+      outcome: 'single',
+    });
+  });
+
+  it('does not keep inflectional duplicates as two topics', () => {
+    const body = ['sleep: John reports waking once a night.', '', 'sleeping: John sleeps better.'].join('\n');
+    expect(tidy(body).outcome).toBe('invalid');
+    expect(tidy(body).body).toBe('John reports waking once a night. John sleeps better.');
   });
 
   it('keeps a name capitalised, and lowercases a word the source capitalises only to start a sentence', () => {
