@@ -38,9 +38,9 @@ export const MAX_IMPORT_PATIENTS = 200;
 /**
  * Which side of a session becomes the note: Claude's last reply in the
  * session (her latest accepted draft — the default, because that is how she
- * wrote her notes), or her own messages in order.
+ * wrote her notes), her own messages in order, or a published Halaxy PDF note.
  */
-export const ImportNoteSourceSchema = z.enum(['assistant', 'human']);
+export const ImportNoteSourceSchema = z.enum(['assistant', 'human', 'halaxy']);
 export type ImportNoteSource = z.infer<typeof ImportNoteSourceSchema>;
 
 /** Her list, one name per line: blank lines and repeats (case-insensitively) dropped. */

@@ -187,7 +187,7 @@ async function receiveExport(request: FastifyRequest): Promise<ExportUpload> {
   if (names.length > MAX_IMPORT_PATIENTS)
     throw badRequest(`List at most ${String(MAX_IMPORT_PATIENTS)} names.`);
   const source = ImportNoteSourceSchema.safeParse(fields.get('source') ?? 'assistant');
-  if (!source.success) throw badRequest('The note source must be "assistant" or "human".');
+  if (!source.success || source.data === 'halaxy') throw badRequest('The note source must be "assistant" or "human".');
   const cutoff = ImportCutoffSchema.safeParse(fields.get('cutoff') ?? DEFAULT_IMPORT_CUTOFF);
   if (!cutoff.success) throw badRequest('Use a cutoff date like 2026-07-01.');
   let exclude: string[] = [];

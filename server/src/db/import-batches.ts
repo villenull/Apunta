@@ -58,6 +58,10 @@ export function importBatchExists(db: Database, id: string): boolean {
  */
 export function undoImportBatch(db: Database, id: string): ImportUndoResponse {
   return db.transaction((): ImportUndoResponse => {
+    const batch = db
+      .prepare('SELECT source FROM import_batches WHERE id = ?')
+      .get(id) as { source: string } | undefined;
+    const removePublished = batch?.source === 'halaxy';
     const notes = db
       .prepare(
         `SELECT n.id, n.status FROM import_batch_notes b JOIN notes n ON n.id = b.note_id WHERE b.batch_id = ?`,
@@ -66,13 +70,12 @@ export function undoImportBatch(db: Database, id: string): ImportUndoResponse {
     let notesDeleted = 0;
     let notesKept = 0;
     for (const note of notes) {
-      if (note.status === 'published') {
+      if (note.status === 'published' && !removePublished) {
         notesKept += 1;
         continue;
       }
       if (deleteNote(db, note.id)) notesDeleted += 1;
     }
-
     const patients = db
       .prepare('SELECT patient_id FROM import_batch_patients WHERE batch_id = ?')
       .all(id) as { patient_id: string }[];

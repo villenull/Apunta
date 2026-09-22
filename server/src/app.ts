@@ -26,6 +26,7 @@ import { registerPlanRoutes } from './routes/plans.js';
 import { registerPrepRoutes } from './routes/prep.js';
 import { registerSettingsRoutes } from './routes/settings.js';
 import { registerTranscribeRoute } from './routes/transcribe.js';
+import { registerHalaxyRoutes } from './routes/halaxy.js';
 
 export interface BuildAppOptions {
   config?: AppConfig;
@@ -119,6 +120,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerPrepRoutes(app, db, providers);
   registerBackupRoutes(app, config, db);
   registerBrainstormRoutes(app, db, providers);
+  registerHalaxyRoutes(app, db);
   registerImportRoutes(app, db);
 
   const hasBuiltSpa = existsSync(config.webDistDir);
