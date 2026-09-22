@@ -97,14 +97,18 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   spellings (`criticized`, `behavior`, `organize`, `center`) and the expected
   rejection of `criticised`. Not yet covered: the chat box and other short
   fields.
-- **Refine safety integration** (2026-09-07): a question (including the
-  "What's missing?" quick action) never applies a model-attached rewrite;
+- **Refine safety integration** (2026-09-07): a question never applies a
+  model-attached rewrite;
   the editor flushes its pending debounce before chat snapshots the note; and
   a rewrite that finishes after a concurrent publish is discarded by a
   draft-only database update. The server-side locks also preserve numbers,
   dates, explicit risk findings, medications and high-confidence names while
-  blocking ungrounded clinical boilerplate. Fake mode's Expand plan path
-  exercises the same preservation invariant.
+  blocking ungrounded clinical boilerplate. Fake mode's "expand the plan"
+  path exercises the same preservation invariant.
+- **The refine chat is just a chat** (2026-09-21, owner): the four
+  quick-action buttons (Shorter / More clinical / Expand plan / What's
+  missing?) are gone; she types or dictates. Deviates from the prototype
+  (`docs/decisions.md`, 2026-09-21).
 - **Clinical-knowledge integration gate** (2026-09-07): local, versioned
   Presentation/MSE and intervention vocabulary is rendered only for authored
   section aliases and never supplies a finding or treatment. Discussion is

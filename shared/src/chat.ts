@@ -16,7 +16,7 @@ import { NoteSchema } from './note.js';
  * `ref_quote` is optional and everything works without it.
  */
 export const ChatRequestSchema = z.object({
-  /** What she typed, or the phrase behind a quick-action button. */
+  /** What she typed or dictated. */
   message: boundedText(MAX_BODY_CHARS),
   /** The excerpt she highlighted in the editor before sending. */
   ref_quote: optionalText(MAX_BODY_CHARS).nullish(),

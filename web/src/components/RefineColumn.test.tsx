@@ -185,8 +185,6 @@ describe('dictating into the composer', () => {
       expect(screen.getByTestId('record-preview-text').textContent).toContain('add that he is sleeping');
     });
     expect(screen.getByTestId('record-preview').textContent).toContain('written from the finished recording');
-    // The quick actions step aside while the panel is up.
-    expect(screen.queryByText('Shorter')).toBeNull();
 
     fireEvent.click(screen.getByTestId('record-stop'));
     await waitFor(() => {
@@ -195,7 +193,6 @@ describe('dictating into the composer', () => {
       );
     });
     expect(screen.queryByTestId('record-panel')).toBeNull();
-    expect(screen.getByText('Shorter')).toBeTruthy();
     vi.useRealTimers();
   });
 

@@ -765,36 +765,17 @@ describe('refine chat', () => {
     expect(activeApi.state.notes.find((candidate) => candidate.id === note.id)?.content).toBe(body.value);
   });
 
-  it("sends the quick action's full phrase, not its label", async () => {
+  it('offers no quick-action buttons: the refine chat is just a chat', async () => {
     openNote();
     await screen.findByTestId('note-body');
 
-    fireEvent.click(screen.getByRole('button', { name: 'More clinical' }));
-
-    // "Shorter" or "More clinical" alone is a label, not an instruction, and
-    // every one of these buttons is one click from rewriting a clinical note.
-    const thread = await screen.findByTestId('chat-thread');
-    await waitFor(() => {
-      expect(thread.textContent).toContain('Use a more clinical tone');
-    });
-    expect(within(thread).queryByText('More clinical')).toBeNull();
-  });
-
-  it('sends the "What\'s missing?" chip as a question, and the note stands still', async () => {
-    openNote();
-    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
-
-    fireEvent.click(screen.getByRole('button', { name: "What's missing?" }));
-
-    // The message carries a question mark on purpose: without one, the model
-    // and the published-note question detector both read the chip as an edit
-    // command, and in live testing it rewrote a note nobody asked to change.
-    const thread = await screen.findByTestId('chat-thread');
-    await waitFor(() => {
-      expect(thread.textContent).toContain('What is missing from this note?');
-    });
-    expect(await screen.findByText(/that detail isn't currently in the note/)).toBeDefined();
-    expect(body.value).toBe(NOTE_TEXT);
+    // Owner's choice (docs/decisions.md, 2026-09-21): she types or dictates
+    // what she wants; one-click rewrites of a clinical note are gone.
+    const panel = screen.getByTestId('chat-panel');
+    for (const label of ['Shorter', 'More clinical', 'Expand plan', "What's missing?"]) {
+      expect(within(panel).queryByRole('button', { name: label })).toBeNull();
+    }
+    expect(within(panel).getByTestId('chat-input')).toBeDefined();
   });
 
   it('answers a question without touching the note', async () => {

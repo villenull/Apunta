@@ -28,6 +28,7 @@ matching `prototype/patients.html` behavior exactly.
      streamed assistant text renders live.
    - quick actions: `Shorter`, `More clinical`, `Expand plan`,
      `What's missing?` — inject the prototype's exact phrases and send.
+     *(Removed 2026-09-21 at the owner's request; `docs/decisions.md`.)*
    - highlight-reference: selecting text in the note textarea shows the ref
      chip (truncated at 70 chars, dismissible ×); sending attaches it as
      `refQuote`; chip clears after send. Selection via

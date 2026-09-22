@@ -187,7 +187,7 @@ describe('fakeRefine', () => {
     expect(result.updatedSections?.['Subjective']).toContain('improved appetite');
   });
 
-  it('covers the four quick-action payloads and their semantic outcomes', () => {
+  it('covers the four phrases the old quick actions sent, typed by hand', () => {
     const shorter = fakeRefine('Make it shorter', current, SOAP);
     expect(shorter.updatedSections?.Subjective).toBe('Patient reports improved sleep.');
 
@@ -207,10 +207,10 @@ describe('fakeRefine', () => {
     expect(result.updatedSections).toBeNull();
   });
 
-  it("routes the What's missing? quick action to the question branch", () => {
-    // The exact phrase `RefineColumn` sends. Its old imperative form fell
-    // through every question check and rewrote the note in live testing, so
-    // this pins the phrase to the branch that answers without editing.
+  it('routes "What is missing from this note?" to the question branch', () => {
+    // The old quick action's imperative form fell through every question
+    // check and rewrote the note in live testing, so this pins the question
+    // to the branch that answers without editing.
     const result = fakeRefine('What is missing from this note?', current, SOAP);
     expect(result.updatedSections).toBeNull();
     expect(result.reply).toContain('Based on the note');

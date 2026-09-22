@@ -315,8 +315,7 @@ export function fakeRefine(
     };
   }
   // Keep ordinary free-form shortening deterministic for existing callers;
-  // the dedicated Expand plan action above is the path with the preservation
-  // invariant.
+  // "expand the plan" above is the path with the preservation invariant.
   if (/plan/i.test(message) && has('plan')) {
     return {
       reply: 'Shortened the Plan section.',

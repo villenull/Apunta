@@ -18,28 +18,6 @@ import { ThinkingDots } from './ThinkingDots.js';
 export const NOTHING_HEARD_MESSAGE =
   'Apunta didn’t catch any words. Try again, a little closer to the microphone.';
 
-/**
- * The quick actions from `prototype/patients.html`.
- *
- * The button wears a short label and sends a full phrase, which is what the
- * model actually reads — "Shorter" on its own is not an instruction, and
- * every one of these is one click from a rewrite of a clinical note.
- *
- * Three phrases are the prototype's verbatim. "What's missing?" is not: the
- * prototype sent an imperative ("Check for…"), and without a question mark
- * both the model and the published-note question detector
- * (`server/src/routes/chat.ts`) read it as an edit command — in live testing
- * it rewrote a note nobody asked to change. The chip now sends a genuine
- * question, so the answer comes back as a reply, never a rewrite. Only the
- * hidden message changed; the visible label is still the prototype's copy.
- */
-const QUICK_ACTIONS: readonly { readonly label: string; readonly message: string }[] = [
-  { label: 'Shorter', message: 'Make it shorter' },
-  { label: 'More clinical', message: 'Use a more clinical tone' },
-  { label: 'Expand plan', message: 'Expand the plan section' },
-  { label: "What's missing?", message: 'What is missing from this note?' },
-];
-
 /** The prototype truncates the highlight chip here. */
 const REF_CHIP_CHARS = 70;
 
@@ -331,7 +309,7 @@ export function RefineColumn({
         </div>
       )}
 
-      {live.phase === 'recording' ? (
+      {live.phase === 'recording' && (
         <LiveRecording
           level={live.level}
           seconds={live.seconds}
@@ -349,22 +327,6 @@ export function RefineColumn({
             Stop dictating
           </button>
         </LiveRecording>
-      ) : (
-        <div className="quick-actions">
-          {QUICK_ACTIONS.map((action) => (
-            <button
-              key={action.label}
-              type="button"
-              className="btn small btn-quick"
-              disabled={sending}
-              onClick={() => {
-                void send(action.message);
-              }}
-            >
-              {action.label}
-            </button>
-          ))}
-        </div>
       )}
 
       <div className="chat-input-row">

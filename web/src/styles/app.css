@@ -1240,13 +1240,6 @@ select:focus {
   font-size: calc(12px * var(--font-scale));
 }
 
-.quick-actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  padding: 0 14px 8px;
-}
-
 .chat-placeholder {
   color: var(--text-muted);
 }

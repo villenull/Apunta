@@ -222,12 +222,13 @@ test.describe('the workspace', () => {
     // A question changes nothing.
     await expect(body).toContainText('Introduce grounding exercises');
 
-    // --- Expand plan sends the full payload and preserves grounded material -
+    // --- Asking to expand the plan preserves grounded material --------------
     const planBeforeExpand = await body.inputValue();
     const expandRequest = page.waitForRequest(
       (request) => request.url().includes(`/api/notes/${note.id}/chat`) && request.method() === 'POST',
     );
-    await page.getByRole('button', { name: 'Expand plan' }).click();
+    await page.getByTestId('chat-input').fill('Expand the plan section');
+    await page.getByTestId('chat-send').click();
     expect((await expandRequest).postDataJSON()).toMatchObject({ message: 'Expand the plan section' });
     await expect(thread).toContainText('Expand the plan section');
     await expect(body).toContainText('Plan: Continue weekly sessions.');
