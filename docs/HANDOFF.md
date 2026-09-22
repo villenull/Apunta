@@ -616,7 +616,7 @@ state.
 
 ```sh
 # Ollama (the systemd unit needs an interactive polkit prompt; run it as the user)
-OLLAMA_MODELS=/var/lib/ollama OLLAMA_HOST=127.0.0.1:11434 setsid nohup ollama serve > /tmp/claude-1000/ollama.log 2>&1 &
+OLLAMA_NO_CLOUD=1 OLLAMA_MODELS=/var/lib/ollama OLLAMA_HOST=127.0.0.1:11434 setsid nohup ollama serve > /tmp/claude-1000/ollama.log 2>&1 &
 
 # The app — web-only changes need `npm run build --workspace @apunta/web` and a reload;
 # server changes need the build and a restart only while no recording is active.
@@ -629,6 +629,14 @@ curl -fsS http://127.0.0.1:7717/api/health
 # The gate, in this order; verify by exit code, never by reading piped output
 npm run build:shared && npm run typecheck && npm run lint && npm test && npm run build && npm run e2e
 ```
+On the Apunta agent's current Linux PC (`villenull`), `~/.local/bin/ollama`
+is user-installed Ollama 0.34.2 with bundled ROCm; active models are in
+`~/.ollama/models`. The log identifies ROCm0 Radeon RX 9070 XT (`gfx1201`),
+15.9 GiB VRAM, and `qwen3.5:4b-q4_K_M` with 34/34 layers offloaded;
+`ollama ps` reports 100% GPU. A fair warm synthetic check measured 108.29
+generation tokens/s versus 107.11 tok/s baseline. This is separate from the
+partner's `/var/lib/ollama` path above. Set `OLLAMA_NO_CLOUD=1` when launching
+either local server as privacy hardening; it does not affect GPU selection.
 
 The 2026-09-08 deployment preserved the existing database, audio directory,
 settings and model paths; health returned fake AI off, migration level 3,
