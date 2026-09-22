@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
-  applyDiscussionThemes,
+  applyDiscussionSubheadings,
   renderClinicalKnowledgeGuide,
   sectionForRole,
   sectionRole,
@@ -16,12 +16,16 @@ const fixturePath = resolve(
   '../../../../e2e/fixtures/clinical-knowledge/acceptance.json',
 );
 interface DiscussionFixture {
-  facts: string[];
-  expectedTitles: string[];
+  sections: string[];
+  source: string;
+  drafted: string;
+  expected: string;
+  expectedHeadings: string[];
 }
 const fixtures = JSON.parse(readFileSync(fixturePath, 'utf8')) as {
-  discussion: DiscussionFixture;
-  discussionSubtopics: DiscussionFixture;
+  discussionOneTopic: DiscussionFixture;
+  discussionTopics: DiscussionFixture;
+  discussionGenericHeadings: DiscussionFixture;
 };
 
 describe('clinical-knowledge drafting integration', () => {
@@ -53,41 +57,45 @@ describe('clinical-knowledge drafting integration', () => {
     expect(renderClinicalKnowledgeGuide('Free form', ['Context', 'Risk'])).toBe('');
   });
 
-  it('leaves a single-theme Discussion as prose with no subheading', () => {
-    const sections = {
-      Subjective: 'A fictional client discussed sleep.',
-      Discussion: fixtures.discussion.facts.join(' '),
-      Plan: '',
-    };
-    expect(fixtures.discussion.expectedTitles).toEqual([]);
-    const result = applyDiscussionThemes(sections, ['Subjective', 'Discussion', 'Plan']);
-    expect(result).toBe(sections);
-    expect(result.Discussion).not.toContain('#');
+  it.each([
+    ['one topic under a lone subheading becomes prose', 'discussionOneTopic', 'single'],
+    ['distinct topics keep her lowercase subheadings', 'discussionTopics', 'kept'],
+    [
+      'generic category headings are not her words and become prose',
+      'discussionGenericHeadings',
+      'ungrounded',
+    ],
+  ] as const)('%s', (_name, key, outcome) => {
+    const fixture = fixtures[key];
+    const sections = { Discussion: fixture.drafted, Plan: 'Fictional client will return.' };
+    const result = applyDiscussionSubheadings(sections, fixture.sections, fixture.source);
+    expect(result.outcome).toBe(outcome);
+    expect(result.sections.Discussion).toBe(fixture.expected);
+    expect(result.sections.Plan).toBe(sections.Plan);
+    for (const heading of fixture.expectedHeadings) {
+      expect(result.sections.Discussion.split(`\n`)).toContain(`${heading}:`);
+    }
+    // The model's sentences survive exactly: only heading lines change.
+    for (const line of fixture.drafted.split('\n').filter((l) => l.startsWith('Fictional'))) {
+      expect(result.sections.Discussion.split(line)).toHaveLength(2);
+    }
+    // The refine chat applies this again to its own output: nothing moves.
+    expect(applyDiscussionSubheadings(result.sections, fixture.sections, fixture.source).sections).toBe(
+      result.sections,
+    );
   });
 
-  it('keeps several subtopics as subheadings without changing other sections or duplicating facts', () => {
-    const sections = {
-      Subjective: 'A fictional client discussed sleep.',
-      Discussion: fixtures.discussionSubtopics.facts.join(' '),
-      Plan: '',
-    };
-    const [first, second] = fixtures.discussionSubtopics.expectedTitles;
-    const result = applyDiscussionThemes(sections, ['Subjective', 'Discussion', 'Plan']);
-    expect(result.Subjective).toBe(sections.Subjective);
-    expect(result.Plan).toBe('');
-    expect(result.Discussion).toBe(
-      `### ${String(first)}\nFictional client discussed sleep at home.\nFictional client reported waking early.\n\n### ${String(second)}\nFictional client described conflict with a partner.\nFictional client discussed support from a friend.`,
-    );
-    for (const fact of fixtures.discussionSubtopics.facts) {
-      expect(result.Discussion.split(fact)).toHaveLength(2);
-    }
-    expect(result.Discussion).not.toMatch(/diagnos|caus|severity|risk/i);
-    // The refine chat applies this again to its own output: nothing moves.
-    expect(applyDiscussionThemes(result, ['Subjective', 'Discussion', 'Plan'])).toBe(result);
+  it('asks the model for subheadings in her words, and only for distinct topics', () => {
+    const guide = renderClinicalKnowledgeGuide('Progress note', ['Discussion', 'Intervention']);
+    expect(guide).toContain('genuinely distinct topics');
+    expect(guide).toContain('lowercase words taken from her own words');
+    expect(guide).toContain('single block of prose with no subheading');
+    expect(guide).toContain('never use a general category');
+    expect(guide).not.toMatch(/catch-all|neutral title|###/);
   });
 
   it('leaves an unnamed Discussion-like section untouched', () => {
-    const sections = { Notes: 'A fictional client discussed sleep.' };
-    expect(applyDiscussionThemes(sections, ['Notes'])).toBe(sections);
+    const sections = { Notes: 'sleep:\nA fictional client discussed sleep.' };
+    expect(applyDiscussionSubheadings(sections, ['Notes'], 'sleep').sections).toBe(sections);
   });
 });

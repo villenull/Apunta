@@ -11,7 +11,7 @@ import type { FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
 import {
-  applyDiscussionThemes,
+  applyDiscussionSubheadings,
   renderClinicalKnowledgeGuide,
   sectionForRole,
 } from '../ai/clinical-knowledge/integration.js';
@@ -83,15 +83,24 @@ export async function streamDraft(params: {
         stream.send('status', { stage: event.stage, message: event.message });
       } else if (event.type === 'token') {
         if (discussionSection !== null && event.section === discussionSection) {
-          // Discussion is deterministically regrouped after schema validation;
-          // hold only that section so the visible stream remains byte-for-byte
-          // equal to the persisted note. Other sections stay live.
+          // Discussion's subheadings are checked after schema validation and
+          // may be dropped; hold only that section so the visible stream
+          // remains byte-for-byte equal to the persisted note. Other sections
+          // stay live.
           continue;
         }
         stream.send('token', { section: event.section, text: event.text });
       } else if (event.type === 'sections') {
-        sections = applyDiscussionThemes(event.sections, format.sections);
+        const checked = applyDiscussionSubheadings(
+          event.sections,
+          format.sections,
+          groundingSource(source, retractions),
+        );
+        sections = checked.sections;
         stats = event.stats;
+        // The outcome only: the headings are patient material.
+        if (checked.outcome !== 'none')
+          request.log.info({ outcome: checked.outcome }, 'discussion subheadings');
         if (discussionSection !== null) {
           stream.send('token', { section: discussionSection, text: sections[discussionSection] ?? '' });
         }
@@ -119,6 +128,19 @@ export async function streamDraft(params: {
 
   if (stats) logStats(request, stats);
   return { sections, stats, retractions, failure: null };
+}
+
+/**
+ * What a Discussion subheading may be named from: her typed notes and the
+ * transcript, with every retracted quote cut out as the drafting model saw it,
+ * so a topic she took back cannot come back as a heading.
+ */
+export function groundingSource(source: DraftSource, retractions: readonly AppliedRetraction[]): string {
+  let transcript = source.transcript ?? '';
+  for (const { withdrawn } of retractions) {
+    if (withdrawn !== '') transcript = transcript.replace(withdrawn, ' ');
+  }
+  return `${source.typedNotes ?? ''}\n${transcript}`;
 }
 
 /** One recording, as it should be recorded against the note it produced. */

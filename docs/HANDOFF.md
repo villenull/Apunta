@@ -1,13 +1,14 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-22, after Discussion stopped getting a lone `### Other
-discussion` subheading (subtopics only when there are two or more), and
-after the owner's own progress note became the app's default: first-run onboarding offers it first (one click, her sections and
-her instructions), `npm run seed` creates it, and a format with her seven
-sections and no instructions drafts with hers (`docs/decisions.md`,
-2026-09-22). Before that, 2026-09-21: the refine chat lost its quick actions
-and gained the patient's other notes as read-only background, and Brainstorm
-began reading every note that fits.**
+**Updated 2026-09-22, after the drafting model took over deciding whether
+Discussion has genuinely distinct subtopics: grounded model-written labels
+are normalized to short lowercase label lines, while a single topic remains
+plain prose. The owner's own progress note is the app default: first-run
+onboarding offers it first, `npm run seed` creates it, and her seven-section
+format drafts with her instructions (`docs/decisions.md`, 2026-09-22).
+Before that, 2026-09-21: the refine chat lost its quick actions and gained
+the patient's other notes as read-only background, and Brainstorm began
+reading every note that fits.**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -37,7 +38,7 @@ machine has only this file.
   scripts in his own voice; every request for a recording comes with the full
   script in the message, every time.
 
-## What is built (all packets M0–M11)
+## What is built (all packets M0–M12)
 
 Local-first therapy-notes app: React SPA, Fastify on 127.0.0.1:7717, SQLite,
 all AI local (Ollama `qwen3.5:4b-q4_K_M` for drafting, whisper.cpp for
@@ -144,17 +145,27 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   (`docs/decisions.md`, 2026-09-21).
 - **Clinical-knowledge integration gate** (2026-09-07): local, versioned
   Presentation/MSE and intervention vocabulary is rendered only for authored
-  section aliases and never supplies a finding or treatment. Discussion is
-  grouped by deterministic neutral themes only when a named Discussion section
-  exists; every supplied fact is retained exactly once, and headings are the
-  only generated content. Since 2026-09-22 subheadings appear only when at
-  least two topics each have two or more sentences: a single-theme Discussion
-  stays prose, `### Other discussion` never stands alone and only holds
-  leftovers beside real subtopics, and a body that already has subtopic
-  headings (the refine chat re-applies the grouper) is left as it is
-  (`docs/decisions.md`, 2026-09-22). No model training, retrieval, raw reference PDF,
-  outbound call, or database change is involved. Synthetic acceptance cases
-  live in `e2e/fixtures/clinical-knowledge/`.
+  section aliases and never supplies a finding or treatment. Since 2026-09-22
+  the model decides from her typed notes and retraction-cleaned transcript
+  whether Discussion contains genuinely distinct topics. With two or more,
+  it writes short topic labels that the server grounds in her source,
+  normalizes to lowercase `label:` lines, and streams exactly as persisted.
+  With one topic it writes one unheaded prose block. A lone, duplicate,
+  reserved-section, generic, or ungrounded label is removed without dropping
+  the model's sentences; refine-chat labels are grounded only in current note
+  bodies, the current message, and an exact current-note quote, never format
+  headers or raw transcripts. The retired deterministic generic-theme
+  grouper and `Other discussion` catch-all are gone (`docs/decisions.md`,
+  2026-09-22). No model training, retrieval, raw reference PDF, outbound call,
+  or database change is involved. Synthetic acceptance cases live in
+  `e2e/fixtures/clinical-knowledge/`.
+- **GitHub README presentation (2026-09-22):** `README.md` now has the
+  centered existing mark/title, factual pre-release/platform/local-AI badges,
+  concise privacy/setup/status copy, a hero, and five synthetic-only feature
+  rows. Media is in asset-only commit `b935789`; feature 1 is a recording-panel
+  illustration with no real audio/transcript, and feature 3's fake refine run
+  returned no edits. GitHub-flavoured Markdown was rendered at 1440 px and
+  390 px with all local assets loading and no horizontal overflow.
 - **Inference lifecycle and efficiency pass** (2026-09-08): the configured
   absolute live `whisper-cli` path was reconciled with the PATH-only audit;
   preview/fitted dictation now use half-core Whisper contention limits, final
@@ -280,18 +291,13 @@ Grouped by what each item waits on.
 
 ### Waits on the owner
 
-- **Discussion subheading form, and whether the grouper finds her
-  subtopics.** She likes Discussion with subtopics under it. Today the
-  server writes them as `### Daily routines and functioning` (markdown H3,
-  title case, generic topic names), shown literally in the note textarea and
-  copied as plain text; her style source says "sparse, lowercase bold
-  subheadings" (`docs/feedback/2026-08-25-owner-style-source.md`). The form
-  was deliberately left unchanged on 2026-09-22, pending a decision. Also:
-  on three synthetic sessions drafted by the real 4B that day, the grouper
-  produced no subheadings at all, even for a session with two plainly
-  separate topics (sleep; an argument with a partner), because it needs two
-  sentences per topic and the model packed the sleep material into one. So
-  the subtopics she likes currently arrive only if the model writes them.
+- **Discussion subtopics in her live notes.** The 2026-09-22 implementation
+  now has the model infer genuinely distinct topics from her narration and
+  writes short lowercase `label:` lines only when there are at least two.
+  The server grounds every label in her current-session material and removes
+  a lone or unsupported label without dropping the prose. Automated synthetic
+  coverage is green; her first live draft remains the human check that the 4B
+  finds the boundaries she expects and does not over-split.
 
 - **The confidentiality decision** on her Claude export (M11 reads her whole
   account). Then the orchestrator runs `npm run probe:claude -- <export.zip>`

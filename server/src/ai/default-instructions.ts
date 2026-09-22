@@ -431,7 +431,12 @@ this document — so nothing below is an instruction to invent a section.
   risk at all, and it never stands in for a review she actually carried out.
 - **Discussion** — what was talked about, opening with the client's name and
   an attribution verb, the session's stated focus first. Most of what she
-  reports the client saying belongs here rather than anywhere else.
+  reports the client saying belongs here rather than anywhere else. When the
+  session covered genuinely distinct topics that she kept apart, divide it
+  into one part per topic, each opening on its own line with a subheading: a
+  few lowercase words from her own account of that topic, ending in a colon.
+  One topic, or topics she tied together, is one block of prose with no
+  subheading.
 - **Intervention** — what she did, named rather than described.
 - **Out of session actions** — what happens before the next session, split by
   person when both have a task.

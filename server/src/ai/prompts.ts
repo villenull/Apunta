@@ -96,7 +96,7 @@ export function outputFormatBlock(sections: readonly string[]): string {
     `  ${quotedKeys(sections)}`,
     '',
     "Every key is required. Each value is that section's body as plain prose.",
-    'Do not add any other key. Do not use markdown, headings, or bullet characters.',
+    "Do not add any other key. Do not use markdown, headings, or bullet characters — except the subheading line a section's local guidance asks for: a few lowercase words ending in a colon, alone on its own line.",
     'Do not repeat the section name inside its value.',
     'If a section has no material in the source, its value is the empty string "".',
   ].join('\n');

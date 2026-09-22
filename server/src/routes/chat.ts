@@ -15,7 +15,10 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
-import { applyDiscussionThemes, renderClinicalKnowledgeGuide } from '../ai/clinical-knowledge/integration.js';
+import {
+  applyDiscussionSubheadings,
+  renderClinicalKnowledgeGuide,
+} from '../ai/clinical-knowledge/integration.js';
 import { FACT_NOTICE_OPENING, factNotice, guardDroppedFacts } from '../ai/fact-guard.js';
 import { REFINE_PROMPT_TOKENS } from '../ai/ollama.js';
 import {
@@ -215,10 +218,18 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         } else if (event.type === 'refined') {
           sawRefined = true;
           replyText = event.reply;
+          // A subheading in a revision may be named from the note as it
+          // stands or from what she wrote in this chat — see
+          // `discussionSubheadingSource`, which deliberately leaves her
+          // stored dictation and the format's own headers out.
           updatedSections =
             event.updatedSections === null
               ? null
-              : applyDiscussionThemes(event.updatedSections, format.sections);
+              : applyDiscussionSubheadings(
+                  event.updatedSections,
+                  format.sections,
+                  discussionSubheadingSource(note.content, format.sections, input.message, input.ref_quote),
+                ).sections;
           stats = event.stats;
         }
       }
@@ -360,6 +371,40 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     stream.send('message', { message: assistantMessage });
     stream.end();
   });
+}
+
+/**
+ * What a Discussion subheading may be named from: the note exactly as it
+ * stands, her message, and the passage she highlighted *when that passage is
+ * still verbatim in the note today*.
+ *
+ * Her stored transcripts are deliberately not a source. A transcript is what
+ * she said, not what the note says: the retraction pass cuts a withdrawn
+ * figure out of it before drafting, so raw dictation can still hold words she
+ * took back, and the refine path has already seen this model confabulate
+ * provenance from a transcript. What survived into the note's bodies is what
+ * she stands behind, so the bodies are the source. The format's own top-level
+ * headers are dropped for the same reason: `Discussion:` is a label the format
+ * owns, not something she said, and a heading must not be grounded on a
+ * section's name.
+ *
+ * This decides subheading *titles* only. Each lock builds its own sources and
+ * keeps them as they are.
+ */
+export function discussionSubheadingSource(
+  noteContent: string,
+  sections: readonly string[],
+  message: string,
+  refQuote: string | null | undefined,
+): string {
+  const bodies = textToSections(noteContent, sections);
+  return [
+    ...sections.map((name) => bodies[name] ?? ''),
+    message,
+    // A highlight from an earlier draft is not in today's note; only a quote
+    // that is still in the text she is revising may name a topic.
+    ...(refQuote != null && refQuote !== '' && noteContent.includes(refQuote) ? [refQuote] : []),
+  ].join('\n');
 }
 
 /**

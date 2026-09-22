@@ -13,29 +13,28 @@
     "blankSections": ["History", "Formulation"],
     "mustNotCreate": ["Presentation", "MSE", "diagnosis", "risk"]
   },
-  "discussion": {
+  "discussionOneTopic": {
     "format": "Fictional discussion format",
-    "sections": ["Discussion"],
-    "facts": [
-      "Fictional client discussed sleep at home.",
-      "Fictional client reported waking early.",
-      "Fictional client mentioned a library book."
-    ],
-    "expectedTitles": [],
-    "preserveExactlyOnce": true,
-    "mustNotClaim": ["diagnosis", "causality", "severity", "risk"]
+    "sections": ["Discussion", "Plan"],
+    "source": "Fictional client talked about sleep, waking early most days this week and lying awake after.",
+    "drafted": "sleep:\nFictional client reported waking early most days this week and lying awake after.",
+    "expected": "Fictional client reported waking early most days this week and lying awake after.",
+    "expectedHeadings": []
   },
-  "discussionSubtopics": {
+  "discussionTopics": {
     "format": "Fictional discussion format",
-    "sections": ["Discussion"],
-    "facts": [
-      "Fictional client discussed sleep at home.",
-      "Fictional client described conflict with a partner.",
-      "Fictional client reported waking early.",
-      "Fictional client discussed support from a friend."
-    ],
-    "expectedTitles": ["Daily routines and functioning", "Context and relationships"],
-    "preserveExactlyOnce": true,
-    "mustNotClaim": ["diagnosis", "causality", "severity", "risk"]
+    "sections": ["Discussion", "Plan"],
+    "source": "Fictional client talked about sleep, waking early most days this week. Separately, she described an argument with her partner about chores.",
+    "drafted": "### Sleep\nFictional client reported waking early most days this week.\n\n**Argument with her partner:**\nFictional client described an argument with her partner about chores.",
+    "expected": "sleep:\nFictional client reported waking early most days this week.\n\nargument with her partner:\nFictional client described an argument with her partner about chores.",
+    "expectedHeadings": ["sleep", "argument with her partner"]
+  },
+  "discussionGenericHeadings": {
+    "format": "Fictional discussion format",
+    "sections": ["Discussion", "Plan"],
+    "source": "Fictional client talked about sleep, waking early most days this week. Separately, she described an argument with her partner about chores.",
+    "drafted": "### Daily routines and functioning\nFictional client reported waking early most days this week.\n\n### Context and relationships\nFictional client described an argument with her partner about chores.",
+    "expected": "Fictional client reported waking early most days this week. Fictional client described an argument with her partner about chores.",
+    "expectedHeadings": []
   }
 }

@@ -36,7 +36,7 @@ Return one JSON object and nothing else. It must have exactly these keys, in thi
   "Risk: \\"safety\\" review", "Plan"
 
 Every key is required. Each value is that section's body as plain prose.
-Do not add any other key. Do not use markdown, headings, or bullet characters.
+Do not add any other key. Do not use markdown, headings, or bullet characters — except the subheading line a section's local guidance asks for: a few lowercase words ending in a colon, alone on its own line.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 
@@ -114,7 +114,7 @@ Return one JSON object and nothing else. It must have exactly these keys, in thi
   "Attendance", "Presentation", "Content", "Interventions", "Risk", "Homework", "Next steps"
 
 Every key is required. Each value is that section's body as plain prose.
-Do not add any other key. Do not use markdown, headings, or bullet characters.
+Do not add any other key. Do not use markdown, headings, or bullet characters — except the subheading line a section's local guidance asks for: a few lowercase words ending in a colon, alone on its own line.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 
@@ -313,7 +313,7 @@ Return one JSON object and nothing else. It must have exactly these keys, in thi
   "Presenting problem", "History", "Formulation", "Plan"
 
 Every key is required. Each value is that section's body as plain prose.
-Do not add any other key. Do not use markdown, headings, or bullet characters.
+Do not add any other key. Do not use markdown, headings, or bullet characters — except the subheading line a section's local guidance asks for: a few lowercase words ending in a colon, alone on its own line.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 
@@ -492,7 +492,7 @@ Return one JSON object and nothing else. It must have exactly these keys, in thi
   "Subjective", "Objective", "Assessment", "Plan"
 
 Every key is required. Each value is that section's body as plain prose.
-Do not add any other key. Do not use markdown, headings, or bullet characters.
+Do not add any other key. Do not use markdown, headings, or bullet characters — except the subheading line a section's local guidance asks for: a few lowercase words ending in a colon, alone on its own line.
 Do not repeat the section name inside its value.
 If a section has no material in the source, its value is the empty string "".
 

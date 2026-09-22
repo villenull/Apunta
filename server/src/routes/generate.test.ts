@@ -1,5 +1,12 @@
 import { listTranscriptsForNote } from '../db/transcripts.js';
-import { FIRST_PASS_MESSAGE, type Note, type NoteFormat, type Patient } from '@apunta/shared';
+import {
+  FIRST_PASS_MESSAGE,
+  STANDARD_PROGRESS_FORMAT,
+  textToSections,
+  type Note,
+  type NoteFormat,
+  type Patient,
+} from '@apunta/shared';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -148,26 +155,45 @@ describe('POST /api/generate — the happy path', () => {
     expect((events.at(-1)?.data['note'] as Note).title).toBe('Friday session');
   });
 
-  it('keeps Discussion formatting identical between the stream and saved note', async () => {
-    const discussionFormat = await seedFormat(harness.app, {
-      name: 'Fictional discussion format',
-      sections: ['Discussion'],
+  /**
+   * The model, not the server, decides whether a session covered genuinely
+   * distinct topics (2026-09-22). Here the provider writes its two topics as
+   * Markdown headings — the shape a model actually reaches for — and what
+   * lands in the note is her own label-line form.
+   */
+  it('drafts Discussion under the model’s subheadings, normalised into her form', async () => {
+    const ownerFormat = await seedFormat(harness.app, {
+      name: 'Fictional progress note',
+      sections: [...STANDARD_PROGRESS_FORMAT.sections],
     });
     const { events } = await generate(harness.app, {
       patient_id: patient.id,
-      format_id: discussionFormat.id,
+      format_id: ownerFormat.id,
       typed_notes:
-        'Fictional client discussed sleep at home. Fictional client described conflict with a partner. Fictional client reported waking early. Fictional client discussed support from a friend. Fictional client mentioned a library book.',
+        'John reports improved sleep since last session. He described an argument with his partner on Sunday and said they have since talked it through.',
     });
     const note = events.at(-1)?.data['note'] as Note;
-    const discussionTokens = events
+    const discussion = textToSections(note.content, ownerFormat.sections)['Discussion'] ?? '';
+
+    // Lowercase label lines of her own, and the model's sentences untouched.
+    expect(discussion.split('\n')[0]).toBe('sleep:');
+    expect(discussion).toContain('\nargument with his partner:\n');
+    expect(discussion).toContain(
+      'John described an argument with his partner and said they have since talked it through.',
+    );
+    expect(discussion).not.toContain('#');
+
+    // The stream is held back for this section, so what she watched arrive is
+    // exactly what was saved.
+    const streamed = events
       .filter((event) => event.name === 'token' && event.data['section'] === 'Discussion')
       .map((event) => String(event.data['text']))
       .join('');
-    expect(discussionTokens).toBe(
-      '### Daily routines and functioning\nFictional client discussed sleep at home.\nFictional client reported waking early.\n\n### Context and relationships\nFictional client described conflict with a partner.\nFictional client discussed support from a friend.\n\n### Other discussion\nFictional client mentioned a library book.',
-    );
-    expect(note.content).toContain(`Discussion: ${discussionTokens}`);
+    expect(streamed).toBe(discussion);
+
+    // A heading starts on the line below its section header, never inline.
+    expect(note.content).toContain(`Discussion:\n${discussion}`);
+    expect(note.content).not.toContain('Discussion: sleep:');
   });
 
   it('drafts a single-theme Discussion as prose with no subheading', async () => {

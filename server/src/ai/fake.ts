@@ -131,7 +131,33 @@ const GRIEF_PROGRESS_OWNER: Sections = {
   'Note for next session': 'Continue weekly supportive therapy.',
 };
 
+/**
+ * John Smith's session again, where she also talked through an argument with
+ * his partner: two topics she kept apart, so Discussion is divided under her
+ * lowercase subheadings. Chosen only when the source names sleep, an argument
+ * and his partner, so every heading word is in what she wrote and the
+ * server's check keeps them.
+ *
+ * The headings are written the way a model reaches for them — `### Sleep` —
+ * so the API normalising them into her own `sleep:` form is exercised end to
+ * end, not only in the subheadings module's own tests.
+ */
+const TWO_TOPIC_PROGRESS_OWNER: Sections = {
+  ...SLEEP_PROGRESS_OWNER,
+  Discussion: [
+    '### Sleep',
+    'John reports improved sleep since last session and decreased frequency of intrusive thoughts.',
+    '',
+    '### Argument with his partner',
+    'John described an argument with his partner and said they have since talked it through.',
+  ].join('\n'),
+};
+
 const CANNED_OWNER: readonly { readonly pattern: RegExp; readonly sections: Sections }[] = [
+  {
+    pattern: /^(?=[\s\S]*\bsleep)(?=[\s\S]*\bargument)(?=[\s\S]*\bpartner)/i,
+    sections: TWO_TOPIC_PROGRESS_OWNER,
+  },
   { pattern: /grief|bereave|anniversary|mother('s)? death|passed away/i, sections: GRIEF_PROGRESS_OWNER },
   { pattern: /sleep|intrusive|anxiet/i, sections: SLEEP_PROGRESS_OWNER },
 ];

@@ -2,17 +2,19 @@ import {
   FIRST_PASS_MESSAGE,
   PUBLISHED_REFUSAL,
   approximateTokens,
+  textToSections,
   type ChatMessage,
   type Note,
   type NoteFormat,
   type Patient,
+  type Sections,
 } from '@apunta/shared';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
 import { aiError } from '../ai/errors.js';
-import type { LlmEvent, RefineNoteRequest } from '../ai/types.js';
+import type { LlmEvent, LlmStats, RefineNoteRequest } from '../ai/types.js';
 import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { getNote, setNotePublished } from '../db/notes.js';
 import { createTranscript } from '../db/transcripts.js';
@@ -20,7 +22,12 @@ import { REFINE_PROMPT_TOKENS } from '../ai/ollama.js';
 import { buildRefinePrompt, REFINE_BACKGROUND_END, REFINE_BACKGROUND_REMINDER } from '../ai/prompts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 import { recordingProviders } from '../test/providers.js';
-import { REFINE_BACKGROUND_TOKENS, UNCHANGED_NOTICE, withoutServerSentences } from './chat.js';
+import {
+  REFINE_BACKGROUND_TOKENS,
+  UNCHANGED_NOTICE,
+  discussionSubheadingSource,
+  withoutServerSentences,
+} from './chat.js';
 
 /**
  * `POST /api/notes/:id/chat` against a real SQLite file and the fake provider.
@@ -660,6 +667,197 @@ describe('POST /api/notes/:id/chat — her other notes as background', () => {
     } finally {
       await local.close();
     }
+  });
+});
+
+/**
+ * What a Discussion subheading may be named from. The model decides whether
+ * the session had distinct topics, but the server grounds every heading in the
+ * note as it stands and her message — never a format's own header, and never
+ * raw dictation, which can still hold words the retraction pass took back.
+ * All fixtures synthetic.
+ */
+describe('POST /api/notes/:id/chat — Discussion subheading grounding', () => {
+  const HEADINGS_FORMAT = ['Objective', 'Discussion', 'Plan'];
+  const HEADINGS_NOTE = [
+    'Objective: Alert and engaged in session.',
+    'Discussion: John described trouble sleeping before the move.',
+    'Plan: Continue weekly sessions.',
+  ].join('\n\n');
+
+  const STATS: LlmStats = {
+    model: 'fake-llm',
+    promptTokens: 0,
+    outputTokens: 0,
+    evalNanos: 0,
+    loadNanos: 0,
+    doneReason: 'stop',
+    attempts: 1,
+  };
+
+  /**
+   * A local app whose refine answer is a Discussion body the test writes,
+   * built on the note the route sent so the other sections are unchanged.
+   * The format has a Discussion, unlike the SOAP format the shared harness
+   * seeds, so `applyDiscussionSubheadings` has somewhere to work.
+   */
+  async function headingApp(discussion: string): Promise<{ local: TestApp; note: Note }> {
+    class DiscussionProvider extends FakeLlmProvider {
+      override async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+        const current = textToSections(request.noteText, request.sections);
+        yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+        yield {
+          type: 'refined',
+          reply: 'Split the discussion by topic.',
+          updatedSections: { ...current, Discussion: discussion },
+          stats: STATS,
+        };
+      }
+    }
+
+    const local = await createTestApp({
+      providers: { llm: new DiscussionProvider(), stt: new FakeSttProvider() },
+    });
+    const own = await seedPatient(local.app, 'John Smith');
+    const localFormat = await seedFormat(local.app, { sections: HEADINGS_FORMAT });
+    const note = await seedNote(local.app, own.id, localFormat.id, HEADINGS_NOTE);
+    return { local, note };
+  }
+
+  function storedDiscussion(local: TestApp, noteId: string): string {
+    const content = getNote(local.db, noteId)?.content ?? '';
+    const sections: Sections = textToSections(content, HEADINGS_FORMAT);
+    return sections['Discussion'] ?? '';
+  }
+
+  it('refuses a heading a format header alone could ground', async () => {
+    // "objective" occurs only in the format's own "Objective:" header; the
+    // second heading's other word is in the note body, so the header is the
+    // only thing that could keep it.
+    const { local, note } = await headingApp(
+      [
+        'sleep:',
+        'John described trouble sleeping before the move.',
+        '',
+        'objective sleeping:',
+        'He also described waking early.',
+      ].join('\n'),
+    );
+    try {
+      const { events } = await chat(local.app, note.id, { message: 'Split the discussion by topic' });
+
+      expect(noteUpdated(events)).toBeDefined();
+      // Both headings go, and no prose goes with them.
+      expect(storedDiscussion(local, note.id)).toBe(
+        'John described trouble sleeping before the move. He also described waking early.',
+      );
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('refuses a heading only the stored transcript could ground', async () => {
+    const { local, note } = await headingApp(
+      [
+        'sleep:',
+        'John described trouble sleeping before the move.',
+        '',
+        'allotment:',
+        'He mentioned his allotment again.',
+      ].join('\n'),
+    );
+    try {
+      createTranscript(local.db, {
+        note_id: note.id,
+        source: 'audio',
+        raw_text: 'He mentioned his allotment again, and the tomatoes are coming on.',
+      });
+
+      const { events } = await chat(local.app, note.id, { message: 'Split the discussion by topic' });
+
+      expect(noteUpdated(events)).toBeDefined();
+      expect(storedDiscussion(local, note.id)).toBe(
+        'John described trouble sleeping before the move. He mentioned his allotment again.',
+      );
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('refuses a heading only a highlight no longer in the note could ground', async () => {
+    const { local, note } = await headingApp(
+      [
+        'sleep:',
+        'John described trouble sleeping before the move.',
+        '',
+        'tomatoes:',
+        'He talked about the tomatoes.',
+      ].join('\n'),
+    );
+    try {
+      const { events } = await chat(local.app, note.id, {
+        message: 'Split the discussion by topic',
+        // A quote from an earlier version of the note: not in today's text.
+        ref_quote: 'He talked about the tomatoes on the allotment.',
+      });
+
+      expect(noteUpdated(events)).toBeDefined();
+      expect(storedDiscussion(local, note.id)).toBe(
+        'John described trouble sleeping before the move. He talked about the tomatoes.',
+      );
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('keeps headings grounded in the note body and her message', async () => {
+    const { local, note } = await headingApp(
+      [
+        'sleep:',
+        'John described trouble sleeping before the move.',
+        '',
+        'appetite:',
+        'He described a better appetite this week.',
+      ].join('\n'),
+    );
+    try {
+      const { events } = await chat(local.app, note.id, {
+        message: 'Split the discussion into sleep and appetite',
+      });
+
+      expect(noteUpdated(events)).toBeDefined();
+      const discussion = storedDiscussion(local, note.id);
+      expect(discussion).toContain('sleep:\nJohn described trouble sleeping before the move.');
+      expect(discussion).toContain('appetite:\nHe described a better appetite this week.');
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('builds the source from note bodies and her message, not headers or a stale quote', () => {
+    expect(
+      discussionSubheadingSource(
+        HEADINGS_NOTE,
+        HEADINGS_FORMAT,
+        'the tomatoes are coming on',
+        'He mentioned his allotment.',
+      ),
+    ).toBe(
+      [
+        'Alert and engaged in session.',
+        'John described trouble sleeping before the move.',
+        'Continue weekly sessions.',
+        'the tomatoes are coming on',
+      ].join('\n'),
+    );
+    // A stale highlight is dropped; one that is still an exact substring of
+    // the note is included as she wrote it.
+    expect(
+      discussionSubheadingSource(HEADINGS_NOTE, HEADINGS_FORMAT, 'x', 'He mentioned his allotment.'),
+    ).not.toContain('allotment');
+    expect(
+      discussionSubheadingSource(HEADINGS_NOTE, HEADINGS_FORMAT, 'x', 'Plan: Continue weekly sessions.'),
+    ).toContain('Plan: Continue weekly sessions.');
   });
 });
 

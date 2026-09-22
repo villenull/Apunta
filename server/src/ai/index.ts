@@ -62,17 +62,16 @@ export function resolveModel(db: Database): string {
 
 export { AiError, aiError, UNREACHABLE_MESSAGE } from './errors.js';
 export {
-  applyDiscussionThemes,
+  applyDiscussionSubheadings,
   renderClinicalKnowledgeGuide,
   sectionForRole,
   sectionRole,
 } from './clinical-knowledge/integration.js';
 export {
-  DISCUSSION_FALLBACK_TITLE,
-  groupDiscussionThemes,
-  renderDiscussionThemes,
-  splitDiscussionRawNotes,
-} from './clinical-knowledge/discussion-themes.js';
+  headingIsGrounded,
+  MAX_SUBHEADING_WORDS,
+  tidyDiscussionSubheadings,
+} from './clinical-knowledge/discussion-subheadings.js';
 export {
   documentInterventions,
   extractInterventionLabels,

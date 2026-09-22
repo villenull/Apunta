@@ -1,6 +1,6 @@
 import { CLINICAL_GUIDANCE_VERSION, INTERVENTION_MODALITIES, PRESENTATION_MSE_DOMAINS } from '@apunta/shared';
 
-import { renderDiscussionThemes } from './discussion-themes.js';
+import { tidyDiscussionSubheadings, type SubheadingOutcome } from './discussion-subheadings.js';
 import { INTERVENTION_KNOWLEDGE } from './interventions.js';
 import { PRESENTATION_MSE_KNOWLEDGE } from './presentation.js';
 
@@ -118,8 +118,8 @@ export function renderClinicalKnowledgeGuide(
 
   if (discussion !== null) {
     lines.push(
-      `Discussion routing: keep supplied facts in the authored section ${JSON.stringify(discussion)} and, when two or more facts clearly share a broad topic, group them under a concise neutral title. Use titles only when there are two or more such topics; a Discussion with a single theme stays prose with no title.`,
-      'Every supplied fact must appear exactly once and verbatim within Discussion. A title may organize facts but may not add diagnosis, causality, severity, risk, or any other clinical claim; when there are titled topics, facts that do not safely group go in one neutral catch-all subsection, and there is no catch-all when every fact belongs to a titled topic.',
+      `Discussion routing: decide from her account whether the session covered genuinely distinct topics that she kept apart. If it did, divide the section ${JSON.stringify(discussion)} into one part per topic. Each part starts on its own line with a subheading of one to four lowercase words taken from her own words for that topic, ending in a colon, and its prose follows on the next line. If the session had one topic, or its parts belong to one throughline, write ${JSON.stringify(discussion)} as a single block of prose with no subheading.`,
+      'Never write a subheading for a single topic, never name a topic she did not discuss, and never use a general category as a subheading. A subheading only names a topic; every sentence under it follows the rules above, and material for other sections stays in them.',
     );
   }
 
@@ -138,21 +138,22 @@ export function renderClinicalKnowledgeGuide(
 }
 
 /**
- * Apply the deterministic Discussion formatter only when the format authored
- * a Discussion-like section. Other sections and all section keys are returned
- * untouched. The formatter emits headings as the only generated content and
- * preserves each supplied body fact once; a Discussion without two distinct
- * subtopics comes back unchanged, with no heading.
+ * Check the subheadings the model wrote in a Discussion-like section
+ * (`discussion-subheadings.ts`): her form, her words, two or more topics, or
+ * no subheadings at all. Only an authored Discussion section is touched, and
+ * the same object comes back when nothing changed. The outcome carries no
+ * note text and is safe to log.
  */
-export function applyDiscussionThemes<T extends Record<string, string>>(
+export function applyDiscussionSubheadings<T extends Record<string, string>>(
   sections: T,
   order: readonly string[],
-): T {
+  source: string,
+): { readonly sections: T; readonly outcome: SubheadingOutcome } {
   const discussion = sectionForRole(order, 'discussion');
-  if (discussion === null) return sections;
+  if (discussion === null) return { sections, outcome: 'none' };
 
   const body = sections[discussion] ?? '';
-  const rendered = renderDiscussionThemes(body);
-  if (rendered === body) return sections;
-  return { ...sections, [discussion]: rendered };
+  const tidied = tidyDiscussionSubheadings(body, { source, sectionNames: order });
+  if (tidied.body === body) return { sections, outcome: tidied.outcome };
+  return { sections: { ...sections, [discussion]: tidied.body }, outcome: tidied.outcome };
 }

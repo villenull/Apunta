@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { leadingLabel } from './note-labels.js';
+
 /**
  * The sections contract (PLAN §3, "Note content contract").
  *
@@ -142,15 +144,25 @@ export function detectedFormatJsonSchema(): JsonSchemaObject {
 /**
  * Sections → editor text. `Section: body` paragraphs, blank line between,
  * in the format's order. An empty body still gets its header, with no
- * trailing space.
+ * trailing space. A body that opens with a subheading line of its own
+ * (`sleep:`, Discussion divided by topic) starts on the line below its header,
+ * so the two labels never share a line.
  */
 export function sectionsToText(sections: Sections, order: readonly string[]): string {
   return order
     .map((name) => {
       const body = (sections[name] ?? '').trim();
-      return body === '' ? `${name}:` : `${name}: ${body}`;
+      if (body === '') return `${name}:`;
+      return opensWithSubheading(body) ? `${name}:\n${body}` : `${name}: ${body}`;
     })
     .join('\n\n');
+}
+
+/** True when the first line of `body` is a label and nothing else. */
+function opensWithSubheading(body: string): boolean {
+  const first = body.split('\n', 1)[0] ?? '';
+  const label = leadingLabel(first);
+  return label !== null && label.prefix === '' && first.trimEnd() === label.label;
 }
 
 /**
