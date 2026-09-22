@@ -14,13 +14,13 @@ afterEach(async () => {
 });
 
 describe('GET /api/settings', () => {
-  it('starts with the available local profiles and Thorough effective by default', async () => {
+  it('starts with only the promoted Quick profile', async () => {
     const response = await harness.app.inject({ method: 'GET', url: '/api/settings' });
 
     expect(response.statusCode).toBe(200);
     expect(SettingsSchema.parse(response.json())).toEqual({
-      llm_available_profiles: ['quick', 'thorough'],
-      llm_effective_profile: 'thorough',
+      llm_available_profiles: ['quick'],
+      llm_effective_profile: 'quick',
     });
   });
 });
@@ -39,12 +39,13 @@ describe('PUT /api/settings', () => {
       payload: { stt_vocabulary: ['sertraline', 'CBT'] },
     });
 
+    expect(second.statusCode).toBe(200);
     expect(second.json<Settings>()).toEqual({
       llm_model: 'gemma4:12b',
       keep_audio: false,
       stt_vocabulary: ['sertraline', 'CBT'],
-      llm_available_profiles: ['quick', 'thorough'],
-      llm_effective_profile: 'thorough',
+      llm_available_profiles: ['quick'],
+      llm_effective_profile: 'quick',
     });
 
     const reread = await harness.app.inject({ method: 'GET', url: '/api/settings' });
@@ -61,8 +62,8 @@ describe('PUT /api/settings', () => {
 
     expect(response.json<Settings>()).toEqual({
       llm_model: 'second',
-      llm_available_profiles: ['quick', 'thorough'],
-      llm_effective_profile: 'thorough',
+      llm_available_profiles: ['quick'],
+      llm_effective_profile: 'quick',
     });
   });
 

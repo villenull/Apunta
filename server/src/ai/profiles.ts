@@ -3,11 +3,11 @@ import type { Database } from 'better-sqlite3';
 
 import { DEFAULT_OLLAMA_URL } from '../config.js';
 import { getAllSettings, getSetting } from '../db/settings.js';
+import { defaultModelForMachine } from './model-picker.js';
 
-/** The only models the application may select for its two user-facing profiles. */
-export const LLM_PROFILES: Record<LlmProfile, { model: string }> = {
+/** The sole promoted profile; ModelEval rejected every Thorough candidate. */
+export const LLM_PROFILES: Partial<Record<LlmProfile, { model: string }>> = {
   quick: { model: 'qwen3.5:4b-q4_K_M' },
-  thorough: { model: 'THOROUGH_MODEL_TBD' },
 };
 
 export const LLM_PROFILE_SETTING = 'llm_profile';
@@ -65,9 +65,12 @@ async function installedModels(
   }
 }
 
-function configuredProfile(db: Database): LlmProfile | undefined {
-  const value = getSetting<unknown>(db, LLM_PROFILE_SETTING);
-  return value === 'quick' || value === 'thorough' ? value : undefined;
+function configuredModel(db: Database): string {
+  const value = getSetting<unknown>(db, 'llm_model');
+  if (typeof value === 'string' && value.trim() !== '' && isLocalModelTag(value.trim())) {
+    return value.trim();
+  }
+  return LLM_PROFILES.quick?.model ?? defaultModelForMachine();
 }
 
 export function profileModel(profile: LlmProfile): string | undefined {
@@ -81,10 +84,9 @@ export interface ResolvedLlmProfile {
 }
 
 /**
- * Resolve the profile and model for every provider call. A stale stored choice
- * is ignored when its model disappeared; the default is Thorough, then Quick
- * is the final available fallback. When Ollama is down, Quick is returned so
- * the normal model-missing/unreachable error remains user-visible.
+ * Resolve the sole promoted Quick profile while preserving the pre-existing
+ * `llm_model` setting. ModelEval rejected every Thorough candidate, so there
+ * is no default replacement or dead profile to expose.
  */
 export async function resolveLlmProfile(
   db: Database,
@@ -95,22 +97,15 @@ export async function resolveLlmProfile(
   } = {},
 ): Promise<ResolvedLlmProfile> {
   const profiles = Object.keys(LLM_PROFILES) as LlmProfile[];
-  if (options.fakeAi) {
-    const available = profiles;
-    const profile = configuredProfile(db) ?? (LLM_PROFILES.thorough ? 'thorough' : 'quick');
-    return { profile, model: LLM_PROFILES[profile].model, available };
-  }
+  const model = configuredModel(db);
+  if (options.fakeAi) return { profile: 'quick', model, available: profiles };
 
   const names = await installedModels(options.baseUrl, options.fetchImpl);
   const available = profiles.filter((profile) => {
-    const model = profileModel(profile);
-    return model !== undefined && isLocalModelTag(model) && names.has(model);
+    const profileTag = profileModel(profile);
+    return profileTag !== undefined && isLocalModelTag(model) && names.has(model);
   });
-  const configured = configuredProfile(db);
-  const preferred = configured ?? (LLM_PROFILES.thorough ? 'thorough' : 'quick');
-  const selected = [preferred, 'quick' as const].find((profile) => available.includes(profile)) ?? 'quick';
-  const model = profileModel(selected) ?? LLM_PROFILES.quick.model;
-  return { profile: selected, model, available };
+  return { profile: 'quick', model, available };
 }
 
 export async function resolveModel(
