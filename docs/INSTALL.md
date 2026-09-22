@@ -99,12 +99,22 @@ to press. The most common is simply the internet dropping.
 
 When it finishes, Apunta opens by itself in your browser.
 
+### Your note format
+
+Apunta then asks you to add your note format. The first choice, **My
+standard progress note**, is already selected: Location, Client
+presentation, Risk review, Discussion, Intervention, Out of session actions
+and Note for next session, written the way you write them. Click
+**Continue** and it is ready. The other choices are there if you ever want a
+different format, and you can change this one later in **Settings → Note
+formats**.
+
 ### If you were given a settings file
 
-Apunta then asks you to add your note format. If someone prepared Apunta for
-you, they will have given you a file ending in **.zip** — it holds your note
+If someone prepared Apunta for you, they will have given you a file ending in
+**.zip** — it holds your note
 format and how you like your notes written, and nothing else: no patients, no
-notes.
+notes. Use it instead of clicking **Continue** above.
 
 Apunta only restores from files kept in its own backups folder, so the file
 has to be put there first. It is a folder macOS normally hides, so:

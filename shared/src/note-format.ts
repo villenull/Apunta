@@ -18,6 +18,27 @@ export const SectionsSchema = z
     message: 'Section names must be unique',
   });
 
+/**
+ * The owner's own progress note, and Apunta's default since 2026-09-22
+ * (`docs/decisions.md`): what first-run onboarding offers first, what
+ * `npm run seed` creates, and the section fingerprint that picks up her
+ * drafting instructions for a format saved without any. The instructions
+ * themselves are server-only (`server/src/ai/default-instructions.ts`,
+ * `OWNER_PROGRESS_INSTRUCTIONS`); the browser never needs their text.
+ */
+export const STANDARD_PROGRESS_FORMAT = {
+  name: 'Progress note',
+  sections: [
+    'Location',
+    'Client presentation',
+    'Risk review',
+    'Discussion',
+    'Intervention',
+    'Out of session actions',
+    'Note for next session',
+  ],
+} as const;
+
 export const NoteFormatSchema = z.object({
   id: IdSchema,
   name: z.string(),

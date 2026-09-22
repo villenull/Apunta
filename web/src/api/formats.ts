@@ -26,6 +26,15 @@ export async function createFormat(input: CreateNoteFormatRequest): Promise<Note
   return requestJson('/api/formats', NoteFormatSchema, { method: 'POST', body: input });
 }
 
+/**
+ * The owner's standard progress note, created by the server with her sections
+ * and her drafting instructions. No body: the instructions never pass through
+ * the browser.
+ */
+export async function createStandardFormat(): Promise<NoteFormat> {
+  return requestJson('/api/formats/standard', NoteFormatSchema, { method: 'POST' });
+}
+
 export async function updateFormat(id: string, patch: UpdateNoteFormatRequest): Promise<NoteFormat> {
   return requestJson(`/api/formats/${id}`, NoteFormatSchema, { method: 'PATCH', body: patch });
 }

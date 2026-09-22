@@ -1,5 +1,6 @@
 import {
   CreateNoteFormatRequestSchema,
+  STANDARD_PROGRESS_FORMAT,
   UpdateNoteFormatRequestSchema,
   type NoteFormat,
   type NoteFormatListResponse,
@@ -7,6 +8,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 
+import { OWNER_PROGRESS_INSTRUCTIONS } from '../ai/default-instructions.js';
 import {
   countNotesForFormat,
   createFormat,
@@ -36,6 +38,24 @@ export function registerFormatRoutes(app: FastifyInstance, db: Database): void {
       sections: input.sections,
       ...(input.instructions === undefined ? {} : { instructions: input.instructions }),
       ...(input.source === undefined ? {} : { source: input.source }),
+    });
+    reply.code(201);
+    return format;
+  });
+
+  /**
+   * `POST /api/formats/standard` — onboarding's recommended one-click choice:
+   * the owner's own progress note, with her sections and her drafting
+   * instructions written onto the format, so Settings shows (and lets her
+   * edit) exactly what the model reads. No body; the browser never carries
+   * the instructions' text.
+   */
+  app.post('/api/formats/standard', async (_request, reply): Promise<NoteFormat> => {
+    const format = createFormat(db, {
+      name: STANDARD_PROGRESS_FORMAT.name,
+      sections: [...STANDARD_PROGRESS_FORMAT.sections],
+      instructions: OWNER_PROGRESS_INSTRUCTIONS,
+      source: 'manual',
     });
     reply.code(201);
     return format;

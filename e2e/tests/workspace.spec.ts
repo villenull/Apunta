@@ -413,8 +413,15 @@ test.describe('first run', () => {
   });
 
   /** What the uploads do once a file is chosen is `tests/formats.spec.ts`. */
-  test('offers all three paths, with the uploads waiting on a file', async ({ page }) => {
+  test('offers her standard note first, then the three other paths, with the uploads waiting on a file', async ({
+    page,
+  }) => {
     await page.goto('/onboarding/format');
+
+    // Her standard progress note is first and already chosen: Continue is live.
+    await expect(page.getByTestId('option-standard')).toHaveClass(/selected/);
+    await expect(page.getByTestId('option-standard')).toContainText('Recommended');
+    await expect(page.getByTestId('format-continue')).toBeEnabled();
 
     await page.getByText('Upload a blank template').click();
     await expect(page.getByTestId('area-template')).toContainText('Drop a .docx or .pdf template here');

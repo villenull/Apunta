@@ -34,7 +34,7 @@ const johnsIntake = makeNote(john.id, {
   published_at: '2026-08-09T09:00:00.000Z',
 });
 
-function renderApp(path = '/'): void {
+function renderApp(path: string | { pathname: string; state: unknown } = '/'): void {
   render(
     <MemoryRouter initialEntries={[path]}>
       <App />
@@ -363,6 +363,45 @@ describe('first run', () => {
     renderApp();
 
     expect(await screen.findByText('Add your note format')).toBeDefined();
+  });
+
+  it('offers her standard progress note first, preselected, and saves it in one click', async () => {
+    const api = installFakeApi({ formats: [], patients: [] });
+    renderApp('/onboarding/format');
+
+    const option = await screen.findByTestId('option-standard');
+    expect(option.className).toContain('selected');
+    expect(option.textContent).toContain('Recommended');
+    expect(option.textContent).toContain('Location, Client presentation, Risk review');
+    // First of the four ways in.
+    expect(option.parentElement?.firstElementChild).toBe(option);
+
+    fireEvent.click(screen.getByTestId('format-continue'));
+
+    expect(await screen.findByRole('heading', { name: 'Add patient' })).toBeDefined();
+    expect(api.state.formats).toHaveLength(1);
+    expect(api.state.formats[0]).toMatchObject({
+      name: 'Progress note',
+      sections: [
+        'Location',
+        'Client presentation',
+        'Risk review',
+        'Discussion',
+        'Intervention',
+        'Out of session actions',
+        'Note for next session',
+      ],
+    });
+    expect(api.state.formats[0]?.instructions).not.toBe('');
+  });
+
+  it('preselects nothing when adding another format from Settings', async () => {
+    installFakeApi({ formats: [] });
+    renderApp({ pathname: '/onboarding/format', state: { name: '', sections: [], returnTo: '/settings' } });
+
+    const option = await screen.findByTestId('option-standard');
+    expect(option.className).not.toContain('selected');
+    expect(screen.getByTestId('format-continue')).toHaveProperty('disabled', true);
   });
 
   it('creates a format from the manual path and lands on add patient', async () => {

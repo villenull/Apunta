@@ -354,18 +354,21 @@ The recipe, repeatable on any machine with the repo:
 1. `npm run build`, then start the server against an empty data dir:
    `APUNTA_DATA_DIR=/tmp/apunta-pack APUNTA_FAKE_AI=1 node server/dist/index.js`
    and open `http://127.0.0.1:7717`.
-2. The first-run screen is the format onboarding. Choose **Describe it
-   myself** and enter name `Progress note` and sections, comma-separated and
-   in this order: `Location, Client presentation, Risk review, Discussion,
-   Intervention, Out of session actions, Note for next session`. Continue,
-   check the seven sections, **Looks right, save**.
+2. The first-run screen is the format onboarding. **My standard progress
+   note** is first and already selected; press **Continue**. That creates
+   `Progress note` with her seven sections in order (`Location, Client
+   presentation, Risk review, Discussion, Intervention, Out of session
+   actions, Note for next session`) and her drafting instructions
+   (`docs/note-instructions/owner-progress-instructions.md`, bundled in the
+   app since 2026-09-22). Before that date this step was **Describe it
+   myself** plus pasting the instructions by hand.
 3. The next screen asks for a patient. **Do not add one** — the pack must
    carry zero patients. Go to `/settings` instead.
-4. Settings → Note formats → **Edit** → paste the full text of
-   `docs/note-instructions/owner-progress-instructions.md` into the
-   **Instructions** field → **Save changes**. (The file replaces the
-   built-in defaults entirely; it must carry its own anti-fabrication core,
-   and it does.)
+4. Check it: Settings → Note formats → **Edit** shows the seven sections and
+   the instructions already filled in, starting "You are drafting a clinical
+   note for a licensed therapist". Nothing to paste. (The instructions
+   replace the built-in defaults entirely; they carry their own
+   anti-fabrication core.)
 5. Pin the model. There is no Settings field for it, deliberately, so:
    `curl -X PUT 127.0.0.1:7717/api/settings -H "content-type: application/json"
    -d '{"llm_model":"qwen3.5:4b-q4_K_M"}'`

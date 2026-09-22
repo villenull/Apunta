@@ -10,6 +10,7 @@ import {
   type PatientListItem,
   type PlanGoal,
   PUBLISHED_REFUSAL,
+  STANDARD_PROGRESS_FORMAT,
   type SessionBrief,
   type SessionBriefContent,
   type TreatmentPlan,
@@ -558,6 +559,14 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
       }
 
       if (path === '/api/formats' && method === 'GET') return json({ formats: state.formats });
+
+      if (path === '/api/formats/standard' && method === 'POST') {
+        const format = makeFormat(STANDARD_PROGRESS_FORMAT.name, [...STANDARD_PROGRESS_FORMAT.sections], {
+          instructions: 'The owner’s progress-note instructions (server-side in the real app).',
+        });
+        state.formats = [...state.formats, format];
+        return json(format, 201);
+      }
 
       if (path === '/api/formats' && method === 'POST') {
         const format = makeFormat(String(body['name']), body['sections'] as string[], {

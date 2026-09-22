@@ -1,4 +1,4 @@
-import { sectionsToText, type Sections } from '@apunta/shared';
+import { sectionsToText, STANDARD_PROGRESS_FORMAT, type Sections } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -98,6 +98,45 @@ describe('FakeLlmProvider.generateNote', () => {
     expect(Object.keys(result)).toEqual(sections);
     expect(result['Attendance']).toBe('Sleep improved.');
     expect(result['Presentation']).toBe('');
+  });
+
+  /** The default format since 2026-09-22 has to demo sensibly in fake mode. */
+  it('drafts the owner’s seven sections, with her "None." convention', async () => {
+    const sections = [...STANDARD_PROGRESS_FORMAT.sections];
+    const sleep = finalSections(
+      await drain(
+        provider.generateNote({
+          instructions: '',
+          formatName: 'Progress note',
+          sections,
+          typedNotes: 'Sleep improved, intrusive thoughts less frequent.',
+        }),
+      ),
+    );
+    expect(Object.keys(sleep)).toEqual(sections);
+    expect(sleep['Discussion']).toContain('John reports improved sleep');
+    expect(sleep['Risk review']).toBe('None.');
+    expect(sleep['Location']).toBe('');
+    // No SOAP wording leaks into her sections.
+    expect(Object.values(sleep).join(' ')).not.toMatch(/\bPatient\b/);
+
+    const grief = finalSections(
+      await drain(
+        provider.generateNote({ instructions: '', sections, typedNotes: 'Anniversary week. Grief.' }),
+      ),
+    );
+    expect(grief['Client presentation']).toBe('');
+    expect(grief['Discussion']).toContain('Maria reports');
+
+    // Nothing canned: the source goes to Discussion, not Location.
+    const other = finalSections(
+      await drain(provider.generateNote({ instructions: '', sections, typedNotes: 'Online today.' })),
+    );
+    expect(other['Location']).toBe('');
+    expect(other['Discussion']).toBe('Online today.');
+    expect(other['Risk review']).toBe('None.');
+    expect(other['Out of session actions']).toBe('None.');
+    expect(other['Intervention']).toBe('');
   });
 
   /**

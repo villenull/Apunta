@@ -1,9 +1,12 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-21, after the refine chat lost its quick actions and
-gained the patient's other notes as read-only background, and Brainstorm
-began reading every note that fits (owner's choices; `docs/decisions.md`,
-2026-09-21).**
+**Updated 2026-09-22, after the owner's own progress note became the app's
+default: first-run onboarding offers it first (one click, her sections and
+her instructions), `npm run seed` creates it, and a format with her seven
+sections and no instructions drafts with hers (`docs/decisions.md`,
+2026-09-22). Before that, 2026-09-21: the refine chat lost its quick actions
+and gained the patient's other notes as read-only background, and Brainstorm
+began reading every note that fits.**
 This is the one document to point a fresh session at.
 It says what is built, what is open, who each open item waits on, and how to
 run things on the machine the live testing happens on. Keep it current: when
@@ -58,6 +61,21 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   another note contains, unless her message asks to bring something over
   from another session ("bring … from last session"). Measured on the real
   4B: `docs/eval-reports/2026-09-21-refine-background.md`.
+- **Her progress note is the default** (2026-09-22, owner): `Progress note`
+  with Location, Client presentation, Risk review, Discussion, Intervention,
+  Out of session actions, Note for next session, and the drafting
+  instructions of `docs/note-instructions/owner-progress-instructions.md`,
+  bundled as `OWNER_PROGRESS_INSTRUCTIONS` in
+  `server/src/ai/default-instructions.ts` (a test fails if the two differ;
+  the sections are `STANDARD_PROGRESS_FORMAT` in `shared/`). First-run
+  onboarding offers it first and preselected (`POST /api/formats/standard`
+  writes her instructions onto the format); the template, examples and
+  describe paths remain. The generic SOAP instructions stay for a format
+  whose sections are exactly SOAP; a "Progress note" with any other sections
+  now defaults to hers. Fake mode drafts her sections from canned prototype
+  notes. `npm run seed` builds this format too and **refuses, exit 1, a
+  database that has patients** unless `--reset` is given: on 2026-09-21
+  seeding over her live database replaced her format with SOAP.
 - **The retraction pass** (`server/src/ai/retractions.ts`,
   `docs/eval-reports/2026-09-06-retraction-pass.md`): "four hours, scratch
   that, six" is cut out of the transcript before drafting, by the server, on
@@ -447,3 +465,7 @@ config pack: `~/Apunta-config-pack/apunta-config-pack.zip`.
 - Real patient text never enters fixtures, tests, logs or commits. The live
   log is shape-only; keep it that way.
 - One recording at a time on one machine. Two starve each other.
+- Never run `npm run seed` (least of all `--reset`) against the live data
+  dir: it deletes every patient, note and setting. On 2026-09-21 it
+  replaced her format with SOAP. Use a throwaway `APUNTA_DATA_DIR` in
+  `/tmp`; seed now exits 1 on any database with patients.

@@ -2,14 +2,16 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { OWNER_PROGRESS_INSTRUCTIONS } from './ai/default-instructions.js';
 import { loadConfig } from './config.js';
-import { listFormats } from './db/formats.js';
+import { createFormat, listFormats } from './db/formats.js';
 import { openDatabase, type Database } from './db/index.js';
 import { listNotesForPatient } from './db/notes.js';
 import { listPatients } from './db/patients.js';
-import { seedDatabase } from './seed.js';
+import { SeedRefusedError, seedDatabase } from './seed.js';
 
 const migrationsDir = loadConfig({}).migrationsDir;
 
@@ -33,7 +35,18 @@ describe('seedDatabase', () => {
     expect(result).toMatchObject({ seeded: true, formats: 2, patients: 3, notes: 4 });
 
     expect(listFormats(db).map((f) => [f.name, f.sections])).toEqual([
-      ['Progress note', ['Subjective', 'Objective', 'Assessment', 'Plan']],
+      [
+        'Progress note',
+        [
+          'Location',
+          'Client presentation',
+          'Risk review',
+          'Discussion',
+          'Intervention',
+          'Out of session actions',
+          'Note for next session',
+        ],
+      ],
       ['Intake note', ['Presenting problem', 'History', 'Formulation', 'Plan']],
     ]);
 
@@ -43,6 +56,15 @@ describe('seedDatabase', () => {
       ['Maria Ruiz', 1],
       ['Ana Torres', 0],
     ]);
+  });
+
+  it('gives the progress note the owner’s instructions and leaves the intake on the default', () => {
+    seedDatabase(db);
+    const [progress, intake] = listFormats(db);
+
+    expect(progress?.sections).toEqual([...STANDARD_PROGRESS_FORMAT.sections]);
+    expect(progress?.instructions).toBe(OWNER_PROGRESS_INSTRUCTIONS);
+    expect(intake?.instructions).toBe('');
   });
 
   it('publishes every sample note and backdates it to the prototype date', () => {
@@ -57,17 +79,34 @@ describe('seedDatabase', () => {
       ['Intake note', '2026-07-24', 'published'],
     ]);
     expect(notes.every((n) => n.published_at === n.created_at)).toBe(true);
-    expect(notes[0]?.content).toContain('Subjective: Patient reports improved sleep');
+    expect(notes[0]?.content).toContain(
+      'Discussion: John reports improved sleep since last session and decreased frequency of intrusive thoughts.',
+    );
+    // Every one of her seven headers travels, the empty Location included.
+    expect(notes[0]?.content.startsWith('Location:')).toBe(true);
+    for (const section of STANDARD_PROGRESS_FORMAT.sections) {
+      expect(notes[0]?.content).toContain(`${section}:`);
+    }
   });
 
-  it('refuses to touch a database that already has data', () => {
+  it('refuses, with an error, a database that already has patients', () => {
     seedDatabase(db);
 
-    const second = seedDatabase(db);
-
-    expect(second.seeded).toBe(false);
-    expect(second.skippedReason).toMatch(/--reset/);
+    expect(() => seedDatabase(db)).toThrow(SeedRefusedError);
+    expect(() => seedDatabase(db)).toThrow(/3 patients and 4 notes.*--reset/);
     expect(listPatients(db)).toHaveLength(3);
+    expect(listFormats(db)).toHaveLength(2);
+  });
+
+  it('skips, without wiping, a database that has formats but no patients yet', () => {
+    // A freshly restored config pack looks like this: her format, no patients.
+    createFormat(db, { name: 'Progress note', sections: ['Location'], instructions: 'Mine.' });
+
+    const result = seedDatabase(db);
+
+    expect(result.seeded).toBe(false);
+    expect(result.skippedReason).toMatch(/--reset/);
+    expect(listFormats(db).map((f) => f.instructions)).toEqual(['Mine.']);
   });
 
   it('replaces the existing content when reset is asked for', () => {

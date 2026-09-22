@@ -1,21 +1,25 @@
-import { MAX_DETECT_FILES } from '@apunta/shared';
+import { MAX_DETECT_FILES, STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 
-import { detectFormat, errorMessage } from '../api/index.js';
-import { ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
+import { createStandardFormat, detectFormat, errorMessage } from '../api/index.js';
+import { DocumentIcon, ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { duplicateSection, parseSections } from '../lib/sections.js';
 import { asFormatDraft, type FormatDraft } from './formatDraft.js';
 
-type Choice = 'template' | 'examples' | 'manual';
+type Choice = 'standard' | 'template' | 'examples' | 'manual';
 
 /**
- * `prototype/onboarding-format.html`. All three options are live: upload a
- * blank template, upload two or three completed notes, or type the sections
- * out. The last one is the only path that cannot fail, so every failure
- * message on the other two points back at it.
+ * `prototype/onboarding-format.html`, plus one option the prototype does not
+ * have: the owner's standard progress note, first, recommended and selected on
+ * first run, so her format with her drafting instructions is one click away
+ * (`docs/decisions.md`, 2026-09-22). It saves straight away, with no preview:
+ * the sections are fixed, and Settings edits them afterwards like any format.
+ * The prototype's three stay as the alternatives: upload a blank template,
+ * upload two or three completed notes, or type the sections out. The last is
+ * the only path that cannot fail, so every failure message points back at it.
  */
 export function OnboardingFormat(): React.JSX.Element {
   useDocumentTitle('Note format');
@@ -23,7 +27,9 @@ export function OnboardingFormat(): React.JSX.Element {
   const location = useLocation();
   const returnTo = asFormatDraft(location.state)?.returnTo ?? '/patients/new';
 
-  const [choice, setChoice] = useState<Choice | null>(null);
+  // From Settings ("Add another format") she already has a format, most likely
+  // this one, so nothing is preselected there.
+  const [choice, setChoice] = useState<Choice | null>(returnTo === '/settings' ? null : 'standard');
   const [name, setName] = useState('');
   const [sectionsText, setSectionsText] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -58,6 +64,18 @@ export function OnboardingFormat(): React.JSX.Element {
     void navigate('/onboarding/preview', { state: draft });
   }
 
+  async function handleStandard(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    try {
+      await createStandardFormat();
+      await navigate(returnTo, { replace: true });
+    } catch (thrown) {
+      setError(errorMessage(thrown));
+      setBusy(false);
+    }
+  }
+
   async function handleUpload(kind: 'template' | 'examples'): Promise<void> {
     setBusy(true);
     setError(null);
@@ -78,6 +96,7 @@ export function OnboardingFormat(): React.JSX.Element {
   }
 
   const canContinue =
+    choice === 'standard' ||
     choice === 'manual' ||
     (choice === 'template' && files.length === 1) ||
     (choice === 'examples' && files.length >= 2);
@@ -93,6 +112,17 @@ export function OnboardingFormat(): React.JSX.Element {
       <p className="muted lede">Choose how to define it — we&apos;ll figure out the structure for you.</p>
 
       <div className="stack">
+        <Option
+          selected={choice === 'standard'}
+          onSelect={() => {
+            choose('standard');
+          }}
+          icon={<DocumentIcon />}
+          title="My standard progress note"
+          badge="Recommended"
+          subtitle={`${STANDARD_PROGRESS_FORMAT.sections.join(', ')}, with my drafting instructions`}
+          testId="option-standard"
+        />
         <Option
           selected={choice === 'template'}
           onSelect={() => {
@@ -198,14 +228,15 @@ export function OnboardingFormat(): React.JSX.Element {
         data-testid="format-continue"
         disabled={!canContinue || busy}
         onClick={() => {
-          if (choice === 'manual') handleManual();
+          if (choice === 'standard') void handleStandard();
+          else if (choice === 'manual') handleManual();
           else if (choice === 'template' || choice === 'examples') void handleUpload(choice);
         }}
       >
-        {busy ? 'Reading your file…' : 'Continue'}
+        {busy ? (choice === 'standard' ? 'Saving…' : 'Reading your file…') : 'Continue'}
       </button>
 
-      {busy && (
+      {busy && choice !== 'standard' && (
         <p className="small state-note" role="status">
           Reading the file and working out its sections. Nothing is saved until you say it looks right.
         </p>
@@ -236,14 +267,32 @@ interface OptionProps {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
+  badge?: string;
+  testId?: string;
 }
 
-function Option({ selected, onSelect, icon, title, subtitle }: OptionProps): React.JSX.Element {
+function Option({
+  selected,
+  onSelect,
+  icon,
+  title,
+  subtitle,
+  badge,
+  testId,
+}: OptionProps): React.JSX.Element {
   return (
-    <button type="button" className={selected ? 'btn-option selected' : 'btn-option'} onClick={onSelect}>
+    <button
+      type="button"
+      className={selected ? 'btn-option selected' : 'btn-option'}
+      onClick={onSelect}
+      {...(testId === undefined ? {} : { 'data-testid': testId })}
+    >
       {icon}
       <div>
-        <div className="opt-title">{title}</div>
+        <div className="opt-title">
+          {title}
+          {badge !== undefined && <span className="badge opt-badge">{badge}</span>}
+        </div>
         <div className="opt-sub">{subtitle}</div>
       </div>
     </button>

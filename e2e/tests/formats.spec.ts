@@ -30,6 +30,38 @@ function drop(collected: string[], line: string): void {
   collected.splice(0, collected.length, ...remaining);
 }
 
+test.describe('her standard progress note', () => {
+  test('is one click from first run, with her sections and her instructions', async ({ page, request }) => {
+    const before = ((await (await request.get('/api/formats')).json()) as { formats: { id: string }[] })
+      .formats.length;
+
+    await page.goto('/onboarding/format');
+    await expect(page.getByTestId('option-standard')).toContainText(
+      'Location, Client presentation, Risk review',
+    );
+    await page.getByTestId('format-continue').click();
+
+    await expect(page.getByRole('heading', { name: 'Add patient' })).toBeVisible();
+
+    const { formats } = (await (await request.get('/api/formats')).json()) as {
+      formats: { name: string; sections: string[]; instructions: string }[];
+    };
+    expect(formats).toHaveLength(before + 1);
+    const created = formats.at(-1);
+    expect(created?.name).toBe('Progress note');
+    expect(created?.sections).toEqual([
+      'Location',
+      'Client presentation',
+      'Risk review',
+      'Discussion',
+      'Intervention',
+      'Out of session actions',
+      'Note for next session',
+    ]);
+    expect(created?.instructions).toContain('Risk review and Out of session actions read');
+  });
+});
+
 test.describe('reading a format out of an uploaded file', () => {
   test('takes a .docx template through the confirm screen and into a note', async ({ page }) => {
     const formatName = uniqueName('E2E uploaded intake');

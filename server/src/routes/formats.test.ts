@@ -1,6 +1,12 @@
-import { NoteFormatListResponseSchema, NoteFormatSchema, type NoteFormat } from '@apunta/shared';
+import {
+  NoteFormatListResponseSchema,
+  NoteFormatSchema,
+  STANDARD_PROGRESS_FORMAT,
+  type NoteFormat,
+} from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { OWNER_PROGRESS_INSTRUCTIONS } from '../ai/default-instructions.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 
 let harness: TestApp;
@@ -11,6 +17,35 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await harness.close();
+});
+
+describe('POST /api/formats/standard', () => {
+  it('creates the owner’s progress note with her sections and her instructions', async () => {
+    const response = await harness.app.inject({ method: 'POST', url: '/api/formats/standard' });
+
+    expect(response.statusCode).toBe(201);
+    const format = NoteFormatSchema.parse(response.json());
+    expect(format).toMatchObject({
+      name: 'Progress note',
+      sections: [
+        'Location',
+        'Client presentation',
+        'Risk review',
+        'Discussion',
+        'Intervention',
+        'Out of session actions',
+        'Note for next session',
+      ],
+      source: 'manual',
+    });
+    expect(format.sections).toEqual([...STANDARD_PROGRESS_FORMAT.sections]);
+    expect(format.instructions).toBe(OWNER_PROGRESS_INSTRUCTIONS);
+
+    const list = NoteFormatListResponseSchema.parse(
+      (await harness.app.inject({ method: 'GET', url: '/api/formats' })).json(),
+    );
+    expect(list.formats.map((f) => f.id)).toEqual([format.id]);
+  });
 });
 
 describe('POST /api/formats', () => {

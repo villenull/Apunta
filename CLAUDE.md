@@ -62,7 +62,8 @@ under the first-pass message in the note's chat.
 - `npm run dev:fake` — same with `APUNTA_FAKE_AI=1`
 - `npm start` — production: build web, serve app at http://127.0.0.1:7717
 - `npm run seed` — dev only: load the prototype's sample practice into the
-  database (`npm run seed -- --reset` replaces existing content)
+  database. It exits 1 on a database with patients; `npm run seed -- --reset`
+  deletes everything and replaces it. Never against the live data dir
 - `npm run lint` / `npm run typecheck` / `npm test` — must all pass
 - `npm run e2e` — Playwright (builds first, runs server in fake mode)
 - `npm run eval` — model-quality harness over `e2e/fixtures/eval/`; the report

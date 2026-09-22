@@ -2,6 +2,7 @@ import {
   MAX_BRIEF_LINES,
   MAX_SUMMARY_EXCERPTS,
   MAX_SUMMARY_POINTS,
+  STANDARD_PROGRESS_FORMAT,
   textToSections,
   type BriefComposition,
   type DetectedFormat,
@@ -101,6 +102,42 @@ const ANXIETY_INTAKE: Sections = {
   Plan: 'Begin weekly CBT-based sessions.',
 };
 
+/**
+ * The two progress notes again in the owner's seven sections
+ * (`STANDARD_PROGRESS_FORMAT`, the default format since 2026-09-22), restated
+ * from the same prototype facts. Used only for a format whose sections are
+ * exactly hers, so no other format's fallback changes.
+ */
+const SLEEP_PROGRESS_OWNER: Sections = {
+  Location: '',
+  'Client presentation':
+    'John appears engaged; the restlessness observed at previous sessions was not present.',
+  'Risk review': 'None.',
+  Discussion: 'John reports improved sleep since last session and decreased frequency of intrusive thoughts.',
+  Intervention: 'CBT; introduced grounding exercises for use between sessions.',
+  'Out of session actions': 'John, practice grounding exercises between sessions.',
+  'Note for next session': 'Continue weekly sessions.',
+};
+
+/** Maria Ruiz's note in her sections; Client presentation blank, as in the SOAP one. */
+const GRIEF_PROGRESS_OWNER: Sections = {
+  Location: '',
+  'Client presentation': '',
+  'Risk review': 'None.',
+  Discussion:
+    "Maria reports a difficult week around the anniversary of her mother's death, with poor sleep and one missed day of work. She continues to attend her bereavement group.",
+  Intervention: 'Supportive therapy.',
+  'Out of session actions': 'Maria, resume morning walks.',
+  'Note for next session': 'Continue weekly supportive therapy.',
+};
+
+const CANNED_OWNER: readonly { readonly pattern: RegExp; readonly sections: Sections }[] = [
+  { pattern: /grief|bereave|anniversary|mother('s)? death|passed away/i, sections: GRIEF_PROGRESS_OWNER },
+  { pattern: /sleep|intrusive|anxiet/i, sections: SLEEP_PROGRESS_OWNER },
+];
+
+const OWNER_KEY = STANDARD_PROGRESS_FORMAT.sections.map((section) => section.toLowerCase()).join('\n');
+
 const CANNED: readonly { readonly pattern: RegExp; readonly sections: Sections }[] = [
   { pattern: /intake|new patient|first session|presenting problem/i, sections: ANXIETY_INTAKE },
   { pattern: /grief|bereave|anniversary|mother('s)? death|passed away/i, sections: GRIEF_PROGRESS },
@@ -132,20 +169,32 @@ function condense(source: string): string {
 }
 
 /**
+ * The two sections the owner's convention fills with "None." when she gave
+ * nothing for them (her instructions, "Empty sections").
+ */
+const NONE_BY_CONVENTION = new Set(['risk review', 'out of session actions']);
+
+/**
  * Map a canned note onto whatever sections this format actually defines.
  * A section the canned note has nothing for stays empty — which is now the
  * correct output for a section with no material, not a gap.
+ *
+ * The owner's own format gets her canned notes, her "None." convention, and
+ * the source in Discussion rather than Location when nothing canned fits.
  */
 export function fakeSectionsFor(request: GenerateNoteRequest): Sections {
   const source = sourceText(request);
-  const canned = CANNED.find((entry) => entry.pattern.test(source))?.sections ?? {};
-  const byLowerName = new Map(Object.entries(canned).map(([name, body]) => [name.toLowerCase(), body]));
+  const owner = request.sections.map((section) => section.trim().toLowerCase()).join('\n') === OWNER_KEY;
+  const canned = (owner ? CANNED_OWNER : CANNED).find((entry) => entry.pattern.test(source))?.sections;
+  const byLowerName = new Map(Object.entries(canned ?? {}).map(([name, body]) => [name.toLowerCase(), body]));
 
   const sections: Sections = {};
   request.sections.forEach((name, index) => {
     const match = byLowerName.get(name.toLowerCase());
     if (match !== undefined) sections[name] = match;
-    else sections[name] = index === 0 ? condense(source) : '';
+    else if (!owner) sections[name] = index === 0 ? condense(source) : '';
+    else if (name.toLowerCase() === 'discussion') sections[name] = condense(source);
+    else sections[name] = NONE_BY_CONVENTION.has(name.toLowerCase()) ? 'None.' : '';
   });
   return sections;
 }

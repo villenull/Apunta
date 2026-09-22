@@ -8,6 +8,7 @@ import {
   MAX_SUMMARY_EXCERPTS,
   MAX_SUMMARY_POINT_CHARS,
   MAX_SUMMARY_POINTS,
+  STANDARD_PROGRESS_FORMAT,
   UNCLEAR_MARKER,
 } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
@@ -17,6 +18,7 @@ import {
   GENERIC_INSTRUCTIONS,
   instructionsFor,
   INTAKE_NOTE_INSTRUCTIONS,
+  OWNER_PROGRESS_INSTRUCTIONS,
   PROGRESS_NOTE_INSTRUCTIONS,
 } from './default-instructions.js';
 import { NUM_CTX } from './ollama.js';
@@ -64,6 +66,17 @@ describe('default instructions', () => {
     };
     expect(PROGRESS_NOTE_INSTRUCTIONS).toBe(port('progress-note-instructions.md'));
     expect(INTAKE_NOTE_INSTRUCTIONS).toBe(port('intake-note-instructions.md'));
+    expect(OWNER_PROGRESS_INSTRUCTIONS).toBe(port('owner-progress-instructions.md'));
+  });
+
+  /** Her instructions describe her sections, and her one "None." convention. */
+  it('bundle the owner’s instructions for every one of her sections', () => {
+    for (const section of STANDARD_PROGRESS_FORMAT.sections) {
+      expect(OWNER_PROGRESS_INSTRUCTIONS).toContain(`**${section}**`);
+    }
+    expect(OWNER_PROGRESS_INSTRUCTIONS).toContain('"Risk review": "None."');
+    expect(OWNER_PROGRESS_INSTRUCTIONS).toContain('"Client presentation": ""');
+    expect(OWNER_PROGRESS_INSTRUCTIONS).toContain(UNCLEAR_MARKER);
   });
 
   /** The owner's answer to design question 5, in the text the model reads. */
@@ -103,16 +116,34 @@ describe('default instructions', () => {
     }
   });
 
-  it('picks a default by format name, then by section list, then generic', () => {
+  it('picks a default by section list, then by format name, then generic', () => {
+    const HERS = [...STANDARD_PROGRESS_FORMAT.sections];
+    expect(defaultInstructionsFor('Progress note', HERS)).toBe(OWNER_PROGRESS_INSTRUCTIONS);
+    expect(defaultInstructionsFor('Weekly session', HERS)).toBe(OWNER_PROGRESS_INSTRUCTIONS);
+    expect(
+      defaultInstructionsFor(
+        'Weekly session',
+        HERS.map((s) => ` ${s.toUpperCase()} `),
+      ),
+    ).toBe(OWNER_PROGRESS_INSTRUCTIONS);
+    // Her sections in another order, or one short, are not her format.
+    expect(defaultInstructionsFor('Weekly session', [...HERS].reverse())).toBe(GENERIC_INSTRUCTIONS);
+    expect(defaultInstructionsFor('Weekly session', HERS.slice(1))).toBe(GENERIC_INSTRUCTIONS);
+    // The sections decide before the name: a "Progress note" in SOAP keeps SOAP.
     expect(defaultInstructionsFor('Progress note', SOAP)).toBe(PROGRESS_NOTE_INSTRUCTIONS);
-    expect(defaultInstructionsFor('intake note', INTAKE)).toBe(INTAKE_NOTE_INSTRUCTIONS);
     expect(defaultInstructionsFor('Weekly session', SOAP)).toBe(PROGRESS_NOTE_INSTRUCTIONS);
+    expect(defaultInstructionsFor('intake note', INTAKE)).toBe(INTAKE_NOTE_INSTRUCTIONS);
+    // A "Progress note" with sections of its own gets hers, which follow any sections.
+    expect(defaultInstructionsFor('Progress note', CUSTOM)).toBe(OWNER_PROGRESS_INSTRUCTIONS);
     expect(defaultInstructionsFor('Supervision log', CUSTOM)).toBe(GENERIC_INSTRUCTIONS);
   });
 
   it('prefers the format’s own instructions when it has any', () => {
     expect(instructionsFor('  Write it my way.  ', 'Progress note', SOAP)).toBe('Write it my way.');
     expect(instructionsFor('   ', 'Progress note', SOAP)).toBe(PROGRESS_NOTE_INSTRUCTIONS);
+    expect(instructionsFor('', 'Progress note', [...STANDARD_PROGRESS_FORMAT.sections])).toBe(
+      OWNER_PROGRESS_INSTRUCTIONS,
+    );
   });
 });
 

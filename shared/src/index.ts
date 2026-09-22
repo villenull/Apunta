@@ -51,6 +51,7 @@ export {
   NoteFormatListResponseSchema,
   NoteFormatSchema,
   SectionsSchema,
+  STANDARD_PROGRESS_FORMAT,
   UpdateNoteFormatRequestSchema,
 } from './note-format.js';
 export type {
