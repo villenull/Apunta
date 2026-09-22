@@ -376,15 +376,19 @@ the existing `llm_model` setting or machine default, rejects cloud-backed
 tags, resolves once per local LLM operation, and leaves no dead Settings
 control; `/api/health` reports the effective model. The current
 `qwen3.5:4b-q4_K_M` control remains the default.
-The interim second pass found false positives in the fabrication scorer for the
-synthetic corpus (SI/HI abbreviation, pronoun attribution and
-non-diagnostic “consistent with”). Under the current production prompts its
-audit puts the 4B at 15% (3/20), not the shipped headline's 35%, and the 9B at
-35% (7/20); no candidate beats the shipped `qwen3.5:4b-q4_K_M` on this
-interim result. The headline reproduces, but single-run sub-score detail
-drifts and the original margin is not supportable. Prompt decontamination and
-the remaining candidate arms are pending; keep the 4B default until that work
-finishes. See `docs/eval-reports/2026-09-22-model-second-pass.md`.
+Model selection, second pass (2026-09-22): the final report is
+`docs/eval-reports/2026-09-22-model-second-pass.md`, with measured prompt
+proposals beside it in `docs/eval-reports/2026-09-22-decontam/`. Five runs per
+fixture on disposable ROCm Ollama plus single-run screens found three things:
+the deterministic scorer misattributes faithful SI/HI expansions, a father's
+pronoun and non-diagnostic `consistent with`; the audited 4B is 15% (3/20,
+two inventions), not the 35% headline. Nothing local beats it on the
+corrected instrument (9B 35%, 14B/Q8 30%, gemma3/phi4 20%; mistral 10% but
+out of hardware). The corpus cannot measure the original 35% versus 45%
+margin. Decontaminated prompts move the 4B from 35% to 15%, with one audited
+failure and no inventions, and the 9B from 40% to 20%; her `check:format` is
+zero flags for both. Proposed prompt files need owner/proxy approval; no
+production prompt or default changes yet.
 Synthetic Discussion follow-up is complete. The server now normalizes
 lowercase inline labels such as `sleep: …` into standalone short lowercase
 `label:` lines, grounds them in current-session material, and removes lone,
