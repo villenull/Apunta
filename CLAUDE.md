@@ -99,9 +99,9 @@ under the first-pass message in the note's chat.
   numbered migrations in `server/migrations/`.
 - Streaming responses are SSE (`text/event-stream`), event names documented
   in `shared/` types.
-- UI matches `prototype/style.css` design tokens (port them once into
-  `web/src/styles/`); keep the prototype's copy/text verbatim where a screen
-  exists in the prototype.
+- The prototype is historical reference only; the UI may intentionally drift.
+  Reuse its design tokens and copy where useful, but do not treat its layout
+  or text as binding.
 - Tests colocated as `*.test.ts`; e2e in `e2e/`. New behavior lands with
   tests in the same commit.
 - Commits: imperative subject, body says why.
