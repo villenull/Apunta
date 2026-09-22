@@ -189,6 +189,13 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   illustration with no real audio/transcript, and feature 3's fake refine run
   returned no edits. GitHub-flavoured Markdown was rendered at 1440 px and
   390 px with all local assets loading and no horizontal overflow.
+- **README presentation supersession (2026-09-22):** The feature demos now use
+  the requested 35/65 side-by-side table, focused synthetic GIF/PNG crops,
+  reduced-motion fallbacks and **Finish & copy** wording; the brief stacked
+  layout described above is superseded. Headless GitHub-Markdown renders at
+  1440 px and 390 px verified five GIF/PNG loads, no feature-title anchors and
+  no horizontal overflow. On phones, the table necessarily makes the media
+  smaller than the desktop presentation.
 - **Inference lifecycle and efficiency pass** (2026-09-08): the configured
   absolute live `whisper-cli` path was reconciled with the PATH-only audit;
   preview/fitted dictation now use half-core Whisper contention limits, final
