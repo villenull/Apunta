@@ -593,8 +593,9 @@ cross-family point that matches the control's *invention* count of zero.
 `mistral-small3.2:24b` is out on the hardware itself: at `num_ctx 16384` its
 18.3 GB of weights and cache do not fit in 16 GB of VRAM — `/api/ps` reports
 14.9 GB resident and `ollama ps` reports **19%/81% CPU/GPU** — so it runs partly
-on the CPU at **14.34 s a draft**, 7.5× the control, and it still fails four
-fixtures (20% shipped; not hand-audited, so that is an upper bound). That is the
+on the CPU at **14.34 s a draft**, 7.5× the control, and hand-audited its four flags come down to **two failures and one
+invention** (17's invented "struggle with motivation", 07's movie aside; 09 and
+19 are faithful sentences the banned patterns match without context). That is the
 same answer the first comparison gave for the 14B on a smaller card: a 24B at
 Q4 does not belong on this GPU at the production window, whatever its quality. The 14B is worse than either at 40%, slower again, and
 carries the broadest failure set of any arm measured (07, 08, 09, 10, 14, 16,
@@ -956,3 +957,4 @@ convention and the retraction rule are untouched.
    stopped there, the note describes and stops there, with no added language
    that interprets, connects, or explains what any of it means. Recording
 ```
+| `mistral-24b` | 20% (4/20) | 20% (4/20) | **10% (2/20)** | 1 | 17 invention, 07 carried (09 and 19 artefacts) |
