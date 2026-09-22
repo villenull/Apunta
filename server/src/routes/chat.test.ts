@@ -827,8 +827,8 @@ describe('POST /api/notes/:id/chat — Discussion subheading grounding', () => {
 
       expect(noteUpdated(events)).toBeDefined();
       const discussion = storedDiscussion(local, note.id);
-      expect(discussion).toContain('sleep:\nJohn described trouble sleeping before the move.');
-      expect(discussion).toContain('appetite:\nHe described a better appetite this week.');
+      expect(discussion).toContain('Sleep:\nJohn described trouble sleeping before the move.');
+      expect(discussion).toContain('Appetite:\nHe described a better appetite this week.');
     } finally {
       await local.close();
     }

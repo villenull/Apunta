@@ -26,8 +26,8 @@
     "sections": ["Discussion", "Plan"],
     "source": "Fictional client talked about sleep, waking early most days this week. Separately, she described an argument with her partner about chores.",
     "drafted": "### Sleep\nFictional client reported waking early most days this week.\n\n**Argument with her partner:**\nFictional client described an argument with her partner about chores.",
-    "expected": "sleep:\nFictional client reported waking early most days this week.\n\nargument with her partner:\nFictional client described an argument with her partner about chores.",
-    "expectedHeadings": ["sleep", "argument with her partner"]
+    "expected": "Sleep:\nFictional client reported waking early most days this week.\n\nArgument with her partner:\nFictional client described an argument with her partner about chores.",
+    "expectedHeadings": ["Sleep", "Argument with her partner"]
   },
   "discussionGenericHeadings": {
     "format": "Fictional discussion format",

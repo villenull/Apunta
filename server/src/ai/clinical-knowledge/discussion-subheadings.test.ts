@@ -30,18 +30,28 @@ describe('tidyDiscussionSubheadings', () => {
     expect(tidy(body)).toEqual({ body, headings: [], outcome: 'none' });
   });
 
-  it('keeps two topics under her lowercase subheadings as written', () => {
+  it('keeps two topics under capitalised subheadings, accepting either input case', () => {
     const body = [
       'sleep:',
       'John reports waking once a night.',
       '',
-      'argument with his partner:',
+      'Argument with his partner:',
       'John described an argument with his partner on Sunday.',
     ].join('\n');
-    expect(tidy(body)).toEqual({ body, headings: ['sleep', 'argument with his partner'], outcome: 'kept' });
+    expect(tidy(body)).toEqual({
+      body: [
+        'Sleep:',
+        'John reports waking once a night.',
+        '',
+        'Argument with his partner:',
+        'John described an argument with his partner on Sunday.',
+      ].join('\n'),
+      headings: ['Sleep', 'Argument with his partner'],
+      outcome: 'kept',
+    });
   });
 
-  it('rewrites markdown, bold and title-case headings into her form', () => {
+  it('rewrites markdown, bold and title-case headings into her capitalised form', () => {
     const body = [
       '### Sleep',
       'John reports waking once a night.',
@@ -55,13 +65,13 @@ describe('tidyDiscussionSubheadings', () => {
     expect(result.outcome).toBe('kept');
     expect(result.body).toBe(
       [
-        'sleep:',
+        'Sleep:',
         'John reports waking once a night.',
         '',
-        'moving house:',
+        'Moving House:',
         'John is moving house next month.',
         '',
-        'the argument:',
+        'The Argument:',
         'John described an argument with his partner.',
       ].join('\n'),
     );
@@ -70,17 +80,17 @@ describe('tidyDiscussionSubheadings', () => {
     const body = [
       'sleep: John reports waking once a night.',
       '',
-      'argument with his partner: John described an argument with his partner on Sunday.',
+      'Argument with his partner: John described an argument with his partner on Sunday.',
     ].join('\n');
     expect(tidy(body)).toEqual({
       body: [
-        'sleep:',
+        'Sleep:',
         'John reports waking once a night.',
         '',
-        'argument with his partner:',
+        'Argument with his partner:',
         'John described an argument with his partner on Sunday.',
       ].join('\n'),
-      headings: ['sleep', 'argument with his partner'],
+      headings: ['Sleep', 'Argument with his partner'],
       outcome: 'kept',
     });
   });
@@ -98,10 +108,10 @@ describe('tidyDiscussionSubheadings', () => {
       'John is moving house next month.',
     ].join('\n');
     expect(tidy(body)).toEqual({
-      body: ['sleep:', 'John said sleep is better.', '', 'moving:', 'John is moving house next month.'].join(
+      body: ['Sleep:', 'John said sleep is better.', '', 'Moving:', 'John is moving house next month.'].join(
         '\n',
       ),
-      headings: ['sleep', 'moving'],
+      headings: ['Sleep', 'Moving'],
       outcome: 'kept',
     });
   });
@@ -143,15 +153,15 @@ describe('tidyDiscussionSubheadings', () => {
     expect(tidy(body).body).toBe('John reports waking once a night. John sleeps better.');
   });
 
-  it('keeps a name capitalised, and lowercases a word the source capitalises only to start a sentence', () => {
+  it('preserves the model’s label casing after capitalising only the first letter', () => {
     const body = [
-      "John's Sister:",
+      "jOhN's Sister:",
       "John's sister is visiting.",
       '',
-      'Sleep:',
+      'sleep:',
       'John reports waking once a night.',
     ].join('\n');
-    expect(tidy(body).headings).toEqual(["John's sister", 'sleep']);
+    expect(tidy(body).headings).toEqual(["JOhN's Sister", 'Sleep']);
   });
 
   it('drops a lone subheading: one topic is one block of prose', () => {
@@ -233,7 +243,7 @@ describe('tidyDiscussionSubheadings', () => {
     ].join('\n');
     const result = tidy(body);
     expect(result.outcome).toBe('kept');
-    expect(result.headings).toEqual(['sleep', 'moving']);
+    expect(result.headings).toEqual(['Sleep', 'Moving']);
     expect(result.body).toContain(sentence);
   });
 
@@ -266,10 +276,10 @@ describe('tidyDiscussionSubheadings', () => {
       [
         'John came to session wanting to talk about two things.',
         '',
-        'sleep:',
+        'Sleep:',
         'John reports waking once a night.',
         '',
-        'moving:',
+        'Moving:',
         'John is moving house next month.',
       ].join('\n'),
     );

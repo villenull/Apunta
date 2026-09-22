@@ -23,7 +23,7 @@
     {
       "id": "discussion-two-topics",
       "source": "Dana reported sleeping six hours and waking early. Separately, Dana described an argument with her partner about chores.",
-      "expectedDiscussion": "two lowercase source-grounded labels; no generic category label"
+      "expectedDiscussion": "two source-grounded labels with first letters capitalised; no generic category label"
     },
     {
       "id": "refine-grounding",

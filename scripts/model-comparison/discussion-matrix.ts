@@ -30,7 +30,8 @@ const cases = [
     id: 'two-topics-labels',
     source:
       'Alex Roe attended from home. She described poor sleep and said the breathing exercise helped. She also discussed an argument with her sister and feeling uncertain about setting a boundary. No risk or plan was discussed.',
-    expected: 'Discussion has two or more grounded lowercase label lines, with facts conserved.',
+    expected:
+      'Discussion has two or more grounded label lines whose first letters are capitalised, with facts conserved.',
   },
   {
     id: 'withdrawn-topic-not-label',
@@ -91,14 +92,18 @@ async function runCase(testCase: (typeof cases)[number]) {
   const discussion = parsed?.Discussion ?? '';
   const labels = [...discussion.matchAll(/(?:^|\n)\s*label:\s*([^\n]+)/giu)].map((match) => match[1].trim());
   const withdrawnAbsent = !/grief/iu.test(discussion);
-  const allLabelsLowercase = labels.every((label) => label === label.toLowerCase());
+  const allLabelsCapitalized = labels.every((label) => /^\p{Lu}/u.test(label));
   const checks = [
     {
       id: 'schema-stop',
       pass: response.ok && done === 'stop' && parsed !== null,
       observed: { status: response.status, done, rawBytes: raw.length },
     },
-    { id: 'grounded-label-shape', pass: labels.length <= 1 || allLabelsLowercase, observed: labels },
+    {
+      id: 'grounded-label-shape',
+      pass: labels.length <= 1 || allLabelsCapitalized,
+      observed: labels,
+    },
     {
       id: 'withdrawn-topic-absent',
       pass: testCase.id !== 'withdrawn-topic-not-label' || withdrawnAbsent,

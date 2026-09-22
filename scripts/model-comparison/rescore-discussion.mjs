@@ -13,7 +13,7 @@ for (const row of rows) {
   const actions = String(parsed['Out of session actions'] ?? '');
   const combined = `${discussion}\n${actions}`;
   const labels = [...discussion.matchAll(/(?:^|\n)\s*label:\s*([^\n]+)/giu)].map((match) => match[1].trim());
-  const allLabelsLowercase = labels.every((label) => label === label.toLowerCase());
+  const allLabelsCapitalized = labels.every((label) => /^\p{Lu}/u.test(label));
   const schemaStop = row.checks.find((check) => check.id === 'schema-stop');
   const checks = [
     schemaStop ?? { id: 'schema-stop', pass: false, observed: 'missing prior check' },
@@ -21,8 +21,8 @@ for (const row of rows) {
       id: 'grounded-label-shape',
       pass:
         row.caseId === 'two-topics-labels'
-          ? labels.length >= 2 && allLabelsLowercase
-          : labels.length <= 1 && allLabelsLowercase,
+          ? labels.length >= 2 && allLabelsCapitalized
+          : labels.length <= 1 && allLabelsCapitalized,
       observed: labels,
     },
     {

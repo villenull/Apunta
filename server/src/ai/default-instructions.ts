@@ -443,9 +443,9 @@ this document — so nothing below is an instruction to invent a section.
   reports the client saying belongs here rather than anywhere else. When the
   session covered genuinely distinct topics that she kept apart, divide it
   into one part per topic, each opening on its own line with a subheading: a
-  few lowercase words from her own account of that topic, ending in a colon.
-  One topic, or topics she tied together, is one block of prose with no
-  subheading.
+  few words from her own account of that topic with the first letter
+  capitalised, ending in a colon. Accept either input case. One topic, or
+  topics she tied together, is one block of prose with no subheading.
 - **Intervention** — what she did, named rather than described.
 - **Out of session actions** — what happens before the next session, split by
   person when both have a task.

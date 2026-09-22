@@ -9,7 +9,7 @@ const turns = [
   {
     id: 'label-only-header',
     message:
-      'Rewrite the Discussion using label-only lowercase headers for sleep and the meeting, without changing or dropping any prose facts.',
+      'Rewrite the Discussion using label-only headers with the first letter capitalised for sleep and the meeting, without changing or dropping any prose facts.',
     forbidden: ['morning meeting'],
     required: ['six hours', 'suicidal thoughts', 'afternoon meeting'],
   },

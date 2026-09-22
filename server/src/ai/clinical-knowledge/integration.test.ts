@@ -59,7 +59,7 @@ describe('clinical-knowledge drafting integration', () => {
 
   it.each([
     ['one topic under a lone subheading becomes prose', 'discussionOneTopic', 'single'],
-    ['distinct topics keep her lowercase subheadings', 'discussionTopics', 'kept'],
+    ['distinct topics keep first-letter-capitalised subheadings', 'discussionTopics', 'kept'],
     [
       'generic category headings are not her words and become prose',
       'discussionGenericHeadings',
@@ -88,7 +88,7 @@ describe('clinical-knowledge drafting integration', () => {
   it('asks the model for subheadings in her words, and only for distinct topics', () => {
     const guide = renderClinicalKnowledgeGuide('Progress note', ['Discussion', 'Intervention']);
     expect(guide).toContain('genuinely distinct topics');
-    expect(guide).toContain('lowercase words taken from her own words');
+    expect(guide).toContain('first letter capitalised');
     expect(guide).toContain('single block of prose with no subheading');
     expect(guide).toContain('never use a general category');
     expect(guide).not.toMatch(/catch-all|neutral title|###/);

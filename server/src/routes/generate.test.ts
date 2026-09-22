@@ -175,9 +175,9 @@ describe('POST /api/generate — the happy path', () => {
     const note = events.at(-1)?.data['note'] as Note;
     const discussion = textToSections(note.content, ownerFormat.sections)['Discussion'] ?? '';
 
-    // Lowercase label lines of her own, and the model's sentences untouched.
-    expect(discussion.split('\n')[0]).toBe('sleep:');
-    expect(discussion).toContain('\nargument with his partner:\n');
+    // First-letter-capitalised label lines of her own, and the model's sentences untouched.
+    expect(discussion.split('\n')[0]).toBe('Sleep:');
+    expect(discussion).toContain('\nArgument with his partner:\n');
     expect(discussion).toContain(
       'John described an argument with his partner and said they have since talked it through.',
     );

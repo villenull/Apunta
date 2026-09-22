@@ -13,11 +13,11 @@ import { isLabelText } from '@apunta/shared';
  * The model is trusted with the split and nothing else. A subheading is
  * model-written text, so the server holds it to the note's own rules:
  *
- * - **Her form.** One heading per line, lowercase, ending in a colon
- *   (`sleep:`). That is the shape the note editor already shows bold
- *   (`leadingLabel` in `shared/`), and it copies into a records system as a
- *   plain line. A model that writes `### Sleep` or `**Sleep:**` is rewritten
- *   into it.
+ * - **Her form.** One heading per line, with its first letter capitalised,
+ *   ending in a colon (`Sleep:`). That is the shape the note editor already
+ *   shows bold (`leadingLabel` in `shared/`), and it copies into a records
+ *   system as a plain line. A model that writes `### Sleep` or `**Sleep:**` is
+ *   rewritten into it.
  * - **Her words.** Every content word of a heading must occur in the source
  *   (her typed notes and the transcript, retractions removed). A heading that
  *   names a category she never said — "Daily routines and functioning" — is
@@ -95,14 +95,42 @@ function isHeadingShaped(text: string): boolean {
 }
 
 /**
- * The heading on this line, or null for a line of prose.
- *
  * A plain `words:` line counts only when it is short and not the lead-in to a
  * list ("She named three things:" followed by bullets stays prose). A
- * lowercase inline label may carry its first sentence on the same line, but
+ * title-cased inline label may carry its first sentence on the same line, but
  * an ordinary sentence such as `Dana reports: …` remains prose so stripping
  * it would cut her words.
  */
+const INLINE_PROSE_WORDS: Record<string, true> = {
+  am: true,
+  are: true,
+  asked: true,
+  described: true,
+  did: true,
+  does: true,
+  explained: true,
+  felt: true,
+  had: true,
+  has: true,
+  is: true,
+  mentioned: true,
+  noted: true,
+  reported: true,
+  reports: true,
+  said: true,
+  says: true,
+  stated: true,
+  states: true,
+  was: true,
+  were: true,
+};
+
+function isInlineLabelTitle(title: string): boolean {
+  if (title === title.toLowerCase()) return true;
+  const words = title.toLowerCase().split(/\s+/);
+  return INLINE_PROSE_WORDS[words.at(-1) ?? ''] !== true;
+}
+
 function headingOn(line: string, next: string | undefined): HeadingLine | null {
   const trimmed = line.trim();
   if (trimmed === '') return null;
@@ -148,16 +176,15 @@ function headingOn(line: string, next: string | undefined): HeadingLine | null {
 
   // Small models sometimes put the first sentence on the same line as a
   // plain label (`sleep: She slept better.`), despite the output contract's
-  // request for a label-only line. Only a lowercase label is recognised here:
-  // an ordinary sentence such as `John reports: sleep is better.` must remain
-  // prose, not lose its lead-in when the server tidies the note.
+  // request for a label-only line. Attribution lead-ins such as
+  // `John reports: ...` remain prose so tidying never cuts her words.
   const inline = /^(.+?):\s+(.+)$/.exec(trimmed);
   if (inline) {
     const title = (inline[1] ?? '').trim();
     const rest = (inline[2] ?? '').trim();
     if (
       title !== '' &&
-      title === title.toLowerCase() &&
+      isInlineLabelTitle(title) &&
       isLabelText(title) &&
       wordsOf(title).length <= MAX_SUBHEADING_WORDS &&
       rest !== ''
@@ -241,34 +268,13 @@ export function headingIsGrounded(title: string, source: string): boolean {
 }
 
 /**
- * Her lowercase, except a name: "john's sister" would misname him. A word
- * counts as a name when the source never writes it in lowercase and either
- * capitalises it mid-sentence or runs it into another capitalised word
- * ("John Smith"). A word the source capitalises only to start a sentence
- * ("Sleep has been better") is lowercased.
+ * Capitalise the first letter and preserve the rest of the model's label.
+ * Grounding is case-insensitive, but the owner wants labels such as
+ * "Sleep:" and "Work stress:" rather than all-lowercase headings.
  */
-function lowercaseHeading(title: string, source: string): string {
-  return title
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\p{L}[\p{L}'’]*/gu, (word) => {
-      const lower = word.toLowerCase();
-      if (word === lower) return word;
-      const base = lower.replace(/['’]s$/, '');
-      const pattern = new RegExp(`(?<!\\p{L})${escapeRegExp(base)}(?!\\p{L})`, 'giu');
-      const found = [...source.matchAll(pattern)];
-      if (found.length === 0 || found.some((match) => match[0] === match[0].toLowerCase())) return lower;
-      const name = found.some((match) => {
-        const before = source.slice(0, match.index);
-        const after = source.slice(match.index + match[0].length);
-        return !/(?:^|[.!?]\s*|\n\s*)$/.test(before) || /^\s+\p{Lu}/u.test(after);
-      });
-      return name ? lower.charAt(0).toUpperCase() + lower.slice(1) : lower;
-    });
-}
-
-function escapeRegExp(text: string): string {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function capitaliseHeading(title: string): string {
+  const normalised = title.replace(/\s+/g, ' ').trim();
+  return normalised.replace(/\p{L}/u, (letter) => letter.toLocaleUpperCase('en-US'));
 }
 
 interface Block {
@@ -337,7 +343,7 @@ export function tidyDiscussionSubheadings(body: string, options: TidyOptions): T
   if (!valid) return prose('invalid');
   if (!titles.every((title) => headingIsGrounded(title, options.source))) return prose('ungrounded');
 
-  const headings = titles.map((title) => lowercaseHeading(title, options.source));
+  const headings = titles.map((title) => capitaliseHeading(title));
   const topicKeys = headings.map((heading) =>
     tokens(heading)
       .filter((word) => !STOPWORDS.has(word))

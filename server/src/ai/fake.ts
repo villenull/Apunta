@@ -133,13 +133,13 @@ const GRIEF_PROGRESS_OWNER: Sections = {
 
 /**
  * John Smith's session again, where she also talked through an argument with
- * his partner: two topics she kept apart, so Discussion is divided under her
- * lowercase subheadings. Chosen only when the source names sleep, an argument
- * and his partner, so every heading word is in what she wrote and the
- * server's check keeps them.
+ * his partner: two topics she kept apart, so Discussion is divided under
+ * first-letter-capitalised subheadings. Chosen only when the source names
+ * sleep, an argument and his partner, so every heading word is in what she
+ * wrote and the server's check keeps them.
  *
  * The headings are written the way a model reaches for them — `### Sleep` —
- * so the API normalising them into her own `sleep:` form is exercised end to
+ * so the API normalising them into her own `Sleep:` form is exercised end to
  * end, not only in the subheadings module's own tests.
  */
 const TWO_TOPIC_PROGRESS_OWNER: Sections = {
