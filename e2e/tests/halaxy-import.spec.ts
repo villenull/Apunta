@@ -17,7 +17,7 @@ test.describe('importing from Halaxy', () => {
     await page.getByTestId('halaxy-check').click();
     await expect(page.getByTestId('halaxy-summary')).toContainText('3 notes across 1 patient');
 
-    const patientName = uniqueName('Halaxy import');
+    const patientName = uniqueName('John Doe Halaxy');
     await page.getByTestId('halaxy-patient-name').fill(patientName);
     await page.getByTestId('halaxy-note').nth(0).uncheck();
     await expect(page.getByTestId('halaxy-run')).toHaveText('Import 2 notes');

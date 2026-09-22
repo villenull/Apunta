@@ -214,8 +214,17 @@
 }
 
 .list-item .name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: calc(14px * var(--font-scale));
   font-weight: 500;
+}
+
+.list-item > div:not(.avatar) {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .list-item .sub {
@@ -2292,16 +2301,21 @@ select:disabled {
 /* Archive: hidden from the working list, deleted from nothing. */
 
 .patient-entry {
-  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.patient-entry .list-item {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .patient-entry-actions {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+  flex: 0 0 auto;
   display: flex;
   gap: 4px;
+  margin-right: 10px;
   opacity: 0;
 }
 
