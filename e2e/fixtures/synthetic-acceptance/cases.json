@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "2026-09-22-synthetic-acceptance",
+  "cases": [
+    {
+      "id": "dictation-retraction-and-safety",
+      "audioScript": "dictation-script.txt",
+      "expectedTranscriptFacts": [
+        "sleep was better",
+        "corrected four hours to six hours",
+        "denied suicidal thoughts",
+        "call on Tuesday",
+        "morning meeting corrected to afternoon meeting"
+      ],
+      "forbiddenCurrentFacts": ["four hours", "morning meeting was cancelled"],
+      "features": ["pause", "um/hmm hesitation", "repetition", "spoken correction", "negation", "number"]
+    },
+    {
+      "id": "discussion-single-topic",
+      "source": "Dana reported sleeping six hours and waking early.",
+      "expectedDiscussion": "plain prose with no label"
+    },
+    {
+      "id": "discussion-two-topics",
+      "source": "Dana reported sleeping six hours and waking early. Separately, Dana described an argument with her partner about chores.",
+      "expectedDiscussion": "two lowercase source-grounded labels; no generic category label"
+    },
+    {
+      "id": "refine-grounding",
+      "source": "Discussion: Dana reported sleeping six hours and waking early.",
+      "request": "Add a sentence about the argument with her partner.",
+      "expected": "do not add a fact absent from the current note"
+    }
+  ]
+}

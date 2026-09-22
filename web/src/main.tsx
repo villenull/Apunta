@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
-
+import { createBrowserRouter, RouterProvider } from 'react-router';
 import { App } from './App.js';
 import { applyAnimations } from './lib/appearance.js';
 import './styles/tokens.css';
@@ -18,8 +17,6 @@ if (!container) throw new Error('#root is missing from index.html');
 
 createRoot(container).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <RouterProvider router={createBrowserRouter([{ path: '*', element: <App /> }])} />
   </StrictMode>,
 );

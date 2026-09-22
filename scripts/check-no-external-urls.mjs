@@ -77,9 +77,14 @@ function isDownloadHost(url) {
   return DOWNLOAD_HOSTS.some((host) => new RegExp(`^https://${host.replaceAll('.', '\\.')}(/|$)`).test(url));
 }
 
-/** Only the bundled setup entry point may name a download host. */
+/** Only the bundled setup entry point and explicitly authorized comparison
+ * downloader may name a pinned model-download host. */
 function allowsDownloadHosts(file) {
-  return /(^|\/)setup\/setup\.mjs$/.test(file) || /(^|\/)installer\//.test(file);
+  return (
+    /(^|\/)setup\/setup\.mjs$/.test(file) ||
+    /(^|\/)installer\//.test(file) ||
+    /(^|\/)scripts\/model-comparison\/acquire\.mjs$/.test(file)
+  );
 }
 
 const SKIP_DIRECTORIES = new Set(['node_modules', '.git']);

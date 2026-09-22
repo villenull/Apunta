@@ -372,12 +372,10 @@ The recipe, repeatable on any machine with the repo:
 5. Pin the model. There is no Settings field for it, deliberately, so:
    `curl -X PUT 127.0.0.1:7717/api/settings -H "content-type: application/json"
    -d '{"llm_model":"qwen3.5:4b-q4_K_M"}'`
-6. Her transcription vocabulary goes in `stt_vocabulary`:
-   `curl -X PUT 127.0.0.1:7717/api/settings -H "content-type: application/json"
-   -d '{"stt_vocabulary":["term one","term two"]}'`. The Settings → Recording
-   screen that used to take it was removed on 2026-09-21 at the owner's
-   request. Not provided as of this writing, so the pack ships without it —
-   add it and re-back-up when she supplies the list.
+6. The optional `stt_vocabulary` setting remains supported by the API for
+   existing deployments, but this pack intentionally leaves it unset. The
+   removed Settings → Recording editor is not being restored, and no owner
+   vocabulary-list step is pending.
 7. Settings → Back up and restore → **Back up now**. The zip appears in
    `<data dir>/backups/apunta-backup-<date>.zip`; its `manifest.json` must
    say `"patients": 0` and `"note_formats": 1`. If you back up more than
@@ -394,7 +392,7 @@ each machine sets its own; the bundled app needs none.
 | Check | ☐ | Notes |
 | --- | --- | --- |
 | Pack restores on the Mac with format + instructions + model pin intact | ☐ | Verified Linux→Linux in M10; the Mac pass is what this row is for |
-| Her vocabulary list added and the pack re-cut | ☐ | Blocked on her list |
+| No vocabulary-list step is pending; the existing API setting remains available | — | Deliberately excluded from this pack by the owner decision |
 
 ---
 

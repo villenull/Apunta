@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.1.0",
+  "source": "/home/villenull/Projects/Apunta/scripts/model-comparison/results/records.jsonl",
+  "models": [
+    {
+      "model": "qwen3.5:4b-q4_K_M",
+      "records": 60,
+      "outcomes": {
+        "pass": 9,
+        "fail": 51,
+        "unsupported": 0,
+        "unmeasured": 0
+      },
+      "fabrication": {
+        "numerator": 18,
+        "denominator": 60
+      },
+      "safety": {
+        "numerator": 42,
+        "denominator": 60
+      },
+      "salientFacts": {
+        "numerator": 681,
+        "denominator": 849
+      },
+      "coldMs": {
+        "p50": 4053.392813,
+        "p95": 4053.392813,
+        "n": 1
+      },
+      "warmMs": {
+        "p50": 5275.973449000012,
+        "p95": 11329.553904,
+        "n": 59
+      },
+      "retries": 0,
+      "stopReasons": {
+        "stop": 60
+      }
+    },
+    {
+      "model": "qwen3.5:2b-q4_K_M",
+      "records": 60,
+      "outcomes": {
+        "pass": 3,
+        "fail": 57,
+        "unsupported": 0,
+        "unmeasured": 0
+      },
+      "fabrication": {
+        "numerator": 24,
+        "denominator": 60
+      },
+      "safety": {
+        "numerator": 33,
+        "denominator": 60
+      },
+      "salientFacts": {
+        "numerator": 525,
+        "denominator": 849
+      },
+      "coldMs": {
+        "p50": 2387.549172000028,
+        "p95": 2387.549172000028,
+        "n": 1
+      },
+      "warmMs": {
+        "p50": 1147.3441640000092,
+        "p95": 2112.9117519999854,
+        "n": 59
+      },
+      "retries": 0,
+      "stopReasons": {
+        "stop": 60
+      }
+    },
+    {
+      "model": "prism-ml/Bonsai-8B-gguf/Bonsai-8B-Q1_0.gguf",
+      "records": 60,
+      "outcomes": {
+        "pass": 8,
+        "fail": 52,
+        "unsupported": 0,
+        "unmeasured": 0
+      },
+      "fabrication": {
+        "numerator": 32,
+        "denominator": 60
+      },
+      "safety": {
+        "numerator": 42,
+        "denominator": 60
+      },
+      "salientFacts": {
+        "numerator": 644,
+        "denominator": 849
+      },
+      "coldMs": {
+        "p50": 8035.291250000009,
+        "p95": 8035.291250000009,
+        "n": 1
+      },
+      "warmMs": {
+        "p50": 2502.038942000014,
+        "p95": 4932.887812000001,
+        "n": 59
+      },
+      "retries": 0,
+      "stopReasons": {
+        "stop": 60
+      }
+    },
+    {
+      "model": "prism-ml/Bonsai-4B-gguf/Bonsai-4B-Q1_0.gguf",
+      "records": 60,
+      "outcomes": {
+        "pass": 6,
+        "fail": 54,
+        "unsupported": 0,
+        "unmeasured": 0
+      },
+      "fabrication": {
+        "numerator": 41,
+        "denominator": 60
+      },
+      "safety": {
+        "numerator": 36,
+        "denominator": 60
+      },
+      "salientFacts": {
+        "numerator": 681,
+        "denominator": 849
+      },
+      "coldMs": {
+        "p50": 1842.8891869999934,
+        "p95": 1842.8891869999934,
+        "n": 1
+      },
+      "warmMs": {
+        "p50": 2563.296788000036,
+        "p95": 4630.629792000051,
+        "n": 59
+      },
+      "retries": 1,
+      "stopReasons": {
+        "stop": 60
+      }
+    }
+  ]
+}

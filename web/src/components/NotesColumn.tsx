@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 
 import type { LoadState } from '../hooks/useLoader.js';
 import { firstName, formatNoteDate, notePreview } from '../lib/format.js';
-import { PlusIcon, TrashIcon } from './icons.js';
+import { BackIcon, PlusIcon, TrashIcon } from './icons.js';
 
 export interface NotesColumnProps {
   patient: PatientListItem | null;
@@ -15,6 +15,7 @@ export interface NotesColumnProps {
   onOpenView: (view: 'plan' | 'prep' | 'brainstorm') => void;
   onRetry: () => void;
   onDeletePatient: () => void;
+  onBackToPatients: () => void;
 }
 
 /** Middle column of `prototype/patients.html`. */
@@ -27,13 +28,21 @@ export function NotesColumn({
   onOpenView,
   onRetry,
   onDeletePatient,
+  onBackToPatients,
 }: NotesColumnProps): React.JSX.Element {
   const navigate = useNavigate();
-
   return (
     <div className="col col-notes">
       <div className="col-header">
-        <h3 data-testid="notes-header">{patient ? `${firstName(patient.name)}’s notes` : 'Notes'}</h3>
+        <div className="col-header-title">
+          <button type="button" className="narrow-back" onClick={onBackToPatients}>
+            <BackIcon className="icon icon-xs" />
+            <span>Patients</span>
+          </button>
+          <h3 data-testid="notes-header" tabIndex={-1}>
+            {patient ? `${firstName(patient.name)}’s notes` : 'Notes'}
+          </h3>
+        </div>
         {patient && (
           <button
             type="button"
@@ -111,11 +120,15 @@ export function NotesColumn({
   );
 }
 
-type NoteListProps = Omit<NotesColumnProps, 'patient' | 'onDeletePatient' | 'view' | 'onOpenView'> & {
+type NoteListProps = Omit<
+  NotesColumnProps,
+  'patient' | 'onDeletePatient' | 'onBackToPatients' | 'view' | 'onOpenView'
+> & {
   patient: PatientListItem;
 };
 
 function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListProps): React.JSX.Element {
+  const navigate = useNavigate();
   if (notes.status === 'loading') return <p className="small state-note">Loading notes…</p>;
 
   if (notes.status === 'error') {
@@ -130,7 +143,21 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
   }
 
   if (notes.data.length === 0) {
-    return <p className="small col-hint notes">No notes yet for {patient.name}.</p>;
+    return (
+      <div className="empty-column-state notes-empty">
+        <p className="small col-hint notes">No notes yet for {patient.name}.</p>
+        <button
+          type="button"
+          className="btn btn-primary btn-compact"
+          onClick={() => {
+            void navigate(`/capture/${patient.id}`);
+          }}
+        >
+          <PlusIcon className="icon icon-sm" />
+          Create first note
+        </button>
+      </div>
+    );
   }
 
   return (

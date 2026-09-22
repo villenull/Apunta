@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
+import { open, type FileHandle } from 'node:fs/promises';
 import { statSync } from 'node:fs';
 import { availableParallelism } from 'node:os';
 import { basename } from 'node:path';
@@ -108,12 +109,20 @@ export function buildWhisperArgs(input: {
    * on a clip that short is noise, shown until the next refresh replaced it.
    */
   readonly greedy?: boolean | undefined;
+  /**
+   * Optional upper bound after a signal-based trailing-silence scan. The
+   * original WAV remains untouched; whisper simply does not decode the padded
+   * tail where it is prone to inventing a closing phrase.
+   */
+  readonly durationMs?: number | undefined;
 }): string[] {
   const args = ['--model', input.modelPath, '--file', input.wavPath, '--print-progress'];
   const prompt = (input.prompt ?? '').trim();
   if (prompt !== '') args.push('--prompt', prompt);
   if (input.threads !== undefined) args.push('--threads', String(input.threads));
   if (input.audioContext !== undefined) args.push('--audio-ctx', String(input.audioContext));
+  if (input.durationMs !== undefined)
+    args.push('--duration', String(Math.max(1, Math.round(input.durationMs))));
   if (input.language !== undefined) args.push('--language', input.language);
   if (input.greedy === true) args.push('--beam-size', '1', '--best-of', '1', '--no-fallback');
   return args;
@@ -151,7 +160,110 @@ export function previewAudioContext(durationSeconds: number): number {
   const rounded = Math.ceil(wanted / 64) * 64;
   return Math.min(AUDIO_CONTEXT_FULL, Math.max(AUDIO_CONTEXT_MIN, rounded));
 }
+/**
+ * A recorder normally leaves a quiet tail after the last word. Whisper's
+ * decoder can treat that unbounded padded tail as an invitation to continue
+ * with a stock closing phrase. Trim only an exactly digital-silent tail, and
+ * leave a short pad so a final consonant is not cut at the boundary.
+ *
+ * This intentionally favors false negatives: any nonzero quiet material is
+ * treated as speech/noise and preserved. It cannot classify microphone noise
+ * versus a very quiet word without a speech model, so this is not universal
+ * voice activity detection.
+ */
+export const TRAILING_SILENCE_MIN_MS = 800;
+export const TRAILING_SILENCE_PAD_MS = 300;
+// Exact-zero only: nonzero quiet material is speech/noise we must preserve.
+const TRAILING_SILENCE_PEAK = 0;
+const WAV_HEADER_SCAN_BYTES = 64 * 1024;
 
+/**
+ * Return a whisper `--duration` bound for a PCM16 mono WAV with a confident
+ * trailing-silence run. `0` means the file is exactly digital silence and
+ * should use the existing `transcription_empty` contract without spawning
+ * Whisper. Unsupported WAV variants and unreadable scratch files return null,
+ * preserving the existing direct-to-whisper path.
+ */
+export async function detectTrailingSilenceDurationMs(
+  wavPath: string,
+  durationSeconds: number,
+  signal?: AbortSignal,
+): Promise<number | null> {
+  let file: FileHandle | undefined;
+  try {
+    file = await open(wavPath, 'r');
+    const totalBytes = (await file.stat()).size;
+    const header = Buffer.alloc(Math.min(WAV_HEADER_SCAN_BYTES, totalBytes));
+    const { bytesRead } = await file.read(header, 0, header.length, 0);
+    if (
+      bytesRead < 12 ||
+      header.toString('ascii', 0, 4) !== 'RIFF' ||
+      header.toString('ascii', 8, 12) !== 'WAVE'
+    )
+      return null;
+
+    let dataOffset = -1;
+    let dataBytes = 0;
+    let pcm16Mono = false;
+    let sampleRate = 0;
+    let offset = 12;
+    while (offset + 8 <= bytesRead) {
+      const id = header.toString('ascii', offset, offset + 4);
+      const size = header.readUInt32LE(offset + 4);
+      const body = offset + 8;
+      if (id === 'fmt ' && body + 16 <= bytesRead) {
+        pcm16Mono =
+          header.readUInt16LE(body) === 1 &&
+          header.readUInt16LE(body + 2) === 1 &&
+          header.readUInt16LE(body + 14) === 16;
+        sampleRate = header.readUInt32LE(body + 4);
+      } else if (id === 'data') {
+        dataOffset = body;
+        dataBytes = Math.min(size === 0 || size === 0xffffffff ? totalBytes - body : size, totalBytes - body);
+        break;
+      }
+      const next = body + size + (size % 2);
+      if (next <= offset) break;
+      offset = next;
+    }
+    if (!pcm16Mono || sampleRate <= 0 || dataOffset < 0 || dataBytes < 2 || dataBytes % 2 !== 0) return null;
+
+    const samples = Math.floor(dataBytes / 2);
+    const fullDurationMs = Math.min(durationSeconds * 1000, (samples * 1000) / sampleRate);
+    const chunk = Buffer.alloc(64 * 1024);
+    let remainingBytes = dataBytes;
+    let lastActive = -1;
+    while (remainingBytes > 0) {
+      if (signal?.aborted) return null;
+      const bytes = Math.min(chunk.length, remainingBytes);
+      remainingBytes -= bytes;
+      const { bytesRead: chunkBytes } = await file.read(chunk, 0, bytes, dataOffset + remainingBytes);
+      if (chunkBytes !== bytes || chunkBytes % 2 !== 0) return null;
+      for (let index = chunkBytes - 2; index >= 0; index -= 2) {
+        if (Math.abs(chunk.readInt16LE(index)) > TRAILING_SILENCE_PEAK) {
+          lastActive = remainingBytes / 2 + index / 2;
+          break;
+        }
+      }
+      if (lastActive >= 0) break;
+    }
+
+    // An exactly silent file has no speech to preserve. Use the existing empty
+    // transcription contract rather than asking Whisper to invent text.
+    if (lastActive < 0) return 0;
+    const tailSamples = samples - (lastActive + 1);
+    if (tailSamples < (sampleRate * TRAILING_SILENCE_MIN_MS) / 1000) return null;
+    const trimmedMs = Math.min(
+      fullDurationMs,
+      ((lastActive + 1) * 1000) / sampleRate + TRAILING_SILENCE_PAD_MS,
+    );
+    return trimmedMs < fullDurationMs ? Math.max(1, Math.round(trimmedMs)) : null;
+  } catch {
+    return null;
+  } finally {
+    await file?.close().catch(() => undefined);
+  }
+}
 /**
  * The vocabulary list, rendered as Whisper's `initial_prompt`.
  *
@@ -301,6 +413,15 @@ export class WhisperCppSttProvider implements SttProvider {
     }
     const previewModel = request.preview === true ? (this.options.resolvePreviewModel?.() ?? null) : null;
     const chosen = previewModel !== null && fileExists(previewModel) ? previewModel : model;
+    const durationMs =
+      request.preview === true || !fileExists(request.wavPath)
+        ? null
+        : await detectTrailingSilenceDurationMs(request.wavPath, request.durationSeconds, request.signal);
+    if (durationMs === 0) {
+      if (binary.includes('/') && !fileExists(binary))
+        throw aiError('whisper_missing', `can't find whisper binary (${binary.length} chars)`);
+      throw aiError('transcription_empty', 'recording contains only digital silence');
+    }
 
     const prompt = sttPrompt(request.vocabulary);
     const args = buildWhisperArgs({
@@ -309,6 +430,7 @@ export class WhisperCppSttProvider implements SttProvider {
       prompt,
       threads: this.options.threads ?? whisperThreads(request.preview === true || request.fitted === true),
       language: this.options.resolveLanguage?.() ?? DEFAULT_STT_LANGUAGE,
+      ...(durationMs === null ? {} : { durationMs }),
       ...(request.preview === true
         ? { audioContext: previewAudioContext(request.durationSeconds), greedy: true }
         : request.fitted === true

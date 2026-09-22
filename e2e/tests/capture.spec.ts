@@ -60,7 +60,7 @@ test.describe('recording a session', () => {
 
     const panel = page.getByTestId('record-panel');
     await expect(panel).toBeVisible();
-    await expect(panel).toContainText('Recording…');
+    await expect(panel).toContainText('Recording');
 
     // The prototype's mm:ss timer, running off the samples that have actually
     // arrived — so a timer moving past 00:00 means audio is flowing.

@@ -39,31 +39,36 @@ export function LiveRecording({
   }, [preview]);
 
   return (
-    <div className="record-ui" data-testid="record-panel">
+    <div className="record-ui capture-stage" data-testid="record-panel">
+      <div className="record-stage-copy">
+        <p className="capture-stage-status record-label" role="status" data-testid="record-stage-status">
+          Recording session
+        </p>
+        <p className="small muted">
+          Speak naturally. You can add typed notes before or while this recording.
+        </p>
+      </div>
       {/*
-        The dot is the meter: faint and still when nothing is heard, swelling
-        and colouring with her voice — the one answer to "is this hearing me"
-        on the timescale of her voice itself (owner, 2026-09-05; the bar it
-        replaces looked like a stray widget).
+        The meter answers "is this hearing me" immediately. It is present only
+        while the microphone is active; the words and stage label carry the
+        actual progress.
       */}
       <div
         className="record-dot recording"
         data-testid="record-dot"
         style={{ ['--level' as string]: String(level) }}
+        aria-hidden="true"
       >
         <MicIcon className="icon record-mic" />
       </div>
       <p className="timer" data-testid="record-timer">
         {formatTimer(seconds)}
       </p>
-      <p className="muted record-label" role="status">
-        Recording…
-      </p>
 
-      <div className="record-preview" data-testid="record-preview">
+      <div className="record-preview capture-stage-preview" data-testid="record-preview">
         {preview === '' ? (
           <p className="small muted record-preview-waiting">
-            <ThinkingDots ariaLabel="Listening" /> Listening…
+            <span>Listening for words…</span> <ThinkingDots ariaLabel="Listening for words" />
           </p>
         ) : (
           <>

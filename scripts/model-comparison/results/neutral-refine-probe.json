@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.1.0",
+  "model": "qwen3.5:4b-q4_K_M",
+  "caseId": "neutral-obsolete-wording",
+  "before": "Location:\n\nClient presentation:\n\nRisk review: None.\n\nDiscussion: Dana reported sleep was better this week and corrected the number to six hours, not four. She denied suicidal thoughts and plans to call on Tuesday. She noted that the afternoon meeting was cancelled.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session:",
+  "request": "Make the Discussion easier to read without adding or changing any facts.",
+  "rawSse": "event: message\ndata: {\"message\":{\"id\":\"01a0ca6a-806b-70b8-88d0-038f25ca2b96\",\"note_id\":\"01a0ca6a-8069-7018-a448-4261458cb64c\",\"role\":\"user\",\"text\":\"Make the Discussion easier to read without adding or changing any facts.\",\"ref_quote\":null,\"created_at\":\"2026-09-22T18:39:32.459Z\"}}\n\nevent: status\ndata: {\"stage\":\"connecting\",\"message\":\"Thinking…\"}\n\nevent: status\ndata: {\"stage\":\"drafting\",\"message\":\"Drafting the note…\"}\n\nevent: note-updated\ndata: {\"note\":{\"id\":\"01a0ca6a-8069-7018-a448-4261458cb64c\",\"patient_id\":\"01a0ca6a-8068-7092-ae2f-35739745d6e9\",\"format_id\":\"01a0ca6a-8064-70df-bdd5-13e02c4ff3f6\",\"title\":\"neutral obsolete-wording probe\",\"status\":\"draft\",\"content\":\"Location:\\n\\nClient presentation:\\n\\nRisk review: None.\\n\\nDiscussion: Dana reported sleep was better this week and corrected the number to six hours, not four.\\n\\nShe denied suicidal thoughts and plans to call on Tuesday.\\n\\nShe noted that the afternoon meeting was cancelled.\\n\\nIntervention:\\n\\nOut of session actions:\\n\\nNote for next session:\",\"created_at\":\"2026-09-22T18:39:32.457Z\",\"updated_at\":\"2026-09-22T18:39:35.871Z\",\"published_at\":null},\"empty_sections\":[\"Location\",\"Client presentation\",\"Intervention\",\"Out of session actions\",\"Note for next session\"]}\n\nevent: token\ndata: {\"text\":\"I have reformatted the Discussion section to improve readability while keeping all facts exactly as you stated them.\"}\n\nevent: message\ndata: {\"message\":{\"id\":\"01a0ca6a-8dbf-7066-b92d-1c3efc1753b6\",\"note_id\":\"01a0ca6a-8069-7018-a448-4261458cb64c\",\"role\":\"assistant\",\"text\":\"I have reformatted the Discussion section to improve readability while keeping all facts exactly as you stated them.\",\"ref_quote\":null,\"created_at\":\"2026-09-22T18:39:35.871Z\"}}\n\n",
+  "reply": "I have reformatted the Discussion section to improve readability while keeping all facts exactly as you stated them.",
+  "changed": true,
+  "after": "Location:\n\nClient presentation:\n\nRisk review: None.\n\nDiscussion: Dana reported sleep was better this week and corrected the number to six hours, not four.\n\nShe denied suicidal thoughts and plans to call on Tuesday.\n\nShe noted that the afternoon meeting was cancelled.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session:",
+  "checks": [
+    {
+      "id": "obsolete-phrase-absent",
+      "expected": "morning meeting absent because request did not authorize it",
+      "observed": "Location:\n\nClient presentation:\n\nRisk review: None.\n\nDiscussion: Dana reported sleep was better this week and corrected the number to six hours, not four.\n\nShe denied suicidal thoughts and plans to call on Tuesday.\n\nShe noted that the afternoon meeting was cancelled.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session:",
+      "pass": true
+    },
+    {
+      "id": "current-facts-preserved",
+      "expected": "six hours, suicidal thoughts negation, afternoon meeting preserved",
+      "observed": "Location:\n\nClient presentation:\n\nRisk review: None.\n\nDiscussion: Dana reported sleep was better this week and corrected the number to six hours, not four.\n\nShe denied suicidal thoughts and plans to call on Tuesday.\n\nShe noted that the afternoon meeting was cancelled.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session:",
+      "pass": true
+    },
+    {
+      "id": "response-recorded",
+      "expected": "assistant response",
+      "observed": "I have reformatted the Discussion section to improve readability while keeping all facts exactly as you stated them.",
+      "pass": true
+    }
+  ],
+  "outcome": "pass"
+}

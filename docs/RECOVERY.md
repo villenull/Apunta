@@ -205,9 +205,10 @@ pending.
 
 ## After recovery readiness
 
-Continue with `docs/HANDOFF.md` in its stated order: first the hands-on
-acceptance of dictation, grounded Discussion/refine/retraction behavior and the
-hosted GitHub presentation; then the controlled vocabulary and model-efficiency
-experiments. Existing green automated gates are evidence for the committed
-code, not substitutes for owner, microphone, clean-device or target-Mac
-acceptance.
+Continue with `docs/HANDOFF.md` in its stated order: first the synthetic
+acceptance of dictation, grounded Discussion/refine/retraction behavior and
+the hosted GitHub presentation; then the authorized four-model local-LLM
+comparison. Physical-microphone acceptance is waived for this round, and no
+candidate or gate is presumed passed. Existing green automated gates are
+evidence for the committed code, not substitutes for owner, clean-device or
+target-Mac acceptance.

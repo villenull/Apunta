@@ -40,15 +40,16 @@ agent history is not a prerequisite.
    no confidential patients, notes, transcripts, chats, recordings, Claude
    export, backup paths, secrets, or patient-derived vocabulary. Never copy,
    reset, inspect or export the patient-loaded database to prove recovery.
-2. **Then improve the local AI without changing defaults prematurely.**
-   Preserve the hands-on dictation and grounded
-   Discussion/refine/retraction acceptance gate first. After that, follow
-   `docs/research/local-ai-efficiency-2026-09-22.md`: bounded synthetic
-   vocabulary experiment, frozen current 4B baseline, exact
-   `qwen3.5:2b-q4_K_M`, then compatible Bonsai candidates only with explicit
-   model-acquisition authorization. Clinical fidelity, schema behavior,
-   latency, memory, runtime/license compatibility and target-Mac evidence all
-   gate adoption. No research candidate is the current default.
+2. **Then measure the local AI without changing defaults prematurely.**
+   Preserve the grounded Discussion/refine/retraction acceptance gate first.
+   The current round authorizes a four-arm local LLM comparison only:
+   `qwen3.5:4b-q4_K_M` control, `qwen3.5:2b-q4_K_M`,
+   `prism-ml/Bonsai-8B-gguf` (`Bonsai-8B-Q1_0.gguf`), and
+   `prism-ml/Bonsai-4B-gguf` (`Bonsai-4B-Q1_0.gguf`). Clinical safety remains
+   the gate: retain negation, quantities, supplied facts and ordinary-language
+   fidelity. Synthetic acceptance is sufficient for this round; physical
+   microphone acceptance is waived. No candidate is the current default, and
+   no work-in-progress result is a pass claim.
 
 ## Who is who
 
@@ -276,16 +277,17 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   do not infer that she can use a practice export. See the wife-facing
   [existing-notes migration guide](import-existing-notes.md) for the current
   source checklists and public-doc research (accessed 2026-09-08).
-- **Remote testing bridge**: Tailscale Serve on the partner's PC, so she can
-  try the app from her MacBook before anything is installed on it
-  (`docs/dev-notes/remote-testing.md`). Not a change to the app.
+- **Remote testing is not an active path.** The former Tailscale bridge and
+  pending invite are retained only as historical context in
+  `docs/dev-notes/remote-testing.md`; no invite or remote-testing setup is
+  pending, and no remote service is changed here.
 
-Eval, current evidence: the fully measured tuned 4B corpus is 35.0% (21/60).
-The retraction report's fixture-04 conditional arm moves its three runs from
-gated to clean and therefore projects 30.0% (18/60) for the corpus; it was not
-a fresh full-corpus rerun. Keep that distinction in release notes and do not
-call 30.0% a new end-to-end measurement. The eval takes 1–2 h of CPU; never
-run it while someone is testing on the same machine.
+The prior 2026-09-08 tuned-4B configuration measured 35.0% (21/60) on
+its own corpus. The 2026-09-22 retraction report's fixture-04 conditional
+arm projects 30.0% (18/60) under a different setup; it was not a fresh
+full-corpus rerun and is not an improvement claim. Keep the configurations
+and artifact scopes distinct in release notes. The eval takes 1–2 h of CPU;
+never run it while someone is testing on the same machine.
 
 Release gate, 2026-09-08 (Linux, fabricated fixtures only): `build:shared`,
 all workspace typechecks, lint/format/URL/license checks, 1,173 unit tests,
@@ -309,135 +311,99 @@ start the long real eval while live testing is active.
 
 ## Latest integrated round — verification and limits
 
-The 2026-09-22 feature integration was developed on the historical
-`claude/local-browser-app-planning-0likfi` branch and is now contained in
-authoritative `main`: `b935789` README media, `e346946` grounded Discussion
-subtopics, `3aa09d5` stale dictation-preview reconciliation, `f30c14f`
-README, and `7141504` local-AI efficiency research. Local lint, typecheck,
-integration tests, production build, and Playwright all passed; Playwright
-was **39/39** after installing the pinned browser. GitHub Actions run
-[`35749958171`](https://github.com/villenull/Apunta/actions/runs/35749958171)
-also passed lint, typecheck, unit/integration, build, the fake eval
-self-check, and end-to-end tests.
+The 2026-09-22 acceptance and comparison round is recorded in:
 
-The reset-recovery round then verified the current manifest read-only,
-created and verified a fresh `/tmp` configuration from the committed
-instructions, launched that isolated database in fake mode at migration 5,
-and exercised the existing installer in no-download `plan` mode. That plan
-exposed and fixed a fractional `approxBytes` value that its integer protocol
-rightly rejected. Installer regression tests passed **32/32**, and the full
-lint, typecheck, unit/integration, build and Playwright chain passed again
-(Playwright **39/39**). No live setting, model, process or patient row was
-changed, and no weight was downloaded.
+- `docs/eval-reports/2026-09-22-synthetic-acceptance.md`
+- `docs/eval-reports/2026-09-22-four-model-comparison.md`
+- `docs/eval-reports/2026-09-22-whisper-silence.md`
 
-That evidence is automated and synthetic. It does **not** establish a real
-microphone transition, the owner's speaking patterns, topic boundaries on
-her sessions, Metal/RAM/thermal behavior on the target Mac, or the quality,
-latency, memory use, schema behavior, license compatibility, or endpoint
-compatibility of any candidate model in
-`docs/research/local-ai-efficiency-2026-09-22.md`. No candidate was
-downloaded, run, or made the default.
+Linux-only disposable evidence now includes real Chromium `MediaRecorder`
+capture through synthetic microphone input, local Whisper, and the current
+4B model, including the refine-chat microphone. Physical microphone, room,
+owner-speaking-pattern and Mac acceptance remain waived/unrun. The final
+bounded browser run stopped at 20,509 ms and received one 20.22-second
+recording with no fake-device loop. Whisper rendered `scratched that`, while
+the narrow marker recognizer matches `scratch that`; no retraction extraction
+ran. The subsequent 4B draft reversed the spoken correction (six → four)
+and retained withdrawn morning-meeting wording. This is a strict
+retraction/number blocker, not a pass.
+
+The current-control Discussion matrix is **3 pass / 1 fail**: the two-topic
+case emitted zero required lowercase source-grounded label lines. The
+four-arm comparison completed for the exact authorized candidates and valid
+runtime aliases. Its corpus favours the current `qwen3.5:4b-q4_K_M` control
+(18/60 fabrication flags, 42/60 gated runs, 42/60 safety facts, 54/60
+retraction/negation) over qwen2, Bonsai 8B Q1_0 and Bonsai 4B Q1_0. All four
+passed transport/schema smoke. Valid app checks were control 0/6 format flags
+and 1/13 refine problems, qwen2 5/6 and 8/13, Bonsai 8B 6/6 and 5/13, and
+Bonsai 4B 2/6 and 10/13; these are inspection prompts, not quality scores.
+All four still failed the strict same-transcript retraction gate. The control's
+refine checks preserved facts under the label-only/header request without
+applying the requested header formatting; the explicit old-wording
+reintroduction was an authorized control, and the separate neutral request
+passed without resurrecting the withdrawn morning topic. Keep the control with
+**no automatic model switch**.
+
+Whisper's narrow mitigation trims only exact digital-zero tails and rejects
+all-zero input; the focused suite is 44/44 and genuine quiet speech,
+repetitions and “Thank you.” remain. It is not universal VAD: nonzero-tail
+hallucination remains unclosed and needs a current-stack non-silent
+reproducer plus matched quiet control before any filter is considered.
+
+The README was rendered through authenticated GitHub Markdown API at desktop
+and narrow widths with all five focused synthetic media assets, reduced-motion
+PNG fallbacks and no overflow. Direct hosted-page verification was **not
+possible** because this repository is private and unauthenticated/browser
+page access returned GitHub 404; the authenticated API render is the
+reproducible substitute, not a hosted-page pass. The latest web bundle was
+built, but the live backend on 7717 was not restarted; no live settings,
+database, model or patient data changed.
+
+The saved-note UI proof covered aligned desktop headers, narrow refine sheet,
+delayed A → undo X persistence, Finish & copy, PATCH failure/retry, and native
+clipboard recovery. In a hidden Chromium context, granting all three
+clipboard permissions (`clipboard-read`, `clipboard-write`, and
+`clipboard-sanitized-write`) on `http://127.0.0.1:7797` allowed an initial
+sentinel write/read. A synthetic failed PATCH then left the UI at
+“Couldn’t save”, the disposable database unchanged, and the sentinel still on
+the native clipboard. After retrying the same changed body, the UI and
+database both showed `Saved`; clicking the real **Finish & copy** action
+published and locked the note, and a read-only native clipboard read exactly
+matched the current editor body and persisted database content. No direct
+clipboard write was used after the initial sentinel.
+
+Previous fake-AI/automated evidence remains historical; it does not override
+these real-model failures. No candidate is clinically cleared.
 
 ## Next session — do these in order
 
-### Recovery readiness comes first
+1. Keep `qwen3.5:4b-q4_K_M` as the default. Do not switch models or add
+   vocabulary work from the comparison alone.
+2. Review the strict retraction failure and the two-topic/header-formatting
+   Discussion findings with synthetic fixtures before any production change.
+   Preserve the raw artifacts and rerun the focused acceptance only on
+   disposable ports.
+3. Obtain the owner's confidentiality decision before probing or opening the
+   real Claude export; use synthetic fixtures only until then.
+4. Run the Mac-only checklist in `docs/MANUAL-VERIFICATION.md`; nothing in
+   `scripts/`, `macos/` or `installer/` has run on a Mac.
+5. Leave the exact-zero Whisper mitigation narrow. Do not add VAD/noise
+   suppression without the missing non-silent reproducer and quiet control.
+6. The hosted README still needs a real authenticated browser page check if
+   repository visibility/access changes; the API-render substitute above must
+   not be relabeled as hosted acceptance.
 
-Follow `docs/RECOVERY.md`. Verify the manifest against installed assets
-read-only, or create a fresh isolated data directory with `apply-config`.
-Do not copy the live database, inspect patient tables, change live settings,
-restart the live app, or acquire models without the user's explicit approval.
-The current reference has been exercised locally without downloads; full
-clean-OS/network acquisition and target-Mac recovery remain unverified.
-
-### A. Hands-on acceptance of the integrated product changes
-
-Use only invented scripts and the prototype's John Smith/Maria Ruiz/Ana
-Torres samples. Never dictate real patient material into a test, screenshot,
-log, or issue.
-
-1. **Real dictation transition:** in New note, speak one invented sentence
-   once, pause through at least one provisional preview, then stop. Confirm
-   the provisional text is replaced by the final text without duplication.
-   Repeat with a sentence that deliberately says the same phrase twice;
-   both intentional repetitions must remain. Repeat start → stop → start and
-   cancel → start transitions; words from the earlier recording must not
-   return. Do the same once with the refine-chat microphone. The regression
-   test covers a stale response after the cursor advances, but no live
-   microphone was exercised in the integrated round.
-2. **Grounded Discussion:** create one invented single-topic note and one
-   invented note with two clearly separate topics. The first must be one
-   prose block under Discussion; the second should use short lowercase
-   `label:` lines named from the narration. Try a retraction ("work stress —
-   scratch that") and confirm the withdrawn phrase cannot become a label.
-   In refine chat, ask for a second subtopic whose name appears only in a
-   section header or older raw wording; it must not survive. Read the whole
-   note to confirm no sentence disappeared when a label was removed.
-3. **GitHub presentation:** open the pushed README on GitHub at desktop and
-   narrow/mobile width. Confirm one centered title, the hero, all five GIF
-   rows and PNG fallbacks, working documentation links, no horizontal
-   overflow, and only synthetic names. The local GitHub-Markdown render
-   already passed at 1440 px and 390 px; this is the hosted-page acceptance.
-4. Record outcomes here. A failure in these manual checks is a product bug
-   even though the automated gates above are green.
-
-### B. Controlled local-AI experiments — only after A
-
-Read `docs/research/local-ai-efficiency-2026-09-22.md` first; its evidence
-labels, candidate table, isolation rules, acceptance metrics, source
-register, and endpoint traps are part of the procedure.
-
-1. Freeze the current `qwen3.5:4b-q4_K_M`/`ggml-tiny.en.bin` control,
-   runtime version, model digest, instructions, synthetic corpus, machine
-   state, cold/warm condition, latency, peak memory, retries, and output.
-   `npm run smoke:live -- --model qwen3.5:4b-q4_K_M --runs 5` is the
-   provider/schema smoke, not the clinical-quality result.
-2. Run the **no-download vocabulary experiment first** on invented audio:
-   unchanged `tiny.en` and decoding, paired runs without a vocabulary, with
-   a short relevant vocabulary, and with plausible unspoken distractors.
-   Score WER, exact clinical entities, numbers/units, negation, additions,
-   preview stability, stop-to-final latency, and peak memory. Do not put a
-   real vocabulary into the live settings until the owner supplies and
-   approves it.
-3. Only with explicit model-acquisition authorization, compare the exact
-   official `qwen3.5:2b-q4_K_M` artifact against the frozen 4B control.
-   Bonsai follows only as `prism-ml/Bonsai-8B-gguf` /
-   `Bonsai-8B-Q1_0.gguf`; the optional smaller arm is
-   `prism-ml/Bonsai-4B-gguf` / `Bonsai-4B-Q1_0.gguf`. Before either, verify
-   the exact file and digest, Apache-2.0 license, prompt template, stop
-   tokens, JSON-schema output, context/KV behavior, and Q1_0 runtime
-   backend. A llama.cpp OpenAI-compatible endpoint is **not** a drop-in
-   replacement for Apunta's Ollama-native `/api/chat`; do not route a
-   standard run to it by assumption.
-4. For every compatible LLM arm, run the existing synthetic gates (replace
-   `<exact-tag>` only with the tag actually served by the compatible
-   runtime):
-+
-   ```sh
-   npm run smoke:live -- --model <exact-tag> --runs 5
-   npm run eval -- --models <exact-tag> --runs 3 --instructions docs/note-instructions/owner-progress-instructions.md
-   npm run check:format
-   npm run check:refine
-   ```
-   Then add hand review, latency and peak-memory capture. Set
-   `APUNTA_CHECK_URL` for the two check
-   scripts to a disposable instance with a fresh data directory. The eval
-   CLI does **not** honor `APUNTA_OLLAMA_URL`; use the default service only
-   in an explicitly coordinated exclusive window, or first build a
-   throwaway runner around `runEval({ ollamaUrl: ... })`.
-5. Reject a candidate for any fabrication increase, lost or added clinical
-   fact, worse risk/negation/number retention, schema/retry regression,
-   unacceptable latency/memory, incompatible license/runtime, or failure on
-   the target Mac. Do not switch the default from measured speed or download
-   size alone. A Linux pass is screening evidence, never Mac acceptance.
-
-The next agent can immediately execute A with synthetic scripts and prepare
-the vocabulary A/B harness. Model downloads, model-server changes and any
-default switch remain gated on explicit authorization; target-Mac checks
-remain under `docs/MANUAL-VERIFICATION.md`.
 
 ## What is open
 
 Grouped by what each item waits on.
+**Explicitly removed from the active backlog (owner decision 2026-09-22):**
+complex-medical-vocabulary acquisition/experiments/optimization, a Settings
+UI for managing added dictionary words, and the Tailscale invite/remote-testing
+setup. Existing `stt_vocabulary` and `spelling_words` settings, the inline
+spell-check "Add to dictionary" behavior, the clinical-knowledge safety
+checks, and the historical measurements remain retained; none is a pending
+task.
 
 ### Waits on the owner
 
@@ -466,29 +432,8 @@ Grouped by what each item waits on.
   and attachment preservation. Apunta has no Halaxy importer; do not build a
   guessed parser or silently drop PDFs/attachments. Use synthetic fixtures
   only after the real format shape is clarified.
-- **Her transcription vocabulary list** (names, medications, terms):
-  promised, not yet sent, and **now the cheapest mitigation measured** for
-  `tiny.en`, not a nice-to-have. On the 2026-09-20 synthetic test, six prompted
-  terms took exact drug/clinical recall from 1/7 to 3/7 and more than halved
-  WER (14.1% → 6.5%), with no new model and no download
-  (`docs/eval-reports/2026-09-20-tiny-en-clinical-vocabulary.md`). Its limit:
-  the hint is a closed set. `akathisia` was not listed and failed in every
-  arm at every model size, so a term she does not think to list stays wrong.
-  Ask her for the terms she actually says, jargon as well as drug names. When
-  it arrives: `PUT /api/settings` `stt_vocabulary` on the live instance and on
-  the config pack (`~/Apunta-config-pack/`, see `docs/MANUAL-VERIFICATION.md`
-  §9), then re-cut the pack.
-  **There is no UI way to act on it any more:** Settings → Recording (the
-  *Words to listen for* list and *Keep the recording after transcribing*)
-  and Settings → Your details were removed from the screen on 2026-09-21 at
-  the owner's request (`docs/decisions.md`). Only the UI went; the settings,
-  the API and any stored values are untouched, so a vocabulary already saved
-  still reaches whisper and the rest fall back to their defaults (keep audio
-  off, plan review every 90 days, 5 notes read for a briefing). Putting the
-  list in is `PUT /api/settings` only, or reverting that commit's web half.
 - **Her first real dictations**, which are the only source allowed to grow
-  the retraction-marker list (`RETRACTION_MARKER_SOURCE`) and the vocabulary.
-- **Her Tailscale invite**, so she can test from her laptop.
+  the retraction-marker list (`RETRACTION_MARKER_SOURCE`).
 
 ### Waits on a Mac
 
@@ -539,16 +484,20 @@ setup/preflight scripts.
   04/07; the retraction pass took 04's most common failure away, so re-check
   the justification before building it.
 
-### Small things seen live, unfixed
+### Small things seen live / known limits
 
 - The spell check covers the note body and the typed-notes box; the chat
   composer and the patient-name field still rely on the browser's checker.
-  A Settings list for the "Add to dictionary" words does not exist yet; the
-  setting is a plain JSON array (`spelling_words`).
+  Inline "Add to dictionary" remains implemented; no Settings management UI
+  for those words is planned.
 
-- Whisper appends **"Thank you."** on the silence at the end of a recording
-  (2026-09-07). Harmless so far; a trailing-segment strip would fix it, but
-  only cut it if her recordings show it too.
+- **Whisper trailing silence is now bounded** (2026-09-22):
+  `docs/eval-reports/2026-09-22-whisper-silence.md` records the focused 44/44
+  test suite and real synthetic Piper trials. Exact digital-zero tails are
+  bounded conservatively; genuine spoken “Thank you.”, quiet speech and
+  intentional repetitions remain; nonzero room noise is not stripped.
+  This is not universal VAD, and it does not establish that arbitrary
+  nonzero-tail hallucinations are fixed.
 - The two-tab test: two recordings at once starve each other's previews
   (CPU). Not a bug to fix; a thing to know.
 - Refine safety guards are intentionally high-precision heuristics. They can

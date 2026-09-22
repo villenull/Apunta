@@ -1,5 +1,5 @@
 import type { Note, PatientListItem } from '@apunta/shared';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router';
 
 import {
@@ -14,7 +14,7 @@ import {
 import { AiBanner } from '../components/AiBanner.js';
 import { BrainstormView } from '../components/BrainstormView.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
-import { DocumentIcon, PeopleIcon, PlusIcon } from '../components/icons.js';
+import { BackIcon, DocumentIcon, PeopleIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
 import { NoteView } from '../components/NoteView.js';
 import { PatientsColumn } from '../components/PatientsColumn.js';
@@ -166,17 +166,32 @@ export function Workspace(): React.JSX.Element {
       setActionError(errorMessage(thrown));
     }
   }
+  const narrowPane = patient === null ? 'patients' : note !== null || view !== 'notes' ? 'main' : 'notes';
+  const previousPane = useRef(narrowPane);
+
+  useEffect(() => {
+    if (previousPane.current === narrowPane) return;
+    previousPane.current = narrowPane;
+    const targetSelector =
+      narrowPane === 'patients'
+        ? "[data-testid='patient-search']"
+        : narrowPane === 'notes'
+          ? "[data-testid='notes-header']"
+          : '.main-back';
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>(targetSelector)?.focus();
+    });
+  }, [narrowPane]);
 
   // First run: with no note format defined there is nothing to draft into, so
   // the app opens on onboarding instead of an empty workspace.
   if (formats.state.status === 'ready' && formats.state.data.length === 0) {
     return <Navigate to="/onboarding/format" replace />;
   }
-
   return (
     <div className="workspace">
       <AiBanner />
-      <div className="app-shell">
+      <div className={`app-shell pane-${narrowPane}`}>
         <PatientsColumn
           patients={patients.state}
           activePatientId={patient?.id ?? null}
@@ -203,9 +218,24 @@ export function Workspace(): React.JSX.Element {
           onDeletePatient={() => {
             if (patient) setPendingDelete(patient);
           }}
+          onBackToPatients={() => {
+            setParams({});
+          }}
         />
 
         <div className="col col-main" data-testid="main-pane">
+          {patient !== null && (
+            <button
+              type="button"
+              className="narrow-back main-back"
+              onClick={() => {
+                setParams({ patient: patient.id });
+              }}
+            >
+              <BackIcon className="icon icon-xs" />
+              <span>Notes</span>
+            </button>
+          )}
           {/* Formats are loaded to decide the first-run redirect; if that call
             fails, say so rather than quietly behaving as if formats exist. */}
           {formats.state.status === 'error' && (
@@ -214,7 +244,9 @@ export function Workspace(): React.JSX.Element {
             </p>
           )}
           {patient === null ? (
-            <NoPatientSelected />
+            <NoPatientSelected
+              emptyPractice={patients.state.status === 'ready' && patients.state.data.length === 0}
+            />
           ) : view === 'plan' ? (
             <PlanView key={`plan-${patient.id}`} patient={patient} onOpenNote={selectNote} />
           ) : view === 'prep' ? (
@@ -222,7 +254,10 @@ export function Workspace(): React.JSX.Element {
           ) : view === 'brainstorm' ? (
             <BrainstormView key={`brainstorm-${patient.id}`} patient={patient} />
           ) : note === null ? (
-            <NoNoteSelected patient={patient} />
+            <NoNoteSelected
+              patient={patient}
+              emptyNotes={notes.state.status === 'ready' && notes.state.data.length === 0}
+            />
           ) : (
             <NoteView
               key={note.id}
@@ -278,7 +313,19 @@ export function Workspace(): React.JSX.Element {
   );
 }
 
-function NoPatientSelected(): React.JSX.Element {
+function NoPatientSelected({ emptyPractice }: { emptyPractice: boolean }): React.JSX.Element {
+  if (emptyPractice) {
+    return (
+      <div className="empty-state" data-testid="empty-no-patient">
+        <PeopleIcon />
+        <p className="empty-message">Add your first patient to begin.</p>
+        <Link to="/patients/new" className="btn btn-primary">
+          <PlusIcon className="icon icon-sm" />
+          Add your first patient
+        </Link>
+      </div>
+    );
+  }
   return (
     <div className="empty-state" data-testid="empty-no-patient">
       <PeopleIcon />
@@ -287,14 +334,22 @@ function NoPatientSelected(): React.JSX.Element {
   );
 }
 
-function NoNoteSelected({ patient }: { patient: PatientListItem }): React.JSX.Element {
+function NoNoteSelected({
+  patient,
+  emptyNotes,
+}: {
+  patient: PatientListItem;
+  emptyNotes: boolean;
+}): React.JSX.Element {
   return (
     <div className="empty-state" data-testid="empty-no-note">
       <DocumentIcon />
-      <p className="empty-message">No note selected for {patient.name}</p>
+      <p className="empty-message">
+        {emptyNotes ? `No notes yet for ${patient.name}.` : `No note selected for ${patient.name}`}
+      </p>
       <Link to={`/capture/${patient.id}`} className="btn btn-primary">
         <PlusIcon className="icon icon-sm" />
-        Create new note
+        {emptyNotes ? 'Create first note' : 'Create new note'}
       </Link>
     </div>
   );

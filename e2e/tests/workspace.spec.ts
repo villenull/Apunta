@@ -60,7 +60,7 @@ test.describe('the workspace', () => {
 
     // --- Empty states: no notes yet, nothing selected -----------------------
     await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);
-    await expect(page.getByTestId('empty-no-note')).toContainText(`No note selected for ${patientName}`);
+    await expect(page.getByTestId('empty-no-note')).toContainText(`No notes yet for ${patientName}`);
 
     // --- Capture: type a summary, watch it drafted, land on the note --------
     await page.getByRole('button', { name: 'New note' }).click();
@@ -98,7 +98,7 @@ test.describe('the workspace', () => {
 
     // --- Publish: copies to the clipboard and locks the body ----------------
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toContainText('Published (click to edit)');
+    await expect(page.getByTestId('publish-button')).toContainText('Edit again');
     await expect(body).toHaveAttribute('readonly', '');
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboard).toBe(edited);
@@ -106,7 +106,7 @@ test.describe('the workspace', () => {
 
     // --- Unlock, then delete the note ---------------------------------------
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toHaveText('Publish');
+    await expect(page.getByTestId('publish-button')).toHaveText('Finish & copy');
     await expect(page.getByTestId('note-body')).not.toHaveAttribute('readonly', '');
 
     // M7 replaced window.confirm with an in-app dialog, so the copy can say
@@ -141,7 +141,7 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('patient-list')).not.toContainText(hidden);
 
     await page.getByLabel('Search patients').fill('no such patient exists');
-    await expect(page.getByTestId('patient-list')).toContainText('No patients match.');
+    await expect(page.getByTestId('patient-list')).toContainText('No patients match');
   });
 
   test('asks for a selection when no patient is chosen', async ({ page, request }) => {
@@ -239,7 +239,7 @@ test.describe('the workspace', () => {
 
     // --- Publishing locks it, and the chat says so rather than editing -----
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toContainText('Published (click to edit)');
+    await expect(page.getByTestId('publish-button')).toContainText('Edit again');
 
     await page.getByTestId('chat-input').fill('Make the plan much shorter');
     await page.getByTestId('chat-send').click();
@@ -250,7 +250,7 @@ test.describe('the workspace', () => {
 
     // --- Unlock, and the same request goes through ------------------------
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toHaveText('Publish');
+    await expect(page.getByTestId('publish-button')).toHaveText('Finish & copy');
 
     await page.getByTestId('chat-input').fill('Add something about sleep');
     await page.getByTestId('chat-send').click();

@@ -7,7 +7,7 @@ import {
   WAV_CONTENT_TYPE,
 } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../App.js';
@@ -75,13 +75,12 @@ vi.mock('../lib/recorder.js', async (importOriginal) => {
 
 const progressNote = makeFormat('Progress note', ['Subjective', 'Objective', 'Assessment', 'Plan']);
 const john = makePatient('John Smith');
+type TestRouter = Parameters<typeof RouterProvider>[0]['router'];
+let activeRouter: TestRouter | null = null;
 
-function renderCapture(): void {
-  render(
-    <MemoryRouter initialEntries={[`/capture/${john.id}`]}>
-      <App />
-    </MemoryRouter>,
-  );
+function renderCapture(initialEntries: string[] = [`/capture/${john.id}`]): void {
+  activeRouter = createMemoryRouter([{ path: '*', element: <App /> }], { initialEntries });
+  render(<RouterProvider router={activeRouter} />);
 }
 
 async function startRecording(): Promise<void> {
@@ -99,6 +98,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  activeRouter?.dispose();
+  activeRouter = null;
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -118,11 +119,15 @@ describe('recording on the capture screen', () => {
     // assembles under it without a second wait.
     expect(await screen.findByTestId('draft-progress')).toBeTruthy();
     const preview = await screen.findByTestId('draft-preview');
+    expect(screen.getByTestId('draft-status-label').textContent).not.toMatch(/%/);
     expect(preview.textContent).toContain('Subjective');
     expect(preview.textContent).not.toContain('{"');
 
     // And then it lands on the note the recording produced.
     expect(await screen.findByTestId('note-body')).toBeDefined();
+    const leaveAfterSave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(leaveAfterSave);
+    expect(leaveAfterSave.defaultPrevented).toBe(false);
 
     // It went to /api/transcribe, not /api/generate: the typed path would have
     // silently dropped the recording.
@@ -132,11 +137,7 @@ describe('recording on the capture screen', () => {
 
   it('offers no microphone for a patient the server no longer knows', async () => {
     installFakeApi({ formats: [progressNote], patients: [john] });
-    render(
-      <MemoryRouter initialEntries={['/capture/01a00000-0000-7000-8000-000000000000']}>
-        <App />
-      </MemoryRouter>,
-    );
+    renderCapture(['/capture/01a00000-0000-7000-8000-000000000000']);
 
     expect((await screen.findByTestId('capture-missing-patient')).textContent).toContain('Back to patients');
     expect(screen.queryByTestId('record-start')).toBeNull();
@@ -284,6 +285,47 @@ describe('recording on the capture screen', () => {
     // Nothing was re-sent, and "Process note" has nothing to send either.
     expect(api.calls.filter((call) => call === 'POST /api/transcribe')).toHaveLength(1);
     expect(screen.getByTestId('process-note')).toHaveProperty('disabled', true);
+  });
+});
+
+describe('unfinished capture navigation protection', () => {
+  it('keeps typed and recording work on Stay, then discards it on approval', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderCapture();
+    await startRecording();
+    fireEvent.change(screen.getByTestId('summary-input'), {
+      target: { value: 'Keep this alongside the recording.' },
+    });
+
+    const back = screen.getByRole('link', { name: 'Patients' });
+    fireEvent.click(back);
+    expect(await screen.findByRole('dialog', { name: 'Leave this unfinished note?' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
+    expect(screen.getByTestId('record-panel')).toBeTruthy();
+    expect(screen.getByTestId('summary-input')).toHaveProperty('value', 'Keep this alongside the recording.');
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(back);
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard and leave' }));
+    await waitFor(() => {
+      expect(screen.queryByTestId('capture-heading')).toBeNull();
+    });
+    expect(screen.getAllByText('Patients').length).toBeGreaterThan(0);
+  });
+  it('guards browser unload while typed work is pending', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderCapture();
+    await screen.findByTestId('summary-input');
+
+    const cleanLeave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(cleanLeave);
+    expect(cleanLeave.defaultPrevented).toBe(false);
+
+    fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Unfinished text.' } });
+    const pendingLeave = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(pendingLeave);
+    expect(pendingLeave.defaultPrevented).toBe(true);
   });
 });
 

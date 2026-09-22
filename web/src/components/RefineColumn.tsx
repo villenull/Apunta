@@ -39,7 +39,9 @@ export interface RefineColumnProps {
 
 /**
  * The refine chat — the right half of `prototype/patients.html`, now a
- * floating card rather than a column.
+ * titled floating card rather than a column. At the shared narrow breakpoint
+ * the same mounted conversation becomes a sheet, so closing it never discards
+ * a draft or an in-flight reply.
  *
  * This is the owner's primary repair path, not a co-equal feature: asked what
  * she reaches for when a paragraph is wrong, she chose describing the problem
@@ -101,6 +103,12 @@ export function RefineColumn({
       abortRef.current?.abort();
     };
   }, []);
+
+  // Opening the floating card or narrow sheet puts the keyboard in its
+  // composer. Closing is handled by NoteView, which restores launcher focus.
+  useEffect(() => {
+    if (!hidden) inputRef.current?.focus();
+  }, [hidden]);
 
   const messages = thread.state.status === 'ready' ? thread.state.data : [];
 
@@ -185,16 +193,22 @@ export function RefineColumn({
   const empty = messages.length === 0 && streaming === null;
 
   return (
-    <div className={hidden ? 'chat-col is-closed' : 'chat-col'} data-testid="chat-panel">
-      {/* No heading (owner-proxy, 2026-08-30): the panel is unmistakably a
-          chat, and a title inside a small floating card is a line of the
-          conversation's height spent saying what it plainly is. */}
+    <div
+      className={hidden ? 'chat-col is-sheet is-closed' : 'chat-col is-sheet'}
+      data-testid="chat-panel"
+      role="dialog"
+      aria-labelledby="refine-note-title"
+      aria-hidden={hidden}
+    >
       <div className="chat-header row between">
+        <h2 className="chat-header-title" id="refine-note-title">
+          Refine note
+        </h2>
         {onClose !== undefined && (
           <button
             type="button"
             className="btn small btn-compact-icon"
-            aria-label="Close chat"
+            aria-label="Close Refine note"
             data-testid="chat-close"
             onClick={() => {
               dictation.cancel();

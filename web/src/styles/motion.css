@@ -235,3 +235,11 @@
   background-color: var(--accent-tint);
   border-radius: var(--radius);
 }
+/* Navigation labels use the same quiet acknowledgement as other controls. */
+.narrow-back {
+  transition: color var(--motion-fast) var(--motion-ease);
+}
+
+.narrow-back:hover {
+  color: var(--text-primary);
+}

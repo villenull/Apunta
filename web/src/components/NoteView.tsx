@@ -69,9 +69,12 @@ export function NoteView({
   onNoteChanged,
   onNoteDeleted,
 }: NoteViewProps): React.JSX.Element {
+  type SaveState = 'saved' | 'saving' | 'error';
+
   const [text, setText] = useState(note.content);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>('saved');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /** The excerpt she highlighted, waiting to be attached to a chat message. */
@@ -86,10 +89,23 @@ export function NoteView({
   // The timers and the save queue outlive any single render.
   const noteRef = useRef(note);
   const pendingRef = useRef<string | null>(null);
+  const pendingRevisionRef = useRef<number | null>(null);
+  const saveRevisionRef = useRef(0);
+  const saveStateRef = useRef<SaveState>('saved');
+  const persistedContentRef = useRef(note.content);
+  const latestTextRef = useRef(note.content);
+  /** Avoid a second unpublish when rapid edits queue behind the first one. */
+  const draftUnlockedRef = useRef(note.status !== 'published');
   const timerRef = useRef<number | null>(null);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   const onNoteChangedRef = useRef(onNoteChanged);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const markSaveState = useCallback((next: SaveState): void => {
+    saveStateRef.current = next;
+    setSaveState(next);
+  }, []);
+  const hadChatOpenRef = useRef(false);
   /** Releases the chat stream only after the committed rewrite is painted. */
   const noteUpdateAckRef = useRef<(() => void) | null>(null);
 
@@ -115,32 +131,65 @@ export function NoteView({
     };
   }, []);
 
+  // Returning from the sheet restores keyboard focus to its launcher.
+  useEffect(() => {
+    if (chatOpen) {
+      hadChatOpenRef.current = true;
+      return;
+    }
+    if (hadChatOpenRef.current) {
+      hadChatOpenRef.current = false;
+      window.requestAnimationFrame(() => fabRef.current?.focus());
+    }
+  }, [chatOpen]);
+
   /**
    * Persist the body. A published note is unpublished first: the server refuses
    * a content PATCH while it is locked, and editing after unlock is exactly the
    * prototype's `onNoteEdit` behaviour (published → draft).
+   * Every save carries the edit revision that scheduled it. A response from an
+   * older revision must not make the current text look saved.
    */
-  const persist = useCallback(async (value: string): Promise<void> => {
-    const current = noteRef.current;
-    if (value === current.content) return;
-
-    try {
-      let target = current;
-      if (target.status === 'published') {
-        target = await unpublishNote(target.id);
-        onNoteChangedRef.current(target);
+  const persist = useCallback(
+    async (value: string, revision: number): Promise<void> => {
+      if (revision !== saveRevisionRef.current) return;
+      const current = noteRef.current;
+      if (value === persistedContentRef.current) {
+        markSaveState('saved');
+        return;
       }
-      onNoteChangedRef.current(await updateNote(target.id, { content: value }));
-      setError(null);
-    } catch (thrown) {
-      setError(errorMessage(thrown));
-    }
-  }, []);
+
+      markSaveState('saving');
+      try {
+        let target = current;
+        if (target.status === 'published' && !draftUnlockedRef.current) {
+          target = await unpublishNote(target.id);
+          draftUnlockedRef.current = true;
+          onNoteChangedRef.current(target);
+        }
+        const updated = await updateNote(target.id, { content: value });
+        // Record server truth even when this response is stale for the editor.
+        persistedContentRef.current = updated.content;
+        if (revision !== saveRevisionRef.current) return;
+        onNoteChangedRef.current(updated);
+        markSaveState('saved');
+        setError(null);
+      } catch (thrown) {
+        if (revision !== saveRevisionRef.current) return;
+        const message = errorMessage(thrown);
+        markSaveState('error');
+        setError(message);
+        throw thrown;
+      }
+    },
+    [markSaveState],
+  );
 
   /** Saves run one at a time, so a debounce and a flush cannot cross. */
   const enqueue = useCallback(
-    (value: string): Promise<void> => {
-      queueRef.current = queueRef.current.then(() => persist(value));
+    (value: string, revision: number): Promise<void> => {
+      // Recover the queue after a failed save; the next edit must still retry.
+      queueRef.current = queueRef.current.catch(() => undefined).then(() => persist(value, revision));
       return queueRef.current;
     },
     [persist],
@@ -152,6 +201,7 @@ export function NoteView({
       timerRef.current = null;
     }
     pendingRef.current = null;
+    pendingRevisionRef.current = null;
   }, []);
 
   const flush = useCallback((): Promise<void> => {
@@ -160,26 +210,39 @@ export function NoteView({
       timerRef.current = null;
     }
     const value = pendingRef.current;
+    const revision = pendingRevisionRef.current;
     pendingRef.current = null;
-    return value === null ? queueRef.current : enqueue(value);
+    pendingRevisionRef.current = null;
+    if (value !== null && revision !== null) return enqueue(value, revision);
+    if (saveStateRef.current === 'error' && persistedContentRef.current !== latestTextRef.current) {
+      return enqueue(latestTextRef.current, saveRevisionRef.current);
+    }
+    return queueRef.current;
   }, [enqueue]);
 
   // Switching notes unmounts this view (see the key requirement above); an edit
   // typed a moment earlier must still reach the server.
   useEffect(() => {
     return () => {
-      void flush();
+      void flush().catch(() => undefined);
     };
   }, [flush]);
-
   function handleChange(value: string): void {
+    const revision = saveRevisionRef.current + 1;
+    saveRevisionRef.current = revision;
+    latestTextRef.current = value;
     setText(value);
+    markSaveState('saving');
     pendingRef.current = value;
+    pendingRevisionRef.current = revision;
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => {
       timerRef.current = null;
-      if (pendingRef.current === value) pendingRef.current = null;
-      void enqueue(value);
+      if (pendingRef.current === value && pendingRevisionRef.current === revision) {
+        pendingRef.current = null;
+        pendingRevisionRef.current = null;
+      }
+      void enqueue(value, revision).catch(() => undefined);
     }, SAVE_DEBOUNCE_MS);
   }
 
@@ -191,6 +254,13 @@ export function NoteView({
   const handleNoteUpdated = useCallback(
     (event: ChatNoteUpdatedEvent): Promise<void> => {
       cancelPending();
+      // The server has persisted this rewrite; invalidate every local edit
+      // revision so an older response cannot overwrite the new note.
+      saveRevisionRef.current += 1;
+      draftUnlockedRef.current = event.note.status !== 'published';
+      persistedContentRef.current = event.note.content;
+      latestTextRef.current = event.note.content;
+      markSaveState('saved');
       return new Promise<void>((resolve) => {
         noteUpdateAckRef.current = resolve;
         // Name what actually changed, so the flash can say which sections moved.
@@ -208,26 +278,33 @@ export function NoteView({
         }, REFINED_FLASH_MS);
       });
     },
-    [cancelPending, format],
+    [cancelPending, format, markSaveState],
   );
 
   async function handleCopy(): Promise<void> {
-    await copyText(text);
-    setCopied(true);
-    window.setTimeout(() => {
-      setCopied(false);
-    }, COPIED_FLASH_MS);
+    try {
+      await flush();
+      await copyText(text);
+      setCopied(true);
+      window.setTimeout(() => {
+        setCopied(false);
+      }, COPIED_FLASH_MS);
+    } catch (thrown) {
+      setError(errorMessage(thrown));
+    }
   }
 
-  /** Publish copies the note and locks it; clicking again unlocks (prototype). */
+  /** Finish copies the note and locks it; Edit again releases that lock. */
   async function handlePublishToggle(): Promise<void> {
     setBusy(true);
     try {
       if (note.status === 'published') {
+        draftUnlockedRef.current = true;
         onNoteChanged(await unpublishNote(note.id));
       } else {
         await flush();
-        onNoteChanged(await publishNote(note.id));
+        const finished = await publishNote(note.id);
+        onNoteChanged(finished);
         await copyText(text);
       }
       setError(null);
@@ -272,6 +349,9 @@ export function NoteView({
             <h2 data-testid="note-title">{note.title}</h2>
           </div>
           <div className="row gap-8 note-actions">
+            <span className={`note-save-status is-${saveState}`} data-testid="note-save-status">
+              {saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Couldn’t save' : 'Saved'}
+            </span>
             {refining && (
               <span className="note-updating-hint" data-testid="note-updating-hint">
                 <ThinkingDots label="Updating the note…" />
@@ -319,7 +399,7 @@ export function NoteView({
               }}
             >
               {published ? <CheckIcon className="icon icon-xs" /> : <PublishIcon className="icon icon-xs" />}
-              {published ? 'Published (click to edit)' : 'Publish'}
+              {published ? 'Edit again' : 'Finish & copy'}
             </button>
           </div>
         </div>
@@ -343,7 +423,7 @@ export function NoteView({
           allowWords={[patient.name]}
           onChange={handleChange}
           onBlur={() => {
-            void flush();
+            void flush().catch(() => undefined);
           }}
           onSelect={(selected) => {
             // Only a real selection raises the chip. A collapsed caret leaves
@@ -360,9 +440,10 @@ export function NoteView({
       </div>
 
       <button
+        ref={fabRef}
         type="button"
         className="chat-fab"
-        aria-label={chatOpen ? 'Close the refine chat' : 'Open the refine chat'}
+        aria-label={chatOpen ? 'Close Refine note' : 'Refine note'}
         aria-expanded={chatOpen}
         data-testid="chat-fab"
         onClick={() => {
@@ -374,6 +455,7 @@ export function NoteView({
       >
         {/* While a refine runs behind a closed panel, the launcher thinks. */}
         {refining ? <ThinkingDots ariaLabel="Updating the note" /> : <ChatIcon className="icon" />}
+        <span className="chat-fab-label">Refine note</span>
       </button>
 
       <RefineColumn

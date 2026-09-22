@@ -1,0 +1,105 @@
+Format: Progress note — Location, Client presentation, Risk review, Discussion, Intervention, Out of session actions, Note for next session
+Model:  qwen3.5:4b-q4_K_M
+
+
+=== 1-typed-brief.txt ===
+Location: Online.
+
+Client presentation:
+
+Risk review: None.
+
+Discussion: John came to session reporting a steady week, kept the walking going, and mood better than last time.
+
+Intervention:
+
+Out of session actions:
+
+Note for next session: John will say if he is staying weekly.
+
+=== 2-presentation-and-talk.txt ===
+Location: In the office.
+
+Client presentation: Jane Doe was tearful for the first ten minutes, settled after that, with good eye contact by the end.
+
+Risk review: None.
+
+Discussion: Jane Doe came to session talking mostly about her sister moving away and what that leaves her with.
+
+Intervention: I introduced grounding.
+
+Out of session actions: Jane Doe, text her sister this week.
+
+Note for next session:
+
+=== 3-risk-reviewed.txt ===
+Location: Online.
+
+Client presentation:
+
+Risk review: Alex denied any thoughts of self harm, noting the passive stuff from July has not come back.
+
+Discussion: Alex came to session asking about safety directly today; he reported that the passive thoughts from July have not returned. We worked on the sleep routine.
+
+Intervention:
+
+Out of session actions:
+
+Note for next session:
+
+=== 4-cadence-decision.txt ===
+Location: Office.
+
+Client presentation:
+
+Risk review: None.
+
+Discussion: Maria Ruiz came to session reporting she is doing the thought records.
+
+Intervention:
+
+Out of session actions: Maria, keep the log going.
+
+Note for next session: Sessions will be every two weeks starting next month.
+
+=== 5-phone-check-in.txt ===
+Location:
+
+Client presentation:
+
+Risk review: None.
+
+Discussion: Richard Roe came to check in, reporting the new job is going fine and that he does not need anything this week.
+
+Intervention:
+
+Out of session actions:
+
+Note for next session:
+
+=== 6-retraction.txt ===
+Location: Online.
+
+Client presentation:
+
+Risk review: None.
+
+Discussion: Dana Doe came to session reporting that the anniversary is hitting her hard, though she clarified this was not from last session; today she presented as steady and talked about the new flat. She asked me to look up the group I mentioned.
+
+Intervention:
+
+Out of session actions:
+
+Note for next session:
+
+--- summary ---
+ok   1-typed-brief.txt
+ok   2-presentation-and-talk.txt
+ok   3-risk-reviewed.txt
+ok   4-cadence-decision.txt
+ok   5-phone-check-in.txt
+ok   6-retraction.txt
+
+0 flag(s) across 6 fixtures.
+Flags are a prompt to read the note above, not a verdict.
+The drafts stay in the database; delete that patient to clear them.

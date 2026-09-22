@@ -21,6 +21,7 @@ export interface ConfirmDialogProps {
   readonly body: React.ReactNode;
   /** The destructive button's label, e.g. "Delete John Smith". */
   readonly confirmLabel: string;
+  readonly cancelLabel?: string;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   title,
   body,
   confirmLabel,
+  cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps): React.JSX.Element {
@@ -66,7 +68,7 @@ export function ConfirmDialog({
         <div className="small note-meta modal-body">{body}</div>
         <div className="modal-actions">
           <button type="button" className="btn" ref={cancelRef} onClick={onCancel}>
-            Cancel
+            {cancelLabel}
           </button>
           <button type="button" className="btn btn-danger" data-testid="confirm-accept" onClick={onConfirm}>
             {confirmLabel}

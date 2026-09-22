@@ -11,10 +11,15 @@ Work packets: `docs/agents/` — **all packets (M0–M10) are complete.** M10
 ran on a live Linux machine on 2026-08-27
 (`docs/eval-reports/2026-08-M10-report.md`), and the owner's answers landed
 2026-08-28 (`docs/feedback/2026-08-28-owner-answers.md` — applied and
-re-measured). What remains needs a Mac (`docs/MANUAL-VERIFICATION.md`), her
-transcription vocabulary list (promised, not yet sent), or a new packet:
-the intake-side instruction distillation, per the M10 report. **M11**
-(importing her Claude conversations) is built — `Settings → Import from
+re-measured). The 2026-09-22 integrated acceptance and four-model comparison
+are recorded in `docs/HANDOFF.md` and `docs/eval-reports/`. What remains needs
+a Mac (`docs/MANUAL-VERIFICATION.md`), the owner's confidentiality decision
+and first dictations, or a new packet: the intake-side instruction
+distillation from the M10 report. The promised transcription-vocabulary
+acquisition, complex-vocabulary experiments, dictionary Settings UI and
+Tailscale setup were explicitly dropped from the active backlog on 2026-09-22;
+preserve their historical evidence but do not treat them as pending work.
+**M11** (importing her Claude conversations) is built — `Settings → Import from
 Claude` — and since 2026-09-21 **automatic** by the owner's choice: every
 patient seen since a cutoff, one draft per session, each run an undoable
 batch (`docs/decisions.md`, 2026-09-21). The export's shape has been probed;

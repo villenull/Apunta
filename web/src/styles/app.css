@@ -2734,3 +2734,268 @@ select:disabled {
 
 @media (prefers-reduced-motion: reduce) {
 }
+
+/* ------------------------------------------------ workspace UX decisions */
+
+/*
+ * Shared empty states keep the next useful action beside the explanation.
+ * They live in the column flow so larger text never pushes a button off-screen.
+ */
+.empty-column-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 10px;
+}
+
+.empty-column-state .col-hint {
+  padding: 0;
+}
+
+.notes-empty {
+  align-items: stretch;
+}
+
+.col-header-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
+.narrow-back {
+  display: none;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  padding: 4px 0;
+  color: var(--text-secondary);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.main-back {
+  flex-shrink: 0;
+  padding: 10px var(--gutter-x);
+  border-bottom: 0.5px solid var(--border);
+}
+
+/* Keep every primary header on the same 12px baseline without fixed heights. */
+.col-header {
+  padding-inline: var(--gutter-x);
+}
+
+.col-header h3,
+.note-editor-header h2,
+.note-editor-header .note-meta {
+  line-height: 1.35;
+}
+
+/* Essential live/draft copy is muted, not invisible. */
+.record-preview-text,
+.draft-preview,
+.capture-stage-preview,
+.note-preview {
+  color: var(--text-secondary);
+}
+
+.record-preview-text {
+  border-color: var(--border-strong);
+}
+
+.record-preview-note,
+.record-preview-waiting,
+.draft-status,
+.capture-stage-status,
+.note-save-status {
+  min-height: calc(22px * var(--font-scale));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-fab {
+  width: auto;
+  min-width: 52px;
+  height: 52px;
+  padding: 0 14px;
+  border-radius: 26px;
+}
+
+.capture-source-copy {
+  color: var(--text-secondary);
+}
+
+.capture-stage {
+  min-width: 0;
+}
+
+.capture-stage-status {
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+
+.capture-stage-preview {
+  color: var(--text-secondary);
+}
+
+.draft-preview {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.chat-fab-label {
+  margin-left: 6px;
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 600;
+}
+
+.chat-header-title {
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  font-size: calc(16px * var(--font-scale));
+  font-weight: 600;
+}
+
+.note-save-status {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.note-save-status.is-saving {
+  color: var(--text-secondary);
+}
+
+.note-save-status.is-saved {
+  color: var(--accent-hover);
+}
+
+.note-save-status.is-error {
+  color: var(--danger);
+}
+
+.note-finish-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.note-finished-banner {
+  color: var(--accent-hover);
+  background: var(--accent-tint);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    max-width: none;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .app-shell > .col {
+    display: none;
+    width: 100%;
+    border-right: 0;
+  }
+
+  .app-shell.pane-patients > .col-patients,
+  .app-shell.pane-notes > .col-notes,
+  .app-shell.pane-main > .col-main {
+    display: flex;
+  }
+
+  .col-header {
+    padding-block: 12px;
+  }
+
+  .narrow-back {
+    display: inline-flex;
+  }
+
+  .col-header-title .narrow-back {
+    flex-shrink: 0;
+  }
+
+  .main-back {
+    display: flex;
+  }
+
+  .note-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .note-finish-actions {
+    width: 100%;
+  }
+
+  .note-finish-actions > * {
+    flex: 1 1 auto;
+  }
+
+  /*
+   * NoteUX marks the narrow refine panel as a sheet. It remains inside the
+   * editor's stacking context, so it cannot cover Patients or Notes.
+   */
+  .chat-col.is-sheet {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+    height: min(76vh, 620px);
+    border-radius: var(--radius-lg);
+  }
+
+  .chat-fab {
+    right: 12px;
+    bottom: 12px;
+  }
+}
+
+@media (min-width: 901px) {
+  .chat-fab-label {
+    display: inline;
+  }
+}
+/* Capture status copy stays solid; only its ThinkingDots indicator moves. */
+.capture-stage,
+.capture-stage-status,
+.capture-stage-preview,
+.capture-stage .draft-preview,
+.capture-stage .draft-preview p,
+.draft-progress[data-testid='draft-progress'],
+.draft-progress[data-testid='draft-progress'] .draft-preview,
+.draft-progress[data-testid='draft-progress'] .draft-preview p {
+  animation: none;
+  opacity: 1;
+}
+/*
+ * Desktop columns share a header row. This is a minimum, not a fixed height:
+ * enlarged text or wrapped actions can still grow it without clipping.
+ */
+@media (min-width: 901px) {
+  .col-header,
+  .note-editor-header {
+    min-height: 86px;
+  }
+}
+
+@media (max-width: 900px) {
+  .col-header,
+  .note-editor-header {
+    min-height: 0;
+  }
+}
+
+.patient-entry .list-item .name {
+  color: var(--text-primary);
+}
+
+.patient-entry .list-item .sub {
+  color: var(--text-secondary);
+}

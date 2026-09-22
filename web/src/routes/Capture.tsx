@@ -1,6 +1,6 @@
 import { WARN_RECORDING_SECONDS } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useBlocker, useNavigate, useParams, type Blocker, type BlockerFunction } from 'react-router';
 
 import {
   errorMessage,
@@ -11,6 +11,7 @@ import {
   type GenerateHandlers,
 } from '../api/index.js';
 import { KeyboardIcon, MicIcon } from '../components/icons.js';
+import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { LiveRecording } from '../components/LiveRecording.js';
 import { SpellcheckTextarea } from '../components/SpellcheckTextarea.js';
 import { ThinkingDots } from '../components/ThinkingDots.js';
@@ -31,7 +32,7 @@ import { formatTimer } from '../lib/recorder.js';
  * notes go to the same drafting call — the recorder replaces the "Record
  * audio" button while it runs, and the textarea stays where it is.
  *
- * And "Process note" calls the local model: `/api/generate` for typed notes,
+ * And "Create draft" calls the local model: `/api/generate` for typed notes,
  * `/api/transcribe` when there is a recording. The second is one request that
  * transcribes and then drafts, so the screen shows one continuous progression
  * rather than making her wait twice.
@@ -42,6 +43,28 @@ import { formatTimer } from '../lib/recorder.js';
  */
 
 export function Capture(): React.JSX.Element {
+  const dirtyRef = useRef(false);
+  const reportDirty = useCallback((dirty: boolean) => {
+    dirtyRef.current = dirty;
+  }, []);
+  const shouldBlock = useCallback<BlockerFunction>(
+    ({ currentLocation, nextLocation }) =>
+      dirtyRef.current &&
+      (currentLocation.pathname !== nextLocation.pathname ||
+        currentLocation.search !== nextLocation.search ||
+        currentLocation.hash !== nextLocation.hash),
+    [],
+  );
+  const blocker = useBlocker(shouldBlock);
+  return <CaptureScreen blocker={blocker} reportDirty={reportDirty} />;
+}
+
+interface CaptureScreenProps {
+  readonly blocker: Blocker;
+  readonly reportDirty: (dirty: boolean) => void;
+}
+
+function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.Element {
   useDocumentTitle('New note');
   const { patientId = '' } = useParams();
   const navigate = useNavigate();
@@ -61,6 +84,7 @@ export function Capture(): React.JSX.Element {
   const [draft, setDraft] = useState<Record<string, string>>({});
 
   const [notice, setNotice] = useState<string | null>(null);
+  const unfinishedRef = useRef(false);
   /**
    * The finished WAV, held until the note is saved.
    *
@@ -115,6 +139,44 @@ export function Capture(): React.JSX.Element {
     },
     [],
   );
+  const unfinished = text.trim().length > 0 || recording !== 'idle' || wav !== null || busy;
+  unfinishedRef.current = unfinished;
+
+  useEffect(() => {
+    reportDirty(unfinished);
+  }, [reportDirty, unfinished]);
+
+  useEffect(() => {
+    function onBeforeUnload(event: BeforeUnloadEvent): void {
+      if (!unfinishedRef.current) return;
+      event.preventDefault();
+      event.returnValue = '';
+    }
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, []);
+
+  function abandonCapture(): void {
+    // This is called only after the user chooses Discard in the leave dialog.
+    unfinishedRef.current = false;
+    live.cancel();
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setWav(null);
+    setBusy(false);
+  }
+
+  function confirmLeave(): void {
+    if (blocker.state !== 'blocked') return;
+    abandonCapture();
+    blocker.proceed();
+  }
+
+  function stayOnCapture(): void {
+    if (blocker.state === 'blocked') blocker.reset();
+  }
 
   const draftHandlers = (): GenerateHandlers => ({
     onStatus: (event) => {
@@ -185,11 +247,13 @@ export function Capture(): React.JSX.Element {
               {
                 ...draftHandlers(),
                 onProgress: (event) => {
-                  setStatus(`${event.message} ${String(Math.round(event.fraction * 100))}%`);
+                  setStatus(event.message);
                 },
               },
               controller.signal,
             );
+      unfinishedRef.current = false;
+      reportDirty(false);
       await navigate(`/?patient=${patientId}&note=${note.id}`, { replace: true });
     } catch (thrown) {
       setError(errorMessage(thrown));
@@ -264,6 +328,11 @@ export function Capture(): React.JSX.Element {
         </p>
       ) : (
         <>
+          <p className="capture-source" data-testid="capture-source">
+            <strong>Start with a recording</strong> — or type notes instead. You can use either, or combine
+            both before you create the draft.
+          </p>
+
           <div className="stack">
             {recording === 'recording' ? (
               <LiveRecording
@@ -280,13 +349,39 @@ export function Capture(): React.JSX.Element {
                     void stopRecording();
                   }}
                 >
-                  Stop and process
+                  Stop and create draft
                 </button>
               </LiveRecording>
-            ) : wav !== null && !busy ? (
-              <div className="record-ui" data-testid="record-done">
+            ) : recording === 'starting' ? (
+              <div className="record-ui capture-stage" data-testid="record-stage">
+                <p className="capture-stage-status" role="status">
+                  Opening microphone…
+                </p>
+                <p className="small muted">Allow microphone access to begin your private recording.</p>
+              </div>
+            ) : busy ? (
+              <div className="capture-stage draft-progress" data-testid="draft-progress">
+                <p className="capture-stage-status draft-status" role="status" data-testid="draft-status">
+                  <span data-testid="draft-status-label">{status ?? 'Preparing your draft…'}</span>{' '}
+                  <ThinkingDots ariaLabel={status ?? 'Preparing your draft'} />
+                </p>
+                {drafting && (
+                  <div className="draft-preview capture-stage-preview" data-testid="draft-preview">
+                    {sections.map((section) => (
+                      <p key={section}>
+                        <span className="draft-section">{section}:</span> {draft[section] ?? ''}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : wav !== null ? (
+              <div className="record-ui capture-stage" data-testid="record-done">
+                <p className="capture-stage-status" role="status">
+                  Recording ready
+                </p>
                 <p className="muted record-label">
-                  Recording ready — {formatTimer(seconds)}. Nothing has left this Mac.
+                  {formatTimer(seconds)} recorded. Nothing has left this Mac.
                 </p>
                 <div className="row gap-12 record-actions">
                   <button
@@ -297,7 +392,7 @@ export function Capture(): React.JSX.Element {
                       void process();
                     }}
                   >
-                    Process recording
+                    Create draft from recording
                   </button>
                   <button
                     type="button"
@@ -309,34 +404,31 @@ export function Capture(): React.JSX.Element {
                   </button>
                 </div>
               </div>
-            ) : (
+            ) : !busy ? (
               <button
                 type="button"
-                className="btn-option"
+                className="btn-option capture-source-option"
                 data-testid="record-start"
-                disabled={busy || recording === 'starting'}
                 onClick={() => {
                   void startRecording();
                 }}
               >
                 <MicIcon />
-                <div>
+                <div className="capture-source-copy">
                   <div className="opt-title">Record audio</div>
                   <div className="opt-sub">
-                    {recording === 'starting'
-                      ? 'Waiting for the microphone…'
-                      : 'Narrate your notes right now'}
+                    Start here — narrate your notes; add typed notes before or while recording
                   </div>
                 </div>
               </button>
-            )}
+            ) : null}
 
             <div className="capture-typed" data-testid="type-ui">
               <div className="row gap-12 capture-typed-head">
                 <KeyboardIcon />
-                <div>
-                  <div className="opt-title">Type it out</div>
-                  <div className="opt-sub">Quick summary in your own words</div>
+                <div className="capture-source-copy">
+                  <div className="opt-title">Type notes</div>
+                  <div className="opt-sub">Type notes before or while recording, or use typing alone</div>
                 </div>
               </div>
               <SpellcheckTextarea
@@ -358,46 +450,41 @@ export function Capture(): React.JSX.Element {
             </p>
           )}
 
-          {busy && (
-            <div className="draft-progress" data-testid="draft-progress">
-              {/* Dots alone (owner-proxy, 2026-08-30): the cycling is the
-                  signal. The server's live stage text still reaches assistive
-                  tech as the dots' spoken name. */}
-              <p className="small muted draft-status" role="status" data-testid="draft-status">
-                <ThinkingDots ariaLabel={status ?? 'Drafting'} />
-              </p>
-              {drafting && (
-                <div className="draft-preview" data-testid="draft-preview">
-                  {sections.map((section) => (
-                    <p key={section}>
-                      <span className="draft-section">{section}:</span> {draft[section] ?? ''}
-                    </p>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
           {error !== null && (
             <p className="form-error" role="alert" data-testid="capture-error">
               {error}
             </p>
           )}
 
-          {recording !== 'recording' && (
+          {recording === 'idle' && !busy && (
             <button
               type="button"
               className="btn btn-primary btn-block form-actions"
               data-testid="process-note"
-              disabled={busy || !canProcess}
+              disabled={!canProcess}
               onClick={() => {
                 void process();
               }}
             >
-              {busy ? 'Drafting…' : 'Process note'}
+              Create draft
             </button>
           )}
         </>
+      )}
+      {blocker.state === 'blocked' && (
+        <ConfirmDialog
+          title="Leave this unfinished note?"
+          cancelLabel="Stay"
+          confirmLabel="Discard and leave"
+          onCancel={stayOnCapture}
+          onConfirm={confirmLeave}
+          body={
+            <>
+              <p>Your typed notes, recording, or draft in progress will be discarded if you leave.</p>
+              <p>Stay to keep working, or discard this unfinished capture and continue.</p>
+            </>
+          }
+        />
       )}
     </Screen>
   );

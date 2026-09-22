@@ -68,6 +68,7 @@ export function PatientsColumn({
             setQuery(event.target.value);
           }}
           placeholder="Search patients"
+          data-testid="patient-search"
           aria-label="Search patients"
         />
       </div>
@@ -80,6 +81,9 @@ export function PatientsColumn({
           showArchived={showArchived}
           onSelect={onSelect}
           onRetry={onRetry}
+          onClearSearch={() => {
+            setQuery('');
+          }}
           onToggleArchived={onToggleArchived}
           onSetArchived={onSetArchived}
           onRename={onRename}
@@ -123,9 +127,10 @@ function PatientList({
   showArchived,
   onSelect,
   onRetry,
+  onClearSearch,
   onSetArchived,
   onRename,
-}: PatientsColumnProps & { query: string }): React.JSX.Element {
+}: PatientsColumnProps & { query: string; onClearSearch: () => void }): React.JSX.Element {
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
 
   if (patients.status === 'loading') return <p className="small state-note">Loading patients…</p>;
@@ -145,11 +150,28 @@ function PatientList({
   const visible = patients.data.filter((patient) => patient.name.toLowerCase().includes(needle));
 
   if (visible.length === 0) {
-    return (
-      <p className="small col-hint">
-        {needle.length > 0 ? 'No patients match.' : showArchived ? 'No patients yet.' : 'No active patients.'}
-      </p>
-    );
+    if (needle.length > 0) {
+      return (
+        <div className="empty-column-state">
+          <p className="small col-hint">No patients match “{query.trim()}”.</p>
+          <button type="button" className="btn btn-compact btn-quick" onClick={onClearSearch}>
+            Clear search
+          </button>
+        </div>
+      );
+    }
+    if (patients.data.length === 0) {
+      return (
+        <div className="empty-column-state">
+          <p className="small col-hint">Add your first patient to get started.</p>
+          <Link to="/patients/new" className="btn btn-primary btn-compact">
+            <PlusIcon className="icon icon-sm" />
+            Add your first patient
+          </Link>
+        </div>
+      );
+    }
+    return <p className="small col-hint">{showArchived ? 'No patients yet.' : 'No active patients.'}</p>;
   }
 
   return (

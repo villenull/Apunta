@@ -1,0 +1,146 @@
+[
+  {
+    "model": "qwen3.5:4b-q4_K_M",
+    "records": 11,
+    "outcomes": {
+      "pass": 11,
+      "fail": 0,
+      "unsupported": 0,
+      "unmeasured": 0
+    },
+    "fabrication": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "safety": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "salientFacts": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "coldMs": {
+      "p50": 2152.1028029999998,
+      "p95": 2152.1028029999998,
+      "n": 1
+    },
+    "warmMs": {
+      "p50": 410.7617,
+      "p95": 434.2209420000004,
+      "n": 10
+    },
+    "retries": 0,
+    "stopReasons": {
+      "stop": 11
+    }
+  },
+  {
+    "model": "qwen3.5:2b-q4_K_M",
+    "records": 11,
+    "outcomes": {
+      "pass": 11,
+      "fail": 0,
+      "unsupported": 0,
+      "unmeasured": 0
+    },
+    "fabrication": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "safety": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "salientFacts": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "coldMs": {
+      "p50": 2020.459964,
+      "p95": 2020.459964,
+      "n": 1
+    },
+    "warmMs": {
+      "p50": 632.9873109999999,
+      "p95": 648.4278549999999,
+      "n": 10
+    },
+    "retries": 0,
+    "stopReasons": {
+      "stop": 11
+    }
+  },
+  {
+    "model": "prism-ml/Bonsai-8B-gguf/Bonsai-8B-Q1_0.gguf",
+    "records": 11,
+    "outcomes": {
+      "pass": 11,
+      "fail": 0,
+      "unsupported": 0,
+      "unmeasured": 0
+    },
+    "fabrication": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "safety": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "salientFacts": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "coldMs": {
+      "p50": 2479.329537,
+      "p95": 2479.329537,
+      "n": 1
+    },
+    "warmMs": {
+      "p50": 1135.6073809999998,
+      "p95": 1174.6001660000002,
+      "n": 10
+    },
+    "retries": 0,
+    "stopReasons": {
+      "stop": 11
+    }
+  },
+  {
+    "model": "prism-ml/Bonsai-4B-gguf/Bonsai-4B-Q1_0.gguf",
+    "records": 11,
+    "outcomes": {
+      "pass": 11,
+      "fail": 0,
+      "unsupported": 0,
+      "unmeasured": 0
+    },
+    "fabrication": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "safety": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "salientFacts": {
+      "numerator": 0,
+      "denominator": 0
+    },
+    "coldMs": {
+      "p50": 2053.90009,
+      "p95": 2053.90009,
+      "n": 1
+    },
+    "warmMs": {
+      "p50": 733.6120559999999,
+      "p95": 755.6903290000005,
+      "n": 10
+    },
+    "retries": 0,
+    "stopReasons": {
+      "stop": 11
+    }
+  }
+]

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "1.1.0",
+  "frozenAt": "2026-09-22T18:24:17.884Z",
+  "revision": "7dbfff8c7c83a641eb38afc3062b662d9daa6754",
+  "runtime": "ollama version is 0.34.2",
+  "node": "v26.8.2",
+  "schemaSha256": "168fee90b67e3e0cd083bdb81f412457da8830b5147a9cb8caf24b89d2042265",
+  "runnerSha256": "569ef2b53de9296ab5c4db407a0ed62cc909ec595bf3ad5271bd3b0f4e39156f",
+  "rescoreDiscussionSha256": "3a564d4d49fc3b822ee05687e8f89d37377659fbe8cf34ee74a1548906de16b8",
+  "artifactsSha256": "9d615d925a9c0e663e1a563eaec90a314791f5fc74285b0237ac337e74538e11",
+  "instructions": {
+    "progressFactoryConstant": "f703e7c210c8d7b1eb3cb2ff4963bb4510708e7f601078df41a76c213fe025cd",
+    "progressRecoveryStored": "5145d6291b7b598b5b9f2a9b775b9144e2e6acbca667eca140b81e9190b57138",
+    "progressOwnerLatest": "a3a0ecc626c32a029588376e18b333195b4bd1e9138ec3a53bf017689763be31",
+    "intakeFactoryConstant": "f703e7c210c8d7b1eb3cb2ff4963bb4510708e7f601078df41a76c213fe025cd"
+  },
+  "fixtures": {
+    "01-terse-jotting.txt": {
+      "sha256": "b5cf27d2a16c197cc4b76f1c819ed06705e1f0d364a851dbbd53502b2abb3612",
+      "bytes": 116
+    },
+    "02-dictated-sleep-progress.txt": {
+      "sha256": "c24e298761e4ba398ba2ae9d85c18c3e0dca5d20294fb222654083baf07a34d0",
+      "bytes": 643
+    },
+    "03-rambling-work-stress.txt": {
+      "sha256": "85e055fbf4d15dd4dcfa163594a5b7e157e032ade91dbff41d1a94719bb4ce7a",
+      "bytes": 3547
+    },
+    "04-dictation-with-retraction.txt": {
+      "sha256": "e70bb29d09e97908cb7df45c7b98809bf46212b448610d4cc7184be8301f565b",
+      "bytes": 1392
+    },
+    "05-garbled-medication.txt": {
+      "sha256": "8da9a03e562055709993b5973e3c199fb34cf3dfffc3f64aa5ef24fce25ff219",
+      "bytes": 1140
+    },
+    "06-shorthand-no-plan.txt": {
+      "sha256": "ff918d416dfe34c8cd75e153dd2ec16e5922bbdbcdd9d2782c0778c57bd0e26f",
+      "bytes": 466
+    },
+    "07-out-of-order-grief.txt": {
+      "sha256": "fc9b4d835aeb5f208e661fa09fcbfa70e3e74bef12913cbcb81bcbe84132027c",
+      "bytes": 1713
+    },
+    "08-intake-dictated.txt": {
+      "sha256": "13572eb149170be1582839f02d82ab6a5d0c8a1aea6b1afc25d5c8e3dadd9ee2",
+      "bytes": 2247
+    },
+    "09-intake-history-declined.txt": {
+      "sha256": "c5ab83588207e33ab1d014b1a53174e0cfe64cf6a62af42e7c866a5b3567482f",
+      "bytes": 1734
+    },
+    "10-intake-messy-mixed.txt": {
+      "sha256": "1bb9c132092cfc24848dea8656ec998ed9a6ce5e4e98b99b1d1e8744539d58cd",
+      "bytes": 2950
+    },
+    "11-terse-observations-no-read.txt": {
+      "sha256": "58c123f83c8a03be581197eb88c58c25b06f52f728f74017ce29c5c615ae2b9d",
+      "bytes": 501
+    },
+    "12-dictated-observation-only.txt": {
+      "sha256": "61e79139f7c36649174a7084e9b2af64f36a16e1de9550a557c3f505def2deb4",
+      "bytes": 1134
+    },
+    "13-phone-check-in-no-objective.txt": {
+      "sha256": "9ab16598bdcf373987e68c82674be3af4d312fc9f237810c72537ef9a4e06a48",
+      "bytes": 389
+    },
+    "14-intake-long-no-formulation.txt": {
+      "sha256": "184a97563e77631029832def370ab5d2ed0692a9b4528c136d1d7fc5166f7b85",
+      "bytes": 3105
+    },
+    "15-shorthand-cut-short.txt": {
+      "sha256": "12c2c360b66f5bf37a0a2a133b71ba20bf0543fc79f10689ec6e2a8ec3fd04be",
+      "bytes": 477
+    },
+    "16-intake-partial-no-plan.txt": {
+      "sha256": "4a57913a8e5c6fbfaa013215551cd64a197e5ee29b9a0f31065b1d2550c5f30f",
+      "bytes": 1536
+    },
+    "17-nothing-changed-phrase-bait.txt": {
+      "sha256": "ac8e5848c962e3d423454f157574eb975a5c57feadd88439b5e3155422d732ea",
+      "bytes": 1031
+    },
+    "18-long-dictation-no-read.txt": {
+      "sha256": "27c4c32739a42e5cdf2ec8fab51f8016c706887a9bdd44ff9ba04fe8dc8d63d8",
+      "bytes": 2629
+    },
+    "19-intake-dictated-no-formulation.txt": {
+      "sha256": "11d1ee11d22f35b4ab90d1492a2fa3a0390c68c918ff31bf357365776f4ea808",
+      "bytes": 2332
+    },
+    "20-two-topics-no-synthesis.txt": {
+      "sha256": "45fc3e399eb5f305407252bc58690973d44b6b5ba1d976546eca48e78afae37c",
+      "bytes": 1058
+    }
+  }
+}

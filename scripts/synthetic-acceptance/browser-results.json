@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "2026-09-22-synthetic-acceptance",
+  "environment": {
+    "host": "Linux x86_64",
+    "browser": "Chromium via browser tool",
+    "realServer": "http://127.0.0.1:7790",
+    "fakeTransitionServer": "http://127.0.0.1:7792",
+    "ollama": "http://127.0.0.1:11436",
+    "sttModel": "ggml-tiny.en.bin",
+    "llmModel": "qwen3.5:4b-q4_K_M"
+  },
+  "cases": [
+    {
+      "id": "sentence-once-preview-stop-final",
+      "outcome": "pass",
+      "observed": "Final note had one grounded Discussion block; preview was not appended."
+    },
+    {
+      "id": "intentional-repetition",
+      "outcome": "pass",
+      "observed": "Whisper retained cancelled,cancelled in the transcript; final prose retained the source repetition before correction."
+    },
+    {
+      "id": "start-stop-start",
+      "outcome": "pass",
+      "observed": "Two successive disposable capture recordings each reached a draft."
+    },
+    {
+      "id": "cancel-start",
+      "outcome": "pass",
+      "observed": "Closing refine chat during capture removed the panel without sending; a later start remained available."
+    },
+    {
+      "id": "stale-delayed-preview",
+      "outcome": "pass",
+      "observed": "Delayed first preview could not overwrite final note; fake canned preview visibly repeats while slices accumulate."
+    },
+    {
+      "id": "refine-chat-microphone",
+      "outcome": "pass",
+      "observed": "Real 4B transcription populated composer and did not send a chat message."
+    },
+    {
+      "id": "real-4b-retraction-safety-note",
+      "outcome": "fail",
+      "observed": "Bounded final-build 20.22s one-shot capture produced one transcript copy, but the 4B reversed the correction (reported six to four) and retained withdrawn morning-meeting wording; safety denial and Tuesday action survived."
+    },
+    {
+      "id": "discussion-matrix-owner-instructions",
+      "outcome": "partial",
+      "observed": "Frozen current-control strict rescore is 3 pass/1 fail: single-topic, withdrawn-topic exclusion, and sentence conservation pass; two-topics-labels fails because raw Discussion has zero lowercase label lines."
+    },
+    {
+      "id": "refine-label-header-and-obsolete-wording",
+      "outcome": "untested",
+      "observed": "Existing fake-provider regressions cover related grounding; no real-model refine-chat run was included in the focused matrix."
+    }
+  ],
+  "limitations": [
+    "Synthetic Piper speech",
+    "Chromium fake capture",
+    "Linux only",
+    "No physical microphone",
+    "No Mac evidence"
+  ]
+}

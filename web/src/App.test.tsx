@@ -1,6 +1,6 @@
 import type { ChatMessage, Note } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App.js';
@@ -33,13 +33,12 @@ const johnsIntake = makeNote(john.id, {
   status: 'published',
   published_at: '2026-08-09T09:00:00.000Z',
 });
+type TestRouter = Parameters<typeof RouterProvider>[0]['router'];
+let activeRouter: TestRouter | null = null;
 
 function renderApp(path: string | { pathname: string; state: unknown } = '/'): void {
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
-  );
+  activeRouter = createMemoryRouter([{ path: '*', element: <App /> }], { initialEntries: [path] });
+  render(<RouterProvider router={activeRouter} />);
 }
 
 /**
@@ -59,8 +58,9 @@ function upload(input: HTMLElement, files: readonly File[]): void {
   Object.defineProperty(input, 'files', { value: list as unknown as FileList, configurable: true });
   fireEvent.change(input);
 }
-
 afterEach(() => {
+  activeRouter?.dispose();
+  activeRouter = null;
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -94,7 +94,7 @@ describe('workspace', () => {
     expect(screen.getByText('Maria Ruiz')).toBeDefined();
 
     fireEvent.change(search, { target: { value: 'nobody' } });
-    expect(screen.getByText('No patients match.')).toBeDefined();
+    expect(await screen.findByText(/No patients match/)).toBeDefined();
   });
 
   it("shows a patient with no notes the prototype's empty hint", async () => {
@@ -102,8 +102,8 @@ describe('workspace', () => {
 
     fireEvent.click(await screen.findByText('Maria Ruiz'));
 
-    expect(await screen.findByText('No notes yet for Maria Ruiz.')).toBeDefined();
-    expect(screen.getByText('No note selected for Maria Ruiz')).toBeDefined();
+    expect((await screen.findAllByText('No notes yet for Maria Ruiz.')).length).toBeGreaterThan(0);
+    expect(screen.getByTestId('notes-header').textContent).toContain('Maria');
   });
 
   it('opens a note, and marks drafts with a date and a Draft label', async () => {
@@ -260,17 +260,18 @@ describe('note editing', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('note-meta').textContent).toContain('edited');
+      expect(screen.getByTestId('note-save-status').textContent).toBe('Saved');
     });
   });
 
-  it('publishes: copies the note, locks the body, and unlocks on a second click', async () => {
+  it('finishes: copies the note, locks the body, and edits again on a second click', async () => {
     const clipboard = installFakeClipboard();
     const body = await openNote();
 
     fireEvent.click(screen.getByTestId('publish-button'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('publish-button').textContent).toContain('Published (click to edit)');
+      expect(screen.getByTestId('publish-button').textContent).toContain('Edit again');
     });
     expect(body).toHaveProperty('readOnly', true);
     expect(clipboard.written).toEqual([note.content]);
@@ -278,7 +279,7 @@ describe('note editing', () => {
     fireEvent.click(screen.getByTestId('publish-button'));
 
     await waitFor(() => {
-      expect(screen.getByTestId('publish-button').textContent).toBe('Publish');
+      expect(screen.getByTestId('publish-button').textContent).toBe('Finish & copy');
     });
     expect(screen.getByTestId('note-body')).toHaveProperty('readOnly', false);
   });

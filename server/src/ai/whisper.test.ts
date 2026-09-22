@@ -5,7 +5,7 @@ import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
 
-import { MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
+import { AUDIO_SAMPLE_RATE, encodeWav, MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AiError } from './errors.js';
@@ -15,6 +15,7 @@ import {
   buildVocabularyPrompt,
   buildWhisperArgs,
   classifyFailure,
+  detectTrailingSilenceDurationMs,
   parseProgress,
   parseTimings,
   parseTranscript,
@@ -22,6 +23,7 @@ import {
   STT_LEAD_IN,
   sttPrompt,
   timeoutFor,
+  TRAILING_SILENCE_MIN_MS,
   TRANSCRIBE_BASE_TIMEOUT_MS,
   whisperThreads,
   WhisperCppSttProvider,
@@ -133,6 +135,54 @@ describe('previewAudioContext', () => {
     expect(previewAudioContext(1)).toBe(384);
     expect(previewAudioContext(2.5)).toBe(384);
     expect(previewAudioContext(60)).toBe(1500);
+  });
+});
+describe('detectTrailingSilenceDurationMs', () => {
+  it('bounds only a confidently silent tail and leaves conservative padding', async () => {
+    const pcm = new Int16Array(AUDIO_SAMPLE_RATE * 3);
+    pcm.fill(12_000, 0, AUDIO_SAMPLE_RATE);
+    const path = join(dir, 'spoken-then-silence.wav');
+    writeFileSync(path, encodeWav(pcm));
+
+    await expect(detectTrailingSilenceDurationMs(path, 3)).resolves.toBe(1300);
+  });
+  it('preserves quiet nonzero material before a later silent tail', async () => {
+    const pcm = new Int16Array(AUDIO_SAMPLE_RATE * 3);
+    pcm.fill(12_000, 0, AUDIO_SAMPLE_RATE);
+    pcm.fill(32, AUDIO_SAMPLE_RATE, AUDIO_SAMPLE_RATE * 2);
+    const path = join(dir, 'quiet-thank-you-then-silence.wav');
+    writeFileSync(path, encodeWav(pcm));
+
+    await expect(detectTrailingSilenceDurationMs(path, 3)).resolves.toBe(2300);
+  });
+
+  it('uses the existing empty-audio contract for digital silence and preserves quiet nonzero audio', async () => {
+    const silent = join(dir, 'digital-silence.wav');
+    writeFileSync(silent, encodeWav(new Int16Array(AUDIO_SAMPLE_RATE * 2)));
+    await expect(detectTrailingSilenceDurationMs(silent, 2)).resolves.toBe(0);
+
+    const quiet = new Int16Array(AUDIO_SAMPLE_RATE * 2).fill(32);
+    const quietPath = join(dir, 'all-quiet-nonzero.wav');
+    writeFileSync(quietPath, encodeWav(quiet));
+    await expect(detectTrailingSilenceDurationMs(quietPath, 2)).resolves.toBeNull();
+  });
+
+  it('requires the full trailing-silence interval', async () => {
+    const pcm = new Int16Array(AUDIO_SAMPLE_RATE * 2);
+    pcm.fill(12_000, 0, Math.floor(AUDIO_SAMPLE_RATE * 1.3));
+    const path = join(dir, 'short-pause.wav');
+    writeFileSync(path, encodeWav(pcm));
+
+    expect(TRAILING_SILENCE_MIN_MS).toBe(800);
+    await expect(detectTrailingSilenceDurationMs(path, 2)).resolves.toBeNull();
+  });
+  it('declines truncated odd-sized PCM instead of looping at the tail', async () => {
+    const wav = Buffer.from(encodeWav(new Int16Array([1])));
+    wav.writeUInt32LE(3, 40);
+    const path = join(dir, 'odd-data.wav');
+    writeFileSync(path, wav);
+
+    await expect(detectTrailingSilenceDurationMs(path, 1)).resolves.toBeNull();
   });
 });
 
@@ -328,6 +378,38 @@ describe('WhisperCppSttProvider.transcribe', () => {
     expect(calls[0]?.command).toBe('whisper-cli');
     expect(calls[0]?.args).toContain('--prompt');
     expect(calls[0]?.args[calls[0]?.args.indexOf('--threads') + 1]).toBe(String(whisperThreads(false)));
+  });
+
+  it('passes a detected trailing-silence bound without rewriting the recording', async () => {
+    const pcm = new Int16Array(AUDIO_SAMPLE_RATE * 3);
+    pcm.fill(12_000, 0, AUDIO_SAMPLE_RATE);
+    const wavPath = join(dir, 'provider-tail.wav');
+    writeFileSync(wavPath, encodeWav(pcm));
+    const calls: SpawnCall[] = [];
+
+    await collect(
+      provider((child) => {
+        child.stdout.write(' Spoken words.\n');
+        child.emit('close', 0, null);
+      }, calls).transcribe({ ...request, wavPath, durationSeconds: 3 }),
+    );
+
+    const args = calls[0]?.args ?? [];
+    expect(args[args.indexOf('--duration') + 1]).toBe('1300');
+  });
+  it('reports digital silence through transcription_empty without spawning Whisper', async () => {
+    const wavPath = join(dir, 'provider-silence.wav');
+    writeFileSync(wavPath, encodeWav(new Int16Array(AUDIO_SAMPLE_RATE * 2)));
+    const calls: SpawnCall[] = [];
+
+    await expect(
+      collect(
+        provider(() => {
+          throw new Error('should not spawn');
+        }, calls).transcribe({ ...request, wavPath, durationSeconds: 2 }),
+      ),
+    ).rejects.toMatchObject({ code: 'transcription_empty' });
+    expect(calls).toHaveLength(0);
   });
 
   it('runs a preview on the smaller model when one is configured and present, and the note on the main one', async () => {

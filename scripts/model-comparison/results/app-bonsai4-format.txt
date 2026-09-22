@@ -1,0 +1,107 @@
+Format: Progress note — Location, Client presentation, Risk review, Discussion, Intervention, Out of session actions, Note for next session
+Model:  prism-ml/Bonsai-4B-gguf:Q1_0
+
+
+=== 1-typed-brief.txt ===
+Location: Online.
+
+Client presentation: John appeared steady during the session, kept the walking going, reported a better mood than last time, and stated he would continue the weekly sessions.
+
+Risk review: None.
+
+Discussion: John reported that he has been walking steadily for the past week and noted his mood has improved compared to the previous session.
+
+Intervention:
+
+Out of session actions:
+
+Note for next session: John will continue his weekly walking sessions.
+
+=== 2-presentation-and-talk.txt ===
+Location: In the office.
+
+Client presentation: Teary for the first ten minutes, settled after that, good eye contact by the end.
+
+Risk review: None.
+
+Discussion: Jane described her sister moving away and how that leaves her with a sense of loss; she expressed ambivalence about the change and asked about the possibility of a text message to her sister this week.
+
+Intervention: I introduced grounding.
+
+Out of session actions: None.
+
+Note for next session: Jane will text her sister this week.
+
+=== 3-risk-reviewed.txt ===
+Location: Online.
+
+Client presentation: Alex appeared concerned about safety, but denied any thoughts of self-harm; otherwise, discussed the sleep routine.
+
+Risk review: None.
+
+Discussion: Alex reported that the passive thoughts from July have not returned; we worked on the sleep routine.
+
+Intervention: I inquired about safety directly today; Alex denied any thoughts of self-harm.
+
+Out of session actions: Alex, write out his practice pieces before Friday.
+
+Note for next session: Alex will report if the passive thoughts from July return.
+  ⚑ a risk review she carried out was flattened to "None."
+
+=== 4-cadence-decision.txt ===
+Location: Office.
+
+Client presentation:
+
+Risk review: None.
+
+Discussion: Maria came to session reporting that she is doing thought records, and we agreed to move the session to every two weeks starting next month. She will continue to keep the log going.
+
+Intervention: I introduced the plan to move the session to every two weeks starting next month.
+
+Out of session actions: Maria, keep the log going.
+
+Note for next session: Maria will keep the log going and the session will be held every two weeks starting next month.
+
+=== 5-phone-check-in.txt ===
+Location: Phone check.
+
+Client presentation: Richard Roe appeared calm and engaged during the phone check.
+
+Risk review: None.
+
+Discussion: Richard Roe reported that his new job is going fine and that he does not need anything this week.
+
+Intervention: I reflected on the client's positive report about his new job and asked if there were any concerns about the transition or workload.
+
+Out of session actions: I will follow up with Richard Roe to confirm his current job status and workload.
+
+Note for next session: Richard Roe will report on his new job and any changes in workload during the next session.
+
+=== 6-retraction.txt ===
+Location: Online.
+
+Client presentation: Dana was steady, talked about the new flat.
+
+Risk review: None.
+
+Discussion: Dana came to session reporting the anniversary is hitting her hard, which was last session; today she was steady, talked about the new flat, and asked me to look up the group she mentioned.
+
+Intervention:
+
+Out of session actions: Dana, look up the group she mentioned.
+
+Note for next session: Dana will ask me to look up the group she mentioned.
+  ⚑ reported content in Client presentation
+
+--- summary ---
+ok   1-typed-brief.txt
+ok   2-presentation-and-talk.txt
+1 ⚑  3-risk-reviewed.txt
+ok   4-cadence-decision.txt
+ok   5-phone-check-in.txt
+1 ⚑  6-retraction.txt
+
+2 flag(s) across 6 fixtures.
+Flags are a prompt to read the note above, not a verdict.
+The drafts stay in the database; delete that patient to clear them.

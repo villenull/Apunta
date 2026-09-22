@@ -1,0 +1,111 @@
+Format: Progress note — Location, Client presentation, Risk review, Discussion, Intervention, Out of session actions, Note for next session
+Model:  prism-ml/Bonsai-8B-gguf:Q1_0
+
+
+=== 1-typed-brief.txt ===
+Location: Online.
+
+Client presentation: John, steady week, kept the walking going. mood better than last time. staying weekly.
+
+Risk review: None.
+
+Discussion:
+
+Intervention:
+
+Out of session actions:
+
+Note for next session: John will say if his usual session time stops working.
+  ⚑ Discussion empty though the source has material
+  ⚑ a stated cadence decision is missing from Note for next session
+
+=== 2-presentation-and-talk.txt ===
+Location: In the office.
+
+Client presentation: She was tearful for the first ten minutes, settled after that, good eye contact by the end.
+
+Risk review: None.
+
+Discussion: Jane came to session talking mostly about her sister moving away and what that leaves her with.
+
+Intervention: I introduced grounding.
+
+Out of session actions: Jane will text her sister this week.
+
+Note for next session: Jane will text her sister this week.
+
+=== 3-risk-reviewed.txt ===
+Location: Online.
+
+Client presentation:
+
+Risk review: None.
+
+Discussion: Alex came to session asking about safety directly today; he denied any thoughts of self harm, said the passive stuff from July has not come back. Otherwise we worked on the sleep routine.
+
+Intervention:
+
+Out of session actions:
+
+Note for next session: Alex will say if his usual session time stops working.
+  ⚑ a risk review she carried out was flattened to "None."
+
+=== 4-cadence-decision.txt ===
+Location: Office.
+
+Client presentation:
+
+Risk review: None.
+
+Discussion: Maria Ruiz, office. Good session, she is doing the thought records.
+
+Intervention: Maria Ruiz, office. We agreed to move to every two weeks starting next month.
+
+Out of session actions:
+
+Note for next session: Maria Ruiz, office. She will keep the log going.
+  ⚑ a stated cadence decision is missing from Note for next session
+
+=== 5-phone-check-in.txt ===
+Location: Phone.
+
+Client presentation:
+
+Risk review: None.
+
+Discussion:
+
+Intervention:
+
+Out of session actions: Client will report on the new job and whether she needs anything this week.
+
+Note for next session: Client will report on the new job and whether she needs anything this week.
+  ⚑ Discussion empty though the source has material
+
+=== 6-retraction.txt ===
+Location: Online.
+
+Client presentation: Dana Doe, online.
+
+Risk review: None.
+
+Discussion: Dana came to session talking about the new flat. She asked me to look up the group I mentioned.
+
+Intervention:
+
+Out of session actions:
+
+Note for next session: Dana will say if her usual session time stops working.
+  ⚑ wording copied from the worked example in the instructions
+
+--- summary ---
+2 ⚑  1-typed-brief.txt
+ok   2-presentation-and-talk.txt
+1 ⚑  3-risk-reviewed.txt
+1 ⚑  4-cadence-decision.txt
+1 ⚑  5-phone-check-in.txt
+1 ⚑  6-retraction.txt
+
+6 flag(s) across 6 fixtures.
+Flags are a prompt to read the note above, not a verdict.
+The drafts stay in the database; delete that patient to clear them.

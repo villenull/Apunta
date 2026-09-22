@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Local-first clinical note drafting for therapists.</strong><br>
-  Dictate or type the rough version, review the draft, refine it beside the text, and copy the finished note into the records system you already use.
+  Dictate or type the rough version, review the draft, refine it beside the text, and use **Finish & copy** to put the finished note into the records system you already use.
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
 
 Apunta is a drafting tool, not a clinical record system. It keeps drafts,
 transcripts and refinement conversations on the Mac, then puts the note on your
-clipboard when you publish it. Read every draft before you use it: a local
+clipboard when you choose **Finish & copy**. Read every draft before you use it: a local
 model can still write a sentence that was never said.
 
 <p align="center">
@@ -34,90 +34,72 @@ model can still write a sentence that was never said.
 
 ## What it feels like
 
-<table>
-<tr>
-<td width="50%" valign="middle">
-
-### 01 · Speak or type the session
+<p><strong>01 · Speak or type the session</strong></p>
 
 Record a session summary or write rough notes in any order. Local `whisper.cpp`
 transcription shows a live, provisional preview and turns the stopped recording
 into editable source text.
 
-</td>
-<td width="50%">
+<p>
   <picture>
-    <source srcset="docs/assets/readme/feature-01.gif" type="image/gif">
-    <img src="docs/assets/readme/feature-01.png" alt="Recording a session summary with a live transcription preview" width="100%">
+    <source srcset="docs/assets/readme/feature-01-mobile.gif" type="image/gif" media="(prefers-reduced-motion: no-preference)">
+    <source srcset="docs/assets/readme/feature-01-mobile.png" type="image/png">
+    <img src="docs/assets/readme/feature-01-mobile.png" alt="Recording a session summary with a live transcription preview" width="700">
   </picture>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="middle">
+</p>
 
-### 02 · Review the draft
+<p><strong>02 · Review the draft</strong></p>
 
 Apunta drafts into your chosen note format. Unclear speech stays marked;
 sections you did not cover stay blank instead of being filled with plausible
 fiction.
 
-</td>
-<td width="50%">
+<p>
   <picture>
-    <source srcset="docs/assets/readme/feature-02.gif" type="image/gif">
-    <img src="docs/assets/readme/feature-02.png" alt="Reviewing a structured draft in the note editor" width="100%">
+    <source srcset="docs/assets/readme/feature-02-mobile.gif" type="image/gif" media="(prefers-reduced-motion: no-preference)">
+    <source srcset="docs/assets/readme/feature-02-mobile.png" type="image/png">
+    <img src="docs/assets/readme/feature-02-mobile.png" alt="Reviewing a structured draft in the note editor" width="700">
   </picture>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="middle">
+</p>
 
-### 03 · Refine beside the note
+<p><strong>03 · Refine beside the note</strong></p>
 
 Ask for a shorter sentence, a moved section or another concrete edit in the
-chat beside the draft. The note remains yours to inspect before publishing.
+chat beside the draft. The note remains yours to inspect before you finish and copy it.
 
-</td>
-<td width="50%">
+<p>
   <picture>
-    <source srcset="docs/assets/readme/feature-03.gif" type="image/gif">
-    <img src="docs/assets/readme/feature-03.png" alt="Refining a note in the chat beside the text" width="100%">
+    <source srcset="docs/assets/readme/feature-03-mobile.gif" type="image/gif" media="(prefers-reduced-motion: no-preference)">
+    <source srcset="docs/assets/readme/feature-03-mobile.png" type="image/png">
+    <img src="docs/assets/readme/feature-03-mobile.png" alt="Refining a note in the chat beside the text" width="700">
   </picture>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="middle">
+</p>
 
-### 04 · Keep patients and sessions together
+<p><strong>04 · Keep patients and sessions together</strong></p>
 
 Organize notes by patient, with treatment plans, session briefings, backups and
 an optional per-patient brainstorm kept in the same local practice.
 
-</td>
-<td width="50%">
+<p>
   <picture>
-    <source srcset="docs/assets/readme/feature-04.gif" type="image/gif">
-    <img src="docs/assets/readme/feature-04.png" alt="Organizing patients, notes and session tools in the workspace" width="100%">
+    <source srcset="docs/assets/readme/feature-04-mobile.gif" type="image/gif" media="(prefers-reduced-motion: no-preference)">
+    <source srcset="docs/assets/readme/feature-04-mobile.png" type="image/png">
+    <img src="docs/assets/readme/feature-04-mobile.png" alt="Organizing patients, notes and session tools in the workspace" width="700">
   </picture>
-</td>
-</tr>
-<tr>
-<td width="50%" valign="middle">
+</p>
 
-### 05 · Reuse your note formats
+<p><strong>05 · Reuse your note formats</strong></p>
 
 Start with the bundled progress-note format, or add your own sections from a
 blank template, examples or typed names. Change formats later in Settings.
 
-</td>
-<td width="50%">
+<p>
   <picture>
-    <source srcset="docs/assets/readme/feature-05.gif" type="image/gif">
-    <img src="docs/assets/readme/feature-05.png" alt="Choosing and customizing a reusable note format" width="100%">
+    <source srcset="docs/assets/readme/feature-05-mobile.gif" type="image/gif" media="(prefers-reduced-motion: no-preference)">
+    <source srcset="docs/assets/readme/feature-05-mobile.png" type="image/png">
+    <img src="docs/assets/readme/feature-05-mobile.png" alt="Choosing and customizing a reusable note format" width="700">
   </picture>
-</td>
-</tr>
-</table>
+</p>
 
 ## Privacy is a product decision
 
