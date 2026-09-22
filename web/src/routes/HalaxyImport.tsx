@@ -252,7 +252,7 @@ export function HalaxyImport(): React.JSX.Element {
         </button>
         <p className="small note-meta">Nothing is written until you press Import on the next screen.</p>
       </div>
-      {batches.length > 0 && (
+      {(batches.length > 0 || undone !== null) && (
         <div className="card card-rows lede" data-testid="halaxy-batches">
           <h3 className="heading-tight">Earlier imports</h3>
           {undone !== null && (
