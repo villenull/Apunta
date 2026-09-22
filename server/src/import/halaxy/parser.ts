@@ -56,6 +56,9 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
   if (headings.some((heading) => heading.line > 0 && lines[heading.line - 1]?.trim() === 'Date')) {
     warnings.push('Some date labels were close to other headings; check the session boundaries.');
   }
+  if (headings.some((heading) => /^\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}$/.test(lines[heading.line] ?? ''))) {
+    warnings.push('Some sessions had a bare date heading; check those session boundaries before importing.');
+  }
   if (
     lines.some(
       (line) =>
