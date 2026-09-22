@@ -59,7 +59,11 @@ const chatSpeller: Speller = {
 const john = makePatient('John Smith', { note_count: 1 });
 const draft = makeNote(john.id, { content: 'Subjective: Improved sleep.\n\nPlan: Continue weekly.' });
 
-function renderChat(onNoteUpdated: (event: ChatNoteUpdatedEvent) => void | Promise<void> = () => {}): void {
+function renderChat(
+  onNoteUpdated: (event: ChatNoteUpdatedEvent) => void | Promise<void> = () => {},
+  onFlushPendingEdit?: () => Promise<void>,
+): void {
+  const flushProps = onFlushPendingEdit === undefined ? {} : { onFlushPendingEdit };
   render(
     <RefineColumn
       key={draft.id}
@@ -67,6 +71,7 @@ function renderChat(onNoteUpdated: (event: ChatNoteUpdatedEvent) => void | Promi
       refQuote={null}
       onClearRefQuote={() => {}}
       onNoteUpdated={onNoteUpdated}
+      {...flushProps}
     />,
   );
 }
@@ -237,6 +242,24 @@ describe('dictating into the composer', () => {
     await waitFor(() => {
       expect(api.state.messages).toHaveLength(0);
     });
+  });
+});
+
+describe('save-before-chat failures', () => {
+  it('keeps the message and sends no request when the latest edit cannot save', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
+    renderChat(
+      () => {},
+      () => Promise.reject(new Error('save failed')),
+    );
+
+    const input = screen.getByTestId('chat-input');
+    fireEvent.change(input, { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    await screen.findByText("Your latest edits haven't saved, so Apunta can't use them yet. Try again.");
+    expect((input as HTMLInputElement).value).toBe('Make the plan shorter');
+    expect(api.calls).not.toContain(`POST /api/notes/${draft.id}/chat`);
   });
 });
 

@@ -12,6 +12,7 @@ export { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
 
 /** The prototype truncates the highlight chip here. */
 const REF_CHIP_CHARS = 70;
+const SAVE_BEFORE_CHAT_ERROR = "Your latest edits haven't saved, so Apunta can't use them yet. Try again.";
 
 export interface RefineColumnProps {
   note: Note;
@@ -138,8 +139,6 @@ export function RefineColumn({
     if (text === '' || sending) return;
 
     const quote = refQuote;
-    setDraft('');
-    onClearRefQuote();
     setSending(true);
     onRefiningChange?.(true);
     setError(null);
@@ -153,7 +152,17 @@ export function RefineColumn({
       // The chat endpoint reads the note immediately. Await the editor's
       // debounce first, or its rewrite can be based on stale text and the
       // eventual note save can write that stale snapshot back over it.
-      await onFlushPendingEdit?.();
+      try {
+        await onFlushPendingEdit?.();
+      } catch {
+        // A refine request against the last server copy would ignore her
+        // latest edits. Keep the message in the composer so she can retry.
+        setError(SAVE_BEFORE_CHAT_ERROR);
+        setStreaming(null);
+        return;
+      }
+      setDraft('');
+      onClearRefQuote();
       await sendChatMessage(
         noteId,
         { message: text, ...(quote === null ? {} : { ref_quote: quote }) },
