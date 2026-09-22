@@ -99,8 +99,11 @@ synthetic John Smith PDF. Migration 006 preserves pre-existing Claude batch
 links under foreign-key enforcement and rolls back transactionally; focused
 coverage asserts that legacy undo still works. Fixture extraction is
 egress-guarded, the bundled `unpdf` dependency has no worker or CMap URLs
-configured, and parsing remains a static server dependency. The remaining
-packet gate is the focused end-to-end verification of the complete flow.
+configured, and parsing remains a static server dependency. Focused
+Playwright verification passed three repeated runs (**3 passed, 9.5s**) in
+fake AI on disposable port `7800`, covering patient-name click, published
+history import and undo; the remaining gate is the orchestrator's integrated
+project validation.
 
 ## Acceptance criteria
 
