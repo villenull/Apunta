@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import type { LoadState } from '../hooks/useLoader.js';
 import { initials, noteCountLabel } from '../lib/format.js';
 import { MarkIcon, PlusIcon } from './icons.js';
+import { SpellcheckInput } from './SpellcheckInput.js';
 
 export interface PatientsColumnProps {
   patients: LoadState<PatientListItem[]>;
@@ -239,13 +240,14 @@ function PatientList({
                   setRenaming(null);
                 }}
               >
-                <input
+                <SpellcheckInput
                   type="text"
                   value={renaming.name}
+                  allowWords={[patient.name]}
                   aria-label={`Name for ${patient.name}`}
                   autoFocus
-                  onChange={(event) => {
-                    setRenaming({ id: patient.id, name: event.target.value });
+                  onChange={(name) => {
+                    setRenaming({ id: patient.id, name });
                   }}
                   onKeyDown={(event) => {
                     if (event.key === 'Escape') setRenaming(null);

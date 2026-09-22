@@ -5,6 +5,7 @@ import { errorMessage, listChatMessages, sendChatMessage } from '../api/index.js
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { ComposerButtons, DictationPanel } from './ComposerButtons.js';
+import { SpellcheckInput } from './SpellcheckInput.js';
 import { ThinkingDots } from './ThinkingDots.js';
 
 export { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
@@ -14,6 +15,8 @@ const REF_CHIP_CHARS = 70;
 
 export interface RefineColumnProps {
   note: Note;
+  /** Words the patient's conversation may contain that the dictionary would not know. */
+  allowWords?: readonly string[];
   /** The excerpt selected in the editor, waiting to be attached to a message. */
   refQuote: string | null;
   onClearRefQuote: () => void;
@@ -54,6 +57,7 @@ export interface RefineColumnProps {
  */
 export function RefineColumn({
   note,
+  allowWords = [],
   refQuote,
   onClearRefQuote,
   onNoteUpdated,
@@ -277,16 +281,17 @@ export function RefineColumn({
       <DictationPanel dictation={dictation} />
 
       <div className="chat-input-row">
-        <input
+        <SpellcheckInput
           ref={inputRef}
           type="text"
           placeholder="Ask a question or give feedback..."
           aria-label="Ask a question or give feedback"
           data-testid="chat-input"
           value={draft}
+          allowWords={allowWords}
           disabled={sending}
-          onChange={(event) => {
-            setDraft(event.target.value);
+          onChange={(value) => {
+            setDraft(value);
           }}
           onKeyDown={(event) => {
             if (event.key !== 'Enter') return;

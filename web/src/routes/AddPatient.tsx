@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { createPatient, errorMessage } from '../api/index.js';
+import { SpellcheckInput } from '../components/SpellcheckInput.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
@@ -48,13 +49,13 @@ export function AddPatient(): React.JSX.Element {
             <label className="label" htmlFor="patient-name">
               Name
             </label>
-            <input
+            <SpellcheckInput
               id="patient-name"
               type="text"
               placeholder="e.g. John Smith"
               value={name}
-              onChange={(event) => {
-                setName(event.target.value);
+              onChange={(value) => {
+                setName(value);
               }}
               autoFocus
             />

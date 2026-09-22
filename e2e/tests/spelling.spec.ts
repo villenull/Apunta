@@ -60,4 +60,30 @@ test('marks a typo in the note body and corrects it from the menu', async ({ pag
     'Subjective: The client criticized behavior; organize the center, not criticised. Zebediah Quill used Zxqvterm and Qvplum.\n\nPlan: Continue weekly.',
   );
   await expect(marks).toHaveText(['criticised']);
+
+  await page.getByTestId('chat-fab').click();
+  const chat = page.getByTestId('chat-input');
+  await chat.fill('Teh');
+  await expect(page.locator('.chat-input-row .misspelt')).toHaveText(['Teh']);
+  await expect(chat).toHaveAttribute('spellcheck', 'false');
+  await chat.evaluate((element: HTMLInputElement) => {
+    element.setSelectionRange(1, 1);
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 1100, clientY: 30 }));
+  });
+  await expect(page.getByTestId('spelling-menu')).toBeVisible();
+  await expect(page.getByTestId('spelling-menu').getByRole('menuitem', { name: 'The' })).toBeVisible();
+  await page.screenshot({ path: '/tmp/apunta-spelling-chat.png' });
+
+  await page.goto('/patients/new');
+  const patientName = page.getByLabel('Name');
+  await patientName.fill('Teh');
+  await expect(page.locator('.spell-input-wrap .misspelt')).toHaveText(['Teh']);
+  await expect(patientName).toHaveAttribute('spellcheck', 'false');
+  await patientName.evaluate((element: HTMLInputElement) => {
+    element.setSelectionRange(1, 1);
+    element.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 800, clientY: 30 }));
+  });
+  await expect(page.getByTestId('spelling-menu')).toBeVisible();
+  await expect(page.getByTestId('spelling-menu').getByRole('menuitem', { name: 'The' })).toBeVisible();
+  await page.screenshot({ path: '/tmp/apunta-spelling-patient-name.png' });
 });

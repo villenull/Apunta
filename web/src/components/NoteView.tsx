@@ -461,6 +461,7 @@ export function NoteView({
       <RefineColumn
         key={note.id}
         note={note}
+        allowWords={[patient.name]}
         onFlushPendingEdit={flush}
         refQuote={refQuote}
         onClearRefQuote={() => {

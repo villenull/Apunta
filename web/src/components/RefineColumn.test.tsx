@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as RecorderModule from '../lib/recorder.js';
 import { RecorderError, type RecorderHandlers } from '../lib/recorder.js';
+import { type Speller } from '../lib/spelling.js';
 import { installFakeApi, makeFormat, makeNote, makePatient } from '../test/fakeApi.js';
 import { NOTHING_HEARD_MESSAGE, RefineColumn } from './RefineColumn.js';
+import { SpellingContext, type Spelling } from './SpellingProvider.js';
 
 /**
  * Dictating into the refine chat's composer (2026-09-07).
@@ -49,6 +51,11 @@ vi.mock('../lib/recorder.js', async (importOriginal) => {
 });
 
 const progressNote = makeFormat('Progress note', ['Subjective', 'Plan']);
+
+const chatSpeller: Speller = {
+  correct: (word) => word.toLowerCase() === 'the',
+  suggest: (word) => (word.toLowerCase() === 'teh' ? ['the'] : []),
+};
 const john = makePatient('John Smith', { note_count: 1 });
 const draft = makeNote(john.id, { content: 'Subjective: Improved sleep.\n\nPlan: Continue weekly.' });
 
@@ -194,6 +201,30 @@ describe('dictating into the composer', () => {
     });
     expect(screen.queryByTestId('record-panel')).toBeNull();
     vi.useRealTimers();
+  });
+
+  it('marks a typo in the composer and opens its suggestion menu', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
+    const spelling: Spelling = {
+      speller: chatSpeller,
+      accepted: new Set(),
+      addWord: vi.fn(),
+      ignoreWord: vi.fn(),
+    };
+    render(
+      <SpellingContext.Provider value={spelling}>
+        <RefineColumn note={draft} refQuote={null} onClearRefQuote={() => {}} onNoteUpdated={() => {}} />
+      </SpellingContext.Provider>,
+    );
+
+    const input = screen.getByTestId('chat-input');
+    fireEvent.change(input, { target: { value: 'Teh' } });
+    await waitFor(() => expect(screen.getAllByText('Teh', { selector: '.misspelt' })).toHaveLength(1));
+    expect(input.getAttribute('spellcheck')).toBe('false');
+
+    (input as HTMLInputElement).setSelectionRange(1, 1);
+    fireEvent.click(input, { clientX: 24, clientY: 16 });
+    expect(await screen.findByRole('menuitem', { name: 'The' })).toBeDefined();
   });
 
   it('keeps the send arrow live with an empty box, and an empty send does nothing', async () => {

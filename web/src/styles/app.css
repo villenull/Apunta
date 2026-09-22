@@ -578,7 +578,7 @@
   background: var(--border);
 }
 
-/* A plain textarea with the spelling layer under it (the capture screen). */
+/* A plain textarea or single-line input with the spelling layer under it. */
 .spell-wrap {
   position: relative;
 }
@@ -595,9 +595,19 @@
   border-color: transparent;
 }
 
-.spell-wrap > textarea.spell-input {
+.spell-wrap > textarea.spell-input,
+.spell-wrap > input.spell-input {
   position: relative;
   background: transparent;
+}
+
+.spell-input-wrap {
+  min-width: 0;
+}
+
+.spell-input-wrap .spell-backdrop {
+  white-space: pre;
+  overflow-wrap: normal;
 }
 
 .empty-sections-note {
@@ -784,7 +794,11 @@
   font-size: calc(14px * var(--font-scale));
   line-height: 1;
   flex-shrink: 0;
+
   padding: 0;
+}
+.chat-input-row .spell-input-wrap {
+  flex: 1;
 }
 
 .chat-input-row {
@@ -2335,6 +2349,10 @@ select:disabled {
 }
 
 .patient-rename input {
+  flex: 1;
+  min-width: 0;
+}
+.patient-rename .spell-input-wrap {
   flex: 1;
   min-width: 0;
 }

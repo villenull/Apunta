@@ -54,18 +54,24 @@ export function useSpellingMenu(
   onChange: (value: string) => void,
   spelling: SpellingCheck,
   wrap: React.RefObject<HTMLElement | null>,
-  textarea: React.RefObject<HTMLTextAreaElement | null>,
+  control: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>,
 ): {
-  readonly open: (event: React.MouseEvent<HTMLTextAreaElement>) => void;
+  readonly open: (event: React.MouseEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   readonly menu: React.JSX.Element | null;
 } {
   const [state, setState] = useState<OpenMenu | null>(null);
 
   const open = useCallback(
-    (event: React.MouseEvent<HTMLTextAreaElement>) => {
+    (event: React.MouseEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const element = event.currentTarget;
-      const entry = misspellingAt(spelling.misspellings, element.selectionStart);
-      if (entry === null || element.selectionStart !== element.selectionEnd) {
+      const start = element.selectionStart;
+      const end = element.selectionEnd;
+      if (start === null || end === null) {
+        setState(null);
+        return;
+      }
+      const entry = misspellingAt(spelling.misspellings, start);
+      if (entry === null || start !== end) {
         setState(null);
         return;
       }
@@ -92,7 +98,7 @@ export function useSpellingMenu(
   const pick = (replacement: string): void => {
     onChange(replaceRange(value, entry.start, entry.end, replacement));
     setState(null);
-    const element = textarea.current;
+    const element = control.current;
     if (element) {
       const caret = entry.start + replacement.length;
       // After React has written the new value.
