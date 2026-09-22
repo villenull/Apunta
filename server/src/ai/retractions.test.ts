@@ -19,19 +19,6 @@ describe('hasRetraction', () => {
     expect(hasRetraction('he actually got no sleep')).toBe(false);
     expect(hasRetraction('')).toBe(false);
   });
-  it('recognizes the Whisper inflection in a spoken correction', () => {
-    const transcript =
-      'The client said sleep was better, but she woke at four hours actually scratched that. Six hours, not four. Home she denied suicidal thoughts.';
-    expect(hasRetraction(transcript)).toBe(true);
-
-    const { text, applied } = applyRetractions(transcript, [
-      { withdrawn: 'woke at four hours', replacement: 'Six hours' },
-    ]);
-    expect(applied).toEqual([{ withdrawn: 'woke at four hours', replacement: 'Six hours' }]);
-    expect(text).toBe(
-      'The client said sleep was better, but she actually. Six hours, not four. Home she denied suicidal thoughts.',
-    );
-  });
 });
 
 describe('applyRetractions', () => {
@@ -57,6 +44,19 @@ describe('applyRetractions', () => {
         replacement: 'stay weekly until after the November surgery',
       },
     ]);
+  });
+  it('recognizes the Whisper inflection in a spoken correction', () => {
+    const transcript =
+      'The client said sleep was better, but she woke at four hours actually scratched that. Six hours, not four. Home she denied suicidal thoughts.';
+    expect(hasRetraction(transcript)).toBe(true);
+
+    const { text, applied } = applyRetractions(transcript, [
+      { withdrawn: 'woke at four hours', replacement: 'Six hours' },
+    ]);
+    expect(applied).toEqual([{ withdrawn: 'woke at four hours', replacement: 'Six hours' }]);
+    expect(text).toBe(
+      'The client said sleep was better, but she actually. Six hours, not four. Home she denied suicidal thoughts.',
+    );
   });
 
   it('never adds a word: every character of the output is in the input, in order', () => {

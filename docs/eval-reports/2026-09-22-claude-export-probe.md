@@ -2,9 +2,11 @@
 
 ## Result
 
-**GO for `docs/import-existing-notes.md`, Checklist A step 2.** The real export's shape matches the M11 importer's inferred schema. No importer change is required before the owner uses the Settings import flow.
+**GO with an instruction for the owner: use the Settings preview and untick any extras before importing.** The real export's shape matches the M11 importer's inferred schema, but a shape-only probe cannot identify which of the 45 multi-session conversations are patients, general chats, format/instruction work, or multiple conversations about one patient. No importer change is justified by this evidence.
 
 This report contains shape, keys, counts, and dates only. It contains no conversation titles, names, message text, attachment names, or extracted content.
+
+The focused synthetic importer test also passed: `server/src/import/claude.test.ts` completed **37/37** tests. Its fabricated preview demonstrates the relevant safeguards: clinical/name filters exclude decoys, title guesses remain individually tickable, and listed names can merge conversations when the owner supplies them. It is not evidence about the real export's patient count.
 
 ## Probe and archive shape
 
@@ -50,9 +52,9 @@ Using the importer's six-hour session gap:
 - 6–20 sessions = **15**
 - 21+ sessions = **1**
 
-The export has **85** conversations active on or after **2026-07-01**; **45** of those have at least two sessions. This is in the expected range for the owner's roughly 25 patients after the importer's additional clinical-note and confident-name filters. The probe cannot determine those filters' outcomes without exposing content, so the Settings preview remains the required final check.
+The export has **85** conversations active on or after **2026-07-01**; **45** of those have at least two sessions. This is an upper bound on qualifying conversations, not a patient count. Shape-only data cannot distinguish patient chats from general/instruction/format chats, or tell whether several conversations concern one patient. It also cannot establish session over-counting: the probe counts timestamp gaps across the raw message arrays, while the importer first follows the latest `parent_message_uuid` chain and then splits the surviving live thread. The **21** branch points across **15** conversations are the only shape signal for possible divergence; their actual effect requires content/links that the probe deliberately does not print.
 
-Branch metadata: **21** branch points across **15** conversations.
+Therefore the exact real preview cannot be calculated from this report. The importer will show the owner the exact number of qualifying patients and drafts (one draft per qualifying live-thread session), plus skipped-conversation counts/reasons. With no patient list, each title-guessed conversation is a separate tickable patient plan; a supplied patient list can merge conversations. The owner can untick extras before pressing Import, and the button's note count updates to the selected patients.
 
 Date ranges:
 
