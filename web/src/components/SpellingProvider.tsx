@@ -1,9 +1,12 @@
 import { SPELLING_WORDS_SETTING, spellingWordsFrom, STT_VOCABULARY_SETTING } from '@apunta/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getSettings, putSettings } from '../api/index.js';
-import { loadSpeller } from '../lib/speller.js';
+import { putSettings } from '../api/settings.js';
+import { useSettingsContext } from './SettingsProvider.js';
 import type { Speller } from '../lib/spelling.js';
+
+// The dictionary must remain out of the initial route chunk; load it after a spell surface mounts.
+const lazyLoadSpeller = () => import('../lib/speller.js').then(({ loadSpeller }) => loadSpeller());
 
 /**
  * Everything the spell check needs, once per tab: the dictionary, the words
@@ -19,6 +22,8 @@ export interface Spelling {
   readonly speller: Speller | null;
   /** Lowercased words never flagged: additions, vocabulary, session ignores. */
   readonly accepted: ReadonlySet<string>;
+  /** Start loading the dictionary when a spell surface first mounts. */
+  readonly ensureLoaded?: () => void;
   /** Persist a word as correctly spelled, for every note from now on. */
   readonly addWord: (word: string) => void;
   /** Stop flagging a word until the tab is reloaded. */
@@ -40,46 +45,51 @@ export function useSpellingContext(): Spelling {
 
 export function SpellingProvider({
   children,
-  load = loadSpeller,
+  load = lazyLoadSpeller,
 }: {
   readonly children: React.ReactNode;
   /** The dictionary loader; tests hand in a small one. */
   readonly load?: () => Promise<Speller>;
 }): React.JSX.Element {
+  const { state: settingsState } = useSettingsContext();
   const [speller, setSpeller] = useState<Speller | null>(null);
   const [added, setAdded] = useState<readonly string[]>([]);
   const [vocabulary, setVocabulary] = useState<readonly string[]>([]);
   const [ignored, setIgnored] = useState<readonly string[]>([]);
   const addedRef = useRef<readonly string[]>([]);
+  const spellerRef = useRef<Speller | null>(null);
+  const loadingRef = useRef(false);
+  const mountedRef = useRef(true);
   addedRef.current = added;
+  spellerRef.current = speller;
 
   useEffect(() => {
-    let cancelled = false;
-    const controller = new AbortController();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const ensureLoaded = useCallback(() => {
+    if (loadingRef.current || spellerRef.current !== null) return;
+    loadingRef.current = true;
     void load()
       .then((loaded) => {
-        if (!cancelled) setSpeller(loaded);
+        if (mountedRef.current) setSpeller(loaded);
       })
       .catch(() => {
         // No dictionary, no marks. The editor is entirely usable without them.
       });
-    void getSettings(controller.signal)
-      .then((settings) => {
-        if (cancelled) return;
-        setAdded(spellingWordsFrom(settings[SPELLING_WORDS_SETTING]));
-        const terms = settings[STT_VOCABULARY_SETTING];
-        setVocabulary(
-          Array.isArray(terms) ? terms.filter((term): term is string => typeof term === 'string') : [],
-        );
-      })
-      .catch(() => {
-        // Settings unreachable: the dictionary alone still checks.
-      });
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
   }, [load]);
+
+  useEffect(() => {
+    if (settingsState.status !== 'ready') return;
+    const settings = settingsState.data;
+    setAdded(spellingWordsFrom(settings[SPELLING_WORDS_SETTING]));
+    const terms = settings[STT_VOCABULARY_SETTING];
+    setVocabulary(
+      Array.isArray(terms) ? terms.filter((term): term is string => typeof term === 'string') : [],
+    );
+  }, [settingsState]);
 
   const addWord = useCallback((word: string) => {
     const next = addedRef.current.includes(word) ? addedRef.current : [...addedRef.current, word];
@@ -97,10 +107,11 @@ export function SpellingProvider({
     () => ({
       speller,
       accepted: lowercased(added, vocabulary, ignored),
+      ensureLoaded,
       addWord,
       ignoreWord,
     }),
-    [speller, added, vocabulary, ignored, addWord, ignoreWord],
+    [speller, added, vocabulary, ignored, ensureLoaded, addWord, ignoreWord],
   );
 
   return <SpellingContext.Provider value={value}>{children}</SpellingContext.Provider>;

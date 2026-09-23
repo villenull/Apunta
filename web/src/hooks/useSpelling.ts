@@ -21,8 +21,12 @@ export interface SpellingCheck {
  * the patient's name, for a note.
  */
 export function useSpelling(text: string, allow: readonly string[] = []): SpellingCheck {
-  const { speller, accepted, addWord, ignoreWord } = useSpellingContext();
+  const { speller, accepted, ensureLoaded, addWord, ignoreWord } = useSpellingContext();
   const [misspellings, setMisspellings] = useState<readonly Misspelling[]>([]);
+
+  useEffect(() => {
+    ensureLoaded?.();
+  }, [ensureLoaded]);
 
   const allowKey = allow.join('\n');
   const allowed = useMemo(() => {

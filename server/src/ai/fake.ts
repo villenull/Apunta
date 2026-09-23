@@ -65,6 +65,7 @@ import type {
  * tests set it to 0.
  */
 export const DEFAULT_FAKE_STREAM_DELAY_MS = 12;
+const MAX_FAKE_DELAYED_WORDS = 200;
 
 export interface FakeLlmOptions {
   readonly streamDelayMs?: number;
@@ -324,12 +325,15 @@ export class FakeLlmProvider implements LlmProvider {
   composeBrief(request: ComposeBriefRequest): Promise<LlmResult<BriefComposition>> {
     return Promise.resolve({ value: fakeComposeBrief(request), stats: FAKE_STATS });
   }
-
   /** Stream a JSON document through the real decoder, word by word. */
   private async *streamJson(json: string): AsyncIterable<LlmEvent> {
     const decoder = new JsonStringStreamDecoder();
-    for (const chunk of wordChunks(json)) {
-      if (this.streamDelayMs > 0) await delay(this.streamDelayMs);
+    const chunks = wordChunks(json);
+    for (let index = 0; index < chunks.length; index += 1) {
+      const chunk = chunks[index] ?? '';
+      if (index < MAX_FAKE_DELAYED_WORDS && this.streamDelayMs > 0) {
+        await delay(this.streamDelayMs);
+      }
       for (const token of decoder.push(chunk)) {
         yield { type: 'token', section: token.key, text: token.text };
       }

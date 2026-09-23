@@ -1,22 +1,31 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router';
 
+import { SettingsProvider, useSettingsContext } from './components/SettingsProvider.js';
 import { SpellingProvider } from './components/SpellingProvider.js';
 
-import { getSettings } from './api/index.js';
 import { applyAppearance } from './lib/appearance.js';
 
-import { About } from './routes/About.js';
-import { AddPatient } from './routes/AddPatient.js';
-import { Capture } from './routes/Capture.js';
-import { Licenses } from './routes/Licenses.js';
-import { OnboardingFormat } from './routes/OnboardingFormat.js';
-import { OnboardingPreview } from './routes/OnboardingPreview.js';
-import { Import } from './routes/Import.js';
-import { HalaxyImport } from './routes/HalaxyImport.js';
-import { Settings } from './routes/Settings.js';
-import { Setup } from './routes/Setup.js';
-import { Workspace } from './routes/Workspace.js';
+// Route chunks are intentionally runtime-loaded so the first workspace download
+// contains no code for screens that are not open.
+const Workspace = lazy(async () => ({ default: (await import('./routes/Workspace.js')).Workspace }));
+const AddPatient = lazy(async () => ({ default: (await import('./routes/AddPatient.js')).AddPatient }));
+const Capture = lazy(async () => ({ default: (await import('./routes/Capture.js')).Capture }));
+
+const About = lazy(async () => ({ default: (await import('./routes/About.js')).About }));
+const Licenses = lazy(async () => ({ default: (await import('./routes/Licenses.js')).Licenses }));
+const OnboardingFormat = lazy(async () => ({
+  default: (await import('./routes/OnboardingFormat.js')).OnboardingFormat,
+}));
+const OnboardingPreview = lazy(async () => ({
+  default: (await import('./routes/OnboardingPreview.js')).OnboardingPreview,
+}));
+const Import = lazy(async () => ({ default: (await import('./routes/Import.js')).Import }));
+const HalaxyImport = lazy(async () => ({
+  default: (await import('./routes/HalaxyImport.js')).HalaxyImport,
+}));
+const Settings = lazy(async () => ({ default: (await import('./routes/Settings.js')).Settings }));
+const Setup = lazy(async () => ({ default: (await import('./routes/Setup.js')).Setup }));
 
 /**
  * Every screen in the app. There is no login route — the app opens straight
@@ -24,40 +33,35 @@ import { Workspace } from './routes/Workspace.js';
  * deliberately not ported.
  */
 export function App(): React.JSX.Element {
+  return (
+    <SettingsProvider>
+      <SpellingProvider>
+        <AppRoutes />
+      </SpellingProvider>
+    </SettingsProvider>
+  );
+}
+
+function AppRoutes(): React.JSX.Element {
   const location = useLocation();
+  const { state } = useSettingsContext();
 
   /*
-   * The practice's appearance — accent, text size, animations — painted
-   * once at startup. A failure here is
-   * deliberately silent: the app is entirely usable in its default colours,
-   * and every screen that actually needs settings reports its own failure.
+   * The practice's appearance — accent, text size, animations — painted once
+   * at startup. A failure here is deliberately silent: the app is entirely
+   * usable in its default colours.
    */
   useEffect(() => {
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        applyAppearance(await getSettings(controller.signal));
-      } catch {
-        // Default colours it is.
-      }
-    })();
-    return () => {
-      controller.abort();
-    };
-  }, []);
+    if (state.status === 'ready') applyAppearance(state.data);
+  }, [state]);
 
   return (
     /*
-     * Keyed by pathname so every screen change remounts the wrapper and
-     * replays `.route-transition` (styles/motion.css): a quick fade and a 3px
-     * rise, part of the sanctioned motion pass (owner-proxy feedback,
-     * 2026-08-28 — the prototype's instant cuts read as the app not
-     * responding). Pathname only, not the full location: picking a patient or
-     * a note changes the query string, and re-fading the whole workspace on
-     * every list click would be exactly the theatre this app avoids.
+     * Key only the route transition wrapper, not either long-lived provider.
+     * Query-string changes (patient and note selection) remain unanimated.
      */
     <div key={location.pathname} className="route-transition">
-      <SpellingProvider>
+      <Suspense fallback={<p className="state-note">Loading…</p>}>
         <Routes>
           <Route path="/" element={<Workspace />} />
           <Route path="/patients/new" element={<AddPatient />} />
@@ -72,7 +76,7 @@ export function App(): React.JSX.Element {
           <Route path="/onboarding/preview" element={<OnboardingPreview />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </SpellingProvider>
+      </Suspense>
     </div>
   );
 }
