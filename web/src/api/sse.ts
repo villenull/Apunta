@@ -1,12 +1,6 @@
-/**
- * Reading a server-sent-event body off `fetch`.
- *
- * `EventSource` cannot POST and both streaming endpoints are POSTs, so the
- * frames are parsed by hand. The format is three lines and the frames are
- * tiny, so this is less machinery than a library would be — and it is shared
- * by `/api/generate` and `/api/notes/:id/chat` rather than written twice.
- */
+import { z } from 'zod';
 
+/** A decoded server-sent event from a fetch response. */
 export interface SseFrame {
   readonly event: string;
   readonly data: unknown;
@@ -23,9 +17,6 @@ export async function* readEvents(
 
   try {
     for (;;) {
-      // An abort must interrupt a hung read, not wait for the server to speak
-      // next: without the race, stopping a reply leaves the reader — and the
-      // send awaiting it — pending forever.
       const { done, value } = await (signal ? raceAbort(reader.read(), signal) : reader.read());
       if (done) break;
       buffer += utf8.decode(value, { stream: true });
@@ -40,9 +31,28 @@ export async function* readEvents(
       if (signal?.aborted) break;
     }
   } finally {
-    // Leaving the loop early (an abort, or a throw on an `error` event) must
-    // release the connection rather than leave the server working into it.
     reader.cancel().catch(() => {});
+  }
+}
+
+/**
+ * Validate and dispatch each event in a stream. Unknown event names are
+ * deliberately ignored so an older browser can consume a newer server's
+ * additive events.
+ */
+export async function consumeStream<const Schemas extends Readonly<Record<string, z.ZodTypeAny>>>(
+  body: ReadableStream<Uint8Array>,
+  signal: AbortSignal | undefined,
+  schemas: Schemas,
+  handlers: {
+    readonly [Event in keyof Schemas]?: (data: z.output<Schemas[Event]>) => void | Promise<void>;
+  },
+): Promise<void> {
+  for await (const frame of readEvents(body, signal)) {
+    const schema = schemas[frame.event];
+    const handler = handlers[frame.event as keyof Schemas];
+    if (schema === undefined || handler === undefined) continue;
+    await handler(schema.parse(frame.data) as z.output<Schemas[keyof Schemas]>);
   }
 }
 

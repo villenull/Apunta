@@ -14,7 +14,7 @@ import {
 
 import { requestJson, requestStream } from './client.js';
 import { GenerateError } from './generate.js';
-import { readEvents } from './sse.js';
+import { consumeStream } from './sse.js';
 
 /** Session preparation (PLAN §4, M9). Ephemeral until she keeps it. */
 
@@ -38,23 +38,26 @@ export async function prepareBriefing(
 
   let brief: PrepBriefEvent | null = null;
 
-  for await (const frame of readEvents(response.body, signal)) {
-    switch (frame.event) {
-      case 'status':
-        handlers.onStatus?.(PlanStatusEventSchema.parse(frame.data));
-        break;
-      case 'line':
-        handlers.onLine?.(PrepLineEventSchema.parse(frame.data));
-        break;
-      case 'brief':
-        brief = PrepBriefEventSchema.parse(frame.data);
-        break;
-      case 'error':
-        throw new GenerateError(PlanErrorEventSchema.parse(frame.data));
-      default:
-        break;
-    }
-  }
+  await consumeStream(
+    response.body,
+    signal,
+    {
+      status: PlanStatusEventSchema,
+      line: PrepLineEventSchema,
+      brief: PrepBriefEventSchema,
+      error: PlanErrorEventSchema,
+    },
+    {
+      status: (event) => handlers.onStatus?.(event),
+      line: (event) => handlers.onLine?.(event),
+      brief: (event) => {
+        brief = event;
+      },
+      error: (event) => {
+        throw new GenerateError(event);
+      },
+    },
+  );
 
   if (brief === null) throw new Error('The briefing stream ended early.');
   return brief;

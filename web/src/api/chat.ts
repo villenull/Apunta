@@ -13,7 +13,7 @@ import {
 
 import { requestJson, requestStream } from './client.js';
 import { GenerateError } from './generate.js';
-import { readEvents } from './sse.js';
+import { consumeStream } from './sse.js';
 
 /** `GET /api/notes/:id/chat` — the thread, oldest first. */
 export async function listChatMessages(noteId: string, signal?: AbortSignal): Promise<ChatMessage[]> {
@@ -63,31 +63,29 @@ export async function sendChatMessage(
 
   let sawAssistant = false;
 
-  for await (const frame of readEvents(response.body, signal)) {
-    switch (frame.event) {
-      case 'status':
-        handlers.onStatus?.(ChatStatusEventSchema.parse(frame.data));
-        break;
-      case 'token':
-        handlers.onToken?.(ChatTokenEventSchema.parse(frame.data).text);
-        break;
-      case 'message': {
-        const { message } = ChatMessageEventSchema.parse(frame.data);
-        if (message.role === 'assistant') sawAssistant = true;
-        handlers.onMessage?.(message);
-        break;
-      }
-      case 'note-updated':
-        await handlers.onNoteUpdated?.(ChatNoteUpdatedEventSchema.parse(frame.data));
-        break;
-      case 'error':
-        throw new GenerateError(ChatErrorEventSchema.parse(frame.data));
-      default:
-        // An event name this build does not know about is not a reason to
-        // fail: the stream still ends with a reply or an error.
-        break;
-    }
-  }
+  await consumeStream(
+    response.body,
+    signal,
+    {
+      status: ChatStatusEventSchema,
+      token: ChatTokenEventSchema,
+      message: ChatMessageEventSchema,
+      'note-updated': ChatNoteUpdatedEventSchema,
+      error: ChatErrorEventSchema,
+    },
+    {
+      status: (event) => handlers.onStatus?.(event),
+      token: (event) => handlers.onToken?.(event.text),
+      message: (event) => {
+        if (event.message.role === 'assistant') sawAssistant = true;
+        handlers.onMessage?.(event.message);
+      },
+      'note-updated': (event) => handlers.onNoteUpdated?.(event),
+      error: (event) => {
+        throw new GenerateError(event);
+      },
+    },
+  );
 
   // A stream that ended without the assistant's persisted turn left a bubble
   // on screen that is not in the database — say so rather than let a reload

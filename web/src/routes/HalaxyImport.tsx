@@ -1,23 +1,10 @@
-import {
-  type HalaxyImportResponse,
-  type HalaxyPreviewPatient,
-  type HalaxyPreviewResponse,
-  type ImportBatch,
-  type ImportUndoResponse,
-} from '@apunta/shared';
-import { useEffect, useState } from 'react';
+import { type HalaxyImportResponse, type HalaxyPreviewPatient, type HalaxyPreviewResponse } from '@apunta/shared';
+import { useState } from 'react';
 import { Link } from 'react-router';
 
-import {
-  errorMessage,
-  listImportBatches,
-  previewHalaxyImport,
-  runHalaxyImport,
-  undoImportBatch,
-} from '../api/index.js';
+import { errorMessage, previewHalaxyImport, runHalaxyImport } from '../api/index.js';
+import { ImportBatchList } from '../components/ImportBatchList.js';
 import { Screen } from '../components/TopBar.js';
-import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-
 /**
  * Halaxy's practitioner export is one text PDF per patient. The preview is
  * deliberately reviewable: names can be corrected and individual sessions
@@ -30,17 +17,10 @@ export function HalaxyImport(): React.JSX.Element {
   const [names, setNames] = useState<Readonly<Record<string, string>>>({});
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [report, setReport] = useState<HalaxyImportResponse | null>(null);
-  const [undone, setUndone] = useState<ImportUndoResponse | null>(null);
-  const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function loadBatches(): void {
-    listImportBatches()
-      .then((response) => setBatches(response.batches))
-      .catch(() => setBatches([]));
-  }
-  useEffect(loadBatches, []);
+  const importBatch = useImportBatch();
+  const { batches, undone, undoing, reload, undo } = importBatch;
 
   async function check(): Promise<void> {
     if (files.length === 0 || busy) return;
@@ -58,7 +38,6 @@ export function HalaxyImport(): React.JSX.Element {
       setNames(nextNames);
       setSelected(nextSelected);
       setReport(null);
-      setUndone(null);
     } catch (thrown) {
       setError(errorMessage(thrown));
     } finally {
@@ -86,8 +65,7 @@ export function HalaxyImport(): React.JSX.Element {
       });
       const response = await runHalaxyImport({ patients });
       setReport(response);
-      setUndone(null);
-      loadBatches();
+      reload();
     } catch (thrown) {
       setError(errorMessage(thrown));
     } finally {
@@ -95,17 +73,13 @@ export function HalaxyImport(): React.JSX.Element {
     }
   }
 
-  async function undo(id: string): Promise<void> {
-    if (busy) return;
-    setBusy(true);
+  async function handleUndo(id: string): Promise<void> {
+    if (busy || undoing) return;
     setError(null);
     try {
-      setUndone(await undoImportBatch(id));
-      loadBatches();
+      await undo(id);
     } catch (thrown) {
       setError(errorMessage(thrown));
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -254,32 +228,14 @@ export function HalaxyImport(): React.JSX.Element {
         </button>
         <p className="small note-meta">Nothing is written until you press Import on the next screen.</p>
       </div>
-      {(batches.length > 0 || undone !== null) && (
-        <div className="card card-rows lede" data-testid="halaxy-batches">
-          <h3 className="heading-tight">Earlier imports</h3>
-          {undone !== null && (
-            <p className="small note-meta" data-testid="halaxy-undone">
-              Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')}{' '}
-              removed.
-            </p>
-          )}
-          {batches.map((batch) => (
-            <div className="row between" key={batch.id}>
-              <span className="small">
-                {batch.created_at.slice(0, 16).replace('T', ' ')} — {plural(batch.notes, 'note')}
-              </span>
-              <button
-                type="button"
-                className="btn small btn-quick"
-                disabled={busy}
-                onClick={() => void undo(batch.id)}
-              >
-                Undo
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      <ImportBatchList
+        batches={batches}
+        undone={undone}
+        busy={busy || undoing}
+        onUndo={(id) => void handleUndo(id)}
+        testId="halaxy-batches"
+        formatDate={formatBatchDate}
+      />
     </Screen>
   );
 }
@@ -358,7 +314,7 @@ function excerpt(text: string): string {
   const compact = text.replace(/\s+/g, ' ').trim();
   return compact.length > 180 ? `${compact.slice(0, 177)}…` : compact;
 }
-
-function plural(count: number, word: string): string {
-  return `${String(count)} ${word}${count === 1 ? '' : 's'}`;
+function formatBatchDate(iso: string): string {
+  return iso.slice(0, 16).replace('T', ' ');
 }
+

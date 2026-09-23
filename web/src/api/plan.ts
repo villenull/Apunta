@@ -21,7 +21,7 @@ import {
 
 import { requestJson, requestStream, requestVoid } from './client.js';
 import { GenerateError } from './generate.js';
-import { readEvents } from './sse.js';
+import { consumeStream } from './sse.js';
 
 /** The treatment-plan endpoints (PLAN §4, M9). */
 
@@ -121,23 +121,26 @@ export async function suggestGoals(
 
   let done: SuggestDoneEvent | null = null;
 
-  for await (const frame of readEvents(response.body, signal)) {
-    switch (frame.event) {
-      case 'status':
-        handlers.onStatus?.(PlanStatusEventSchema.parse(frame.data));
-        break;
-      case 'goal':
-        handlers.onGoal?.(SuggestGoalEventSchema.parse(frame.data));
-        break;
-      case 'done':
-        done = SuggestDoneEventSchema.parse(frame.data);
-        break;
-      case 'error':
-        throw new GenerateError(PlanErrorEventSchema.parse(frame.data));
-      default:
-        break;
-    }
-  }
+  await consumeStream(
+    response.body,
+    signal,
+    {
+      status: PlanStatusEventSchema,
+      goal: SuggestGoalEventSchema,
+      done: SuggestDoneEventSchema,
+      error: PlanErrorEventSchema,
+    },
+    {
+      status: (event) => handlers.onStatus?.(event),
+      goal: (event) => handlers.onGoal?.(event),
+      done: (event) => {
+        done = event;
+      },
+      error: (event) => {
+        throw new GenerateError(event);
+      },
+    },
+  );
 
   if (done === null) throw new Error('The suggestion stream ended early.');
   return done;

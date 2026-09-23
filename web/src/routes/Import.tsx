@@ -1,25 +1,17 @@
-import {
-  DEFAULT_IMPORT_CUTOFF,
-  instantToLocalDay,
-  type ClaudeImportReport,
-  type ImportBatch,
-  type ImportNameSource,
-  type ImportNoteSource,
-  type ImportSkipReason,
-  type ImportUndoResponse,
-} from '@apunta/shared';
-import { useEffect, useState } from 'react';
+import { DEFAULT_IMPORT_CUTOFF, type ClaudeImportReport, type ImportNameSource, type ImportNoteSource, type ImportSkipReason } from '@apunta/shared';
+import { useState } from 'react';
 import { Link } from 'react-router';
 
 import {
   errorMessage,
-  listImportBatches,
   previewClaudeImport,
   runClaudeImport,
-  undoImportBatch,
 } from '../api/index.js';
+import { ImportBatchList } from '../components/ImportBatchList.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { useImportBatch } from '../hooks/useImportBatch.js';
+import { plural } from '../lib/plural.js';
 
 /**
  * Importing her Claude conversations (M11), automatically — the owner's
@@ -58,21 +50,10 @@ export function Import(): React.JSX.Element {
   const [summary, setSummary] = useState<ClaudeImportReport | null>(null);
   const [unticked, setUnticked] = useState<ReadonlySet<string>>(new Set());
   const [report, setReport] = useState<ClaudeImportReport | null>(null);
-  const [undone, setUndone] = useState<ImportUndoResponse | null>(null);
-  const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function loadBatches(): void {
-    listImportBatches()
-      .then((result) => {
-        setBatches(result.batches);
-      })
-      .catch(() => {
-        setBatches([]);
-      });
-  }
-  useEffect(loadBatches, []);
+  const importBatch = useImportBatch();
+  const { batches, undone, undoing, reload, undo } = importBatch;
 
   async function check(): Promise<void> {
     if (file === null || busy) return;
@@ -94,8 +75,7 @@ export function Import(): React.JSX.Element {
     setError(null);
     try {
       setReport(await runClaudeImport({ file, names, cutoff, source, exclude: [...unticked] }));
-      setUndone(null);
-      loadBatches();
+      reload();
     } catch (thrown) {
       setError(errorMessage(thrown));
     } finally {
@@ -103,17 +83,13 @@ export function Import(): React.JSX.Element {
     }
   }
 
-  async function undo(id: string): Promise<void> {
-    if (busy) return;
-    setBusy(true);
+  async function handleUndo(id: string): Promise<void> {
+    if (busy || undoing) return;
     setError(null);
     try {
-      setUndone(await undoImportBatch(id));
-      loadBatches();
+      await undo(id);
     } catch (thrown) {
       setError(errorMessage(thrown));
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -332,35 +308,15 @@ export function Import(): React.JSX.Element {
         <p className="small note-meta">Nothing is written until you press Import on the next screen.</p>
       </div>
 
-      {batches.length > 0 && (
-        <div className="card card-rows lede" data-testid="import-batches">
-          <h3 className="heading-tight">Earlier imports</h3>
-          {undone !== null && (
-            <p className="small note-meta" data-testid="import-undone">
-              Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')}{' '}
-              removed.
-            </p>
-          )}
-          {batches.map((batch) => (
-            <div className="row between" key={batch.id}>
-              <span className="small">
-                {batch.created_at.slice(0, 16).replace('T', ' ')} — {plural(batch.notes, 'note')}
-                {batch.patients > 0 ? `, ${plural(batch.patients, 'new patient')}` : ''}
-              </span>
-              <button
-                type="button"
-                className="btn small btn-quick"
-                disabled={busy}
-                onClick={() => {
-                  void undo(batch.id);
-                }}
-              >
-                Undo
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      <ImportBatchList
+        batches={batches}
+        undone={undone}
+        busy={busy || undoing}
+        onUndo={(id) => void handleUndo(id)}
+        testId="import-batches"
+        showPatients
+        formatDate={formatBatchDate}
+      />
     </Screen>
   );
 }
@@ -416,11 +372,11 @@ function Skipped({ report }: { report: ClaudeImportReport }): React.JSX.Element 
     </details>
   );
 }
-
-function plural(count: number, word: string): string {
-  return `${String(count)} ${word}${count === 1 ? '' : 's'}`;
+function formatBatchDate(iso: string): string {
+  return iso.slice(0, 16).replace('T', ' ');
 }
 
+
 function day(iso: string | null): string {
-  return iso === null ? 'undated' : instantToLocalDay(iso);
+  return iso === null ? 'undated' : iso.slice(0, 10);
 }

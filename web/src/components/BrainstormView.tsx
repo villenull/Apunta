@@ -1,73 +1,42 @@
 import type { BrainstormContext, BrainstormMessage, PatientListItem } from '@apunta/shared';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import { clearBrainstorm, errorMessage, listBrainstorm, sendBrainstormMessage } from '../api/index.js';
+import { clearBrainstorm, listBrainstorm, sendBrainstormMessage } from '../api/index.js';
+import { useChatStream, type ChatStreamHandlers } from '../hooks/useChatStream.js';
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { firstName } from '../lib/format.js';
 import { Markdown } from '../lib/markdown.js';
-import { ComposerButtons, DictationPanel } from './ComposerButtons.js';
+import { ChatComposer } from './ChatComposer.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
 
-/**
- * Brainstorm (M12): a freeform chat with the local model about one patient.
- *
- * A thinking aid, never a record. Nothing typed or streamed here can revise
- * a note, a plan or the patient's details — the endpoint has no write path
- * to any of them, and the screen offers none either: there are no citations,
- * no follow-through into notes, no way to attach a reply anywhere.
- *
- * The composer wears the refine chat's microphone and send arrow (owner,
- * 2026-09-22): dictation goes through local whisper into the box, and
- * nothing is sent until she presses the arrow.
- *
- * Enter sends and Shift+Enter breaks the line; Stop abandons the reply (the
- * user's turn stays saved, no assistant turn is written); the thread follows
- * along until she scrolls up; the Context line says which notes the model
- * was given. Replies render as Markdown through our own renderer — React
- * text nodes only, so no reply can smuggle in an element.
- */
 export interface BrainstormViewProps {
   patient: PatientListItem;
 }
 
+/** Brainstorm is a thinking aid, never a record. */
 export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Element {
   const patientId = patient.id;
-
   const loadThread = useCallback((signal: AbortSignal) => listBrainstorm(patientId, signal), [patientId]);
   const thread = useLoader(loadThread);
   const reloadThread = thread.reload;
-
   const [messages, setMessages] = useState<BrainstormMessage[]>([]);
   const [context, setContext] = useState<BrainstormContext | null>(null);
   const [draft, setDraft] = useState('');
-  const [streaming, setStreaming] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [confirmingNew, setConfirmingNew] = useState(false);
-
+  const [dictationError, setDictationError] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const stickRef = useRef(true);
   const optimisticIdRef = useRef<string | null>(null);
+  const stickRef = useRef(true);
+  const [confirmingNew, setConfirmingNew] = useState(false);
 
   const dictation = useDictation({
-    onStart: () => {
-      setError(null);
-    },
-    onError: setError,
-    onHeard: (heard) => {
-      setDraft((current) => appendHeard(current, heard));
-    },
-    onSettled: () => {
-      inputRef.current?.focus();
-    },
+    onStart: () => setDictationError(null),
+    onError: setDictationError,
+    onHeard: (heard) => setDraft((current) => appendHeard(current, heard)),
+    onSettled: () => inputRef.current?.focus(),
   });
 
-  // Opening the view loads the saved conversation; a send below keeps the
-  // local copy current turn by turn after that.
   useEffect(() => {
     if (thread.state.status === 'ready') {
       setMessages(thread.state.data.messages);
@@ -75,31 +44,30 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
     }
   }, [thread.state]);
 
-  // Leaving the view mid-reply stops the model rather than leaving it writing
-  // into a stream nobody is reading.
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
+  const request = useCallback(
+    async (
+      text: string,
+      handlers: ChatStreamHandlers<BrainstormMessage, BrainstormContext>,
+      signal: AbortSignal,
+    ): Promise<void> => {
+      await sendBrainstormMessage(
+        patientId,
+        { message: text },
+        {
+          onStatus: (event) => handlers.onStatus(event.message),
+          onToken: handlers.onToken,
+          onMessage: handlers.onMessage,
+          onContext: handlers.onContext,
+        },
+        signal,
+      );
+    },
+    [patientId],
+  );
 
-  // Follow the conversation down, until she scrolls up to reread — then let go.
-  useEffect(() => {
-    const element = threadRef.current;
-    if (element && stickRef.current) element.scrollTop = element.scrollHeight;
-  }, [messages, streaming, status]);
-
-  const send = useCallback(
-    async (text: string): Promise<void> => {
-      const trimmed = text.trim();
-      if (trimmed === '' || sending) return;
-
+  const chat = useChatStream<BrainstormMessage, BrainstormContext>(request, {
+    onStarted: (text) => {
       setDraft('');
-      setSending(true);
-      setError(null);
-      setStreaming('');
-      setStatus(null);
-
       const optimisticId = `optimistic-${Date.now().toString()}`;
       optimisticIdRef.current = optimisticId;
       setMessages((current) => [
@@ -108,87 +76,50 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
           id: optimisticId,
           patient_id: patientId,
           role: 'user',
-          text: trimmed,
+          text,
           created_at: new Date().toISOString(),
         },
       ]);
-
-      const controller = new AbortController();
-      abortRef.current = controller;
-
-      try {
-        await sendBrainstormMessage(
-          patientId,
-          { message: trimmed },
-          {
-            onStatus: (event) => {
-              setStatus(event.message);
-            },
-            onToken: (chunk) => {
-              setStreaming((current) => (current ?? '') + chunk);
-            },
-            onMessage: (persisted) => {
-              // The persisted row supersedes whatever streamed, so the bubble
-              // on screen is the one a reload would show.
-              if (persisted.role === 'assistant') setStreaming(null);
-              setMessages((current) =>
-                current.map((message) =>
-                  message.id === optimisticIdRef.current && persisted.role === 'user' ? persisted : message,
-                ),
-              );
-              if (persisted.role === 'assistant') {
-                setMessages((current) =>
-                  current.some((existing) => existing.id === persisted.id)
-                    ? current
-                    : [...current, persisted],
-                );
-              }
-            },
-            onContext: (value) => {
-              setContext(value);
-            },
-          },
-          controller.signal,
-        );
-      } catch (thrown) {
-        // Stopping is her choice, not a failure to report.
-        if (controller.signal.aborted) return;
-        setError(errorMessage(thrown));
-        // Her message is already saved server-side; drop only the half-written
-        // reply, which is not.
-        setStreaming(null);
-        // The user's turn may not have reached the thread if the failure came
-        // before its `message` event.
-        reloadThread();
-      } finally {
-        abortRef.current = null;
-        optimisticIdRef.current = null;
-        setSending(false);
-        setStatus(null);
-      }
     },
-    [patientId, sending, reloadThread],
-  );
+    onMessage: (persisted) => {
+      setMessages((current) => {
+        if (persisted.role === 'user') {
+          return current.map((message) => (message.id === optimisticIdRef.current ? persisted : message));
+        }
+        return current.some((message) => message.id === persisted.id) ? current : [...current, persisted];
+      });
+      return persisted.role === 'assistant';
+    },
+    onContext: setContext,
+  });
+  const { clearError, error, send, sending, status, streaming, stop } = chat;
 
-  const stop = useCallback(() => {
-    abortRef.current?.abort();
-    // The send's catch sees the abort and stands down; clear the half-written
-    // bubble now so stopping feels immediate.
-    setStreaming(null);
-  }, []);
+  useEffect(() => {
+    if (error !== null) reloadThread();
+  }, [error, reloadThread]);
+
+  useEffect(() => {
+    return () => stop();
+  }, [stop]);
+
+  useEffect(() => {
+    const element = threadRef.current;
+    if (element && stickRef.current) element.scrollTop = element.scrollHeight;
+  }, [messages, streaming, status]);
 
   const startNew = useCallback(async (): Promise<void> => {
     setConfirmingNew(false);
-    setError(null);
+    clearError();
+    setDictationError(null);
     try {
       const fresh = await clearBrainstorm(patientId);
       setMessages(fresh.messages);
       setContext(fresh.context);
       inputRef.current?.focus();
     } catch (thrown) {
-      setError(errorMessage(thrown));
+      setDictationError(thrown instanceof Error ? thrown.message : String(thrown));
     }
-  }, [patientId]);
+  }, [clearError, patientId]);
 
   return (
     <div className="brainstorm-view" data-testid="brainstorm-view">
@@ -202,9 +133,7 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
           className="btn small btn-compact"
           data-testid="brainstorm-new"
           disabled={sending}
-          onClick={() => {
-            setConfirmingNew(true);
-          }}
+          onClick={() => setConfirmingNew(true)}
         >
           New conversation
         </button>
@@ -255,11 +184,7 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
               <div className="chat-bubble">{message.text}</div>
             </div>
           ) : (
-            <div key={message.id} className="chat-msg ai" data-testid="brainstorm-reply">
-              <div className="chat-bubble">
-                <Markdown text={message.text} />
-              </div>
-            </div>
+            <MarkdownBubble key={message.id} message={message} />
           ),
         )}
         {streaming !== null && (
@@ -269,70 +194,49 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
         )}
       </div>
 
-      {error !== null && (
+      {(error ?? dictationError) !== null && (
         <p className="form-error" role="alert" data-testid="brainstorm-error">
-          {error}
+          {error ?? dictationError}
         </p>
       )}
 
-      <DictationPanel dictation={dictation} />
-
-      <div className="chat-input-row brainstorm-composer">
-        <textarea
-          ref={inputRef}
-          rows={2}
-          data-testid="brainstorm-input"
-          placeholder="Think out loud…"
-          aria-label="Brainstorm message"
-          value={draft}
-          disabled={sending}
-          onChange={(event) => {
-            setDraft(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              void send(draft);
-            }
-          }}
-        />
-        <ComposerButtons
-          dictation={dictation}
-          sending={sending}
-          testIdPrefix="brainstorm"
-          onSend={() => {
-            void send(draft);
-          }}
-          onStop={stop}
-        />
-      </div>
+      <ChatComposer
+        inputRef={inputRef}
+        value={draft}
+        onChange={setDraft}
+        onSend={() => void send(draft)}
+        onStop={stop}
+        dictation={dictation}
+        sending={sending}
+        placeholder="Think out loud…"
+        ariaLabel="Brainstorm message"
+        testId="brainstorm-input"
+        className="brainstorm-composer"
+      />
 
       {confirmingNew && (
         <ConfirmDialog
           title="Start a new conversation?"
-          body={
-            <p>
-              This forgets the conversation above. {firstName(patient.name)}&rsquo;s notes stay exactly as
-              they are.
-            </p>
-          }
+          body={<p>This forgets the conversation above. {firstName(patient.name)}&rsquo;s notes stay exactly as they are.</p>}
           confirmLabel="Forget it"
-          onCancel={() => {
-            setConfirmingNew(false);
-          }}
-          onConfirm={() => {
-            void startNew();
-          }}
+          onCancel={() => setConfirmingNew(false)}
+          onConfirm={() => void startNew()}
         />
       )}
     </div>
   );
 }
 
-/**
- * The Context line. When notes had to be left out for space it says so, in
- * so many words: she should never think the model read a note it did not.
- */
+const MarkdownBubble = memo(function MarkdownBubble({ message }: { message: BrainstormMessage }): React.JSX.Element {
+  return (
+    <div className="chat-msg ai" data-testid="brainstorm-reply">
+      <div className="chat-bubble">
+        <Markdown text={message.text} />
+      </div>
+    </div>
+  );
+});
+
 function contextSummary(context: BrainstormContext): string {
   const count = context.notes.length;
   const total = Math.max(context.total, count);

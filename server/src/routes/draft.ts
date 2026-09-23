@@ -9,7 +9,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyRequest } from 'fastify';
 
-import { AiError, aiError } from '../ai/errors.js';
+import { logFailure, logStats, toAiError } from './ai.js';
 import {
   applyDiscussionSubheadings,
   renderClinicalKnowledgeGuide,
@@ -220,37 +220,4 @@ export function persistDraft(
   return note;
 }
 
-export function toAiError(error: unknown): AiError {
-  if (error instanceof AiError) return error;
-  return aiError('ollama_error', String(error));
-}
 
-/**
- * The log carries the diagnosis, never the prompt.
- *
- * A prompt contains the therapist's account of a session — real patient
- * material (CLAUDE.md hard rule 2) — so no code path may write it to a log,
- * an error report, or a crash dump. The same goes for a recording and its
- * transcript, which is why the transcribe route logs byte counts and seconds.
- */
-export function logFailure(request: FastifyRequest, failure: AiError, message: string): void {
-  request.log.error({ code: failure.code, detail: failure.detail }, message);
-}
-
-export function logStats(request: FastifyRequest, stats: LlmStats): void {
-  const tokensPerSecond = stats.evalNanos > 0 ? stats.outputTokens / (stats.evalNanos / 1e9) : 0;
-  request.log.info(
-    {
-      model: stats.model,
-      // `prompt_eval_count` is the only observability Ollama gives us on
-      // truncation, and it is free: log it on every call.
-      promptTokens: stats.promptTokens,
-      outputTokens: stats.outputTokens,
-      tokensPerSecond: Math.round(tokensPerSecond * 10) / 10,
-      loadMs: Math.round(stats.loadNanos / 1e6),
-      doneReason: stats.doneReason,
-      attempts: stats.attempts,
-    },
-    'note drafted',
-  );
-}

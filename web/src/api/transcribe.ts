@@ -14,7 +14,7 @@ import {
 
 import { requestJson, requestStream } from './client.js';
 import { GenerateError, type GenerateHandlers } from './generate.js';
-import { readEvents } from './sse.js';
+import { consumeStream } from './sse.js';
 
 /**
  * `POST /api/transcribe` — upload the recording and watch it become a note.
@@ -64,28 +64,29 @@ export async function transcribeRecording(
 
   let result: GenerateNoteEvent | null = null;
 
-  for await (const frame of readEvents(response.body, signal)) {
-    switch (frame.event) {
-      case 'progress':
-        handlers.onProgress?.(TranscribeProgressEventSchema.parse(frame.data));
-        break;
-      case 'status':
-        handlers.onStatus?.(GenerateStatusEventSchema.parse(frame.data));
-        break;
-      case 'token':
-        handlers.onToken?.(GenerateTokenEventSchema.parse(frame.data));
-        break;
-      case 'note':
-        result = GenerateNoteEventSchema.parse(frame.data);
-        break;
-      case 'error':
-        throw new GenerateError(GenerateErrorEventSchema.parse(frame.data));
-      default:
-        // An event name this build does not know about is not a reason to
-        // fail: the stream still ends with `note` or `error`.
-        break;
-    }
-  }
+  await consumeStream(
+    response.body,
+    signal,
+    {
+      progress: TranscribeProgressEventSchema,
+      status: GenerateStatusEventSchema,
+      token: GenerateTokenEventSchema,
+      note: GenerateNoteEventSchema,
+      error: GenerateErrorEventSchema,
+    },
+    {
+      progress: (event) => handlers.onProgress?.(event),
+      status: (event) => handlers.onStatus?.(event),
+      token: (event) => handlers.onToken?.(event),
+      note: (event) => {
+        result = event;
+      },
+      error: (event) => {
+        throw new GenerateError(event);
+      },
+    },
+  );
+
 
   if (result === null) throw new Error('The recording stream ended before the note was saved.');
   return result;

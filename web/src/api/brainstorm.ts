@@ -13,7 +13,7 @@ import {
 
 import { requestJson, requestStream } from './client.js';
 import { GenerateError } from './generate.js';
-import { readEvents } from './sse.js';
+import { consumeStream } from './sse.js';
 
 /** `GET /api/patients/:id/brainstorm` — the thread, oldest first, plus today's context. */
 export async function listBrainstorm(
@@ -64,31 +64,29 @@ export async function sendBrainstormMessage(
 
   let sawAssistant = false;
 
-  for await (const frame of readEvents(response.body, signal)) {
-    switch (frame.event) {
-      case 'status':
-        handlers.onStatus?.(BrainstormStatusEventSchema.parse(frame.data));
-        break;
-      case 'token':
-        handlers.onToken?.(BrainstormTokenEventSchema.parse(frame.data).text);
-        break;
-      case 'message': {
-        const { message } = BrainstormMessageEventSchema.parse(frame.data);
-        if (message.role === 'assistant') sawAssistant = true;
-        handlers.onMessage?.(message);
-        break;
-      }
-      case 'context':
-        handlers.onContext?.(BrainstormContextEventSchema.parse(frame.data).context);
-        break;
-      case 'error':
-        throw new GenerateError(BrainstormErrorEventSchema.parse(frame.data));
-      default:
-        // An event name this build does not know about is not a reason to
-        // fail: the stream still ends with a reply or an error.
-        break;
-    }
-  }
+  await consumeStream(
+    response.body,
+    signal,
+    {
+      status: BrainstormStatusEventSchema,
+      token: BrainstormTokenEventSchema,
+      message: BrainstormMessageEventSchema,
+      context: BrainstormContextEventSchema,
+      error: BrainstormErrorEventSchema,
+    },
+    {
+      status: (event) => handlers.onStatus?.(event),
+      token: (event) => handlers.onToken?.(event.text),
+      message: (event) => {
+        if (event.message.role === 'assistant') sawAssistant = true;
+        handlers.onMessage?.(event.message);
+      },
+      context: (event) => handlers.onContext?.(event.context),
+      error: (event) => {
+        throw new GenerateError(event);
+      },
+    },
+  );
 
   // A stream that ended without the assistant's persisted turn left a bubble
   // on screen that is not in the database — say so rather than let a reload

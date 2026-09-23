@@ -11,7 +11,7 @@ import {
 } from '@apunta/shared';
 
 import { requestStream } from './client.js';
-import { readEvents } from './sse.js';
+import { consumeStream } from './sse.js';
 
 /** `POST /api/generate` over SSE — the drafting stream the capture screen shows. */
 
@@ -47,25 +47,27 @@ export async function generateNote(
 
   let result: GenerateNoteEvent | null = null;
 
-  for await (const frame of readEvents(response.body, signal)) {
-    switch (frame.event) {
-      case 'status':
-        handlers.onStatus?.(GenerateStatusEventSchema.parse(frame.data));
-        break;
-      case 'token':
-        handlers.onToken?.(GenerateTokenEventSchema.parse(frame.data));
-        break;
-      case 'note':
-        result = GenerateNoteEventSchema.parse(frame.data);
-        break;
-      case 'error':
-        throw new GenerateError(GenerateErrorEventSchema.parse(frame.data));
-      default:
-        // An event name this build does not know about is not a reason to
-        // fail: the stream still ends with `note` or `error`.
-        break;
-    }
-  }
+  await consumeStream(
+    response.body,
+    signal,
+    {
+      status: GenerateStatusEventSchema,
+      token: GenerateTokenEventSchema,
+      note: GenerateNoteEventSchema,
+      error: GenerateErrorEventSchema,
+    },
+    {
+      status: (event) => handlers.onStatus?.(event),
+      token: (event) => handlers.onToken?.(event),
+      note: (event) => {
+        result = event;
+      },
+      error: (event) => {
+        throw new GenerateError(event);
+      },
+    },
+  );
+
 
   if (result === null) throw new Error('The draft stream ended before the note was saved.');
   return result;
