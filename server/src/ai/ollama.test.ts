@@ -412,10 +412,20 @@ describe('OllamaProvider.refineNote', () => {
     expect(last.reply).toBe('Shortened the Plan section.');
     expect(last.updatedSections).toEqual(GOOD);
 
-    const streamedKeys = new Set(
-      events.filter((event) => event.type === 'token').map((event) => event.section),
-    );
-    expect([...streamedKeys]).toEqual(['reply']);
+    const streamed = events.filter((event) => event.type === 'token');
+    // The reply is the only streamable string, so it is the only text a client
+    // shows. The section bodies are decoded as well — the route turns each new
+    // section key into its "Rewriting n of m sections" progress line — and an
+    // empty body produces no token at all.
+    const replyText = streamed
+      .filter((event) => event.section === 'reply')
+      .map((event) => event.text)
+      .join('');
+    expect(replyText).toBe('Shortened the Plan section.');
+    const sectionKeys = streamed
+      .map((event) => event.section)
+      .filter((key, index, all) => all.indexOf(key) === index);
+    expect(sectionKeys).toEqual(['reply', 'Subjective', 'Assessment', 'Plan']);
   });
 
   it('accepts an answer that leaves the note alone', async () => {

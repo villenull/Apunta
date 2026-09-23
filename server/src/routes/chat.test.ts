@@ -327,6 +327,43 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
   });
 
   /**
+   * The invariant behind the 2026-09-22 screenshot of a note whose Location
+   * section held a JSON object: a rewrite must land each section in its own
+   * key, whatever the bodies happen to contain. A body that looks like JSON, a
+   * body with a colon in it, and a body that names another section are all
+   * ordinary prose to the serializer — if one ever leaked into another
+   * section's key, or the sections object itself were written into a body, the
+   * round trip below would show it.
+   */
+  it('writes each section to its own key, whatever the bodies contain', async () => {
+    const note = await freshNote(
+      [
+        'Subjective: Reports {"sleep": "four hours", "appetite": "poor"}.',
+        'Objective: Alert; noted: calm.',
+        'Assessment: Plan was discussed but not written up.',
+        'Plan: Continue weekly.',
+      ].join('\n\n'),
+    );
+
+    const { events } = await chat(harness.app, note.id, { message: 'Add something about sleep' });
+
+    const final = noteUpdated(events);
+    const stored = getNote(harness.db, note.id);
+    expect(stored?.content).toBe(String((final?.data['note'] as Note).content));
+
+    const sections = textToSections(stored?.content ?? '', ['Subjective', 'Objective', 'Assessment', 'Plan']);
+    expect(sections['Subjective']).toBe(
+      'Reports {"sleep": "four hours", "appetite": "poor"}. Also noted improved appetite this week.',
+    );
+    // Every other section is exactly what it was: nothing leaked into it, and
+    // none of them holds the note as an object.
+    expect(sections['Objective']).toBe('Alert; noted: calm.');
+    expect(sections['Assessment']).toBe('Plan was discussed but not written up.');
+    expect(sections['Plan']).toBe('Continue weekly.');
+    expect(stored?.content).not.toContain('{"Subjective"');
+  });
+
+  /**
    * The boilerplate lock, end to end. The fake's "clinical tone" branch
    * replays M10's live incident — injecting "Alert and oriented" into
    * Objective — and the route is expected to revert it, append the server's
@@ -342,9 +379,12 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(reply).toContain('Objective was kept as it was');
     expect(reply).toContain('"Alert and oriented"');
 
-    // The only changed section was the blocked one, so the note is untouched
-    // and no note-updated event goes out.
-    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    // The only changed section was the blocked one, so the note is untouched —
+    // and the client is told that authoritatively instead of inferring an edit
+    // from a reply it has to distrust.
+    const final = noteUpdated(events);
+    expect(final?.data['outcome']).toBe('withheld');
+    expect((final?.data['note'] as Note).content).toBe(NOTE_TEXT);
     expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
   });
 
@@ -395,7 +435,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(reply).toContain('"four hours a night in June"');
     // The lock's notice is the explanation; the no-change line would only repeat it.
     expect(reply).not.toContain(UNCHANGED_NOTICE);
-    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(noteUpdated(events)?.data['outcome']).toBe('withheld');
     expect(getNote(harness.db, note.id)?.content).toBe(FACT_NOTE);
   });
 
@@ -445,7 +485,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     const { events } = await chat(harness.app, note.id, { message: 'Tidy this up a little' });
 
     expect(assistantReply(events)).toContain(UNCHANGED_NOTICE);
-    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(noteUpdated(events)?.data['outcome']).toBe('unchanged');
     expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
   });
 
@@ -589,7 +629,7 @@ describe('POST /api/notes/:id/chat — her other notes as background', () => {
     const reply = assistantReply(events);
     expect(reply).toContain('Apunta kept your other notes out of this revision.');
     expect(reply).toContain('To bring something over from another session, ask for it.');
-    expect(events.map((event) => event.name)).not.toContain('note-updated');
+    expect(noteUpdated(events)?.data['outcome']).toBe('withheld');
     expect(getNote(harness.db, notes.current.id)?.content).toBe(GAPPY);
     // …and the model never sees the notice.
     await chat(harness.app, notes.current.id, { message: 'Is the plan clear?' });
@@ -959,9 +999,12 @@ describe('POST /api/notes/:id/chat — a publish that lands mid-refine', () => {
 
       const { events } = await chat(local.app, note.id, { message: 'Make the plan shorter' });
 
-      // The rewrite is thrown away: no note-updated, the record stays published
-      // with the content it was filed with.
-      expect(events.map((event) => event.name)).not.toContain('note-updated');
+      // The rewrite is thrown away: the record stays published with the content
+      // it was filed with, and the client is told the edit was withheld rather
+      // than shown an outcome it would have to guess at.
+      const final = noteUpdated(events);
+      expect(final?.data['outcome']).toBe('withheld');
+      expect(String(final?.data['outcome_reason'])).toContain('published');
       expect(assistantReply(events)).toBe(PUBLISHED_REFUSAL);
       const stored = getNote(local.db, note.id);
       expect(stored?.status).toBe('published');

@@ -35,11 +35,13 @@ export type ChatMessageListResponse = z.infer<typeof ChatMessageListResponseSche
  * `message` arrives twice: once for the persisted user turn (so the browser
  * can swap its optimistic bubble for the real row, ids and `ref_quote`
  * included) and once for the assistant's. For an edit, `note-updated` is sent
- * before the assistant's `message`, only after the guarded draft write has
- * committed; the browser may wait for that event to render before showing the
- * assistant's completion claim. Questions and refused edits have no
- * `note-updated`; the stream ends after the assistant's `message` or an
- * `error`.
+ * before the assistant's `message`, after the guarded draft write has
+ * committed — or, when the write was held back or changed nothing, carrying the
+ * record as it stands and the server's `outcome`. The browser may wait for that
+ * event to render before showing the assistant's completion claim, so the
+ * visible result follows the note rather than racing it. A question has no
+ * `note-updated`: the answer stands alone. The stream ends after the
+ * assistant's `message` or an `error`.
  */
 export const CHAT_EVENT_NAMES = ['status', 'token', 'message', 'note-updated', 'error'] as const;
 export type ChatEventName = (typeof CHAT_EVENT_NAMES)[number];
@@ -68,10 +70,16 @@ export const ChatMessageEventSchema = z.object({
 export type ChatMessageEvent = z.infer<typeof ChatMessageEventSchema>;
 
 /**
- * The rewritten note, already persisted with `updated_at` bumped.
+ * The note as the server left it, plus its authoritative outcome.
  *
- * Never sent for a published note: the server discards any rewrite of one
- * rather than asking the model to respect the lock.
+ * Sent for an applied rewrite (the note is already persisted, with `updated_at`
+ * bumped), and also when the server did *not* write — a guard held the model's
+ * revision back, an instruction changed nothing, or the note was filed in the
+ * seconds the model spent thinking. In those cases `note` is the record exactly
+ * as it stands and `outcome` says why nothing moved, so a client never has to
+ * infer an edit from the model's prose.
+ *
+ * Never sent for a question: the answer stands alone and the note is untouched.
  */
 export const ChatNoteUpdatedEventSchema = z.object({
   note: NoteSchema,
