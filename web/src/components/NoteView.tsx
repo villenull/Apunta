@@ -283,6 +283,11 @@ export function NoteView({
    * The chat rewrote the note. The server has already saved it, so a debounced
    * edit still in flight would write the old text back over it — drop it, and
    * light the editor for a moment so the change is not silent.
+   *
+   * The server also says whether it applied the rewrite: a guard that held the
+   * model's revision back, or an instruction that changed nothing, arrives with
+   * the note exactly as it stands. Those are outcomes, not edits, so the
+   * editor must not flash as though it had been rewritten.
    */
   const handleNoteUpdated = useCallback(
     (event: ChatNoteUpdatedEvent): Promise<void> => {
@@ -295,15 +300,22 @@ export function NoteView({
       latestTextRef.current = event.note.content;
       markSaveState('saved');
       return new Promise<void>((resolve) => {
+        setText(event.note.content);
+        onNoteChangedRef.current(event.note);
+        setError(null);
+        if (event.outcome !== 'applied') {
+          // Nothing was written, so there is no painted rewrite for the chat
+          // to wait on — releasing the ack here is what keeps a withheld edit
+          // from leaving the assistant's turn off screen.
+          resolve();
+          return;
+        }
         noteUpdateAckRef.current = resolve;
         // Name what actually changed, so the flash can say which sections moved.
         const sectionNames = format?.sections ?? [];
         const before = textToSections(noteRef.current.content, sectionNames);
         const after = textToSections(event.note.content, sectionNames);
         setChangedSections(sectionNames.filter((name) => (before[name] ?? '') !== (after[name] ?? '')));
-        setText(event.note.content);
-        onNoteChangedRef.current(event.note);
-        setError(null);
         setRefined(true);
         window.setTimeout(() => {
           setRefined(false);

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { installFakeApi, makeFormat, makeNote, makePatient } from '../test/fakeApi.js';
@@ -23,7 +23,44 @@ function renderNote() {
 }
 
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
+});
+
+describe('refine outcomes', () => {
+  /**
+   * A withheld rewrite is an outcome, not an edit: the note is exactly as it
+   * was, so the editor must not light up as though the chat had changed it.
+   * The flash is what the "Updated …" line rides on, so both are asserted.
+   */
+  it('leaves the editor unlit when a guard withheld the rewrite', async () => {
+    const note = makeNote(patient.id, { content: 'Subjective: X' });
+    installFakeApi(
+      { patients: [patient], formats: [format], notes: [note] },
+      { chatOutcome: { outcome: 'withheld', reason: 'A safety guard protected the existing note content.' } },
+    );
+    render(
+      <NoteView
+        patient={patient}
+        note={note}
+        format={format}
+        onNoteChanged={() => undefined}
+        onNoteDeleted={() => undefined}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('chat-fab'));
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    // The stream has been applied once the thread shows the assistant's turn.
+    await waitFor(() => {
+      expect(screen.getAllByTestId('chat-msg').length).toBe(2);
+    });
+    expect(document.querySelector('.note-editable-wrap')?.className).not.toContain('is-refined');
+    expect(screen.queryByTestId('note-updated-hint')).toBeNull();
+    expect((screen.getByTestId('note-body') as HTMLTextAreaElement).value).toBe('Subjective: X');
+  });
 });
 
 describe('autosave ordering', () => {
