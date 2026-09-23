@@ -168,11 +168,11 @@ async function preview(wavBuffer, parsed, totalSeconds) {
 function stableTail(previous, next) {
   const oldWords = previous.trim() === '' ? [] : previous.trim().split(/\s+/);
   const newWords = next.trim() === '' ? [] : next.trim().split(/\s+/);
-  let common = 0;
-  while (common < oldWords.length && common < newWords.length && key(oldWords[common]) === key(newWords[common]))
-    common += 1;
-  const stable = Math.min(common, Math.max(0, oldWords.length - 4));
-  return stable === 0 ? newWords.join(' ') : `${oldWords.slice(0, stable).join(' ')} ${newWords.slice(stable).join(' ')}`.trim();
+  const stable = Math.max(0, oldWords.length - 4);
+  if (stable === 0) return newWords.join(' ');
+  const boundaryAgrees = stable <= newWords.length && key(oldWords[stable - 1]) === key(newWords[stable - 1]);
+  const tail = boundaryAgrees ? newWords.slice(stable) : newWords.slice(-4);
+  return `${oldWords.slice(0, stable).join(' ')} ${tail.join(' ')}`.trim();
 }
 function key(word) {
   return word.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');

@@ -89,9 +89,11 @@ function stableTail(previous: string, next: string): string {
   // Once a word is four positions behind the live edge, stop allowing a
   // later Whisper hypothesis to rewrite it. The short tail remains tentative.
   const stable = Math.max(0, oldWords.length - TENTATIVE_TAIL_WORDS);
-  return stable === 0
-    ? newWords.join(' ')
-    : `${oldWords.slice(0, stable).join(' ')} ${newWords.slice(stable).join(' ')}`.trim();
+  if (stable === 0) return newWords.join(' ');
+  const boundaryAgrees =
+    stable <= newWords.length && previewWordKey(oldWords[stable - 1]) === previewWordKey(newWords[stable - 1]);
+  const tail = boundaryAgrees ? newWords.slice(stable) : newWords.slice(-TENTATIVE_TAIL_WORDS);
+  return `${oldWords.slice(0, stable).join(' ')} ${tail.join(' ')}`.trim();
 }
 
 export function reconcilePreviewResult(
