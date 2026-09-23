@@ -240,9 +240,9 @@ function AppearanceSettings(): React.JSX.Element {
   const settings = useLoader(load);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accentColor, setAccentColor] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<FontSize | null>(null);
   const [animations, setAnimations] = useState<boolean | null>(null);
-
   /*
    * The settings actually stored, which is what an abandoned preview must be
    * put back to. It is a ref because the unmount cleanup below reads it long
@@ -285,9 +285,9 @@ function AppearanceSettings(): React.JSX.Element {
     );
   }
 
+  const shownAccent = accentColor ?? loaded ?? DEFAULT_ACCENT_COLOR;
   const shownSize = fontSize ?? fontSizeOrDefault(stored?.[FONT_SIZE_SETTING]);
   const shownAnimations = animations ?? animationsEnabled(stored?.[ANIMATIONS_SETTING]);
-
   const save = (patch: SettingsRecord): void => {
     void (async () => {
       try {
@@ -310,9 +310,8 @@ function AppearanceSettings(): React.JSX.Element {
       data-testid="appearance-settings"
       onSubmit={(event) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget);
         save({
-          [ACCENT_COLOR_SETTING]: String(form.get(ACCENT_COLOR_SETTING) ?? DEFAULT_ACCENT_COLOR),
+          [ACCENT_COLOR_SETTING]: shownAccent,
           [FONT_SIZE_SETTING]: shownSize,
           [ANIMATIONS_SETTING]: shownAnimations,
         });
@@ -329,9 +328,10 @@ function AppearanceSettings(): React.JSX.Element {
             id="accent-color"
             name={ACCENT_COLOR_SETTING}
             type="color"
-            defaultValue={loaded ?? DEFAULT_ACCENT_COLOR}
+            value={shownAccent}
             onChange={(event) => {
               setSaved(false);
+              setAccentColor(event.target.value);
               applyAccentColor(event.target.value);
             }}
           />
@@ -340,6 +340,9 @@ function AppearanceSettings(): React.JSX.Element {
             className="btn small btn-quick"
             data-testid="reset-accent"
             onClick={() => {
+              setSaved(false);
+              setAccentColor(DEFAULT_ACCENT_COLOR);
+              applyAccentColor(DEFAULT_ACCENT_COLOR);
               save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
             }}
           >
@@ -357,18 +360,42 @@ function AppearanceSettings(): React.JSX.Element {
           role="radiogroup"
           aria-labelledby="font-size-label"
         >
-          {FONT_SIZES.map((size) => (
+          {FONT_SIZES.map((size, index) => (
             <button
               key={size}
               type="button"
               role="radio"
               aria-checked={shownSize === size}
+              tabIndex={shownSize === size ? 0 : -1}
               className={shownSize === size ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
               data-testid={`font-size-${size}`}
               onClick={() => {
                 setSaved(false);
                 setFontSize(size);
                 applyFontSize(size);
+              }}
+              onKeyDown={(event) => {
+                const direction =
+                  event.key === 'ArrowRight' || event.key === 'ArrowDown'
+                    ? 1
+                    : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+                      ? -1
+                      : event.key === 'Home'
+                        ? -index
+                        : event.key === 'End'
+                          ? FONT_SIZES.length - 1 - index
+                          : 0;
+                if (direction === 0) return;
+                event.preventDefault();
+                const nextIndex = (index + direction + FONT_SIZES.length) % FONT_SIZES.length;
+                const next = FONT_SIZES[nextIndex];
+                if (next === undefined) return;
+                setSaved(false);
+                setFontSize(next);
+                applyFontSize(next);
+                requestAnimationFrame(() => {
+                  document.querySelector<HTMLButtonElement>(`[data-testid="font-size-${next}"]`)?.focus();
+                });
               }}
             >
               {FONT_SIZE_LABELS[size]}

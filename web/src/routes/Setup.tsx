@@ -11,10 +11,10 @@ import {
   FULLY_LOCAL,
   SETUP_SCRIPT_COMMAND,
   hasBlockingProblem,
-  isFullyLocal,
   setupChecks,
   type CheckState,
   type SetupCheck,
+  type SetupPlatform,
 } from '../lib/setup.js';
 
 /**
@@ -24,12 +24,11 @@ import {
  * the browser and `whisper-cli` decodes it, so a machine without ffmpeg is a
  * machine that works.
  *
- * The screen refuses to print "You're fully local — nothing leaves this Mac"
- * until every row is green, and FileVault is one of the rows. That sentence is
- * a promise about the disk, not about the network, and it is false while the
- * disk is unencrypted or while backups are being written into a folder iCloud
- * syncs (`docs/research/data-at-rest-2026-08.md` §9).
+ * The screen separates the network-locality statement from disk encryption:
+ * the former is a property of Apunta's runtime, while the latter is reported
+ * only when the operating system can verify it.
  */
+
 export function Setup(): React.JSX.Element {
   useDocumentTitle('Setup');
   const loadHealth = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
@@ -39,6 +38,8 @@ export function Setup(): React.JSX.Element {
   // must not stop the checklist rendering — it is the smaller half.
   const loadBackup = useCallback((signal: AbortSignal) => fetchBackupStatus(signal).catch(() => null), []);
   const backup = useLoader(loadBackup);
+  const platform: SetupPlatform =
+    typeof navigator !== 'undefined' && /Macintosh|Mac OS X/i.test(navigator.userAgent) ? 'mac' : 'other';
 
   function recheck(): void {
     health.reload();
@@ -49,7 +50,7 @@ export function Setup(): React.JSX.Element {
     <Screen back={{ to: '/', label: 'Patients' }}>
       <h2 className="lede">Setup</h2>
       <p className="small note-meta lede">
-        Apunta runs entirely on this Mac. These are the pieces it needs, and what to do about any that are
+        Apunta runs on this computer. These are the pieces it needs, and what to do about any that are
         missing.
       </p>
 
@@ -66,7 +67,11 @@ export function Setup(): React.JSX.Element {
 
       {health.state.status === 'ready' && (
         <SetupBody
-          checks={setupChecks(health.state.data, backup.state.status === 'ready' ? backup.state.data : null)}
+          checks={setupChecks(
+            health.state.data,
+            backup.state.status === 'ready' ? backup.state.data : null,
+            platform,
+          )}
           bundled={health.state.data.bundled}
           onRecheck={recheck}
         />
@@ -85,15 +90,11 @@ function SetupBody({
   bundled: boolean;
   onRecheck: () => void;
 }): React.JSX.Element {
-  const ready = isFullyLocal(checks);
-
   return (
     <>
-      {ready && (
-        <p className="card lede setup-verdict is-ready" data-testid="setup-ready">
-          {FULLY_LOCAL}
-        </p>
-      )}
+      <p className="card lede setup-verdict is-ready" data-testid="setup-local">
+        {FULLY_LOCAL}
+      </p>
 
       <ul className="card card-rows lede setup-list" data-testid="setup-checklist">
         {checks.map((check) => (
@@ -123,14 +124,15 @@ function SetupBody({
     </>
   );
 }
-
 function SetupRow({ check }: { check: SetupCheck }): React.JSX.Element {
   return (
     <li className={`setup-row is-${check.state}`} data-testid={`setup-row-${check.id}`}>
       <div className="setup-row-head">
         <StateMark state={check.state} />
         <div className="grow">
-          <p className="setup-row-label">{check.label}</p>
+          <p className="setup-row-label">
+            {check.label} <span className="setup-row-state">{STATE_LABEL[check.state]}</span>
+          </p>
           <p className="small note-meta" data-testid={`setup-detail-${check.id}`}>
             {check.detail}
           </p>
@@ -157,11 +159,10 @@ function SetupRow({ check }: { check: SetupCheck }): React.JSX.Element {
 const STATE_LABEL: Record<CheckState, string> = {
   ok: 'Ready',
   missing: 'Missing',
-  warn: 'Not finished',
-  unknown: 'Could not check',
+  warn: 'Not checked',
+  unknown: 'Not checked',
   skipped: 'Not checked',
 };
-
 function StateMark({ state }: { state: CheckState }): React.JSX.Element {
   return (
     <span className={`setup-mark is-${state}`} aria-label={STATE_LABEL[state]} title={STATE_LABEL[state]}>

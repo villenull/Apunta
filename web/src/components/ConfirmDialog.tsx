@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
+import { Dialog } from './Dialog.js';
 /**
  * A confirmation the keyboard can dismiss (M7 deliverable 5).
  *
@@ -25,7 +26,6 @@ export interface ConfirmDialogProps {
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }
-
 export function ConfirmDialog({
   title,
   body,
@@ -36,45 +36,17 @@ export function ConfirmDialog({
 }: ConfirmDialogProps): React.JSX.Element {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    // Focus lands on Cancel, never on the destructive button: a stray Return
-    // on a dialog you did not expect must not delete a patient.
-    cancelRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onCancel();
-      }
-    }
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [onCancel]);
-
   return (
-    <div
-      className="modal-backdrop"
-      data-testid="confirm-backdrop"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onCancel();
-      }}
-    >
-      <div className="modal card" role="dialog" aria-modal="true" aria-label={title}>
-        <h3 className="heading-tight">{title}</h3>
-        <div className="small note-meta modal-body">{body}</div>
-        <div className="modal-actions">
-          <button type="button" className="btn" ref={cancelRef} onClick={onCancel}>
-            {cancelLabel}
-          </button>
-          <button type="button" className="btn btn-danger" data-testid="confirm-accept" onClick={onConfirm}>
-            {confirmLabel}
-          </button>
-        </div>
+    <Dialog title={title} onClose={onCancel} testId="confirm-backdrop" initialFocusRef={cancelRef}>
+      <div className="small note-meta modal-body">{body}</div>
+      <div className="modal-actions">
+        <button type="button" className="btn" ref={cancelRef} onClick={onCancel}>
+          {cancelLabel}
+        </button>
+        <button type="button" className="btn btn-danger" data-testid="confirm-accept" onClick={onConfirm}>
+          {confirmLabel}
+        </button>
       </div>
-    </div>
+    </Dialog>
   );
 }

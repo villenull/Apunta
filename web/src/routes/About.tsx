@@ -7,16 +7,9 @@ import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 
 /**
- * About and privacy (M7 deliverable 5) — the local-only guarantee in plain
- * language, and the two places it stops.
- *
- * The point of this page is that it does not overclaim. "Nothing leaves this
- * Mac" is true of the network and is *not* the whole story about the disk:
- * without FileVault, anyone who takes the laptop reads every note without
- * knowing a password, and a backup saved into Documents is uploaded to Apple.
- * Both are stated here rather than left to the setup screen, because this is
- * the page someone reads when they want to know whether to trust it
- * (`docs/research/data-at-rest-2026-08.md` §4.2, §2.5).
+ * About and privacy: the local-only guarantee in plain language, and the two
+ * places it stops. The copy deliberately says "this computer" because Apunta
+ * runs on more than one operating system.
  */
 export function About(): React.JSX.Element {
   useDocumentTitle('About');
@@ -29,29 +22,25 @@ export function About(): React.JSX.Element {
       <h2 className="lede">About Apunta</h2>
 
       <div className="card card-rows lede">
-        <h3 className="heading-tight">Nothing you write here goes anywhere</h3>
+        <h3 className="heading-tight">Nothing you write here goes onto the internet</h3>
         <p className="small note-meta">
-          Apunta runs on this Mac and only on this Mac. The part of it you are looking at is a web page, but
-          it is being served by a program on this computer — nothing is being sent over the internet, and
-          there is no account, no server, and nobody else with a copy.
+          Apunta runs on this computer. It is a web page served by a program on the same computer, and the app
+          makes no outbound network connections. There is no account and no remote copy.
         </p>
         <p className="small note-meta">
-          The writing is done by an AI model that was downloaded onto this Mac and runs on it. Transcription
-          is the same: your recording is read by a program on this computer and is never uploaded. Apunta
-          deliberately does not use the browser&rsquo;s built-in speech recognition, because on most browsers
-          that sends the audio to Google.
+          The writing model and transcription model run locally too. Your recording is read by a program on
+          this computer and is never uploaded. Apunta does not use the browser&apos;s built-in speech
+          recognition, because that can send audio to a third party.
         </p>
         <p className="small note-meta">
-          There is no analytics, no crash reporting, no update check, and no &ldquo;anonymous usage
-          data&rdquo;. The program is not allowed to make an outbound connection at all; if some future change
-          tried to, it would fail rather than succeed quietly.
+          There is no analytics, crash reporting, update check, or anonymous usage data.
         </p>
       </div>
 
       <div className="card card-rows lede">
         <h3 className="heading-tight">Where your notes actually are</h3>
         <p className="small note-meta">
-          One folder on this Mac, holding one file:
+          One folder on this computer, holding one file:
           {data === null ? ' loading…' : ''}
         </p>
         {data !== null && (
@@ -70,15 +59,13 @@ export function About(): React.JSX.Element {
       <div className="card card-rows lede">
         <h3 className="heading-tight">The two things this does not protect you from</h3>
         <p className="small note-meta">
-          <strong>Someone at your unlocked Mac.</strong> Apunta has no password of its own. Anyone sitting at
-          this computer while you are logged in can open it and read everything. Locking the screen when you
-          walk away is the real answer, and if anyone else uses this Mac, a separate macOS account for the
-          practice is a bigger improvement than anything in this app.
+          <strong>Someone at your unlocked computer.</strong> Apunta has no password of its own. Anyone
+          sitting at this computer while you are logged in can open it and read everything. Locking the screen
+          when you walk away is the real answer.
         </p>
         <p className="small note-meta">
-          <strong>A stolen Mac with the disk unencrypted.</strong> FileVault is macOS&rsquo;s disk encryption,
-          and it is what makes a lost laptop a lost laptop rather than a disclosure. It is not on by default
-          on every Mac.
+          <strong>A stolen computer with an unencrypted disk.</strong> Disk encryption protects a lost
+          computer from disclosure. Its status is shown below only when the operating system can report it.
         </p>
         {data !== null && <FileVaultLine state={data.fileVault.state} detail={data.fileVault.detail} />}
       </div>
@@ -86,9 +73,10 @@ export function About(): React.JSX.Element {
       <div className="card card-rows lede">
         <h3 className="heading-tight">What it does with the AI</h3>
         <p className="small note-meta">
-          The model is given what you dictated or typed, the shape of your note format, and nothing else. It
-          is asked to write only what is in front of it. It still makes mistakes, so every draft is yours to
-          read before you publish it — an invented sentence in a clinical note looks exactly like a real one.
+          When you create a draft, the model receives what you dictated or typed and the shape of your note
+          format. Refine and brainstorm can also include relevant prior notes when they are used as
+          background. It is asked to write only what is in front of it. It still makes mistakes, so every
+          draft is yours to read before you publish it.
         </p>
         <p className="small note-meta">
           Where the recording was unclear, the draft says so in the text rather than guessing.
@@ -103,8 +91,8 @@ export function About(): React.JSX.Element {
           <Link to="/licenses">the licences are here</Link>.
         </p>
         <p className="small note-meta">
-          The AI models themselves are not part of Apunta. Your Mac downloaded them once, from the people who
-          made them, under their terms — Apunta keeps no copy of its own and never passes them on.
+          The AI models themselves are not part of Apunta. They are installed on this computer under their own
+          terms, and Apunta does not pass them on.
         </p>
       </div>
 
@@ -116,26 +104,32 @@ export function About(): React.JSX.Element {
 }
 
 function FileVaultLine({ state, detail }: { state: string; detail: string }): React.JSX.Element {
+  if (state === 'not_applicable') {
+    return (
+      <p className="small note-meta" data-testid="about-filevault">
+        Disk encryption: <strong>not checked</strong> on this operating system. {detail}
+      </p>
+    );
+  }
   if (state === 'on') {
     return (
       <p className="small note-meta" data-testid="about-filevault">
-        On this Mac, FileVault is <strong>on</strong>. {detail}
+        Disk encryption: <strong>ready</strong>. {detail}
       </p>
     );
   }
   if (state === 'off' || state === 'deferred') {
     return (
       <p className="form-error" role="alert" data-testid="about-filevault">
-        On this Mac, FileVault is <strong>not protecting the disk yet</strong>. Turn it on in System Settings
-        &rarr; Privacy &amp; Security &rarr; FileVault before real notes go in, and keep the recovery key
-        somewhere that is not this Mac.
+        Disk encryption: <strong>not ready</strong>. Turn it on in System Settings → Privacy &amp; Security →
+        FileVault before real notes go in, and keep the recovery key somewhere other than this computer.
       </p>
     );
   }
   return (
     <p className="small note-meta" data-testid="about-filevault">
-      Apunta could not tell whether FileVault is on. It is worth checking yourself: System Settings &rarr;
-      Privacy &amp; Security &rarr; FileVault.
+      Disk encryption: <strong>not checked</strong>. Apunta could not read its status; check it yourself in
+      the operating system&apos;s security settings. {detail}
     </p>
   );
 }

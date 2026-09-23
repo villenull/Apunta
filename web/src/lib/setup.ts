@@ -41,53 +41,81 @@ export const REOPEN_TO_DOWNLOAD =
   'Quit Apunta and open it again — the setup window comes back and downloads what is missing.';
 export const REOPEN = 'Quit Apunta and open it again — it starts its own copy.';
 
-/** The prototype's sentence, and the thing it is not allowed to say too early. */
-export const FULLY_LOCAL = "You're fully local — nothing leaves this Mac.";
+/** The local-only statement is about network locality, not disk encryption. */
+export const FULLY_LOCAL = 'Apunta runs on this computer — notes are not sent over the network.';
 
-export function setupChecks(health: HealthResponse, backup?: BackupStatus | null): SetupCheck[] {
+/** The listening model shipped by the current setup is ggml-tiny.en.bin (77,704,715 bytes). */
+export const LISTENING_MODEL_NOTE =
+  'The configured listening model is ggml-tiny.en.bin (about 75 MB). Apunta checks it arrived intact.';
+
+/** Homebrew commands are only useful on macOS source installs. */
+const NON_MAC_FIX = 'Install the local runtime for your operating system, then press Check again.';
+
+export type SetupPlatform = 'mac' | 'other';
+
+function fixFor(
+  platform: SetupPlatform,
+  macCommand: string,
+  bundled: boolean,
+  bundledFix: string,
+): {
+  fix: string;
+  fixIsCommand: boolean;
+} {
+  if (bundled) return { fix: bundledFix, fixIsCommand: false };
+  if (platform !== 'mac') return { fix: NON_MAC_FIX, fixIsCommand: false };
+  return { fix: macCommand, fixIsCommand: true };
+}
+
+export function setupChecks(
+  health: HealthResponse,
+  backup?: BackupStatus | null,
+  platform: SetupPlatform = 'other',
+): SetupCheck[] {
   const { bundled } = health;
+  const ollamaFix = fixFor(platform, 'brew services start ollama', bundled, REOPEN);
+  const modelFix = bundled
+    ? { fix: REOPEN_TO_DOWNLOAD, fixIsCommand: false }
+    : platform === 'mac'
+      ? {
+          fix: health.ollama.model === null ? SETUP_SCRIPT_COMMAND : `ollama pull ${health.ollama.model}`,
+          fixIsCommand: true,
+        }
+      : { fix: NON_MAC_FIX, fixIsCommand: false };
+  const whisperFix = fixFor(platform, 'brew install whisper-cpp', bundled, REOPEN);
+  const listeningModelFix = fixFor(platform, SETUP_SCRIPT_COMMAND, bundled, REOPEN_TO_DOWNLOAD);
   const checks: SetupCheck[] = [
     {
       id: 'ollama',
-      label: 'Ollama is running',
+      label: 'Ollama',
       state: health.ollama.reachable ? 'ok' : 'missing',
       detail: health.ollama.reachable
         ? 'answering on 127.0.0.1:11434'
         : 'nothing is answering on 127.0.0.1:11434',
-      fix: bundled ? REOPEN : 'brew services start ollama',
-      fixIsCommand: !bundled,
+      ...ollamaFix,
     },
     {
       id: 'model',
-      label: 'The writing model is downloaded',
+      label: 'Writing model',
       state: modelState(health),
       detail: modelDetail(health),
-      fix: bundled
-        ? REOPEN_TO_DOWNLOAD
-        : health.ollama.model === null
-          ? SETUP_SCRIPT_COMMAND
-          : `ollama pull ${health.ollama.model}`,
-      fixIsCommand: !bundled,
+      ...modelFix,
     },
     {
       id: 'whisper',
-      label: 'whisper.cpp is installed',
+      label: 'whisper.cpp',
       state: health.whisper.binaryPresent ? 'ok' : 'missing',
       detail: health.whisper.binaryPresent ? health.whisper.binary : `${health.whisper.binary} was not found`,
-      fix: bundled ? REOPEN : 'brew install whisper-cpp',
-      fixIsCommand: !bundled,
+      ...whisperFix,
       note: 'Only needed to record audio. Typed notes work without it.',
     },
     {
       id: 'whisper-model',
-      label: 'The listening model is downloaded',
+      label: 'Listening model',
       state: health.whisper.modelPresent ? 'ok' : 'missing',
       detail: health.whisper.modelPresent ? health.whisper.model : `${health.whisper.model} is not there yet`,
-      fix: bundled ? REOPEN_TO_DOWNLOAD : SETUP_SCRIPT_COMMAND,
-      fixIsCommand: !bundled,
-      note: bundled
-        ? 'About 550 MB. Apunta downloads it and checks it arrived intact.'
-        : 'About 550 MB. The setup script downloads it and checks it arrived intact.',
+      ...listeningModelFix,
+      note: LISTENING_MODEL_NOTE,
     },
     fileVaultCheck(health),
   ];
@@ -96,7 +124,6 @@ export function setupChecks(health: HealthResponse, backup?: BackupStatus | null
   if (destination !== null) checks.push(destination);
   return checks;
 }
-
 function modelState(health: HealthResponse): CheckState {
   if (!health.ollama.reachable) return 'unknown';
   return health.ollama.modelPresent ? 'ok' : 'missing';
@@ -107,65 +134,54 @@ function modelDetail(health: HealthResponse): string {
   if (health.ollama.model === null) return 'no model has been chosen yet';
   return health.ollama.modelPresent ? health.ollama.model : `${health.ollama.model} is not downloaded`;
 }
-
-/**
- * The row that is not about AI at all.
- *
- * FileVault is the entire at-rest story for this laptop and it is not implied
- * by Apple silicon — recent Setup Assistant does not always ask. Without it,
- * anyone who takes the machine reads every note without knowing a password.
- * It is the one item here Apunta cannot fix, which is why the row says exactly
- * where to click (`docs/research/data-at-rest-2026-08.md` §4.2).
- */
 function fileVaultCheck(health: HealthResponse): SetupCheck {
   const { state, detail } = health.fileVault;
 
   if (state === 'not_applicable') {
     return {
       id: 'filevault',
-      label: 'The disk is encrypted',
+      label: 'Disk encryption',
       state: 'skipped',
-      detail,
-      note: 'Disk encryption is checked on macOS, which is where this app is meant to run.',
+      detail: detail || 'Not checked on this operating system',
+      note: 'Apunta does not verify disk encryption on this operating system.',
     };
   }
 
   if (state === 'on') {
-    return { id: 'filevault', label: 'The disk is encrypted', state: 'ok', detail };
+    return { id: 'filevault', label: 'Disk encryption', state: 'ok', detail };
   }
 
   if (state === 'unknown') {
     return {
       id: 'filevault',
-      label: 'The disk is encrypted',
+      label: 'Disk encryption',
       state: 'unknown',
       detail: detail === '' ? 'could not read the disk encryption setting' : detail,
       fix: 'fdesetup status',
       fixIsCommand: true,
-      note: 'Apunta could not tell. Run this in Terminal and read the answer yourself — it is worth knowing.',
+      note: 'Apunta could not tell. Check the setting yourself — it is worth knowing.',
     };
   }
 
   return {
     id: 'filevault',
-    label: 'The disk is encrypted',
+    label: 'Disk encryption',
     state: state === 'deferred' ? 'warn' : 'missing',
     detail:
       state === 'deferred'
-        ? 'FileVault is switched on but has not finished — log out and back in'
+        ? 'FileVault is switched on but has not finished'
         : 'FileVault is OFF: the disk is not encrypted',
     fix: 'System Settings → Privacy & Security → FileVault → Turn On',
-    note: 'Without it, anyone who takes this Mac can read every note on it without your password. Nothing else in Apunta makes up for that.',
+    note: 'Without it, anyone who takes this computer can read every note without your password.',
   };
 }
 
 /**
  * Where backups are going, if that is somewhere a sync service watches.
  *
- * ~/Desktop and ~/Documents are the two folders iCloud syncs by default, so
- * the obvious place to save an archive is the place that uploads it to Apple —
- * and this is the screen that claims nothing leaves the Mac, so the claim has
- * to answer for it (§2.5, §5.4).
+ * A synced destination is reported separately from the local-only runtime
+ * statement: the app can avoid network calls while an archive is copied into
+ * a folder another service watches.
  */
 function backupDestinationCheck(backup: BackupStatus | null | undefined): SetupCheck | null {
   if (backup === null || backup === undefined) return null;
@@ -173,7 +189,7 @@ function backupDestinationCheck(backup: BackupStatus | null | undefined): SetupC
 
   return {
     id: 'backup-destination',
-    label: 'Backups stay on this Mac',
+    label: 'Backup destination',
     state: 'missing',
     detail: `backups are being written to ${backup.destination.path}`,
     fix: 'Settings → Advanced → Backup → change the folder',

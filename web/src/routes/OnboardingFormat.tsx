@@ -111,7 +111,7 @@ export function OnboardingFormat(): React.JSX.Element {
       <h2 className="heading-tight">Add your note format</h2>
       <p className="muted lede">Choose how to define it — we&apos;ll figure out the structure for you.</p>
 
-      <div className="stack">
+      <div className="stack" role="radiogroup" aria-label="Note format choices">
         <Option
           selected={choice === 'standard'}
           onSelect={() => {
@@ -284,6 +284,9 @@ function Option({
     <button
       type="button"
       className={selected ? 'btn-option selected' : 'btn-option'}
+      role="radio"
+      aria-checked={selected}
+      aria-pressed={selected}
       onClick={onSelect}
       {...(testId === undefined ? {} : { 'data-testid': testId })}
     >

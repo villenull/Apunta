@@ -275,7 +275,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
   if (patient.state.status === 'error') {
     return (
       <Screen back={{ to: '/', label: 'Patients' }}>
-        <h2 className="heading-tight" data-testid="capture-heading">
+        <h2 className="heading-tight capture-heading" data-testid="capture-heading">
           New note
         </h2>
         <p className="form-error" role="alert" data-testid="capture-missing-patient">
@@ -288,7 +288,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
 
   return (
     <Screen back={{ to: `/?patient=${patientId}`, label: 'Patients' }}>
-      <h2 className="heading-tight" data-testid="capture-heading">
+      <h2 className="heading-tight capture-heading" data-testid="capture-heading">
         {heading}
       </h2>
       <div className="field field-narrow lede">
@@ -433,6 +433,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
               </div>
               <SpellLayer
                 as="textarea"
+                className="capture-editor"
                 placeholder="Type your session summary..."
                 aria-label="Session summary"
                 data-testid="summary-input"
