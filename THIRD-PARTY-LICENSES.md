@@ -845,7 +845,7 @@ on a GPL, AGPL, LGPL, SSPL or BUSL package appearing in the shipped tree.
 | `depd` | 2.0.0 | MIT | Copyright (c) 2014-2018 Douglas Christopher Wilson |
 | `dequal` | 2.0.3 | MIT | Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com) |
 | `dictionary-en` | 4.0.0 | (MIT AND BSD) | COPYRIGHT, SOURCES, and CREDITS: |
-| `dingbat-to-unicode` | 1.0.1 | BSD-2-Clause | Author: Michael Williamson <mike@zwobble.org> |
+| `dingbat-to-unicode` | 1.0.1 | BSD-2-Clause | Copyright (c) 2021, Michael Williamson |
 | `duck` | 0.1.12 | BSD | Copyright (c) 2013, Michael Williamson |
 | `escape-html` | 1.0.3 | MIT | Copyright (c) 2012-2013 TJ Holowaychuk |
 | `fast-decode-uri-component` | 1.0.1 | MIT | Copyright (c) 2018 Tomas Della Vedova |
@@ -859,7 +859,7 @@ on a GPL, AGPL, LGPL, SSPL or BUSL package appearing in the shipped tree.
 | `fastq` | 1.20.1 | ISC | Copyright (c) 2015-2020, Matteo Collina <matteo.collina@gmail.com> |
 | `fflate` | 0.8.3 | MIT | Copyright (c) 2026 Arjun Barrett |
 | `find-my-way` | 9.9.0 | MIT | Copyright (c) 2017-2019 Tomas Della Vedova |
-| `glob` | 13.0.6 | BlueOak-1.0.0 | Copyright |
+| `glob` | 13.0.6 | BlueOak-1.0.0 | Copyright (c) Isaac Z. Schlueter and Contributors |
 | `http-errors` | 2.0.1 | MIT | Copyright (c) 2014 Jonathan Ong me@jongleberry.com |
 | `immediate` | 3.0.6 | MIT | Copyright (c) 2012 Barnesandnoble.com, llc, Donavon West, Domenic Denicola, Brian Cavalier |
 | `inherits` | 2.0.4 | ISC | Copyright (c) Isaac Z. Schlueter |
