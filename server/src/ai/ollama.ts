@@ -357,6 +357,7 @@ export class OllamaProvider implements LlmProvider {
       user: prompt.user,
       format: refineJsonSchema(request.sections),
       validate,
+      decodeNestedKeys: request.sections,
     });
 
     yield { type: 'refined', reply: value.reply, updatedSections: value.updatedSections, stats };
