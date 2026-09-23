@@ -72,6 +72,7 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
           patient = createPatient(db, { name: planned.patientName });
           created = true;
         }
+        if (!patient) throw badRequest('Choose an active matching patient or Create new before importing.');
         if (created) {
           addBatchPatient(db, batchId, patient.id);
           activePatients.push(patient);
