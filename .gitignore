@@ -14,6 +14,17 @@ test-results/
 apunta-backup-*.zip
 eval-report.md
 
+# Model lab (tools/model-lab) — venvs, weights, adapters and datasets are
+# machine-local and may hold clinical text once a consented run happens.
+# Only the scripts are committed.
+tools/model-lab/.venv
+tools/model-lab/.venv/
+tools/model-lab/**/__pycache__/
+tools/model-lab/work/
+*.safetensors
+*.gguf
+*.jsonl
+
 # local data + env
 data/
 *.db
