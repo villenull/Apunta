@@ -36,12 +36,13 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
 
     const { sections, retractions } = await streamDraft({
       providers,
+      db,
+      patientId: input.patient_id,
       format,
       source: { typedNotes: input.typed_notes, transcript: input.transcript },
       stream,
       request,
     });
-
     if (sections === null || stream.closed) {
       stream.end();
       return;

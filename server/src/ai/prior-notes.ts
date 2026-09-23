@@ -72,3 +72,25 @@ export function fitNotesNewestFirst(candidates: readonly Note[], room: number): 
   const mostRecent = notes.every((note, index) => candidates[index]?.id === note.id);
   return { notes, omittedIds, mostRecent, tokens };
 }
+/**
+ * Drafting deliberately gets a much smaller history than Brainstorm or refine.
+ * Keep these two limits together: published notes are style examples, never
+ * an unbounded source of old clinical facts.
+ */
+export const DRAFTING_PRIOR_NOTE_COUNT = 3;
+export const DRAFTING_PRIOR_NOTE_CHARACTER_BUDGET = 12_000;
+
+/** Select recent published notes without cutting a note or crossing the cap. */
+export function fitDraftingPriorNotes(candidates: readonly Note[]): FittedNote[] {
+  const notes: FittedNote[] = [];
+  let characters = 0;
+  for (const candidate of candidates) {
+    if (candidate.status !== 'published' || notes.length >= DRAFTING_PRIOR_NOTE_COUNT) continue;
+    const note = toPriorNote(candidate);
+    const cost = priorNoteBlock(note).length + 2;
+    if (characters + cost > DRAFTING_PRIOR_NOTE_CHARACTER_BUDGET) break;
+    characters += cost;
+    notes.push(note);
+  }
+  return notes;
+}

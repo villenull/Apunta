@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { sectionsToText, type Sections } from '@apunta/shared';
+import type { PriorNoteInput } from '../ai/types.js';
 
 import { collapse, compile, f6Core, normalise } from './patterns.js';
 

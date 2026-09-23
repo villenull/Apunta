@@ -36,6 +36,8 @@ export interface RunOptions {
   readonly instructions?: InstructionsOverride | undefined;
   /** One line for the report header saying what `instructions` was. */
   readonly instructionsNote?: string | undefined;
+  /** Number of fixture-provided recent published notes to retrieve (0 disables). */
+  readonly priorNoteCount?: number | undefined;
   readonly directory?: string | undefined;
   readonly ollamaUrl?: string | undefined;
   readonly onProgress?: (line: string) => void;
@@ -101,7 +103,16 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
     for (const fixture of fixtures) {
       for (let run = 1; run <= options.runs; run += 1) {
         options.onProgress?.(`${model} · ${fixture.filename} · run ${String(run)}`);
-        scores.push(await scoreOneRun(provider, fixture, model, run, options.instructions));
+        scores.push(
+          await scoreOneRun(
+            provider,
+            fixture,
+            model,
+            run,
+            options.instructions,
+            options.priorNoteCount ?? 0,
+          ),
+        );
       }
     }
     models.push({ model, runs: options.runs, scores });
@@ -114,6 +125,10 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
       models,
       fake: options.fake,
       instructionsNote: options.instructionsNote,
+      priorNotesNote:
+        (options.priorNoteCount ?? 0) > 0
+          ? `${String(options.priorNoteCount)} recent published note(s), fixture-provided`
+          : 'disabled',
       startedAt,
       elapsedMs: Date.now() - started,
     }),
@@ -127,11 +142,12 @@ async function scoreOneRun(
   fixture: Fixture,
   model: string,
   run: number,
-  override?: InstructionsOverride,
+  override: InstructionsOverride | undefined,
+  priorNoteCount: number,
 ): Promise<NoteScore> {
   const began = Date.now();
   try {
-    const { sections, stats } = await generateOnce(provider, fixture, override);
+    const { sections, stats } = await generateOnce(provider, fixture, override, priorNoteCount);
     return scoreNote(fixture, sections, {
       model,
       run,
@@ -145,15 +161,18 @@ async function scoreOneRun(
 async function generateOnce(
   provider: LlmProvider,
   fixture: Fixture,
-  override?: InstructionsOverride,
+  override: InstructionsOverride | undefined,
+  priorNoteCount: number,
 ): Promise<{ sections: Record<string, string>; stats: LlmStats }> {
   const stream = provider.generateNote({
     instructions: instructionsFor(fixture, override),
     sections: fixture.sections,
     formatName: formatNameFor(fixture),
+    ...(priorNoteCount > 0 && fixture.priorNotes !== undefined
+      ? { priorNotes: fixture.priorNotes.slice(0, priorNoteCount) }
+      : {}),
     ...draftSourceFor(fixture),
   });
-
   for await (const event of stream) {
     if (event.type === 'sections') return { sections: event.sections, stats: event.stats };
   }

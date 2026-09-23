@@ -346,6 +346,21 @@ describe('buildGeneratePrompt', () => {
     expect(prompt.system).toContain('her written notes are correct');
   });
 
+  it('fences prior published notes as style-only examples before current source', () => {
+    const prompt = buildGeneratePrompt({
+      instructions: '',
+      sections: SOAP,
+      formatName: 'Progress note',
+      typedNotes: 'Today: sleep improved.',
+      priorNotes: [{ title: 'Progress note', date: '2026-09-20', text: 'Old medication: sertraline 100 mg.' }],
+    });
+    expect(prompt.system).toContain('not evidence for today’s session');
+    expect(prompt.user).toContain('PREVIOUS NOTES — STYLE AND CONTINUITY EXAMPLES ONLY');
+    expect(prompt.user).toContain('END OF PREVIOUS NOTES');
+    expect(prompt.user.indexOf('Old medication')).toBeLessThan(prompt.user.indexOf('Today: sleep improved.'));
+    expect(prompt.user.endsWith(tailReminder(SOAP))).toBe(true);
+  });
+
   it('adds only section-scoped clinical guidance and keeps reference documents out', () => {
     const prompt = buildGeneratePrompt({
       instructions: 'Owner-authored fictional format instructions.',

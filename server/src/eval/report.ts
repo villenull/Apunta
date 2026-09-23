@@ -28,6 +28,8 @@ export interface ReportInput {
   readonly fake: boolean;
   /** Set when owner-supplied instructions replaced the defaults. */
   readonly instructionsNote?: string | undefined;
+  /** Retrieval arm description, including zero when disabled. */
+  readonly priorNotesNote?: string | undefined;
   readonly startedAt: Date;
   readonly elapsedMs: number;
 }
@@ -51,6 +53,9 @@ export function renderReport(input: ReportInput): string {
     );
   }
 
+  if (input.priorNotesNote !== undefined) {
+    lines.push(`> **Previous-note retrieval.** ${input.priorNotesNote}.`, '');
+  }
   if (input.fake) {
     lines.push(
       '> **Fake mode.** These notes came from `FakeLlmProvider`, not from a model.',

@@ -31,6 +31,8 @@ interface Args {
   directory?: string | undefined;
   /** Ollama base URL, from --ollama-url */
   ollamaUrl?: string | undefined;
+  /** Number of fixture-provided published notes to include. */
+  priorNoteCount: number;
   /** file paths by format, from --instructions */
   instructionFiles: Partial<Record<'progress' | 'intake', string>>;
 }
@@ -40,6 +42,7 @@ function parseArgs(argv: readonly string[]): Args {
     fake: process.env['APUNTA_FAKE_AI'] === '1',
     instructionFiles: {},
     runs: 3,
+    priorNoteCount: 0,
     models: (process.env['APUNTA_EVAL_MODELS'] ?? '')
       .split(',')
       .map((model) => model.trim())
@@ -89,6 +92,10 @@ function parseArgs(argv: readonly string[]): Args {
         args.ollamaUrl = value;
         index += 1;
         break;
+      case '--prior-notes':
+        args.priorNoteCount = Number(value);
+        index += 1;
+        break;
       case '--out':
         args.out = value;
         index += 1;
@@ -119,6 +126,11 @@ function parseArgs(argv: readonly string[]): Args {
     process.exit(2);
   }
 
+  if (!Number.isInteger(args.priorNoteCount) || args.priorNoteCount < 0 || args.priorNoteCount > 3) {
+    console.error('--prior-notes must be an integer from 0 through 3');
+    process.exit(2);
+  }
+
   return args;
 }
 
@@ -141,6 +153,7 @@ function printUsage(): void {
       '                     all follow the fixtures, so two section shapes never mix.',
       '  --ollama-url URL   Ollama to measure against (default 127.0.0.1:11434).',
       '                     Loopback only: a run that could reach the internet would be',
+      '  --prior-notes N     include up to N fixture-provided published notes (0, 1, or 3).',
       '                     a different program from the one under test.',
       '  --instructions F   drafting instructions to measure instead of the built-in',
       '                     defaults — the file replaces them entirely, exactly as a',
@@ -201,6 +214,7 @@ async function main(): Promise<void> {
     models,
     runs: args.runs,
     fake: args.fake,
+    priorNoteCount: args.priorNoteCount,
     ...(noteParts.length === 0 ? {} : { instructions: loaded, instructionsNote: noteParts.join(' · ') }),
     ...(args.fixture === undefined ? {} : { fixtureFilter: args.fixture }),
     ...(args.directory === undefined

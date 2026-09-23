@@ -18,10 +18,10 @@ import {
 } from '../ai/clinical-knowledge/integration.js';
 import { retractionNotice } from '../ai/retractions.js';
 import type { AiProviders, DraftSource, LlmStats } from '../ai/types.js';
+import { fitDraftingPriorNotes } from '../ai/prior-notes.js';
 import { createChatMessage } from '../db/chat-messages.js';
-import { createNote } from '../db/notes.js';
+import { createNote, listNotesForPatient } from '../db/notes.js';
 import { createTranscript } from '../db/transcripts.js';
-import type { SseStream } from '../http/sse.js';
 
 /**
  * Drafting a note, shared by the two routes that do it.
@@ -52,19 +52,21 @@ export interface DraftOutcome {
  */
 export async function streamDraft(params: {
   readonly providers: AiProviders;
+  readonly db: Database;
+  readonly patientId: string;
   readonly format: NoteFormat;
   readonly source: DraftSource;
   readonly stream: SseStream;
   readonly request: FastifyRequest;
 }): Promise<DraftOutcome> {
-  const { providers, format, source, stream, request } = params;
+  const { providers, db, patientId, format, source, stream, request } = params;
 
   let sections: Sections | null = null;
   let stats: LlmStats | null = null;
   let retractions: readonly AppliedRetraction[] = [];
   const discussionSection = sectionForRole(format.sections, 'discussion');
-
   try {
+    const priorNotes = fitDraftingPriorNotes(listNotesForPatient(db, patientId));
     const events = providers.llm.generateNote({
       instructions: format.instructions,
       formatName: format.name,
@@ -72,6 +74,7 @@ export async function streamDraft(params: {
       clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
       typedNotes: source.typedNotes,
       transcript: source.transcript,
+      ...(priorNotes.length === 0 ? {} : { priorNotes }),
     });
 
     for await (const event of events) {

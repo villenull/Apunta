@@ -1,7 +1,14 @@
 import type { Note } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
-import { fitNotesNewestFirst, priorNoteTokens, toPriorNote } from './prior-notes.js';
+import {
+  DRAFTING_PRIOR_NOTE_CHARACTER_BUDGET,
+  DRAFTING_PRIOR_NOTE_COUNT,
+  fitDraftingPriorNotes,
+  fitNotesNewestFirst,
+  priorNoteTokens,
+  toPriorNote,
+} from './prior-notes.js';
 
 /** Synthetic notes, newest first, as `listNotesForPatient` returns them. */
 function note(index: number, text: string): Note {
@@ -62,5 +69,29 @@ describe('fitNotesNewestFirst', () => {
     const fitted = fitNotesNewestFirst([small(0)], 0);
     expect(fitted.notes).toEqual([]);
     expect(fitted.omittedIds).toHaveLength(1);
+  });
+});
+describe('fitDraftingPriorNotes', () => {
+  it('selects only published notes, newest first, up to the shared count cap', () => {
+    const candidates = Array.from({ length: DRAFTING_PRIOR_NOTE_COUNT + 2 }, (_, index) => {
+      const item = note(index, `Subjective: Published session ${String(index)}.`);
+      return index === 1 || index === 4 ? item : { ...item, status: 'published' as const, published_at: item.created_at };
+    });
+    const fitted = fitDraftingPriorNotes(candidates);
+    expect(fitted.map((item) => item.text)).toEqual([
+      'Subjective: Published session 0.',
+      'Subjective: Published session 2.',
+      'Subjective: Published session 3.',
+    ]);
+  });
+
+  it('never crosses the character budget or cuts a note', () => {
+    const first = { ...note(0, 'Subjective: First.'), status: 'published' as const, published_at: note(0, '').created_at };
+    const second = {
+      ...note(1, 'Subjective: '.concat('x'.repeat(DRAFTING_PRIOR_NOTE_CHARACTER_BUDGET))),
+      status: 'published' as const,
+      published_at: note(1, '').created_at,
+    };
+    expect(fitDraftingPriorNotes([first, second])).toEqual([toPriorNote(first)]);
   });
 });

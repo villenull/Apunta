@@ -34,6 +34,11 @@ export interface GenerateNoteRequest extends DraftSource {
   readonly formatName?: string | undefined;
   /** Deterministic, section-scoped vocabulary guidance; never source text. */
   readonly clinicalGuidance?: string | undefined;
+  /**
+   * The patient's recent published notes, newest first, as read-only style
+   * examples. They are continuity context only, never evidence for this session.
+   */
+  readonly priorNotes?: readonly PriorNoteInput[] | undefined;
 }
 
 export interface ChatTurn {

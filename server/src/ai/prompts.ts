@@ -141,7 +141,26 @@ function sourceBlocks(request: {
   return blocks;
 }
 
+export const DRAFTING_PRIOR_NOTES_RULE =
+  'The previous notes below are published notes from this patient, shown only as style and continuity examples. They are not evidence for today’s session. Do not copy any fact, name, number, finding, medication, risk statement, plan, mood, or sentence from them into today’s note unless the current source says it again.';
+
+export const DRAFTING_PRIOR_NOTES_START =
+  'PREVIOUS NOTES — STYLE AND CONTINUITY EXAMPLES ONLY. These published notes are not evidence for today’s session.';
+
+export const DRAFTING_PRIOR_NOTES_END =
+  'END OF PREVIOUS NOTES. Use only the current session source below as evidence for today’s note.';
+
+export function draftingPriorNotesBlock(notes: readonly PriorNoteInput[]): string {
+  return [
+    DRAFTING_PRIOR_NOTES_START,
+    ...notes.flatMap((note) => ['', priorNoteBlock(note)]),
+    '',
+    DRAFTING_PRIOR_NOTES_END,
+  ].join('\n');
+}
+
 export function buildGeneratePrompt(request: GenerateNoteRequest): ChatPrompt {
+  const priorNotes = request.priorNotes ?? [];
   const instructions = instructionsFor(request.instructions, request.formatName ?? '', request.sections);
   const clinicalGuidance =
     request.clinicalGuidance ?? renderClinicalKnowledgeGuide(request.formatName, request.sections);
@@ -150,6 +169,7 @@ export function buildGeneratePrompt(request: GenerateNoteRequest): ChatPrompt {
     '',
     outputFormatBlock(request.sections),
     ...(clinicalGuidance.trim() === '' ? [] : ['', clinicalGuidance.trim()]),
+    ...(priorNotes.length === 0 ? [] : ['', DRAFTING_PRIOR_NOTES_RULE]),
     '',
     sourceGlossary(request),
     '',
@@ -158,6 +178,7 @@ export function buildGeneratePrompt(request: GenerateNoteRequest): ChatPrompt {
 
   const source = `${request.typedNotes ?? ''}\n${request.transcript ?? ''}`;
   const user = [
+    ...(priorNotes.length === 0 ? [] : [draftingPriorNotesBlock(priorNotes), '']),
     ...sourceBlocks(request),
     ...retractionReminderFor(source),
     ...restatedFigureReminderFor(source),
