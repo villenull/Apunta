@@ -51,7 +51,7 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
       throw badRequest('Create a note format before importing, so the notes have somewhere to go.');
     const response = db.transaction((): HalaxyImportResponse => {
       const batchId = createImportBatch(db, 'halaxy');
-      const activePatients = listPatients(db);
+      const activePatients = listPatients(db).map(({ id, name }) => ({ id, name }));
       const patients: HalaxyImportResponse['patients'] = [];
       let noteCount = 0;
       for (const planned of parsed.data.patients) {
@@ -70,7 +70,10 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
           created = true;
         }
         if (!patient) throw badRequest('Choose an active matching patient or Create new before importing.');
-        if (created) addBatchPatient(db, batchId, patient.id);
+        if (created) {
+          addBatchPatient(db, batchId, patient.id);
+          activePatients.push(patient);
+        }
         for (const noteInput of planned.notes) {
           const note = createNote(db, {
             patient_id: patient.id,
