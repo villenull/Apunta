@@ -23,8 +23,8 @@ const perArm = new Map();
 for (const file of files) {
   const label = file.replace(/^arm-/, '').replace(new RegExp(`-${corpusTag}-i1\\.md$`), '');
   const gated = new Map();
-  const invocations = readdirSync(dir).filter((f) =>
-    f.startsWith(`arm-${label}-${corpusTag}-i`) && f.endsWith('.md'),
+  const invocations = readdirSync(dir).filter(
+    (f) => f.startsWith(`arm-${label}-${corpusTag}-i`) && f.endsWith('.md'),
   ).length;
   for (let i = 1; i <= invocations; i += 1) {
     const md = readFileSync(join(dir, `arm-${label}-${corpusTag}-i${i}.md`), 'utf8');

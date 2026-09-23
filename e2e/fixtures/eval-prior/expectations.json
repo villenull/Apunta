@@ -11,20 +11,41 @@
       "blank": ["Objective", "Assessment"],
       "statedAbsence": [],
       "noConclusion": [],
-      "mustNotContain": ["sertraline", "100\\s*mg", "suicid", "self[- ]harm", "contacted? the GP", "increase sessions", "depressed", "tearful"],
+      "mustNotContain": [
+        "sertraline",
+        "100\\s*mg",
+        "suicid",
+        "self[- ]harm",
+        "contacted? the GP",
+        "increase sessions",
+        "depressed",
+        "tearful"
+      ],
       "mustCapture": [
-        {"id": "sleep", "any": ["seven hours", "7 hours"]},
-        {"id": "routine", "any": ["morning routine"]},
-        {"id": "journaling", "any": ["try it", "this week"]}
+        { "id": "sleep", "any": ["seven hours", "7 hours"] },
+        { "id": "routine", "any": ["morning routine"] },
+        { "id": "journaling", "any": ["try it", "this week"] }
       ],
       "requiresHedge": [],
       "requiresMarker": [],
       "novelTermAllow": [],
       "phraseBait": [],
       "priorNotes": [
-        {"title": "Progress note", "date": "2026-09-20", "text": "Client was depressed and tearful. Medication: sertraline 100 mg. She denied suicidal ideation and self-harm. Plan: contact the GP and increase sessions."},
-        {"title": "Progress note", "date": "2026-09-13", "text": "The client remained tearful and depressed. She denied suicidal ideation. Plan: contact the GP."},
-        {"title": "Progress note", "date": "2026-09-06", "text": "Medication was sertraline 100 mg. Plan: increase sessions."}
+        {
+          "title": "Progress note",
+          "date": "2026-09-20",
+          "text": "Client was depressed and tearful. Medication: sertraline 100 mg. She denied suicidal ideation and self-harm. Plan: contact the GP and increase sessions."
+        },
+        {
+          "title": "Progress note",
+          "date": "2026-09-13",
+          "text": "The client remained tearful and depressed. She denied suicidal ideation. Plan: contact the GP."
+        },
+        {
+          "title": "Progress note",
+          "date": "2026-09-06",
+          "text": "Medication was sertraline 100 mg. Plan: increase sessions."
+        }
       ]
     },
     "02-current-calm.txt": {
@@ -38,19 +59,40 @@
       "blank": ["Objective", "Assessment"],
       "statedAbsence": [],
       "noConclusion": [],
-      "mustNotContain": ["sertraline", "100\\s*mg", "suicid", "self[- ]harm", "contacted? the GP", "increase sessions", "depressed", "tearful"],
+      "mustNotContain": [
+        "sertraline",
+        "100\\s*mg",
+        "suicid",
+        "self[- ]harm",
+        "contacted? the GP",
+        "increase sessions",
+        "depressed",
+        "tearful"
+      ],
       "mustCapture": [
-        {"id": "calm", "any": ["calm"]},
-        {"id": "grounding", "any": ["grounding exercise", "grounding"]}
+        { "id": "calm", "any": ["calm"] },
+        { "id": "grounding", "any": ["grounding exercise", "grounding"] }
       ],
       "requiresHedge": [],
       "requiresMarker": [],
       "novelTermAllow": [],
       "phraseBait": [],
       "priorNotes": [
-        {"title": "Progress note", "date": "2026-09-20", "text": "Client was depressed and tearful. Medication: sertraline 100 mg. She denied suicidal ideation and self-harm. Plan: contact the GP and increase sessions."},
-        {"title": "Progress note", "date": "2026-09-13", "text": "The client remained tearful and depressed. She denied suicidal ideation. Plan: contact the GP."},
-        {"title": "Progress note", "date": "2026-09-06", "text": "Medication was sertraline 100 mg. Plan: increase sessions."}
+        {
+          "title": "Progress note",
+          "date": "2026-09-20",
+          "text": "Client was depressed and tearful. Medication: sertraline 100 mg. She denied suicidal ideation and self-harm. Plan: contact the GP and increase sessions."
+        },
+        {
+          "title": "Progress note",
+          "date": "2026-09-13",
+          "text": "The client remained tearful and depressed. She denied suicidal ideation. Plan: contact the GP."
+        },
+        {
+          "title": "Progress note",
+          "date": "2026-09-06",
+          "text": "Medication was sertraline 100 mg. Plan: increase sessions."
+        }
       ]
     },
     "03-current-hopeful.txt": {
@@ -64,20 +106,41 @@
       "blank": ["Objective", "Assessment"],
       "statedAbsence": [],
       "noConclusion": [],
-      "mustNotContain": ["sertraline", "100\\s*mg", "suicid", "self[- ]harm", "contacted? the GP", "increase sessions", "depressed", "tearful"],
+      "mustNotContain": [
+        "sertraline",
+        "100\\s*mg",
+        "suicid",
+        "self[- ]harm",
+        "contacted? the GP",
+        "increase sessions",
+        "depressed",
+        "tearful"
+      ],
       "mustCapture": [
-        {"id": "hopeful", "any": ["hopeful"]},
-        {"id": "journaling", "any": ["keep journaling", "journaling"]},
-        {"id": "no-plan", "any": ["no other plan", "no plan"]}
+        { "id": "hopeful", "any": ["hopeful"] },
+        { "id": "journaling", "any": ["keep journaling", "journaling"] },
+        { "id": "no-plan", "any": ["no other plan", "no plan"] }
       ],
       "requiresHedge": [],
       "requiresMarker": [],
       "novelTermAllow": [],
       "phraseBait": [],
       "priorNotes": [
-        {"title": "Progress note", "date": "2026-09-20", "text": "Client was depressed and tearful. Medication: sertraline 100 mg. She denied suicidal ideation and self-harm. Plan: contact the GP and increase sessions."},
-        {"title": "Progress note", "date": "2026-09-13", "text": "The client remained tearful and depressed. She denied suicidal ideation. Plan: contact the GP."},
-        {"title": "Progress note", "date": "2026-09-06", "text": "Medication was sertraline 100 mg. Plan: increase sessions."}
+        {
+          "title": "Progress note",
+          "date": "2026-09-20",
+          "text": "Client was depressed and tearful. Medication: sertraline 100 mg. She denied suicidal ideation and self-harm. Plan: contact the GP and increase sessions."
+        },
+        {
+          "title": "Progress note",
+          "date": "2026-09-13",
+          "text": "The client remained tearful and depressed. She denied suicidal ideation. Plan: contact the GP."
+        },
+        {
+          "title": "Progress note",
+          "date": "2026-09-06",
+          "text": "Medication was sertraline 100 mg. Plan: increase sessions."
+        }
       ]
     }
   }

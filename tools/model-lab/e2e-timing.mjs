@@ -123,7 +123,15 @@ async function main() {
     runs.push(result);
     process.stderr.write(`  run ${String(run)}: total ${String(result.totalMs)} ms\n`);
   }
-  const summary = { label: args.label, base: args.base, wav: args.wav, bytes: wav.length, patientId: ids.patientId, formatId: ids.formatId, runs };
+  const summary = {
+    label: args.label,
+    base: args.base,
+    wav: args.wav,
+    bytes: wav.length,
+    patientId: ids.patientId,
+    formatId: ids.formatId,
+    runs,
+  };
   process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
   if (args.out !== undefined) writeFileSync(args.out, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
 }

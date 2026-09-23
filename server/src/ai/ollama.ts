@@ -106,7 +106,6 @@ export const DRAFT_PRELOAD_KEEP_ALIVE = '30m';
 /** Avoid repeating a load request when the capture screen is opened repeatedly. */
 export const DRAFT_PRELOAD_INTERVAL_MS = 5 * 60 * 1000;
 
-
 /** How long silence lasts before the UI is told the model is still loading. */
 const LOADING_STATUS_AFTER_MS = 2500;
 
@@ -315,7 +314,6 @@ export class OllamaProvider implements LlmProvider {
       });
     }
   }
-
 
   /** Pre-flight for a real call: reachable, pulled, and running on llama.cpp. */
   private async requireUsableModel(model: string): Promise<void> {

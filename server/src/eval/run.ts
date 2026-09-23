@@ -104,14 +104,7 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
       for (let run = 1; run <= options.runs; run += 1) {
         options.onProgress?.(`${model} · ${fixture.filename} · run ${String(run)}`);
         scores.push(
-          await scoreOneRun(
-            provider,
-            fixture,
-            model,
-            run,
-            options.instructions,
-            options.priorNoteCount ?? 0,
-          ),
+          await scoreOneRun(provider, fixture, model, run, options.instructions, options.priorNoteCount ?? 0),
         );
       }
     }

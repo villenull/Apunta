@@ -362,7 +362,9 @@ describe('buildGeneratePrompt', () => {
       sections: SOAP,
       formatName: 'Progress note',
       typedNotes: 'Today: sleep improved.',
-      priorNotes: [{ title: 'Progress note', date: '2026-09-20', text: 'Old medication: sertraline 100 mg.' }],
+      priorNotes: [
+        { title: 'Progress note', date: '2026-09-20', text: 'Old medication: sertraline 100 mg.' },
+      ],
     });
     expect(prompt.system).toContain('not evidence for today’s session');
     expect(prompt.user).toContain('PREVIOUS NOTES — STYLE AND CONTINUITY EXAMPLES ONLY');

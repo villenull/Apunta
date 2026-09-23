@@ -75,14 +75,20 @@ describe('fitDraftingPriorNotes', () => {
   it('selects only published notes, newest first, up to the shared count cap', () => {
     const candidates = Array.from({ length: DRAFTING_PRIOR_NOTE_COUNT + 2 }, (_, index) => {
       const item = note(index, `Subjective: Published session ${String(index)}.`);
-      return index === 1 || index === 4 ? item : { ...item, status: 'published' as const, published_at: item.created_at };
+      return index === 1 || index === 4
+        ? item
+        : { ...item, status: 'published' as const, published_at: item.created_at };
     });
     const fitted = fitDraftingPriorNotes(candidates);
     expect(fitted.map((item) => item.text)).toEqual(['Subjective: Published session 0.']);
   });
 
   it('never crosses the character budget or cuts a note', () => {
-    const first = { ...note(0, 'Subjective: First.'), status: 'published' as const, published_at: note(0, '').created_at };
+    const first = {
+      ...note(0, 'Subjective: First.'),
+      status: 'published' as const,
+      published_at: note(0, '').created_at,
+    };
     const second = {
       ...note(1, 'Subjective: '.concat('x'.repeat(DRAFTING_PRIOR_NOTE_CHARACTER_BUDGET))),
       status: 'published' as const,
