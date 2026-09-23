@@ -823,6 +823,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
             context: {
               notes: notes.map((note) => ({
                 id: note.id,
+                title: note.title,
                 date: instantToLocalDay(note.created_at),
               })),
               total: notes.length,

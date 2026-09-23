@@ -111,7 +111,11 @@ describe('workspace', () => {
 
     fireEvent.click(await screen.findByText('John Smith'));
     expect((await screen.findByTestId('notes-header')).textContent).toBe('John’s notes');
-    expect(screen.getByText('Aug 8, 2026 · Draft')).toBeDefined();
+    // The note row's date line carries a Draft chip beside the date now; the
+    // published note below it has the date alone.
+    const draftRow = (await screen.findByText('Draft')).closest('.note-date-row');
+    expect(draftRow?.textContent).toContain('Aug 8, 2026');
+    expect(screen.getAllByText('Draft')).toHaveLength(1);
 
     fireEvent.click(screen.getByText('Intake note'));
 
@@ -349,11 +353,14 @@ describe('a server that is not answering', () => {
 
     renderApp();
 
-    const alerts = await screen.findAllByRole('alert');
-    expect(alerts.some((alert) => alert.textContent?.includes('Could not reach the Apunta server'))).toBe(
-      true,
-    );
-    expect(screen.getByTestId('patient-list').textContent).toContain('Could not reach the Apunta server');
+    // One honest screen instead of an empty practice: nothing that looks like
+    // her records is rendered when the server never answered.
+    const alert = await screen.findByTestId('server-unavailable');
+    expect(alert.getAttribute('role')).toBe('alert');
+    expect(alert.textContent).toContain('can’t reach its server');
+    expect(alert.textContent).toContain('Start Apunta again');
+    expect(screen.queryByTestId('patient-list')).toBeNull();
+    expect(screen.queryByTestId('note-list')).toBeNull();
   });
 });
 
@@ -856,8 +863,10 @@ describe('refine chat', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('ref-chip')).toBeNull();
     });
-    const quote = await screen.findByText('“Subjective: Improved sleep.”');
-    expect(quote.className).toBe('chat-quote');
+    // The quote is the message's, inside the user's own bubble. (The chip's own
+    // span carries the same words, so the query has to be scoped to the bubble.)
+    const bubble = (await screen.findByText('Tighten this')).closest('.chat-bubble');
+    expect(bubble?.querySelector('.chat-quote')?.textContent).toBe('“Subjective: Improved sleep.”');
   });
 
   it('dismisses the chip with the ×', async () => {
