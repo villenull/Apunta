@@ -13,7 +13,7 @@ import type { Database } from 'better-sqlite3';
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
 import { getSetting, putSettings } from '../db/settings.js';
-import { createBackup } from './archive.js';
+import { createBackup, createBackupAsync } from './archive.js';
 import { tableCounts } from './dump.js';
 import {
   describeDestination,
@@ -28,7 +28,7 @@ import {
   resolveBackupDir,
 } from './store.js';
 
-export { BackupError, createBackup } from './archive.js';
+export { BackupError, createBackup, createBackupAsync } from './archive.js';
 export { encryptPayload, decryptPayload, sha256 } from './crypto.js';
 export { dumpDatabase, tableCounts, listUserTables } from './dump.js';
 export { noteEntries, planEntries, noteFileText } from './readable.js';
@@ -119,6 +119,68 @@ export function runBackup(
     });
     throw error;
   }
+}
+
+/** Async HTTP/startup counterpart; compression runs off the event loop. */
+export async function runBackupAsync(
+  db: Database,
+  config: AppConfig,
+  options: RunBackupOptions = {},
+): Promise<CreateBackupResponse> {
+  const now = options.now ?? new Date();
+  const directory = options.directory ?? resolveBackupDir(db, config.dataDir);
+  const destination = describeDestination(directory, config.dataDir);
+
+  try {
+    ensureBackupDir(directory);
+    const created = await createBackupAsync({
+      db,
+      dataDir: config.dataDir,
+      directory,
+      appVersion: config.version,
+      passphrase: options.passphrase,
+      now,
+    });
+
+    const settings: Settings = {
+      [LAST_BACKUP_AT_SETTING]: now.toISOString(),
+      [LAST_BACKUP_FILE_SETTING]: created.path,
+      [LAST_BACKUP_ERROR_SETTING]: '',
+    };
+    if (options.remember === true) settings[BACKUP_DIR_SETTING] = directory;
+    putSettings(db, settings);
+
+    return {
+      file: {
+        filename: created.filename,
+        path: created.path,
+        bytes: created.bytes,
+        created_at: now.toISOString(),
+        encrypted: created.manifest.encrypted,
+      },
+      manifest: created.manifest,
+      destination,
+      pruned: pruneBackups(directory),
+    };
+  } catch (error) {
+    putSettings(db, {
+      [LAST_BACKUP_ERROR_SETTING]: `${now.toISOString()} — ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    });
+    throw error;
+  }
+}
+
+export async function maybeRunDailyBackupAsync(
+  db: Database,
+  config: AppConfig,
+  now: Date = new Date(),
+): Promise<CreateBackupResponse | null> {
+  if (!isDueToday(lastBackupAt(db), now)) return null;
+  const counts = tableCounts(db);
+  if ((counts['patients'] ?? 0) === 0) return null;
+  return runBackupAsync(db, config, { now });
 }
 
 /**

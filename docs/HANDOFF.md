@@ -326,40 +326,27 @@ The 2026-09-22 acceptance and comparison round is recorded in:
 
 Linux-only disposable evidence now includes real Chromium `MediaRecorder`
 capture through synthetic microphone input, local Whisper, and the current
-4B model, including the refine-chat microphone. Physical microphone, room,
-owner-speaking-pattern and Mac acceptance remain waived/unrun. The final
-bounded browser run stopped at 20,509 ms and received one 20.22-second
-recording with no fake-device loop. Whisper rendered `scratched that`, while
-the narrow marker recognizer matches `scratch that`; no retraction extraction
-ran. The subsequent 4B draft reversed the spoken correction (six → four)
-and retained withdrawn morning-meeting wording. This is a strict
-retraction/number blocker, not a pass.
-The strict-failure follow-up is now fixed in the retraction pass:
-`server/src/ai/retractions.ts` shares marker discovery between detection and
-application and recognizes Whisper's observed `scratched that` inflection
-without changing `RETRACTION_MARKER_SOURCE` or weakening verbatim/proximity
-checks. The focused synthetic suite is **16/16**; raw acceptance/model
-artifacts remain unchanged. See
-`docs/eval-reports/2026-09-22-retraction-strict-fix.md`. Re-run the focused
-acceptance on a disposable port before treating the end-to-end blocker as
-closed.
+4B model, including the refine-chat microphone. Physical microphone,
+room/owner-speaking-pattern and Mac acceptance remain waived/unrun. The
+2026-09-22 retraction review is **done**: the strict follow-up recognizes the
+observed `scratched that` ASR inflection without changing
+`RETRACTION_MARKER_SOURCE` or weakening verbatim/proximity checks. Its focused
+synthetic suite is **16/16**; raw acceptance/model artifacts remain unchanged.
+See `docs/eval-reports/2026-09-22-retraction-strict-fix.md`.
 
-The pre-fix current-control Discussion matrix was **3 pass / 1 fail**: the
-two-topic case emitted zero required lowercase source-grounded label lines.
-The capitalized-label implementation and its gate are now complete below.
-The four-arm comparison completed for the exact authorized candidates and valid
-runtime aliases. Its corpus favours the current `qwen3.5:4b-q4_K_M` control
-(18/60 fabrication flags, 42/60 gated runs, 42/60 safety facts, 54/60
-retraction/negation) over qwen2, Bonsai 8B Q1_0 and Bonsai 4B Q1_0. All four
-passed transport/schema smoke. Valid app checks were control 0/6 format flags
-and 1/13 refine problems, qwen2 5/6 and 8/13, Bonsai 8B 6/6 and 5/13, and
-Bonsai 4B 2/6 and 10/13; these are inspection prompts, not quality scores.
-All four still failed the strict same-transcript retraction gate. The control's
-refine checks preserved facts under the label-only/header request without
-applying the requested header formatting; the explicit old-wording
-reintroduction was an authorized control, and the separate neutral request
-passed without resurrecting the withdrawn morning topic. Keep the control with
-**no automatic model switch**.
+The Discussion subtopic review is **done**. The pre-fix matrix and its
+zero-label failure remain historical evidence; the capitalized-label parser,
+case handling and gate are complete. Labels stay grounded in current-session
+material and unsupported labels are removed. See
+`docs/eval-reports/2026-09-22-discussion-subtopics-fix.md`.
+
+The four-arm comparison completed for the exact authorized candidates and
+valid runtime aliases. Its corpus favours the current
+`qwen3.5:4b-q4_K_M` control (18/60 fabrication flags, 42/60 gated runs, 42/60
+safety facts, 54/60 retraction/negation) over qwen2, Bonsai 8B Q1_0 and Bonsai
+4B Q1_0. All four passed transport/schema smoke. These are synthetic
+inspection results, not clinical clearance; keep the control with **no
+automatic model switch**.
 The Thorough-model selection gate is closed with **NONE**. In a same-campaign,
 local-only ROCm eval on the RX 9070 XT (20 fixtures, one deterministic run per
 fixture), the 4B control measured 35.0% fabrication (7/20), 70% safety facts
@@ -387,16 +374,11 @@ live Progress-format update was applied after a backup
 (`apunta-backup-2026-09-22-4.zip`) and verified byte for byte; Intake inherits
 the shipped default. GPU prefill is 18.7× faster than CPU. See
 `docs/eval-reports/2026-09-22-model-second-pass.md`.
-The live `:7717` instance still runs the pre-2026-09-22 build. Redeploying
-will apply migration 007 for note revisions, so take a backup first.
-Discussion subtopic labels are complete. Commit `3d428e8` implements the
-parser and case handling; `0a06e8f` removes the obsolete parser-only prompt
-sentence. Labels display with a capitalized first letter while accepting
-either input case, and the live Progress format includes the subtopic
-paragraph after backup `apunta-backup-2026-09-22-4.zip`, verified byte for
-byte. Intake is unchanged. The first live draft remains the human check for
-boundaries and over-splitting. See
-`docs/eval-reports/2026-09-22-discussion-subtopics-fix.md`.
+The live Progress-format update was applied after a backup
+(`apunta-backup-2026-09-22-4.zip`) and verified byte for byte; Intake inherits
+the shipped default. The Linux live app was then redeployed on 2026-09-23 at
+`9eb0cdd`, applying migration 007 for note revisions, with
+`apunta-backup-2026-09-23.zip` retained.
 
 Whisper's narrow mitigation trims only exact digital-zero tails and rejects
 all-zero input; the focused suite is 44/44 and genuine quiet speech,
@@ -409,9 +391,9 @@ and narrow widths with all five focused synthetic media assets, reduced-motion
 PNG fallbacks and no overflow. Direct hosted-page verification was **not
 possible** because this repository is private and unauthenticated/browser
 page access returned GitHub 404; the authenticated API render is the
-reproducible substitute, not a hosted-page pass. The latest web bundle was
-built, but the live backend on 7717 was not restarted; no live settings,
-database, model or patient data changed.
+reproducible substitute, not a hosted-page pass. The latest web bundle and
+the detached Linux live deployment are current; no live settings, database,
+model or patient data was opened by this work.
 
 The saved-note UI proof covered aligned desktop headers, narrow refine sheet,
 delayed A → undo X persistence, Finish & copy, PATCH failure/retry, and native
@@ -431,28 +413,30 @@ these real-model failures. No candidate is clinically cleared.
 
 ## Next session — do these in order
 
-1. Keep `qwen3.5:4b-q4_K_M` as the default. Do not switch models or add
-   vocabulary work from the comparison alone.
-2. Review the strict retraction failure and the two-topic/header-formatting
-   Discussion findings with synthetic fixtures before any production change.
-   The retraction strict-fix now recognizes the observed ASR inflection;
-   preserve the raw artifacts and rerun focused acceptance on disposable
-   ports before treating either finding as closed.
-3. The owner has approved confidentiality for her Claude export. The
-   shape-only probe verdict is **GO with preview**; read
-   `docs/eval-reports/2026-09-22-claude-export-probe.md`. She can proceed to
-   step 2 of `docs/import-existing-notes.md`, but must review the Settings
-   preview, untick anything that is not a patient, merge duplicate patients,
-   and check the draft counts before importing. Agents must never open, list,
-   read or import the real export.
-4. Keep M13's Halaxy importer on the completed synthetic path; no real Halaxy
-   export is needed or permitted.
-5. Leave the exact-zero Whisper mitigation narrow. Do not add VAD/noise
+1. Treat the 2026-09-22 retraction and Discussion reviews as **done**. Keep
+   their focused synthetic gates and raw reports as regression evidence; do not
+   reopen either review without a new owner-facing failure.
+2. Keep `qwen3.5:4b-q4_K_M` as the default. The current model-quality round is
+   synthetic and local-only; keep its measured paragraph and per-item verdict
+   with the newest report when it lands. Do not switch models or add vocabulary
+   work from comparison results alone.
+3. The Linux live app was redeployed on 2026-09-23 at `9eb0cdd`, with migration
+   7, after the backup `apunta-backup-2026-09-23.zip`. Confirm health and the
+   note-revision choice only through disposable fixtures unless the owner is
+   actively doing the hands-on checks below.
+4. The owner imports her real Halaxy PDFs herself. Agents must never open, list,
+   read or import real PDFs or Claude exports; synthetic fixtures remain the
+   only implementation and test input. Her import check must include
+   **Add to existing**.
+5. Keep the exact-zero Whisper mitigation narrow. Do not add VAD/noise
    suppression without the missing non-silent reproducer and quiet control.
-6. Mac work is paused for the coming months by the owner's decision. Keep the
+6. Linux disk encryption is **not checked**. Recommend an off-machine backup
+   (encrypted, if it leaves the machine) rather than treating the local copy as
+   the only recovery path.
+7. Mac work is paused for the coming months by the owner's decision. Keep the
    Linux PC as the machine running the local AI server; resume the Mac-only
    checklist only when she reopens that work.
-7. The hosted README still needs a real authenticated browser page check if
+8. The hosted README still needs a real authenticated browser page check if
    repository visibility/access changes; the API-render substitute above must
    not be relabeled as hosted acceptance.
 
@@ -469,7 +453,8 @@ Grouped by what each item waits on.
   preview first, allow patient-name edits and note unticking, then import
   selected notes as published history in one undoable batch. Scanned or
   image-only PDFs are rejected clearly; attachments, letters and images are
-  text-only non-goals. No real Halaxy export is needed or permitted.
+  text-only non-goals. The owner may import her real Halaxy PDFs herself;
+  agents never open, list, read or import them.
 
 The Halaxy server/shared slice is now ready: `shared/src/halaxy.ts` defines
 the preview/request/response schemas and size limits; the local parser handles
@@ -482,13 +467,14 @@ split note; the focused server/shared suite is 26 tests. HalaxyWeb now offers
 **Import from Halaxy** beside Claude in Settings: it accepts one or more
 text-based practitioner PDFs, previews editable patient names and sessions
 with per-note unticking and rejected-file reasons, then imports selected notes
-as published history in one undoable batch. Synthetic Playwright coverage uses
-the John Smith fixture; no real patient export was opened.
+as published history in one undoable batch. The John Smith fixture remains the
+synthetic path; the owner, not agents, performs any real Halaxy-PDF import. No
+agent opens, lists or reads those files.
 Final synthetic Playwright evidence passed three repeated runs (**3 passed,
 9.5s**) in an isolated fake-AI worktree on disposable port `7800`, covering
 the normal `.name` click, published-history import and undo. The UI also
 received a hover-only patient-action spacing/truncation fix; screenshots used
-only synthetic patients. No real Halaxy export was opened.
+only synthetic patients.
 The final server slice also adds migration 006: it preserves pre-existing
 Claude batch links under foreign-key enforcement and rolls back
 transactionally; focused coverage asserts that legacy undo still works.
@@ -664,11 +650,19 @@ Every item comes with a full script when it needs his voice.
 4. **Import dry run** with `e2e/fixtures/claude-export/patient-chats.json`:
    expect 7 notes for John, Maria (1) and Maria (2), four skipped; untick
    one, import, rename a guessed patient from the row's **Rename**, then undo.
-   The Playwright coverage now passes locally and in CI; the proxy's
-   hands-on dry run remains pending.
-5. **A long recording** (10+ minutes) for the preview's slow-gap mode after
+   Also exercise **Add to existing** with a synthetic existing patient and
+   confirm that no duplicate chart is created. The Playwright coverage now
+   passes locally and in CI; the proxy's hands-on dry run remains pending.
+5. **Two-window save conflict**: open one draft in two windows, edit both,
+   then choose **Keep mine** and repeat with **Take theirs**. Confirm the
+   selected body is the one left in the database and the losing text remains
+   available in the choice.
+6. **Two recordings in a row**: record, stop and send one dictation, then
+   immediately record and send a second without reloading. Confirm both
+   previews/transcripts arrive in the correct composer or note.
+7. **A long recording** (10+ minutes) for the preview's slow-gap mode after
    four minutes, and the final transcription time.
-6. Paste-into-Halaxy — human-only, whenever he has Halaxy open.
+8. Paste-into-Halaxy — human-only, whenever he has Halaxy open.
 
 ## Running things on the partner's PC
 
@@ -690,15 +684,13 @@ never open the real export for verification. GitHub contains none of that
 state.
 
 ```sh
-# Ollama (the systemd unit needs an interactive polkit prompt; run it as the user)
-OLLAMA_NO_CLOUD=1 OLLAMA_MODELS=/var/lib/ollama OLLAMA_HOST=127.0.0.1:11434 setsid nohup ollama serve > /tmp/claude-1000/ollama.log 2>&1 &
+# Ollama (local-only; launch from the user's shell)
+setsid nohup env OLLAMA_NO_CLOUD=1 ollama serve
 
-# The app — web-only changes need `npm run build --workspace @apunta/web` and a reload;
-# server changes need the build and a restart only while no recording is active.
-cd /home/huyke/orca/workspaces/Apunta/Apunta
+# The app — build first, then restart only while no recording is active.
+cd /home/villenull/Projects/Apunta
 npm run build
-# Confirm no whisper child is active, then TERM the pid from `ss -ltnp | grep 7717`.
-APUNTA_NO_OPEN=1 NODE_ENV=production setsid nohup node server/dist/index.js >> /tmp/claude-1000/apunta-live.log 2>&1 </dev/null &
+setsid nohup env NODE_ENV=production APUNTA_NO_OPEN=1 node server/dist/index.js
 curl -fsS http://127.0.0.1:7717/api/health
 
 # The gate, in this order; verify by exit code, never by reading piped output
@@ -713,12 +705,13 @@ generation tokens/s versus 107.11 tok/s baseline. This is separate from the
 partner's `/var/lib/ollama` path above. Set `OLLAMA_NO_CLOUD=1` when launching
 either local server as privacy hardening; it does not affect GPU selection.
 
-The 2026-09-08 deployment preserved the existing database, audio directory,
-settings and model paths; health returned fake AI off, migration level 3,
-Ollama reachable/model present, Whisper binary/model present, and SQLite
-integrity `ok`. It is reachable at `http://127.0.0.1:7717`. This is Linux
-evidence only: no Mac shell, Metal, FileVault, LaunchAgent, installer,
-standalone decrypt script, or `.dmg` run is claimed; complete
+The 2026-09-23 deployment at `9eb0cdd` preserved the existing database, audio
+directory, settings and model paths, applied migration 007, and retained
+`apunta-backup-2026-09-23.zip`; health returned SQLite integrity `ok`. It is
+reachable at `http://127.0.0.1:7717`. Linux disk encryption is not checked, so
+keep an off-machine backup rather than relying on this disk as the only copy.
+This is Linux evidence only: no Mac shell, Metal, FileVault, LaunchAgent,
+installer, standalone decrypt script, or `.dmg` run is claimed; complete
 `docs/MANUAL-VERIFICATION.md` §1–§9 before real notes reach the Mac when the
 owner resumes the paused Mac work.
 

@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import {
@@ -13,7 +14,7 @@ import {
   type BackupManifest,
 } from '@apunta/shared';
 import BetterSqlite3, { type Database } from 'better-sqlite3';
-import { strToU8, zipSync } from 'fflate';
+import { strToU8, zip, zipSync } from 'fflate';
 
 import { migrationLevel } from '../db/index.js';
 import { encryptPayload, sha256 } from './crypto.js';
@@ -66,83 +67,193 @@ export interface CreatedBackup {
   readonly manifest: BackupManifest;
 }
 
-export function createBackup(options: CreateBackupOptions): CreatedBackup {
+interface PreparedBackup {
+  readonly now: Date;
+  readonly staging: string;
+  readonly manifest: BackupManifest;
+  readonly restoreText: string;
+  readonly body: Record<string, Uint8Array>;
+}
+
+interface BackupPreparation {
+  readonly now: Date;
+  readonly staging: string;
+  readonly copyPath: string;
+}
+
+function beginBackup(options: CreateBackupOptions): BackupPreparation {
   const now = options.now ?? new Date();
   const staging = join(options.dataDir, BACKUP_DIRNAME, '.staging');
-
   mkdirSync(staging, { recursive: true, mode: 0o700 });
   try {
-    mkdirSync(options.directory, { recursive: true });
+    try {
+      mkdirSync(options.directory, { recursive: true });
+    } catch (error) {
+      throw new BackupError(
+        `cannot create the backup folder ${options.directory}: ${describe(error)}`,
+        'destination_unwritable',
+      );
+    }
+    return {
+      now,
+      staging,
+      copyPath: join(staging, `${DB_ENTRY_NAME}.${String(now.getTime())}`),
+    };
   } catch (error) {
+    rmSync(staging, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+function finishPreparation(
+  options: CreateBackupOptions,
+  preparation: BackupPreparation,
+): PreparedBackup {
+  const { now, staging, copyPath } = preparation;
+  const dbBytes = readFileSync(copyPath);
+  const integrity = integrityCheck(copyPath);
+  if (integrity !== 'ok') {
     throw new BackupError(
-      `cannot create the backup folder ${options.directory}: ${describe(error)}`,
-      'destination_unwritable',
+      `the database copy failed its integrity check (${integrity}); no backup was written`,
+      'integrity_failed',
     );
   }
 
-  const copyPath = join(staging, `${DB_ENTRY_NAME}.${String(now.getTime())}`);
+  const level = migrationLevel(options.db);
+  const manifest: BackupManifest = {
+    format: 1,
+    app_version: options.appVersion,
+    generated_at: now.toISOString(),
+    migration_level: level,
+    sqlite_version: sqliteVersion(options.db),
+    db_bytes: dbBytes.byteLength,
+    db_sha256: sha256(dbBytes),
+    integrity_check: integrity,
+    counts: tableCounts(options.db),
+    encrypted: options.passphrase !== undefined,
+  };
+
+  const plans = planEntries(options.db);
+  const restoreText = renderRestoreText({
+    manifest,
+    dataDir: options.dataDir,
+    encrypted: manifest.encrypted,
+    // Described only when it is there. A file that promises a folder the zip
+    // does not contain is a file nobody trusts the rest of.
+    hasPlans: plans.length > 0,
+  });
+
+  const body: Record<string, Uint8Array> = {
+    [DB_ENTRY_NAME]: dbBytes,
+    [DATA_JSON_FILENAME]: strToU8(JSON.stringify(dumpDatabase(options.db, level, now), null, 2)),
+    [MANIFEST_FILENAME]: strToU8(JSON.stringify(manifest, null, 2)),
+  };
+  for (const entry of [...noteEntries(options.db), ...plans]) {
+    body[entry.path] = strToU8(entry.text);
+  }
+
+  return { now, staging, manifest, restoreText, body };
+}
+
+function prepareBackup(options: CreateBackupOptions): PreparedBackup {
+  const preparation = beginBackup(options);
   try {
     // Inside the data dir on purpose: this is the second plaintext copy, and
     // it must never be somewhere nothing in this project manages.
-    vacuumInto(options.db, copyPath);
-    const dbBytes = readFileSync(copyPath);
-    const integrity = integrityCheck(copyPath);
-    if (integrity !== 'ok') {
-      throw new BackupError(
-        `the database copy failed its integrity check (${integrity}); no backup was written`,
-        'integrity_failed',
-      );
-    }
+    vacuumInto(options.db, preparation.copyPath);
+    return finishPreparation(options, preparation);
+  } catch (error) {
+    rmSync(preparation.staging, { recursive: true, force: true });
+    throw error;
+  }
+}
 
-    const level = migrationLevel(options.db);
-    const manifest: BackupManifest = {
-      format: 1,
-      app_version: options.appVersion,
-      generated_at: now.toISOString(),
-      migration_level: level,
-      sqlite_version: sqliteVersion(options.db),
-      db_bytes: dbBytes.byteLength,
-      db_sha256: sha256(dbBytes),
-      integrity_check: integrity,
-      counts: tableCounts(options.db),
-      encrypted: options.passphrase !== undefined,
-    };
+async function prepareBackupAsync(options: CreateBackupOptions): Promise<PreparedBackup> {
+  const preparation = beginBackup(options);
+  try {
+    // better-sqlite3's online backup yields between page batches, unlike
+    // VACUUM INTO, so a large live database does not monopolize this thread.
+    await backupInto(options.db, preparation.copyPath);
+    return finishPreparation(options, preparation);
+  } catch (error) {
+    rmSync(preparation.staging, { recursive: true, force: true });
+    throw error;
+  }
+}
 
-    const plans = planEntries(options.db);
-    const restoreText = renderRestoreText({
-      manifest,
-      dataDir: options.dataDir,
-      encrypted: manifest.encrypted,
-      // Described only when it is there. A file that promises a folder the zip
-      // does not contain is a file nobody trusts the rest of.
-      hasPlans: plans.length > 0,
-    });
+function finishBackupSync(
+  options: CreateBackupOptions,
+  prepared: PreparedBackup,
+  archive: Record<string, Uint8Array>,
+): CreatedBackup {
+  const { path, filename } = uniqueDestination(options.directory, prepared.now);
+  // Written to a `.part` first: a half-written zip that is named like a
+  // finished one is exactly the backup that looks fine until it is needed.
+  const partial = `${path}.part`;
+  writeFileSync(partial, zipSync(archive, { level: 6 }), { mode: 0o600 });
+  renameSync(partial, path);
 
-    const body: Record<string, Uint8Array> = {
-      [DB_ENTRY_NAME]: dbBytes,
-      [DATA_JSON_FILENAME]: strToU8(JSON.stringify(dumpDatabase(options.db, level, now), null, 2)),
-      [MANIFEST_FILENAME]: strToU8(JSON.stringify(manifest, null, 2)),
-    };
-    for (const entry of [...noteEntries(options.db), ...plans]) {
-      body[entry.path] = strToU8(entry.text);
-    }
+  return { path, filename, bytes: statSync(path).size, manifest: prepared.manifest };
+}
 
+async function finishBackupAsync(
+  options: CreateBackupOptions,
+  prepared: PreparedBackup,
+  archive: Record<string, Uint8Array>,
+): Promise<CreatedBackup> {
+  const { path, filename } = uniqueDestination(options.directory, prepared.now);
+  const partial = `${path}.part`;
+  await writeFile(partial, await zipArchiveAsync(archive), { mode: 0o600 });
+  await rename(partial, path);
+  return { path, filename, bytes: (await stat(path)).size, manifest: prepared.manifest };
+}
+
+export function createBackup(options: CreateBackupOptions): CreatedBackup {
+  const prepared = prepareBackup(options);
+  try {
     const archive =
       options.passphrase === undefined
-        ? { ...body, [RESTORE_FILENAME]: strToU8(restoreText) }
-        : encryptedArchive(body, restoreText, options.passphrase);
-
-    const { path, filename } = uniqueDestination(options.directory, now);
-    // Written to a `.part` first: a half-written zip that is named like a
-    // finished one is exactly the backup that looks fine until it is needed.
-    const partial = `${path}.part`;
-    writeFileSync(partial, zipSync(archive, { level: 6 }), { mode: 0o600 });
-    renameSync(partial, path);
-
-    return { path, filename, bytes: statSync(path).size, manifest };
+        ? { ...prepared.body, [RESTORE_FILENAME]: strToU8(prepared.restoreText) }
+        : encryptedArchive(prepared.body, prepared.restoreText, options.passphrase);
+    return finishBackupSync(options, prepared, archive);
   } finally {
-    rmSync(staging, { recursive: true, force: true });
+    rmSync(prepared.staging, { recursive: true, force: true });
   }
+}
+
+/**
+ * Async counterpart used by HTTP and startup backups. SQLite's online backup
+ * yields between page batches, and fflate's large-file compression runs in its
+ * worker-thread implementation, so the request loop remains available while
+ * the archive is being produced.
+ */
+export async function createBackupAsync(options: CreateBackupOptions): Promise<CreatedBackup> {
+  const prepared = await prepareBackupAsync(options);
+  try {
+    const archive =
+      options.passphrase === undefined
+        ? { ...prepared.body, [RESTORE_FILENAME]: strToU8(prepared.restoreText) }
+        : await encryptedArchiveAsync(prepared.body, prepared.restoreText, options.passphrase);
+    return await finishBackupAsync(options, prepared, archive);
+  } finally {
+    rmSync(prepared.staging, { recursive: true, force: true });
+  }
+}
+
+function zipArchiveAsync(data: Record<string, Uint8Array>): Promise<Uint8Array> {
+  const { promise, resolve, reject } = (
+    Promise as PromiseConstructor & {
+      withResolvers<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (reason?: unknown) => void };
+    }
+  ).withResolvers<Uint8Array>();
+  zip(data, { level: 6 }, (error, archive) => {
+    if (error !== null) {
+      reject(error);
+    } else {
+      resolve(archive);
+    }
+  });
+  return promise;
 }
 
 /**
@@ -175,6 +286,28 @@ export function vacuumInto(db: Database, destination: string): void {
   }
 }
 
+export async function backupInto(db: Database, destination: string): Promise<void> {
+  try {
+    await db.backup(destination);
+  } catch (error) {
+    throw new BackupError(`online backup failed: ${describe(error)}`, 'vacuum_failed');
+  }
+}
+
+
+async function encryptedArchiveAsync(
+  body: Record<string, Uint8Array>,
+  restoreText: string,
+  passphrase: string,
+): Promise<Record<string, Uint8Array>> {
+  const inner = Buffer.from(await zipArchiveAsync(body));
+  const { ciphertext, meta } = encryptPayload(inner, passphrase);
+  return {
+    [RESTORE_FILENAME]: strToU8(restoreText),
+    [ENCRYPTION_META_FILENAME]: strToU8(JSON.stringify(meta, null, 2)),
+    [ENCRYPTED_PAYLOAD_NAME]: new Uint8Array(ciphertext),
+  };
+}
 /** Opened read-only, so checking a copy can never modify it. */
 export function integrityCheck(file: string): string {
   const copy = new BetterSqlite3(file, { readonly: true });

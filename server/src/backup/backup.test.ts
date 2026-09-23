@@ -29,7 +29,7 @@ import { listNotesForPatient } from '../db/notes.js';
 import { listPatients } from '../db/patients.js';
 import { openDatabase, type Database } from '../db/index.js';
 import { seedDatabase } from '../seed.js';
-import { createBackup } from './archive.js';
+import { createBackup, createBackupAsync } from './archive.js';
 import { applyPendingRestore, hasPendingRestore, readArchive, stageRestore } from './restore.js';
 import { DECRYPT_SCRIPT } from './restore-txt.js';
 import { runBackup } from './index.js';
@@ -197,6 +197,33 @@ describe('restoring', () => {
         // The whole point: not "a note exists" but "this note, exactly".
         expect(notes[0]?.content).toBe(noteBefore?.content);
         expect(notes[0]?.title).toBe(noteBefore?.title);
+      } finally {
+        restored.db.close();
+      }
+    } finally {
+      rmSync(fresh, { recursive: true, force: true });
+    }
+  });
+
+  it('keeps the async archive restorable', async () => {
+    const created = await createBackupAsync({
+      db,
+      dataDir,
+      directory: join(dataDir, 'backups'),
+      appVersion: '0',
+    });
+    const fresh = mkdtempSync(join(tmpdir(), 'apunta-restore-async-'));
+    try {
+      const staged = stageRestore({
+        archivePath: created.path,
+        dataDir: fresh,
+        maxMigrationLevel: created.manifest.migration_level,
+      });
+      applyPendingRestore(fresh);
+      const restored = open(fresh);
+      try {
+        expect(staged.manifest.db_sha256).toBe(created.manifest.db_sha256);
+        expect(listPatients(restored.db)).toHaveLength(3);
       } finally {
         restored.db.close();
       }

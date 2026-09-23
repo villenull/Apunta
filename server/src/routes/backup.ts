@@ -20,7 +20,7 @@ import {
   hasPendingRestore,
   resolveBackupDir,
   RestoreError,
-  runBackup,
+  runBackupAsync,
   stageRestore,
 } from '../backup/index.js';
 import type { AppConfig } from '../config.js';
@@ -57,7 +57,7 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
     }
 
     try {
-      const result = runBackup(db, config, {
+      const result = await runBackupAsync(db, config, {
         directory: input.directory,
         passphrase: input.passphrase,
         remember: input.remember,

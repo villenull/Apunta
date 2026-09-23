@@ -1,4 +1,4 @@
-import { applyPendingRestore, maybeRunDailyBackup, rollbackAppliedRestore } from './backup/index.js';
+import { applyPendingRestore, maybeRunDailyBackupAsync, rollbackAppliedRestore } from './backup/index.js';
 import { OllamaProcess } from './ai/ollama-process.js';
 import { buildApp } from './app.js';
 import { openBrowser } from './boot.js';
@@ -91,17 +91,18 @@ async function start(): Promise<void> {
     const url = appUrl(config);
     app.log.info({ dataDir: config.dataDir, db: config.dbFile, fakeAi: config.fakeAi }, `Apunta on ${url}`);
 
-    try {
-      const backup = maybeRunDailyBackup(db, config);
-      if (backup !== null) {
-        app.log.info(
-          { file: backup.file.filename, bytes: backup.file.bytes, pruned: backup.pruned.length },
-          'daily backup written',
-        );
-      }
-    } catch (error) {
-      app.log.error({ err: error }, 'the daily backup failed; see Settings');
-    }
+    void maybeRunDailyBackupAsync(db, config)
+      .then((backup) => {
+        if (backup !== null) {
+          app.log.info(
+            { file: backup.file.filename, bytes: backup.file.bytes, pruned: backup.pruned.length },
+            'daily backup written',
+          );
+        }
+      })
+      .catch((error: unknown) => {
+        app.log.error({ err: error }, 'the daily backup failed; see Settings');
+      });
 
     const openedBrowser = openBrowser({ url, disabled: process.env['APUNTA_NO_OPEN'] === '1' });
     if (!openedBrowser.opened && openedBrowser.reason !== undefined) {
