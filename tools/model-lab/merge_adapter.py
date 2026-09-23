@@ -22,7 +22,13 @@ from pathlib import Path
 
 import torch
 from peft import PeftModel
-from transformers import AutoModelForImageTextToText, AutoTokenizer
+from transformers import AutoConfig, AutoModelForCausalLM, AutoModelForImageTextToText, AutoTokenizer
+
+
+def load_text_model(base: str) -> torch.nn.Module:
+    model_type = AutoConfig.from_pretrained(base).model_type
+    model_class = AutoModelForCausalLM if model_type == "qwen3" else AutoModelForImageTextToText
+    return model_class.from_pretrained(base, dtype=torch.bfloat16)
 
 
 def main() -> None:
@@ -32,7 +38,7 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
 
-    model = AutoModelForImageTextToText.from_pretrained(args.base, dtype=torch.bfloat16)
+    model = load_text_model(args.base)
     model = PeftModel.from_pretrained(model, args.adapter)
     model = model.merge_and_unload()
     out = Path(args.out)

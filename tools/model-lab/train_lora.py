@@ -59,7 +59,19 @@ os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 import torch  # noqa: E402
 import torch.nn.functional as F  # noqa: E402
 from peft import LoraConfig, get_peft_model  # noqa: E402
-from transformers import AutoModelForImageTextToText, AutoTokenizer  # noqa: E402
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoModelForImageTextToText,
+    AutoTokenizer,
+)  # noqa: E402
+
+
+def load_text_model(base: str) -> torch.nn.Module:
+    """Load either the production hybrid model or a plain text fallback."""
+    model_type = AutoConfig.from_pretrained(base).model_type
+    model_class = AutoModelForCausalLM if model_type == "qwen3" else AutoModelForImageTextToText
+    return model_class.from_pretrained(base, dtype=torch.bfloat16)
 
 PAD = -100
 
@@ -219,6 +231,11 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--batch-tokens", type=int, default=14_000)
     parser.add_argument("--max-length", type=int, default=6144)
+    parser.add_argument(
+        "--target-modules",
+        default="all-linear",
+        help="all-linear or a comma-separated list such as q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj",
+    )
     parser.add_argument("--holdout-percent", type=int, default=10)
     parser.add_argument("--max-steps", type=int, default=0, help="0 = the whole schedule")
     parser.add_argument("--seed", type=int, default=17)
@@ -232,8 +249,14 @@ def main() -> None:
         help="how far to upcast the linear-attention fallback (see apply_numerics_workaround)",
     )
     args = parser.parse_args()
+    target_modules = (
+        args.target_modules
+        if args.target_modules == "all-linear"
+        else [name.strip() for name in args.target_modules.split(",") if name.strip()]
+    )
+    if not target_modules:
+        raise SystemExit("--target-modules must not be empty")
     apply_numerics_workaround(args.numerics)
-
     torch.manual_seed(args.seed)
     if not torch.cuda.is_available():
         raise SystemExit("no GPU visible to torch: refusing to train on the CPU")
@@ -246,7 +269,7 @@ def main() -> None:
     )
 
     tokenizer = AutoTokenizer.from_pretrained(args.base)
-    model = AutoModelForImageTextToText.from_pretrained(args.base, dtype=torch.bfloat16)
+    model = load_text_model(args.base)
     # The vision tower is dead weight for a text-only job and costs VRAM.
     for holder in (model, getattr(model, "model", None)):
         visual = getattr(holder, "visual", None) if holder is not None else None
@@ -263,7 +286,7 @@ def main() -> None:
         lora_dropout=args.dropout,
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules="all-linear",
+        target_modules=target_modules,
     )
     model = get_peft_model(model, lora)
     model.print_trainable_parameters()
@@ -435,6 +458,7 @@ def main() -> None:
         "rank": args.rank,
         "alpha": args.alpha,
         "lr": args.lr,
+        "target_modules": target_modules,
         "max_length": args.max_length,
         "max_steps_cap": args.max_steps,
         "train_seconds": round(train_seconds, 1),

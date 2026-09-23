@@ -16,7 +16,7 @@ TIMEOUT=${1:-900}
 started=$SECONDS
 while :; do
   busy=""
-  for port in 11434 11436 11437 11438; do
+  for port in ${APUNTA_GPU_PORTS:-11434 11440 11441 11442 11443}; do
     names=$(curl -s --max-time 2 "http://127.0.0.1:$port/api/ps" 2>/dev/null | jq -r '.models[]?.name' 2>/dev/null | paste -sd, - || true)
     if [ -n "${names:-}" ]; then busy="$busy ${port}:${names}"; fi
   done

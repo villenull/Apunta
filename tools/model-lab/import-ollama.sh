@@ -10,11 +10,14 @@
 # and the sampling parameters are the same ones the shipped model was made
 # with, so a difference in the eval is a difference in weights.
 #
-# Usage: import-ollama.sh <merged-dir> <tag>
+# Usage: import-ollama.sh <merged-dir> <tag> [renderer] [parser] [quantize]
 set -euo pipefail
 
-MERGED=${1:?usage: import-ollama.sh <merged-dir> <tag>}
-TAG=${2:?usage: import-ollama.sh <merged-dir> <tag>}
+MERGED=${1:?usage: import-ollama.sh <merged-dir> <tag> [renderer] [parser] [quantize]}
+TAG=${2:?usage: import-ollama.sh <merged-dir> <tag> [renderer] [parser] [quantize]}
+RENDERER=${3:-qwen3.5}
+PARSER=${4:-$RENDERER}
+QUANTIZE=${5:-q4_K_M}
 LAB=${APUNTA_LAB_DIR:-$HOME/.local/share/apunta/model-lab}
 OLLAMA_URL=${OLLAMA_URL:-http://127.0.0.1:11437}
 
@@ -28,8 +31,8 @@ trap 'rm -f "$MODELFILE"' EXIT
 cat >"$MODELFILE" <<EOF
 FROM $MERGED
 TEMPLATE {{ .Prompt }}
-RENDERER qwen3.5
-PARSER qwen3.5
+RENDERER $RENDERER
+PARSER $PARSER
 PARAMETER presence_penalty 1.5
 PARAMETER temperature 1
 PARAMETER top_k 20
@@ -37,7 +40,11 @@ PARAMETER top_p 0.95
 EOF
 
 # The conversion and quantization both run on the GPU, and the shared card is
-# the reason every heavy step in this lab is serialized.
-flock /tmp/apunta-gpu.lock env OLLAMA_HOST="$OLLAMA_URL" ollama create "$TAG" -q q4_K_M -f "$MODELFILE"
-
-flock /tmp/apunta-gpu.lock env OLLAMA_HOST="$OLLAMA_URL" ollama show "$TAG" | head -20
+# the reason every heavy step in this lab is serialized. Keep the model fully
+# resident for conversion, then unload it before releasing the lock.
+flock /tmp/apunta-gpu.lock bash -euo pipefail -c '
+  export APUNTA_GPU_PORTS="${APUNTA_GPU_PORTS:-11434 11440 11441 11442 11443}"
+  OLLAMA_HOST="'"$OLLAMA_URL"'" ollama create "'"$TAG"'" --force -q "'"$QUANTIZE"'" -f "'"$MODELFILE"'"
+  OLLAMA_HOST="'"$OLLAMA_URL"'" ollama show "'"$TAG"'" | sed -n "1,20p"
+  curl -sS "'"$OLLAMA_URL"'/api/generate" -d "{\"model\":\"'"$TAG"'\",\"keep_alive\":0}" >/dev/null
+'
