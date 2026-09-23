@@ -15,6 +15,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes('/web/src/hooks/useDocumentTitle.') || id.includes('/web/src/components/TopBar.')) {
+            return 'app-shared';
+          }
           if (id.includes('/node_modules/react') || id.includes('/node_modules/@remix-run/router')) {
             return 'vendor-react';
           }
