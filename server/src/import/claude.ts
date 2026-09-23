@@ -909,19 +909,31 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
         };
       }
     } else {
-      key = name.patientId !== null ? `patient:${name.patientId}` : `list:${normalizedPatientName(name.value)}`;
+      key =
+        name.patientId !== null ? `patient:${name.patientId}` : `list:${normalizedPatientName(name.value)}`;
       plan = { key, name: name.value, source: name.source, patient_id: name.patientId, name_guessed: false };
     }
 
     const selectedPatientId = options.existingPatientIds?.get(key);
     if (selectedPatientId !== undefined) {
       if (selectedPatientId === null) {
-        plan = { ...plan, patient_id: null, source: name.source === 'title' ? 'title' : 'list', name_guessed: name.source === 'title' };
+        plan = {
+          ...plan,
+          patient_id: null,
+          source: name.source === 'title' ? 'title' : 'list',
+          name_guessed: name.source === 'title',
+        };
       } else {
         const selectedPatient = existingById.get(selectedPatientId);
         if (selectedPatient === undefined || selectedPatient.archived === true)
           throw new Error('The selected import patient is not an active patient.');
-        plan = { ...plan, name: selectedPatient.name, source: 'existing', patient_id: selectedPatient.id, name_guessed: false };
+        plan = {
+          ...plan,
+          name: selectedPatient.name,
+          source: 'existing',
+          patient_id: selectedPatient.id,
+          name_guessed: false,
+        };
       }
     }
 

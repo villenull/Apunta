@@ -35,7 +35,10 @@ function sectionsFrom(text: string): LicenseSection[] {
 }
 
 function toSection(section: { title: string; lines: string[] }): LicenseSection {
-  const id = `license-${section.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+  const id = `license-${section.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')}`;
   return { id, title: section.title, text: section.lines.join('\n') };
 }
 
