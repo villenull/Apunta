@@ -94,7 +94,8 @@ export function Dialog({
         className={className || (variant === 'sheet' ? 'sheet' : 'modal card')}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId.current}
+        aria-labelledby={showTitle ? titleId.current : undefined}
+        aria-label={showTitle ? undefined : title}
         aria-hidden={!open}
         tabIndex={-1}
       >

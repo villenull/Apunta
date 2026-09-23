@@ -286,6 +286,13 @@ describe('refine completion ordering', () => {
   });
 });
 
+describe('refine dialog semantics', () => {
+  it('names the sheet when its visible heading is intentionally omitted', () => {
+    renderChat();
+    expect(screen.getByRole('dialog', { name: 'Refine note' })).toBeDefined();
+  });
+});
+
 describe('structured refine outcomes', () => {
   it('announces a withheld edit separately from the model reply', async () => {
     installFakeApi(
