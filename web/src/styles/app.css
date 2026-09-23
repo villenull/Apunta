@@ -285,7 +285,25 @@
 .note-item .note-date {
   font-size: var(--text-sm);
   color: var(--text-muted);
-  margin-top: 1px;
+}
+
+.note-date-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 18px;
+}
+
+.draft-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 0.5px solid var(--danger);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  color: var(--danger);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .note-item .note-preview {
@@ -2288,44 +2306,26 @@ select:disabled {
   border-color: var(--danger);
 }
 
-.toast-dismiss {
-  border: none;
-  background: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: var(--text-lg);
-  line-height: 1;
-  padding: var(--space-0) var(--space-1);
-}
-
-.toast-dismiss:hover {
-  color: var(--text-primary);
-}
-
 /* Archive: hidden from the working list, deleted from nothing. */
-
 .patient-entry {
-  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
 }
 
 .patient-entry-actions {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 132px;
+  gap: var(--space-2);
   opacity: 0;
   pointer-events: none;
 }
 
 .patient-entry .list-item {
+  flex: 1 1 auto;
   min-width: 0;
-}
-
-.patient-entry:hover .list-item,
-.patient-entry:focus-within .list-item {
-  padding-right: 150px;
 }
 
 .patient-entry:hover .patient-entry-actions,
@@ -2336,6 +2336,10 @@ select:disabled {
 
 .patient-rename {
   padding: var(--space-0) var(--space-5) var(--space-4);
+}
+
+.patient-rename {
+  flex: 1 1 auto;
 }
 
 .patient-rename input {
@@ -2381,6 +2385,69 @@ select:disabled {
   color: var(--text-primary);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+.field-label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.field-input {
+  width: 100%;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.licenses-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.licenses-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3) var(--space-4);
+  align-items: end;
+}
+
+.licenses-toolbar .field-label {
+  grid-column: 1 / -1;
+}
+
+.licenses-toolbar .field-input {
+  min-width: 0;
+}
+
+.licenses-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-5);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+}
+
+.licenses-index a {
+  color: var(--accent-ink);
+  font-size: var(--text-sm);
+}
+
+.licenses-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.licenses-sections .licenses-text {
+  max-height: none;
 }
 
 /* ------------------------------------- brand + motion polish (2026-08-28) */
