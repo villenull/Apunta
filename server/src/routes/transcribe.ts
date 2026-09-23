@@ -30,7 +30,8 @@ import { uuidv7 } from '../db/uuid.js';
 import { badRequest, HttpError, notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { parseBody } from '../http/validate.js';
-import { logFailure, persistDraft, streamDraft, toAiError } from './draft.js';
+import { logFailure, toAiError } from './ai.js';
+import { persistDraft, streamDraft } from './draft.js';
 import { requirePatient } from './patients.js';
 
 /**

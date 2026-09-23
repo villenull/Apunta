@@ -22,8 +22,8 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
-import { AiError, aiError } from '../ai/errors.js';
-import type { AiProviders, LlmStats } from '../ai/types.js';
+import { logFailure, logStats, toAiError } from './ai.js';
+import type { AiProviders } from '../ai/types.js';
 import { getFormat } from '../db/formats.js';
 import { listNotesForPatient } from '../db/notes.js';
 import {
@@ -520,36 +520,6 @@ function resolveEvidence(goal: SuggestedGoal, materials: readonly NoteMaterial[]
  */
 function logDroppedGoal(request: FastifyRequest, detail: Record<string, unknown>): void {
   request.log.info(detail, 'suggested goal dropped');
-}
-
-function toAiError(error: unknown): AiError {
-  if (error instanceof AiError) return error;
-  return aiError('ollama_error', String(error));
-}
-
-/**
- * Shapes, counts and codes. Never a goal, an excerpt or a note.
- *
- * The plan and prep paths carry more clinical text than anything else in the
- * app, which makes them the worst place to be casual about a log line
- * (`docs/research/privacy-audit-2026-08.md` H1).
- */
-export function logFailure(request: FastifyRequest, failure: AiError, message: string): void {
-  request.log.error({ code: failure.code, detail: failure.detail }, message);
-}
-
-export function logStats(request: FastifyRequest, stats: LlmStats, message: string): void {
-  request.log.info(
-    {
-      model: stats.model,
-      // The only observability Ollama gives us on truncation, and it is free.
-      promptTokens: stats.promptTokens,
-      outputTokens: stats.outputTokens,
-      doneReason: stats.doneReason,
-      attempts: stats.attempts,
-    },
-    message,
-  );
 }
 
 /** Shared with the prep route, which streams with the same discipline. */

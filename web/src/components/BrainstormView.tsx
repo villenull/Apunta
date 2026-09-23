@@ -217,7 +217,12 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
       {confirmingNew && (
         <ConfirmDialog
           title="Start a new conversation?"
-          body={<p>This forgets the conversation above. {firstName(patient.name)}&rsquo;s notes stay exactly as they are.</p>}
+          body={
+            <p>
+              This forgets the conversation above. {firstName(patient.name)}&rsquo;s notes stay exactly as
+              they are.
+            </p>
+          }
           confirmLabel="Forget it"
           onCancel={() => setConfirmingNew(false)}
           onConfirm={() => void startNew()}
@@ -227,7 +232,11 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
   );
 }
 
-const MarkdownBubble = memo(function MarkdownBubble({ message }: { message: BrainstormMessage }): React.JSX.Element {
+const MarkdownBubble = memo(function MarkdownBubble({
+  message,
+}: {
+  message: BrainstormMessage;
+}): React.JSX.Element {
   return (
     <div className="chat-msg ai" data-testid="brainstorm-reply">
       <div className="chat-bubble">

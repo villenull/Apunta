@@ -10,7 +10,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 
-import { AiError, aiError } from '../ai/errors.js';
+import { logFailure, logStats, toAiError } from './ai.js';
 import type { AiProviders } from '../ai/types.js';
 import { createSessionBrief, listSessionBriefs } from '../db/briefs.js';
 import { getFormat } from '../db/formats.js';
@@ -20,7 +20,6 @@ import { openSse } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
 import { readRecentNotes, type NoteMaterial } from '../plan/pipeline.js';
 import { resolveLookback } from '../plan/settings.js';
-import { logFailure, logStats } from './plans.js';
 import { requirePatient } from './patients.js';
 
 /**
@@ -174,9 +173,4 @@ function resolveLines(
     });
   }
   return lines;
-}
-
-function toAiError(error: unknown): AiError {
-  if (error instanceof AiError) return error;
-  return aiError('ollama_error', String(error));
 }

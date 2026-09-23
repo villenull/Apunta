@@ -28,6 +28,7 @@ export interface RefineColumnProps {
 /** The refine chat, with the same stream lifecycle and composer as Brainstorm. */
 export function RefineColumn({
   note,
+  allowWords = [],
   refQuote,
   onClearRefQuote,
   onNoteUpdated,
@@ -162,7 +163,9 @@ export function RefineColumn({
           </p>
         )}
         {thread.state.status === 'ready' && empty && (
-          <p className="small chat-placeholder">Ask a question about this note, or give feedback to refine it.</p>
+          <p className="small chat-placeholder">
+            Ask a question about this note, or give feedback to refine it.
+          </p>
         )}
         {messages.map((message) => (
           <Bubble key={message.id} message={message} />
@@ -213,6 +216,7 @@ export function RefineColumn({
         placeholder="Ask a question or give feedback..."
         ariaLabel="Ask a question or give feedback"
         testId="chat-input"
+        allowWords={allowWords}
       />
     </div>
   );
@@ -222,7 +226,9 @@ function Bubble({ message }: { message: ChatMessage }): React.JSX.Element {
   return (
     <div className={message.role === 'user' ? 'chat-msg user' : 'chat-msg ai'} data-testid="chat-msg">
       <div className="chat-bubble">
-        {message.ref_quote !== null && message.ref_quote !== '' && <div className="chat-quote">“{message.ref_quote}”</div>}
+        {message.ref_quote !== null && message.ref_quote !== '' && (
+          <div className="chat-quote">“{message.ref_quote}”</div>
+        )}
         {message.text}
       </div>
     </div>

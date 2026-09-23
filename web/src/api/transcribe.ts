@@ -87,7 +87,6 @@ export async function transcribeRecording(
     },
   );
 
-
   if (result === null) throw new Error('The recording stream ended before the note was saved.');
   return result;
 }

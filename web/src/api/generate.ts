@@ -68,7 +68,6 @@ export async function generateNote(
     },
   );
 
-
   if (result === null) throw new Error('The draft stream ended before the note was saved.');
   return result;
 }

@@ -7,9 +7,10 @@ import {
   type Patient,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
-import { AiError, aiError } from '../ai/errors.js';
+import { aiError } from '../ai/errors.js';
+import { logFailure, logStats, toAiError } from './ai.js';
 import { brainstormPromptTokens } from '../ai/ollama.js';
 import { fitNotesNewestFirst } from '../ai/prior-notes.js';
 import { buildBrainstormPrompt, omittedNotesLine } from '../ai/prompts.js';
@@ -186,7 +187,7 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
       }
     } catch (error) {
       const failure = toAiError(error);
-      logFailure(request, failure);
+      logFailure(request, failure, 'brainstorm discussion failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
       return;
@@ -198,13 +199,13 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
     }
     if (!sawDiscussed) {
       const failure = aiError('empty_response', 'discussPatient finished without producing a reply');
-      logFailure(request, failure);
+      logFailure(request, failure, 'brainstorm discussion failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
       return;
     }
 
-    if (stats) logStats(request, stats);
+    if (stats) logStats(request, stats, 'brainstorm discussed');
 
     // The reply is persisted and released. Nothing here writes anywhere else:
     // this endpoint cannot revise a note, a plan, a briefing or a patient, by
@@ -248,30 +249,4 @@ function recentTurns(db: Database, patientId: string): ChatTurn[] {
   return listBrainstormMessages(db, patientId)
     .slice(-BRAINSTORM_HISTORY_TURNS)
     .map((message) => ({ role: message.role, text: message.text }));
-}
-
-function toAiError(error: unknown): AiError {
-  if (error instanceof AiError) return error;
-  return aiError('ollama_error', String(error));
-}
-
-/** The log carries the diagnosis, never the conversation (see above). */
-function logFailure(request: FastifyRequest, failure: AiError): void {
-  request.log.error({ code: failure.code, detail: failure.detail }, 'brainstorm discussion failed');
-}
-
-function logStats(request: FastifyRequest, stats: LlmStats): void {
-  const tokensPerSecond = stats.evalNanos > 0 ? stats.outputTokens / (stats.evalNanos / 1e9) : 0;
-  request.log.info(
-    {
-      model: stats.model,
-      promptTokens: stats.promptTokens,
-      outputTokens: stats.outputTokens,
-      tokensPerSecond: Math.round(tokensPerSecond * 10) / 10,
-      loadMs: Math.round(stats.loadNanos / 1e6),
-      doneReason: stats.doneReason,
-      attempts: stats.attempts,
-    },
-    'brainstorm discussed',
-  );
 }

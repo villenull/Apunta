@@ -1,12 +1,14 @@
-import { DEFAULT_IMPORT_CUTOFF, type ClaudeImportReport, type ImportNameSource, type ImportNoteSource, type ImportSkipReason } from '@apunta/shared';
+import {
+  DEFAULT_IMPORT_CUTOFF,
+  type ClaudeImportReport,
+  type ImportNameSource,
+  type ImportNoteSource,
+  type ImportSkipReason,
+} from '@apunta/shared';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import {
-  errorMessage,
-  previewClaudeImport,
-  runClaudeImport,
-} from '../api/index.js';
+import { errorMessage, previewClaudeImport, runClaudeImport } from '../api/index.js';
 import { ImportBatchList } from '../components/ImportBatchList.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
@@ -375,7 +377,6 @@ function Skipped({ report }: { report: ClaudeImportReport }): React.JSX.Element 
 function formatBatchDate(iso: string): string {
   return iso.slice(0, 16).replace('T', ' ');
 }
-
 
 function day(iso: string | null): string {
   return iso === null ? 'undated' : iso.slice(0, 10);

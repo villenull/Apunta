@@ -9,6 +9,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyRequest } from 'fastify';
 
+import { AiError, aiError } from '../ai/errors.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import {
   applyDiscussionSubheadings,
@@ -126,7 +127,7 @@ export async function streamDraft(params: {
     return { sections: null, stats: null, retractions: [], failure };
   }
 
-  if (stats) logStats(request, stats);
+  if (stats) logStats(request, stats, 'note drafted');
   return { sections, stats, retractions, failure: null };
 }
 
@@ -219,5 +220,3 @@ export function persistDraft(
   });
   return note;
 }
-
-

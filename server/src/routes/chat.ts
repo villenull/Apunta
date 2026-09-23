@@ -15,7 +15,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
-import { AiError, aiError } from '../ai/errors.js';
+import { aiError } from '../ai/errors.js';
 import {
   applyDiscussionSubheadings,
   renderClinicalKnowledgeGuide,
@@ -40,6 +40,7 @@ import { listTranscriptsForNote } from '../db/transcripts.js';
 import { notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
+import { logFailure, logStats, toAiError } from './ai.js';
 import { tryMoveOnlyRefine } from './refine-fast-path.js';
 
 /**
@@ -232,11 +233,12 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
                   discussionSubheadingSource(note.content, format.sections, input.message, input.ref_quote),
                 ).sections;
           stats = event.stats;
+          if (updatedSections !== null) streamRefineProgress(stream, format.sections, updatedSections);
         }
       }
     } catch (error) {
       const failure = toAiError(error);
-      logFailure(request, failure);
+      logFailure(request, failure, 'note refinement failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
       return;
@@ -248,13 +250,13 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     }
     if (!sawRefined) {
       const failure = aiError('empty_response', 'refineNote finished without producing a reply');
-      logFailure(request, failure);
+      logFailure(request, failure, 'note refinement failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
       return;
     }
 
-    if (stats) logStats(request, stats);
+    if (stats) logStats(request, stats, 'note refined');
 
     if (locked) {
       // The lock, applied after the fact. A model that tried to rewrite the
@@ -507,20 +509,22 @@ function finishWithReply(db: Database, stream: SseStream, noteId: string, text: 
   stream.end();
 }
 
-function toAiError(error: unknown): AiError {
-  if (error instanceof AiError) return error;
-  return aiError('ollama_error', String(error));
-}
-
-/**
- * The log carries the diagnosis, never the conversation.
- *
- * A refine call holds the note *and* what the therapist said about it — both
- * real patient material (CLAUDE.md hard rule 2). `AiError.detail` is shape
- * only by construction; nothing here may add text to it.
- */
-function logFailure(request: FastifyRequest, failure: AiError): void {
-  request.log.error({ code: failure.code, detail: failure.detail }, 'note refinement failed');
+/** Tell the browser which validated rewrite sections have completed. */
+export function streamRefineProgress(
+  stream: SseStream,
+  sections: readonly string[],
+  updated: Sections,
+): void {
+  const total = sections.length;
+  let completed = 0;
+  for (const section of sections) {
+    if (!(section in updated)) continue;
+    completed += 1;
+    stream.send('status', {
+      stage: 'drafting',
+      message: `Rewriting ${String(completed)} of ${String(total)} sections…`,
+    });
+  }
 }
 
 /** A count, never the phrase and never the section name — shape only. */
@@ -536,20 +540,4 @@ function logKept(request: FastifyRequest, sections: number): void {
 /** A count, never the phrase: it is from another of her notes. */
 function logFenced(request: FastifyRequest, sections: number): void {
   request.log.info({ fencedSections: sections }, 'refinement partially held back by the prior-note lock');
-}
-
-function logStats(request: FastifyRequest, stats: LlmStats): void {
-  const tokensPerSecond = stats.evalNanos > 0 ? stats.outputTokens / (stats.evalNanos / 1e9) : 0;
-  request.log.info(
-    {
-      model: stats.model,
-      promptTokens: stats.promptTokens,
-      outputTokens: stats.outputTokens,
-      tokensPerSecond: Math.round(tokensPerSecond * 10) / 10,
-      loadMs: Math.round(stats.loadNanos / 1e6),
-      doneReason: stats.doneReason,
-      attempts: stats.attempts,
-    },
-    'note refined',
-  );
 }

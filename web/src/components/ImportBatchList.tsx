@@ -28,7 +28,8 @@ export function ImportBatchList({
       <h3 className="heading-tight">Earlier imports</h3>
       {undone !== null && (
         <p className="small note-meta">
-          Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')} removed.
+          Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')}{' '}
+          removed.
         </p>
       )}
       {batches.map((batch) => (
