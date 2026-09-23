@@ -1,13 +1,15 @@
 import { SPELLING_WORDS_SETTING, spellingWordsFrom, STT_VOCABULARY_SETTING } from '@apunta/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { putSettings } from '../api/settings.js';
+1: import { putSettings } from '../api/settings.js';
 import { useSettingsContext } from './SettingsProvider.js';
-import type { Speller } from '../lib/spelling.js';
+import { allowedWords, type Speller } from '../lib/spelling.js';
 
 // The dictionary must remain out of the initial route chunk; load it after a spell surface mounts.
 const lazyLoadSpeller = () => import('../lib/speller.js').then(({ loadSpeller }) => loadSpeller());
 
+2:       accepted: allowedWords(added, vocabulary, ignored),
+      ensureLoaded,
 /**
  * Everything the spell check needs, once per tab: the dictionary, the words
  * she has added to it, her transcription vocabulary (a name or a medication
@@ -106,7 +108,14 @@ export function SpellingProvider({
   const value = useMemo<Spelling>(
     () => ({
       speller,
-      accepted: lowercased(added, vocabulary, ignored),
+1: import { putSettings } from '../api/settings.js';
+import { useSettingsContext } from './SettingsProvider.js';
+import { allowedWords, type Speller } from '../lib/spelling.js';
+
+// The dictionary must remain out of the initial route chunk; load it after a spell surface mounts.
+const lazyLoadSpeller = () => import('../lib/speller.js').then(({ loadSpeller }) => loadSpeller());
+
+2:       accepted: allowedWords(added, vocabulary, ignored),
       ensureLoaded,
       addWord,
       ignoreWord,
@@ -115,17 +124,4 @@ export function SpellingProvider({
   );
 
   return <SpellingContext.Provider value={value}>{children}</SpellingContext.Provider>;
-}
-
-/** Each word of each entry, lowercased: "Dr Jane Smith" accepts "jane" in a note. */
-function lowercased(...lists: readonly (readonly string[])[]): Set<string> {
-  const words = new Set<string>();
-  for (const list of lists) {
-    for (const entry of list) {
-      for (const match of entry.matchAll(/[A-Za-z]+(?:['’][A-Za-z]+)*/g)) {
-        words.add(match[0].replace(/’/g, "'").toLowerCase());
-      }
-    }
-  }
-  return words;
 }

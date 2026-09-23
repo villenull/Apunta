@@ -90,4 +90,13 @@ describe('suggestionsFor', () => {
     expect(suggestionsFor(speller, 'weeek')).toEqual(['week']);
     expect(suggestionsFor(speller, 'zzz')).toEqual([]);
   });
+
+  it('skips the expensive one-slip neighbourhood for long tokens', () => {
+    const longWord = 'a'.repeat(33);
+    const longSpeller: Speller = {
+      correct: () => true,
+      suggest: () => ['fallback'],
+    };
+    expect(suggestionsFor(longSpeller, longWord)).toEqual(['fallback']);
+  });
 });

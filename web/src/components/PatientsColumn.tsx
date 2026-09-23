@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 import type { LoadState } from '../hooks/useLoader.js';
 import { initials, noteCountLabel } from '../lib/format.js';
 import { MarkIcon, PlusIcon } from './icons.js';
-import { SpellcheckInput } from './SpellcheckInput.js';
+import { SpellLayer } from './SpellLayer.js';
 
 export interface PatientsColumnProps {
   patients: LoadState<PatientListItem[]>;
@@ -240,7 +240,8 @@ function PatientList({
                   setRenaming(null);
                 }}
               >
-                <SpellcheckInput
+                <SpellLayer
+                  as="input"
                   type="text"
                   value={renaming.name}
                   allowWords={[patient.name]}

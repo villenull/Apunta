@@ -5,7 +5,7 @@ import { errorMessage, listChatMessages, sendChatMessage } from '../api/index.js
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { ComposerButtons, DictationPanel } from './ComposerButtons.js';
-import { SpellcheckInput } from './SpellcheckInput.js';
+import { SpellLayer } from './SpellLayer.js';
 import { ThinkingDots } from './ThinkingDots.js';
 
 export { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
@@ -290,7 +290,8 @@ export function RefineColumn({
       <DictationPanel dictation={dictation} />
 
       <div className="chat-input-row">
-        <SpellcheckInput
+        <SpellLayer
+          as="input"
           ref={inputRef}
           type="text"
           placeholder="Ask a question or give feedback..."

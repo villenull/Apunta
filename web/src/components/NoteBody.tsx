@@ -1,9 +1,9 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { useSpelling } from '../hooks/useSpelling.js';
+import type { Misspelling } from '../lib/spelling.js';
 import { emptySections, markNoteText } from '../lib/markers.js';
-import { AutoGrowTextarea } from './AutoGrowTextarea.js';
-import { spelledRuns, useSpellingMenu } from './SpellMarks.js';
+import { SpellLayer } from './SpellLayer.js';
+import { spelledRuns } from './SpellMarks.js';
 
 export interface NoteBodyProps {
   value: string;
@@ -56,27 +56,24 @@ export function NoteBody({
 }: NoteBodyProps): React.JSX.Element {
   const segments = useMemo(() => markNoteText(value, sections), [value, sections]);
   const blanks = useMemo(() => emptySections(value, sections), [value, sections]);
-
-  /** Where each run starts in the text, for the spelling marks. */
-  const offsets = useMemo(() => {
-    const starts: number[] = [];
-    let at = 0;
-    for (const segment of segments) {
-      starts.push(at);
-      at += segment.text.length;
-    }
-    return starts;
-  }, [segments]);
-
-  const wrap = useRef<HTMLDivElement>(null);
-  const textarea = useRef<HTMLTextAreaElement>(null);
-  const spelling = useSpelling(value, allowWords);
-  const { open: openSpelling, menu: spellingMenu } = useSpellingMenu(
-    value,
-    onChange,
-    spelling,
-    wrap,
-    textarea,
+  const renderBackdrop = useCallback(
+    (misspellings: readonly Misspelling[]) => {
+      let offset = 0;
+      const result = segments.map((segment, index) => {
+        const runs = spelledRuns(segment.text, offset, misspellings, String(index));
+        offset += segment.text.length;
+        return segment.kind === 'plain' ? (
+          <span key={index}>{runs}</span>
+        ) : (
+          <mark key={index} className={`marker marker-${segment.kind}`}>
+            {runs}
+          </mark>
+        );
+      });
+      result.push(<span key="spell-sentinel">{'\n'}</span>);
+      return result;
+    },
+    [segments],
   );
 
   return (
@@ -87,59 +84,28 @@ export function NoteBody({
         </p>
       )}
 
-      <div
-        ref={wrap}
-        className={['note-editable-wrap', refined ? 'is-refined' : '', refining ? 'is-refining' : '']
+      <SpellLayer
+        as="textarea"
+        ref={ref}
+        value={value}
+        onChange={onChange}
+        allowWords={allowWords}
+        autoGrow
+        renderBackdrop={renderBackdrop}
+        backdropTestId="note-highlights"
+        wrapClassName={['note-editable-wrap', refined ? 'is-refined' : '', refining ? 'is-refining' : '']
           .filter(Boolean)
           .join(' ')}
-        data-testid={refining ? 'note-updating' : undefined}
-      >
-        <div className="note-editable note-highlights" aria-hidden="true" data-testid="note-highlights">
-          {/* Keyed by position: the runs are a pure function of the text, and
-              every one of them changes when it does. Each run carries its own
-              spelling marks, so the two layers stay in register. */}
-          {segments.map((segment, index) => {
-            const offset = offsets[index] ?? 0;
-            const runs = spelledRuns(segment.text, offset, spelling.misspellings, String(index));
-            return segment.kind === 'plain' ? (
-              <span key={index}>{runs}</span>
-            ) : (
-              <mark key={index} className={`marker marker-${segment.kind}`}>
-                {runs}
-              </mark>
-            );
-          })}
-          {/* A sentinel: a text node ending in a newline has it collapsed at
-              the end of a block, which would leave the backdrop a line short
-              for a note that ends in one. */}
-          {'\n'}
-        </div>
-
-        <AutoGrowTextarea
-          ref={(node) => {
-            textarea.current = node;
-            if (typeof ref === 'function') ref(node);
-            else if (ref) ref.current = node;
-          }}
-          className={readOnly ? 'note-editable is-published' : 'note-editable'}
-          data-testid="note-body"
-          aria-label="Note body"
-          spellCheck={false}
-          value={value}
-          readOnly={readOnly}
-          onChange={(event) => {
-            onChange(event.target.value);
-          }}
-          onClick={readOnly ? undefined : openSpelling}
-          onContextMenu={readOnly ? undefined : openSpelling}
-          onBlur={onBlur}
-          onSelect={(event) => {
-            const element = event.currentTarget;
-            onSelect(element.value.slice(element.selectionStart, element.selectionEnd).trim());
-          }}
-        />
-        {spellingMenu}
-      </div>
+        className={readOnly ? 'note-editable is-published' : 'note-editable'}
+        data-testid="note-body"
+        aria-label="Note body"
+        readOnly={readOnly}
+        onBlur={onBlur}
+        onSelect={(event) => {
+          const element = event.currentTarget;
+          onSelect(element.value.slice(element.selectionStart, element.selectionEnd).trim());
+        }}
+      />
     </div>
   );
 }

@@ -9,8 +9,8 @@ import { SpellingMenu } from './SpellingMenu.js';
  * `.misspelt` span that draws the wavy line. `offset` is where `text` sits
  * in the whole value, since a backdrop may already be split into other runs
  * (the note body's markers). Concatenating the runs reproduces `text`
- * exactly — a backdrop must lay out character for character with the
- * textarea above it.
+ * exactly — a backdrop must lay out character for character with the textarea
+ * above it.
  */
 export function spelledRuns(
   text: string,
@@ -21,8 +21,20 @@ export function spelledRuns(
   const end = offset + text.length;
   const runs: React.ReactNode[] = [];
   let cursor = offset;
-  for (const entry of misspellings) {
-    if (entry.end <= offset || entry.start >= end) continue;
+  // Misspellings are sorted by start offset. Skip the prefix that cannot
+  // overlap this segment instead of scanning every mark for every line.
+  let low = 0;
+  let high = misspellings.length;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    const middleEntry = misspellings[middle];
+    if (!middleEntry || middleEntry.end > offset) high = middle;
+    else low = middle + 1;
+  }
+  for (let index = low; index < misspellings.length; index += 1) {
+    const entry = misspellings[index];
+    if (!entry) break;
+    if (entry.start >= end) break;
     const start = Math.max(entry.start, offset);
     const stop = Math.min(entry.end, end);
     if (start > cursor) runs.push(text.slice(cursor - offset, start - offset));
@@ -45,8 +57,8 @@ interface OpenMenu {
 }
 
 /**
- * The menu under a misspelt word, for any textarea that draws marks: a
- * click (or a right-click) on a flagged word opens it where the pointer is,
+ * The menu under a misspelt word, for any textarea that draws marks: a click
+ * (or a right-click) on a flagged word opens it where the pointer is,
  * inside `wrap`; a pick replaces the word and puts the caret after it.
  */
 export function useSpellingMenu(
@@ -117,6 +129,7 @@ export function useSpellingMenu(
         suggestions={state.suggestions}
         left={state.left}
         top={state.top}
+        wrap={wrap}
         onPick={pick}
         onIgnore={() => {
           spelling.ignoreWord(entry.word);

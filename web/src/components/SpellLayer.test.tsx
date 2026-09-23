@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Speller } from '../lib/spelling.js';
-import { SpellcheckInput } from './SpellcheckInput.js';
+import { SpellLayer } from './SpellLayer.js';
 import { SpellingContext, type Spelling } from './SpellingProvider.js';
 
 const speller: Speller = {
@@ -20,12 +20,12 @@ function renderInput(value: string, overrides: Partial<Spelling> = {}): void {
   };
   render(
     <SpellingContext.Provider value={spelling}>
-      <SpellcheckInput aria-label="Name" value={value} onChange={() => {}} allowWords={['Qvplum']} />
+      <SpellLayer as="input" aria-label="Name" value={value} onChange={() => {}} allowWords={['Qvplum']} />
     </SpellingContext.Provider>,
   );
 }
 
-describe('SpellcheckInput', () => {
+describe('SpellLayer input', () => {
   it('marks a typo, offers a suggestion, and adds the word through the shared menu', async () => {
     const addWord = vi.fn();
     renderInput('Teh Qvplum', { addWord });

@@ -13,7 +13,7 @@ import {
 import { KeyboardIcon, MicIcon } from '../components/icons.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { LiveRecording } from '../components/LiveRecording.js';
-import { SpellcheckTextarea } from '../components/SpellcheckTextarea.js';
+import { SpellLayer } from '../components/SpellLayer.js';
 import { ThinkingDots } from '../components/ThinkingDots.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
@@ -431,7 +431,8 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                   <div className="opt-sub">Type notes before or while recording, or use typing alone</div>
                 </div>
               </div>
-              <SpellcheckTextarea
+              <SpellLayer
+                as="textarea"
                 placeholder="Type your session summary..."
                 aria-label="Session summary"
                 data-testid="summary-input"

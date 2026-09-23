@@ -129,6 +129,10 @@ interface Slip {
 
 /** Every string one edit from `word`. */
 function oneSlipAway(word: string): Slip[] {
+  // The edit neighbourhood grows as ~54 × length. Long tokens are much more
+  // likely to be identifiers or pasted prose than useful correction targets,
+  // and nspell's own suggestions still provide a bounded fallback.
+  if (word.length > 32) return [];
   const slips: Slip[] = [];
   for (let index = 0; index < word.length; index += 1) {
     if (index + 1 < word.length && word[index] !== word[index + 1]) {

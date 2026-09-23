@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 /**
  * The little menu under a misspelt word: the suggestions, then "Ignore" for
  * this tab and "Add to dictionary" for good. Closed by a choice, Escape, or a
@@ -10,6 +9,7 @@ export function SpellingMenu({
   suggestions,
   left,
   top,
+  wrap,
   onPick,
   onIgnore,
   onAdd,
@@ -18,13 +18,27 @@ export function SpellingMenu({
   readonly word: string;
   readonly suggestions: readonly string[];
   readonly left: number;
+  /** The pointer-relative top of the menu's below-word position. */
   readonly top: number;
+  readonly wrap: React.RefObject<HTMLElement | null>;
   readonly onPick: (replacement: string) => void;
   readonly onIgnore: () => void;
   readonly onAdd: () => void;
   readonly onClose: () => void;
 }): React.JSX.Element {
   const menu = useRef<HTMLDivElement>(null);
+  const [above, setAbove] = useState(false);
+
+  useLayoutEffect(() => {
+    const element = menu.current;
+    if (!element) return;
+    const boundary = wrap.current?.getBoundingClientRect();
+    const bounds = element.getBoundingClientRect();
+    const bottom = boundary?.bottom ?? window.innerHeight;
+    const topEdge = boundary?.top ?? 0;
+    const roomAbove = bounds.top - bounds.height >= topEdge;
+    setAbove(bounds.bottom > bottom && roomAbove);
+  }, [left, top, wrap, suggestions.length]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -48,7 +62,7 @@ export function SpellingMenu({
       role="menu"
       aria-label={`Spelling of ${word}`}
       data-testid="spelling-menu"
-      style={{ left, top }}
+      style={{ left, top: above ? top - (menu.current?.offsetHeight ?? 0) - 8 : top }}
     >
       {suggestions.length === 0 ? (
         <p className="spelling-menu-none">No suggestions</p>
