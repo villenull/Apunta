@@ -71,38 +71,72 @@ export interface PreviewRequest {
 }
 
 export interface PreviewResult {
-  readonly committed: { readonly text: string; readonly at: number };
+  readonly committed: { readonly text: string; readonly at: number; readonly tail: string };
   readonly preview: string;
 }
 
+/** Keep only a short, revisable tail; older words have already been read. */
+const TENTATIVE_TAIL_WORDS = 4;
+
 /**
- * Apply one preview response only to the cursor that requested it.
- *
- * A tail is provisional and replaces the previous tail. A commit replaces
- * that provisional view with the committed chunk. If another response has
- * already advanced the cursor, this response is stale — appending it would
- * briefly show a sentence twice before the next final chunk corrected it.
+ * Preserve the prefix that both consecutive hypotheses agree on once it is
+ * older than the tentative tail. This makes Whisper's normal re-decoding
+ * visible only in the last few words instead of making the whole caption jump.
  */
+function stableTail(previous: string, next: string): string {
+  const oldWords = previous.trim() === '' ? [] : previous.trim().split(/\s+/);
+  const newWords = next.trim() === '' ? [] : next.trim().split(/\s+/);
+  // Once a word is four positions behind the live edge, stop allowing a
+  // later Whisper hypothesis to rewrite it. The short tail remains tentative.
+  const stable = Math.max(0, oldWords.length - TENTATIVE_TAIL_WORDS);
+  return stable === 0
+    ? newWords.join(' ')
+    : `${oldWords.slice(0, stable).join(' ')} ${newWords.slice(stable).join(' ')}`.trim();
+}
+
 export function reconcilePreviewResult(
-  current: { readonly text: string; readonly at: number },
+  current: { readonly text: string; readonly at: number; readonly tail?: string },
   request: PreviewRequest,
   text: string,
 ): PreviewResult | null {
   if (current.at !== request.committedAt) return null;
   if (request.kind === 'tail') {
+    const tail = stableTail(current.tail ?? '', text);
     return {
-      committed: current,
-      preview: joinWords(current.text, text),
+      committed: { ...current, tail },
+      preview: joinWords(current.text, tail),
     };
   }
-  const committed = { text: joinWords(current.text, text), at: request.to };
+  const committed = { text: joinWords(current.text, text), at: request.to, tail: '' };
   return { committed, preview: committed.text };
 }
 
 function joinWords(head: string, tail: string): string {
   const a = head.trim();
   const b = tail.trim();
-  return a === '' ? b : b === '' ? a : `${a} ${b}`;
+  if (a === '' || b === '') return a === '' ? b : a;
+
+  const left = a.split(/\s+/);
+  const right = b.split(/\s+/);
+  const max = Math.min(12, left.length, right.length);
+  // Preview windows are cut at pauses, but whisper can still repeat the
+  // sentence on both sides of a cut. Remove only a substantial overlap with
+  // more than one distinct word: repeated emphatic words ("No, no, no.") are
+  // real speech and must remain visible.
+  for (let size = max; size >= 3; size -= 1) {
+    const suffix = left.slice(-size);
+    const prefix = right.slice(0, size);
+    const keys = suffix.map(previewWordKey);
+    if (keys.some((word) => word === '') || new Set(keys).size < 2) continue;
+    if (keys.every((word, index) => word === previewWordKey(prefix[index]))) {
+      return `${a} ${right.slice(size).join(' ')}`.trim();
+    }
+  }
+  return `${a} ${b}`;
+}
+
+function previewWordKey(word: string): string {
+  return word.toLowerCase().replace(/[^\p{L}\p{N}']/gu, '');
 }
 
 export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
@@ -121,7 +155,7 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   /** The smoothed voice level behind the dot, and when it last reached the screen. */
   const voice = useRef({ smoothed: 0, shownAt: 0, shown: 0 });
   /** Words committed for good, and the second of audio they run up to. */
-  const committed = useRef({ text: '', at: 0 });
+  const committed = useRef({ text: '', at: 0, tail: '' });
   const previewGeneration = useRef(0);
   const limited = useRef(false);
   /** The active preview request must stop before final transcription starts. */
@@ -160,7 +194,7 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     if (phase !== 'recording') return;
     const generation = previewGeneration.current + 1;
     previewGeneration.current = generation;
-    committed.current = { text: '', at: 0 };
+    committed.current = { text: '', at: 0, tail: '' };
     setPreview('');
 
     let cancelled = false;

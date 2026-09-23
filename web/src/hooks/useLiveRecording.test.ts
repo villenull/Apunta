@@ -36,4 +36,52 @@ describe('live preview reconciliation', () => {
     );
     expect(repeated?.preview).toBe('No, no, no. No, no, no.');
   });
+
+  it('removes a repeated sentence at a preview-window join', () => {
+    const first = reconcilePreviewResult(
+      { text: '', at: 0 },
+      { kind: 'commit' as const, committedAt: 0, to: 12 },
+      'The client discussed the wedding next month.',
+    );
+    const joined = reconcilePreviewResult(
+      first!.committed,
+      { kind: 'commit' as const, committedAt: 12, to: 24 },
+      'The client discussed the wedding next month. She feels anxious.',
+    );
+    expect(joined?.preview).toBe('The client discussed the wedding next month. She feels anxious.');
+  });
+
+  it('does not remove a repeated single-word emphasis at a join', () => {
+    const first = reconcilePreviewResult(
+      { text: '', at: 0 },
+      { kind: 'commit' as const, committedAt: 0, to: 12 },
+      'No, no, no.',
+    );
+    const joined = reconcilePreviewResult(
+      first!.committed,
+      { kind: 'commit' as const, committedAt: 12, to: 24 },
+      'No, no, no.',
+    );
+    expect(joined?.preview).toBe('No, no, no. No, no, no.');
+  });
+
+  it('stabilizes an agreed prefix and leaves only a short tentative tail', () => {
+    const first = reconcilePreviewResult(
+      { text: '', at: 0, tail: '' },
+      { kind: 'tail' as const, committedAt: 0, to: 1 },
+      'The client discussed the wedding',
+    );
+    const next = reconcilePreviewResult(
+      first!.committed,
+      { kind: 'tail' as const, committedAt: 0, to: 2 },
+      'The client discussed the wedding next month',
+    );
+    const rewrite = reconcilePreviewResult(
+      next!.committed,
+      { kind: 'tail' as const, committedAt: 0, to: 3 },
+      'The client discussed the work next month',
+    );
+    expect(rewrite?.preview).toContain('The client discussed');
+    expect(rewrite?.preview).toContain('work next month');
+  });
 });
