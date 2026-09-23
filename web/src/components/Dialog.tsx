@@ -10,6 +10,8 @@ export interface DialogProps {
   readonly testId?: string;
   readonly open?: boolean;
   readonly showTitle?: boolean;
+  /** Confirmation surfaces trap focus; the refine sheet remains non-modal. */
+  readonly modal?: boolean;
 }
 /**
  * The one modal surface used by confirmations and the refine sheet. It owns
@@ -26,6 +28,7 @@ export function Dialog({
   testId,
   open = true,
   showTitle = true,
+  modal = true,
 }: DialogProps): React.JSX.Element {
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
@@ -47,7 +50,7 @@ export function Dialog({
         onClose();
         return;
       }
-      if (event.key !== 'Tab' || panel === null) return;
+      if (!modal || event.key !== 'Tab' || panel === null) return;
       const focusable = Array.from(
         panel.querySelectorAll<HTMLElement>(
           'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])',
@@ -81,11 +84,17 @@ export function Dialog({
       document.removeEventListener('keydown', onKeyDown);
       restoreRef.current?.focus();
     };
-  }, [initialFocusRef, onClose, open]);
+  }, [initialFocusRef, modal, onClose, open]);
   return (
     <div
       className={
-        open ? (variant === 'sheet' ? 'modal-backdrop sheet-backdrop' : 'modal-backdrop') : 'is-dialog-closed'
+        open
+          ? modal
+            ? variant === 'sheet'
+              ? 'modal-backdrop sheet-backdrop'
+              : 'modal-backdrop'
+            : ''
+          : 'is-dialog-closed'
       }
       data-testid={testId}
     >
@@ -93,7 +102,7 @@ export function Dialog({
         ref={panelRef}
         className={className || (variant === 'sheet' ? 'sheet' : 'modal card')}
         role="dialog"
-        aria-modal="true"
+        aria-modal={modal || undefined}
         aria-labelledby={showTitle ? titleId.current : undefined}
         aria-label={showTitle ? undefined : title}
         aria-hidden={!open}

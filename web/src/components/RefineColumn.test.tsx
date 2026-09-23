@@ -287,9 +287,10 @@ describe('refine completion ordering', () => {
 });
 
 describe('refine dialog semantics', () => {
-  it('names the sheet when its visible heading is intentionally omitted', () => {
+  it('names the sheet and leaves the editor undimmed', () => {
     renderChat();
     expect(screen.getByRole('dialog', { name: 'Refine note' })).toBeDefined();
+    expect(document.querySelector('.modal-backdrop')).toBeNull();
   });
 });
 

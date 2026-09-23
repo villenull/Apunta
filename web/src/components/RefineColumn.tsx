@@ -145,6 +145,7 @@ export function RefineColumn({
       title="Refine note"
       onClose={closePanel}
       variant="sheet"
+      modal={false}
       className={hidden ? 'chat-col is-sheet is-closed' : 'chat-col is-sheet'}
       initialFocusRef={inputRef}
       open={!hidden}
