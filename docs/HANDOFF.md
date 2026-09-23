@@ -344,9 +344,10 @@ artifacts remain unchanged. See
 acceptance on a disposable port before treating the end-to-end blocker as
 closed.
 
-The current-control Discussion matrix is **3 pass / 1 fail**: the two-topic
-case emitted zero required lowercase source-grounded label lines. The
-four-arm comparison completed for the exact authorized candidates and valid
+The pre-fix current-control Discussion matrix was **3 pass / 1 fail**: the
+two-topic case emitted zero required lowercase source-grounded label lines.
+The capitalized-label implementation and its gate are now complete below.
+The four-arm comparison completed for the exact authorized candidates and valid
 runtime aliases. Its corpus favours the current `qwen3.5:4b-q4_K_M` control
 (18/60 fabrication flags, 42/60 gated runs, 42/60 safety facts, 54/60
 retraction/negation) over qwen2, Bonsai 8B Q1_0 and Bonsai 4B Q1_0. All four
@@ -386,18 +387,15 @@ live Progress-format update was applied after a backup
 (`apunta-backup-2026-09-22-4.zip`) and verified byte for byte; Intake inherits
 the shipped default. GPU prefill is 18.7× faster than CPU. See
 `docs/eval-reports/2026-09-22-model-second-pass.md`.
-The live `:7717` app still runs the pre-today build until it is redeployed.
-Synthetic Discussion follow-up is complete. The server now normalizes
-lowercase inline labels such as `sleep: …` into standalone short lowercase
-`label:` lines, grounds them in current-session material, and removes lone,
-unsupported, reserved or inflectionally duplicate labels without dropping
-prose. A synthetic two-topic unlabeled response remains prose because the
-server cannot safely infer a split. An extra prompt sentence asking the 4B not
-to flatten genuinely distinct topics was tried on disposable ports 7794/7795
-and reverted: both runs had 0 format flags, single-topic fixtures did not
-over-split, and the 4B still emitted zero labels for a direct two-topic
-synthetic request. The 4B therefore does not split topics on its own; retain
-the human live-note check. Evidence:
+The live `:7717` instance still runs the pre-2026-09-22 build. Redeploying
+will apply migration 007 for note revisions, so take a backup first.
+Discussion subtopic labels are complete. Commit `3d428e8` implements the
+parser and case handling; `0a06e8f` removes the obsolete parser-only prompt
+sentence. Labels display with a capitalized first letter while accepting
+either input case, and the live Progress format includes the subtopic
+paragraph after backup `apunta-backup-2026-09-22-4.zip`, verified byte for
+byte. Intake is unchanged. The first live draft remains the human check for
+boundaries and over-splitting. See
 `docs/eval-reports/2026-09-22-discussion-subtopics-fix.md`.
 
 Whisper's narrow mitigation trims only exact digital-zero tails and rejects
@@ -496,9 +494,59 @@ Claude batch links under foreign-key enforcement and rolls back
 transactionally; focused coverage asserts that legacy undo still works.
 Fixture extraction is egress-guarded, the bundled `unpdf` path has no worker or
 CMap URLs configured, and the parser is a static server dependency.
-The integrated project gate is now green at `690853b`: build:shared,
-typecheck, lint (including 111 licenses), 108 test files/1,390 tests,
-production build, 40 e2e tests and 60 fake-eval runs all exited 0.
+The integrated full gate is green at `0142752`: build:shared, typecheck, lint,
+test (114 files, 1,429 tests), production build, 41 e2e tests and
+`eval --fake` all exited 0.
+
+Packet follow-through now on main:
+
+- **Save integrity (P1, migration 007):** note PATCH requires a monotonic
+  revision and returns `stale_write` with the server note; the editor offers
+  **Keep mine** / **Take theirs**, published notes require an explicit unlock,
+  copy happens before save, pagehide/visibility flushes and visible refetches
+  protect edits, and recorder/transcription cancellation preserves staged
+  work. Focused route/database, browser two-context and cancellation coverage
+  passed (`79d9106`).
+- **Storage boot (P2):** data-folder/database failures produce a minimal static
+  503 naming the folder, explaining disk/read-only/permission fixes, saying
+  existing data is untouched and telling her to restart. Staged restore rolls
+  back if the database cannot open; migration ceilings are dynamically
+  detected. Local-calendar handling has America/Denver coverage
+  (`73bb656`, `8913638`, `4d923b4`).
+- **Bundle and design (P3/P4):** spell loading is lazy, Settings uses one
+  long-lived provider, non-workspace screens are lazy while Workspace/Capture/
+  AddPatient stay eager, and the final eager bundle is 479.49 kB raw /
+  144.32 kB gzip versus the 542,935 B / 158.97 kB baseline. Cold seeded fake
+  root LCP is 376 ms, patient-list readiness 49 ms and warm navigation about
+  25 ms; `/` fetches no dictionary files. Inter is bundled with the design
+  tokens and no prototype-parity work is required
+  (`1a768cf`, `28914a2`, `5966067`, `0b3b6f1`).
+- **Spell layer (P5):** the unified input/textarea/note layer uses
+  segment-aware binary-search marks, memoized unchanged segments, the shared
+  allowed-words tokeniser and a 32-character menu cap. The synthetic
+  147,999-character case measured 0.733 ms/character and one 73 ms long task
+  after the optimization; the normal-note 1.6 ms/character figure is the
+  pre-change measurement and was not re-measured (`f0d784a`).
+- **Shared streams and refine progress (P6):** shared SSE decoding powers the
+  generation, chat, Brainstorm, plan, prep and transcription paths; refine
+  emits additive **Rewriting N of M sections…** status as nested tokens arrive.
+  Focused fake/JSON decoding was 42/42 and the real SSE fixture was 1/1
+  (`4bfee91`, `9e68919`, `f1883a1`, `ad370e8`).
+- **Accessible surfaces (P7):** Setup/About is OS-neutral and states local
+  operation without gating that claim on disk encryption; accent reset,
+  keyboard radio semantics, shared dialogs, editor focus, recording meter and
+  long-name wrapping are covered (`8dc4b5c`, `5ecc409`).
+- **Workspace/imports (P8):** active patient names match
+  case/whitespace-insensitively with optional existing ids; undo removes only
+  patients created by that batch. Note rows lead with session/created dates and
+  Draft chips; the licences view supports index/filter/copy; Halaxy duplicate
+  protection and import-preview polish are shipped (`ceeb7e4`, `352b04f`,
+  `f9e4d35`, `f6ddf3d`, `4aa7cb3`).
+- **Integration fixes:** the recorder's `acceptingFrames` regression is fixed
+  (`96546de`); setup copy no longer depends on disk encryption, and the
+  JSON-in-note screenshot was a fixture artefact, not app corruption. The
+  remaining integration fixes are `fc0a05e`, `5fad0dd`, `fe3fee1`, `d96af22`,
+  `4572e4c`, `5062de7`, `7fa015b`.
 
 ### Approved, next action
 - **Claude export confidentiality is approved.** ClaudeProbe's shape-only
@@ -578,10 +626,10 @@ setup/preflight scripts.
 
 ### Small things seen live / known limits
 
-- The spell check covers the note body and the typed-notes box; the chat
-  composer and the patient-name field still rely on the browser's checker.
-  Inline "Add to dictionary" remains implemented; no Settings management UI
-  for those words is planned.
+- The unified SpellLayer covers the note body, typed-notes box, refine-chat
+  composer and patient-name field with the same bundled spell checker;
+  dictionary words and **Add to dictionary** apply in each, and the patient
+  name is not flagged against itself.
 
 - **Whisper trailing silence is now bounded** (2026-09-22):
   `docs/eval-reports/2026-09-22-whisper-silence.md` records the focused 44/44
@@ -597,9 +645,6 @@ setup/preflight scripts.
   shortening when an existing risk, medication or anchored name is removed
   without an explicit request. Review the displayed notice and the full note
   before publishing; the guards are a second line, not a clinical validator.
-- The editor flush-before-chat path prevents stale-note rewrites, but a
-  failed local save still leaves the chat request available against the last
-  server copy; verify the save error before relying on that reply.
 
 ### The testing docket for the owner's proxy (his PC, no Mac needed)
 
@@ -657,7 +702,7 @@ APUNTA_NO_OPEN=1 NODE_ENV=production setsid nohup node server/dist/index.js >> /
 curl -fsS http://127.0.0.1:7717/api/health
 
 # The gate, in this order; verify by exit code, never by reading piped output
-npm run build:shared && npm run typecheck && npm run lint && npm test && npm run build && npm run e2e
+npm run build:shared && npm run typecheck && npm run lint && npm test && npm run build && npm run e2e && npm run eval -- --fake
 ```
 On the Apunta agent's current Linux PC (`villenull`), `~/.local/bin/ollama`
 is user-installed Ollama 0.34.2 with bundled ROCm; active models are in
