@@ -39,6 +39,11 @@ import {
   REFINE_BACKGROUND_REMINDER,
   REFINE_BACKGROUND_RULE,
   REFINE_BACKGROUND_START,
+  RESTATED_FIGURE_REMINDER,
+  restatedFigureReminderFor,
+  RISK_CONTENT_REMINDER,
+  RISK_REVIEW_REMINDER,
+  riskReviewReminderFor,
   RETRACTION_REMINDER,
   retractionReminderFor,
   tailReminder,
@@ -58,15 +63,31 @@ describe('default instructions', () => {
    * The markdown in `docs/note-instructions/` is the source the practice owner
    * reads and edits. If the two drift, the app stops doing what the document
    * says it does — so the copy is asserted, not assumed.
+   *
+   * **Verbatim, including the H1.** The H1 used to be stripped, on the theory
+   * that it was a markdown title for the document rather than text for the
+   * model, and that `prompts.ts` must not prepend another role framing. It is
+   * neither: it names the format and the register ("Progress note — the
+   * owner's voice"), it is what the practice owner's own stored instructions
+   * begin with, and on this model it is load-bearing. Measured 2026-09-23 on
+   * the owner-format corpus: with the H1, 0/20 runs fabricated across three
+   * invocations; without it, 5/20 in each of six, all of them the same
+   * fixture. The bundled default and her live copy are now the same prompt.
    */
-  it('are the docs/note-instructions markdown, minus its H1', () => {
-    const port = (file: string): string => {
-      const text = readFileSync(join(repoRoot, 'docs', 'note-instructions', file), 'utf8');
-      return `${text.split('\n').slice(1).join('\n').trim()}\n`;
-    };
-    expect(PROGRESS_NOTE_INSTRUCTIONS).toBe(port('progress-note-instructions.md'));
-    expect(INTAKE_NOTE_INSTRUCTIONS).toBe(port('intake-note-instructions.md'));
-    expect(OWNER_PROGRESS_INSTRUCTIONS).toBe(port('owner-progress-instructions.md'));
+  it('are the docs/note-instructions markdown, verbatim for hers', () => {
+    const read = (file: string): string =>
+      readFileSync(join(repoRoot, 'docs', 'note-instructions', file), 'utf8').trim();
+    // Hers is verbatim, H1 included. The other two still drop their H1: the
+    // H1 is load-bearing on this model (measured below), but the SOAP and
+    // intake constants are the eval instrument's own prompt, and changing them
+    // needs its own measured round rather than a ride-along here.
+    expect(OWNER_PROGRESS_INSTRUCTIONS).toBe(`${read('owner-progress-instructions.md')}\n`);
+    expect(PROGRESS_NOTE_INSTRUCTIONS).toBe(
+      `${read('progress-note-instructions.md').split('\n').slice(1).join('\n').trim()}\n`,
+    );
+    expect(INTAKE_NOTE_INSTRUCTIONS).toBe(
+      `${read('intake-note-instructions.md').split('\n').slice(1).join('\n').trim()}\n`,
+    );
   });
 
   /** Her instructions describe her sections, and her one "None." convention. */
@@ -194,6 +215,82 @@ describe('the retraction reminder', () => {
     expect(prompt.user).not.toContain(RETRACTION_REMINDER);
     expect(retractionReminderFor('no correction here, he never minds the noise')).toEqual([]);
     expect(retractionReminderFor('four out of seven, no wait, two out of seven')).toHaveLength(1);
+  });
+});
+
+describe('the restated-figure reminder', () => {
+  it('sits in the user turn beside a source that restates a figure without a direction', () => {
+    const prompt = buildGeneratePrompt({
+      instructions: 'Write a note.',
+      sections: ['Subjective', 'Plan'],
+      transcript: 'He reckons six drinks a week at the moment, and four was back in February.',
+    });
+    expect(prompt.user).toContain(RESTATED_FIGURE_REMINDER);
+    expect(prompt.system).not.toContain(RESTATED_FIGURE_REMINDER);
+  });
+
+  /**
+   * The detector is narrow on purpose. A source that *does* say which way the
+   * change went must keep its prompt byte for byte, because the reminder
+   * would suppress a comparison she actually made.
+   */
+  it('stays out of a source that states the direction itself', () => {
+    expect(
+      restatedFigureReminderFor('Drinking has crept up: six a week now, and four was back in February.'),
+    ).toEqual([]);
+    expect(restatedFigureReminderFor('Sleep is down to five hours; it was seven in June.')).toEqual([]);
+  });
+
+  it('stays out of a source with no earlier figure at all', () => {
+    expect(restatedFigureReminderFor('Sleeping better. Plan unchanged, weekly.')).toEqual([]);
+    expect(restatedFigureReminderFor('He was fidgety and talked fast. No risk concerns raised.')).toEqual([]);
+  });
+
+  it('needs both a quantity and a past marker, not one of them', () => {
+    expect(restatedFigureReminderFor('Four drinks a week.')).toEqual([]);
+    expect(restatedFigureReminderFor('He was quiet for a while.')).toEqual([]);
+    expect(restatedFigureReminderFor('Four was back in February.')).toHaveLength(1);
+  });
+});
+
+describe('the risk-review reminder', () => {
+  const RISK_REVIEW = ['Location', 'Client presentation', 'Risk review', 'Discussion'];
+  const INTAKE = ['Presenting problem', 'History', 'Formulation', 'Plan'];
+
+  it('tells a format with a risk section to fill it rather than default to "None."', () => {
+    const reminder = riskReviewReminderFor(
+      'I asked about risk and she denied any thoughts of self harm.',
+      RISK_REVIEW,
+    );
+    expect(reminder).toEqual([RISK_REVIEW_REMINDER]);
+    expect(RISK_REVIEW_REMINDER).toContain('None.');
+  });
+
+  /**
+   * The opposite failure needs the opposite instruction: a four-section intake
+   * has nowhere for a risk review to go, and the review came back nowhere at
+   * all. Telling that format "fill your risk section" would be nonsense.
+   */
+  it('tells a format with no risk section that the review still has to land somewhere', () => {
+    const reminder = riskReviewReminderFor('asked about SI, they said no', INTAKE);
+    expect(reminder).toEqual([RISK_CONTENT_REMINDER]);
+    expect(RISK_CONTENT_REMINDER).toContain('never disappears');
+  });
+
+  it('stays out of a session where risk never came up', () => {
+    expect(riskReviewReminderFor('Sleeping better. Plan unchanged, weekly.', RISK_REVIEW)).toEqual([]);
+    expect(riskReviewReminderFor('She was fidgety and talked fast. No concerns raised.', INTAKE)).toEqual([]);
+  });
+
+  it('sits in the user turn, beside the source, and not in the system block', () => {
+    const prompt = buildGeneratePrompt({
+      instructions: 'Write a note.',
+      sections: RISK_REVIEW,
+      transcript: 'I asked about risk and she denied any thoughts of self harm.',
+    });
+    expect(prompt.user).toContain(RISK_REVIEW_REMINDER);
+    expect(prompt.system).not.toContain(RISK_REVIEW_REMINDER);
+    expect(prompt.user.trimEnd().endsWith('and nothing else.')).toBe(true);
   });
 });
 

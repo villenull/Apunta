@@ -162,9 +162,8 @@ Dana, online today. Rough notes, sorry. She's worried the date of her
 recital could change again, that took most of the hour, she keeps
 re-reading the email thread about it. We talked about moving her
 sessions to mornings, actually no, scratch that, she'd rather keep her
-usual time and tell me if that stops working. She asked about my trip,
-we chatted a minute, anyway. She's going to write out her practice
-pieces before Friday.
+usual time. She asked about my trip, we chatted a minute, anyway. She's
+going to write out her practice pieces before Friday.
 ```
 
 The note:
@@ -177,7 +176,7 @@ The note:
   "Discussion": "Dana came to session worried that the date of her recital could change again, which took most of the hour; she reports re-reading the email thread about it.",
   "Intervention": "",
   "Out of session actions": "Dana, write out her practice pieces before Friday.",
-  "Note for next session": "Dana will say if her usual session time stops working."
+  "Note for next session": "Recital date still open; Dana keeps her usual session time."
 }
 ```
 

@@ -347,7 +347,9 @@ came from. If you cannot, delete the sentence.
  * reads and edits; this is its port, minus the H1, and the same snapshot test
  * as the two above fails the moment they differ.
  */
-export const OWNER_PROGRESS_INSTRUCTIONS = `You are drafting a clinical note for a licensed therapist, from her own
+export const OWNER_PROGRESS_INSTRUCTIONS = `# Progress note — the owner's voice
+
+You are drafting a clinical note for a licensed therapist, from her own
 written notes or dictation about a session she has just finished. She reads
 and edits every draft before it enters the record. Your job is to organize
 what she said into the named sections, in her voice. It is not to add to it.
@@ -509,9 +511,8 @@ Dana, online today. Rough notes, sorry. She's worried the date of her
 recital could change again, that took most of the hour, she keeps
 re-reading the email thread about it. We talked about moving her
 sessions to mornings, actually no, scratch that, she'd rather keep her
-usual time and tell me if that stops working. She asked about my trip,
-we chatted a minute, anyway. She's going to write out her practice
-pieces before Friday.
+usual time. She asked about my trip, we chatted a minute, anyway. She's
+going to write out her practice pieces before Friday.
 \`\`\`
 
 The note:
@@ -524,7 +525,7 @@ The note:
   "Discussion": "Dana came to session worried that the date of her recital could change again, which took most of the hour; she reports re-reading the email thread about it.",
   "Intervention": "",
   "Out of session actions": "Dana, write out her practice pieces before Friday.",
-  "Note for next session": "Dana will say if her usual session time stops working."
+  "Note for next session": "Recital date still open; Dana keeps her usual session time."
 }
 \`\`\`
 

@@ -160,6 +160,8 @@ export function buildGeneratePrompt(request: GenerateNoteRequest): ChatPrompt {
   const user = [
     ...sourceBlocks(request),
     ...retractionReminderFor(source),
+    ...restatedFigureReminderFor(source),
+    ...riskReviewReminderFor(source, request.sections),
     tailReminder(request.sections),
   ].join('\n\n');
   return { system, user };
@@ -190,6 +192,80 @@ export const RETRACTION_REMINDER =
 
 export function retractionReminderFor(source: string): string[] {
   return hasRetraction(source) ? [RETRACTION_REMINDER] : [];
+}
+
+/**
+ * The restated-figure rule, restated in the user turn — only when the source
+ * gives an earlier figure without saying which way it moved.
+ *
+ * "Four was back in February" came back as "down from four in February"
+ * (2026-09-06): the source states a past figure and no direction, and the
+ * model supplied one. The direction it supplies is not reliably the right
+ * one, and a note that says the opposite of what happened is worse than one
+ * that says less.
+ *
+ * The detector is deliberately narrow — a quantity, a past-time marker, and
+ * no direction word anywhere in the source — because a reminder that fires
+ * on a source which *does* state a direction would suppress a comparison she
+ * actually made.
+ */
+const RESTATED_QUANTITY = /\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|couple|few|several)\b/i;
+
+const RESTATED_PAST_MARKER =
+  /\b(?:was|were|used to|back (?:in|at|when)|previously|last (?:month|year|week|session|time|term)|in (?:january|february|march|april|may|june|july|august|september|october|november|december))\b/i;
+
+const RESTATED_DIRECTION =
+  /\b(?:up|down|more|less|fewer|increas\w*|decreas\w*|reduc\w*|rose|risen|fell|fallen|drop\w*|improv\w*|worsen\w*|better|worse|higher|lower|gain\w*|lost|gain|losing|cut (?:back|down)|quit)\b/i;
+
+export function hasRestatedFigure(source: string): boolean {
+  return (
+    RESTATED_QUANTITY.test(source) && RESTATED_PAST_MARKER.test(source) && !RESTATED_DIRECTION.test(source)
+  );
+}
+
+export const RESTATED_FIGURE_REMINDER =
+  'She gave an earlier figure without saying which way it moved. Write the figures she gave and nothing about the direction: no "up from", "down from", "better since" or any other comparison she did not make. If she did not say the change went one way, the note does not say it either.';
+
+export function restatedFigureReminderFor(source: string): string[] {
+  return hasRestatedFigure(source) ? [RESTATED_FIGURE_REMINDER] : [];
+}
+
+/**
+ * The risk-review rule, restated in the user turn — only when the source shows
+ * a review she carried out.
+ *
+ * Two measured failures, one rule. Both were on the "safety facts" measure,
+ * which is the one number in the eval that is about the record being
+ * clinically complete rather than merely faithful:
+ *
+ * - **Her format**: "I asked about risk, she denied any thoughts of self harm"
+ *   came back as `"Risk review": "None."` — a review she carried out replaced
+ *   by the word for a review that never happened, which is a record saying the
+ *   opposite of what occurred. Seen 5/5 on the owner-format corpus, and the
+ *   reason `check:format` grew that flag in the first place.
+ * - **A four-section intake**: the same review came back nowhere at all. The
+ *   intake instructions' section list never mentions risk, so it had no home
+ *   and the "nothing dictated should disappear" rule lost to that.
+ *
+ * The sentence differs by whether the format has a section for risk, because
+ * the two failures need opposite instructions: with a section, the danger is
+ * the default word; without one, the danger is silence.
+ */
+const RISK_TERM = /\b(?:self[-\s]?harm|suicid\w*|homicid\w*|hurt(?:ing)?|risk|safety plan|SI|HI)\b/i;
+const RISK_REVIEW_VERB = /\b(?:denie[sd]|denies|asked|no (?:thoughts|history|plan|intent)|said no)\b/i;
+const RISK_SECTION = /^(?:risk|risk review|risk assessment|safety|safety review)$/i;
+
+export const RISK_REVIEW_REMINDER =
+  'She asked about risk in this session. The risk section carries what she asked and what the client said, in her words: history first if she named any, then today. "None." belongs only to a session where she said nothing about risk at all, and it never stands in for a review she carried out.';
+
+export const RISK_CONTENT_REMINDER =
+  'She asked about risk in this session and the answer is in the dictation. This format has no section for risk, so it goes in the section it fits best; it never disappears from the note.';
+
+export function riskReviewReminderFor(source: string, sections: readonly string[]): string[] {
+  if (!RISK_TERM.test(source) || !RISK_REVIEW_VERB.test(source)) return [];
+  return sections.some((section) => RISK_SECTION.test(section.trim()))
+    ? [RISK_REVIEW_REMINDER]
+    : [RISK_CONTENT_REMINDER];
 }
 
 /**
