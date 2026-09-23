@@ -17,7 +17,6 @@ import { ThinkingDots } from './ThinkingDots.js';
 export function LiveRecording({
   level,
   seconds,
-  preview,
   previewCommitted,
   previewTentative,
   previewNote,
@@ -26,18 +25,16 @@ export function LiveRecording({
   /** 0 at rest, 0.55–1 when she is heard. */
   readonly level: number;
   readonly seconds: number;
-  /** Everything so far, roughly; empty until whisper has heard something. */
-  readonly preview: string;
   /** Stable words, rendered normally so they do not look provisional. */
-  readonly previewCommitted?: string;
+  readonly previewCommitted: string;
   /** The short tail Whisper may still revise. */
-  readonly previewTentative?: string;
+  readonly previewTentative: string;
   /** Under the words: what they are, and what they are not. */
   readonly previewNote: string;
   readonly children?: React.ReactNode;
 }): React.JSX.Element {
   const previewBox = useRef<HTMLDivElement | null>(null);
-
+  const preview = [previewCommitted, previewTentative].filter((part) => part !== '').join(' ');
   // The block follows the words: newest at the bottom, always in view.
   useEffect(() => {
     const box = previewBox.current;
@@ -79,15 +76,9 @@ export function LiveRecording({
         ) : (
           <>
             <div className="record-preview-text" ref={previewBox} data-testid="record-preview-text">
-              {previewCommitted === undefined ? (
-                preview
-              ) : (
-                <>
-                  <span className="record-preview-committed">{previewCommitted}</span>
-                  {previewCommitted !== '' && previewTentative !== '' ? ' ' : null}
-                  <span className="record-preview-tentative">{previewTentative ?? ''}</span>
-                </>
-              )}
+              <span className="record-preview-committed">{previewCommitted}</span>
+              {previewCommitted !== '' && previewTentative !== '' ? ' ' : null}
+              <span className="record-preview-tentative">{previewTentative}</span>
             </div>
             <p className="small muted record-preview-note">{previewNote}</p>
           </>

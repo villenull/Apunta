@@ -87,7 +87,7 @@ describe('notesBeforeThisOne', () => {
     // The failure this exists for: asked to shorten the older note, the model
     // "corrected" its Location from what the later note said.
     const earlier = notesBeforeThisOne(candidates, current.id);
-    expect(earlier.map((item) => item.text)).not.toContain(later.content);
+    expect(earlier.map((item) => item.content)).not.toContain(later.content);
   });
 
   it('offers nothing for a note that is not in the list', () => {

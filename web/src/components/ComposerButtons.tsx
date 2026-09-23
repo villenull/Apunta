@@ -15,7 +15,6 @@ export function DictationPanel({ dictation }: { dictation: Dictation }): React.J
     <LiveRecording
       level={live.level}
       seconds={live.seconds}
-      preview={live.preview}
       previewCommitted={live.committedPreview}
       previewTentative={live.tentativePreview}
       previewNote="Everything so far, roughly. Your message is written from the finished recording."

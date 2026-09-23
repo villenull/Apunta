@@ -342,7 +342,6 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
               <LiveRecording
                 level={live.level}
                 seconds={seconds}
-                preview={live.preview}
                 previewCommitted={live.committedPreview}
                 previewTentative={live.tentativePreview}
                 previewNote="Everything so far, roughly. The note is written from the finished recording."

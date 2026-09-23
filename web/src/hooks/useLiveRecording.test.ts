@@ -85,10 +85,7 @@ describe('live preview reconciliation', () => {
     expect(rewrite?.preview).toContain('work next month');
   });
   it('renders each preview word once across committed and tentative spans', () => {
-    const cases = [
-      'The client discussed the wedding next month with her sister',
-      'Wedding anxiety',
-    ];
+    const cases = ['The client discussed the wedding next month with her sister', 'Wedding anxiety'];
     for (const text of cases) {
       const result = reconcilePreviewResult(
         { text: '', at: 0, tail: '' },

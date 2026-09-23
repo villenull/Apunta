@@ -75,7 +75,11 @@ function sliceWav(buffer, parsed, fromSeconds, toSeconds) {
 }
 
 function pausePoints(buffer, parsed) {
-  const samples = new Int16Array(buffer.buffer, buffer.byteOffset + parsed.dataOffset, Math.floor(parsed.dataBytes / 2));
+  const samples = new Int16Array(
+    buffer.buffer,
+    buffer.byteOffset + parsed.dataOffset,
+    Math.floor(parsed.dataBytes / 2),
+  );
   const perBucket = Math.max(1, Math.floor(parsed.sampleRate / 10));
   const levels = [];
   for (let start = 0; start < samples.length; start += perBucket) {
@@ -187,7 +191,8 @@ function joinWords(head, tail, dedupe) {
   for (let size = Math.min(12, left.length, right.length); size >= 3; size -= 1) {
     const suffix = left.slice(-size).map(key);
     if (suffix.some((word) => !word) || new Set(suffix).size < 2) continue;
-    if (suffix.every((word, index) => word === key(right[index]))) return `${a} ${right.slice(size).join(' ')}`.trim();
+    if (suffix.every((word, index) => word === key(right[index])))
+      return `${a} ${right.slice(size).join(' ')}`.trim();
   }
   return `${a} ${b}`;
 }
@@ -238,17 +243,41 @@ function repeatedNgrams(tokens) {
 function expectedChecks(noteText, expected = {}) {
   const checks = [];
   const test = (label, pass, wording) => checks.push({ label, pass, wording });
-  test('six hours kept', /six hours/i.test(noteText) && !/four hours/i.test(noteText), noteText.match(/[^.]*six hours[^.]*/i)?.[0] ?? 'missing');
+  test(
+    'six hours kept',
+    /six hours/i.test(noteText) && !/four hours/i.test(noteText),
+    noteText.match(/[^.]*six hours[^.]*/i)?.[0] ?? 'missing',
+  );
   test('weekend aside omitted', !/weekend|not clinically relevant/i.test(noteText), 'omitted');
-  test('cognitive restructuring', /cognitive restructuring/i.test(noteText), noteText.match(/[^.]*cognitive restructuring[^.]*/i)?.[0] ?? 'missing');
-  test('risk denial retained', /denied|no thoughts of harming|suicid/i.test(noteText), noteText.match(/[^.]*\\b(denied|harming|suicid)[^.]*\\.?/i)?.[0] ?? 'missing');
-  test('panic attacks down 3 to 1', /three.*one|3.*1|decreased|down/i.test(noteText) && /panic attacks/i.test(noteText), noteText.match(/[^.]*panic attacks[^.]*/i)?.[0] ?? 'missing');
-  test('weekly cadence', /weekly|each week|every week/i.test(noteText), noteText.match(/[^.]*weekly[^.]*/i)?.[0] ?? 'missing');
+  test(
+    'cognitive restructuring',
+    /cognitive restructuring/i.test(noteText),
+    noteText.match(/[^.]*cognitive restructuring[^.]*/i)?.[0] ?? 'missing',
+  );
+  test(
+    'risk denial retained',
+    /denied|no thoughts of harming|suicid/i.test(noteText),
+    noteText.match(/[^.]*\\b(denied|harming|suicid)[^.]*\\.?/i)?.[0] ?? 'missing',
+  );
+  test(
+    'panic attacks down 3 to 1',
+    /three.*one|3.*1|decreased|down/i.test(noteText) && /panic attacks/i.test(noteText),
+    noteText.match(/[^.]*panic attacks[^.]*/i)?.[0] ?? 'missing',
+  );
+  test(
+    'weekly cadence',
+    /weekly|each week|every week/i.test(noteText),
+    noteText.match(/[^.]*weekly[^.]*/i)?.[0] ?? 'missing',
+  );
   for (const [label, value] of Object.entries(expected)) {
     const pattern = new RegExp(String(value), 'i');
     const omitted = /omitted/i.test(label);
     const pass = omitted ? !pattern.test(noteText) : pattern.test(noteText);
-    test(label, pass, omitted ? 'omitted' : noteText.match(new RegExp(`[^.]*${String(value)}[^.]*`, 'i'))?.[0] ?? 'missing');
+    test(
+      label,
+      pass,
+      omitted ? 'omitted' : (noteText.match(new RegExp(`[^.]*${String(value)}[^.]*`, 'i'))?.[0] ?? 'missing'),
+    );
   }
   return checks;
 }
@@ -276,7 +305,9 @@ async function finalDraft(wavBuffer) {
   if (dbPath) {
     const query = `SELECT raw_text FROM transcripts WHERE note_id='${String(note.id).replaceAll("'", "''")}'`;
     try {
-      transcript = execFileSync('sqlite3', ['-separator', '', resolve(dbPath), query], { encoding: 'utf8' }).trim();
+      transcript = execFileSync('sqlite3', ['-separator', '', resolve(dbPath), query], {
+        encoding: 'utf8',
+      }).trim();
     } catch {
       transcript = '';
     }
@@ -303,10 +334,22 @@ const report = {
   expected: expectedChecks(noteText, sidecar.expected),
   preview: { before, after, updates },
 };
-writeFileSync(`${out}-before.html`, html(updates.map((item) => ({ ...item, after: item.before })), 'Preview replay — before fix'));
+writeFileSync(
+  `${out}-before.html`,
+  html(
+    updates.map((item) => ({ ...item, after: item.before })),
+    'Preview replay — before fix',
+  ),
+);
 writeFileSync(`${out}-after.html`, html(updates, 'Preview replay — after fix'));
 writeFileSync(`${out}.json`, JSON.stringify(report, null, 2));
-console.log(JSON.stringify({ ...report, preview: { before, after }, html: [`${out}-before.html`, `${out}-after.html`] }, null, 2));
+console.log(
+  JSON.stringify(
+    { ...report, preview: { before, after }, html: [`${out}-before.html`, `${out}-after.html`] },
+    null,
+    2,
+  ),
+);
 
 function wer(reference, hypothesis) {
   const a = words(reference);

@@ -91,8 +91,12 @@ function stableTail(previous: string, next: string): string {
   // later Whisper hypothesis to rewrite it. The short tail remains tentative.
   const stable = Math.max(0, oldWords.length - TENTATIVE_TAIL_WORDS);
   if (stable === 0) return newWords.join(' ');
+  const oldBoundary = oldWords[stable - 1];
+  const newBoundary = newWords[stable - 1];
   const boundaryAgrees =
-    stable <= newWords.length && previewWordKey(oldWords[stable - 1]) === previewWordKey(newWords[stable - 1]);
+    oldBoundary !== undefined &&
+    newBoundary !== undefined &&
+    previewWordKey(oldBoundary) === previewWordKey(newBoundary);
   const tail = boundaryAgrees ? newWords.slice(stable) : newWords.slice(-TENTATIVE_TAIL_WORDS);
   return `${oldWords.slice(0, stable).join(' ')} ${tail.join(' ')}`.trim();
 }
@@ -142,8 +146,15 @@ function joinWords(head: string, tail: string): string {
     const suffix = left.slice(-size);
     const prefix = right.slice(0, size);
     const keys = suffix.map(previewWordKey);
+    const prefixKeys = prefix.map(previewWordKey);
     if (keys.some((word) => word === '') || new Set(keys).size < 2) continue;
-    if (keys.every((word, index) => word === previewWordKey(prefix[index]))) {
+    if (
+      keys.length === prefixKeys.length &&
+      keys.every((word, index) => {
+        const prefixWord = prefixKeys[index];
+        return prefixWord !== undefined && word === prefixWord;
+      })
+    ) {
       return `${a} ${right.slice(size).join(' ')}`.trim();
     }
   }
@@ -163,7 +174,6 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   const [phase, setPhase] = useState<LivePhase>('idle');
   const [seconds, setSeconds] = useState(0);
   const [level, setLevel] = useState(0);
-  const [preview, setPreview] = useState('');
   const [committedPreview, setCommittedPreview] = useState('');
   const [tentativePreview, setTentativePreview] = useState('');
 
@@ -208,11 +218,10 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
    * recording which is going fine would be worse than none.
    */
   useEffect(() => {
-    if (phase !== 'recording') return;
     const generation = previewGeneration.current + 1;
     previewGeneration.current = generation;
+    if (phase !== 'recording') return;
     committed.current = { text: '', at: 0, tail: '' };
-    setPreview('');
     setCommittedPreview('');
     setTentativePreview('');
     let cancelled = false;
@@ -271,7 +280,6 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
               if (next === null) return;
               committed.current = next.committed;
               const display = splitPreviewTail(next.committed);
-              setPreview(next.preview);
               setCommittedPreview(display.committed);
               setTentativePreview(display.tentative);
             })
@@ -314,7 +322,6 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
           if (next !== null) {
             committed.current = next.committed;
             const display = splitPreviewTail(next.committed);
-            setPreview(next.preview);
             setCommittedPreview(display.committed);
             setTentativePreview(display.tentative);
           }
@@ -336,11 +343,11 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
 
   const start = useCallback(async (): Promise<boolean> => {
     if (recorder.current !== null || starting.current) return false;
-    starting.current = true;
     setSeconds(0);
     setLevel(0);
     voice.current = { smoothed: 0, shownAt: 0, shown: 0 };
-    setPreview('');
+    setCommittedPreview('');
+    setTentativePreview('');
     limited.current = false;
     setPhase('starting');
 
@@ -433,10 +440,12 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     recorder.current?.cancel();
     setSeconds(0);
     setLevel(0);
+    setCommittedPreview('');
+    setTentativePreview('');
     setPhase('idle');
   }, []);
 
-  return { phase, seconds, level, preview, committedPreview, tentativePreview, start, stop, cancel };
+  return { phase, seconds, level, committedPreview, tentativePreview, start, stop, cancel };
 }
 
 /** Peaks under this are the room, not her: the same floor the recorder uses to find a pause. */
