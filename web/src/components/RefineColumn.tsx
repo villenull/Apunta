@@ -226,8 +226,8 @@ export function RefineColumn({
             <strong>
               {outcome.kind === 'applied'
                 ? 'Changes applied'
-                : outcome.kind === 'withheld'
-                  ? 'No changes applied'
+                : outcome.kind === 'partial'
+                  ? 'Some changes applied'
                   : 'No changes applied'}
             </strong>
             {outcome.reason === null ? null : ` — ${outcome.reason}`}

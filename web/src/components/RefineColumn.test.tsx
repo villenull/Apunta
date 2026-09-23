@@ -351,4 +351,31 @@ describe('structured refine outcomes', () => {
     expect(outcome.textContent).toContain('safety guard protected');
     expect(outcome.textContent).not.toContain('Changes applied');
   });
+
+  /**
+   * Since 2026-09-23 an edit can land with something held back — the change
+   * she asked for is in the note, and a guard kept another section as it was.
+   * Saying "No changes applied" over that would be as wrong as the old
+   * `applied` over an edit that never happened.
+   */
+  it('announces a partly applied edit as partly applied, with the reason', async () => {
+    installFakeApi(
+      { formats: [progressNote], patients: [john], notes: [draft] },
+      {
+        chatOutcome: {
+          outcome: 'partial',
+          reason: 'Apunta left Location as it was: your message asked about Discussion only.',
+        },
+      },
+    );
+    renderChat();
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const outcome = await screen.findByTestId('refine-outcome');
+    expect(outcome.textContent).toContain('Some changes applied');
+    expect(outcome.textContent).toContain('Apunta left Location as it was');
+    expect(outcome.textContent).not.toContain('No changes applied');
+  });
 });

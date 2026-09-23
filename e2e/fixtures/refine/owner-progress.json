@@ -1,0 +1,157 @@
+{
+  "_readme": [
+    "The owner's own progress format, and the refine turns her hands-on pass on",
+    "2026-09-23 went wrong on (`docs/eval-reports/2026-09-23-owner-tests-2-3.md`).",
+    "All content is fabricated (CLAUDE.md hard rule 2): no sentence came from a",
+    "real session.",
+    "",
+    "One scenario, three turns on one note, in the owner's order: that is how her",
+    "test ran, and the thread matters — the second request behaved differently",
+    "after the first one's reply was in the history.",
+    "",
+    "`standardFormat` builds the note format with POST /api/formats/standard, so",
+    "the model reads the same instructions the owner's practice uses.",
+    "",
+    "`laterNotes` are the same patient's sessions AFTER the one being refined —",
+    "the shape of the 2026-09-23 leak, where the model 'corrected' an older",
+    "note's Location from what its next session said. They must never reach the",
+    "note (`leaks`), and the refine prompt must never be shown them at all.",
+    "",
+    "`unchanged`, `changed`, `shortens`, `requires` and `replyRequires` are read",
+    "off the diff and the reply. The harness's standing rules for these turns:",
+    "an `applied` outcome must mean what she asked for actually happened, a",
+    "held-back section may not be reported as `applied`, and any change the",
+    "reply claims must be visible in the diff."
+  ],
+  "standardFormat": true,
+  "sections": [
+    "Location",
+    "Client presentation",
+    "Risk review",
+    "Discussion",
+    "Intervention",
+    "Out of session actions",
+    "Note for next session"
+  ],
+  "note": {
+    "Location": "In person.",
+    "Client presentation": "Reports sleep has been better this week, about six hours a night.",
+    "Risk review": "None.",
+    "Discussion": "She wanted to talk about her sister's wedding next month and seeing her ex there, which took most of the hour. We also talked a bit about work; her manager has been giving her more responsibility and she feels good about it. She asked about my weekend and we chatted for a minute, not clinically relevant.",
+    "Intervention": "Cognitive restructuring around the worry about the ex.",
+    "Out of session actions": "Write down her worries each evening before the next session.",
+    "Note for next session": "Panic attacks decreased from three a week back in August to one this week. Sessions continue weekly."
+  },
+  "scenarios": [
+    {
+      "id": "owner-refine-session",
+      "why": "The owner's 2026-09-23 refine pass, in her order, on one note: (a) 'make the discussion shorter' came back `applied` with the Discussion held back and Location rewritten from the patient's NEXT session's note; (b) 'add that she's on sertraline 20 mg' came back `applied` with the medication missing and an unrequested Discussion sentence deleted; (c) 'remove the risk review' cleared the Note for next session too and the reply invented a sertraline removal.",
+      "turns": [
+        {
+          "message": "Make the discussion shorter",
+          "shortens": ["Discussion"],
+          "unchanged": [
+            "Location",
+            "Client presentation",
+            "Risk review",
+            "Intervention",
+            "Out of session actions",
+            "Note for next session"
+          ],
+          "keeps": ["six hours"],
+          "forbids": ["Video", "went better than expected"],
+          "replyForbids": ["Video", "I corrected the Location"],
+          "outcomeHonest": true,
+          "replyBackedByDiff": true
+        },
+        {
+          "message": "Add that she's on sertraline 20 mg",
+          "requires": ["sertraline"],
+          "outcomeHonest": true,
+          "replyBackedByDiff": true,
+          "noLoss": true
+        },
+        {
+          "message": "Remove the risk review",
+          "changed": ["Risk review"],
+          "unchanged": [
+            "Location",
+            "Client presentation",
+            "Discussion",
+            "Intervention",
+            "Out of session actions",
+            "Note for next session"
+          ],
+          "replyRequires": ["Risk review"],
+          "replyForbids": ["sertraline", "panic attacks"],
+          "outcomeHonest": true,
+          "replyBackedByDiff": true
+        }
+      ]
+    },
+    {
+      "id": "owner-shorten-later-note-only",
+      "why": "The owner's exact 2026-09-23 (a) setup: the patient's only other note is the NEXT session's, and it says the session was on video. Asked to shorten the Discussion, the model 'corrected' Location from 'In person' to 'Video' out of that note. A later session is never context for an earlier one.",
+      "priorNotes": [],
+      "laterNotes": [
+        {
+          "title": "Progress note",
+          "content": "Location: Video.\n\nClient presentation: Reports mood was flat and she was tired from travelling.\n\nRisk review: None.\n\nDiscussion: Second session on video. The wedding went better than expected and she avoided her ex most of the evening. Mostly the meeting, and noticing what helped her stay calm.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session:"
+        }
+      ],
+      "turns": [
+        {
+          "message": "Make the discussion shorter",
+          "shortens": ["Discussion"],
+          "unchanged": [
+            "Location",
+            "Client presentation",
+            "Risk review",
+            "Intervention",
+            "Out of session actions",
+            "Note for next session"
+          ],
+          "keeps": ["six hours"],
+          "forbids": ["Video", "went better than expected"],
+          "replyForbids": ["Video", "I corrected the Location"],
+          "outcomeHonest": true,
+          "replyBackedByDiff": true
+        }
+      ]
+    },
+    {
+      "id": "owner-question-about-earlier-session",
+      "why": "The refine chat still reads the patient's EARLIER notes as read-only background (2026-09-21); only later ones are fenced. A question about an earlier session is answered, and nothing from it enters the note.",
+      "turns": [
+        {
+          "message": "How does this compare to last session?",
+          "noRewrite": true,
+          "forbids": ["four hours"]
+        }
+      ]
+    }
+  ],
+  "priorNotes": [
+    {
+      "title": "Progress note",
+      "content": "Location: In person.\n\nClient presentation: First session. Reported sleeping about four hours a night and a lot of worry about the wedding.\n\nRisk review: None.\n\nDiscussion: Mostly the sleep and the wedding.\n\nIntervention: Psychoeducation about sleep.\n\nOut of session actions: Keep a sleep log.\n\nNote for next session: Review the sleep log."
+    }
+  ],
+  "laterNotes": [
+    {
+      "title": "Progress note",
+      "content": "Location: Video.\n\nClient presentation: Reports mood was flat and she was tired from travelling.\n\nRisk review: None.\n\nDiscussion: Second session on video. The wedding went better than expected and she avoided her ex most of the evening. Mostly the meeting, and noticing what helped her stay calm.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session:"
+    }
+  ],
+  "leaks": [
+    "Video",
+    "went better than expected",
+    "most of the evening",
+    "Mood was flat",
+    "travelling",
+    "four hours",
+    "sleep log",
+    "Psychoeducation",
+    "First session"
+  ]
+}

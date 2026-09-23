@@ -28,9 +28,19 @@ import {
   guardPriorNoteContent,
   priorNoteNotice,
 } from '../ai/prior-note-guard.js';
-import { fitNotesNewestFirst, type FittedNote } from '../ai/prior-notes.js';
+import { fitNotesNewestFirst, notesBeforeThisOne, type FittedNote } from '../ai/prior-notes.js';
 import { buildRefinePrompt, refineBackgroundOverheadTokens } from '../ai/prompts.js';
 import { GUARD_NOTICE_OPENING, guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
+import {
+  ALREADY_THERE_NOTICE,
+  QUESTION_LEFT_ALONE,
+  UNCHANGED_NOTICE,
+  assessRefine,
+  enforceRefineScope,
+  isQuestion,
+  parseRefineRequest,
+  type RefineVerdict,
+} from '../ai/refine-request.js';
 import { RETRACTION_NOTICE_OPENING } from '../ai/retractions.js';
 import type { AiProviders, ChatTurn, LlmStats, RefineNoteRequest } from '../ai/types.js';
 import { createChatMessage, listChatMessagesForNote } from '../db/chat-messages.js';
@@ -174,7 +184,6 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     let stats: LlmStats | null = null;
     let sawRefined = false;
     const streamedRewriteSections = new Set<string>();
-    let heldBack = false;
     // An edit reply is a completion claim. Keep it out of the visible chat
     // until the guarded write has committed; otherwise the model can say it
     // fixed the note while the editor is still showing the old text. Questions
@@ -283,11 +292,37 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     // about, so the rewrite is discarded and she keeps the reply. The published
     // lock above refuses the same disguised edit; on a draft there is nothing
     // to refuse, so the note is simply left as it was.
-    if (isQuestion(input.message)) {
+    const question = isQuestion(input.message);
+    // A question the model answered with a rewrite attached is a question it
+    // read as an instruction, so its reply may well describe an edit that did
+    // not happen. The answer is hers to keep — she asked it — but the thread
+    // has to say the note was left alone (2026-09-23).
+    const attachedRewrite = question && updatedSections !== null;
+    if (question) {
       updatedSections = null;
     }
 
+    /** The lock notices and scope holds, in the order they were decided. */
+    const notices: string[] = [];
+    /** The sections a lock kept as they were, by name — for the verdict. */
+    const lockedSections: string[] = [];
+    let verdict: RefineVerdict | null = null;
+    let content: string | null = null;
+    let changed = false;
+
     if (updatedSections !== null) {
+      // The request-scope check, first of the family (2026-09-23, the owner's
+      // hands-on pass): a revision is held to what she actually asked for. A
+      // request naming a section may change that section only — "make the
+      // discussion shorter" rewrote Location instead, taking it from the
+      // patient's *later* note — and a request that only adds may not delete
+      // anything. Runs before the content locks, so a section the request never
+      // authorised is gone before anything else judges it.
+      const previous = textToSections(note.content, format.sections);
+      const intent = parseRefineRequest(input.message, format.sections);
+      const scoped = enforceRefineScope(previous, updatedSections, intent);
+      if (scoped.held.length > 0) logScoped(request, scoped.held.length);
+
       // The boilerplate lock, the published lock's sibling (found necessary
       // in M10's live pass): a revision may not gain a stock clinical
       // assertion that neither the note, her stored dictation, nor her own
@@ -296,7 +331,6 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       // provenance. Her message is an allowed source because "add that he
       // denied SI today" is her writing the note through the chat, which is
       // the whole point of the chat.
-      const previous = textToSections(note.content, format.sections);
       const sources = [
         ...listTranscriptsForNote(db, note.id).map((t) => t.raw_text),
         input.message,
@@ -308,13 +342,13 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       const bringOver = bringOverRequested(input.message);
       const guarded = guardRefinedSections(
         previous,
-        updatedSections,
+        scoped.sections,
         bringOver ? [...sources, ...priorTexts] : sources,
       );
       if (guarded.blocked.length > 0) {
-        replyText = `${replyText}\n\n${guardNotice(guarded.blocked)}`;
+        notices.push(guardNotice(guarded.blocked));
+        lockedSections.push(...guarded.blocked.map((block) => block.section));
         logBlocked(request, guarded.blocked.length);
-        heldBack = true;
       }
       // The fact lock, the third of the family (found by the refine harness,
       // 2026-09-01): a revision may not lose a number or a date that nothing
@@ -323,41 +357,49 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       // "shorter" is not permission to lose what it says.
       const kept = guardDroppedFacts(previous, guarded.sections, input.message);
       if (kept.dropped.length > 0) {
-        replyText = `${replyText}\n\n${factNotice(kept.dropped)}`;
+        notices.push(factNotice(kept.dropped));
+        lockedSections.push(...kept.dropped.map((drop) => drop.section));
         logKept(request, kept.dropped.length);
-        heldBack = true;
       }
       // The prior-note lock, the fourth: nothing only her other notes contain
       // enters this one unless she asked for it. Checked last, against what
       // the other locks let through, so a section any lock kept stays kept.
       const fenced = guardPriorNoteContent(previous, kept.sections, sources, priorTexts, input.message);
       if (fenced.carried.length > 0) {
-        replyText = `${replyText}\n\n${priorNoteNotice(fenced.carried)}`;
+        notices.push(priorNoteNotice(fenced.carried));
+        lockedSections.push(...fenced.carried.map((carry) => carry.section));
         logFenced(request, fenced.carried.length);
-        heldBack = true;
       }
       updatedSections = fenced.sections;
+
+      // Serialized through the same `sectionsToText` the drafting path uses,
+      // so a refined note is identical in shape to a freshly drafted one —
+      // which is what keeps the round trip through `textToSections` stable
+      // over many turns of revision.
+      content = sectionsToText(updatedSections, format.sections);
+      changed = content !== note.content;
+
+      // The outcome, its reason and the reply, all read off the diff and the
+      // guard results rather than off the model's claim (2026-09-23). The
+      // model reported adding a medication over a note without it and invented
+      // a removal that never happened, so its prose is not the account of the
+      // turn: this is.
+      verdict = assessRefine({
+        intent,
+        previous,
+        updated: updatedSections,
+        held: scoped.held,
+        lockedSections,
+        notices,
+        changed,
+      });
+      replyText = verdict.reply;
     }
 
-    // Serialized through the same `sectionsToText` the drafting path uses,
-    // so a refined note is identical in shape to a freshly drafted one —
-    // which is what keeps the round trip through `textToSections` stable
-    // over many turns of revision.
-    const content = updatedSections === null ? null : sectionsToText(updatedSections, format.sections);
-    const changed = content !== null && content !== note.content;
-
-    // An instruction that changed nothing gets the server's sentence, because
-    // the model's reply may well describe an edit that did not happen. Seen
-    // live on 2026-09-04: asked to shorten a second time, the model returned
-    // no revision and repeated, word for word, its earlier claim to have
-    // removed a sentence. A question is allowed to change nothing, and a
-    // revision a lock held back has already been explained.
-    if (!changed && !heldBack && !isQuestion(input.message)) {
-      replyText = `${replyText}\n\n${UNCHANGED_NOTICE}`;
-    }
+    if (attachedRewrite) replyText = `${replyText}\n\n${QUESTION_LEFT_ALONE}`;
 
     let rewritten: Note | undefined;
-    if (changed && updatedSections !== null) {
+    if (changed && content !== null) {
       // Conditional on the note still being a draft: she may have filed it in
       // the seconds the model spent thinking, and the finished rewrite must not
       // land on a published record behind the lock's back. A write that no-ops
@@ -365,36 +407,40 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       // Replace the model's claim with the same refusal used by the published
       // lock, so the thread tells the truth about the race too.
       rewritten = updateDraftNoteContent(db, note.id, content);
-      if (rewritten === undefined) replyText = PUBLISHED_REFUSAL;
+      if (rewritten === undefined) {
+        replyText = PUBLISHED_REFUSAL;
+        verdict = {
+          outcome: 'withheld',
+          reason: 'The note became published before the edit could be applied.',
+          reply: PUBLISHED_REFUSAL,
+        };
+      }
     }
 
-    if (rewritten !== undefined && updatedSections !== null) {
+    if (rewritten !== undefined && updatedSections !== null && verdict !== null) {
       // The note has been committed before this event is sent. Clients apply
       // it before releasing the assistant completion, so the visible success
       // follows the rendered note rather than racing it.
       stream.send('note-updated', {
         note: rewritten,
         empty_sections: emptySectionNames(updatedSections, format.sections),
-        outcome: 'applied',
-        outcome_reason: null,
+        outcome: verdict.outcome,
+        outcome_reason: verdict.reason,
       });
-    } else if (updatedSections !== null && !isQuestion(input.message)) {
-      const outcome = changed ? 'withheld' : heldBack ? 'withheld' : 'unchanged';
-      const outcomeReason =
-        outcome === 'withheld'
-          ? changed
-            ? 'The note became published before the edit could be applied.'
-            : 'A safety guard protected the existing note content.'
-          : 'The requested edit produced no changes.';
+    } else if (updatedSections !== null && !question && verdict !== null) {
       stream.send('note-updated', {
         note,
         empty_sections: emptySectionNames(updatedSections, format.sections),
-        outcome,
-        outcome_reason: outcomeReason,
+        outcome: verdict.outcome,
+        outcome_reason: verdict.reason,
       });
     }
 
-    if (bufferedReply !== '') stream.send('token', { text: bufferedReply });
+    // The buffered reply is the server's, not the model's: it is what the row
+    // below says, so the bubble on screen matches a reload. Only sent when the
+    // model streamed something to replace — a turn with no reply tokens at all
+    // still ends with the `message` event.
+    if (bufferedReply !== '') stream.send('token', { text: replyText });
     const assistantMessage = persistReply(db, note.id, replyText);
     stream.send('message', { message: assistantMessage });
     stream.end();
@@ -445,13 +491,20 @@ export function discussionSubheadingSource(
 export const REFINE_BACKGROUND_TOKENS = 4096;
 
 /**
- * Her other notes on this patient, newest first, fitted with Brainstorm's
+ * Her earlier notes on this patient, newest first, fitted with Brainstorm's
  * code (`fitNotesNewestFirst`). The note, the conversation and her message
  * are sized first, from the real prompt; the background gets only what is
  * left, capped above. So the note and the thread always win.
+ *
+ * **Earlier only** (2026-09-23): `notesBeforeThisOne` drops every note that
+ * came after the one being refined. The owner's pass caught the model
+ * "correcting" an older note's Location from `In person` to `Video`, which was
+ * true only of the patient's *next* session — a record cannot be built from a
+ * session that had not happened yet. The prompt says so too, so "not in the
+ * notes" is not read as "never happened".
  */
 function fitRefineBackground(db: Database, note: Note, request: RefineNoteRequest): FittedNote[] {
-  const others = listNotesForPatient(db, note.patient_id).filter((other) => other.id !== note.id);
+  const others = notesBeforeThisOne(listNotesForPatient(db, note.patient_id), note.id);
   if (others.length === 0) return [];
   const prompt = buildRefinePrompt(request);
   const fixed =
@@ -467,22 +520,31 @@ function requireNote(db: Database, id: string): Note {
   return note;
 }
 
-/** The server's own sentence when an instruction left the note as it was. */
-export const UNCHANGED_NOTICE = 'Apunta did not change the note: the revision came back with no edits.';
-
 /**
- * Everything the server appends to a reply — lock notices, the no-change
- * sentence — begins with one of these after a blank line. The thread shows
- * them to her; the model never sees them (see `recentTurns`).
+ * Every sentence the server writes into a reply begins with one of these, and
+ * each one is its own paragraph. The thread shows them to her; the model never
+ * sees them (see `recentTurns`).
+ *
+ * `Apunta left` covers the two "left alone" sentences and the request-scope
+ * holds ("Apunta left Note for next session as it was: your message asked
+ * about Discussion only"), `Apunta could not` every unmet-request sentence
+ * ("could not add …", "could not shorten …", "could not clear …"), and the
+ * no-change sentences are the whole reply on a turn that changed nothing.
+ * Since 2026-09-23 a reply can be *entirely* the server's — an edit turn's
+ * reply is written from the diff — which is why the whole paragraph is matched
+ * rather than only what follows the model's prose.
  */
 const SERVER_SENTENCES = [
   GUARD_NOTICE_OPENING,
   FACT_NOTICE_OPENING,
-  UNCHANGED_NOTICE,
-  RETRACTION_NOTICE_OPENING,
   PRIOR_NOTE_NOTICE_OPENING,
+  RETRACTION_NOTICE_OPENING,
+  UNCHANGED_NOTICE,
+  ALREADY_THERE_NOTICE,
+  QUESTION_LEFT_ALONE,
+  'Apunta could not',
 ].map((sentence) => sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-const SERVER_SENTENCE_START = new RegExp(`\\n\\n(?=(?:${SERVER_SENTENCES.join('|')}))`);
+const SERVER_SENTENCE_START = new RegExp(`^(?:${SERVER_SENTENCES.join('|')})`);
 
 /**
  * The last few turns, oldest first, with the server's sentences taken off the
@@ -499,23 +561,37 @@ const SERVER_SENTENCE_START = new RegExp(`\\n\\n(?=(?:${SERVER_SENTENCES.join('|
  * dropping the instructions and keeping the patient material.
  */
 function recentTurns(db: Database, noteId: string): ChatTurn[] {
-  return listChatMessagesForNote(db, noteId)
-    .slice(-CHAT_HISTORY_TURNS)
-    .map((message) => ({
-      role: message.role,
-      text: message.role === 'assistant' ? withoutServerSentences(message.text) : message.text,
-    }));
+  return (
+    listChatMessagesForNote(db, noteId)
+      .slice(-CHAT_HISTORY_TURNS)
+      .map((message) => ({
+        role: message.role,
+        text: message.role === 'assistant' ? withoutServerSentences(message.text) : message.text,
+      }))
+      // A turn that was nothing but the server's own sentences has no model text
+      // to carry forward, and an empty "You:" line is worse than no line.
+      .filter((turn) => turn.text !== '')
+  );
 }
 
-/** Exported for the test that proves the model never sees a notice. */
+/**
+ * The model's own prose from a reply, with every server-written paragraph
+ * taken off. Exported for the test that proves the model never sees a notice.
+ */
 export function withoutServerSentences(reply: string): string {
-  return (reply.split(SERVER_SENTENCE_START)[0] ?? reply).trimEnd();
+  return reply
+    .split(/\n{2,}/)
+    .filter((paragraph) => !SERVER_SENTENCE_START.test(paragraph.trim()))
+    .join('\n\n')
+    .trimEnd();
 }
 
-/** The prototype's test: a message with a question mark in it is a question. */
-function isQuestion(message: string): boolean {
-  return message.includes('?');
-}
+/**
+ * The prototype's test: a message with a question mark in it is a question.
+ * `isQuestion`, `UNCHANGED_NOTICE` and the outcome/reply rules live in
+ * `ai/refine-request.ts` since 2026-09-23 — the module reads her request, holds
+ * the revision to its scope and writes the reply the server can stand behind.
+ */
 
 function persistReply(db: Database, noteId: string, text: string): ChatMessage {
   return createChatMessage(db, { note_id: noteId, role: 'assistant', text, ref_quote: null });
@@ -547,4 +623,9 @@ function logKept(request: FastifyRequest, sections: number): void {
 /** A count, never the phrase: it is from another of her notes. */
 function logFenced(request: FastifyRequest, sections: number): void {
   request.log.info({ fencedSections: sections }, 'refinement partially held back by the prior-note lock');
+}
+
+/** Likewise a count: the section name is not in the log, only how many were held. */
+function logScoped(request: FastifyRequest, sections: number): void {
+  request.log.info({ scopedSections: sections }, 'refinement held to the scope of her request');
 }

@@ -336,7 +336,7 @@ export interface FakeApiOptions {
   /** Overrides for `GET /api/backup` — the Settings backup card reads this. */
   backup?: Record<string, unknown>;
   /** Structured note outcome for a refine stream, without inferring from prose. */
-  chatOutcome?: { outcome: 'applied' | 'unchanged' | 'withheld'; reason: string | null };
+  chatOutcome?: { outcome: 'applied' | 'partial' | 'unchanged' | 'withheld'; reason: string | null };
   /** Make `POST /api/notes/:id/chat` fail inside the stream, as the server does. */
   chatError?: { code: string; message: string };
   brainstormError?: { code: string; message: string };

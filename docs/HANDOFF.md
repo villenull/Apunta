@@ -69,15 +69,22 @@ speech). CI is green on every push (GitHub Actions, fake AI mode).
 
 Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
 
-- **Four server-side locks on the refine chat**, because the 4B ignores
+- **Four server-side locks on the refine chat, and a request-scope check
+  above them**, because the 4B ignores
   prompt rules under a direct command and lies about provenance: the
   published lock, the boilerplate lock (`server/src/ai/refine-guard.ts`),
   the fact lock (`server/src/ai/fact-guard.ts`) and, since 2026-09-21, the
   prior-note lock (`server/src/ai/prior-note-guard.ts`). Each appends a
   sentence to the reply; those sentences are stripped from the history the
-  model sees.
-- **The refine chat reads her other notes** (2026-09-21, owner): the
-  patient's other notes, newest first, go in as fenced READ-ONLY background
+  model sees. Since 2026-09-23 the request itself is read first
+  (`server/src/ai/refine-request.ts`): a revision is held to the sections her
+  message named, an addition may not delete, the outcome and the reply are
+  read off the diff rather than off the model's claim, and an edit turn's
+  reply is written by the server. See
+  `docs/eval-reports/2026-09-23-refine-fix.md`.
+- **The refine chat reads her earlier notes** (2026-09-21, owner): the
+  patient's notes from sessions *before* the one being refined, newest first,
+  go in as fenced READ-ONLY background
   (before the note, so Ollama can reuse the prefix; at most 4,096 estimated
   tokens, and only what the note, the thread and her message leave of the
   refine budget — fitted by Brainstorm's `ai/prior-notes.ts`). The rule is in
@@ -85,7 +92,11 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   holds back any revised section that gains a fact or a five-word run only
   another note contains, unless her message asks to bring something over
   from another session ("bring … from last session"). Measured on the real
-  4B: `docs/eval-reports/2026-09-21-refine-background.md`.
+  4B: `docs/eval-reports/2026-09-21-refine-background.md`. **Earlier only
+  since 2026-09-23**: a later session is never context for an earlier note
+  (the owner's pass caught the model "correcting" an older note's Location
+  from its *next* session), so `notesBeforeThisOne` does not offer them and
+  the prompt says why they are absent.
 - **Her progress note is the default** (2026-09-22, owner): `Progress note`
   with Location, Client presentation, Risk review, Discussion, Intervention,
   Out of session actions, Note for next session, and the drafting

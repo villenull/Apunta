@@ -45,6 +45,27 @@ export function toPriorNote(note: Note): FittedNote {
   return { id: note.id, title: note.title, date: instantToLocalDay(note.created_at), text: note.content };
 }
 
+/**
+ * The notes from sessions *before* the one being refined, newest first.
+ *
+ * `candidates` is the patient's notes as `listNotesForPatient` returns them —
+ * newest first, including the note being refined. Everything after that note
+ * in the list is earlier than it; everything before it is later.
+ *
+ * The refine chat reads the patient's earlier sessions so she can ask how this
+ * one compares with the last (2026-09-21). It must never read a **later** one:
+ * a record of a session cannot be built from a session that had not happened
+ * yet, and on 2026-09-23 the model did exactly that — asked to shorten an
+ * older note, it "corrected" the note's Location from `In person` to `Video`,
+ * which was true only of the patient's next session. Ordering by list position
+ * rather than by comparing timestamps keeps this consistent with the order the
+ * UI shows, and covers notes created in the same millisecond.
+ */
+export function notesBeforeThisOne(candidates: readonly Note[], noteId: string): Note[] {
+  const at = candidates.findIndex((candidate) => candidate.id === noteId);
+  return at === -1 ? [] : candidates.slice(at + 1);
+}
+
 /** `candidates` must be newest first, as `listNotesForPatient` returns them. */
 export function fitNotesNewestFirst(candidates: readonly Note[], room: number): FittedNotes {
   const notes: FittedNote[] = [];

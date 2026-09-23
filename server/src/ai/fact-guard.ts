@@ -139,7 +139,16 @@ const WEEKDAYS: Readonly<Record<string, number>> = {
  * Her request asks, in so many words, to take something out. The lock stands
  * down for the turn: she is doing the removing, and it exists for the turns
  * where the model does it on its own.
+ *
+ * Exported since 2026-09-23 because the request-scope check
+ * (`refine-request.ts`) has to read the same signal: a request that removes is
+ * a request whose section may shrink, and the two must never disagree about
+ * what "remove" means.
  */
+export function removalRequested(message: string): boolean {
+  return REMOVAL_REQUEST.test(message);
+}
+
 const REMOVAL_REQUEST =
   /\b(?:remove|delete|drop|omit|erase|scrap|strike|get rid of|take (?:that |this |it |them )?out|leave (?:that |this |it |them )?out)\b/i;
 
@@ -428,6 +437,15 @@ export function medicationTokens(text: string): Map<string, string> {
  * counts; a bare capitalised word does not, because at that breadth the lock
  * would guess and revert edits she asked for. The token is the given name,
  * lowercased, so a title added or dropped is not itself a loss.
+ *
+ * The relationship patterns are case-insensitive so "Her Son Michael" matches
+ * as well as "her son Michael" — which is exactly why the capture is checked
+ * for a capital letter in `nameTokens` rather than by the pattern: with the
+ * `i` flag, `[A-Z]` matches any letter, and "her manager has been giving her
+ * more responsibility" became the name `has`. Found on 2026-09-23: that false
+ * name made the fact lock hold back a shortening the owner had asked for, and
+ * the notice under the reply read "the change would have lost \"manager
+ * has\"".
  */
 const TITLED_NAME = /\b(?:Dr|Mr|Mrs|Ms|Miss|Prof|Sr|Sra|Srta|Dra|Fr|Rev)\.?\s+([A-Z][a-zà-ÿ]+)\b/g;
 const RELATED_NAME =
@@ -435,9 +453,13 @@ const RELATED_NAME =
 const SPANISH_RELATED_NAME =
   /\b(?:su|el|la)\s+(?:hijo|hija|esposo|esposa|pareja|madre|padre|hermano|hermana|terapeuta|médic[oa]|amig[oa])(?:'s)?[,:]?\s+(?:llamad[oa]\s+)?([A-ZÁÉÍÓÚÑ][a-záéíóúñ]+)\b/g;
 
+/** A name is a capitalised word; the `i`-flagged patterns above cannot say so themselves. */
+const CAPITALISED = /^[A-ZÀ-Þ]/;
+
 export function nameTokens(text: string): Map<string, string> {
   const found = new Map<string, string>();
   const add = (given: string, phrase: string): void => {
+    if (!CAPITALISED.test(given)) return;
     const key = `name:${given.toLowerCase()}`;
     if (!found.has(key)) found.set(key, phrase.trim());
   };
@@ -529,7 +551,7 @@ export interface FactGuardResult {
  * revised note, unless her message names them or asks for a removal.
  */
 export function guardDroppedFacts(previous: Sections, updated: Sections, message: string): FactGuardResult {
-  if (REMOVAL_REQUEST.test(message)) return { sections: { ...updated }, dropped: [] };
+  if (removalRequested(message)) return { sections: { ...updated }, dropped: [] };
 
   const survives = new Set<string>();
   for (const text of Object.values(updated))

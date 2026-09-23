@@ -1,8 +1,15 @@
 # Refine chat — adversarial requests
 
-Seventeen turns across thirteen scenarios, sent through the real refine
-endpoint by `npm run check:refine`, with what each request may and may not do
-to the note.
+Two fixture sets, both sent through the real refine endpoint by
+`npm run check:refine`, with what each request may and may not do to the note:
+
+- `scenarios.json` — the SOAP-shaped adversarial turns (seventeen turns across
+  thirteen scenarios) written after the 2026-08-28 → 09-04 failures.
+- `owner-progress.json` — the owner's own seven-section progress format, shaped
+  after her hands-on pass of 2026-09-23
+  (`docs/eval-reports/2026-09-23-owner-tests-2-3.md`): one note, three requests
+  in her order, plus the patient's *later* session as a note that must never
+  reach it.
 
 ## Why this exists
 
@@ -18,6 +25,9 @@ Three faults were found in it inside one week, every one by a person clicking:
 | "More clinical" added "alert and oriented" and "mood congruent with affect" to a note containing neither, while the reply claimed nothing was added | 2026-08-28 |
 | "What's missing?" rewrote a note nobody asked it to change, after two edit turns had set the direction | 2026-08-28 |
 | "Move the walking to Out of session actions" copied it there and left the original, then explained the empty section as having no content | 2026-08-30 |
+| "Make the discussion shorter" came back `applied` with the Discussion untouched, because Location had been rewritten from the patient's **next** session's note | 2026-09-23 |
+| "Add that she's on sertraline 20 mg" came back `applied` with no sertraline in the note, while an unrequested Discussion sentence was deleted | 2026-09-23 |
+| "Remove the risk review" cleared the Note for next session too, and the reply invented a sertraline removal | 2026-09-23 |
 
 Each was fixed, and each fix was then held up by a unit test asserting the
 prompt contains the right sentence. That proves the wording exists. It does
@@ -58,6 +68,28 @@ The checks are few and mechanical, each tied to an incident above:
   appends "Apunta did not change the note" to any instruction that left the
   note as it was, because the model's reply may describe an edit that never
   happened (seen live, 2026-09-04: the turn after a held-back shortening).
+- **outcomeHonest** — the outcome event must mean what she asked for actually
+  happened. When `applied`, every `shortens` / `changed` / `unchanged` /
+  `requires` / `moves` expectation of the turn is a failure if it does not
+  hold; when not `applied`, the reply has to say so (one of the server's own
+  sentences), and a shortfall is printed as a note about the model rather than
+  as a failure of the app. It also fails an `applied` outcome whose own reply
+  reports a held-back section, which is what "applied" meant before
+  2026-09-23.
+- **replyBackedByDiff** — a reply that claims a change (added / removed /
+  shortened / expanded), naming a section or not, must be backed by the diff.
+  This is the check for the false completions above: the reply said it had
+  removed "the specific panic attack statistics from Note for next session"
+  while the server had kept that section as it was.
+- **noLoss** — a request that only adds may not take anything out: no section
+  may lose a content word, judged by the server's own tokeniser
+  (`ai/refine-request.ts`) so the harness and the app agree on the meaning.
+- **shortens / changed / unchanged** — read off the section diff, per turn.
+- **laterNotes** — a fixture may give the patient sessions *after* the one
+  being refined. Nothing from them may reach the note, and since 2026-09-23
+  the refine prompt is not shown them at all (asserted in
+  `server/src/routes/chat.test.ts`, which can see the prompt; this harness
+  only sees the note and the reply).
 
 ## All content is fabricated
 
@@ -66,16 +98,22 @@ transparently synthetic names. No sentence came from a real session.
 
 ## Running it
 
-Needs a running Apunta on a real model. It creates its own note format, so it
-does not care which format the practice uses and does not touch it:
+Needs a running Apunta on a real model. The SOAP set creates its own note
+format, so it does not care which format the practice uses and does not touch
+it; the owner set builds the standard progress format
+(`POST /api/formats/standard`), so the model reads the instructions her
+practice uses:
 
 ```sh
 npm run check:refine
 APUNTA_CHECK_URL=http://127.0.0.1:7720 npm run check:refine
+npm run check:refine -- --only owner-refine-session
 ```
 
-Seventeen model round trips, so a few minutes on a small local model. It
+Twenty-two model round trips, so a few minutes on a small local model. It
 prints every reply, because the flags are the smaller half of what it is for.
+It exits 0 with flags on screen, like `check:format`: flags are a prompt to
+read the turn above, not a verdict.
 
 ## Closed: shortening dropped a fact
 
@@ -124,3 +162,32 @@ than a quantity), negations and names (they need a reader), and a shortening
 that rewrites "every two weeks" as "fortnightly", which reads as a loss and
 will hold the section back until she says the word. Her review before
 publishing is still the last line, as it was before.
+
+## Closed: the reply told a story the note did not
+
+The owner's pass on 2026-09-23 (`docs/eval-reports/2026-09-23-refine-fix.md`)
+found the other half of the same problem. The locks stopped the *note* from
+gaining or losing the wrong thing; nothing stopped the *chat* from saying it
+had done what it had not. "Add that she's on sertraline 20 mg" came back
+`applied`, with no sertraline in the note, over the reply "I added the
+medication information you requested"; "remove the risk review" produced "I
+also removed the mention of sertraline" over a note that had never contained
+it; and "make the discussion shorter" reported `applied` while its own reply
+admitted the Discussion had been kept.
+
+Two changes closed it. The outcome is computed from the section diff against
+what her message asked for (`server/src/ai/refine-request.ts`) instead of from
+"did the note change", and an edit turn's reply is written by the server from
+that diff — so the prose is the account of the turn, and the model's own
+account of it is not shown. A question still keeps the model's answer, because
+a question has no diff to contradict; a question that came back with a rewrite
+attached gets one sentence saying the note was left alone.
+
+The request itself is read first, above the four locks: a revision may change
+only the sections her message names (a move may also reach the section the text
+left), and a request that only adds may not delete. The one thing that is
+*not* guarded is the risk section against her own explicit instruction —
+"remove the risk review" is honoured, exactly and only, because the fact lock's
+documented way through has always been that she is the clinician and a request
+that removes something in so many words is her editing the note herself
+(`docs/decisions.md`, 2026-09-23).

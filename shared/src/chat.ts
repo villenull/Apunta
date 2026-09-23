@@ -79,6 +79,14 @@ export type ChatMessageEvent = z.infer<typeof ChatMessageEventSchema>;
  * as it stands and `outcome` says why nothing moved, so a client never has to
  * infer an edit from the model's prose.
  *
+ * Since 2026-09-23 the outcome is read off the actual section diff against
+ * what her message asked for (`server/src/ai/refine-request.ts`), never off
+ * the model's claim: `applied` means the change she asked for is in the note;
+ * `partial` means it went in with something held back; `withheld` means the
+ * note did not change, or nothing she asked for got through; `unchanged`
+ * means nothing changed and nothing was held back. `outcome_reason` carries
+ * the held-back reasons, so a `partial` or `withheld` turn always says why.
+ *
  * Never sent for a question: the answer stands alone and the note is untouched.
  */
 export const ChatNoteUpdatedEventSchema = z.object({
@@ -86,7 +94,7 @@ export const ChatNoteUpdatedEventSchema = z.object({
   /** Sections whose body came back blank, in format order. */
   empty_sections: z.array(z.string()),
   /** The server's authoritative result, separate from the model's prose. */
-  outcome: z.enum(['applied', 'unchanged', 'withheld']).default('applied'),
+  outcome: z.enum(['applied', 'partial', 'unchanged', 'withheld']).default('applied'),
   outcome_reason: z.string().nullable().default(null),
 });
 export type ChatNoteUpdatedEvent = z.infer<typeof ChatNoteUpdatedEventSchema>;

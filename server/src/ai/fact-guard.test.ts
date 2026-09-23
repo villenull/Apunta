@@ -232,6 +232,30 @@ describe('guardDroppedFacts', () => {
       'med:walking',
     );
   });
+
+  /**
+   * Found by the owner's hands-on pass, 2026-09-23. The relationship patterns
+   * are case-insensitive, and with the `i` flag `[A-Z]` matches any letter, so
+   * the word after a relationship noun became a name whatever it was: "her
+   * manager has been giving her more responsibility" held the name `has`, and
+   * "her sister's wedding next month" the name `wedding`. Asked to make the
+   * Discussion shorter, the lock then kept the whole section and the notice
+   * under the reply read "the change would have lost \"manager has\"" — a
+   * shortening she had asked for, refused for a word that is not a name.
+   */
+  it('does not read an ordinary word after a relationship noun as a name', () => {
+    expect([...nameTokens('her manager has been giving her more responsibility').keys()]).toEqual([]);
+    expect([...nameTokens("her sister's wedding next month").keys()]).toEqual([]);
+    expect([...nameTokens('her manager Hasina approved the request').keys()]).toEqual(['name:hasina']);
+
+    const before = {
+      Discussion: 'We also talked about work; her manager has been giving her more responsibility.',
+    };
+    const shortened = { Discussion: 'We talked about work.' };
+    const result = guardDroppedFacts(before, shortened, 'Make the discussion shorter');
+    expect(result.dropped).toEqual([]);
+    expect(result.sections).toEqual(shortened);
+  });
 });
 
 describe('factNotice', () => {

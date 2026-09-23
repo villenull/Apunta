@@ -254,7 +254,9 @@ test.describe('the workspace', () => {
 
     await page.getByTestId('chat-input').fill('Add something about sleep');
     await page.getByTestId('chat-send').click();
-    await expect(thread).toContainText('Added that to the Subjective section.');
+    // The reply is the server's own account of the diff since 2026-09-23, not
+    // the model's prose, so it names the section that actually changed.
+    await expect(thread).toContainText('I expanded the Subjective section.');
     await expect(body).toContainText('Also noted improved appetite this week.');
 
     // --- The whole conversation is still there after a reload -------------

@@ -398,23 +398,33 @@ export function buildRefinePrompt(request: RefineNoteRequest): ChatPrompt {
 }
 
 /**
- * The refine chat's background (2026-09-21): her other notes on this patient,
- * so she can ask how this session compares with the last. Faithfulness-
- * critical — the refine call edits a clinical record, and fabrication is its
- * first failure — so the background is fenced, labelled read-only at both
- * ends, stated in the system block, and restated beside her message, where a
- * rule survives on this model and a rule in the system block alone does not
- * (the tone lesson of M10). The server's prior-note lock
+ * The refine chat's background (2026-09-21): her **earlier** notes on this
+ * patient, so she can ask how this session compares with the last.
+ * Faithfulness-critical — the refine call edits a clinical record, and
+ * fabrication is its first failure — so the background is fenced, labelled
+ * read-only at both ends, stated in the system block, and restated beside her
+ * message, where a rule survives on this model and a rule in the system block
+ * alone does not (the tone lesson of M10). The server's prior-note lock
  * (`prior-note-guard.ts`) stands behind all of it.
+ *
+ * **Earlier only** (2026-09-23): the background is the notes from sessions
+ * *before* the one being refined, never a later one. On 2026-09-23 the owner
+ * asked a two-session patient's older note to be shortened and the model
+ * "corrected" its Location from `In person` to `Video` — taken from the
+ * *newer* note of the same patient. A record of a session cannot be built from
+ * a session that had not happened yet, so the fitting code
+ * (`notesBeforeThisOne`) does not offer later notes at all, and the model is
+ * told why they are absent so "not in the notes" is not read as "never
+ * happened".
  *
  * Every one of these strings appears only when there is background to fence:
  * with none, the refine prompt is byte for byte what it was before.
  */
 export const REFINE_BACKGROUND_RULE =
-  'Her other notes on this patient may appear before the note, fenced as BACKGROUND. They are read-only: a record of other sessions, not part of the note you are revising. Use them to answer her questions about other sessions — what changed, what was agreed — and say which note, by date, an answer comes from. Nothing from them goes into this note — not a fact, a name, a number, a finding or a sentence — unless her message asks you to bring that specific thing over. A section with nothing from this session stays empty even when an earlier note has something that would fill it.';
+  'Her earlier notes on this patient — sessions before this one, never a later session — may appear before the note, fenced as BACKGROUND. They are read-only: a record of other sessions, not part of the note you are revising. Use them to answer her questions about those sessions — what changed, what was agreed — and say which note, by date, an answer comes from. Nothing from them goes into this note — not a fact, a name, a number, a finding or a sentence — unless her message asks you to bring that specific thing over. A section with nothing from this session stays empty even when an earlier note has something that would fill it.';
 
 export const REFINE_BACKGROUND_START =
-  'BACKGROUND — READ ONLY. Her other notes on this patient, newest first. They are not the note you are revising, and nothing in them goes into it unless she asks for that exact thing.';
+  'BACKGROUND — READ ONLY. Her earlier notes on this patient, newest first. They are not the note you are revising, and nothing in them goes into it unless she asks for that exact thing.';
 
 export const REFINE_BACKGROUND_END = 'END OF BACKGROUND. Everything above this line is read-only.';
 
@@ -425,6 +435,7 @@ export function refineBackgroundBlock(notes: readonly PriorNoteInput[], noteDate
   return [
     REFINE_BACKGROUND_START,
     ...(noteDate === undefined ? [] : [`The note you are revising is dated ${noteDate}.`]),
+    'Only earlier sessions are listed. A session that came after this one is not shown and this note takes nothing from it, whatever the later note says.',
     ...notes.flatMap((note) => ['', priorNoteBlock(note)]),
     '',
     REFINE_BACKGROUND_END,

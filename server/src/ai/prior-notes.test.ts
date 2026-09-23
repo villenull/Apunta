@@ -6,6 +6,7 @@ import {
   DRAFTING_PRIOR_NOTE_COUNT,
   fitDraftingPriorNotes,
   fitNotesNewestFirst,
+  notesBeforeThisOne,
   priorNoteTokens,
   toPriorNote,
 } from './prior-notes.js';
@@ -71,6 +72,29 @@ describe('fitNotesNewestFirst', () => {
     expect(fitted.omittedIds).toHaveLength(1);
   });
 });
+describe('notesBeforeThisOne', () => {
+  const older = note(2, 'Subjective: Earlier session.');
+  const current = note(1, 'Subjective: This session.');
+  const later = note(0, 'Subjective: The next session, which had not happened yet.');
+  const candidates = [later, current, older];
+
+  it('takes the notes after the one being refined, newest first, and never a later one', () => {
+    expect(notesBeforeThisOne(candidates, current.id).map((item) => item.id)).toEqual([older.id]);
+    expect(notesBeforeThisOne(candidates, older.id)).toEqual([]);
+  });
+
+  it('drops every note that came after the one being refined', () => {
+    // The failure this exists for: asked to shorten the older note, the model
+    // "corrected" its Location from what the later note said.
+    const earlier = notesBeforeThisOne(candidates, current.id);
+    expect(earlier.map((item) => item.text)).not.toContain(later.content);
+  });
+
+  it('offers nothing for a note that is not in the list', () => {
+    expect(notesBeforeThisOne(candidates, '0198c0f0-0000-7000-8000-000000000fff')).toEqual([]);
+  });
+});
+
 describe('fitDraftingPriorNotes', () => {
   it('selects only published notes, newest first, up to the shared count cap', () => {
     const candidates = Array.from({ length: DRAFTING_PRIOR_NOTE_COUNT + 2 }, (_, index) => {

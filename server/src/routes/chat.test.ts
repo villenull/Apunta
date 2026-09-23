@@ -22,12 +22,8 @@ import { REFINE_PROMPT_TOKENS } from '../ai/ollama.js';
 import { buildRefinePrompt, REFINE_BACKGROUND_END, REFINE_BACKGROUND_REMINDER } from '../ai/prompts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 import { recordingProviders } from '../test/providers.js';
-import {
-  REFINE_BACKGROUND_TOKENS,
-  UNCHANGED_NOTICE,
-  discussionSubheadingSource,
-  withoutServerSentences,
-} from './chat.js';
+import { ALREADY_THERE_NOTICE, QUESTION_LEFT_ALONE, UNCHANGED_NOTICE } from '../ai/refine-request.js';
+import { REFINE_BACKGROUND_TOKENS, discussionSubheadingSource, withoutServerSentences } from './chat.js';
 
 /**
  * `POST /api/notes/:id/chat` against a real SQLite file and the fake provider.
@@ -138,12 +134,14 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(names.lastIndexOf('note-updated')).toBeLessThan(names.lastIndexOf('message'));
     expect(names).not.toContain('error');
 
-    // The reply streams as prose, never as the JSON the model actually emits.
+    // The reply streams as prose, never as the JSON the model actually emits,
+    // and since 2026-09-23 the prose is the server's — written from the diff,
+    // so the bubble on screen cannot claim an edit the note does not have.
     const streamed = events
       .filter((event) => event.name === 'token')
       .map((event) => String(event.data['text']))
       .join('');
-    expect(streamed).toBe('Shortened the Plan section.');
+    expect(streamed).toBe('I shortened the Plan section.');
     expect(streamed).not.toContain('{"');
 
     const updated = noteUpdated(events)?.data['note'] as Note;
@@ -160,7 +158,8 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     const thread = listChatMessagesForNote(harness.db, note.id);
     expect(thread.map((message) => message.role)).toEqual(['user', 'assistant']);
     expect(thread[0]?.text).toBe('Make the plan shorter');
-    expect(thread[1]?.text).toBe('Shortened the Plan section.');
+    // What streamed is exactly what was persisted.
+    expect(thread[1]?.text).toBe('I shortened the Plan section.');
   });
 
   it('waits for a delayed provider, then emits the committed note before edit completion', async () => {
@@ -1150,6 +1149,282 @@ describe('POST /api/notes/:id/chat over a real connection', () => {
       expect(String((final?.data['note'] as Note).content)).toContain(
         'Plan: Continue weekly sessions and grounding exercises.',
       );
+    } finally {
+      await local.close();
+    }
+  });
+});
+
+/**
+ * The request, the diff and the reply — the owner's 2026-09-23 pass.
+ *
+ * Every lock below these tests judges the *content* of a revision. These judge
+ * the revision against what she asked for, and the reply against the diff:
+ * `applied` has to mean the change she asked for is in the note, an edit that
+ * names one section may not change another, a request that only adds may not
+ * delete, and the reply may not claim a change the note does not have.
+ *
+ * A fixed provider rather than the fake's canned logic, because what is under
+ * test here is the route's own rules, not the model's behaviour.
+ */
+describe('POST /api/notes/:id/chat — the request, the diff and the reply', () => {
+  const OWNER_SECTIONS = [
+    'Location',
+    'Client presentation',
+    'Risk review',
+    'Discussion',
+    'Intervention',
+    'Out of session actions',
+    'Note for next session',
+  ];
+  const OWNER_NOTE = [
+    'Location: In person.',
+    'Client presentation: Reports sleep has been better this week, about six hours a night.',
+    'Risk review: None.',
+    'Discussion: She wanted to talk about her sister’s wedding next month, which took most of the hour. We also talked about work; her manager has been giving her more responsibility.',
+    'Intervention: Cognitive restructuring around the worry about the ex.',
+    'Out of session actions: Write down her worries each evening.',
+    'Note for next session: Panic attacks decreased from three a week in August to one this week.',
+  ].join('\n\n');
+
+  const STATS: LlmStats = {
+    model: 'fake-llm',
+    promptTokens: 0,
+    outputTokens: 0,
+    evalNanos: 0,
+    loadNanos: 0,
+    doneReason: 'stop',
+    attempts: 1,
+  };
+
+  /** A local app whose refine answer is fixed: reply and revision are the test's. */
+  async function fixedApp(
+    reply: string,
+    revise: (current: Sections) => Sections,
+    note = OWNER_NOTE,
+  ): Promise<{ local: TestApp; note: Note }> {
+    class FixedProvider extends FakeLlmProvider {
+      override async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+        const current = textToSections(request.noteText, request.sections);
+        yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+        yield { type: 'refined', reply, updatedSections: revise(current), stats: STATS };
+      }
+    }
+
+    const local = await createTestApp({
+      providers: { llm: new FixedProvider(), stt: new FakeSttProvider() },
+    });
+    const own = await seedPatient(local.app, 'John Smith');
+    const localFormat = await seedFormat(local.app, { sections: OWNER_SECTIONS });
+    const seeded = await seedNote(local.app, own.id, localFormat.id, note);
+    return { local, note: seeded };
+  }
+
+  it('holds back a section the request never named, and says which', async () => {
+    // 2026-09-23 (a): "make the discussion shorter" rewrote Location, taking
+    // "Video" from the patient's next session's note.
+    const { local, note } = await fixedApp('Shortened the Discussion.', (current) => ({
+      ...current,
+      Location: 'Video.',
+      Discussion: 'The wedding, mostly.',
+    }));
+    try {
+      const { events } = await chat(local.app, note.id, { message: 'Make the discussion shorter' });
+
+      const stored = getNote(local.db, note.id);
+      expect(stored?.content).toContain('Location: In person.');
+      expect(stored?.content).not.toContain('Video');
+      expect(stored?.content).toContain('Discussion: The wedding, mostly.');
+
+      const final = noteUpdated(events);
+      expect(final?.data['outcome']).toBe('partial');
+      expect(String(final?.data['outcome_reason'])).toBe(
+        'Apunta left Location as it was: your message asked about Discussion only.',
+      );
+      // The reply names what changed and what was put back — never the model's
+      // own account of the turn.
+      expect(assistantReply(events)).toContain('I shortened the Discussion section.');
+      expect(assistantReply(events)).toContain('Apunta left Location as it was');
+      expect(assistantReply(events)).not.toContain('Shortened the Discussion.');
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('does not let a request that only adds take anything out', async () => {
+    // 2026-09-23 (b): "add that she's on sertraline 20 mg" deleted a
+    // Discussion sentence instead of adding the medication.
+    const { local, note } = await fixedApp('Added the medication.', (current) => ({
+      ...current,
+      Discussion: 'She wanted to talk about her sister’s wedding next month, which took most of the hour.',
+    }));
+    try {
+      const { events } = await chat(local.app, note.id, {
+        message: "Add that she's on sertraline 20 mg",
+      });
+
+      const stored = getNote(local.db, note.id);
+      expect(stored?.content).toContain('her manager has been giving her more responsibility');
+      expect(stored?.content).not.toContain('sertraline');
+      expect(noteUpdated(events)?.data['outcome']).toBe('withheld');
+      expect(assistantReply(events)).toContain('you asked only to add');
+      expect(assistantReply(events)).not.toContain('Added the medication.');
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('is not applied when the medication she asked for never arrived, and says so', async () => {
+    const { local, note } = await fixedApp(
+      'I added the medication information you requested.',
+      (current) => ({
+        ...current,
+      }),
+    );
+    try {
+      const { events } = await chat(local.app, note.id, {
+        message: "Add that she's on sertraline 20 mg",
+      });
+
+      const final = noteUpdated(events);
+      // Nothing was applied, and what she asked for is what was not applied —
+      // `withheld`, with the reason naming it, rather than a bare "unchanged".
+      expect(final?.data['outcome']).toBe('withheld');
+      expect(String(final?.data['outcome_reason'])).toBe(
+        'Apunta could not add "sertraline": the revision came back without it.',
+      );
+      const reply = assistantReply(events);
+      // The model's false completion never reaches her.
+      expect(reply).not.toContain('I added the medication information');
+      expect(reply).toBe('Apunta could not add "sertraline": the revision came back without it.');
+      expect(getNote(local.db, note.id)?.content).toBe(OWNER_NOTE);
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('reports an addition that landed, in her own words', async () => {
+    const { local, note } = await fixedApp('Added it.', (current) => ({
+      ...current,
+      Discussion: `${current['Discussion'] ?? ''} She reports taking sertraline 20 mg.`,
+    }));
+    try {
+      const { events } = await chat(local.app, note.id, {
+        message: "Add that she's on sertraline 20 mg",
+      });
+
+      expect(noteUpdated(events)?.data['outcome']).toBe('applied');
+      expect(noteUpdated(events)?.data['outcome_reason']).toBeNull();
+      expect(assistantReply(events)).toBe('I expanded the Discussion section and added "sertraline".');
+      expect(getNote(local.db, note.id)?.content).toContain('sertraline 20 mg');
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('clears exactly the section she named, and reports the one it put back', async () => {
+    // 2026-09-23 (c): "remove the risk review" cleared the Note for next
+    // session too, and the reply invented a medication removal.
+    const { local, note } = await fixedApp('Removed it.', (current) => ({
+      ...current,
+      'Risk review': '',
+      'Note for next session': '',
+    }));
+    try {
+      const { events } = await chat(local.app, note.id, { message: 'Remove the risk review' });
+
+      const stored = getNote(local.db, note.id);
+      expect(stored?.content).toContain('Risk review:');
+      expect(stored?.content).not.toContain('Risk review: None.');
+      expect(stored?.content).toContain('Panic attacks decreased from three a week in August');
+
+      expect(noteUpdated(events)?.data['outcome']).toBe('partial');
+      const reply = assistantReply(events);
+      expect(reply).toContain('I cleared the Risk review section.');
+      expect(reply).toContain('Apunta left Note for next session as it was');
+      expect(reply).not.toContain('Removed it.');
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('says the note already said it rather than reporting a silent no-op', async () => {
+    const already = OWNER_NOTE.replace(
+      'Client presentation: Reports sleep has been better this week, about six hours a night.',
+      'Client presentation: Reports sleep has been better this week. On sertraline 20 mg.',
+    );
+    const { local, note } = await fixedApp('It is already there.', (current) => ({ ...current }), already);
+    try {
+      const { events } = await chat(local.app, note.id, {
+        message: "Add that she's on sertraline 20 mg",
+      });
+
+      expect(noteUpdated(events)?.data['outcome']).toBe('unchanged');
+      expect(String(noteUpdated(events)?.data['outcome_reason'])).toBe(
+        'The note already said what you asked for.',
+      );
+      expect(assistantReply(events)).toBe(ALREADY_THERE_NOTICE);
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('corrects a question that came back with a rewrite attached', async () => {
+    const { local, note } = await fixedApp('Shortened the Plan section.', (current) => ({
+      ...current,
+      'Note for next session': '',
+    }));
+    try {
+      const { events } = await chat(local.app, note.id, { message: 'Can you shorten the note?' });
+
+      // The rewrite is discarded, her answer is kept, and the thread says the
+      // note was left alone.
+      expect(events.map((event) => event.name)).not.toContain('note-updated');
+      expect(getNote(local.db, note.id)?.content).toBe(OWNER_NOTE);
+      expect(assistantReply(events)).toContain('Shortened the Plan section.');
+      expect(assistantReply(events)).toContain(QUESTION_LEFT_ALONE);
+    } finally {
+      await local.close();
+    }
+  });
+
+  it('never offers the model a note from a later session', async () => {
+    const providers = recordingProviders();
+    const local = await createTestApp({ providers });
+    try {
+      const own = await seedPatient(local.app, 'John Smith');
+      const localFormat = await seedFormat(local.app, { sections: OWNER_SECTIONS });
+      const earlier = await seedNote(
+        local.app,
+        own.id,
+        localFormat.id,
+        'Location: In person.\n\nDiscussion: First session.',
+      );
+      const current = await seedNote(local.app, own.id, localFormat.id, OWNER_NOTE);
+      const later = await seedNote(
+        local.app,
+        own.id,
+        localFormat.id,
+        'Location: Video.\n\nDiscussion: Second session on video.',
+      );
+      const pin = (target: Note, day: string): void => {
+        local.db
+          .prepare('UPDATE notes SET created_at = ? WHERE id = ?')
+          .run(`2026-09-${day}T09:00:00.000Z`, target.id);
+      };
+      pin(earlier, '04');
+      pin(current, '11');
+      pin(later, '18');
+
+      await chat(local.app, current.id, { message: 'Make it shorter' });
+
+      const sent = providers.llm.refines.at(-1);
+      expect(sent?.priorNotes?.map((prior) => prior.text)).toEqual([
+        'Location: In person.\n\nDiscussion: First session.',
+      ]);
+      // The later session is not context for this one: a record cannot be
+      // built from a session that had not happened yet.
+      expect(sent?.priorNotes?.some((prior) => prior.text.includes('Second session on video'))).toBe(false);
     } finally {
       await local.close();
     }
