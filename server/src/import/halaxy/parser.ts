@@ -87,7 +87,7 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
   if (notes.length === 0) {
     throw new HalaxyParseError('missing_sessions', 'The PDF has dated headings but no session text.');
   }
-  return { fileName, patientName, notes, warnings };
+  return { fileName, patientName, existingPatients: [], notes, warnings };
 }
 
 function cleanLines(text: string): string[] {

@@ -2,6 +2,7 @@ export {
   MAX_HALAXY_FILES,
   MAX_HALAXY_FILE_BYTES,
   MAX_HALAXY_TOTAL_BYTES,
+  HalaxyExistingPatientSchema,
   HalaxyPreviewNoteSchema,
   HalaxyPreviewPatientSchema,
   HalaxyPreviewResponseSchema,
@@ -10,6 +11,7 @@ export {
   HalaxyImportResponseSchema,
 } from './halaxy.js';
 export type {
+  HalaxyExistingPatient,
   HalaxyPreviewNote,
   HalaxyPreviewPatient,
   HalaxyPreviewResponse,

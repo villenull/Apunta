@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { listNotesForPatient, setNotePublished } from '../db/notes.js';
 import { getPatient, listPatients } from '../db/patients.js';
 import { listTranscriptsForNote } from '../db/transcripts.js';
-import { createTestApp, seedFormat, seedPatient, type TestApp } from '../test/harness.js';
+import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 
 /**
  * The automatic import, end to end through the API, on a fabricated export
@@ -256,12 +256,17 @@ describe('undoing an import', () => {
     expect(getPatient(harness.db, john.id)).toBeDefined();
   });
 
-  it('never touches a patient she already had', async () => {
+  it('matches an existing patient regardless of case or whitespace and preserves her chart on undo', async () => {
     const maria = await seedPatient(harness.app, 'Maria Ruiz');
-    const { body } = await post('run', { names: 'Maria Ruiz' });
+    const format = await seedFormat(harness.app, { name: 'Prior note format' });
+    await seedNote(harness.app, maria.id, format.id, 'Prior note stays here.');
+    const { body } = await post('run', { names: ' maria   ruiz ' });
+
+    expect(body.patients.find((patient) => patient.name === 'Maria Ruiz')?.patient_id).toBe(maria.id);
     await undo(body.batch_id as string);
     expect(getPatient(harness.db, maria.id)).toBeDefined();
-    expect(listNotesForPatient(harness.db, maria.id)).toHaveLength(0);
+    expect(listNotesForPatient(harness.db, maria.id)).toHaveLength(1);
+    expect(listNotesForPatient(harness.db, maria.id)[0]?.content).toContain('Prior note stays here.');
   });
 });
 

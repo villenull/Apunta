@@ -145,16 +145,16 @@ function planFor(db: Database, upload: ExportUpload): ImportPlan {
     existing: listPatients(db, { includeArchived: true }).map((patient) => ({
       id: patient.id,
       name: patient.name,
+      archived: patient.archived_at !== null,
     })),
     imported: importedKeys(transcripts),
     headings: listFormats(db).flatMap((format) => format.sections),
   });
 }
-
 interface ExportUpload {
   readonly bytes: Buffer;
   readonly read: ReadExport;
-  readonly options: Pick<ImportOptions, 'names' | 'source' | 'cutoff' | 'exclude'>;
+  readonly options: Pick<ImportOptions, 'names' | 'source' | 'cutoff' | 'exclude' | 'existingPatientIds'>;
 }
 
 /** The whole file into memory, and nowhere else; the form fields beside it. */
@@ -198,6 +198,19 @@ async function receiveExport(request: FastifyRequest): Promise<ExportUpload> {
   } catch {
     throw badRequest('Could not read the list of unticked patients.');
   }
+  let existingPatientIds: Map<string, string | null> | undefined;
+  try {
+    const parsed = JSON.parse(fields.get('existingPatientIds') ?? '{}') as unknown;
+    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      existingPatientIds = new Map(
+        Object.entries(parsed as Record<string, unknown>).flatMap(([key, value]) =>
+          value === null || typeof value === 'string' ? [[key, value] as [string, string | null]] : [],
+        ),
+      );
+    }
+  } catch {
+    throw badRequest('Could not read the patient import choices.');
+  }
 
   let read: ReadExport;
   try {
@@ -209,6 +222,12 @@ async function receiveExport(request: FastifyRequest): Promise<ExportUpload> {
   return {
     bytes: file.bytes,
     read,
-    options: { names, source: source.data, cutoff: cutoff.data, exclude: new Set(exclude) },
+    options: {
+      names,
+      source: source.data,
+      cutoff: cutoff.data,
+      exclude: new Set(exclude),
+      ...(existingPatientIds === undefined ? {} : { existingPatientIds }),
+    },
   };
 }

@@ -171,14 +171,11 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
             onSelect(note.id);
           }}
         >
-          <div className="note-title">
-            {note.status === 'draft' && <span className="draft-dot" />}
-            {note.title}
+          <div className="note-date-row">
+            <span className="note-date">{formatNoteDate(note.created_at)}</span>
+            {note.status === 'draft' && <span className="draft-chip">Draft</span>}
           </div>
-          <div className="note-date">
-            {formatNoteDate(note.created_at)}
-            {note.status === 'draft' ? ' · Draft' : ''}
-          </div>
+          <div className="note-title">{note.title}</div>
           <div className="note-preview">{notePreview(note.content)}</div>
         </button>
       ))}

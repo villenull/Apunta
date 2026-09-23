@@ -722,6 +722,13 @@ export function nameFromTitle(title: string, text: string): string | null {
 export interface KnownPatient {
   readonly id: string;
   readonly name: string;
+  /** Archived charts are retained for previous-import provenance but are not
+   * candidates for a new name match. */
+  readonly archived?: boolean;
+}
+
+function normalizedPatientName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }
 
 export interface ImportOptions {
@@ -737,6 +744,8 @@ export interface ImportOptions {
   readonly headings: readonly string[];
   /** Patient keys she unticked in the summary. */
   readonly exclude?: ReadonlySet<string>;
+  /** Explicit preview choices, keyed by the stable report patient key. */
+  readonly existingPatientIds?: ReadonlyMap<string, string | null>;
 }
 
 export interface PlannedNote {
@@ -779,16 +788,18 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
     ...new Set([...options.headings, ...COMMON_NOTE_HEADINGS].map((h) => h.trim()).filter(Boolean)),
   ];
   const existingById = new Map(options.existing.map((patient) => [patient.id, patient]));
-  const existingByName = new Map<string, KnownPatient>();
+  const existingByName = new Map<string, KnownPatient[]>();
   for (const patient of options.existing) {
-    const key = patient.name.trim().toLowerCase();
-    if (!existingByName.has(key)) existingByName.set(key, patient);
+    if (patient.archived === true) continue;
+    const key = normalizedPatientName(patient.name);
+    const matches = existingByName.get(key);
+    if (matches) matches.push(patient);
+    else existingByName.set(key, [patient]);
   }
-
-  const skipped: ImportSkippedConversation[] = [];
-  const qualified: Qualified[] = [];
   let abandoned = 0;
   const dates: string[] = [];
+  const skipped: ImportSkippedConversation[] = [];
+  const qualified: Qualified[] = [];
 
   for (const conversation of read.conversations) {
     abandoned += conversation.abandoned;
@@ -834,7 +845,8 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
     const listed = assignConversation(conversation, options.names);
     if (listed.kind === 'assigned') {
       const value = options.names[listed.patient] as string;
-      const match = existingByName.get(value.toLowerCase());
+      const matches = existingByName.get(normalizedPatientName(value)) ?? [];
+      const match = matches.length === 1 ? matches[0] : undefined;
       qualified.push({
         conversation,
         sessions,
@@ -858,9 +870,11 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
   // conversations guessing the same name are not merged: each gets a numbered suffix, and
   // both are flagged — and an existing patient of that name is not assumed to be either.
   const guessCounts = new Map<string, number>();
-  for (const { name } of qualified)
-    if (name.source === 'title')
-      guessCounts.set(name.value.toLowerCase(), (guessCounts.get(name.value.toLowerCase()) ?? 0) + 1);
+  for (const { name } of qualified) {
+    if (name.source !== 'title') continue;
+    const key = normalizedPatientName(name.value);
+    guessCounts.set(key, (guessCounts.get(key) ?? 0) + 1);
+  }
   const guessSeen = new Map<string, number>();
 
   const patients: ImportPatientPlan[] = [];
@@ -872,13 +886,14 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
   const matchedNames = new Set<string>();
 
   for (const { conversation, sessions, name } of qualified) {
-    matchedNames.add(name.value.toLowerCase());
+    matchedNames.add(normalizedPatientName(name.value));
     let key: string;
     let plan: Omit<ImportPatientPlan, 'conversations' | 'notes'>;
     if (name.source === 'title') {
-      const lower = name.value.toLowerCase();
+      const lower = normalizedPatientName(name.value);
       const clashes = (guessCounts.get(lower) ?? 0) > 1;
-      const existing = clashes ? undefined : existingByName.get(lower);
+      const matches = existingByName.get(lower) ?? [];
+      const existing = clashes || matches.length !== 1 ? undefined : matches[0];
       key = `title:${conversation.id}`;
       if (existing !== undefined) {
         plan = { key, name: existing.name, source: 'existing', patient_id: existing.id, name_guessed: false };
@@ -894,8 +909,20 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
         };
       }
     } else {
-      key = name.patientId !== null ? `patient:${name.patientId}` : `list:${name.value.toLowerCase()}`;
+      key = name.patientId !== null ? `patient:${name.patientId}` : `list:${normalizedPatientName(name.value)}`;
       plan = { key, name: name.value, source: name.source, patient_id: name.patientId, name_guessed: false };
+    }
+
+    const selectedPatientId = options.existingPatientIds?.get(key);
+    if (selectedPatientId !== undefined) {
+      if (selectedPatientId === null) {
+        plan = { ...plan, patient_id: null, source: name.source === 'title' ? 'title' : 'list', name_guessed: name.source === 'title' };
+      } else {
+        const selectedPatient = existingById.get(selectedPatientId);
+        if (selectedPatient === undefined || selectedPatient.archived === true)
+          throw new Error('The selected import patient is not an active patient.');
+        plan = { ...plan, name: selectedPatient.name, source: 'existing', patient_id: selectedPatient.id, name_guessed: false };
+      }
     }
 
     if (options.exclude?.has(key) === true) {
@@ -971,7 +998,7 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
       patients: shown,
       patients_to_create: shown.filter((patient) => patient.patient_id === null).length,
       notes: notes.length,
-      unmatched_names: options.names.filter((name) => !matchedNames.has(name.toLowerCase())),
+      unmatched_names: options.names.filter((name) => !matchedNames.has(normalizedPatientName(name))),
       already_imported: alreadyImported,
       sessions_without_body: withoutBody,
       skipped,

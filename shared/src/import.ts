@@ -109,6 +109,8 @@ export const ImportPatientPlanSchema = z.object({
   source: ImportNameSourceSchema,
   /** The existing patient; null when the run creates them. */
   patient_id: IdSchema.nullable(),
+  /** Explicit choice from the review screen; omitted uses the safe name match. */
+  existingPatientId: IdSchema.nullable().optional(),
   /** True when the run creates this patient from a title guess, so the name must be checked. */
   name_guessed: z.boolean(),
   /** Conversations assigned to this patient. */

@@ -18,10 +18,18 @@ export const HalaxyPreviewNoteSchema = z.object({
 });
 export type HalaxyPreviewNote = z.infer<typeof HalaxyPreviewNoteSchema>;
 
+/** One active Apunta patient with the same normalized name as an export. */
+export const HalaxyExistingPatientSchema = z.object({
+  id: IdSchema,
+  name: z.string().min(1),
+});
+export type HalaxyExistingPatient = z.infer<typeof HalaxyExistingPatientSchema>;
+
 /** One accepted text-based PDF, ready for the review screen. */
 export const HalaxyPreviewPatientSchema = z.object({
   fileName: z.string().min(1),
   patientName: z.string().min(1),
+  existingPatients: z.array(HalaxyExistingPatientSchema),
   notes: z.array(HalaxyPreviewNoteSchema),
   warnings: z.array(z.string()),
 });
@@ -39,6 +47,7 @@ export const HalaxyImportRequestSchema = z.object({
     z.object({
       fileName: z.string().min(1),
       patientName: z.string().min(1),
+      existingPatientId: IdSchema.nullable().optional(),
       notes: z.array(
         z.object({
           date: IsoDateSchema,

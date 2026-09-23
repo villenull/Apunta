@@ -11,21 +11,26 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import { extractPdf } from '../extract/pdf.js';
 import { ExtractError } from '../extract/types.js';
-import { addBatchNote, addBatchPatient, createImportBatch } from '../db/import-batches.js';
+import { createImportBatch, addBatchNote, addBatchPatient } from '../db/import-batches.js';
 import { createNote, setNotePublished } from '../db/notes.js';
-import { createPatient } from '../db/patients.js';
+import { createPatient, listPatients } from '../db/patients.js';
 import { badRequest } from '../http/errors.js';
 import { HalaxyParseError, parseHalaxyText } from '../import/halaxy/parser.js';
 
 export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
   app.post('/api/import/halaxy/preview', async (request): Promise<HalaxyPreviewResponse> => {
     const files = await receiveFiles(request);
+    const activePatients = listPatients(db);
     const patients: HalaxyPreviewResponse['patients'] = [];
     const rejected: HalaxyPreviewResponse['rejected'] = [];
     for (const file of files) {
       try {
-        const text = await extractPdf(file.bytes);
-        patients.push(parseHalaxyText(text, file.filename));
+        const parsed = parseHalaxyText(await extractPdf(file.bytes), file.filename);
+        const normalized = normalizePatientName(parsed.patientName);
+        const existingPatients = activePatients
+          .filter((patient) => normalizePatientName(patient.name) === normalized)
+          .map((patient) => ({ id: patient.id, name: patient.name }));
+        patients.push({ ...parsed, existingPatients });
       } catch (error) {
         rejected.push({ fileName: file.filename, reason: rejectionMessage(error) });
       }
@@ -36,7 +41,6 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
     );
     return { patients, rejected };
   });
-
   app.post('/api/import/halaxy', (request, reply): HalaxyImportResponse => {
     const parsed = HalaxyImportRequestSchema.safeParse(request.body);
     if (!parsed.success) throw badRequest('The Halaxy review selection is not valid.');
@@ -47,11 +51,26 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
       throw badRequest('Create a note format before importing, so the notes have somewhere to go.');
     const response = db.transaction((): HalaxyImportResponse => {
       const batchId = createImportBatch(db, 'halaxy');
+      const activePatients = listPatients(db);
       const patients: HalaxyImportResponse['patients'] = [];
       let noteCount = 0;
       for (const planned of parsed.data.patients) {
-        const patient = createPatient(db, { name: planned.patientName });
-        addBatchPatient(db, batchId, patient.id);
+        const matches = activePatients.filter(
+          (patient) => normalizePatientName(patient.name) === normalizePatientName(planned.patientName),
+        );
+        const selected = planned.existingPatientId;
+        let patient;
+        let created = false;
+        if (selected !== undefined && selected !== null) {
+          patient = matches.find((candidate) => candidate.id === selected);
+        } else if (matches.length === 1) {
+          patient = matches[0];
+        } else {
+          patient = createPatient(db, { name: planned.patientName });
+          created = true;
+        }
+        if (!patient) throw badRequest('Choose an active matching patient or Create new before importing.');
+        if (created) addBatchPatient(db, batchId, patient.id);
         for (const noteInput of planned.notes) {
           const note = createNote(db, {
             patient_id: patient.id,
@@ -118,4 +137,8 @@ async function receiveFiles(request: FastifyRequest): Promise<HalaxyFile[]> {
 function rejectionMessage(error: unknown): string {
   if (error instanceof ExtractError || error instanceof HalaxyParseError) return error.message;
   return "Apunta couldn't read that PDF. Choose a text-based Halaxy export.";
+}
+
+function normalizePatientName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 }

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { listNotesForPatient } from '../db/notes.js';
 import { listPatients } from '../db/patients.js';
-import { createTestApp, seedFormat, type TestApp } from '../test/harness.js';
+import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 
 const FIXTURE = join(import.meta.dirname, '..', '..', '..', 'e2e', 'fixtures', 'halaxy', 'john-smith.pdf');
 const PDF = readFileSync(FIXTURE);
@@ -108,5 +108,46 @@ describe('POST /api/import/halaxy', () => {
     expect(undone.statusCode).toBe(200);
     expect(undone.json()).toMatchObject({ notes_deleted: 3, patients_deleted: 1 });
     expect(listPatients(harness.db, { includeArchived: true })).toHaveLength(0);
+  });
+
+  it('adds a repeated PDF to one matching chart and undo leaves prior notes', async () => {
+    const existing = await seedPatient(harness.app, '  john   smith ');
+    const format = await seedFormat(harness.app, { name: 'Prior Halaxy note format' });
+    await seedNote(harness.app, existing.id, format.id, 'Prior Halaxy note stays here.');
+    const preview = await harness.app.inject({
+      method: 'POST',
+      url: '/api/import/halaxy/preview',
+      headers: { 'content-type': 'multipart/form-data; boundary=apunta-halaxy-test' },
+      payload: multipart([{ name: 'john-smith.pdf', bytes: PDF }]),
+    });
+    const patient = preview.json<HalaxyPreviewResponse>().patients[0]!;
+    expect(patient.existingPatients.map((match) => match.id)).toEqual([existing.id]);
+
+    const run = await harness.app.inject({
+      method: 'POST',
+      url: '/api/import/halaxy',
+      payload: {
+        patients: [
+          {
+            fileName: patient.fileName,
+            patientName: 'John Smith',
+            existingPatientId: existing.id,
+            notes: patient.notes.map(({ date, title, text }) => ({ date, title, text })),
+          },
+        ],
+      },
+    });
+    expect(run.statusCode).toBe(201);
+    expect(listPatients(harness.db, { includeArchived: true })).toHaveLength(1);
+    expect(listNotesForPatient(harness.db, existing.id)).toHaveLength(4);
+
+    const undone = await harness.app.inject({
+      method: 'POST',
+      url: `/api/import/batches/${run.json<HalaxyImportResponse>().batch_id}/undo`,
+    });
+    expect(undone.statusCode).toBe(200);
+    expect(undone.json()).toMatchObject({ notes_deleted: 3, patients_deleted: 0 });
+    expect(listPatients(harness.db, { includeArchived: true })).toHaveLength(1);
+    expect(listNotesForPatient(harness.db, existing.id)).toHaveLength(1);
   });
 });

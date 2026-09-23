@@ -193,7 +193,7 @@ function PatientList({
               }}
             >
               <div className="avatar">{initials(patient.name)}</div>
-              <div>
+              <div className="patient-list-copy">
                 <div className="name" title={patient.name}>
                   {patient.name}
                 </div>
@@ -203,10 +203,10 @@ function PatientList({
                 </div>
               </div>
             </button>
-            {/* Hover actions, like the prototype's list: renaming is for a name
-                the Claude import misspelt or guessed (owner, 2026-09-21). */}
+            {/* Keep this slot in the row even while its controls are hidden. The
+                primary patient-selection target therefore never moves under hover. */}
             {renaming?.id !== patient.id && (
-              <div className="patient-entry-actions">
+              <div className="patient-entry-actions" aria-label={`Tools for ${patient.name}`}>
                 <button
                   type="button"
                   className="btn small btn-quick"
