@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { reconcilePreviewResult } from './useLiveRecording.js';
+import { reconcilePreviewResult, splitPreviewTail } from './useLiveRecording.js';
 
 describe('live preview reconciliation', () => {
   it('lets the final chunk supersede a stale partial instead of appending it', () => {
@@ -83,5 +83,23 @@ describe('live preview reconciliation', () => {
     );
     expect(rewrite?.preview).toContain('The client discussed');
     expect(rewrite?.preview).toContain('work next month');
+  });
+  it('renders each preview word once across committed and tentative spans', () => {
+    const cases = [
+      'The client discussed the wedding next month with her sister',
+      'Wedding anxiety',
+    ];
+    for (const text of cases) {
+      const result = reconcilePreviewResult(
+        { text: '', at: 0, tail: '' },
+        { kind: 'tail' as const, committedAt: 0, to: 1 },
+        text,
+      );
+      expect(result).not.toBeNull();
+      const display = splitPreviewTail(result!.committed);
+      const rendered = [display.committed, display.tentative].filter(Boolean).join(' ');
+      expect(rendered).toBe(result!.preview);
+      expect(rendered.split(/\s+/)).toEqual(text.split(/\s+/));
+    }
   });
 });

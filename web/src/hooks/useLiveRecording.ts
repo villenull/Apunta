@@ -96,6 +96,18 @@ function stableTail(previous: string, next: string): string {
   const tail = boundaryAgrees ? newWords.slice(stable) : newWords.slice(-TENTATIVE_TAIL_WORDS);
   return `${oldWords.slice(0, stable).join(' ')} ${tail.join(' ')}`.trim();
 }
+export function splitPreviewTail(committed: { readonly text: string; readonly tail?: string }): {
+  readonly committed: string;
+  readonly tentative: string;
+} {
+  const tail = (committed.tail ?? '').trim();
+  const words = tail === '' ? [] : tail.split(/\s+/);
+  const stableCount = Math.max(0, words.length - TENTATIVE_TAIL_WORDS);
+  return {
+    committed: joinWords(committed.text, words.slice(0, stableCount).join(' ')),
+    tentative: words.slice(stableCount).join(' '),
+  };
+}
 
 export function reconcilePreviewResult(
   current: { readonly text: string; readonly at: number; readonly tail?: string },
@@ -258,9 +270,10 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
               const next = reconcilePreviewResult(committed.current, request, result.text);
               if (next === null) return;
               committed.current = next.committed;
+              const display = splitPreviewTail(next.committed);
               setPreview(next.preview);
-              setCommittedPreview(next.committed.text);
-              setTentativePreview(next.committed.tail);
+              setCommittedPreview(display.committed);
+              setTentativePreview(display.tentative);
             })
             .finally(() => {
               if (previewAbort.current === controller) previewAbort.current = null;
@@ -300,9 +313,10 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
           const next = reconcilePreviewResult(committed.current, request, result.text);
           if (next !== null) {
             committed.current = next.committed;
+            const display = splitPreviewTail(next.committed);
             setPreview(next.preview);
-            setCommittedPreview(next.committed.text);
-            setTentativePreview(next.committed.tail);
+            setCommittedPreview(display.committed);
+            setTentativePreview(display.tentative);
           }
         })
         .finally(() => {
