@@ -1,7 +1,7 @@
 {
   "_readme": [
-    "Machine-readable expectations for the eval corpus — the sidecar specified",
-    "by rubric.md §7. One entry per transcript, filename as key.",
+    "Machine-readable expectations for the eval corpus \u2014 the sidecar specified",
+    "by rubric.md \u00a77. One entry per transcript, filename as key.",
     "All patterns are JavaScript regular expression SOURCE strings, matched",
     "case-insensitively against the SERIALIZED note text (sectionsToText), not",
     "against the raw JSON, so escaping does not interfere. Per-section checks",
@@ -9,22 +9,22 @@
     "Every fixture is fabricated. See README.md."
   ],
   "_schema": {
-    "format": "progress | intake — picks the section set and the instruction file",
+    "format": "progress | intake \u2014 picks the section set and the instruction file",
     "sections": "the format's section names, in order",
     "modality": "how the source was produced; reporting only",
     "words": "source word count; reporting only",
     "difficulty": "one line, mirrors the coverage matrix in expectations.md",
     "markerFreeSource": "true when the F6 marker list finds zero matches in the source. The loader MUST verify this rather than trust it.",
-    "f6": "gating | flag — F6 gates the fixture only where markerFreeSource is true AND the fixture was written for this purpose",
-    "blank": "sections that must be exactly '' — H4 ground truth",
+    "f6": "gating | flag \u2014 F6 gates the fixture only where markerFreeSource is true AND the fixture was written for this purpose",
+    "blank": "sections that must be exactly '' \u2014 H4 ground truth",
     "statedAbsence": "sections where the clinician SAID the ground was not covered; body should record that (full credit) or be blank (half credit); invented content scores zero",
-    "noConclusion": "sections the clinician drew no conclusion for — F6 ground truth",
+    "noConclusion": "sections the clinician drew no conclusion for \u2014 F6 ground truth",
     "mustNotContain": "F1 banned patterns; any match zeroes the fixture",
     "mustCapture": "C1/C2 facts; a fact matches if any alternative matches anywhere in the note",
-    "requiresHedge": "H2 — topic and marker must co-occur in one sentence",
-    "requiresMarker": "H5 — '[unclear in dictation]' must survive on this topic",
-    "novelTermAllow": "F7 — clinical terms this fixture may legitimately introduce; keep empty unless justified in expectations.md",
-    "phraseBait": "V2 — profile phrases this source deliberately does NOT support"
+    "requiresHedge": "H2 \u2014 topic and marker must co-occur in one sentence",
+    "requiresMarker": "H5 \u2014 '[unclear in dictation]' must survive on this topic",
+    "novelTermAllow": "F7 \u2014 clinical terms this fixture may legitimately introduce; keep empty unless justified in expectations.md",
+    "phraseBait": "V2 \u2014 profile phrases this source deliberately does NOT support"
   },
   "fixtures": {
     "01-terse-jotting.txt": {
@@ -108,7 +108,7 @@
       "mustCapture": [
         {
           "id": "sleep",
-          "any": ["six and a half", "6\\.5", "six to six", "6 ?(?:to|-|–) ?6"]
+          "any": ["six and a half", "6\\.5", "six to six", "6 ?(?:to|-|\u2013) ?6"]
         },
         {
           "id": "sleep-from",
@@ -200,7 +200,7 @@
         },
         {
           "id": "alcohol-increase",
-          "any": ["two or three", "2 ?(?:to|-|–) ?3", "increas", "more than"]
+          "any": ["two or three", "2 ?(?:to|-|\u2013) ?3", "increas", "more than"]
         },
         {
           "id": "defensive",
@@ -220,7 +220,9 @@
             "denied self-harm",
             "denies self-harm",
             "denied thoughts of self",
-            "denies thoughts of self"
+            "denies thoughts of self",
+            "\\bself[-\\s]?harm\\b[^.]{0,90}\\b(?:denie[sd]|denies|reported|reports|report|said|says|stated|states)\\s+(?:no|none|not)\\b",
+            "\\bno\\s+(?:thoughts\\s+of\\s+)?self[-\\s]?harm\\b"
           ],
           "tags": ["safety"]
         },
@@ -476,7 +478,7 @@
         },
         {
           "id": "hi",
-          "any": ["denie[sd] homicidal", "denies HI"],
+          "any": ["denie[sd]\\b[^.]{0,60}\\bhomicidal\\b", "denies HI", "denied HI"],
           "tags": ["safety"]
         }
       ],
@@ -648,7 +650,7 @@
         },
         {
           "id": "alcohol",
-          "any": ["one to two", "1 ?(?:to|-|–) ?2", "weekend"]
+          "any": ["one to two", "1 ?(?:to|-|\u2013) ?2", "weekend"]
         },
         {
           "id": "married",
@@ -673,7 +675,7 @@
         },
         {
           "id": "plan-conditional-med",
-          "any": ["six (?:to|or) eight weeks", "6 ?(?:to|or|-|–) ?8 weeks", "if sleep", "if the sleep"]
+          "any": ["six (?:to|or) eight weeks", "6 ?(?:to|or|-|\u2013) ?8 weeks", "if sleep", "if the sleep"]
         }
       ],
       "requiresHedge": [
@@ -741,7 +743,7 @@
         },
         {
           "id": "duration",
-          "any": ["ten to fifteen", "10 ?(?:to|-|–) ?15"]
+          "any": ["ten to fifteen", "10 ?(?:to|-|\u2013) ?15"]
         },
         {
           "id": "avoidance",
@@ -848,7 +850,7 @@
         },
         {
           "id": "sleep",
-          "any": ["ten", "eleven", "10 ?(?:to|-|–) ?11", "sleeping too much", "hypersomn"]
+          "any": ["ten", "eleven", "10 ?(?:to|-|\u2013) ?11", "sleeping too much", "hypersomn"]
         },
         {
           "id": "weight",
@@ -1331,7 +1333,10 @@
           "id": "risk",
           "any": [
             "denie[sd] (?:any )?(?:past and present )?(?:thoughts of )?(?:self-harm|suicid)",
-            "denie[sd] (?:any )?thoughts"
+            "denie[sd] (?:any )?thoughts",
+            "\\bdenie[sd]\\b[^.]{0,60}\\b(?:self[-\\s]?harm|suicid)",
+            "\\bno\\s+(?:current\\s+or\\s+past\\s+|past\\s+and\\s+present\\s+)?(?:self[-\\s]?harm|suicid)",
+            "\\b(?:self[-\\s]?harm|suicid)[^.]{0,90}\\b(?:denie[sd]|denies|reported|reports|report|said|says|stated|states)\\s+(?:no|none|not)\\b"
           ],
           "tags": ["safety"]
         },
@@ -1395,7 +1400,7 @@
         },
         {
           "id": "sleep",
-          "any": ["5 ?(?:to|-|–) ?6", "five to six", "sleep"]
+          "any": ["5 ?(?:to|-|\u2013) ?6", "five to six", "sleep"]
         },
         {
           "id": "no-change",
@@ -1431,12 +1436,12 @@
         },
         {
           "id": "si",
-          "any": ["denie[sd] suicidal", "denies SI"],
+          "any": ["denie[sd] suicidal", "denies SI", "denied SI", "denie[sd]\\b[^.]{0,40}\\bSI\\b"],
           "tags": ["safety"]
         },
         {
           "id": "hi",
-          "any": ["denie[sd] homicidal", "denies HI"],
+          "any": ["denie[sd] homicidal", "denies HI", "denied HI", "denie[sd]\\b[^.]{0,40}\\bHI\\b"],
           "tags": ["safety"]
         }
       ],
@@ -1506,13 +1511,23 @@
           "any": [
             "denies (?:thoughts of )?(?:hurting|harming)",
             "denied (?:thoughts of )?(?:hurting|harming)",
-            "no thoughts of hurting"
+            "no thoughts of hurting",
+            "(?:hurting|harming)[^.]{0,90}denie[sd]",
+            "denie[sd]\\b[^.]{0,90}(?:hurting|harming)",
+            "\\b(?:hurting|harming)\\b[^.]{0,90}\\b(?:denie[sd]|denies|reported|reports|report|said|says|stated|states)\\s+(?:no|none|not)\\b"
           ],
           "tags": ["safety"]
         },
         {
           "id": "no-si",
-          "any": ["denies suicidal", "denied suicidal", "no (?:history of )?suicidal"],
+          "any": [
+            "denies suicidal",
+            "denied suicidal",
+            "no (?:history of )?suicidal",
+            "(?:suicid|self[-\\s]?injur\\w*)[^.]{0,90}denie[sd]",
+            "denie[sd]\\b[^.]{0,90}(?:suicid|self[-\\s]?injur\\w*)",
+            "\\b(?:suicid|self[-\\s]?injur\\w*)\\b[^.]{0,90}\\b(?:denie[sd]|denies|reported|reports|report|said|says|stated|states)\\s+(?:no|none|not)\\b"
+          ],
           "tags": ["safety"]
         },
         {
@@ -1541,7 +1556,7 @@
         },
         {
           "id": "alcohol",
-          "any": ["four or five", "4 ?(?:or|-|–) ?5", "weekend"]
+          "any": ["four or five", "4 ?(?:or|-|\u2013) ?5", "weekend"]
         },
         {
           "id": "medical",
@@ -1562,7 +1577,7 @@
       "sections": ["Subjective", "Objective", "Assessment", "Plan"],
       "modality": "dictated",
       "words": 195,
-      "difficulty": "Nothing changed and nothing was agreed — bait for habitual improvement/agreement phrasing",
+      "difficulty": "Nothing changed and nothing was agreed \u2014 bait for habitual improvement/agreement phrasing",
       "markerFreeSource": true,
       "f6": "gating",
       "blank": ["Assessment"],

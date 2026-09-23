@@ -312,3 +312,58 @@ writing: if the schema ever parses that file, the clamps are gone.
   than pre-forgiven. Add entries only with a written justification.
 - **No change to the dimension weights or to the gating philosophy.**
   Faithfulness still carries 40 and still gates.
+
+---
+
+## 8. The safety facts were keyed on one verb, and it was mis-scoring notes (2026-09-23)
+
+C2 — "safety facts" — is the one completeness measure that is about the record
+being clinically complete rather than merely faithful, and it was reading 70%
+on a model that was writing the facts down. The cause was in this directory,
+not in the model.
+
+A safety fact's pattern accepted one construction:
+
+```
+denied self-harm | denies self-harm | denied thoughts of self | denies thoughts of self
+```
+
+The model writes several faithful equivalents of that, and every one of them
+scored as a dropped safety fact:
+
+| Fixture | What the note said | Why it did not match |
+| --- | --- | --- |
+| `03` | "When asked directly about self-harm thoughts, she reported none and was clear on this point." | the denial follows the term, and it is "reported none", not "denied" |
+| `14` | "Patient denies current or past self-harm and suicidal ideation." | "current or past" is not one of the two parenthetical forms the pattern allowed |
+| `16` | "When asked directly about thoughts of hurting anyone or a history of self-injury, they report no." | the denial follows both terms, and it is "report no" |
+| `06` | "She denies suicidal ideation, homicidal ideation, and any changes in alcohol or drug use." | a list puts "homicidal" 19 characters from the verb, past the pattern's adjacency |
+| `15` | "She denied SI and HI and asked about both." | the pattern had `denies SI` in the present tense and no past form |
+
+Each of those notes records the safety fact. Each was counted as a drop, which
+put 15 of the corpus's 30 percentage points of C2 failure on the instrument.
+
+**What changed.** The facts above gained alternatives that name the same claim
+in the forms a note actually uses:
+
+- a term, then a denial word within one sentence — `TERM[^.]{0,90}(denie[sd]|denies|reported|reports|report|said|says|stated|states)\s+(no|none|not)`;
+- `denie[sd]` within a clause of the term, in either order;
+- `no (thoughts of)? self-harm`, `no current or past self-harm`, and the
+  `self-injury` spelling.
+
+**What was deliberately not added.** The mirror form — a denial word, then the
+term — because it accepted this:
+
+> "She reported no improvement in mood; self-harm was not raised by her at all
+> this session."
+
+That sentence does not record the fact, and a safety gate that accepts it is
+not a gate. The reversed form is the one every observed faithful note uses.
+`e2e/fixtures/eval-owner/README.md` and the 2026-09-23 model-quality report
+carry the same reasoning.
+
+**The bar it still holds.** Each widened fact was checked against a note that
+omits it (`03` "She was fidgety and talked fast.", `14` "He drinks two beers
+most nights.", `16` "Asked about SI; they report no.") and against the decoy
+above. All of them still fail. The widening moves the measure from "did the
+model use this verb" to "is the fact in the note", which is what C2 says it
+measures.
