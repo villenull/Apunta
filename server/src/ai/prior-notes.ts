@@ -77,7 +77,7 @@ export function fitNotesNewestFirst(candidates: readonly Note[], room: number): 
  * Keep these two limits together: published notes are style examples, never
  * an unbounded source of old clinical facts.
  */
-export const DRAFTING_PRIOR_NOTE_COUNT = 3;
+export const DRAFTING_PRIOR_NOTE_COUNT = 1;
 export const DRAFTING_PRIOR_NOTE_CHARACTER_BUDGET = 12_000;
 
 /** Select recent published notes without cutting a note or crossing the cap. */

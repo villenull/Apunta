@@ -78,11 +78,7 @@ describe('fitDraftingPriorNotes', () => {
       return index === 1 || index === 4 ? item : { ...item, status: 'published' as const, published_at: item.created_at };
     });
     const fitted = fitDraftingPriorNotes(candidates);
-    expect(fitted.map((item) => item.text)).toEqual([
-      'Subjective: Published session 0.',
-      'Subjective: Published session 2.',
-      'Subjective: Published session 3.',
-    ]);
+    expect(fitted.map((item) => item.text)).toEqual(['Subjective: Published session 0.']);
   });
 
   it('never crosses the character budget or cuts a note', () => {

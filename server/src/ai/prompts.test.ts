@@ -346,6 +346,16 @@ describe('buildGeneratePrompt', () => {
     expect(prompt.system).toContain('her written notes are correct');
   });
 
+  it('keeps the prompt byte-identical when no prior notes are available', () => {
+    const request = {
+      instructions: '',
+      sections: SOAP,
+      formatName: 'Progress note',
+      typedNotes: TYPED,
+    };
+    expect(buildGeneratePrompt(request)).toEqual(buildGeneratePrompt({ ...request, priorNotes: [] }));
+  });
+
   it('fences prior published notes as style-only examples before current source', () => {
     const prompt = buildGeneratePrompt({
       instructions: '',
