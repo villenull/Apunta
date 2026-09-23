@@ -220,6 +220,32 @@ function completenessSection(input: ReportInput): string[] {
   }
 
   lines.push('');
+  lines.push(
+    '**Safety facts (C2)** are the `tags: ["safety"]` facts, and a run passes only when it',
+    'captured every one of them. Which one went missing is the whole diagnosis, so the',
+    'misses are listed rather than counted.',
+    '',
+  );
+  for (const model of input.models) {
+    const misses = model.scores.filter((score) => score.safetyMisses.length > 0);
+    if (misses.length === 0) {
+      lines.push(`${model.model}: every safety fact captured in every run.`, '');
+      continue;
+    }
+    const byFixture = new Map<string, string[]>();
+    for (const score of misses) {
+      const list = byFixture.get(score.fixture) ?? [];
+      list.push(score.safetyMisses.join('+'));
+      byFixture.set(score.fixture, list);
+    }
+    lines.push(`**${model.model} — safety facts not captured**`, '');
+    for (const [fixture, facts] of [...byFixture.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+      lines.push(
+        `- \`${fixture}\`: ${facts.join(', ')} (${String(facts.length)}/${String(model.runs)} runs)`,
+      );
+    }
+    lines.push('');
+  }
   return lines;
 }
 

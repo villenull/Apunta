@@ -1,4 +1,4 @@
-import { INTAKE_NOTE_INSTRUCTIONS, PROGRESS_NOTE_INSTRUCTIONS } from '../ai/default-instructions.js';
+import { defaultInstructionsFor } from '../ai/default-instructions.js';
 import { FakeLlmProvider } from '../ai/fake.js';
 import { NUM_CTX, OllamaProvider } from '../ai/ollama.js';
 import type { LlmProvider, LlmStats } from '../ai/types.js';
@@ -65,7 +65,11 @@ export interface InstructionsOverride {
 export function instructionsFor(fixture: Fixture, override?: InstructionsOverride): string {
   const custom = fixture.format === 'intake' ? override?.intake : override?.progress;
   if (custom !== undefined && custom.trim() !== '') return custom.trim();
-  return fixture.format === 'intake' ? INTAKE_NOTE_INSTRUCTIONS : PROGRESS_NOTE_INSTRUCTIONS;
+  // The same selection production applies to a format with an empty
+  // `instructions` field: section fingerprint first, then the format name.
+  // Hardcoding PROGRESS/INTAKE here would mean the eval could only ever
+  // measure SOAP, and the shipped default is the owner's own format.
+  return defaultInstructionsFor(formatNameFor(fixture), fixture.sections);
 }
 
 export function formatNameFor(fixture: Fixture): string {

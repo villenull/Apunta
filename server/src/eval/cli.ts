@@ -27,6 +27,10 @@ interface Args {
   models: string[];
   fixture?: string | undefined;
   out?: string | undefined;
+  /** fixture directory, from --corpus */
+  directory?: string | undefined;
+  /** Ollama base URL, from --ollama-url */
+  ollamaUrl?: string | undefined;
   /** file paths by format, from --instructions */
   instructionFiles: Partial<Record<'progress' | 'intake', string>>;
 }
@@ -77,6 +81,14 @@ function parseArgs(argv: readonly string[]): Args {
         args.fixture = value;
         index += 1;
         break;
+      case '--corpus':
+        args.directory = value;
+        index += 1;
+        break;
+      case '--ollama-url':
+        args.ollamaUrl = value;
+        index += 1;
+        break;
       case '--out':
         args.out = value;
         index += 1;
@@ -100,6 +112,13 @@ function parseArgs(argv: readonly string[]): Args {
     process.exit(2);
   }
 
+  if (args.ollamaUrl !== undefined && !/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(args.ollamaUrl)) {
+    // Same refusal `scripts/check-note-format.mjs` makes. The egress guard would
+    // catch it too; failing here says why.
+    console.error(`--ollama-url refuses ${args.ollamaUrl}: this only ever speaks to a loopback Ollama.`);
+    process.exit(2);
+  }
+
   return args;
 }
 
@@ -116,6 +135,13 @@ function printUsage(): void {
       '  --runs N           runs per fixture per model (default 3)',
       '  --models a,b       compare models; same as APUNTA_EVAL_MODELS=a,b',
       '  --fixture 07       only fixtures whose filename contains this',
+      '  --corpus DIR       read fixtures and expectations.json from DIR instead of',
+      '                     e2e/fixtures/eval. One directory is one corpus: the rubric',
+      '                     denominators, the section lists and the instruction defaults',
+      '                     all follow the fixtures, so two section shapes never mix.',
+      '  --ollama-url URL   Ollama to measure against (default 127.0.0.1:11434).',
+      '                     Loopback only: a run that could reach the internet would be',
+      '                     a different program from the one under test.',
       '  --instructions F   drafting instructions to measure instead of the built-in',
       '                     defaults — the file replaces them entirely, exactly as a',
       "                     format's Instructions field does in the app. FILE applies",
@@ -177,6 +203,10 @@ async function main(): Promise<void> {
     fake: args.fake,
     ...(noteParts.length === 0 ? {} : { instructions: loaded, instructionsNote: noteParts.join(' · ') }),
     ...(args.fixture === undefined ? {} : { fixtureFilter: args.fixture }),
+    ...(args.directory === undefined
+      ? {}
+      : { directory: resolve(process.env['INIT_CWD'] ?? process.cwd(), args.directory) }),
+    ...(args.ollamaUrl === undefined ? {} : { ollamaUrl: args.ollamaUrl }),
     onProgress: (line) => {
       // stderr, so `npm run eval > report.md` gets only the report.
       process.stderr.write(`  ${line}\n`);

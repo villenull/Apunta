@@ -1,6 +1,11 @@
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import type { Sections } from '@apunta/shared';
+import { STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
+import { OWNER_PROGRESS_INSTRUCTIONS, PROGRESS_NOTE_INSTRUCTIONS } from '../ai/default-instructions.js';
 import { assertFixture, denominators, draftSourceFor, loadCorpus, type Fixture } from './corpus.js';
 import { loadLexicon, stem } from './lexicon.js';
 import { f6Core, h1Narrated, h1Placeholder } from './patterns.js';
@@ -105,6 +110,43 @@ describe('the corpus', () => {
         assertFixture(broken);
       }).toThrowError(/different answers/);
     });
+  });
+});
+
+describe('the owner-format corpus', () => {
+  const owner = loadCorpus(
+    resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'e2e', 'fixtures', 'eval-owner'),
+  );
+
+  it('is her seven sections, in the order the shipped format uses', () => {
+    expect(owner.length).toBeGreaterThan(0);
+    for (const entry of owner) {
+      expect(entry.sections).toEqual(STANDARD_PROGRESS_FORMAT.sections);
+    }
+  });
+
+  /**
+   * The whole point of the directory: a fixture with her sections must get her
+   * instructions, through the same fingerprint production uses. If this ever
+   * routes to the SOAP instructions, every number the corpus reports is about
+   * a configuration nobody runs.
+   */
+  it('gets the owner instructions, not the SOAP ones', () => {
+    for (const entry of owner) {
+      expect(instructionsFor(entry)).toBe(OWNER_PROGRESS_INSTRUCTIONS);
+    }
+    expect(instructionsFor(fixture('01'))).toBe(PROGRESS_NOTE_INSTRUCTIONS);
+  });
+
+  /**
+   * The cadence leak and the restated figure are two of the four findings this
+   * corpus exists to measure. Both must stay banned by name: a fixture that
+   * quietly loses its ban stops measuring anything.
+   */
+  it('bans the worked example from its own notes', () => {
+    const cadence = owner.find((entry) => entry.filename.startsWith('01'));
+    expect(cadence?.mustNotContain).toContain('stops? working');
+    expect(cadence?.mustNotContain).toContain('will say if');
   });
 });
 

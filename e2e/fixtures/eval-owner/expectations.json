@@ -1,0 +1,252 @@
+{
+  "_readme": [
+    "Machine-readable expectations for the owner-format eval corpus \u2014 the sidecar",
+    "specified by rubric.md \u00a77. One entry per transcript, filename as key.",
+    "All patterns are JavaScript regular expression SOURCE strings, matched",
+    "case-insensitively against the SERIALIZED note text (sectionsToText), not",
+    "against the raw JSON, so escaping does not interfere. Per-section checks",
+    "match against the individual section body.",
+    "Every fixture is fabricated. See README.md."
+  ],
+  "_schema": {
+    "format": "progress | intake \u2014 picks the instruction default via the same section fingerprint production uses",
+    "sections": "the format's section names, in order",
+    "modality": "how the source was produced; reporting only",
+    "words": "source word count; reporting only",
+    "difficulty": "one line, mirrors the coverage matrix in expectations.md",
+    "markerFreeSource": "true when the F6 marker list finds zero matches in the source",
+    "f6": "gating | flag \u2014 F6 gates the fixture only where markerFreeSource is true AND the fixture was written for this purpose",
+    "blank": "sections that must be exactly '' \u2014 H4 ground truth",
+    "statedAbsence": "sections where the clinician SAID the ground was not covered",
+    "noConclusion": "sections the clinician drew no conclusion for \u2014 F6 ground truth",
+    "mustNotContain": "F1 banned patterns; any match zeroes the fixture",
+    "mustCapture": "C1/C2 facts; a fact matches if any alternative matches anywhere in the note",
+    "requiresHedge": "H2 \u2014 topic and marker must co-occur in one sentence",
+    "requiresMarker": "H5 \u2014 '[unclear in dictation]' must survive on this topic",
+    "novelTermAllow": "F7 \u2014 clinical terms this fixture may legitimately introduce",
+    "phraseBait": "V2 \u2014 profile phrases this source deliberately does NOT support"
+  },
+  "fixtures": {
+    "01-dictated-cadence-decision.txt": {
+      "format": "progress",
+      "sections": [
+        "Location",
+        "Client presentation",
+        "Risk review",
+        "Discussion",
+        "Intervention",
+        "Out of session actions",
+        "Note for next session"
+      ],
+      "modality": "dictated",
+      "words": 94,
+      "difficulty": "A stated cadence decision, and the instructions' worked example is the nearest sentence in the prompt",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": ["Client presentation"],
+      "statedAbsence": [],
+      "noConclusion": ["Discussion"],
+      "mustNotContain": [
+        "will say if",
+        "stops? working",
+        "usual session time",
+        "practice pieces",
+        "recital",
+        "email thread"
+      ],
+      "mustCapture": [
+        {
+          "id": "cadence",
+          "any": ["every two weeks", "biweekly", "bi-weekly", "fortnightly"]
+        },
+        {
+          "id": "interview",
+          "any": ["interview"]
+        },
+        {
+          "id": "restructuring",
+          "any": ["cognitive restructuring", "restructur"]
+        },
+        {
+          "id": "out-of-session",
+          "any": ["worst-case thought", "worst case thought"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "02-dictated-aside-holiday.txt": {
+      "format": "progress",
+      "sections": [
+        "Location",
+        "Client presentation",
+        "Risk review",
+        "Discussion",
+        "Intervention",
+        "Out of session actions",
+        "Note for next session"
+      ],
+      "modality": "dictated",
+      "words": 94,
+      "difficulty": "An aside she flagged as not clinically relevant, sitting in the middle of the session's real content",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": ["Client presentation"],
+      "statedAbsence": [],
+      "noConclusion": ["Discussion"],
+      "mustNotContain": [
+        "holiday",
+        "vacation",
+        "not clinically relevant",
+        "how my (?:holiday|trip|weekend)",
+        "personal (?:chat|conversation|talk)"
+      ],
+      "mustCapture": [
+        {
+          "id": "panic",
+          "any": ["panic"]
+        },
+        {
+          "id": "train",
+          "any": ["train"]
+        },
+        {
+          "id": "grounding",
+          "any": ["grounding"]
+        },
+        {
+          "id": "thought-record",
+          "any": ["thought record"]
+        },
+        {
+          "id": "forward-topic",
+          "any": ["wedding"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "03-dictated-restated-history.txt": {
+      "format": "progress",
+      "sections": [
+        "Location",
+        "Client presentation",
+        "Risk review",
+        "Discussion",
+        "Intervention",
+        "Out of session actions",
+        "Note for next session"
+      ],
+      "modality": "dictated",
+      "words": 85,
+      "difficulty": "Restated history she gave no direction for, plus a risk review she carried out",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": ["Client presentation"],
+      "statedAbsence": [],
+      "noConclusion": ["Discussion"],
+      "mustNotContain": [
+        "\\b(?:up|down) from\\b",
+        "\\b(?:increas|decreas|reduc|declin|fell|rose|drop|lower|rais)[a-z]* (?:from|to|since)\\b",
+        "\\b(?:higher|lower|more|less|fewer) than (?:four|4|six|6)\\b",
+        "\\bcompared (?:to|with)\\b"
+      ],
+      "mustCapture": [
+        {
+          "id": "current-six",
+          "any": ["six drinks", "6 drinks", "six a week", "6 a week", "six per week", "six drinks a week"]
+        },
+        {
+          "id": "february-four",
+          "any": ["four in February", "4 in February", "four drinks in February", "four a week in February"]
+        },
+        {
+          "id": "safety-review",
+          "any": ["denied", "denies", "no thoughts of self-harm", "no thoughts of self harm"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "plan",
+          "any": ["Friday drinks"]
+        },
+        {
+          "id": "cadence",
+          "any": ["same time next week", "weekly", "next week"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "04-dictated-plain-session.txt": {
+      "format": "progress",
+      "sections": [
+        "Location",
+        "Client presentation",
+        "Risk review",
+        "Discussion",
+        "Intervention",
+        "Out of session actions",
+        "Note for next session"
+      ],
+      "modality": "dictated",
+      "words": 96,
+      "difficulty": "Control: every section has material, no aside, no restated history, and a cadence decision she kept as it is",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Discussion"],
+      "mustNotContain": [
+        "will say if",
+        "stops? working",
+        "usual session time",
+        "practice pieces",
+        "recital",
+        "email thread"
+      ],
+      "mustCapture": [
+        {
+          "id": "presentation",
+          "any": ["settled", "eye contact"]
+        },
+        {
+          "id": "intrusive-thoughts",
+          "any": ["intrusive thoughts"]
+        },
+        {
+          "id": "exposure",
+          "any": ["exposure"]
+        },
+        {
+          "id": "thought-record",
+          "any": ["thought record"]
+        },
+        {
+          "id": "cadence",
+          "any": ["weekly", "every week"]
+        },
+        {
+          "id": "safety-review",
+          "any": [
+            "denied",
+            "denies",
+            "no thoughts of self-harm",
+            "no thoughts of self harm",
+            "no history of attempts"
+          ],
+          "tags": ["safety"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    }
+  }
+}

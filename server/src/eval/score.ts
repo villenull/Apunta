@@ -92,6 +92,8 @@ export interface NoteScore {
   readonly capturedFacts: number;
   readonly totalFacts: number;
   readonly safetyPassed: boolean;
+  /** Ids of the `tags: ['safety']` facts this run did not capture. */
+  readonly safetyMisses: readonly string[];
   readonly hedgesMet: number;
   readonly hedgesRequired: number;
   readonly markersMet: number;
@@ -141,6 +143,9 @@ export function failedNote(fixture: Fixture, model: string, run: number, failure
     capturedFacts: 0,
     totalFacts: fixture.mustCapture.length,
     safetyPassed: false,
+    safetyMisses: fixture.mustCapture
+      .filter((fact) => fact.tags?.includes('safety') === true)
+      .map((fact) => fact.id),
     hedgesMet: 0,
     hedgesRequired: fixture.requiresHedge.length,
     markersMet: 0,
@@ -338,9 +343,10 @@ export function scoreNote(fixture: Fixture, sections: Sections, options: ScoreOp
     fact.any.some((pattern) => compile(pattern).test(collapse(noteText))),
   );
   const safetyFacts = fixture.mustCapture.filter((fact) => fact.tags?.includes('safety') === true);
-  const safetyPassed = safetyFacts.every((fact) =>
-    fact.any.some((pattern) => compile(pattern).test(collapse(noteText))),
-  );
+  const safetyMisses = safetyFacts
+    .filter((fact) => !fact.any.some((pattern) => compile(pattern).test(collapse(noteText))))
+    .map((fact) => fact.id);
+  const safetyPassed = safetyMisses.length === 0;
   const c1 =
     fixture.mustCapture.length === 0 ? 10 : Math.round((captured.length / fixture.mustCapture.length) * 10);
   const c2 = safetyPassed ? 6 : 0;
@@ -412,6 +418,7 @@ export function scoreNote(fixture: Fixture, sections: Sections, options: ScoreOp
     capturedFacts: captured.length,
     totalFacts: fixture.mustCapture.length,
     safetyPassed,
+    safetyMisses,
     hedgesMet,
     hedgesRequired: fixture.requiresHedge.length,
     markersMet,
