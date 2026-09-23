@@ -446,9 +446,7 @@ export function importedKeys(
  * session, however old.
  */
 export function activeSince(turns: readonly RawTurn[], cutoff: string): boolean {
-  return turns.some(
-    (turn) => turn.at !== null && new Date(turn.at).toISOString().split('T', 1)[0]! >= cutoff,
-  );
+  return turns.some((turn) => turn.at !== null && instantToLocalDay(turn.at) >= cutoff);
 }
 
 /**

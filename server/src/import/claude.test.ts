@@ -209,10 +209,24 @@ describe('sessionBody', () => {
 
 describe('activeSince', () => {
   it('counts a message on the cutoff day, and not one the day before', () => {
-    const on: RawTurn = { id: 'a', role: 'human', text: 'x', at: '2026-07-01T00:30:00.000Z', attachments: 0 };
-    const before: RawTurn = { ...on, at: '2026-06-30T23:59:00.000Z' };
+    const on: RawTurn = { id: 'a', role: 'human', text: 'x', at: '2026-07-01T07:30:00.000Z', attachments: 0 };
+    const before: RawTurn = { ...on, at: '2026-07-01T01:00:00.000Z' };
     expect(activeSince([before, on], CUTOFF)).toBe(true);
     expect(activeSince([before], CUTOFF)).toBe(false);
+  });
+  it('uses the local day for a late-evening instant before the cutoff', () => {
+    const timezone = process.env.TZ;
+    process.env.TZ = 'America/Denver';
+    const beforeCutoff: RawTurn = {
+      id: 'late',
+      role: 'human',
+      text: 'x',
+      at: '2026-07-01T01:00:00.000Z',
+      attachments: 0,
+    };
+    expect(activeSince([beforeCutoff], CUTOFF)).toBe(false);
+    if (timezone === undefined) delete process.env.TZ;
+    else process.env.TZ = timezone;
   });
 });
 
