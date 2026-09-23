@@ -2346,10 +2346,15 @@ select:disabled {
   gap: var(--space-2);
   width: max-content;
   max-width: 0;
+  flex: 0 0 max-content;
   overflow: hidden;
   padding-inline: var(--space-0);
   opacity: 0;
   pointer-events: none;
+}
+
+.patient-entry-actions .btn {
+  padding: var(--space-2) var(--space-4);
 }
 
 .patient-entry .list-item {
@@ -2359,10 +2364,9 @@ select:disabled {
 
 .patient-entry:hover .patient-entry-actions,
 .patient-entry:focus-within .patient-entry-actions {
-  max-width: 100%;
-  padding-inline: var(--space-4);
+  max-width: max-content;
   opacity: 1;
-  pointer-events: auto;
+  padding-inline: var(--space-0);
 }
 
 .patient-rename {
