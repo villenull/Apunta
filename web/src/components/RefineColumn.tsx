@@ -19,6 +19,8 @@ export interface RefineColumnProps {
   allowWords?: readonly string[];
   refQuote: string | null;
   onClearRefQuote: () => void;
+  /** Restores a quote when the pre-send save fails, so retry keeps context. */
+  onRestoreRefQuote?: (quote: string) => void;
   onNoteUpdated: (event: ChatNoteUpdatedEvent) => void | Promise<void>;
   onFlushPendingEdit?: () => Promise<void>;
   onRefiningChange?: (refining: boolean) => void;
@@ -32,6 +34,7 @@ export function RefineColumn({
   allowWords = [],
   refQuote,
   onClearRefQuote,
+  onRestoreRefQuote,
   onNoteUpdated,
   onFlushPendingEdit,
   onRefiningChange,
@@ -49,6 +52,9 @@ export function RefineColumn({
     kind: ChatNoteUpdatedEvent['outcome'];
     reason: string | null;
   } | null>(null);
+  const refQuoteRef = useRef<string | null>(refQuote);
+  refQuoteRef.current = refQuote;
+  const pendingQuoteRef = useRef<string | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -83,19 +89,24 @@ export function RefineColumn({
       handlers: ChatStreamHandlers<ChatMessage, never>,
       signal: AbortSignal,
     ): Promise<void> => {
-      await sendChatMessage(
-        noteId,
-        { message: text, ...(refQuote === null ? {} : { ref_quote: refQuote }) },
-        {
-          onStatus: (event) => handlers.onStatus(event.message),
-          onToken: handlers.onToken,
-          onMessage: handlers.onMessage,
-          onNoteUpdated: handleNoteUpdated,
-        },
-        signal,
-      );
+      const quote = pendingQuoteRef.current;
+      try {
+        await sendChatMessage(
+          noteId,
+          { message: text, ...(quote === null ? {} : { ref_quote: quote }) },
+          {
+            onStatus: (event) => handlers.onStatus(event.message),
+            onToken: handlers.onToken,
+            onMessage: handlers.onMessage,
+            onNoteUpdated: handleNoteUpdated,
+          },
+          signal,
+        );
+      } finally {
+        pendingQuoteRef.current = null;
+      }
     },
-    [handleNoteUpdated, noteId, refQuote],
+    [handleNoteUpdated, noteId],
   );
 
   const chat = useChatStream<ChatMessage, never>(request, {
@@ -103,13 +114,15 @@ export function RefineColumn({
       try {
         await onFlushPendingEdit?.();
       } catch {
+        const quote = pendingQuoteRef.current;
+        if (quote !== null) onRestoreRefQuote?.(quote);
+        pendingQuoteRef.current = null;
         throw new Error(SAVE_BEFORE_CHAT_ERROR);
       }
     },
     onStarted: () => {
       setDraft('');
       setOutcome(null);
-      onClearRefQuote();
     },
     onMessage: append,
   });
@@ -242,6 +255,8 @@ export function RefineColumn({
         value={draft}
         onChange={setDraft}
         onSend={() => {
+          if (draft.trim() === '') return;
+          pendingQuoteRef.current = refQuoteRef.current;
           onClearRefQuote();
           void chat.send(draft);
         }}

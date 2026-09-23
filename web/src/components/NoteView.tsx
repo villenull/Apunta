@@ -572,6 +572,7 @@ export function NoteView({
         onClearRefQuote={() => {
           setRefQuote(null);
         }}
+        onRestoreRefQuote={setRefQuote}
         onNoteUpdated={handleNoteUpdated}
         onRefiningChange={setRefining}
         hidden={!chatOpen}

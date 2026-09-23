@@ -245,6 +245,46 @@ describe('dictating into the composer', () => {
   });
 });
 
+describe('reference quotes', () => {
+  it('keeps the highlighted quote on the chat request while hiding the chip', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
+    const quote = 'Subjective: Improved sleep.';
+    const clear = vi.fn();
+    render(<RefineColumn note={draft} refQuote={quote} onClearRefQuote={clear} onNoteUpdated={() => {}} />);
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Tighten this' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    await waitFor(() => {
+      expect(api.state.messages.find((message) => message.role === 'user')?.ref_quote).toBe(quote);
+    });
+    expect(clear).toHaveBeenCalledOnce();
+  });
+
+  it('restores the highlighted quote when the pre-send save fails', async () => {
+    const quote = 'Subjective: Improved sleep.';
+    const clear = vi.fn();
+    const restore = vi.fn();
+    render(
+      <RefineColumn
+        note={draft}
+        refQuote={quote}
+        onClearRefQuote={clear}
+        onRestoreRefQuote={restore}
+        onNoteUpdated={() => {}}
+        onFlushPendingEdit={() => Promise.reject(new Error('save failed'))}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Tighten this' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    await screen.findByText("Your latest edits haven't saved, so Apunta can't use them yet. Try again.");
+    expect(clear).toHaveBeenCalledOnce();
+    expect(restore).toHaveBeenCalledWith(quote);
+  });
+});
+
 describe('save-before-chat failures', () => {
   it('keeps the message and sends no request when the latest edit cannot save', async () => {
     const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
