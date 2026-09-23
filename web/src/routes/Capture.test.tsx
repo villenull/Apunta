@@ -130,7 +130,9 @@ describe('recording on the capture screen', () => {
     expect(leaveAfterSave.defaultPrevented).toBe(false);
 
     // It went to /api/transcribe, not /api/generate: the typed path would have
-    // silently dropped the recording.
+    // silently dropped the recording. The model preload was fired at start,
+    // before this upload began.
+    expect(api.calls).toContain('POST /api/transcribe/preload');
     expect(api.calls).toContain('POST /api/transcribe');
     expect(api.calls).not.toContain('POST /api/generate');
   });

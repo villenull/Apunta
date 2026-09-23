@@ -7,6 +7,7 @@ import {
   generateNote,
   getPatient,
   listFormats,
+  preloadDraftingModel,
   transcribeRecording,
   type GenerateHandlers,
 } from '../api/index.js';
@@ -195,12 +196,12 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
       }));
     },
   });
-
   async function startRecording(): Promise<void> {
     if (busy || wav !== null || recording !== 'idle') return;
     setError(null);
     setNotice(null);
-    await live.start();
+    const started = await live.start();
+    if (started) preloadDraftingModel();
   }
 
   async function stopRecording(): Promise<void> {

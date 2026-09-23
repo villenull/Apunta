@@ -207,6 +207,12 @@ export interface LlmProvider {
   composeBrief(request: ComposeBriefRequest): Promise<LlmResult<BriefComposition>>;
   /** For `/api/health` and `smoke:live`: what this provider is talking to. */
   describe(): Promise<LlmDescription>;
+  /**
+   * Ask the local provider to load the drafting model ahead of a recording.
+   * This is deliberately fire-and-forget at the route boundary; providers
+   * swallow failures so recording can never depend on model availability.
+   */
+  preloadDraft(): Promise<void>;
 }
 
 export interface LlmDescription {

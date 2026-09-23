@@ -513,6 +513,8 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         return json(state.settings);
       }
 
+      if (path === '/api/transcribe/preload' && method === 'POST') return new Response(null, { status: 204 });
+
       /**
        * `POST /api/transcribe` (M5): a multipart upload, then the *same*
        * frames `/api/generate` streams, prefixed by whisper's progress —

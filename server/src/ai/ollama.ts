@@ -101,6 +101,11 @@ export const NUM_PREDICT_SUMMARY = 768;
 export const NUM_PREDICT_PLAN = 1536;
 export const NUM_PREDICT_BRIEF = 1024;
 export const NUM_PREDICT_BRAINSTORM = 1536;
+/** Keep the drafting weights resident through a typical recording session. */
+export const DRAFT_PRELOAD_KEEP_ALIVE = '30m';
+/** Avoid repeating a load request when the capture screen is opened repeatedly. */
+export const DRAFT_PRELOAD_INTERVAL_MS = 5 * 60 * 1000;
+
 
 /** How long silence lasts before the UI is told the model is still loading. */
 const LOADING_STATUS_AFTER_MS = 2500;
@@ -152,6 +157,10 @@ export interface OllamaProviderOptions {
   readonly totalTimeoutMs?: number;
   readonly fetchImpl?: typeof globalThis.fetch;
   readonly log?: (message: string, detail: Record<string, unknown>) => void;
+  /** Test seam for the capture preload's cooldown clock. */
+  readonly now?: () => number;
+  /** Override the cooldown only for controlled callers and tests. */
+  readonly preloadIntervalMs?: number;
 }
 
 interface OllamaMessage {
@@ -213,17 +222,23 @@ export class OllamaProvider implements LlmProvider {
   private readonly log: (message: string, detail: Record<string, unknown>) => void;
   /** `POST /api/show` is a round trip; the answer never changes for a tag. */
   private readonly thinkingSupport = new Map<string, boolean>();
+  private readonly now: () => number;
+  private readonly preloadIntervalMs: number;
+  private lastPreloadAt = Number.NEGATIVE_INFINITY;
+  private preloadInFlight: Promise<void> | null = null;
 
   constructor(options: OllamaProviderOptions = {}) {
     this.baseUrl = (options.baseUrl ?? DEFAULT_OLLAMA_URL).replace(/\/+$/, '');
     this.resolveModel = options.resolveModel ?? defaultModelForMachine;
     this.numCtx = options.numCtx ?? NUM_CTX;
     this.numPredict = options.numPredict ?? NUM_PREDICT;
-    this.keepAlive = options.keepAlive ?? '30m';
+    this.keepAlive = options.keepAlive ?? DRAFT_PRELOAD_KEEP_ALIVE;
     this.firstByteTimeoutMs = options.firstByteTimeoutMs ?? 120_000;
     this.totalTimeoutMs = options.totalTimeoutMs ?? 600_000;
     this.fetchImpl = options.fetchImpl ?? ((...args) => globalThis.fetch(...args));
     this.log = options.log ?? (() => {});
+    this.now = options.now ?? Date.now;
+    this.preloadIntervalMs = options.preloadIntervalMs ?? DRAFT_PRELOAD_INTERVAL_MS;
   }
 
   // --- health ------------------------------------------------------------
@@ -247,6 +262,60 @@ export class OllamaProvider implements LlmProvider {
       return { reachable: false, model, modelPresent: false, weightsFormat: null };
     }
   }
+  /**
+   * Load the resolved drafting model while the therapist is speaking. An empty
+   * `/api/generate` prompt does not alter drafting prompts or decoding; it only
+   * asks Ollama to create the resident model context.
+   */
+  async preloadDraft(): Promise<void> {
+    const now = this.now();
+    if (this.preloadInFlight !== null) {
+      await this.preloadInFlight;
+      return;
+    }
+    if (now - this.lastPreloadAt < this.preloadIntervalMs) return;
+
+    this.lastPreloadAt = now;
+    const work = this.runDraftPreload();
+    this.preloadInFlight = work.finally(() => {
+      this.preloadInFlight = null;
+    });
+    await this.preloadInFlight;
+  }
+
+  private async runDraftPreload(): Promise<void> {
+    let model: string | null = null;
+    try {
+      model = await this.resolveModel();
+      const response = await this.fetchImpl(`${this.baseUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          prompt: '',
+          stream: false,
+          raw: true,
+          keep_alive: this.keepAlive,
+          options: {
+            temperature: 0,
+            num_ctx: this.numCtx,
+            num_predict: 1,
+            seed: 0,
+            repeat_penalty: 1.0,
+          },
+        }),
+        signal: AbortSignal.timeout(this.firstByteTimeoutMs),
+      });
+      if (!response.ok) throw await this.mapHttpError(response, model);
+      await response.text();
+    } catch (error) {
+      this.log('draft model preload failed', {
+        model: model ?? 'unresolved',
+        code: error instanceof AiError ? error.code : 'unknown',
+      });
+    }
+  }
+
 
   /** Pre-flight for a real call: reachable, pulled, and running on llama.cpp. */
   private async requireUsableModel(model: string): Promise<void> {

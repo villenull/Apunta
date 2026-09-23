@@ -12,9 +12,20 @@ import {
   type TranscribeProgressEvent,
 } from '@apunta/shared';
 
-import { requestJson, requestStream } from './client.js';
+import { requestJson, requestStream, requestVoid } from './client.js';
 import { GenerateError, type GenerateHandlers } from './generate.js';
 import { consumeStream } from './sse.js';
+
+/**
+ * Ask the server to warm the drafting model while the microphone is opening.
+ * This intentionally returns nothing: capture must never await model loading,
+ * and a stopped Ollama is harmless until the finished recording is submitted.
+ */
+export function preloadDraftingModel(): void {
+  void requestVoid('/api/transcribe/preload', { method: 'POST', keepalive: true }).catch(() => {
+    // The preload is an optimisation, not a prerequisite for recording.
+  });
+}
 
 /**
  * `POST /api/transcribe` — upload the recording and watch it become a note.

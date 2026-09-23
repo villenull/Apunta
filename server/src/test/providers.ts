@@ -109,6 +109,10 @@ export class RecordingLlmProvider implements LlmProvider {
   describe(): Promise<LlmDescription> {
     return this.inner.describe();
   }
+
+  preloadDraft(): Promise<void> {
+    return this.inner.preloadDraft();
+  }
 }
 
 export function recordingProviders(stubs: ProviderStubs = {}): AiProviders & {

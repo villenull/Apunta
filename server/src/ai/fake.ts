@@ -267,6 +267,10 @@ export class FakeLlmProvider implements LlmProvider {
       weightsFormat: 'gguf',
     });
   }
+  /** Fake mode has no model process to warm and must remain network-free. */
+  preloadDraft(): Promise<void> {
+    return Promise.resolve();
+  }
 
   async *generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
     // The same pass the real provider runs, on the same server-side checks.

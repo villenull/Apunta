@@ -79,8 +79,13 @@ function ndjson(reply: ChatReply): string {
   return `${lines.join('\n')}\n`;
 }
 
-function stub(options: StubOptions): { fetchImpl: typeof globalThis.fetch; calls: ChatCall[] } {
+function stub(options: StubOptions): {
+  fetchImpl: typeof globalThis.fetch;
+  calls: ChatCall[];
+  generateCalls: ChatCall[];
+} {
   const calls: ChatCall[] = [];
+  const generateCalls: ChatCall[] = [];
   let index = 0;
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
@@ -99,6 +104,13 @@ function stub(options: StubOptions): { fetchImpl: typeof globalThis.fetch; calls
           headers: { 'content-type': 'application/json' },
         },
       );
+    }
+    if (url.endsWith('/api/generate')) {
+      generateCalls.push({ body: JSON.parse(String(init?.body)) as Record<string, unknown> });
+      return new Response(JSON.stringify({ model: MODEL, response: '', done: true }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
     }
     if (!url.endsWith('/api/chat')) throw new Error(`unexpected request to ${url}`);
 
@@ -128,7 +140,7 @@ function stub(options: StubOptions): { fetchImpl: typeof globalThis.fetch; calls
     return new Response(ndjson(reply), { status: 200, headers: { 'content-type': 'application/x-ndjson' } });
   }) as typeof globalThis.fetch;
 
-  return { fetchImpl, calls };
+  return { fetchImpl, calls, generateCalls };
 }
 
 function provider(options: StubOptions, overrides: Record<string, unknown> = {}): OllamaProvider {
@@ -765,5 +777,49 @@ describe('OllamaProvider.generateNote — spoken retractions', () => {
       }),
     );
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe('OllamaProvider.preloadDraft', () => {
+  it('uses the resolved model and keeps the request rate-limited', async () => {
+    let now = 0;
+    const { fetchImpl, generateCalls } = stub({ chats: [] });
+    const local = new OllamaProvider({
+      resolveModel: () => MODEL,
+      fetchImpl,
+      now: () => now,
+      preloadIntervalMs: 100,
+    });
+
+    await local.preloadDraft();
+    await local.preloadDraft();
+    expect(generateCalls).toHaveLength(1);
+    expect(generateCalls[0]?.body).toMatchObject({
+      model: MODEL,
+      prompt: '',
+      stream: false,
+      keep_alive: '30m',
+      options: { num_ctx: NUM_CTX },
+    });
+
+    now = 100;
+    await local.preloadDraft();
+    expect(generateCalls).toHaveLength(2);
+  });
+
+  it('swallows a warm-up transport failure', async () => {
+    let calls = 0;
+    const fetchImpl = (async (input: string | URL): Promise<Response> => {
+      if (String(input).endsWith('/api/generate')) calls += 1;
+      throw new Error('synthetic Ollama outage');
+    }) as typeof globalThis.fetch;
+    const local = new OllamaProvider({
+      resolveModel: () => MODEL,
+      fetchImpl,
+      log: () => {},
+    });
+
+    await expect(local.preloadDraft()).resolves.toBeUndefined();
+    expect(calls).toBe(1);
   });
 });

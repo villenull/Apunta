@@ -59,6 +59,21 @@ export function registerTranscribeRoute(
   providers: AiProviders,
 ): void {
   /**
+   * Start loading the drafting model as soon as capture opens. The response is
+   * deliberately immediate: recording must not wait for Ollama, and a missing
+   * model or stopped server is only a warm-up miss, never a recording error.
+   */
+  app.post('/api/transcribe/preload', async (request, reply): Promise<void> => {
+    void providers.llm.preloadDraft().catch((error: unknown) => {
+      request.log.warn(
+        { code: error instanceof AiError ? error.code : 'unknown' },
+        'draft model preload failed',
+      );
+    });
+    reply.code(204).send();
+  });
+
+  /**
    * `POST /api/transcribe/preview` — provisional words while she is still
    * speaking, so the screen can show that the microphone is being heard.
    *
