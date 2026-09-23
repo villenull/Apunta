@@ -53,8 +53,9 @@ export interface LiveRecording {
   readonly seconds: number;
   /** 0 at rest, 0.55–1 when she is heard: presence, not loudness. */
   readonly level: number;
-  /** Everything so far, roughly: committed words, then the tail still being re-read. */
-  readonly preview: string;
+  /** The stable prefix and the short hypothesis tail, rendered separately. */
+  readonly committedPreview: string;
+  readonly tentativePreview: string;
   /** Open the microphone. Resolves true once recording, false when it could not (after `onError`). */
   readonly start: () => Promise<boolean>;
   /** Stop, and hand back the WAV — or null when nothing was recording. */
@@ -151,6 +152,8 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
   const [seconds, setSeconds] = useState(0);
   const [level, setLevel] = useState(0);
   const [preview, setPreview] = useState('');
+  const [committedPreview, setCommittedPreview] = useState('');
+  const [tentativePreview, setTentativePreview] = useState('');
 
   const recorder = useRef<Recorder | null>(null);
   const starting = useRef(false);
@@ -198,7 +201,8 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     previewGeneration.current = generation;
     committed.current = { text: '', at: 0, tail: '' };
     setPreview('');
-
+    setCommittedPreview('');
+    setTentativePreview('');
     let cancelled = false;
     let timer = 0;
     let requestSequence = 0;
@@ -255,6 +259,8 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
               if (next === null) return;
               committed.current = next.committed;
               setPreview(next.preview);
+              setCommittedPreview(next.committed.text);
+              setTentativePreview(next.committed.tail);
             })
             .finally(() => {
               if (previewAbort.current === controller) previewAbort.current = null;
@@ -292,7 +298,12 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
           )
             return;
           const next = reconcilePreviewResult(committed.current, request, result.text);
-          if (next !== null) setPreview(next.preview);
+          if (next !== null) {
+            committed.current = next.committed;
+            setPreview(next.preview);
+            setCommittedPreview(next.committed.text);
+            setTentativePreview(next.committed.tail);
+          }
         })
         .finally(() => {
           if (previewAbort.current === controller) previewAbort.current = null;
@@ -406,13 +417,12 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     previewAbort.current?.abort();
     previewAbort.current = null;
     recorder.current?.cancel();
-    recorder.current = null;
     setSeconds(0);
     setLevel(0);
     setPhase('idle');
   }, []);
 
-  return { phase, seconds, level, preview, start, stop, cancel };
+  return { phase, seconds, level, preview, committedPreview, tentativePreview, start, stop, cancel };
 }
 
 /** Peaks under this are the room, not her: the same floor the recorder uses to find a pause. */

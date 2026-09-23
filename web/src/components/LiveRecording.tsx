@@ -18,6 +18,8 @@ export function LiveRecording({
   level,
   seconds,
   preview,
+  previewCommitted,
+  previewTentative,
   previewNote,
   children,
 }: {
@@ -26,6 +28,10 @@ export function LiveRecording({
   readonly seconds: number;
   /** Everything so far, roughly; empty until whisper has heard something. */
   readonly preview: string;
+  /** Stable words, rendered normally so they do not look provisional. */
+  readonly previewCommitted?: string;
+  /** The short tail Whisper may still revise. */
+  readonly previewTentative?: string;
   /** Under the words: what they are, and what they are not. */
   readonly previewNote: string;
   readonly children?: React.ReactNode;
@@ -73,7 +79,15 @@ export function LiveRecording({
         ) : (
           <>
             <div className="record-preview-text" ref={previewBox} data-testid="record-preview-text">
-              {preview}
+              {previewCommitted === undefined ? (
+                preview
+              ) : (
+                <>
+                  <span className="record-preview-committed">{previewCommitted}</span>
+                  {previewCommitted !== '' && previewTentative !== '' ? ' ' : null}
+                  <span className="record-preview-tentative">{previewTentative ?? ''}</span>
+                </>
+              )}
             </div>
             <p className="small muted record-preview-note">{previewNote}</p>
           </>

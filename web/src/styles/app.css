@@ -3022,6 +3022,16 @@ select:disabled {
   white-space: pre-wrap;
 }
 
+.record-preview-committed {
+  color: var(--text-primary);
+  font-style: normal;
+}
+
+.record-preview-tentative {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 .record-preview-note,
 .record-preview-waiting {
   margin: 6px 0 0;
