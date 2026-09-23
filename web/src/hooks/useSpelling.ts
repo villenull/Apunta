@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { useSpellingContext } from '../components/SpellingProvider.js';
-import { findMisspellings, suggestionsFor, type Misspelling } from '../lib/spelling.js';
+import { allowedWords, findMisspellings, suggestionsFor, type Misspelling } from '../lib/spelling.js';
 
 /** How long after the last keystroke the text is re-checked. */
 const CHECK_DELAY_MS = 250;
@@ -29,15 +29,7 @@ export function useSpelling(text: string, allow: readonly string[] = []): Spelli
   }, [ensureLoaded]);
 
   const allowKey = allow.join('\n');
-  const allowed = useMemo(() => {
-    const words = new Set(accepted);
-    for (const entry of allowKey.split('\n')) {
-      for (const match of entry.matchAll(/[A-Za-z]+(?:['’][A-Za-z]+)*/g)) {
-        words.add(match[0].replace(/’/g, "'").toLowerCase());
-      }
-    }
-    return words;
-  }, [accepted, allowKey]);
+  const allowed = useMemo(() => allowedWords([...accepted], allow), [accepted, allowKey]);
 
   useEffect(() => {
     if (speller === null) {
