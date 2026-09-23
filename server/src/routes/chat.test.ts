@@ -26,7 +26,6 @@ import {
   REFINE_BACKGROUND_TOKENS,
   UNCHANGED_NOTICE,
   discussionSubheadingSource,
-  streamRefineProgress,
   withoutServerSentences,
 } from './chat.js';
 
@@ -1088,6 +1087,20 @@ describe('POST /api/notes/:id/chat over a real connection', () => {
       // The regression this suite exists for: this used to be empty.
       expect(events.length).toBeGreaterThan(0);
       expect(events.some((event) => event.name === 'token')).toBe(true);
+      const progress = events
+        .filter((event) => event.name === 'status' && String(event.data['message']).startsWith('Rewriting '))
+        .map((event) => String(event.data['message']));
+      expect(progress).toEqual([
+        'Rewriting 1 of 4 sections…',
+        'Rewriting 2 of 4 sections…',
+        'Rewriting 3 of 4 sections…',
+        'Rewriting 4 of 4 sections…',
+      ]);
+      const firstProgress = events.findIndex(
+        (event) => event.name === 'status' && String(event.data['message']).startsWith('Rewriting '),
+      );
+      const firstToken = events.findIndex((event) => event.name === 'token');
+      expect(firstProgress).toBeLessThan(firstToken);
 
       const final = noteUpdated(events);
       expect(final?.name).toBe('note-updated');
@@ -1097,26 +1110,5 @@ describe('POST /api/notes/:id/chat over a real connection', () => {
     } finally {
       await local.close();
     }
-  });
-});
-describe('refine progress events', () => {
-  it('advances through each completed section without exposing section text', () => {
-    const events: { event: string; data: unknown }[] = [];
-    streamRefineProgress(
-      {
-        send: (event, data) => events.push({ event, data }),
-        end: () => {},
-        closed: false,
-      },
-      ['Subjective', 'Objective', 'Plan'],
-      { Subjective: 'kept', Objective: '', Plan: 'updated' },
-    );
-
-    expect(events.map(({ data }) => (data as { message: string }).message)).toEqual([
-      'Rewriting 1 of 3 sections…',
-      'Rewriting 2 of 3 sections…',
-      'Rewriting 3 of 3 sections…',
-    ]);
-    expect(events.every(({ event }) => event === 'status')).toBe(true);
   });
 });

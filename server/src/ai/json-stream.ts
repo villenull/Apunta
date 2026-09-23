@@ -25,6 +25,12 @@ export interface StringDelta {
 type Container = 'object' | 'array';
 
 export class JsonStringStreamDecoder {
+  private readonly nestedKeys: ReadonlySet<string>;
+
+  constructor(nestedKeys: readonly string[] = []) {
+    this.nestedKeys = new Set(nestedKeys);
+  }
+
   /** Everything seen so far, verbatim — what gets parsed at the end. */
   private raw = '';
 
@@ -60,8 +66,11 @@ export class JsonStringStreamDecoder {
       this.inString &&
       !this.isKey &&
       this.currentKey !== null &&
-      this.containers.length === 1 &&
-      this.containers[0] === 'object'
+      ((this.containers.length === 1 && this.containers[0] === 'object') ||
+        (this.containers.length === 2 &&
+          this.containers[0] === 'object' &&
+          this.containers[1] === 'object' &&
+          this.nestedKeys.has(this.currentKey)))
     );
   }
 

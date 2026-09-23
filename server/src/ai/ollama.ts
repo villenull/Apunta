@@ -166,6 +166,7 @@ interface ChatAttempt {
   readonly think: boolean | undefined;
   readonly seed: number;
   readonly numPredict: number;
+  readonly decodeNestedKeys?: readonly string[];
 }
 
 interface StreamOutcome {
@@ -602,6 +603,7 @@ export class OllamaProvider implements LlmProvider {
     format: JsonSchemaObject;
     validate: (value: unknown) => T;
     numPredict?: number;
+    decodeNestedKeys?: readonly string[];
   }): AsyncGenerator<LlmEvent, { value: T; stats: LlmStats }> {
     const thinkingModel = await this.supportsThinking(options.model);
     let think: boolean | undefined = thinkingModel ? false : undefined;
@@ -634,6 +636,7 @@ export class OllamaProvider implements LlmProvider {
         think,
         seed: attempt - 1,
         numPredict: options.numPredict ?? this.numPredict,
+        ...(options.decodeNestedKeys === undefined ? {} : { decodeNestedKeys: options.decodeNestedKeys }),
       });
 
       try {
@@ -864,7 +867,7 @@ export class OllamaProvider implements LlmProvider {
       }, LOADING_STATUS_AFTER_MS);
       timers.push(loading);
 
-      const decoder = new JsonStringStreamDecoder();
+      const decoder = new JsonStringStreamDecoder(attempt.decodeNestedKeys);
       const reader = response.body.getReader();
       const utf8 = new TextDecoder();
       let buffer = '';

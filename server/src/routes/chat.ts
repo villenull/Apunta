@@ -173,6 +173,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     let updatedSections: Sections | null = null;
     let stats: LlmStats | null = null;
     let sawRefined = false;
+    const streamedRewriteSections = new Set<string>();
     let heldBack = false;
     // An edit reply is a completion claim. Keep it out of the visible chat
     // until the guarded write has committed; otherwise the model can say it
@@ -212,9 +213,16 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         if (event.type === 'status') {
           stream.send('status', { stage: event.stage, message: event.message });
         } else if (event.type === 'token') {
-          // The decoder emits `reply` for the streamable field; a section name
-          // here would mean the shape changed under us, so ignore it rather
-          // than render half a rewrite into the chat bubble.
+          // Section tokens are progress-only. Their text remains buffered in
+          // the provider's validated result and never leaks a half rewrite.
+          const rewriteSection = format.sections.find((section) => section === event.section);
+          if (rewriteSection !== undefined && !streamedRewriteSections.has(rewriteSection)) {
+            streamedRewriteSections.add(rewriteSection);
+            stream.send('status', {
+              stage: 'drafting',
+              message: `Rewriting ${String(streamedRewriteSections.size)} of ${String(format.sections.length)} sections…`,
+            });
+          }
           if (event.section === 'reply') {
             if (bufferReplyTokens) bufferedReply += event.text;
             else stream.send('token', { text: event.text });
@@ -235,7 +243,6 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
                   discussionSubheadingSource(note.content, format.sections, input.message, input.ref_quote),
                 ).sections;
           stats = event.stats;
-          if (updatedSections !== null) streamRefineProgress(stream, format.sections, updatedSections);
         }
       }
     } catch (error) {
@@ -245,6 +252,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       stream.end();
       return;
     }
+
 
     if (stream.closed) {
       stream.end();
@@ -527,23 +535,6 @@ function finishWithReply(db: Database, stream: SseStream, noteId: string, text: 
   stream.end();
 }
 
-/** Tell the browser which validated rewrite sections have completed. */
-export function streamRefineProgress(
-  stream: SseStream,
-  sections: readonly string[],
-  updated: Sections,
-): void {
-  const total = sections.length;
-  let completed = 0;
-  for (const section of sections) {
-    if (!(section in updated)) continue;
-    completed += 1;
-    stream.send('status', {
-      stage: 'drafting',
-      message: `Rewriting ${String(completed)} of ${String(total)} sections…`,
-    });
-  }
-}
 
 /** A count, never the phrase and never the section name — shape only. */
 function logBlocked(request: FastifyRequest, sections: number): void {

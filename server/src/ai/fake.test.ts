@@ -208,7 +208,7 @@ describe('FakeLlmProvider.refineNote', () => {
         message: 'Expand the plan section',
       }),
     );
-    expect(Object.keys(streamed(events))).toEqual(['reply']);
+    expect(Object.keys(streamed(events))).toEqual(['reply', 'Subjective', 'Objective', 'Assessment', 'Plan']);
   });
 });
 

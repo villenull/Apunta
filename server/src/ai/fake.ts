@@ -297,7 +297,7 @@ export class FakeLlmProvider implements LlmProvider {
     );
 
     yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
-    yield* this.streamJson(JSON.stringify({ reply, updatedSections }));
+    yield* this.streamJson(JSON.stringify({ reply, updatedSections }), request.sections);
     yield { type: 'refined', reply, updatedSections, stats: FAKE_STATS };
   }
 
@@ -326,8 +326,8 @@ export class FakeLlmProvider implements LlmProvider {
     return Promise.resolve({ value: fakeComposeBrief(request), stats: FAKE_STATS });
   }
   /** Stream a JSON document through the real decoder, word by word. */
-  private async *streamJson(json: string): AsyncIterable<LlmEvent> {
-    const decoder = new JsonStringStreamDecoder();
+  private async *streamJson(json: string, nestedKeys: readonly string[] = []): AsyncIterable<LlmEvent> {
+    const decoder = new JsonStringStreamDecoder(nestedKeys);
     const chunks = wordChunks(json);
     for (let index = 0; index < chunks.length; index += 1) {
       const chunk = chunks[index] ?? '';
