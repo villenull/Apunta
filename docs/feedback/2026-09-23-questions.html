@@ -147,9 +147,9 @@
       <section class="card">
         <fieldset>
           <legend><span class="question-number">Question 1 of 5</span><br>How would you like to reach Apunta day to day?</legend>
-          <p class="question-help">This decides whether it stays on the practice PC or needs a secure way to reach it from another computer.</p>
+          <p class="question-help">This decides whether it stays where it runs now or needs a secure way to reach it from another computer.</p>
           <div class="option-list">
-            <label class="option"><input type="radio" name="q1" value="At this PC in the practice" checked><span class="option-copy"><span class="option-title">At this PC in the practice <span class="recommended">Recommended</span></span><span class="reason">This keeps notes and the local AI on one machine, with no remote connection to set up.</span></span></label>
+            <label class="option"><input type="radio" name="q1" value="At the computer where Apunta runs now" checked><span class="option-copy"><span class="option-title">At the computer where Apunta runs now <span class="recommended">Recommended</span></span><span class="reason">This is simplest and most private; nothing extra to set up.</span></span></label>
             <label class="option"><input type="radio" name="q1" value="From my own laptop through a secure connection"><span class="option-copy"><span class="option-title">From my own laptop through a secure connection</span></span></label>
             <label class="option"><input type="radio" name="q1" value="Either, depending on the day"><span class="option-copy"><span class="option-title">Either, depending on the day</span></span></label>
           </div>
@@ -174,15 +174,15 @@
 
       <section class="card">
         <fieldset>
-          <legend><span class="question-number">Question 3 of 5</span><br>When should you review a new draft?</legend>
-          <p class="question-help">You remain the person who checks and publishes it; this is about when the first draft should be ready for you.</p>
+          <legend><span class="question-number">Question 3 of 5</span><br>Which old Claude conversations should come into Apunta?</legend>
+          <p class="question-help">The preview lets you untick anything before importing.</p>
           <div class="option-list">
-            <label class="option"><input type="radio" name="q3" value="Show it as soon as it is ready" checked><span class="option-copy"><span class="option-title">Show it as soon as it is ready <span class="recommended">Recommended</span></span><span class="reason">You stay in control of what is published, without waiting on a timer.</span></span></label>
-            <label class="option"><input type="radio" name="q3" value="Hold drafts for an end-of-day review"><span class="option-copy"><span class="option-title">Hold drafts for an end-of-day review</span></span></label>
-            <label class="option"><input type="radio" name="q3" value="Let me choose a waiting time"><span class="option-copy"><span class="option-title">Let me choose a waiting time</span></span></label>
+            <label class="option"><input type="radio" name="q3" value="Only patients seen since July 1, 2026" checked><span class="option-copy"><span class="option-title">Only patients seen since July 1, 2026 <span class="recommended">Recommended</span></span><span class="reason">This is the current default; older chats stay in Claude.</span></span></label>
+            <label class="option"><input type="radio" name="q3" value="All patients, however long ago"><span class="option-copy"><span class="option-title">All patients, however long ago</span></span></label>
+            <label class="option"><input type="radio" name="q3" value="Let me pick a different start date"><span class="option-copy"><span class="option-title">Let me pick a different start date</span></span></label>
           </div>
           <label class="comment-label" for="comment-q3">Anything to add? <span>(optional)</span></label>
-          <textarea id="comment-q3" name="comment-q3" maxlength="240" placeholder="A short note, if helpful"></textarea>
+          <textarea id="comment-q3" name="comment-q3" maxlength="240" placeholder="A date or short note, if helpful"></textarea>
         </fieldset>
       </section>
 
@@ -226,9 +226,9 @@
 
   <script>
     const questions = [
-      { id: '1', name: 'q1', recommendation: 'At this PC in the practice' },
+      { id: '1', name: 'q1', recommendation: 'At the computer where Apunta runs now' },
       { id: '2', name: 'q2', recommendation: 'Not gathered in this session' },
-      { id: '3', name: 'q3', recommendation: 'Show it as soon as it is ready' },
+      { id: '3', name: 'q3', recommendation: 'Only patients seen since July 1, 2026' },
       { id: '4', name: 'q4', recommendation: 'Bring one patient first, then the rest' },
       { id: '5', name: 'q5', recommendation: 'Show a short note beside the draft' }
     ];
