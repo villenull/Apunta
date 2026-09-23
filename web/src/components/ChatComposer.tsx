@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 
 import type { Dictation } from '../hooks/useDictation.js';
 import { ComposerButtons, DictationPanel } from './ComposerButtons.js';
-import { SpellcheckTextarea } from './SpellcheckTextarea.js';
+import { SpellLayer } from './SpellLayer.js';
 
 export interface ChatComposerProps {
   readonly inputRef?: RefObject<HTMLTextAreaElement | null>;
@@ -57,10 +57,13 @@ export function ChatComposer({
         {allowWords === undefined ? (
           <textarea ref={inputRef} {...inputProps} spellCheck={false} />
         ) : (
-          <SpellcheckTextarea
+          <SpellLayer
+            as="textarea"
+            ref={inputRef}
             rows={2}
             value={value}
             disabled={sending}
+            spellCheck={false}
             placeholder={placeholder}
             aria-label={ariaLabel}
             data-testid={testId}
