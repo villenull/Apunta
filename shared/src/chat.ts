@@ -77,6 +77,9 @@ export const ChatNoteUpdatedEventSchema = z.object({
   note: NoteSchema,
   /** Sections whose body came back blank, in format order. */
   empty_sections: z.array(z.string()),
+  /** The server's authoritative result, separate from the model's prose. */
+  outcome: z.enum(['applied', 'unchanged', 'withheld']).default('applied'),
+  outcome_reason: z.string().nullable().default(null),
 });
 export type ChatNoteUpdatedEvent = z.infer<typeof ChatNoteUpdatedEventSchema>;
 

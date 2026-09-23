@@ -158,6 +158,8 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         stream.send('note-updated', {
           note: rewritten,
           empty_sections: emptySectionNames(fastPath.sections, format.sections),
+          outcome: 'applied',
+          outcome_reason: null,
         });
         const replyText = `Moved the quoted text from ${fastPath.source} to ${fastPath.target}.`;
         stream.send('token', { text: replyText });
@@ -366,6 +368,22 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       stream.send('note-updated', {
         note: rewritten,
         empty_sections: emptySectionNames(updatedSections, format.sections),
+        outcome: 'applied',
+        outcome_reason: null,
+      });
+    } else if (updatedSections !== null && !isQuestion(input.message)) {
+      const outcome = changed ? 'withheld' : heldBack ? 'withheld' : 'unchanged';
+      const outcomeReason =
+        outcome === 'withheld'
+          ? changed
+            ? 'The note became published before the edit could be applied.'
+            : 'A safety guard protected the existing note content.'
+          : 'The requested edit produced no changes.';
+      stream.send('note-updated', {
+        note,
+        empty_sections: emptySectionNames(updatedSections, format.sections),
+        outcome,
+        outcome_reason: outcomeReason,
       });
     }
 

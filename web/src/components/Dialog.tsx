@@ -8,8 +8,9 @@ export interface DialogProps {
   readonly className?: string;
   readonly initialFocusRef?: React.RefObject<HTMLElement | null>;
   readonly testId?: string;
+  readonly open?: boolean;
+  readonly showTitle?: boolean;
 }
-
 /**
  * The one modal surface used by confirmations and the refine sheet. It owns
  * keyboard dismissal, a contained tab order, and returning focus to the
@@ -23,12 +24,14 @@ export function Dialog({
   className = '',
   initialFocusRef,
   testId,
+  open = true,
+  showTitle = true,
 }: DialogProps): React.JSX.Element {
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
   const titleId = useRef(`dialog-title-${Math.random().toString(36).slice(2)}`);
-
   useEffect(() => {
+    if (!open) return;
     restoreRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const panel = panelRef.current;
     const focusTarget =
@@ -78,10 +81,12 @@ export function Dialog({
       document.removeEventListener('keydown', onKeyDown);
       restoreRef.current?.focus();
     };
-  }, [initialFocusRef, onClose]);
+  }, [initialFocusRef, onClose, open]);
   return (
     <div
-      className={variant === 'sheet' ? 'modal-backdrop sheet-backdrop' : 'modal-backdrop'}
+      className={
+        open ? (variant === 'sheet' ? 'modal-backdrop sheet-backdrop' : 'modal-backdrop') : 'is-dialog-closed'
+      }
       data-testid={testId}
     >
       <div
@@ -90,11 +95,14 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId.current}
+        aria-hidden={!open}
         tabIndex={-1}
       >
-        <h2 id={titleId.current} className="heading-tight">
-          {title}
-        </h2>
+        {showTitle && (
+          <h2 id={titleId.current} className="heading-tight">
+            {title}
+          </h2>
+        )}
         {children}
       </div>
     </div>

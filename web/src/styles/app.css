@@ -2237,6 +2237,27 @@ select:disabled {
 .col-action-btn:focus-visible {
   outline-offset: -2px;
 }
+/* Programmatic focus on headings moves screen-reader context without implying
+   keyboard focus; reserve the visible ring for keyboard navigation. */
+:is(h1, h2, h3)[tabindex]:focus:not(:focus-visible) {
+  outline: none;
+}
+.is-dialog-closed {
+  display: none;
+}
+
+.chat-outcome {
+  margin: var(--space-4) var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border-left: var(--space-1) solid var(--accent);
+  color: var(--text-primary);
+  background: var(--accent-tint);
+}
+
+.chat-outcome.is-withheld {
+  border-left-color: var(--danger);
+  background: var(--danger-tint);
+}
 
 /* A confirmation dialog, replacing window.confirm. */
 

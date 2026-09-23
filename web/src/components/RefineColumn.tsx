@@ -6,6 +6,7 @@ import { useChatStream, type ChatStreamHandlers } from '../hooks/useChatStream.j
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { ChatComposer } from './ChatComposer.js';
+import { Dialog } from './Dialog.js';
 import { ThinkingDots } from './ThinkingDots.js';
 
 export { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
@@ -44,6 +45,10 @@ export function RefineColumn({
   const reloadThread = thread.reload;
   const [draft, setDraft] = useState('');
   const [dictationError, setDictationError] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<{
+    kind: ChatNoteUpdatedEvent['outcome'];
+    reason: string | null;
+  } | null>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -64,6 +69,14 @@ export function RefineColumn({
     [updateThread],
   );
 
+  const handleNoteUpdated = useCallback(
+    (event: ChatNoteUpdatedEvent): void | Promise<void> => {
+      setOutcome({ kind: event.outcome, reason: event.outcome_reason });
+      return onNoteUpdated(event);
+    },
+    [onNoteUpdated],
+  );
+
   const request = useCallback(
     async (
       text: string,
@@ -77,12 +90,12 @@ export function RefineColumn({
           onStatus: (event) => handlers.onStatus(event.message),
           onToken: handlers.onToken,
           onMessage: handlers.onMessage,
-          onNoteUpdated,
+          onNoteUpdated: handleNoteUpdated,
         },
         signal,
       );
     },
-    [noteId, onNoteUpdated, refQuote],
+    [handleNoteUpdated, noteId, refQuote],
   );
 
   const chat = useChatStream<ChatMessage, never>(request, {
@@ -95,6 +108,7 @@ export function RefineColumn({
     },
     onStarted: () => {
       setDraft('');
+      setOutcome(null);
       onClearRefQuote();
     },
     onMessage: append,
@@ -122,15 +136,20 @@ export function RefineColumn({
     if (element) element.scrollTop = element.scrollHeight;
   }, [messages, chat.streaming, chat.status]);
 
+  const closePanel = useCallback(() => onClose?.(), [onClose]);
   const empty = messages.length === 0 && chat.streaming === null;
+  const lastAssistant = [...messages].reverse().find((message) => message.role === 'assistant');
 
   return (
-    <div
+    <Dialog
+      title="Refine note"
+      onClose={closePanel}
+      variant="sheet"
       className={hidden ? 'chat-col is-sheet is-closed' : 'chat-col is-sheet'}
-      data-testid="chat-panel"
-      role="dialog"
-      aria-labelledby="refine-note-title"
-      aria-hidden={hidden}
+      initialFocusRef={inputRef}
+      open={!hidden}
+      showTitle={false}
+      testId="chat-panel"
     >
       <div className="chat-header row between">
         <h2 className="chat-header-title" id="refine-note-title">
@@ -168,7 +187,7 @@ export function RefineColumn({
           </p>
         )}
         {messages.map((message) => (
-          <Bubble key={message.id} message={message} />
+          <Bubble key={message.id} message={message} announce={message.id === lastAssistant?.id} />
         ))}
         {chat.streaming !== null && (
           <div className="chat-msg ai" data-testid="chat-streaming">
@@ -187,6 +206,18 @@ export function RefineColumn({
               )}
             </div>
           </div>
+        )}
+        {outcome !== null && (
+          <p className={`chat-outcome is-${outcome.kind}`} role="status" data-testid="refine-outcome">
+            <strong>
+              {outcome.kind === 'applied'
+                ? 'Changes applied'
+                : outcome.kind === 'withheld'
+                  ? 'No changes applied'
+                  : 'No changes applied'}
+            </strong>
+            {outcome.reason === null ? null : ` — ${outcome.reason}`}
+          </p>
         )}
       </div>
 
@@ -218,14 +249,23 @@ export function RefineColumn({
         testId="chat-input"
         allowWords={allowWords}
       />
-    </div>
+    </Dialog>
   );
 }
 
-function Bubble({ message }: { message: ChatMessage }): React.JSX.Element {
+function Bubble({
+  message,
+  announce = false,
+}: {
+  message: ChatMessage;
+  announce?: boolean;
+}): React.JSX.Element {
   return (
     <div className={message.role === 'user' ? 'chat-msg user' : 'chat-msg ai'} data-testid="chat-msg">
-      <div className="chat-bubble">
+      <div
+        className="chat-bubble"
+        {...(message.role === 'assistant' && announce ? { role: 'status', 'aria-live': 'polite' } : {})}
+      >
         {message.ref_quote !== null && message.ref_quote !== '' && (
           <div className="chat-quote">“{message.ref_quote}”</div>
         )}
