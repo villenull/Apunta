@@ -60,7 +60,11 @@ describe('CreateNoteFormatRequestSchema', () => {
 describe('note request schemas', () => {
   it('requires both ids on create and allows empty content on update', () => {
     expect(CreateNoteRequestSchema.safeParse({ patient_id: 'not-a-uuid' }).success).toBe(false);
-    expect(UpdateNoteRequestSchema.safeParse({ content: '' }).success).toBe(true);
+    // `revision` is the optimistic-write precondition the server refuses a
+    // stale write on, so an update without one is not a valid update.
+    expect(UpdateNoteRequestSchema.safeParse({ content: '' }).success).toBe(false);
+    expect(UpdateNoteRequestSchema.safeParse({ revision: 0 }).success).toBe(false);
+    expect(UpdateNoteRequestSchema.safeParse({ revision: 0, content: '' }).success).toBe(true);
     expect(UpdateNoteRequestSchema.safeParse({}).success).toBe(false);
   });
 });
