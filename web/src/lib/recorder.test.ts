@@ -1,7 +1,15 @@
 import { AUDIO_SAMPLE_RATE, parseWavHeader, WAV_CONTENT_TYPE } from '@apunta/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { classifyMediaError, formatTimer, PcmBuffer, RecorderError, recorderMessage } from './recorder.js';
+import {
+  classifyMediaError,
+  formatTimer,
+  PcmBuffer,
+  Recorder,
+  RecorderError,
+  recorderMessage,
+  type RecorderHandlers,
+} from './recorder.js';
 
 /**
  * The parts of the recorder that are not the browser.
@@ -97,6 +105,111 @@ describe('PcmBuffer', () => {
     expect(samples.getInt16(2, true)).toBe(32_767);
     expect(samples.getInt16(4, true)).toBe(-32_768);
     expect(samples.getInt16(6, true)).toBe(32_767);
+  });
+});
+
+/**
+ * The audio graph, stubbed just enough to drive the real `Recorder`: the
+ * browser half is Chromium's fake microphone in Playwright, but the gate
+ * between "the worklet is wired" and "a frame counts" is this class's own
+ * bookkeeping, and nothing else covers it.
+ */
+describe('Recorder', () => {
+  class FakePort {
+    onmessage: ((event: MessageEvent<unknown>) => void) | null = null;
+    postMessage(data: unknown): void {
+      if (data !== 'flush') return;
+      // The real worklet acknowledges once its partial block has crossed.
+      queueMicrotask(() => {
+        this.onmessage?.({ data: 'flushed' } as MessageEvent<unknown>);
+      });
+    }
+
+    /** Stand in for the worklet forwarding a block of samples. */
+    emit(frames: Float32Array): void {
+      this.onmessage?.({ data: frames } as MessageEvent<unknown>);
+    }
+  }
+
+  const original = {
+    AudioWorkletNode: globalThis.AudioWorkletNode,
+    AudioContext: globalThis.AudioContext,
+  };
+  /** The port of the node the last `start()` built. */
+  let port: FakePort | null = null;
+
+  beforeEach(() => {
+    port = null;
+    class FakeAudioWorkletNode {
+      readonly port = new FakePort();
+      constructor(..._args: unknown[]) {
+        port = this.port;
+      }
+      connect(): void {}
+      disconnect(): void {}
+    }
+    class FakeAudioContext {
+      readonly sampleRate = AUDIO_SAMPLE_RATE;
+      readonly state = 'running';
+      readonly audioWorklet = { addModule: (): Promise<void> => Promise.resolve() };
+      createMediaStreamSource(): { connect: () => void } {
+        return { connect: () => undefined };
+      }
+      resume(): Promise<void> {
+        return Promise.resolve();
+      }
+      close(): Promise<void> {
+        return Promise.resolve();
+      }
+    }
+    (globalThis as { AudioWorkletNode?: unknown }).AudioWorkletNode = FakeAudioWorkletNode;
+    (globalThis as { AudioContext?: unknown }).AudioContext = FakeAudioContext;
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: {
+        getUserMedia: () =>
+          Promise.resolve({ getTracks: () => [{ stop: () => undefined }], getAudioTracks: () => [] }),
+      },
+    });
+  });
+
+  afterEach(() => {
+    (globalThis as { AudioWorkletNode?: unknown }).AudioWorkletNode = original.AudioWorkletNode;
+    (globalThis as { AudioContext?: unknown }).AudioContext = original.AudioContext;
+    Reflect.deleteProperty(navigator, 'mediaDevices');
+  });
+
+  /** A started recorder and the worklet port feeding it. */
+  async function started(handlers: RecorderHandlers = {}): Promise<{ recorder: Recorder; port: FakePort }> {
+    const recorder = new Recorder(handlers);
+    await recorder.start();
+    if (port === null) throw new Error('the recorder never built a worklet node');
+    return { recorder, port };
+  }
+
+  it('keeps the frames that arrive between start and stop', async () => {
+    const progress: number[] = [];
+    const { recorder, port } = await started({ onProgress: (seconds) => progress.push(seconds) });
+    port.emit(new Float32Array(AUDIO_SAMPLE_RATE));
+    port.emit(new Float32Array(AUDIO_SAMPLE_RATE / 2));
+
+    expect(progress).toEqual([1, 1.5]);
+    expect(recorder.seconds).toBeCloseTo(1.5, 5);
+    expect(recorder.snapshot()).not.toBeNull();
+
+    const wav = await recorder.stop();
+    expect((await headerOf(wav)).durationSeconds).toBeCloseTo(1.5, 5);
+  });
+
+  it('drops frames that arrive after stop', async () => {
+    const { recorder, port } = await started();
+    port.emit(new Float32Array(AUDIO_SAMPLE_RATE));
+    const wav = await recorder.stop();
+    expect((await headerOf(wav)).durationSeconds).toBeCloseTo(1, 5);
+
+    // A frame the worklet sends after the flush boundary is not in the file.
+    port.emit(new Float32Array(AUDIO_SAMPLE_RATE));
+    expect(recorder.seconds).toBeCloseTo(1, 5);
   });
 });
 

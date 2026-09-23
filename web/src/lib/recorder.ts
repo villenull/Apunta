@@ -295,6 +295,10 @@ export class Recorder {
 
       this.source = context.createMediaStreamSource(this.stream);
       this.source.connect(this.node);
+      // Frames are accepted from here until `stop()`, `cancel()`, or the cap.
+      // The gate is a field rather than a local so a late worklet message
+      // cannot land after teardown has begun.
+      this.acceptingFrames = true;
 
       // The device being unplugged mid-session is a real failure with a real
       // recovery — say so rather than ending up with a file of silence.
