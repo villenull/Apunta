@@ -67,11 +67,19 @@ test.describe('recording a session', () => {
     await expect(page.getByTestId('record-timer')).toHaveText(/00:0[1-9]/, { timeout: 10_000 });
 
     // --- Stop and process --------------------------------------------------
-    await page.getByTestId('record-stop').click();
-
     // "Transcribing… 25%" — whisper's progress, or the fake's stand-in for it.
     // Visibly the status is dots alone (owner-proxy, 2026-08-30); the stage
     // text is the dots' accessible name, and that is where it is asserted.
+    // Fake AI answers in milliseconds, which would make the stage a blink no
+    // poller could see, so the request is held briefly — continued, not
+    // buffered, so the progress stream arrives as it always does.
+    await page.route('**/api/transcribe', (route) => {
+      setTimeout(() => {
+        void route.continue();
+      }, 300);
+    });
+    await page.getByTestId('record-stop').click();
+
     await expect(page.getByTestId('draft-status').getByTestId('thinking-dots')).toHaveAttribute(
       'aria-label',
       /Transcribing…/,
