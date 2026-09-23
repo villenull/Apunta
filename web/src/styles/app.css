@@ -1443,10 +1443,14 @@ select:disabled {
  */
 .record-ui {
   text-align: center;
-  padding: var(--space-32) var(--space-0);
+  padding: var(--space-6);
   border: 0.5px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
+}
+
+.record-stage-copy {
+  text-align: left;
 }
 
 .record-mic {
