@@ -1,58 +1,185 @@
 /*
  * Design tokens ported from prototype/style.css.
  *
- * Two deliberate differences from the prototype:
- *  - No `@import url('https://fonts.googleapis.com/...')`. Runtime assets must
- *    never come from a CDN (CLAUDE.md hard rule 1); the families stay as the
- *    first entry of each stack so bundled font files can be dropped in later
- *    without touching component CSS.
+ * The sans family is bundled as local Inter woff2 subsets with `@font-face`
+ * below; the serif deliberately remains a system fallback. Runtime assets
+ * never come from a CDN (CLAUDE.md hard rule 1).
  *  - Only tokens and base element styles live here. Component classes
  *    (.app-shell, .card, .btn, …) are ported with their screens in M2.
  */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src:
+    url('/fonts/inter-latin-ext-400-normal.woff2') format('woff2'),
+    local('Inter Regular'),
+    local('Inter');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src:
+    url('/fonts/inter-latin-400-normal.woff2') format('woff2'),
+    local('Inter Regular'),
+    local('Inter');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src:
+    url('/fonts/inter-latin-ext-500-normal.woff2') format('woff2'),
+    local('Inter Medium'),
+    local('Inter');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src:
+    url('/fonts/inter-latin-500-normal.woff2') format('woff2'),
+    local('Inter Medium'),
+    local('Inter');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src:
+    url('/fonts/inter-latin-ext-600-normal.woff2') format('woff2'),
+    local('Inter SemiBold'),
+    local('Inter');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF,
+    U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src:
+    url('/fonts/inter-latin-600-normal.woff2') format('woff2'),
+    local('Inter SemiBold'),
+    local('Inter');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
   --bg: #f6f4ef;
   --surface: #ffffff;
   --surface-muted: #fbfaf7;
   --border: #e3e0d6;
+  --border-subtle: #e6e3da;
   --border-strong: #cfcbbc;
   --text-primary: #262620;
   --text-secondary: #6e6c60;
   --text-muted: #716f64;
-  /*
-   * The accent is the one colour the practice can change (Settings →
-   * Appearance writes `--accent` onto the root element). Its two relatives
-   * are mixed from it rather than stored, so a new accent brings its own
-   * hover and tint instead of leaving the old green behind in every active
-   * row. The literals above each mix are the pre-`color-mix` fallback and
-   * are the exact values this file shipped with.
-   */
   --accent: #1f6f63;
-  --accent-hover: #17554b;
   --accent-hover: color-mix(in srgb, var(--accent) 77%, #000);
-  --accent-tint: #e4efec;
   --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
+  --on-accent: #fff;
+  --accent-ink: var(--accent-hover);
   --danger: #b54b3a;
+  --danger-hover: #9c3f30;
   --danger-tint: #f7e9e5;
-  --radius: 10px;
-  --radius-lg: 16px;
-  --shadow: 0 1px 2px rgba(38, 38, 32, 0.04), 0 1px 12px rgba(38, 38, 32, 0.03);
-  /*
-   * Left/right padding around page content: the top bar, screen content,
-   * cards, and the note, plan and prep panes. Half the prototype's 22–24px
-   * at the owner's request (2026-09-21), so a note gets the width. Top and
-   * bottom padding are untouched and stay literal in each rule.
-   */
-  --gutter-x: 12px;
-  /*
-   * Text size (Settings → Appearance, owner 2026-09-21). Every font-size in
-   * the stylesheets is a px value times this, so text scales together and
-   * spacing does not. Written onto the root element; 1 is "Default".
-   */
-  --font-scale: 1;
 
+  /* Typography: every component uses one of these six sizes. */
+  --text-xs: calc(11px * var(--font-scale));
+  --text-sm: calc(12px * var(--font-scale));
+  --text-md: calc(13px * var(--font-scale));
+  --text-base: calc(14px * var(--font-scale));
+  --text-lg: calc(16px * var(--font-scale));
+  --text-xl: calc(22px * var(--font-scale));
+
+  /* Spacing: the numbered scale is supplemented by exact semantic aliases. */
+  --space-0: 0;
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 16px;
+  --space-18: 18px;
+  --space-20: 20px;
+  --space-22: 22px;
+  --space-24: 24px;
+  --space-28: 28px;
+  --space-32: 32px;
+  --space-40: 40px;
+
+  /* Radius aliases preserve the current visual language while removing drift. */
+  --radius-hairline: 2px;
+  --radius-mark: 3px;
+  --radius-focus: 4px;
+  --radius-xs: 6px;
+  --radius-icon: 7px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-bubble: 12px;
+  --space-2px: 2px;
+  --space-3px: 3px;
+  --space-5px: 5px;
+  --space-7px: 7px;
+  --space-9px: 9px;
+  --space-13px: 13px;
+  --space-15px: 15px;
+  --radius-chat: 14px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+  --radius-fab: 26px;
+  --radius: var(--radius-md);
+
+  --radius-none: 0;
+  --radius-badge: 20px;
+  --shadow-lift: 0 1px 2px rgba(38, 38, 32, 0.04), 0 1px 12px rgba(38, 38, 32, 0.03);
+  --shadow-pop: 0 4px 14px rgba(0, 0, 0, 0.18);
+  --shadow-overlay: 0 12px 40px rgba(0, 0, 0, 0.16);
+  --shadow-modal: 0 8px 40px rgba(38, 38, 32, 0.18);
+  --shadow-toast: 0 6px 28px rgba(38, 38, 32, 0.16);
+  --shadow-switch: 0 1px 2px rgba(38, 38, 32, 0.2);
+  --shadow-focus: 0 0 0 3px var(--accent-tint);
+  --shadow-selected: 0 0 0 1px var(--accent);
+  --shadow-border: 0 0 0 1px var(--border);
+  --shadow-marker-danger: inset 0 -1.5px 0 var(--danger);
+  --shadow-marker-accent: inset 0 -1.5px 0 var(--accent);
+  --shadow: var(--shadow-lift);
+
+  --gutter-x: var(--space-6);
+  --font-scale: 1;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-serif: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
 }
 
 * {
@@ -80,7 +207,7 @@ body {
   font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text-primary);
-  font-size: calc(16px * var(--font-scale));
+  font-size: var(--text-lg);
   line-height: 1.5;
 }
 
@@ -93,16 +220,13 @@ h3 {
   color: var(--text-primary);
 }
 
-h1 {
-  font-size: calc(22px * var(--font-scale));
-}
-
+h1,
 h2 {
-  font-size: calc(19px * var(--font-scale));
+  font-size: var(--text-xl);
 }
 
 h3 {
-  font-size: calc(16px * var(--font-scale));
+  font-size: var(--text-lg);
 }
 
 p {
@@ -116,9 +240,9 @@ a {
 
 .muted {
   color: var(--text-secondary);
-  font-size: calc(14px * var(--font-scale));
+  font-size: var(--text-base);
 }
 
 .small {
-  font-size: calc(13px * var(--font-scale));
+  font-size: var(--text-md);
 }
