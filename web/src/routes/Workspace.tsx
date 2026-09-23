@@ -66,6 +66,23 @@ export function Workspace(): React.JSX.Element {
     [patientId],
   );
   const notes = useLoader(loadNotes);
+  // A visibility refresh must not briefly unmount the editor: its cleanup
+  // flushes local edits, and a conflicted edit must wait for an explicit
+  // Keep mine / Take theirs choice.
+  const lastNotesPatientRef = useRef<string | null>(null);
+  const lastNotesRef = useRef<Note[]>([]);
+  if (lastNotesPatientRef.current !== patientId) {
+    lastNotesPatientRef.current = patientId;
+    lastNotesRef.current = [];
+  }
+  if (notes.state.status === 'ready') lastNotesRef.current = notes.state.data;
+  const visibleNotes = notes.state.status === 'ready' ? notes.state.data : lastNotesRef.current;
+
+  const note = visibleNotes.find((candidate) => candidate.id === noteId) ?? null;
+  const notesForColumn =
+    notes.state.status === 'loading' && lastNotesRef.current.length > 0
+      ? { status: 'ready' as const, data: lastNotesRef.current }
+      : notes.state;
   useEffect(() => {
     const refreshNotesWhenVisible = (): void => {
       if (document.visibilityState === 'visible') notes.reload();
@@ -79,10 +96,6 @@ export function Workspace(): React.JSX.Element {
   const patient =
     patients.state.status === 'ready'
       ? (patients.state.data.find((candidate) => candidate.id === patientId) ?? null)
-      : null;
-  const note =
-    notes.state.status === 'ready'
-      ? (notes.state.data.find((candidate) => candidate.id === noteId) ?? null)
       : null;
   // The note's format supplies its section list, which the editor needs to
   // tell an empty section from a gap. Formats are already loaded here for the
@@ -235,7 +248,7 @@ export function Workspace(): React.JSX.Element {
 
         <NotesColumn
           patient={patient}
-          notes={notes.state}
+          notes={notesForColumn}
           activeNoteId={view === 'notes' ? (note?.id ?? null) : null}
           view={view}
           onSelect={selectNote}

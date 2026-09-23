@@ -71,7 +71,7 @@ export function NoteView({
   onNoteChanged,
   onNoteDeleted,
 }: NoteViewProps): React.JSX.Element {
-  type SaveState = 'saved' | 'saving' | 'error';
+  type SaveState = 'saved' | 'saving' | 'error' | 'conflict';
 
   const [text, setText] = useState(note.content);
   const [copied, setCopied] = useState(false);
@@ -99,6 +99,12 @@ export function NoteView({
   const latestTextRef = useRef(note.content);
   /** Avoid a second unpublish when rapid edits queue behind the first one. */
   const draftUnlockedRef = useRef(note.status !== 'published');
+  /**
+   * A stale write is a user decision, not a failed save to retry. This ref is
+   * what the pagehide/visibility cleanup reads after the conflict state has
+   * been painted.
+   */
+  const staleRef = useRef(false);
   const timerRef = useRef<number | null>(null);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   const onNoteChangedRef = useRef(onNoteChanged);
@@ -113,9 +119,36 @@ export function NoteView({
   const noteUpdateAckRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    noteRef.current = note;
     onNoteChangedRef.current = onNoteChanged;
-  });
+    const previous = noteRef.current;
+    if (note.id === previous.id && note.revision !== previous.revision) {
+      if (staleRef.current) {
+        // While a conflict is waiting for a choice, keep the local edit and
+        // move the remote side forward if another window edits again.
+        persistedContentRef.current = note.content;
+        draftUnlockedRef.current = note.status !== 'published';
+        setStale((current) => (current === null ? current : { mine: current.mine, theirs: note }));
+      } else if (latestTextRef.current !== persistedContentRef.current) {
+        // The list refresh found a remote write while this window still has
+        // an edit of its own. Surface the same explicit choice as a 409.
+        persistedContentRef.current = note.content;
+        draftUnlockedRef.current = note.status !== 'published';
+        staleRef.current = true;
+        setStale({ mine: latestTextRef.current, theirs: note });
+        setError(null);
+        markSaveState('conflict');
+      } else {
+        // No local edit is pending: quietly accept the newer remote note.
+        persistedContentRef.current = note.content;
+        latestTextRef.current = note.content;
+        draftUnlockedRef.current = note.status !== 'published';
+        setText(note.content);
+        setError(null);
+        markSaveState('saved');
+      }
+    }
+    noteRef.current = note;
+  }, [markSaveState, note, onNoteChanged]);
 
   useLayoutEffect(() => {
     const ack = noteUpdateAckRef.current;
@@ -153,7 +186,7 @@ export function NoteView({
    */
   const persist = useCallback(
     async (value: string, revision: number, keepalive = false): Promise<void> => {
-      if (revision !== saveRevisionRef.current) return;
+      if (revision !== saveRevisionRef.current || staleRef.current) return;
       const current = noteRef.current;
       if (value === persistedContentRef.current) {
         markSaveState('saved');
@@ -167,11 +200,13 @@ export function NoteView({
           { revision: current.revision, content: value },
           keepalive ? { keepalive: true } : undefined,
         );
+        noteRef.current = updated;
         persistedContentRef.current = updated.content;
         if (revision !== saveRevisionRef.current) return;
         onNoteChangedRef.current(updated);
         markSaveState('saved');
         setError(null);
+        staleRef.current = false;
         setStale(null);
       } catch (thrown) {
         if (revision !== saveRevisionRef.current) return;
@@ -185,13 +220,10 @@ export function NoteView({
             persistedContentRef.current = theirs.content;
             draftUnlockedRef.current = theirs.status !== 'published';
             onNoteChangedRef.current(theirs);
+            staleRef.current = true;
             setStale({ mine: value, theirs });
-            markSaveState('error');
-            setError(
-              theirs.status === 'published'
-                ? 'This note was published in another window. Choose what to do with your edit.'
-                : 'This note changed in another window. Choose which text to keep.',
-            );
+            markSaveState('conflict');
+            setError(null);
             return;
           } catch {
             // Fall through to the ordinary save error if the refetch itself fails.
@@ -215,7 +247,6 @@ export function NoteView({
     },
     [persist],
   );
-
   const cancelPending = useCallback((): void => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current);
@@ -224,9 +255,12 @@ export function NoteView({
     pendingRef.current = null;
     pendingRevisionRef.current = null;
   }, []);
-
   const flush = useCallback(
     (keepalive = false): Promise<void> => {
+      if (staleRef.current) {
+        cancelPending();
+        return queueRef.current;
+      }
       if (timerRef.current !== null) {
         window.clearTimeout(timerRef.current);
         timerRef.current = null;
@@ -241,7 +275,7 @@ export function NoteView({
       }
       return queueRef.current;
     },
-    [enqueue],
+    [cancelPending, enqueue],
   );
 
   // Switching notes and closing a tab must not strand the debounced edit.
@@ -292,16 +326,20 @@ export function NoteView({
   const handleNoteUpdated = useCallback(
     (event: ChatNoteUpdatedEvent): Promise<void> => {
       cancelPending();
+      const previousContent = noteRef.current.content;
       // The server has persisted this rewrite; invalidate every local edit
       // revision so an older response cannot overwrite the new note.
       saveRevisionRef.current += 1;
+      staleRef.current = false;
       draftUnlockedRef.current = event.note.status !== 'published';
+      noteRef.current = event.note;
       persistedContentRef.current = event.note.content;
       latestTextRef.current = event.note.content;
       markSaveState('saved');
       return new Promise<void>((resolve) => {
         setText(event.note.content);
         onNoteChangedRef.current(event.note);
+        setStale(null);
         setError(null);
         if (event.outcome !== 'applied') {
           // Nothing was written, so there is no painted rewrite for the chat
@@ -313,7 +351,7 @@ export function NoteView({
         noteUpdateAckRef.current = resolve;
         // Name what actually changed, so the flash can say which sections moved.
         const sectionNames = format?.sections ?? [];
-        const before = textToSections(noteRef.current.content, sectionNames);
+        const before = textToSections(previousContent, sectionNames);
         const after = textToSections(event.note.content, sectionNames);
         setChangedSections(sectionNames.filter((name) => (before[name] ?? '') !== (after[name] ?? '')));
         setRefined(true);
@@ -375,6 +413,7 @@ export function NoteView({
       latestTextRef.current = updated.content;
       saveRevisionRef.current += 1;
       draftUnlockedRef.current = updated.status !== 'published';
+      staleRef.current = false;
       setText(updated.content);
       setStale(null);
       setError(null);
@@ -392,6 +431,7 @@ export function NoteView({
     if (stale === null) return;
     cancelPending();
     saveRevisionRef.current += 1;
+    staleRef.current = false;
     noteRef.current = stale.theirs;
     persistedContentRef.current = stale.theirs.content;
     latestTextRef.current = stale.theirs.content;
@@ -438,7 +478,13 @@ export function NoteView({
           </div>
           <div className="row gap-8 note-actions">
             <span className={`note-save-status is-${saveState}`} data-testid="note-save-status">
-              {saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Couldn’t save' : 'Saved'}
+              {saveState === 'saving'
+                ? 'Saving…'
+                : saveState === 'error'
+                  ? 'Couldn’t save'
+                  : saveState === 'conflict'
+                    ? 'Changed in another window'
+                    : 'Saved'}
             </span>
             {refining && (
               <span className="note-updating-hint" data-testid="note-updating-hint">
@@ -493,12 +539,8 @@ export function NoteView({
         </div>
 
         {stale !== null && (
-          <div className="form-error" role="alert" data-testid="note-conflict">
-            <p>
-              {stale.theirs.status === 'published'
-                ? 'This note is published in another window. Your edit is still here.'
-                : 'This note changed in another window. Your edit is still here.'}
-            </p>
+          <div className="note-conflict" role="alert" data-testid="note-conflict">
+            <p>This note was changed in another window. Your edits are still here.</p>
             <div className="row gap-8">
               <button type="button" className="btn small" disabled={busy} onClick={() => void keepMine()}>
                 {stale.theirs.status === 'published' ? 'Unlock and apply my edit' : 'Keep mine'}

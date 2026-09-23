@@ -36,8 +36,27 @@ test('two note windows refuse a stale save and let her keep her text', async ({ 
 
     await bodyB.fill('Subjective: Saved from window B.\n\nPlan: Continue weekly.');
     await bodyB.blur();
-    await expect(pageB.getByTestId('note-conflict')).toContainText('changed in another window');
-    await expect(pageB.getByTestId('note-conflict')).toContainText('Keep mine');
+    await expect(pageB.getByTestId('note-conflict')).toBeVisible();
+    await expect(pageB.getByTestId('note-save-status')).toHaveText('Changed in another window');
+
+    // A real tab switch fires visibilitychange. It must not unmount the
+    // conflicted editor and retry the edit with the refetched revision.
+    await pageB.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await pageB.waitForTimeout(100);
+    await pageB.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(pageB.getByTestId('note-conflict')).toBeVisible();
+    await expect(pageB.getByTestId('note-save-status')).toHaveText('Changed in another window');
+    await expect(pageB.getByTestId('note-conflict').locator('p')).toHaveCount(1);
+
+    const serverBeforeChoice = await request.get(`/api/notes/${note.id}`);
+    expect((await serverBeforeChoice.json()).content).toContain('Saved from window A.');
+
     await pageB.getByRole('button', { name: 'Keep mine' }).click();
     await expect(pageB.getByTestId('note-save-status')).toHaveText('Saved');
 

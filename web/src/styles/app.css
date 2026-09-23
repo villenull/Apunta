@@ -1383,6 +1383,23 @@ select:disabled {
   font-size: var(--text-md);
   margin-top: 10px;
 }
+.note-conflict {
+  margin: var(--space-6) var(--gutter-x) 0;
+  padding: var(--space-6) var(--space-8);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--accent-tint);
+  color: var(--text-primary);
+}
+
+.note-conflict p {
+  margin: 0;
+  color: var(--accent-ink);
+}
+
+.note-conflict .row {
+  margin-top: var(--space-6);
+}
 
 .error-state {
   color: var(--danger);
@@ -2380,6 +2397,12 @@ select:disabled {
   background: transparent;
 }
 
+/* The selected patient remains legible while the surrounding list animates. */
+.patient-entry:has(.list-item.active) {
+  animation: none;
+  opacity: 1;
+}
+
 .import-actions .btn-quick {
   padding: var(--space-5) var(--space-8);
   font-size: var(--text-base);
@@ -3112,6 +3135,10 @@ select:disabled {
 
 .note-save-status.is-error {
   color: var(--danger);
+}
+
+.note-save-status.is-conflict {
+  color: var(--accent-ink);
 }
 
 .note-finish-actions {

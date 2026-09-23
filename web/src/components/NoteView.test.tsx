@@ -97,3 +97,81 @@ describe('autosave ordering', () => {
     });
   });
 });
+
+describe('remote note changes', () => {
+  it('quietly takes a newer server note when this editor has no local edit', async () => {
+    const note = makeNote(patient.id, { content: 'Subjective: Original' });
+    installFakeApi({ patients: [patient], formats: [format], notes: [note] });
+    const view = render(
+      <NoteView
+        patient={patient}
+        note={note}
+        format={format}
+        onNoteChanged={() => undefined}
+        onNoteDeleted={() => undefined}
+      />,
+    );
+    const remote = {
+      ...note,
+      content: 'Subjective: Updated in another window',
+      revision: note.revision + 1,
+      updated_at: '2026-08-08T09:01:00.000Z',
+    };
+    view.rerender(
+      <NoteView
+        patient={patient}
+        note={remote}
+        format={format}
+        onNoteChanged={() => undefined}
+        onNoteDeleted={() => undefined}
+      />,
+    );
+
+    await waitFor(() => {
+      expect((screen.getByTestId('note-body') as HTMLTextAreaElement).value).toBe(remote.content);
+      expect(screen.getByTestId('note-save-status').textContent).toContain('Saved');
+    });
+    expect(screen.queryByTestId('note-conflict')).toBeNull();
+  });
+
+  it('keeps a remote conflict until she chooses and never retries it on unmount', async () => {
+    const note = makeNote(patient.id, { content: 'Subjective: Original' });
+    const api = installFakeApi({ patients: [patient], formats: [format], notes: [note] });
+    const view = render(
+      <NoteView
+        patient={patient}
+        note={note}
+        format={format}
+        onNoteChanged={() => undefined}
+        onNoteDeleted={() => undefined}
+      />,
+    );
+    fireEvent.change(screen.getByTestId('note-body'), {
+      target: { value: 'Subjective: My unsaved edit' },
+    });
+
+    const remote = {
+      ...note,
+      content: 'Subjective: Saved in another window',
+      revision: note.revision + 1,
+      updated_at: '2026-08-08T09:01:00.000Z',
+    };
+    view.rerender(
+      <NoteView
+        patient={patient}
+        note={remote}
+        format={format}
+        onNoteChanged={() => undefined}
+        onNoteDeleted={() => undefined}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('note-save-status').textContent).toContain('Changed in another window');
+      expect(screen.queryByTestId('note-conflict')).not.toBeNull();
+    });
+    expect(screen.getByTestId('note-conflict').querySelectorAll('p')).toHaveLength(1);
+    view.unmount();
+    expect(api.state.notes[0]?.content).toBe(note.content);
+  });
+});
