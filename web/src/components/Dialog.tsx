@@ -7,7 +7,15 @@ export interface DialogProps {
   readonly variant?: 'dialog' | 'sheet';
   readonly className?: string;
   readonly initialFocusRef?: React.RefObject<HTMLElement | null>;
+  /**
+   * The dialog itself — the element with `role="dialog"`, which is the one that
+   * has a box and carries the caller's `className`. Name a test hook for the
+   * element you mean: a non-modal sheet's wrapper is a zero-sized div, so a
+   * hook there would never be visible.
+   */
   readonly testId?: string;
+  /** The wrapper that dims the page behind a modal. */
+  readonly backdropTestId?: string;
   readonly open?: boolean;
   readonly showTitle?: boolean;
   /** Confirmation surfaces trap focus; the refine sheet remains non-modal. */
@@ -26,6 +34,7 @@ export function Dialog({
   className = '',
   initialFocusRef,
   testId,
+  backdropTestId,
   open = true,
   showTitle = true,
   modal = true,
@@ -96,11 +105,12 @@ export function Dialog({
             : ''
           : 'is-dialog-closed'
       }
-      data-testid={testId}
+      data-testid={backdropTestId}
     >
       <div
         ref={panelRef}
         className={className || (variant === 'sheet' ? 'sheet' : 'modal card')}
+        data-testid={testId}
         role="dialog"
         aria-modal={modal || undefined}
         aria-labelledby={showTitle ? titleId.current : undefined}

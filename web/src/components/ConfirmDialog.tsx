@@ -37,7 +37,7 @@ export function ConfirmDialog({
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <Dialog title={title} onClose={onCancel} testId="confirm-backdrop" initialFocusRef={cancelRef}>
+    <Dialog title={title} onClose={onCancel} backdropTestId="confirm-backdrop" initialFocusRef={cancelRef}>
       <div className="small note-meta modal-body">{body}</div>
       <div className="modal-actions">
         <button type="button" className="btn" ref={cancelRef} onClick={onCancel}>
