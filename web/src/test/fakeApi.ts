@@ -335,9 +335,10 @@ export interface FakeApiOptions {
   health?: Partial<HealthResponse>;
   /** Overrides for `GET /api/backup` — the Settings backup card reads this. */
   backup?: Record<string, unknown>;
+  /** Structured note outcome for a refine stream, without inferring from prose. */
+  chatOutcome?: { outcome: 'applied' | 'unchanged' | 'withheld'; reason: string | null };
   /** Make `POST /api/notes/:id/chat` fail inside the stream, as the server does. */
   chatError?: { code: string; message: string };
-  /** The same, for `POST /api/patients/:id/brainstorm` (M12). */
   brainstormError?: { code: string; message: string };
   /**
    * Make `POST /api/generate` fail *inside* the stream, the way the server
@@ -771,19 +772,30 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         const quote = body['ref_quote'] == null ? null : String(body['ref_quote']);
         const user = makeChatMessage(note.id, 'user', text, quote);
         state.messages = [...state.messages, user];
-
         const frames: { event: string; data: unknown }[] = [{ event: 'message', data: { message: user } }];
         const outcome = fakeRefine(note, text);
-        if (outcome.content !== null) {
+        if (options.chatOutcome !== undefined) {
+          frames.push({
+            event: 'note-updated',
+            data: {
+              note,
+              empty_sections: [],
+              outcome: options.chatOutcome.outcome,
+              outcome_reason: options.chatOutcome.reason,
+            },
+          });
+        }
+        if (outcome.content !== null && options.chatOutcome === undefined) {
           const updated = replaceNote({
             ...note,
             content: outcome.content,
             revision: note.revision + 1,
             updated_at: stamp(),
           });
-          // Keep this fake's stream contract aligned with the real route:
-          // commit and render the note before releasing a successful reply.
-          frames.push({ event: 'note-updated', data: { note: updated, empty_sections: [] } });
+          frames.push({
+            event: 'note-updated',
+            data: { note: updated, empty_sections: [], outcome: 'applied', outcome_reason: null },
+          });
         }
         if (outcome.content === null && note.status === 'published' && !text.includes('?')) {
           // The published lock never asks the model to stream an edit.

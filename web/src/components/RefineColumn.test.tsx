@@ -285,3 +285,22 @@ describe('refine completion ordering', () => {
     expect(await screen.findByText('Shortened the Plan section.')).toBeDefined();
   });
 });
+
+describe('structured refine outcomes', () => {
+  it('announces a withheld edit separately from the model reply', async () => {
+    installFakeApi(
+      { formats: [progressNote], patients: [john], notes: [draft] },
+      { chatOutcome: { outcome: 'withheld', reason: 'A safety guard protected the existing note content.' } },
+    );
+    renderChat();
+
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const outcome = await screen.findByTestId('refine-outcome');
+    expect(outcome.getAttribute('role')).toBe('status');
+    expect(outcome.textContent).toContain('No changes applied');
+    expect(outcome.textContent).toContain('safety guard protected');
+    expect(outcome.textContent).not.toContain('Changes applied');
+  });
+});
