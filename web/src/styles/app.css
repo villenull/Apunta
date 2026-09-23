@@ -277,6 +277,11 @@
   background: var(--accent-tint);
 }
 
+.note-item.active {
+  animation: none;
+  opacity: 1;
+}
+
 .note-item .note-title {
   font-size: var(--text-md);
   font-weight: 500;
