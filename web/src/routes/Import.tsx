@@ -1,5 +1,6 @@
 import {
   DEFAULT_IMPORT_CUTOFF,
+  calendarDay,
   type ClaudeImportReport,
   type ImportNameSource,
   type ImportNoteSource,
@@ -10,9 +11,11 @@ import { Link } from 'react-router';
 
 import { errorMessage, previewClaudeImport, runClaudeImport } from '../api/index.js';
 import { ImportBatchList } from '../components/ImportBatchList.js';
+import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
+import { formatInstantAsDate } from '../lib/format.js';
 import { plural } from '../lib/plural.js';
 
 /**
@@ -201,49 +204,46 @@ export function Import(): React.JSX.Element {
           )}
           {summary.patients.map((patient) => (
             <div className="import-patient-row" key={patient.key} data-testid="import-patient">
-              <label className="row gap-8">
-                <input
-                  type="checkbox"
-                  checked={!unticked.has(patient.key)}
-                  aria-label={`Import ${patient.name}`}
-                  onChange={(event) => {
-                    const next = new Set(unticked);
-                    if (event.target.checked) next.delete(patient.key);
-                    else next.add(patient.key);
-                    setUnticked(next);
-                  }}
-                />
-                <strong>{patient.name}</strong>
-                <span className="small muted">
-                  {plural(patient.notes, 'note')} · {NAME_SOURCES[patient.source]}
-                </span>
-              </label>
+              <ImportPreviewRow
+                checked={!unticked.has(patient.key)}
+                ariaLabel={`Import ${patient.name}`}
+                title={patient.name}
+                excerpt={`${plural(patient.notes, 'note')} · ${NAME_SOURCES[patient.source]}`}
+                onChange={(checked) => {
+                  const next = new Set(unticked);
+                  if (checked) next.delete(patient.key);
+                  else next.add(patient.key);
+                  setUnticked(next);
+                }}
+              />
               {patient.patient_id !== null ? (
-                <fieldset className="import-patient-choice">
-                  <legend className="small muted">Where should these notes go?</legend>
-                  <label className="small">
-                    <input
-                      type="radio"
-                      name={`import-choice-${patient.key}`}
-                      checked={chosenPatientId(patient) === patient.patient_id}
-                      onChange={() => {
-                        setPatientChoices((current) => ({ ...current, [patient.key]: patient.patient_id }));
-                      }}
-                    />
-                    Add to {patient.name}
-                  </label>
-                  <label className="small">
-                    <input
-                      type="radio"
-                      name={`import-choice-${patient.key}`}
-                      checked={chosenPatientId(patient) === null}
-                      onChange={() => {
-                        setPatientChoices((current) => ({ ...current, [patient.key]: null }));
-                      }}
-                    />
-                    Create new
-                  </label>
-                </fieldset>
+                <div className="import-patient-choice">
+                  <span className="import-patient-choice-label">Where should these notes go?</span>
+                  <div className="import-patient-choice-options">
+                    <label className="small">
+                      <input
+                        type="radio"
+                        name={`import-choice-${patient.key}`}
+                        checked={chosenPatientId(patient) === patient.patient_id}
+                        onChange={() => {
+                          setPatientChoices((current) => ({ ...current, [patient.key]: patient.patient_id }));
+                        }}
+                      />
+                      Add to {patient.name}
+                    </label>
+                    <label className="small">
+                      <input
+                        type="radio"
+                        name={`import-choice-${patient.key}`}
+                        checked={chosenPatientId(patient) === null}
+                        onChange={() => {
+                          setPatientChoices((current) => ({ ...current, [patient.key]: null }));
+                        }}
+                      />
+                      Create new
+                    </label>
+                  </div>
+                </div>
               ) : (
                 <span className="small muted">Create new patient</span>
               )}
@@ -256,26 +256,28 @@ export function Import(): React.JSX.Element {
           )}
         </div>
         {errorLine}
-        <button
-          type="button"
-          className="btn btn-block"
-          disabled={notes === 0 || busy}
-          data-testid="import-run"
-          onClick={() => {
-            void run();
-          }}
-        >
-          {busy ? 'Importing…' : `Import ${plural(notes, 'note')}`}
-        </button>
-        <button
-          type="button"
-          className="btn btn-quick small"
-          onClick={() => {
-            setSummary(null);
-          }}
-        >
-          Change the settings
-        </button>
+        <div className="import-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={notes === 0 || busy}
+            data-testid="import-run"
+            onClick={() => {
+              void run();
+            }}
+          >
+            {busy ? 'Importing…' : `Import ${plural(notes, 'note')}`}
+          </button>
+          <button
+            type="button"
+            className="btn btn-quick"
+            onClick={() => {
+              setSummary(null);
+            }}
+          >
+            Change the settings
+          </button>
+        </div>
       </Screen>
     );
   }
@@ -432,9 +434,9 @@ function Skipped({ report }: { report: ClaudeImportReport }): React.JSX.Element 
   );
 }
 function formatBatchDate(iso: string): string {
-  return iso.slice(0, 16).replace('T', ' ');
+  return formatInstantAsDate(iso);
 }
 
 function day(iso: string | null): string {
-  return iso === null ? 'undated' : iso.slice(0, 10);
+  return iso === null ? 'undated' : calendarDay(iso.slice(0, 10));
 }

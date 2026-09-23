@@ -7,9 +7,11 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { errorMessage, previewHalaxyImport, runHalaxyImport } from '../api/index.js';
 import { ImportBatchList } from '../components/ImportBatchList.js';
+import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
+import { formatInstantAsDate } from '../lib/format.js';
 import { plural } from '../lib/plural.js';
 /**
  * Halaxy's practitioner export is one text PDF per patient. The preview is
@@ -195,26 +197,28 @@ export function HalaxyImport(): React.JSX.Element {
         ))}
         <Rejected response={summary} />
         {errorLine}
-        <button
-          type="button"
-          className="btn btn-block"
-          disabled={notes === 0 || busy}
-          data-testid="halaxy-run"
-          onClick={() => {
-            void run();
-          }}
-        >
-          {busy ? 'Importing…' : `Import ${plural(notes, 'note')}`}
-        </button>
-        <button
-          type="button"
-          className="btn btn-quick small"
-          onClick={() => {
-            setSummary(null);
-          }}
-        >
-          Choose different files
-        </button>
+        <div className="import-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={notes === 0 || busy}
+            data-testid="halaxy-run"
+            onClick={() => {
+              void run();
+            }}
+          >
+            {busy ? 'Importing…' : `Import ${plural(notes, 'note')}`}
+          </button>
+          <button
+            type="button"
+            className="btn btn-quick"
+            onClick={() => {
+              setSummary(null);
+            }}
+          >
+            Choose different files
+          </button>
+        </div>
       </Screen>
     );
   }
@@ -282,7 +286,7 @@ function PatientReview({
 }): React.JSX.Element {
   return (
     <section className="card card-rows lede" data-testid="halaxy-patient">
-      <label className="field-label">
+      <label className="field-label import-patient-name">
         Patient name
         <input
           className="field-input"
@@ -292,52 +296,45 @@ function PatientReview({
         />
       </label>
       {patient.existingPatients.length > 0 && (
-        <fieldset className="import-patient-choice">
-          <legend className="small muted">Where should these notes go?</legend>
-          {patient.existingPatients.map((existing) => (
-            <label className="small" key={existing.id}>
+        <div className="import-patient-choice">
+          <span className="import-patient-choice-label">Where should these notes go?</span>
+          <div className="import-patient-choice-options">
+            {patient.existingPatients.map((existing) => (
+              <label className="small" key={existing.id}>
+                <input
+                  type="radio"
+                  name={`halaxy-choice-${patient.fileName}`}
+                  checked={choice === existing.id}
+                  onChange={() => onChoice(existing.id)}
+                />
+                Add to {existing.name}
+              </label>
+            ))}
+            <label className="small">
               <input
                 type="radio"
                 name={`halaxy-choice-${patient.fileName}`}
-                checked={choice === existing.id}
-                onChange={() => onChoice(existing.id)}
+                checked={choice === null}
+                onChange={() => onChoice(null)}
               />
-              Add to {existing.name}
+              Create new
             </label>
-          ))}
-          <label className="small">
-            <input
-              type="radio"
-              name={`halaxy-choice-${patient.fileName}`}
-              checked={choice === null}
-              onChange={() => onChoice(null)}
-            />
-            Create new
-          </label>
-        </fieldset>
+          </div>
+        </div>
       )}
-      {patient.warnings.map((warning) => (
-        <p className="small note-meta" role="status" key={warning}>
-          {warning}
-        </p>
-      ))}
       {patient.notes.map((note) => {
         const key = noteKey(patient.fileName, note.key);
         return (
-          <label className="row gap-8" key={key}>
-            <input
-              type="checkbox"
-              checked={selected.has(key)}
-              aria-label={`Import ${note.date}${note.title === undefined ? '' : ` ${note.title}`} for ${name}`}
-              data-testid="halaxy-note"
-              onChange={(event) => onToggle(key, event.target.checked)}
-            />
-            <span>
-              <strong>{note.title ?? note.date}</strong>
-              {note.title !== undefined && <span className="small muted"> · {note.date}</span>}
-              <span className="small note-meta halaxy-excerpt">{excerpt(note.text)}</span>
-            </span>
-          </label>
+          <ImportPreviewRow
+            key={key}
+            checked={selected.has(key)}
+            ariaLabel={`Import ${note.date}${note.title === undefined ? '' : ` ${note.title}`} for ${name}`}
+            testId="halaxy-note"
+            title={note.title ?? 'Session'}
+            date={note.date}
+            excerpt={excerpt(note.text)}
+            onChange={(checked) => onToggle(key, checked)}
+          />
         );
       })}
     </section>
@@ -367,5 +364,5 @@ function excerpt(text: string): string {
   return compact.length > 180 ? `${compact.slice(0, 177)}…` : compact;
 }
 function formatBatchDate(iso: string): string {
-  return iso.slice(0, 16).replace('T', ' ');
+  return formatInstantAsDate(iso);
 }

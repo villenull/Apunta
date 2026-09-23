@@ -2335,6 +2335,7 @@ select:disabled {
 .patient-entry {
   display: flex;
   align-items: stretch;
+  width: 100%;
   min-width: 0;
 }
 
@@ -2342,8 +2343,11 @@ select:disabled {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex: 0 0 132px;
   gap: var(--space-2);
+  width: max-content;
+  max-width: 0;
+  overflow: hidden;
+  padding-inline: var(--space-0);
   opacity: 0;
   pointer-events: none;
 }
@@ -2355,6 +2359,8 @@ select:disabled {
 
 .patient-entry:hover .patient-entry-actions,
 .patient-entry:focus-within .patient-entry-actions {
+  max-width: 100%;
+  padding-inline: var(--space-4);
   opacity: 1;
   pointer-events: auto;
 }
@@ -2418,6 +2424,10 @@ select:disabled {
   font-size: var(--text-sm);
   font-weight: 600;
 }
+.import-patient-name .field-input {
+  font-size: var(--text-base);
+  font-weight: 400;
+}
 
 .field-input {
   width: 100%;
@@ -2460,17 +2470,80 @@ select:disabled {
 
 .import-patient-choice {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3) var(--space-5);
+  flex-direction: column;
+  gap: var(--space-4);
   margin: 0;
-  padding: var(--space-4);
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: 0;
 }
 
-.import-patient-choice legend {
-  width: 100%;
-  padding: 0;
+.import-patient-choice-label {
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+}
+
+.import-patient-choice-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-6);
+}
+
+.import-preview-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-width: 0;
+  padding-block: var(--space-4);
+}
+
+.import-preview-row > input {
+  flex: 0 0 auto;
+  margin-top: var(--space-2);
+}
+
+.import-preview-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.import-preview-title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-preview-title-text {
+  font-weight: 500;
+}
+
+.import-preview-date {
+  color: var(--text-secondary);
+}
+
+.import-preview-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--text-md);
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.import-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-20);
+}
+
+.import-actions .btn-primary {
+  flex: 1;
 }
 .licenses-toolbar .field-input {
   min-width: 0;
