@@ -31,6 +31,8 @@ export interface ClaudeImportInput {
   readonly source: ImportNoteSource;
   /** Patient keys she unticked in the summary. */
   readonly exclude: readonly string[];
+  /** Explicit review choices: a patient id to add to, or null to create new. */
+  readonly existingPatientIds?: Readonly<Record<string, string | null>>;
 }
 
 function form(input: ClaudeImportInput): FormData {
@@ -39,6 +41,8 @@ function form(input: ClaudeImportInput): FormData {
   body.append('cutoff', input.cutoff);
   body.append('source', input.source);
   body.append('exclude', JSON.stringify(input.exclude));
+  if (input.existingPatientIds !== undefined)
+    body.append('existingPatientIds', JSON.stringify(input.existingPatientIds));
   body.append('export', input.file, input.file.name);
   return body;
 }

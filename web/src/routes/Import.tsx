@@ -50,19 +50,23 @@ export function Import(): React.JSX.Element {
   const [names, setNames] = useState('');
   const [source, setSource] = useState<ImportNoteSource>('assistant');
   const [summary, setSummary] = useState<ClaudeImportReport | null>(null);
+  const [patientChoices, setPatientChoices] = useState<Readonly<Record<string, string | null>>>({});
   const [unticked, setUnticked] = useState<ReadonlySet<string>>(new Set());
   const [report, setReport] = useState<ClaudeImportReport | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const importBatch = useImportBatch();
-  const { batches, undone, undoing, reload, undo } = importBatch;
+  const { batches, undone, undoing, reload, undo } = useImportBatch();
 
   async function check(): Promise<void> {
     if (file === null || busy) return;
     setBusy(true);
     setError(null);
     try {
-      setSummary(await previewClaudeImport({ file, names, cutoff, source, exclude: [] }));
+      const next = await previewClaudeImport({ file, names, cutoff, source, exclude: [] });
+      setSummary(next);
+      setPatientChoices(
+        Object.fromEntries(next.patients.map((patient) => [patient.key, patient.patient_id])),
+      );
       setUnticked(new Set());
     } catch (thrown) {
       setError(errorMessage(thrown));
@@ -70,13 +74,30 @@ export function Import(): React.JSX.Element {
       setBusy(false);
     }
   }
-
   async function run(): Promise<void> {
     if (file === null || busy) return;
     setBusy(true);
     setError(null);
     try {
-      setReport(await runClaudeImport({ file, names, cutoff, source, exclude: [...unticked] }));
+      const existingPatientIds = Object.fromEntries(
+        (summary?.patients ?? [])
+          .filter((patient) => !unticked.has(patient.key) && patient.patient_id !== null)
+          .map((patient) => [
+            patient.key,
+            (Object.hasOwn(patientChoices, patient.key) ? patientChoices[patient.key] : patient.patient_id) ??
+              null,
+          ]),
+      );
+      setReport(
+        await runClaudeImport({
+          file,
+          names,
+          cutoff,
+          source,
+          exclude: [...unticked],
+          ...(Object.keys(existingPatientIds).length > 0 ? { existingPatientIds } : {}),
+        }),
+      );
       reload();
     } catch (thrown) {
       setError(errorMessage(thrown));
@@ -151,8 +172,10 @@ export function Import(): React.JSX.Element {
 
   if (summary !== null) {
     const kept = summary.patients.filter((patient) => !unticked.has(patient.key));
+    const chosenPatientId = (patient: ClaudeImportReport['patients'][number]): string | null =>
+      (Object.hasOwn(patientChoices, patient.key) ? patientChoices[patient.key] : patient.patient_id) ?? null;
     const notes = kept.reduce((sum, patient) => sum + patient.notes, 0);
-    const toCreate = kept.filter((patient) => patient.patient_id === null).length;
+    const toCreate = kept.filter((patient) => chosenPatientId(patient) === null).length;
     const ambiguous = summary.skipped.filter((s) => s.reason === 'ambiguous').length;
     return (
       <Screen back={{ to: '/settings', label: 'Settings' }}>
@@ -177,23 +200,54 @@ export function Import(): React.JSX.Element {
             <p className="small muted">No patient conversations were found since {summary.cutoff}.</p>
           )}
           {summary.patients.map((patient) => (
-            <label className="row gap-8" key={patient.key} data-testid="import-patient">
-              <input
-                type="checkbox"
-                checked={!unticked.has(patient.key)}
-                aria-label={`Import ${patient.name}`}
-                onChange={(event) => {
-                  const next = new Set(unticked);
-                  if (event.target.checked) next.delete(patient.key);
-                  else next.add(patient.key);
-                  setUnticked(next);
-                }}
-              />
-              <strong>{patient.name}</strong>
-              <span className="small muted">
-                {plural(patient.notes, 'note')} · {NAME_SOURCES[patient.source]}
-              </span>
-            </label>
+            <div className="import-patient-row" key={patient.key} data-testid="import-patient">
+              <label className="row gap-8">
+                <input
+                  type="checkbox"
+                  checked={!unticked.has(patient.key)}
+                  aria-label={`Import ${patient.name}`}
+                  onChange={(event) => {
+                    const next = new Set(unticked);
+                    if (event.target.checked) next.delete(patient.key);
+                    else next.add(patient.key);
+                    setUnticked(next);
+                  }}
+                />
+                <strong>{patient.name}</strong>
+                <span className="small muted">
+                  {plural(patient.notes, 'note')} · {NAME_SOURCES[patient.source]}
+                </span>
+              </label>
+              {patient.patient_id !== null ? (
+                <fieldset className="import-patient-choice">
+                  <legend className="small muted">Where should these notes go?</legend>
+                  <label className="small">
+                    <input
+                      type="radio"
+                      name={`import-choice-${patient.key}`}
+                      checked={chosenPatientId(patient) === patient.patient_id}
+                      onChange={() => {
+                        setPatientChoices((current) => ({ ...current, [patient.key]: patient.patient_id }));
+                      }}
+                    />
+                    Add to {patient.name}
+                  </label>
+                  <label className="small">
+                    <input
+                      type="radio"
+                      name={`import-choice-${patient.key}`}
+                      checked={chosenPatientId(patient) === null}
+                      onChange={() => {
+                        setPatientChoices((current) => ({ ...current, [patient.key]: null }));
+                      }}
+                    />
+                    Create new
+                  </label>
+                </fieldset>
+              ) : (
+                <span className="small muted">Create new patient</span>
+              )}
+            </div>
           ))}
           {summary.unmatched_names.length > 0 && (
             <p className="small note-meta" data-testid="import-unmatched">
@@ -239,6 +293,7 @@ export function Import(): React.JSX.Element {
           file here, or the conversations.json inside it. It is read on this Mac and kept nowhere.
         </p>
         <input
+          className="field-input"
           type="file"
           accept=".zip,.json,application/zip,application/json"
           data-testid="import-file"
@@ -247,9 +302,10 @@ export function Import(): React.JSX.Element {
             setFile(event.target.files?.[0] ?? null);
           }}
         />
-        <label className="small note-meta">
-          Patients seen since{' '}
+        <label className="field-label">
+          Patients seen since
           <input
+            className="field-input"
             type="date"
             value={cutoff}
             data-testid="import-cutoff"
@@ -258,10 +314,11 @@ export function Import(): React.JSX.Element {
             }}
           />
         </label>
-        <label className="small note-meta">
+        <label className="field-label">
           Your patients&rsquo; names, one per line (optional — they help spell and match names; anyone not
           listed is still found from the chat title)
           <textarea
+            className="field-input"
             rows={5}
             value={names}
             data-testid="import-names"

@@ -2425,6 +2425,32 @@ select:disabled {
   grid-column: 1 / -1;
 }
 
+.import-patient-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-block: var(--space-4);
+  border-bottom: 0.5px solid var(--border);
+}
+
+.import-patient-row:last-child {
+  border-bottom: none;
+}
+
+.import-patient-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+  padding: var(--space-4);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.import-patient-choice legend {
+  width: 100%;
+  padding: 0;
+}
 .licenses-toolbar .field-input {
   min-width: 0;
 }

@@ -21,6 +21,7 @@ export function HalaxyImport(): React.JSX.Element {
   const [files, setFiles] = useState<readonly File[]>([]);
   const [summary, setSummary] = useState<HalaxyPreviewResponse | null>(null);
   const [names, setNames] = useState<Readonly<Record<string, string>>>({});
+  const [patientChoices, setPatientChoices] = useState<Readonly<Record<string, string | null>>>({});
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [report, setReport] = useState<HalaxyImportResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -35,15 +36,18 @@ export function HalaxyImport(): React.JSX.Element {
     try {
       const response = await previewHalaxyImport(files);
       const nextNames: Record<string, string> = {};
+      const nextChoices: Record<string, string | null> = {};
       const nextSelected = new Set<string>();
       for (const patient of response.patients) {
         nextNames[patient.fileName] = patient.patientName;
+        if (patient.existingPatients.length === 1)
+          nextChoices[patient.fileName] = patient.existingPatients[0]!.id;
         for (const note of patient.notes) nextSelected.add(noteKey(patient.fileName, note.key));
       }
       setSummary(response);
       setNames(nextNames);
+      setPatientChoices(nextChoices);
       setSelected(nextSelected);
-      setReport(null);
     } catch (thrown) {
       setError(errorMessage(thrown));
     } finally {
@@ -54,7 +58,6 @@ export function HalaxyImport(): React.JSX.Element {
   async function run(): Promise<void> {
     if (summary === null || busy) return;
     setBusy(true);
-    setError(null);
     try {
       const patients = summary.patients.flatMap((patient) => {
         const notes = patient.notes
@@ -65,6 +68,9 @@ export function HalaxyImport(): React.JSX.Element {
           {
             fileName: patient.fileName,
             patientName: names[patient.fileName] ?? patient.patientName,
+            ...(Object.hasOwn(patientChoices, patient.fileName)
+              ? { existingPatientId: patientChoices[patient.fileName] ?? null }
+              : {}),
             notes,
           },
         ];
@@ -166,8 +172,19 @@ export function HalaxyImport(): React.JSX.Element {
             key={patient.fileName}
             patient={patient}
             name={names[patient.fileName] ?? patient.patientName}
+            choice={patientChoices[patient.fileName]}
             selected={selected}
-            onName={(name) => setNames((current) => ({ ...current, [patient.fileName]: name }))}
+            onName={(name) => {
+              setNames((current) => ({ ...current, [patient.fileName]: name }));
+              setPatientChoices((current) => {
+                const next = { ...current };
+                delete next[patient.fileName];
+                return next;
+              });
+            }}
+            onChoice={(choice) => {
+              setPatientChoices((current) => ({ ...current, [patient.fileName]: choice }));
+            }}
             onToggle={(key, checked) => {
               const next = new Set(selected);
               if (checked) next.add(key);
@@ -249,27 +266,56 @@ export function HalaxyImport(): React.JSX.Element {
 function PatientReview({
   patient,
   name,
+  choice,
   selected,
   onName,
+  onChoice,
   onToggle,
 }: {
   patient: HalaxyPreviewPatient;
   name: string;
+  choice: string | null | undefined;
   selected: ReadonlySet<string>;
   onName: (name: string) => void;
+  onChoice: (choice: string | null) => void;
   onToggle: (key: string, checked: boolean) => void;
 }): React.JSX.Element {
   return (
     <section className="card card-rows lede" data-testid="halaxy-patient">
-      <label className="small note-meta">
+      <label className="field-label">
         Patient name
         <input
-          className="input"
+          className="field-input"
           value={name}
           data-testid="halaxy-patient-name"
           onChange={(event) => onName(event.target.value)}
         />
       </label>
+      {patient.existingPatients.length > 0 && (
+        <fieldset className="import-patient-choice">
+          <legend className="small muted">Where should these notes go?</legend>
+          {patient.existingPatients.map((existing) => (
+            <label className="small" key={existing.id}>
+              <input
+                type="radio"
+                name={`halaxy-choice-${patient.fileName}`}
+                checked={choice === existing.id}
+                onChange={() => onChoice(existing.id)}
+              />
+              Add to {existing.name}
+            </label>
+          ))}
+          <label className="small">
+            <input
+              type="radio"
+              name={`halaxy-choice-${patient.fileName}`}
+              checked={choice === null}
+              onChange={() => onChoice(null)}
+            />
+            Create new
+          </label>
+        </fieldset>
+      )}
       {patient.warnings.map((warning) => (
         <p className="small note-meta" role="status" key={warning}>
           {warning}
