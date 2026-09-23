@@ -1,7 +1,7 @@
 import type { BackupStatus, HealthResponse } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
-import { FULLY_LOCAL, hasBlockingProblem, isFullyLocal, REOPEN_TO_DOWNLOAD, setupChecks } from './setup.js';
+import { hasBlockingProblem, REOPEN_TO_DOWNLOAD, setupChecks } from './setup.js';
 
 const HEALTHY: HealthResponse = {
   ok: true,
@@ -38,7 +38,6 @@ describe('the checklist', () => {
   it('goes green on a fully set-up Mac', () => {
     const checks = setupChecks(HEALTHY);
     expect(checks.every((check) => check.state === 'ok')).toBe(true);
-    expect(isFullyLocal(checks)).toBe(true);
     expect(hasBlockingProblem(checks)).toBe(false);
   });
 
@@ -48,6 +47,8 @@ describe('the checklist', () => {
         ollama: { reachable: false, model: 'gemma4:12b-it-qat', modelPresent: false },
         whisper: { ...HEALTHY.whisper, binaryPresent: false, modelPresent: false },
       }),
+      null,
+      'mac',
     );
     const byId = Object.fromEntries(checks.map((check) => [check.id, check]));
 
@@ -55,6 +56,25 @@ describe('the checklist', () => {
     expect(byId['ollama']?.fix).toBe('brew services start ollama');
     expect(byId['whisper']?.fix).toBe('brew install whisper-cpp');
     expect(byId['whisper-model']?.fix).toBe('bash scripts/setup-macos.sh');
+  });
+
+  it('does not send a non-macOS install to Homebrew', () => {
+    // Homebrew and `scripts/setup-macos.sh` are not commands she can run on
+    // Linux, so the row has to point at her own operating system instead.
+    const checks = setupChecks(
+      health({
+        ollama: { reachable: false, model: 'gemma4:12b-it-qat', modelPresent: false },
+        whisper: { ...HEALTHY.whisper, binaryPresent: false, modelPresent: false },
+      }),
+    );
+    const byId = Object.fromEntries(checks.map((check) => [check.id, check]));
+
+    for (const id of ['ollama', 'model', 'whisper', 'whisper-model']) {
+      expect(byId[id]?.fixIsCommand).toBe(false);
+      expect(byId[id]?.fix).toBe(
+        'Install the local runtime for your operating system, then press Check again.',
+      );
+    }
   });
 
   it('tells her to reopen the app, never to open a Terminal, when the runtime shipped with the app', () => {
@@ -96,7 +116,7 @@ describe('the FileVault row', () => {
     expect(row?.state).toBe('missing');
     expect(row?.fix).toContain('System Settings');
     expect(row?.note).toContain('without your password');
-    expect(isFullyLocal(checks)).toBe(false);
+    expect(hasBlockingProblem(checks)).toBe(true);
   });
 
   it('distinguishes deferred enablement from off', () => {
@@ -104,18 +124,19 @@ describe('the FileVault row', () => {
     const row = checks.find((check) => check.id === 'filevault');
 
     expect(row?.state).toBe('warn');
-    expect(row?.detail).toContain('log out');
-    // Still not "fully local": it is not encrypted until it finishes.
-    expect(isFullyLocal(checks)).toBe(false);
+    expect(row?.detail).toContain('has not finished');
   });
 
   /**
-   * An unread setting is not a passing one. This is the whole reason
-   * `FULLY_LOCAL` is gated on the checklist rather than on the AI rows.
+   * An unread setting is not a passing one: the row says so rather than
+   * borrowing the language of a verified one.
    */
-  it('will not let an unknown answer buy the "fully local" claim', () => {
+  it('does not let an unreadable setting read as a good one', () => {
     const checks = setupChecks(health({ fileVault: { state: 'unknown', detail: '' } }));
-    expect(isFullyLocal(checks)).toBe(false);
+    const row = checks.find((check) => check.id === 'filevault');
+
+    expect(row?.state).toBe('unknown');
+    expect(row?.detail).toContain('could not read');
     // …but it is not a broken machine either, so nothing is painted red.
     expect(hasBlockingProblem(checks)).toBe(false);
   });
@@ -125,7 +146,6 @@ describe('the FileVault row', () => {
       health({ fileVault: { state: 'not_applicable', detail: 'not checked on linux' } }),
     );
     expect(checks.find((check) => check.id === 'filevault')?.state).toBe('skipped');
-    expect(isFullyLocal(checks)).toBe(true);
   });
 });
 
@@ -155,9 +175,13 @@ describe('the backup destination row', () => {
     expect(ids(setupChecks(HEALTHY, backup('sync', '/Users/her/Documents')))).toContain('backup-destination');
   });
 
-  it('withdraws the "fully local" claim, because it is not true', () => {
+  it('names the synced destination rather than leaving it to the network claim', () => {
     const checks = setupChecks(HEALTHY, backup('sync', '/Users/her/Documents'));
-    expect(isFullyLocal(checks)).toBe(false);
-    expect(FULLY_LOCAL).toContain('nothing leaves this Mac');
+    const row = checks.find((check) => check.id === 'backup-destination');
+
+    expect(row?.state).toBe('missing');
+    expect(row?.detail).toContain('/Users/her/Documents');
+    expect(row?.note).toContain('synced to the cloud');
+    expect(hasBlockingProblem(checks)).toBe(true);
   });
 });

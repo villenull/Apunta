@@ -45,20 +45,37 @@ test.describe('the setup wizard', () => {
 
     await page.goto('/setup');
 
+    // The fix line has to be something she can run on *this* computer: the
+    // Homebrew commands and the macOS setup script on a Mac, and an OS-neutral
+    // instruction everywhere else.
+    const onMac = await page.evaluate(() => /Macintosh|Mac OS X/i.test(navigator.userAgent));
+
     await expect(page.getByTestId('setup-checklist')).toBeVisible();
     await expect(page.getByTestId('setup-detail-ollama')).toContainText('nothing is answering');
-    await expect(page.getByTestId('setup-fix-ollama')).toHaveText('brew services start ollama');
-    await expect(page.getByTestId('setup-fix-whisper')).toHaveText('brew install whisper-cpp');
-    // A copyable one-liner for the whole thing, since something is broken.
-    await expect(page.getByTestId('setup-script-command')).toHaveText('bash scripts/setup-macos.sh');
-    await expect(page.getByTestId('setup-ready')).toHaveCount(0);
+    if (onMac) {
+      await expect(page.getByTestId('setup-fix-ollama')).toHaveText('brew services start ollama');
+      await expect(page.getByTestId('setup-fix-whisper')).toHaveText('brew install whisper-cpp');
+      // A copyable one-liner for the whole thing, since something is broken.
+      await expect(page.getByTestId('setup-script-command')).toHaveText('bash scripts/setup-macos.sh');
+    } else {
+      const elsewhere = 'Install the local runtime for your operating system, then press Check again.';
+      await expect(page.getByTestId('setup-fix-ollama')).toHaveText(elsewhere);
+      await expect(page.getByTestId('setup-fix-whisper')).toHaveText(elsewhere);
+      // A macOS script is not offered where it cannot run.
+      await expect(page.getByTestId('setup-script-command')).toHaveCount(0);
+    }
+    // Network locality is a property of the runtime, not of the disk, so the
+    // statement stands while a row is red — the disk is a row of its own.
+    await expect(page.getByTestId('setup-local')).toHaveText(
+      'Apunta runs on this computer — notes are not sent over the network.',
+    );
 
     // She fixes it in another window, and presses the button.
     healthy = true;
     await page.getByTestId('setup-recheck').click();
 
     await expect(page.getByTestId('setup-detail-ollama')).toContainText('answering on');
-    await expect(page.getByTestId('setup-ready')).toHaveText("You're fully local — nothing leaves this Mac.");
+    await expect(page.getByTestId('setup-local')).toBeVisible();
   });
 
   test('has no ffmpeg row, because a Mac without ffmpeg is a Mac that works', async ({ page }) => {
@@ -90,9 +107,10 @@ test.describe('the setup wizard', () => {
     await expect(page.getByRole('heading', { name: 'About Apunta' })).toBeVisible();
     const body = page.locator('.content');
     await expect(body).toContainText('no account');
-    // The two honest caveats, not just the guarantee.
-    await expect(body).toContainText('Someone at your unlocked Mac');
-    await expect(body).toContainText('FileVault');
+    // The two honest caveats, not just the guarantee. The copy says "computer",
+    // not "Mac", and the disk-encryption line names its own state.
+    await expect(body).toContainText('Someone at your unlocked computer');
+    await expect(page.getByTestId('about-filevault')).toContainText('Disk encryption');
     await expect(page.getByTestId('about-db-path')).toContainText('apunta.db');
   });
 
@@ -109,7 +127,10 @@ test.describe('the setup wizard', () => {
     await expect(page).toHaveURL(/\/licenses$/);
     await expect(page.getByRole('heading', { name: 'What Apunta is built from' })).toBeVisible();
 
-    const text = page.getByTestId('licenses-text');
+    // The licences are one section per component now, with an index and a
+    // filter over them, so the panel is the thing that has to be there — and
+    // the obligation is that the text itself is really rendered.
+    const text = page.getByRole('region', { name: 'Third-party licences' });
     await expect(text).toBeVisible();
     // The components that carry an obligation, and the text that satisfies it.
     await expect(text).toContainText('MIT License');

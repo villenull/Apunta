@@ -141,7 +141,7 @@ describe('the setup screen', () => {
     );
   });
 
-  it('withdraws the claim when backups are going into a synced folder', async () => {
+  it('names a synced backup destination while the network statement stands', async () => {
     installFakeApi(
       {},
       {

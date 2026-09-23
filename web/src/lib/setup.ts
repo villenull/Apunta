@@ -197,18 +197,6 @@ function backupDestinationCheck(backup: BackupStatus | null | undefined): SetupC
   };
 }
 
-/**
- * Whether the screen may print `FULLY_LOCAL`.
- *
- * Deliberately strict. "Nothing leaves this Mac" is false while FileVault is
- * off and false while the backup folder is inside iCloud, and an *unknown*
- * FileVault is not a yes — a promise the app cannot stand behind is worse than
- * no promise (`docs/research/data-at-rest-2026-08.md` §9).
- */
-export function isFullyLocal(checks: readonly SetupCheck[]): boolean {
-  return checks.every((check) => check.state === 'ok' || check.state === 'skipped');
-}
-
 /** True when something is actually broken, as opposed to merely unverifiable. */
 export function hasBlockingProblem(checks: readonly SetupCheck[]): boolean {
   return checks.some((check) => check.state === 'missing');
