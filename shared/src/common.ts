@@ -39,6 +39,11 @@ export function instantToLocalDay(instant: string | Date): string {
   return `${year}-${month}-${day}`;
 }
 
+/** Keep a value that is already a calendar date in its original timezone. */
+export function calendarDay(value: string): string {
+  return value;
+}
+
 /**
  * A rough token count, used to refuse an over-long prompt rather than let
  * Ollama silently truncate it (which would drop the anti-fabrication rules and

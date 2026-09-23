@@ -23,6 +23,7 @@ export type {
 export {
   approximateTokens,
   boundedText,
+  calendarDay,
   IdSchema,
   instantToLocalDay,
   MAX_BODY_CHARS,

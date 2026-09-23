@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { calendarDay, instantToLocalDay } from './common.js';
 import { addDays } from './plan.js';
-import { instantToLocalDay } from './common.js';
 
 const originalTimezone = process.env.TZ;
 
@@ -19,7 +19,7 @@ describe('instantToLocalDay', () => {
 
   it('keeps calendar-only values as calendar values in a UTC-6 timezone', () => {
     process.env.TZ = 'America/Denver';
-    expect(addDays('2026-09-22', 0)).toBe('2026-09-22');
+    expect(calendarDay('2026-09-22')).toBe('2026-09-22');
     expect(addDays('2026-09-22', 1)).toBe('2026-09-23');
   });
 });

@@ -1,4 +1,4 @@
-import { instantToLocalDay } from './common.js';
+import { calendarDay, instantToLocalDay } from './common.js';
 import type { Diagnosis, PlanGoal, PlanObjective, TreatmentPlan } from './plan.js';
 
 /**
@@ -37,9 +37,8 @@ export interface PlanDocumentInput {
 function value(text: string): string {
   return text.trim() === '' ? NOT_RECORDED : text.trim();
 }
-
 function dateOrDash(date: string | null): string {
-  return date ?? NOT_RECORDED;
+  return date === null ? NOT_RECORDED : calendarDay(date);
 }
 
 function diagnosisLine(diagnosis: Diagnosis): string {

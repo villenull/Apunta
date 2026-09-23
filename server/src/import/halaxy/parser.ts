@@ -1,4 +1,4 @@
-import type { HalaxyPreviewNote, HalaxyPreviewPatient } from '@apunta/shared';
+import { calendarDay, type HalaxyPreviewNote, type HalaxyPreviewPatient } from '@apunta/shared';
 
 const MONTHS: Record<string, number> = {
   january: 1,
@@ -183,7 +183,9 @@ function isoDate(year: number, month: number, day: number): string {
   const value = new Date(Date.UTC(year, month - 1, day));
   if (value.getUTCFullYear() !== year || value.getUTCMonth() !== month - 1 || value.getUTCDate() !== day)
     return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  return `${String(value.getUTCFullYear()).padStart(4, '0')}-${String(value.getUTCMonth() + 1).padStart(2, '0')}-${String(value.getUTCDate()).padStart(2, '0')}`;
+  return calendarDay(
+    `${String(value.getUTCFullYear()).padStart(4, '0')}-${String(value.getUTCMonth() + 1).padStart(2, '0')}-${String(value.getUTCDate()).padStart(2, '0')}`,
+  );
 }
 
 function title(value: string | undefined): string | undefined {
