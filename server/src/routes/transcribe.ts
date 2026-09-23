@@ -18,7 +18,7 @@ import {
   type WavFormat,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 import { AiError, aiError } from '../ai/errors.js';
 import { collapseRepeats } from '../ai/preview-text.js';
@@ -75,9 +75,9 @@ export function registerTranscribeRoute(
    * server-side accumulator per recording session, is a pile of temporary
    * audio files whose lifetime nobody owns.
    */
-  app.post('/api/transcribe/preview', async (request): Promise<TranscribePreviewResponse> => {
+  app.post('/api/transcribe/preview', async (request, reply): Promise<TranscribePreviewResponse> => {
     const upload = await receiveUpload(request, config);
-    const cancellation = requestCancellation(request);
+    const cancellation = requestCancellation(request, reply);
     try {
       // Not `readWavFormat`: that helper throws on a recording too short to
       // transcribe, which is the right answer for a finished recording and the
@@ -143,9 +143,9 @@ export function registerTranscribeRoute(
    * a clip that could not be read — through the same typed errors the
    * capture screen shows.
    */
-  app.post('/api/transcribe/dictation', async (request): Promise<TranscribeDictationResponse> => {
+  app.post('/api/transcribe/dictation', async (request, reply): Promise<TranscribeDictationResponse> => {
     const upload = await receiveUpload(request, config);
-    const cancellation = requestCancellation(request);
+    const cancellation = requestCancellation(request, reply);
     try {
       let wav: WavFormat;
       try {
@@ -327,21 +327,22 @@ interface Upload {
   readonly head: Uint8Array;
   readonly fields: Record<string, string>;
 }
-
-/** Abort child inference when a preview/dictation fetch is canceled. */
-function requestCancellation(request: FastifyRequest): { signal: AbortSignal; cleanup: () => void } {
+/** Abort child inference when a preview/dictation response is closed. */
+function requestCancellation(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): { signal: AbortSignal; cleanup: () => void } {
   const controller = new AbortController();
-  const abortIfDisconnected = (): void => {
-    if (request.raw.aborted) controller.abort();
+  const abort = (): void => {
+    if (!reply.raw.writableEnded) controller.abort();
   };
-  const abort = (): void => controller.abort();
   request.raw.once('aborted', abort);
-  request.raw.once('close', abortIfDisconnected);
+  reply.raw.once('close', abort);
   return {
     signal: controller.signal,
     cleanup: () => {
       request.raw.off('aborted', abort);
-      request.raw.off('close', abortIfDisconnected);
+      reply.raw.off('close', abort);
     },
   };
 }

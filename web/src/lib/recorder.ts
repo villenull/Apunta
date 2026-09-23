@@ -242,8 +242,8 @@ export class Recorder {
   private node: AudioWorkletNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
   private buffer: PcmBuffer | null = null;
-  private stopped = false;
-
+  private acceptingFrames = false;
+  private flushResolve: (() => void) | null = null;
   constructor(private readonly handlers: RecorderHandlers = {}) {}
 
   get seconds(): number {
@@ -284,7 +284,12 @@ export class Recorder {
         numberOfInputs: 1,
         numberOfOutputs: 0,
       });
-      this.node.port.onmessage = (event: MessageEvent<Float32Array>) => {
+      this.node.port.onmessage = (event: MessageEvent<Float32Array | 'flushed'>) => {
+        if (event.data === 'flushed') {
+          this.flushResolve?.();
+          this.flushResolve = null;
+          return;
+        }
         this.receive(event.data);
       };
 
@@ -334,15 +339,18 @@ export class Recorder {
   }
 
   /** Stop, and answer with the WAV. Safe to call once. */
-
   async stop(): Promise<Blob> {
     if (!this.buffer) throw new RecorderError('failed', 'stop() before start()');
-    this.stopped = true;
 
-    // Ask the worklet for its partial block before tearing the graph down, so
-    // the last fraction of a second survives.
-    this.node?.port.postMessage('flush');
-    await nextTick();
+    // Ask the worklet for its partial block and wait for its acknowledgement.
+    // The acknowledgement is the boundary: no samples accepted before it are
+    // discarded by teardown.
+    await new Promise<void>((resolve) => {
+      this.flushResolve = resolve;
+      this.node?.port.postMessage('flush');
+      if (this.node === null) resolve();
+    });
+    this.acceptingFrames = false;
 
     const wav = this.buffer.toWav();
     this.teardown();
@@ -351,7 +359,8 @@ export class Recorder {
 
   /** Throw the recording away — she navigated off, or it failed. */
   cancel(): void {
-    this.stopped = true;
+    this.acceptingFrames = false;
+    this.flushResolve = null;
     this.teardown();
   }
 
@@ -365,12 +374,12 @@ export class Recorder {
       this.handlers.onLevel(peak > 1 ? 1 : peak);
     }
     const buffer = this.buffer;
-    if (!buffer || this.stopped) return;
+    if (!buffer || !this.acceptingFrames) return;
 
     buffer.push(frames);
     this.handlers.onProgress?.(buffer.seconds);
     if (buffer.full) {
-      this.stopped = true;
+      this.acceptingFrames = false;
       this.handlers.onLimit?.();
     }
   }
@@ -390,13 +399,6 @@ export class Recorder {
     this.stream = null;
     this.context = null;
   }
-}
-
-/** Let the worklet's flush message cross the thread boundary. */
-function nextTick(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 20);
-  });
 }
 
 /** `00:14` — the prototype's timer, on `capture.html`. */

@@ -133,6 +133,7 @@ export function makeNote(patientId: string, overrides: Partial<Note> = {}): Note
     format_id: fakeId(),
     title: 'Progress note',
     status: 'draft',
+    revision: 0,
     content: 'Subjective: Patient reports improved sleep since last session.',
     created_at: '2026-08-08T09:00:00.000Z',
     updated_at: '2026-08-08T09:00:00.000Z',
@@ -325,8 +326,8 @@ const BACKUP_STATUS = {
   pending_restore: false,
 };
 
-function apiError(status: number, code: string, message: string): Response {
-  return json({ error: code, message }, status);
+function apiError(status: number, code: string, message: string, details?: unknown): Response {
+  return json(details === undefined ? { error: code, message } : { error: code, message, details }, status);
 }
 
 export interface FakeApiOptions {
@@ -774,7 +775,12 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         const frames: { event: string; data: unknown }[] = [{ event: 'message', data: { message: user } }];
         const outcome = fakeRefine(note, text);
         if (outcome.content !== null) {
-          const updated = replaceNote({ ...note, content: outcome.content, updated_at: stamp() });
+          const updated = replaceNote({
+            ...note,
+            content: outcome.content,
+            revision: note.revision + 1,
+            updated_at: stamp(),
+          });
           // Keep this fake's stream contract aligned with the real route:
           // commit and render the note before releasing a successful reply.
           frames.push({ event: 'note-updated', data: { note: updated, empty_sections: [] } });
@@ -854,6 +860,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
           replaceNote({
             ...note,
             status: publishing ? 'published' : 'draft',
+            revision: note.revision + 1,
             published_at: publishing ? stamp() : null,
             updated_at: stamp(),
           }),
@@ -868,7 +875,9 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
           state.notes = state.notes.filter((candidate) => candidate.id !== note.id);
           return new Response(null, { status: 204 });
         }
-        // The published lock, exactly as the server enforces it.
+        if (body['revision'] !== note.revision) {
+          return apiError(409, 'stale_write', 'This note changed in another window.', { note });
+        }
         if (note.status === 'published' && body['content'] !== undefined) {
           return apiError(409, 'conflict', 'This note is published, so its content is locked.');
         }
@@ -877,6 +886,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
             ...note,
             ...(typeof body['title'] === 'string' ? { title: body['title'] } : {}),
             ...(typeof body['content'] === 'string' ? { content: body['content'] } : {}),
+            revision: note.revision + 1,
             updated_at: stamp(),
           }),
         );

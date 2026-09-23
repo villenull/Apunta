@@ -1,6 +1,8 @@
+import type { spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-
+import { PassThrough } from 'node:stream';
 import {
   AUDIO_SAMPLE_RATE,
   encodeWav,
@@ -397,6 +399,69 @@ describe('POST /api/transcribe over a real connection', () => {
       expect(final?.name).toBe('note');
       expect((final?.data['note'] as Note | undefined)?.patient_id).toBe(patient.id);
     } finally {
+      await app.close();
+    }
+  });
+  it('kills whisper when a preview response closes', async () => {
+    const child = new EventEmitter() as EventEmitter & {
+      stdout: PassThrough;
+      stderr: PassThrough;
+      exitCode: number | null;
+      signalCode: NodeJS.Signals | null;
+      kill: (signal?: NodeJS.Signals) => boolean;
+    };
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.exitCode = null;
+    child.signalCode = null;
+    let killed = false;
+    child.kill = (signal = 'SIGKILL') => {
+      killed = true;
+      child.signalCode = signal;
+      child.emit('close', null, signal);
+      return true;
+    };
+    let resolveSpawn!: () => void;
+    const spawned = new Promise<void>((resolve) => {
+      resolveSpawn = resolve;
+    });
+    const modelPath = join(harness.dataDir, 'route-cancel-model.bin');
+    writeFileSync(modelPath, 'synthetic model');
+    const app = await buildApp({
+      config: harness.config,
+      db: harness.db,
+      logger: false,
+      providers: {
+        llm: new FakeLlmProvider({ streamDelayMs: 0 }),
+        stt: new WhisperCppSttProvider({
+          resolveBinary: () => 'synthetic-whisper',
+          resolveModel: () => modelPath,
+          spawnImpl: (() => {
+            resolveSpawn();
+            return child;
+          }) as unknown as typeof spawn,
+        }),
+      },
+    });
+    const address = await app.listen({ port: 0, host: '127.0.0.1' });
+    const controller = new AbortController();
+    const form = new FormData();
+    form.set('audio', new Blob([new Uint8Array(wav(3))], { type: 'audio/wav' }), 'preview.wav');
+
+    try {
+      const request = fetch(`${address}/api/transcribe/preview`, {
+        method: 'POST',
+        body: form,
+        signal: controller.signal,
+      }).then((response) => response.text());
+      await spawned;
+      controller.abort();
+      await expect(request).rejects.toThrow();
+      // The socket close is delivered by Node after the aborted fetch settles.
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(killed).toBe(true);
+    } finally {
+      controller.abort();
       await app.close();
     }
   });

@@ -66,6 +66,15 @@ export function Workspace(): React.JSX.Element {
     [patientId],
   );
   const notes = useLoader(loadNotes);
+  useEffect(() => {
+    const refreshNotesWhenVisible = (): void => {
+      if (document.visibilityState === 'visible') notes.reload();
+    };
+    document.addEventListener('visibilitychange', refreshNotesWhenVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshNotesWhenVisible);
+    };
+  }, [notes.reload]);
 
   const patient =
     patients.state.status === 'ready'

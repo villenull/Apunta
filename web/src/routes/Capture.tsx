@@ -104,7 +104,10 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
    * recorder, this screen owns what becomes of the WAV.
    */
   const live = useLiveRecording({
-    onError: setError,
+    onError: (message, salvage) => {
+      setError(message);
+      if (salvage !== null && salvage !== undefined) setWav(salvage);
+    },
     onNotice: setNotice,
     warnAfterSeconds: WARN_RECORDING_SECONDS,
     onLimit: () => {

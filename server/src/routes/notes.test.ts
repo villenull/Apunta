@@ -112,7 +112,7 @@ describe('PATCH /api/notes/:id', () => {
     const response = await harness.app.inject({
       method: 'PATCH',
       url: `/api/notes/${note.id}`,
-      payload: { content: 'Subjective: Revised body.' },
+      payload: { revision: note.revision, content: 'Subjective: Revised body.' },
     });
 
     expect(response.statusCode).toBe(200);
@@ -123,39 +123,79 @@ describe('PATCH /api/notes/:id', () => {
 
   it('409s a content edit on a published note but allows a rename', async () => {
     const note = await seedNote(harness.app, patient.id, format.id);
-    await harness.app.inject({ method: 'POST', url: `/api/notes/${note.id}/publish` });
+    const published = await harness.app.inject({ method: 'POST', url: `/api/notes/${note.id}/publish` });
+    const publishedNote = published.json<Note>();
 
     const blocked = await harness.app.inject({
       method: 'PATCH',
       url: `/api/notes/${note.id}`,
-      payload: { content: 'sneaky edit' },
+      payload: { revision: note.revision, content: 'sneaky edit' },
     });
     expect(blocked.statusCode).toBe(409);
-    expect(blocked.json()).toMatchObject({ error: 'conflict' });
-    expect(blocked.json<{ message: string }>().message).toMatch(/unpublish/i);
+    expect(blocked.json()).toMatchObject({ error: 'stale_write' });
+    expect(blocked.json<{ details: { note: Note } }>().details.note.status).toBe('published');
 
     const renamed = await harness.app.inject({
       method: 'PATCH',
       url: `/api/notes/${note.id}`,
-      payload: { title: 'Progress note (Aug 8)' },
+      payload: { revision: publishedNote.revision, title: 'Progress note (Aug 8)' },
     });
     expect(renamed.statusCode).toBe(200);
+
+    const current = renamed.json<Note>();
+    const locked = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/notes/${note.id}`,
+      payload: { revision: current.revision, content: 'sneaky edit' },
+    });
+    expect(locked.statusCode).toBe(409);
+    expect(locked.json()).toMatchObject({ error: 'conflict' });
+    expect(locked.json<{ message: string }>().message).toMatch(/unpublish/i);
 
     // The body really did not change.
     const reread = await harness.app.inject({ method: 'GET', url: `/api/notes/${note.id}` });
     expect(reread.json<Note>().content).toBe(note.content);
   });
 
+  it('rejects a missing revision and returns the current note for a stale write', async () => {
+    const note = await seedNote(harness.app, patient.id, format.id);
+
+    const missing = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/notes/${note.id}`,
+      payload: { content: 'without precondition' },
+    });
+    expect(missing.statusCode).toBe(400);
+
+    const first = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/notes/${note.id}`,
+      payload: { revision: note.revision, content: 'first window' },
+    });
+    const current = first.json<Note>();
+    const stale = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/notes/${note.id}`,
+      payload: { revision: note.revision, content: 'second window' },
+    });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json()).toMatchObject({ error: 'stale_write', details: { note: current } });
+  });
+
   it('400s an empty patch and 404s an unknown note', async () => {
     const note = await seedNote(harness.app, patient.id, format.id);
 
-    const empty = await harness.app.inject({ method: 'PATCH', url: `/api/notes/${note.id}`, payload: {} });
+    const empty = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/notes/${note.id}`,
+      payload: { revision: note.revision },
+    });
     expect(empty.statusCode).toBe(400);
 
     const missing = await harness.app.inject({
       method: 'PATCH',
       url: '/api/notes/nope',
-      payload: { content: 'x' },
+      payload: { revision: 0, content: 'x' },
     });
     expect(missing.statusCode).toBe(404);
   });
@@ -176,13 +216,14 @@ describe('publish and unpublish', () => {
 
     const unpublished = await harness.app.inject({ method: 'POST', url: `/api/notes/${note.id}/unpublish` });
     expect(unpublished.statusCode).toBe(200);
-    expect(unpublished.json<Note>()).toMatchObject({ status: 'draft', published_at: null });
+    const draft = unpublished.json<Note>();
+    expect(draft).toMatchObject({ status: 'draft', published_at: null });
 
     // ...and now the body is editable again.
     const edit = await harness.app.inject({
       method: 'PATCH',
       url: `/api/notes/${note.id}`,
-      payload: { content: 'Subjective: Edited after unlocking.' },
+      payload: { revision: draft.revision, content: 'Subjective: Edited after unlocking.' },
     });
     expect(edit.statusCode).toBe(200);
   });

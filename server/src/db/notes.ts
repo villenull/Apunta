@@ -3,7 +3,8 @@ import type { Database } from 'better-sqlite3';
 
 import { uuidv7 } from './uuid.js';
 
-const COLUMNS = 'id, patient_id, format_id, title, status, content, created_at, updated_at, published_at';
+const COLUMNS =
+  'id, patient_id, format_id, title, status, revision, content, created_at, updated_at, published_at';
 
 /** Newest first, as the prototype's notes column shows them. */
 export function listNotesForPatient(db: Database, patientId: string): Note[] {
@@ -37,6 +38,7 @@ export function createNote(db: Database, input: CreateNoteInput): Note {
     format_id: input.format_id,
     title: input.title,
     status: 'draft',
+    revision: 0,
     content: input.content ?? '',
     created_at: timestamp,
     updated_at: timestamp,
@@ -45,37 +47,41 @@ export function createNote(db: Database, input: CreateNoteInput): Note {
 
   db.prepare(
     `INSERT INTO notes (${COLUMNS})
-     VALUES (@id, @patient_id, @format_id, @title, @status, @content, @created_at, @updated_at, @published_at)`,
+     VALUES (@id, @patient_id, @format_id, @title, @status, @revision, @content, @created_at, @updated_at, @published_at)`,
   ).run(note);
 
   return note;
 }
 
 export interface UpdateNoteInput {
+  readonly revision: number;
   readonly title?: string;
   readonly content?: string;
 }
 
 /**
  * Content edits on a published note are refused at the route layer (409,
- * "unlock first"); this function is the mechanical write.
+ * "unlock first"); this function is the mechanical optimistic write.
  */
 export function updateNote(db: Database, id: string, patch: UpdateNoteInput): Note | undefined {
   const current = getNote(db, id);
-  if (!current) return undefined;
+  if (!current || current.revision !== patch.revision) return undefined;
 
   const next: Note = {
     ...current,
     title: patch.title ?? current.title,
     content: patch.content ?? current.content,
+    revision: current.revision + 1,
     updated_at: new Date().toISOString(),
   };
 
-  db.prepare(
-    'UPDATE notes SET title = @title, content = @content, updated_at = @updated_at WHERE id = @id',
-  ).run(next);
-
-  return next;
+  const result = db
+    .prepare(
+      `UPDATE notes SET title = @title, content = @content, revision = @revision, updated_at = @updated_at
+       WHERE id = @id AND revision = @previous_revision`,
+    )
+    .run({ ...next, previous_revision: patch.revision });
+  return result.changes === 0 ? undefined : next;
 }
 
 /**
@@ -92,7 +98,7 @@ export function updateNote(db: Database, id: string, patch: UpdateNoteInput): No
 export function updateDraftNoteContent(db: Database, id: string, content: string): Note | undefined {
   const result = db
     .prepare(
-      `UPDATE notes SET content = @content, updated_at = @updated_at
+      `UPDATE notes SET content = @content, revision = revision + 1, updated_at = @updated_at
         WHERE id = @id AND status = 'draft'`,
     )
     .run({ id, content, updated_at: new Date().toISOString() });
@@ -110,21 +116,22 @@ export function setNotePublished(
 ): Note | undefined {
   const current = getNote(db, id);
   if (!current) return undefined;
-
   const now = at ?? new Date().toISOString();
+
   const next: Note = {
     ...current,
     status: published ? 'published' : 'draft',
     published_at: published ? now : null,
+    revision: current.revision + 1,
     updated_at: now,
   };
 
   db.prepare(
-    `UPDATE notes SET status = @status, published_at = @published_at, updated_at = @updated_at
-      WHERE id = @id`,
-  ).run(next);
+    `UPDATE notes SET status = @status, published_at = @published_at, revision = @revision, updated_at = @updated_at
+      WHERE id = @id AND revision = @previous_revision`,
+  ).run({ ...next, previous_revision: current.revision });
 
-  return next;
+  return getNote(db, id);
 }
 
 /** Cascades to the note's transcripts and chat messages. */

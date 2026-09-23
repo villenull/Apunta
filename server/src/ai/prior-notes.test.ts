@@ -12,6 +12,7 @@ function note(index: number, text: string): Note {
     format_id: '0198c0f0-0000-7000-8000-00000000bbbb',
     title: 'Progress note',
     status: 'draft',
+    revision: 0,
     content: text,
     created_at: `2026-08-${day}T09:00:00.000Z`,
     updated_at: `2026-08-${day}T09:00:00.000Z`,

@@ -301,7 +301,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     await harness.app.inject({
       method: 'PATCH',
       url: `/api/notes/${note.id}`,
-      payload: { content: handEdited },
+      payload: { revision: note.revision, content: handEdited },
     });
 
     const { events } = await chat(harness.app, note.id, { message: 'Make the plan shorter' });

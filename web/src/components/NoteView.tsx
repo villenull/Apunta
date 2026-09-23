@@ -8,8 +8,10 @@ import {
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
+  ApiRequestError,
   deleteNote as deleteNoteRequest,
   errorMessage,
+  getNote,
   publishNote,
   unpublishNote,
   updateNote,
@@ -77,6 +79,7 @@ export function NoteView({
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stale, setStale] = useState<{ mine: string; theirs: Note } | null>(null);
   /** The excerpt she highlighted, waiting to be attached to a chat message. */
   const [refQuote, setRefQuote] = useState<string | null>(null);
   const [refined, setRefined] = useState(false);
@@ -144,14 +147,12 @@ export function NoteView({
   }, [chatOpen]);
 
   /**
-   * Persist the body. A published note is unpublished first: the server refuses
-   * a content PATCH while it is locked, and editing after unlock is exactly the
-   * prototype's `onNoteEdit` behaviour (published → draft).
-   * Every save carries the edit revision that scheduled it. A response from an
-   * older revision must not make the current text look saved.
+   * Persist the body with the revision currently held by the editor. A
+   * published lock or a revision race is surfaced rather than silently
+   * unpublishing or overwriting another window.
    */
   const persist = useCallback(
-    async (value: string, revision: number): Promise<void> => {
+    async (value: string, revision: number, keepalive = false): Promise<void> => {
       if (revision !== saveRevisionRef.current) return;
       const current = noteRef.current;
       if (value === persistedContentRef.current) {
@@ -161,35 +162,55 @@ export function NoteView({
 
       markSaveState('saving');
       try {
-        let target = current;
-        if (target.status === 'published' && !draftUnlockedRef.current) {
-          target = await unpublishNote(target.id);
-          draftUnlockedRef.current = true;
-          onNoteChangedRef.current(target);
-        }
-        const updated = await updateNote(target.id, { content: value });
-        // Record server truth even when this response is stale for the editor.
+        const updated = await updateNote(
+          current.id,
+          { revision: current.revision, content: value },
+          keepalive ? { keepalive: true } : undefined,
+        );
         persistedContentRef.current = updated.content;
         if (revision !== saveRevisionRef.current) return;
         onNoteChangedRef.current(updated);
         markSaveState('saved');
         setError(null);
+        setStale(null);
       } catch (thrown) {
         if (revision !== saveRevisionRef.current) return;
-        const message = errorMessage(thrown);
+        if (
+          thrown instanceof ApiRequestError &&
+          (thrown.code === 'stale_write' || thrown.code === 'conflict')
+        ) {
+          try {
+            const theirs = await getNote(current.id);
+            noteRef.current = theirs;
+            persistedContentRef.current = theirs.content;
+            draftUnlockedRef.current = theirs.status !== 'published';
+            onNoteChangedRef.current(theirs);
+            setStale({ mine: value, theirs });
+            markSaveState('error');
+            setError(
+              theirs.status === 'published'
+                ? 'This note was published in another window. Choose what to do with your edit.'
+                : 'This note changed in another window. Choose which text to keep.',
+            );
+            return;
+          } catch {
+            // Fall through to the ordinary save error if the refetch itself fails.
+          }
+        }
         markSaveState('error');
-        setError(message);
+        setError(errorMessage(thrown));
         throw thrown;
       }
     },
     [markSaveState],
   );
-
   /** Saves run one at a time, so a debounce and a flush cannot cross. */
   const enqueue = useCallback(
-    (value: string, revision: number): Promise<void> => {
+    (value: string, revision: number, keepalive = false): Promise<void> => {
       // Recover the queue after a failed save; the next edit must still retry.
-      queueRef.current = queueRef.current.catch(() => undefined).then(() => persist(value, revision));
+      queueRef.current = queueRef.current
+        .catch(() => undefined)
+        .then(() => persist(value, revision, keepalive));
       return queueRef.current;
     },
     [persist],
@@ -204,26 +225,38 @@ export function NoteView({
     pendingRevisionRef.current = null;
   }, []);
 
-  const flush = useCallback((): Promise<void> => {
-    if (timerRef.current !== null) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    const value = pendingRef.current;
-    const revision = pendingRevisionRef.current;
-    pendingRef.current = null;
-    pendingRevisionRef.current = null;
-    if (value !== null && revision !== null) return enqueue(value, revision);
-    if (saveStateRef.current === 'error' && persistedContentRef.current !== latestTextRef.current) {
-      return enqueue(latestTextRef.current, saveRevisionRef.current);
-    }
-    return queueRef.current;
-  }, [enqueue]);
+  const flush = useCallback(
+    (keepalive = false): Promise<void> => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      const value = pendingRef.current;
+      const revision = pendingRevisionRef.current;
+      pendingRef.current = null;
+      pendingRevisionRef.current = null;
+      if (value !== null && revision !== null) return enqueue(value, revision, keepalive);
+      if (saveStateRef.current === 'error' && persistedContentRef.current !== latestTextRef.current) {
+        return enqueue(latestTextRef.current, saveRevisionRef.current, keepalive);
+      }
+      return queueRef.current;
+    },
+    [enqueue],
+  );
 
-  // Switching notes unmounts this view (see the key requirement above); an edit
-  // typed a moment earlier must still reach the server.
+  // Switching notes and closing a tab must not strand the debounced edit.
   useEffect(() => {
+    const flushKeepalive = (): void => {
+      void flush(true).catch(() => undefined);
+    };
+    const onVisibilityChange = (): void => {
+      if (document.visibilityState === 'hidden') flushKeepalive();
+    };
+    window.addEventListener('pagehide', flushKeepalive);
+    document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
+      window.removeEventListener('pagehide', flushKeepalive);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       void flush().catch(() => undefined);
     };
   }, [flush]);
@@ -283,12 +316,13 @@ export function NoteView({
 
   async function handleCopy(): Promise<void> {
     try {
-      await flush();
+      // Copy the visible text first: persistence must never gate this escape hatch.
       await copyText(text);
       setCopied(true);
       window.setTimeout(() => {
         setCopied(false);
       }, COPIED_FLASH_MS);
+      void flush().catch(() => undefined);
     } catch (thrown) {
       setError(errorMessage(thrown));
     }
@@ -300,7 +334,9 @@ export function NoteView({
     try {
       if (note.status === 'published') {
         draftUnlockedRef.current = true;
-        onNoteChanged(await unpublishNote(note.id));
+        const unlocked = await unpublishNote(note.id);
+        noteRef.current = unlocked;
+        onNoteChanged(unlocked);
       } else {
         await flush();
         const finished = await publishNote(note.id);
@@ -313,6 +349,46 @@ export function NoteView({
     } finally {
       setBusy(false);
     }
+  }
+  async function keepMine(): Promise<void> {
+    const conflictState = stale;
+    if (conflictState === null) return;
+    setBusy(true);
+    try {
+      let target = conflictState.theirs;
+      if (target.status === 'published') target = await unpublishNote(target.id);
+      const updated = await updateNote(target.id, { revision: target.revision, content: conflictState.mine });
+      noteRef.current = updated;
+      persistedContentRef.current = updated.content;
+      latestTextRef.current = updated.content;
+      saveRevisionRef.current += 1;
+      draftUnlockedRef.current = updated.status !== 'published';
+      setText(updated.content);
+      setStale(null);
+      setError(null);
+      markSaveState('saved');
+      onNoteChanged(updated);
+    } catch (thrown) {
+      setError(errorMessage(thrown));
+      markSaveState('error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function takeTheirs(): void {
+    if (stale === null) return;
+    cancelPending();
+    saveRevisionRef.current += 1;
+    noteRef.current = stale.theirs;
+    persistedContentRef.current = stale.theirs.content;
+    latestTextRef.current = stale.theirs.content;
+    draftUnlockedRef.current = stale.theirs.status !== 'published';
+    setText(stale.theirs.content);
+    setStale(null);
+    setError(null);
+    markSaveState('saved');
+    onNoteChanged(stale.theirs);
   }
 
   async function handleDelete(): Promise<void> {
@@ -404,6 +480,23 @@ export function NoteView({
           </div>
         </div>
 
+        {stale !== null && (
+          <div className="form-error" role="alert" data-testid="note-conflict">
+            <p>
+              {stale.theirs.status === 'published'
+                ? 'This note is published in another window. Your edit is still here.'
+                : 'This note changed in another window. Your edit is still here.'}
+            </p>
+            <div className="row gap-8">
+              <button type="button" className="btn small" disabled={busy} onClick={() => void keepMine()}>
+                {stale.theirs.status === 'published' ? 'Unlock and apply my edit' : 'Keep mine'}
+              </button>
+              <button type="button" className="btn small" disabled={busy} onClick={takeTheirs}>
+                Take theirs
+              </button>
+            </div>
+          </div>
+        )}
         {error !== null && (
           <p className="form-error" role="alert" data-testid="note-error">
             {error}

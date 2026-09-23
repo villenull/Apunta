@@ -34,11 +34,10 @@ function draftNote(content = 'Subjective: Sample body.') {
 describe('updateDraftNoteContent', () => {
   it('writes the content while the note is a draft', () => {
     const note = draftNote();
-
     const updated = updateDraftNoteContent(db, note.id, 'Subjective: Revised body.');
-
     expect(updated?.content).toBe('Subjective: Revised body.');
     expect(updated?.status).toBe('draft');
+    expect(updated?.revision).toBe(note.revision + 1);
     expect(getNote(db, note.id)?.content).toBe('Subjective: Revised body.');
   });
 

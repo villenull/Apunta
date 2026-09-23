@@ -34,8 +34,7 @@ export type LivePhase = 'idle' | 'starting' | 'recording';
 
 export interface LiveRecordingOptions {
   /** The recorder's own words when the microphone cannot be opened, or goes away. */
-  readonly onError: (message: string) => void;
-  /** A warning worth showing — the recording is getting long, or was stopped at the cap. */
+  readonly onError: (message: string, salvage?: Blob | null) => void;
   readonly onNotice?: (message: string) => void;
   /** Warn, without stopping, once the recording passes this length. */
   readonly warnAfterSeconds?: number;
@@ -328,9 +327,12 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
         }
       },
       onError: (failure) => {
-        optionsRef.current.onError(recorderMessage(failure));
-        recorder.current?.cancel();
+        const salvage = active.snapshot();
+        const elapsed = active.seconds;
+        optionsRef.current.onError(recorderMessage(failure), salvage);
+        active.cancel();
         recorder.current = null;
+        setSeconds(elapsed);
         setPhase('idle');
       },
     });

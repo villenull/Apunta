@@ -23,22 +23,28 @@ test('a patient, a format and a note round-trip through the running server', asy
     data: { patient_id: patient.id, format_id: format.id, content: 'Subjective: Sample body.' },
   });
   expect(noteResponse.status()).toBe(201);
-  const note = (await noteResponse.json()) as { id: string; title: string; status: string };
-  expect(note).toMatchObject({ title: format.name, status: 'draft' });
+  const note = (await noteResponse.json()) as { id: string; title: string; status: string; revision: number };
+  expect(note).toMatchObject({ title: format.name, status: 'draft', revision: 0 });
 
   const listed = await request.get(`/api/patients/${patient.id}/notes`);
-  const { notes } = (await listed.json()) as { notes: { id: string }[] };
+  const { notes } = (await listed.json()) as { notes: { id: string; revision: number }[] };
   expect(notes.map((n) => n.id)).toEqual([note.id]);
 
   // Publishing locks the body: a content edit has to be refused.
   const published = await request.post(`/api/notes/${note.id}/publish`);
   expect(published.status()).toBe(200);
+  await published.json();
 
-  const blocked = await request.patch(`/api/notes/${note.id}`, { data: { content: 'edited' } });
+  const blocked = await request.patch(`/api/notes/${note.id}`, {
+    data: { revision: note.revision, content: 'edited' },
+  });
   expect(blocked.status()).toBe(409);
 
-  await request.post(`/api/notes/${note.id}/unpublish`);
-  const allowed = await request.patch(`/api/notes/${note.id}`, { data: { content: 'edited' } });
+  const unpublished = await request.post(`/api/notes/${note.id}/unpublish`);
+  const draft = (await unpublished.json()) as { revision: number };
+  const allowed = await request.patch(`/api/notes/${note.id}`, {
+    data: { revision: draft.revision, content: 'edited' },
+  });
   expect(allowed.status()).toBe(200);
 
   // Deleting the patient takes the note with it.

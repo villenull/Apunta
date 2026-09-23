@@ -51,7 +51,15 @@ export {
   updatePatient,
 } from './patients.js';
 
-export { createNote, deleteNote, listNotes, publishNote, unpublishNote, updateNote } from './notes.js';
+export {
+  createNote,
+  deleteNote,
+  getNote,
+  listNotes,
+  publishNote,
+  unpublishNote,
+  updateNote,
+} from './notes.js';
 
 export {
   createFormat,

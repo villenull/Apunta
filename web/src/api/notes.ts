@@ -17,6 +17,10 @@ export async function listNotes(patientId: string, signal?: AbortSignal): Promis
   return notes;
 }
 
+export async function getNote(id: string, signal?: AbortSignal): Promise<Note> {
+  return requestJson(`/api/notes/${id}`, NoteSchema, signal ? { signal } : {});
+}
+
 export async function createNote(input: CreateNoteRequest): Promise<Note> {
   return requestJson('/api/notes', NoteSchema, { method: 'POST', body: input });
 }
@@ -28,7 +32,6 @@ export async function updateNote(
 ): Promise<Note> {
   return requestJson(`/api/notes/${id}`, NoteSchema, { method: 'PATCH', body: patch, ...options });
 }
-
 export async function deleteNote(id: string): Promise<void> {
   return requestVoid(`/api/notes/${id}`, { method: 'DELETE' });
 }

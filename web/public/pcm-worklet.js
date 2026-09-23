@@ -28,9 +28,11 @@ class PcmForwarder extends AudioWorkletProcessor {
     this.stopped = false;
     this.port.onmessage = (event) => {
       // "flush": the page is stopping. Send the partial block so the last
-      // fraction of a second of speech is not dropped on the floor.
+      // fraction of a second of speech is not dropped on the floor, then
+      // acknowledge the boundary after the frame has crossed the port.
       if (event.data === 'flush') {
         this.flush();
+        this.port.postMessage('flushed');
         this.stopped = true;
       }
     };

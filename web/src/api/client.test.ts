@@ -29,6 +29,7 @@ const note = {
   format_id: format.id,
   title: 'Progress note',
   status: 'draft' as const,
+  revision: 0,
   content: 'Subjective: Sample body.',
   created_at: '2026-08-22T09:00:00.000Z',
   updated_at: '2026-08-22T09:00:00.000Z',
@@ -145,7 +146,7 @@ describe('resource helpers', () => {
     await createPatient({ name: 'John Smith' });
     await deletePatient(patient.id);
     await createNote({ patient_id: patient.id, format_id: format.id });
-    await updateNote(note.id, { content: 'Subjective: edited.' });
+    await updateNote(note.id, { revision: note.revision, content: 'Subjective: edited.' });
     await publishNote(note.id);
     await createFormat({ name: 'Progress note', sections: ['Subjective', 'Plan'] });
 
@@ -159,6 +160,6 @@ describe('resource helpers', () => {
       'POST /api/formats',
     ]);
     expect(calls[1]?.init.body).toBe(JSON.stringify({ name: 'John Smith' }));
-    expect(calls[4]?.init.body).toBe(JSON.stringify({ content: 'Subjective: edited.' }));
+    expect(calls[4]?.init.body).toBe(JSON.stringify({ revision: 0, content: 'Subjective: edited.' }));
   });
 });

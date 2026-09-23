@@ -16,7 +16,7 @@ import {
   setNotePublished,
   updateNote,
 } from '../db/notes.js';
-import { conflict, notFound } from '../http/errors.js';
+import { conflict, HttpError, notFound } from '../http/errors.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
 import { requirePatient } from './patients.js';
 
@@ -28,6 +28,9 @@ function requireNote(db: Database, id: string): Note {
   const note = getNote(db, id);
   if (!note) throw notFound('Note not found');
   return note;
+}
+function staleWrite(note: Note): HttpError {
+  return new HttpError(409, 'stale_write', 'This note changed in another window.', { note });
 }
 
 export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
@@ -74,16 +77,21 @@ export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
     const patch = parseBody(UpdateNoteRequestSchema, request.body);
     const note = requireNote(db, id);
 
+    if (patch.revision !== note.revision) throw staleWrite(note);
     if (note.status === 'published' && patch.content !== undefined) {
       throw conflict(PUBLISHED_LOCK_MESSAGE);
     }
 
     const updated = updateNote(db, id, {
+      revision: patch.revision,
       ...(patch.title === undefined ? {} : { title: patch.title }),
       ...(patch.content === undefined ? {} : { content: patch.content }),
     });
-    if (!updated) throw notFound('Note not found');
-    return updated;
+    if (updated) return updated;
+
+    const latest = requireNote(db, id);
+    if (latest.revision !== patch.revision) throw staleWrite(latest);
+    throw notFound('Note not found');
   });
 
   /** Cascades to the note's transcripts and chat messages. */

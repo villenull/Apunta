@@ -12,6 +12,8 @@ export const NoteSchema = z.object({
   format_id: IdSchema,
   title: z.string(),
   status: NoteStatusSchema,
+  /** Monotonic row revision, required as the optimistic-write precondition. */
+  revision: z.number().int().nonnegative(),
   /** Exactly what the editor shows: `Section: body` paragraphs (PLAN §3). */
   content: z.string(),
   created_at: TimestampSchema,
@@ -37,13 +39,14 @@ export const CreateNoteRequestSchema = z.object({
   content: optionalText(MAX_BODY_CHARS).optional(),
 });
 export type CreateNoteRequest = z.infer<typeof CreateNoteRequestSchema>;
-
 export const UpdateNoteRequestSchema = z
   .object({
+    /** Revision read with the note; the server refuses stale writes. */
+    revision: z.number().int().nonnegative(),
     title: boundedText(200).optional(),
     content: optionalText(MAX_BODY_CHARS).optional(),
   })
-  .refine((body) => Object.keys(body).length > 0, {
+  .refine((body) => Object.keys(body).some((key) => key !== 'revision'), {
     message: 'Provide at least one field to update',
   });
 export type UpdateNoteRequest = z.infer<typeof UpdateNoteRequestSchema>;
