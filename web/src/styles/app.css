@@ -691,7 +691,8 @@
 }
 
 .note-editable:focus {
-  outline: none;
+  outline: var(--space-1) solid var(--accent);
+  outline-offset: var(--space-1);
   border: none;
   box-shadow: none;
 }
@@ -1206,6 +1207,10 @@ select:focus {
   justify-content: center;
   margin: 0 auto 14px;
 }
+.capture-heading {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 .timer {
   font-size: var(--text-xl);
@@ -1430,16 +1435,15 @@ select:disabled {
 
 /*
  * The dot is the level meter: at rest it is a faint grey disc; with her
- * voice it swells and warms towards the recording red. `--level` is set
- * from the audio frames themselves (Capture.tsx), so it moves on the
- * timescale of her voice, not of whisper.
+ * voice it swells and warms towards the recording red. Its scale is capped
+ * so loud speech cannot collide with the caption below it.
  */
 .record-dot.recording {
   --level: 0;
   background: color-mix(in srgb, var(--danger-tint) calc(var(--level) * 100%), var(--surface-muted));
   box-shadow: var(--shadow-border);
-  transform: scale(calc(1 + var(--level) * 0.45));
-  /* Slow enough to read as breathing, quick enough to answer her first word. */
+  transform: scale(clamp(1, calc(1 + var(--level) * 0.2), 1.2));
+  transform-origin: center;
   transition:
     transform 220ms ease-out,
     background-color 260ms ease-out;

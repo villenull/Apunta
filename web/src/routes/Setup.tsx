@@ -73,21 +73,23 @@ export function Setup(): React.JSX.Element {
             platform,
           )}
           bundled={health.state.data.bundled}
+          platform={platform}
           onRecheck={recheck}
         />
       )}
     </Screen>
   );
 }
-
 function SetupBody({
   checks,
   bundled,
+  platform,
   onRecheck,
 }: {
   checks: SetupCheck[];
   /** Inside Apunta.app there is no Terminal to run the script in, so the card that offers it stays away. */
   bundled: boolean;
+  platform: SetupPlatform;
   onRecheck: () => void;
 }): React.JSX.Element {
   return (
@@ -106,7 +108,7 @@ function SetupBody({
         Check again
       </button>
 
-      {hasBlockingProblem(checks) && !bundled && (
+      {hasBlockingProblem(checks) && !bundled && platform === 'mac' && (
         <div className="card card-rows lede">
           <h3 className="heading-tight">Or do all of it at once</h3>
           <p className="small note-meta">

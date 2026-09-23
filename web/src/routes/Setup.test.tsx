@@ -25,14 +25,14 @@ describe('the setup screen', () => {
     renderSetup();
 
     const list = await screen.findByTestId('setup-checklist');
-    expect(list.textContent).toContain('Ollama is running');
-    expect(list.textContent).toContain('The writing model is downloaded');
-    expect(list.textContent).toContain('whisper.cpp is installed');
-    expect(list.textContent).toContain('The disk is encrypted');
+    expect(list.textContent).toContain('Ollama');
+    expect(list.textContent).toContain('Writing model');
+    expect(list.textContent).toContain('whisper.cpp');
+    expect(list.textContent).toContain('Disk encryption');
     expect(list.textContent?.toLowerCase()).not.toContain('ffmpeg');
+    expect(list.textContent).toContain('Not checked');
   });
-
-  it('names the exact command for each missing piece', async () => {
+  it('names an OS-neutral action for missing local pieces', async () => {
     installFakeApi(
       {},
       {
@@ -41,7 +41,7 @@ describe('the setup screen', () => {
           whisper: {
             binaryPresent: false,
             modelPresent: false,
-            binary: '/opt/homebrew/bin/whisper-cli',
+            binary: '/usr/local/bin/whisper-cli',
             model: '/data/models/ggml-tiny.en.bin',
           },
         },
@@ -49,10 +49,9 @@ describe('the setup screen', () => {
     );
     renderSetup();
 
-    expect((await screen.findByTestId('setup-fix-ollama')).textContent).toBe('brew services start ollama');
-    expect(screen.getByTestId('setup-fix-whisper').textContent).toBe('brew install whisper-cpp');
-    // And the one-liner that does all of it, since something is actually broken.
-    expect(screen.getByTestId('setup-script-command').textContent).toBe('bash scripts/setup-macos.sh');
+    expect((await screen.findByTestId('setup-fix-ollama')).textContent).toContain('operating system');
+    expect(screen.getByTestId('setup-fix-whisper').textContent).toContain('operating system');
+    expect(screen.queryByTestId('setup-script-command')).toBeNull();
   });
 
   it('offers no Terminal command inside the packaged app, where there is none to run', async () => {
@@ -109,37 +108,36 @@ describe('the setup screen', () => {
 
     renderSetup();
     expect((await screen.findByTestId('setup-detail-ollama')).textContent).toContain('nothing is answering');
-    expect(screen.queryByTestId('setup-ready')).toBeNull();
+    expect(screen.getByTestId('setup-local')).toBeDefined();
 
     fireEvent.click(screen.getByTestId('setup-recheck'));
 
     await waitFor(() => {
       expect(screen.getByTestId('setup-detail-ollama').textContent).toContain('answering on');
     });
-    expect(await screen.findByTestId('setup-ready')).toBeDefined();
+    expect(screen.getByTestId('setup-local')).toBeDefined();
   });
 
   /**
-   * The sentence is a promise about the disk as much as the network, and it is
-   * false while FileVault is off. Printing it anyway is the one failure this
-   * screen must not have (`docs/research/data-at-rest-2026-08.md` §9).
+   * Network locality is not a claim about disk encryption. The checklist
+   * reports the disk state separately and does not hide the local-runtime copy.
    */
-  it('will not say "nothing leaves this Mac" while the disk is unencrypted', async () => {
+  it('reports disk encryption separately from network locality', async () => {
     installFakeApi({}, { health: { fileVault: { state: 'off', detail: 'FileVault is Off.' } } });
     renderSetup();
 
     await screen.findByTestId('setup-checklist');
-    expect(screen.queryByTestId('setup-ready')).toBeNull();
+    expect(screen.getByTestId('setup-local').textContent).toContain('not sent over the network');
     expect(screen.getByTestId('setup-detail-filevault').textContent).toContain('FileVault is OFF');
     expect(screen.getByTestId('setup-fix-filevault').textContent).toContain('System Settings');
   });
 
-  it('says it plainly when every check passes', async () => {
+  it('states network locality when every check is ready', async () => {
     installFakeApi();
     renderSetup();
 
-    expect((await screen.findByTestId('setup-ready')).textContent).toBe(
-      "You're fully local — nothing leaves this Mac.",
+    expect((await screen.findByTestId('setup-local')).textContent).toBe(
+      'Apunta runs on this computer — notes are not sent over the network.',
     );
   });
 
@@ -162,7 +160,7 @@ describe('the setup screen', () => {
     await waitFor(() => {
       expect(screen.getByTestId('setup-row-backup-destination')).toBeDefined();
     });
-    expect(screen.queryByTestId('setup-ready')).toBeNull();
+    expect(screen.getByTestId('setup-local')).toBeDefined();
   });
 
   it('names the screen in the browser tab', async () => {

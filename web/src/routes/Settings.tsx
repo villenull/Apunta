@@ -12,7 +12,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
-import { errorMessage, getSettings, listFormats, putSettings } from '../api/index.js';
+import { errorMessage, listFormats, putSettings } from '../api/index.js';
 import { accentColorOrDefault, applyAccentColor } from '../lib/accent.js';
 import {
   animationsEnabled,
@@ -22,6 +22,7 @@ import {
   fontSizeOrDefault,
 } from '../lib/appearance.js';
 import { BackupAdvanced, BackupCard, useBackup } from '../components/BackupCard.js';
+import { useSettingsContext } from '../components/SettingsProvider.js';
 import { PlusIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
@@ -152,10 +153,8 @@ export function Settings(): React.JSX.Element {
     </Screen>
   );
 }
-
 function LlmProfileSettings(): React.JSX.Element | null {
-  const load = useCallback((signal: AbortSignal) => getSettings(signal), []);
-  const settings = useLoader(load);
+  const settings = useSettingsContext();
   const [selected, setSelected] = useState<LlmProfile | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -236,8 +235,7 @@ function LlmProfileSettings(): React.JSX.Element | null {
  * not a choice, so leaving without saving puts the stored look back.
  */
 function AppearanceSettings(): React.JSX.Element {
-  const load = useCallback((signal: AbortSignal) => getSettings(signal), []);
-  const settings = useLoader(load);
+  const settings = useSettingsContext();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accentColor, setAccentColor] = useState<string | null>(null);
