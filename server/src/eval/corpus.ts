@@ -54,6 +54,7 @@ export interface FixtureExpectations {
   readonly requiresMarker: readonly { topic: string }[];
   readonly novelTermAllow: readonly string[];
   readonly phraseBait: readonly string[];
+  readonly priorNotes?: readonly PriorNoteInput[] | undefined;
 }
 
 export interface Fixture extends FixtureExpectations {

@@ -8,6 +8,7 @@ import {
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyRequest } from 'fastify';
+import type { SseStream } from '../http/sse.js';
 
 import { aiError, type AiError } from '../ai/errors.js';
 import { logFailure, logStats, toAiError } from './ai.js';
