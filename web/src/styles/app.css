@@ -2368,6 +2368,22 @@ select:disabled {
   opacity: 1;
   padding-inline: var(--space-0);
 }
+.patient-entry:hover {
+  background: var(--surface);
+}
+
+.patient-entry:has(.list-item.active) {
+  background: var(--accent-tint);
+}
+
+.patient-entry:has(.list-item.active) .list-item.active {
+  background: transparent;
+}
+
+.import-actions .btn-quick {
+  padding: var(--space-5) var(--space-8);
+  font-size: var(--text-base);
+}
 
 .patient-rename {
   padding: var(--space-0) var(--space-5) var(--space-4);
