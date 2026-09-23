@@ -240,6 +240,8 @@ export function registerTranscribeRoute(
 
       const { sections, retractions } = await streamDraft({
         providers,
+        db,
+        patientId: input.patient_id,
         format,
         source: { typedNotes: input.typed_notes, transcript },
         stream,
