@@ -1,4 +1,4 @@
-import { planDocumentText, safeFilePart } from '@apunta/shared';
+import { instantToLocalDay, planDocumentText, safeFilePart } from '@apunta/shared';
 import type { Note, Patient } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 
@@ -91,7 +91,7 @@ function patientFolder(patient: Patient): string {
 }
 
 function noteFilename(note: Note): string {
-  const day = note.created_at.slice(0, 10);
+  const day = instantToLocalDay(note.created_at);
   return `${safeFilePart(`${day} ${note.title}`)}.txt`;
 }
 

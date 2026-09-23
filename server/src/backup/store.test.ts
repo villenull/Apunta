@@ -1,4 +1,4 @@
-import type { BackupFile } from '@apunta/shared';
+import { backupFilename, type BackupFile } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import { isDueToday, isStale, selectPrunable } from './store.js';
@@ -17,7 +17,7 @@ function daily(from: string, count: number): BackupFile[] {
   const start = new Date(from);
   return Array.from({ length: count }, (_unused, index) => {
     const day = new Date(start.getTime() - index * 24 * 60 * 60 * 1000);
-    return file(`apunta-backup-${day.toISOString().slice(0, 10)}.zip`);
+    return file(backupFilename(day));
   });
 }
 

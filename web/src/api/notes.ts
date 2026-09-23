@@ -6,7 +6,7 @@ import {
   type UpdateNoteRequest,
 } from '@apunta/shared';
 
-import { requestJson, requestVoid } from './client.js';
+import { requestJson, requestVoid, type RequestOptions } from './client.js';
 
 export async function listNotes(patientId: string, signal?: AbortSignal): Promise<Note[]> {
   const { notes } = await requestJson(
@@ -21,8 +21,12 @@ export async function createNote(input: CreateNoteRequest): Promise<Note> {
   return requestJson('/api/notes', NoteSchema, { method: 'POST', body: input });
 }
 
-export async function updateNote(id: string, patch: UpdateNoteRequest): Promise<Note> {
-  return requestJson(`/api/notes/${id}`, NoteSchema, { method: 'PATCH', body: patch });
+export async function updateNote(
+  id: string,
+  patch: UpdateNoteRequest,
+  options: Pick<RequestOptions, 'keepalive'> = {},
+): Promise<Note> {
+  return requestJson(`/api/notes/${id}`, NoteSchema, { method: 'PATCH', body: patch, ...options });
 }
 
 export async function deleteNote(id: string): Promise<void> {

@@ -1,12 +1,12 @@
-import type {
-  ClaudeImportReport,
-  ImportNameSource,
-  ImportNoteSource,
-  ImportPatientPlan,
-  ImportSkippedConversation,
-  ImportSkipReason,
+import {
+  instantToLocalDay,
+  type ClaudeImportReport,
+  type ImportNameSource,
+  type ImportNoteSource,
+  type ImportPatientPlan,
+  type ImportSkippedConversation,
+  type ImportSkipReason,
 } from '@apunta/shared';
-
 import { plainFromMarkdown } from './markdown.js';
 import { readZip, ZipFormatError } from './zip.js';
 
@@ -395,7 +395,7 @@ export function provenanceLine(input: {
 }): string {
   const title = input.title.replace(/\s+/g, ' ').trim();
   const name = title === '' ? 'an untitled conversation' : `"${title}"`;
-  const when = input.recordedAt === null ? '' : `, recorded ${input.recordedAt.slice(0, 10)}`;
+  const when = input.recordedAt === null ? '' : `, recorded ${instantToLocalDay(input.recordedAt)}`;
   const from = input.source === 'assistant' ? "Claude's last reply" : 'your own messages';
   const files =
     input.attachments === 0
@@ -446,7 +446,9 @@ export function importedKeys(
  * session, however old.
  */
 export function activeSince(turns: readonly RawTurn[], cutoff: string): boolean {
-  return turns.some((turn) => turn.at !== null && turn.at.slice(0, 10) >= cutoff);
+  return turns.some(
+    (turn) => turn.at !== null && new Date(turn.at).toISOString().split('T', 1)[0]! >= cutoff,
+  );
 }
 
 /**

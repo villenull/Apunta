@@ -218,6 +218,18 @@ export function applyPendingRestore(dataDir: string): AppliedRestore {
   return { applied: true, safetyCopy, removedSidecars };
 }
 
+/**
+ * Put the pre-restore database back after the restored file cannot be opened.
+ * Sidecars are removed first because they belong to the failed file, not the
+ * safety copy. The safety copy is retained if rollback itself fails.
+ */
+export function rollbackAppliedRestore(dataDir: string, safetyCopy: string): void {
+  const live = join(dataDir, DB_ENTRY_NAME);
+  for (const suffix of ['-wal', '-shm']) rmSync(`${live}${suffix}`, { force: true });
+  if (existsSync(live)) rmSync(live, { force: true });
+  if (existsSync(safetyCopy)) renameSync(safetyCopy, live);
+}
+
 /** True when a restore is waiting for the next start. */
 export function hasPendingRestore(dataDir: string): boolean {
   return existsSync(join(dataDir, PENDING_RESTORE_DIRNAME, DB_ENTRY_NAME));

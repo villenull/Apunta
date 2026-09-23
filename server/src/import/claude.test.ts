@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { instantToLocalDay } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -357,7 +358,11 @@ describe('planImport', () => {
 
     // John straddles the cutoff: his May and June sessions come too.
     const john = notes.filter((n) => n.patient === 0);
-    expect(john.map((n) => n.recordedAt?.slice(0, 10))).toEqual(['2026-05-12', '2026-06-09', '2026-07-14']);
+    expect(john.map((n) => (n.recordedAt === null ? undefined : instantToLocalDay(n.recordedAt)))).toEqual([
+      '2026-05-12',
+      '2026-06-09',
+      '2026-07-14',
+    ]);
     // Claude's last reply in each session, the live branch, verbatim.
     expect(john[1]?.body).toContain('John reports sleeping six hours.');
     // Claude's Markdown is gone; the labels stay, as plain `Label:` lines.

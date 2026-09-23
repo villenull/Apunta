@@ -358,12 +358,13 @@ async function receiveUpload(request: FastifyRequest, config: AppConfig): Promis
   }
 
   const filename = `${uuidv7()}.wav`;
-  const path = join(ensureDir(config.audioDir), filename);
+  let path: string | undefined;
   const fields: Record<string, string> = {};
   let bytes = 0;
   let received = false;
 
   try {
+    path = join(ensureDir(config.audioDir), filename);
     // Narrowed from the app-wide ceiling in `app.ts`. Document upload shares
     // that registration and wants far tighter limits than a recording does,
     // so each route states its own rather than one global serving neither.
@@ -374,8 +375,6 @@ async function receiveUpload(request: FastifyRequest, config: AppConfig): Promis
     for await (const part of parts) {
       if (part.type === 'file') {
         if (received) {
-          // Draining a second file to nowhere keeps the request body fully
-          // read, which is what lets the error below reach the browser.
           part.file.resume();
           continue;
         }
@@ -391,11 +390,11 @@ async function receiveUpload(request: FastifyRequest, config: AppConfig): Promis
       }
     }
   } catch (error) {
-    await discard(path);
-    // `@fastify/multipart` throws its own typed errors when a limit is hit;
-    // they carry a `statusCode`, which the error handler turns into a 4xx.
+    if (path !== undefined) await discard(path);
     throw error;
   }
+
+  if (path === undefined) throw new Error('audio upload path was not created');
 
   if (!received || bytes === 0) {
     await discard(path);

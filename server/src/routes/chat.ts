@@ -3,6 +3,7 @@ import {
   ChatRequestSchema,
   approximateTokens,
   emptySectionNames,
+  instantToLocalDay,
   PUBLISHED_REFUSAL,
   sectionsToText,
   textToSections,
@@ -195,7 +196,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
           ? baseRequest
           : {
               ...baseRequest,
-              noteDate: note.created_at.slice(0, 10),
+              noteDate: instantToLocalDay(note.created_at),
               priorNotes: priorNotes.map(({ title, date, text }) => ({ title, date, text })),
             },
       );
@@ -427,9 +428,7 @@ function fitRefineBackground(db: Database, note: Note, request: RefineNoteReques
   if (others.length === 0) return [];
   const prompt = buildRefinePrompt(request);
   const fixed =
-    approximateTokens(prompt.system) +
-    approximateTokens(prompt.user) +
-    refineBackgroundOverheadTokens(note.created_at.slice(0, 10));
+    approximateTokens(prompt.system) + refineBackgroundOverheadTokens(instantToLocalDay(note.created_at));
   const room = Math.min(REFINE_BACKGROUND_TOKENS, REFINE_PROMPT_TOKENS - fixed);
   if (room <= 0) return [];
   return [...fitNotesNewestFirst(others, room).notes];

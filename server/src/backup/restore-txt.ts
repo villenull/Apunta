@@ -3,6 +3,7 @@ import {
   DB_ENTRY_NAME,
   ENCRYPTED_PAYLOAD_NAME,
   ENCRYPTION_META_FILENAME,
+  instantToLocalDay,
   MANIFEST_FILENAME,
   type BackupManifest,
 } from '@apunta/shared';
@@ -38,7 +39,7 @@ function count(value: number, singular: string, plural = `${singular}s`): string
 
 export function renderRestoreText(input: RestoreTextInput): string {
   const { manifest, dataDir } = input;
-  const generated = manifest.generated_at.slice(0, 10);
+  const generated = instantToLocalDay(manifest.generated_at);
   const notes = manifest.counts['notes'] ?? 0;
   const patients = manifest.counts['patients'] ?? 0;
 

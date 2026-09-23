@@ -21,28 +21,29 @@ export class ApiRequestError extends Error {
   readonly status: number;
   /** `error` code from the API's JSON body, or `network_error`. */
   readonly code: string;
+  /** Structured server details, when the API supplied them. */
+  readonly details: unknown;
 
-  constructor(status: number, code: string, message: string) {
+  constructor(status: number, code: string, message: string, details?: unknown) {
     super(message);
     this.name = 'ApiRequestError';
     this.status = status;
     this.code = code;
+    this.details = details;
   }
 }
-
 export type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
-
 export interface RequestOptions {
   method?: HttpMethod;
   /** Serialized as JSON — unless it is a `FormData`, which is sent as-is. */
   body?: unknown;
   signal?: AbortSignal;
+  keepalive?: boolean;
 }
-
-const NETWORK_ERROR_MESSAGE = 'Could not reach the Apunta server. Is it still running?';
+export const NETWORK_ERROR_MESSAGE = 'Could not reach the Apunta server. Is it still running?';
 
 function buildInit(options: RequestOptions): RequestInit {
-  const { method = 'GET', body, signal } = options;
+  const { method = 'GET', body, signal, keepalive } = options;
   // A `FormData` body is passed straight through with **no** content-type
   // header: the browser has to set it itself, because only it knows the
   // multipart boundary it generated. Setting one by hand produces a body the
@@ -54,23 +55,24 @@ function buildInit(options: RequestOptions): RequestInit {
         ? { body }
         : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } };
 
-  return { method, ...payload, ...(signal ? { signal } : {}) };
+  return { method, ...payload, ...(signal ? { signal } : {}), ...(keepalive ? { keepalive: true } : {}) };
 }
-
 /** Turn a non-2xx response into an ApiRequestError carrying the server's message. */
 async function toError(response: Response): Promise<ApiRequestError> {
   let code = 'internal_error';
-  let message = `Request failed with HTTP ${String(response.status)}`;
+  let message = 'The Apunta server returned an unexpected error. Try again.';
+  let details: unknown;
   try {
     const parsed = ApiErrorSchema.safeParse(await response.json());
     if (parsed.success) {
       code = parsed.data.error;
       message = parsed.data.message;
+      details = parsed.data.details;
     }
   } catch {
     // A non-JSON error body (a proxy page, say) keeps the generic message.
   }
-  return new ApiRequestError(response.status, code, message);
+  return new ApiRequestError(response.status, code, message, details);
 }
 
 async function send(path: string, options: RequestOptions): Promise<Response> {

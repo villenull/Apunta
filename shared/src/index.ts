@@ -24,6 +24,7 @@ export {
   approximateTokens,
   boundedText,
   IdSchema,
+  instantToLocalDay,
   MAX_BODY_CHARS,
   optionalText,
   TimestampSchema,

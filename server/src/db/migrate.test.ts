@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from '../config.js';
 import { undoImportBatch } from './import-batches.js';
 import { openDatabase } from './index.js';
-import { appliedVersions, loadMigrations, migrate, migrationLevel } from './migrate.js';
+import { appliedVersions, loadMigrations, migrate } from './migrate.js';
 
 const migrationsDir = loadConfig({}).migrationsDir;
 
@@ -116,10 +116,17 @@ describe('migrate', () => {
     second.db.close();
   });
 
-  it('reports level 0 for a database no migration has touched', () => {
+  it('refuses a database newer than the highest shipped migration', () => {
     const db = new BetterSqlite3(':memory:');
+    db.exec(
+      'CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TEXT NOT NULL) STRICT',
+    );
+    db.prepare('INSERT INTO schema_migrations VALUES (?, ?, ?)').run(99, 'future_change', 'test');
+    const maximum = loadMigrations(migrationsDir).at(-1)?.version ?? 0;
 
-    expect(migrationLevel(db)).toBe(0);
+    expect(() => migrate(db, migrationsDir)).toThrow(
+      `Database schema version 99 is newer than this build (highest supported migration ${String(maximum)})`,
+    );
 
     db.close();
   });

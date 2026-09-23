@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { boundedText, IdSchema, optionalText, TimestampSchema } from './common.js';
+import { boundedText, IdSchema, instantToLocalDay, optionalText, TimestampSchema } from './common.js';
 
 /**
  * The treatment plan (PLAN §3, M9).
@@ -309,13 +309,12 @@ export const MAX_LOOKBACK_NOTES = 12;
 export function addDays(date: string, days: number): string {
   const parsed = new Date(`${date}T00:00:00Z`);
   parsed.setUTCDate(parsed.getUTCDate() + days);
-  return parsed.toISOString().slice(0, 10);
+  return parsed.toISOString().split('T', 1)[0]!;
 }
 
 /** Today, as a calendar date in the caller's own timezone. */
 export function today(now: Date = new Date()): string {
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
-  return local.toISOString().slice(0, 10);
+  return instantToLocalDay(now);
 }
 
 export interface ReviewDueState {

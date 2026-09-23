@@ -74,8 +74,18 @@ export function migrationLevel(db: Database): number {
 export function migrate(db: Database, migrationsDir: string): MigrationResult {
   ensureMigrationsTable(db);
 
-  const already = new Set(appliedVersions(db));
-  const pending = loadMigrations(migrationsDir).filter((m) => !already.has(m.version));
+  const migrations = loadMigrations(migrationsDir);
+  const maximum = migrations.at(-1)?.version ?? 0;
+  const versions = appliedVersions(db);
+  const current = versions.at(-1) ?? 0;
+  if (current > maximum) {
+    throw new Error(
+      `Database schema version ${String(current)} is newer than this build (highest supported migration ${String(maximum)}). Update Apunta before opening this database.`,
+    );
+  }
+
+  const already = new Set(versions);
+  const pending = migrations.filter((migration) => !already.has(migration.version));
 
   const record = db.prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)');
 

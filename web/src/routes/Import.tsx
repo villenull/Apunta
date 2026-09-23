@@ -1,5 +1,6 @@
 import {
   DEFAULT_IMPORT_CUTOFF,
+  instantToLocalDay,
   type ClaudeImportReport,
   type ImportBatch,
   type ImportNameSource,
@@ -421,5 +422,5 @@ function plural(count: number, word: string): string {
 }
 
 function day(iso: string | null): string {
-  return iso === null ? 'undated' : iso.slice(0, 10);
+  return iso === null ? 'undated' : instantToLocalDay(iso);
 }

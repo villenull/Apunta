@@ -34,16 +34,77 @@ export function conflict(message: string): HttpError {
   return new HttpError(409, 'conflict', message);
 }
 
+export class StorageError extends HttpError {
+  constructor(
+    message: string,
+    readonly causeCode: string,
+  ) {
+    super(507, 'storage_error', message, { cause: causeCode });
+    this.name = 'StorageError';
+  }
+}
+
+function errorCode(error: unknown): string | undefined {
+  if (typeof error !== 'object' || error === null || !('code' in error)) return undefined;
+  const code = error.code;
+  return typeof code === 'string' ? code : undefined;
+}
+/** Convert filesystem/SQLite failures into an actionable, safe message. */
+export function storageErrorFor(error: unknown, dataDir: string): StorageError | null {
+  if (error instanceof StorageError) return error;
+  const code = errorCode(error);
+  if (code === undefined) return null;
+  if (code === 'ENOSPC' || code === 'SQLITE_FULL') {
+    return new StorageError(
+      `Apunta cannot write to ${dataDir} because the disk is full. Free space and try again. Your existing data was left untouched.`,
+      code,
+    );
+  }
+  if (
+    code === 'EACCES' ||
+    code === 'EPERM' ||
+    code === 'EROFS' ||
+    code === 'SQLITE_READONLY' ||
+    code === 'SQLITE_READONLY_DIRECTORY' ||
+    code === 'SQLITE_CANTOPEN'
+  ) {
+    return new StorageError(
+      `Apunta cannot write to ${dataDir} because the folder is read-only or permissions do not allow access. Choose a writable folder or fix its permissions, then try again. Your existing data was left untouched.`,
+      code,
+    );
+  }
+  return null;
+}
+
+export function storageBootMessage(error: unknown, dataDir: string, dbFile: string): string {
+  const mapped = storageErrorFor(error, dataDir);
+  if (mapped !== null) return mapped.message;
+  if (error instanceof Error) return `${error.message} Database: ${dbFile}.`;
+  return `Apunta could not open its database at ${dbFile}. Check that the folder is writable, then try again.`;
+}
+
 function body(code: ApiErrorCode, message: string, details?: unknown): ApiError {
   return details === undefined ? { error: code, message } : { error: code, message, details };
 }
 
-export function registerErrorHandler(app: FastifyInstance): void {
+export interface ErrorHandlerOptions {
+  readonly dataDir?: string;
+}
+
+export function registerErrorHandler(app: FastifyInstance, options: ErrorHandlerOptions = {}): void {
   // Fastify types the handler's error as `unknown` by default; naming
   // FastifyError keeps `statusCode`/`message` available on the fall-through.
   app.setErrorHandler<FastifyError>((error, request, reply) => {
     if (error instanceof HttpError) {
       return reply.code(error.statusCode).send(body(error.code, error.message, error.details));
+    }
+
+    if (options.dataDir !== undefined) {
+      const storage = storageErrorFor(error, options.dataDir);
+      if (storage !== null) {
+        request.log.error({ err: error, code: storage.causeCode }, storage.message);
+        return reply.code(storage.statusCode).send(body(storage.code, storage.message, storage.details));
+      }
     }
 
     // A zod failure that escaped a route wrapper is still a client error.

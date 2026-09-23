@@ -1,5 +1,6 @@
 import {
   SaveBriefRequestSchema,
+  instantToLocalDay,
   type BriefLine,
   type BriefLookback,
   type SessionBrief,
@@ -88,7 +89,7 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
         const composed = await providers.llm.composeBrief({
           notes: read.materials.map((material) => ({
             index: material.index,
-            date: material.note.created_at.slice(0, 10),
+            date: instantToLocalDay(material.note.created_at),
             title: material.note.title,
             points: material.points,
           })),

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { instantToLocalDay } from './common.js';
 
 /**
  * Backup and export (M7 deliverable 4), rewritten against
@@ -293,7 +294,7 @@ export type VerifiedRestoreResponse = z.infer<typeof VerifiedRestoreResponseSche
 
 /** `apunta-backup-2026-08-24.zip` for the first of the day, `-2.zip` after that. */
 export function backupFilename(date: Date, sequence = 1): string {
-  const day = date.toISOString().slice(0, 10);
+  const day = instantToLocalDay(date);
   const tail = sequence > 1 ? `-${String(sequence)}` : '';
   return `${BACKUP_FILE_PREFIX}${day}${tail}${BACKUP_FILE_SUFFIX}`;
 }

@@ -122,7 +122,7 @@ console.error(`Model: ${health.ollama.model}\n`);
 
 const format = await (
   await post('/api/formats', {
-    name: `Refine check ${new Date().toISOString().slice(0, 10)}`,
+    name: `Refine check ${new Date().toLocaleDateString('en-CA')}`,
     sections: names,
   })
 ).json();

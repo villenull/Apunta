@@ -25,6 +25,19 @@ export function optionalText(max: number): z.ZodString {
 
 /** Longest note/transcript body we accept. Generous, but not unbounded. */
 export const MAX_BODY_CHARS = 200_000;
+/**
+ * Return the calendar day on which an instant occurs in the machine's local
+ * timezone. Never derive a local day by slicing an ISO string: ISO timestamps
+ * are UTC, so evening sessions west of Greenwich would be assigned tomorrow.
+ */
+export function instantToLocalDay(instant: string | Date): string {
+  const date = typeof instant === 'string' ? new Date(instant) : instant;
+  if (Number.isNaN(date.getTime())) return typeof instant === 'string' ? instant : '';
+  const year = String(date.getFullYear()).padStart(4, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 /**
  * A rough token count, used to refuse an over-long prompt rather than let

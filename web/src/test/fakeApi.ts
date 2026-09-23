@@ -1,4 +1,5 @@
 import {
+  instantToLocalDay,
   type BrainstormMessage,
   type ChatMessage,
   type ClaudeImportReport,
@@ -804,8 +805,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
             context: {
               notes: notes.map((note) => ({
                 id: note.id,
-                title: note.title,
-                date: note.created_at.slice(0, 10),
+                date: instantToLocalDay(note.created_at),
               })),
               total: notes.length,
               dropped_note_ids: [],

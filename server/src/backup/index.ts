@@ -39,6 +39,7 @@ export {
   hasPendingRestore,
   readArchive,
   RestoreError,
+  rollbackAppliedRestore,
   stageRestore,
 } from './restore.js';
 export {

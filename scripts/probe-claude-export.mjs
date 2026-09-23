@@ -82,7 +82,7 @@ function keyTally(items, limit = 400) {
 function describeDates(values) {
   const stamps = values.filter((v) => typeof v === 'string' && !Number.isNaN(Date.parse(v))).sort();
   if (stamps.length === 0) return 'none parsed';
-  return `${stamps[0].slice(0, 10)} → ${stamps[stamps.length - 1].slice(0, 10)}`;
+  return `${stamps[0].split('T', 1)[0]} → ${stamps[stamps.length - 1].split('T', 1)[0]}`;
 }
 
 /** The importer's session gap and default cutoff (server/src/import/claude.ts, shared/src/import.ts). */
@@ -124,7 +124,7 @@ function textLength(message) {
 
 function day(iso) {
   return typeof iso === 'string' && !Number.isNaN(Date.parse(iso))
-    ? new Date(iso).toISOString().slice(0, 10)
+    ? new Date(iso).toISOString().split('T', 1)[0]
     : '?';
 }
 

@@ -102,7 +102,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     },
   });
 
-  registerErrorHandler(app);
+  registerErrorHandler(app, { dataDir: config.dataDir });
 
   registerHealthRoute(app, config, db, providers);
   registerLicensesRoute(app, config);

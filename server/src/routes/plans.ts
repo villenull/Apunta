@@ -3,6 +3,7 @@ import {
   addDays,
   ATTESTATION_TEXT,
   CreateGoalRequestSchema,
+  instantToLocalDay,
   planDocumentText,
   StartPlanVersionRequestSchema,
   today,
@@ -354,7 +355,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
           existingGoals: existing.map((goal) => goal.statement),
           notes: materials.map((material) => ({
             index: material.index,
-            date: material.note.created_at.slice(0, 10),
+            date: instantToLocalDay(material.note.created_at),
             excerpts: material.excerpts.map((excerpt) => excerpt.text),
           })),
         });

@@ -1,4 +1,4 @@
-import { approximateTokens, type Note } from '@apunta/shared';
+import { approximateTokens, instantToLocalDay, type Note } from '@apunta/shared';
 
 import { priorNoteBlock } from './prompts.js';
 import type { PriorNoteInput } from './types.js';
@@ -42,7 +42,7 @@ export function priorNoteTokens(note: PriorNoteInput): number {
 }
 
 export function toPriorNote(note: Note): FittedNote {
-  return { id: note.id, title: note.title, date: note.created_at.slice(0, 10), text: note.content };
+  return { id: note.id, title: note.title, date: instantToLocalDay(note.created_at), text: note.content };
 }
 
 /** `candidates` must be newest first, as `listNotesForPatient` returns them. */

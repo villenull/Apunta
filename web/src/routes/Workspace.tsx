@@ -8,6 +8,7 @@ import {
   listFormats,
   listNotes,
   listPatients,
+  NETWORK_ERROR_MESSAGE,
   setPatientArchived,
   updatePatient,
 } from '../api/index.js';
@@ -182,6 +183,22 @@ export function Workspace(): React.JSX.Element {
       document.querySelector<HTMLElement>(targetSelector)?.focus();
     });
   }, [narrowPane]);
+
+  const serverUnavailable = [patients.state, formats.state, notes.state].some(
+    (state) => state.status === 'error' && state.message === NETWORK_ERROR_MESSAGE,
+  );
+
+  if (serverUnavailable) {
+    return (
+      <div className="empty-state" data-testid="server-unavailable" role="alert">
+        <h1>Apunta can’t reach its server</h1>
+        <p>Start Apunta again, then try this page again.</p>
+        <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   // First run: with no note format defined there is nothing to draft into, so
   // the app opens on onboarding instead of an empty workspace.

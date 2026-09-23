@@ -1,4 +1,11 @@
-export { ApiRequestError, errorMessage, requestJson, requestStream, requestVoid } from './client.js';
+export {
+  ApiRequestError,
+  errorMessage,
+  NETWORK_ERROR_MESSAGE,
+  requestJson,
+  requestStream,
+  requestVoid,
+} from './client.js';
 export type { HttpMethod, Parser, RequestOptions } from './client.js';
 
 export { fetchHealth } from './health.js';

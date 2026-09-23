@@ -5,6 +5,7 @@ export const ApiErrorCodeSchema = z.enum([
   'bad_request',
   'not_found',
   'conflict',
+  'storage_error',
   'ai_unavailable',
   'internal_error',
 ]);

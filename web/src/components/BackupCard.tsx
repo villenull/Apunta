@@ -1,4 +1,9 @@
-import { BACKUP_STALE_DAYS, type BackupFile, type BackupStatusResponse } from '@apunta/shared';
+import {
+  BACKUP_STALE_DAYS,
+  instantToLocalDay,
+  type BackupFile,
+  type BackupStatusResponse,
+} from '@apunta/shared';
 import { useCallback, useState } from 'react';
 
 import {
@@ -289,7 +294,7 @@ export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JS
               ...(backup.passphrase === '' ? {} : { passphrase: backup.passphrase }),
             });
             backup.setPassphrase('');
-            return `Restore of ${result.manifest.generated_at.slice(0, 10)} is ready. Quit Apunta and open it again to finish; your current notes are kept at ${result.safety_copy}.`;
+            return `Restore of ${instantToLocalDay(result.manifest.generated_at)} is ready. Quit Apunta and open it again to finish; your current notes are kept at ${result.safety_copy}.`;
           });
         }}
       />
@@ -308,7 +313,9 @@ export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JS
 
       <p className="small note-meta" data-testid="retention-summary">
         Stored: {String(data.counts['notes'] ?? 0)} notes for {String(data.counts['patients'] ?? 0)} patients
-        {data.oldest_note_at === null ? '' : `, going back to ${data.oldest_note_at.slice(0, 10)}`},{' '}
+        {data.oldest_note_at === null
+          ? ''
+          : `, going back to ${instantToLocalDay(data.oldest_note_at)}`},{' '}
         {String(data.counts['transcripts'] ?? 0)} transcripts, {formatBytes(data.db_bytes)}.
       </p>
     </div>
@@ -383,7 +390,7 @@ function VerifyRestore({
   if (lastVerified !== null && Date.parse(lastVerified) > yearAgo) {
     return (
       <p className="small note-meta" data-testid="backup-verified">
-        Restore last tested {lastVerified.slice(0, 10)}.
+        Restore last tested {instantToLocalDay(lastVerified)}.
       </p>
     );
   }

@@ -82,7 +82,7 @@ describe('requestJson', () => {
     const error = await requestJson('/api/patients', PatientSchema).catch((thrown: unknown) => thrown);
 
     expect(error).toMatchObject({ status: 500, code: 'internal_error' });
-    expect(errorMessage(error)).toBe('Request failed with HTTP 500');
+    expect(errorMessage(error)).toBe('The Apunta server returned an unexpected error. Try again.');
   });
 
   it('reports an unreachable server rather than a raw TypeError', async () => {

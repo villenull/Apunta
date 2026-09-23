@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
+import { instantToLocalDay, STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { OWNER_PROGRESS_INSTRUCTIONS } from './ai/default-instructions.js';
@@ -73,7 +73,7 @@ describe('seedDatabase', () => {
 
     const notes = listNotesForPatient(db, john?.id ?? '');
 
-    expect(notes.map((n) => [n.title, n.created_at.slice(0, 10), n.status])).toEqual([
+    expect(notes.map((n) => [n.title, instantToLocalDay(n.created_at), n.status])).toEqual([
       ['Progress note', '2026-08-08', 'published'],
       ['Progress note', '2026-08-01', 'published'],
       ['Intake note', '2026-07-24', 'published'],

@@ -1,3 +1,4 @@
+import { instantToLocalDay } from './common.js';
 import type { Diagnosis, PlanGoal, PlanObjective, TreatmentPlan } from './plan.js';
 
 /**
@@ -79,7 +80,7 @@ function goalLines(goal: PlanGoal, index: number): string[] {
     lines.push('    Drafted from:');
     for (const evidence of goal.evidence) {
       const where = evidence.section === null ? '' : `, ${evidence.section}`;
-      lines.push(`      ${evidence.note_date.slice(0, 10)}${where}: "${evidence.excerpt.trim()}"`);
+      lines.push(`      ${instantToLocalDay(evidence.note_date)}${where}: "${evidence.excerpt.trim()}"`);
     }
   }
   return lines;
@@ -100,7 +101,7 @@ function historyLines(versions: readonly TreatmentPlan[], upTo: number): string[
     .filter((version) => version.version <= upTo)
     .sort((a, b) => a.version - b.version)
     .map((version) => {
-      const from = version.effective_from ?? version.created_at.slice(0, 10);
+      const from = version.effective_from ?? instantToLocalDay(version.created_at);
       const to = version.effective_to ?? (version.status === 'superseded' ? NOT_RECORDED : 'present');
       return `  Version ${String(version.version)} — ${version.status} — ${from} to ${to}`;
     });
@@ -123,7 +124,7 @@ export function planDocumentText(input: PlanDocumentInput): string {
   );
   lines.push(`Version: ${String(plan.version)} (${plan.status})`);
   lines.push(`Effective: ${dateOrDash(plan.effective_from)} to ${plan.effective_to ?? 'present'}`);
-  lines.push(`Created: ${plan.created_at.slice(0, 10)}`);
+  lines.push(`Created: ${instantToLocalDay(plan.created_at)}`);
   lines.push('');
 
   lines.push('Diagnoses:');
@@ -162,7 +163,7 @@ export function planDocumentText(input: PlanDocumentInput): string {
 
   lines.push('Attestation:');
   lines.push(`  ${plan.attested_at === null ? 'Not yet attested' : value(plan.attestation_text)}`);
-  lines.push(`  Attested: ${plan.attested_at === null ? NOT_RECORDED : plan.attested_at.slice(0, 10)}`);
+  lines.push(`  Attested: ${plan.attested_at === null ? NOT_RECORDED : instantToLocalDay(plan.attested_at)}`);
   lines.push(`  Clinician: ${value(plan.clinician_name)}`);
   lines.push(`  Credential: ${value(plan.clinician_credential)}`);
   lines.push(`  Licence: ${value(plan.clinician_licence)}`);

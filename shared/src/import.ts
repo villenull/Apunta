@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { IdSchema } from './common.js';
+import { IdSchema, instantToLocalDay } from './common.js';
 
 /**
  * Importing her Claude conversations (M11, `docs/agents/M11-claude-import.md`).
@@ -182,6 +182,6 @@ export type ImportUndoResponse = z.infer<typeof ImportUndoResponseSchema>;
 
 /** An imported note's title: the day it was recorded, so a patient's list reads as a history. */
 export function importedNoteTitle(recordedAt: string | null): string {
-  const day = recordedAt === null ? '' : recordedAt.slice(0, 10);
+  const day = recordedAt === null ? '' : instantToLocalDay(recordedAt);
   return day === '' ? 'Imported session' : `Imported session, ${day}`;
 }
