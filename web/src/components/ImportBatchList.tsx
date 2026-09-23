@@ -27,7 +27,7 @@ export function ImportBatchList({
     <div className="card card-rows lede" data-testid={testId}>
       <h3 className="heading-tight">Earlier imports</h3>
       {undone !== null && (
-        <p className="small note-meta">
+        <p className="small note-meta" data-testid={testId.replace('batches', 'undone')}>
           Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')}{' '}
           removed.
         </p>
