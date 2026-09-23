@@ -658,6 +658,8 @@ the live text.
   shortening when an existing risk, medication or anchored name is removed
   without an explicit request. Review the displayed notice and the full note
   before publishing; the guards are a second line, not a clinical validator.
+- Clinical-knowledge's Discussion guide still says “accept either input case”,
+  a parser-only phrase; this is a known leftover with no behavior impact.
 
 ### The testing docket for the owner's proxy (his PC, no Mac needed)
 
