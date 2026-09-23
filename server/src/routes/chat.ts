@@ -253,7 +253,6 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       return;
     }
 
-
     if (stream.closed) {
       stream.end();
       return;
@@ -534,7 +533,6 @@ function finishWithReply(db: Database, stream: SseStream, noteId: string, text: 
   stream.send('message', { message: persistReply(db, noteId, text) });
   stream.end();
 }
-
 
 /** A count, never the phrase and never the section name — shape only. */
 function logBlocked(request: FastifyRequest, sections: number): void {

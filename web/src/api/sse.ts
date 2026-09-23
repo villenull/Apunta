@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 
 /** A decoded server-sent event from a fetch response. */
 export interface SseFrame {

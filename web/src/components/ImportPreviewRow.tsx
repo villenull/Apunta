@@ -34,7 +34,9 @@ export function ImportPreviewRow({
       <span className="import-preview-copy">
         <span className="import-preview-title">
           <span className="import-preview-title-text">{title}</span>
-          {date !== undefined && <span className="import-preview-date"> · {formatPlanDate(calendarDay(date))}</span>}
+          {date !== undefined && (
+            <span className="import-preview-date"> · {formatPlanDate(calendarDay(date))}</span>
+          )}
         </span>
         {excerpt !== undefined && <span className="import-preview-excerpt">{excerpt}</span>}
       </span>

@@ -9,7 +9,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyRequest } from 'fastify';
 
-import { AiError, aiError } from '../ai/errors.js';
+import { aiError, type AiError } from '../ai/errors.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import {
   applyDiscussionSubheadings,
