@@ -6,11 +6,11 @@ import { SpellingProvider } from './components/SpellingProvider.js';
 
 import { applyAppearance } from './lib/appearance.js';
 
-// Route chunks are intentionally runtime-loaded so the first workspace download
-// contains no code for screens that are not open.
-const Workspace = lazy(async () => ({ default: (await import('./routes/Workspace.js')).Workspace }));
-const AddPatient = lazy(async () => ({ default: (await import('./routes/AddPatient.js')).AddPatient }));
-const Capture = lazy(async () => ({ default: (await import('./routes/Capture.js')).Capture }));
+import { AddPatient } from './routes/AddPatient.js';
+import { Capture } from './routes/Capture.js';
+import { Workspace } from './routes/Workspace.js';
+
+// Non-workspace screens are runtime-loaded so the landing view stays eager.
 
 const About = lazy(async () => ({ default: (await import('./routes/About.js')).About }));
 const Licenses = lazy(async () => ({ default: (await import('./routes/Licenses.js')).Licenses }));
