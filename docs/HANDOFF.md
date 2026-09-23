@@ -693,32 +693,36 @@ Every item comes with a full script when it needs his voice.
 
 ## Running things on the partner's PC
 
-The live instance is a detached production build on `127.0.0.1:7717`, data in
+The live instance is a detached production build on `127.0.0.1:7717` from
+the plain clone `/home/villenull/apunta-live` (not a worktree). **RULE: the
+live app never runs from the development repo
+`/home/villenull/Projects/Apunta`.** Its data stays in
 `~/.local/share/apunta` (`apunta.db`, `audio/`, `models/`, `bin/whisper-cli`),
-log at `/tmp/claude-1000/apunta-live.log` (shape-only by design: bytes,
-seconds, token counts, never words). The Linux release process is detached
-from the agent terminal under the user systemd session; Mac work is paused for
-the coming months and its LaunchAgent checklist is not a next step.
+and its shape-only log (bytes, seconds, token counts, never words) is
+`/home/villenull/.local/var/log/apunta-live.log`.
 
-Both Paseo workspace records currently point to this same local checkout;
-there is no second worktree to recover. Removing the Paseo workspace records
-must not be mistaken for backing up or deleting Apunta's data. The live
-SQLite database, WAL/SHM files, audio, encrypted backups and whisper model
-are outside Git under `~/.local/share/apunta/`; the real Claude export, local
-runbook/config pack, Ollama models and agent/session history also live
-outside this checkout. Do not delete those paths during Paseo cleanup, and
-never open the real export for verification. GitHub contains none of that
-state.
+The verified deployment backup from this move is
+`/home/villenull/.local/share/apunta/backups/apunta-backup-2026-09-23-2.zip`
+(`unzip -t` passed; extracted SQLite `PRAGMA integrity_check` returned
+`ok`). The live SQLite database, WAL/SHM files, audio, encrypted backups and
+whisper model are outside Git; the real Claude export, local runbook/config
+pack, Ollama models and agent/session history also live outside this checkout.
+Do not delete those paths during Paseo cleanup, and never open the real export
+for verification. GitHub contains none of that state.
 
 ```sh
 # Ollama (local-only; launch from the user's shell)
 setsid nohup env OLLAMA_NO_CLOUD=1 ollama serve
 
-# The app — build first, then restart only while no recording is active.
-cd /home/villenull/Projects/Apunta
-npm run build
-setsid nohup env NODE_ENV=production APUNTA_NO_OPEN=1 node server/dist/index.js
+# The app — launch only from the dedicated clone, and only while no recording is active.
+cd /home/villenull/apunta-live
+setsid nohup env NODE_ENV=production APUNTA_NO_OPEN=1 node server/dist/index.js >> /home/villenull/.local/var/log/apunta-live.log 2>&1 </dev/null &
 curl -fsS http://127.0.0.1:7717/api/health
+
+# Deploy a main revision from the development repo; it backs up first and
+# refuses to stop the app while whisper-cli is a child of the live PID.
+cd /home/villenull/Projects/Apunta
+bash scripts/deploy-live-linux.sh 03f38a8
 
 # The gate, in this order; verify by exit code, never by reading piped output
 npm run build:shared && npm run typecheck && npm run lint && npm test && npm run build && npm run e2e && npm run eval -- --fake
@@ -732,9 +736,10 @@ generation tokens/s versus 107.11 tok/s baseline. This is separate from the
 partner's `/var/lib/ollama` path above. Set `OLLAMA_NO_CLOUD=1` when launching
 either local server as privacy hardening; it does not affect GPU selection.
 
-The 2026-09-23 deployment at `9eb0cdd` preserved the existing database, audio
-directory, settings and model paths, applied migration 007, and retained
-`apunta-backup-2026-09-23.zip`; health returned SQLite integrity `ok`. It is
+The 2026-09-23 deployment checked out main revision `03f38a8` into the plain
+live clone, preserved the existing database, audio directory, settings and
+model paths, and retained
+`apunta-backup-2026-09-23-2.zip`; health returned SQLite integrity `ok`. It is
 reachable at `http://127.0.0.1:7717`. Linux disk encryption is not checked, so
 keep an off-machine backup rather than relying on this disk as the only copy.
 This is Linux evidence only: no Mac shell, Metal, FileVault, LaunchAgent,
