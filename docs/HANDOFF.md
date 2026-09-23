@@ -1,6 +1,6 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-22.** Git now contains the sanitized machine-readable
+**Updated 2026-09-23.** Git now contains the sanitized machine-readable
 reference configuration and executable Linux recovery path needed to
 recreate the current app after a reset (`docs/RECOVERY.md`,
 `config/recovery/current-linux.json`). It records the exact current writing
