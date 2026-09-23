@@ -241,7 +241,10 @@ export function RefineColumn({
         inputRef={inputRef}
         value={draft}
         onChange={setDraft}
-        onSend={() => void chat.send(draft)}
+        onSend={() => {
+          onClearRefQuote();
+          void chat.send(draft);
+        }}
         onStop={chat.stop}
         dictation={dictation}
         sending={chat.sending}
