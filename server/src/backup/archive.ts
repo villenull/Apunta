@@ -105,10 +105,7 @@ function beginBackup(options: CreateBackupOptions): BackupPreparation {
   }
 }
 
-function finishPreparation(
-  options: CreateBackupOptions,
-  preparation: BackupPreparation,
-): PreparedBackup {
+function finishPreparation(options: CreateBackupOptions, preparation: BackupPreparation): PreparedBackup {
   const { now, staging, copyPath } = preparation;
   const dbBytes = readFileSync(copyPath);
   const integrity = integrityCheck(copyPath);
@@ -243,7 +240,11 @@ export async function createBackupAsync(options: CreateBackupOptions): Promise<C
 function zipArchiveAsync(data: Record<string, Uint8Array>): Promise<Uint8Array> {
   const { promise, resolve, reject } = (
     Promise as PromiseConstructor & {
-      withResolvers<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (reason?: unknown) => void };
+      withResolvers<T>(): {
+        promise: Promise<T>;
+        resolve: (value: T) => void;
+        reject: (reason?: unknown) => void;
+      };
     }
   ).withResolvers<Uint8Array>();
   zip(data, { level: 6 }, (error, archive) => {
@@ -293,7 +294,6 @@ export async function backupInto(db: Database, destination: string): Promise<voi
     throw new BackupError(`online backup failed: ${describe(error)}`, 'vacuum_failed');
   }
 }
-
 
 async function encryptedArchiveAsync(
   body: Record<string, Uint8Array>,
