@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 
 import type { SpellingCheck } from '../hooks/useSpelling.js';
 import { misspellingAt, replaceRange, type Misspelling } from '../lib/spelling.js';
@@ -48,6 +48,23 @@ export function spelledRuns(
   if (cursor < end) runs.push(text.slice(cursor - offset));
   return runs;
 }
+
+export const SpelledSegment = memo(function SpelledSegment({
+  text,
+  offset,
+  misspellings,
+  keyPrefix,
+  kind,
+}: {
+  readonly text: string;
+  readonly offset: number;
+  readonly misspellings: readonly Misspelling[];
+  readonly keyPrefix: string;
+  readonly kind: string;
+}): React.JSX.Element {
+  const runs = spelledRuns(text, offset, misspellings, keyPrefix);
+  return kind === 'plain' ? <span>{runs}</span> : <mark className={`marker marker-${kind}`}>{runs}</mark>;
+});
 
 interface OpenMenu {
   readonly entry: Misspelling;

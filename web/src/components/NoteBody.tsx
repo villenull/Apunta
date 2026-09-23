@@ -1,9 +1,9 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import type { Misspelling } from '../lib/spelling.js';
 import { emptySections, markNoteText } from '../lib/markers.js';
 import { SpellLayer } from './SpellLayer.js';
-import { spelledRuns } from './SpellMarks.js';
+import { SpelledSegment } from './SpellMarks.js';
 
 export interface NoteBodyProps {
   value: string;
@@ -56,22 +56,70 @@ export function NoteBody({
 }: NoteBodyProps): React.JSX.Element {
   const segments = useMemo(() => markNoteText(value, sections), [value, sections]);
   const blanks = useMemo(() => emptySections(value, sections), [value, sections]);
+  const backdropCache = useRef<{
+    readonly misspellings: readonly Misspelling[];
+    readonly segments: readonly { readonly kind: string; readonly text: string }[];
+    readonly offsets: readonly number[];
+    readonly nodes: React.ReactNode[];
+  } | null>(null);
   const renderBackdrop = useCallback(
     (misspellings: readonly Misspelling[]) => {
+      const previous = backdropCache.current;
+      const canReuse = previous !== null && previous.misspellings === misspellings;
+      const offsets: number[] = [];
       let offset = 0;
-      const result = segments.map((segment, index) => {
-        const runs = spelledRuns(segment.text, offset, misspellings, String(index));
+      let firstChanged = 0;
+      if (canReuse && previous !== null) {
+        while (firstChanged < segments.length) {
+          const segment = segments[firstChanged];
+          if (!segment) break;
+          offsets.push(offset);
+          const old = previous.segments[firstChanged];
+          if (
+            old === undefined ||
+            old.kind !== segment.kind ||
+            old.text !== segment.text ||
+            previous.offsets[firstChanged] !== offset
+          ) {
+            break;
+          }
+          offset += segment.text.length;
+          firstChanged += 1;
+        }
+      }
+      if (
+        firstChanged === segments.length &&
+        canReuse &&
+        previous !== null &&
+        previous.segments.length === segments.length
+      ) {
+        return previous.nodes;
+      }
+      for (let index = firstChanged; index < segments.length; index += 1) {
+        const segment = segments[index];
+        if (!segment) continue;
+        offsets[index] = offset;
         offset += segment.text.length;
-        return segment.kind === 'plain' ? (
-          <span key={index}>{runs}</span>
-        ) : (
-          <mark key={index} className={`marker marker-${segment.kind}`}>
-            {runs}
-          </mark>
+      }
+      const nodes = canReuse && previous !== null ? previous.nodes.slice(0, segments.length) : [];
+      nodes.length = segments.length;
+      for (let index = firstChanged; index < segments.length; index += 1) {
+        const segment = segments[index];
+        if (!segment) continue;
+        nodes[index] = (
+          <SpelledSegment
+            key={index}
+            text={segment.text}
+            offset={offsets[index] ?? 0}
+            misspellings={misspellings}
+            keyPrefix={String(index)}
+            kind={segment.kind}
+          />
         );
-      });
-      result.push(<span key="spell-sentinel">{'\n'}</span>);
-      return result;
+      }
+      nodes.push(<span key="spell-sentinel">{'\n'}</span>);
+      backdropCache.current = { misspellings, segments, offsets, nodes };
+      return nodes;
     },
     [segments],
   );
