@@ -1,15 +1,13 @@
 import { SPELLING_WORDS_SETTING, spellingWordsFrom, STT_VOCABULARY_SETTING } from '@apunta/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-1: import { putSettings } from '../api/settings.js';
-import { useSettingsContext } from './SettingsProvider.js';
+import { putSettings } from '../api/settings.js';
 import { allowedWords, type Speller } from '../lib/spelling.js';
+import { useSettingsContext } from './SettingsProvider.js';
 
 // The dictionary must remain out of the initial route chunk; load it after a spell surface mounts.
 const lazyLoadSpeller = () => import('../lib/speller.js').then(({ loadSpeller }) => loadSpeller());
 
-2:       accepted: allowedWords(added, vocabulary, ignored),
-      ensureLoaded,
 /**
  * Everything the spell check needs, once per tab: the dictionary, the words
  * she has added to it, her transcription vocabulary (a name or a medication
@@ -108,14 +106,7 @@ export function SpellingProvider({
   const value = useMemo<Spelling>(
     () => ({
       speller,
-1: import { putSettings } from '../api/settings.js';
-import { useSettingsContext } from './SettingsProvider.js';
-import { allowedWords, type Speller } from '../lib/spelling.js';
-
-// The dictionary must remain out of the initial route chunk; load it after a spell surface mounts.
-const lazyLoadSpeller = () => import('../lib/speller.js').then(({ loadSpeller }) => loadSpeller());
-
-2:       accepted: allowedWords(added, vocabulary, ignored),
+      accepted: allowedWords(added, vocabulary, ignored),
       ensureLoaded,
       addWord,
       ignoreWord,
