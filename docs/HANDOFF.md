@@ -589,26 +589,49 @@ setup/preflight scripts.
 
 ### Model-quality work, packet-sized (measure before and after; report in `docs/eval-reports/`)
 
-- **Instruction decontamination is adopted in the shipped defaults.** The
-  adopted 4B eval measured 10% fabrication (6/60), 65% safety facts and 100%
-  schema after scorer fix `e050eba`; these numbers are not comparable with
-  earlier runs. The live Progress-format copy was updated after a backup
-  (`apunta-backup-2026-09-22-4.zip`) and verified byte for byte; Intake
-  inherits the shipped default.
-- **The worked example leaks into "Note for next session"**: her
-  instructions' example ends *"Dana will say if her usual session time stops
-  working"*, and a dictation with a cadence decision drafts *"John will say
-  if weekly sessions stop working"* (seen 2026-09-05 through 09-07). Fixing
-  it means changing her example, which changes every prompt — a full eval,
-  overnight.
-- **The aside leaks**: "He asked about my holiday, not clinically relevant"
-  lands in Discussion on most takes despite the instructions.
-- **Restated history invites inference**: "four was back in February"
-  drafts as *"down from four in February"* (wrong way round). Drafting-model
-  behaviour; see the 09-06 report's costs section.
-- **Section-at-a-time drafting**, justified in the M10 report for fixtures
-  04/07; the retraction pass took 04's most common failure away, so re-check
-  the justification before building it.
+**The five model-quality items are measured, and the instrument had to be built
+first.** `npm run eval` could only measure SOAP — `instructionsFor` hard-coded
+the SOAP and intake constants — so three of the five findings, which live in
+the owner's own seven-section format, had no instrument at all. A second corpus
+(`e2e/fixtures/eval-owner/`, four fabricated dictations, one trap each plus a
+control), `--corpus`/`--ollama-url` on the eval CLI, and production's own
+section-fingerprint instruction selection now make her format measurable; the
+report's completeness section names which safety fact a run dropped instead of
+only counting. Baseline on unmodified main, four invocations: fabrication
+10–15%, safety facts 70%, salient facts 82–83% (runs inside one invocation are
+byte-identical; one fixture moves between them). Her format at baseline: 50%
+fabrication, 75% safety facts. Verdicts: **(1) the worked example leaking into
+"Note for next session" — fixed**, 5/5 → 0/5, by rewriting the example's
+forward-looking line; a prompt-only prohibition had already been tried on
+2026-08-31 and failed. The bundled constant also stopped dropping the markdown
+H1, which measured as load-bearing (0/20 fabricated with it, 5/20 in each of
+six invocations without it); SOAP and intake still drop theirs, on purpose,
+because they are the instrument's own prompt. **(2) the "not clinically
+relevant" aside — not reproducible on the shipped instructions**, in three
+reconstructions including both markers and the aside at the start and at the
+end; the live sighting predates the 2026-09-22 decontamination. The fixture
+stays as a tripwire. **(3) restated history inverted — fixed**, 5/5 → 0/5, by
+a conditional user-turn reminder that fires only when the source gives a
+quantity and a past marker and no direction word. **(4) safety facts at 65–70%
+— half the failure was the instrument.** Five of six failing fixtures were
+notes that recorded the fact and were scored as drops, because the patterns
+accepted only `denied/denies <term>` adjacent; the patterns now name the forms
+a note uses, and the mirror form was deliberately left out because it accepted
+a sentence that omits the fact. A third conditional reminder, section-aware,
+took her format's safety facts 75% → 100% and the corpus 70% → 90%. Two
+genuine drops remain (`10`, `19`: risk content absent from a four-section
+intake) and the reminder reaches both prompts without fixing them — the same
+decoding-stage conclusion the M10 report reached. **(5) section-at-a-time
+drafting — not justified any more, not built.** The two fixtures M10 named for
+it (`04`, `18`) pass in all four baseline invocations, and `07` never failed;
+the cost would be 7 calls for her format against 1. After: SOAP 15% fabrication
+(top of the baseline range, same nine runs as the baseline's worst invocation)
+/ 90% safety / 84.5% salient; her format 0% fabrication / 100% safety. Left
+open: the two intake drops need a server-side step, not a prompt; item 1's fix
+is prompt-layer and prompt-layer fixes on this model are fragile, so the leak
+is not proven gone beyond the runs recorded. The owner-approved Example diff is
+now applied to the live Progress format; the recovery snapshot and hash match
+the live text.
 
 ### Small things seen live / known limits
 

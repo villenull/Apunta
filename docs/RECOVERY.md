@@ -42,13 +42,12 @@ therefore selects the small tier by the code's portable fallback. Recovery
 writes the same tag explicitly so another OS or RAM size cannot silently
 select another tier.
 
-The captured live progress instructions predate the extra Discussion paragraph
-in `docs/note-instructions/owner-progress-instructions.md`. This is deliberate:
-`docs/note-instructions/current-linux-progress-instructions.md` reproduces the
-actual stored configuration, while the current route-level clinical guidance
-still supplies the grounded Discussion behavior. The manifest records both the
-snapshot hash and this distinction instead of pretending factory and live state
-are identical.
+The captured live progress instructions are the sanitized text currently
+stored in the reference database, including the reviewed cadence example and
+the capitalized Discussion-subtopic wording. The snapshot at
+`docs/note-instructions/current-linux-progress-instructions.md` must remain
+byte-for-byte equal to that text; the manifest records its SHA-256 so recovery
+cannot silently drift from the live format.
 
 ## Privacy boundary
 

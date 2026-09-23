@@ -91,8 +91,8 @@
         "Note for next session"
       ],
       "instructionsFile": "docs/note-instructions/current-linux-progress-instructions.md",
-      "instructionsSha256": "5145d6291b7b598b5b9f2a9b775b9144e2e6acbca667eca140b81e9190b57138",
-      "note": "This is the sanitized instruction text actually stored in the live format. The newer factory file adds explicit Discussion-subtopic wording; route-level clinical guidance still supplies that behavior to the current app. Keep the distinction visible rather than silently rewriting the captured state."
+      "instructionsSha256": "e2a6dfb064f7306ea2db4f8194a1e9a7dc37415dd073c1164a7f2eb33f1bfb7d",
+      "note": "This is the sanitized instruction text actually stored in the live format, including the reviewed cadence-example and capitalized Discussion-subtopic wording. Keep the live snapshot and this hash in sync after any owner-approved instruction change."
     },
     {
       "name": "Intake note",
