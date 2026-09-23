@@ -64,11 +64,11 @@ export function SpellingProvider({
   spellerRef.current = speller;
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
   }, []);
-
   const ensureLoaded = useCallback(() => {
     if (loadingRef.current || spellerRef.current !== null) return;
     loadingRef.current = true;
