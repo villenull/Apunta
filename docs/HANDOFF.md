@@ -588,6 +588,10 @@ the revert path is in the report: `WHISPER_MODEL_FILENAME` in
 setup/preflight scripts.
 
 ### Model-quality work, packet-sized (measure before and after; report in `docs/eval-reports/`)
+The full evidence is `docs/eval-reports/2026-09-23-model-quality-round.md`.
+The owner-approved live instruction edit was applied only after backup
+`/home/villenull/.local/share/apunta/backups/apunta-backup-2026-09-22-5.zip`;
+the archive passed unzip and extracted-database integrity checks.
 
 **The five model-quality items are measured, and the instrument had to be built
 first.** `npm run eval` could only measure SOAP — `instructionsFor` hard-coded
