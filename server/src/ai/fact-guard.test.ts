@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  explicitAbsenceSentences,
   factNotice,
   factTokens,
   guardDroppedFacts,
   medicationTokens,
   nameTokens,
+  preserveExplicitAbsences,
   protectedFactTokens,
 } from './fact-guard.js';
 
@@ -255,6 +257,55 @@ describe('guardDroppedFacts', () => {
     const result = guardDroppedFacts(before, shortened, 'Make the discussion shorter');
     expect(result.dropped).toEqual([]);
     expect(result.sections).toEqual(shortened);
+  });
+});
+
+describe('preserveExplicitAbsences', () => {
+  // Synthetic drafting omitted an explicitly stated current-count absence
+  // while keeping the neighbouring historical count: the absence sentence
+  // carries no number, denial, or finding, so the locks above have nothing
+  // to hold. This pass carries the verbatim source sentence into the draft.
+  const SOURCE =
+    'He reported three panic attacks a week back in August. He did not say how many he is having now.';
+  const ABSENT = 'He did not say how many he is having now.';
+
+  it('reinserts an omitted explicit absence verbatim in Discussion', () => {
+    expect(explicitAbsenceSentences(SOURCE)).toEqual([ABSENT]);
+    const sections = { Discussion: 'Panic attacks were discussed.', Plan: 'Continue weekly.' };
+    const result = preserveExplicitAbsences(SOURCE, sections, ['Discussion', 'Plan']);
+    expect(result.Plan).toBe('Continue weekly.');
+    expect(result.Discussion).toBe(`Panic attacks were discussed. ${ABSENT}`);
+  });
+
+  it('generalises across subjects, verbs, and current markers', () => {
+    const sentence = 'She has not said how often they are happening currently.';
+    expect(explicitAbsenceSentences(`Sleep was reviewed. ${sentence}`)).toEqual([sentence]);
+    const result = preserveExplicitAbsences(
+      `Sleep was reviewed. ${sentence}`,
+      { Notes: 'Sleep was reviewed.' },
+      ['Notes'],
+    );
+    expect(result.Notes).toBe(`Sleep was reviewed. ${sentence}`);
+  });
+
+  it('does not duplicate the absence sentence when the note already has it', () => {
+    const sections = { Discussion: `Panic attacks were discussed. ${ABSENT}`, Plan: 'Continue weekly.' };
+    expect(preserveExplicitAbsences(SOURCE, sections, ['Discussion', 'Plan'])).toEqual(sections);
+  });
+
+  it('does not read a clinical denial as an absence', () => {
+    expect(explicitAbsenceSentences('He denies panic attacks.')).toEqual([]);
+    const sections = { Discussion: 'Progress continues.', Plan: 'Continue weekly.' };
+    expect(preserveExplicitAbsences('He denies panic attacks.', sections, ['Discussion', 'Plan'])).toEqual(
+      sections,
+    );
+  });
+
+  it('does not infer an absence from silence, and manufactures no count or denial', () => {
+    const silent = 'He reported three panic attacks a week back in August.';
+    expect(explicitAbsenceSentences(silent)).toEqual([]);
+    const sections = { Discussion: 'Panic attacks were discussed.', Plan: 'Continue weekly.' };
+    expect(preserveExplicitAbsences(silent, sections, ['Discussion', 'Plan'])).toEqual(sections);
   });
 });
 

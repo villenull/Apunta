@@ -1120,3 +1120,28 @@ describe('settings', () => {
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#1f6f63');
   });
 });
+
+/**
+ * A browser without Web Locks fails closed: blocked with an explanation and
+ * no edit access. `installFakeApi` shims locks for the rest of the suite, so
+ * this test removes the shim after installing to simulate that browser. It
+ * stays isolated here — nothing else in the file touches `navigator.locks`.
+ */
+describe('a browser without Web Locks', () => {
+  it('stays blocked with an explanation and inert app content', async () => {
+    installFakeApi({
+      formats: [progressNote],
+      patients: [john, maria],
+      notes: [johnsDraft, johnsIntake],
+    });
+    // navigator.locks is outside the DOM lib here, and inert outside the JSX types.
+    const nav = navigator as unknown as Record<string, unknown>;
+    Reflect.deleteProperty(nav, 'locks');
+    renderApp('/');
+
+    expect(await screen.findByText(/keep one editing window/)).toBeDefined();
+    expect(screen.queryByTestId('primary-takeover')).toBeNull();
+    const content = document.getElementById('apunta-content') as unknown as { inert?: boolean };
+    expect(content.inert).toBe(true);
+  });
+});

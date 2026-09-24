@@ -11,13 +11,14 @@ import type { FastifyRequest } from 'fastify';
 import type { SseStream } from '../http/sse.js';
 
 import { aiError, type AiError } from '../ai/errors.js';
+import { preserveExplicitAbsences } from '../ai/fact-guard.js';
+import { retractionNotice } from '../ai/retractions.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import {
   applyDiscussionSubheadings,
   renderClinicalKnowledgeGuide,
   sectionForRole,
 } from '../ai/clinical-knowledge/integration.js';
-import { retractionNotice } from '../ai/retractions.js';
 import type { AiProviders, DraftSource, LlmStats } from '../ai/types.js';
 import { fitDraftingPriorNotes } from '../ai/prior-notes.js';
 import { createChatMessage } from '../db/chat-messages.js';
@@ -101,7 +102,11 @@ export async function streamDraft(params: {
           format.sections,
           groundingSource(source, retractions),
         );
-        sections = checked.sections;
+        sections = preserveExplicitAbsences(
+          groundingSource(source, retractions),
+          checked.sections,
+          format.sections,
+        );
         stats = event.stats;
         // The outcome only: the headings are patient material.
         if (checked.outcome !== 'none')

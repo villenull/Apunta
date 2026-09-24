@@ -87,9 +87,18 @@ export function Workspace(): React.JSX.Element {
     const refreshNotesWhenVisible = (): void => {
       if (document.visibilityState === 'visible') notes.reload();
     };
+    // A handoff lands with this tab still visible, so the visibility refresh
+    // above never fires: reload the current note list on primary acquisition
+    // instead, through the same `notes.reload` path (which keeps the editor
+    // mounted on `lastNotesRef` while loading).
+    const refreshNotesOnPrimary = (): void => {
+      notes.reload();
+    };
     document.addEventListener('visibilitychange', refreshNotesWhenVisible);
+    window.addEventListener('apunta:became-primary', refreshNotesOnPrimary);
     return () => {
       document.removeEventListener('visibilitychange', refreshNotesWhenVisible);
+      window.removeEventListener('apunta:became-primary', refreshNotesOnPrimary);
     };
   }, [notes.reload]);
 

@@ -385,8 +385,100 @@ const EMPTY_IMPORT_REPORT: ClaudeImportReport = {
   date_range: { from: null, to: null },
 };
 
+/**
+ * jsdom has no Web Locks, and the primary-window lock fails closed without
+ * them — so without a shim every jsdom render of `<App />` would sit behind
+ * the unsupported-browser blocker. Single-window tests behave like one
+ * supported browser window instead: the first exclusive `request` is granted
+ * and stays held until its callback returns (the hold is released by
+ * resolving the inner promise, exactly like the real lock), while an
+ * `ifAvailable` probe made while it is held gets `null`. Waiting exclusive
+ * requests queue until the holder releases, and honour an abort signal.
+ * There is no production fallback — this lives in the test harness only.
+ */
+export function installFakeWebLocks(): void {
+  let held = false;
+  const queue: Array<() => void> = [];
+
+  const pump = (): void => {
+    if (held) return;
+    const next = queue.shift();
+    if (next === undefined) return;
+    held = true;
+    next();
+  };
+
+  const abortError = (): Error => new DOMException('Aborted', 'AbortError');
+
+  interface FakeLockInfo {
+    readonly name: string;
+  }
+
+  async function request(
+    name: string,
+    optionsOrCallback:
+      | { mode?: string; ifAvailable?: boolean; signal?: AbortSignal }
+      | ((lock: FakeLockInfo | null) => Promise<void>),
+    maybeCallback?: (lock: FakeLockInfo | null) => Promise<void>,
+  ): Promise<void> {
+    const options = typeof optionsOrCallback === 'function' ? {} : optionsOrCallback;
+    const callback = typeof optionsOrCallback === 'function' ? optionsOrCallback : maybeCallback;
+    if (callback === undefined) return;
+    const signal = options.signal;
+    if (signal?.aborted === true) throw abortError();
+
+    if (options.ifAvailable === true) {
+      if (held) {
+        await callback(null);
+        return;
+      }
+      held = true;
+      try {
+        await callback({ name });
+      } finally {
+        held = false;
+        pump();
+      }
+      return;
+    }
+
+    // Exclusive and waiting: queued until the holder releases, abortable.
+    await new Promise<void>((resolve, reject) => {
+      const run = (): void => {
+        if (signal !== undefined) signal.removeEventListener('abort', onAbort);
+        void (async () => {
+          try {
+            await callback({ name });
+            resolve();
+          } catch (error) {
+            reject(error);
+          } finally {
+            held = false;
+            pump();
+          }
+        })();
+      };
+      const onAbort = (): void => {
+        if (signal === undefined) return;
+        const index = queue.indexOf(run);
+        if (index !== -1) queue.splice(index, 1);
+        reject(abortError());
+      };
+      queue.push(run);
+      signal?.addEventListener('abort', onAbort, { once: true });
+      pump();
+    });
+  }
+
+  Object.defineProperty(globalThis.navigator, 'locks', {
+    configurable: true,
+    value: { request },
+  });
+}
+
 /** Installs a `fetch` that answers the endpoints the SPA uses, and returns its state. */
 export function installFakeApi(initial: Partial<FakeApiState> = {}, options: FakeApiOptions = {}): FakeApi {
+  installFakeWebLocks();
   let previewCalls = 0;
   const state: FakeApiState = {
     patients: [],

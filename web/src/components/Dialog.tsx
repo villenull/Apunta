@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 export interface DialogProps {
   readonly title: string;
@@ -41,25 +41,58 @@ export function Dialog({
 }: DialogProps): React.JSX.Element {
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
-  const titleId = useRef(`dialog-title-${Math.random().toString(36).slice(2)}`);
+  const titleId = useId();
+  /**
+   * Latest-callback refs: callers pass a fresh inline `onClose` on every
+   * render (each note keystroke), so the effects below stay keyed on `open`
+   * only and read the handler, trap flag, and focus target through these.
+   * Otherwise each keystroke re-runs the focus setup — its cleanup restores
+   * focus and its body re-focuses the chat input, stealing the caret.
+   */
+  const onCloseRef = useRef(onClose);
+  const modalRef = useRef(modal);
+  const openRef = useRef(open);
+  const initialFocusTargetRef = useRef(initialFocusRef);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    modalRef.current = modal;
+    openRef.current = open;
+    initialFocusTargetRef.current = initialFocusRef;
+  });
+  // Initial focus + restore: keyed on the open transition only. Caller renders
+  // pass fresh inline `onClose` closures on every keystroke, so depending on
+  // anything but `open` re-runs this setup per character — the cleanup
+  // restores the opener's focus and the body re-focuses the chat input,
+  // stealing the caret out of the note textarea mid-word.
   useEffect(() => {
     if (!open) return;
     restoreRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const panel = panelRef.current;
     const focusTarget =
-      initialFocusRef?.current ??
+      initialFocusTargetRef.current?.current ??
       panel?.querySelector<HTMLElement>(
         'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])',
       );
     (focusTarget ?? panel)?.focus();
-
+    return () => {
+      restoreRef.current?.focus();
+    };
+  }, [open]);
+  // Keyboard dismissal + focus trap: mounted once, always consulting the
+  // latest handler/flag through refs, so callback identity churn neither
+  // re-registers the listener nor touches focus.
+  useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
+      // The refine sheet stays mounted while closed (`open=false`), where the
+      // previous version had no listener at all — ignore keys until reopened.
+      if (!openRef.current) return;
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
-      if (!modal || event.key !== 'Tab' || panel === null) return;
+      const panel = panelRef.current;
+      if (!modalRef.current || event.key !== 'Tab' || panel === null) return;
       const focusable = Array.from(
         panel.querySelectorAll<HTMLElement>(
           'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])',
@@ -87,13 +120,11 @@ export function Dialog({
         first.focus();
       }
     }
-
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      restoreRef.current?.focus();
     };
-  }, [initialFocusRef, modal, onClose, open]);
+  }, []);
   return (
     <div
       className={
@@ -113,13 +144,13 @@ export function Dialog({
         data-testid={testId}
         role="dialog"
         aria-modal={modal || undefined}
-        aria-labelledby={showTitle ? titleId.current : undefined}
+        aria-labelledby={showTitle ? titleId : undefined}
         aria-label={showTitle ? undefined : title}
         aria-hidden={!open}
         tabIndex={-1}
       >
         {showTitle && (
-          <h2 id={titleId.current} className="heading-tight">
+          <h2 id={titleId} className="heading-tight">
             {title}
           </h2>
         )}

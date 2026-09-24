@@ -38,6 +38,7 @@ export {
   CLINICAL_GUIDANCE_VERSION,
   INTERVENTION_MODALITIES,
   PRESENTATION_MSE_DOMAINS,
+  suggestInterventionApproach,
 } from './clinical-guidance.js';
 export type { InterventionModality, PresentationMseDomainName } from './clinical-guidance.js';
 

@@ -645,6 +645,40 @@
   margin-bottom: 14px;
 }
 
+/*
+ * A suggested intervention approach beside the draft. It is a note beside the
+ * note — quoted evidence and an exact approach label with an explicit choice —
+ * so it must never read as note text: tinted, dashed, and outside the textarea
+ * that Copy and Finish & copy read from.
+ */
+.approach-suggestion {
+  flex-shrink: 0;
+  background: var(--surface-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--space-5) var(--space-6);
+  margin-bottom: 14px;
+}
+
+.approach-suggestion-title {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin: 0 0 4px;
+}
+
+.approach-suggestion-evidence {
+  margin: 6px 0 10px;
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--border-strong);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.approach-suggestion-actions {
+  flex-wrap: wrap;
+}
+
 /* The chat rewrote the note: light the editor briefly so it is not silent. */
 @keyframes note-refined {
   from {
@@ -1404,7 +1438,15 @@ select:disabled {
 
 .note-conflict .row {
   margin-top: var(--space-6);
+  flex-wrap: wrap;
 }
+
+/*
+ * A stale write is an explicit choice, not a reading exercise: one line of
+ * copy and Keep mine / Take theirs. The full-version comparison panes are
+ * gone — with a single primary editor, overlap is a rare race, not a
+ * workflow to optimise for.
+ */
 
 .error-state {
   color: var(--danger);
@@ -2329,6 +2371,28 @@ select:disabled {
 .btn-danger:hover {
   background: var(--danger-hover);
   border-color: var(--danger-hover);
+}
+
+/*
+ * The single-primary-window prompt. It covers the whole viewport above every
+ * other surface — including toasts — so a blocked window is fully
+ * non-interactive behind it. The panel is opaque: nothing of the app reads
+ * through, and the muted backdrop colour cannot be mistaken for loading.
+ */
+.primary-blocker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-24);
+  background: var(--surface-muted);
+}
+
+.primary-blocker {
+  width: 100%;
+  max-width: 460px;
 }
 
 /* A failed request, said out loud rather than tucked into a corner. */

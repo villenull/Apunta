@@ -592,3 +592,127 @@ export function factNotice(dropped: readonly DroppedFact[]): string {
 
 /** The notice's first sentence — what the thread is stripped of before the model sees it again. */
 export const FACT_NOTICE_OPENING = 'Apunta held back part of this revision.';
+
+/**
+ * Explicit current-quantity absences, preserved verbatim through drafting.
+ *
+ * On synthetic drafting the model drops a sentence like an explicit "did not
+ * say how many ... now" even when the source states it outright: the sentence
+ * carries no number, no denial and no finding, so every guard above (numeric
+ * facts, risk negations, medications, names) has nothing to hold onto, and
+ * the faithfulness close never names this shape. The loss is silent — the
+ * note simply stops saying that the current quantity is unstated, which a
+ * reader can mistake for a quantity never asked about.
+ *
+ * `explicitAbsenceSentences` extracts only complete verbatim source sentences
+ * that state the absence outright, and `preserveExplicitAbsences` appends a
+ * missing one unchanged to the closest existing section (Discussion first).
+ * Nothing is paraphrased or inferred: a source that is merely silent about
+ * the current frequency yields no sentence and the note is untouched.
+ *
+ * An absence is not a denial. "Did not say how many" reports that the
+ * quantity is unstated; "denies" reports that a symptom is absent. The two
+ * must never convert into each other, so a candidate carrying a denial, a
+ * measured count (digits, number words, calendar anchors — read off
+ * `factTokens`, which is also why no quantity vocabulary is repeated here),
+ * a historical qualifier, a future plan, hypothetical/question text, or a
+ * quotation is rejected outright. The verb is a negated communicative
+ * (say/state/specify/mention — never deny/report), the quantity/timing is an
+ * explicit "how many/how often" form, and a current marker
+ * (now/currently/...) must follow it, in that order; a subject
+ * (he/she/they/client/patient) must precede the verb so fragments with no
+ * clear subject do not qualify. No names, symptoms, or counts appear below —
+ * every class is generic, so no single fixture sentence can special-case its
+ * way through.
+ *
+ * The caller passes the grounded drafting source (retractions already cut,
+ * as the drafting model saw it) and the model's drafted sections; the
+ * returned sections keep every drafted body intact, appending at most the
+ * missing source sentences. A sentence already present in any section —
+ * compared whitespace-insensitively but otherwise exactly — is never added
+ * twice. With nowhere to put a sentence (no sections at all) the input is
+ * returned unchanged.
+ */
+const ABSENCE_VERB =
+  /\b(?:(?:did\s+not|didn['’]?t)\s+(?:say|state|specify|mention)|(?:has\s+not|hasn['’]?t|had\s+not|hadn['’]?t)\s+(?:said|stated|specified|mentioned))\b/i;
+const ABSENCE_QUANTITY = /\bhow\s+(?:many|often|frequently|frequent)\b/i;
+const ABSENCE_CURRENT = /(?:\bnow\b|\bcurrently\b|\bat\s+present\b|\bat\s+the\s+moment\b)/i;
+const ABSENCE_SUBJECT = /\b(?:he|she|they|client|patient)\b/i;
+const ABSENCE_DENIAL = /\bden(?:y|ies|ied)\b/i;
+const ABSENCE_HISTORICAL =
+  /\bback\s+(?:in|at|when)\b|\bpreviously\b|\bused\s+to\b|\blast\s+(?:week|month|year|session|time|term)\b/i;
+const ABSENCE_FUTURE =
+  /\bwill\b|\bgoing\s+to\b|\bplan(?:s|ned|ning)?\s+to\b|\bnext\s+(?:week|month|session)\b|\bfuture\b/i;
+const ABSENCE_HYPOTHETICAL = /[?]|\bif\b|\bwhether\b|\bwhat\s+if\b/i;
+const ABSENCE_QUOTED = /["“”]/;
+const DISCUSSION_NAMES: Record<string, true> = {
+  discussion: true,
+  'session discussion': true,
+  'discussion themes': true,
+};
+
+/** The source's sentences, kept verbatim (punctuation included) for exact reinsertion. */
+function sourceSentences(source: string): string[] {
+  return (source.match(/[^.!?]+[.!?]+["”']?|[^\s.!?][^.!?]*$/g) ?? [])
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence !== '');
+}
+
+/** Every explicitly stated current-quantity absence in the source, verbatim and in source order. */
+export function explicitAbsenceSentences(source: string): string[] {
+  const found: string[] = [];
+  for (const sentence of sourceSentences(source)) {
+    const verbAt = sentence.search(ABSENCE_VERB);
+    if (verbAt < 0) continue;
+    const afterVerb = sentence.slice(verbAt);
+    const howAt = afterVerb.search(ABSENCE_QUANTITY);
+    if (howAt < 0) continue;
+    if (afterVerb.slice(howAt).search(ABSENCE_CURRENT) < 0) continue;
+    if (!ABSENCE_SUBJECT.test(sentence.slice(0, verbAt))) continue;
+    if (ABSENCE_DENIAL.test(sentence)) continue;
+    if (ABSENCE_HISTORICAL.test(sentence)) continue;
+    if (ABSENCE_FUTURE.test(sentence)) continue;
+    if (ABSENCE_HYPOTHETICAL.test(sentence)) continue;
+    if (ABSENCE_QUOTED.test(sentence)) continue;
+    // A sentence that also measures states a quantity rather than an
+    // absence; leaving it out keeps this pass from manufacturing counts.
+    if (factTokens(sentence).size > 0) continue;
+    found.push(sentence);
+  }
+  return found;
+}
+
+/** Discussion first (under any authored alias), else the format's first section. */
+function absenceTargetSection(sections: Sections, order: readonly string[]): string | null {
+  const keys = order.length > 0 ? order.filter((name) => name in sections) : Object.keys(sections);
+  if (keys.length === 0) return null;
+  return keys.find((name) => DISCUSSION_NAMES[name.trim().toLowerCase()] === true) ?? keys[0] ?? null;
+}
+
+/** Exact-sentence presence, modulo whitespace, across every section. */
+function noteHasSentence(sections: Sections, sentence: string): boolean {
+  const wanted = sentence.trim().replace(/\s+/g, ' ');
+  return Object.values(sections).some((body) => body.replace(/\s+/g, ' ').includes(wanted));
+}
+
+/**
+ * Carry explicitly stated current-quantity absences from the source into a
+ * draft: any qualifying source sentence the note omits is appended unchanged
+ * to the closest existing section. All drafted bodies are otherwise kept
+ * exactly as the model wrote them.
+ */
+export function preserveExplicitAbsences(
+  source: string,
+  sections: Sections,
+  order: readonly string[] = [],
+): Sections {
+  const candidates = explicitAbsenceSentences(source);
+  if (candidates.length === 0) return { ...sections };
+  const missing = candidates.filter((sentence) => !noteHasSentence(sections, sentence));
+  if (missing.length === 0) return { ...sections };
+  const target = absenceTargetSection(sections, order);
+  if (target === null) return { ...sections };
+  const base = sections[target] ?? '';
+  const carried = missing.join(' ');
+  return { ...sections, [target]: base.trim() === '' ? carried : `${base.trimEnd()} ${carried}` };
+}

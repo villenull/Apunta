@@ -1,4 +1,6 @@
 import {
+  sectionsToText,
+  suggestInterventionApproach,
   textToSections,
   type ChatNoteUpdatedEvent,
   type Note,
@@ -20,6 +22,7 @@ import { copyText } from '../lib/clipboard.js';
 import { formatEditedDate, formatNoteDate, wasEdited } from '../lib/format.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
 import { ChatIcon, CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
+import { InterventionApproachSuggestion } from './InterventionApproachSuggestion.js';
 import { NoteBody } from './NoteBody.js';
 import { RefineColumn } from './RefineColumn.js';
 import { ThinkingDots } from './ThinkingDots.js';
@@ -88,6 +91,12 @@ export function NoteView({
   const [chatOpen, setChatOpen] = useState(() => chatStorage()?.getItem(CHAT_OPEN_KEY) === '1');
   /** Which sections the last rewrite changed, named for a moment. */
   const [changedSections, setChangedSections] = useState<readonly string[]>([]);
+  /**
+   * The Intervention body the therapist declined a suggestion for. The card
+   * stays dismissed while this exact body stands; any edit to the section
+   * reevaluates and may suggest again.
+   */
+  const [dismissedInterventionBody, setDismissedInterventionBody] = useState<string | null>(null);
 
   // The timers and the save queue outlive any single render.
   const noteRef = useRef(note);
@@ -222,8 +231,8 @@ export function NoteView({
             onNoteChangedRef.current(theirs);
             staleRef.current = true;
             setStale({ mine: value, theirs });
-            markSaveState('conflict');
             setError(null);
+            markSaveState('conflict');
             return;
           } catch {
             // Fall through to the ordinary save error if the refetch itself fails.
@@ -257,29 +266,57 @@ export function NoteView({
   }, []);
   const flush = useCallback(
     (keepalive = false): Promise<void> => {
+      let pending: Promise<void>;
       if (staleRef.current) {
         cancelPending();
-        return queueRef.current;
+        pending = queueRef.current;
+      } else {
+        if (timerRef.current !== null) {
+          window.clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        const value = pendingRef.current;
+        const revision = pendingRevisionRef.current;
+        pendingRef.current = null;
+        pendingRevisionRef.current = null;
+        if (value !== null && revision !== null) {
+          pending = enqueue(value, revision, keepalive);
+        } else if (
+          saveStateRef.current === 'error' &&
+          persistedContentRef.current !== latestTextRef.current
+        ) {
+          pending = enqueue(latestTextRef.current, saveRevisionRef.current, keepalive);
+        } else {
+          pending = queueRef.current;
+        }
       }
-      if (timerRef.current !== null) {
-        window.clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-      const value = pendingRef.current;
-      const revision = pendingRevisionRef.current;
-      pendingRef.current = null;
-      pendingRevisionRef.current = null;
-      if (value !== null && revision !== null) return enqueue(value, revision, keepalive);
-      if (saveStateRef.current === 'error' && persistedContentRef.current !== latestTextRef.current) {
-        return enqueue(latestTextRef.current, saveRevisionRef.current, keepalive);
-      }
-      return queueRef.current;
+      return pending.then(() => {
+        if (staleRef.current || saveStateRef.current === 'conflict') {
+          throw new Error('Unresolved conflict');
+        }
+        if (saveStateRef.current === 'error') {
+          throw new Error('Unsaved changes could not be saved');
+        }
+      });
     },
     [cancelPending, enqueue],
   );
 
   // Switching notes and closing a tab must not strand the debounced edit.
+  // The primary-window handoff also reads this hook so the old primary saves
+  // before it steps down; it carries no note text, only a flush signal.
+  // A keystroke typed in the old primary while that flush is in flight stays
+  // debounced here, so the handoff drains until no pending edit remains —
+  // saving late from a blocked window would overwrite the new primary.
+  // The pagehide/visibility outcome below stays a single best-effort flush.
   useEffect(() => {
+    const owner = window as unknown as { __apuntaFlushBeforeRelease?: () => Promise<void> };
+    owner.__apuntaFlushBeforeRelease = async (): Promise<void> => {
+      await flush(true);
+      while (pendingRef.current !== null || timerRef.current !== null) {
+        await flush(true);
+      }
+    };
     const flushKeepalive = (): void => {
       void flush(true).catch(() => undefined);
     };
@@ -289,6 +326,7 @@ export function NoteView({
     window.addEventListener('pagehide', flushKeepalive);
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
+      if (owner.__apuntaFlushBeforeRelease !== undefined) delete owner.__apuntaFlushBeforeRelease;
       window.removeEventListener('pagehide', flushKeepalive);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       void flush().catch(() => undefined);
@@ -314,6 +352,77 @@ export function NoteView({
   }
 
   /**
+   * The approach candidate comes only from the configured
+   * Intervention/Interventions section of the current draft — never from
+   * Discussion, Risk review, transcripts, or prior notes. A null means the
+   * matcher abstained (generic, ambiguous, negated, future, or already
+   * named), so no card renders.
+   */
+  const noteSectionNames = format?.sections ?? [];
+  const interventionSectionName =
+    noteSectionNames.find((name) => {
+      const lowered = name.toLowerCase();
+      return lowered === 'intervention' || lowered === 'interventions';
+    }) ?? null;
+  const interventionBody =
+    interventionSectionName === null
+      ? ''
+      : (textToSections(text, noteSectionNames)[interventionSectionName] ?? '');
+  const suggestionCandidate =
+    interventionSectionName === null ? null : suggestInterventionApproach(interventionBody);
+  const suggestion =
+    suggestionCandidate !== null && dismissedInterventionBody !== interventionBody
+      ? suggestionCandidate
+      : null;
+
+  function handleAddApproach(): void {
+    if (interventionSectionName === null || suggestion === null) return;
+    const lines = text.split('\n');
+    const target = interventionSectionName.toLowerCase();
+    const headerIndex = lines.findIndex((line) => {
+      const colon = line.indexOf(':');
+      if (colon <= 0) return false;
+      return line.slice(0, colon).trim().toLowerCase() === target;
+    });
+    // The section header is absent from the draft: fall back to the shared
+    // serializer so the new section lands in format order.
+    if (headerIndex === -1) {
+      const sections = textToSections(text, noteSectionNames);
+      const current = sections[interventionSectionName] ?? '';
+      const updated = current.trim() === '' ? suggestion.approach : `${suggestion.approach}: ${current}`;
+      setDismissedInterventionBody(null);
+      handleChange(sectionsToText({ ...sections, [interventionSectionName]: updated }, noteSectionNames));
+      return;
+    }
+    const headerLine = lines[headerIndex] ?? '';
+    const colon = headerLine.indexOf(':');
+    const inlineRest = headerLine.slice(colon + 1);
+    if (inlineRest.trim() !== '') {
+      lines[headerIndex] =
+        `${headerLine.slice(0, colon + 1)} ${suggestion.approach}: ${inlineRest.trimStart()}`;
+    } else {
+      // The prose starts on a following line: prefix the first body line and
+      // leave the header and every other line byte-identical.
+      const bodyIndex = lines.findIndex((line, index) => {
+        if (index <= headerIndex || line.trim() === '') return false;
+        const bodyColon = line.indexOf(':');
+        if (bodyColon <= 0) return true;
+        return !noteSectionNames.some(
+          (name) => line.slice(0, bodyColon).trim().toLowerCase() === name.toLowerCase(),
+        );
+      });
+      if (bodyIndex === -1) lines[headerIndex] = `${headerLine.trimEnd()} ${suggestion.approach}`;
+      else lines[bodyIndex] = `${suggestion.approach}: ${(lines[bodyIndex] ?? '').trimStart()}`;
+    }
+    setDismissedInterventionBody(null);
+    handleChange(lines.join('\n'));
+  }
+
+  function handleDismissApproach(): void {
+    setDismissedInterventionBody(interventionBody);
+  }
+
+  /**
    * The chat rewrote the note. The server has already saved it, so a debounced
    * edit still in flight would write the old text back over it — drop it, and
    * light the editor for a moment so the change is not silent.
@@ -335,12 +444,12 @@ export function NoteView({
       noteRef.current = event.note;
       persistedContentRef.current = event.note.content;
       latestTextRef.current = event.note.content;
+      setError(null);
       markSaveState('saved');
       return new Promise<void>((resolve) => {
         setText(event.note.content);
         onNoteChangedRef.current(event.note);
         setStale(null);
-        setError(null);
         if (event.outcome !== 'applied') {
           // Nothing was written, so there is no painted rewrite for the chat
           // to wait on — releasing the ack here is what keeps a withheld edit
@@ -411,7 +520,6 @@ export function NoteView({
       noteRef.current = updated;
       persistedContentRef.current = updated.content;
       latestTextRef.current = updated.content;
-      saveRevisionRef.current += 1;
       draftUnlockedRef.current = updated.status !== 'published';
       staleRef.current = false;
       setText(updated.content);
@@ -433,8 +541,6 @@ export function NoteView({
     saveRevisionRef.current += 1;
     staleRef.current = false;
     noteRef.current = stale.theirs;
-    persistedContentRef.current = stale.theirs.content;
-    latestTextRef.current = stale.theirs.content;
     draftUnlockedRef.current = stale.theirs.status !== 'published';
     setText(stale.theirs.content);
     setStale(null);
@@ -555,6 +661,16 @@ export function NoteView({
           <p className="form-error" role="alert" data-testid="note-error">
             {error}
           </p>
+        )}
+
+        {suggestion !== null && (
+          <InterventionApproachSuggestion
+            approach={suggestion.approach}
+            evidence={suggestion.evidence}
+            disabled={published || refining}
+            onAdd={handleAddApproach}
+            onDismiss={handleDismissApproach}
+          />
         )}
 
         <NoteBody
