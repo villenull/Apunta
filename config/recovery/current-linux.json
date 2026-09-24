@@ -1,7 +1,6 @@
 {
-  "schemaVersion": 1,
-  "capturedAt": "2026-09-22T16:25:10Z",
-  "capturedFromCommit": "37617cbd023e769b338a3bafb98ebd5f2a60ea98",
+  "capturedAt": "2026-09-24T04:33:51Z",
+  "capturedFromCommit": "c6eb4f40134ee831a69c39c20481cbbd5cced74b",
   "scope": "Sanitized behavior-affecting configuration for the current Linux reference instance; no patients, notes, transcripts, chat, vocabulary values, backup paths, secrets, or export content.",
   "repository": {
     "branch": "main",
@@ -9,13 +8,13 @@
     "observedNode": "26.8.2",
     "observedNpm": "11.19.1",
     "packageLockVersion": 3,
-    "packageLockSha256": "22c04952ed68a128ae941dff21aad04e3d57d329d6fb37597e28797039133a08"
+    "packageLockSha256": "c83a1cdde816ee24cee1808148d6965ce595893de55c04d4b8781fbe4fd1eee2"
   },
   "app": {
     "port": 7717,
     "ollamaUrl": "http://127.0.0.1:11434",
     "fakeAi": false,
-    "migrationLevel": 5,
+    "migrationLevel": 7,
     "behaviorSettings": {
       "llm_model": null,
       "whisper_binary": null,
@@ -91,8 +90,8 @@
         "Note for next session"
       ],
       "instructionsFile": "docs/note-instructions/current-linux-progress-instructions.md",
-      "instructionsSha256": "e2a6dfb064f7306ea2db4f8194a1e9a7dc37415dd073c1164a7f2eb33f1bfb7d",
-      "note": "This is the sanitized instruction text actually stored in the live format, including the reviewed cadence-example and capitalized Discussion-subtopic wording. Keep the live snapshot and this hash in sync after any owner-approved instruction change."
+      "instructionsSha256": "23135caebcdec7eef165ca9a5ca3e5e2f326c704b29121578975a2d352347392",
+      "note": "Owner's revised 2026-09-24 progress instructions (Q4 fuller-sentence Intervention). This is the sanitized instruction text actually stored in the live format. Keep the live snapshot and this hash in sync after any owner-approved instruction change."
     },
     {
       "name": "Intake note",

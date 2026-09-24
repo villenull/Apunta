@@ -1,3 +1,33 @@
+## New PC: what to tell your agent
+
+Copy-paste this to a fresh agent on the rebuilt PC:
+
+```
+Recreate Apunta from https://github.com/villenull/Apunta.git (branch main):
+git clone --branch main https://github.com/villenull/Apunta.git, then read
+CLAUDE.md, docs/RECOVERY.md and docs/HANDOFF.md, and follow docs/RECOVERY.md
+end to end. I explicitly authorize model acquisition limited to the pinned
+installer catalog (installer/src/catalog.ts) — this is the single CLAUDE.md
+hard-rule-1 network exception, so do not stall on it; the server and browser
+tab stay offline-only (127.0.0.1/localhost). Install Node 22+, Ollama 0.34.2
+with AMD ROCm (RX 9070 XT, gfx1201) bound to 127.0.0.1 with OLLAMA_NO_CLOUD=1,
+and whisper.cpp 1.9.3-dev; npm ci and build; acquire qwen3.5:4b-q4_K_M and
+ggml-tiny.en.bin via the installer (plan, then run after my approval);
+apply-config into ~/.local/share/apunta; run the live instance from a plain
+clone ~/apunta-live via scripts/deploy-live-linux.sh <revision> (backs up via
+POST /api/backup, fetches and detached-checkouts the revision in
+~/apunta-live, runs offline npm ci plus build, then restarts 127.0.0.1:7717
+with a health wait; it refuses while whisper-cli is transcribing and needs a
+listening live process, so the very first boot is a manual start from
+~/apunta-live) serving 127.0.0.1:7717. Verify with
+node scripts/recover-current-linux.mjs verify, curl /api/health,
+npm run smoke:live and npm run check:format. Done means the Progress note
+(Location, Client presentation, Risk review, Discussion, Intervention, Out of
+session actions, Note for next session) is the default, with
+docs/note-instructions/owner-progress-instructions.md mirrored as
+OWNER_PROGRESS_INSTRUCTIONS in server/src/ai/default-instructions.ts.
+```
+
 # Recreate the current Apunta reference setup
 
 This is the fresh-machine entry point for an agent told **“recreate Apunta.”**
@@ -42,12 +72,13 @@ therefore selects the small tier by the code's portable fallback. Recovery
 writes the same tag explicitly so another OS or RAM size cannot silently
 select another tier.
 
-The captured live progress instructions are the sanitized text currently
-stored in the reference database, including the reviewed cadence example and
-the capitalized Discussion-subtopic wording. The snapshot at
-`docs/note-instructions/current-linux-progress-instructions.md` must remain
-byte-for-byte equal to that text; the manifest records its SHA-256 so recovery
-cannot silently drift from the live format.
+The live progress instructions are the owner's revised 2026-09-24 text (Q4
+fuller-sentence Intervention wording); the snapshot at
+`docs/note-instructions/current-linux-progress-instructions.md` is
+byte-identical to `docs/note-instructions/owner-progress-instructions.md`,
+and the live database is being updated to that exact text. The snapshot must
+remain byte-for-byte equal to the live format text; the manifest records its
+SHA-256 so recovery cannot silently drift from the live format.
 
 ## Privacy boundary
 
@@ -61,6 +92,22 @@ The recovery script reads only these database fields:
 It never selects patient names, note bodies, transcript text, chat text,
 recordings, vocabulary values, backup paths, or export content. `apply-config`
 refuses any database containing a patient or note.
+
+## Not in Git — carry these yourself
+
+- Real client database (`~/.local/share/apunta/apunta.db`, plus audio and
+  backups): intentionally never restored; recovery builds a clean database.
+- Her Halaxy PDFs, which she uploads herself through Import from Halaxy: keep
+  your own copy off the PC; agents never open them. The importer accepts
+  text-based Halaxy PDFs; synthetic coverage is
+  `e2e/fixtures/halaxy/john-smith.pdf`.
+- The Claude export: agents never open it; only the shape-only probe may run
+  against the real file.
+- `~/APUNTA-MORNING.md` and `~/Apunta-config-pack/`: morning runbook and
+  config pack, outside Git.
+- Preserved test audio under `~/.local/share/apunta-test-evidence/`
+  (synthetic, optional): keep it only if you want the spoken-acceptance
+  evidence; nothing in Git needs it.
 
 ## Fresh Linux recovery
 
@@ -139,9 +186,11 @@ node scripts/recover-current-linux.mjs apply-config \
 ```
 
 This creates/migrates a fresh database through the built server's existing
-migration code, writes only the two note formats and pins the effective writing
-model tag. It never copies the live database. It refuses a directory whose
-database already contains patients or notes.
+migration code, writes only the two note formats and explicitly pins
+`llm_model` to the effective writing-model tag (`qwen3.5:4b-q4_K_M`) so
+another OS or RAM size cannot silently select another tier. It never copies
+the live database. It refuses a directory whose database already contains
+patients or notes.
 
 ### 6. Verify before launching
 
@@ -153,7 +202,7 @@ curl -fsS http://127.0.0.1:7717/api/health
 npm run smoke:live -- --model qwen3.5:4b-q4_K_M --runs 5
 ```
 
-Expected health facts: fake AI off; database migration level 5; Ollama
+Expected health facts: fake AI off; database migration level 7; Ollama
 reachable with `qwen3.5:4b-q4_K_M` present; `whisper-cli` and
 `models/ggml-tiny.en.bin` present. `smoke:live` is a schema/provider smoke, not
 clinical acceptance. Stop the temporary server before starting another Apunta
@@ -204,10 +253,12 @@ pending.
 
 ## After recovery readiness
 
-Continue with `docs/HANDOFF.md` in its stated order: first the synthetic
-acceptance of dictation, grounded Discussion/refine/retraction behavior and
-the hosted GitHub presentation; then the authorized four-model local-LLM
-comparison. Physical-microphone acceptance is waived for this round, and no
-candidate or gate is presumed passed. Existing green automated gates are
-evidence for the committed code, not substitutes for owner, clean-device or
-target-Mac acceptance.
+Continue with `docs/HANDOFF.md` "Next session" in its stated order. The
+2026-09-22 acceptance and comparison round it records is done: the retraction
+review, the Discussion-subtopic review, the four-model comparison, the
+Thorough-model gate (closed NONE, keep `qwen3.5:4b-q4_K_M`), and the model
+second pass are complete with `check:format` at 0 flags; do not reopen them
+without a new owner-facing failure. Physical-microphone acceptance remains
+waived/unrun and speech fidelity remains the open gap. Existing green
+automated gates are evidence for the committed code, not substitutes for
+owner, clean-device or target-Mac acceptance.

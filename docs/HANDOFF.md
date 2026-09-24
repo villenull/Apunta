@@ -450,6 +450,7 @@ these real-model failures. No candidate is clinically cleared.
 8. The hosted README still needs a real authenticated browser page check if
    repository visibility/access changes; the API-render substitute above must
    not be relabeled as hosted acceptance.
+9. Speech fidelity remains the open acceptance gap: installed tiny.en mishears "scratch that" and some words (see docket). A better Whisper model requires the owner's explicit model-acquisition authorization under hard rule 1; do not download without it.
 
 
 ## What is open
@@ -676,6 +677,26 @@ the live text.
 
 Every item comes with a full script when it needs his voice.
 
+**Proxy recording / independent browser pass, 2026-09-23:** used a fresh
+database on port 7741, real Qwen 4B and tiny.en; live patient data untouched.
+The proxy read all three fictional John Smith prompts into one 143.913-second
+recording. Preserved local-only evidence (original `john-first.wav` untouched;
+derived cuts `note.wav`, `tuesday.wav`, `thursday.wav`, `waiting.wav` and
+`tail.wav`, plus transcripts) is at
+`~/.local/share/apunta-test-evidence/2026-09-23/` outside Git; only the
+isolated scratch DB/server used `/tmp/apunta-spoken-acceptance-GHkrMn/`.
+No raw voice is committed.
+
+- **Speech fidelity, still limited (transcription, not capture):** on 2026-09-23 both whole-file and cropped transcription misheard "scratch that"; the generated note retained both four and six hours. Tuesday's "walked" became "walks". The note kept the August date, both risk denials, five-minute action and next-session review. Follow-up 2026-09-24: the direct spoken "four hours, scratch that, six hours" remains misrecognized by installed `ggml-tiny.en.bin`; the generated synthetic note kept both values. Only tiny.en is installed in the verified store; do not acquire/download a different model without explicit owner authorization. The sentence about an absent current count is now preserved server-side verbatim in Discussion (synthetic API smoke); not inferred from silence.
+- **Silence evidence, narrowly:** the dictation endpoint returned empty text for the first-minute sample and the 8.912-second tail. A localized sneeze and a matched blank control both returned empty; narrow observation, not universal noise/VAD acceptance. Whole-file transcription on 2026-09-23 contained the three prompts without an extra unrelated sentence.
+- **Refine synthetic browser checks passed:** shortening Discussion changed only that section; medication addition retained prior text and included 20 mg daily; a sleep question left the note unchanged; clearing Risk review preserved every other section. A no-op shortening was truthfully reported.
+- **Two-window behavior (updated 2026-09-24):** on 2026-09-23 Keep mine and Take theirs each persisted the chosen body through reload, but the conflicting window showed only a truncated list preview. Follow-up: one Web Lock primary, secondary fullscreen blocker/inert/focus-trapped, decline keeps block; explicit transfer waits for an intercepted pending PATCH, old window becomes blocked before new window unlocks, new owner reloads latest saved note, and owner release allows old tab to reacquire. A handoff whose pending save fails or hits an unresolved conflict does not transfer: the old window stays primary and editable showing `Couldn’t save`, the requesting window stays blocked and its takeover request times out after ~8s back to the decision prompt. Covered by e2e `a failed flush keeps the old primary and leaves takeover blocked`. Minimal per-note remote-revision conflict fallback still provides Keep mine/Take theirs; no full comparison UI.
+- **Focus bug fixed 2026-09-24:** on 2026-09-23 typing in the note body with Refine open moved focus to the chat composer after the first character (reproduced with two strings; a newline could then send the remainder as an unintended chat request; cause identified as the dialog focus effect rerunning on inline `onClose` churn). Follow-up: inline `onClose` churn was removed from the dialog focus effect; real browser check showed body typing/newline stay in the note and no chat text is sent.
+- **Consecutive recorder cycles, capture fixed / transcription still fails:** on 2026-09-23 recorded-WAV replay exercised two recorder cycles without reload but produced unrelated text despite direct WAV uploads yielding the expected passages. Follow-up 2026-09-24: consecutive browser recorder cycles now yield two distinct nonempty previews without reload; lexical accuracy still fails: Tuesday text was `Add the John logs for 20 minutes on Tuesday.` and Thursday text was `Add that John, plans to repeat the lock on Thursday.` Neither was sent to refine. Capture/upload path success is distinct from transcription fidelity.
+- **Q3 intervention approach (owner choice):** owner chose a named approach suggestion for confirmation and supplied the PDF. Intervention-only card uses exact evidence quote; Not now leaves note byte-identical; Add prefixes confirmed PDF heading and autosaves; the card vanishes. Matcher avoids generic/ambiguous/negated/quoted/unattributed inference. See `shared/src/clinical-guidance.ts`.
+- **Q4 intervention style (owner choice "Tidy them into fuller sentences."):** both instruction copies are synchronized. New 4B rubric eval report and style comparison: `docs/eval-reports/2026-09-24-owner-intervention-style.md`; be candid that actor-absent passive wording is still not obeyed by this 4B sample.
+- **Verified gates 2026-09-24 (full gate, exit 0):** build:shared, typecheck, lint, `npm test` 118 files / 1,531 tests, build, `npm run e2e` 42 passed, `eval --fake`; plus `npm run check:format` 0 flags across 6 synthetic fixtures on the real 4B. A post-gate review fixed the conflict banner lingering after Keep mine/Take theirs, drains keystrokes typed during a handoff flush, and removed an unused broadcast. Known, accepted: `preserveExplicitAbsences` can append the verbatim source sentence beside a model paraphrase of it (duplication, never loss).
+
 1. **Dictate into the chat**: open any draft, press the microphone in the
    composer, say a change ("add that he is on sertraline, twenty milligrams");
    the panel should look exactly like recording a note, words and all; press
@@ -693,10 +714,7 @@ Every item comes with a full script when it needs his voice.
    Also exercise **Add to existing** with a synthetic existing patient and
    confirm that no duplicate chart is created. The Playwright coverage now
    passes locally and in CI; the proxy's hands-on dry run remains pending.
-5. **Two-window save conflict**: open one draft in two windows, edit both,
-   then choose **Keep mine** and repeat with **Take theirs**. Confirm the
-   selected body is the one left in the database and the losing text remains
-   available in the choice.
+5. **Two-window ownership handoff**: open one draft in two windows. Confirm exactly one window is primary and the second shows the fullscreen blocker (inert, focus-trapped); declining the transfer keeps the block. Request an explicit transfer: pending edits flush before handover (an intercepted pending PATCH completes), the old window becomes blocked before the new window unlocks, and the new owner reloads the latest saved note; then release ownership and confirm the old tab can reacquire. Separately, the minimal per-note remote-revision conflict fallback still offers Keep mine/Take theirs with no full comparison UI.
 6. **Two recordings in a row**: record, stop and send one dictation, then
    immediately record and send a second without reloading. Confirm both
    previews/transcripts arrive in the correct composer or note.
