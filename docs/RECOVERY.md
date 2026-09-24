@@ -116,6 +116,9 @@ refuses any database containing a patient or note.
   your own copy off the PC; agents never open them. The importer accepts
   text-based Halaxy PDFs; synthetic coverage is
   `e2e/fixtures/halaxy/john-smith.pdf`.
+- Not needed: the three public clinical reference guides (Interventions
+  Cheat Sheet, MSE examples, Presentation/MSE) are in Git under
+  `docs/reference/` with their SHA-256 hashes.
 - The Claude export: agents never open it; only the shape-only probe may run
   against the real file.
 - `~/APUNTA-MORNING.md` and `~/Apunta-config-pack/`: morning runbook and
