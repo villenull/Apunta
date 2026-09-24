@@ -1,6 +1,12 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-23.** Git now contains the sanitized machine-readable
+**Updated 2026-09-24.** Live runs `d4eeacd` with the owner's revised
+progress instructions (hash `23135cae…`, verified by
+`scripts/recover-current-linux.mjs verify`). The owner is restoring this PC:
+on a new machine, give the agent the prompt at the top of
+`docs/RECOVERY.md`; a fresh-clone dry run of that path passed tonight.
+
+**2026-09-23.** Git now contains the sanitized machine-readable
 reference configuration and executable Linux recovery path needed to
 recreate the current app after a reset (`docs/RECOVERY.md`,
 `config/recovery/current-linux.json`). It records the exact current writing
@@ -431,10 +437,11 @@ these real-model failures. No candidate is clinically cleared.
    synthetic and local-only; keep its measured paragraph and per-item verdict
    with the newest report when it lands. Do not switch models or add vocabulary
    work from comparison results alone.
-3. The Linux live app was redeployed on 2026-09-23 at `9eb0cdd`, with migration
-   7, after the backup `apunta-backup-2026-09-23.zip`. Confirm health and the
-   note-revision choice only through disposable fixtures unless the owner is
-   actively doing the hands-on checks below.
+3. The Linux live app was redeployed on 2026-09-24 at `d4eeacd` through
+   `scripts/deploy-live-linux.sh` (backup via `/api/backup` first), and its
+   Progress note instructions were updated through the formats API to the
+   revised text. Confirm health and behavior only through disposable
+   fixtures unless the owner is actively doing the hands-on checks below.
 4. The owner imports her real Halaxy PDFs herself. Agents must never open, list,
    read or import real PDFs or Claude exports; synthetic fixtures remain the
    only implementation and test input. Her import check must include

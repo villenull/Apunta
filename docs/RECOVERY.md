@@ -1,3 +1,5 @@
+# Recreate the current Apunta reference setup
+
 ## New PC: what to tell your agent
 
 Copy-paste this to a fresh agent on the rebuilt PC:
@@ -21,14 +23,26 @@ with a health wait; it refuses while whisper-cli is transcribing and needs a
 listening live process, so the very first boot is a manual start from
 ~/apunta-live) serving 127.0.0.1:7717. Verify with
 node scripts/recover-current-linux.mjs verify, curl /api/health,
-npm run smoke:live and npm run check:format. Done means the Progress note
-(Location, Client presentation, Risk review, Discussion, Intervention, Out of
-session actions, Note for next session) is the default, with
-docs/note-instructions/owner-progress-instructions.md mirrored as
-OWNER_PROGRESS_INSTRUCTIONS in server/src/ai/default-instructions.ts.
+npm run smoke:live and npm run check:format (check:format hangs drafts on
+the first patient; delete the "format check —" drafts afterwards). A
+differing Ollama/whisper executable SHA-256 after a clean reinstall of the
+same version is expected: report it and carry on. A differing Ollama model
+ID or weights blob, or a differing ggml-tiny.en.bin checksum, is a stop.
+Done means the Progress note (Location, Client presentation, Risk review,
+Discussion, Intervention, Out of session actions, Note for next session) is
+the default, its instructions SHA-256 is 23135cae…52347392 (byte-identical
+to docs/note-instructions/owner-progress-instructions.md), and a typed
+John Smith note drafts through the real model at http://127.0.0.1:7717.
 ```
 
-# Recreate the current Apunta reference setup
+**Dry run, 2026-09-24:** a fresh clone of `main` at `d4eeacd` from GitHub
+ran `npm ci --offline`, `npm run build`, `apply-config` and `verify` (exit 0)
+into an empty `/tmp` data directory; the server it started served both
+formats with the Progress note instructions hash above and drafted a John
+Smith note through the real `qwen3.5:4b-q4_K_M`. Runtimes and models came
+from this machine; the download path and a clean OS were not exercised.
+
+## About this document
 
 This is the fresh-machine entry point for an agent told **“recreate Apunta.”**
 It rebuilds the application and its sanitized behavior-affecting configuration
@@ -76,7 +90,8 @@ The live progress instructions are the owner's revised 2026-09-24 text (Q4
 fuller-sentence Intervention wording); the snapshot at
 `docs/note-instructions/current-linux-progress-instructions.md` is
 byte-identical to `docs/note-instructions/owner-progress-instructions.md`,
-and the live database is being updated to that exact text. The snapshot must
+and the live database was updated to that exact text on 2026-09-24 (hash
+verified by `verify`). The snapshot must
 remain byte-for-byte equal to the live format text; the manifest records its
 SHA-256 so recovery cannot silently drift from the live format.
 
