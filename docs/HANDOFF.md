@@ -1,6 +1,6 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-24.** Live runs `7d8b306` (slimmer workspace columns, "⋯" patient menu, auto-hiding scrollbars) with the owner's revised
+**Updated 2026-09-24.** Live runs `3e2708f` (welcome-search home, patient-name notes header, thirds layout) with the owner's revised
 progress instructions (hash `23135cae…`, verified by
 `scripts/recover-current-linux.mjs verify`). The owner is restoring this PC:
 on a new machine, give the agent the prompt at the top of
