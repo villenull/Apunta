@@ -122,7 +122,7 @@ test.describe('the workspace', () => {
     await page.getByLabel(`Delete ${patientName}`).click();
     await expect(page.getByRole('dialog')).toContainText('Time Machine');
     await page.getByTestId('confirm-accept').click();
-    await expect(page.getByTestId('empty-no-patient')).toBeVisible();
+    await expect(page.getByTestId('home')).toBeVisible();
     await expect(page.getByTestId('patient-list')).not.toContainText(patientName);
   });
 
@@ -145,12 +145,21 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('patient-list')).toContainText('No patients match');
   });
 
-  test('asks for a selection when no patient is chosen', async ({ page, request }) => {
+  test('opens on home, and finds a patient from its search', async ({ page, request }) => {
+    const patientName = uniqueName('E2E Home');
     await request.post('/api/formats', { data: { name: uniqueName('E2E format'), sections: ['Plan'] } });
+    await request.post('/api/patients', { data: { name: patientName } });
 
     await page.goto('/');
 
-    await expect(page.getByTestId('empty-no-patient')).toHaveText('Select a patient to see their notes');
+    await expect(page.getByTestId('home')).toContainText('Let’s focus on…');
+    await expect(page.locator('.col-notes')).toHaveCount(0);
+    await page.getByTestId('home-search').fill(patientName);
+    await page.getByRole('option', { name: patientName, exact: true }).click();
+    await expect(page.getByTestId('notes-header')).toHaveText(patientName.split(' ')[0] ?? '');
+
+    await page.getByTestId('home-link').click();
+    await expect(page.getByTestId('home')).toBeVisible();
   });
 
   /**

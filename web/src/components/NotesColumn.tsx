@@ -2,7 +2,7 @@ import type { Note, PatientListItem } from '@apunta/shared';
 import { useNavigate } from 'react-router';
 
 import type { LoadState } from '../hooks/useLoader.js';
-import { formatNoteDate, notePreview } from '../lib/format.js';
+import { firstName, formatNoteDate, notePreview } from '../lib/format.js';
 import { BackIcon, PlusIcon } from './icons.js';
 
 export interface NotesColumnProps {
@@ -31,14 +31,14 @@ export function NotesColumn({
   const navigate = useNavigate();
   return (
     <div className="col col-notes">
-      <div className="col-header">
+      <div className={patient ? 'col-header notes-header-patient' : 'col-header'}>
         <div className="col-header-title">
           <button type="button" className="narrow-back" onClick={onBackToPatients}>
             <BackIcon className="icon icon-xs" />
             <span>Patients</span>
           </button>
           <h3 data-testid="notes-header" tabIndex={-1}>
-            Notes
+            {patient ? firstName(patient.name) : 'Notes'}
           </h3>
         </div>
       </div>

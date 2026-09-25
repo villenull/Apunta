@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { createPatient, errorMessage } from '../api/index.js';
 import { SpellLayer } from '../components/SpellLayer.js';
@@ -10,7 +10,9 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 export function AddPatient(): React.JSX.Element {
   useDocumentTitle('New patient');
   const navigate = useNavigate();
-  const [name, setName] = useState('');
+  // The home search's "New" option hands over what she typed.
+  const [params] = useSearchParams();
+  const [name, setName] = useState(() => params.get('name') ?? '');
   const [identifier, setIdentifier] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -48,9 +48,12 @@ export function PatientsColumn({
         The app's identity lives here, top-left: the wordmark alone. The owner
         dropped the mark and the "Patients" label (2026-09-24) — the list names
         itself — and adding a patient is the "New" row at the top of the list.
+        The wordmark goes home: no patient, the welcome search.
       */}
       <div className="col-header col-header-brand">
-        <span className="brand">Apunta</span>
+        <Link to="/" className="brand brand-link" data-testid="home-link">
+          Apunta
+        </Link>
       </div>
 
       <div className="col-search">

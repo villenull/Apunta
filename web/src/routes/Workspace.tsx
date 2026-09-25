@@ -15,7 +15,8 @@ import {
 import { AiBanner } from '../components/AiBanner.js';
 import { BrainstormView } from '../components/BrainstormView.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
-import { BackIcon, DocumentIcon, PeopleIcon, PlusIcon } from '../components/icons.js';
+import { HomeLauncher } from '../components/HomeLauncher.js';
+import { BackIcon, DocumentIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
 import { NoteView } from '../components/NoteView.js';
 import { PatientsColumn } from '../components/PatientsColumn.js';
@@ -198,6 +199,9 @@ export function Workspace(): React.JSX.Element {
       setActionError(errorMessage(thrown));
     }
   }
+  // Home is the no-patient screen. A patient id whose list is still loading
+  // is not home yet — it would flash the welcome screen on every reload.
+  const atHome = patient === null && (patientId === null || patients.state.status !== 'loading');
   const narrowPane = patient === null ? 'patients' : note !== null || view !== 'notes' ? 'main' : 'notes';
   const previousPane = useRef(narrowPane);
 
@@ -239,7 +243,7 @@ export function Workspace(): React.JSX.Element {
   return (
     <div className="workspace">
       <AiBanner />
-      <div className={`app-shell pane-${narrowPane}`}>
+      <div className={`app-shell pane-${narrowPane}${atHome ? ' at-home' : ''}`}>
         <PatientsColumn
           patients={patients.state}
           activePatientId={patient?.id ?? null}
@@ -256,18 +260,20 @@ export function Workspace(): React.JSX.Element {
           onDelete={setPendingDelete}
         />
 
-        <NotesColumn
-          patient={patient}
-          notes={notesForColumn}
-          activeNoteId={view === 'notes' ? (note?.id ?? null) : null}
-          view={view}
-          onSelect={selectNote}
-          onOpenView={openView}
-          onRetry={notes.reload}
-          onBackToPatients={() => {
-            setParams({});
-          }}
-        />
+        {!atHome && (
+          <NotesColumn
+            patient={patient}
+            notes={notesForColumn}
+            activeNoteId={view === 'notes' ? (note?.id ?? null) : null}
+            view={view}
+            onSelect={selectNote}
+            onOpenView={openView}
+            onRetry={notes.reload}
+            onBackToPatients={() => {
+              setParams({});
+            }}
+          />
+        )}
 
         <div className="col col-main" data-testid="main-pane">
           {patient !== null && (
@@ -290,9 +296,12 @@ export function Workspace(): React.JSX.Element {
             </p>
           )}
           {patient === null ? (
-            <NoPatientSelected
-              emptyPractice={patients.state.status === 'ready' && patients.state.data.length === 0}
-            />
+            atHome ? (
+              <HomeLauncher
+                patients={patients.state.status === 'ready' ? patients.state.data : []}
+                onSelect={selectPatient}
+              />
+            ) : null
           ) : view === 'plan' ? (
             <PlanView key={`plan-${patient.id}`} patient={patient} onOpenNote={selectNote} />
           ) : view === 'prep' ? (
@@ -355,27 +364,6 @@ export function Workspace(): React.JSX.Element {
           }}
         />
       )}
-    </div>
-  );
-}
-
-function NoPatientSelected({ emptyPractice }: { emptyPractice: boolean }): React.JSX.Element {
-  if (emptyPractice) {
-    return (
-      <div className="empty-state" data-testid="empty-no-patient">
-        <PeopleIcon />
-        <p className="empty-message">Add your first patient to begin.</p>
-        <Link to="/patients/new" className="btn btn-primary">
-          <PlusIcon className="icon icon-sm" />
-          Add your first patient
-        </Link>
-      </div>
-    );
-  }
-  return (
-    <div className="empty-state" data-testid="empty-no-patient">
-      <PeopleIcon />
-      <p>Select a patient to see their notes</p>
     </div>
   );
 }

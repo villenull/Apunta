@@ -83,7 +83,44 @@ describe('workspace', () => {
     expect(await screen.findByText('John Smith')).toBeDefined();
     expect(screen.getByText('2 notes')).toBeDefined();
     expect(screen.getByText('0 notes')).toBeDefined();
-    expect(screen.getByText('Select a patient to see their notes')).toBeDefined();
+    // Home: the welcome question, and no notes column until a patient is chosen.
+    expect(screen.getByTestId('home').textContent).toContain('Let’s focus on…');
+    expect(screen.queryByTestId('note-list')).toBeNull();
+  });
+
+  it('finds a patient from the home search as she types', async () => {
+    renderApp();
+    await screen.findByText('John Smith');
+
+    fireEvent.change(screen.getByTestId('home-search'), { target: { value: 'jo' } });
+    const results = screen.getByRole('listbox', { name: 'Patients' });
+    expect(within(results).getByText('John Smith')).toBeDefined();
+    expect(within(results).queryByText('Maria Ruiz')).toBeNull();
+
+    fireEvent.click(within(results).getByText('John Smith'));
+    expect((await screen.findByTestId('notes-header')).textContent).toBe('John');
+  });
+
+  it('offers New with what she typed when nobody matches', async () => {
+    renderApp();
+    await screen.findByText('John Smith');
+
+    fireEvent.change(screen.getByTestId('home-search'), { target: { value: 'Ana Torres' } });
+    expect(screen.getAllByRole('option')).toHaveLength(1);
+    fireEvent.keyDown(screen.getByTestId('home-search'), { key: 'Enter' });
+
+    expect(await screen.findByRole('heading', { name: 'Add patient' })).toBeDefined();
+    expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Ana Torres');
+  });
+
+  it('goes home from the wordmark', async () => {
+    renderApp(`/?patient=${john.id}`);
+    await screen.findByTestId('note-list');
+
+    fireEvent.click(screen.getByTestId('home-link'));
+
+    expect(await screen.findByTestId('home')).toBeDefined();
+    expect(screen.queryByTestId('note-list')).toBeNull();
   });
 
   it('filters the patient list as the prototype does', async () => {
@@ -113,14 +150,14 @@ describe('workspace', () => {
     fireEvent.click(await screen.findByText('Maria Ruiz'));
 
     expect((await screen.findAllByText('No notes yet for Maria Ruiz.')).length).toBeGreaterThan(0);
-    expect(screen.getByTestId('notes-header').textContent).toBe('Notes');
+    expect(screen.getByTestId('notes-header').textContent).toBe('Maria');
   });
 
   it('opens a note, and marks drafts with a date and a Draft label', async () => {
     renderApp();
 
     fireEvent.click(await screen.findByText('John Smith'));
-    expect((await screen.findByTestId('notes-header')).textContent).toBe('Notes');
+    expect((await screen.findByTestId('notes-header')).textContent).toBe('John');
     // The note row's date line carries a Draft chip beside the date now; the
     // published note below it has the date alone.
     const draftRow = (await screen.findByText('Draft')).closest('.note-date-row');
@@ -150,7 +187,7 @@ describe('workspace', () => {
     await waitFor(() => {
       expect(screen.queryByText('Maria Ruiz')).toBeNull();
     });
-    expect(screen.getByText('Select a patient to see their notes')).toBeDefined();
+    expect(screen.getByTestId('home')).toBeDefined();
   });
 
   it('closes the confirmation on Escape without deleting anything', async () => {
