@@ -1,10 +1,10 @@
 import type { PatientListItem } from '@apunta/shared';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import type { LoadState } from '../hooks/useLoader.js';
 import { initials, noteCountLabel } from '../lib/format.js';
-import { MarkIcon, PlusIcon } from './icons.js';
+import { MoreIcon, PlusIcon } from './icons.js';
 import { SpellLayer } from './SpellLayer.js';
 
 export interface PatientsColumnProps {
@@ -21,6 +21,8 @@ export interface PatientsColumnProps {
    * import's `name_guessed` flag, which the list no longer shows.
    */
   onRename: (patient: PatientListItem, name: string) => void;
+  /** Ask to delete the patient; the workspace confirms before anything goes. */
+  onDelete: (patient: PatientListItem) => void;
 }
 
 /** Left column of `prototype/patients.html`: search, add, and the patient list. */
@@ -33,6 +35,7 @@ export function PatientsColumn({
   onToggleArchived,
   onSetArchived,
   onRename,
+  onDelete,
 }: PatientsColumnProps): React.JSX.Element {
   const [query, setQuery] = useState('');
 
@@ -42,23 +45,12 @@ export function PatientsColumn({
   return (
     <div className="col col-patients">
       {/*
-        The app's identity lives here, top-left: the mark and the lowercase
-        "Apunta" wordmark (owner-proxy: capitalized, 2026-08-30), with "Patients"
-        kept beneath as a small label so the list still names itself. The
-        prototype put only the column title here; this is part of the same
-        sanctioned brand-and-motion pass.
+        The app's identity lives here, top-left: the wordmark alone. The owner
+        dropped the mark and the "Patients" label (2026-09-24) — the list names
+        itself — and adding a patient is the "New" row at the top of the list.
       */}
       <div className="col-header col-header-brand">
-        <div className="brand-block">
-          <div className="row gap-8">
-            <MarkIcon className="mark mark-sm" />
-            <span className="brand">Apunta</span>
-          </div>
-          <h3>Patients</h3>
-        </div>
-        <Link to="/patients/new" className="icon-btn" title="Add patient" aria-label="Add patient">
-          <PlusIcon className="icon-plus" />
-        </Link>
+        <span className="brand">Apunta</span>
       </div>
 
       <div className="col-search">
@@ -75,6 +67,14 @@ export function PatientsColumn({
       </div>
 
       <div className="col-body" data-testid="patient-list">
+        <Link to="/patients/new" className="list-item new-patient-item" data-testid="new-patient">
+          <div className="avatar">
+            <PlusIcon className="icon-plus" />
+          </div>
+          <div className="patient-list-copy">
+            <div className="name">New</div>
+          </div>
+        </Link>
         <PatientList
           patients={patients}
           query={query}
@@ -88,6 +88,7 @@ export function PatientsColumn({
           onToggleArchived={onToggleArchived}
           onSetArchived={onSetArchived}
           onRename={onRename}
+          onDelete={onDelete}
         />
       </div>
 
@@ -131,6 +132,7 @@ function PatientList({
   onClearSearch,
   onSetArchived,
   onRename,
+  onDelete,
 }: PatientsColumnProps & { query: string; onClearSearch: () => void }): React.JSX.Element {
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
 
@@ -203,31 +205,24 @@ function PatientList({
                 </div>
               </div>
             </button>
-            {/* Keep this slot in the row even while its controls are hidden. The
-                primary patient-selection target therefore never moves under hover. */}
+            {/* One small "⋯" instead of a row of buttons: the column is narrow
+                (owner, 2026-09-24), and three buttons on hover squeezed the
+                name to nothing. Its slot stays in the row while hidden so the
+                selection target never moves under the pointer. */}
             {renaming?.id !== patient.id && (
-              <div className="patient-entry-actions" aria-label={`Tools for ${patient.name}`}>
-                <button
-                  type="button"
-                  className="btn small btn-quick"
-                  data-testid={`rename-${patient.id}`}
-                  onClick={() => {
-                    setRenaming({ id: patient.id, name: patient.name });
-                  }}
-                >
-                  Rename
-                </button>
-                <button
-                  type="button"
-                  className="btn small btn-quick"
-                  data-testid={`archive-${patient.id}`}
-                  onClick={() => {
-                    onSetArchived(patient, !archived);
-                  }}
-                >
-                  {archived ? 'Restore' : 'Archive'}
-                </button>
-              </div>
+              <PatientMenu
+                patient={patient}
+                archived={archived}
+                onRename={() => {
+                  setRenaming({ id: patient.id, name: patient.name });
+                }}
+                onSetArchived={() => {
+                  onSetArchived(patient, !archived);
+                }}
+                onDelete={() => {
+                  onDelete(patient);
+                }}
+              />
             )}
             {renaming?.id === patient.id && (
               <form
@@ -263,5 +258,96 @@ function PatientList({
         );
       })}
     </>
+  );
+}
+
+interface PatientMenuProps {
+  patient: PatientListItem;
+  archived: boolean;
+  onRename: () => void;
+  onSetArchived: () => void;
+  onDelete: () => void;
+}
+
+function PatientMenu({
+  patient,
+  archived,
+  onRename,
+  onSetArchived,
+  onDelete,
+}: PatientMenuProps): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function onPointerDown(event: PointerEvent): void {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    }
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  function choose(action: () => void): () => void {
+    return () => {
+      setOpen(false);
+      action();
+    };
+  }
+
+  return (
+    <div ref={ref} className={open ? 'patient-entry-actions is-open' : 'patient-entry-actions'}>
+      <button
+        type="button"
+        className="icon-btn patient-menu-btn"
+        aria-label={`Tools for ${patient.name}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        data-testid={`patient-menu-${patient.id}`}
+        onClick={() => {
+          setOpen((was) => !was);
+        }}
+      >
+        <MoreIcon className="icon icon-sm" />
+      </button>
+      {open && (
+        <div className="patient-menu" role="menu">
+          <button
+            type="button"
+            role="menuitem"
+            className="patient-menu-item"
+            data-testid={`rename-${patient.id}`}
+            onClick={choose(onRename)}
+          >
+            Rename
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="patient-menu-item"
+            data-testid={`archive-${patient.id}`}
+            onClick={choose(onSetArchived)}
+          >
+            {archived ? 'Restore' : 'Archive'}
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="patient-menu-item is-danger"
+            aria-label={`Delete ${patient.name}`}
+            onClick={choose(onDelete)}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

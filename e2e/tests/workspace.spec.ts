@@ -118,6 +118,7 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);
 
     // --- Delete the patient, and the workspace is unselected again ----------
+    await page.getByLabel(`Tools for ${patientName}`).click();
     await page.getByLabel(`Delete ${patientName}`).click();
     await expect(page.getByRole('dialog')).toContainText('Time Machine');
     await page.getByTestId('confirm-accept').click();

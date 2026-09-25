@@ -99,20 +99,28 @@ describe('workspace', () => {
     expect(await screen.findByText(/No patients match/)).toBeDefined();
   });
 
+  it('adds a patient from the New row at the top of the list', async () => {
+    renderApp();
+
+    fireEvent.click(await screen.findByTestId('new-patient'));
+
+    expect(await screen.findByRole('heading', { name: 'Add patient' })).toBeDefined();
+  });
+
   it("shows a patient with no notes the prototype's empty hint", async () => {
     renderApp();
 
     fireEvent.click(await screen.findByText('Maria Ruiz'));
 
     expect((await screen.findAllByText('No notes yet for Maria Ruiz.')).length).toBeGreaterThan(0);
-    expect(screen.getByTestId('notes-header').textContent).toContain('Maria');
+    expect(screen.getByTestId('notes-header').textContent).toBe('Notes');
   });
 
   it('opens a note, and marks drafts with a date and a Draft label', async () => {
     renderApp();
 
     fireEvent.click(await screen.findByText('John Smith'));
-    expect((await screen.findByTestId('notes-header')).textContent).toBe('John’s notes');
+    expect((await screen.findByTestId('notes-header')).textContent).toBe('Notes');
     // The note row's date line carries a Draft chip beside the date now; the
     // published note below it has the date alone.
     const draftRow = (await screen.findByText('Draft')).closest('.note-date-row');
@@ -128,7 +136,8 @@ describe('workspace', () => {
   it('deletes a patient after confirming, and empties the workspace', async () => {
     renderApp(`/?patient=${maria.id}`);
 
-    fireEvent.click(await screen.findByLabelText('Delete Maria Ruiz'));
+    fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
+    fireEvent.click(screen.getByLabelText('Delete Maria Ruiz'));
 
     // The dialog says what deleting cannot reach, which is the half that
     // "this cannot be undone" gets backwards.
@@ -147,7 +156,8 @@ describe('workspace', () => {
   it('closes the confirmation on Escape without deleting anything', async () => {
     renderApp(`/?patient=${maria.id}`);
 
-    fireEvent.click(await screen.findByLabelText('Delete Maria Ruiz'));
+    fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
+    fireEvent.click(screen.getByLabelText('Delete Maria Ruiz'));
     expect(await screen.findByRole('dialog')).toBeDefined();
 
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -162,13 +172,15 @@ describe('workspace', () => {
   it('archives a patient out of the working list and can show them again', async () => {
     renderApp(`/?patient=${maria.id}`);
 
-    fireEvent.click(await screen.findByTestId(`archive-${maria.id}`));
+    fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
+    fireEvent.click(screen.getByTestId(`archive-${maria.id}`));
     await waitFor(() => {
       expect(screen.queryByText('Maria Ruiz')).toBeNull();
     });
 
     fireEvent.click(screen.getByTestId('show-archived'));
     expect(await screen.findByText('Maria Ruiz')).toBeDefined();
+    fireEvent.click(screen.getByLabelText('Tools for Maria Ruiz'));
     expect(screen.getByTestId(`archive-${maria.id}`).textContent).toBe('Restore');
   });
 });
@@ -183,6 +195,7 @@ describe('renaming a patient', () => {
     // The owner asked for the "name guessed — check" badge to go (2026-09-21).
     expect(screen.queryByText(/name guessed/i)).toBeNull();
 
+    fireEvent.click(screen.getByLabelText('Tools for Ana'));
     fireEvent.click(screen.getByTestId(`rename-${guessed.id}`));
     fireEvent.change(screen.getByLabelText('Name for Ana'), { target: { value: 'Ana Torres' } });
     fireEvent.click(screen.getByTestId(`save-name-${guessed.id}`));
@@ -326,7 +339,7 @@ describe('an action that fails', () => {
     const api = installFakeApi({ formats: [progressNote], patients: [john, maria] });
     renderApp(`/?patient=${maria.id}`);
 
-    await screen.findByLabelText('Delete Maria Ruiz');
+    fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
     // The patient disappears from under the delete: the request 404s.
     api.state.patients = api.state.patients.filter((candidate) => candidate.id !== maria.id);
 

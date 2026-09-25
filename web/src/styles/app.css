@@ -108,19 +108,19 @@
 }
 
 /*
- * Quarter, quarter, half (owner-proxy, 2026-08-30) — and the editor keeps
- * that half whether or not a note is open, since the chat now floats over
- * the page instead of splitting the main column.
+ * An eighth, three eighths, half: the owner halved the patients column and
+ * gave the space to the notes list (2026-09-24). The editor keeps its half
+ * whether or not a note is open, since the chat floats over the page.
  */
 .col-patients {
-  width: 25%;
+  width: 12.5%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
   background: var(--col-patients-bg);
 }
 
 .col-notes {
-  width: 25%;
+  width: 37.5%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
   background: var(--col-notes-bg);
@@ -136,7 +136,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-8) var(--space-8);
+  /* Only as tall as its label (owner, 2026-09-24), and the same height in
+     both columns so the rules beneath them line up. */
+  min-height: 36px;
+  padding: var(--space-0) var(--space-8);
   border-bottom: 0.5px solid var(--border);
   flex-shrink: 0;
   gap: 8px;
@@ -2441,6 +2444,7 @@ select:disabled {
 
 /* Archive: hidden from the working list, deleted from nothing. */
 .patient-entry {
+  position: relative;
   display: flex;
   align-items: stretch;
   width: 100%;
@@ -2450,19 +2454,9 @@ select:disabled {
 .patient-entry-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  width: max-content;
-  max-width: 0;
-  flex: 0 0 max-content;
-  overflow: hidden;
-  padding-inline: var(--space-0);
+  flex: 0 0 auto;
+  padding-right: var(--space-2);
   opacity: 0;
-  pointer-events: none;
-}
-
-.patient-entry-actions .btn {
-  padding: var(--space-2) var(--space-4);
 }
 
 .patient-entry .list-item {
@@ -2471,11 +2465,54 @@ select:disabled {
 }
 
 .patient-entry:hover .patient-entry-actions,
-.patient-entry:focus-within .patient-entry-actions {
-  max-width: max-content;
+.patient-entry:focus-within .patient-entry-actions,
+.patient-entry-actions.is-open {
   opacity: 1;
-  padding-inline: var(--space-0);
 }
+
+.patient-menu-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
+.patient-menu {
+  position: absolute;
+  top: calc(100% - var(--space-2));
+  right: var(--space-2);
+  z-index: 40;
+  min-width: 120px;
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patient-menu-item {
+  text-align: left;
+  font: inherit;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-5);
+  cursor: pointer;
+}
+
+.patient-menu-item:hover,
+.patient-menu-item:focus-visible {
+  background: var(--surface-muted);
+}
+
+.patient-menu-item.is-danger {
+  color: var(--danger);
+}
+
 .patient-entry:hover {
   background: var(--surface);
 }
@@ -2719,25 +2756,13 @@ select:disabled {
  * the palette above. Nothing here scales, springs, or bounces.
  */
 
-/*
- * The workspace brand header: the wordmark sits above the patient list as
- * the app's identity, and "Patients" drops to a small label beneath it so
- * the list still names itself. The add button keeps to the label's line.
- */
-.col-header-brand {
-  align-items: flex-end;
+/* "New" sits at the top of the list as a patient row with a + avatar. */
+.new-patient-item {
+  text-decoration: none;
 }
 
-.brand-block {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.brand-block h3 {
-  font-size: var(--text-xs);
-  letter-spacing: 0.06em;
+.new-patient-item .name {
+  color: var(--text-secondary);
 }
 
 /*
@@ -3355,11 +3380,11 @@ select:disabled {
   opacity: 1;
 }
 /*
- * Desktop columns share a header row. This is a minimum, not a fixed height:
- * enlarged text or wrapped actions can still grow it without clipping.
+ * The note header keeps a minimum, not a fixed height: enlarged text or
+ * wrapped actions can still grow it without clipping. The list columns'
+ * headers are short (see `.col-header`).
  */
 @media (min-width: 901px) {
-  .col-header,
   .note-editor-header {
     min-height: 86px;
   }

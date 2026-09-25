@@ -253,6 +253,7 @@ export function Workspace(): React.JSX.Element {
           onRename={(target, name) => {
             void handleRename(target, name);
           }}
+          onDelete={setPendingDelete}
         />
 
         <NotesColumn
@@ -263,9 +264,6 @@ export function Workspace(): React.JSX.Element {
           onSelect={selectNote}
           onOpenView={openView}
           onRetry={notes.reload}
-          onDeletePatient={() => {
-            if (patient) setPendingDelete(patient);
-          }}
           onBackToPatients={() => {
             setParams({});
           }}

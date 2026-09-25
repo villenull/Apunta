@@ -2,8 +2,8 @@ import type { Note, PatientListItem } from '@apunta/shared';
 import { useNavigate } from 'react-router';
 
 import type { LoadState } from '../hooks/useLoader.js';
-import { firstName, formatNoteDate, notePreview } from '../lib/format.js';
-import { BackIcon, PlusIcon, TrashIcon } from './icons.js';
+import { formatNoteDate, notePreview } from '../lib/format.js';
+import { BackIcon, PlusIcon } from './icons.js';
 
 export interface NotesColumnProps {
   patient: PatientListItem | null;
@@ -14,7 +14,6 @@ export interface NotesColumnProps {
   onSelect: (noteId: string) => void;
   onOpenView: (view: 'plan' | 'prep' | 'brainstorm') => void;
   onRetry: () => void;
-  onDeletePatient: () => void;
   onBackToPatients: () => void;
 }
 
@@ -27,7 +26,6 @@ export function NotesColumn({
   onSelect,
   onOpenView,
   onRetry,
-  onDeletePatient,
   onBackToPatients,
 }: NotesColumnProps): React.JSX.Element {
   const navigate = useNavigate();
@@ -40,20 +38,9 @@ export function NotesColumn({
             <span>Patients</span>
           </button>
           <h3 data-testid="notes-header" tabIndex={-1}>
-            {patient ? `${firstName(patient.name)}’s notes` : 'Notes'}
+            Notes
           </h3>
         </div>
-        {patient && (
-          <button
-            type="button"
-            className="icon-btn"
-            title={`Delete ${patient.name}`}
-            aria-label={`Delete ${patient.name}`}
-            onClick={onDeletePatient}
-          >
-            <TrashIcon className="icon-plus" />
-          </button>
-        )}
       </div>
 
       <div className="col-body" data-testid="note-list">
@@ -120,10 +107,7 @@ export function NotesColumn({
   );
 }
 
-type NoteListProps = Omit<
-  NotesColumnProps,
-  'patient' | 'onDeletePatient' | 'onBackToPatients' | 'view' | 'onOpenView'
-> & {
+type NoteListProps = Omit<NotesColumnProps, 'patient' | 'onBackToPatients' | 'view' | 'onOpenView'> & {
   patient: PatientListItem;
 };
 

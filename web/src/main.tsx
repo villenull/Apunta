@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { App } from './App.js';
 import { applyAnimations, applyTheme } from './lib/appearance.js';
+import { installAutoHideScrollbars } from './lib/scrollbars.js';
 import './styles/tokens.css';
 import './styles/app.css';
 import './styles/motion.css';
@@ -13,6 +14,7 @@ import './styles/choreography.css';
 // settings.
 applyAnimations(undefined);
 applyTheme(undefined);
+installAutoHideScrollbars();
 
 const container = document.getElementById('root');
 if (!container) throw new Error('#root is missing from index.html');

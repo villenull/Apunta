@@ -261,6 +261,45 @@ html {
   scrollbar-gutter: stable;
 }
 
+/*
+ * Scrollbars stay out of sight until something scrolls, then show a thin
+ * thumb that disappears again when scrolling stops, like a phone's (owner,
+ * 2026-09-24). `lib/scrollbars.ts` sets `is-scrolling`. Chrome styles
+ * scrollbars through these pseudo-elements; setting the standard
+ * `scrollbar-color` anywhere would switch them off, so Firefox alone gets
+ * the standard properties below.
+ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.is-scrolling::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-muted) 55%, transparent);
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+
+  .is-scrolling {
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 55%, transparent) transparent;
+  }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
