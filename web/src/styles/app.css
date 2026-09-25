@@ -108,19 +108,19 @@
 }
 
 /*
- * Thirds: patients and notes a third each, the note the rest (owner,
+ * Patients and notes 17% of the page each, the note the rest (owner,
  * 2026-09-24). At home there is no notes column and the welcome screen takes
- * both thirds. The chat floats over the page, so nothing else splits them.
+ * its space too. The chat floats over the page, so nothing else splits them.
  */
 .col-patients {
-  width: 33%;
+  width: 17%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
   background: var(--col-patients-bg);
 }
 
 .col-notes {
-  width: 33%;
+  width: 17%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
   background: var(--col-notes-bg);
