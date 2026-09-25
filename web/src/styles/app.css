@@ -39,11 +39,7 @@
    * percentage columns made the sizing circular and the variation visible.
    */
   width: 100%;
-  /* 87vw leaves half the old margins (owner-proxy, 2026-08-30). */
-  max-width: max(1180px, 87vw);
-  margin: 0 auto;
-  border-left: 0.5px solid var(--border);
-  border-right: 0.5px solid var(--border);
+  /* Edge to edge: no side margins (owner, 2026-09-24). */
   background: var(--surface);
 }
 
@@ -120,18 +116,20 @@
   width: 25%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
-  background: var(--surface-muted);
+  background: var(--col-patients-bg);
 }
 
 .col-notes {
   width: 25%;
   flex-shrink: 0;
   border-right: 0.5px solid var(--border);
+  background: var(--col-notes-bg);
 }
 
 .col-main {
   flex: 1;
   min-width: 0;
+  background: var(--col-main-bg);
 }
 
 .col-header {
@@ -3278,12 +3276,6 @@ select:disabled {
 }
 
 @media (max-width: 900px) {
-  .app-shell {
-    max-width: none;
-    border-left: 0;
-    border-right: 0;
-  }
-
   .app-shell > .col {
     display: none;
     width: 100%;

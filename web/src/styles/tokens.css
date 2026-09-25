@@ -182,6 +182,11 @@
   --shadow-marker-accent: inset 0 -1.5px 0 var(--accent);
   --shadow: var(--shadow-lift);
 
+  /* The three workspace columns, left to right. */
+  --col-patients-bg: var(--surface-muted);
+  --col-notes-bg: var(--surface);
+  --col-main-bg: var(--surface);
+
   --gutter-x: var(--space-6);
   --font-scale: 1;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -206,6 +211,13 @@
   --text-primary: #ece9dd;
   --text-secondary: #b3b0a1;
   --text-muted: #9a9789;
+  /*
+   * Owner's swatches (2026-09-24): patients #111111, the note #151515, and
+   * the notes list the grey halfway between.
+   */
+  --col-patients-bg: #111111;
+  --col-notes-bg: #131313;
+  --col-main-bg: #151515;
   --accent-tint: color-mix(in srgb, var(--accent) 22%, #201f18);
   /*
    * The light-mode ink is a darkened accent, which vanishes on the dark
