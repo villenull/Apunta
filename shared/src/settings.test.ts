@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_ACCENT_COLOR, isAccentColor, SettingKeySchema } from './settings.js';
+import { DEFAULT_ACCENT_COLOR, DEFAULT_THEME, isAccentColor, isTheme, SettingKeySchema } from './settings.js';
 
 /**
  * The accent is the one setting whose value is written into a style
@@ -38,5 +38,20 @@ describe('isAccentColor', () => {
 
   it('is stored under a key the settings store accepts', () => {
     expect(SettingKeySchema.safeParse('accent_color').success).toBe(true);
+  });
+});
+
+describe('isTheme', () => {
+  it('defaults to dark and accepts only the two themes', () => {
+    expect(DEFAULT_THEME).toBe('dark');
+    expect(isTheme('dark')).toBe(true);
+    expect(isTheme('light')).toBe(true);
+    for (const value of ['Dark', 'system', '', null, undefined, 42]) {
+      expect(isTheme(value), String(value)).toBe(false);
+    }
+  });
+
+  it('is stored under a key the settings store accepts', () => {
+    expect(SettingKeySchema.safeParse('theme').success).toBe(true);
   });
 });

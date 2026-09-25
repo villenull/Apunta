@@ -1,5 +1,7 @@
 import type { ChatMessage, Note } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -933,6 +935,28 @@ describe('editor markers', () => {
     expect(screen.getByTestId('publish-button')).toHaveProperty('disabled', false);
   });
 
+  it('keeps the empty-sections notice readable in dark mode', () => {
+    /*
+     * The notice is accent-ink text on an accent tint: ~7.3:1 in light
+     * mode, but the dark theme remixes the tint against the dark surface
+     * while the ink stays darkened, landing at ~1.6:1 — blue-on-blue. So
+     * the notice uses `--tint-ink`: the accent ink in light mode, a
+     * lightened accent in dark mode (~5.2:1). This pins the token contract
+     * rather than pixels — jsdom never resolves `color-mix`, and the web
+     * vitest project stubs CSS imports, so the stylesheets are read here
+     * as source text.
+     */
+    const appCss = readFileSync(join(import.meta.dirname, 'styles', 'app.css'), 'utf8');
+    const tokensCss = readFileSync(join(import.meta.dirname, 'styles', 'tokens.css'), 'utf8');
+    const noticeRule = appCss.match(/\.empty-sections-note\s*\{[^}]*\}/);
+    expect(noticeRule?.[0]).toContain('color: var(--tint-ink)');
+    expect(noticeRule?.[0]).not.toContain('var(--accent-ink)');
+    expect(tokensCss).toMatch(/:root\s*\{[^}]*--tint-ink:\s*var\(--accent-ink\)/);
+    expect(tokensCss).toMatch(
+      /:root\[data-theme='dark'\][^]*?--tint-ink:\s*color-mix\(in srgb,\s*var\(--accent\)/,
+    );
+  });
+
   it('marks the unclear-dictation flag distinctly and never warns about it', async () => {
     const note = makeNote(john.id, {
       format_id: progressNote.id,
@@ -992,25 +1016,25 @@ describe('settings', () => {
   /**
    * The accent is the one colour the practice chooses. It is stored as a
    * setting and painted onto the root element, where `tokens.css` mixes the
-   * hover and tint shades out of it.
+   * hover and tint shades out of it. Every move of the picker saves
+   * immediately — there is no separate Save step.
    */
-  it('saves a chosen accent colour and paints it on the document', async () => {
+  it('saves a chosen accent colour immediately and paints it on the document', async () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
     const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
     expect(picker.value).toBe('#1f6f63');
+    expect(screen.queryByTestId('appearance-saved')).toBeNull();
 
-    // Moving the picker previews immediately; saving is what stores it.
     fireEvent.change(picker, { target: { value: '#8b2f6b' } });
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#8b2f6b');
-    expect(api.state.settings['accent_color']).toBeUndefined();
-
-    fireEvent.click(screen.getByTestId('save-appearance'));
 
     await waitFor(() => {
       expect(api.state.settings['accent_color']).toBe('#8b2f6b');
     });
+    expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
+    document.documentElement.style.removeProperty('--accent');
   });
 
   it('orders the screen Appearance, Note formats, Backup, then Import', async () => {
@@ -1033,44 +1057,76 @@ describe('settings', () => {
     expect(formats.lastElementChild).toBe(add);
   });
 
-  it('previews and saves a text size by scaling one root token', async () => {
+  it('saves a text size immediately by scaling one root token', async () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
     const large = await screen.findByTestId('font-size-large');
     expect(screen.getByTestId('font-size-default').getAttribute('aria-checked')).toBe('true');
+    expect(screen.queryByTestId('appearance-saved')).toBeNull();
     fireEvent.click(large);
     expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.15');
-    expect(api.state.settings['font_size']).toBeUndefined();
-
-    fireEvent.click(screen.getByTestId('save-appearance'));
     await waitFor(() => {
       expect(api.state.settings['font_size']).toBe('large');
     });
+    expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
 
-    // Back to default removes the override rather than writing 1.
+    // Back to default removes the override and saves that too.
     fireEvent.click(screen.getByTestId('font-size-default'));
     expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
-    // Leaving without saving puts the stored size back.
+    await waitFor(() => {
+      expect(api.state.settings['font_size']).toBe('default');
+    });
+    // Every change is saved, so leaving the screen keeps the stored size.
     cleanup();
-    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.15');
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
     document.documentElement.style.removeProperty('--font-scale');
   });
 
-  it('turns animations off app-wide and remembers it', async () => {
+  it('turns animations off app-wide and remembers it immediately', async () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
     const toggle = (await screen.findByTestId('animations-toggle')) as HTMLInputElement;
     expect(toggle.checked).toBe(true);
+    expect(screen.queryByTestId('appearance-saved')).toBeNull();
     fireEvent.click(toggle);
     expect(document.documentElement.classList.contains('no-motion')).toBe(true);
 
-    fireEvent.click(screen.getByTestId('save-appearance'));
     await waitFor(() => {
       expect(api.state.settings['animations']).toBe(false);
     });
+    expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
     document.documentElement.classList.remove('no-motion');
+  });
+
+  it('saves a theme immediately, defaulting to dark', async () => {
+    const api = installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const dark = await screen.findByTestId('theme-dark');
+    expect(dark.getAttribute('aria-checked')).toBe('true');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(screen.queryByTestId('appearance-saved')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('theme-light'));
+    expect(document.documentElement.dataset.theme).toBe('light');
+
+    await waitFor(() => {
+      expect(api.state.settings['theme']).toBe('light');
+    });
+    expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
+    document.documentElement.dataset.theme = 'dark';
+  });
+
+  it('applies a saved light theme at startup', async () => {
+    installFakeApi({ formats: [progressNote], settings: { theme: 'light' } });
+    renderApp('/');
+
+    await waitFor(() => {
+      expect(document.documentElement.dataset.theme).toBe('light');
+    });
+    document.documentElement.dataset.theme = 'dark';
   });
 
   it('applies saved text size and animations at startup', async () => {
@@ -1101,23 +1157,27 @@ describe('settings', () => {
     document.documentElement.classList.remove('no-motion');
   });
 
-  it('puts the original green back, and forgets an unsaved preview', async () => {
+  it('puts the original green back, and keeps a saved colour on leaving', async () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
     const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
     fireEvent.change(picker, { target: { value: '#123456' } });
+    await waitFor(() => {
+      expect(api.state.settings['accent_color']).toBe('#123456');
+    });
     fireEvent.click(screen.getByTestId('reset-accent'));
 
     await waitFor(() => {
       expect(api.state.settings['accent_color']).toBe('#1f6f63');
     });
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#1f6f63');
+    expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
 
-    // Leaving the screen drops a preview nobody saved.
-    fireEvent.change(picker, { target: { value: '#abcdef' } });
+    // Every change is saved, so leaving the screen keeps the stored colour.
     cleanup();
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#1f6f63');
+    document.documentElement.style.removeProperty('--accent');
   });
 });
 

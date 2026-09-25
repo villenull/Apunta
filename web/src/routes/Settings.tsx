@@ -5,9 +5,12 @@ import {
   FONT_SIZE_SETTING,
   FONT_SIZES,
   LLM_PROFILE_SETTING,
+  THEME_SETTING,
+  THEMES,
   type LlmProfile,
   type Settings as SettingsRecord,
   type FontSize,
+  type Theme,
 } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
@@ -17,9 +20,10 @@ import { accentColorOrDefault, applyAccentColor } from '../lib/accent.js';
 import {
   animationsEnabled,
   applyAnimations,
-  applyAppearance,
   applyFontSize,
+  applyTheme,
   fontSizeOrDefault,
+  themeOrDefault,
 } from '../lib/appearance.js';
 import { BackupAdvanced, BackupCard, useBackup } from '../components/BackupCard.js';
 import { useSettingsContext } from '../components/SettingsProvider.js';
@@ -230,9 +234,8 @@ function LlmProfileSettings(): React.JSX.Element | null {
  * Appearance: the accent colour (owner-proxy, 2026-08-30), text size and
  * animations (owner, 2026-09-21).
  *
- * Every control previews as it moves, because a colour or a size described
- * in a form and one on the screen are different things — but a preview is
- * not a choice, so leaving without saving puts the stored look back.
+ * Every control saves as it moves, so what she sees is what is stored —
+ * there is no unsaved preview left to put back on leaving.
  */
 function AppearanceSettings(): React.JSX.Element {
   const settings = useSettingsContext();
@@ -241,13 +244,14 @@ function AppearanceSettings(): React.JSX.Element {
   const [accentColor, setAccentColor] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<FontSize | null>(null);
   const [animations, setAnimations] = useState<boolean | null>(null);
+  const [theme, setTheme] = useState<Theme | null>(null);
   /*
-   * The settings actually stored, which is what an abandoned preview must be
-   * put back to. It is a ref because the unmount cleanup below reads it long
-   * after the render that learned it — and it is written from a dependency
-   * on the loaded *value*, never on every render: seeding it from the
-   * loader's cached data each time meant a save was immediately forgotten,
-   * and leaving the screen reverted the colour she had just chosen.
+   * The settings actually stored, kept current with every save so rapid
+   * successive changes never leave stale state behind. It is a ref because
+   * the saves resolving after a render read it long after that render — and
+   * it is written from the loaded *value* plus each save's own patch, never
+   * from every render: seeding it from the loader's cached data each time
+   * meant a save was immediately forgotten.
    */
   const savedRef = useRef<SettingsRecord | null>(null);
   const stored = settings.state.status === 'ready' ? (settings.state.data as SettingsRecord) : null;
@@ -259,17 +263,10 @@ function AppearanceSettings(): React.JSX.Element {
         [ACCENT_COLOR_SETTING]: stored[ACCENT_COLOR_SETTING] ?? null,
         [FONT_SIZE_SETTING]: stored[FONT_SIZE_SETTING] ?? null,
         [ANIMATIONS_SETTING]: stored[ANIMATIONS_SETTING] ?? null,
+        [THEME_SETTING]: stored[THEME_SETTING] ?? null,
       };
     }
   }, [stored]);
-
-  // A preview outlives this screen otherwise: she picks a colour, navigates
-  // away without saving, and the app keeps wearing a look nothing stored.
-  useEffect(() => {
-    return () => {
-      if (savedRef.current !== null) applyAppearance(savedRef.current);
-    };
-  }, []);
 
   if (settings.state.status === 'loading') return <p className="small state-note">Loading settings…</p>;
   if (settings.state.status === 'error') {
@@ -286,36 +283,34 @@ function AppearanceSettings(): React.JSX.Element {
   const shownAccent = accentColor ?? loaded ?? DEFAULT_ACCENT_COLOR;
   const shownSize = fontSize ?? fontSizeOrDefault(stored?.[FONT_SIZE_SETTING]);
   const shownAnimations = animations ?? animationsEnabled(stored?.[ANIMATIONS_SETTING]);
+  const shownTheme = theme ?? themeOrDefault(stored?.[THEME_SETTING]);
   const save = (patch: SettingsRecord): void => {
     void (async () => {
       try {
         await putSettings(patch);
         savedRef.current = { ...(savedRef.current ?? {}), ...patch };
-        // Everything else saved is already on screen as its preview; only
-        // the reset button saves a colour the picker is not showing.
+        // The reset button saves a colour the picker is not showing, so it
+        // is painted here too; every other caller already previewed.
         if (ACCENT_COLOR_SETTING in patch) applyAccentColor(patch[ACCENT_COLOR_SETTING]);
         setSaved(true);
         setError(null);
       } catch (thrown) {
+        setSaved(false);
         setError(errorMessage(thrown));
       }
     })();
   };
 
   return (
-    <form
-      className="card settings-card"
-      data-testid="appearance-settings"
-      onSubmit={(event) => {
-        event.preventDefault();
-        save({
-          [ACCENT_COLOR_SETTING]: shownAccent,
-          [FONT_SIZE_SETTING]: shownSize,
-          [ANIMATIONS_SETTING]: shownAnimations,
-        });
-      }}
-    >
-      <h2 className="settings-title">Appearance</h2>
+    <section className="card settings-card" data-testid="appearance-settings">
+      <div className="settings-card-header">
+        <h2 className="settings-title">Appearance</h2>
+        {saved && (
+          <span className="settings-saved" data-testid="appearance-saved">
+            Saved
+          </span>
+        )}
+      </div>
 
       <div className="settings-row">
         <label className="settings-label" htmlFor="accent-color">
@@ -328,9 +323,10 @@ function AppearanceSettings(): React.JSX.Element {
             type="color"
             value={shownAccent}
             onChange={(event) => {
-              setSaved(false);
-              setAccentColor(event.target.value);
-              applyAccentColor(event.target.value);
+              const next = event.target.value;
+              setAccentColor(next);
+              applyAccentColor(next);
+              save({ [ACCENT_COLOR_SETTING]: next });
             }}
           />
           <button
@@ -338,7 +334,6 @@ function AppearanceSettings(): React.JSX.Element {
             className="btn small btn-quick"
             data-testid="reset-accent"
             onClick={() => {
-              setSaved(false);
               setAccentColor(DEFAULT_ACCENT_COLOR);
               applyAccentColor(DEFAULT_ACCENT_COLOR);
               save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
@@ -346,6 +341,32 @@ function AppearanceSettings(): React.JSX.Element {
           >
             Reset
           </button>
+        </span>
+      </div>
+
+      <div className="settings-row">
+        <span className="settings-label" id="theme-label">
+          Theme
+        </span>
+        <span className="settings-row-actions size-options" role="radiogroup" aria-labelledby="theme-label">
+          {THEMES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={shownTheme === option}
+              tabIndex={shownTheme === option ? 0 : -1}
+              className={shownTheme === option ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
+              data-testid={`theme-${option}`}
+              onClick={() => {
+                setTheme(option);
+                applyTheme(option);
+                save({ [THEME_SETTING]: option });
+              }}
+            >
+              {THEME_LABELS[option]}
+            </button>
+          ))}
         </span>
       </div>
 
@@ -368,9 +389,9 @@ function AppearanceSettings(): React.JSX.Element {
               className={shownSize === size ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
               data-testid={`font-size-${size}`}
               onClick={() => {
-                setSaved(false);
                 setFontSize(size);
                 applyFontSize(size);
+                save({ [FONT_SIZE_SETTING]: size });
               }}
               onKeyDown={(event) => {
                 const direction =
@@ -388,9 +409,9 @@ function AppearanceSettings(): React.JSX.Element {
                 const nextIndex = (index + direction + FONT_SIZES.length) % FONT_SIZES.length;
                 const next = FONT_SIZES[nextIndex];
                 if (next === undefined) return;
-                setSaved(false);
                 setFontSize(next);
                 applyFontSize(next);
+                save({ [FONT_SIZE_SETTING]: next });
                 requestAnimationFrame(() => {
                   document.querySelector<HTMLButtonElement>(`[data-testid="font-size-${next}"]`)?.focus();
                 });
@@ -414,9 +435,10 @@ function AppearanceSettings(): React.JSX.Element {
           checked={shownAnimations}
           data-testid="animations-toggle"
           onChange={(event) => {
-            setSaved(false);
-            setAnimations(event.target.checked);
-            applyAnimations(event.target.checked);
+            const next = event.target.checked;
+            setAnimations(next);
+            applyAnimations(next);
+            save({ [ANIMATIONS_SETTING]: next });
           }}
         />
       </div>
@@ -426,12 +448,7 @@ function AppearanceSettings(): React.JSX.Element {
           {error}
         </p>
       )}
-      <div className="settings-actions">
-        <button type="submit" className="btn btn-primary small" data-testid="save-appearance">
-          {saved ? 'Saved' : 'Save'}
-        </button>
-      </div>
-    </form>
+    </section>
   );
 }
 
@@ -440,4 +457,9 @@ const FONT_SIZE_LABELS: Readonly<Record<FontSize, string>> = {
   default: 'Default',
   large: 'Large',
   'extra-large': 'Extra large',
+};
+
+const THEME_LABELS: Readonly<Record<Theme, string>> = {
+  light: 'Light',
+  dark: 'Dark',
 };

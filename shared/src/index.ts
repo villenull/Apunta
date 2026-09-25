@@ -232,18 +232,22 @@ export {
   ANIMATIONS_SETTING,
   DEFAULT_ACCENT_COLOR,
   DEFAULT_FONT_SIZE,
+  DEFAULT_THEME,
   FONT_SCALE,
   FONT_SIZE_SETTING,
   FONT_SIZES,
   isAccentColor,
   isFontSize,
+  isTheme,
   LLM_PROFILE_SETTING,
   LlmProfileSchema,
   SettingKeySchema,
   SettingsSchema,
+  THEME_SETTING,
+  THEMES,
   UpdateSettingsRequestSchema,
 } from './settings.js';
-export type { FontSize, LlmProfile, Settings, UpdateSettingsRequest } from './settings.js';
+export type { FontSize, LlmProfile, Settings, Theme, UpdateSettingsRequest } from './settings.js';
 
 export {
   buildRefineSchema,

@@ -208,6 +208,16 @@
   background: var(--accent-tint);
 }
 
+/*
+ * The selected row already wears the accent tint, so its avatar keeps the
+ * same pale circle as every other row instead of tint-on-tint. Neutral
+ * tokens only, so this reads as off-white in light mode and its dark
+ * equivalent under `data-theme="dark"`.
+ */
+.list-item.active .avatar {
+  background: var(--surface-muted);
+}
+
 .list-item .avatar {
   width: 30px;
   height: 30px;
@@ -587,7 +597,7 @@
 
 .spelling-menu-item:hover {
   background: var(--accent-tint);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
 }
 
 .spelling-menu-none {
@@ -638,7 +648,7 @@
 .empty-sections-note {
   flex-shrink: 0;
   font-size: var(--text-sm);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
   background: var(--accent-tint);
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-5);
@@ -748,7 +758,7 @@
 .btn-publish.is-published {
   background: var(--accent-tint);
   border-color: var(--accent);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
 }
 
 /*
@@ -832,7 +842,7 @@
   border: 0.5px solid var(--accent);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -849,7 +859,7 @@
 .ref-chip button {
   background: none;
   border: none;
-  color: var(--accent-ink);
+  color: var(--tint-ink);
   cursor: pointer;
   font-size: var(--text-base);
   line-height: 1;
@@ -1183,6 +1193,16 @@ select:focus {
   flex-shrink: 0;
 }
 
+/*
+ * The mid-teal accent on the dark tint is ~2.3:1, so in dark mode only the
+ * two accent-on-tint glyphs (avatar initials, the setup check) borrow the
+ * lightened tint ink. Light mode keeps `var(--accent)` exactly as before.
+ */
+:root[data-theme='dark'] .avatar,
+:root[data-theme='dark'] .setup-mark.is-ok {
+  color: var(--tint-ink);
+}
+
 .patient-row {
   display: flex;
   align-items: center;
@@ -1232,7 +1252,7 @@ select:focus {
   padding: var(--space-3px) var(--space-9px);
   border-radius: var(--radius-badge);
   background: var(--accent-tint);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
   font-weight: 500;
 }
 
@@ -1433,7 +1453,7 @@ select:disabled {
 
 .note-conflict p {
   margin: 0;
-  color: var(--accent-ink);
+  color: var(--tint-ink);
 }
 
 .note-conflict .row {
@@ -1678,7 +1698,7 @@ select:disabled {
 
 .col-action-btn.active {
   background: var(--accent-tint);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
   border-color: var(--accent);
 }
 
@@ -2239,7 +2259,7 @@ select:disabled {
 .setup-verdict.is-ready {
   background: var(--accent-tint);
   border: 0.5px solid var(--accent);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
 }
 
 /* The backup card in Settings: the same rows, plus the archive list. */
@@ -2837,6 +2857,26 @@ select:disabled {
   margin: 0 0 10px;
 }
 
+/* Card header row: title left, autosave state right. */
+.settings-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.settings-card-header .settings-title {
+  margin: 0;
+}
+
+/* Autosave confirmation: small grey italic, shown only after a save lands. */
+.settings-saved {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
 .settings-subtitle {
   font-size: var(--text-base);
   margin: 0 0 10px;
@@ -2882,7 +2922,7 @@ select:disabled {
 .size-options .btn.is-selected {
   background: var(--accent-tint);
   border-color: var(--accent);
-  color: var(--accent-ink);
+  color: var(--tint-ink);
 }
 
 .settings-profile-options {
@@ -3231,7 +3271,7 @@ select:disabled {
 }
 
 .note-finished-banner {
-  color: var(--accent-ink);
+  color: var(--tint-ink);
   background: var(--accent-tint);
   border-radius: var(--radius);
   padding: var(--space-4) var(--space-5);

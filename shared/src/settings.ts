@@ -71,3 +71,16 @@ export function isFontSize(value: unknown): value is FontSize {
  * reduced motion. Not in the prototype.
  */
 export const ANIMATIONS_SETTING = 'animations';
+
+/**
+ * Colour theme, app-wide. `dark` is the default: an unset or unusable value
+ * falls back to dark, so a fresh install opens dark like the OS dark style.
+ */
+export const THEME_SETTING = 'theme';
+export const THEMES = ['light', 'dark'] as const;
+export type Theme = (typeof THEMES)[number];
+export const DEFAULT_THEME: Theme = 'dark';
+
+export function isTheme(value: unknown): value is Theme {
+  return typeof value === 'string' && (THEMES as readonly string[]).includes(value);
+}
