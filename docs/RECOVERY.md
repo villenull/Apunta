@@ -2,7 +2,20 @@
 
 ## New PC: what to tell your agent
 
-Copy-paste this to a fresh agent on the rebuilt PC:
+Short version — this alone is enough on a fresh clone:
+
+```
+Recreate Apunta: read CLAUDE.md, docs/RECOVERY.md and docs/HANDOFF.md,
+and follow docs/RECOVERY.md end to end.
+```
+
+The agent will ask before any download (model acquisition needs your
+explicit approval per CLAUDE.md hard rule 1); the server and browser tab
+stay offline-only (`127.0.0.1`/`localhost`). Everything else it needs —
+repo, versions, checksums, steps, done criteria — is below and in
+`config/recovery/current-linux.json`.
+
+Long version with pre-authorization, if you want to approve downloads up front:
 
 ```
 Recreate Apunta from https://github.com/villenull/Apunta.git (branch main):
@@ -146,14 +159,17 @@ committed lockfile hash.
 ### 2. Install the local runtimes
 
 Install Ollama 0.34.2 and whisper.cpp 1.9.3-dev for the machine's operating
-system. Keep Ollama bound to `127.0.0.1:11434`; never enable cloud routing,
-telemetry or prompt logging. Put `ollama` and `whisper-cli` on `PATH`.
+system. On this Linux reference machine that is Ollama with AMD ROCm
+(RX 9070 XT, gfx1201) and whisper.cpp with the CPU backend. Keep Ollama
+bound to `127.0.0.1:11434` with `OLLAMA_NO_CLOUD=1`; never enable cloud
+routing, telemetry or prompt logging. Put `ollama` and `whisper-cli` on `PATH`.
 
 Git does not redistribute either executable. Their observed Linux SHA-256
 values identify the exact binaries used here, but a clean reinstall of the
-same named version can differ by distributor, build flags or unavailable
-historical artifacts. A checksum mismatch is a real reproducibility gap to
-resolve, not permission to edit the manifest until it passes.
+same named version can differ by distributor or build flags: a differing
+executable SHA-256 is expected — report it and carry on. A differing Ollama
+model ID or weights blob, or a differing `ggml-tiny.en.bin` checksum, is a
+stop. Never edit the manifest to make a checksum pass.
 
 The reference whisper binary linked the CPU backend. A compatible GPU build
 may work, and Ollama may select AMD GPU, CPU, or a mixed placement, but the
@@ -231,6 +247,25 @@ Then run the repository gate before treating the checkout as ready:
 ```sh
 npm run build:shared && npm run typecheck && npm run lint && npm test && npm run build && npm run e2e
 ```
+
+### 7. Deploy the live instance
+
+Run the live instance from a plain clone `~/apunta-live` via
+`scripts/deploy-live-linux.sh <revision>`: it backs up via
+`POST /api/backup`, fetches and detached-checkouts the revision in
+`~/apunta-live`, runs offline `npm ci` plus build, then restarts
+`127.0.0.1:7717` with a health wait. It refuses while `whisper-cli` is
+transcribing and needs a listening live process, so the very first boot is
+a manual start from `~/apunta-live`. Also run `npm run check:format`
+(`check:format` hangs drafts on the first patient; delete the
+"format check —" drafts afterwards).
+
+Done means the Progress note (Location, Client presentation, Risk review,
+Discussion, Intervention, Out of session actions, Note for next session) is
+the default, its instructions SHA-256 is `23135cae…52347392`
+(byte-identical to `docs/note-instructions/owner-progress-instructions.md`),
+and a typed John Smith note drafts through the real model at
+http://127.0.0.1:7717.
 
 ## Offline and no-download verification
 
