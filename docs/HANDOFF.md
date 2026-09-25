@@ -1,6 +1,6 @@
 # Where Apunta is — the handoff
 
-**Updated 2026-09-24.** Live runs `d4eeacd` with the owner's revised
+**Updated 2026-09-24.** Live runs `8d59fcf` (edge-to-edge workspace, owner's dark column greys) with the owner's revised
 progress instructions (hash `23135cae…`, verified by
 `scripts/recover-current-linux.mjs verify`). The owner is restoring this PC:
 on a new machine, give the agent the prompt at the top of
