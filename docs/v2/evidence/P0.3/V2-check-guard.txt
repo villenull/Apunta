@@ -1,0 +1,1 @@
+Under APUNTA_V2=1, run this through scripts/v2/sandbox.mjs so APUNTA_CHECK_URL points at the sandbox server (never port 7717).

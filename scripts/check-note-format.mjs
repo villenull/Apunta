@@ -25,6 +25,28 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dir = join(root, 'e2e', 'fixtures', 'her-format');
 const BASE = process.env['APUNTA_CHECK_URL'] ?? 'http://127.0.0.1:7717';
 
+function checkPort(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.port === '' ? null : Number(parsed.port);
+  } catch {
+    return null;
+  }
+}
+
+// Under the sandbox wrapper (APUNTA_V2=1) this must run through
+// scripts/v2/sandbox.mjs against a sandbox server: an unset APUNTA_CHECK_URL
+// would fall back to the live port, and 7717 is never a check target.
+if (process.env['APUNTA_V2'] === '1') {
+  const raw = process.env['APUNTA_CHECK_URL'];
+  if (raw === undefined || raw === '' || checkPort(raw) === 7717) {
+    console.error(
+      'Under APUNTA_V2=1, run this through scripts/v2/sandbox.mjs so APUNTA_CHECK_URL points at the sandbox server (never port 7717).',
+    );
+    process.exit(2);
+  }
+}
+
 if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(BASE)) {
   console.error(`Refusing to talk to ${BASE}: this only ever speaks to a local Apunta.`);
   process.exit(2);

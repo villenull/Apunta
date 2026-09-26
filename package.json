@@ -31,6 +31,7 @@
     "check:format": "node scripts/check-note-format.mjs",
     "check:refine": "node scripts/check-refine.mjs",
     "probe:claude": "node scripts/probe-claude-export.mjs",
+    "sandbox:selftest": "node scripts/v2/sandbox.mjs selftest",
     "seed": "npm run build:shared && npm run seed --workspace @apunta/server --",
     "smoke:live": "node scripts/smoke-live.mjs",
     "recover:linux": "node scripts/recover-current-linux.mjs",

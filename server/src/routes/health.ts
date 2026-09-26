@@ -29,12 +29,17 @@ export async function buildHealthResponse(
   config: AppConfig,
   db: Database,
   providers: AiProviders,
-): Promise<HealthResponse> {
+): Promise<HealthResponse & { testRunId?: string }> {
   const [llm, stt, fileVault] = await Promise.all([
     providers.llm.describe(),
     providers.stt.describe(),
     fileVaultStatus(),
   ]);
+  // The sandbox wrapper's ownership check (C-ISO@1 rule 5): when the server
+  // runs inside a sandbox run, it says which one, so the wrapper can refuse
+  // a foreign server answering on its port. The field never appears
+  // otherwise, so production responses are unchanged.
+  const testRunId = process.env['APUNTA_TEST_RUN_ID']?.trim() || undefined;
   return {
     ok: true,
     version: config.version,
@@ -50,6 +55,7 @@ export async function buildHealthResponse(
       model: stt.model,
     },
     fileVault,
+    ...(testRunId === undefined ? {} : { testRunId }),
   };
 }
 
@@ -59,5 +65,7 @@ export function registerHealthRoute(
   db: Database,
   providers: AiProviders,
 ): void {
-  app.get('/api/health', async (): Promise<HealthResponse> => buildHealthResponse(config, db, providers));
+  app.get('/api/health', async (): Promise<HealthResponse & { testRunId?: string }> =>
+    buildHealthResponse(config, db, providers),
+  );
 }

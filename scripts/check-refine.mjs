@@ -14,6 +14,31 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
+const BASE = process.env['APUNTA_CHECK_URL'] ?? 'http://127.0.0.1:7717';
+
+function checkPort(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.port === '' ? null : Number(parsed.port);
+  } catch {
+    return null;
+  }
+}
+
+// Under the sandbox wrapper (APUNTA_V2=1) this must run through
+// scripts/v2/sandbox.mjs against a sandbox server: an unset APUNTA_CHECK_URL
+// would fall back to the live port, and 7717 is never a check target. This
+// guard sits above the built-server imports so it fires even unbuilt.
+if (process.env['APUNTA_V2'] === '1') {
+  const raw = process.env['APUNTA_CHECK_URL'];
+  if (raw === undefined || raw === '' || checkPort(raw) === 7717) {
+    console.error(
+      'Under APUNTA_V2=1, run this through scripts/v2/sandbox.mjs so APUNTA_CHECK_URL points at the sandbox server (never port 7717).',
+    );
+    process.exit(2);
+  }
+}
+
 /**
  * The fact lock's own tokeniser, so `keeps` judges a fact the way the server
  * does: "six and a half" is kept by "six and one-half" or "6.5", because the
@@ -33,8 +58,6 @@ function stillHas(note, text) {
   const present = factTokens(note);
   return facts.every((fact) => present.has(fact));
 }
-const BASE = process.env['APUNTA_CHECK_URL'] ?? 'http://127.0.0.1:7717';
-
 /** `-- --only tone-request shorten-keeps-facts` runs just those scenarios; the default is all of them. */
 const only = new Set(process.argv.slice(2).filter((arg) => arg !== '--only'));
 

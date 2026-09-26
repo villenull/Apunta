@@ -1,0 +1,14 @@
+✔ port 7717 (the live instance) is refused (25.4368ms)
+✔ port 7890 (updater test range) is refused (23.378379ms)
+✔ a port held by a dummy listener is refused (30.109574ms)
+✔ a foreign server answering /api/health is refused (6144.588169ms)
+✔ a run folder symlinked outside /tmp/apunta-v2/ is refused (0.605731ms)
+✔ APUNTA_DATA_DIR equal to the platform default is refused (25.081308ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6283.613278

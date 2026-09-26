@@ -1,0 +1,13 @@
+
+> apunta@0.0.0 sandbox:selftest
+> node scripts/v2/sandbox.mjs selftest
+
+refused: port 7717 — refusing port 7717: the live instance. Start a sandbox server instead.
+refused: port 7890 — refusing port 7890: 7890-7899 are reserved for the updater test server (C-UPD).
+refused: occupied port — refusing port 7880: already in use. Pick a free sandbox port.
+  variant refused: no testRunId — refusing port 7881: ownership check failed (testRunId never matched ours): answered 200 with no testRunId: a foreign server
+  variant refused: wrong testRunId — refusing port 7882: ownership check failed (testRunId never matched ours): wrong testRunId (expected ours, got "somebody-elses-run")
+refused: foreign server answering /api/health — both foreign-server variants refused on testRunId
+refused: run folder symlinked outside — refusing run folder <sandbox>: symlink escapes /tmp/apunta-v2 to outside /tmp/apunta-v2
+refused: data folder equal to the platform default — refusing data folder ~/.local/share/apunta: it equals (or sits inside) the platform default ~/.local/share/apunta. Sandbox runs never touch the live data folder.
+selftest: 6/6 rejection cases refused before any database was opened

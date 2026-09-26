@@ -6,8 +6,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 const repoRoot = resolve(import.meta.dirname, '..');
 
-/** Never touch the real data directory from tests. */
-const dataDir = mkdtempSync(join(tmpdir(), 'apunta-e2e-'));
+/** Never touch the real data directory from tests. Under the sandbox wrapper
+ * (scripts/v2/sandbox.mjs) the run folder arrives in APUNTA_DATA_DIR. */
+const dataDir = process.env['APUNTA_DATA_DIR'] ?? mkdtempSync(join(tmpdir(), 'apunta-e2e-'));
 
 /** Not 7717, so a dev server left running does not collide with the suite. */
 const port = Number(process.env['APUNTA_E2E_PORT'] ?? 7788);
@@ -61,7 +62,9 @@ export default defineConfig({
     command: 'npm run build && node server/dist/index.js',
     cwd: repoRoot,
     url: `${baseURL}/api/health`,
-    reuseExistingServer: !process.env['CI'],
+    // Under the sandbox wrapper (APUNTA_V2=1) never attach to a stray
+    // server: the run owns its port, verified by testRunId (C-ISO@1 rule 8).
+    reuseExistingServer: process.env['APUNTA_V2'] === '1' ? false : !process.env['CI'],
     stdout: 'pipe',
     stderr: 'pipe',
     timeout: 60_000,
@@ -69,6 +72,11 @@ export default defineConfig({
       APUNTA_PORT: String(port),
       APUNTA_FAKE_AI: '1',
       APUNTA_DATA_DIR: dataDir,
+      APUNTA_NO_OPEN: '1',
+      // The server Playwright starts belongs to this sandbox run: carry the
+      // run id so its /api/health answers with the matching testRunId.
+      ...(process.env['APUNTA_TEST_RUN_ID'] ? { APUNTA_TEST_RUN_ID: process.env['APUNTA_TEST_RUN_ID'] } : {}),
+      ...(process.env['APUNTA_V2'] ? { APUNTA_V2: process.env['APUNTA_V2'] } : {}),
     },
   },
 });
