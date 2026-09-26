@@ -7,6 +7,12 @@ import { installEgressGuard } from './egress-guard.js';
 import { openDatabase, type OpenedDatabase } from './db/index.js';
 import { storageBootMessage } from './http/errors.js';
 import { serveBootError } from './boot-error.js';
+import {
+  DATA_FOLDER_IN_USE,
+  DataFolderInUseError,
+  acquireDataFolderLock,
+  type DataFolderLock,
+} from './platform/data-lock.js';
 
 // First thing, before anything can make a request: lock outbound network access
 // down to loopback. See egress-guard.ts.
@@ -16,8 +22,14 @@ async function start(): Promise<void> {
   const config = loadConfig();
   let restored = { applied: false } as { applied: boolean; safetyCopy?: string; removedSidecars?: string[] };
   let opened: OpenedDatabase;
+  let lock: DataFolderLock;
   try {
+    // C-OWN@1 rule 1's order: the folder exists, then it is owned, and only
+    // then does anything touch the database — a restore, a snapshot,
+    // migration or an open. Every one of those would be two processes
+    // rewriting one practice's records.
     ensureDataDir(config.dataDir);
+    lock = acquireDataFolderLock(config.dataDir);
     restored = applyPendingRestore(config.dataDir);
     opened = openDatabase({
       file: config.dbFile,
@@ -25,6 +37,16 @@ async function start(): Promise<void> {
       nativeBinding: config.sqliteBinding,
     });
   } catch (error) {
+    // The one boot failure that is not a storage failure and gets no
+    // boot-error page: another Apunta already owns this folder. Serving a
+    // page here would bind the port and leave with 0, so the shell would be
+    // told the second launch worked while it answered nothing — and the owner
+    // would never learn why. Exit 75 and the message code is the whole of the
+    // contract (P3.3 carries the code to the shell).
+    if (error instanceof DataFolderInUseError) {
+      console.error(`${DATA_FOLDER_IN_USE}: ${error.message}`);
+      process.exit(75);
+    }
     if (restored.applied && restored.safetyCopy !== undefined) {
       try {
         rollbackAppliedRestore(config.dataDir, restored.safetyCopy);
@@ -47,6 +69,11 @@ async function start(): Promise<void> {
   const app = await buildApp({ config, db });
   app.addHook('onClose', () => {
     db.close();
+    // C-OWN@1 rule 5, on the one hook every clean exit already goes through:
+    // `app.close()` on SIGINT/SIGTERM, and any other orderly close. A crash
+    // skips it and leaves the file behind, which is the stale lock rule 3
+    // takes over.
+    lock.release();
   });
 
   /**

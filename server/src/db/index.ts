@@ -55,6 +55,20 @@ export function openDatabase(options: OpenDatabaseOptions): OpenedDatabase {
     db.pragma('journal_size_limit = 6291456');
 
     const migrations = migrate(db, migrationsDir);
+
+    /**
+     * C-OWN@1 rule 4's backstop, and it is deliberately not a lock file:
+     * a process that ignores `apunta.lock` — a v1 server, an older copy of
+     * this one, something run by hand — still cannot write to a database
+     * this process holds. It answers SQLITE_BUSY instead.
+     *
+     * After `migrate`, never before: migrations write, and the exclusive lock
+     * has to be taken once the schema is in place. SQLite takes the lock at
+     * the first read or write after this pragma, so the backstop is fully
+     * effective from the first write the app makes.
+     */
+    db.pragma('locking_mode = EXCLUSIVE');
+
     return { db, migrations };
   } catch (error) {
     db.close();
