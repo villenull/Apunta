@@ -169,7 +169,7 @@ server:
 npm start
 ```
 
-The source path needs Node 22+. Real model setup is macOS-specific:
+The source path needs Node 24.19.0+. Real model setup is macOS-specific:
 
 ```sh
 bash scripts/setup-macos.sh
