@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 
+import { useI18n } from '../lib/i18n.js';
 import { formatTimer } from '../lib/recorder.js';
 import { MicIcon } from './icons.js';
 import { ThinkingDots } from './ThinkingDots.js';
@@ -33,6 +34,7 @@ export function LiveRecording({
   readonly previewNote: string;
   readonly children?: React.ReactNode;
 }): React.JSX.Element {
+  const { t } = useI18n();
   const previewBox = useRef<HTMLDivElement | null>(null);
   const preview = [previewCommitted, previewTentative].filter((part) => part !== '').join(' ');
   // The block follows the words: newest at the bottom, always in view.
@@ -45,11 +47,9 @@ export function LiveRecording({
     <div className="record-ui capture-stage" data-testid="record-panel">
       <div className="record-stage-copy">
         <p className="capture-stage-status record-label" role="status" data-testid="record-stage-status">
-          Recording session
+          {t('capture.recordingSession')}
         </p>
-        <p className="small muted">
-          Speak naturally. You can add typed notes before or while this recording.
-        </p>
+        <p className="small muted">{t('capture.liveHint')}</p>
       </div>
       {/*
         The meter answers "is this hearing me" immediately. It is present only
@@ -71,7 +71,7 @@ export function LiveRecording({
       <div className="record-preview capture-stage-preview" data-testid="record-preview">
         {preview === '' ? (
           <p className="small muted record-preview-waiting">
-            <span>Listening for words…</span> <ThinkingDots ariaLabel="Listening for words" />
+            <span>{t('capture.listening')}</span> <ThinkingDots ariaLabel={t('capture.listening')} />
           </p>
         ) : (
           <>

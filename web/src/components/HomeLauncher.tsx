@@ -2,6 +2,7 @@ import type { PatientListItem } from '@apunta/shared';
 import { useId, useState } from 'react';
 import { useNavigate } from 'react-router';
 
+import { useI18n } from '../lib/i18n.js';
 import { BrandMark } from './BrandMark.js';
 import { PlusIcon } from './icons.js';
 
@@ -20,9 +21,18 @@ const MAX_MATCHES = 8;
  * a chat app's welcome screen (owner, 2026-09-24). Typing narrows the
  * patients live; the last option is always "New", which carries what she
  * typed into the add-patient form.
+ *
+ * Every string here is a catalogue key, the "New" row included. That row used
+ * to be `New: <strong>{query.trim()}</strong>` — a sentence split around an
+ * inline element, the class `check-ui-strings.mjs` deliberately does not
+ * report — so it is one key with the typed name as a `{name}` parameter and
+ * the line renders as a single string. What the `<strong>` bought (a bolder
+ * name inside the row) went with it: no key here is bolded, and
+ * `HomeLauncher.test.tsx` pins the rendered line against `t()`.
  */
 export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.JSX.Element {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const listId = useId();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -72,15 +82,15 @@ export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.J
             the heading and the question stays the heading's whole text. */}
         <BrandMark />
         <h1 className="home-title">
-          <span>Let’s focus on…</span>
+          <span>{t('home.title')}</span>
         </h1>
         <div className="home-search">
           <input
             type="text"
             role="combobox"
             value={query}
-            placeholder="Search patients"
-            aria-label="Find a patient"
+            placeholder={t('home.searchPlaceholder')}
+            aria-label={t('home.searchLabel')}
             aria-expanded={open}
             aria-controls={listId}
             aria-autocomplete="list"
@@ -94,7 +104,7 @@ export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.J
             onKeyDown={onKeyDown}
           />
           {open && (
-            <ul className="home-results" id={listId} role="listbox" aria-label="Patients">
+            <ul className="home-results" id={listId} role="listbox" aria-label={t('home.resultsLabel')}>
               {matches.map((patient, index) => (
                 <li
                   key={patient.id}
@@ -133,9 +143,7 @@ export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.J
                 onClick={createNew}
               >
                 <PlusIcon className="icon icon-sm" />
-                <span>
-                  New: <strong>{query.trim()}</strong>
-                </span>
+                <span>{t('home.newWith', { name: query.trim() })}</span>
               </li>
             </ul>
           )}

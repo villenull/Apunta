@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 
+import { useI18n, type Translate } from '../lib/i18n.js';
 import type { Misspelling } from '../lib/spelling.js';
 import { emptySections, markNoteText } from '../lib/markers.js';
 import { SpellLayer } from './SpellLayer.js';
@@ -56,6 +57,7 @@ export function NoteBody({
 }: NoteBodyProps): React.JSX.Element {
   const segments = useMemo(() => markNoteText(value, sections), [value, sections]);
   const blanks = useMemo(() => emptySections(value, sections), [value, sections]);
+  const { t } = useI18n();
   const backdropCache = useRef<{
     readonly misspellings: readonly Misspelling[];
     readonly segments: readonly { readonly kind: string; readonly text: string }[];
@@ -128,7 +130,7 @@ export function NoteBody({
     <div className="note-editor-body">
       {blanks.length > 0 && (
         <p className="empty-sections-note" data-testid="empty-sections">
-          Nothing recorded in {joinNames(blanks)} — add or leave blank.
+          {t('notes.emptySections', { sections: joinNames(blanks, t) })}
         </p>
       )}
 
@@ -146,7 +148,7 @@ export function NoteBody({
           .join(' ')}
         className={readOnly ? 'note-editable is-published' : 'note-editable'}
         data-testid="note-body"
-        aria-label="Note body"
+        aria-label={t('note.body')}
         readOnly={readOnly}
         onBlur={onBlur}
         onSelect={(event) => {
@@ -158,8 +160,15 @@ export function NoteBody({
   );
 }
 
-/** "Objective", "Objective and Plan", "Objective, Assessment and Plan". */
-function joinNames(names: readonly string[]): string {
+/**
+ * "Objective", "Objective and Plan", "Objective, Assessment and Plan".
+ *
+ * The conjunction is a catalogue key rather than a literal, because it is the
+ * one word in the list a language has to choose (`and` / `y`, `und` / `y`).
+ * The names themselves are the format's own section names and arrive as data,
+ * so they are passed through untouched.
+ */
+function joinNames(names: readonly string[], t: Translate): string {
   if (names.length <= 1) return names[0] ?? '';
-  return `${names.slice(0, -1).join(', ')} and ${String(names.at(-1))}`;
+  return t('common.listLast', { items: names.slice(0, -1).join(', '), last: String(names.at(-1)) });
 }

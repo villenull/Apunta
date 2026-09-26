@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+import { useI18n } from '../lib/i18n.js';
+
 /**
  * A failed request, said out loud (M7 deliverable 5).
  *
@@ -23,6 +25,7 @@ export interface ToastProps {
 const INFO_TIMEOUT_MS = 5000;
 
 export function Toast({ message, kind = 'error', onDismiss }: ToastProps): React.JSX.Element {
+  const { t } = useI18n();
   useEffect(() => {
     if (kind !== 'info') return;
     const timer = setTimeout(onDismiss, INFO_TIMEOUT_MS);
@@ -38,7 +41,7 @@ export function Toast({ message, kind = 'error', onDismiss }: ToastProps): React
       data-testid={kind === 'error' ? 'toast-error' : 'toast-info'}
     >
       <span className="grow">{message}</span>
-      <button type="button" className="toast-dismiss" aria-label="Dismiss" onClick={onDismiss}>
+      <button type="button" className="toast-dismiss" aria-label={t('common.dismiss')} onClick={onDismiss}>
         ×
       </button>
     </div>

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 
+import { useI18n } from '../lib/i18n.js';
 import { Dialog } from './Dialog.js';
 /**
  * A confirmation the keyboard can dismiss (M7 deliverable 5).
@@ -22,6 +23,7 @@ export interface ConfirmDialogProps {
   readonly body: React.ReactNode;
   /** The destructive button's label, e.g. "Delete John Smith". */
   readonly confirmLabel: string;
+  /** The other button; the catalogue's `common.cancel` when a caller says nothing. */
   readonly cancelLabel?: string;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
@@ -30,10 +32,11 @@ export function ConfirmDialog({
   title,
   body,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps): React.JSX.Element {
+  const { t } = useI18n();
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -41,7 +44,7 @@ export function ConfirmDialog({
       <div className="small note-meta modal-body">{body}</div>
       <div className="modal-actions">
         <button type="button" className="btn" ref={cancelRef} onClick={onCancel}>
-          {cancelLabel}
+          {cancelLabel ?? t('common.cancel')}
         </button>
         <button type="button" className="btn btn-danger" data-testid="confirm-accept" onClick={onConfirm}>
           {confirmLabel}

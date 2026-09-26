@@ -7,6 +7,15 @@ import { BackIcon } from './icons.js';
  * The `.topbar` from `prototype/style.css`, in its two forms: a back link
  * (add-patient, capture, settings, onboarding-preview) or the brand mark
  * (onboarding-format).
+ *
+ * `back.label` stays a plain `string` and this file holds no literal of its
+ * own, so there is nothing here for a catalogue to reach. That is deliberate:
+ * retyping the prop to take a `MessageKey` would type every call site, and
+ * every call site is a route screen whose strings are S2.4's. The caller
+ * resolves the label in its own file and hands over a finished string; the only
+ * literal in this component's closure is `BrandWordmark.tsx:34`'s
+ * `aria-label="Apunta"`, which is a keep-as-is token in
+ * `scripts/check-ui-strings.allow.json` and is never translated.
  */
 export interface TopBarProps {
   back?: { to: string; label: string };

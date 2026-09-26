@@ -16,7 +16,16 @@ import { t } from './t.js';
  * typecheck`, which is the card's V4).
  */
 
-/** The nine keys Fixed decision 8 fixes, spelled out so a tenth is a failure. */
+/**
+ * The nine keys Fixed decision 8 fixes, spelled out so a tenth is a failure.
+ *
+ * Since S2.3 grew the catalogue this list no longer says what a catalogue *is*:
+ * it says which nine keys were there before the screens moved onto them, and the
+ * cases below it hold the shape for every key, whenever it was added. Both
+ * readings are wanted — a key that quietly disappeared is as bad as one that
+ * lost its placeholders — so the list stays and the invariant reads the
+ * catalogues rather than it.
+ */
 const SEED: readonly MessageKey[] = [
   'brand.name',
   'notes.title',
@@ -28,6 +37,9 @@ const SEED: readonly MessageKey[] = [
   'brainstorm.empty',
   'errors.language_unavailable',
 ];
+
+/** Every key, in catalogue order — the set the invariants below iterate. */
+const KEYS: readonly MessageKey[] = Object.keys(en) as MessageKey[];
 
 /** The two keys that take a number, and therefore a plural map. */
 const COUNTED: readonly MessageKey[] = ['notes.count', 'backup.stale'];
@@ -89,29 +101,68 @@ afterEach(() => {
 });
 
 describe('the two catalogues', () => {
-  it('holds exactly the nine seed keys in both, and nothing else', () => {
-    expect(Object.keys(en).sort()).toEqual([...SEED].sort());
-    expect(Object.keys(esMX).sort()).toEqual([...SEED].sort());
+  it('still holds the nine seed keys in both, and they are still all there', () => {
+    // The seed list is a "these nine are still here" case, not the shape of a
+    // catalogue: S2.3 added keys on top and this must not be the assertion that
+    // notices. What notices is the next two cases, which read the catalogues.
+    for (const key of SEED) {
+      expect(KEYS, `${key} in en`).toContain(key);
+      expect(Object.keys(esMX), `${key} in es-MX`).toContain(key);
+    }
   });
 
-  it('names the same placeholders in both, per key', () => {
+  it('names the same placeholders in both, for every key either holds', () => {
     // A type cannot see inside a string, so this is the check that a
-    // translation kept the placeholders its English entry names.
-    for (const key of SEED) {
-      expect(placeholders(esMX[key] as Message), `${key} in es-MX`).toEqual(placeholders(en[key] as Message));
+    // translation kept the placeholders its English entry names. It reads both
+    // catalogues rather than a list, so a key added by a later card is covered
+    // the day it is added and a tenth key cannot quietly break the file.
+    for (const key of KEYS) {
+      const english = en[key] as Message;
+      const spanish = (esMX as Record<string, Message | undefined>)[key];
+      expect(spanish, `es-MX has no ${key}`).toBeDefined();
+      expect(placeholders(spanish as Message), `${key} in es-MX`).toEqual(placeholders(english));
     }
     expect(placeholders(en['notes.count'])).toEqual(['count']);
     expect(placeholders(en['brainstorm.empty'])).toEqual(['name']);
   });
 
-  it('answers every plural category its locale can select', () => {
-    // es-MX selects three cardinals on this box (ICU 78.3), so its entries
-    // need three forms. English selects two, and a category an entry omits
-    // falls back to `other` — which is why `en` needs no `many`.
+  it('gives every counted key the plural floor its locale can select', () => {
+    // Whatever a card adds, the floor travels with the catalogue: `Intl` can
+    // select three cardinals in es-MX on this box (ICU 78.3) and two in English,
+    // and a key that declares a `number` is a key whose category is selected
+    // from a `plural` map. `other` is the one form no plural key may leave out,
+    // because a category an entry omits falls back to it.
     const spanish = [...new Intl.PluralRules('es-MX').resolvedOptions().pluralCategories].sort();
     expect(spanish).toEqual(['many', 'one', 'other']);
     const english = [...new Intl.PluralRules('en').resolvedOptions().pluralCategories].sort();
     expect(english).toEqual(['one', 'other']);
+    for (const key of KEYS) {
+      const entry = en[key] as Message;
+      if (entry.plural === undefined) continue;
+      const counted = Object.keys(entry.kind ?? {}).some((name) => entry.kind?.[name] === 'number');
+      expect(counted, `${key} has a plural map with nothing to select on`).toBe(true);
+      for (const category of english) {
+        expect((en[key] as Message).plural?.[category], `en ${key} ${category}`).toBeTypeOf('string');
+      }
+      for (const category of spanish) {
+        expect((esMX[key] as Message).plural?.[category], `es-MX ${key} ${category}`).toBeTypeOf('string');
+      }
+    }
+    // The two keys that take a number today, so a card that moved the floor
+    // rather than adding to it would still be caught by name.
+    for (const key of COUNTED) {
+      expect((en[key] as Message).plural, `en ${key}`).toBeDefined();
+      expect((esMX[key] as Message).plural, `es-MX ${key}`).toBeDefined();
+    }
+  });
+
+  it('answers every plural category the keys Fixed decision 8 named', () => {
+    // Named rather than derived, so this case says which forms the seed keys
+    // were written with; the case above is the one that travels with the
+    // catalogue. Typed as `LDMLPluralRule[]` because that is what indexes a
+    // `Message`'s `plural` map.
+    const spanish: Intl.LDMLPluralRule[] = ['many', 'one', 'other'];
+    const english: Intl.LDMLPluralRule[] = ['one', 'other'];
     for (const key of COUNTED) {
       for (const category of spanish) {
         expect((esMX[key] as Message).plural?.[category], `es-MX ${key} ${category}`).toBeTypeOf('string');
@@ -336,14 +387,16 @@ describe("Fixed decision 7's fallbacks", () => {
 describe('the type-level parity rule', () => {
   it('rejects a key es-MX is missing', () => {
     const { 'notes.title': _omitted, ...withoutNotesTitle } = esMX;
-    // @ts-expect-error — `Record<MessageKey, Message>` demands all nine keys,
-    // so leaving one out is a compile error. An unused `@ts-expect-error` is
-    // itself an error, so this case cannot go vacuous.
+    // @ts-expect-error — `Record<MessageKey, Message>` demands every key, so
+    // leaving one out is a compile error. An unused `@ts-expect-error` is itself
+    // an error, so this case cannot go vacuous.
     const incomplete: Record<MessageKey, Message> = withoutNotesTitle;
     // At runtime the object is simply shorter, which is all the assertion can
-    // see; the type half is the line above.
-    expect(Object.keys(incomplete)).not.toContain('notes.title');
-    expect(Object.keys(incomplete)).toHaveLength(SEED.length - 1);
+    // see; the type half is the line above. The comparison is against the
+    // catalogue rather than a written-out count, so a card that adds a key
+    // afterwards does not turn this line red.
+    expect(Object.keys(incomplete)).toHaveLength(Object.keys(esMX).length - 1);
+    expect(Object.keys(en).length).toBe(Object.keys(esMX).length);
   });
 
   it('rejects a key English does not have', () => {

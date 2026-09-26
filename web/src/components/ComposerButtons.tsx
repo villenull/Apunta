@@ -1,3 +1,4 @@
+import { useI18n } from '../lib/i18n.js';
 import type { Dictation } from '../hooks/useDictation.js';
 import { formatTimer } from '../lib/recorder.js';
 import { MicIcon, SendIcon, StopIcon } from './icons.js';
@@ -9,6 +10,7 @@ import { ThinkingDots } from './ThinkingDots.js';
  * screen's dot, timer and growing words, with "Stop dictating".
  */
 export function DictationPanel({ dictation }: { dictation: Dictation }): React.JSX.Element | null {
+  const { t } = useI18n();
   const { live } = dictation;
   if (live.phase !== 'recording') return null;
   return (
@@ -17,7 +19,7 @@ export function DictationPanel({ dictation }: { dictation: Dictation }): React.J
       seconds={live.seconds}
       previewCommitted={live.committedPreview}
       previewTentative={live.tentativePreview}
-      previewNote="Everything so far, roughly. Your message is written from the finished recording."
+      previewNote={t('dictation.previewNote')}
     >
       <button
         type="button"
@@ -27,7 +29,7 @@ export function DictationPanel({ dictation }: { dictation: Dictation }): React.J
           void dictation.finish();
         }}
       >
-        Stop dictating
+        {t('dictation.stop')}
       </button>
     </LiveRecording>
   );
@@ -59,13 +61,14 @@ export function ComposerButtons({
   onStop,
   testIdPrefix,
 }: ComposerButtonsProps): React.JSX.Element {
+  const { t } = useI18n();
   const { listening, transcribing } = dictation;
   return (
     <>
       <button
         type="button"
         className={listening ? 'btn btn-mic is-recording' : 'btn btn-mic'}
-        aria-label={listening ? 'Stop dictating' : 'Dictate a message'}
+        aria-label={listening ? t('dictation.stop') : t('dictation.mic')}
         aria-pressed={listening}
         data-testid={`${testIdPrefix}-mic`}
         disabled={sending || transcribing}
@@ -81,7 +84,7 @@ export function ComposerButtons({
             </span>
           </>
         ) : transcribing ? (
-          <ThinkingDots ariaLabel="Transcribing" />
+          <ThinkingDots ariaLabel={t('dictation.transcribing')} />
         ) : (
           <MicIcon className="icon icon-sm" />
         )}
@@ -90,7 +93,7 @@ export function ComposerButtons({
         <button
           type="button"
           className="btn btn-primary btn-send"
-          aria-label="Stop"
+          aria-label={t('common.stop')}
           data-testid={`${testIdPrefix}-stop`}
           onClick={onStop}
         >
@@ -103,7 +106,7 @@ export function ComposerButtons({
         <button
           type="button"
           className="btn btn-primary btn-send"
-          aria-label="Send"
+          aria-label={t('common.send')}
           data-testid={`${testIdPrefix}-send`}
           disabled={sending}
           onClick={onSend}

@@ -1,4 +1,4 @@
-import { PREVIEW_FIRST_MS, type ChatNoteUpdatedEvent } from '@apunta/shared';
+import { PREVIEW_FIRST_MS, t, type ChatNoteUpdatedEvent } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -286,6 +286,35 @@ describe('reference quotes', () => {
 });
 
 describe('save-before-chat failures', () => {
+  /**
+   * The one class of string the literal checker cannot see.
+   *
+   * `SAVE_BEFORE_CHAT_ERROR` was a module-level `const` holding the whole
+   * sentence (`RefineColumn.tsx:15`): a literal in a variable declaration is
+   * neither a JSX text node nor one of the four visible attributes, so
+   * `check-ui-strings.mjs` never reported it and `TOTAL 0` said nothing about
+   * it. It is a key now, looked up at the throw site, and this case is what
+   * keeps it one: the text on the screen is read out of the catalogue, so a key
+   * that lost its sentence — or a throw site that went back to a literal —
+   * turns this red where the checker would stay silent.
+   */
+  it('says the catalogue’s own save-failure sentence, not a literal beside it', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
+    renderChat(
+      () => {},
+      () => Promise.reject(new Error('save failed')),
+    );
+
+    const input = screen.getByTestId('chat-input');
+    fireEvent.change(input, { target: { value: 'Make the plan shorter' } });
+    fireEvent.click(screen.getByTestId('chat-send'));
+
+    const shown = await screen.findByTestId('chat-error');
+    expect(shown.textContent).toBe(t('refine.saveBeforeChat', {}, 'en'));
+    // The prototype's sample name is nowhere in it, and neither is a raw key.
+    expect(shown.textContent).not.toContain('{');
+  });
+
   it('keeps the message and sends no request when the latest edit cannot save', async () => {
     const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
     renderChat(

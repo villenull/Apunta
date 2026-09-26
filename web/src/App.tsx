@@ -5,6 +5,7 @@ import { SettingsProvider, useSettingsContext } from './components/SettingsProvi
 import { SpellingProvider } from './components/SpellingProvider.js';
 
 import { applyAppearance } from './lib/appearance.js';
+import { I18nProvider } from './lib/i18n.js';
 
 import { AddPatient } from './routes/AddPatient.js';
 import { Capture } from './routes/Capture.js';
@@ -32,13 +33,22 @@ const Setup = lazy(async () => ({ default: (await import('./routes/Setup.js')).S
  * Every screen in the app. There is no login route — the app opens straight
  * into the workspace (PLAN §1); the prototype's `index.html` sign-in screen is
  * deliberately not ported.
+ *
+ * `I18nProvider` sits inside `SettingsProvider` and above the router, which is
+ * the only place it can be: it reads the `language` setting through the
+ * settings provider's own state, and every screen under it reads its strings
+ * through the `t()` it provides. Mounted with no string of its own here —
+ * `App.tsx`'s own literals (the primary-window blocker, the loading note) are
+ * S2.4's and are not in this card's path list.
  */
 export function App(): React.JSX.Element {
   return (
     <SettingsProvider>
-      <SpellingProvider>
-        <AppRoutes />
-      </SpellingProvider>
+      <I18nProvider>
+        <SpellingProvider>
+          <AppRoutes />
+        </SpellingProvider>
+      </I18nProvider>
     </SettingsProvider>
   );
 }

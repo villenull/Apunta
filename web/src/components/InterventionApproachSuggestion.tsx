@@ -1,3 +1,5 @@
+import { useI18n } from '../lib/i18n.js';
+
 /**
  * A suggested intervention-approach label beside the draft, never in it.
  *
@@ -25,14 +27,15 @@ export function InterventionApproachSuggestion({
   onAdd,
   onDismiss,
 }: InterventionApproachSuggestionProps): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <section
       className="approach-suggestion"
       data-testid="approach-suggestion"
-      aria-label="Suggested intervention approach"
+      aria-label={t('approach.label')}
     >
       <p className="approach-suggestion-title" data-testid="approach-suggestion-title">
-        Possible approach for Intervention
+        {t('approach.possible')}
       </p>
       <p className="small" data-testid="approach-suggestion-approach">
         {approach}
@@ -48,7 +51,7 @@ export function InterventionApproachSuggestion({
           disabled={disabled}
           onClick={onAdd}
         >
-          Add {approach} to Intervention
+          {t('approach.add', { approach })}
         </button>
         <button
           type="button"
@@ -57,7 +60,7 @@ export function InterventionApproachSuggestion({
           disabled={disabled}
           onClick={onDismiss}
         >
-          Not now
+          {t('approach.notNow')}
         </button>
       </div>
     </section>

@@ -1,10 +1,11 @@
-import type { ChatMessage, ChatNoteUpdatedEvent, Note } from '@apunta/shared';
+import type { ChatMessage, ChatNoteUpdatedEvent, MessageKey, Note } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { listChatMessages, sendChatMessage } from '../api/index.js';
 import { useChatStream, type ChatStreamHandlers } from '../hooks/useChatStream.js';
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
+import { useI18n } from '../lib/i18n.js';
 import { ChatComposer } from './ChatComposer.js';
 import { Dialog } from './Dialog.js';
 import { ThinkingDots } from './ThinkingDots.js';
@@ -12,7 +13,19 @@ import { ThinkingDots } from './ThinkingDots.js';
 export { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
 
 const REF_CHIP_CHARS = 70;
-const SAVE_BEFORE_CHAT_ERROR = "Your latest edits haven't saved, so Apunta can't use them yet. Try again.";
+
+/**
+ * The message a pre-send save failure throws, and what the chat shows.
+ *
+ * It used to be a module-level `const` holding the whole sentence, which
+ * `check-ui-strings.mjs` cannot see (a literal in a variable declaration is
+ * neither a JSX text node nor one of the four visible attributes) and which no
+ * locale could ever reach. The name stays — the message is still one thing with
+ * one meaning — and what it holds is now a key, looked up through the provider
+ * at the throw site below. It is a **UI** key, not an `errors.<code>` one: the
+ * server sent no code, and that namespace belongs to the server's own list.
+ */
+const SAVE_BEFORE_CHAT_ERROR: MessageKey = 'refine.saveBeforeChat';
 
 export interface RefineColumnProps {
   note: Note;
@@ -41,6 +54,7 @@ export function RefineColumn({
   hidden = false,
   onClose,
 }: RefineColumnProps): React.JSX.Element {
+  const { t } = useI18n();
   const noteId = note.id;
   const loadThread = useCallback((signal: AbortSignal) => listChatMessages(noteId, signal), [noteId]);
   const thread = useLoader(loadThread);
@@ -117,7 +131,7 @@ export function RefineColumn({
         const quote = pendingQuoteRef.current;
         if (quote !== null) onRestoreRefQuote?.(quote);
         pendingQuoteRef.current = null;
-        throw new Error(SAVE_BEFORE_CHAT_ERROR);
+        throw new Error(t(SAVE_BEFORE_CHAT_ERROR));
       }
     },
     onStarted: () => {
@@ -155,7 +169,7 @@ export function RefineColumn({
 
   return (
     <Dialog
-      title="Refine note"
+      title={t('refine.title')}
       onClose={closePanel}
       variant="sheet"
       modal={false}
@@ -167,13 +181,13 @@ export function RefineColumn({
     >
       <div className="chat-header row between">
         <h2 className="chat-header-title" id="refine-note-title">
-          Refine note
+          {t('refine.title')}
         </h2>
         {onClose !== undefined && (
           <button
             type="button"
             className="btn small btn-compact-icon"
-            aria-label="Close Refine note"
+            aria-label={t('refine.closeLabel')}
             data-testid="chat-close"
             onClick={() => {
               dictation.cancel();
@@ -186,19 +200,17 @@ export function RefineColumn({
       </div>
 
       <div className="chat-thread" ref={threadRef} data-testid="chat-thread">
-        {thread.state.status === 'loading' && <p className="state-note">Loading the conversation…</p>}
+        {thread.state.status === 'loading' && <p className="state-note">{t('refine.loadingConversation')}</p>}
         {thread.state.status === 'error' && (
           <p className="form-error" role="alert">
             {thread.state.message}{' '}
             <button type="button" className="btn small btn-quick" onClick={reloadThread}>
-              Try again
+              {t('common.tryAgain')}
             </button>
           </p>
         )}
         {thread.state.status === 'ready' && empty && (
-          <p className="small chat-placeholder">
-            Ask a question about this note, or give feedback to refine it.
-          </p>
+          <p className="small chat-placeholder">{t('refine.empty')}</p>
         )}
         {messages.map((message) => (
           <Bubble key={message.id} message={message} announce={message.id === lastAssistant?.id} />
@@ -208,7 +220,7 @@ export function RefineColumn({
             <div className="chat-bubble">
               {chat.streaming === '' ? (
                 <span className="chat-thinking">
-                  <ThinkingDots ariaLabel={chat.status ?? 'Thinking'} />
+                  <ThinkingDots ariaLabel={chat.status ?? t('common.thinking')} />
                 </span>
               ) : (
                 chat.streaming
@@ -225,11 +237,15 @@ export function RefineColumn({
           <p className={`chat-outcome is-${outcome.kind}`} role="status" data-testid="refine-outcome">
             <strong>
               {outcome.kind === 'applied'
-                ? 'Changes applied'
+                ? t('refine.outcomeApplied')
                 : outcome.kind === 'partial'
-                  ? 'Some changes applied'
-                  : 'No changes applied'}
+                  ? t('refine.outcomePartial')
+                  : t('refine.outcomeNone')}
             </strong>
+            {/* The ` — ` before the server's own reason is left exactly as it is:
+                the reason is server text S2.5 keys, and a translated joiner
+                around an untranslated sentence would only read worse. Reported
+                to S2.5 rather than half-translated here. */}
             {outcome.reason === null ? null : ` — ${outcome.reason}`}
           </p>
         )}
@@ -244,7 +260,7 @@ export function RefineColumn({
       {refQuote !== null && (
         <div className="ref-chip" data-testid="ref-chip">
           <span>“{truncate(refQuote)}”</span>
-          <button type="button" aria-label="Clear highlighted excerpt" onClick={onClearRefQuote}>
+          <button type="button" aria-label={t('refine.clearQuoteLabel')} onClick={onClearRefQuote}>
             ×
           </button>
         </div>
@@ -263,8 +279,8 @@ export function RefineColumn({
         onStop={chat.stop}
         dictation={dictation}
         sending={chat.sending}
-        placeholder="Ask a question or give feedback..."
-        ariaLabel="Ask a question or give feedback"
+        placeholder={t('refine.inputPlaceholder')}
+        ariaLabel={t('refine.inputLabel')}
         testId="chat-input"
         allowWords={allowWords}
       />

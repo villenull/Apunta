@@ -19,7 +19,8 @@ import {
   updateNote,
 } from '../api/index.js';
 import { copyText } from '../lib/clipboard.js';
-import { formatEditedDate, formatNoteDate, wasEdited } from '../lib/format.js';
+import { wasEdited } from '../lib/format.js';
+import { useI18n } from '../lib/i18n.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
 import { ChatIcon, CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
 import { InterventionApproachSuggestion } from './InterventionApproachSuggestion.js';
@@ -49,6 +50,29 @@ function chatStorage(): Storage | null {
   }
 }
 
+/**
+ * Whether an ISO timestamp fell on the same local day as `now` — the test
+ * `format.ts`'s own `sameDay` makes, copied here rather than imported.
+ *
+ * `web/src/lib/format.ts` is read-only for this card (Fixed decision 4): it
+ * keeps the English the app has always shown, and it is the oracle every
+ * catalogue entry is pinned against. The same-day test belongs to the screen
+ * that picks the key, and it is three comparisons of two values the component
+ * already holds — so it is here, and not one line of the oracle changes.
+ *
+ * A timestamp that is not a date is not today: it falls to the `date`-kinded
+ * key, which renders the value as it stands, exactly as `formatNoteDate` did.
+ */
+function sameDay(iso: string, now: Date): boolean {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return false;
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
 export interface NoteViewProps {
   patient: PatientListItem;
   note: Note;
@@ -76,6 +100,7 @@ export function NoteView({
 }: NoteViewProps): React.JSX.Element {
   type SaveState = 'saved' | 'saving' | 'error' | 'conflict';
 
+  const { t } = useI18n();
   const [text, setText] = useState(note.content);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -292,14 +317,14 @@ export function NoteView({
       }
       return pending.then(() => {
         if (staleRef.current || saveStateRef.current === 'conflict') {
-          throw new Error('Unresolved conflict');
+          throw new Error(t('note.unsavedConflict'));
         }
         if (saveStateRef.current === 'error') {
-          throw new Error('Unsaved changes could not be saved');
+          throw new Error(t('note.unsavedError'));
         }
       });
     },
-    [cancelPending, enqueue],
+    [cancelPending, enqueue, t],
   );
 
   // Switching notes and closing a tab must not strand the debounced edit.
@@ -563,11 +588,32 @@ export function NoteView({
 
   const published = note.status === 'published';
 
-  /** "Discussion", "Discussion and Plan", "Discussion, Risk review and Plan". */
+  /**
+   * "Discussion", "Discussion and Plan", "Discussion, Risk review and Plan".
+   *
+   * The section names are the format's own, so they are passed through as
+   * data; the conjunction is a catalogue key, because it is the one word in
+   * the list a language has to choose.
+   */
   function joinSectionNames(names: readonly string[]): string {
     if (names.length <= 1) return names[0] ?? '';
-    return `${names.slice(0, -1).join(', ')} and ${String(names.at(-1))}`;
+    return t('common.listLast', { items: names.slice(0, -1).join(', '), last: String(names.at(-1)) });
   }
+
+  /*
+   * The note header's two date sentences.
+   *
+   * `formatNoteDate` / `formatEditedDate` return whole English sentences —
+   * "Today", "today", or `en-US`'s "Aug 8, 2026" — so the component no longer
+   * asks them for a string at all. It asks the catalogue for one of four keys
+   * and hands `t()` the ISO timestamp, which `t()` formats in the active locale
+   * (Fixed decision 4). `web/src/lib/format.ts` stays the English oracle and
+   * keeps its two helpers: they are what S2.2 pinned `notes.today` and this
+   * card's `note.editedToday` to, and S2.4's own screens still call them.
+   */
+  const now = new Date();
+  const createdToday = sameDay(note.created_at, now);
+  const updatedToday = sameDay(note.updated_at, now);
 
   return (
     <div className={chatOpen ? 'note-chat-split chat-docked' : 'note-chat-split'}>
@@ -575,9 +621,13 @@ export function NoteView({
         <div className="note-editor-header row between">
           <div>
             <p className="small note-meta" data-testid="note-meta">
-              {patient.name} · created {formatNoteDate(note.created_at)}
+              {createdToday
+                ? t('note.metaToday', { name: patient.name, today: t('notes.today') })
+                : t('note.meta', { name: patient.name, date: note.created_at })}
               {wasEdited(note.created_at, note.updated_at)
-                ? ` · edited ${formatEditedDate(note.updated_at)}`
+                ? updatedToday
+                  ? t('note.editedMetaToday', { today: t('note.editedToday') })
+                  : t('note.editedMeta', { date: note.updated_at })
                 : ''}
             </p>
             <h2 data-testid="note-title">{note.title}</h2>
@@ -585,28 +635,28 @@ export function NoteView({
           <div className="row gap-8 note-actions">
             <span className={`note-save-status is-${saveState}`} data-testid="note-save-status">
               {saveState === 'saving'
-                ? 'Saving…'
+                ? t('note.saveSaving')
                 : saveState === 'error'
-                  ? 'Couldn’t save'
+                  ? t('note.saveError')
                   : saveState === 'conflict'
-                    ? 'Changed in another window'
-                    : 'Saved'}
+                    ? t('note.saveConflict')
+                    : t('note.saveSaved')}
             </span>
             {refining && (
               <span className="note-updating-hint" data-testid="note-updating-hint">
-                <ThinkingDots label="Updating the note…" />
+                <ThinkingDots label={t('note.updating')} />
               </span>
             )}
             {!refining && refined && changedSections.length > 0 && (
               <span className="note-updated-hint" data-testid="note-updated-hint">
-                Updated {joinSectionNames(changedSections)}
+                {t('note.updatedSections', { sections: joinSectionNames(changedSections) })}
               </span>
             )}
             <button
               type="button"
               className="btn small btn-compact-icon"
-              title="Delete note"
-              aria-label="Delete note"
+              title={t('note.deleteLabel')}
+              aria-label={t('note.deleteLabel')}
               disabled={busy}
               onClick={() => {
                 setConfirmingDelete(true);
@@ -623,7 +673,7 @@ export function NoteView({
               }}
             >
               {copied ? <CheckIcon className="icon icon-xs" /> : <CopyIcon className="icon icon-xs" />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? t('note.copied') : t('note.copy')}
             </button>
             <button
               type="button"
@@ -639,20 +689,22 @@ export function NoteView({
               }}
             >
               {published ? <CheckIcon className="icon icon-xs" /> : <PublishIcon className="icon icon-xs" />}
-              {published ? 'Edit again' : 'Finish & copy'}
+              {published ? t('note.editAgain') : t('note.finishAndCopy')}
             </button>
           </div>
         </div>
 
         {stale !== null && (
           <div className="note-conflict" role="alert" data-testid="note-conflict">
-            <p>This note was changed in another window. Your edits are still here.</p>
+            <p>{t('note.conflictHelp')}</p>
             <div className="row gap-8">
               <button type="button" className="btn small" disabled={busy} onClick={() => void keepMine()}>
-                {stale.theirs.status === 'published' ? 'Unlock and apply my edit' : 'Keep mine'}
+                {stale.theirs.status === 'published'
+                  ? t('note.conflictUnlockApply')
+                  : t('note.conflictKeepMine')}
               </button>
               <button type="button" className="btn small" disabled={busy} onClick={takeTheirs}>
-                Take theirs
+                {t('note.conflictTakeTheirs')}
               </button>
             </div>
           </div>
@@ -706,7 +758,7 @@ export function NoteView({
         ref={fabRef}
         type="button"
         className="chat-fab"
-        aria-label={chatOpen ? 'Close Refine note' : 'Refine note'}
+        aria-label={chatOpen ? t('refine.closeLabel') : t('refine.title')}
         aria-expanded={chatOpen}
         data-testid="chat-fab"
         onClick={() => {
@@ -717,8 +769,8 @@ export function NoteView({
         }}
       >
         {/* While a refine runs behind a closed panel, the launcher thinks. */}
-        {refining ? <ThinkingDots ariaLabel="Updating the note" /> : <ChatIcon className="icon" />}
-        <span className="chat-fab-label">Refine note</span>
+        {refining ? <ThinkingDots ariaLabel={t('note.updatingShort')} /> : <ChatIcon className="icon" />}
+        <span className="chat-fab-label">{t('refine.title')}</span>
       </button>
 
       <RefineColumn
@@ -742,15 +794,12 @@ export function NoteView({
 
       {confirmingDelete && (
         <ConfirmDialog
-          title="Delete this note?"
-          confirmLabel="Delete note"
+          title={t('note.deleteTitle')}
+          confirmLabel={t('note.deleteLabel')}
           body={
             <>
-              <p>The note, its transcript and the refine conversation all go. It cannot be undone here.</p>
-              <p>
-                If you have already pasted this note into your records system, that copy is untouched — and so
-                is any backup written before now.
-              </p>
+              <p>{t('note.deleteBodyFirst')}</p>
+              <p>{t('note.deleteBodySecond')}</p>
             </>
           }
           onCancel={() => {

@@ -1,3 +1,4 @@
+import { t } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -71,6 +72,44 @@ function typeSearch(value: string): void {
 
 afterEach(() => {
   cleanup();
+});
+
+describe('the "New" row of the results list', () => {
+  /**
+   * The second class of string the literal checker cannot see.
+   *
+   * The row was `New: <strong>{query.trim()}</strong>` (`HomeLauncher.tsx:137`):
+   * JSX splits that sentence in two around the inline element, and the checker
+   * deliberately reports neither half (`check-ui-strings.mjs:29-36`), so
+   * `TOTAL 0` is compatible with the whole English row still being hardcoded —
+   * which is exactly what it would have been. So the line is read out of the
+   * catalogue here: the row is the catalogue's English with the typed name in
+   * it, and a component that went back to writing "New: " itself — or a
+   * translation of the row that dropped the name — turns this red.
+   */
+  it('is the catalogue’s sentence with the typed name in it', () => {
+    renderHome();
+
+    typeSearch('Jo');
+
+    const row = screen.getByTestId('home-new');
+    expect(row.textContent).toBe(t('home.newWith', { name: 'Jo' }, 'en'));
+    // What she typed is carried into the add-patient form, so it must survive
+    // the whole line rather than being dropped beside a translated prefix.
+    expect(row.textContent).toContain('Jo');
+    expect(row.textContent).not.toContain('{');
+  });
+
+  /** An empty box says the same thing, with nothing carried into the name. */
+  it('keeps the same sentence when she has typed nothing yet', () => {
+    renderHome();
+
+    typeSearch('');
+
+    // No listbox opens on an empty box, so the row is rendered directly: this
+    // is the sentence the key carries, read from the catalogue either way.
+    expect(t('home.newWith', { name: '' }, 'en')).toBe('New: ');
+  });
 });
 
 describe('the A mark above the home greeting', () => {
