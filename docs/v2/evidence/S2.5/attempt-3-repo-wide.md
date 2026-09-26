@@ -58,3 +58,17 @@ commit, so nothing had to be re-run and nothing in `web/` is implicated. Had any
 of them been red in a file this card does not own, the instruction was to
 re-run once and report it as a collision rather than fix it; that situation did
 not arise.
+
+## Re-run at the final commit
+
+```
+2026-09-26T21:08:26Z  npm run lint && npm run typecheck   → exit 0 (TOTAL 0)
+2026-09-26T21:08:41Z  npm test                             → exit 0
+ Test Files  143 passed (143)
+      Tests  1841 passed (1841)
+```
+
+Two files in the working tree were modified by the other writer while these
+rows ran — `web/src/styles/app.css` and `web/src/styles/tokens.css`. Both are
+unstaged, both are outside this card, neither was read, staged or committed
+here, and no row was red in either.
