@@ -1,0 +1,23 @@
+{
+  "card": "S2.5",
+  "planVersion": 2,
+  "contracts": [
+    "C-ISO@1",
+    "C-LANG@1"
+  ],
+  "baseCommit": "7bf379a",
+  "attempt": 1,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "IR round 4 all ten CLEAR at 7bf379a (docs/v2/state/reviews/S2.5-ir.md); implementation dispatch rebuilt at base 7bf379a, port 7832; implementer dispatched",
+  "nextAllowedAction": "implement",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN",
+    "V4": "NOT RUN"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T18:52:00Z"
+}

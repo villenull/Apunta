@@ -74,3 +74,38 @@ One entry per coordinator step, newest last:
 - Ollama installed + enabled (AM-020); qwen3.5:4b-q4_K_M on GPU; P0.4 English provider baseline recorded (fabrication 20%/0%, safety 85%/100%).
 - P1: shared settings mutation (P1.1), theme-radio coverage (P1.2 rewritten coverage-only after AM-028 shipped it), request guard (P1.3), effective-model policy (P1.4, 2 attempts), licence/docs (P1.5, +AM-034/035). P1.R all PASS.
 - Next: P2 brand (P2.1/P2.2 likely mostly shipped by AM-028 -> reconcile then verify), then S2 language, P3 shell, S3/S4/S5 Spanish, P4-P6, P7b, Q1.
+
+## Recovery log (2026-09-26, 14:00Z → 18:55Z, coordinator)
+
+The block above ended at 08:25Z. The session that followed it ran a parallel
+P3/P4/P5 wave and then died of provider errors ("Insufficient account funds",
+HTTP 402, then "Model not found: opencode-go/space-bunny-free") at ~16:54Z
+without recording anything. This block reconstructs that window from the commit
+record, the returns and the review files. Git commit times are CST (UTC-6);
+the timestamps below are true UTC, as the rest of this log is.
+
+### Parallel wave: S2.3, S2.4 (language) · P3.1, P3.2, P4.1, P4.2, P5.1 (shell/paths/backup)
+
+- 2026-09-26T14:00Z | TOOL | AM-037 applied | `build-dispatch.mjs` substituted every literal `<p>`, corrupting S2.3's V5 probe cell; now substitutes only `--port <p>` (e9b096b)
+- 2026-09-26T14:35Z | S2.3 | implement a1 | SUBMITTED (316d816); S2.3 APPROVED 14:41Z (71b4ba2)
+- 2026-09-26T14:52Z | S2.4 | IR r1 DEFECT → card-text repair (0fadc54), r2 (1fe2438) | IR CLEAR 15:06Z (dac687b)
+- 2026-09-26T15:30Z | P5.1 · 15:45Z P4.2 · 15:45Z P3.1 · 15:47Z P4.1 | IR r1 each DEFECT → card-text repair under AM-024 (32c42e1, b9287a2, 1f7600e, 368fbe9) | all four CLEAR by 15:59Z
+- 2026-09-26T15:32Z | S4a.1 | AM-038 (owner-approved) pinned `noise_scale 0`/`noise_w 0` + `OMP_NUM_THREADS=1` (810dbb4) | attempt 2 committed 5ccb9eb; V1 then passed 295/295 byte-identical; **card APPROVED 16:37Z** (b1fd1dc) — resolves the BLOCKED entry in BLOCKED.md
+- 2026-09-26T16:00Z | S2.4 | impl a2 (aaebc4d) | review a2 found V1/V4 FAIL purely from a coordinator staging omission; **AM-040** committed the missing allowlist; card APPROVED 16:12Z (589294c)
+- 2026-09-26T16:04Z | P4.2 | impl a1 (3e2e4e7) | **AM-041** committed the left-untracked `platform-paths.test.ts`; APPROVED 16:29Z (26b4350)
+- 2026-09-26T16:11Z | P5.1 | impl a1 (e9cfffa) | APPROVED 16:19Z (1610d5c)
+- 2026-09-26T16:10Z | P3.2 | IR r1 DEFECT → card-text repair (0a00898) | IR CLEAR 16:19Z (dbe3579); impl a1 (48e8778); impl review all PASS; **APPROVED 16:43Z** (465499e)
+- 2026-09-26T15:54Z · 15:58Z | P4.1 | IR r2 (0d3ce0f) and r3 note (ba63695) | **card BLOCKED** (194d0b8): every pinned A07 artifact answers `302` with a **query string** in `Location`, which ACQUISITION rule 1 refuses. Owner/plan-editor decision filed in OWNER-ACTIONS.md line 9. Untracked `scripts/v2/probe-redirects.mjs` is P4.1's probe and belongs to the blocked card — deliberately not committed
+- 2026-09-26T15:45Z | (coordinator) | 8057679 | recorded the parallel P3/P4/P5 dispatch wave and filed the owner `cmake` action (OWNER-ACTIONS.md line 8) after P3.1's IR confirmed `cmake` absent
+
+### S2.5 (last card before the chain needs cmake)
+
+- 2026-09-26T16:26Z | S2.5 | IR r1 DEFECT → repair (b9b651b) | 16:42Z r2 DEFECT → repair (7e1e4b6) | 16:48Z r3 repair (7bf379a)
+- 2026-09-26T16:53Z | S2.5 | **IR r4 all ten CLEAR** at base `7bf379a` (`docs/v2/state/reviews/S2.5-ir.md`). Note 2: the implementation dispatch was still the stale `b9b651b` artifact and had to be regenerated. Attempt budget untouched (no implementation run yet)
+
+### Handover to the next coordinator (18:52Z)
+
+- Cards APPROVED since the overnight digest: **S2.3, S2.4, S4a.1, P3.2, P4.2, P5.1**. `P4.1` BLOCKED (owner). `P3.1` IR CLEAR but its stop condition is live: `cmake` is absent, so the whisper build cannot run.
+- Ready to run, in DEPENDENCIES order: **S2.5** (IR clear), **P5.2** (deps P5.1 + P3.2 both APPROVED, IR not yet run). Nothing else has all dependencies APPROVED.
+- The `-ir.md` review files for P1.1–P1.5, P2.1, P2.2, P3.1, S2.1, S2.2, S2.3 and S2.5, and the `P3.1-ir.md`/`P3.2*.md`/`S2.5*.md`/`P5.2-ir.md` dispatch files, are **untracked**. Precedent is mixed (S2.3-ir.md and S2.4-ir.md are tracked). They are regenerated artifacts, not sources of truth; `docs/v2/cards/*.md` is.
+- `docs/v2/state/dispatch/P3.1-ir.md`, `P4.2.md` and `P5.1.md` are tracked and carry uncommitted modifications from the rebuilds that preceded those cards' runs.
