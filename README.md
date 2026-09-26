@@ -188,7 +188,7 @@ user action.
 
 ## Development status
 
-All planned work packets M0–M12 are built, including local drafting,
+All planned work packets M0–M13 are built, including local drafting,
 transcription, formats, refine chat, backups, installer logic and Claude
 conversation import. The remaining release gate is evidence on a real Mac:
 the setup scripts, packaged app, menu-bar shell, FileVault checks, backup

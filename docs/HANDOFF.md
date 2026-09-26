@@ -465,6 +465,23 @@ these real-model failures. No candidate is clinically cleared.
 Grouped by what each item waits on.
 **Explicitly removed from the active backlog (owner decision 2026-09-22):**
 
+- Complex-medical-vocabulary acquisition, and a Settings UI for managing
+  dictionary words. The existing `stt_vocabulary` and `spelling_words` settings,
+  the inline spell-check add behaviour, the clinical safety checks and the
+  historical measurements all stay.
+- A/B experiments and optimization.
+- The Tailscale invite and remote-testing setup.
+- The Quick/Thorough model switch. No Thorough default ships: `qwen3.5:4b-q4_K_M`
+  is retained as the sole/default Quick path with no model control shown, to be
+  revisited only after prompt re-tuning and a new fabrication/safety gate.
+- The wider local-model candidate set. Model comparison is limited to exactly
+  four authorized LLM arms (4B control, Qwen 2B, Bonsai 8B, Bonsai 4B);
+  `qwen3.5:9b`, `qwen3:8b` and `qwen3:14b` were rejected and no candidate or
+  gate is presumed passed.
+- Mac acceptance work, paused for the coming months. The Linux PC remains the
+  machine running the local AI server; resume the Mac-only checklist only when
+  the owner reopens that work.
+
 ### Recently completed
 
 - **Halaxy PDF importer (M13) is built.** HalaxyServer and HalaxyWeb implement

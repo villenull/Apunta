@@ -139,4 +139,32 @@ describe('the writing models', () => {
     expect(unknown.licence.verified).toBe(false);
     expect(unknown.approxBytes).toBeGreaterThan(0);
   });
+
+  /**
+   * The two writing-model licence records, pinned field by field.
+   *
+   * The rule these enforce: `verified: true` is only ever admissible together
+   * with a read of that tag's own licence text, and the name must be whatever
+   * that read said — never a remembered identifier, never the publisher's
+   * reputation. Both of these records are read in
+   * `docs/v2/evidence/P1.5/licence-evidence.md`: on 2026-09-26 the two library
+   * pages named in each `url` were fetched (HTTP 200) and neither states a
+   * licence at all, so `verified` stays `false` on both, and the names are the
+   * publisher-neutral ones the window already showed. Whichever way a later
+   * card settles these — a real `ollama show --license` blob, or the
+   * publisher's own terms — this assertion is the tripwire that says the record
+   * moved on purpose and on a read.
+   */
+  it('pins the licence record of each writing model whose terms were read', () => {
+    expect(WRITING_MODELS['gemma4:12b-it-qat'].licence).toEqual({
+      name: 'Gemma Terms of Use',
+      url: 'https://ollama.com/library/gemma4',
+      verified: false,
+    });
+    expect(WRITING_MODELS['qwen3.6:35b-a3b'].licence).toEqual({
+      name: 'Apache-2.0',
+      url: 'https://ollama.com/library/qwen3.6',
+      verified: false,
+    });
+  });
 });
