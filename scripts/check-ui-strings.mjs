@@ -115,28 +115,25 @@ function decode(text) {
     .replaceAll(/&#(\d+);/g, (_match, code) => String.fromCodePoint(Number(code)));
 }
 
-/**
- * Whether a JSX text node is one piece of a sentence rather than a string.
+/*
+ * There is deliberately no exemption here any more (2026-09-26, AM-047).
  *
- * It is, when JSX split the sentence here: an interpolation or an inline
- * element sits immediately beside it inside the same element. That is the
- * shape of every §3.6 fragment — `days.` beside `{String(BACKUP_STALE_DAYS)}`,
- * `yet.` beside `{patient.name}`, `A` and `, or a` beside two `<code>`
- * elements — and it is decided from the tree rather than from a glossary, so
- * the check needs nothing but the source.
+ * This file used to skip any JSX text node with an interpolation or an inline
+ * element beside it, on the reasoning that such a node is one fragment of a
+ * sentence the card had already catalogued rather than a string in its own
+ * right. That exemption was a hole, and a wide one: it is satisfied by any
+ * sibling element, so *every* row-menu word qualified. Five user-visible
+ * English strings shipped through it untranslated for the whole of S2.1-S2.5 —
+ * `Pin`, `Rename`, `Restore`, `Delete` and `Archive` in `PatientMenu.tsx`, plus
+ * the trailing `has it.` in `Setup.tsx`, whose only neighbour was a `<Link>`.
+ * All five now read from the catalogues and the exemption is gone rather than
+ * narrowed, because a narrowed exemption is the same hole with a length limit.
+ *
+ * The escape a fragment actually needs is two keys. `Setup.tsx:122` is
+ * `t('setup.backingUpLead')`, a `<Link>`, then `t('setup.backingUpTail')` —
+ * a slot cannot carry the link, because `MessageParams` admits only
+ * `string | number` and `t()` returns `string`.
  */
-function isSplitSentence(node) {
-  const parent = node.parent;
-  if (parent === undefined || (!ts.isJsxElement(parent) && !ts.isJsxFragment(parent))) return false;
-  const children = parent.children;
-  const index = children.indexOf(node);
-  if (index < 0) return false;
-  const splits = (child) =>
-    child !== undefined &&
-    child !== node &&
-    (ts.isJsxExpression(child) || ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child));
-  return splits(children[index - 1]) || splits(children[index + 1]);
-}
 
 /** The string of a literal node, decoded, or `null` when it is not visible text. */
 function visibleString(node, sourceFile) {
@@ -155,7 +152,7 @@ function visibleString(node, sourceFile) {
   }
   if (ts.isJsxText(node)) {
     const text = normalise(decode(node.getText(sourceFile)));
-    if (text === '' || NON_TEXT.test(text) || isSplitSentence(node)) return null;
+    if (text === '' || NON_TEXT.test(text)) return null;
     return text;
   }
   return null;
