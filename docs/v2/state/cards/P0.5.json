@@ -1,0 +1,19 @@
+{
+  "card": "P0.5",
+  "planVersion": 2,
+  "contracts": [],
+  "baseCommit": "e8dbf44",
+  "attempt": 1,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "card created by owner-authorised AM-022; dispatch built (port 7809); AM-023 logged; instruction review dispatched (space-bunny-free)",
+  "nextAllowedAction": "check instruction review return",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T07:40:00Z"
+}
