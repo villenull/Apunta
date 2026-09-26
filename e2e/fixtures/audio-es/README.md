@@ -84,13 +84,16 @@ the ten non-speech clips, which exist in the `clean` variant only.
   "version": 1,
   "piper": "1.8.0",
   "synthesis": {
+    "noise_scale": 0,
+    "noise_w": 0,
+    "threads": 1,
+    "threadSetting": "OMP_NUM_THREADS=1; this piper CLI exposes no --num_threads flag",
+    "length_scale": 0.8695652173913044,
     "seed": 20260926,
     "noiseColour": "white",
     "noiseSnrDb": 20,
     "noisePowerReference": "speech-active region, gate -40 dBFS of clip peak",
     "fastRate": 1.15,
-    "lengthScale": 0.8695652173913044,
-    "lengthScaleExpression": "1 / 1.15",
     "sourceSampleRate": 22050,
     "sampleRate": 16000,
     "channels": 1,
@@ -102,19 +105,23 @@ the ten non-speech clips, which exist in the `clean` variant only.
 }
 ```
 
-The `synthesis` block is where the constants the card pins live: the RNG seed, the
-noise colour, the SNR, and the `length_scale` — `1/1.15`, the exact double rather
-than the card's rounded `≈ 0.8696`, with the expression beside it. The card's
-pinned four top-level keys are all present and unchanged; `synthesis` is the only
-addition, because the card also requires the seed, the noise colour and the
-`length_scale` to be written into this file.
+The `synthesis` block is where the constants the card pins live: the two vocoder-noise
+values, the thread setting, the RNG seed, the noise colour, the SNR, and the
+`length_scale` — `1/1.15`, the exact double rather than the card's rounded
+`≈ 0.8696`, because it is the double the Piper call is given, and a rounded value
+would not be the number that decided the samples. The card's pinned five top-level
+keys are all present and unchanged; `synthesis` is the only addition, because the
+card also requires the seed, the noise colour and the `length_scale` to be written
+into this file.
 
 `source` and `category` together are what let S4a.2 report the 55-dictation rate
 and the 40-sentence rate separately and attribute both to the right split.
 
 ## The three variants
 
-- **`clean`** — Piper as found, the model's own `noise_scale` and `noise_w`.
+- **`clean`** — the voice as rendered with the pinned determinism settings: Piper's
+  own `noise_scale` and `noise_w` are both **0** and inference runs on one thread.
+  See "Reproducibility" below.
 - **`noise`** — room noise at **20 dB SNR**, white, seeded. It is **the `clean`
   arm of the same run plus the noise**, not a third synthesis, so the two arms of
   a dictation differ only by the noise. Signal power is the mean square over the
@@ -162,25 +169,41 @@ everything else.
   and `text` with no extra field.
 - `numbers` — numbers as words (`diecinueve`, `ochenta y dos`, `seis y media`).
 
-## Reproducibility, honestly
+## Reproducibility
 
-**Piper is not byte-deterministic.** Two runs of this generator on this machine
-produce the same 295 file names, a byte-identical `reference.json`, and 10 of the
-295 clips byte-identical — the five silence and five tone clips, which this
-script writes itself. The other 285, every one of them a Piper synthesis, differ.
+**Two runs of this generator on this machine are byte-identical, all 295 clips.**
+That is V1, and it is a property of the corpus rather than a claim about it: the
+check is `sha256sum *.wav` in two separate run directories, compared per file.
 
-The cause is inside the ONNX graph, not in this script. `es_MX-ald-medium.onnx`
-takes three inputs (`input`, `input_lengths`, `scales`) and no noise tensor, so
-the VITS flow draws its own randomness per run; piper exposes no seed for it.
-Synthesising the same sentence with `--noise-scale 0 --noise-w-scale 0` **is**
-byte-identical across runs, which is the proof of the mechanism. Piper 1.8.0 is
-the newest release on the acquisition day, which is what A09's fixed selection
-rule requires, and the rule is not the implementer's to relax — so this is
-reported, not worked around. Nothing here post-processes audio to force a hash.
+It takes the pinned settings to get there. `es_MX-ald-medium.onnx` takes three
+inputs (`input`, `input_lengths`, `scales`) and no noise tensor, so Piper's VITS
+draws its vocoder randomness **inside the ONNX graph**, and piper-tts 1.8.0
+exposes no seed for it. Left at the voice's own values — `noise_scale` 0.667,
+`noise_w` 0.8 — every synthesis differs from the last, in the samples *and* in the
+clip's length, because `noise_w` is the duration predictor's width noise. That is
+not a subtlety: an earlier run of this script produced only 10 of 295 identical
+clips, and those ten were exactly the silence and tone clips this script writes
+itself. `noise_w` is what made two runs of one sentence differ by 8 KB of samples
+*and* by 20 ms of audio.
 
-What this means downstream: S4a.2 must not compare a transcription against a hash,
-and must not assume a clip it regenerated is the same clip it measured. Anything
-that needs a stable corpus across machines has to record the WAVs it scored.
+So every Piper call passes `--noise_scale 0 --noise_w 0`, and inference runs with
+`OMP_NUM_THREADS=1`. The card asks for `--num_threads 1` "if the CLI exposes it";
+**piper-tts 1.8.0 does not** — its usage lists no such option — so the environment
+variable carries the setting alone. The generator asks the CLI once per run rather
+than assuming either answer, and records what it found in
+`synthesis.threadSetting`, so the record never claims a flag the invocation did not
+use. The checker fails if `noise_scale`, `noise_w` or `threads` are not the pinned
+values, because moving any of them voids the reproducibility claim above.
+
+The cost is real and is not hidden here: **zero vocoder noise flattens prosody.**
+The corpus is synthetic ASR material for an ASR benchmark, not material anyone
+listens to, and the values are recorded precisely so a later card can decide the
+trade is worth revisiting. Nothing here post-processes audio to force a hash.
+
+What this means downstream: S4a.2 may compare a transcription against a hash, and
+may assume a clip it regenerated is byte-for-byte the clip it measured — within one
+machine and one Piper build, which `reference.json` records. Across machines or
+Piper versions, the WAVs it scored are still the ones to keep.
 
 ## Extending it
 

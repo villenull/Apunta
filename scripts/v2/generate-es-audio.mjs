@@ -36,9 +36,20 @@
  * control only by the noise and one third of the Piper work is saved.
  *
  * Every constant that decides a sample is written into `reference.json` (the
- * seed, the noise colour, the `length_scale`, the sample rates, the Piper
- * version), so two runs of this script on one machine are comparable file by
- * file. `check-es-audio.mjs` asserts the shape and the constants.
+ * seed, the noise colour, the `length_scale`, the two pinned vocoder-noise
+ * values, the thread setting, the sample rates, the Piper version), so two runs
+ * of this script on one machine are byte-identical file by file.
+ * `check-es-audio.mjs` asserts the shape and the constants.
+ *
+ * ## Why the synthesis is pinned
+ *
+ * Piper's VITS draws its vocoder noise inside the ONNX graph and piper-tts
+ * exposes no seed, so at the voice's own `noise_scale` 0.667 / `noise_w` 0.8 no
+ * two syntheses of one sentence are alike. Every call therefore passes
+ * `--noise_scale 0 --noise_w 0` and runs with `OMP_NUM_THREADS=1` (plus
+ * `--num_threads 1` on a CLI that has it, which 1.8.0 does not). The cost is
+ * flatter prosody; the corpus is synthetic ASR material, and both values are in
+ * `reference.json` so the trade can be revisited.
  *
  * Piper and `ffmpeg` are development-only. Nothing here is imported by
  * `server/`, `web/` or `shared/`, and no runtime path touches them.
@@ -87,6 +98,25 @@ const ACTIVE_GATE_DBFS = -40;
 /** `fast` is 1.15x faster, which in VITS is `length_scale` 1/1.15. */
 const FAST_RATE = 1.15;
 const LENGTH_SCALE = 1 / FAST_RATE;
+
+/**
+ * The pinned determinism settings, and V1's precondition.
+ *
+ * Piper's VITS draws its vocoder randomness **inside the ONNX graph**: the voice
+ * takes `scales` and no noise tensor, and piper-tts exposes no seed, so with the
+ * model's own `noise_scale` (0.667) and `noise_w` (0.8) every synthesis differs
+ * from the last — in the samples *and*, because `noise_w` is the duration
+ * predictor's width noise, in the clip's length. Both are pinned to 0 here and
+ * inference is forced to one thread, which is what makes two runs of this script
+ * byte-identical.
+ *
+ * The trade is deliberate and recorded rather than hidden: zero vocoder noise
+ * flattens prosody. The corpus is synthetic ASR material, and the values are in
+ * `reference.json` so a later card can revisit them.
+ */
+const NOISE_SCALE = 0;
+const NOISE_W = 0;
+const THREADS = 1;
 
 /** The five non-speech clips per arm, in seconds; no voice, no text. */
 const SILENCE_SECONDS = [1, 2, 3, 4, 5];
@@ -288,6 +318,24 @@ function ffmpegVersion() {
     throw new Error('ffmpeg is required (ACQUISITION §2) and was not found on PATH');
   }
   return (probe.stdout.split('\n')[0] ?? '').trim();
+}
+
+/**
+ * Whether this Piper's CLI exposes `--num_threads`, asked once per run. The card
+ * wants the flag "if the CLI exposes it"; piper-tts 1.8.0 does not, so on that
+ * version the single-thread setting is carried by `OMP_NUM_THREADS` alone. The
+ * answer is recorded in `reference.json` either way, so the record never claims a
+ * flag the invocation did not use. A probe that cannot run is treated as "not
+ * exposed": the setting is then applied by the environment variable, which is
+ * always available.
+ */
+let numThreadsFlag;
+function piperExposesNumThreads(piper) {
+  if (numThreadsFlag !== undefined) return numThreadsFlag;
+  const probe = spawnSync(piper, ['--help'], { encoding: 'utf8' });
+  const usage = `${probe.stdout ?? ''}\n${probe.stderr ?? ''}`;
+  numThreadsFlag = probe.error === undefined && /--num[-_]threads/u.test(usage);
+  return numThreadsFlag;
 }
 
 /* ------------------------------------------------------------------- the corpus */
@@ -536,13 +584,32 @@ function addRoomNoise(samples, clipId) {
  * One Piper call: text on stdin, a 22,050 Hz WAV at `outWav`, exactly as
  * `scripts/synthetic-acceptance/generate-audio.mjs` does it. `lengthScale` is
  * left unset for every variant but `fast`.
+ *
+ * The two vocoder-noise flags are passed on **every** call, not only the ones
+ * that need a flag of their own, so no call can silently fall back to the voice
+ * config's 0.667/0.8. `OMP_NUM_THREADS=1` goes into the child's environment and
+ * `--num_threads 1` is added when this CLI has it; both are V1's precondition.
  */
-function piperSynthesise(piper, model, text, outWav, lengthScale) {
-  const args = ['--model', model, '--output_file', outWav];
+function piperSynthesise(piper, model, text, outWav, lengthScale, useNumThreadsFlag) {
+  const args = [
+    '--model',
+    model,
+    '--output_file',
+    outWav,
+    '--noise_scale',
+    String(NOISE_SCALE),
+    '--noise_w',
+    String(NOISE_W),
+  ];
   if (lengthScale !== undefined) args.push('--length_scale', String(lengthScale));
+  if (useNumThreadsFlag) args.push('--num_threads', String(THREADS));
   const result = spawnSync(piper, args, {
     input: `${text}\n`,
-    env: { ...process.env, LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH ?? dirname(piper) },
+    env: {
+      ...process.env,
+      LD_LIBRARY_PATH: process.env.LD_LIBRARY_PATH ?? dirname(piper),
+      OMP_NUM_THREADS: String(THREADS),
+    },
     stdio: ['pipe', 'inherit', 'inherit'],
   });
   if (result.error) throw result.error;
@@ -692,6 +759,10 @@ function main(argv) {
   const staging = join(dirname(out), `.${VOICE}-staging-${String(process.pid)}`);
   const scratch = join(staging, '.scratch');
   const stats = { snr: [], clipped: 0, synthesised: 0, resampled: 0 };
+  const useNumThreadsFlag = piperExposesNumThreads(options.piper);
+  const threadSetting = useNumThreadsFlag
+    ? `OMP_NUM_THREADS=${String(THREADS)} and --num_threads ${String(THREADS)}`
+    : `OMP_NUM_THREADS=${String(THREADS)}; this piper CLI exposes no --num_threads flag`;
 
   try {
     rmSync(staging, { recursive: true, force: true });
@@ -701,7 +772,7 @@ function main(argv) {
 
     dictations.forEach((clip, index) => {
       const raw = join(scratch, `raw-${String(index)}.wav`);
-      piperSynthesise(options.piper, options.model, clip.text, raw, undefined);
+      piperSynthesise(options.piper, options.model, clip.text, raw, undefined, useNumThreadsFlag);
       stats.synthesised += 1;
       const clean = join(staging, speechFileName(clip, 'clean'));
       resampleTo16k(raw, clean);
@@ -727,7 +798,7 @@ function main(argv) {
         Buffer.concat([wavHeader(SAMPLE_RATE, samples.length * 2), Buffer.from(samples.buffer)]),
       );
 
-      piperSynthesise(options.piper, options.model, clip.text, raw, LENGTH_SCALE);
+      piperSynthesise(options.piper, options.model, clip.text, raw, LENGTH_SCALE, useNumThreadsFlag);
       stats.synthesised += 1;
       resampleTo16k(raw, join(staging, speechFileName(clip, 'fast')));
       stats.resampled += 1;
@@ -741,13 +812,16 @@ function main(argv) {
       version: 1,
       piper,
       synthesis: {
+        noise_scale: NOISE_SCALE,
+        noise_w: NOISE_W,
+        threads: THREADS,
+        threadSetting,
+        length_scale: LENGTH_SCALE,
         seed: SEED,
         noiseColour: NOISE_COLOUR,
         noiseSnrDb: NOISE_SNR_DB,
         noisePowerReference: `speech-active region, gate ${String(ACTIVE_GATE_DBFS)} dBFS of clip peak`,
         fastRate: FAST_RATE,
-        lengthScale: LENGTH_SCALE,
-        lengthScaleExpression: '1 / 1.15',
         sourceSampleRate: SOURCE_RATE,
         sampleRate: SAMPLE_RATE,
         channels: CHANNELS,
@@ -785,6 +859,7 @@ function main(argv) {
     `clips:       ${String(plan.length)} (${String(stats.synthesised)} Piper calls, ${String(stats.resampled)} resamples)`,
     `rate:        ${String(SOURCE_RATE)} Hz -> ${String(SAMPLE_RATE)} Hz mono ${String(BITS_PER_SAMPLE)}-bit`,
     `seed:        ${String(SEED)}  noise ${NOISE_COLOUR} at ${String(NOISE_SNR_DB)} dB SNR  length_scale ${String(LENGTH_SCALE)}`,
+    `determinism: noise_scale ${String(NOISE_SCALE)}  noise_w ${String(NOISE_W)}  ${threadSetting}`,
   ];
   if (snr.length > 0) {
     lines.push(

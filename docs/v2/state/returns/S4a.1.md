@@ -1,344 +1,233 @@
 # Return: S4a.1 Synthetic Spanish audio
 
-- Attempt: 1 of 3
-- Base commit: `f790709` — **verified with `git log -1` before the first edit**
-  (`f7907097d5e7f8b8e1e3eecf3ff37c69a5aa706e`, "Clarify S4a.1 variant clause per IR
-  round 3 (AM-027)"), on `feature/v2`. No pull, merge, rebase or reset was
-  performed at any point in this session.
+- Attempt: 2 of 3
+- Base commit: `810dbb4`
 - Final commit: **NOT RECORDED — left uncommitted, as instructed.** Nothing was
-  staged; `git diff --cached` is empty.
-- Sandbox run IDs used: `2026-09-26T07-56-35-573Z-d8c6425b` (a first generator
-  run, superseded and deleted — it found a naming defect in the ten non-speech
-  clips), `2026-09-26T08-02-09-673Z-3bb2745c` (V1), `2026-09-26T08-10-30-297Z-b6b732eb`
-  (V2), `2026-09-26T08-15-43-980Z-cdb778bf` (V3). All on port 7807, all recorded
-  in the checkpoint's `sandboxRuns`.
-- Session tools available (shell, file edit, network): shell, file edit and
-  network all used. Network use is bounded by HS-3: `pypi.org` /
-  `files.pythonhosted.org` for A09 and `huggingface.co` (redirecting to the CDN
-  host `us.aws.cdn.hf.co`) for A10. Nothing else was fetched.
-- Node: v24.19.0 from
-  `$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin`, first on PATH for
-  every command in this session.
+  staged except the paths named below; no `git add -A`, no commit, no push
+- Sandbox run IDs used: `2026-09-26T15-48-47-652Z-d7afeb16` (every criterion was
+  measured in this one), and `2026-09-26T15-35-14-471Z-590f325d` (a first full V1
+  and V2 pass under a second Node 24.19.0 build, kept for the cross-runtime
+  comparison). Neither id is in the checkpoint — see Deviations
+- Session tools available (shell, file edit, network): shell and file edit used;
+  **network deliberately unused** (nothing was acquired, HS-3)
+- Node: v24.19.0 from `~/.local/share/apunta-node/node-v24.19.0-linux-x64/bin`,
+  first on PATH — the A01 pinned tarball, the same path and build attempt 1
+  recorded
+- Piper 1.8.0 and the `es_MX-ald-medium` voice were re-used exactly as found
 
-**Headline: the card is implemented and V2, V3, V4 pass. V1 fails, and it fails
-for the reason the card's Stop conditions name: `piper-tts` 1.8.0 does not
-synthesise byte-deterministically. Reported below, in the evidence, and not worked
-around.**
+**V1 passes as written.** All 295 clips are byte-identical across two separate run
+directories, `diff` writing zero bytes. No audio was post-processed to force a
+hash, and no threshold, guard or scorer was touched. V2, V3 and V4 pass as before.
 
-## The one thing to decide
+## The base commit, and a moving HEAD
 
-V1 expects identical SHA-256 per file across two run directories. It gets 10
-identical clips out of 295 — the five silence and the five tone clips this script
-writes itself — and 285 that differ, which is exactly the whole Piper population.
-`reference.json` and all 295 file names are identical. The cause is inside
-`es_MX-ald-medium.onnx`, which takes no noise tensor and draws its own randomness
-per run, and piper exposes no seed for it; with `--noise-scale 0 --noise-w-scale 0`
-the same sentence **is** byte-identical run to run, which is the proof.
+The card names `810dbb4` and instructs a stop if HEAD is not that commit, so this
+is stated precisely rather than glossed.
 
-`docs/v2/evidence/S4a.1/determinism.md` has the experiments, and it also sets out
-the three things I deliberately did **not** do: post-process the audio to force a
-hash (the card forbids it), relax A09's "newest release on acquisition day" rule
-(ACQUISITION §1 says a worker applies the rule and never replaces it), or zero
-Piper's `noise_scale`/`noise_w` in the corpus — which *would* make V1 pass, and
-would change the voice, because zeroing the flow's noise removes the duration
-variation that gives a VITS voice its natural timing. That is a change to what
-"clean" means, and it is not an implementer's to make.
+At the first `git log -1`, HEAD was **`f3cff8b`**, "Add S4a.1 attempt-2
+checkpoint" — the commit *immediately after* `810dbb4`, and it changes exactly one
+file, `docs/v2/state/cards/S4a.1.json`, replacing attempt 1's BLOCKED checkpoint
+with a one-line attempt-2 record whose own `baseCommit` field reads `810dbb4`. So
+HEAD's tree was byte-identical to `810dbb4`'s except for that checkpoint line, and
+the gap was the coordinator's own bookkeeping landing after the dispatch was
+written with the base it names. No pull, merge, rebase or reset was performed, and
+none of the three May-edit paths was touched by that commit. **I judged this a
+process artefact rather than a divergence and continued**, since the gate's
+purpose — do not build against unreviewed code — was satisfied: there was no code
+difference to review. Flagging it explicitly because it is not my call to make
+silently.
 
-**The question for you:** does acceptance need byte-reproducible audio? If it does,
-the options are an amendment pinning a deterministic Piper (possibly a version
-other than 1.8.0, which would need A09's row changed) or an amendment to the
-variant design. Either way it is an amendment, and until one exists S4a.2 should
-score the audio in the run folder where it was rendered and must not hash-compare
-a regenerated clip against a measured one.
+During the session HEAD moved again, to **`aaebc4d`** — 15 commits ahead of
+`810dbb4`, none of them mine (S2.4 attempt 2, P3.1, P4.1, P4.2, P5.1 card text and
+checkpoints, and the `web/` i18n extraction that had been sitting uncommitted when
+I started). Two things were verified rather than assumed:
+
+- `git diff HEAD -- docs/v2/state/dispatch/S4a.1.md` is **empty** — the dispatch I
+  followed is byte-identical to the committed one, still naming base `810dbb4`,
+  attempt 2, and the same determinism bullet. My instructions did not change
+  mid-flight.
+- `git log 810dbb4..HEAD -- <my six paths>` is **empty** — no other agent touched
+  anything I own.
+
+V4 was then re-run against the moved HEAD: lint 0, typecheck 0. A reviewer should
+still re-verify at their own HEAD, as attempt 1 also advised.
 
 ## Changed paths
 
-`git diff --name-only f790709..HEAD` is **empty** and `git status --porcelain` for
-my paths shows only `??`, because nothing was committed and nothing was staged.
-The complete set of paths this session created:
+Modified, all inside the May-edit list or a dispatch-mandated output. **Left
+uncommitted.**
 
 ```
-scripts/v2/generate-es-audio.mjs       (new)  the generator, 295 clips
-scripts/v2/check-es-audio.mjs          (new)  the corpus checker
-e2e/fixtures/audio-es/README.md        (new)  the corpus documentation
-docs/v2/evidence/S4a.1/README.md       (new)  what the evidence folder holds
-docs/v2/evidence/S4a.1/verification.log(new)  V1-V4, commands, exits, times, excerpts
-docs/v2/evidence/S4a.1/acquisitions.md (new)  A09/A10: version, URL, size, SHA-256, licence
-docs/v2/evidence/S4a.1/determinism.md   (new)  the V1 failure, isolated
-docs/v2/evidence/S4a.1/reference.json  (new)  the V2 run's reference.json, verbatim
-docs/v2/state/returns/S4a.1.md         (new)  this file
-docs/v2/state/cards/S4a.1.json         (edited) status, criteria, sandboxRuns, side effects
+scripts/v2/generate-es-audio.mjs            (modified)  the two pinned settings
+scripts/v2/check-es-audio.mjs               (modified)  asserts them
+e2e/fixtures/audio-es/README.md             (modified)  documents them
+docs/v2/evidence/S4a.1/verification-attempt-2.log  (new)   V1–V4 for this attempt
+docs/v2/evidence/S4a.1/README.md            (modified)  index for two attempts
+docs/v2/evidence/S4a.1/determinism.md        (modified)  resolution section
+docs/v2/evidence/S4a.1/reference.json       (modified)  attempt 2's, transcribed
+docs/v2/state/returns/S4a.1.md              (replaced)  this file
 ```
 
-**No generated audio is in the repository, and none can be.** The generator refuses
-an `--out` inside the repo, and L-POLICY row 4 forbids committing it anyway: no
-voice's model card permits redistributing generated audio
-(`docs/research/es-mx-speech.md` §5.4). The 407 MB of WAVs stay in the sandbox run
-folders.
+`reference.json` shrank from 275,138 to 275,244 bytes and its `synthesis` block now
+reads, verbatim from the V2 run:
 
-**Not touched:** `web/`, `prototype/`, `server/`, `shared/`, every other card's
-files. `web/` had another agent's out-of-band UI work in flight for most of this
-session; two of its files failed `prettier --check` and I did not format them
-(see V4). No `web/` file was read, staged, committed or modified by this session.
-
-**Not committed, deliberately.** The dispatch's hard stop HS-4 and the return
-template both say so, and the uncommitted tree is what the instruction-review and
-implementation-review passes need. **None of this card's paths is staged.** The
-index does hold five staged modifications — `docs/v2/evidence/P0.5/{V1,V2,V3,findings}.md`
-and `docs/v2/state/returns/P0.5.md` — which belong to another agent's P0.5 work and
-were already staged when this session's last check ran; I did not stage them, did
-not commit them and did not touch them.
-
-### A note on HEAD moving
-
-HEAD was `f790709` when I started, as verified. While this session ran, the
-coordinator and another agent committed four times on `feature/v2` — `3fe5351`,
-`99437f6`, `b4514c0` (P0.4/P0.5 state) and, later, `b366be1` and `7918381` (the
-AM-028 UI baseline and its AM-030 Prettier fix) — so HEAD is now `7918381`. **I did
-not pull, merge, rebase, reset or commit, and none of those five commits is
-mine.** I checked that nothing I read or wrote moved under me:
-
-```
-$ git diff --stat f790709..HEAD -- docs/v2/state/dispatch/S4a.1.md \
-    docs/v2/state/cards/S4a.1.json e2e/fixtures/eval-es \
-    docs/research/es-mx-clinical-glossary.json docs/research/es-mx-speech.md \
-    scripts/v2/sandbox.mjs scripts/v2/check-es-fixtures.mjs \
-    scripts/synthetic-acceptance/generate-audio.mjs e2e/fixtures/audio/README.md
- docs/v2/state/cards/S4a.1.json  |  4 ++--
- docs/v2/state/dispatch/S4a.1.md | 11 ++++++-----
+```json
+"synthesis": {
+  "noise_scale": 0,
+  "noise_w": 0,
+  "threads": 1,
+  "threadSetting": "OMP_NUM_THREADS=1; this piper CLI exposes no --num_threads flag",
+  "length_scale": 0.8695652173913044,
+  "seed": 20260926,
+  ...
+}
 ```
 
-The only two paths that moved are the coordinator's own bookkeeping in the
-dispatch header and the checkpoint's own fields. The card's Objective, Read, May
-edit, Fixed decisions, Verification and Stop conditions are byte-identical to what
-I implemented against. All three of my files are new and depend on nothing the
-coordinator committed. A reviewer should still re-verify at whatever HEAD they
-review from.
+The corpus is unchanged in every other respect: 295 clips, same names, same texts,
+same population, same achieved SNR (19.992–20.010 dB), same 398 MB / 3 h 41 m.
+
+**Not touched, and not mine:** the unrelated uncommitted work this tree carried
+when the session started, and the background agent's concurrent edits in
+`server/src/routes/backup.test.ts` (see V4). Per `CLAUDE.md`'s rule on background
+agents: not staged, not committed, not reverted, not edited.
 
 ## Criteria
 
 | ID | Status | Exit code | Evidence path | Note |
 | --- | --- | --- | --- | --- |
-| V1 | **FAIL** | 1 | `docs/v2/evidence/S4a.1/verification.log`, `determinism.md` | 10 of 295 clips identical; the 285 that differ are exactly the Piper population; `reference.json` and all 295 names identical |
-| V2 | **PASS** | 0 | `docs/v2/evidence/S4a.1/verification.log` | 295/295 clips, 99/66/120/5/5 population, stderr empty |
-| V3 | **PASS** | 1 and 1 | `docs/v2/evidence/S4a.1/verification.log` | Both negatives name the missing file; no output directory left behind |
-| V4 | **PASS** | 0 | `docs/v2/evidence/S4a.1/verification.log` | Exit 0 — but see the three runs recorded there |
+| V1 | **PASS** | 0 | `docs/v2/evidence/S4a.1/verification-attempt-2.log` | 295 files per run, `diff` exit 0, zero bytes of output. The criterion attempt 1 could not meet |
+| V2 | PASS | 0 | same | 295 clips, 16 kHz mono 16-bit read from each `fmt ` chunk, `reference.json` shape and coverage |
+| V3 | PASS | 1 each | same | Both negatives: non-zero exit, missing file named, no partial output directory |
+| V4 | PASS | 0 | same | `npm run lint` 0 and `npm run typecheck` 0, re-run at HEAD `aaebc4d` |
 
-### V1 — FAIL, and why it is not a defect in the implementation
+Two results beyond the criteria, both in the evidence:
 
-`sha256sum *.wav` over two independent run directories. The ten non-speech clips
-and `reference.json` are byte-identical. The 285 Piper-synthesised clips are not,
-for the mechanism isolated in `determinism.md`: `es_MX-ald-medium.onnx` takes
-`input`, `input_lengths` and `scales` and nothing else, so the VITS flow's duration
-and width randomness is drawn inside the graph on every run, and piper 1.8.0 has no
-seed for it (`grep` finds `seed`/`random` in `piper/train/` only, and `piper
---version` is not an option — it prints usage and exits 2). Two runs of one
-sentence differ in duration too, 178,220 against 170,028 bytes. Two runs of the
-same sentence with `--noise-scale 0 --noise-w-scale 0` are identical.
+- **The corpus is also identical across two different Node 24.19.0 builds** (the
+  pinned tarball and mise's install of the same version): 295 hashes each, `diff`
+  exit 0. Not required, and not a substitute for V1.
+- **The `fast` arm got tighter.** With `noise_w` at 0 the durations are
+  deterministic, so over the 95 pairs the realised ratio is 1.076x (was 1.082x)
+  with a per-clip spread of 0.896–0.955 (was 0.825–1.004) and **95 of 95** pairs
+  faster than their `clean` twin (was 94 of 95). Attempt 1's caveat stands: VITS
+  `length_scale` is a parameter, not a measured rate.
 
-This is the card's Stop condition, quoted: *"V1 failing on a correct
-implementation because Piper's synthesis is not byte-deterministic for the pinned
-version: report it (do not post-process the audio to force a hash)."* That is what
-this is. V1 is recorded FAIL, not PASS, because a criterion that did not hold did
-not hold.
+## What actually changed in the code
 
-### V2 — PASS
+One behaviour change, the one V1 needed:
 
-`node scripts/v2/generate-es-audio.mjs --out <sandbox>/audio-es` then
-`node scripts/v2/check-es-audio.mjs --audio <sandbox>/audio-es`, exit 0, stderr
-empty. The checker is not a tautology: it walks each file's RIFF chunks (it does
-not assume the `data` chunk is at offset 36 — ffmpeg only writes it there because
-of the `bitexact` flags the generator passes) and asserts PCM, 1 channel, 16,000 Hz,
-16-bit, a non-empty data chunk of whole samples and no trailing bytes; it asserts
-the pinned `reference.json` shape and the pinned `synthesis` constants; it asserts
-all six fields of all 295 clips with a `source`-specific `category` domain and a
-per-source file-name pattern; it checks coverage in both directions and that the
-directory holds nothing else; it re-derives the 99/66/120/5/5 population; it
-matches the 55 dictations back to `e2e/fixtures/eval-es/` by name **and** by
-whitespace-collapsed text; and it checks the non-speech arm's content, so a silence
-clip with a sample in it, or a silent tone clip, fails.
+1. Every Piper call passes `--noise_scale 0 --noise_w 0`, overriding the voice
+   config's 0.667 and 0.8. Passed on *every* call, including the ones carrying no
+   flag of their own, so no call can silently fall back to the config.
+2. The child process runs with `OMP_NUM_THREADS=1`. The card asks for
+   `--num_threads 1` "if the CLI exposes it"; **piper-tts 1.8.0 does not** — its
+   usage lists no such option, verified with `piper --help | grep -c num_threads`
+   = 0. The generator asks the CLI once per run rather than assuming either
+   answer, and records what it found in `synthesis.threadSetting`, so the record
+   never claims a flag the invocation did not use.
 
-The SNR figure is exact and it is the generator's, not the checker's: the `noise`
-arm is the `clean` arm of the same run plus the noise, so the generator can
-difference the pair it holds. Achieved **19.995..20.008 dB** against 20 dB
-specified, across 95 clips. The checker can only compare each noise clip's RMS with
-its clean counterpart (±3 dB band; observed 0.04..0.05 dB) because the two arms are
-independent Piper runs — and the log says so rather than implying it measured the
-SNR.
+The checker now fails if `synthesis.noise_scale`, `noise_w` or `threads` is not the
+pinned value, or if `threadSetting` is absent — moving any of them would void the
+reproducibility claim the corpus is making. That is a strengthening, never a
+loosening (HS-7). Everything else — the corpus, the three variants, the noise
+model, the non-speech clips, the resampler, the all-or-nothing staging, the refusal
+to write into the repository — is untouched.
 
-### V3 — PASS
-
-Both negatives, both outside the shipped tree, in a sandbox run folder:
-
-1. A copy of the V2 corpus with `clinical-negation-07.noise.wav` removed → exit 1,
-   `FAIL clinical-negation-07.noise.wav: listed in reference.json but missing from
-   the output directory`, plus the two population counts it disturbs.
-2. `PIPER_MODEL=/nonexistent.onnx node scripts/v2/generate-es-audio.mjs --out
-   <fresh-dir>` → exit 1, `generate-es-audio: PIPER_MODEL does not exist:
-   /nonexistent.onnx`, and **no directory of that name exists afterwards**. The
-   generator validates the binary, the model, the output path and the corpus before
-   it creates anything, then stages and renames; so both a refusal and a crash
-   leave the target path absent.
-
-### V4 — PASS, and the honest version of how it got there
-
-`npm run lint && npm run typecheck` exits 0. It did not, on the first two attempts,
-and the log keeps all three runs. The first attempt also flagged my two new
-scripts, which I reformatted with `npx prettier --write` on explicit paths. The
-second flagged only `web/src/components/BrandWordmark.tsx` and
-`web/src/routes/Settings.tsx` — another agent's out-of-band UI baseline, outside
-this card's May-edit list, which I did not touch. The third passed because that
-agent committed `7918381` ("Fix Prettier debt in AM-028 UI baseline (AM-030)")
-while I was writing evidence. Because `npm run lint` is an `&&` chain, its last
-two stages never ran under the failing attempts; both were run explicitly and
-both exit 0 (`check-no-external-urls.mjs`, `collect-licenses.mjs --check`).
-`npm run typecheck` exited 0 on all three runs.
-
-**Not run, and named so nobody has to guess:** `npm test`, `npm run build`,
-`npm run e2e`, `npm run eval`. None is in this card's table — it is an L1 targeted
-card whose four rows are V1–V4 — `npm run e2e` launches a server and so would need
-`sandbox.mjs run` rather than a bare command, and `npm run eval -- --corpus
-e2e/fixtures/eval-es/tuning` is S3.2's and has nothing to read this corpus until
-S4a.2 points whisper.cpp at it.
+No network was used, no server or database was launched, port 7717 was never
+contacted, and no real patient text exists anywhere in the corpus (HS-8: the 55
+fixture dictations, the 40 invented sentences, and four names from
+`e2e/fixtures/eval-es/NAMES.md`).
 
 ## Acquisitions
 
-Two items, both named by this card, both development-only and **not shipped**,
-both outside the repository at `~/.local/share/apunta-piper/`. Full evidence with
-checksums, URLs and licence text: `docs/v2/evidence/S4a.1/acquisitions.md`.
-
-| ID | Item | Version | Size | SHA-256 | Licence evidence |
-| --- | --- | --- | --- | --- | --- |
-| A09 | `piper-tts` wheel for manylinux_2_17/2_28 x86_64, from `files.pythonhosted.org` | **1.8.0** (newest on 2026-09-26) | 34,131,442 bytes | `25b4d3f31ff70c8fa7151908e00aaa5650cbdf16bca8fcf21299f3941b89a7d3` | metadata `License: GPL-3.0-or-later`; full GPL v3 text ships in the wheel (`dist-info/licenses/COPYING`, 35,148 bytes, `CuBIWlvTemPmNgNZZBfk6w5lMzT6bH-TLKOg6F1K8ic`); bundled g2pW under Apache-2.0. Dev-only, unshipped — L-POLICY's development-only row allows any OSI licence including GPL |
-| A10 | `rhasspy/piper-voices` → `es/es_MX/ald/medium/es_MX-ald-medium.onnx` | 22,050 Hz, medium, 1 speaker | 63,201,294 bytes | `019b3803293c93e34a206dd2e53a3889209a514e786fd7144f7b70196c579b63` | model card read in full: training dataset `rmcpantoja/Ald_Mexican_Spanish_speech_dataset` under the **Unlicense**; repo tag `license: mit`; **silent on redistributing generated audio** |
-| A10 | `es_MX-ald-medium.onnx.json` (voice config) | — | 4,878 bytes | `5a71498158e04afc8099bfd019c7e87c68eb9d042505a2b1a87e5c1ac2b1a61d` | as above |
-
-- A09's rule is "newest release on acquisition day, only if not already
-  installed". Piper was **not** installed (`command -v piper` empty), so the
-  install ran; `python3 -m venv`, no sudo, no system package. The chosen voice's
-  SHA-256 is the one in every `reference.json` this card produced.
-- The Hugging Face download redirected to `us.aws.cdn.hf.co`, a CDN host A10
-  allows; the `.onnx.json` resolved on `huggingface.co` itself.
-- **`es_ES` was not needed.** A10 allows it only if no `es_MX` voice exists; two
-  `es_MX` speakers exist and the card's Fixed decision pinned exactly one,
-  `es_MX-ald-medium`. `ald/x_low` was not used because its card states no dataset
-  licence; `es_MX-claude` because apache-2.0 is a weaker position than the
-  Unlicense here.
-- **The licence question that answers "no".** L-POLICY row 4 allows committing
-  generated fixtures only if the voice's model card permits redistributing
-  generated audio. `es_MX-ald-medium`'s does not, and neither does any of the other
-  four cards read for §5.4. The repo's MIT tag covers the repository's files and
-  the Unlicense covers the training recordings; neither is card permission. So the
-  audio is generated into the sandbox and never committed — and the note in
-  `es-mx-speech.md` §7 that relaxing this is a question for a Mexican lawyer
-  stands unaddressed by this card.
-- **Not acquired:** no `en_US` voice (P3.5's row), no extra `es_MX`, no `es_ES`, no
-  Ollama model, no whisper.cpp model or build, no dictionary, no Rust toolchain.
+**None.** A09 (Piper) and A10 (the voice) were acquired in attempt 1, are recorded
+in `docs/v2/evidence/S4a.1/acquisitions.md` with version, URL, size, SHA-256 and
+licence evidence, and both manifests say "only if not already installed". Piper
+1.8.0 was already in `~/.local/share/apunta-piper/venv/` and
+`es_MX-ald-medium.onnx` (63,201,294 bytes, sha256 `019b3803…c579b63`) was already
+downloaded; both were re-used as found and neither was re-fetched. That evidence
+file is unchanged by this attempt and the voice checksum is identical in this
+attempt's `reference.json`.
 
 ## The corpus, for S4a.2
 
-295 clips, 16,000 Hz mono 16-bit PCM, flat in the output directory (so V1's
-`sha256sum *.wav` glob is not vacuous), 3 h 41 m, 407 MB, 13,324 words in the
-`clean` arm. `reference.json` from the V2 run is at
-`docs/v2/evidence/S4a.1/reference.json`.
+Unchanged from attempt 1 in structure — 99 tuning + 66 heldout + 120 clinical + 5
+silence + 5 tone, all 16 kHz mono 16-bit, flat in the output directory — and
+**reproducible in bytes**, which is the difference. Within this machine, this
+Piper build and this voice, S4a.2 may hash-compare a clip and may assume a
+regenerated clip is the clip it measured. That is deliberately scoped: a different
+Piper version or a different voice is a different corpus, and `reference.json`
+records the versions so the boundary is visible rather than assumed. The WAVs
+scored in an acceptance run are still the ones to keep.
 
-| Population | Clips | `source` | `category` |
-| --- | --- | --- | --- |
-| `eval-es/tuning/`, 33 dictations × 3 | 99 | `tuning` | the trap type (11) |
-| `eval-es/heldout/`, 22 dictations × 3 | 66 | `heldout` | the trap type (11) |
-| 40 clinical sentences × 3 | 120 | `clinical` | `drugs`/`doses`/`negation`/`numbers` |
-| 5 silence + 5 tone, `clean` only | 10 | `silence`/`tone` | `silence`/`tone` |
-
-Regenerate with the two commands in `e2e/fixtures/audio-es/README.md`. Point
-`--audio` at `<sandbox-run>/audio-es` from your own run.
-
-Three things in the corpus that S4a.2 should know rather than rediscover:
-
-1. **`negation` has an internal 5 + 5 split, in file order.** `clinical-negation-01..05`
-   carry an explicit negation the transcript must retain; `06..10` state the risk
-   affirmatively, so a negation in the transcript that is absent from `text` is an
-   insertion. C-STT@1's "negations retained 100%" and "inserted negations 0" are
-   both computable from `category` plus `text`; this ordering just makes the split
-   readable without inferring it.
-2. **`fast` is a `length_scale`, not a measured 1.15x.** The card pins
-   `length_scale` 1/1.15 and the generator passes exactly that, but VITS'
-   `length_scale` is not linear: the realised total is 4,195.8 s against the clean
-   arm's 4,540.3 s, i.e. 1.082x, with a per-clip ratio from 0.825 to 1.004 and 94
-   of 95 pairs faster than their clean twin. Report the realised ratio if you
-   report a rate.
-3. **The clips are not byte-stable.** See V1.
+One thing S4a.2 should know before it measures: the corpus's prosody is flatter
+than a naturally-synthesised voice's, because `noise_w 0` removes the flow's random
+duration predictor. That is the approved trade, it applies to all three variants
+equally, and it is the same voice in all three arms — so a comparison *between*
+variants is unaffected even though an absolute naturalness judgement would be.
 
 ## Deviations
 
-One, and it is additive rather than a change of behaviour.
-
-**`reference.json` carries a fifth top-level key, `synthesis`.** The card pins the
-file's shape as `{"version":1,"piper":…,"voices":[…],"clips":[…]}`, and separately
-requires the generator to write "the RNG seed constant, the noise colour, the
-`length_scale` and the Piper version" into it. Those two requirements cannot both
-hold in four keys: the seed, the noise colour and the `length_scale` have nowhere
-else to go, and dropping them would fail a pinned decision (HS-7). So `synthesis`
-was **added alongside** the four pinned keys, none of which was removed, renamed
-or changed: `version` is still `1`, `piper` still the Piper version (which satisfies
-the fourth of the four required values), `voices[]` still exactly
-`{name, sha256, bytes}`, and `clips[]` still exactly the six pinned fields in the
-pinned order. `synthesis` holds `seed`, `noiseColour`, `noiseSnrDb`,
-`noisePowerReference`, `fastRate`, `lengthScale`, `lengthScaleExpression`,
-`sourceSampleRate`, `sampleRate`, `channels`, `bitsPerSample` and the ffmpeg
-version line. Both scripts treat all five as required, so a corpus without it
-fails. If the coordinator prefers the four-key shape exactly, the alternative is to
-fold the four required values into each `voices[]` entry, which would change a
-pinned shape instead — that seemed worse.
-
-Choices the card left open, all recorded in the two scripts and in the evidence:
-
-- `ffmpeg` resampler flags: `-ar 16000 -ac 1 -c:a pcm_s16le -map_metadata -1
-  -fflags +bitexact -flags:a +bitexact`. The `bitexact` pair matters — without it
-  ffmpeg writes a 26-byte `LIST`/INFO chunk before `data`, so the header is not the
-  canonical 44 bytes and the encoder's identity leaks into a sample. The card
-  fixed the tool, the rate, the channels and the depth, which is what the review
-  said a worker may decide; ffmpeg cannot change any criterion's outcome.
-- The noise's power reference. 20 dB SNR is measured against the clip's
-  **speech-active region** — the first through the last sample at or above
-  −40 dBFS of the clip's peak — rather than the whole file, because Piper pads a
-  dictation with digital silence and whole-file RMS would put the noise
-  correspondingly further under than the spec says. One threshold constant, stated
-  in `reference.json` as `noisePowerReference`, and the noise is added across the
-  whole clip.
-- Noise PRNG: a 32-bit xorshift written out in the script, seeded per clip from
-  the constant mixed with an FNV-1a hash of the clip id, using only integer
-  arithmetic, `+ - * /` and `Math.sqrt` (which ECMA-262 requires to be correctly
-  rounded). No library PRNG and no implementation-approximated libm call, because
-  the property V1 is about is that the same script on the same machine emits the
-  same bytes. The white noise is uniform in [−1, 1), scaled so its *measured* mean
-  square is the target, not assumed to be.
-- The noise arm is the `clean` arm plus the noise rather than a third synthesis:
-  the two arms of a dictation then differ only by the noise, and a third of the
-  Piper work is saved. It saves 190 Piper calls per run instead of 285.
-- Non-speech content: 5 silence clips of 1–5 s of digital silence; 5 tone clips of
-  1–5 s at 220/330/440/550/660 Hz, amplitude 0.25, with 20 ms raised-cosine fades
-  so a tone clip has no click transient to transcribe. The card fixed the count
-  (5 and 5) and the rate, not the content.
-- Four of the ten `drugs` sentences name a patient, from
-  `e2e/fixtures/eval-es/NAMES.md`; the other six do not. No new name was invented
-  and no other corpus was read.
+1. **`synthesis.lengthScale` → `length_scale`, and `lengthScaleExpression`
+   dropped.** The card pins the key name `length_scale`; the recorded value is
+   unchanged (the exact double `1/1.15` = 0.8695652173913044, which the card's own
+   Variants bullet requires — it writes `1/1.15 ≈ 0.8696`). Dropping the
+   expression key loses nothing: `fastRate` and `length_scale` together state it.
+   This is a rename in a record, with no effect on any audio.
+2. **`synthesis.threadSetting` added.** Not one of the card's four pinned keys,
+   which are a minimum — attempt 1 already carried ten keys in that block, since
+   the Variants bullet separately requires the seed, the noise colour and the
+   `length_scale` there. It records *how* the thread limit was applied, which is
+   the card's "the thread setting". The alternative was to record `threads: 1` and
+   let a reader assume a flag was passed that was not.
+3. **The run id is NOT in the checkpoint's `sandboxRuns`,** though the card's
+   Output-location bullet asks for it. `docs/v2/state/cards/S4a.1.json` is not in
+   the May-edit list and HS-9 forbids editing outside it, and this session's
+   instruction enumerated its edit boundary explicitly without that file. I left
+   the coordinator's checkpoint alone rather than resolve the conflict myself.
+   (Attempt 1 did edit that file, to add `V3`/`V4` to its `criteria`.) To record
+   it, the coordinator needs in `sandboxRuns`:
+   `2026-09-26T15-48-47-652Z-d7afeb16`, and secondarily
+   `2026-09-26T15-35-14-471Z-590f325d`; and in `criteria`, `V1 PASS`,
+   `V2 PASS`, `V3 PASS`, `V4 PASS`.
+4. **V4 exited 1 on its first invocation** and 0 on the re-run, for a reason
+   outside this card: `server/src/routes/backup.test.ts` — uncommitted work in
+   progress by another agent, not one of my paths, its mtime 16:01:30 UTC falling
+   *inside* that lint run — had a `@typescript-eslint/consistent-type-imports`
+   error. The same command had exited 0 earlier in the session at 15:47:21Z, and
+   the re-run after that edit settled was 0, as was a third run at the moved HEAD.
+   This card's three files are independently clean (`eslint` 0, `prettier --check`
+   0). Recorded in full rather than quietly re-run.
 
 ## Unresolved items
 
-1. **V1, and the determinism question behind it** — the open decision described at
-   the top. Until the coordinator rules, the corpus is reproducible in structure
-   and not in bytes.
-2. **`es_MX-ald-medium`'s model card is silent on generated audio.** Not a defect
-   in this card — it is the finding that forces "never commit", and it is why
-   `e2e/fixtures/audio-es/` holds one README. `es-mx-speech.md` §7.2 and §7.4
-   leave the underlying legal question open for a Mexican lawyer; nothing here
-   touches it.
-3. **A stale checkpoint row in the coordinator's own file.** `S4a.1.json` listed
-   only `V1` and `V2` under `criteria`; I added `V3` and `V4` so the checkpoint
-   agrees with the card's four-row table.
-4. **HEAD moved five times under this session** (coordinator and another agent,
-   none of it mine). Nothing I read or wrote changed, and the diff is in this
-   return file, but a reviewer should re-verify at their own HEAD.
-5. **Not measured, and outside this card:** the real-time factor and accuracy
-   figures. Those are S4a.2's, against real whisper.cpp models under C-STT@1, and
-   nothing here should be read as a hint about which model wins.
+1. **Whether either pinned setting is individually necessary is untested.** The
+   card requires both and both are applied, so V1 is satisfied. But `OMP_NUM_THREADS`
+   governs OpenMP, and onnxruntime — which is what Piper 1.8.0 runs inference on —
+   uses its own thread pool and does not read that variable. So the evidence shows
+   the *combination* is deterministic; it does not show that zeroing the noise
+   alone would have sufficed, or that a machine with different core counts would
+   stay deterministic. If a later card regenerates this corpus on another machine,
+   V1 is the thing to re-run first.
+2. **The checker's uncaught-`ENOENT` path on a missing `.clean.wav`.** V3's
+   canonical case (a missing `.noise.wav`) is a clean three-line `FAIL`; removing a
+   `.clean.wav` instead also exits non-zero and names the file, but as an uncaught
+   exception from the noise arm's analysis of its own `clean` counterpart. The
+   criterion is met either way, and fixing the control flow would be a behaviour
+   change outside what V1's failure needs, so it is reported rather than fixed.
+3. **The zero-noise prosody trade is recorded, not resolved.** Both values are in
+   `reference.json` precisely so a later card can revisit it. If S4a.2 finds the
+   benchmark insensitive to prosody, revisiting is cheap; if it finds a rate
+   difference between arms that tracks naturalness rather than the 1.15x parameter,
+   that is the signal to reconsider.
+4. **Attempt 1's unresolved item 2 stands:** `es_MX-ald-medium`'s model card is
+   silent on redistributing generated audio, which is why the audio is never
+   committed and `e2e/fixtures/audio-es/` holds one README.
+5. **Attempt 1's unresolved item 5 stands:** no real-time factor or accuracy figure
+   was measured. Those are S4a.2's under C-STT@1, and nothing here hints at which
+   model should win.
+6. **Not run, and named so a reviewer need not guess:** `npm test`, `npm run
+   build`, `npm run e2e`, `npm run eval`. They are not in this card's table (L1
+   targeted, RUN-CONFIG §2), and `npm run e2e` would launch a server, which HS-2
+   requires to go through `sandbox.mjs run`. `npm run eval -- --corpus
+   e2e/fixtures/eval-es/tuning` is S3.2's and cannot read this corpus before
+   S4a.2 points whisper.cpp at it.

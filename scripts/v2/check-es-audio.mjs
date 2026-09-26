@@ -54,6 +54,15 @@ const NOISE_SNR_DB = 20;
 const FAST_RATE = 1.15;
 const SOURCE_RATE = 22050;
 
+/**
+ * V1's precondition, read back out of `reference.json`: the vocoder noise
+ * pinned to 0 and single-threaded inference. If any of these moves, two runs
+ * stop being byte-identical, so the corpus's reproducibility claim is void.
+ */
+const NOISE_SCALE = 0;
+const NOISE_W = 0;
+const THREADS = 1;
+
 const TRAP_TYPES = [
   'clean-control',
   'dose-and-number',
@@ -224,6 +233,24 @@ function checkReference(reference) {
 
   if (reference.synthesis !== undefined) {
     const s = reference.synthesis;
+    if (s.noise_scale !== NOISE_SCALE) {
+      fail(
+        `reference.json: synthesis.noise_scale is ${JSON.stringify(s.noise_scale)}, expected ${String(NOISE_SCALE)} (V1's precondition)`,
+      );
+    }
+    if (s.noise_w !== NOISE_W) {
+      fail(
+        `reference.json: synthesis.noise_w is ${JSON.stringify(s.noise_w)}, expected ${String(NOISE_W)} (V1's precondition)`,
+      );
+    }
+    if (s.threads !== THREADS) {
+      fail(
+        `reference.json: synthesis.threads is ${JSON.stringify(s.threads)}, expected ${String(THREADS)} (V1's precondition)`,
+      );
+    }
+    if (typeof s.threadSetting !== 'string' || s.threadSetting.trim() === '') {
+      fail('reference.json: synthesis.threadSetting must say how the thread limit was applied');
+    }
     if (!Number.isInteger(s.seed))
       fail(`reference.json: synthesis.seed is ${JSON.stringify(s.seed)}, expected an integer`);
     if (s.noiseColour !== NOISE_COLOUR) {
@@ -241,9 +268,9 @@ function checkReference(reference) {
         `reference.json: synthesis.fastRate is ${JSON.stringify(s.fastRate)}, expected ${String(FAST_RATE)}`,
       );
     }
-    if (typeof s.lengthScale !== 'number' || Math.abs(s.lengthScale - 1 / FAST_RATE) > 1e-9) {
+    if (typeof s.length_scale !== 'number' || Math.abs(s.length_scale - 1 / FAST_RATE) > 1e-9) {
       fail(
-        `reference.json: synthesis.lengthScale is ${JSON.stringify(s.lengthScale)}, expected 1/${String(FAST_RATE)}`,
+        `reference.json: synthesis.length_scale is ${JSON.stringify(s.length_scale)}, expected 1/${String(FAST_RATE)}`,
       );
     }
     if (s.sourceSampleRate !== SOURCE_RATE) {
@@ -612,7 +639,11 @@ function main(argv) {
   say(
     `synthesis:  ${String(synthesis.sampleRate ?? '?')} Hz mono ${String(synthesis.bitsPerSample ?? '?')}-bit, ` +
       `seed ${String(synthesis.seed ?? '?')}, ${String(synthesis.noiseColour ?? '?')} noise at ${String(synthesis.noiseSnrDb ?? '?')} dB SNR, ` +
-      `length_scale ${String(synthesis.lengthScale ?? '?')}`,
+      `length_scale ${String(synthesis.length_scale ?? '?')}`,
+  );
+  say(
+    `determinism: noise_scale ${String(synthesis.noise_scale ?? '?')}, noise_w ${String(synthesis.noise_w ?? '?')}, ` +
+      `${String(synthesis.threadSetting ?? `threads ${String(synthesis.threads ?? '?')}`)}`,
   );
   for (const voice of reference.voices ?? []) {
     say(`voice:      ${String(voice.name)}  sha256 ${String(voice.sha256)}  ${String(voice.bytes)} bytes`);
