@@ -142,8 +142,26 @@ export async function resolveEffectiveModel(
   return effectiveModel({ override, installed: await installedModelTags(options) });
 }
 
+/**
+ * The tag the server will name, resolved without asking the runtime.
+ *
+ * C-MODEL@1's "one resolver" has to be one *function*, not one rule copied
+ * twice: this used to spell the selection out by hand
+ * (`llmModelOverride(db) ?? LLM_PROFILES.quick?.model ?? PROMOTED_DEFAULT_MODEL`),
+ * which is `effectiveModel`'s rule in a second place. It is now the resolver's
+ * own answer, and `installed: null` is the honest input rather than a shortcut —
+ * the generation path does not need `present`, and `resolveLlmProfile` already
+ * reads the installed list immediately below for the availability list, so a
+ * second read here would buy nothing. `resolveEffectiveModel` is the same
+ * resolver with the runtime asked as well, for callers that want all three
+ * fields.
+ *
+ * The `LLM_PROFILES.quick?.model` term the hand-written line carried is
+ * redundant: the test in this directory pins that profile's tag to equal
+ * `PROMOTED_DEFAULT_MODEL`, which is what the resolver returns with no override.
+ */
 function configuredModel(db: Database): string {
-  return llmModelOverride(db) ?? LLM_PROFILES.quick?.model ?? PROMOTED_DEFAULT_MODEL;
+  return effectiveModel({ override: llmModelOverride(db), installed: null }).tag;
 }
 
 export function profileModel(profile: LlmProfile): string | undefined {

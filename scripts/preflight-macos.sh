@@ -76,12 +76,16 @@ VERSION="1.0"
 # data-at-rest-2026-08.md  §7 items 1-9 (the nine [I] claims)
 # m3-preflight-2026-08.md  §1.1 tags, §1.3 details.format, §3.G repetition loop
 # m8-bundling-2026-08.md   §5 whisper-cli has no prebuilt macOS binary, §7 signing
-# PLAN.md                  §2 RAM -> model tier table
+# PLAN.md                  §2 RAM -> model size table (a recommendation, not a choice)
 
 # --- constants from the project ---------------------------------------------
+# WRITING_TAG is the one model Apunta writes with, on every machine:
+# `PROMOTED_DEFAULT_MODEL` in shared/src/models.ts, held to this value by
+# server/src/platform/setup-script.test.ts. It is also the small tier's tag, so
+# the recommendation below names it without a second constant.
+WRITING_TAG="qwen3.5:4b-q4_K_M";   WRITING_GB="3.4"
 LARGE_TAG="qwen3.6:35b-a3b";     LARGE_GB="24"
 DEFAULT_TAG="gemma4:12b-it-qat"; DEFAULT_GB="7.2"
-SMALL_TAG="qwen3.5:4b-q4_K_M";   SMALL_GB="3.4"
 LARGE_TIER_GIB=36
 DEFAULT_TIER_GIB=16
 WHISPER_MODEL="ggml-tiny.en.bin"
@@ -246,7 +250,7 @@ printf '%sApunta pre-flight%s  v%s   %s\n' "$C_BOLD" "$C_RESET" "$VERSION" "$(da
 printf '%s\n' "Read-only: nothing is installed, downloaded, or changed."
 
 # ===========================================================================
-hdr "1. THIS MACHINE, AND THE MODEL TIER PLAN §2 PUTS IT IN"
+hdr "1. THIS MACHINE, AND THE SIZE RECOMMENDATION FROM PLAN §2"
 # ===========================================================================
 
 check "macOS version"
@@ -296,42 +300,58 @@ else
 fi
 
 check "Installed memory"
-MEM_BYTES=$(sysctl -n hw.memsize 2>/dev/null)
-case "${MEM_BYTES:-x}" in ''|*[!0-9]*) MEM_BYTES="" ;; esac
+# APUNTA_PREFLIGHT_RAM_GIB overrides the reading, so a container that answers no
+# sysctl at all can still be checked as a Mac of a given size. It changes no
+# decision: memory does not choose the model (C-MODEL@1).
+MEM_BYTES=""
+if [ -n "${APUNTA_PREFLIGHT_RAM_GIB:-}" ]; then
+  case "$APUNTA_PREFLIGHT_RAM_GIB" in ''|*[!0-9]*) : ;; *) MEM_BYTES=$(( APUNTA_PREFLIGHT_RAM_GIB * 1073741824 )) ;; esac
+fi
+if [ -z "$MEM_BYTES" ]; then
+  MEM_BYTES=$(sysctl -n hw.memsize 2>/dev/null)
+  case "${MEM_BYTES:-x}" in ''|*[!0-9]*) MEM_BYTES="" ;; esac
+fi
 if [ -n "$MEM_BYTES" ]; then
   MEM_GIB=$(( MEM_BYTES / 1073741824 ))
   res OK "$MEM_GIB GiB ($MEM_BYTES bytes)"
 else
   MEM_GIB=0
   res UNKNOWN "could not read hw.memsize" \
-      "Apunta falls back to the smallest model when it cannot read this."
+      "The size recommendation below cannot be made; the writing model is unaffected."
 fi
 
+# The size of the model Apunta will load, not the size of a tier it might.
 MODEL_GB_INT=4; METAL_BUDGET=0; HEADROOM=0   # safe defaults; set for real below
-check "Model tier — PLAN §2's table, applied to the numbers above"
-claim "PLAN §2" "the RAM→model table, and its assumption that Metal can only use ~75% of unified RAM"
+check "Model size — PLAN §2's table, as a recommendation"
+claim "PLAN §2" "the RAM→size table and its ~75%-of-unified-RAM assumption, kept as a recommendation: memory does not choose the model, and every Apunta machine runs $WRITING_TAG"
 if [ "$MEM_GIB" -eq 0 ]; then
-  TIER_TAG="$SMALL_TAG"; TIER_GB="$SMALL_GB"; TIER_NAME="fallback"
-  res UNKNOWN "memory unreadable, so Apunta would pick the fallback model: $SMALL_TAG"
+  TIER_TAG="$WRITING_TAG"; TIER_GB="$WRITING_GB"; TIER_NAME="unknown"
+  res UNKNOWN "memory unreadable, so there is no size recommendation" \
+      "Apunta runs $WRITING_TAG on this machine and on every other one"
 else
   if   [ "$MEM_GIB" -ge "$LARGE_TIER_GIB" ];   then TIER_TAG="$LARGE_TAG";   TIER_GB="$LARGE_GB";   TIER_NAME="large (>= ${LARGE_TIER_GIB}GB)"
   elif [ "$MEM_GIB" -ge "$DEFAULT_TIER_GIB" ]; then TIER_TAG="$DEFAULT_TAG"; TIER_GB="$DEFAULT_GB"; TIER_NAME="default (${DEFAULT_TIER_GIB}-$((LARGE_TIER_GIB-1))GB)"
-  else                                              TIER_TAG="$SMALL_TAG";   TIER_GB="$SMALL_GB";   TIER_NAME="small (< ${DEFAULT_TIER_GIB}GB)"
+  else                                              TIER_TAG="$WRITING_TAG"; TIER_GB="$WRITING_GB"; TIER_NAME="small (< ${DEFAULT_TIER_GIB}GB)"
   fi
   METAL_BUDGET=$(( MEM_GIB * 3 / 4 ))
   # integer maths only: compare whole GiB, rounding the model size up
-  MODEL_GB_INT=$(printf '%s' "$TIER_GB" | cut -d. -f1)
+  MODEL_GB_INT=$(printf '%s' "$WRITING_GB" | cut -d. -f1)
   case "${MODEL_GB_INT:-x}" in ''|*[!0-9]*) MODEL_GB_INT=0 ;; esac
   MODEL_GB_INT=$(( MODEL_GB_INT + 1 ))
   HEADROOM=$(( METAL_BUDGET - MODEL_GB_INT ))
-  res OK "tier: $TIER_NAME  →  $TIER_TAG  (~${TIER_GB} GB of weights)"
+  res OK "size recommendation (${TIER_NAME}): $TIER_TAG ~${TIER_GB} GB — Apunta writes with $WRITING_TAG either way"
   note "Metal's usable share of $MEM_GIB GiB is roughly ${METAL_BUDGET} GiB (the ~75% rule PLAN §2 relies on)"
-  note "that leaves about ${HEADROOM} GiB for the KV cache, macOS and a browser"
+  note "that leaves about ${HEADROOM} GiB for the ${WRITING_TAG} weights, the KV cache, macOS and a browser"
   if [ "$HEADROOM" -lt 4 ]; then
-    res WARN "headroom is thin — expect CPU offload or a load failure on this tier"
-    warned "the PLAN §2 tier for this machine leaves under 4 GiB of Metal headroom; verify with a real draft before trusting it"
+    res WARN "headroom is thin — expect CPU offload or a load failure"
+    warned "the writing model leaves under 4 GiB of Metal headroom on this Mac; verify with a real draft before trusting it"
   fi
-  note "PLAN §2 says the target Mac lands on $DEFAULT_TAG — this machine lands on $TIER_TAG"
+  if [ "$TIER_TAG" = "$DEFAULT_TAG" ]; then
+    note "PLAN §2 sizes the target Mac at $DEFAULT_TAG, which is this machine's recommendation too."
+  else
+    note "PLAN §2 sizes the target Mac at $DEFAULT_TAG; this machine could also run $TIER_TAG."
+  fi
+  note "Neither is what Apunta runs: it writes with $WRITING_TAG on every machine."
 fi
 
 # ===========================================================================
@@ -617,10 +637,10 @@ NEED_GIB=$(( MODEL_GB_INT + 2 ))
 if [ "$FREE_K" -eq 0 ]; then
   res UNKNOWN "could not read free space"
 elif [ "$FREE_GIB" -ge "$NEED_GIB" ]; then
-  res OK "${FREE_H:-$FREE_GIB GiB} free — enough for the $TIER_TAG weights plus the whisper model"
+  res OK "${FREE_H:-$FREE_GIB GiB} free — enough for the $WRITING_TAG weights plus the whisper model"
 else
-  res ACTION "${FREE_H:-$FREE_GIB GiB} free — the model tier for this machine needs about ${NEED_GIB} GiB"
-  act 20 "Free up disk space before pulling the model (~${TIER_GB} GB) and the whisper model (~${WHISPER_MIB} MiB)" \
+  res ACTION "${FREE_H:-$FREE_GIB GiB} free — $WRITING_TAG needs about ${NEED_GIB} GiB"
+  act 20 "Free up disk space before pulling the model (~${WRITING_GB} GB) and the whisper model (~${WHISPER_MIB} MiB)" \
       "About This Mac → More Info → Storage"
 fi
 
@@ -873,7 +893,7 @@ fi
 
 check "Which models are pulled, and do they enforce a schema?"
 claim "m3-preflight §1.3 [inference]" "only details.format == \"gguf\" routes to llama.cpp, where the JSON schema is actually enforced; MLX/safetensors weights silently ignore it (ollama#16563, still open)"
-TIER_PRESENT=0
+WRITING_PRESENT=0
 if [ "$OLLAMA_UP" = "1" ] && have curl; then
   TAGS="$TMPD/tags.json"
   curl -fsS --max-time 15 "$OLLAMA_URL/api/tags" -o "$TAGS" 2>/dev/null
@@ -928,7 +948,7 @@ if [ "$OLLAMA_UP" = "1" ] && have curl; then
         esac
         printf '              %-30s %5s GB  format=%-12s %s %s%s\n' "$name" "$gb" "$fmt" "${psize}" "${quant}" "$flag"
         case "$name" in
-          "$TIER_TAG"|"$TIER_TAG":*) TIER_PRESENT=1 ;;
+          "$WRITING_TAG"|"$WRITING_TAG":*) WRITING_PRESENT=1 ;;
         esac
         if [ "$fmt" != "gguf" ]; then
           act 15 "Model '$name' does not report format=gguf — Apunta will refuse it, and it would silently ignore the schema" \
@@ -940,13 +960,14 @@ if [ "$OLLAMA_UP" = "1" ] && have curl; then
             warned "model tag '$name' names a non-GGUF weight format" ;;
         esac
       done <"$PARSED"
-      # Grouped verdict on the tier model
-      if [ "$TIER_PRESENT" = "1" ]; then
-        res OK "the tier model for this Mac ($TIER_TAG) is pulled"
+      # Grouped verdict on the writing model — the one Apunta will load, and
+      # not the tier the RAM table would have suggested.
+      if [ "$WRITING_PRESENT" = "1" ]; then
+        res OK "the writing model Apunta will load ($WRITING_TAG) is pulled"
       else
-        res ACTION "the tier model for this Mac ($TIER_TAG) is not pulled"
-        act 16 "Pull the model PLAN §2 assigns to this machine (~${TIER_GB} GB download)" \
-            "ollama pull $TIER_TAG"
+        res ACTION "the writing model Apunta will load ($WRITING_TAG) is not pulled"
+        act 16 "Pull the model Apunta uses (~${WRITING_GB} GB download)" \
+            "ollama pull $WRITING_TAG"
       fi
     fi
   fi
@@ -954,11 +975,11 @@ else
   res SKIP "Ollama is not reachable"
 fi
 
-check "Context length and capabilities of the tier model"
+check "Context length and capabilities of the writing model"
 claim "m3-preflight §1.1 [search-snippet only]" "the tag, its size and its 256K context could never be confirmed — ollama.com and registry.ollama.ai were unreachable from the build container"
-if [ "$OLLAMA_UP" = "1" ] && [ "$TIER_PRESENT" = "1" ] && have curl; then
+if [ "$OLLAMA_UP" = "1" ] && [ "$WRITING_PRESENT" = "1" ] && have curl; then
   SHOW="$TMPD/show.json"
-  curl -fsS --max-time 20 "$OLLAMA_URL/api/show" -d "{\"model\":\"$TIER_TAG\"}" -o "$SHOW" 2>/dev/null
+  curl -fsS --max-time 20 "$OLLAMA_URL/api/show" -d "{\"model\":\"$WRITING_TAG\"}" -o "$SHOW" 2>/dev/null
   if [ -s "$SHOW" ]; then
     CTX=""
     if have jq; then
@@ -972,11 +993,11 @@ if [ "$OLLAMA_UP" = "1" ] && [ "$TIER_PRESENT" = "1" ] && have curl; then
     [ -n "${CAPS:-}" ] || CAPS=$(tr -d '\n' <"$SHOW" | sed -n 's/.*"capabilities"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' | tr -d '"')
     [ -n "${SFMT:-}" ] || SFMT=$(tr -d '\n' <"$SHOW" | sed -n 's/.*"format"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
     if [ -n "$CTX" ]; then
-      res OK "$TIER_TAG reports a context length of $CTX tokens (Apunta asks for 16384)"
+      res OK "$WRITING_TAG reports a context length of $CTX tokens (Apunta asks for 16384)"
       if [ "$CTX" -lt 16384 ] 2>/dev/null; then
         res ACTION "that is smaller than the 16K context Apunta requires"
-        act 17 "This model cannot hold Apunta's prompt; pick another tag" \
-            "ollama pull $DEFAULT_TAG"
+        act 17 "This model cannot hold Apunta's prompt; set another tag as the llm_model override" \
+            "Apunta's writing model is $WRITING_TAG by default, and nothing is ever pulled automatically"
       fi
     else
       res UNKNOWN "could not read a context_length from /api/show"
@@ -991,7 +1012,7 @@ if [ "$OLLAMA_UP" = "1" ] && [ "$TIER_PRESENT" = "1" ] && have curl; then
     res UNKNOWN "POST /api/show returned nothing"
   fi
 else
-  res SKIP "needs a running Ollama with $TIER_TAG pulled"
+  res SKIP "needs a running Ollama with $WRITING_TAG pulled"
 fi
 
 check "Ollama model storage"

@@ -1,4 +1,4 @@
-import { PROMOTED_DEFAULT_MODEL } from '@apunta/shared';
+import { effectiveModel, PROMOTED_DEFAULT_MODEL } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { putSettings } from '../db/settings.js';
@@ -148,6 +148,38 @@ describe('resolveLlmProfile', () => {
     expect(isLocalModelTag('qwen3.5:4b-q4_K_M-cloud')).toBe(false);
     expect(isLocalModelTag('qwen3.5:4b-q4_K_M-cloud-preview')).toBe(false);
     expect(isLocalModelTag('qwen3.5:4b-q4_K_M')).toBe(true);
+  });
+
+  /**
+   * C-MODEL@1's "one resolver" as the generation path sees it.
+   *
+   * `configuredModel` used to spell the selection out by hand, which made the
+   * server a second copy of the rule that `shared/` owns. It is now the
+   * resolver's own answer, and this row is what holds it there: the model the
+   * server names is compared against `effectiveModel`'s answer for the same
+   * stored value, not against a second hand-written expectation. The promoted
+   * case is also pinned to the literal, so the row cannot pass by agreeing
+   * with itself.
+   *
+   * A cloud-backed stored value is included on purpose: it is refused later, at
+   * the use site, and substituting a different tag here is the behaviour the
+   * contract removes.
+   */
+  it('names the model the resolver names, whatever the setting holds', async () => {
+    const fetchImpl = async (): Promise<Response> => tags([PROMOTED_DEFAULT_MODEL]);
+
+    for (const stored of ['', '   ', 'gemma4:12b-it-qat', 'qwen3.5:4b-q4_K_M-cloud']) {
+      putSettings(harness.db, { llm_model: stored });
+      const resolved = await resolveLlmProfile(harness.db, { fetchImpl });
+
+      expect(resolved.model, JSON.stringify(stored)).toBe(
+        effectiveModel({ override: stored, installed: [PROMOTED_DEFAULT_MODEL] }).tag,
+      );
+    }
+
+    // And the promoted default is the resolver's own answer, spelled out.
+    putSettings(harness.db, { llm_model: '' });
+    expect((await resolveLlmProfile(harness.db, { fetchImpl })).model).toBe(PROMOTED_DEFAULT_MODEL);
   });
 });
 

@@ -1,0 +1,5 @@
+row                                                           base a115718        now (worktree)
+names the promoted default as the writing model it downloads FAIL               PASS
+never assigns the model it downloads from a RAM branch       FAIL               PASS
+names the writing model as the one it checks and tells the owner to pull FAIL               PASS
+still reports the RAM table and its boundaries, unchanged    PASS               PASS

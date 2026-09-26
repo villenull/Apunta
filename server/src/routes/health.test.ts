@@ -147,6 +147,14 @@ describe('GET /api/health testRunId', () => {
   });
 });
 
+/** Close the app the helper opened, so a loop does not leak one per iteration. */
+async function closeCurrent(): Promise<void> {
+  await app?.close();
+  app = null;
+  if (dir !== null) rmSync(dir, { recursive: true, force: true });
+  dir = null;
+}
+
 /**
  * C-MODEL@1: "Health and preflight report `{ tag, source, present }`."
  *
@@ -154,6 +162,17 @@ describe('GET /api/health testRunId', () => {
  * Must-not-edit `web/**` still compile — which is what the `parse` in
  * `ollamaOf` above and `server/src/app.test.ts`'s unedited fake-mode
  * assertion are together asserting.
+ *
+ * **Why the inputs are deliberately inconsistent.** In production
+ * `describe()` and the installed list are two reads of the same runtime and
+ * agree, so a test that derives one from the other asserts nothing: it would
+ * hold for any implementation, including one that computed `present` from the
+ * wrong half. Each row below therefore states what `describe()` says and what
+ * the installed list says *separately*, and at least one row has them
+ * disagreeing on purpose. A route that takes `present` from `describe()` fails
+ * the "list does not have the tag" rows; a route that never consults
+ * `reachable` fails the "unreachable, list has the tag" row. Neither
+ * derivation can pass this block.
  */
 describe('GET /api/health — the effective model (real mode)', () => {
   const REACHABLE = {
@@ -178,7 +197,9 @@ describe('GET /api/health — the effective model (real mode)', () => {
 
   it('reports present: false when the tag is not in the installed list', async () => {
     const server = await realModeApp({
-      description: { ...REACHABLE, modelPresent: false },
+      // `describe()` says the model is there; the list does not have it.
+      // `present` is the list's answer, and must not be `describe()`'s.
+      description: REACHABLE,
       installedModels: ['some-other-tag'],
     });
 
@@ -205,7 +226,7 @@ describe('GET /api/health — the effective model (real mode)', () => {
 
   it('reports an override that is not installed as present: false', async () => {
     const server = await realModeApp({
-      description: { ...REACHABLE, model: 'gemma4:12b-it-qat', modelPresent: false },
+      description: { ...REACHABLE, model: 'gemma4:12b-it-qat', modelPresent: true },
       installedModels: [PROMOTED_DEFAULT_MODEL],
       override: 'gemma4:12b-it-qat',
     });
@@ -214,6 +235,40 @@ describe('GET /api/health — the effective model (real mode)', () => {
       tag: 'gemma4:12b-it-qat',
       source: 'override',
       present: false,
+    });
+  });
+
+  /**
+   * An empty list is a **fact** — the runtime answered and does not have the
+   * tag — so it may be reported as "not present". `null` is the absence of a
+   * fact and may not. This is the pair the card calls out as never to be
+   * conflated, and the two rows either side of this one hold the other down.
+   */
+  it('reports an empty installed list as present: false, not as unknown', async () => {
+    const server = await realModeApp({
+      description: { ...REACHABLE, modelPresent: false },
+      installedModels: [],
+    });
+
+    expect(await ollamaOf(server)).toMatchObject({
+      reachable: true,
+      tag: PROMOTED_DEFAULT_MODEL,
+      source: 'promoted',
+      present: false,
+    });
+  });
+
+  it('reports present: null when a reachable runtime answers nothing about its models', async () => {
+    const server = await realModeApp({
+      description: REACHABLE,
+      installedModels: null,
+    });
+
+    expect(await ollamaOf(server)).toMatchObject({
+      reachable: true,
+      tag: PROMOTED_DEFAULT_MODEL,
+      source: 'promoted',
+      present: null,
     });
   });
 
@@ -240,36 +295,75 @@ describe('GET /api/health — the effective model (real mode)', () => {
   });
 
   /**
-   * The agreement rule. `model`/`modelPresent` come from `describe()`;
-   * `tag`/`present` come from the resolver. A reachable runtime where the two
-   * pairs disagree is a bug in this card, not a tolerated difference — the
-   * setup screen would then show one model while the server ran another.
+   * The reachability half of the agreement rule, and the row that cannot
+   * otherwise be reached: the runtime is **unreachable** and the installed
+   * list nevertheless **contains the tag**. A route that computed `present`
+   * from the list alone answers `true` here — claiming the owner has a model
+   * on a runtime it just failed to contact. The list is not consulted at all
+   * when `reachable` is false, so `present` is `null` by construction.
    */
-  it('keeps describe() and the resolver in agreement whenever the runtime answers', async () => {
-    for (const installedModels of [[], ['some-other-tag'], [PROMOTED_DEFAULT_MODEL]]) {
+  it('reports present: null exactly when the runtime is unreachable, list or no list', async () => {
+    const server = await realModeApp({
+      description: {
+        reachable: false,
+        model: PROMOTED_DEFAULT_MODEL,
+        modelPresent: false,
+        weightsFormat: null,
+      },
+      // The list a stale 2 s cache would hand back. It must be ignored.
+      installedModels: [PROMOTED_DEFAULT_MODEL, 'some-other-tag'],
+    });
+
+    const ollama = await ollamaOf(server);
+    expect(ollama.reachable).toBe(false);
+    expect(ollama.present).toBeNull();
+    expect(ollama.tag).toBe(PROMOTED_DEFAULT_MODEL);
+  });
+
+  /**
+   * The agreement rule: `model`/`modelPresent` come from `describe()` and
+   * `tag`/`present` from the resolver, and on a runtime that answers the two
+   * pairs describe one model. `model === tag` holds because both sides resolve
+   * the same setting through the same resolver; `modelPresent === (present ===
+   * true)` holds because both halves read the same `/api/tags`.
+   *
+   * The cases are stated independently — the installed list is a column of its
+   * own, not `includes()` of the expected answer — so this is no longer a
+   * statement about the test's own construction. It is deliberately not
+   * asserted for the one state the card cannot make agree: a runtime that is
+   * reachable, whose model list could not be read, is `present: null` while
+   * `describe()` may well have found the model. Reporting `false` there would
+   * be a lie the owner sees, so the row above pins `null` instead and this one
+   * leaves that state out.
+   */
+  it('keeps describe() and the resolver in agreement whenever both halves answered', async () => {
+    const cases = [
+      { label: 'the tag is installed', modelPresent: true, installedModels: [PROMOTED_DEFAULT_MODEL] },
+      { label: 'another model is installed', modelPresent: false, installedModels: ['some-other-tag'] },
+      { label: 'nothing is installed', modelPresent: false, installedModels: [] },
+    ] as const;
+
+    for (const { label, modelPresent, installedModels } of cases) {
       const server = await realModeApp({
-        description: {
-          ...REACHABLE,
-          modelPresent: installedModels.includes(PROMOTED_DEFAULT_MODEL),
-        },
+        description: { ...REACHABLE, modelPresent },
         installedModels,
       });
 
       const ollama = await ollamaOf(server);
-      expect(ollama.reachable).toBe(true);
-      expect(ollama.model).toBe(ollama.tag);
-      expect(ollama.modelPresent).toBe(ollama.present === true);
+      expect(ollama.reachable, label).toBe(true);
+      expect(ollama.present, label).toBe(modelPresent);
+      expect(ollama.model, label).toBe(ollama.tag);
+      expect(ollama.modelPresent, label).toBe(ollama.present === true);
 
-      // The loop builds more than one app; only the last would be closed by
-      // afterEach, so each is closed as it goes.
-      await server.close();
-      rmSync(dir ?? '', { recursive: true, force: true });
-      app = null;
-      dir = null;
+      await closeCurrent();
     }
   });
 
-  it('reports present: null exactly when the runtime is unreachable', async () => {
+  /**
+   * The unreachable case, where the rule *is* enforceable by construction:
+   * `describe()` reports the tag and no model, and `present` is `null`.
+   */
+  it('keeps describe() and the resolver in agreement when the runtime does not answer', async () => {
     const server = await realModeApp({
       description: {
         reachable: false,
@@ -282,7 +376,8 @@ describe('GET /api/health — the effective model (real mode)', () => {
 
     const ollama = await ollamaOf(server);
     expect(ollama.reachable).toBe(false);
-    expect(ollama.present).toBeNull();
+    expect(ollama.model).toBe(ollama.tag);
+    expect(ollama.modelPresent).toBe(ollama.present === true);
   });
 });
 

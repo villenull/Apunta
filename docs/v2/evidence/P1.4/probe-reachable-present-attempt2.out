@@ -1,0 +1,6 @@
+reachable, tag installed       reachable=true  modelPresent=true  present=true   present-null-IFF-unreachable: HOLDS   model/present agree: HOLDS
+reachable, tag NOT installed   reachable=true  modelPresent=true  present=false  present-null-IFF-unreachable: HOLDS   model/present agree: n/a (unknown) or VIOLATED
+reachable, empty list          reachable=true  modelPresent=false present=false  present-null-IFF-unreachable: HOLDS   model/present agree: HOLDS
+reachable, list unreadable     reachable=true  modelPresent=true  present=null   present-null-IFF-unreachable: VIOLATED   model/present agree: n/a (unknown) or VIOLATED
+unreachable, list unreadable   reachable=false modelPresent=false present=null   present-null-IFF-unreachable: HOLDS   model/present agree: HOLDS
+unreachable, list DID answer   reachable=false modelPresent=false present=null   present-null-IFF-unreachable: HOLDS   model/present agree: HOLDS

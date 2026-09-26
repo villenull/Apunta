@@ -53,9 +53,14 @@ set -u
 VERSION="1.0"
 
 # --- constants, kept identical to scripts/preflight-macos.sh ----------------
+# WRITING_TAG is the one model Apunta writes with, on every machine: it is
+# `PROMOTED_DEFAULT_MODEL` in shared/src/models.ts, and
+# server/src/platform/setup-script.test.ts holds the two to each other. It
+# happens to also be the small tier's tag, which is why the recommendation
+# below can name it without a second constant.
+WRITING_TAG="qwen3.5:4b-q4_K_M"
 LARGE_TAG="qwen3.6:35b-a3b"
 DEFAULT_TAG="gemma4:12b-it-qat"
-SMALL_TAG="qwen3.5:4b-q4_K_M"
 LARGE_TIER_GIB=36
 DEFAULT_TIER_GIB=16
 
@@ -102,7 +107,7 @@ Apunta macOS setup — installs the local AI stack and downloads the models.
 
   --dry-run          print every command it would run, and run none of them
   --yes              do not ask before a large download (for scripts and CI)
-  --model TAG        use this Ollama tag instead of the one this Mac's RAM picks
+  --model TAG        use this Ollama tag instead of Apunta's promoted writing model
   --skip-ollama      leave Ollama alone (already installed as the desktop app,
                      or managed some other way)
   --skip-models      install the tools but download nothing
@@ -300,27 +305,51 @@ else
 fi
 
 # ===========================================================================
-step "Choosing the writing model for this Mac"
+step "The writing model Apunta will use"
 # ===========================================================================
-# hw.memsize is total physical RAM in bytes. Not hw.physmem, which saturates
-# at 4 GB and is wrong on every modern Mac.
-RAM_BYTES=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
-case "$RAM_BYTES" in ''|*[!0-9]*) RAM_BYTES=0 ;; esac
-RAM_GIB=$(( RAM_BYTES / 1073741824 ))
+# Memory size does not choose the model. Apunta runs one writing model on every
+# machine (C-MODEL@1), so this script downloads exactly the tag the app, health
+# and eval all resolve, and a machine provisioned from here can make its first
+# inference without a further pull. The RAM table below is the *recommendation*
+# — "this Mac could also run X" — and it selects nothing.
+#
+# APUNTA_SETUP_RAM_GIB overrides the memory reading, for the same reason
+# APUNTA_OLLAMA_URL above overrides the port: so a test container that answers no
+# sysctl at all can still check what the walk prints for a 16 or 36 GiB Mac. It
+# changes no decision.
+RAM_GIB="${APUNTA_SETUP_RAM_GIB:-}"
+if [ -z "$RAM_GIB" ]; then
+  # hw.memsize is total physical RAM in bytes. Not hw.physmem, which saturates
+  # at 4 GB and is wrong on every modern Mac.
+  RAM_BYTES=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
+  case "$RAM_BYTES" in ''|*[!0-9]*) RAM_BYTES=0 ;; esac
+  RAM_GIB=$(( RAM_BYTES / 1073741824 ))
+fi
+case "$RAM_GIB" in ''|*[!0-9]*) RAM_GIB=0 ;; esac
 
 if [ -n "$MODEL_OVERRIDE" ]; then
   MODEL="$MODEL_OVERRIDE"
   ok "using $MODEL (--model)"
-elif [ "$RAM_GIB" -ge "$LARGE_TIER_GIB" ]; then
-  MODEL="$LARGE_TAG"
-  ok "${RAM_GIB} GB of memory → $MODEL"
-elif [ "$RAM_GIB" -ge "$DEFAULT_TIER_GIB" ]; then
-  MODEL="$DEFAULT_TAG"
-  ok "${RAM_GIB} GB of memory → $MODEL"
 else
-  MODEL="$SMALL_TAG"
-  ok "${RAM_GIB} GB of memory → $MODEL"
-  note "This is the small-model tier. It works; the notes will be rougher."
+  MODEL="$WRITING_TAG"
+  ok "$MODEL — the writing model Apunta uses on every machine"
+fi
+
+# The RAM table, reported and never obeyed.
+if   [ "$RAM_GIB" -ge "$LARGE_TIER_GIB" ];   then RECOMMENDED_TAG="$LARGE_TAG"
+elif [ "$RAM_GIB" -ge "$DEFAULT_TIER_GIB" ]; then RECOMMENDED_TAG="$DEFAULT_TAG"
+else                                              RECOMMENDED_TAG="$WRITING_TAG"
+fi
+if [ "$RAM_GIB" -eq 0 ]; then
+  note "could not read this Mac's memory, so there is no size recommendation"
+elif [ "$RECOMMENDED_TAG" = "$MODEL" ]; then
+  note "size recommendation: $RECOMMENDED_TAG — the same model Apunta uses"
+else
+  note "this Mac (${RAM_GIB} GB) could also run $RECOMMENDED_TAG, as a recommendation"
+  note "Apunta's writing model is $MODEL on every machine, so that is what gets downloaded"
+fi
+if [ "$RAM_GIB" -lt "$DEFAULT_TIER_GIB" ] && [ "$RAM_GIB" -ne 0 ]; then
+  note "below ${DEFAULT_TIER_GIB} GB this is the small-model tier. It works; the notes will be rougher."
 fi
 
 # An MLX or safetensors flavour routes to Ollama's MLX engine, which silently
@@ -332,7 +361,7 @@ case "$MODEL" in
     problem "$MODEL names a non-GGUF weight format."
     note "Ollama routes those to its MLX engine, which ignores the JSON schema"
     note "that keeps a note in its sections — silently, with no error."
-    note "Use a GGUF tag: $DEFAULT_TAG"
+    note "Use a GGUF tag: $WRITING_TAG"
     MODEL=""
     ;;
 esac

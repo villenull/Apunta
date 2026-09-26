@@ -9,6 +9,42 @@ import { migrationLevel } from '../db/index.js';
 import { fileVaultStatus } from '../platform/filevault.js';
 
 /**
+ * The agreement rule (C-MODEL@1): in real mode `present` is `null` **exactly**
+ * when the runtime is unreachable.
+ *
+ * `reachable` is consulted *before* the installed list, so the invariant holds
+ * by construction rather than by the two happening to agree. It matters
+ * because they are independent round trips to the same loopback URL:
+ * `OllamaProvider.describe()` reads `/api/tags` with its own 2500 ms timeout
+ * and `readInstalledModelNames` reads it again, the second time possibly
+ * answered from its 2 s cache while the first was not. Computing `present` from
+ * the list alone lets the route publish two states that are both wrong:
+ * `present: false` for a runtime it had just failed to reach, which tells the
+ * owner a model is missing that she has; and `present: true` for a runtime
+ * that never answered at all, which is how a machine looks set up and cannot
+ * draft. An unreachable runtime is `null` and the list is not read.
+ *
+ * `undefined` means "nobody injected a list", so the route asks `profiles.ts`.
+ * An explicit `null` is itself the answer — the caller is saying the runtime
+ * could not be asked — and must not be turned into a fetch by `??`.
+ *
+ * The residual: a runtime that *is* reachable, whose model list could not be
+ * read, is `null` too, because that is unknown and `false` would be a lie the
+ * owner sees. `describe()` may well have found the model in the same second, so
+ * the two halves can legitimately differ there. It is the one state the card's
+ * rule cannot close from the route, and it is recorded in the return file.
+ */
+async function effectiveInstalled(
+  config: AppConfig,
+  reachable: boolean,
+  injected: readonly string[] | null | undefined,
+): Promise<readonly string[] | null> {
+  if (!reachable) return null;
+  if (injected !== undefined) return injected;
+  return installedModelTags({ baseUrl: config.ollamaUrl });
+}
+
+/**
  * Every dependency, asked rather than assumed.
  *
  * M3 made the LLM half real; M5 does whisper — the binary is probed and the
@@ -58,14 +94,7 @@ export async function buildHealthResponse(
       { ...effectiveModel({ override, installed: null }), present: true as const }
     : effectiveModel({
         override,
-        // `undefined` means "nobody injected a list", so the route asks
-        // `profiles.ts`. An explicit `null` is itself the answer — the caller
-        // is saying the runtime could not be asked — and must not be turned
-        // into a fetch by `??`.
-        installed:
-          injectedInstalledModels === undefined
-            ? await installedModelTags({ baseUrl: config.ollamaUrl })
-            : injectedInstalledModels,
+        installed: await effectiveInstalled(config, llm.reachable, injectedInstalledModels),
       });
 
   // The sandbox wrapper's ownership check (C-ISO@1 rule 5): when the server
