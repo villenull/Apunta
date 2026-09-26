@@ -132,3 +132,6 @@ build output and could turn a green row red for a reason that has nothing to do
 with either card. P4.1 attempt 2 and P3.1 attempt 1 are therefore held until
 S2.5's implementer commits and is reviewed. Read-only lanes (instruction
 reviews) still run in parallel.
+
+- 2026-09-26T19:12Z | P5.2 | IR r2 DEFECT on IR-04 only, 9 CLEAR | **AM-044** applies the clock seam (`now?: Date`, matching `CreateBackupOptions`/`StageRestoreOptions`) plus the reviewer's two non-blocking clauses; r3 dispatched at `5c71ecf`
+- 2026-09-26T19:10Z | (side) | UI preview rebuilt on :7810 | the 06:50 preview was serving a **10:39 web bundle on a 06:50 server** — a mismatched pair: the API had no `locale` and reported `migrationLevel 7` while the repo is at `008_locale.sql`. Stopped it (`kill -TERM` on the process group, then the PID: the wrapper installs no SIGTERM handler, as logged at 06:50) and started a coherent one — `sandbox.mjs env` for the run dir, `APUNTA_FAKE_AI=1 npm run seed` **before** the server, then the server on that dir. Seeded 2 formats / 3 patients / 4 notes; level 8; fake AI. **Seeding after the server starts is no longer possible**: P3.2's data-folder ownership (APPROVED `48e8778`) makes the second writer `SQLITE_BUSY`, which is that card working as designed, not a defect. The new order is env → seed → serve
