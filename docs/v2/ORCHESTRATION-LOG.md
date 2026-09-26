@@ -21,3 +21,7 @@ One entry per coordinator step, newest last:
 2026-09-26T01:48:21Z | P0.3 | impl review | all PASS | docs/v2/state/reviews/P0.3-impl.md. Card APPROVED. From here all launching commands run through scripts/v2/sandbox.mjs (HS-2).
 2026-09-26T01:51:35Z | P0.4 | IR | CLEAR all ten (first round, AM-004) | docs/v2/state/reviews/P0.4-ir.md
 2026-09-26T01:51:35Z | P0.4 | measurement attempt 1 | BLOCKED (environment) | No Ollama on this machine (worker return + coordinator `which`/`curl` confirmation). Card stop condition "model tag missing" → BLOCKED, owner action filed in OWNER-ACTIONS.md; attempt budget intact. Card BLOCKED, see BLOCKED.md.
+2026-09-26T02:03:21Z | S1.1 | IR round 1 | 9x CLEAR, IR-03 DEFECT | Q4 mispointed SOAP/intake source at note-format.ts; AM-006 corrected to seed.ts:44/BY_SECTIONS (read-only), committed 7b1358d, dispatch rebuilt
+2026-09-26T02:03:21Z | S1.1 | IR round 2 | CLEAR all ten | docs/v2/state/reviews/S1.1-ir.md
+2026-09-26T02:03:21Z | S1.1 | research attempt 1 | SUBMITTED, committed cbc0f96 | es-mx-clinical-documentation.md + 182-line addendum; V1 PASS, V2 for review; lawyer/owner questions handed forward, none guessed
+2026-09-26T02:03:21Z | S1.1 | research review | all PASS, no findings | docs/v2/state/reviews/S1.1-impl.md. Card APPROVED.
