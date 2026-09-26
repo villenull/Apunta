@@ -44,3 +44,6 @@ One entry per coordinator step, newest last:
 2026-09-26T05:26:34Z | S1.5 | research attempt 1 | SUBMITTED, committed f71e16f | es-mx-spellcheck.md — dictionary-es-mx@2.0.0 FITS via MPL-1.1 election; review dispatched
 2026-09-26T05:26:34Z | P7a.1 | research | in flight (space-bunny-free)
 2026-09-26T05:34:32Z | S1.5 | research review | all PASS, 7 non-blocking findings | docs/v2/state/reviews/S1.5-impl.md — MPL-1.1 election verified verbatim. Card APPROVED.
+2026-09-26T05:40:01Z | P7a.1 | research attempt 1 | SUBMITTED, committed 1a81d91 | PUBLIC-REPO-AUDIT.md — no secret/patient content in tree or history; exposure is owner name/mailbox metadata + home/host/Tailscale strings; UNLICENSED is the gating decision
+2026-09-26T05:40:01Z | P7a.1 | research review | all PASS (3 cosmetic notes) | docs/v2/state/reviews/P7a.1-impl.md. Card APPROVED.
+2026-09-26T05:40:01Z | S1.R | parent review | in flight (space-bunny-free)
