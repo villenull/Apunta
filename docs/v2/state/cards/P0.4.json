@@ -1,15 +1,15 @@
 {
   "card": "P0.4",
   "planVersion": 2,
-  "contracts": [
-    "C-EVAL@1"
-  ],
-  "baseCommit": "92c152c",
+  "contracts": ["C-EVAL@1"],
+  "baseCommit": "f790709",
   "attempt": 1,
-  "status": "BLOCKED (owner)",
-  "lastCompletedStep": "attempt 1 could not start: no Ollama on this machine (worker return + coordinator confirmation); card BLOCKED per stop condition, attempt budget intact, owner action filed",
-  "nextAllowedAction": "check instruction review return",
-  "sideEffectsDone": [],
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "unblocked after owner-authorised Ollama setup (AM-020); IR was CLEAR on all ten at round 1 (2026-09-26, card text unchanged); dispatch rebuilt at base f790709; measurement dispatched (space-bunny-free)",
+  "nextAllowedAction": "check measurement return",
+  "sideEffectsDone": [
+    "Ollama service installed/enabled; qwen3.5:4b-q4_K_M present (not pulled by this card)"
+  ],
   "changedFiles": [],
   "criteria": {
     "V1": "NOT RUN",
@@ -17,5 +17,5 @@
     "V3": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T01:51:35Z"
+  "updatedUtc": "2026-09-26T08:05:00Z"
 }

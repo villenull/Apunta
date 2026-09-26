@@ -2,11 +2,11 @@
   "card": "P0.5",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "e8dbf44",
+  "baseCommit": "c8b656b",
   "attempt": 1,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "card created by owner-authorised AM-022; dispatch built (port 7809); AM-023 logged; instruction review dispatched (space-bunny-free)",
-  "nextAllowedAction": "check instruction review return",
+  "lastCompletedStep": "instruction review CLEAR on all ten (round 2 after AM-025); implementer NOT yet dispatched — HELD so the uncommitted out-of-band UI preview (which edits web/src/lib/format.test.ts, one of this card's four files) is reverted first, otherwise the commit would capture UI-preview edits",
+  "nextAllowedAction": "dispatch implementer after the UI preview is reverted",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
@@ -15,5 +15,5 @@
     "V3": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T07:40:00Z"
+  "updatedUtc": "2026-09-26T07:55:00Z"
 }
