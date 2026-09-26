@@ -5,8 +5,8 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 
 ## The run
 
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
-- **Node:** v26.8.2
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
+- **Node:** v24.19.0
 - **Requests:** 7 — one `HEAD` each, `redirect: 'manual'`
 - **Hops followed:** 0 in total — no `Location` was ever requested
 - **Bytes acquired:** none. No response body was read, nothing was downloaded, no model was pulled, no Ollama daemon was contacted.
@@ -30,7 +30,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 - **Request URL:** `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin`
 - **Response status:** `302`
 - **Hops followed:** 0 — a `HEAD` is the whole of this probe and no `Location` was requested
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
 - **`Location` observed (would be hop 1; never requested):**
 
   - host: `us.aws.cdn.hf.co`
@@ -51,7 +51,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
   - size: not acquired — HEAD only, no bytes
   - SHA-256: not computed — HEAD only, no bytes
   - licence evidence: MIT (OpenAI Whisper) — https://huggingface.co/ggerganov/whisper.cpp (`verified: true`); Read from the catalogue entry itself.
-  - date: 2026-09-26T18:58:22.075Z
+  - date: 2026-09-26T22:06:41.672Z
 
 ### `ggml-base.bin`
 
@@ -61,7 +61,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 - **Request URL:** `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin`
 - **Response status:** `302`
 - **Hops followed:** 0 — a `HEAD` is the whole of this probe and no `Location` was requested
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
 - **`Location` observed (would be hop 1; never requested):**
 
   - host: `us.aws.cdn.hf.co`
@@ -82,7 +82,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
   - size: not acquired — HEAD only, no bytes
   - SHA-256: not computed — HEAD only, no bytes
   - licence evidence: MIT (OpenAI Whisper) — https://huggingface.co/ggerganov/whisper.cpp (`verified: true`); Inherited from the pinned entry: same publisher and same repository, not a separate read of this artifact’s terms.
-  - date: 2026-09-26T18:58:22.075Z
+  - date: 2026-09-26T22:06:41.672Z
 
 ### `ggml-base-q5_1.bin`
 
@@ -92,7 +92,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 - **Request URL:** `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin`
 - **Response status:** `302`
 - **Hops followed:** 0 — a `HEAD` is the whole of this probe and no `Location` was requested
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
 - **`Location` observed (would be hop 1; never requested):**
 
   - host: `us.aws.cdn.hf.co`
@@ -113,7 +113,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
   - size: not acquired — HEAD only, no bytes
   - SHA-256: not computed — HEAD only, no bytes
   - licence evidence: MIT (OpenAI Whisper) — https://huggingface.co/ggerganov/whisper.cpp (`verified: true`); Inherited from the pinned entry: same publisher and same repository, not a separate read of this artifact’s terms.
-  - date: 2026-09-26T18:58:22.075Z
+  - date: 2026-09-26T22:06:41.672Z
 
 ### `ggml-small.bin`
 
@@ -123,7 +123,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 - **Request URL:** `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin`
 - **Response status:** `302`
 - **Hops followed:** 0 — a `HEAD` is the whole of this probe and no `Location` was requested
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
 - **`Location` observed (would be hop 1; never requested):**
 
   - host: `us.aws.cdn.hf.co`
@@ -144,7 +144,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
   - size: not acquired — HEAD only, no bytes
   - SHA-256: not computed — HEAD only, no bytes
   - licence evidence: MIT (OpenAI Whisper) — https://huggingface.co/ggerganov/whisper.cpp (`verified: true`); Inherited from the pinned entry: same publisher and same repository, not a separate read of this artifact’s terms.
-  - date: 2026-09-26T18:58:22.075Z
+  - date: 2026-09-26T22:06:41.672Z
 
 ### `ggml-small-q5_1.bin`
 
@@ -154,7 +154,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 - **Request URL:** `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small-q5_1.bin`
 - **Response status:** `302`
 - **Hops followed:** 0 — a `HEAD` is the whole of this probe and no `Location` was requested
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
 - **`Location` observed (would be hop 1; never requested):**
 
   - host: `us.aws.cdn.hf.co`
@@ -175,7 +175,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
   - size: not acquired — HEAD only, no bytes
   - SHA-256: not computed — HEAD only, no bytes
   - licence evidence: MIT (OpenAI Whisper) — https://huggingface.co/ggerganov/whisper.cpp (`verified: true`); Inherited from the pinned entry: same publisher and same repository, not a separate read of this artifact’s terms.
-  - date: 2026-09-26T18:58:22.075Z
+  - date: 2026-09-26T22:06:41.672Z
 
 ### `ggml-large-v3-turbo-q5_0.bin`
 
@@ -185,7 +185,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 - **Request URL:** `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin`
 - **Response status:** `302`
 - **Hops followed:** 0 — a `HEAD` is the whole of this probe and no `Location` was requested
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
 - **`Location` observed (would be hop 1; never requested):**
 
   - host: `us.aws.cdn.hf.co`
@@ -206,7 +206,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
   - size: not acquired — HEAD only, no bytes
   - SHA-256: not computed — HEAD only, no bytes
   - licence evidence: MIT (OpenAI Whisper) — https://huggingface.co/ggerganov/whisper.cpp (`verified: true`); Inherited from the pinned entry: same publisher and same repository, not a separate read of this artifact’s terms.
-  - date: 2026-09-26T18:58:22.075Z
+  - date: 2026-09-26T22:06:41.672Z
 
 ### `ggml-large-v3-turbo-q8_0.bin`
 
@@ -216,7 +216,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
 - **Request URL:** `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q8_0.bin`
 - **Response status:** `302`
 - **Hops followed:** 0 — a `HEAD` is the whole of this probe and no `Location` was requested
-- **Date (UTC):** 2026-09-26T18:58:22.075Z
+- **Date (UTC):** 2026-09-26T22:06:41.672Z
 - **`Location` observed (would be hop 1; never requested):**
 
   - host: `us.aws.cdn.hf.co`
@@ -237,7 +237,7 @@ Written by `scripts/v2/probe-redirects.mjs`, which read every URL out of the bui
   - size: not acquired — HEAD only, no bytes
   - SHA-256: not computed — HEAD only, no bytes
   - licence evidence: MIT (OpenAI Whisper) — https://huggingface.co/ggerganov/whisper.cpp (`verified: true`); Inherited from the pinned entry: same publisher and same repository, not a separate read of this artifact’s terms.
-  - date: 2026-09-26T18:58:22.075Z
+  - date: 2026-09-26T22:06:41.672Z
 
 ## What a reader may conclude
 
