@@ -47,8 +47,23 @@ Anything else. Never write generated audio into the repository.
   colour, the `length_scale` and the Piper version into `reference.json`.
 - **`reference.json` shape** (one file per output directory):
   `{"version":1,"piper":"<version>","voices":[{"name","sha256","bytes"}],"clips":[{"file","text","voice","variant","source","category"}]}`,
-  where `file` is relative to the output directory, `variant` is
-  `clean|noise|fast`, and `category` is one of the four sentence classes below.
+  where:
+  - `file` is relative to the output directory;
+  - `variant` is `clean|noise|fast` (`clean` only for the non-speech clips);
+  - `voice` is the voice name, or `"none"` for the 10 non-speech clips;
+  - `text` is the reference text, or `""` for the 10 non-speech clips;
+  - `source` is one of `tuning | heldout | clinical | silence | tone`;
+  - `category` is: for `source: tuning|heldout`, the clip's trap type (one of
+    the eleven in `e2e/fixtures/eval-es/`: `clean-control`, `dose-and-number`,
+    `english-loanword`, `experiencer`, `invented-negation`, `lost-negation`,
+    `past-vs-current-risk`, `section-never-covered`, `spoken-correction`,
+    `uncertainty`, `unclear-speech`); for `source: clinical`, one of
+    `drugs | doses | negation | numbers`; for `source: silence|tone`, `silence`
+    or `tone` respectively.
+  This makes every clip in the output directory representable, so V2's
+  "covers every clip" is satisfiable without widening any pinned decision. The
+  `source`/`category` pair is what lets S4a.2 report the 55-dictation rate and
+  the 40-sentence rate separately and attribute them to the right split.
 - **The 40 clinical-term sentences live as a literal array in
   `scripts/v2/generate-es-audio.mjs`** (no new data file), 10 per class — drugs,
   doses with decimals and units, negated and inserted-negation risk statements,
