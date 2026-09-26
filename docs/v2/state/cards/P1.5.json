@@ -1,1 +1,19 @@
-{ "card":"P1.5","planVersion":2,"contracts":[],"baseCommit":"2465353","attempt":1,"status":"IN PROGRESS","lastCompletedStep":"dispatch built; AM-033 logged; instruction review dispatched (space-bunny-free)","nextAllowedAction":"check instruction review return","sideEffectsDone":[],"changedFiles":[],"criteria":{},"sandboxRuns":[],"updatedUtc":"2026-09-26T09:00:00Z" }
+{
+  "card": "P1.5",
+  "planVersion": 2,
+  "contracts": [],
+  "baseCommit": "2465353",
+  "attempt": 1,
+  "status": "APPROVED",
+  "lastCompletedStep": "impl review all PASS (0841207; 3 non-blocking findings, home path sanitised)",
+  "nextAllowedAction": "done",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "PASS",
+    "V2": "PASS",
+    "V3": "PASS"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T09:30:00Z"
+}

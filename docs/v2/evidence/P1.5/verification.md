@@ -114,7 +114,7 @@ reason — the drifted files are all `docs/v2/cards/` text.
 | Criterion | **PASS** |
 ```text
 > build:shared
- RUN  v4.1.11 /home/villenull/Projects/Apunta
+ RUN  v4.1.11 ~/Projects/Apunta
 
  Test Files  12 passed (12)
       Tests  123 passed (123)
