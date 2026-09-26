@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { instantToLocalDay } from '@apunta/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   activeSince,
@@ -208,6 +208,16 @@ describe('sessionBody', () => {
 });
 
 describe('activeSince', () => {
+  // `activeSince` reads the local calendar day, so every case pins a zone:
+  // 01:00Z on 1 July is 30 June in Denver but 1 July on a UTC CI runner.
+  const originalTimezone = process.env.TZ;
+  beforeEach(() => {
+    process.env.TZ = 'America/Denver';
+  });
+  afterEach(() => {
+    if (originalTimezone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimezone;
+  });
   it('counts a message on the cutoff day, and not one the day before', () => {
     const on: RawTurn = { id: 'a', role: 'human', text: 'x', at: '2026-07-01T07:30:00.000Z', attachments: 0 };
     const before: RawTurn = { ...on, at: '2026-07-01T01:00:00.000Z' };
@@ -215,8 +225,6 @@ describe('activeSince', () => {
     expect(activeSince([before], CUTOFF)).toBe(false);
   });
   it('uses the local day for a late-evening instant before the cutoff', () => {
-    const timezone = process.env.TZ;
-    process.env.TZ = 'America/Denver';
     const beforeCutoff: RawTurn = {
       id: 'late',
       role: 'human',
@@ -225,8 +233,6 @@ describe('activeSince', () => {
       attachments: 0,
     };
     expect(activeSince([beforeCutoff], CUTOFF)).toBe(false);
-    if (timezone === undefined) delete process.env.TZ;
-    else process.env.TZ = timezone;
   });
 });
 
@@ -359,6 +365,17 @@ describe('assignConversation', () => {
 });
 
 describe('planImport', () => {
+  // `planImport` reports local calendar days (via `instantToLocalDay`), so
+  // every case pins a zone: 17:00Z is the same day in Denver but the next
+  // day in Sydney, which moved John's dates and provenance by one.
+  const originalTimezone = process.env.TZ;
+  beforeEach(() => {
+    process.env.TZ = 'America/Denver';
+  });
+  afterEach(() => {
+    if (originalTimezone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimezone;
+  });
   it('imports every qualifying patient with their whole history, and nothing else', () => {
     const { report, notes } = planImport(chats(), options());
 
