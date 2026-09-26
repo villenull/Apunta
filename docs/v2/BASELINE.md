@@ -31,10 +31,10 @@ eight invocations, so it is stated once.
 | Model | 4.7B, 4,659,865,088 parameters, Q4_K_M gguf, family `qwen35`, Apache-2.0 |
 | Ollama | 0.33.3, `http://127.0.0.1:11434`, 100% GPU offload |
 | Inference options | `temperature` 0, `num_ctx` 16384, `num_predict` 3072, `seed` 0, `repeat_penalty` 1.0, `keep_alive` 30m, JSON-schema output, sequential |
-| Prompt set | built-in defaults, no `--instructions` override; `server/src/ai/default-instructions.ts` sha256 `1855cce7a774b7dd7bf75b73d79918a3c1a9549251141e99c69f3121c4d9152c` |
+| Prompt set | built-in defaults, no `--instructions` override; `default-instructions.ts` `1855cce7a774b7dd7bf75b73d79918a3c1a9549251141e99c69f3121c4d9152c`, `prompts.ts` `30efe2c3cb9f026e870996789642beb6e616ef01c98962eb8d0be0406e5a2a44`, and the `clinical-knowledge/{integration,presentation,interventions,discussion-subheadings}.ts` hashes `46c2d1b7…`/`e0ff375e…`/`274a286b…`/`f4db4f74…` (C-EVAL@1 §7; guidance version `2026-09-07.1`) |
 | Scorer | `server/src/eval/score.ts` sha256 `619eb001e7e2fdd3c2919773f0f4f6f937bedd869cd60bed334f1de42a0ff995` |
-| Corpus V1 hash | `e2e/fixtures/eval` tree `b520dab22415f421bed2cef27add05e9c103b4879fbfa12fbd858de94428436c` |
-| Corpus V2 hash | `e2e/fixtures/eval-owner` tree `58e6d77a8ef717ac9a5cc1d4e4ff8aa0bb9c06e3021e57ce399014993be06ac9` |
+| Corpus V1 hash | `e2e/fixtures/eval/expectations.json` `ee9d28f26f3e9bcd2d950f87debe6d00a3535de54cdbc49fd572721428ef62f6`; transcripts concatenated `70ca0aae615a0e70c7883f14adfb900f6bac2b6cf0c9294905f571127150126f` |
+| Corpus V2 hash | `e2e/fixtures/eval-owner/expectations.json` `f1e5d94536e60817aae4cbb00318908c8a92362907081720af08d493d94cb14c`; transcripts concatenated `63d1c0d2fb31c88bb883e432c17f0f22d57a9d87bebdf49829f1f3103341cbb2` |
 | CPU | AMD Ryzen 7 9800X3D, 8 cores / 8 threads |
 | RAM | 30 GiB |
 | GPU | AMD Radeon Navi 48 (RX 9070 series), `amdgpu`, 100% offload |

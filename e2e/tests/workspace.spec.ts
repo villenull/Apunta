@@ -117,12 +117,19 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('empty-no-note')).toBeVisible();
     await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);
 
-    // --- Delete the patient, and the workspace is unselected again ----------
+    // --- Archive the patient, then delete it from View all -> Archived ------
+    // AM-028: an active patient's row menu offers Archive, not Delete; Delete is
+    // the red item on an archived patient's row in the View all page.
     await page.getByLabel(`Tools for ${patientName}`).click();
+    await page.getByRole('menuitem', { name: 'Archive' }).click();
+    await expect(page.getByTestId('patient-list')).not.toContainText(patientName);
+
+    await page.goto('/patients');
+    await page.getByTestId('directory-tab-archived').click();
+    await page.getByLabel(`Tools for ${patientName}, all patients`).click();
     await page.getByLabel(`Delete ${patientName}`).click();
     await expect(page.getByRole('dialog')).toContainText('Time Machine');
     await page.getByTestId('confirm-accept').click();
-    await expect(page.getByTestId('home')).toBeVisible();
     await expect(page.getByTestId('patient-list')).not.toContainText(patientName);
   });
 
