@@ -100,7 +100,7 @@ if (plan.reviews.has(id)) {
   body = card.text;
 }
 
-if (port) body = body.replaceAll('<p>', port);
+if (port) body = body.replaceAll('--port <p>', `--port ${port}`);
 
 const contractIds = new Set(card.contracts);
 if (plan.reviews.has(id))
