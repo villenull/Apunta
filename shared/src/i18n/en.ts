@@ -1503,6 +1503,32 @@ export const en = {
   'patients.hideColumn': { text: 'Hide patients' },
   /** The sidebar's new-patient row, `PatientsColumn.tsx:123`. */
   'patients.newShort': { text: 'New' },
+
+  /*
+   * The starred/recents sidebar sections and the row menu, added with the
+   * owner's out-of-band UI work (2026-09-26). The row menu's visible words are
+   * JSX text beside an icon, which `check-ui-strings.mjs` exempts, so these
+   * keys are what actually get them onto the catalogues.
+   */
+  'patients.star': { text: 'Star' },
+  'patients.unstar': { text: 'Unstar' },
+  'patients.starred': { text: 'Starred' },
+  'patients.recents': { text: 'Recents' },
+  /** The row's accessible name; `patients.renameShort` is its visible word. */
+  'patients.renameAction': { text: 'Rename {name}' },
+  /** The bare word for a narrow menu row, beside `patients.renameAction`. */
+  'patients.renameShort': { text: 'Rename' },
+  /** The rename modal's title, shaped like `workspace.deleteTitle`. */
+  'patients.renameTitle': { text: 'Rename {name}' },
+  'patients.restore': { text: 'Restore' },
+  'patients.delete': { text: 'Delete' },
+  /**
+   * `Setup.tsx:122`'s trailing clause. The paragraph is
+   * `{t('setup.backingUpLead')} <Link>…</Link> has it.`, and the link cannot
+   * live in a slot: `MessageParams` is `Record<string, string | number>` and
+   * `t()` returns `string`, so a React node cannot be passed through one.
+   */
+  'setup.backingUpTail': { text: 'has it.' },
   /** `PatientDirectory.tsx:128`. */
   'patients.new': { text: 'New patient' },
   /** `PatientDirectory.tsx:160` and `PatientsColumn.tsx:284`. */

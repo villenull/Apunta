@@ -1104,6 +1104,41 @@ export const esMX = {
   'patients.newShort': {
     text: 'Nuevo',
   },
+
+  /*
+   * El apartado de destacados y recientes, y el menu de fila, anadidos con el
+   * trabajo de interfaz fuera de tarjeta (2026-09-26).
+   */
+  'patients.star': {
+    text: 'Destacar',
+  },
+  'patients.unstar': {
+    text: 'Quitar de destacados',
+  },
+  'patients.starred': {
+    text: 'Destacados',
+  },
+  'patients.recents': {
+    text: 'Recientes',
+  },
+  'patients.renameAction': {
+    text: 'Cambiar el nombre de {name}',
+  },
+  'patients.renameShort': {
+    text: 'Cambiar nombre',
+  },
+  'patients.renameTitle': {
+    text: 'Cambiar el nombre de {name}',
+  },
+  'patients.restore': {
+    text: 'Restaurar',
+  },
+  'patients.delete': {
+    text: 'Eliminar',
+  },
+  'setup.backingUpTail': {
+    text: 'ya lo tiene.',
+  },
   'patients.new': {
     text: 'Nuevo paciente',
   },
