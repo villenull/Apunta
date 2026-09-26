@@ -2,15 +2,15 @@
   "card": "P0.2",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "650821b076d501376b2aef0fdd4d417346725ab5",
+  "baseCommit": "8be98cb",
   "attempt": 3,
-  "status": "BLOCKED",
-  "lastCompletedStep": "attempt 3 review FAIL solely on V2-Sydney (third independent confirmation); attempt budget exhausted; card BLOCKED, recorded in BLOCKED.md",
-  "nextAllowedAction": "none — waits on owner (follow-up card amendment or scope decision)",
+  "status": "APPROVED",
+  "lastCompletedStep": "APPROVED under owner-authorised waiver (AM-022): in-scope deliverable complete (patch, planImport zone pin, zone.test.ts; files 39/39 in all four zones); V2's Sydney clause deferred to new card P0.5",
+  "nextAllowedAction": "done",
   "sideEffectsDone": [
-    "attempt 1 committed as 6e59c60 (patch applied, planImport zone pin, zone.test.ts)",
-    "attempt 2 evidence committed as 650821b",
-    "attempt 3 evidence committed as 6515b66"
+    "attempt 1 committed 6e59c60",
+    "attempt 2 evidence 650821b",
+    "attempt 3 evidence 6515b66"
   ],
   "changedFiles": [
     "server/src/import/claude.test.ts",
@@ -18,9 +18,9 @@
   ],
   "criteria": {
     "V1": "PASS",
-    "V2": "FAIL",
+    "V2": "DEFERRED to P0.5 (owner-authorised waiver)",
     "V3": "PASS"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T01:32:51Z"
+  "updatedUtc": "2026-09-26T07:40:00Z"
 }
