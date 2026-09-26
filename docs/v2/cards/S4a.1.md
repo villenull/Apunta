@@ -49,7 +49,8 @@ Anything else. Never write generated audio into the repository.
   `{"version":1,"piper":"<version>","voices":[{"name","sha256","bytes"}],"clips":[{"file","text","voice","variant","source","category"}]}`,
   where:
   - `file` is relative to the output directory;
-  - `variant` is `clean|noise|fast` (`clean` only for the non-speech clips);
+  - `variant` is `clean|noise|fast` for every speech clip; the 10 non-speech
+    clips exist in the `clean` variant only;
   - `voice` is the voice name, or `"none"` for the 10 non-speech clips;
   - `text` is the reference text, or `""` for the 10 non-speech clips;
   - `source` is one of `tuning | heldout | clinical | silence | tone`;
