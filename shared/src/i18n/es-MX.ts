@@ -223,6 +223,24 @@ export const esMX = {
     text: 'El PDF tiene encabezados con fecha pero ningún texto de sesión.',
   },
 
+  /* Los cinco `warnings` que devuelve el analizador de Halaxy. */
+  'errors.bad_request.halaxy_text_before_first_session': {
+    text: 'El texto anterior a la primera sesión con fecha no se importó.',
+  },
+  'errors.bad_request.halaxy_close_date_labels': {
+    text: 'Algunas etiquetas de fecha quedaron junto a otros encabezados; revisa los límites entre sesiones.',
+  },
+  'errors.bad_request.halaxy_bare_date_heading': {
+    text: 'Algunas sesiones solo tenían un encabezado con la fecha; revisa esos límites entre sesiones antes de importar.',
+  },
+  'errors.bad_request.halaxy_date_like_line': {
+    text: 'Una línea que parece una fecha se quedó dentro de su sesión; revisa los límites entre sesiones.',
+  },
+  'errors.bad_request.halaxy_empty_session': {
+    text: 'La sesión del {date} no tiene texto.',
+    kind: { date: 'text' },
+  },
+
   'errors.bad_request.import_not_multipart': {
     text: 'Envía la exportación como multipart/form-data con un solo archivo.',
   },
@@ -286,6 +304,9 @@ export const esMX = {
   'errors.not_found.backup_file': {
     text: '{file} no es un archivo de copia de seguridad en la carpeta de copias.',
     kind: { file: 'text' },
+  },
+  'errors.not_found.licenses_file': {
+    text: 'No se encontró el archivo de licencias en esta compilación de Apunta.',
   },
 
   'errors.conflict.format_in_use': {
@@ -447,6 +468,68 @@ export const esMX = {
   },
   'chat.priorNoteNotice.tail': {
     text: 'Para traer algo de otra sesión, pídelo.',
+  },
+
+  'chat.publishedMidEdit': {
+    text: 'La nota se publicó antes de que se pudiera aplicar el cambio.',
+  },
+
+  /* Las retenciones por alcance y las razones de una petición no cumplida. */
+  'chat.request.leftAlone': { text: 'Apunta dejó' },
+  'chat.request.couldNot': { text: 'Apunta no pudo' },
+  'chat.scopeHold.outOfScope': {
+    text: 'Apunta dejó {section} como estaba: tu mensaje solo preguntaba por {scope}.',
+    kind: { section: 'text', scope: 'text' },
+  },
+  'chat.scopeHold.additionOnly': {
+    text: 'Apunta dejó {section} como estaba: solo pediste agregar, y la revisión también habría quitado "{phrase}".',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  'chat.request.shorteningNote': {
+    text: 'Apunta no pudo acortar la nota: la revisión no salió más corta.',
+  },
+  'chat.request.shorteningSection': {
+    text: 'Apunta no pudo acortar la sección de {section}: la revisión no salió más corta.',
+    kind: { section: 'text' },
+  },
+  'chat.request.clearing': {
+    text: 'Apunta no pudo vaciar la sección de {section}: la revisión la dejó como estaba.',
+    kind: { section: 'text' },
+  },
+  'chat.request.addition': {
+    text: 'Apunta no pudo agregar "{label}": la revisión volvió sin eso.',
+    kind: { label: 'text' },
+  },
+
+  'chat.unchangedNotice': {
+    text: 'Apunta no cambió la nota: la revisión volvió sin cambios.',
+  },
+  'chat.alreadyThereNotice': {
+    text: 'Apunta no cambió la nota: ya decía lo que pediste.',
+  },
+  'chat.questionLeftAlone': {
+    text: 'Apunta dejó la nota sin cambios: hiciste una pregunta, no pediste una edición.',
+  },
+
+  /* El aviso de las correcciones habladas, armado por partes. */
+  'chat.retractionNotice.opening': {
+    text: 'Apunta aplicó las correcciones que hiciste al hablar',
+  },
+  'chat.retractionNotice.dropped': {
+    text: 'dejó fuera «{withdrawn}»',
+    kind: { withdrawn: 'text' },
+  },
+  'chat.retractionNotice.replaced': {
+    text: 'dejó fuera «{withdrawn}» en lugar de «{replacement}»',
+    kind: { withdrawn: 'text', replacement: 'text' },
+  },
+  'chat.retractionNotice.list': {
+    text: '{first}; y {last}',
+    kind: { first: 'text', last: 'text' },
+  },
+  'chat.retractionNotice.sentence': {
+    text: '{opening}, antes de redactar: {list}.',
+    kind: { opening: 'text', list: 'text' },
   },
 
   'backup.failure': { text: '{at} — {detail}', kind: { at: 'date', detail: 'text' } },

@@ -316,6 +316,31 @@ export const en = {
     text: 'The PDF has dated headings but no session text.',
   },
 
+  /**
+   * The five `warnings` `import/halaxy/parser.ts` returns to the browser beside
+   * the preview. They are advice rather than a 400, but they are the same
+   * module's sentences on the same screen, so they sit beside its other keys
+   * rather than in a namespace of their own. `{date}` is the stored session
+   * date as data, not through `Intl` — the wire carries `2026-08-08` today and
+   * formatting it would change the English.
+   */
+  'errors.bad_request.halaxy_text_before_first_session': {
+    text: 'Text before the first dated session was not imported.',
+  },
+  'errors.bad_request.halaxy_close_date_labels': {
+    text: 'Some date labels were close to other headings; check the session boundaries.',
+  },
+  'errors.bad_request.halaxy_bare_date_heading': {
+    text: 'Some sessions had a bare date heading; check those session boundaries before importing.',
+  },
+  'errors.bad_request.halaxy_date_like_line': {
+    text: 'A date-like line inside a session was left in that session; check the session boundaries.',
+  },
+  'errors.bad_request.halaxy_empty_session': {
+    text: 'The session on {date} has no text.',
+    kind: { date: 'text' },
+  },
+
   /** `routes/import.ts:162`. */
   'errors.bad_request.import_not_multipart': {
     text: 'Send the export as multipart/form-data with one file.',
@@ -408,6 +433,14 @@ export const en = {
   'errors.not_found.backup_file': {
     text: '{file} is not a backup file in the backup folder.',
     kind: { file: 'text' },
+  },
+  /**
+   * `routes/licenses.ts:35` — the About page's 404. A `reply.send` rather than
+   * a `notFound()` call, so the route-file table does not reach it; the code on
+   * the wire is still `not_found` and only the words come from here.
+   */
+  'errors.not_found.licenses_file': {
+    text: 'The licence file was not found in this build of Apunta.',
   },
 
   /* --- errors.conflict --- */
@@ -666,6 +699,107 @@ export const en = {
   },
   'chat.priorNoteNotice.tail': {
     text: 'To bring something over from another session, ask for it.',
+  },
+
+  /**
+   * `routes/chat.ts`'s `outcome_reason` for the race the published lock names:
+   * she filed the note while the model was still revising it, so the write
+   * no-opped. The same field the verdict sentences below travel in, which is
+   * why it is keyed here and not as an `errors.` body — it is never a status
+   * code, it is the account of a turn.
+   */
+  'chat.publishedMidEdit': {
+    text: 'The note became published before the edit could be applied.',
+  },
+
+  /*
+   * The request-scope holds and the unmet-request reasons, from
+   * `ai/refine-request.ts`. Both are shown twice: as a paragraph of the reply
+   * and, joined, as the turn's `outcome_reason`. `{section}`, `{scope}` and
+   * `{label}` are stored clinical text and her own words, passed as data and
+   * never translated (C-LANG@1 rule 5).
+   */
+
+  /**
+   * `ai/refine-request.ts`'s out-of-scope hold, and `chat.request.leftAlone` /
+   * `chat.request.couldNot` below, are the openings `routes/chat.ts` strips a
+   * persisted reply by. They are openings rather than whole sentences because a
+   * hold names a section, which differs every time — so both languages'
+   * openings are listed from the catalogue and the sentences below begin with
+   * the opening they are declared next to.
+   */
+  'chat.request.leftAlone': { text: 'Apunta left' },
+  'chat.request.couldNot': { text: 'Apunta could not' },
+  'chat.scopeHold.outOfScope': {
+    text: 'Apunta left {section} as it was: your message asked about {scope} only.',
+    kind: { section: 'text', scope: 'text' },
+  },
+  'chat.scopeHold.additionOnly': {
+    text: 'Apunta left {section} as it was: you asked only to add, and the revision would also have taken out "{phrase}".',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  /**
+   * Two forms of one sentence: the whole note, or the section she named. The
+   * subject used to be assembled in English from the section's name, which left
+   * the Spanish sentence half English — so the subject is the key's job.
+   */
+  'chat.request.shorteningNote': {
+    text: 'Apunta could not shorten the note: the revision came back no shorter.',
+  },
+  'chat.request.shorteningSection': {
+    text: 'Apunta could not shorten the {section} section: the revision came back no shorter.',
+    kind: { section: 'text' },
+  },
+  'chat.request.clearing': {
+    text: 'Apunta could not clear the {section} section: the revision left it as it was.',
+    kind: { section: 'text' },
+  },
+  'chat.request.addition': {
+    text: 'Apunta could not add "{label}": the revision came back without it.',
+    kind: { label: 'text' },
+  },
+
+  /**
+   * The three sentences that are a whole reply on a turn that changed nothing,
+   * and the one a question-with-a-rewrite-attached gets appended. Like the lock
+   * notices they are persisted in the note's own locale and stripped from the
+   * model's history in both languages.
+   */
+  'chat.unchangedNotice': {
+    text: 'Apunta did not change the note: the revision came back with no edits.',
+  },
+  'chat.alreadyThereNotice': {
+    text: 'Apunta did not change the note: it already said what you asked for.',
+  },
+  'chat.questionLeftAlone': {
+    text: 'Apunta left the note unchanged: you asked a question, not for an edit.',
+  },
+
+  /**
+   * The retraction pass's notice, appended to the first-pass opening in the
+   * note's chat (`ai/retractions.ts`, `routes/draft.ts`). Assembled from parts
+   * because the middle is a list whose length is not known here: one dropped
+   * claim, or several, and Spanish joins the last one with `y` rather than
+   * `and`. `{opening}` and `{list}` carry the two halves.
+   */
+  'chat.retractionNotice.opening': {
+    text: 'Apunta applied the corrections you made as you spoke',
+  },
+  'chat.retractionNotice.dropped': {
+    text: 'left out “{withdrawn}”',
+    kind: { withdrawn: 'text' },
+  },
+  'chat.retractionNotice.replaced': {
+    text: 'left out “{withdrawn}” in favour of “{replacement}”',
+    kind: { withdrawn: 'text', replacement: 'text' },
+  },
+  'chat.retractionNotice.list': {
+    text: '{first}; and {last}',
+    kind: { first: 'text', last: 'text' },
+  },
+  'chat.retractionNotice.sentence': {
+    text: '{opening}, before drafting: {list}.',
+    kind: { opening: 'text', list: 'text' },
   },
 
   /**
