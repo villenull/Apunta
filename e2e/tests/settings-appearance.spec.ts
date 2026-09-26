@@ -60,3 +60,59 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
   await expect(light).toHaveAttribute('aria-checked', 'true');
   await expect(root).toHaveAttribute('data-theme', 'light');
 });
+
+/**
+ * C-SETTINGS@1's radio bullet in a real browser: arrow keys move **and** select
+ * inside the theme group, and Tab enters it at the selected option.
+ *
+ * The keyboard path is the same path a click takes, so this also pins the part
+ * that only shows up under a key: the group has a single tab stop, focus follows
+ * the selection, and `data-theme` carries the **resolved** theme — `system` is
+ * the stored choice, never what the page is painted.
+ */
+test('settings appearance: moves and selects the theme with the arrow keys', async ({ page, request }) => {
+  // Deterministic starting point: Dark, whatever a sibling spec left behind.
+  await request.put('/api/settings', { data: { theme: 'dark' } });
+  // Order-independent: a run that reaches this test first still has a note
+  // format, so `/settings` is a real screen.
+  await request.post('/api/formats', {
+    data: { name: uniqueName('E2E settings appearance keyboard format'), sections: ['Subjective', 'Plan'] },
+  });
+
+  await page.goto('/settings');
+  const system = page.getByTestId('theme-system');
+  const light = page.getByTestId('theme-light');
+  const dark = page.getByTestId('theme-dark');
+  const root = page.locator('html');
+  await expect(dark).toHaveAttribute('aria-checked', 'true');
+  await expect(root).toHaveAttribute('data-theme', 'dark');
+
+  // One tab stop, on the choice already made: the other two segments are
+  // unreachable by Tab alone, so the arrows have to work.
+  await expect(dark).toHaveAttribute('tabindex', '0');
+  await expect(light).toHaveAttribute('tabindex', '-1');
+  await expect(system).toHaveAttribute('tabindex', '-1');
+
+  await dark.focus();
+  await page.keyboard.press('ArrowLeft');
+
+  // Moving is selecting: no Enter, no Space, and the save is already through
+  // (the same `Saved` note a click leaves).
+  await expect(light).toHaveAttribute('aria-checked', 'true');
+  await expect(dark).toHaveAttribute('aria-checked', 'false');
+  await expect(light).toHaveAttribute('tabindex', '0');
+  await expect(light).toBeFocused();
+  await expect(root).toHaveAttribute('data-theme', 'light');
+  await expect(page.getByTestId('appearance-saved')).toHaveText('Saved');
+
+  // `THEMES` is `system, light, dark`, so Home is System. What persists is the
+  // choice `system`; what the page is painted is the resolved theme, and
+  // Playwright emulates a light OS — so `light`, never the literal `system`.
+  await page.keyboard.press('Home');
+  await expect(system).toHaveAttribute('aria-checked', 'true');
+  await expect(light).toHaveAttribute('aria-checked', 'false');
+  await expect(system).toHaveAttribute('tabindex', '0');
+  await expect(system).toBeFocused();
+  await expect(root).toHaveAttribute('data-theme', 'light');
+  await expect(root).not.toHaveAttribute('data-theme', 'system');
+});

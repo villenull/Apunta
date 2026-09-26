@@ -1,5 +1,5 @@
 import type { Settings } from '@apunta/shared';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -178,6 +178,149 @@ describe('settings appearance controls', () => {
     expect(paintedTheme()).toBe('dark');
     expect(screen.queryByTestId('appearance-saved')).toBeNull();
     expect(api.state.settings['theme']).toBe('dark');
+  });
+});
+
+/**
+ * C-SETTINGS@1's radio bullet on the theme group: arrow keys move **and**
+ * select inside it, and Tab enters at the selected option.
+ *
+ * The behaviour is shipped, so these cases are expected to pass unchanged —
+ * that is the point. A pass here is the evidence the group is still native-
+ * radio shaped; a failure means the control has regressed, and the fix is in
+ * `Settings.tsx`, not in what is asserted here.
+ */
+describe('the theme radio group', () => {
+  it('is one tab stop, on the selected option', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    renderApp();
+    const group = await screen.findByRole('radiogroup', { name: 'Theme' });
+    const system = screen.getByTestId('theme-system');
+    const light = screen.getByTestId('theme-light');
+    const dark = screen.getByTestId('theme-dark');
+
+    // Three `role="radio"` buttons under the row's own label, not three
+    // `<input type="radio">`: the role is what satisfies the contract bullet,
+    // and P1.1 forbids the markup change.
+    expect(within(group).getAllByRole('radio')).toHaveLength(3);
+    expect(system.getAttribute('aria-label')).toBe('System');
+    expect(light.getAttribute('aria-label')).toBe('Light');
+    expect(dark.getAttribute('aria-label')).toBe('Dark');
+
+    // The stored fixture is Dark, so Dark is the tab stop and the other two are
+    // unreachable by Tab alone.
+    expect(dark.getAttribute('aria-checked')).toBe('true');
+    expect(dark.getAttribute('tabindex')).toBe('0');
+    expect(system.getAttribute('aria-checked')).toBe('false');
+    expect(system.getAttribute('tabindex')).toBe('-1');
+    expect(light.getAttribute('aria-checked')).toBe('false');
+    expect(light.getAttribute('tabindex')).toBe('-1');
+    expect(paintedTheme()).toBe('dark');
+  });
+
+  it('wraps ArrowRight from Dark to System, painting the resolved theme', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...STORED } });
+    const puts = holdSettingsPuts(api);
+    renderApp();
+    const system = await screen.findByTestId('theme-system');
+    const dark = screen.getByTestId('theme-dark');
+    await waitFor(() => {
+      expect(dark.getAttribute('aria-checked')).toBe('true');
+    });
+
+    dark.focus();
+    // `THEMES` is `system, light, dark`, so "next" after Dark wraps round to
+    // System. Reading the constant is the whole test: an implementation that
+    // went back to Light here would be asserting a different control.
+    fireEvent.keyDown(dark, { key: 'ArrowRight' });
+
+    // Selection is immediate, not deferred to Enter or Space: the save is on
+    // its way and the control has already moved before it settles.
+    expect(puts.sent).toEqual([{ theme: 'system' }]);
+    expect(system.getAttribute('aria-checked')).toBe('true');
+    expect(system.getAttribute('tabindex')).toBe('0');
+    expect(dark.getAttribute('aria-checked')).toBe('false');
+    expect(dark.getAttribute('tabindex')).toBe('-1');
+
+    // `data-theme` is always the resolved theme. jsdom does not ask for dark,
+    // so System paints light — never the literal `system`.
+    expect(paintedTheme()).toBe('light');
+    expect(paintedTheme()).not.toBe('system');
+
+    // Focus follows the selection, one frame later.
+    await waitFor(() => {
+      expect(document.activeElement).toBe(system);
+    });
+
+    puts.settle(0, { ok: true });
+    await flush();
+    // The server was told `system` — the choice, not the paint.
+    expect(api.state.settings['theme']).toBe('system');
+    expect(paintedTheme()).toBe('light');
+  });
+
+  it('moves ArrowLeft from Dark to Light', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...STORED } });
+    renderApp();
+    const light = await screen.findByTestId('theme-light');
+    const dark = screen.getByTestId('theme-dark');
+    await waitFor(() => {
+      expect(dark.getAttribute('aria-checked')).toBe('true');
+    });
+
+    dark.focus();
+    fireEvent.keyDown(dark, { key: 'ArrowLeft' });
+
+    expect(light.getAttribute('aria-checked')).toBe('true');
+    expect(light.getAttribute('tabindex')).toBe('0');
+    expect(dark.getAttribute('aria-checked')).toBe('false');
+    expect(dark.getAttribute('tabindex')).toBe('-1');
+    expect(paintedTheme()).toBe('light');
+    await waitFor(() => {
+      expect(api.state.settings['theme']).toBe('light');
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(light);
+    });
+  });
+
+  it('jumps Home to System and End to Dark', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...STORED } });
+    renderApp();
+    const system = await screen.findByTestId('theme-system');
+    const dark = screen.getByTestId('theme-dark');
+    await waitFor(() => {
+      expect(dark.getAttribute('aria-checked')).toBe('true');
+    });
+
+    dark.focus();
+    fireEvent.keyDown(dark, { key: 'Home' });
+
+    expect(system.getAttribute('aria-checked')).toBe('true');
+    expect(system.getAttribute('tabindex')).toBe('0');
+    expect(dark.getAttribute('tabindex')).toBe('-1');
+    expect(paintedTheme()).toBe('light');
+    await waitFor(() => {
+      expect(api.state.settings['theme']).toBe('system');
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(system);
+    });
+
+    // `End` is the last of `THEMES`, which is Dark — not Light.
+    fireEvent.keyDown(system, { key: 'End' });
+
+    expect(dark.getAttribute('aria-checked')).toBe('true');
+    expect(dark.getAttribute('tabindex')).toBe('0');
+    expect(system.getAttribute('aria-checked')).toBe('false');
+    expect(system.getAttribute('tabindex')).toBe('-1');
+    expect(paintedTheme()).toBe('dark');
+    await waitFor(() => {
+      expect(api.state.settings['theme']).toBe('dark');
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(dark);
+    });
   });
 });
 
