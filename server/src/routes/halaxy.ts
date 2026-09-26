@@ -21,7 +21,8 @@ import { HalaxyParseError, parseHalaxyText } from '../import/halaxy/parser.js';
 export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
   app.post('/api/import/halaxy/preview', async (request): Promise<HalaxyPreviewResponse> => {
     // Read once, at the start: every rejection reason below is rendered from
-    // this value, not from the setting as it stands after each PDF.
+    // this value, not from the setting as it stands after each PDF — and the
+    // preview's own `warnings`, which the parser renders, travel with it.
     const locale = storedLanguage(db);
     const files = await receiveFiles(request);
     const activePatients = listPatients(db);
@@ -29,7 +30,7 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
     const rejected: HalaxyPreviewResponse['rejected'] = [];
     for (const file of files) {
       try {
-        const parsed = parseHalaxyText(await extractPdf(file.bytes), file.filename);
+        const parsed = parseHalaxyText(await extractPdf(file.bytes), file.filename, locale);
         const normalized = normalizePatientName(parsed.patientName);
         const existingPatients = activePatients
           .filter((patient) => normalizePatientName(patient.name) === normalized)

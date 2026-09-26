@@ -56,4 +56,51 @@ describe('parseHalaxyText', () => {
       HalaxyParseError,
     );
   });
+
+  /**
+   * The `warnings` are the sentences the preview shows beside the sessions they
+   * are about, so they are rendered here in the request's language rather than
+   * left English for the browser — which has no catalogue of its own for them.
+   */
+  it('renders its warnings in the requested language, English unchanged', () => {
+    const text = [
+      'Halaxy Clinical Notes',
+      'Patient: Jane Doe',
+      'Some preamble that is not a session.',
+      'Date',
+      '01/02/2026',
+      'First body',
+    ].join('\n');
+
+    const english = parseHalaxyText(text, 'notes.pdf').warnings;
+    const spanish = parseHalaxyText(text, 'notes.pdf', 'es-MX').warnings;
+
+    // English first, byte for byte what this parser always returned.
+    expect(english).toEqual([
+      'Text before the first dated session was not imported.',
+      'Some date labels were close to other headings; check the session boundaries.',
+      'Some sessions had a bare date heading; check those session boundaries before importing.',
+    ]);
+    // Every warning is translated, and none of them is the English sentence.
+    expect(spanish).toHaveLength(english.length);
+    for (const [index, warning] of spanish.entries()) {
+      expect(warning).not.toBe(english[index]);
+      expect(warning.endsWith('.')).toBe(true);
+    }
+    expect(spanish[0]).toBe('El texto anterior a la primera sesión con fecha no se importó.');
+
+    // A session with no text, where the date is data: the wire carries
+    // `2026-08-08` today and formatting it would change the English.
+    const empty = [
+      'Halaxy Clinical Notes',
+      'Patient: Jane Doe',
+      '01/02/2026',
+      'First body',
+      '05/03/2026',
+    ].join('\n');
+    expect(parseHalaxyText(empty, 'notes.pdf').warnings).toContain('The session on 2026-03-05 has no text.');
+    expect(parseHalaxyText(empty, 'notes.pdf', 'es-MX').warnings).toContain(
+      'La sesión del 2026-03-05 no tiene texto.',
+    );
+  });
 });

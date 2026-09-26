@@ -1,4 +1,9 @@
-import { calendarDay, type HalaxyPreviewNote, type HalaxyPreviewPatient } from '@apunta/shared';
+import {
+  calendarDay,
+  DEFAULT_LOCALE,
+  type HalaxyPreviewNote,
+  type HalaxyPreviewPatient,
+} from '@apunta/shared';
 
 import { msg, type Locale, type MessageKey, type MessageParams } from '../../http/locale.js';
 
@@ -53,7 +58,11 @@ interface DateHeading {
 }
 
 /** Parse the text layer returned by pdf.js without retaining the source text. */
-export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPatient {
+export function parseHalaxyText(
+  text: string,
+  fileName: string,
+  locale: Locale = DEFAULT_LOCALE,
+): HalaxyPreviewPatient {
   const lines = cleanLines(text);
   const patientName = findPatientName(lines);
   if (patientName === null) {
@@ -65,20 +74,21 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
     throw new HalaxyParseError('missing_sessions', 'errors.bad_request.halaxy_no_dated_sessions');
   }
 
+  // The warnings are sentences the preview shows beside the sessions they are
+  // about, so they are rendered here, in the request's language, rather than
+  // being English the browser has no way to translate.
   const warnings: string[] = [];
   const firstDate = headings[0]?.line ?? 0;
   const preamble = lines.slice(0, firstDate).filter((line) => !isHeaderLine(line, patientName));
-  if (preamble.length > 0) warnings.push('Text before the first dated session was not imported.');
+  if (preamble.length > 0) warnings.push(msg(locale, 'errors.bad_request.halaxy_text_before_first_session'));
   if (headings.some((heading) => heading.line > 0 && lines[heading.line - 1]?.trim() === 'Date')) {
-    warnings.push('Some date labels were close to other headings; check the session boundaries.');
+    warnings.push(msg(locale, 'errors.bad_request.halaxy_close_date_labels'));
   }
   if (headings.some((heading) => /^\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}$/.test(lines[heading.line] ?? ''))) {
-    warnings.push('Some sessions had a bare date heading; check those session boundaries before importing.');
+    warnings.push(msg(locale, 'errors.bad_request.halaxy_bare_date_heading'));
   }
   if (lines.some((line) => /\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b/.test(line) && !looksLikeDateHeading(line))) {
-    warnings.push(
-      'A date-like line inside a session was left in that session; check the session boundaries.',
-    );
+    warnings.push(msg(locale, 'errors.bad_request.halaxy_date_like_line'));
   }
 
   const notes: HalaxyPreviewNote[] = [];
@@ -90,7 +100,7 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
       .join('\n')
       .trim();
     if (!body) {
-      warnings.push(`The session on ${heading.date} has no text.`);
+      warnings.push(msg(locale, 'errors.bad_request.halaxy_empty_session', { date: heading.date }));
       return;
     }
     notes.push({
