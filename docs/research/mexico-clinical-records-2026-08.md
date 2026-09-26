@@ -1236,3 +1236,185 @@ Cédula profesional:
 [lexinformatica]: https://lexinformaticablog.wordpress.com/2016/02/17/lex-informatica-validez-juridica-de-la-firma-autografa-digitalizada-en-dispositivos-electronicos/
 [infocedula]: https://infocedula.com/cedula-profesional/numeros-cedula-profesional/
 [rubro]: https://rubro.mx/consulta/cedula-profesional
+
+---
+
+## Addendum — S1.1 verification round (2026-09-26)
+
+S1.1 re-checked this file with working web search, reading the NOM-004 text
+itself via the DOF page and official mirrors (extracts, not a downloaded
+copy), the LGS and 2025 LFPDPPP texts on `diputados.gob.mx`, the SMP and
+FENAPSIME ethics codes, a UNAM SOAP teaching document, and the Secretaría de
+Salud CONASAMA expediente guide. New evidence lives in
+`docs/research/es-mx-clinical-documentation.md` (S1.1). Verdicts below use
+**confirmed** (read in the instrument), **corrected** (the claim or its
+numeral/attribution was wrong or overstated), and **unverified** (not
+re-checked this round; the original tag and caution stand). Nothing here is
+legal advice.
+
+### §0 The five-line answer
+
+1. "NOM-004 very probably binds her" — **confirmed, and strengthened**:
+   §5.16 names *exactly her setting* (independent ambulatory psychological
+   care) and regulates it rather than exempting it (DOF,
+   `dof.gob.mx/nota_detalle_popup.php?codigo=5272787`). The residual doubt is
+   narrower than §1 framed it: establishment vs *personal del área de la
+   salud*. See the §1 verdict.
+2. "Requires far less than M9 built" — **confirmed** (§5.9/§5.10/§5.11/§5.4,
+   §6.2; same URL).
+3. "`clinician_npi` becomes `clinician_cedula`" — **confirmed** as the
+   practical recommendation; **corrected** on authority: the binding text
+   never requires the cédula on a note (§5.10 names full name + signature
+   only). The cédula appears solely in Appendix A (Informativo) checklist
+   items D2-11 and D12-17, and routinely in federal practice (CONASAMA
+   guide). See the §3.2 verdict.
+4. "Diagnosis coding is optional for her" — **confirmed** in substance
+   (NOM-004 wants a diagnosis per note, §6.2.4; no code anywhere in the
+   numerals read). The DSM-prints-ICD-10-CM half-correction stands as
+   written; no new evidence either way.
+5. "Nobody demands the plan document" — **confirmed**, with a sharper
+   citation: FENAPSIME arts. 7, 10 and 29 (`fenapsime.org/.../Codigo-de-Etica-FENAPSIME.pdf`)
+   require a documented, consented *plan de trabajo* — client-facing, as §5
+   argued.
+
+The §0 rider on the LFPDPPP ("abrogated and replaced 20 March 2025") —
+**confirmed** against the current text on `diputados.gob.mx/LeyesBiblio/pdf/LFPDPPP.pdf`.
+
+### §1 Scope
+
+- §1.1 (scope clause, "personal del área de la salud… incluidos los
+  consultorios") — **confirmed** verbatim, §2 *Campo de aplicación*.
+- §1.2 leg 1 (LGS art. 79 names psicología) — **confirmed** (DOF reform
+  `dof.gob.mx/nota_detalle.php?codigo=5584753&fecha=24/01/2020`).
+- §1.2 leg 2 (LGS art. 32 atención médica; mental health in LGS Chapter
+  VII) — **unverified** this round (not re-checked; no reason to doubt, but
+  the S1.1 evidence does not cover it).
+- §1.2 leg 3 (COFEPRIS aviso de funcionamiento) — **unverified** (not
+  re-checked; remains the weakest leg).
+- §1.3 (the "genuinely debated" framing + comply-anyway recommendation) —
+  **corrected in framing, confirmed in recommendation**: §5.16 (unknown to
+  the original file) contemplates independent psychological records
+  directly, so the debate is narrower than presented — but the "assume it
+  applies" conclusion now rests on §5.16 itself and is stronger for it.
+- §1.4 (records standard, not medical-necessity) — **confirmed** (nothing
+  in §§4–10 contemplates a reviewer, a lapsing plan, or medical necessity).
+
+### §2 Expediente contents
+
+- §2.1 (§5.10 date/time/name/signature; binds the note, not the plan) —
+  **confirmed** verbatim, numeral confirmed (the original file's `[single]`
+  on the numeral is now lifted).
+- §2.2 (§6.2 six-element nota de evolución) — **confirmed** verbatim,
+  numerals 6.2.1–6.2.6 confirmed (the original guess "§6.2" was right). One
+  new caveat: the numeral says *"Deberá elaborarla el médico"* — §5.16 is
+  what carries it into a psychology file.
+- §2.3 (five-year retention, §5.4; minors rider as guidance-only; floor
+  not ceiling) — **confirmed** verbatim, numeral confirmed. Minors rider —
+  **unverified** (not re-checked).
+- §2.4 (corrections/immutability; no amendment procedure found; ARCO
+  rectification reconciliation) — **confirmed** as far as re-checked
+  (§5.11 verbatim; no amendment procedure surfaced in the numerals read).
+  The reconciliation reasoning is unchanged.
+- §2.5 (NOM-024 project-level risk) — **unverified** (deliberately
+  untouched; S1.1 asks nothing about NOM-024; the warning stands as
+  written).
+- §2.6 (establishment/patient identification §5.2; resumen clínico §4.10 +
+  written-request §5.6) — **confirmed** verbatim, numerals confirmed
+  (§5.2.1–5.2.3; §4.10 *"elaborado por un médico… padecimiento actual,
+  diagnósticos, tratamientos, evolución, pronóstico y estudios"*; §5.6
+  written request). New question surfaced: §4.10 says *médico* — whether a
+  psychologist issues one is a lawyer question (S1.1 file §7.3).
+
+### §3 Cédula
+
+- §3.1 (cédula via DGP/Registro Nacional; 7–8 digits; electrónica since
+  2018; LGS art. 79 ¶2 wall notice; 2015 reform) — **partially verified**:
+  LGS art. 79 naming psicología **confirmed**; the DGP/format/e-2018
+  details **unverified** (not re-checked; S1.1 did not need them).
+- §3.2 ("does NOM-004 require the cédula on each note?" — originally
+  *unresolved*) — **resolved as far as the text allows**: binding text
+  never requires it (§5.10 exhaustive on its face); it appears only in the
+  informative Appendix A checklists and in federal practice (CONASAMA).
+  Recommendation (print it, don't claim the norm requires it) unchanged.
+- §3.3 (cédula de especialidad exists; art. 81 regime is medical-only; no
+  licensing board; colegios voluntary) — **unverified** this round except
+  the CONAEP-confirmed SMP jurisdiction note (SMP sanctions reach members
+  only; `sociedadmexicanadepsicologia.org/index.php/nosotros/conaep`).
+- §3.4 (`clinician_cedula`, collapse `clinician_licence`) — recommendation
+  stands; authority corrected per §3.2.
+
+### §4 Diagnosis coding
+
+- §4.1 (NOM-035 statistics scope; NOM-004 wants a diagnosis, not a code)
+  — **partially verified**: the NOM-004 half **confirmed** (§6.2.4
+  *"Diagnósticos o problemas clínicos"*, no code). NOM-035 text —
+  **unverified** (not re-read this round).
+- §4.2 (CIE-11 transition, PAHO 2026 course) — **unverified** (not
+  re-checked).
+- §4.3 (DSM-5-TR prints CIE-10-MC/ICD-10-CM codes) — **unverified** (not
+  re-checked; the reasoning stands as written).
+- §4.4 ("coding not required for self-pay practice") — **confirmed** in
+  the only half S1.1 re-checked (no code in NOM-004's note numerals).
+
+### §5 Treatment plan
+
+- §5.1 (insurers exclude routine psychotherapy; want informe/referral/
+  CFDI, not a plan) — **unverified** (not re-checked).
+- §5.2 (public schemes n/a) — **unverified** (not re-checked; inference,
+  unchanged).
+- §5.3 (SMP ethics code: consent, place/schedule/cost/methods, plan-change
+  consent; record duties; LGS 2022 mental-health reform consent rights) —
+  **confirmed with a better citation**: FENAPSIME art. 7 states the
+  plan-change-consent sentence nearly verbatim (*"modificar el plan de
+  trabajo inicial, deberá tratarse anticipadamente y contar con el
+  consentimiento del usuario"*); SMP arts. 53–54 and confidentiality
+  chapter **confirmed** via the UNAM-hosted code text. LGS reform articles
+  — **unverified** (not re-checked).
+- §5.4 (the justification-remap table) — stands; its ethics-code row is
+  now sourced, the rest is recommendation, unchanged.
+
+### §6 LFPDPPP
+
+- §6.1 (2010 law abrogated; 2025 law DOF 20-03-2025; INAI →
+  Secretaría Anticorrupción y Buen Gobierno; Reglamento unpublished as of
+  mid-2026) — **confirmed** except the last clause: abrogation, date, and
+  succession **confirmed** against `diputados.gob.mx` texts (federal
+  guarantor: *Transparencia para el Pueblo*, deconcentrated organ of the
+  Secretaría). Reglamento status — **unverified** (not re-checked; the
+  warning stands).
+- §6.2 (sensitive data incl. health; express written consent; narrow
+  incapacity exception) — **partially verified**: the sensitive-data
+  definition (*"estado de salud presente o futuro"*) **confirmed** in the
+  2025 text. Consent/exception article numbers — **unverified** (not
+  re-checked).
+- §6.3 (responsable deliverables: aviso, consent, security, conservation
+  periods) — **unverified** (not re-checked; list stands as written).
+- §6.4 (local-only removes encargado/transfer/breach-surface, not duties;
+  Halaxy caveat) — reasoning, unchanged; not subject to verification.
+- §6.5 (breach notification substance; art. 63–65 Reglamento detail;
+  no-encryption-safe-harbour) — **unverified** (not re-checked).
+- §6.6 (bloqueo/supresión vs five-year floor tension) — **unverified** on
+  the LFPDPPP half (not re-checked); NOM-004 half **confirmed**.
+
+### §7 Signatures
+
+- §7.1 (NOM-004 §5.10 permissive chain; CCom art. 89/97; CCF 1834
+  Bis/1803; NOM-151) — **partially verified**: §5.10 **confirmed**
+  verbatim. CCom/CCF/NOM-151 articles — **unverified** (not re-checked
+  this round; S1.1 needs none of them for section names).
+- §7.2–§7.4 (attribution analysis, e.firma observation, keep-attestation
+  recommendation) — reasoning and recommendation, unchanged.
+
+### §8 Lawyer/owner questions
+
+All ten stand. Q3 (cédula numeral) is now answerable from the text per the
+§3.2 verdict but kept open at low priority for confirmation. New questions
+added by S1.1: §5.16's effect on *which* §6.2 elements a psychology note
+must show; whether a psychologist may author a §4.10 resumen clínico.
+Q6's CFPC art. 271 — **unverified** (not re-checked).
+
+### §9 M9 field recommendations
+
+Out of S1.1's scope; untouched. The S1.1 evidence does not confirm or
+disturb them, except §9.1 rows 1–2 (cédula), whose *authority* is corrected
+per §3.2 above while the recommendation stands.
