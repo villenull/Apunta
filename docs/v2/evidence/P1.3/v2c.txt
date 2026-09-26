@@ -20,60 +20,60 @@
 
  RUN  v4.1.11 ~/Projects/Apunta
 
-{"level":30,"time":1790415351010,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351026,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351042,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351067,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"POST","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":40,"time":1790415351010,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351010,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.2096779999999967,"msg":"request completed"}
-{"level":40,"time":1790415351026,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351027,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.21097800000001143,"msg":"request completed"}
-{"level":40,"time":1790415351042,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351042,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.13945799999999053,"msg":"request completed"}
-{"level":40,"time":1790415351067,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"POST","url":"/api/patients","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351067,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.2630470000000287,"msg":"request completed"}
-{"level":30,"time":1790415351089,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"POST","url":"/api/formats/detect","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351100,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351116,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351126,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351137,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351149,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":40,"time":1790415351089,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"POST","url":"/api/formats/detect","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351089,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1288889999999583,"msg":"request completed"}
-{"level":40,"time":1790415351100,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","rule":"sec_fetch_site","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351100,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.08794899999998051,"msg":"request completed"}
-{"level":40,"time":1790415351116,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","rule":"options_origin","method":"OPTIONS","url":"/api/patients","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351116,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.10169899999999643,"msg":"request completed"}
-{"level":30,"time":1790415351126,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.13938799999999674,"msg":"request completed"}
-{"level":30,"time":1790415351137,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.073079000000007,"msg":"request completed"}
-{"level":30,"time":1790415351149,"pid":521705,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.0792489999999475,"msg":"request completed"}
-{"level":30,"time":1790415351695,"pid":521953,"hostname":"FBI-PC","msg":"Server listening at http://127.0.0.1:7812"}
-{"level":30,"time":1790415351704,"pid":521953,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"evil.example:7812","remoteAddress":"127.0.0.1","remotePort":35188},"msg":"incoming request"}
-{"level":40,"time":1790415351704,"pid":521953,"hostname":"FBI-PC","reqId":"req-1","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351708,"pid":521953,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":3.814206000000013,"msg":"request completed"}
-{"level":30,"time":1790415351712,"pid":521953,"hostname":"FBI-PC","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"","remoteAddress":"127.0.0.1","remotePort":35194},"msg":"incoming request"}
-{"level":40,"time":1790415351712,"pid":521953,"hostname":"FBI-PC","reqId":"req-2","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351713,"pid":521953,"hostname":"FBI-PC","reqId":"req-2","res":{"statusCode":403},"responseTime":0.2627769999999998,"msg":"request completed"}
-{"level":30,"time":1790415351713,"pid":521953,"hostname":"FBI-PC","reqId":"req-3","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35188},"msg":"incoming request"}
-{"level":30,"time":1790415351714,"pid":521953,"hostname":"FBI-PC","reqId":"req-3","res":{"statusCode":503},"responseTime":0.3246769999999799,"msg":"request completed"}
-{"level":30,"time":1790415351718,"pid":521953,"hostname":"FBI-PC","reqId":"req-4","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35208},"msg":"incoming request"}
-{"level":40,"time":1790415351718,"pid":521953,"hostname":"FBI-PC","reqId":"req-4","rule":"origin","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351719,"pid":521953,"hostname":"FBI-PC","reqId":"req-4","res":{"statusCode":403},"responseTime":0.19579799999999636,"msg":"request completed"}
-{"level":30,"time":1790415351723,"pid":521953,"hostname":"FBI-PC","reqId":"req-5","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35220},"msg":"incoming request"}
-{"level":40,"time":1790415351723,"pid":521953,"hostname":"FBI-PC","reqId":"req-5","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351723,"pid":521953,"hostname":"FBI-PC","reqId":"req-5","res":{"statusCode":403},"responseTime":0.11640799999997853,"msg":"request completed"}
-{"level":30,"time":1790415351725,"pid":521953,"hostname":"FBI-PC","reqId":"req-6","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35208},"msg":"incoming request"}
-{"level":40,"time":1790415351725,"pid":521953,"hostname":"FBI-PC","reqId":"req-6","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351725,"pid":521953,"hostname":"FBI-PC","reqId":"req-6","res":{"statusCode":403},"responseTime":0.12867799999997942,"msg":"request completed"}
-{"level":30,"time":1790415351729,"pid":521953,"hostname":"FBI-PC","reqId":"req-7","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35220},"msg":"incoming request"}
-{"level":40,"time":1790415351729,"pid":521953,"hostname":"FBI-PC","reqId":"req-7","rule":"options_origin","method":"OPTIONS","url":"/api/health","msg":"request rejected by the guard"}
-{"level":30,"time":1790415351729,"pid":521953,"hostname":"FBI-PC","reqId":"req-7","res":{"statusCode":403},"responseTime":0.14187899999998876,"msg":"request completed"}
-{"level":30,"time":1790415351731,"pid":521953,"hostname":"FBI-PC","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35208},"msg":"incoming request"}
-{"level":30,"time":1790415351732,"pid":521953,"hostname":"FBI-PC","reqId":"req-8","res":{"statusCode":503},"responseTime":0.17388800000000515,"msg":"request completed"}
-{"level":30,"time":1790415351734,"pid":521953,"hostname":"FBI-PC","reqId":"req-9","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35220},"msg":"incoming request"}
-{"level":30,"time":1790415351735,"pid":521953,"hostname":"FBI-PC","reqId":"req-9","res":{"statusCode":503},"responseTime":0.3318960000000004,"msg":"request completed"}
-{"level":30,"time":1790415351747,"pid":521978,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
-{"level":30,"time":1790415351750,"pid":521978,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":1.6151519999999948,"msg":"request completed"}
+{"level":30,"time":1790415351010,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351026,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351042,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351067,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790415351010,"pid":521705,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351010,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.2096779999999967,"msg":"request completed"}
+{"level":40,"time":1790415351026,"pid":521705,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351027,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.21097800000001143,"msg":"request completed"}
+{"level":40,"time":1790415351042,"pid":521705,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351042,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.13945799999999053,"msg":"request completed"}
+{"level":40,"time":1790415351067,"pid":521705,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351067,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.2630470000000287,"msg":"request completed"}
+{"level":30,"time":1790415351089,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/formats/detect","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351100,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351116,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351126,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351137,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351149,"pid":521705,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790415351089,"pid":521705,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/formats/detect","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351089,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1288889999999583,"msg":"request completed"}
+{"level":40,"time":1790415351100,"pid":521705,"hostname":"<host>","reqId":"req-1","rule":"sec_fetch_site","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351100,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.08794899999998051,"msg":"request completed"}
+{"level":40,"time":1790415351116,"pid":521705,"hostname":"<host>","reqId":"req-1","rule":"options_origin","method":"OPTIONS","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351116,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.10169899999999643,"msg":"request completed"}
+{"level":30,"time":1790415351126,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.13938799999999674,"msg":"request completed"}
+{"level":30,"time":1790415351137,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.073079000000007,"msg":"request completed"}
+{"level":30,"time":1790415351149,"pid":521705,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.0792489999999475,"msg":"request completed"}
+{"level":30,"time":1790415351695,"pid":521953,"hostname":"<host>","msg":"Server listening at http://127.0.0.1:7812"}
+{"level":30,"time":1790415351704,"pid":521953,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"evil.example:7812","remoteAddress":"127.0.0.1","remotePort":35188},"msg":"incoming request"}
+{"level":40,"time":1790415351704,"pid":521953,"hostname":"<host>","reqId":"req-1","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351708,"pid":521953,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":3.814206000000013,"msg":"request completed"}
+{"level":30,"time":1790415351712,"pid":521953,"hostname":"<host>","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"","remoteAddress":"127.0.0.1","remotePort":35194},"msg":"incoming request"}
+{"level":40,"time":1790415351712,"pid":521953,"hostname":"<host>","reqId":"req-2","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351713,"pid":521953,"hostname":"<host>","reqId":"req-2","res":{"statusCode":403},"responseTime":0.2627769999999998,"msg":"request completed"}
+{"level":30,"time":1790415351713,"pid":521953,"hostname":"<host>","reqId":"req-3","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35188},"msg":"incoming request"}
+{"level":30,"time":1790415351714,"pid":521953,"hostname":"<host>","reqId":"req-3","res":{"statusCode":503},"responseTime":0.3246769999999799,"msg":"request completed"}
+{"level":30,"time":1790415351718,"pid":521953,"hostname":"<host>","reqId":"req-4","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35208},"msg":"incoming request"}
+{"level":40,"time":1790415351718,"pid":521953,"hostname":"<host>","reqId":"req-4","rule":"origin","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351719,"pid":521953,"hostname":"<host>","reqId":"req-4","res":{"statusCode":403},"responseTime":0.19579799999999636,"msg":"request completed"}
+{"level":30,"time":1790415351723,"pid":521953,"hostname":"<host>","reqId":"req-5","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35220},"msg":"incoming request"}
+{"level":40,"time":1790415351723,"pid":521953,"hostname":"<host>","reqId":"req-5","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351723,"pid":521953,"hostname":"<host>","reqId":"req-5","res":{"statusCode":403},"responseTime":0.11640799999997853,"msg":"request completed"}
+{"level":30,"time":1790415351725,"pid":521953,"hostname":"<host>","reqId":"req-6","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35208},"msg":"incoming request"}
+{"level":40,"time":1790415351725,"pid":521953,"hostname":"<host>","reqId":"req-6","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351725,"pid":521953,"hostname":"<host>","reqId":"req-6","res":{"statusCode":403},"responseTime":0.12867799999997942,"msg":"request completed"}
+{"level":30,"time":1790415351729,"pid":521953,"hostname":"<host>","reqId":"req-7","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35220},"msg":"incoming request"}
+{"level":40,"time":1790415351729,"pid":521953,"hostname":"<host>","reqId":"req-7","rule":"options_origin","method":"OPTIONS","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415351729,"pid":521953,"hostname":"<host>","reqId":"req-7","res":{"statusCode":403},"responseTime":0.14187899999998876,"msg":"request completed"}
+{"level":30,"time":1790415351731,"pid":521953,"hostname":"<host>","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35208},"msg":"incoming request"}
+{"level":30,"time":1790415351732,"pid":521953,"hostname":"<host>","reqId":"req-8","res":{"statusCode":503},"responseTime":0.17388800000000515,"msg":"request completed"}
+{"level":30,"time":1790415351734,"pid":521953,"hostname":"<host>","reqId":"req-9","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":35220},"msg":"incoming request"}
+{"level":30,"time":1790415351735,"pid":521953,"hostname":"<host>","reqId":"req-9","res":{"statusCode":503},"responseTime":0.3318960000000004,"msg":"request completed"}
+{"level":30,"time":1790415351747,"pid":521978,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415351750,"pid":521978,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":1.6151519999999948,"msg":"request completed"}
 effective time zone: America/Mexico_City (TZ=<unset>)
 
  Test Files  127 passed (127)
