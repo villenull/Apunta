@@ -38,3 +38,8 @@ One entry per coordinator step, newest last:
 2026-09-26T03:0x | S1.5 | IR round 1 | 8x CLEAR, IR-04 + IR-10 | IR-04: markdown prettier check vacuous; IR-10: evidence dir vs May-edit tension
 2026-09-26T03:0x | P7a.1 | IR round 1 | 7x CLEAR, IR-03 + IR-05 + IR-08 | IR-05: same vacuous markdown check; IR-03: no home-path placeholder; IR-08: git log -p --all to stdout vs HS-5
 2026-09-26T03:0x | ALL-L0 | owner decision | markdown prettier rows NON-BINDING (AM-014) | owner also authorised AM-015 (format S1.2 JSON to restore npm run lint) and AM-016 (P7a.1 safe secret handling). S1.5/P7a.1 IR re-runs next.
+2026-09-26T03:0x | S1.5 | IR round 2 | CLEAR all ten | AM-014 + AM-017; AM-017 logs the evidence/return standing interpretation
+2026-09-26T03:0x | P7a.1 | IR round 2 | CLEAR all ten | AM-016 closed IR-03/IR-08; AM-014 closed IR-05
+2026-09-26T05:26:34Z | S1.4 | review attempt 3 | all PASS | docs/v2/state/reviews/S1.4-impl.md — 6 non-blocking findings (link rot in a citation, one verb, one file:line, wording drift, vacuous V2, delta-check note). Card APPROVED.
+2026-09-26T05:26:34Z | S1.5 | research attempt 1 | SUBMITTED, committed f71e16f | es-mx-spellcheck.md — dictionary-es-mx@2.0.0 FITS via MPL-1.1 election; review dispatched
+2026-09-26T05:26:34Z | P7a.1 | research | in flight (space-bunny-free)

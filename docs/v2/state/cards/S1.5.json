@@ -5,7 +5,7 @@
   "baseCommit": "46216fe",
   "attempt": 1,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "dispatch built (L0, no port); AM-012 logged; instruction review dispatched in parallel with S1.4 repair and P7a.1 (docs-only lane)",
+  "lastCompletedStep": "instruction review CLEAR on all ten (round 2 after AM-014/AM-017); researcher dispatched (space-bunny-free)",
   "nextAllowedAction": "check instruction review return",
   "sideEffectsDone": [],
   "changedFiles": [],
