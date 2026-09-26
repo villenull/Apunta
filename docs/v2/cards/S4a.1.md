@@ -45,8 +45,16 @@ Anything else. Never write generated audio into the repository.
   seeded, per clip); speech rate 1.15× faster, i.e. Piper `length_scale`
   `1/1.15 ≈ 0.8696`. The generator writes the RNG seed constant, the noise
   colour, the `length_scale` and the Piper version into `reference.json`.
+- **Deterministic synthesis (V1's precondition).** Piper's VITS draws vocoder
+  noise inside the graph with no seed, so the generator pins the voice's
+  `noise_scale` to `0` and `noise_w` to `0`, and runs single-threaded inference
+  (`OMP_NUM_THREADS=1`, and `--num_threads 1` if the CLI exposes it), writing
+  both values and the thread setting into `reference.json`'s `synthesis`
+  object. Two runs must then be byte-identical. This is a deliberate trade:
+  zero vocoder noise flattens prosody; the corpus is synthetic ASR material and
+  the value is recorded so a later card can revisit it.
 - **`reference.json` shape** (one file per output directory):
-  `{"version":1,"piper":"<version>","voices":[{"name","sha256","bytes"}],"clips":[{"file","text","voice","variant","source","category"}]}`,
+  `{"version":1,"piper":"<version>","synthesis":{"noise_scale":0,"noise_w":0,"threads":1,"length_scale":0.8696},"voices":[{"name","sha256","bytes"}],"clips":[{"file","text","voice","variant","source","category"}]}`,
   where:
   - `file` is relative to the output directory;
   - `variant` is `clean|noise|fast` for every speech clip; the 10 non-speech
@@ -95,7 +103,8 @@ Anything else. Never write generated audio into the repository.
 
 ## Stop conditions
 Piper or a required voice cannot be obtained under A09/A10, or a voice's licence
-text is unobtainable: report `BLOCKED` with the licence text found. V1 failing
-on a correct implementation because Piper's synthesis is not byte-deterministic
-for the pinned version: report it (do not post-process the audio to force a
-hash).
+text is unobtainable: report `BLOCKED` with the licence text found. If, with the
+pinned `noise_scale 0`/`noise_w 0` and single-threaded inference, two runs are
+still not byte-identical (e.g. non-deterministic ONNX threading), report it with
+the two hash lists as evidence — the coordinator will amend V1 to a
+decode-stability contract. Never post-process the audio to force a hash.
