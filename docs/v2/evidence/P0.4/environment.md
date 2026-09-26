@@ -114,9 +114,11 @@ the model's native 262,144.
 | GPU offload | 100% GPU, confirmed by `ollama ps` above |
 | OS | Omarchy, kernel `7.2.5-3-omarchy`, x86_64 |
 
-The card's GPU capacity is not recorded because it cannot be read on this host:
-`rocm-smi` is not installed and `/sys/class/drm/card0/device/mem_info_vram_total`
-reports the 0.5 GiB BAR aperture rather than the card's capacity. A number
+The card's GPU capacity is not recorded because it cannot be read reliably on
+this host: `rocm-smi` is not installed, `/sys/class/drm/card0/.../mem_info_vram_total`
+is the 0.5 GiB BAR aperture, and while `/sys/class/drm/card1/.../mem_info_vram_total`
+does read 17,095,983,104, the node-to-device mapping was not certain enough to
+assert as the capacity. A number
 guessed from the PCI device string would be a fabrication, which is the one
 thing this card exists to measure, so it is left out.
 
@@ -130,22 +132,34 @@ thing this card exists to measure, so it is left out.
 
 ## Corpus and prompt-set hashes
 
-SHA-256. "Tree hash" is `sha256sum` over the sorted `<sha256>  <path>` listing of
-every file in the directory, so it moves if any fixture, expectation or lexicon
-changes.
+SHA-256. The two "tree hash" values from the first draft were dropped: the
+documented method did not reproduce them (review finding 3), and the per-file
+`expectations.json` and transcript-concatenation hashes below reproduce exactly
+and pin the same content. The four `clinical-knowledge/*.ts` hashes were added so
+the prompt-set hash covers the whole prompt set (C-EVAL@1 §7).
 
 | Artefact | SHA-256 |
 | --- | --- |
-| `e2e/fixtures/eval` tree hash (29 files, 20 transcripts) | `b520dab22415f421bed2cef27add05e9c103b4879fbfa12fbd858de94428436c` |
 | `e2e/fixtures/eval/expectations.json` | `ee9d28f26f3e9bcd2d950f87debe6d00a3535de54cdbc49fd572721428ef62f6` |
 | `e2e/fixtures/eval` transcripts, concatenated | `70ca0aae615a0e70c7883f14adfb900f6bac2b6cf0c9294905f571127150126f` |
-| `e2e/fixtures/eval-owner` tree hash (7 files, 4 transcripts) | `58e6d77a8ef717ac9a5cc1d4e4ff8aa0bb9c06e3021e57ce399014993be06ac9` |
 | `e2e/fixtures/eval-owner/expectations.json` | `f1e5d94536e60817aae4cbb00318908c8a92362907081720af08d493d94cb14c` |
 | `e2e/fixtures/eval-owner` transcripts, concatenated | `63d1c0d2fb31c88bb883e432c17f0f22d57a9d87bebdf49829f1f3103341cbb2` |
+| `server/src/ai/clinical-knowledge/integration.ts` | `46c2d1b73f1721aaf7ec01020656b9f1cd6ecad7f05452bf25d064623c8d97b5` |
+| `server/src/ai/clinical-knowledge/presentation.ts` | `e0ff375ea70cbc9a9216bf62cc2484f700b2aa6ac030ac5e784611d80152ccf5` |
+| `server/src/ai/clinical-knowledge/interventions.ts` | `274a286b5f4438664b67c0751ab27382d6f9f373902c806b13170a314362f678` |
+| `server/src/ai/clinical-knowledge/discussion-subheadings.ts` | `f4db4f744244a9b99a2232f20058f582e7780210aa552611e15f19b8aab3786d` |
 | `server/src/ai/default-instructions.ts` (the prompt set — built-in defaults, no `--instructions` override was used) | `1855cce7a774b7dd7bf75b73d79918a3c1a9549251141e99c69f3121c4d9152c` |
 | `server/src/ai/prompts.ts` | `30efe2c3cb9f026e870996789642beb6e616ef01c98962eb8d0be0406e5a2a44` |
 | `server/src/eval/score.ts` (the scorer) | `619eb001e7e2fdd3c2919773f0f4f6f937bedd869cd60bed334f1de42a0ff995` |
 | `server/src/eval/corpus.ts` | `cd546f8cc52609d61d72afa794f18ea31810662f159799d3d0c6129e8f064cee` |
+
+Per C-EVAL@1 §7 the prompt-set hash must cover the whole prompt set: besides
+`default-instructions.ts` and `prompts.ts`, `buildGeneratePrompt` splices in
+`renderClinicalKnowledgeGuide(...)` (`server/src/ai/prompts.ts:165-171`), which is
+assembled from the four `clinical-knowledge/*.ts` files above (guidance version
+string `2026-09-07.1`, `shared/src/clinical-guidance.ts:10`). Those four are now
+hashed; a change to the local clinical vocabulary moves every rate in
+`BASELINE.md` §5 and now moves a recorded hash too.
 
 V1 is SOAP + intake (`e2e/fixtures/eval`), V2 is the owner's own format
 (`e2e/fixtures/eval-owner`). They are separate corpora with separate

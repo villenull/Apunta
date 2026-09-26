@@ -49,9 +49,11 @@ touched nothing on the eval path, and it is recorded in
 - 4 separate invocations per corpus, `--runs 1` each, one process each. V1 first,
   then V2, as the card ordered. C-EVAL@1 §6: these are repeatability evidence,
   not four independent samples.
-- `--models qwen3.5:4b-q4_K_M` was passed explicitly on every invocation. It is
-  mandatory: omit it and the CLI falls back to the memory picker
-  (`server/src/eval/cli.ts:175`).
+- `--models qwen3.5:4b-q4_K_M` was passed explicitly on every invocation, per the
+  card, pinning the model independently of the host (on a ≥ 16 GiB Mac the memory
+  picker returns `gemma4:12b-it-qat`). On this Linux host the picker's fallback
+  coincides with this tag, so the flag is a card requirement, not a host-dependent
+  rescue (`server/src/eval/cli.ts:175`).
 - The only addition to the card's command was `--out <report path>`, so the report
   is captured as evidence. `cli.ts` writes the same `result.markdown` to stdout
   and to that file, so the measurement is unchanged.

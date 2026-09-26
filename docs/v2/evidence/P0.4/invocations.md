@@ -11,7 +11,8 @@ corpus hashes, hardware — is in `environment.md`.
 
 ## Exit codes, and why V1 is 1
 
-The card's verification table expects exit 0. The eval CLI's own contract is
+The card's verification table expected exit 0 as it then read (AM-029 later
+reworded it to accept the eval's own gating exit 0 or 1). The eval CLI's own contract is
 that in a **real** run a gating failure *is* the finding, and the exit status
 says so (`server/src/eval/cli.ts`: `process.exit(gated ? 1 : 0)`), while in fake
 mode it is the harness sensitivity check that decides. So:
@@ -72,9 +73,12 @@ npm run eval -- --models qwen3.5:4b-q4_K_M --corpus e2e/fixtures/eval-owner \
   --out docs/v2/evidence/P0.4/reports/v2-invocation-N.md
 ```
 
-`--models` was passed explicitly on every invocation, never inferred: with the
-flag omitted the CLI falls back to the machine's memory picker (`cli.ts:175`),
-which is a different model on a different machine and would not be this baseline.
+`--models` was passed explicitly on every invocation as the card requires, so the
+model is pinned independently of the host: on a ≥ 16 GiB Mac the memory picker
+(`cli.ts:175` → `model-picker.ts`) returns `gemma4:12b-it-qat`. On this Linux host
+the picker's fallback happens to coincide with this tag — `machineMemoryGib()`
+returns null off darwin and `modelForMemory(null)` returns `qwen3.5:4b-q4_K_M` — so
+the flag is a card requirement here, not a host-dependent rescue.
 No model was pulled, removed or replaced (HS-3); `ollama list` was run first and
 showed the tag already present.
 
