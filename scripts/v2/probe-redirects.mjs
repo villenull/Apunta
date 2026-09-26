@@ -23,7 +23,9 @@
  *  - **It sanitises by construction.** No `os.hostname()`, no login name, no
  *    home or sandbox path reaches the file. The only paths in the output are
  *    the repository-relative evidence path and the catalogue's own public URLs,
- *    and a query string is written `<redacted>` rather than pasted.
+ *    and a query string's **values** are never written: the file carries
+ *    `<redacted>` in their place plus the parameter *names*, which are public
+ *    vocabulary that an allow-list has to name anyway.
  *
  * It writes `docs/v2/evidence/P4.1/redirects.md` itself. A hand-transcribed
  * version of that file would be worth nothing, because the run is the evidence.
@@ -151,6 +153,25 @@ function passesDomainRule(host) {
   return CDN_DOMAIN_SUFFIXES.some((suffix) => lower === suffix || lower.endsWith(`.${suffix}`));
 }
 
+/**
+ * The sorted, de-duplicated **names** of a query string's parameters. A value
+ * is never returned, so nothing signed can leak through this function; a
+ * parameter with no `=` still contributes its name, because that is exactly
+ * the case where a name alone is the whole of what an allow-list must name.
+ */
+function queryKeyNames(search) {
+  if (search === '') return [];
+  return [
+    ...new Set(
+      search
+        .replace(/^\?/, '')
+        .split('&')
+        .filter((pair) => pair !== '')
+        .map((pair) => decodeURIComponent(pair.split('=')[0] ?? pair)),
+    ),
+  ].sort();
+}
+
 /** Everything rule 1 checks about a `Location`, recorded per hop. */
 function describeLocation(raw) {
   let parsed;
@@ -164,6 +185,7 @@ function describeLocation(raw) {
       scheme: '(unparseable)',
       port: '(unparseable)',
       query: '(unparseable)',
+      queryKeys: '(unparseable)',
       userInfo: '(unparseable)',
       fragment: '(unparseable)',
       refusals: ['the Location could not be parsed as a URL at all'],
@@ -185,6 +207,10 @@ function describeLocation(raw) {
     // default, so "absent" here means 443 either way.
     port: parsed.port === '' ? "absent (the scheme's default, 443)" : parsed.port,
     query: parsed.search === '' ? 'absent' : 'present — `<redacted>`, never pasted',
+    // Key names only, never a value. The names are what a plan editor needs to
+    // write an enumerated allow-list; a value is a signed-URL secret and is
+    // never written, here or anywhere.
+    queryKeys: queryKeyNames(parsed.search),
     userInfo: parsed.username === '' && parsed.password === '' ? 'absent' : 'present — refused',
     fragment: parsed.hash === '' ? 'absent' : 'present — refused',
     refusals,
@@ -227,6 +253,15 @@ function renderArtifact(artifact, observation, when) {
     lines.push(`  - scheme: \`${location.scheme}\``);
     lines.push(`  - port: ${location.port}`);
     lines.push(`  - query: ${location.query}`);
+    lines.push(
+      `  - query key names (values never read): ${
+        location.queryKeys.length === 0
+          ? location.query === 'absent'
+            ? 'none — the query is absent'
+            : 'none — the query has no parameter name'
+          : location.queryKeys.map((name) => `\`${name}\``).join(', ')
+      }`,
+    );
     lines.push(`  - user-info: ${location.userInfo}`);
     lines.push(`  - fragment: ${location.fragment}`);
     lines.push(
