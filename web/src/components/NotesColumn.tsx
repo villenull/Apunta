@@ -111,7 +111,7 @@ export function NotesColumn({
                 onOpenView('prep');
               }}
             >
-              {t('prep.title')}
+              {t('notes.prepareForSession')}
             </button>
           </div>
         )}

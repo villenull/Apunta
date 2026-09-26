@@ -109,7 +109,7 @@ export function PatientDirectory({
             <button
               type="button"
               className="icon-btn directory-action-btn"
-              aria-label={searching ? t('directory.clearSearch') : t('common.searchPatients')}
+              aria-label={searching ? t('directory.hideSearch') : t('common.searchPatients')}
               aria-expanded={searching}
               data-testid="directory-search-toggle"
               onClick={() => {

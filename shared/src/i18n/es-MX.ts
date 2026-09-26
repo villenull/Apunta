@@ -633,6 +633,9 @@ export const esMX = {
   'notes.loading': {
     text: 'Cargando notas…',
   },
+  'notes.prepareForSession': {
+    text: 'Preparar la sesión',
+  },
   'notes.emptyFor': {
     text: 'Aún no hay notas de {name}.',
     kind: { name: 'text' },
@@ -681,6 +684,9 @@ export const esMX = {
   },
   'directory.clearSearch': {
     text: 'Limpiar la búsqueda',
+  },
+  'directory.hideSearch': {
+    text: 'Ocultar la búsqueda',
   },
   'patients.emptyStart': {
     text: 'Agrega tu primer paciente para empezar.',
@@ -2006,6 +2012,9 @@ export const esMX = {
   },
   'import.createNew': {
     text: 'Crear uno nuevo',
+  },
+  'import.createNewPatient': {
+    text: 'Crear un paciente nuevo',
   },
   'import.notFound': {
     text: 'No encontrados desde {cutoff}: {names}.',

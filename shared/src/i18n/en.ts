@@ -753,6 +753,12 @@ export const en = {
   'notes.new': { text: 'New note' },
   /** `NotesColumn.tsx:116`. */
   'notes.loading': { text: 'Loading notes…' },
+  /**
+   * `NotesColumn.tsx:114`, the briefing button in the notes column. Not
+   * `prep.title`: that heading reads "Before this session", and Fixed decision
+   * 7 keeps each site's own English.
+   */
+  'notes.prepareForSession': { text: 'Prepare for session' },
   /** `NotesColumn.tsx:132` — a split sentence the checker cannot see. */
   'notes.emptyFor': { text: 'No notes yet for {name}.', kind: { name: 'text' } },
   /** `NotesColumn.tsx:141` and `Workspace.tsx:558`. */
@@ -786,6 +792,12 @@ export const en = {
   'nav.help': { text: 'Get help' },
   /** `PatientsColumn.tsx:306`. */
   'directory.clearSearch': { text: 'Clear search' },
+  /**
+   * `PatientDirectory.tsx:112`, the same toggle's `aria-label` while the search
+   * field is open. Not `directory.clearSearch` ("Clear search"), which is the
+   * button beside the field in `PatientsColumn`.
+   */
+  'directory.hideSearch': { text: 'Hide search' },
   /** `PatientsColumn.tsx:314`. */
   'patients.emptyStart': { text: 'Add your first patient to get started.' },
   /** `PatientsColumn.tsx:317`. */
@@ -1938,6 +1950,12 @@ export const en = {
   'import.addTo': { text: 'Add to {name}', kind: { name: 'text' } },
   /** `Import.tsx:243` and `HalaxyImport.tsx:320`. */
   'import.createNew': { text: 'Create new' },
+  /**
+   * `Import.tsx:283`, the muted fallback when a match cannot be chosen. Not
+   * `patients.new` ("New patient") and not `import.createNew` ("Create new"):
+   * the screen read "Create new patient" and stays that way in English.
+   */
+  'import.createNewPatient': { text: 'Create new patient' },
   /** `Import.tsx:254`. */
   'import.notFound': { text: 'Not found since {cutoff}: {names}.', kind: { cutoff: 'text', names: 'text' } },
   /** `Import.tsx:269` and `HalaxyImport.tsx:210`, with the count already rendered. */

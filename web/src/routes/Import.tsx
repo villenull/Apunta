@@ -280,7 +280,7 @@ export function Import(): React.JSX.Element {
                   </div>
                 </div>
               ) : (
-                <span className="small muted">{t('patients.new')}</span>
+                <span className="small muted">{t('import.createNewPatient')}</span>
               )}
             </div>
           ))}

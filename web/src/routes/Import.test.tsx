@@ -137,6 +137,26 @@ describe('the import screen', () => {
   });
 
   /**
+   * S2.4: the muted fallback for a name that is not in the practice reads
+   * "Create new patient" and nothing else, so it is its own key rather than
+   * `patients.new` ("New patient") or `import.createNew` ("Create new"). Fixed
+   * decision 7 pins the English to the base commit, and both rows of `REPORT`
+   * have no `patient_id`, so both render the span.
+   */
+  it('keeps "Create new patient" whole on the row, and translates it', async () => {
+    installFakeApi({}, { importReport: REPORT });
+    renderImport();
+    await chooseAndCheck();
+
+    const rows = screen.getAllByTestId('import-patient');
+    expect(rows).toHaveLength(2);
+    for (const row of rows) expect(row.textContent).toContain('Create new patient');
+    expect(t('import.createNewPatient', {}, 'en')).toBe('Create new patient');
+    expect(t('import.createNewPatient', {}, 'es-MX')).toBe('Crear un paciente nuevo');
+    expect(t('import.createNewPatient', {}, 'es-MX')).not.toBe(t('import.createNewPatient', {}, 'en'));
+  });
+
+  /**
    * `Mac` is a keep-as-is token inside a translatable sentence, so it appears
    * verbatim in both catalogue values and never in the allowlist.
    */
