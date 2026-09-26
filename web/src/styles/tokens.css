@@ -313,9 +313,18 @@
    * shade above that; the three greys are the foregrounds Claude puts on them.
    * The row menu and the settings modal sit *on* the open space, so they take
    * its colour and are lifted by their border and shadow instead.
+   *
+   * The two base surfaces are the owner's exact values (2026-09-26): the
+   * Patients column is `#111111` and the open space the note and the home
+   * screen sit on is `#151515`, both neutral greys where this ramp had a warm
+   * cast. The steps above them are still this ramp's own values, so they now
+   * read further from the base than the "a shade above" above describes —
+   * `--menu-bg` in particular no longer equals `--app-bg`, which the paragraph
+   * above says it should. The owner has the measured offsets and has not asked
+   * for the ramp to be re-stepped; do not re-step it unasked.
    */
-  --sidebar-bg: #1f1f1e;
-  --app-bg: #262624;
+  --sidebar-bg: #111111;
+  --app-bg: #151515;
   --text-primary: #f0eee6;
   --text-secondary: #b3b0a9;
   --text-muted: #8a8780;
