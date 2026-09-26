@@ -1,1 +1,24 @@
-{ "card":"S2.3","planVersion":2,"contracts":["C-LANG@1","C-SETTINGS@1"],"baseCommit":"e9b096b","attempt":1,"status":"IN PROGRESS","lastCompletedStep":"card repaired twice; IR CLEAR all ten (round 3); tool bug AM-037 fixed; implementer dispatched","nextAllowedAction":"check implementation return","sideEffectsDone":[],"changedFiles":[],"criteria":{},"sandboxRuns":[],"updatedUtc":"2026-09-26T15:40:00Z" }
+{
+  "card": "S2.3",
+  "planVersion": 2,
+  "contracts": [
+    "C-LANG@1",
+    "C-SETTINGS@1"
+  ],
+  "baseCommit": "e9b096b",
+  "attempt": 1,
+  "status": "APPROVED",
+  "lastCompletedStep": "impl review all PASS (316d816; V1-V5 green; 4 advisory notes)",
+  "nextAllowedAction": "done",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "PASS",
+    "V2": "PASS",
+    "V3": "PASS",
+    "V4": "PASS",
+    "V5": "PASS"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T16:20:00Z"
+}
