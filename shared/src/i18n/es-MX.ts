@@ -501,6 +501,42 @@ export const esMX = {
     kind: { label: 'text' },
   },
 
+  /* La frase del diff: la primera línea de cada respuesta de ajuste. */
+  'chat.change.cleared': {
+    text: 'vacié la sección de {section}',
+    kind: { section: 'text' },
+  },
+  'chat.change.shortened': {
+    text: 'acorté la sección de {section}',
+    kind: { section: 'text' },
+  },
+  'chat.change.expanded': {
+    text: 'amplié la sección de {section}',
+    kind: { section: 'text' },
+  },
+  'chat.change.rewrote': {
+    text: 'reescribí la sección de {section}',
+    kind: { section: 'text' },
+  },
+  'chat.change.addition': {
+    text: 'agregué "{label}"',
+    kind: { label: 'text' },
+  },
+  'chat.change.summary': {
+    text: 'Cambié lo siguiente: {changes}.',
+    kind: { changes: 'text' },
+  },
+  'chat.list.last': {
+    text: '{first} y {last}',
+    kind: { first: 'text', last: 'text' },
+  },
+  'chat.verdict.alreadySaid': {
+    text: 'La nota ya decía lo que pediste.',
+  },
+  'chat.verdict.noChanges': {
+    text: 'La edición que pediste no produjo cambios.',
+  },
+
   'chat.unchangedNotice': {
     text: 'Apunta no cambió la nota: la revisión volvió sin cambios.',
   },

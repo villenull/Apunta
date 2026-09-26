@@ -283,7 +283,7 @@ export function enforceRefineScope(
   const held: ScopeHold[] = [];
   const scoped = intent.targets.length > 0;
   const additionOnly = intent.addition && !intent.removal && !intent.shortening && !intent.move;
-  const scopeLabel = listSections(intent.targets);
+  const scopeLabel = listSections(intent.targets, locale);
   const gained = new Set(
     intent.targets.flatMap((target) => gainedWords(previous[target] ?? '', updated[target] ?? '')),
   );
@@ -324,9 +324,19 @@ export function enforceRefineScope(
   return { sections, held };
 }
 
-function listSections(names: readonly string[]): string {
+/**
+ * Her request's scope, named in one breath: two sections read "A and B", three
+ * read "A, B and C". The `and` is a word the server owns, so it comes from the
+ * catalogue (`chat.list.last`, shared with the diff sentence's parts) — an `and`
+ * written here is English inside a Spanish sentence. The comma between the
+ * others is punctuation and stays.
+ */
+function listSections(names: readonly string[], locale: Locale): string {
   if (names.length <= 1) return names[0] ?? '';
-  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1] as string}`;
+  return msg(locale, 'chat.list.last', {
+    first: names.slice(0, -1).join(', '),
+    last: names[names.length - 1] as string,
+  });
 }
 
 export interface RequestCheck {
@@ -493,8 +503,8 @@ export function assessRefine(input: AssessInput, locale: Locale = DEFAULT_LOCALE
       : reasons.length > 0
         ? reasons.join(' ')
         : outcome === 'unchanged' && checks.length > 0
-          ? 'The note already said what you asked for.'
-          : 'The requested edit produced no changes.';
+          ? msg(locale, 'chat.verdict.alreadySaid')
+          : msg(locale, 'chat.verdict.noChanges');
 
   return { outcome, reason, reply: replyFor(input, checks, outcome, explained, locale) };
 }
@@ -524,6 +534,7 @@ function replyFor(
         checks
           .filter((check) => check.kind === 'addition' && check.satisfied && check.label !== null)
           .map((check) => check.label as string),
+        locale,
       ),
     );
   }
@@ -543,8 +554,24 @@ function replyFor(
     : unchangedNotice(locale);
 }
 
-/** "I shortened the Discussion section and added "sertraline 20 mg"." */
-function changeSentence(previous: Sections, updated: Sections, additions: readonly string[]): string {
+/**
+ * "I shortened the Discussion section and added "sertraline 20 mg"." — the
+ * first paragraph of every successful refine reply, and the one this module
+ * returned in English whatever locale it was given.
+ *
+ * Every word of it is a key: the verb (four of them, one per way a section can
+ * have moved), the addition, the conjunction, and the frame. The frame is a key
+ * for the same reason the verb is — `I` does not open a Spanish sentence — and
+ * the parts are joined by `chat.list.last`, so a two-part and a three-part list
+ * read the way the language reads. The English is unchanged, character for
+ * character: this is the sentence the wire has always carried.
+ */
+function changeSentence(
+  previous: Sections,
+  updated: Sections,
+  additions: readonly string[],
+  locale: Locale,
+): string {
   const parts: string[] = [];
   for (const name of Object.keys(previous)) {
     const before = previous[name] ?? '';
@@ -552,16 +579,24 @@ function changeSentence(previous: Sections, updated: Sections, additions: readon
     if (before === revised) continue;
     const verb =
       revised.trim() === ''
-        ? 'cleared'
+        ? 'chat.change.cleared'
         : words(revised).length < words(before).length
-          ? 'shortened'
+          ? 'chat.change.shortened'
           : words(revised).length > words(before).length
-            ? 'expanded'
-            : 'rewrote';
-    parts.push(`${verb} the ${name} section`);
+            ? 'chat.change.expanded'
+            : 'chat.change.rewrote';
+    parts.push(msg(locale, verb, { section: name }));
   }
-  for (const addition of additions) parts.push(`added "${addition}"`);
-  return parts.length === 0 ? '' : `I ${parts.join(' and ')}.`;
+  for (const addition of additions) parts.push(msg(locale, 'chat.change.addition', { label: addition }));
+  if (parts.length === 0) return '';
+  const changes =
+    parts.length === 1
+      ? (parts[0] as string)
+      : msg(locale, 'chat.list.last', {
+          first: parts.slice(0, -1).join(', '),
+          last: parts[parts.length - 1] as string,
+        });
+  return msg(locale, 'chat.change.summary', { changes });
 }
 
 /**

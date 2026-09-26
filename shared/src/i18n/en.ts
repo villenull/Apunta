@@ -760,6 +760,71 @@ export const en = {
   },
 
   /**
+   * The diff sentence — `ai/refine-request.ts`'s `changeSentence`, the first
+   * line of *every* successful refine reply. Assembled from parts because the
+   * number of parts is not known here: one section that moved, or several and
+   * a medication she asked for. The verb is the key's job, not a word chosen
+   * in code, which is what left this sentence English on a Spanish note.
+   * `{section}` is stored clinical text and `{label}` is her own words; both
+   * are passed as data and never translated (C-LANG@1 rule 5).
+   */
+  'chat.change.cleared': {
+    text: 'cleared the {section} section',
+    kind: { section: 'text' },
+  },
+  'chat.change.shortened': {
+    text: 'shortened the {section} section',
+    kind: { section: 'text' },
+  },
+  'chat.change.expanded': {
+    text: 'expanded the {section} section',
+    kind: { section: 'text' },
+  },
+  'chat.change.rewrote': {
+    text: 'rewrote the {section} section',
+    kind: { section: 'text' },
+  },
+  'chat.change.addition': {
+    text: 'added "{label}"',
+    kind: { label: 'text' },
+  },
+  /**
+   * `I {changes}.` — the frame around the parts above. Spanish cannot keep it
+   * (`I reescribí la sección…` is not a sentence), so the frame is a key even
+   * though the English is a pronoun and a full stop.
+   */
+  'chat.change.summary': {
+    text: 'I {changes}.',
+    kind: { changes: 'text' },
+  },
+
+  /**
+   * The conjunction that joins the last of a server-built list to the ones
+   * before it. Two callers, one string: the scope a hold names
+   * (`chat.scopeHold.outOfScope`'s `{scope}`) and the diff sentence's parts.
+   * The separator before that is a comma, which is punctuation and not a
+   * language's, so only this one word is a key — the same reason
+   * `chat.retractionNotice.list` is.
+   */
+  'chat.list.last': {
+    text: '{first} and {last}',
+    kind: { first: 'text', last: 'text' },
+  },
+
+  /**
+   * `assessRefine`'s two reason fallbacks — the account of a turn in
+   * `outcome_reason`, for the two shapes no check or notice explains. Distinct
+   * sentences from `chat.alreadyThereNotice` and `chat.unchangedNotice` above,
+   * which are whole replies rather than the reason beside them.
+   */
+  'chat.verdict.alreadySaid': {
+    text: 'The note already said what you asked for.',
+  },
+  'chat.verdict.noChanges': {
+    text: 'The requested edit produced no changes.',
+  },
+
+  /**
    * The three sentences that are a whole reply on a turn that changed nothing,
    * and the one a question-with-a-rewrite-attached gets appended. Like the lock
    * notices they are persisted in the note's own locale and stripped from the

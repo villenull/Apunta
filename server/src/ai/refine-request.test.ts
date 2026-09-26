@@ -309,7 +309,7 @@ describe('the server’s own sentences in Spanish', () => {
     );
   });
 
-  it('joins a Spanish reply out of the same pieces, with no English left in it', () => {
+  it('joins a Spanish reply out of the same pieces, with the diff sentence in Spanish too', () => {
     const intent = parseRefineRequest('Make the discussion shorter', OWNER);
     const updated = { ...NOTE, Location: 'Video.', Discussion: `${NOTE['Discussion'] ?? ''} And more.` };
     const held = enforceRefineScope(NOTE, updated, intent, 'es-MX').held;
@@ -319,10 +319,161 @@ describe('the server’s own sentences in Spanish', () => {
     );
     expect(verdict.reason).toContain('Apunta no pudo acortar');
     expect(verdict.reply).toContain('Apunta dejó');
-    // The only English left is the diff sentence `changeSentence` writes, which
-    // this card's amendment does not reach — named in the return file.
+    // The diff sentence is the first line of a successful refine reply, so it
+    // used to open the whole reply in English. Its parts are keys now: the
+    // verb, the frame and the conjunction.
+    expect(verdict.reply).toContain('Cambié lo siguiente: ');
+    expect(verdict.reply).toContain('acorté la sección de Location y amplié la sección de Discussion.');
+    expect(verdict.reply).not.toContain('I ');
     expect(verdict.reply).not.toContain('Apunta left');
     expect(verdict.reply).not.toContain('Apunta could not');
+    expect(verdict.reply).not.toContain(' and ');
+    expect(verdict.reply).not.toContain('section');
+  });
+
+  it('names a scope of two sections with y, not with an English and', () => {
+    // `listSections` is the `{scope}` of `chat.scopeHold.outOfScope`, and the
+    // `and` it used to write is a word the server owns. The section that
+    // actually moved is outside each scope, which is what produces the hold.
+    const two = enforceRefineScope(
+      NOTE,
+      { ...NOTE, Location: 'Video.' },
+      parseRefineRequest('Make the discussion and the intervention shorter', OWNER),
+      'es-MX',
+    );
+    expect(two.held[0]?.reason).toContain('tu mensaje solo preguntaba por Discussion y Intervention.');
+
+    const three = enforceRefineScope(
+      NOTE,
+      { ...NOTE, 'Risk review': 'Thinking about her sister.' },
+      parseRefineRequest('Make the location, the discussion and the intervention shorter', OWNER),
+      'es-MX',
+    );
+    expect(three.held[0]?.reason).toContain(
+      'tu mensaje solo preguntaba por Location, Discussion y Intervention.',
+    );
+
+    // English is unchanged, comma and all.
+    const english = enforceRefineScope(
+      NOTE,
+      { ...NOTE, Location: 'Video.' },
+      parseRefineRequest('Make the discussion and the intervention shorter', OWNER),
+    );
+    expect(english.held[0]?.reason).toContain('your message asked about Discussion and Intervention only.');
+  });
+
+  it('reports a change in the note’s language, addition and conjunction included', () => {
+    const previous: Sections = { ...NOTE, 'Client presentation': 'Reports better sleep.' };
+    const updated: Sections = {
+      ...previous,
+      'Client presentation': 'Reports better sleep. On sertraline 20 mg daily.',
+    };
+    const intent = parseRefineRequest("Add that she's on sertraline 20 mg", OWNER);
+    const input = { intent, previous, updated, held: [], lockedSections: [], notices: [], changed: true };
+    const spanish = assessRefine(input, 'es-MX');
+    expect(spanish.outcome).toBe('applied');
+    expect(spanish.reply).toBe(
+      'Cambié lo siguiente: amplié la sección de Client presentation y agregué "sertraline".',
+    );
+    // The same input, the same two parts, the bytes the wire has always
+    // carried (FD6).
+    expect(assessRefine(input).reply).toBe(
+      'I expanded the Client presentation section and added "sertraline".',
+    );
+  });
+
+  it('clears, shortens, expands and rewrites a section in the note’s language', () => {
+    const reply = (name: string, body: string, message: string, locale?: 'en' | 'es-MX') =>
+      assessRefine(
+        {
+          intent: parseRefineRequest(message, OWNER),
+          previous: NOTE,
+          updated: withSection(name, body),
+          held: [],
+          lockedSections: [],
+          notices: [],
+          changed: true,
+        },
+        locale,
+      ).reply;
+
+    expect(reply('Risk review', '', 'Make the risk review shorter', 'es-MX')).toContain(
+      'vacié la sección de Risk review',
+    );
+    expect(reply('Discussion', 'Short.', 'Make the discussion shorter', 'es-MX')).toContain(
+      'acorté la sección de Discussion',
+    );
+    expect(
+      reply('Discussion', `${NOTE['Discussion'] ?? ''} And more.`, 'Make the discussion longer', 'es-MX'),
+    ).toContain('amplié la sección de Discussion');
+    // Two words for two words, so the diff is a rewrite and not a shortening.
+    expect(reply('Location', 'Video visit.', 'Rewrite the location', 'es-MX')).toContain(
+      'reescribí la sección de Location',
+    );
+
+    // The four English verbs, unchanged.
+    expect(reply('Risk review', '', 'Make the risk review shorter')).toContain(
+      'cleared the Risk review section',
+    );
+    expect(reply('Discussion', 'Short.', 'Make the discussion shorter')).toContain(
+      'shortened the Discussion section',
+    );
+    expect(
+      reply('Discussion', `${NOTE['Discussion'] ?? ''} And more.`, 'Make the discussion longer'),
+    ).toContain('expanded the Discussion section');
+    expect(reply('Location', 'Video visit.', 'Rewrite the location')).toContain(
+      'rewrote the Location section',
+    );
+  });
+
+  it('gives the two verdict fallbacks in the note’s language, beside the English they replace', () => {
+    // `assessRefine`'s reason when nothing explains the turn, and the
+    // defensive one below it: both used to be English literals on a Spanish
+    // note, in the same field as a Spanish reply.
+    const already: Sections = { ...NOTE, 'Client presentation': 'On sertraline 20 mg daily.' };
+    const saidIt = assessRefine(
+      {
+        intent: parseRefineRequest("Add that she's on sertraline 20 mg", OWNER),
+        previous: already,
+        updated: already,
+        held: [],
+        lockedSections: [],
+        notices: [],
+        changed: false,
+      },
+      'es-MX',
+    );
+    expect(saidIt.outcome).toBe('unchanged');
+    expect(saidIt.reason).toBe('La nota ya decía lo que pediste.');
+    expect(saidIt.reply).toBe(alreadyThereNotice('es-MX'));
+
+    // No section named, so nothing to check and nothing to say it was held
+    // back: the fallback the second one is for.
+    const nothing = assessRefine(
+      {
+        intent: parseRefineRequest('Tidy this up a little', OWNER),
+        previous: NOTE,
+        updated: withSection('Discussion', 'A different length of words entirely.'),
+        held: [],
+        lockedSections: [],
+        notices: [],
+        changed: false,
+      },
+      'es-MX',
+    );
+    expect(nothing.outcome).toBe('unchanged');
+    expect(nothing.reason).toBe('La edición que pediste no produjo cambios.');
+
+    const english = assessRefine({
+      intent: parseRefineRequest('Tidy this up a little', OWNER),
+      previous: NOTE,
+      updated: withSection('Discussion', 'A different length of words entirely.'),
+      held: [],
+      lockedSections: [],
+      notices: [],
+      changed: false,
+    });
+    expect(english.reason).toBe('The requested edit produced no changes.');
   });
 
   it('says nothing changed, in Spanish, in the whole reply', () => {
