@@ -2910,28 +2910,26 @@ select:disabled {
 }
 
 /*
- * With a patient open the notes header is their first name, centred on the
- * accent (owner, 2026-09-24) — so which patient is open reads from across
- * the room. Written as she typed it, not upper-cased like other headers.
+ * With a patient open the notes header is their first name — written as she
+ * typed it, not upper-cased like the other headers, and centred so it reads
+ * from across the room.
+ *
+ * It was an accent-filled bar (owner, 2026-09-24) and the owner made it plain
+ * on 2026-09-26, which is also what claude.ai has: no coloured bar there. So
+ * the fill is gone and the two on-accent inks with it — the name takes the
+ * header's own `--text-secondary` and the back arrow its own, rather than
+ * white on a fill that is no longer there. The centring and the
+ * `text-transform: none` are separate earlier preferences and stay.
  */
-.notes-header-patient {
-  background: var(--accent);
-}
-
 .notes-header-patient .col-header-title {
   flex: 1;
   justify-content: center;
 }
 
 .notes-header-patient h3 {
-  color: var(--on-accent);
   text-transform: none;
   letter-spacing: 0;
   font-size: var(--text-md);
-}
-
-.notes-header-patient .narrow-back {
-  color: var(--on-accent);
 }
 
 /*
