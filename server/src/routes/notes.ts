@@ -54,6 +54,9 @@ export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
     const note = createNote(db, {
       patient_id: input.patient_id,
       format_id: input.format_id,
+      // C-LANG@1 rule 3: a note is written in its format's language, so the
+      // format's locale is the locale. No client chooses one.
+      locale: format.locale,
       // The prototype titles notes after their format ("Progress note").
       title: input.title ?? format.name,
       ...(input.content === undefined ? {} : { content: input.content }),

@@ -22,6 +22,7 @@ function note(index: number, text: string): Note {
     status: 'draft',
     revision: 0,
     content: text,
+    locale: 'en',
     created_at: `2026-08-${day}T09:00:00.000Z`,
     updated_at: `2026-08-${day}T09:00:00.000Z`,
     published_at: null,

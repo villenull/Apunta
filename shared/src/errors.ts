@@ -13,6 +13,10 @@ export const ApiErrorCodeSchema = z.enum([
   'storage_error',
   'stale_write',
   'ai_unavailable',
+  // C-LANG@1 rule 1: `PUT /api/settings { "language": "es-MX" }` when the
+  // Language control is hidden. A 400, because the request asked for something
+  // this build does not offer rather than for something that conflicts.
+  'language_unavailable',
   'internal_error',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCodeSchema>;

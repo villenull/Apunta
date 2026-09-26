@@ -104,7 +104,9 @@ describe('migrate', () => {
     const second = openDatabase({ file, migrationsDir });
 
     expect(second.migrations.applied).toEqual([]);
-    expect(second.migrations.level).toBe(7);
+    // The shipped level, written out. 008 (C-LANG@1 rule 3) is the migration
+    // that made `7` stale; the expectation stays exactly as strict.
+    expect(second.migrations.level).toBe(8);
     expect(
       (
         second.db.prepare('SELECT applied_at FROM schema_migrations WHERE version = 1').get() as {
@@ -203,5 +205,96 @@ describe('migrate', () => {
     expect(db.prepare('SELECT COUNT(*) AS count FROM notes').get()).toEqual({ count: 0 });
     expect(db.prepare('SELECT COUNT(*) AS count FROM patients').get()).toEqual({ count: 0 });
     db.close();
+  });
+
+  /**
+   * C-LANG@1 rule 3's legacy clause, on a real level-7 database: 008 adds the
+   * `locale` column and changes nothing else about the rows it finds.
+   *
+   * The comparison is over **named** columns, and it is written out by name
+   * rather than as a blob, because "content unchanged byte for byte" is not an
+   * observable after an `ALTER TABLE` — what is observable is each value in
+   * each named column, before and after, and `locale` reading `'en'`.
+   */
+  it('adds locale as English to every existing note and format, and moves nothing else', () => {
+    const file = join(dataDir, 'apunta.db');
+    // A directory holding copies of the shipped 001–007 and nothing else, so the
+    // first open stops at the level this migration starts from.
+    const before008 = mkdtempSync(join(tmpdir(), 'apunta-migrations-'));
+    for (const migration of loadMigrations(migrationsDir)) {
+      if (migration.version > 7) continue;
+      writeFileSync(
+        join(before008, `${String(migration.version).padStart(3, '0')}_${migration.name}.sql`),
+        migration.sql,
+      );
+    }
+
+    const first = openDatabase({ file, migrationsDir: before008 });
+    expect(first.migrations.level).toBe(7);
+    first.db
+      .prepare('INSERT INTO patients (id, name, created_at) VALUES (?, ?, ?)')
+      .run('0198c0f0-0000-7000-8000-00000000c0de', 'John Smith', '2026-01-01T09:00:00.000Z');
+    first.db
+      .prepare(
+        'INSERT INTO note_formats (id, name, sections, instructions, source, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      )
+      .run(
+        '0198c0f0-0000-7000-8000-00000000f0de',
+        'Progress note',
+        '["Location","Discussion"]',
+        '',
+        'manual',
+        '2026-01-01T09:00:00.000Z',
+      );
+    first.db
+      .prepare(
+        `INSERT INTO notes (id, patient_id, format_id, title, status, content, created_at, updated_at, published_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        '0198c0f0-0000-7000-8000-00000000b0de',
+        '0198c0f0-0000-7000-8000-00000000c0de',
+        '0198c0f0-0000-7000-8000-00000000f0de',
+        'Progress note',
+        'draft',
+        'Location: Clinic\n\nDiscussion: Sleep improved.',
+        '2026-01-02T09:00:00.000Z',
+        '2026-01-02T09:00:00.000Z',
+        null,
+      );
+
+    const NOTE_COLUMNS =
+      'id, patient_id, format_id, title, status, content, created_at, updated_at, published_at, revision';
+    const FORMAT_COLUMNS = 'id, name, sections, instructions, source, created_at';
+    const noteBefore = first.db.prepare(`SELECT ${NOTE_COLUMNS} FROM notes`).get();
+    const formatBefore = first.db.prepare(`SELECT ${FORMAT_COLUMNS} FROM note_formats`).get();
+    first.db.close();
+
+    // Re-open with the shipped directory: 008 is the only pending migration.
+    const second = openDatabase({ file, migrationsDir });
+    try {
+      expect(second.migrations.applied).toEqual([8]);
+      expect(second.migrations.level).toBe(8);
+
+      // The new column is last in each table and is the only one that is new.
+      expect(Object.keys(second.db.prepare('SELECT * FROM notes').get() as object)).toEqual([
+        ...NOTE_COLUMNS.split(', '),
+        'locale',
+      ]);
+      expect(Object.keys(second.db.prepare('SELECT * FROM note_formats').get() as object)).toEqual([
+        ...FORMAT_COLUMNS.split(', '),
+        'locale',
+      ]);
+
+      // Every existing row is English (D11), and no row is translated or
+      // relabelled: each named column holds the value it held before.
+      expect(second.db.prepare('SELECT locale FROM notes').get()).toEqual({ locale: 'en' });
+      expect(second.db.prepare('SELECT locale FROM note_formats').get()).toEqual({ locale: 'en' });
+      expect(second.db.prepare(`SELECT ${NOTE_COLUMNS} FROM notes`).get()).toEqual(noteBefore);
+      expect(second.db.prepare(`SELECT ${FORMAT_COLUMNS} FROM note_formats`).get()).toEqual(formatBefore);
+    } finally {
+      second.db.close();
+      rmSync(before008, { recursive: true, force: true });
+    }
   });
 });

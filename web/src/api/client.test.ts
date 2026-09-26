@@ -20,6 +20,10 @@ const format = {
   sections: ['Subjective', 'Plan'],
   instructions: '',
   source: 'manual' as const,
+  // A stubbed response body, parsed by the client against the shared output
+  // schema — so it carries the required `locale` (C-LANG@1 rule 3) like any
+  // real one does.
+  locale: 'en' as const,
   created_at: '2026-08-22T09:00:00.000Z',
 };
 
@@ -31,6 +35,7 @@ const note = {
   status: 'draft' as const,
   revision: 0,
   content: 'Subjective: Sample body.',
+  locale: 'en' as const,
   created_at: '2026-08-22T09:00:00.000Z',
   updated_at: '2026-08-22T09:00:00.000Z',
   published_at: null,

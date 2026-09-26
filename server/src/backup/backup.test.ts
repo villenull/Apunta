@@ -25,7 +25,8 @@ import { strFromU8, unzipSync, zipSync, strToU8 } from 'fflate';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { loadConfig, type AppConfig } from '../config.js';
-import { listNotesForPatient } from '../db/notes.js';
+import { createFormat, getFormat } from '../db/formats.js';
+import { createNote, getNote, listNotesForPatient } from '../db/notes.js';
 import { listPatients } from '../db/patients.js';
 import { openDatabase, type Database } from '../db/index.js';
 import { seedDatabase } from '../seed.js';
@@ -197,6 +198,64 @@ describe('restoring', () => {
         // The whole point: not "a note exists" but "this note, exactly".
         expect(notes[0]?.content).toBe(noteBefore?.content);
         expect(notes[0]?.title).toBe(noteBefore?.title);
+      } finally {
+        restored.db.close();
+      }
+    } finally {
+      rmSync(fresh, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * C-LANG@1 rule 9: a backup carries the `locale` columns.
+   *
+   * A Spanish format and a Spanish note exist in no seeded practice, so this
+   * creates them: the dump selects every column, which is why the round trip
+   * needs no code of its own to be checked.
+   */
+  it('round-trips a Spanish format and note, locale included', () => {
+    const format = createFormat(db, {
+      name: 'Nota de progreso',
+      sections: ['Lugar', 'Discusión'],
+      locale: 'es-MX',
+    });
+    const john = listPatients(db).find((patient) => patient.name === 'John Smith');
+    const spanish = createNote(db, {
+      patient_id: john?.id ?? '',
+      format_id: format.id,
+      title: 'Nota de progreso',
+      content: 'Lugar: Consultorio\n\nDiscusión: mejoró el sueño.',
+      locale: 'es-MX',
+    });
+    // The seeded English rows beside it, so the test also shows the two travel
+    // apart rather than being flattened into one language.
+    const englishBefore = listNotesForPatient(db, john?.id ?? '').filter((row) => row.locale === 'en');
+    expect(englishBefore.length).toBeGreaterThan(0);
+
+    const created = createBackup({ db, dataDir, directory: join(dataDir, 'backups'), appVersion: '0' });
+
+    const fresh = mkdtempSync(join(tmpdir(), 'apunta-restore-locale-'));
+    try {
+      stageRestore({
+        archivePath: created.path,
+        dataDir: fresh,
+        maxMigrationLevel: created.manifest.migration_level,
+      });
+      expect(applyPendingRestore(fresh).applied).toBe(true);
+
+      const restored = open(fresh);
+      try {
+        expect(getFormat(restored.db, format.id)?.locale).toBe('es-MX');
+        expect(getFormat(restored.db, format.id)?.sections).toEqual(['Lugar', 'Discusión']);
+        const restoredNote = getNote(restored.db, spanish.id);
+        expect(restoredNote?.locale).toBe('es-MX');
+        expect(restoredNote?.content).toBe(spanish.content);
+        // The English rows are still English, and still there.
+        expect(
+          listNotesForPatient(restored.db, john?.id ?? '')
+            .filter((row) => row.locale === 'en')
+            .map((row) => row.content),
+        ).toEqual(englishBefore.map((row) => row.content));
       } finally {
         restored.db.close();
       }

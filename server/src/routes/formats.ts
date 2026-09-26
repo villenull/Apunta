@@ -38,6 +38,10 @@ export function registerFormatRoutes(app: FastifyInstance, db: Database): void {
       sections: input.sections,
       ...(input.instructions === undefined ? {} : { instructions: input.instructions }),
       ...(input.source === undefined ? {} : { source: input.source }),
+      // C-LANG@1 rule 3: a client may name a format's language when it creates
+      // one, and names none gets English. The sections are stored exactly as
+      // given in either language.
+      ...(input.locale === undefined ? {} : { locale: input.locale }),
     });
     reply.code(201);
     return format;
@@ -69,6 +73,10 @@ export function registerFormatRoutes(app: FastifyInstance, db: Database): void {
   /**
    * Editing sections of a format that already has notes is allowed — existing
    * notes keep their text, and only future drafts use the new structure.
+   *
+   * So does changing the format's `locale` (C-LANG@1 rule 3): a format is
+   * written in the language it is written in, and the notes already drafted
+   * against it keep the locale they were created with.
    */
   app.patch('/api/formats/:id', async (request): Promise<NoteFormat> => {
     const { id } = parseParams(IdParamsSchema, request.params);
@@ -80,6 +88,7 @@ export function registerFormatRoutes(app: FastifyInstance, db: Database): void {
       ...(patch.sections === undefined ? {} : { sections: patch.sections }),
       ...(patch.instructions === undefined ? {} : { instructions: patch.instructions }),
       ...(patch.source === undefined ? {} : { source: patch.source }),
+      ...(patch.locale === undefined ? {} : { locale: patch.locale }),
     });
     if (!updated) throw notFound('Note format not found');
     return updated;

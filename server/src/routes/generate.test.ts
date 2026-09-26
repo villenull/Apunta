@@ -12,9 +12,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../app.js';
 import { OllamaProvider } from '../ai/ollama.js';
-import { FakeSttProvider } from '../ai/fake.js';
+import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
+import type { GenerateNoteRequest, LlmEvent } from '../ai/types.js';
 import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { listNotesForPatient } from '../db/notes.js';
+import { active, type ActiveJob } from '../jobs/registry.js';
 import { createTestApp, seedFormat, seedPatient, type TestApp } from '../test/harness.js';
 
 /**
@@ -327,6 +329,99 @@ describe('POST /api/generate — spoken retractions', () => {
     );
     // The transcript row keeps her words as transcribed, retraction and all.
     expect(listTranscriptsForNote(harness.db, note.id)[0]?.raw_text).toContain('scratch that');
+  });
+});
+
+/**
+ * The active job registry, as `POST /api/generate` drives it.
+ *
+ * The reading is taken **inside** the stream: a provider that notes what
+ * `active()` holds as it produces each event is the only place a job is
+ * observably in flight, because by the time a response body exists the job is
+ * over. These providers are the real fake with one method wrapped, so everything
+ * else about the draft is exactly what production does.
+ */
+class WatchingLlmProvider extends FakeLlmProvider {
+  /** What `active()` held as each event was produced, in order. */
+  readonly readings: ActiveJob[][] = [];
+
+  constructor() {
+    super({ streamDelayMs: 0 });
+  }
+
+  private async *watched(events: AsyncIterable<LlmEvent>): AsyncGenerator<LlmEvent> {
+    for await (const event of events) {
+      this.readings.push(active().map((job) => ({ ...job })));
+      yield event;
+    }
+  }
+
+  override generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
+    return this.watched(super.generateNote(request));
+  }
+}
+
+/**
+ * The failure path. A provider that dies before it produces anything, which is
+ * the shape of a model that has stopped: `streamDraft` catches it, sends the
+ * `error` event and returns — and the job still has to be released.
+ */
+class FailingLlmProvider extends FakeLlmProvider {
+  override generateNote(): AsyncIterable<LlmEvent> {
+    throw new Error('the local model stopped mid-draft');
+  }
+}
+
+describe('active job registry — POST /api/generate', () => {
+  it('holds a draft job for as long as the stream runs, and releases it after', async () => {
+    const watcher = new WatchingLlmProvider();
+    const app = await buildApp({
+      config: harness.config,
+      db: harness.db,
+      logger: false,
+      providers: { llm: watcher, stt: new FakeSttProvider() },
+    });
+
+    const names = (
+      await generate(app, {
+        patient_id: patient.id,
+        format_id: format.id,
+        typed_notes: 'Sleep improved, intrusive thoughts less frequent.',
+      }).finally(() => app.close())
+    ).events.map((event) => event.name);
+
+    expect(names.at(-1)).toBe('note');
+    // Between the first event and the last, the draft is in flight — every
+    // single reading says so, and says that nothing else is.
+    expect(watcher.readings.length).toBeGreaterThan(1);
+    for (const jobs of watcher.readings) {
+      expect(jobs.map((job) => job.kind)).toEqual(['draft']);
+      expect(jobs[0]?.id).toMatch(/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/);
+    }
+    expect(active()).toEqual([]);
+  });
+
+  it('leaves nothing active when the draft fails, which is what the finally buys', async () => {
+    const app = await buildApp({
+      config: harness.config,
+      db: harness.db,
+      logger: false,
+      providers: { llm: new FailingLlmProvider(), stt: new FakeSttProvider() },
+    });
+
+    const events = (
+      await generate(app, {
+        patient_id: patient.id,
+        format_id: format.id,
+        typed_notes: 'Sleep improved.',
+      }).finally(() => app.close())
+    ).events;
+
+    expect(events.at(-1)?.name).toBe('error');
+    // The registry is what a later card reads to refuse a language change, so a
+    // failed draft leaving a job behind would block the app until it was
+    // restarted.
+    expect(active()).toEqual([]);
   });
 });
 

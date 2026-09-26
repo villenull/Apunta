@@ -34,6 +34,18 @@ export function conflict(message: string): HttpError {
   return new HttpError(409, 'conflict', message);
 }
 
+/**
+ * C-LANG@1 rule 1: `es-MX` was asked for while the Language control is hidden.
+ *
+ * 400 rather than 409, and not 403 either: the request was well-formed and
+ * would be perfectly acceptable on a build that offers Spanish. What it hits is
+ * an offer this one does not make, and a `language_unavailable` the client can
+ * branch on is the whole point of the code.
+ */
+export function languageUnavailable(message: string): HttpError {
+  return new HttpError(400, 'language_unavailable', message);
+}
+
 export class StorageError extends HttpError {
   constructor(
     message: string,

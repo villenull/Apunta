@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { DEFAULT_LOCALE, isLocale } from './i18n/locales.js';
+import type { Locale } from './i18n/locales.js';
+
 /**
  * Settings are a flat key → JSON-value store (PLAN §3), not a fixed record:
  * later packets add keys (`llm_model` in M3; `whisper_binary`, `whisper_model`,
@@ -23,6 +26,44 @@ export type UpdateSettingsRequest = z.infer<typeof UpdateSettingsRequestSchema>;
 export const LlmProfileSchema = z.enum(['quick', 'thorough']);
 export type LlmProfile = z.infer<typeof LlmProfileSchema>;
 export const LLM_PROFILE_SETTING = 'llm_profile';
+
+/**
+ * C-LANG@1 rule 1: the UI language.
+ *
+ * The value is a `Locale`, so the setting, a note's `locale` and a format's
+ * `locale` are one type rather than three lookalike enums that could drift
+ * apart. The row is written only when she actually chooses something other than
+ * English: an install that has never been asked answers `'en'` and has nothing
+ * in the table, which is what keeps the setting from outrunning the `locale`
+ * columns 008 added.
+ */
+export const LANGUAGE_SETTING = 'language';
+export const LANGUAGES = ['en', 'es-MX'] as const;
+export type Language = Locale;
+export const DEFAULT_LANGUAGE: Language = DEFAULT_LOCALE;
+
+/**
+ * C-LANG@1 rule 1's `spanishAvailable`, under the name the API publishes it
+ * under. It is a key every settings response carries and **no key the table
+ * ever holds**: whether Spanish is offered is a property of the build, not
+ * something a client can switch on by writing a row, so `PUT /api/settings`
+ * drops it instead of storing it.
+ */
+export const SPANISH_AVAILABLE_SETTING = 'spanish_available';
+
+/**
+ * `settings` holds free-form JSON, so this is the guard that decides whether a
+ * stored or submitted value is a language at all — a row written by an older
+ * build, or a hand-edited one, falls back to English rather than reaching the UI
+ * as something it cannot render.
+ */
+export function isLanguage(value: unknown): value is Language {
+  return isLocale(value);
+}
+
+// Re-exported so a caller that already imports the settings vocabulary does not
+// have to reach into `i18n/` for the type its values are.
+export type { Locale } from './i18n/locales.js';
 
 /**
  * The accent colour, so the practice can look like itself (owner-proxy,

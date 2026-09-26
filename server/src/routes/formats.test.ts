@@ -166,6 +166,93 @@ describe('GET/PATCH /api/formats/:id', () => {
   });
 });
 
+/**
+ * C-LANG@1 rule 3's data side. A format's language is written when it is created
+ * and changed when she changes it; nothing else about the format moves, and no
+ * section name is ever relabelled.
+ */
+describe('a format’s locale', () => {
+  it('is English on every format the app creates without being told otherwise', async () => {
+    const manual = await harness.app.inject({
+      method: 'POST',
+      url: '/api/formats',
+      payload: { name: 'Progress note', sections: ['Subjective', 'Plan'] },
+    });
+    expect(NoteFormatSchema.parse(manual.json()).locale).toBe('en');
+
+    // The one-click standard format is still English in this card: S5.1 is the
+    // card that makes it take a locale and creates the Spanish ones.
+    const standard = await harness.app.inject({ method: 'POST', url: '/api/formats/standard' });
+    expect(NoteFormatSchema.parse(standard.json()).locale).toBe('en');
+
+    const { formats } = NoteFormatListResponseSchema.parse(
+      (await harness.app.inject({ method: 'GET', url: '/api/formats' })).json(),
+    );
+    expect(formats.map((format) => format.locale)).toEqual(['en', 'en']);
+  });
+
+  it('is Spanish when the client names es-MX at creation', async () => {
+    const response = await harness.app.inject({
+      method: 'POST',
+      url: '/api/formats',
+      payload: {
+        name: 'Nota de progreso',
+        sections: ['Lugar', 'Temas tratados'],
+        locale: 'es-MX',
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    // The section names are stored exactly as given — a locale is not a
+    // translation, and nothing here rewrites them.
+    expect(NoteFormatSchema.parse(response.json())).toMatchObject({
+      name: 'Nota de progreso',
+      sections: ['Lugar', 'Temas tratados'],
+      locale: 'es-MX',
+    });
+  });
+
+  it('changes through PATCH, and a PATCH that names no locale leaves it alone', async () => {
+    const format = await seedFormat(harness.app);
+
+    const renamed = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/formats/${format.id}`,
+      payload: { name: 'Fictional renamed format' },
+    });
+    expect(renamed.json<NoteFormat>().locale).toBe('en');
+
+    const changed = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/formats/${format.id}`,
+      payload: { locale: 'es-MX' },
+    });
+    expect(changed.statusCode).toBe(200);
+    expect(changed.json<NoteFormat>()).toMatchObject({ locale: 'es-MX', name: 'Fictional renamed format' });
+
+    // Written, not just answered: it survives a read.
+    const reread = await harness.app.inject({ method: 'GET', url: `/api/formats/${format.id}` });
+    expect(reread.json<NoteFormat>().locale).toBe('es-MX');
+  });
+
+  it('400s a locale that is neither en nor es-MX', async () => {
+    const created = await harness.app.inject({
+      method: 'POST',
+      url: '/api/formats',
+      payload: { name: 'Progress note', sections: ['Plan'], locale: 'de' },
+    });
+    expect(created.statusCode).toBe(400);
+
+    const format = await seedFormat(harness.app);
+    const patched = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/formats/${format.id}`,
+      payload: { locale: 'es-ES' },
+    });
+    expect(patched.statusCode).toBe(400);
+  });
+});
+
 describe('DELETE /api/formats/:id', () => {
   it('deletes an unused format', async () => {
     const format = await seedFormat(harness.app);

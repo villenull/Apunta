@@ -91,6 +91,7 @@ export function makeFormat(
     sections,
     instructions: '',
     source: 'manual',
+    locale: 'en',
     created_at: '2026-07-01T09:00:00.000Z',
     ...overrides,
   };
@@ -135,6 +136,7 @@ export function makeNote(patientId: string, overrides: Partial<Note> = {}): Note
     status: 'draft',
     revision: 0,
     content: 'Subjective: Patient reports improved sleep since last session.',
+    locale: 'en',
     created_at: '2026-08-08T09:00:00.000Z',
     updated_at: '2026-08-08T09:00:00.000Z',
     published_at: null,

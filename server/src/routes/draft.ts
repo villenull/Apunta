@@ -24,6 +24,8 @@ import { fitDraftingPriorNotes } from '../ai/prior-notes.js';
 import { createChatMessage } from '../db/chat-messages.js';
 import { createNote, listNotesForPatient } from '../db/notes.js';
 import { createTranscript } from '../db/transcripts.js';
+import { uuidv7 } from '../db/uuid.js';
+import { begin, end } from '../jobs/registry.js';
 
 /**
  * Drafting a note, shared by the two routes that do it.
@@ -63,81 +65,99 @@ export async function streamDraft(params: {
 }): Promise<DraftOutcome> {
   const { providers, db, patientId, format, source, stream, request } = params;
 
-  let sections: Sections | null = null;
-  let stats: LlmStats | null = null;
-  let retractions: readonly AppliedRetraction[] = [];
-  const discussionSection = sectionForRole(format.sections, 'discussion');
+  /**
+   * The registry's first user (C-LANG@1 rule 6): a draft is in flight for as
+   * long as this call takes, and the `finally` is what makes that true on the
+   * paths that matter — a provider that failed, a client that closed the tab.
+   * Both are exactly when a stale "something is running" would be worst, since
+   * it is the flag S2.6 refuses a language change on.
+   *
+   * A draft has no note yet, so the job carries an id minted here rather than
+   * the note's. This is the shared drafting path, so the transcribe route's
+   * drafting half registers one too — that is the same code, not a second
+   * decision.
+   */
+  const jobId = uuidv7();
+  begin('draft', jobId);
   try {
-    const priorNotes = fitDraftingPriorNotes(listNotesForPatient(db, patientId));
-    const events = providers.llm.generateNote({
-      instructions: format.instructions,
-      formatName: format.name,
-      sections: format.sections,
-      clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
-      typedNotes: source.typedNotes,
-      transcript: source.transcript,
-      ...(priorNotes.length === 0 ? {} : { priorNotes }),
-    });
+    let sections: Sections | null = null;
+    let stats: LlmStats | null = null;
+    let retractions: readonly AppliedRetraction[] = [];
+    const discussionSection = sectionForRole(format.sections, 'discussion');
+    try {
+      const priorNotes = fitDraftingPriorNotes(listNotesForPatient(db, patientId));
+      const events = providers.llm.generateNote({
+        instructions: format.instructions,
+        formatName: format.name,
+        sections: format.sections,
+        clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
+        typedNotes: source.typedNotes,
+        transcript: source.transcript,
+        ...(priorNotes.length === 0 ? {} : { priorNotes }),
+      });
 
-    for await (const event of events) {
-      // The client navigated away or closed the tab: stop drafting. Breaking
-      // out of the loop runs the provider's cleanup, which aborts the
-      // request to Ollama rather than leaving it generating into nothing.
-      if (stream.closed) break;
+      for await (const event of events) {
+        // The client navigated away or closed the tab: stop drafting. Breaking
+        // out of the loop runs the provider's cleanup, which aborts the
+        // request to Ollama rather than leaving it generating into nothing.
+        if (stream.closed) break;
 
-      if (event.type === 'status') {
-        stream.send('status', { stage: event.stage, message: event.message });
-      } else if (event.type === 'token') {
-        if (discussionSection !== null && event.section === discussionSection) {
-          // Discussion's subheadings are checked after schema validation and
-          // may be dropped; hold only that section so the visible stream
-          // remains byte-for-byte equal to the persisted note. Other sections
-          // stay live.
-          continue;
+        if (event.type === 'status') {
+          stream.send('status', { stage: event.stage, message: event.message });
+        } else if (event.type === 'token') {
+          if (discussionSection !== null && event.section === discussionSection) {
+            // Discussion's subheadings are checked after schema validation and
+            // may be dropped; hold only that section so the visible stream
+            // remains byte-for-byte equal to the persisted note. Other sections
+            // stay live.
+            continue;
+          }
+          stream.send('token', { section: event.section, text: event.text });
+        } else if (event.type === 'sections') {
+          const checked = applyDiscussionSubheadings(
+            event.sections,
+            format.sections,
+            groundingSource(source, retractions),
+          );
+          sections = preserveExplicitAbsences(
+            groundingSource(source, retractions),
+            checked.sections,
+            format.sections,
+          );
+          stats = event.stats;
+          // The outcome only: the headings are patient material.
+          if (checked.outcome !== 'none')
+            request.log.info({ outcome: checked.outcome }, 'discussion subheadings');
+          if (discussionSection !== null) {
+            stream.send('token', { section: discussionSection, text: sections[discussionSection] ?? '' });
+          }
+        } else if (event.type === 'retractions') {
+          retractions = event.applied;
+          // Counts only: what was cut is patient material.
+          request.log.info({ applied: event.applied.length, offered: event.offered }, 'retractions applied');
         }
-        stream.send('token', { section: event.section, text: event.text });
-      } else if (event.type === 'sections') {
-        const checked = applyDiscussionSubheadings(
-          event.sections,
-          format.sections,
-          groundingSource(source, retractions),
-        );
-        sections = preserveExplicitAbsences(
-          groundingSource(source, retractions),
-          checked.sections,
-          format.sections,
-        );
-        stats = event.stats;
-        // The outcome only: the headings are patient material.
-        if (checked.outcome !== 'none')
-          request.log.info({ outcome: checked.outcome }, 'discussion subheadings');
-        if (discussionSection !== null) {
-          stream.send('token', { section: discussionSection, text: sections[discussionSection] ?? '' });
-        }
-      } else if (event.type === 'retractions') {
-        retractions = event.applied;
-        // Counts only: what was cut is patient material.
-        request.log.info({ applied: event.applied.length, offered: event.offered }, 'retractions applied');
       }
+    } catch (error) {
+      const failure = toAiError(error);
+      logFailure(request, failure, 'note drafting failed');
+      stream.send('error', { code: failure.code, message: failure.message });
+      return { sections: null, stats: null, retractions: [], failure };
     }
-  } catch (error) {
-    const failure = toAiError(error);
-    logFailure(request, failure, 'note drafting failed');
-    stream.send('error', { code: failure.code, message: failure.message });
-    return { sections: null, stats: null, retractions: [], failure };
+
+    if (stream.closed) return { sections, stats, retractions, failure: null };
+
+    if (sections === null) {
+      const failure = aiError('empty_response', 'the provider finished without producing a note');
+      logFailure(request, failure, 'note drafting failed');
+      stream.send('error', { code: failure.code, message: failure.message });
+      return { sections: null, stats: null, retractions: [], failure };
+    }
+
+    if (stats) logStats(request, stats, 'note drafted');
+    return { sections, stats, retractions, failure: null };
+  } finally {
+    end(jobId);
   }
-
-  if (stream.closed) return { sections, stats, retractions, failure: null };
-
-  if (sections === null) {
-    const failure = aiError('empty_response', 'the provider finished without producing a note');
-    logFailure(request, failure, 'note drafting failed');
-    stream.send('error', { code: failure.code, message: failure.message });
-    return { sections: null, stats: null, retractions: [], failure };
-  }
-
-  if (stats) logStats(request, stats, 'note drafted');
-  return { sections, stats, retractions, failure: null };
 }
 
 /**
@@ -194,6 +214,8 @@ export function persistDraft(
   const note = createNote(db, {
     patient_id: input.patient_id,
     format_id: input.format_id,
+    // C-LANG@1 rule 3: a drafted note is written in its format's language.
+    locale: format.locale,
     // The prototype titles notes after their format ("Progress note").
     title: input.title ?? format.name,
     content: sectionsToText(sections, format.sections),

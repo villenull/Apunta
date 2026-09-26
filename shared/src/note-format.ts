@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { boundedText, IdSchema, optionalText, TimestampSchema } from './common.js';
+import { LocaleSchema } from './i18n/locales.js';
 
 /** How a format was defined — see `prototype/onboarding-format.html`. */
 export const FormatSourceSchema = z.enum(['template', 'examples', 'manual']);
@@ -46,6 +47,13 @@ export const NoteFormatSchema = z.object({
   /** Flattened prompt for this format; see `docs/skill-porting.md`. Empty = use the default. */
   instructions: z.string(),
   source: FormatSourceSchema,
+  /**
+   * The language this format is written in (C-LANG@1 rule 3). Required, because
+   * the column is `NOT NULL` — a stored format always has one, so an optional
+   * field here would be a lie every consumer had to re-check. Changing it is
+   * `PATCH /api/formats/:id`; it never relabels the sections already stored.
+   */
+  locale: LocaleSchema,
   created_at: TimestampSchema,
 });
 export type NoteFormat = z.infer<typeof NoteFormatSchema>;
@@ -60,6 +68,12 @@ export const CreateNoteFormatRequestSchema = z.object({
   sections: SectionsSchema,
   instructions: optionalText(50_000).optional(),
   source: FormatSourceSchema.optional(),
+  /**
+   * Optional, and absent means English (C-LANG@1 rule 3). A client that names
+   * no locale gets `'en'` — the `createFormat` fallback, not a filled-in
+   * default, so the parse output stays the body the client sent.
+   */
+  locale: LocaleSchema.optional(),
 });
 export type CreateNoteFormatRequest = z.infer<typeof CreateNoteFormatRequestSchema>;
 
@@ -69,6 +83,8 @@ export const UpdateNoteFormatRequestSchema = z
     sections: SectionsSchema.optional(),
     instructions: optionalText(50_000).optional(),
     source: FormatSourceSchema.optional(),
+    /** How a format's locale is changed: a `PATCH` is partial by definition. */
+    locale: LocaleSchema.optional(),
   })
   .refine((body) => Object.keys(body).length > 0, {
     message: 'Provide at least one field to update',

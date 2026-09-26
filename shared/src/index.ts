@@ -241,23 +241,29 @@ export {
   ANIMATIONS_SETTING,
   DEFAULT_ACCENT_COLOR,
   DEFAULT_FONT_SIZE,
+  DEFAULT_LANGUAGE,
   DEFAULT_THEME,
   FONT_SCALE,
   FONT_SIZE_SETTING,
   FONT_SIZES,
   isAccentColor,
   isFontSize,
+  isLanguage,
   isTheme,
+  LANGUAGES,
+  LANGUAGE_SETTING,
   LLM_PROFILE_SETTING,
   LlmProfileSchema,
   SettingKeySchema,
   SettingsSchema,
+  SPANISH_AVAILABLE_SETTING,
   THEME_SETTING,
   THEMES,
   UpdateSettingsRequestSchema,
 } from './settings.js';
 export type {
   FontSize,
+  Language,
   LlmProfile,
   ResolvedTheme,
   Settings,
@@ -517,3 +523,30 @@ export type {
 } from './import.js';
 
 export { isLabelText, leadingLabel, MAX_LABEL_CHARS } from './note-labels.js';
+
+/**
+ * C-LANG@1's language vocabulary, in the same single `exports` entry the server
+ * and the browser both import from — `shared/package.json` publishes `"."` and
+ * nothing else, so a module that is not listed here is invisible to them.
+ */
+export {
+  DEFAULT_LOCALE,
+  isLocale,
+  LOCALES,
+  LocaleSchema,
+  LOCALE_SETTINGS,
+  localeSettings,
+} from './i18n/locales.js';
+export type { Locale, LocaleSettings } from './i18n/locales.js';
+
+export {
+  CUSTOM_SECTION_ROLE,
+  normaliseSectionName,
+  SECTION_ROLE_IDS,
+  SECTION_ROLES,
+  sectionRole,
+} from './section-roles.js';
+export type { SectionRole, SectionRoleId } from './section-roles.js';
+
+export { captureJobContext } from './job-context.js';
+export type { JobContext, JobContextInput } from './job-context.js';

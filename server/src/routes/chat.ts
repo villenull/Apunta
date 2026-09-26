@@ -50,6 +50,7 @@ import { listTranscriptsForNote } from '../db/transcripts.js';
 import { notFound } from '../http/errors.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
+import { begin, end } from '../jobs/registry.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import { tryMoveOnlyRefine } from './refine-fast-path.js';
 
@@ -98,352 +99,364 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     const format = getFormat(db, note.format_id);
     if (!format) throw notFound('Note format not found');
 
-    // Read the thread *before* writing this turn into it: the message being
-    // answered is passed to the provider on its own, not as history.
-    const history = recentTurns(db, note.id);
+    /**
+     * The registry's second user (C-LANG@1 rule 6): a refine is in flight for
+     * as long as this request takes, on every path out of it — the fast path,
+     * the published refusal, a provider that failed, a client that closed the
+     * tab. The job is the note being refined, so `active()` can name it, and
+     * the `finally` is what releases it even when the stream is abandoned.
+     */
+    const job = begin('refine', note.id);
+    try {
+      // Read the thread *before* writing this turn into it: the message being
+      // answered is passed to the provider on its own, not as history.
+      const history = recentTurns(db, note.id);
 
-    // Her words are persisted whatever happens next. A local model that is not
-    // running is a transient condition she will retry through; losing what she
-    // typed to it is not something she should have to notice.
-    const userMessage = createChatMessage(db, {
-      note_id: note.id,
-      role: 'user',
-      text: input.message,
-      ref_quote: input.ref_quote ?? null,
-    });
+      // Her words are persisted whatever happens next. A local model that is not
+      // running is a transient condition she will retry through; losing what she
+      // typed to it is not something she should have to notice.
+      const userMessage = createChatMessage(db, {
+        note_id: note.id,
+        role: 'user',
+        text: input.message,
+        ref_quote: input.ref_quote ?? null,
+      });
 
-    const stream = openSse(reply);
-    stream.send('message', { message: userMessage });
+      const stream = openSse(reply);
+      stream.send('message', { message: userMessage });
 
-    const locked = note.status === 'published';
+      const locked = note.status === 'published';
 
-    // A published note plus a plain instruction never reaches the model at
-    // all: there is nothing for it to do, and the prototype's answer is the
-    // right one. A question still gets asked — she may simply want to know
-    // something about a note she has already filed.
-    if (locked && !isQuestion(input.message)) {
-      finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
-      return;
-    }
+      // A published note plus a plain instruction never reaches the model at
+      // all: there is nothing for it to do, and the prototype's answer is the
+      // right one. A question still gets asked — she may simply want to know
+      // something about a note she has already filed.
+      if (locked && !isQuestion(input.message)) {
+        finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
+        return;
+      }
 
-    // A single, explicitly quoted move is safe to perform without model
-    // generation. The parser is intentionally strict; every rejected or
-    // ambiguous request falls through to the existing refine path below.
-    const fastPath = tryMoveOnlyRefine(input.message, note.content, format.sections);
-    if (fastPath.matched) {
+      // A single, explicitly quoted move is safe to perform without model
+      // generation. The parser is intentionally strict; every rejected or
+      // ambiguous request falls through to the existing refine path below.
+      const fastPath = tryMoveOnlyRefine(input.message, note.content, format.sections);
+      if (fastPath.matched) {
+        if (stream.closed) {
+          stream.end();
+          return;
+        }
+
+        const previous = textToSections(note.content, format.sections);
+        const sources = [
+          ...listTranscriptsForNote(db, note.id).map((t) => t.raw_text),
+          input.message,
+          ...(input.ref_quote == null ? [] : [input.ref_quote]),
+        ];
+        const guarded = guardRefinedSections(previous, fastPath.sections, sources);
+        const kept = guardDroppedFacts(previous, guarded.sections, input.message);
+
+        // Moving existing, quoted text should pass both locks. Keep this check
+        // explicit nevertheless: if a future guard learns that the operation
+        // violates a clinical or fact invariant, this request takes the normal
+        // model path instead of bypassing that protection.
+        if (guarded.blocked.length === 0 && kept.dropped.length === 0) {
+          stream.send('status', { stage: 'drafting', message: 'Applying the move…' });
+          if (stream.closed) {
+            stream.end();
+            return;
+          }
+          const rewritten = updateDraftNoteContent(db, note.id, fastPath.content);
+          if (rewritten === undefined) {
+            finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
+            return;
+          }
+          if (stream.closed) {
+            stream.end();
+            return;
+          }
+
+          stream.send('note-updated', {
+            note: rewritten,
+            empty_sections: emptySectionNames(fastPath.sections, format.sections),
+            outcome: 'applied',
+            outcome_reason: null,
+          });
+          const replyText = `Moved the quoted text from ${fastPath.source} to ${fastPath.target}.`;
+          stream.send('token', { text: replyText });
+          stream.send('message', { message: persistReply(db, note.id, replyText) });
+          stream.end();
+          return;
+        }
+      }
+
+      let replyText = '';
+      let updatedSections: Sections | null = null;
+      let stats: LlmStats | null = null;
+      let sawRefined = false;
+      const streamedRewriteSections = new Set<string>();
+      // An edit reply is a completion claim. Keep it out of the visible chat
+      // until the guarded write has committed; otherwise the model can say it
+      // fixed the note while the editor is still showing the old text. Questions
+      // remain streamable because their answer is useful before any note write.
+      const bufferReplyTokens = !isQuestion(input.message);
+      let bufferedReply = '';
+
+      const baseRequest: RefineNoteRequest = {
+        instructions: format.instructions,
+        formatName: format.name,
+        sections: format.sections,
+        clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
+        noteText: note.content,
+        history,
+        message: input.message,
+        ...(input.ref_quote == null ? {} : { refQuote: input.ref_quote }),
+      };
+      const priorNotes = fitRefineBackground(db, note, baseRequest);
+
+      try {
+        const events = providers.llm.refineNote(
+          priorNotes.length === 0
+            ? baseRequest
+            : {
+                ...baseRequest,
+                noteDate: instantToLocalDay(note.created_at),
+                priorNotes: priorNotes.map(({ title, date, text }) => ({ title, date, text })),
+              },
+        );
+
+        for await (const event of events) {
+          // She closed the tab or switched notes: stop, and let the provider's
+          // cleanup abort the call to Ollama rather than leave it generating.
+          if (stream.closed) break;
+
+          if (event.type === 'status') {
+            stream.send('status', { stage: event.stage, message: event.message });
+          } else if (event.type === 'token') {
+            // Section tokens are progress-only. Their text remains buffered in
+            // the provider's validated result and never leaks a half rewrite.
+            const rewriteSection = format.sections.find((section) => section === event.section);
+            if (rewriteSection !== undefined && !streamedRewriteSections.has(rewriteSection)) {
+              streamedRewriteSections.add(rewriteSection);
+              stream.send('status', {
+                stage: 'drafting',
+                message: `Rewriting ${String(streamedRewriteSections.size)} of ${String(format.sections.length)} sections…`,
+              });
+            }
+            if (event.section === 'reply') {
+              if (bufferReplyTokens) bufferedReply += event.text;
+              else stream.send('token', { text: event.text });
+            }
+          } else if (event.type === 'refined') {
+            sawRefined = true;
+            replyText = event.reply;
+            // A subheading in a revision may be named from the note as it
+            // stands or from what she wrote in this chat — see
+            // `discussionSubheadingSource`, which deliberately leaves her
+            // stored dictation and the format's own headers out.
+            updatedSections =
+              event.updatedSections === null
+                ? null
+                : applyDiscussionSubheadings(
+                    event.updatedSections,
+                    format.sections,
+                    discussionSubheadingSource(note.content, format.sections, input.message, input.ref_quote),
+                  ).sections;
+            stats = event.stats;
+          }
+        }
+      } catch (error) {
+        const failure = toAiError(error);
+        logFailure(request, failure, 'note refinement failed');
+        stream.send('error', { code: failure.code, message: failure.message });
+        stream.end();
+        return;
+      }
+
       if (stream.closed) {
         stream.end();
         return;
       }
-
-      const previous = textToSections(note.content, format.sections);
-      const sources = [
-        ...listTranscriptsForNote(db, note.id).map((t) => t.raw_text),
-        input.message,
-        ...(input.ref_quote == null ? [] : [input.ref_quote]),
-      ];
-      const guarded = guardRefinedSections(previous, fastPath.sections, sources);
-      const kept = guardDroppedFacts(previous, guarded.sections, input.message);
-
-      // Moving existing, quoted text should pass both locks. Keep this check
-      // explicit nevertheless: if a future guard learns that the operation
-      // violates a clinical or fact invariant, this request takes the normal
-      // model path instead of bypassing that protection.
-      if (guarded.blocked.length === 0 && kept.dropped.length === 0) {
-        stream.send('status', { stage: 'drafting', message: 'Applying the move…' });
-        if (stream.closed) {
-          stream.end();
-          return;
-        }
-        const rewritten = updateDraftNoteContent(db, note.id, fastPath.content);
-        if (rewritten === undefined) {
-          finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
-          return;
-        }
-        if (stream.closed) {
-          stream.end();
-          return;
-        }
-
-        stream.send('note-updated', {
-          note: rewritten,
-          empty_sections: emptySectionNames(fastPath.sections, format.sections),
-          outcome: 'applied',
-          outcome_reason: null,
-        });
-        const replyText = `Moved the quoted text from ${fastPath.source} to ${fastPath.target}.`;
-        stream.send('token', { text: replyText });
-        stream.send('message', { message: persistReply(db, note.id, replyText) });
+      if (!sawRefined) {
+        const failure = aiError('empty_response', 'refineNote finished without producing a reply');
+        logFailure(request, failure, 'note refinement failed');
+        stream.send('error', { code: failure.code, message: failure.message });
         stream.end();
         return;
       }
-    }
 
-    let replyText = '';
-    let updatedSections: Sections | null = null;
-    let stats: LlmStats | null = null;
-    let sawRefined = false;
-    const streamedRewriteSections = new Set<string>();
-    // An edit reply is a completion claim. Keep it out of the visible chat
-    // until the guarded write has committed; otherwise the model can say it
-    // fixed the note while the editor is still showing the old text. Questions
-    // remain streamable because their answer is useful before any note write.
-    const bufferReplyTokens = !isQuestion(input.message);
-    let bufferedReply = '';
+      if (stats) logStats(request, stats, 'note refined');
 
-    const baseRequest: RefineNoteRequest = {
-      instructions: format.instructions,
-      formatName: format.name,
-      sections: format.sections,
-      clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
-      noteText: note.content,
-      history,
-      message: input.message,
-      ...(input.ref_quote == null ? {} : { refQuote: input.ref_quote }),
-    };
-    const priorNotes = fitRefineBackground(db, note, baseRequest);
+      if (locked) {
+        // The lock, applied after the fact. A model that tried to rewrite the
+        // note has effectively read the message as an instruction, so its reply
+        // may well describe an edit that did not happen — say the true thing
+        // instead. An answer that touched nothing is hers to keep.
+        finishWithReply(db, stream, note.id, updatedSections === null ? replyText : PUBLISHED_REFUSAL);
+        return;
+      }
 
-    try {
-      const events = providers.llm.refineNote(
-        priorNotes.length === 0
-          ? baseRequest
-          : {
-              ...baseRequest,
-              noteDate: instantToLocalDay(note.created_at),
-              priorNotes: priorNotes.map(({ title, date, text }) => ({ title, date, text })),
-            },
-      );
+      // A question is a question, never an edit. A message she phrased as one
+      // ("can you shorten the plan?") can still come back from the model with a
+      // rewrite attached — the model reads it as an instruction. Applying that
+      // would let a draft be silently rewritten by something she only asked
+      // about, so the rewrite is discarded and she keeps the reply. The published
+      // lock above refuses the same disguised edit; on a draft there is nothing
+      // to refuse, so the note is simply left as it was.
+      const question = isQuestion(input.message);
+      // A question the model answered with a rewrite attached is a question it
+      // read as an instruction, so its reply may well describe an edit that did
+      // not happen. The answer is hers to keep — she asked it — but the thread
+      // has to say the note was left alone (2026-09-23).
+      const attachedRewrite = question && updatedSections !== null;
+      if (question) {
+        updatedSections = null;
+      }
 
-      for await (const event of events) {
-        // She closed the tab or switched notes: stop, and let the provider's
-        // cleanup abort the call to Ollama rather than leave it generating.
-        if (stream.closed) break;
+      /** The lock notices and scope holds, in the order they were decided. */
+      const notices: string[] = [];
+      /** The sections a lock kept as they were, by name — for the verdict. */
+      const lockedSections: string[] = [];
+      let verdict: RefineVerdict | null = null;
+      let content: string | null = null;
+      let changed = false;
 
-        if (event.type === 'status') {
-          stream.send('status', { stage: event.stage, message: event.message });
-        } else if (event.type === 'token') {
-          // Section tokens are progress-only. Their text remains buffered in
-          // the provider's validated result and never leaks a half rewrite.
-          const rewriteSection = format.sections.find((section) => section === event.section);
-          if (rewriteSection !== undefined && !streamedRewriteSections.has(rewriteSection)) {
-            streamedRewriteSections.add(rewriteSection);
-            stream.send('status', {
-              stage: 'drafting',
-              message: `Rewriting ${String(streamedRewriteSections.size)} of ${String(format.sections.length)} sections…`,
-            });
-          }
-          if (event.section === 'reply') {
-            if (bufferReplyTokens) bufferedReply += event.text;
-            else stream.send('token', { text: event.text });
-          }
-        } else if (event.type === 'refined') {
-          sawRefined = true;
-          replyText = event.reply;
-          // A subheading in a revision may be named from the note as it
-          // stands or from what she wrote in this chat — see
-          // `discussionSubheadingSource`, which deliberately leaves her
-          // stored dictation and the format's own headers out.
-          updatedSections =
-            event.updatedSections === null
-              ? null
-              : applyDiscussionSubheadings(
-                  event.updatedSections,
-                  format.sections,
-                  discussionSubheadingSource(note.content, format.sections, input.message, input.ref_quote),
-                ).sections;
-          stats = event.stats;
+      if (updatedSections !== null) {
+        // The request-scope check, first of the family (2026-09-23, the owner's
+        // hands-on pass): a revision is held to what she actually asked for. A
+        // request naming a section may change that section only — "make the
+        // discussion shorter" rewrote Location instead, taking it from the
+        // patient's *later* note — and a request that only adds may not delete
+        // anything. Runs before the content locks, so a section the request never
+        // authorised is gone before anything else judges it.
+        const previous = textToSections(note.content, format.sections);
+        const intent = parseRefineRequest(input.message, format.sections);
+        const scoped = enforceRefineScope(previous, updatedSections, intent);
+        if (scoped.held.length > 0) logScoped(request, scoped.held.length);
+
+        // The boilerplate lock, the published lock's sibling (found necessary
+        // in M10's live pass): a revision may not gain a stock clinical
+        // assertion that neither the note, her stored dictation, nor her own
+        // request contains. Checked against the transcripts on disk, never the
+        // model's account of them — the same session showed it confabulating
+        // provenance. Her message is an allowed source because "add that he
+        // denied SI today" is her writing the note through the chat, which is
+        // the whole point of the chat.
+        const sources = [
+          ...listTranscriptsForNote(db, note.id).map((t) => t.raw_text),
+          input.message,
+          ...(input.ref_quote == null ? [] : [input.ref_quote]),
+        ];
+        const priorTexts = priorNotes.map((prior) => prior.text);
+        // Asked in so many words to bring something over from another session,
+        // that session's note is her own record and a source like her dictation.
+        const bringOver = bringOverRequested(input.message);
+        const guarded = guardRefinedSections(
+          previous,
+          scoped.sections,
+          bringOver ? [...sources, ...priorTexts] : sources,
+        );
+        if (guarded.blocked.length > 0) {
+          notices.push(guardNotice(guarded.blocked));
+          lockedSections.push(...guarded.blocked.map((block) => block.section));
+          logBlocked(request, guarded.blocked.length);
+        }
+        // The fact lock, the third of the family (found by the refine harness,
+        // 2026-09-01): a revision may not lose a number or a date that nothing
+        // in her message named or asked to remove. Her highlighted passage is
+        // deliberately not a source here — pointing at a sentence and saying
+        // "shorter" is not permission to lose what it says.
+        const kept = guardDroppedFacts(previous, guarded.sections, input.message);
+        if (kept.dropped.length > 0) {
+          notices.push(factNotice(kept.dropped));
+          lockedSections.push(...kept.dropped.map((drop) => drop.section));
+          logKept(request, kept.dropped.length);
+        }
+        // The prior-note lock, the fourth: nothing only her other notes contain
+        // enters this one unless she asked for it. Checked last, against what
+        // the other locks let through, so a section any lock kept stays kept.
+        const fenced = guardPriorNoteContent(previous, kept.sections, sources, priorTexts, input.message);
+        if (fenced.carried.length > 0) {
+          notices.push(priorNoteNotice(fenced.carried));
+          lockedSections.push(...fenced.carried.map((carry) => carry.section));
+          logFenced(request, fenced.carried.length);
+        }
+        updatedSections = fenced.sections;
+
+        // Serialized through the same `sectionsToText` the drafting path uses,
+        // so a refined note is identical in shape to a freshly drafted one —
+        // which is what keeps the round trip through `textToSections` stable
+        // over many turns of revision.
+        content = sectionsToText(updatedSections, format.sections);
+        changed = content !== note.content;
+
+        // The outcome, its reason and the reply, all read off the diff and the
+        // guard results rather than off the model's claim (2026-09-23). The
+        // model reported adding a medication over a note without it and invented
+        // a removal that never happened, so its prose is not the account of the
+        // turn: this is.
+        verdict = assessRefine({
+          intent,
+          previous,
+          updated: updatedSections,
+          held: scoped.held,
+          lockedSections,
+          notices,
+          changed,
+        });
+        replyText = verdict.reply;
+      }
+
+      if (attachedRewrite) replyText = `${replyText}\n\n${QUESTION_LEFT_ALONE}`;
+
+      let rewritten: Note | undefined;
+      if (changed && content !== null) {
+        // Conditional on the note still being a draft: she may have filed it in
+        // the seconds the model spent thinking, and the finished rewrite must not
+        // land on a published record behind the lock's back. A write that no-ops
+        // for that reason emits no `note-updated` — her filed note is unchanged.
+        // Replace the model's claim with the same refusal used by the published
+        // lock, so the thread tells the truth about the race too.
+        rewritten = updateDraftNoteContent(db, note.id, content);
+        if (rewritten === undefined) {
+          replyText = PUBLISHED_REFUSAL;
+          verdict = {
+            outcome: 'withheld',
+            reason: 'The note became published before the edit could be applied.',
+            reply: PUBLISHED_REFUSAL,
+          };
         }
       }
-    } catch (error) {
-      const failure = toAiError(error);
-      logFailure(request, failure, 'note refinement failed');
-      stream.send('error', { code: failure.code, message: failure.message });
+
+      if (rewritten !== undefined && updatedSections !== null && verdict !== null) {
+        // The note has been committed before this event is sent. Clients apply
+        // it before releasing the assistant completion, so the visible success
+        // follows the rendered note rather than racing it.
+        stream.send('note-updated', {
+          note: rewritten,
+          empty_sections: emptySectionNames(updatedSections, format.sections),
+          outcome: verdict.outcome,
+          outcome_reason: verdict.reason,
+        });
+      } else if (updatedSections !== null && !question && verdict !== null) {
+        stream.send('note-updated', {
+          note,
+          empty_sections: emptySectionNames(updatedSections, format.sections),
+          outcome: verdict.outcome,
+          outcome_reason: verdict.reason,
+        });
+      }
+
+      // The buffered reply is the server's, not the model's: it is what the row
+      // below says, so the bubble on screen matches a reload. Only sent when the
+      // model streamed something to replace — a turn with no reply tokens at all
+      // still ends with the `message` event.
+      if (bufferedReply !== '') stream.send('token', { text: replyText });
+      const assistantMessage = persistReply(db, note.id, replyText);
+      stream.send('message', { message: assistantMessage });
       stream.end();
-      return;
+    } finally {
+      end(job.id);
     }
-
-    if (stream.closed) {
-      stream.end();
-      return;
-    }
-    if (!sawRefined) {
-      const failure = aiError('empty_response', 'refineNote finished without producing a reply');
-      logFailure(request, failure, 'note refinement failed');
-      stream.send('error', { code: failure.code, message: failure.message });
-      stream.end();
-      return;
-    }
-
-    if (stats) logStats(request, stats, 'note refined');
-
-    if (locked) {
-      // The lock, applied after the fact. A model that tried to rewrite the
-      // note has effectively read the message as an instruction, so its reply
-      // may well describe an edit that did not happen — say the true thing
-      // instead. An answer that touched nothing is hers to keep.
-      finishWithReply(db, stream, note.id, updatedSections === null ? replyText : PUBLISHED_REFUSAL);
-      return;
-    }
-
-    // A question is a question, never an edit. A message she phrased as one
-    // ("can you shorten the plan?") can still come back from the model with a
-    // rewrite attached — the model reads it as an instruction. Applying that
-    // would let a draft be silently rewritten by something she only asked
-    // about, so the rewrite is discarded and she keeps the reply. The published
-    // lock above refuses the same disguised edit; on a draft there is nothing
-    // to refuse, so the note is simply left as it was.
-    const question = isQuestion(input.message);
-    // A question the model answered with a rewrite attached is a question it
-    // read as an instruction, so its reply may well describe an edit that did
-    // not happen. The answer is hers to keep — she asked it — but the thread
-    // has to say the note was left alone (2026-09-23).
-    const attachedRewrite = question && updatedSections !== null;
-    if (question) {
-      updatedSections = null;
-    }
-
-    /** The lock notices and scope holds, in the order they were decided. */
-    const notices: string[] = [];
-    /** The sections a lock kept as they were, by name — for the verdict. */
-    const lockedSections: string[] = [];
-    let verdict: RefineVerdict | null = null;
-    let content: string | null = null;
-    let changed = false;
-
-    if (updatedSections !== null) {
-      // The request-scope check, first of the family (2026-09-23, the owner's
-      // hands-on pass): a revision is held to what she actually asked for. A
-      // request naming a section may change that section only — "make the
-      // discussion shorter" rewrote Location instead, taking it from the
-      // patient's *later* note — and a request that only adds may not delete
-      // anything. Runs before the content locks, so a section the request never
-      // authorised is gone before anything else judges it.
-      const previous = textToSections(note.content, format.sections);
-      const intent = parseRefineRequest(input.message, format.sections);
-      const scoped = enforceRefineScope(previous, updatedSections, intent);
-      if (scoped.held.length > 0) logScoped(request, scoped.held.length);
-
-      // The boilerplate lock, the published lock's sibling (found necessary
-      // in M10's live pass): a revision may not gain a stock clinical
-      // assertion that neither the note, her stored dictation, nor her own
-      // request contains. Checked against the transcripts on disk, never the
-      // model's account of them — the same session showed it confabulating
-      // provenance. Her message is an allowed source because "add that he
-      // denied SI today" is her writing the note through the chat, which is
-      // the whole point of the chat.
-      const sources = [
-        ...listTranscriptsForNote(db, note.id).map((t) => t.raw_text),
-        input.message,
-        ...(input.ref_quote == null ? [] : [input.ref_quote]),
-      ];
-      const priorTexts = priorNotes.map((prior) => prior.text);
-      // Asked in so many words to bring something over from another session,
-      // that session's note is her own record and a source like her dictation.
-      const bringOver = bringOverRequested(input.message);
-      const guarded = guardRefinedSections(
-        previous,
-        scoped.sections,
-        bringOver ? [...sources, ...priorTexts] : sources,
-      );
-      if (guarded.blocked.length > 0) {
-        notices.push(guardNotice(guarded.blocked));
-        lockedSections.push(...guarded.blocked.map((block) => block.section));
-        logBlocked(request, guarded.blocked.length);
-      }
-      // The fact lock, the third of the family (found by the refine harness,
-      // 2026-09-01): a revision may not lose a number or a date that nothing
-      // in her message named or asked to remove. Her highlighted passage is
-      // deliberately not a source here — pointing at a sentence and saying
-      // "shorter" is not permission to lose what it says.
-      const kept = guardDroppedFacts(previous, guarded.sections, input.message);
-      if (kept.dropped.length > 0) {
-        notices.push(factNotice(kept.dropped));
-        lockedSections.push(...kept.dropped.map((drop) => drop.section));
-        logKept(request, kept.dropped.length);
-      }
-      // The prior-note lock, the fourth: nothing only her other notes contain
-      // enters this one unless she asked for it. Checked last, against what
-      // the other locks let through, so a section any lock kept stays kept.
-      const fenced = guardPriorNoteContent(previous, kept.sections, sources, priorTexts, input.message);
-      if (fenced.carried.length > 0) {
-        notices.push(priorNoteNotice(fenced.carried));
-        lockedSections.push(...fenced.carried.map((carry) => carry.section));
-        logFenced(request, fenced.carried.length);
-      }
-      updatedSections = fenced.sections;
-
-      // Serialized through the same `sectionsToText` the drafting path uses,
-      // so a refined note is identical in shape to a freshly drafted one —
-      // which is what keeps the round trip through `textToSections` stable
-      // over many turns of revision.
-      content = sectionsToText(updatedSections, format.sections);
-      changed = content !== note.content;
-
-      // The outcome, its reason and the reply, all read off the diff and the
-      // guard results rather than off the model's claim (2026-09-23). The
-      // model reported adding a medication over a note without it and invented
-      // a removal that never happened, so its prose is not the account of the
-      // turn: this is.
-      verdict = assessRefine({
-        intent,
-        previous,
-        updated: updatedSections,
-        held: scoped.held,
-        lockedSections,
-        notices,
-        changed,
-      });
-      replyText = verdict.reply;
-    }
-
-    if (attachedRewrite) replyText = `${replyText}\n\n${QUESTION_LEFT_ALONE}`;
-
-    let rewritten: Note | undefined;
-    if (changed && content !== null) {
-      // Conditional on the note still being a draft: she may have filed it in
-      // the seconds the model spent thinking, and the finished rewrite must not
-      // land on a published record behind the lock's back. A write that no-ops
-      // for that reason emits no `note-updated` — her filed note is unchanged.
-      // Replace the model's claim with the same refusal used by the published
-      // lock, so the thread tells the truth about the race too.
-      rewritten = updateDraftNoteContent(db, note.id, content);
-      if (rewritten === undefined) {
-        replyText = PUBLISHED_REFUSAL;
-        verdict = {
-          outcome: 'withheld',
-          reason: 'The note became published before the edit could be applied.',
-          reply: PUBLISHED_REFUSAL,
-        };
-      }
-    }
-
-    if (rewritten !== undefined && updatedSections !== null && verdict !== null) {
-      // The note has been committed before this event is sent. Clients apply
-      // it before releasing the assistant completion, so the visible success
-      // follows the rendered note rather than racing it.
-      stream.send('note-updated', {
-        note: rewritten,
-        empty_sections: emptySectionNames(updatedSections, format.sections),
-        outcome: verdict.outcome,
-        outcome_reason: verdict.reason,
-      });
-    } else if (updatedSections !== null && !question && verdict !== null) {
-      stream.send('note-updated', {
-        note,
-        empty_sections: emptySectionNames(updatedSections, format.sections),
-        outcome: verdict.outcome,
-        outcome_reason: verdict.reason,
-      });
-    }
-
-    // The buffered reply is the server's, not the model's: it is what the row
-    // below says, so the bubble on screen matches a reload. Only sent when the
-    // model streamed something to replace — a turn with no reply tokens at all
-    // still ends with the `message` event.
-    if (bufferedReply !== '') stream.send('token', { text: replyText });
-    const assistantMessage = persistReply(db, note.id, replyText);
-    stream.send('message', { message: assistantMessage });
-    stream.end();
   });
 }
 

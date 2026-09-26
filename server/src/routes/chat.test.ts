@@ -17,6 +17,7 @@ import { aiError } from '../ai/errors.js';
 import type { LlmEvent, LlmStats, RefineNoteRequest } from '../ai/types.js';
 import { listChatMessagesForNote } from '../db/chat-messages.js';
 import { getNote, setNotePublished } from '../db/notes.js';
+import { active, type ActiveJob } from '../jobs/registry.js';
 import { createTranscript } from '../db/transcripts.js';
 import { REFINE_PROMPT_TOKENS } from '../ai/ollama.js';
 import { buildRefinePrompt, REFINE_BACKGROUND_END, REFINE_BACKGROUND_REMINDER } from '../ai/prompts.js';
@@ -1428,5 +1429,60 @@ describe('POST /api/notes/:id/chat — the request, the diff and the reply', () 
     } finally {
       await local.close();
     }
+  });
+});
+
+/**
+ * The active job registry, as `POST /api/notes/:id/chat` drives it.
+ *
+ * The reading is taken **inside** the stream: a provider that notes what
+ * `active()` holds as it produces each event is the only place a refine is
+ * observably in flight, because by the time a response body exists the job is
+ * over. It is the real fake with `refineNote` wrapped, so the note, the locks
+ * and the reply are exactly what production produces.
+ */
+class WatchingLlmProvider extends FakeLlmProvider {
+  /** What `active()` held as each event was produced, in order. */
+  readonly readings: ActiveJob[][] = [];
+
+  private async *watched(events: AsyncIterable<LlmEvent>): AsyncGenerator<LlmEvent> {
+    for await (const event of events) {
+      this.readings.push(active().map((job) => ({ ...job })));
+      yield event;
+    }
+  }
+
+  override refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+    return this.watched(super.refineNote(request));
+  }
+}
+
+describe('active job registry — POST /api/notes/:id/chat', () => {
+  it('holds a refine job for as long as the stream runs, and releases it after', async () => {
+    const watcher = new WatchingLlmProvider();
+    const local = await createTestApp({ providers: { llm: watcher, stt: new FakeSttProvider() } });
+
+    let names: string[];
+    try {
+      const own = await seedPatient(local.app, 'John Smith');
+      const ownFormat = await seedFormat(local.app);
+      const note = await seedNote(local.app, own.id, ownFormat.id, NOTE_TEXT);
+
+      names = (await chat(local.app, note.id, { message: 'Make the plan shorter' })).events.map(
+        (event) => event.name,
+      );
+    } finally {
+      await local.close();
+    }
+
+    expect(names).toContain('token');
+    expect(names).not.toContain('error');
+    // Between the first event and the last, the refine is in flight — and the
+    // job names the note, so a later refusal can say which one.
+    expect(watcher.readings.length).toBeGreaterThan(1);
+    for (const jobs of watcher.readings) {
+      expect(jobs.map((job) => job.kind)).toEqual(['refine']);
+    }
+    expect(active()).toEqual([]);
   });
 });

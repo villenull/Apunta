@@ -49,6 +49,47 @@ describe('POST /api/notes', () => {
     expect(response.json<Note>()).toMatchObject({ title: 'Session 4', content: '' });
   });
 
+  /**
+   * C-LANG@1 rule 3: a note is written in its format's language, and nothing
+   * else chooses one. A request that names a locale is refused for having an
+   * unknown key rather than quietly honoured.
+   */
+  it('takes its locale from the format it was written against', async () => {
+    const english = await harness.app.inject({
+      method: 'POST',
+      url: '/api/notes',
+      payload: { patient_id: patient.id, format_id: format.id },
+    });
+    expect(NoteSchema.parse(english.json()).locale).toBe('en');
+
+    const spanishFormat = await seedFormat(harness.app, {
+      name: 'Nota de progreso',
+      sections: ['Lugar', 'Discusión'],
+    });
+    const changed = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/formats/${spanishFormat.id}`,
+      payload: { locale: 'es-MX' },
+    });
+    expect(changed.json<NoteFormat>().locale).toBe('es-MX');
+
+    const spanish = await harness.app.inject({
+      method: 'POST',
+      url: '/api/notes',
+      payload: { patient_id: patient.id, format_id: spanishFormat.id },
+    });
+    const note = NoteSchema.parse(spanish.json());
+    expect(note.locale).toBe('es-MX');
+    expect(note.title).toBe('Nota de progreso');
+
+    // The English note is untouched by the Spanish one existing: no translation,
+    // no relabelling, and the listing carries both locales as they were created.
+    const { notes } = NoteListResponseSchema.parse(
+      (await harness.app.inject({ method: 'GET', url: `/api/patients/${patient.id}/notes` })).json(),
+    );
+    expect(notes.map((row) => row.locale).sort()).toEqual(['en', 'es-MX']);
+  });
+
   it('404s an unknown patient or format', async () => {
     const noPatient = await harness.app.inject({
       method: 'POST',

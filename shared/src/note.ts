@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { boundedText, IdSchema, MAX_BODY_CHARS, optionalText, TimestampSchema } from './common.js';
+import { LocaleSchema } from './i18n/locales.js';
 
 /** A published note is locked: its body may not change until it is unpublished. */
 export const NoteStatusSchema = z.enum(['draft', 'published']);
@@ -16,6 +17,12 @@ export const NoteSchema = z.object({
   revision: z.number().int().nonnegative(),
   /** Exactly what the editor shows: `Section: body` paragraphs (PLAN §3). */
   content: z.string(),
+  /**
+   * The language this note is written in (C-LANG@1 rule 3) — its format's
+   * locale at creation, and the locale a refine works in whatever language the
+   * request was typed in. Required, because the column is `NOT NULL`.
+   */
+  locale: LocaleSchema,
   created_at: TimestampSchema,
   updated_at: TimestampSchema,
   published_at: TimestampSchema.nullable(),

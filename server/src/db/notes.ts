@@ -1,10 +1,10 @@
-import type { Note } from '@apunta/shared';
+import { DEFAULT_LOCALE, isLocale, type Note } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 
 import { uuidv7 } from './uuid.js';
 
 const COLUMNS =
-  'id, patient_id, format_id, title, status, revision, content, created_at, updated_at, published_at';
+  'id, patient_id, format_id, locale, title, status, revision, content, created_at, updated_at, published_at';
 
 /** Newest first, as the prototype's notes column shows them. */
 export function listNotesForPatient(db: Database, patientId: string): Note[] {
@@ -24,6 +24,13 @@ export function getNote(db: Database, id: string): Note | undefined {
 export interface CreateNoteInput {
   readonly patient_id: string;
   readonly format_id: string;
+  /**
+   * The note's language (C-LANG@1 rule 3), which is the format's locale — the
+   * only locale a note can inherit. Optional so every caller that writes legacy
+   * content keeps compiling, and English when absent, because that is what all
+   * of them mean today (D11).
+   */
+  readonly locale?: string;
   readonly title: string;
   readonly content?: string;
   /** Seeding backdates notes to the prototype's dates; the API never sets this. */
@@ -36,6 +43,7 @@ export function createNote(db: Database, input: CreateNoteInput): Note {
     id: uuidv7(),
     patient_id: input.patient_id,
     format_id: input.format_id,
+    locale: isLocale(input.locale) ? input.locale : DEFAULT_LOCALE,
     title: input.title,
     status: 'draft',
     revision: 0,
@@ -47,7 +55,7 @@ export function createNote(db: Database, input: CreateNoteInput): Note {
 
   db.prepare(
     `INSERT INTO notes (${COLUMNS})
-     VALUES (@id, @patient_id, @format_id, @title, @status, @revision, @content, @created_at, @updated_at, @published_at)`,
+     VALUES (@id, @patient_id, @format_id, @locale, @title, @status, @revision, @content, @created_at, @updated_at, @published_at)`,
   ).run(note);
 
   return note;
