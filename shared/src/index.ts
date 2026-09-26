@@ -539,6 +539,19 @@ export {
 } from './i18n/locales.js';
 export type { Locale, LocaleSettings } from './i18n/locales.js';
 
+/**
+ * The message catalogue: `t(key, params, locale)`, both catalogues, and the one
+ * `MessageKey` union the web provider and every later consumer name keys
+ * through. Exported from the same single `exports` entry as everything else,
+ * because `shared/package.json` publishes `"."` and nothing else — a deep path
+ * such as `@apunta/shared/src/i18n/t.js` resolves to nothing at runtime and to
+ * nothing in `tsc`.
+ */
+export { t } from './i18n/t.js';
+export { en } from './i18n/en.js';
+export { esMX } from './i18n/es-MX.js';
+export type { MessageKey } from './i18n/t.js';
+
 export {
   CUSTOM_SECTION_ROLE,
   normaliseSectionName,
