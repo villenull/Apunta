@@ -19,3 +19,5 @@ One entry per coordinator step, newest last:
 2026-09-26T01:48:21Z | P0.3 | IR | CLEAR all ten (first round, AM-003) | docs/v2/state/reviews/P0.3-ir.md
 2026-09-26T01:48:21Z | P0.3 | implement attempt 1 | SUBMITTED, committed 0360932 | sandbox.mjs + selftest (6/6 refusals pre-DB), playwright/check-script guards, health testRunId; one orphan-server incident disclosed and fixed same-session; V1-V5 PASS
 2026-09-26T01:48:21Z | P0.3 | impl review | all PASS | docs/v2/state/reviews/P0.3-impl.md. Card APPROVED. From here all launching commands run through scripts/v2/sandbox.mjs (HS-2).
+2026-09-26T01:51:35Z | P0.4 | IR | CLEAR all ten (first round, AM-004) | docs/v2/state/reviews/P0.4-ir.md
+2026-09-26T01:51:35Z | P0.4 | measurement attempt 1 | BLOCKED (environment) | No Ollama on this machine (worker return + coordinator `which`/`curl` confirmation). Card stop condition "model tag missing" → BLOCKED, owner action filed in OWNER-ACTIONS.md; attempt budget intact. Card BLOCKED, see BLOCKED.md.
