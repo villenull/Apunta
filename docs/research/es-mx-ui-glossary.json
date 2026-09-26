@@ -1,0 +1,1563 @@
+[
+  {
+    "category": "interface",
+    "en": "Apunta (brand)",
+    "es_mx": "Apunta",
+    "ui": ["Apunta"],
+    "note": "[inferred] Product name; brand names are not translated (Ubuntu Spanish style keeps trademarked product names). Keep as-is.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "interface",
+    "en": "Patients (nav)",
+    "es_mx": "Pacientes",
+    "ui": ["Patients"],
+    "note": "[verified] NOM-004 defines paciente as the beneficiary of care; S1.1 recommends paciente as the Spanish default. Retained as a nav item.",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "interface",
+    "en": "Notes (nav)",
+    "es_mx": "Notas",
+    "ui": ["Notes"],
+    "note": "[verified] RAE DLE nota. Nav label for the note list.",
+    "source": "https://dle.rae.es/nota"
+  },
+  {
+    "category": "interface",
+    "en": "Archive (nav)",
+    "es_mx": "Archivo",
+    "ui": ["Archive"],
+    "note": "[inferred] Spanish software commonly names the archive destination Archivo; the verb 'to archive' is archivar (separate entry).",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "interface",
+    "en": "About",
+    "es_mx": "Acerca de",
+    "ui": ["About", "About Apunta"],
+    "note": "[inferred] Standard Spanish rendering of an About screen heading; sentence case.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "interface",
+    "en": "Setup",
+    "es_mx": "Configuración inicial",
+    "ui": ["Setup"],
+    "note": "[inferred] The screen checks installed AI components; 'Configuración inicial' names the first-run setup, distinct from Ajustes (settings). Flag O-6 family: confirm wording with the owner.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "add",
+    "es_mx": "agregar / añadir",
+    "ui": ["Add", "Add patient", "Add diagnosis", "Add objective", "Add a goal myself", "Add another format", "Add section", "+ Add section", "Add one first", "Add to", "Add one or two more", "Add to dictionary", "Add to Intervention"],
+    "note": "[inferred] Both agregar and añadir are standard; Microsoft es-MX leans agregar. Choose one form and keep it. 'Add patient' = Agregar paciente.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "save",
+    "es_mx": "guardar",
+    "ui": ["Save", "Save plan details", "Save and accept", "Save changes", "Looks right, save", "Saving…", "Saved", "Saved.", "You have not saved", "Nothing is saved until you press save"],
+    "note": "[inferred] Standard Spanish verb for saving; gerund 'Guardando…', participle 'Guardado'.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "cancel",
+    "es_mx": "cancelar",
+    "ui": ["Cancel"],
+    "note": "[inferred] Standard Spanish verb; also the noun 'Cancelar' button label.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "delete",
+    "es_mx": "eliminar",
+    "ui": ["Delete", "Delete note", "Delete this note?", "Delete this goal", "Delete them", "Delete {name}", "Discard this suggestion", "removes"],
+    "note": "[inferred] Standard Spanish verb for deleting; 'Delete note' = Eliminar nota. Confirmation headings take inverted question marks: ¿Eliminar esta nota?",
+    "source": "https://www.rae.es/dpd/signos%20de%20interrogaci%C3%B3n%20y%20exclamaci%C3%B3n"
+  },
+  {
+    "category": "common-verb",
+    "en": "discard",
+    "es_mx": "descartar",
+    "ui": ["Discard recording", "Discard and leave", "Discard this suggestion", "will be discarded"],
+    "note": "[inferred] Standard Spanish verb; 'Discard and leave' = Descartar y salir.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "remove",
+    "es_mx": "quitar / eliminar",
+    "ui": ["Remove {name}", "removed", "removed."],
+    "note": "[inferred] For a list item use quitar; for a record use eliminar. Import undo text ('and {n} removed.') = 'y se eliminaron {n}.'",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "rename",
+    "es_mx": "cambiar nombre",
+    "ui": ["Rename", "Rename {name}", "New name for {name}"],
+    "note": "[inferred] Standard Spanish phrase; avoids the anglicism. 'Rename' button = Cambiar nombre.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "archive (verb)",
+    "es_mx": "archivar",
+    "ui": ["Archive", "archived", "Show archived"],
+    "note": "[inferred] Standard Spanish verb; 'archived' = archivado, 'Show archived' = Mostrar archivados.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "restore",
+    "es_mx": "restaurar",
+    "ui": ["Restore", "Restore last tested", "Restore never tested", "Restore it instead", "Restore of {file}", "A restore is waiting"],
+    "note": "[inferred] Standard Spanish verb for restoring a record or a backup; noun 'restauración'. Distinct from recuperar (recuperar is used for data recovery).",
+    "source": "https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/"
+  },
+  {
+    "category": "common-verb",
+    "en": "edit",
+    "es_mx": "editar",
+    "ui": ["Edit", "Edit again", "Edit note format"],
+    "note": "[inferred] Standard Spanish verb; 'Edit again' = Editar de nuevo.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "accept",
+    "es_mx": "aceptar",
+    "ui": ["Accept"],
+    "note": "[inferred] Standard Spanish verb for accepting a suggestion. Noun 'aceptación'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "keep",
+    "es_mx": "conservar / guardar",
+    "ui": ["Keep", "Kept", "Keep mine", "Stay to keep working"],
+    "note": "[inferred] 'Keep' (a briefing) = Conservar (or Guardar); 'Kept' = Conservado. 'Keep mine' in the conflict dialog = Conservar la mía.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "copy",
+    "es_mx": "copiar",
+    "ui": ["Copy", "Copied", "Copy plan", "Copy plain text", "Finish & copy"],
+    "note": "[inferred] Standard Spanish verb; 'Copied' = Copiado. 'Finish & copy' = Finalizar y copiar.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "undo",
+    "es_mx": "deshacer",
+    "ui": ["Undo", "Undo this import", "Import undone", "Undone:"],
+    "note": "[inferred] Standard Spanish verb; 'Undo this import' = Deshacer esta importación.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "search",
+    "es_mx": "buscar",
+    "ui": ["Search patients", "No patients match", "Clear search", "Filter licences", "Filter by component or text"],
+    "note": "[inferred] Standard Spanish verb; 'Search patients' = Buscar pacientes. Filter = filtrar.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "show",
+    "es_mx": "mostrar",
+    "ui": ["Show archived"],
+    "note": "[inferred] Standard Spanish verb; 'Show archived' = Mostrar archivados.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "close",
+    "es_mx": "cerrar",
+    "ui": ["Close", "Close Refine note"],
+    "note": "[inferred] Standard Spanish verb; aria-label 'Close Refine note' = Cerrar Refinar nota.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "dismiss",
+    "es_mx": "descartar",
+    "ui": ["Dismiss"],
+    "note": "[inferred] For a banner/toast close control, descartar is the standard Spanish choice; cerrar is the fallback.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "try again",
+    "es_mx": "intentar de nuevo / reintentar",
+    "ui": ["Try again", "Check again"],
+    "note": "[inferred] Both are standard; Microsoft es-MX often uses 'Intentar de nuevo'. 'Check again' = Comprobar de nuevo.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "finish",
+    "es_mx": "finalizar / terminar",
+    "ui": ["Finish & copy"],
+    "note": "[inferred] Standard Spanish verb; 'Finish & copy' = Finalizar y copiar. See O-2 on the publish metaphor.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "publish",
+    "es_mx": "publicar",
+    "ui": ["Publish"],
+    "note": "[inferred] Standard software verb (with borrador as its counterpart). Flag O-2: literal publicar can suggest posting to the internet, which conflicts with Apunta's privacy promise; finalizar/marcar como final is the documented alternative.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "start over",
+    "es_mx": "empezar de nuevo",
+    "ui": ["Start over"],
+    "note": "[inferred] Standard Spanish phrase; 'Empezar de nuevo'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "continue",
+    "es_mx": "continuar",
+    "ui": ["Continue"],
+    "note": "[inferred] Standard Spanish verb.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "working / processing",
+    "es_mx": "procesando",
+    "ui": ["Working…", "Working", "Preparing your draft…", "Preparing your draft"],
+    "note": "[inferred] Standard Spanish progress state; 'Working' = Procesando. 'Preparing your draft…' = Preparando tu borrador…",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "loading",
+    "es_mx": "cargando",
+    "ui": ["Loading…", "Loading notes…", "Loading patients…", "Loading the plan…", "Loading the conversation…", "Loading AI settings…", "Loading settings…", "Reading…"],
+    "note": "[inferred] Standard Spanish gerund; 'Loading notes…' = Cargando notas… 'Reading…' (the model) = Leyendo…",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "saving / saved",
+    "es_mx": "guardando / guardado",
+    "ui": ["Saving…", "Saved", "Saved.", "Couldn’t save", "Unsaved changes could not be saved", "Your latest edits haven't saved"],
+    "note": "[inferred] Standard Spanish states. \"Couldn't save\" = No se pudo guardar.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "thinking",
+    "es_mx": "pensando",
+    "ui": ["Thinking…", "Thinking"],
+    "note": "[inferred] Standard Spanish gerund for the model's in-progress state.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "rewriting",
+    "es_mx": "reescribiendo",
+    "ui": ["Rewriting"],
+    "note": "[inferred] Standard Spanish gerund; the refine pass is rewriting the note.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "transcribing",
+    "es_mx": "transcribiendo",
+    "ui": ["Transcribing", "Transcribing…", "Reading the export…", "Reading the PDFs…", "Reading your notes…", "Reading the skill…"],
+    "note": "[inferred] Standard Spanish gerund. 'Reading the export…' = Leyendo la exportación…",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "listening",
+    "es_mx": "escuchando",
+    "ui": ["Listening for words…"],
+    "note": "[inferred] 'Listening for words…' = Escuchando palabras…",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "opening / starting",
+    "es_mx": "abriendo / iniciando",
+    "ui": ["Opening microphone…", "Starting…", "Start here", "Start with a recording", "Start a plan", "Start a review", "Start a new conversation?"],
+    "note": "[inferred] 'Opening microphone…' = Abriendo el micrófono… 'Start a plan' = Iniciar un plan.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common-verb",
+    "en": "prepare",
+    "es_mx": "preparar",
+    "ui": ["Prepare for session", "Prepare again", "Preparing your draft…"],
+    "note": "[inferred] Standard Spanish verb; 'Prepare for session' = Preparar la sesión; 'Prepare again' = Preparar de nuevo.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common-verb",
+    "en": "review",
+    "es_mx": "revisar / revisión",
+    "ui": ["Review due", "Start a review", "Plan review due", "Plan review was due", "Review interval", "Review interval (days)"],
+    "note": "[inferred] Standard Spanish verb/noun. S1.1 deliberately keeps revisión distinct from evaluación (review vs assessment).",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "common-verb",
+    "en": "draft (verb)",
+    "es_mx": "redactar",
+    "ui": ["Drafted from your notes:", "Draft goals from recent notes", "draft goal was", "draft goals were"],
+    "note": "[inferred] Drafting a note = redactar. 'Drafted from your notes:' = Redactado a partir de tus notas:",
+    "source": "https://dle.rae.es/borrador"
+  },
+  {
+    "category": "patient",
+    "en": "patient",
+    "es_mx": "paciente",
+    "ui": ["Patient", "Patients", "Patient name", "Add patient", "New patient", "Create new patient", "No patients yet.", "No active patients.", "Add your first patient", "patients", "patient menu"],
+    "note": "[verified] NOM-004 §4.7 defines paciente; S1.1 §2.3 recommends paciente in the UI and formats. Feminine agreement as needed (la paciente).",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "patient",
+    "en": "patient identifier",
+    "es_mx": "identificador del paciente",
+    "ui": ["Identifier (optional)", "Internal reference, chart number, etc."],
+    "note": "[inferred] 'Identifier (optional)' = Identificador (opcional). 'chart number' = número de expediente (S1.1: expediente clínico).",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "patient",
+    "en": "name",
+    "es_mx": "nombre",
+    "ui": ["Name", "Patient name", "Format name", "New name for {name}", "Section name"],
+    "note": "[inferred] Standard Spanish noun. 'Format name' = Nombre del formato; 'Section name' = Nombre de la sección.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "patient",
+    "en": "sample patient name (placeholder)",
+    "es_mx": "(pendiente: NAMES.md)",
+    "ui": ["e.g. John Smith"],
+    "note": "[not found] e2e/fixtures/eval-es/NAMES.md does not exist at this commit. Per HS-8, Spanish sample names must come only from that file when created; do not invent. Flag O-3.",
+    "source": "docs/v2/HARD-STOPS.md"
+  },
+  {
+    "category": "patient",
+    "en": "archived (patient)",
+    "es_mx": "archivado",
+    "ui": ["archived", "Show archived", "No active patients."],
+    "note": "[inferred] 'No active patients.' = No hay pacientes activos.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "note",
+    "en": "note",
+    "es_mx": "nota",
+    "ui": ["Note", "Notes", "New note", "Create first note", "Create new note", "Delete note", "Delete this note?", "This note", "Note body", "No notes yet", "No notes yet for {name}", "note"],
+    "note": "[verified] RAE DLE nota. In the clinical record the session note is nota de evolución [verified] NOM-004 §6.2.",
+    "source": "https://dle.rae.es/nota"
+  },
+  {
+    "category": "note",
+    "en": "draft",
+    "es_mx": "borrador",
+    "ui": ["Draft", "draft in progress", "draft marker"],
+    "note": "[verified] RAE DLE borrador: 'Texto provisional susceptible de modificación y desarrollo'.",
+    "source": "https://dle.rae.es/borrador"
+  },
+  {
+    "category": "note",
+    "en": "session note",
+    "es_mx": "nota de evolución",
+    "ui": ["Note", "Session"],
+    "note": "[verified] NOM-004 §6.2 names the session note 'Nota de evolución'; UNAM FES Iztacala and CONASAMA Anexo 19 confirm 'Nota de evolución psicológica'. S1.1 §2.1.",
+    "source": "https://www.conasama.salud.gob.mx/Residenciales/Guxa_expediente_res_profesional_13_09_21.pdf"
+  },
+  {
+    "category": "note",
+    "en": "format",
+    "es_mx": "formato",
+    "ui": ["Format", "Note format", "Note formats", "Add your note format", "Add another format", "Edit note format"],
+    "note": "[inferred] Standard Spanish noun; the formats feature already speaks of 'formatos de notas'. NOM-004 §5.13 lets providers design their own formats.",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "note",
+    "en": "section",
+    "es_mx": "sección",
+    "ui": ["Sections", "Sections detected", "Add section", "+ Add section", "Section name", "at least one section", "change its sections"],
+    "note": "[inferred] Standard Spanish noun; S1.1 §5 uses sección for the note parts.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "note",
+    "en": "body",
+    "es_mx": "cuerpo",
+    "ui": ["Note body", "Note body (aria-label)"],
+    "note": "[inferred] 'Note body' = Cuerpo de la nota.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "note",
+    "en": "version",
+    "es_mx": "versión",
+    "ui": ["Version", "same version", "previous version"],
+    "note": "[inferred] Standard Spanish noun; 'Carried forward from the previous version.' = Arrastrado desde la versión anterior.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "note",
+    "en": "current",
+    "es_mx": "actual / vigente",
+    "ui": ["Current"],
+    "note": "[inferred] For the in-force plan version, vigente is more precise than actual (a plan is in force, not merely current). Flag O-5 family.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "note",
+    "en": "superseded",
+    "es_mx": "reemplazada / superada",
+    "ui": ["This version has been superseded."],
+    "note": "[inferred] 'This version has been superseded.' = Esta versión fue reemplazada. Prefer reemplazada for plain speech.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "note",
+    "en": "transcript",
+    "es_mx": "transcripción",
+    "ui": ["transcript"],
+    "note": "[inferred] Standard Spanish noun for the written record of speech; S1.3 uses transcripción.",
+    "source": "docs/research/es-mx-speech.md"
+  },
+  {
+    "category": "capture",
+    "en": "record (verb)",
+    "es_mx": "grabar",
+    "ui": ["Record audio", "Record"],
+    "note": "[inferred] Standard Spanish verb for capturing audio; 'Record audio' = Grabar audio.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "capture",
+    "en": "recording",
+    "es_mx": "grabación",
+    "ui": ["Recording session", "recording", "Discard recording", "Create draft from recording"],
+    "note": "[inferred] Standard Spanish noun. 'Create draft from recording' = Crear borrador a partir de la grabación.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "capture",
+    "en": "microphone",
+    "es_mx": "micrófono",
+    "ui": ["microphone access", "Opening microphone…", "Allow microphone access…"],
+    "note": "[verified] Standard Spanish noun; accent on the i. 'Allow microphone access…' = Permitir el acceso al micrófono…",
+    "source": "https://www.rae.es/libro-estilo-lengua-espa%C3%B1ola/comunicaci%C3%B3n-ser-humanom%C3%A1quina"
+  },
+  {
+    "category": "capture",
+    "en": "dictate",
+    "es_mx": "dictar",
+    "ui": ["Dictate a message", "Stop dictating"],
+    "note": "[verified] RAE's estilo guide discusses 'dictar textos a una máquina' for speech-to-text. 'Stop dictating' = Dejar de dictar.",
+    "source": "https://www.rae.es/libro-estilo-lengua-espa%C3%B1ola/comunicaci%C3%B3n-ser-humanom%C3%A1quina"
+  },
+  {
+    "category": "capture",
+    "en": "typed notes",
+    "es_mx": "notas escritas",
+    "ui": ["Type notes", "Type notes before or while recording…", "Type your session summary…"],
+    "note": "[inferred] 'Type notes' = Escribir notas. Distinct from dictation; keeps the either/or the UI describes.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "capture",
+    "en": "session summary",
+    "es_mx": "resumen de la sesión",
+    "ui": ["Session summary", "Type your session summary…", "What happened in this session…"],
+    "note": "[inferred] 'Session summary' = Resumen de la sesión; placeholder = Escribe el resumen de tu sesión…",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "capture",
+    "en": "create draft",
+    "es_mx": "crear borrador",
+    "ui": ["Create draft", "Create draft from recording", "Stop and create draft"],
+    "note": "[inferred] 'Stop and create draft' = Detener y crear borrador.",
+    "source": "https://dle.rae.es/borrador"
+  },
+  {
+    "category": "capture",
+    "en": "discard capture",
+    "es_mx": "descartar la captura",
+    "ui": ["Leave this unfinished note?", "Discard and leave", "Stay"],
+    "note": "[inferred] Confirmation dialog; 'Leave this unfinished note?' = ¿Salir de esta nota sin terminar? 'Stay' = Quedarme.",
+    "source": "https://www.rae.es/dpd/signos%20de%20interrogaci%C3%B3n%20y%20exclamaci%C3%B3n"
+  },
+  {
+    "category": "capture",
+    "en": "recording ready",
+    "es_mx": "grabación lista",
+    "ui": ["Recording ready", "recorded. Nothing has left this Mac."],
+    "note": "[inferred] 'recorded. Nothing has left this Mac.' = grabado. Nada ha salido de esta Mac. (Mac kept as a proper noun.)",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "ai",
+    "en": "refine",
+    "es_mx": "refinar",
+    "ui": ["Refine note", "Close Refine note", "give feedback to refine it"],
+    "note": "[inferred] Standard Spanish verb; 'Refine note' = Refinar nota.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "ai",
+    "en": "brainstorm",
+    "es_mx": "lluvia de ideas",
+    "ui": ["Brainstorm", "Brainstorm message", "New conversation"],
+    "note": "[verified] FundéuRAE: DLE records 'lluvia de ideas' and 'tormenta de ideas' for brainstorming.",
+    "source": "https://www.fundeu.es/consulta/brainstorming-16047/"
+  },
+  {
+    "category": "ai",
+    "en": "think out loud",
+    "es_mx": "piensa en voz alta",
+    "ui": ["Think out loud about {name}…", "Think out loud…"],
+    "note": "[inferred] Direct tú-imperative; 'Think out loud…' = Piensa en voz alta…",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  },
+  {
+    "category": "ai",
+    "en": "suggestion",
+    "es_mx": "sugerencia",
+    "ui": ["Suggested — not in the plan yet", "Suggested from your notes", "No suggestions waiting.", "Discard this suggestion", "Suggested intervention approach"],
+    "note": "[inferred] Standard Spanish noun; 'Suggested from your notes' = Sugerido a partir de tus notas.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "ai",
+    "en": "ask a question",
+    "es_mx": "hacer una pregunta",
+    "ui": ["Ask a question about this note…", "Ask a question or give feedback…", "Ask a question or give feedback"],
+    "note": "[inferred] Placeholder = Haz una pregunta sobre esta nota o da comentarios para refinarla.",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  },
+  {
+    "category": "ai",
+    "en": "feedback",
+    "es_mx": "comentarios",
+    "ui": ["give feedback to refine it", "give feedback"],
+    "note": "[inferred] 'feedback' = comentarios (or retroalimentación, but comentarios reads better in tú-voice UI).",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "ai",
+    "en": "changes applied",
+    "es_mx": "cambios aplicados",
+    "ui": ["Changes applied", "Some changes applied", "No changes applied"],
+    "note": "[inferred] 'Some changes applied' = Algunos cambios aplicados.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "ai",
+    "en": "model",
+    "es_mx": "modelo",
+    "ui": ["Apunta can’t find the AI model", "Apunta can’t reach the local AI", "local AI", "the AI"],
+    "note": "[inferred] 'AI model' = modelo de IA; 'local AI' = IA local.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "ai",
+    "en": "intervention approach",
+    "es_mx": "enfoque de intervención",
+    "ui": ["Possible approach for Intervention", "Add to Intervention", "Suggested intervention approach"],
+    "note": "[verified] S1.2 intervention vocabulary: intervención is the standard term (FENAPSIME arts. 27/29).",
+    "source": "docs/research/es-mx-clinical-glossary.json"
+  },
+  {
+    "category": "plan",
+    "en": "treatment plan",
+    "es_mx": "plan de tratamiento",
+    "ui": ["Treatment plan", "Plan details", "Save plan details"],
+    "note": "[verified] NOM-004 uses 'plan de tratamiento'; CONASAMA Anexo 15 'Plan de Tratamiento'; S1.1 §5.3. FENAPSIME uses 'plan de trabajo' (art. 10).",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "plan",
+    "en": "goal",
+    "es_mx": "meta",
+    "ui": ["Goal", "New goal", "Add a goal myself", "Goal target date", "Delete this goal", "No goals in the plan yet."],
+    "note": "[inferred] Standard Spanish noun; 'Goal target date' = Fecha límite de la meta.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "objective",
+    "es_mx": "objetivo",
+    "ui": ["Objective", "No objectives yet.", "Add objective", "Objective {n}"],
+    "note": "[inferred] Standard Spanish noun; distinct from meta (goal) as in English.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "measure",
+    "es_mx": "medición",
+    "ui": ["Measure", "Measure:", "Measure (placeholder)"],
+    "note": "[inferred] In an outcome-goal context medición is clearer than the verb medir; flag if the owner prefers 'Cómo se mide'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "baseline",
+    "es_mx": "línea base",
+    "ui": ["Baseline", "Baseline:", "Baseline (placeholder)"],
+    "note": "[inferred] Standard Spanish term; 'línea base' is the established rendering in outcome measurement.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "target",
+    "es_mx": "meta / objetivo",
+    "ui": ["Target", "Target:", "Target (placeholder)"],
+    "note": "[inferred] To avoid collision with the Goal entry (meta), use objetivo aquí or 'valor objetivo'. Flag for S2.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "by (date)",
+    "es_mx": "para",
+    "ui": ["By:"],
+    "note": "[inferred] 'By:' (target date) = Para: — concise; alternatively 'Fecha límite:'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "intervention",
+    "es_mx": "intervención",
+    "ui": ["Interventions:", "Interventions, one per line", "Intervention"],
+    "note": "[verified] Standard clinical term; S1.2 maps intervention -> intervención.",
+    "source": "docs/research/es-mx-clinical-glossary.json"
+  },
+  {
+    "category": "plan",
+    "en": "diagnosis",
+    "es_mx": "diagnóstico",
+    "ui": ["Diagnoses", "Add diagnosis", "Diagnosis {n}", "Primary", "None recorded.", "diagnosis"],
+    "note": "[verified] Standard clinical term; NOM-004 D2 lists diagnóstico(s). 'Primary' = principal (diagnóstico principal).",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "plan",
+    "en": "ICD-10-CM",
+    "es_mx": "ICD-10-CM",
+    "ui": ["ICD-10-CM"],
+    "note": "[inferred] Standard coding-system identifier; keep as-is (the Spanish acronym CIE-10 refers to the WHO classification, not the US clinical modification).",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "plan",
+    "en": "DSM-5-TR",
+    "es_mx": "DSM-5-TR",
+    "ui": ["DSM-5-TR"],
+    "note": "[inferred] Standard manual identifier; keep as-is.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "plan",
+    "en": "attestation",
+    "es_mx": "declaración",
+    "ui": ["Attestation", "Not yet attested.", "Attested in Apunta"],
+    "note": "[inferred] English attestation is recording name/credential against the version in force. Declaración reads naturally; literal atestación is archaic outside law. Flag O-4.",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "plan",
+    "en": "put in force",
+    "es_mx": "poner en vigencia",
+    "ui": ["Put in force"],
+    "note": "[inferred] 'Put in force' = Poner en vigencia; the in-force version is la versión vigente.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "met (goal status)",
+    "es_mx": "cumplida",
+    "ui": ["Met"],
+    "note": "[inferred] Goal status 'Met' = Cumplida (meta feminine) or Lograda. Pick one and keep it.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "discontinue",
+    "es_mx": "suspender",
+    "ui": ["Discontinue"],
+    "note": "[inferred] For a goal, suspender is the natural clinical verb; descontinuar is the literal calque.",
+    "source": "docs/research/es-mx-clinical-glossary.json"
+  },
+  {
+    "category": "plan",
+    "en": "carried forward",
+    "es_mx": "arrastrado / retomado",
+    "ui": ["Carried forward from the previous version."],
+    "note": "[inferred] 'Carried forward from the previous version.' = Arrastrado desde la versión anterior. Flag which verb the owner prefers.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "review interval",
+    "es_mx": "intervalo de revisión",
+    "ui": ["Review interval", "Review interval (days)"],
+    "note": "[inferred] Keeps intervalo distinct from the separate 'Service frequency' (frecuencia). Flag O-5.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "plan",
+    "en": "client participation",
+    "es_mx": "participación del cliente",
+    "ui": ["Client participation", "Reviewed with client", "Client declined to sign", "Signed copy in my records system", "Not recorded", "Reason, if it could not be signed"],
+    "note": "[inferred] S1.1 §5.4 flags cliente vs paciente; her English uses Client here, so cliente. Statuses: Not recorded = No registrado; Reviewed with client = Revisado con el cliente.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "plan",
+    "en": "presenting problem",
+    "es_mx": "motivo de consulta",
+    "ui": ["Presenting problem"],
+    "note": "[verified] Standard intake header; NOM-004 and CONASAMA use 'Motivo de Consulta'. S1.1 §5.3.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "plan",
+    "en": "strengths",
+    "es_mx": "fortalezas",
+    "ui": ["Strengths"],
+    "note": "[inferred] Standard Spanish noun in intake/plan vocabulary.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "plan",
+    "en": "service modality",
+    "es_mx": "modalidad del servicio",
+    "ui": ["Service modality"],
+    "note": "[inferred] Standard Spanish phrase; modality = individual/pareja/familiar/grupal per ECLIME Psicología.",
+    "source": "https://www.zaragoza.unam.mx/wp-content/Portal2015/eclime/ECLIME_Psicologia_2025.pdf"
+  },
+  {
+    "category": "plan",
+    "en": "service frequency",
+    "es_mx": "frecuencia del servicio",
+    "ui": ["Service frequency"],
+    "note": "[inferred] Standard Spanish phrase; S1.1 §5.3 records 'frecuencia' as an intake element.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "plan",
+    "en": "discharge criteria",
+    "es_mx": "criterios de alta",
+    "ui": ["Discharge criteria"],
+    "note": "[inferred] Standard Spanish clinical phrase; alta is the established term (contrasted with egreso, which is hospital discharge).",
+    "source": "https://www.zaragoza.unam.mx/wp-content/Portal2015/eclime/ECLIME_Psicologia_2025.pdf"
+  },
+  {
+    "category": "plan",
+    "en": "licence (professional)",
+    "es_mx": "cédula profesional",
+    "ui": ["Licence {n}", "credential"],
+    "note": "[verified] NOM-004 Appendix D2/D12 lists 'cédula profesional'; S1.1 §3.4. Distinct from the software licencia.",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "plan",
+    "en": "NPI",
+    "es_mx": "NPI",
+    "ui": ["NPI {n}"],
+    "note": "[inferred] Identifier acronym; keep as-is. (It is a US identifier, not a Mexican one; the plan prints whatever the practitioner entered.)",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "session-prep",
+    "en": "session",
+    "es_mx": "sesión",
+    "ui": ["Session", "Before this session", "this session", "next session", "session summary", "Recording session"],
+    "note": "[verified] Standard clinical term; UNAM/CONASAMA use sesión.",
+    "source": "https://www.zaragoza.unam.mx/wp-content/Portal2015/eclime/ECLIME_Psicologia_2025.pdf"
+  },
+  {
+    "category": "session-prep",
+    "en": "briefing (prepare)",
+    "es_mx": "resumen previo",
+    "ui": ["briefing", "This briefing is not saved unless you keep it."],
+    "note": "[inferred] Pre-session summary assembled from past notes; informe would imply a filed report. Flag O-6.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "session-prep",
+    "en": "before this session",
+    "es_mx": "antes de esta sesión",
+    "ui": ["Before this session"],
+    "note": "[inferred] Direct rendering.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "session-prep",
+    "en": "since you last saw them",
+    "es_mx": "desde la última vez que los viste",
+    "ui": ["Since you last saw them"],
+    "note": "[inferred] tú-preterite; 'desde la última vez que los viste'.",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  },
+  {
+    "category": "session-prep",
+    "en": "the plan",
+    "es_mx": "el plan",
+    "ui": ["The plan", "No goals in the plan yet."],
+    "note": "[inferred] Short for plan de tratamiento; use 'el plan' only where the referent is clear.",
+    "source": "https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787"
+  },
+  {
+    "category": "session-prep",
+    "en": "nothing to read yet",
+    "es_mx": "nada que leer todavía",
+    "ui": ["Nothing to read yet — there are no notes for this patient.", "Read no notes.", "Read the last {n}"],
+    "note": "[inferred] 'Read no notes.' = No se leyó ninguna nota. 'Read the last {n}' = Se leyeron las últimas {n}.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "backup",
+    "en": "backup",
+    "es_mx": "copia de seguridad",
+    "ui": ["Backup", "No backup yet", "Last backup", "Backed up", "The last backup failed", "No backup for over {n} days.", "These backups are on the same disk…"],
+    "note": "[verified] FundéuRAE: backup = copia de seguridad (also copia de respaldo / copia). Verb 'back up' = hacer una copia de seguridad.",
+    "source": "https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/"
+  },
+  {
+    "category": "backup",
+    "en": "back up now",
+    "es_mx": "hacer una copia ahora",
+    "ui": ["Back up now", "Back up", "Back up now (button)"],
+    "note": "[verified] Verb phrase based on Fundéu's copia de seguridad; 'Back up now' = Hacer una copia ahora.",
+    "source": "https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/"
+  },
+  {
+    "category": "backup",
+    "en": "folder",
+    "es_mx": "carpeta",
+    "ui": ["Folder", "Change folder", "backup folder"],
+    "note": "[inferred] Standard Spanish noun; 'Change folder' = Cambiar carpeta.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "backup",
+    "en": "passphrase",
+    "es_mx": "frase de contraseña",
+    "es_mx_alt": "frase de paso",
+    "ui": ["Passphrase", "Lose this passphrase…"],
+    "note": "[inferred] There is no single settled Spanish term; 'frase de contraseña' is the common rendering. Flag for S2.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "backup",
+    "en": "encrypted",
+    "es_mx": "cifrado / cifrada",
+    "ui": ["encrypted", "encrypted archive"],
+    "note": "[verified] Standard Spanish participle; NOM-008/security use 'cifrado'. Gender agrees with the noun (copia cifrada).",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "backup",
+    "en": "disk encryption",
+    "es_mx": "cifrado de disco",
+    "ui": ["Disk encryption", "unencrypted disk"],
+    "note": "[inferred] 'Disk encryption' = cifrado de disco; 'unencrypted disk' = disco sin cifrar.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "backup",
+    "en": "restore archive",
+    "es_mx": "archivo de restauración",
+    "ui": ["No archives yet.", "restore archive", "RESTORE.txt"],
+    "note": "[inferred] 'No archives yet.' = Aún no hay archivos. RESTORE.txt is a filename and stays as-is.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "backup",
+    "en": "restore tested",
+    "es_mx": "restauración probada",
+    "ui": ["Restore last tested", "Restore never tested", "I have done this"],
+    "note": "[inferred] 'Restore last tested' = Última restauración probada; 'I have done this' = Ya lo hice.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "import",
+    "es_mx": "importar",
+    "ui": ["Import", "Import from Claude", "Import from Halaxy", "Importing…", "Ready to import", "Import this batch"],
+    "note": "[inferred] Standard Spanish verb; 'Importing…' = Importando… 'Ready to import' = Listo para importar.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "import",
+    "en": "export",
+    "es_mx": "exportación / exportar",
+    "ui": ["Claude export", "Export data", "export"],
+    "note": "[inferred] 'Export data' (in Claude's own UI) = Exportar datos; the file = exportación.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "import",
+    "en": "cutoff",
+    "es_mx": "fecha de corte",
+    "ui": ["Patients seen since {date}", "No patient conversations were found since {date}", "Not found since {date}", "since the cutoff"],
+    "note": "[inferred] 'cutoff' in this sense = fecha de corte; 'since the cutoff' = desde la fecha de corte.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "untick",
+    "es_mx": "desmarcar",
+    "ui": ["untick anything you do not want", "you unticked the patient", "Untick anyone who is not a patient."],
+    "note": "[inferred] Standard Spanish verb for clearing a checkbox; 'tick' = marcar.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "skipped",
+    "es_mx": "omitido / saltado",
+    "ui": ["skipped", "skipped:", "Files not imported"],
+    "note": "[inferred] 'skipped' = omitido; 'Files not imported' = Archivos no importados.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "batch",
+    "es_mx": "lote",
+    "ui": ["Earlier imports", "batch", "Undo this import"],
+    "note": "[inferred] 'batch' in import context = lote; 'Earlier imports' = Importaciones anteriores.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "why (column)",
+    "es_mx": "motivo",
+    "ui": ["Why", "Started", "Last message", "Messages"],
+    "note": "[inferred] Import-review table headers: Why = Motivo; Started = Inicio; Last message = Último mensaje; Messages = Mensajes.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "name guessed",
+    "es_mx": "nombre deducido",
+    "ui": ["name guessed — check", "name guessed from the chat title — check"],
+    "note": "[inferred] 'name guessed — check' = nombre deducido — verificar.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "Claude",
+    "es_mx": "Claude",
+    "ui": ["Import from Claude", "Claude export", "Claude's replies", "Claude's last reply", "Claude\u2019s"],
+    "note": "[inferred] Product name; keep as-is.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "Halaxy",
+    "es_mx": "Halaxy",
+    "ui": ["Import from Halaxy", "Halaxy notes", "PDFs"],
+    "note": "[inferred] Product name; keep as-is. PDF stays PDF.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "import",
+    "en": "conversations.json",
+    "es_mx": "conversations.json",
+    "ui": ["conversations.json", "zip"],
+    "note": "[inferred] Filename and file extension; keep as-is. 'zip' as a file type can be 'archivo zip'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "settings",
+    "es_mx": "Ajustes",
+    "ui": ["Settings", "Note formats & settings", "Settings (nav)", "AI settings"],
+    "note": "[inferred] es-MX consumer convention (Samsung Mexico and Audible es_MX use 'Ajustes'); 'Configuración' is the Microsoft/enterprise variant and is accepted.",
+    "source": "https://www.samsung.com/mx/support/mobile-devices/how-to-change-the-language-settings-of-each-app-in-your-galaxy-device/"
+  },
+  {
+    "category": "settings",
+    "en": "advanced",
+    "es_mx": "avanzado",
+    "ui": ["Advanced"],
+    "note": "[inferred] Standard Spanish adjective; 'Avanzado'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "app",
+    "es_mx": "aplicación",
+    "ui": ["App"],
+    "note": "[inferred] Standard Spanish noun; in a tab label 'Aplicación'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "drafting model",
+    "es_mx": "modelo de redacción",
+    "ui": ["Drafting model"],
+    "note": "[inferred] The model that drafts notes; 'modelo de redacción' is precise.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "settings",
+    "en": "quick / thorough",
+    "es_mx": "rápido / exhaustivo",
+    "ui": ["Quick", "Thorough", "Faster drafts.", "Slower, more careful drafts."],
+    "note": "[inferred] 'Quick' = Rápido; 'Thorough' = Exhaustivo; 'Faster drafts.' = Borradores más rápidos.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "appearance",
+    "es_mx": "apariencia",
+    "ui": ["Appearance"],
+    "note": "[inferred] Standard Spanish noun for a theme/appearance section.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "colour",
+    "es_mx": "color",
+    "ui": ["Colour"],
+    "note": "[inferred] Mexican spelling 'color' (no u).",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "theme",
+    "es_mx": "tema",
+    "ui": ["Theme"],
+    "note": "[inferred] Standard Spanish noun; also 'tema de color'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "font size",
+    "es_mx": "tamaño de fuente",
+    "ui": ["Font size", "Small", "Default", "Large", "Extra large"],
+    "note": "[inferred] 'tamaño de fuente'; sizes: Pequeño, Predeterminado, Grande, Extragrande.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "animations",
+    "es_mx": "animaciones",
+    "ui": ["Animations"],
+    "note": "[inferred] Standard Spanish noun; toggle = Activar/Desactivar animaciones.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "light / dark",
+    "es_mx": "claro / oscuro",
+    "ui": ["Light", "Dark"],
+    "note": "[inferred] Standard Spanish theme names; 'tema claro', 'tema oscuro'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "settings",
+    "en": "reset",
+    "es_mx": "restablecer",
+    "ui": ["Reset"],
+    "note": "[inferred] Standard Spanish verb; 'Restablecer' (not resetear).",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "setup-about",
+    "en": "checking",
+    "es_mx": "comprobando",
+    "ui": ["Checking…", "Check again", "not checked", "Not checked"],
+    "note": "[inferred] 'Checking…' = Comprobando…; 'Check again' = Comprobar de nuevo; 'not checked' = sin comprobar.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "setup-about",
+    "en": "ready",
+    "es_mx": "listo",
+    "ui": ["ready", "Ready", "not ready", "Not ready", "Files not imported"],
+    "note": "[inferred] 'ready' = listo; 'not ready' = no listo. Gender agree with the component (listo/lista).",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "missing",
+    "es_mx": "faltante",
+    "ui": ["Missing", "Missing pieces and what to run:"],
+    "note": "[inferred] 'Missing' = Faltante; heading = 'Piezas faltantes y qué ejecutar:'",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "privacy",
+    "es_mx": "privacidad",
+    "ui": ["Privacy", "Nothing you write here goes onto the internet", "no account", "no remote copy"],
+    "note": "[inferred] Standard Spanish noun.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "internet",
+    "es_mx": "internet",
+    "ui": ["internet", "outbound network connections", "no outbound network connections"],
+    "note": "[verified] FundéuRAE treats 'internet' as a lowercase common noun in Spanish.",
+    "source": "https://www.fundeu.es/recomendacion/seguridad-en-internet-claves-de-redaccion/"
+  },
+  {
+    "category": "setup-about",
+    "en": "update check",
+    "es_mx": "comprobación de actualizaciones",
+    "ui": ["update check", "no update check"],
+    "note": "[inferred] 'update check' = comprobación de actualizaciones.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "setup-about",
+    "en": "analytics",
+    "es_mx": "analíticas / estadísticas de uso",
+    "ui": ["analytics", "no analytics", "anonymous usage data"],
+    "note": "[inferred] 'analytics' = analíticas (or 'estadísticas de uso'); 'anonymous usage data' = datos de uso anónimos.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "crash reporting",
+    "es_mx": "informes de fallos",
+    "ui": ["crash reporting", "no crash reporting"],
+    "note": "[inferred] Standard Spanish software term; 'informes de fallos'.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "telemetry",
+    "es_mx": "telemetría",
+    "ui": ["telemetry"],
+    "note": "[inferred] Standard Spanish noun. Not all screens use this word; included for completeness.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "localhost",
+    "es_mx": "equipo local",
+    "ui": ["on this computer", "local", "this Mac"],
+    "note": "[inferred] 'on this computer' = en este equipo; Mac stays Mac.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "Terminal",
+    "es_mx": "Terminal",
+    "ui": ["From a Terminal window"],
+    "note": "[inferred] App name; keep as-is. 'From a Terminal window' = Desde una ventana de Terminal.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "setup-about",
+    "en": "System Settings",
+    "es_mx": "Ajustes del sistema",
+    "ui": ["System Settings", "Privacy & Security", "FileVault"],
+    "note": "[inferred] macOS UI names: System Settings = Ajustes del sistema. Privacy & Security and FileVault are macOS proper names and should match the user's macOS language; keep English if her Mac is in English.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "licensing",
+    "en": "licence (software)",
+    "es_mx": "licencia",
+    "ui": ["Licences", "Third-party licences", "No licence text matches", "the licences are here", "licence components"],
+    "note": "[inferred] Standard legal noun; distinct from professional cédula. 'Third-party licences' = Licencias de terceros.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "licensing",
+    "en": "component",
+    "es_mx": "componente",
+    "ui": ["Filter by component or text", "Licence components"],
+    "note": "[inferred] Standard Spanish noun.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "licensing",
+    "en": "overview",
+    "es_mx": "resumen",
+    "ui": ["Overview"],
+    "note": "[inferred] Standard Spanish noun.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "format name",
+    "es_mx": "nombre del formato",
+    "ui": ["Format name", "Give the format a name."],
+    "note": "[inferred] 'Give the format a name.' = Ponle un nombre al formato.",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  },
+  {
+    "category": "onboarding",
+    "en": "template",
+    "es_mx": "plantilla",
+    "ui": ["Upload a blank template", "Drop a .docx or .pdf template here", "template"],
+    "note": "[inferred] Standard Spanish noun; 'Upload a blank template' = Sube una plantilla en blanco.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "examples",
+    "es_mx": "ejemplos",
+    "ui": ["Upload a few example notes", "Drop 2-3 completed notes here", "example notes"],
+    "note": "[inferred] Standard Spanish noun; 'Upload a few example notes' = Sube algunas notas de ejemplo.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "recommended",
+    "es_mx": "recomendado",
+    "ui": ["Recommended"],
+    "note": "[inferred] Standard Spanish participle; agreements (recomendado/recomendada).",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "describe it myself",
+    "es_mx": "describirlo yo misma",
+    "ui": ["Describe it myself"],
+    "note": "[inferred] First-person option; 'Describirlo yo misma' (feminine agreement) or neutral 'Describirlo yo'. Flag which the owner prefers.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "drop a file",
+    "es_mx": "soltar un archivo",
+    "ui": ["or click to choose a file", "Drop a .docx or .pdf template here", "Drop 2-3 completed notes here"],
+    "note": "[inferred] Drag-and-drop UI: 'soltar' works; 'or click to choose a file' = o haz clic para elegir un archivo.",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  },
+  {
+    "category": "onboarding",
+    "en": "sections detected",
+    "es_mx": "secciones detectadas",
+    "ui": ["Sections detected", "Here's what we found", "Looks right, save"],
+    "note": "[inferred] 'Here's what we found' = Esto es lo que encontramos. 'Looks right, save' = Parece correcto, guardar.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "move (section)",
+    "es_mx": "mover",
+    "ui": ["Move {name}"],
+    "note": "[inferred] Reorder control; 'Mover {name}'. Adjacent to Rename and Remove.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "skill file",
+    "es_mx": "archivo de skill",
+    "ui": ["Import from skill file", "SKILL.md", ".zip", "frontmatter removed", "nothing needed removing"],
+    "note": "[inferred] 'skill' is a Claude concept; keep the term. SKILL.md is a filename. 'frontmatter removed' = se quitó el frontmatter.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "onboarding",
+    "en": "backup or settings file",
+    "es_mx": "archivo de copia de seguridad o de ajustes",
+    "ui": ["Already have an Apunta backup, or a settings file someone prepared for you?"],
+    "note": "[inferred] 'backup' = copia de seguridad (Fundéu); 'settings file' = archivo de ajustes.",
+    "source": "https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/"
+  },
+  {
+    "category": "common",
+    "en": "health",
+    "es_mx": "salud",
+    "ui": ["Health", "healthy", "state"],
+    "note": "[inferred] Generic; used where the UI reports component health. Confirm strings at S2 time.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "identifier",
+    "es_mx": "identificador",
+    "ui": ["Identifier (optional)"],
+    "note": "[inferred] Standard Spanish noun.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "reference",
+    "es_mx": "referencia",
+    "ui": ["Internal reference"],
+    "note": "[inferred] 'Internal reference' = Referencia interna.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "chart number",
+    "es_mx": "número de expediente",
+    "ui": ["chart number", "Internal reference, chart number, etc."],
+    "note": "[verified] S1.1: the record is the expediente clínico; 'chart number' = número de expediente.",
+    "source": "docs/research/es-mx-clinical-documentation.md"
+  },
+  {
+    "category": "common",
+    "en": "conversation",
+    "es_mx": "conversación",
+    "ui": ["New conversation", "This conversation is never written into their notes.", "the conversation above", "the refine conversation"],
+    "note": "[inferred] Standard Spanish noun.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "message",
+    "es_mx": "mensaje",
+    "ui": ["Messages", "Last message", "Your message", "Your own messages", "message"],
+    "note": "[inferred] Standard Spanish noun.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "options",
+    "es_mx": "opciones",
+    "ui": ["options", "format choices", "Note format choices"],
+    "note": "[inferred] Standard Spanish noun.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "patient name (generic)",
+    "es_mx": "nombre del paciente",
+    "ui": ["Name for {name}", "Name"],
+    "note": "[inferred] 'Name for {name}' = Nombre de {name}.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "clear",
+    "es_mx": "borrar / limpiar",
+    "ui": ["Clear search", "Clear highlighted excerpt"],
+    "note": "[inferred] 'Clear search' = Borrar búsqueda; 'Clear highlighted excerpt' = Limpiar el extracto resaltado.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "ignore (spelling)",
+    "es_mx": "ignorar",
+    "ui": ["Ignore", "No suggestions", "Spelling of {word}"],
+    "note": "[inferred] 'Ignore' = Ignorar; 'No suggestions' = Sin sugerencias; 'Spelling of {word}' = Ortografía de {word}.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "dictionary",
+    "es_mx": "diccionario",
+    "ui": ["Add to dictionary"],
+    "note": "[inferred] 'Add to dictionary' = Agregar al diccionario.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "highlighted excerpt",
+    "es_mx": "extracto resaltado",
+    "ui": ["highlighted excerpt"],
+    "note": "[inferred] Standard noun phrase in the refine flow.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "conflict",
+    "es_mx": "conflicto",
+    "ui": ["Unresolved conflict", "This note was changed in another window."],
+    "note": "[inferred] 'Unresolved conflict' = Conflicto sin resolver; 'This note was changed in another window.' = Esta nota se cambió en otra ventana.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "lock and apply",
+    "es_mx": "desbloquear y aplicar",
+    "ui": ["Unlock and apply my edit", "Take theirs", "Keep mine"],
+    "note": "[inferred] Merge dialog: 'Unlock and apply my edit' = Desbloquear y aplicar mi edición; 'Take theirs' = Usar la de la otra ventana; 'Keep mine' = Conservar la mía.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "Noted.",
+    "es_mx": "Anotado.",
+    "ui": ["Noted."],
+    "note": "[inferred] Short confirmation; 'Anotado.'",
+    "source": "https://dle.rae.es/nota"
+  },
+  {
+    "category": "common",
+    "en": "Last message",
+    "es_mx": "Último mensaje",
+    "ui": ["Last message"],
+    "note": "[inferred] Import table header.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "Deleted/removed counts",
+    "es_mx": "se eliminaron {n}",
+    "ui": ["and {n} removed.", "removed."],
+    "note": "[inferred] Plural agreement; singular 'y se eliminó 1.'",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "Saving status",
+    "es_mx": "Guardando…",
+    "ui": ["Saving…", "Saved", "Couldn’t save", "Changed in another window"],
+    "note": "[inferred] Status strings: 'Changed in another window' = Cambiada en otra ventana.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "Generating/Updating",
+    "es_mx": "Actualizando…",
+    "ui": ["Updating the note…", "Updating the note", "Updated"],
+    "note": "[inferred] 'Updating the note…' = Actualizando la nota…; 'Updated' = Actualizada.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "AI disclosure",
+    "es_mx": "como IA",
+    "ui": ["as AI", "the AI"],
+    "note": "[verified] S1.2 maps the disclosure phrase 'as AI' to 'como IA'.",
+    "source": "docs/research/es-mx-clinical-glossary.json"
+  },
+  {
+    "category": "common",
+    "en": "promise",
+    "es_mx": "promesa",
+    "ui": ["Promise"],
+    "note": "[inferred] Used only in code identifiers, not visible; included because the extraction found it. S2 may ignore if not user-facing.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "common",
+    "en": "loading notes",
+    "es_mx": "Cargando notas…",
+    "ui": ["Loading notes…"],
+    "note": "[inferred] Standard progress string.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "common",
+    "en": "no data states",
+    "es_mx": "estados sin datos",
+    "ui": ["No notes yet", "No patients yet.", "No suggestions waiting.", "No objectives yet.", "No backup yet", "No archives yet.", "Nothing new to import.", "No goals in the plan yet.", "No note formats yet.", "No activity since the cutoff"],
+    "note": "[inferred] Consistent pattern: 'No hay …' or 'Aún no hay …'. Keep one pattern across screens.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "sentence",
+    "en": "Let’s focus on…",
+    "es_mx": "Vamos a enfocarnos en…",
+    "ui": ["Let’s focus on…"],
+    "note": "[inferred] First-person plural invitation on the home launcher; maintains the informal register.",
+    "source": "https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf"
+  },
+  {
+    "category": "sentence",
+    "en": "New:",
+    "es_mx": "Nuevo:",
+    "ui": ["New:", "New"],
+    "note": "[inferred] Launcher action prefix; agreement follows the noun it introduces (Nuevo paciente / Nueva nota).",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "sentence",
+    "en": "Not now",
+    "es_mx": "Ahora no",
+    "ui": ["Not now"],
+    "note": "[inferred] Dismissal button on the intervention suggestion.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "sentence",
+    "en": "created / edited (note meta)",
+    "es_mx": "creada / editada",
+    "ui": ["· created", "· edited"],
+    "note": "[inferred] Note metadata line; feminine agreement with nota.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "sentence",
+    "en": "Stored:",
+    "es_mx": "Guardadas:",
+    "ui": ["Stored:", "notes for", "patients"],
+    "note": "[inferred] Backup summary line ('Stored: N notes for M patients'); feminine agreement with notas.",
+    "source": "https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/"
+  },
+  {
+    "category": "sentence",
+    "en": "most recent",
+    "es_mx": "más reciente",
+    "ui": ["most recent", "Using the most recent", "Using {n} most recent"],
+    "note": "[inferred] Brainstorm context line; 'Using the most recent' = Usando las más recientes (notas).",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "sentence",
+    "en": "This skill refers to",
+    "es_mx": "Esta skill se refiere a",
+    "ui": ["This skill refers to", "which Apunta cannot read"],
+    "note": "[inferred] Instruction-panel warning; 'skill' kept as the Claude concept. Missing file names stay as-is.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "sentence",
+    "en": "The two things this does not protect you from",
+    "es_mx": "Las dos cosas de las que esto no te protege",
+    "ui": ["The two things this does not protect you from", "Someone at your unlocked computer.", "A stolen computer with an unencrypted disk.", "on this operating system."],
+    "note": "[inferred] About screen heading and its two items; tú-voice, informal second person.",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  },
+  {
+    "category": "sentence",
+    "en": "Choose different files",
+    "es_mx": "Elegir otros archivos",
+    "ui": ["Choose different files", "attached file", "to create,", "from your list", "skipped:"],
+    "note": "[inferred] Import-review action and fragments; 'attached file' = archivo adjunto.",
+    "source": "https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo"
+  },
+  {
+    "category": "sentence",
+    "en": "Choose how to define it — we’ll figure out the structure for you.",
+    "es_mx": "Elige cómo definirlo — nosotros descubrimos la estructura por ti.",
+    "ui": ["Choose how to define it — we&apos;ll figure out the structure for you.", "Reading your file…", "Reading the file and working out its sections."],
+    "note": "[inferred] Onboarding subtitle and reading state; tú-imperative plus first-person plural support voice.",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  },
+  {
+    "category": "sentence",
+    "en": "Or do all of it at once",
+    "es_mx": "O hazlo todo de una vez",
+    "ui": ["Or do all of it at once", "From a Terminal window in the Apunta folder.", "Backing up is a separate question, and the one most worth getting right —", "has it."],
+    "note": "[inferred] Setup screen optional script block; 'Backing up…' = La copia de seguridad es un tema aparte, y el que más vale la pena hacer bien.",
+    "source": "https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/"
+  },
+  {
+    "category": "sentence",
+    "en": "If you only want them out of the list,",
+    "es_mx": "Si solo quieres sacarlos de la lista,",
+    "ui": ["If you only want them out of the list,", "does that and deletes nothing.", "Archive"],
+    "note": "[inferred] Delete-patient dialog; points the user to Archive instead. tú-voice.",
+    "source": "https://www.rae.es/gram%C3%A1tica-b%C3%A1sica/el-pronombre-personal/las-formas-de-tratamiento-pronominal/t%C3%BA-y-usted"
+  }
+]
