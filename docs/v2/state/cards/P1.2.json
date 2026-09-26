@@ -1,1 +1,21 @@
-{ "card":"P1.2","planVersion":2,"contracts":["C-SETTINGS@1"],"baseCommit":"7771fce","attempt":1,"status":"IN PROGRESS","lastCompletedStep":"rewritten as coverage-only; IR CLEAR on all ten (round 3); implementer dispatched (space-bunny-free)","nextAllowedAction":"check implementation return","sideEffectsDone":[],"changedFiles":[],"criteria":{},"sandboxRuns":[],"updatedUtc":"2026-09-26T10:25:00Z" }
+{
+  "card": "P1.2",
+  "planVersion": 2,
+  "contracts": [
+    "C-SETTINGS@1"
+  ],
+  "baseCommit": "7771fce",
+  "attempt": 1,
+  "status": "APPROVED",
+  "lastCompletedStep": "impl review all PASS (4 non-blocking findings; evidence sanitised)",
+  "nextAllowedAction": "done",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "PASS",
+    "V2": "PASS",
+    "V3": "PASS"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T10:40:00Z"
+}

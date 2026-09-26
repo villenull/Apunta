@@ -16,7 +16,7 @@ prints the per-case names.
 Start 2026-09-26T09:57:55Z, end 09:57:56Z. Exit **0**.
 
 ```
- RUN  v4.1.11 /home/villenull/Projects/Apunta
+ RUN  v4.1.11 ~/Projects/Apunta
 
  Test Files  1 passed (1)
       Tests  3 passed (3)
@@ -33,7 +33,7 @@ that the behaviour is shipped, not a gap in the tests.
 Start 2026-09-26T10:00:08Z, end 10:00:11Z. Exit **0**.
 
 ```
- RUN  v4.1.11 /home/villenull/Projects/Apunta
+ RUN  v4.1.11 ~/Projects/Apunta
 
  Test Files  1 passed (1)
       Tests  7 passed (7)
