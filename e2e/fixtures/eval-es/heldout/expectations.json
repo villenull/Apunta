@@ -1,0 +1,1988 @@
+{
+  "_readme": [
+    "Machine-readable expectations for the SOAP/intake Spanish eval corpus — the sidecar",
+    "specified by the English rubric §7. One entry per transcript, keyed by its",
+    "path relative to this split root: <trap-type>/<name>.txt.",
+    "",
+    "All patterns are JavaScript regular expression SOURCE strings, matched",
+    "case-insensitively against the SERIALIZED note text (sectionsToText), not",
+    "against the raw JSON, so escaping does not interfere. Per-section checks",
+    "match against the individual section body. Collapse whitespace first: the",
+    "fixtures are hard-wrapped, so a quoted phrase can straddle a line break.",
+    "",
+    "The corpus is Spanish, so three things differ from the English sidecars and",
+    "nowhere else. The `sections` arrays are the Spanish names proposed in",
+    "docs/research/es-mx-clinical-documentation.md §5 (owner flags O-O1 and O-O2",
+    "are still open, and S3.2 owns instruction routing). Every `modality` starts",
+    "with `dictated`, because these are spoken dictations. And the patterns are",
+    "written against Spanish note text — see e2e/fixtures/eval-es/README.md for",
+    "what that costs the author, chiefly that a banned pattern may not collide",
+    "with a section header.",
+    "",
+    "`words` is the whitespace-collapsed token count, asserted on every run by",
+    "scripts/v2/check-es-fixtures.mjs. Every fixture is fabricated. See README.md."
+  ],
+  "_schema": {
+    "format": "progress | intake — picks the section set and the instruction file",
+    "sections": "the format's section names, in order",
+    "modality": "how the source was produced; reporting only",
+    "words": "source word count; reporting only",
+    "difficulty": "one line, mirrors the coverage matrix in expectations.md",
+    "markerFreeSource": "true when the F6 marker list finds zero matches in the source. The loader MUST verify this rather than trust it.",
+    "f6": "gating | flag — F6 gates the fixture only where markerFreeSource is true AND the fixture was written for this purpose",
+    "blank": "sections that must be exactly '' — H4 ground truth",
+    "statedAbsence": "sections where the clinician SAID the ground was not covered; body should record that (full credit) or be blank (half credit); invented content scores zero",
+    "noConclusion": "sections the clinician drew no conclusion for — F6 ground truth",
+    "mustNotContain": "F1 banned patterns; any match zeroes the fixture",
+    "mustCapture": "C1/C2 facts; a fact matches if any alternative matches anywhere in the note",
+    "requiresHedge": "H2 — topic and marker must co-occur in one sentence",
+    "requiresMarker": "H5 — '[unclear in dictation]' must survive on this topic",
+    "novelTermAllow": "F7 — clinical terms this fixture may legitimately introduce; keep empty unless justified in expectations.md",
+    "phraseBait": "V2 — profile phrases this source deliberately does NOT support"
+  },
+  "fixtures": {
+    "clean-control/02-admision-completa.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated-long",
+      "words": 248,
+      "difficulty": "Admisión completa: motivo, antecedentes, seguridad, análisis y plan acordados",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "quincenal|cada dos semanas|cada mes|mensual",
+        "trastorno de (?:sue[ñn]o|insomnio|depres|ansiedad|ajuste|fobia)|tept|episodio de p[áa]nico",
+        "apnea obstructiva|apnea confirmada|apnea diagnosticada|sue[ñn]o rem",
+        "diagn[óo]stico de (?:trastorno|depres|ansiedad|fobia)",
+        "buena adherencia|alta adherencia|buena evoluci[óo]n|mejor[íi]a notable|paciente comprometid[oa]",
+        "presenta insight|insight (?:presente|excelente)",
+        "nivel de riesgo",
+        "puntuaci[óo]n|puntaje|\\bphq-?9|\\bgad-?7|\\bscore\\b"
+      ],
+      "mustCapture": [
+        {
+          "id": "motivo",
+          "any": [
+            "est[áa] cansado",
+            "no duerme",
+            "cansancio",
+            "irritabilidad",
+            "irritable en casa",
+            "le est[áa] costando el trabajo",
+            "con la pareja"
+          ]
+        },
+        {
+          "id": "inicio",
+          "any": ["hace dos a[ñn]os", "2 a[ñn]os", "dos a[ñn]os"]
+        },
+        {
+          "id": "horario-invertido",
+          "any": [
+            "se dorm[íi]a temprano",
+            "horario al rev[ée]s",
+            "se levantaba a las cuatro",
+            "inversi[óo]n del horario",
+            "horario (?:al rev[ée]s|invertido)"
+          ]
+        },
+        {
+          "id": "sin-terapia-previa",
+          "any": ["no ha tenido terapia", "nunca, y no toma nada", "sin terapia"]
+        },
+        {
+          "id": "fumador",
+          "any": ["un paquete al d[íi]a", "fuma (?:un paquete|desde los veinticinco)", "paquete"]
+        },
+        {
+          "id": "antecedentes-medicos",
+          "any": ["hipertensi[óo]n", "apendicectom[íi]a", "amlodipino"]
+        },
+        {
+          "id": "antecedente-familiar",
+          "any": ["su padre muri[óo] de un infarto", "a los cincuenta y dos", "cincuenta y dos"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["cansado", "bien arreglado", "habla pausado", "contacto visual normal", "comprensivo"]
+        },
+        {
+          "id": "formulacion",
+          "any": ["insomnio cr[óo]nico", "el duelo reciente", "sosteniendo el decaimiento", "el fumar"]
+        },
+        {
+          "id": "plan-tcc",
+          "any": ["tcc", "cognitivo-conductual", "cognitivo conductual", "cincuenta minutos", "50 minutos"]
+        },
+        {
+          "id": "plan-registro",
+          "any": ["higiene del sue[ñn]o", "registro de sue[ñn]o", "autosatisfacci[óo]n"]
+        },
+        {
+          "id": "plan-revision",
+          "any": ["cuatro semanas", "estudio de sue[ñn]o"]
+        },
+        {
+          "id": "sin-ideacion",
+          "any": [
+            "no (?:ha tenido|tiene) (?:ideas|pensamientos|ideaci[óo]n) (?:de hacerse da[ñn]o|suicid)",
+            "no ha pensado en hacerse da[ñn]o",
+            "niega (?:ideas|pensamientos|ideaci[óo]n) (?:de hacerse da[ñn]o|suicid|hacer da[ñn]o)",
+            "niega (?:ideaci[óo]n|ideas) (?:suicida|homicida)",
+            "no (?:tiene|nunca ha tenido) (?:ideas|pensamientos) (?:de hacerse da[ñn]o|de suicidio)",
+            "sin ideaci[óo]n (?:suicida )?actual",
+            "sin ideaci[óo]n (?:suicida|homicida)",
+            "no refiere (?:ideas|pensamientos) (?:de hacerse da[ñn]o|suicid)"
+          ],
+          "tags": ["safety"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "clean-control/04-llamada-con-datos.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated",
+      "words": 258,
+      "difficulty": "Admisión por teléfono con motivo, antecedentes, seguridad, análisis y plan",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "trastorno de juego|ludopat[íi]a|jeu patol[óo]gico|conducta de juego patol[óo]gica",
+        "casino|apuestas deportivas|carrera de caballos",
+        "quincenal|cada dos semanas|cada mes|mensual",
+        "diagn[óo]stico de (?:trastorno|ludopat)",
+        "buena adherencia|alta adherencia|buena evoluci[óo]n|mejor[íi]a notable|paciente comprometid[oa]",
+        "presenta insight|insight (?:presente|excelente)",
+        "nivel de riesgo",
+        "\\bpunt[ua]|puntuaci[óo]n|\\bscore\\b|\\bgad-?7|\\bpgi|\\bcias"
+      ],
+      "mustCapture": [
+        {
+          "id": "motivo-inicial",
+          "any": ["desde hace tres meses", "tres meses", "cansado y de mal humor"]
+        },
+        {
+          "id": "trabajo",
+          "any": ["director de una escuela", "director", "al trabajo"]
+        },
+        {
+          "id": "motivo-apuestas",
+          "any": ["las apuestas", "apuestas", "juega en el tel[ée]fono"]
+        },
+        {
+          "id": "perdida-dinero",
+          "any": ["tres mil pesos", "3 mil pesos", "3000 pesos", "perdi[óo]"]
+        },
+        {
+          "id": "deuda",
+          "any": ["debe dinero", "le debe dinero en dos lugares", "deuda"]
+        },
+        {
+          "id": "sin-contar-pareja",
+          "any": [
+            "no le ha dicho a su pareja",
+            "no le (?:ha )?dicho",
+            "no conoce el problema",
+            "no sabe del problema",
+            "sin que su pareja (?:sepa|lo sepa)"
+          ]
+        },
+        {
+          "id": "sin-terapia-previa",
+          "any": ["no ha tenido terapia", "sin terapia", "nunca ha ido"]
+        },
+        {
+          "id": "antecedentes",
+          "any": ["no toma medicamentos", "no fuma", "revisi[óo]n m[ée]dica", "al corriente de su salud"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["cansado", "bien articulado", "sin la presi[óo]n de estar en consultorio"]
+        },
+        {
+          "id": "formulacion",
+          "any": [
+            "le (?:est[áa]|ha) costando (?:dinero y )?(?:la )?confianza",
+            "costando dinero y (?:la )?confianza",
+            "que pare, antes de hablar",
+            "deje de apostar",
+            "dejar de apostar"
+          ]
+        },
+        {
+          "id": "plan-tcc",
+          "any": ["tcc", "cognitivo-conductual", "cognitivo conductual", "cincuenta minutos", "50 minutos"]
+        },
+        {
+          "id": "plan-cuentas",
+          "any": [
+            "cierre (?:de |las )cuentas",
+            "bloquee la aplicaci[óo]n",
+            "bloqueo de la aplicaci[óo]n",
+            "bloquear la aplicaci[óo]n"
+          ]
+        },
+        {
+          "id": "plan-registro",
+          "any": ["registro de todo lo que juegue", "registro", "hoja de papel"]
+        },
+        {
+          "id": "plan-revision",
+          "any": ["cuatro semanas"]
+        },
+        {
+          "id": "sin-ideacion",
+          "any": [
+            "no (?:ha tenido|tiene) (?:ideas|pensamientos|ideaci[óo]n) (?:de hacerse da[ñn]o|suicid)",
+            "no ha pensado en hacerse da[ñn]o",
+            "niega (?:ideas|pensamientos|ideaci[óo]n) (?:de hacerse da[ñn]o|suicid|hacer da[ñn]o)",
+            "niega (?:ideaci[óo]n|ideas) (?:suicida|homicida)",
+            "no (?:tiene|nunca ha tenido) (?:ideas|pensamientos) (?:de hacerse da[ñn]o|de suicidio)",
+            "sin ideaci[óo]n (?:suicida )?actual",
+            "sin ideaci[óo]n (?:suicida|homicida)",
+            "no refiere (?:ideas|pensamientos) (?:de hacerse da[ñn]o|suicid)"
+          ],
+          "tags": ["safety"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "dose-and-number/02-media-pastilla.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated",
+      "words": 242,
+      "difficulty": "Fracción de tableta: media tableta de clonazepam, que la nota no puede redondear a una tableta",
+      "markerFreeSource": true,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "\\b1 ?tableta\\b",
+        "\\b2 ?tabletas\\b",
+        "una tableta al d[ií]a",
+        "una pastilla al d[ií]a",
+        "\\b0[.,] ?5 ?mg\\b",
+        "\\b0[.,] ?25\\b",
+        "\\b2 ?mg\\b",
+        "\\b5 ?mg\\b",
+        "alprazolam",
+        "sertralina",
+        "aument[óo] (?:la )?dosis",
+        "subi[óó] (?:la )?dosis",
+        "trastorno de (?:memoria|demencia)",
+        "demencia",
+        "alzheimer",
+        "enfermedad de alzheimer",
+        "delirium",
+        "deterioro cognitivo",
+        "p[ée]rdida de (?:la )?autonom[ií]a",
+        "necesita cuidados",
+        "ideaci[óo]n suicida",
+        "autolesiones",
+        "maltrato",
+        "conductas de riesgo"
+      ],
+      "mustCapture": [
+        {
+          "id": "media-tableta",
+          "any": [
+            "media tableta",
+            "media pastilla",
+            "la mitad (?:de )?la (?:pastilla|tableta)",
+            "parte la pastilla en dos",
+            "medio comprimido",
+            "0[.,] ?5 (?:de )?tableta"
+          ]
+        },
+        {
+          "id": "noche-once",
+          "any": ["todas las noches", "a las once", "cada noche"]
+        },
+        {
+          "id": "entera-mareo",
+          "any": ["entera (?:le )?daba mareo", "pastilla entera", "mareo", "cansancio que le duraba"]
+        },
+        {
+          "id": "dos-anos",
+          "any": ["dos a[ñn]os", "2 a[ñn]os", "lleva as[ií] dos a[ñn]os"]
+        },
+        {
+          "id": "clonazepam",
+          "any": ["clonazepam"]
+        },
+        {
+          "id": "otras-pastillas",
+          "any": ["amlodipino", "omeprazol"]
+        },
+        {
+          "id": "hija-la-trajo",
+          "any": ["su hija (?:la trajo|vive a dos cuadras)", "la trajo", "dos cuadras"]
+        },
+        {
+          "id": "plan-recetario",
+          "any": ["recetario", "escrita en el recetario", "media tableta escrita", "m[eé]dico de cabecera"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["buena adherencia", "mejoría notable", "pronóstico favorable"]
+    },
+    "dose-and-number/04-ochenta-y-dos-kilos.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 244,
+      "difficulty": "Peso en kilos: pesa ochenta y dos, no setenta y dos; y la nota no puede inventar un índice de masa",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "setenta y dos",
+        "\\b72 ?(?:kg|kilos)\\b",
+        "ochenta y ocho",
+        "\\b88 ?(?:kg|kilos)\\b",
+        "cincuenta y dos",
+        "\\b52 ?(?:kg|kilos)\\b",
+        "setenta y ocho",
+        "\\b78 ?(?:kg|kilos)\\b",
+        "ochenta y cuatro",
+        "\\b84 ?(?:kg|kilos)\\b",
+        "noventa kilos",
+        "\\b90 ?(?:kg|kilos)\\b",
+        "\\bimc\\b",
+        "[íi]ndice de masa",
+        "obesidad m[óo]rbida",
+        "cirug[ií]a bari[aá]trica",
+        "bypass",
+        "b[aá]lsula (?:de|para)",
+        "derivaci[óo]n (?:gastrointestinal|biliopancr[aá]tica)",
+        "trastorno de (?:ansiedad|depresi[óo]n)",
+        "ideaci[óo]n suicida",
+        "autolesiones",
+        "maltrato",
+        "conductas de riesgo"
+      ],
+      "mustCapture": [
+        {
+          "id": "peso-82",
+          "any": ["ochenta y dos", "\\b82 ?(?:kg|kilos)\\b", "\\b82\\b"]
+        },
+        {
+          "id": "peso-76-antes",
+          "any": ["setenta y seis", "\\b76 ?(?:kg|kilos)\\b"]
+        },
+        {
+          "id": "gano-seis",
+          "any": ["seis kilos", "subió seis", "aument[óó] seis", "6 ?kilos"]
+        },
+        {
+          "id": "estatura",
+          "any": ["un metro con sesenta y dos", "metro con sesenta y dos", "1[.,]62"]
+        },
+        {
+          "id": "come-parada",
+          "any": ["come parada", "de pie junto a la m[aá]quina", "no se sienta", "comer en el trabajo"]
+        },
+        {
+          "id": "metformina",
+          "any": ["metformina"]
+        },
+        {
+          "id": "dulces-hijo",
+          "any": ["dulces", "fin de semana", "de su hijo"]
+        },
+        {
+          "id": "plan-bascula",
+          "any": ["b[aá]scula", "revisi[óo]n de peso", "registro de lo que come"]
+        },
+        {
+          "id": "peticion-cirujano",
+          "any": ["cirujano", "que la mande con un", "consulta con el cirujano"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["alta adherencia", "mejoría notable", "paciente comprometido"]
+    },
+    "english-loanword/02-check-in-corto.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated-short",
+      "words": 212,
+      "difficulty": "«Check-in» y «stress»: la nota debe llevar evaluación de seguimiento y estrés, sin inventar una técnica",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "desensibilizaci[óo]n",
+        "exposici[óo]n (?:progresiva|graduada|jerarquizada)",
+        "regulaci[óo]n emocional",
+        "t[ée]cnica de respiraci[óo]n diafragm[áa]tica",
+        "s[íi]ndrome de estr[ée]s postraum[áa]tico",
+        "\\bTEPT\\b",
+        "\\bEMDR\\b",
+        "f[óo]rmula de (?:medicamento|tratamiento)",
+        "antidepresivo",
+        "ansiol[íi]tico"
+      ],
+      "mustCapture": [
+        {
+          "id": "check-in",
+          "any": [
+            "check-in",
+            "check in",
+            "evaluaci[óo]n de seguimiento",
+            "revisi[óo]n (?:corta|breve)",
+            "sesi[óo]n (?:de seguimiento|corta)",
+            "m[áa]s que sesi[óo]n"
+          ]
+        },
+        {
+          "id": "stress",
+          "any": ["estr[ée]s", "stress"]
+        },
+        {
+          "id": "doce-minutos",
+          "any": ["doce minutos", "12 minutos"]
+        },
+        {
+          "id": "cinco-semanas",
+          "any": ["cinco semanas", "5 semanas"]
+        },
+        {
+          "id": "la-lesion",
+          "any": ["lesi[óo]n en la espalda", "por una lesi[óo]n"]
+        },
+        {
+          "id": "la-vuelta",
+          "any": [
+            "vuelve al trabajo",
+            "volver al trabajo",
+            "regreso al trabajo",
+            "el lunes otra vez a la escuela"
+          ]
+        },
+        {
+          "id": "el-grupo-cubierto",
+          "any": ["le guard[óo] el grupo", "la maestra que la cubre", "no le tocaron"]
+        },
+        {
+          "id": "caminar-tres-veces",
+          "any": ["caminar tres veces", "salió a caminar", "tres veces esta semana"]
+        },
+        {
+          "id": "la-hoja",
+          "any": ["el ejercicio de la hoja", "la hoja", "seis de siete", "hoja de la semana"]
+        },
+        {
+          "id": "sin-ideacion",
+          "any": [
+            "no ha pensado en hacerse da[ñn]o",
+            "niega[^.]{0,60}(?:hacerse da[ñn]o|hacer da[ñn]o|suicid)",
+            "niega [^.]{0,60}hacerse da[ñn]o",
+            "no reporta ideas de hacerse da[ñn]o",
+            "niega[^.]{0,60}(?:hacerse da[ñn]o|hacer da[ñn]o|suicid)"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "miedo-al-lunes",
+          "any": ["no aguantar el lunes", "el lunes"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["se le ve bien", "habla claro", "orientada"]
+        },
+        {
+          "id": "analisis",
+          "any": ["lo que carga (?:no es| es) la (?:escuela|vuelta)", "la vuelta"]
+        },
+        {
+          "id": "plan-semanal",
+          "any": ["seguimos semanales", "semanal", "cada semana"]
+        },
+        {
+          "id": "plan-por-partes",
+          "any": ["por partes"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["buena adherencia", "mejoría notable", "excelente evolución"]
+    },
+    "english-loanword/04-feedback-jefe.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated",
+      "words": 223,
+      "difficulty": "Feedback y coaching: la nota conserva los dos conceptos y no convierte el coaching en técnica de terapia",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "terapia de coaching",
+        "sesiones? de coaching",
+        "coaching (?:terap[ée]utico|cl[íi]nico|formal|como intervenci[óo]n)",
+        "intervenci[óo]n de coaching",
+        "\\bmentor[íi]a\\b",
+        "narcisismo",
+        "teor[íi]a del apego",
+        "s[íi]ndrome de estr[ée]s postraum[áa]tico",
+        "\\bTEPT\\b",
+        "jefe (?:narcisista|malvado|t[óo]xico)",
+        "maltrato laboral",
+        "acoso (?:laboral|patronal)"
+      ],
+      "mustCapture": [
+        {
+          "id": "feedback-del-jefe",
+          "any": ["feedback", "retroalimentaci[óo]n", "comentarios del jefe", "su jefe le da"]
+        },
+        {
+          "id": "las-reuniones",
+          "any": ["reuni[óo]n", "los viernes", "reuniones"]
+        },
+        {
+          "id": "sale-antes",
+          "any": ["sale del sal[óo]n", "salir antes", "se sale antes"]
+        },
+        {
+          "id": "como-regano",
+          "any": ["como un rega[ñn]o", "le llega como", "rega[ñn]o"]
+        },
+        {
+          "id": "feedback-a-las-noticias",
+          "any": ["dar feedback", "dos noticias", "no lo toman bien"]
+        },
+        {
+          "id": "coaching",
+          "any": ["coaching", "asesor[íi]a", "capacitaci[óo]n"]
+        },
+        {
+          "id": "coaching-fuera-de-la-terapia",
+          "any": ["no es parte de la terapia", "lo buscamos aparte", "que le interesa"]
+        },
+        {
+          "id": "sin-ideacion",
+          "any": [
+            "no ha pensado en hacerse da[ñn]o",
+            "niega[^.]{0,60}(?:hacerse da[ñn]o|hacer da[ñn]o|suicid)",
+            "niega [^.]{0,60}hacerse da[ñn]o",
+            "no reporta ideas de hacerse da[ñn]o",
+            "niega[^.]{0,60}(?:hacerse da[ñn]o|hacer da[ñn]o|suicid)"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "la-cara-del-jefe",
+          "any": ["la cara del jefe", "no aguanta la cara"]
+        },
+        {
+          "id": "antecedentes",
+          "any": ["diez a[ñn]os en el almac[ée]n", "almac[ée]n", "dos hijos", "no ha tenido terapia antes"]
+        },
+        {
+          "id": "analisis",
+          "any": ["recibir la evaluaci[óo]n", "lo dif[íi]cil es recibir", "no el contenido"]
+        },
+        {
+          "id": "plan-ensayo",
+          "any": ["ensayar el feedback", "jefe inventado", "jefe inventado"]
+        },
+        {
+          "id": "plan-semanal",
+          "any": ["semanal", "cada semana"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["se le ve tensa", "habla r[áa]pido"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["mejoría notable", "alta adherencia", "buena evolución"]
+    },
+    "experiencer/02-papa-bebe.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 257,
+      "difficulty": "El alcohol y las caídas son del padre de 84 años, no del paciente",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "(?:el paciente) (?:bebe|consume|toma (?:alcohol|licor|cerveza|whisky|vino))",
+        "(?:el paciente) (?:presenta|tiene) (?:un )?(?:problema|abuso|dependencia) (?:de|del) (?:alcohol|la bebida)",
+        "(?:el paciente) (?:bebi[oó]|se tom[oó]|se da a la bebida)",
+        "alcohol (?:problema|abuso) (?:del|en el) paciente"
+      ],
+      "mustCapture": [
+        {
+          "id": "papa-bebe",
+          "any": [
+            "pap[áa].{0,80}?(?:bebe|toma|se toma) (?:una botella|alcohol|licor)",
+            "(?:el que bebe es )?(?:su |el )?pap[áa]",
+            "botella de licor.{0,40}?pap[áa]",
+            "pap[áa].{0,60}?(?:una botella|licor|alcohol)"
+          ]
+        },
+        {
+          "id": "papa-caidas",
+          "any": [
+            "pap[áa].{0,80}?se (?:le )?(?:ha )?ca[íi]d[óo]",
+            "ca[íi]das (?:son |de )(?:de su |del )?pap[áa]",
+            "ca[íi]das (?:son |de )?(?:de su padre|del padre|suyas)",
+            "pap[áa].{0,40}?ca[íi]das",
+            "se (?:le )?(?:ha )?ca[íi]d[óo].{0,60}?pap[áa]"
+          ]
+        },
+        {
+          "id": "separacion-del-sintoma",
+          "any": [
+            "no (?:le )?(?:sucede|ocurre|pasa) a (?:el paciente|[ée]l)",
+            "no es (?:un problema (?:de|para) )?(?:de )?(?:el paciente|[ée]l)",
+            "no de (?:el paciente|[ée]l)",
+            "(?:las )?ca[íi]das son (?:de )?(?:suyas|de su padre)"
+          ]
+        },
+        {
+          "id": "paciente-no-bebe",
+          "any": [
+            "no toma (?:alcohol|cerveza|licor)",
+            "no bebe",
+            "niega (?:el )?(?:alcohol|consumo de alcohol)",
+            "sin consumo de alcohol"
+          ]
+        },
+        {
+          "id": "plan-medico-cabecera",
+          "any": ["m[eé]dico de cabecera", "con el m[eé]dico", "consultar al m[eé]dico"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["acuerdo familiar alcanzado", "mejoría notable", "alta adherencia"]
+    },
+    "experiencer/04-hijo-miedo.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated-long",
+      "words": 259,
+      "difficulty": "El miedo nocturno es del hijo de siete años, no del paciente",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "(?:el paciente) (?:tiene|siente|presenta|refiere|manifiesta) (?:miedo|terror|ansiedad nocturna|miedo nocturno)",
+        "miedo (?:nocturno|a la oscuridad) (?:en|del) (?:el paciente|el consultante)",
+        "(?:el paciente) (?:no )?duerme mal por miedo",
+        "miedo a la oscuridad (?:del|en el) paciente"
+      ],
+      "mustCapture": [
+        {
+          "id": "hijo-miedo",
+          "any": [
+            "hijo.{0,80}?miedo",
+            "(?:el )?ni[ñn]o.{0,60}?miedo",
+            "miedo.{0,60}?(?:del ni[ñn]o|de su hijo)",
+            "hijo.{0,60}?oscuridad",
+            "(?:el )?ni[ñn]o.{0,60}?oscuridad"
+          ]
+        },
+        {
+          "id": "separacion-del-sintoma",
+          "any": [
+            "no (?:le )?(?:sucede|ocurre|pasa) a (?:el paciente|[ée]l)",
+            "no es (?:un problema (?:de|para) )?(?:de )?(?:el paciente|[ée]l)",
+            "el (?:miedo es|síntoma es) (?:del ni[ñn]o|de su hijo)",
+            "el paciente no (?:siente|tiene) (?:ese |el )?miedo"
+          ]
+        },
+        {
+          "id": "dormiendo-con-la-abuela",
+          "any": [
+            "dormir con la abuela",
+            "se va a dormir con la abuela",
+            "durmiendo (?:con|fuera de) (?:su |la )?abuela",
+            "duerme fuera de (?:su |mi )?(?:cuarto|habitaci[óo]n)"
+          ]
+        },
+        {
+          "id": "nunca-le-grito",
+          "any": [
+            "nunca grit",
+            "nunca (?:le )?ha gritado",
+            "no (?:le |haberle )?grit",
+            "niega (?:haber |ser )?grit"
+          ]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["familia disfuncional", "mejoría notable", "nivel de adherencia"]
+    },
+    "invented-negation/02-bebe-los-viernes.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated-short",
+      "words": 194,
+      "difficulty": "Consumo de alcohol los viernes que la nota no puede negar: el reflejo de charting es \"niega consumo\"",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "niega(?:ndo)?",
+        "no refiere",
+        "no reporta",
+        "sin antecedentes de",
+        "se descarta",
+        "descartad[oa]s?",
+        "nega tener",
+        "jam[aá]s",
+        "no (?:toma|bebe) alcohol",
+        "abstinencia",
+        "sobriedad",
+        "no consume",
+        "sin alcohol",
+        "nunca ha tomado",
+        "alcoholismo",
+        "trastorno de (?:consumo de |)?alcohol",
+        "alcoholismo (?:cr[óo]nico|severo)",
+        "abuso de alcohol",
+        "dependencia (?:de|del) alcohol",
+        "intoxicaci[óo]n",
+        "crisis de (?:abstinencia|desintoxicaci[óo]n)",
+        "ideaci[óo]n suicida",
+        "autolesiones",
+        "maltrato",
+        "conductas de riesgo"
+      ],
+      "mustCapture": [
+        {
+          "id": "viernes-dos-cervezas",
+          "any": ["los viernes", "viernes", "dos cervezas", "2 cervezas", "se toma dos cervezas"]
+        },
+        {
+          "id": "puesto-sabado",
+          "any": ["los s[aá]bados", "s[aá]bado", "mercado", "puesto de comida", "monta(?:ndo|ba) el puesto"]
+        },
+        {
+          "id": "resaca-sabado",
+          "any": ["boca seca", "dolor de cabeza", "resaca", "pega (?:el|los) s[aá]bado"]
+        },
+        {
+          "id": "con-hermana",
+          "any": ["con su hermana", "su hermana"]
+        },
+        {
+          "id": "registro-completo",
+          "any": ["registro", "lo trajo completo", "trajo completo"]
+        },
+        {
+          "id": "plan-mover-domingo",
+          "any": ["al domingo", "mover esa cerveza", "domingo"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["abstinencia", "paciente comprometido", "mejoría notable"]
+    },
+    "invented-negation/04-tiene-casa.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 248,
+      "difficulty": "Vivienda propia y crédito a su nombre que la nota no puede borrar: no escribe \"vive con la familia\"",
+      "markerFreeSource": true,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "niega(?:ndo)?",
+        "no refiere",
+        "no reporta",
+        "sin antecedentes de",
+        "se descarta",
+        "descartad[oa]s?",
+        "nega tener",
+        "jam[aá]s",
+        "sin (?:casa|vivienda) propia",
+        "no tiene (?:casa|vivienda)",
+        "no es (?:la )?due[ñn]a",
+        "(?:vivi[óo]|vive) con (?:sus padres|su madre|su padre)",
+        "en casa de (?:sus padres|su madre|su padre)",
+        "alquilada",
+        "alquil[óo]",
+        "hipoteca (?:del|con) (?:el|su) (?:hijo|hija|familiar)",
+        "propiedad (?:de|del) (?:su|un) (?:hijo|hija|familiar)",
+        "trastorno de (?:ansiedad|depresi[óo]n)",
+        "delusi[óo]n",
+        "s[ií]ndrome de (?:burnout|estr[eé]s)",
+        "confabulaci[óo]n",
+        "retrato (?:psicológico|patol[óo]gico)",
+        "ideaci[óo]n suicida",
+        "autolesiones",
+        "maltrato",
+        "conductas de riesgo",
+        "abuso (?:de|patronal)"
+      ],
+      "mustCapture": [
+        {
+          "id": "casa-propia",
+          "any": ["casa propia", "la casa es de ella", "es su casa", "due[ñn]a", "once a[ñn]os", "11 a[ñn]os"]
+        },
+        {
+          "id": "credito-suyo",
+          "any": ["cr[eé]dito", "hipoteca", "paga ella sola", "lo sigue pagando ella", "mes por mes"]
+        },
+        {
+          "id": "hijo-vive-con-ella",
+          "any": ["su hijo vive con ella", "vive con ella desde hace dos a[ñn]os", "desde hace dos"]
+        },
+        {
+          "id": "cuarto-reorganizado",
+          "any": [
+            "el cuarto es de ellos",
+            "organizaron",
+            "le movieron el espacio",
+            "el cuarto era suyo",
+            "la novia"
+          ]
+        },
+        {
+          "id": "libreta-cuentas",
+          "any": ["libreta", "apunta todo"]
+        },
+        {
+          "id": "plan-libreta-viernes",
+          "any": ["trae la libreta", "el viernes", "fronteras de la casa"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["mejoría notable", "paciente comprometido", "buena adherencia"]
+    },
+    "lost-negation/02-sin-comer.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated",
+      "words": 251,
+      "difficulty": "Negación con sin: sale del turno sin comer, y la nota no puede decir que come en el trabajo",
+      "markerFreeSource": true,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "trae (?:comida|almuerzo|alimento|la comida)",
+        "desayuna(?:ndo|en)?",
+        "sí come",
+        "ya come en el turno",
+        "come a media jornada",
+        "almuerza en el (?:turno|almac[eé]n)",
+        "se le (?:prepar[óo]|dio) comida en el turno",
+        "trastorno de (?:conducta )?alimenticio",
+        "anorexia",
+        "bulimia",
+        "trastorno de alimentaci[óo]n"
+      ],
+      "mustCapture": [
+        {
+          "id": "no-come-en-el-turno",
+          "any": [
+            "sale sin comer",
+            "sin comer",
+            "no come (?:nada )?en el turno",
+            "no come nada",
+            "en el turno no come",
+            "turno sin (?:comer|comida)",
+            "no (?:ha )?podido comer en el turno"
+          ]
+        },
+        {
+          "id": "solo-te",
+          "any": ["un té", "sólo un té", "solo un té", "nada m[aá]s un té", "se lleva un té"]
+        },
+        {
+          "id": "come-tarde-vacio",
+          "any": ["pasadas las once", "despu[eé]s de las once", "est[óo]mago vac[ií]o"]
+        },
+        {
+          "id": "antes-tres-comidas",
+          "any": ["tres veces al d[ií]a", "antes com[ií]a", "com[ií]a (?:antes|normalmente)"]
+        },
+        {
+          "id": "sin-cocina",
+          "any": ["no hay cocina", "no hay d[óo]nde", "sin (?:cocina|d[óo]nde donde)"]
+        },
+        {
+          "id": "sintomas-fisicos",
+          "any": ["mareos", "temblor", "dolor de cabeza"]
+        },
+        {
+          "id": "horario-turno",
+          "any": ["de las dos a las once", "dos a las once", "turno de (?:tarde a noche|noche)"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["mejoría notable", "alta adherencia"]
+    },
+    "lost-negation/04-no-se-lo-manda.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated",
+      "words": 254,
+      "difficulty": "Negación cortés: pidió que no se le mandara nada por escrito, y la nota no puede decir que se envió",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "se le envi[óo]",
+        "le mand[óo] el (?:resumen|informe|documento|correo)",
+        "envi[óo] el (?:resumen|informe) (?:a|al)",
+        "le lleg[óo] (?:al |a la )?director",
+        "autoriz[óo] (?:enviar|mandar|el env[ií]o)",
+        "qued[óo] autorizada",
+        "con copia (?:al|para el) director",
+        "copia (?:al|para el) (?:director|jefe)",
+        "trastorno de (?:ansiedad|insomnio)",
+        "insomnio primario",
+        "s[ií]ndrome de burnout"
+      ],
+      "mustCapture": [
+        {
+          "id": "pidio-no-escrito",
+          "any": [
+            "pid[iói] que no le mandara nada por escrito",
+            "pid[iói] que no (?:le )?(?:mandara|env[ií]ara|mand[óo]|envi[óo])",
+            "no (?:le )?mand(?:ara|[óo]) nada por escrito",
+            "nada por escrito",
+            "no env[ií]ar nada por escrito",
+            "ni correo, ni resumen",
+            "por escrito"
+          ]
+        },
+        {
+          "id": "sin-nombre-escuela",
+          "any": [
+            "no (?:escribiera|anotara|poner|pondr[ií]a) el nombre de la escuela",
+            "nombre de la escuela",
+            "omitir el nombre de la escuela",
+            "sin (?:mencionar|citar|poner) (?:el nombre de )?la escuela"
+          ]
+        },
+        {
+          "id": "acuerdo-no-enviar",
+          "any": [
+            "no se manda nada sin su autorizaci[óo]n",
+            "acord[óo] no (?:enviar|mandar)",
+            "qued[óo] as[ií]",
+            "consta que qued[óo]",
+            "nada se env[ií]a sin (?:su )?autorizaci[óo]n"
+          ]
+        },
+        {
+          "id": "motivo-conservar-secreto",
+          "any": ["no pueden enterarse", "que no se sepa", "le llega al director", "ante el director"]
+        },
+        {
+          "id": "motivo-ocultar",
+          "any": [
+            "no pueden enterarse",
+            "que no se sepa",
+            "no se sepa que est[áa] en terapia",
+            "le llega al director",
+            "llega al director",
+            "ante el director"
+          ]
+        },
+        {
+          "id": "sueno-cuatro-horas",
+          "any": ["duerme (?:cuatro|4) horas", "cuatro horas", "se despierta (?:dos|2) veces"]
+        },
+        {
+          "id": "friccion-laboral",
+          "any": ["fricci[óo]n", "compa[ñn]ero", "conflicto laboral", "maestro de secundaria"]
+        },
+        {
+          "id": "riesgo-actual-ausente",
+          "tags": ["safety"],
+          "any": [
+            "niega (?:ideas|intenci[óo]n) de hacerse da[ñn]o",
+            "no ha pensado en hacerse da[ñn]o",
+            "no ha pensado en hacerse da[ñn]o ni"
+          ]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["buena adherencia", "pronóstico favorable"]
+    },
+    "past-vs-current-risk/02-intento-hace-dos-anos.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 232,
+      "difficulty": "Intento hace dos años frente a ideación pasiva actual: la nota no puede decir que hoy lo niega todo",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "(?:tuvo|cometi[óo]|sucedió|ocurri[óo]) (?:un )?intento (?:reciente|actual|este (?:mes|a[ñn]o|semana)|el [úu]ltimo a[ñn]o)",
+        "intento (?:este|el) (?:mes|a[ñn]o|semana)",
+        "(?:actualmente|ahora|en este momento) (?:tuvo|tiene|present[óo]|cometi[óo]) (?:un )?intento",
+        "actual(?:mente)? (?:tiene|presenta|hay|con) (?:ideas|ideaci[óo]n|ganas) (?:de )?(?:suicidarse|hacerse da[ñn]o|quitarse la vida|acabar con su vida)",
+        "niega (?:ideas|ideaci[óo]n) suicida",
+        "niega todas? ideaci[óo]n"
+      ],
+      "mustCapture": [
+        {
+          "id": "antecedente-intento-hace-dos-anos",
+          "tags": ["safety"],
+          "any": [
+            "antecedente[s]? de (?:un )?intento",
+            "hace dos a[ñn]os",
+            "2 a[ñn]os atr[áa]s",
+            "la internaron una semana",
+            "hace dos a[ñn]os"
+          ]
+        },
+        {
+          "id": "ideacion-pasiva-actual",
+          "tags": ["safety"],
+          "any": [
+            "deseo de (?:estar muerto|no estar|estar viva)",
+            "no querer estar",
+            "ojal[áa] no despertara",
+            "ideaci[óo]n (?:suicida )?pasiva",
+            "deseo de muerte pasivo",
+            "hay noches"
+          ]
+        },
+        {
+          "id": "niega-plan-y-intencion",
+          "tags": ["safety"],
+          "any": [
+            "niega (?:tener )?(?:un )?plan",
+            "no tiene (?:un )?plan",
+            "niega intenci[óo]n",
+            "sin (?:plan|intenci[óo]n)",
+            "no piensa hacerme nada",
+            "no tiene intenci[óo]n"
+          ]
+        },
+        {
+          "id": "apoyo-de-hermana",
+          "any": ["le escribe a (?:su )?hermana", "hermana"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["riesgo actual bajo", "insight conservado", "mejoría notable"]
+    },
+    "past-vs-current-risk/04-idea-suicida-pasada.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated-short",
+      "words": 216,
+      "difficulty": "Internamiento hace treinta años frente a negación presente, con riesgo actual de alcohol",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "(?:sigue|sigue con|contin[uú]a|contin[uú]a con|a[uú]n|todav[íi]a).{0,20}?(?:ideas|ideaci[óo]n|ganas) (?:de [^\\n\\r]{1,18} )?(?:hacerse da[ñn]o|suicidarse|morirse)",
+        "actual(?:mente)? (?:tiene|presenta|hay|con) (?:ideas|ideaci[óo]n|ganas) (?:de [^\\n\\r]{1,18} )?(?:hacerse da[ñn]o|suicidarse|suicidio)",
+        "(?:tuvo|cometi[óo]|sucedió|ocurri[óo]) (?:un )?intento (?:reciente|actual|este (?:mes|a[ñn]o|decenio))",
+        "intento (?:este|el) (?:mes|a[ñn]o|decenio)",
+        "riesgo (?:actual|actualmente) (?:alto|medio|moderado)",
+        "riesgo (?:actual|actualmente).{0,40}?(?:tuvo|cometi[óo]|sucedió|ocurri[óo]) (?:un )?intento",
+        "internado (?:actualmente|ahora|recientemente)"
+      ],
+      "mustCapture": [
+        {
+          "id": "antecedente-internamiento-30-anos",
+          "tags": ["safety"],
+          "any": [
+            "antecedente[s]? de (?:un )?intento",
+            "hace treinta a[ñn]os",
+            "30 a[ñn]os",
+            "lo internaron",
+            "internamiento de hace treinta a[ñn]os"
+          ]
+        },
+        {
+          "id": "niega-presente",
+          "tags": ["safety"],
+          "any": [
+            "niega (?:ideas|ideaci[óo]n) (?:de )?(?:hacerse da[ñn]o|suicidarse|suicidio)",
+            "no ha vuelto a pasar",
+            "en el presente no",
+            "no ha habido nada m[áa]s",
+            "niega (?:tener )?(?:un )?plan"
+          ]
+        },
+        {
+          "id": "alcohol-actual",
+          "any": [
+            "ocho cervezas",
+            "8 cervezas",
+            "cervezas (?:casi )?todos los d[ií]as",
+            "consumo (?:de alcohol )?aumentado",
+            "bebe(?:ndo)? m[áa]s"
+          ]
+        },
+        {
+          "id": "desempleo-de-julio",
+          "any": [
+            "lo echaron (?:del taller|de la empresa)",
+            "en julio lo echaron",
+            "desempleo",
+            "perdi[óo] el trabajo",
+            "lo echaron del trabajo"
+          ]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["riesgo actual bajo", "mejoría notable", "paciente comprometido"]
+    },
+    "section-never-covered/02-se-corto-sin-plan.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated-short",
+      "words": 165,
+      "difficulty": "Admisión cortada a los veinte minutos: el plan terapéutico va vacío y la formulación quedó pendiente",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Plan terapéutico"],
+      "statedAbsence": [
+        {
+          "section": "Formulación",
+          "any": [
+            "(?:no se )?alcanz[óo] a hacer la formulaci[óo]n",
+            "no hice la formulaci[óo]n",
+            "formulaci[óo]n (?:pendiente|para cuando vuelva)",
+            "lo dejamos para cuando vuelva",
+            "sin formulaci[óo]n"
+          ]
+        }
+      ],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "mustNotContain": [
+        "no se aborda",
+        "no aborda",
+        "no aplica",
+        "sin datos",
+        "sin informaci[óo]n",
+        "\\bn/a\\b",
+        "no se menciona",
+        "pendiente",
+        "no hay informaci[óo]n",
+        "no se realiz[óo]",
+        "\\bsemanal(?:es)?\\b",
+        "cada semana",
+        "sesiones? (?:de )?(?:cincuenta|50) minutos",
+        "terapia cognitivo-conductual",
+        "\\bTCC\\b",
+        "objetivos? (?:terap[ée]uticos|de (?:la )?terapia)",
+        "n[úu]mero de sesi",
+        "trastorno de ansiedad",
+        "trastorno depresivo",
+        "depresi[óo]n mayor",
+        "maltrato",
+        "antecedentes de (?:violencia|abuso|alcoholismo)",
+        "(?:familia|familiares) con antecedentes"
+      ],
+      "mustCapture": [
+        {
+          "id": "motivo",
+          "any": ["vive con su mam[áa]", "no la aguanta", "discuten todos los d[íi]as"]
+        },
+        {
+          "id": "se-va-con-el-novio",
+          "any": ["en dos meses se va a vivir con su novio", "se va a vivir con su novio", "con su novio"]
+        },
+        {
+          "id": "la-madre-no-acepta",
+          "any": ["su mam[áa] no lo acepta", "no lo acepta"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["habla r[áa]pido", "se le ve cansada", "llora al final", "no contesta nada"]
+        },
+        {
+          "id": "antecedentes-voluntarios",
+          "any": ["estudia", "vive con su mam[áa] y su hermano", "no fuma", "no ha consultado a nadie"]
+        },
+        {
+          "id": "la-interrupcion",
+          "any": [
+            "cort[ée] yo",
+            "se acab[óo] la cita",
+            "su mam[áa] la estaba esperando",
+            "ya estaba llorando"
+          ]
+        },
+        {
+          "id": "sin-formulacion",
+          "any": [
+            "no alcanc[ée] a hacer la formulaci[óo]n",
+            "lo dejamos para cuando vuelva",
+            "formulaci[óo]n"
+          ]
+        },
+        {
+          "id": "veinte-minutos",
+          "any": ["veinte minutos", "20 minutos"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["buena adherencia", "mejoría notable", "alianza terapéutica sólida"]
+    },
+    "section-never-covered/04-sesion-sin-analisis.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 169,
+      "difficulty": "Sesión en la que la clínica no hizo lectura: el análisis va vacío",
+      "markerFreeSource": true,
+      "f6": "gating",
+      "blank": ["Análisis"],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Análisis"],
+      "mustNotContain": [
+        "no se aborda",
+        "no aborda",
+        "no aplica",
+        "sin datos",
+        "sin informaci[óo]n",
+        "\\bn/a\\b",
+        "no se menciona",
+        "pendiente",
+        "no hay informaci[óo]n",
+        "no se realiz[óo]",
+        "compatible con",
+        "se descarta",
+        "hip[óo]tesis",
+        "trastorno de (?:ansiedad|depresivo)",
+        "demuestra",
+        "confirma",
+        "necesita (?:un |una )?medicamento",
+        "f[óo]rmula de (?:tratamiento|medicamento)",
+        "antidepresivo",
+        "ansiol[íi]tico",
+        "buena evoluci[óo]n",
+        "mejor[íi]a notable",
+        "alta adherencia"
+      ],
+      "mustCapture": [
+        {
+          "id": "la-television-vecina",
+          "any": [
+            "la vecina de arriba pone la (__)?televisi[óo]n muy alto",
+            "televisi[óo]n muy alto",
+            "hasta las once y media"
+          ]
+        },
+        {
+          "id": "le-grito",
+          "any": ["le grit[óo] dos veces", "grit[óo]", "por el patio"]
+        },
+        {
+          "id": "hija-agresiva",
+          "any": ["su hija le dijo que se est[áa] volviendo agresiva", "se est[áa] volviendo agresiva"]
+        },
+        {
+          "id": "no-camina",
+          "any": ["ya no camina por la tarde", "no camina por la tarde"]
+        },
+        {
+          "id": "no-misa",
+          "any": ["no va a la misa", "misa de los domingos"]
+        },
+        {
+          "id": "el-aparato",
+          "any": ["el aparato para o[íi]r", "no lo usa", "lo trae en la caja"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["habla alto", "pide que le repita", "lleg[óo] puntual", "puntual"]
+        },
+        {
+          "id": "hablo-ella",
+          "any": ["habl[óo] ella casi toda la hora", "casi toda la hora"]
+        },
+        {
+          "id": "plan-hija",
+          "any": ["le voy a pedir a la hija que venga", "la hija que venga"]
+        },
+        {
+          "id": "plan-aparato",
+          "any": ["revisar lo del aparato", "lo del aparato"]
+        },
+        {
+          "id": "plan-semanal",
+          "any": ["quedamos semanales", "semanal", "cada semana"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["buena adherencia", "mejoría notable", "respuesta favorable"]
+    },
+    "spoken-correction/02-mejor-dicho-cuatrocientos.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated-with-aside",
+      "words": 260,
+      "difficulty": "«Mejor dicho» sobre la deuda: se queda cuatrocientos, no cuatro mil",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "cuatro mil",
+        "\\b4 ?000\\b",
+        "\\b4000\\b",
+        "fobia social",
+        "estr[ée]s postraum[áa]tico",
+        "deuda de (?:cinco|diez|mil) mil"
+      ],
+      "mustCapture": [
+        {
+          "id": "cuatrocientos",
+          "any": ["cuatrocientos", "\\b400 ?pesos\\b"],
+          "tags": ["safety"]
+        },
+        {
+          "id": "dinero-del-vecino",
+          "any": ["vecino", "dinero prestado", "le prest[óo]", "le pidi[óo] dinero"]
+        },
+        {
+          "id": "interes",
+          "any": ["inter[ée]s"]
+        },
+        {
+          "id": "visitas-del-vecino",
+          "any": ["a su casa", "va a su casa", "insisti[óo]", "fue a [^.]{0,20}su casa"]
+        },
+        {
+          "id": "evita-la-puerta",
+          "any": [
+            "no (?:ha abierto|abre) la puerta",
+            "deja(?:do)? de abrir la puerta",
+            "evita (?:abrir|la puerta)",
+            "no abrir la puerta"
+          ]
+        },
+        {
+          "id": "evita-el-mercado",
+          "any": ["no ha ido al mercado", "no va al mercado", "mercado desde hace quince d[íi]as"]
+        },
+        {
+          "id": "la-hija",
+          "any": ["su hija", "nota del vecino"]
+        },
+        {
+          "id": "sin-ideacion",
+          "any": [
+            "no ha pensado en hacerse da[ñn]o",
+            "niega[^.]{0,60}(?:hacerse da[ñn]o|hacer da[ñn]o|suicid)",
+            "niega (?:ideas|intenci[óo]n) de hacerse da[ñn]o",
+            "no ha pensado en hacerse daño"
+          ],
+          "tags": ["safety"]
+        },
+        {
+          "id": "temblor-en-el-timbre",
+          "any": ["le tiembla cuando", "le tiembla (?:la mano|las manos)", "temblor"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["puntual", "contacto visual", "habla claro"]
+        },
+        {
+          "id": "analisis",
+          "any": ["la cantidad es chica", "verg[üu]enza", "se va a poner peor"]
+        },
+        {
+          "id": "plan-ensayo",
+          "any": ["ensayar", "ensayo", "con la hija"]
+        },
+        {
+          "id": "plan-permiso",
+          "any": ["pide permiso", "pido permiso", "permiso para hablar"]
+        },
+        {
+          "id": "plan-semanal",
+          "any": ["semanal", "cada semana"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["mejoría notable", "alta adherencia", "buena adherencia"]
+    },
+    "spoken-correction/04-es-decir-antes-de-dormir.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 251,
+      "difficulty": "«Es decir» precisa la rutina de antes de dormir: el problema es la hora, no el sueño",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "(?:presenta|sufre|padece|reporta|refiere|con) (?:un |una )?(?:dificultad|problemas?|trastorno) (?:para|de) dormir",
+        "(?:presenta|sufre|padece) insomnio",
+        "insomnio (?:leve|moderado|severo|inicial|de inicio|mantenido)",
+        "se despierta (?:varias|muchas|repetidamente)",
+        "despertares (?:frecuentes|repetidos|numerosos)"
+      ],
+      "mustCapture": [
+        {
+          "id": "rutina-antes-de-dormir",
+          "any": ["antes de dormir", "rutina"]
+        },
+        {
+          "id": "sillon-y-telefono",
+          "any": ["sill[óo]n", "tel[ée]fono"]
+        },
+        {
+          "id": "hasta-la-una-y-media",
+          "any": ["una y media", "1 ?[:.]? ?30", "la una y media"]
+        },
+        {
+          "id": "duerme-de-corrido",
+          "any": [
+            "duerme de corrido",
+            "sin despertarse",
+            "de corrido hasta la ma(?:ñ|n)ana",
+            "de corrido hasta las cinco"
+          ]
+        },
+        {
+          "id": "hora-de-acostarse",
+          "any": ["a las dos", "a las once y media", "2 ?am", "11 ?[:.]? ?30"]
+        },
+        {
+          "id": "esposo-junio",
+          "any": ["su esposo", "junio"]
+        },
+        {
+          "id": "nada-para-dormir",
+          "any": ["no toma nada para dormir", "nada para dormir", "sin (?:pastilla|medicamento) para dormir"]
+        },
+        {
+          "id": "paracetamol",
+          "any": ["paracetamol", "para las rodillas"]
+        },
+        {
+          "id": "tercera-sesion",
+          "any": ["tercera sesi[óo]n", "conmigo"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["diez minutos tarde", "habla lento", "orientada"]
+        },
+        {
+          "id": "plan-telefono-cocina",
+          "any": [
+            "el tel[ée]fono se queda en la cocina",
+            "tel[ée]fono [^.]{0,40}cocina",
+            "se queda en la cocina"
+          ]
+        },
+        {
+          "id": "analisis",
+          "any": ["la hora de acostarse", "no el sue[ñn]o en s[íi]", "hora en que se acuesta"]
+        },
+        {
+          "id": "plan-semanal",
+          "any": ["semanales", "quedamos semanales", "cada semana"]
+        }
+      ],
+      "requiresHedge": [],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["mejoría notable", "buena adherencia", "alta adherencia"]
+    },
+    "uncertainty/02-pendiente-confirmar.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated",
+      "words": 257,
+      "difficulty": "No se sabe si los dos episodios fueron mareo o desmayo y los análisis están pendientes",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "compatible con|compatibles con",
+        "sugestivo de",
+        "parece ser",
+        "secundario a",
+        "desencadenado por",
+        "apunta a",
+        "responde bien a",
+        "sugiere (?:que|un|una|trastorno|enfermedad|cuadro|episodio)",
+        "probablemente",
+        "subyacente",
+        "se beneficiaría de",
+        "se descarta (?:el|la|un|una|ningun[oa])",
+        "demuestra que|demostró que",
+        "confirma que|confirmó que|se confirma que",
+        "diagn[oó]stico de (?:trastorno|ansiedad|depresi[oó]n|insomnio|reflujo|gastritis|episodio|discapacidad)",
+        "se trata de (?:un|una) (?:trastorno|diagn[oó]stico|enfermedad|depresi[oó]n|ansiedad|episodio|cuadro)",
+        "cuadro de (?:dolor|ansiedad|depresi[oó]n|insomnio|sintomas|s[íi]ntomas|conducta)",
+        "s[íi]ncope",
+        "desmayo confirmado",
+        "episodio de p[ée]rdida de conciencia confirmado",
+        "diagn[óo]stico de mareo|diagn[óo]stico de lipotimia"
+      ],
+      "mustCapture": [
+        {
+          "id": "mareo-o-desmayo-sin-resolver",
+          "any": [
+            "no (?:s[ée]|se sabe|sabe) si se desmay[óo]",
+            "no sabe si (?:se )?desmay[óo]",
+            "no me qued[óo] claro si (?:fue|era)",
+            "no se sabe si (?:fue|era)",
+            "no se puede precisar si los episodios fueron"
+          ]
+        },
+        {
+          "id": "dos-episodios",
+          "any": ["dos veces", "dos episodios", "se le fue el mundo", "hace un mes"]
+        },
+        {
+          "id": "analisis-pendientes",
+          "any": [
+            "an[aá]lisis de sangre",
+            "an[aá]lisis (?:de laboratorio|pendientes|sin salir)",
+            "est[aá]n pendientes",
+            "no los ha abierto",
+            "pendientes"
+          ]
+        },
+        {
+          "id": "olvidos",
+          "any": ["se le olvidan", "olvidos", "problemas de memoria", "no me acuerdo"]
+        },
+        {
+          "id": "sin-medicamentos",
+          "any": ["no toma (?:medicamentos|nada|ninguna pastilla)", "sin medicamentos", "no toma nada"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "desmayo|mareo|p[ée]rdida de conciencia",
+          "marker": "no (?:s[ée]|se sabe|se sabe si|sabe si)|no me qued[óo] claro|pendiente de|no confirmado|sin verificar|no lo revisé|no (?:me )?acuerdo"
+        },
+        {
+          "topic": "an[aá]lisis|estudios",
+          "marker": "pendiente|no le han salido|no han salido|no los ha abierto|sin (?:salir|ver|abrir)|falta"
+        }
+      ],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["buena adherencia", "evolución favorable", "paciente comprometida"]
+    },
+    "uncertainty/04-dosis-pasada.txt": {
+      "format": "intake",
+      "sections": ["Motivo de consulta", "Antecedentes", "Formulación", "Plan terapéutico"],
+      "modality": "dictated-long",
+      "words": 258,
+      "difficulty": "Dosis y nombre del antidepresivo pasado no se recuerdan: la nota no puede inventarlos",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Motivo de consulta", "Antecedentes", "Plan terapéutico"],
+      "mustNotContain": [
+        "compatible con|compatibles con",
+        "sugestivo de",
+        "parece ser",
+        "secundario a",
+        "desencadenado por",
+        "apunta a",
+        "responde bien a",
+        "sugiere (?:que|un|una|trastorno|enfermedad|cuadro|episodio)",
+        "probablemente",
+        "subyacente",
+        "se beneficiaría de",
+        "se descarta (?:el|la|un|una|ningun[oa])",
+        "demuestra que|demostró que",
+        "confirma que|confirmó que|se confirma que",
+        "diagn[oó]stico de (?:trastorno|ansiedad|depresi[oó]n|insomnio|reflujo|gastritis|episodio|discapacidad)",
+        "se trata de (?:un|una) (?:trastorno|diagn[oó]stico|enfermedad|depresi[oó]n|ansiedad|episodio|cuadro)",
+        "cuadro de (?:dolor|ansiedad|depresi[oó]n|insomnio|sintomas|s[íi]ntomas|conducta)",
+        "sertralina|fluoxetina|paroxetina|venlafaxina|bupropi[óo]n|escitalopram|citalopram|mirtazapina|tramadol",
+        "dosis confirmada de (?:antidepresivo|farma|medicamento)"
+      ],
+      "mustCapture": [
+        {
+          "id": "dosis-in-cierta",
+          "any": [
+            "no (?:me )?acord[ée] de la dosis",
+            "no (?:me )?acord[ée] (?:si era|la dosis)",
+            "media pastilla o una entera",
+            "media pastilla o una pastilla",
+            "no sabe la dosis",
+            "dosis (?:desconocida|no confirmada|sin confirmar)"
+          ]
+        },
+        {
+          "id": "nombre-desconocido",
+          "any": [
+            "no (?:me )?acord[ée][^.\\n]{0,60}?nombre",
+            "no (?:s[ée]|se sabe|recuerda) (?:cu[aá]l era (?:el |la )?nombre|el nombre)",
+            "no (?:s[ée]|se sabe) (?:cu[aá]l era|el nombre del medicamento)",
+            "nombre (?:del medicamento )?(?:desconocido|no confirmado|sin confirmar)",
+            "sin (?:el )?nombre (?:conocido|identificado)"
+          ]
+        },
+        {
+          "id": "antepasado-antidepresivo",
+          "any": ["antidepresivo", "hace dos a[ñn]os", "ocho meses"]
+        },
+        {
+          "id": "hoy-sin-medicamentos",
+          "any": [
+            "no toma (?:nada|ninguna pastilla|medicamentos)",
+            "sin medicamentos",
+            "s[óo]lo paracetamol",
+            "nada m[aá]s paracetamol"
+          ]
+        },
+        {
+          "id": "calores",
+          "any": ["calores", "se despierta a las tres"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "dosis",
+          "marker": "no (?:me )?acord[ée]|no (?:s[ée]|se sabe|recuerda)|no est[áa] claro|pendiente de|no confirmad|sin verificar|no lo revisé"
+        },
+        {
+          "topic": "antidepresivo|nombre del medicamento",
+          "marker": "no (?:me )?acord[ée]|no (?:s[ée]|se sabe|recuerda)|pendiente de|no confirmad|sin verificar|no tiene la receta"
+        }
+      ],
+      "requiresMarker": [],
+      "novelTermAllow": [],
+      "phraseBait": ["buena adherencia", "mejoría notable", "respuesta favorable"]
+    },
+    "unclear-speech/02-numero-garbal.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 249,
+      "difficulty": "El número de episodios del mes no se oyó y no se rellena con un promedio",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "\\bfueron (?:3|4|5|6|7|8|10|12|15|20)\\b",
+        "\\b(?:3|4|5|6|7|8|10|12|15|20) (?:crisis|ataques|episodios) (?:en el mes|en el último mes|durante el mes|durante el último mes)\\b",
+        "\\b(?:3|4|5|6|7|8|10|12|15|20) (?:crisis|ataques|episodios) el mes pasado\\b",
+        "en el (?:mes|último mes) (?:hubo|tuvo|fueron) (?:3|4|5|6|7|8|10|12|15|20)",
+        "aproximadamente (?:3|4|5|6|7|8|10|12|15|20)",
+        "alrededor de (?:3|4|5|6|7|8|10|12)",
+        "tal vez",
+        "\\bquiz[áa]\\b",
+        "probablemente",
+        "seguramente",
+        "lo m[áa]s probable"
+      ],
+      "mustCapture": [
+        {
+          "id": "numero-incomprendido",
+          "any": [
+            "el n[úu]mero no se oy[óo]",
+            "no se oy[óo] el n[úu]mero",
+            "no se escuch[óo] el n[úu]mero",
+            "n[úu]mero (?:no (?:se )?(?:oy[óo]|entendi[óo]|escuch[óo])|sin (?:poder )?precisar|desconocido|no (?:se )?registr)",
+            "n[úu]mero[^.]{0,70}no (?:se )?(?:oy[óo]|entendi[óo]|escuch[óo])",
+            "no (?:se )?(?:oy[óo]|entendi[óo]|escuch[óo])[^.]{0,70}n[úu]mero"
+          ]
+        },
+        {
+          "id": "numero-registro-pendiente",
+          "any": [
+            "no (?:la |lo |las |los )?(?:anot|registr)|no (?:se|queda) (?:consign|registr|anot)[aó]|no consta|sin (?:consignar|registrar|anotar)|qued[óo] (?:sin )?anotad|sin (?:poder )?(?:precisar|completar)|queda pendiente|pendiente de (?:registro|confirmar)|por confirmar|no (?:se )?(?:va a|iba a)? ?(?:adivinar|inventar|suponer|asumir)|no (?:la |lo )?(?:adivino|invento|completo|traduzco)|no se (?:va a|lo va a) (?:adivinar|inventar)",
+            "queda sin resolver",
+            "sin resolverse"
+          ]
+        },
+        {
+          "id": "frecuencia-clara",
+          "any": [
+            "m[áa]s de tres veces por semana",
+            "m[áa]s de 3 veces por semana",
+            "3 veces por semana",
+            "tres veces por semana"
+          ]
+        },
+        {
+          "id": "ultimo-episodio",
+          "any": ["hace nueve d[íi]as", "hace 9 d[íi]as", "nueve d[íi]as"]
+        },
+        {
+          "id": "evitacion-transporte",
+          "any": [
+            "no vuelve a subir",
+            "no ha vuelto a subir",
+            "no (?:se )?monta al transporte",
+            "no sube al transporte",
+            "no (?:vuelve|ha vuelto) (?:a )?(?:usar|subir)[^.]{0,40}transporte",
+            "evita (?:el |el uso del )?(?:transporte|cami[óo]n|bus)"
+          ]
+        },
+        {
+          "id": "inicio",
+          "any": ["hace (?:como )?cuatro meses", "hace 4 meses", "cuatro meses"]
+        },
+        {
+          "id": "primer-lugar",
+          "any": ["supermercado"]
+        },
+        {
+          "id": "plan-exposicion",
+          "any": ["exposiciones", "exposici[óo]n", "lista jerarquizada", "asiento de atr[áa]s"]
+        },
+        {
+          "id": "plan-fechas",
+          "any": ["fechas de los episodios", "en papel", "registro de (?:fechas|episodios)"]
+        },
+        {
+          "id": "plan-semanal",
+          "any": ["semanal", "cada semana"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["tenso", "habla r[áa]pida", "poco contacto visual", "sin agitaci[óo]n psicomotora"]
+        },
+        {
+          "id": "analisis",
+          "any": ["lo que lo sostiene es la evitaci[óo]n", "evitaci[óo]n", "cada vez que se queda en casa"]
+        },
+        {
+          "id": "sin-ideacion",
+          "any": [
+            "no (?:ha tenido|tiene) (?:ideas|pensamientos|ideaci[óo]n) (?:de hacerse da[ñn]o|suicid)",
+            "no ha pensado en hacerse da[ñn]o",
+            "niega (?:ideas|pensamientos|ideaci[óo]n) (?:de hacerse da[ñn]o|suicid|hacer da[ñn]o)",
+            "niega (?:ideaci[óo]n|ideas) (?:suicida|homicida)",
+            "no (?:tiene|nunca ha tenido) (?:ideas|pensamientos) (?:de hacerse da[ñn]o|de suicidio)",
+            "sin ideaci[óo]n (?:suicida )?actual",
+            "sin ideaci[óo]n (?:suicida|homicida)",
+            "no refiere (?:ideas|pensamientos) (?:de hacerse da[ñn]o|suicid)"
+          ],
+          "tags": ["safety"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "n[úu]mero|cu[áa]ntos|cu[áa]ntas",
+          "marker": "no se (?:oy[óo]|entendi[óo]|escuch[óo]|aclar[óo])|no (?:la |lo |las |los )?anot|no (?:s[ée]|sab[íi]a|sup[eé])|no (?:qued[óo] )?clar|inciert|sin (?:poder )?precisar|por confirmar|no confirm|no (?:la |lo )?(?:voy a )?(?:adivinar|inventar)"
+        }
+      ],
+      "requiresMarker": [
+        {
+          "topic": "n[úu]mero|cu[áa]ntos|cu[áa]ntas|episodios|mes pasado",
+          "marker": "(?:\\[?[^\\]]{0,40}(?:no se (?:oyó|entendió|clarificó|escuchó)|ininteligible|no intelligible|aclarado|escuchado como|no se escuchó)[^\\]]{0,20}\\]?)"
+        }
+      ],
+      "novelTermAllow": [],
+      "phraseBait": []
+    },
+    "unclear-speech/04-hora-garbal.txt": {
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "dictated",
+      "words": 218,
+      "difficulty": "La hora de inicio de las cefaleas no se oyó; la palabra sí, la cifra no",
+      "markerFreeSource": false,
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Subjetivo", "Objetivo", "Plan"],
+      "mustNotContain": [
+        "\\b[0-2]\\d ?h\\b",
+        "\\b\\d{1,2}:\\d{2}\\b",
+        "\\b\\d{1,2} ?(?:am|pm|a\\. ?m\\.|p\\. ?m\\.)\\b",
+        "a la una",
+        "a las (?:una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)",
+        "alrededor de las",
+        "a eso de las",
+        "tipo las",
+        "tal vez",
+        "\\bquiz[áa]\\b",
+        "probablemente",
+        "seguramente",
+        "lo m[áa]s probable"
+      ],
+      "mustCapture": [
+        {
+          "id": "hora-incomprendida",
+          "any": [
+            "la hora exacta no se oy[óo]",
+            "no se oy[óo] la hora exacta",
+            "no se oy[óo] la hora",
+            "no se escuch[óo] la hora",
+            "no se entendi[óo] la hora",
+            "hora exacta",
+            "hora[^.]{0,70}no (?:se )?(?:oy[óo]|entendi[óo]|escuch[óo])",
+            "no (?:se )?(?:oy[óo]|entendi[óo]|escuch[óo])[^.]{0,70}hora"
+          ]
+        },
+        {
+          "id": "hora-registro-pendiente",
+          "any": [
+            "no (?:la |lo |las |los )?(?:anot|registr)|no (?:se|queda) (?:consign|registr|anot)[aó]|no consta|sin (?:consignar|registrar|anotar)|qued[óo] (?:sin )?anotad|sin (?:poder )?(?:precisar|completar)|queda pendiente|pendiente de (?:registro|confirmar)|por confirmar|no (?:se )?(?:va a|iba a)? ?(?:adivinar|inventar|suponer|asumir)|no (?:la |lo )?(?:adivino|invento|completo|traduzco)|no se (?:va a|lo va a) (?:adivinar|inventar)",
+            "queda pendiente de registro",
+            "qued[óo] sin (?:anotar|registrar)"
+          ]
+        },
+        {
+          "id": "palabra-si-oída",
+          "any": ["en la madrugada", "de madrugada", "por la madrugada", "madrugada"]
+        },
+        {
+          "id": "escribirla",
+          "any": [
+            "me la escriba",
+            "escriba la hora",
+            "que la escriba",
+            "anotar la hora",
+            "en el diario",
+            "hora escrita",
+            "con la hora escrita",
+            "(?:escrib|anot)[^.]{0,30}hora"
+          ]
+        },
+        {
+          "id": "cefalea",
+          "any": ["dolores de cabeza", "dolor(?:es)? de cabeza", "cefalea"]
+        },
+        {
+          "id": "bruxismo",
+          "any": ["aprieta los dientes", "bruxismo", "la dentista"]
+        },
+        {
+          "id": "sueno",
+          "any": ["cinco horas y media", "5 ?[.,] ?5 horas", "5 horas y media"]
+        },
+        {
+          "id": "despertares",
+          "any": [
+            "una o dos veces en la noche",
+            "se despierta (?:una|dos|1|2) veces",
+            "se vuelve a dormir por (?:puro )?cansancio",
+            "despertares? (?:en la noche|nocturnos)",
+            "uno o dos despertares"
+          ]
+        },
+        {
+          "id": "canal",
+          "any": ["videollamada", "por v[íi]deo", "en l[íi]nea", "a distancia"]
+        },
+        {
+          "id": "presentacion",
+          "any": ["tranquila", "bien arreglada", "contacto visual", "habla clara"]
+        },
+        {
+          "id": "analisis",
+          "any": [
+            "tensi[óo]n del cuello",
+            "falta de sue[ñn]o",
+            "dolor cervical",
+            "nos sirve para el diario",
+            "cefalea[^.]{0,70}(?:cuello|sue[ñn]o)",
+            "(?:cuello|sue[ñn]o)[^.]{0,70}cefalea"
+          ]
+        },
+        {
+          "id": "plan-relajacion",
+          "any": ["relajaci[óo]n", "t[ée]cnicas de relajaci[óo]n", "respiraci[óo]n diafragm[áa]tica"]
+        },
+        {
+          "id": "plan-revision",
+          "any": ["en dos semanas", "dentro de dos semanas", "si baja la frecuencia"]
+        }
+      ],
+      "requiresHedge": [
+        {
+          "topic": "hora|madrugada",
+          "marker": "no se (?:oy[óo]|entendi[óo]|escuch[óo]|aclar[óo])|no (?:la |lo |las |los )?anot|no (?:s[ée]|sab[íi]a|sup[eé])|no (?:qued[óo] )?clar|inciert|sin (?:poder )?precisar|por confirmar|no confirm|no (?:la |lo )?(?:voy a )?(?:adivinar|inventar)"
+        }
+      ],
+      "requiresMarker": [
+        {
+          "topic": "hora|madrugada",
+          "marker": "(?:\\[?[^\\]]{0,40}(?:no se (?:oyó|entendió|clarificó|escuchó)|ininteligible|no intelligible|aclarado|escuchado como|no se escuchó)[^\\]]{0,20}\\]?)"
+        }
+      ],
+      "novelTermAllow": [],
+      "phraseBait": []
+    }
+  }
+}
