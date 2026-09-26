@@ -313,6 +313,25 @@ export function PinIcon({ className }: IconProps): React.JSX.Element {
 }
 
 /** The box a patient is archived into. */
+/**
+ * Star, for claude.ai's "Star" on a row menu (AM-047). Drawn here rather than
+ * copied: a five-point star at the menu's 1.5 stroke, rounded joins. `filled`
+ * is the Unstar row's glyph, so the menu says which state the patient is in.
+ */
+export function StarIcon({ className, filled = false }: IconProps & { filled?: boolean }): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"
+        stroke="currentColor"
+        fill={filled ? 'currentColor' : 'none'}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
 export function ArchiveIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>

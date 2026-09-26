@@ -193,10 +193,11 @@
   padding: var(--space-0);
 }
 
+/* claude.ai's icon buttons lift a neutral shade on hover; they never turn the
+   accent, which stays for the controls she acts with (AM-047). */
 .icon-btn:hover {
-  background: var(--accent-tint);
-  color: var(--accent);
-  border-color: var(--accent);
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
 }
 
 /* ------------------------------------------------------------ list items */
@@ -3747,16 +3748,20 @@ select:disabled {
   padding: 0 var(--space-4);
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-primary);
+  /* claude.ai's recents are set a step below the primary ink; the row under
+     the pointer and the open one come up to it. */
+  color: var(--text-secondary);
   font-size: var(--row-font);
 }
 
 .project-row:hover {
   background: var(--row-hover-bg);
+  color: var(--text-primary);
 }
 
 .project-row.is-active {
   background: var(--row-selected-bg);
+  color: var(--text-primary);
   font-weight: 500;
 }
 
@@ -3793,8 +3798,21 @@ select:disabled {
   color: var(--text-muted);
 }
 
-.patient-entry.is-pinned .project-row .name {
-  color: var(--text-primary);
+/*
+ * The "Starred" and "Recents" labels over the two groups of rows, as claude.ai
+ * heads its sidebar: small, medium weight, the muted ink, inset to the names.
+ */
+.sidebar-section-label {
+  margin: var(--space-8) 0 var(--space-2);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.sidebar-section-label:first-child {
+  margin-top: var(--space-4);
 }
 
 .patient-entry.is-dragging {
@@ -4080,9 +4098,10 @@ select:disabled {
 }
 
 .directory-title {
-  font-family: var(--font-sans);
-  font-size: calc(22px * var(--font-scale));
-  font-weight: 500;
+  /* claude.ai's page titles: the display serif, regular weight. */
+  font-family: var(--font-serif);
+  font-size: calc(28px * var(--font-scale));
+  font-weight: 400;
   letter-spacing: -0.01em;
   color: var(--patients-title);
 }
@@ -4214,15 +4233,17 @@ select:disabled {
   width: var(--settings-nav-w);
   flex: 0 0 auto;
   padding: var(--settings-pad) var(--space-8);
-  border-right: 1px solid var(--divider);
+  /* claude.ai runs the nav and the section on one surface, no rule between. */
   overflow-y: auto;
 }
 
+/* claude.ai's "Settings": the display serif, large and regular, over the nav. */
 .settings-nav-title {
-  margin: 0 0 var(--space-4) var(--space-4);
-  font-family: var(--font-sans);
-  font-size: var(--text-md);
-  font-weight: 600;
+  margin: 0 0 var(--space-8) var(--space-4);
+  font-family: var(--font-serif);
+  font-size: calc(24px * var(--font-scale));
+  font-weight: 400;
+  line-height: 1.2;
   color: var(--text-primary);
 }
 
@@ -4246,11 +4267,8 @@ select:disabled {
 /* The tab's own glyph, 16px and a step down from its label, as Claude's are.
    The open tab takes the label's colour and the icon goes with it. */
 .settings-nav-item .icon {
-  width: 16px;
-  height: 16px;
-  stroke-width: 1.5;
-  color: var(--text-secondary);
-  flex-shrink: 0;
+  /* claude.ai's settings nav is words only (AM-047). */
+  display: none;
 }
 
 .settings-nav-item:hover {
@@ -4265,7 +4283,6 @@ select:disabled {
 .settings-nav-item.is-active {
   background: var(--row-selected-bg);
   color: var(--text-primary);
-  font-weight: 500;
 }
 
 .settings-nav-item.is-active .icon {
@@ -4325,6 +4342,19 @@ select:disabled {
 .settings-pane-body .settings-title {
   font-family: var(--font-sans);
   font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+/* The close control is a bare glyph, as claude.ai's is: no box around it. */
+.settings-pane-bar .icon-btn {
+  border-color: transparent;
+  background: transparent;
+}
+
+.settings-pane-bar .icon-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
 }
 
 .settings-pane-body .settings-group {
