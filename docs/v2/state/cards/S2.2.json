@@ -1,0 +1,1 @@
+{ "card":"S2.2","planVersion":2,"contracts":["C-SETTINGS@1"],"baseCommit":"4e12e9e","attempt":1,"status":"IN PROGRESS","lastCompletedStep":"card repaired twice; IR CLEAR all ten (round 3); implementer dispatched","nextAllowedAction":"check implementation return","sideEffectsDone":[],"changedFiles":[],"criteria":{},"sandboxRuns":[],"updatedUtc":"2026-09-26T14:00:00Z" }
