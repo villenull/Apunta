@@ -24,7 +24,7 @@ import { REFINE_PROMPT_TOKENS } from '../ai/ollama.js';
 import { buildRefinePrompt, REFINE_BACKGROUND_END, REFINE_BACKGROUND_REMINDER } from '../ai/prompts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 import { recordingProviders } from '../test/providers.js';
-import { ALREADY_THERE_NOTICE, QUESTION_LEFT_ALONE, UNCHANGED_NOTICE } from '../ai/refine-request.js';
+import { alreadyThereNotice, questionLeftAlone, unchangedNotice } from '../ai/refine-request.js';
 import { REFINE_BACKGROUND_TOKENS, discussionSubheadingSource, withoutServerSentences } from './chat.js';
 
 /**
@@ -289,7 +289,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(assistantReply(events)).not.toBe('');
     // …and the no-change sentence is not appended: a question is allowed to
     // leave the note alone without the server remarking on it.
-    expect(assistantReply(events)).not.toContain(UNCHANGED_NOTICE);
+    expect(assistantReply(events)).not.toContain(unchangedNotice('en'));
   });
 
   it('refines whatever the editor currently shows, not what was drafted', async () => {
@@ -435,7 +435,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(reply).toContain('Subjective was kept as it was');
     expect(reply).toContain('"four hours a night in June"');
     // The lock's notice is the explanation; the no-change line would only repeat it.
-    expect(reply).not.toContain(UNCHANGED_NOTICE);
+    expect(reply).not.toContain(unchangedNotice('en'));
     expect(noteUpdated(events)?.data['outcome']).toBe('withheld');
     expect(getNote(harness.db, note.id)?.content).toBe(FACT_NOTE);
   });
@@ -519,7 +519,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
 
     const { events } = await chat(harness.app, note.id, { message: 'Tidy this up a little' });
 
-    expect(assistantReply(events)).toContain(UNCHANGED_NOTICE);
+    expect(assistantReply(events)).toContain(unchangedNotice('en'));
     expect(noteUpdated(events)?.data['outcome']).toBe('unchanged');
     expect(getNote(harness.db, note.id)?.content).toBe(NOTE_TEXT);
   });
@@ -529,7 +529,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
 
     const { events } = await chat(harness.app, note.id, { message: 'Is the assessment clear enough?' });
 
-    expect(assistantReply(events)).not.toContain(UNCHANGED_NOTICE);
+    expect(assistantReply(events)).not.toContain(unchangedNotice('en'));
   });
 
   it('strips every server sentence from a reply before it goes back as history', () => {
@@ -546,7 +546,7 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
         `${reply}\n\nApunta blocked part of this revision. Objective was kept as it was.`,
       ),
     ).toBe(reply);
-    expect(withoutServerSentences(`${reply}\n\n${UNCHANGED_NOTICE}`)).toBe(reply);
+    expect(withoutServerSentences(`${reply}\n\n${unchangedNotice('en')}`)).toBe(reply);
     expect(
       withoutServerSentences(
         `${reply}\n\nApunta applied the corrections you made as you spoke, before drafting: left out “four hours”.`,
@@ -562,6 +562,27 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(withoutServerSentences('Apunta already has that in the Plan section.')).toBe(
       'Apunta already has that in the Plan section.',
     );
+  });
+
+  /**
+   * The strip in the other language. Every one of these sentences is persisted
+   * in the note's own locale, so a list that only knew the English openings
+   * would quietly feed a Spanish notice back to the model — the exact failure
+   * the locks exist to prevent, one language over.
+   */
+  it('strips the server sentences in Spanish as well as in English', () => {
+    const reply = 'Acorté la sección de Assessment.';
+    for (const sentence of [
+      t('chat.unchangedNotice', {}, 'es-MX'),
+      t('chat.alreadyThereNotice', {}, 'es-MX'),
+      t('chat.questionLeftAlone', {}, 'es-MX'),
+      'Apunta dejó Location como estaba: tu mensaje solo preguntaba por Discussion.',
+      'Apunta no pudo acortar la sección de Discussion: la revisión no salió más corta.',
+      'Apunta aplicó las correcciones que hiciste al hablar, antes de redactar: dejó fuera «four hours».',
+      t('chat.guardNotice.opening', {}, 'es-MX'),
+    ]) {
+      expect(withoutServerSentences(`${reply}\n\n${sentence}`), sentence).toBe(reply);
+    }
   });
 
   it('sends the recent thread back as history on the next turn', async () => {
@@ -1287,6 +1308,98 @@ describe('POST /api/notes/:id/chat — the request, the diff and the reply', () 
     }
   });
 
+  /**
+   * The same hold, on a note written in Spanish: the outcome reason and the
+   * reply are both the note's language, and the strip still takes the reply off
+   * the history the model sees next turn — in Spanish, which is the half that
+   * used to be missing.
+   */
+  it('reports a scope hold in the note’s language, and strips it in that language too', async () => {
+    const { local, note } = await fixedApp('Shortened the Discussion.', (current) => ({
+      ...current,
+      Location: 'Video.',
+      Discussion: 'The wedding, mostly.',
+    }));
+    try {
+      local.db.prepare('UPDATE notes SET locale = ? WHERE id = ?').run('es-MX', note.id);
+      const { events } = await chat(local.app, note.id, { message: 'Make the discussion shorter' });
+
+      const final = noteUpdated(events);
+      expect(final?.data['outcome']).toBe('partial');
+      expect(String(final?.data['outcome_reason'])).toBe(
+        'Apunta dejó Location como estaba: tu mensaje solo preguntaba por Discussion.',
+      );
+      const reply = assistantReply(events);
+      expect(reply).toContain('Apunta dejó Location como estaba');
+      expect(reply).not.toContain('Apunta left');
+      // The model never reads its own lock notice back, in either language.
+      expect(withoutServerSentences(`${reply}`)).not.toContain('Apunta dejó');
+    } finally {
+      await local.close();
+    }
+  });
+
+  /**
+   * The race the published lock names, from the inside: the note was filed
+   * while the model was still revising it, so the write no-opped. The thread has
+   * to say why in the note's language — the reason is read off
+   * `outcome_reason` by `RefineColumn.tsx`, so an English string here is a
+   * sentence the owner reads on a Spanish note.
+   */
+  it('says why the edit was refused when the note was filed mid-turn, in the note’s language', async () => {
+    let filed: (() => void) | null = null;
+    class FilingProvider extends FakeLlmProvider {
+      override async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+        const current = textToSections(request.noteText, request.sections);
+        // She files the note here, between the model starting and the guarded
+        // write — the window `updateDraftNoteContent` refuses to write through.
+        filed?.();
+        yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+        yield {
+          type: 'refined',
+          reply: 'Updated.',
+          updatedSections: { ...current, Discussion: 'The wedding, mostly.' },
+          stats: STATS,
+        };
+      }
+    }
+
+    const local = await createTestApp({
+      providers: { llm: new FilingProvider(), stt: new FakeSttProvider() },
+    });
+    try {
+      const own = await seedPatient(local.app, 'John Smith');
+      const localFormat = await seedFormat(local.app, { sections: OWNER_SECTIONS });
+      const note = await seedNote(local.app, own.id, localFormat.id, OWNER_NOTE);
+      local.db.prepare('UPDATE notes SET locale = ? WHERE id = ?').run('es-MX', note.id);
+      filed = (): void => {
+        // Publishing is one write, and the schema's check wants the stamp with
+        // the status — the same pair `POST /api/notes/:id/publish` writes.
+        local.db
+          .prepare("UPDATE notes SET status = 'published', published_at = ? WHERE id = ?")
+          .run('2026-09-26T12:00:00.000Z', note.id);
+      };
+
+      const { events } = await chat(local.app, note.id, { message: 'Make the discussion shorter' });
+
+      // The event that does go out carries the note as it stands — the write
+      // that no-opped must not claim a revision — and the reason for it.
+      const final = noteUpdated(events);
+      expect((final?.data['note'] as Note).content).toBe(OWNER_NOTE);
+      expect(final?.data['outcome']).toBe('withheld');
+      // The reason itself, read verbatim by `RefineColumn.tsx`. This is the
+      // sentence this attempt's finding 3 was about: it was a raw English
+      // string two lines from a sentence the card had already keyed.
+      expect(String(final?.data['outcome_reason'])).toBe(
+        'La nota se publicó antes de que se pudiera aplicar el cambio.',
+      );
+      expect(assistantReply(events)).toBe(t('chat.publishedRefusal', {}, 'es-MX'));
+      expect(getNote(local.db, note.id)?.content).toBe(OWNER_NOTE);
+    } finally {
+      await local.close();
+    }
+  });
+
   it('does not let a request that only adds take anything out', async () => {
     // 2026-09-23 (b): "add that she's on sertraline 20 mg" deleted a
     // Discussion sentence instead of adding the medication.
@@ -1399,7 +1512,7 @@ describe('POST /api/notes/:id/chat — the request, the diff and the reply', () 
       expect(String(noteUpdated(events)?.data['outcome_reason'])).toBe(
         'The note already said what you asked for.',
       );
-      expect(assistantReply(events)).toBe(ALREADY_THERE_NOTICE);
+      expect(assistantReply(events)).toBe(alreadyThereNotice('en'));
     } finally {
       await local.close();
     }
@@ -1418,7 +1531,7 @@ describe('POST /api/notes/:id/chat — the request, the diff and the reply', () 
       expect(events.map((event) => event.name)).not.toContain('note-updated');
       expect(getNote(local.db, note.id)?.content).toBe(OWNER_NOTE);
       expect(assistantReply(events)).toContain('Shortened the Plan section.');
-      expect(assistantReply(events)).toContain(QUESTION_LEFT_ALONE);
+      expect(assistantReply(events)).toContain(questionLeftAlone('en'));
     } finally {
       await local.close();
     }

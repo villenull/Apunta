@@ -2,13 +2,13 @@ import type { Sections } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import {
-  ALREADY_THERE_NOTICE,
-  UNCHANGED_NOTICE,
+  alreadyThereNotice,
   assessRefine,
   checkRequests,
   enforceRefineScope,
   isQuestion,
   parseRefineRequest,
+  unchangedNotice,
 } from './refine-request.js';
 
 const OWNER = [
@@ -222,6 +222,137 @@ describe('checkRequests', () => {
   });
 });
 
+/**
+ * The sentences this card's catalogues took over, asked for in Spanish.
+ *
+ * Every one of them is persisted into the note's thread and read back as
+ * `outcome_reason`, so a note written in Spanish has to be able to answer in
+ * Spanish — and the English above is the oracle that the two are the same
+ * sentence rather than two different ones.
+ */
+describe('the server’s own sentences in Spanish', () => {
+  it('holds a section her request did not name, in the note’s language', () => {
+    const result = enforceRefineScope(
+      NOTE,
+      { ...NOTE, Location: 'Video.' },
+      parseRefineRequest('Make the discussion shorter', OWNER),
+      'es-MX',
+    );
+    expect(result.held[0]?.reason).toBe(
+      'Apunta dejó Location como estaba: tu mensaje solo preguntaba por Discussion.',
+    );
+    // Her format's section names are stored text, not translated (C-LANG@1 rule 5).
+    expect(result.held[0]?.reason).toContain('Location');
+  });
+
+  it('holds an addition-only request to adding, in the note’s language', () => {
+    const updated = {
+      ...NOTE,
+      Discussion:
+        'She wanted to talk about her sister’s wedding next month and seeing her ex there, which took most of the hour.',
+    };
+    const result = enforceRefineScope(
+      NOTE,
+      updated,
+      parseRefineRequest("Add that she's on sertraline 20 mg", OWNER),
+      'es-MX',
+    );
+    expect(result.held[0]?.reason).toContain('solo pediste agregar');
+    // The lost stretch is quoted as it reads in the note, in straight quotes
+    // like every other `{phrase}` in this catalogue.
+    expect(result.held[0]?.reason).toContain('"talked about work her manager"');
+  });
+
+  it('names the subject of an unmet shortening in Spanish, whole note and section', () => {
+    // The subject used to be assembled in English from the section's name, so
+    // the Spanish sentence came out half English whatever the template said.
+    const section = checkRequests(
+      parseRefineRequest('Make the discussion shorter', OWNER),
+      NOTE,
+      withSection('Discussion', `${NOTE['Discussion'] ?? ''} And more.`),
+      'es-MX',
+    );
+    expect(section[0]?.reason).toBe(
+      'Apunta no pudo acortar la sección de Discussion: la revisión no salió más corta.',
+    );
+
+    const whole = checkRequests(
+      parseRefineRequest('Make it shorter', OWNER),
+      NOTE,
+      withSection('Discussion', 'Short.'),
+      'es-MX',
+    );
+    expect(whole[0]?.satisfied).toBe(true);
+    const wholeMiss = checkRequests(
+      parseRefineRequest('Make it shorter', OWNER),
+      NOTE,
+      withSection('Discussion', `${NOTE['Discussion'] ?? ''} And more.`),
+      'es-MX',
+    );
+    expect(wholeMiss[0]?.reason).toBe('Apunta no pudo acortar la nota: la revisión no salió más corta.');
+  });
+
+  it('names an unmet removal and an unmet addition in Spanish', () => {
+    const removal = checkRequests(parseRefineRequest('Remove the risk review', OWNER), NOTE, NOTE, 'es-MX');
+    expect(removal[0]?.reason).toBe(
+      'Apunta no pudo vaciar la sección de Risk review: la revisión la dejó como estaba.',
+    );
+
+    const addition = checkRequests(
+      parseRefineRequest('Add that she is on Zoloft 50 mg', OWNER),
+      NOTE,
+      withSection('Discussion', 'Unchanged elsewhere.'),
+      'es-MX',
+    );
+    expect(addition.map((check) => check.reason)).toContain(
+      'Apunta no pudo agregar "Zoloft": la revisión volvió sin eso.',
+    );
+  });
+
+  it('joins a Spanish reply out of the same pieces, with no English left in it', () => {
+    const intent = parseRefineRequest('Make the discussion shorter', OWNER);
+    const updated = { ...NOTE, Location: 'Video.', Discussion: `${NOTE['Discussion'] ?? ''} And more.` };
+    const held = enforceRefineScope(NOTE, updated, intent, 'es-MX').held;
+    const verdict = assessRefine(
+      { intent, previous: NOTE, updated, held, lockedSections: [], notices: [], changed: true },
+      'es-MX',
+    );
+    expect(verdict.reason).toContain('Apunta no pudo acortar');
+    expect(verdict.reply).toContain('Apunta dejó');
+    // The only English left is the diff sentence `changeSentence` writes, which
+    // this card's amendment does not reach — named in the return file.
+    expect(verdict.reply).not.toContain('Apunta left');
+    expect(verdict.reply).not.toContain('Apunta could not');
+  });
+
+  it('says nothing changed, in Spanish, in the whole reply', () => {
+    const intent = parseRefineRequest('Tidy this up a little', OWNER);
+    const verdict = assessRefine(
+      { held: [], lockedSections: [], notices: [], previous: NOTE, intent, updated: NOTE, changed: false },
+      'es-MX',
+    );
+    expect(verdict.reply).toBe(unchangedNotice('es-MX'));
+    expect(verdict.reply).not.toBe(unchangedNotice('en'));
+
+    const already: Sections = { ...NOTE, 'Client presentation': 'On sertraline 20 mg daily.' };
+    const satisfied = parseRefineRequest("Add that she's on sertraline 20 mg", OWNER);
+    expect(
+      assessRefine(
+        {
+          held: [],
+          lockedSections: [],
+          notices: [],
+          previous: already,
+          intent: satisfied,
+          updated: already,
+          changed: false,
+        },
+        'es-MX',
+      ).reply,
+    ).toBe(alreadyThereNotice('es-MX'));
+  });
+});
+
 describe('assessRefine', () => {
   const base = { held: [], lockedSections: [], notices: [], previous: NOTE };
 
@@ -292,7 +423,7 @@ describe('assessRefine', () => {
     });
     expect(verdict.outcome).toBe('unchanged');
     expect(verdict.reason).toBe('The requested edit produced no changes.');
-    expect(verdict.reply).toBe(UNCHANGED_NOTICE);
+    expect(verdict.reply).toBe(unchangedNotice('en'));
   });
 
   it('says the note already said it, rather than reporting a silent no-op', () => {
@@ -301,7 +432,7 @@ describe('assessRefine', () => {
     const verdict = assessRefine({ ...base, previous: already, intent, updated: already, changed: false });
     expect(verdict.outcome).toBe('unchanged');
     expect(verdict.reason).toBe('The note already said what you asked for.');
-    expect(verdict.reply).toBe(ALREADY_THERE_NOTICE);
+    expect(verdict.reply).toBe(alreadyThereNotice('en'));
   });
 
   it('never claims a change the diff does not have, and names what really moved', () => {

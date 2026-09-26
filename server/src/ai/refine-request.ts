@@ -1,5 +1,6 @@
-import type { Sections } from '@apunta/shared';
+import { DEFAULT_LOCALE, type Sections } from '@apunta/shared';
 
+import { msg, type Locale } from '../http/locale.js';
 import { factTokens, medicationTokens, removalRequested } from './fact-guard.js';
 
 /**
@@ -272,7 +273,12 @@ export interface ScopeResult {
  * allowed to change when it only lost words and the words it lost are among the
  * ones the named section gained. Nothing else.
  */
-export function enforceRefineScope(previous: Sections, updated: Sections, intent: RefineIntent): ScopeResult {
+export function enforceRefineScope(
+  previous: Sections,
+  updated: Sections,
+  intent: RefineIntent,
+  locale: Locale = DEFAULT_LOCALE,
+): ScopeResult {
   const sections: Record<string, string> = { ...updated };
   const held: ScopeHold[] = [];
   const scoped = intent.targets.length > 0;
@@ -294,7 +300,7 @@ export function enforceRefineScope(previous: Sections, updated: Sections, intent
         sections[name] = before;
         held.push({
           section: name,
-          reason: `Apunta left ${name} as it was: your message asked about ${scopeLabel} only.`,
+          reason: msg(locale, 'chat.scopeHold.outOfScope', { section: name, scope: scopeLabel }),
         });
         continue;
       }
@@ -306,7 +312,10 @@ export function enforceRefineScope(previous: Sections, updated: Sections, intent
         sections[name] = before;
         held.push({
           section: name,
-          reason: `Apunta left ${name} as it was: you asked only to add, and the revision would also have taken out "${lostPhrase(before, revised)}".`,
+          reason: msg(locale, 'chat.scopeHold.additionOnly', {
+            section: name,
+            phrase: lostPhrase(before, revised),
+          }),
         });
       }
     }
@@ -335,7 +344,12 @@ export interface RequestCheck {
  * Did what she asked for actually happen? Read off the diff, never off the
  * model's reply. A request this module cannot check contributes no entry.
  */
-export function checkRequests(intent: RefineIntent, previous: Sections, updated: Sections): RequestCheck[] {
+export function checkRequests(
+  intent: RefineIntent,
+  previous: Sections,
+  updated: Sections,
+  locale: Locale = DEFAULT_LOCALE,
+): RequestCheck[] {
   const checks: RequestCheck[] = [];
   const revisedAll = Object.values(updated).join('\n');
 
@@ -345,13 +359,19 @@ export function checkRequests(intent: RefineIntent, previous: Sections, updated:
       const before = section === null ? Object.values(previous).join('\n') : (previous[section] ?? '');
       const revised = section === null ? revisedAll : (updated[section] ?? '');
       const satisfied = words(revised).length < words(before).length;
-      const subject = section === null ? 'the note' : `the ${section} section`;
       checks.push({
         kind: 'shortening',
         section,
         label: null,
         satisfied,
-        reason: satisfied ? '' : `Apunta could not shorten ${subject}: the revision came back no shorter.`,
+        // Two keys for one sentence: the whole note, or the section she named.
+        // The subject used to be assembled in English here, which left the
+        // Spanish sentence half English whatever the key said about the rest.
+        reason: satisfied
+          ? ''
+          : section === null
+            ? msg(locale, 'chat.request.shorteningNote')
+            : msg(locale, 'chat.request.shorteningSection', { section }),
       });
     }
   }
@@ -368,9 +388,7 @@ export function checkRequests(intent: RefineIntent, previous: Sections, updated:
         section,
         label: null,
         satisfied,
-        reason: satisfied
-          ? ''
-          : `Apunta could not clear the ${section} section: the revision left it as it was.`,
+        reason: satisfied ? '' : msg(locale, 'chat.request.clearing', { section }),
       });
     }
   }
@@ -382,7 +400,7 @@ export function checkRequests(intent: RefineIntent, previous: Sections, updated:
       section: null,
       label: addition.label,
       satisfied,
-      reason: satisfied ? '' : `Apunta could not add "${addition.label}": the revision came back without it.`,
+      reason: satisfied ? '' : msg(locale, 'chat.request.addition', { label: addition.label }),
     });
   }
 
@@ -434,8 +452,8 @@ export interface AssessInput {
  * `unchanged` with a satisfied request means the note already said what she
  * asked for, and the reason says so rather than reporting a silent no-op.
  */
-export function assessRefine(input: AssessInput): RefineVerdict {
-  const checks = checkRequests(input.intent, input.previous, input.updated);
+export function assessRefine(input: AssessInput, locale: Locale = DEFAULT_LOCALE): RefineVerdict {
+  const checks = checkRequests(input.intent, input.previous, input.updated, locale);
   const unmet = checks.filter((check) => !check.satisfied);
   const heldBack = input.held.length > 0 || input.notices.length > 0;
   const explainedSections = new Set([...input.held.map((hold) => hold.section), ...input.lockedSections]);
@@ -478,7 +496,7 @@ export function assessRefine(input: AssessInput): RefineVerdict {
           ? 'The note already said what you asked for.'
           : 'The requested edit produced no changes.';
 
-  return { outcome, reason, reply: replyFor(input, checks, outcome, explained) };
+  return { outcome, reason, reply: replyFor(input, checks, outcome, explained, locale) };
 }
 
 /**
@@ -492,6 +510,7 @@ function replyFor(
   checks: readonly RequestCheck[],
   outcome: RefineOutcome,
   explained: (check: RequestCheck) => boolean,
+  locale: Locale,
 ): string {
   const parts: string[] = [];
   if (input.changed) {
@@ -520,8 +539,8 @@ function replyFor(
   if (parts.length > 0) return parts.join('\n\n');
   if (outcome !== 'unchanged') return '';
   return checks.length > 0 && checks.every((check) => check.satisfied)
-    ? ALREADY_THERE_NOTICE
-    : UNCHANGED_NOTICE;
+    ? alreadyThereNotice(locale)
+    : unchangedNotice(locale);
 }
 
 /** "I shortened the Discussion section and added "sertraline 20 mg"." */
@@ -545,11 +564,23 @@ function changeSentence(previous: Sections, updated: Sections, additions: readon
   return parts.length === 0 ? '' : `I ${parts.join(' and ')}.`;
 }
 
-/** The server's own sentence when an instruction left the note as it was. */
-export const UNCHANGED_NOTICE = 'Apunta did not change the note: the revision came back with no edits.';
+/**
+ * The server's own sentence when an instruction left the note as it was.
+ *
+ * `locale` is the note's, not the request's (C-LANG@1 rule 4): the sentence is
+ * persisted into the note's thread at write time and read back on every later
+ * turn, so it has to be the language the note is written in.
+ */
+export function unchangedNotice(locale: Locale = DEFAULT_LOCALE): string {
+  return msg(locale, 'chat.unchangedNotice');
+}
 
 /** The server's own sentence when the note already said what she asked for. */
-export const ALREADY_THERE_NOTICE = 'Apunta did not change the note: it already said what you asked for.';
+export function alreadyThereNotice(locale: Locale = DEFAULT_LOCALE): string {
+  return msg(locale, 'chat.alreadyThereNotice');
+}
 
 /** The server's own sentence when a question came back with a rewrite attached. */
-export const QUESTION_LEFT_ALONE = 'Apunta left the note unchanged: you asked a question, not for an edit.';
+export function questionLeftAlone(locale: Locale = DEFAULT_LOCALE): string {
+  return msg(locale, 'chat.questionLeftAlone');
+}
