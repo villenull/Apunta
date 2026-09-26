@@ -109,3 +109,26 @@ the timestamps below are true UTC, as the rest of this log is.
 - Ready to run, in DEPENDENCIES order: **S2.5** (IR clear), **P5.2** (deps P5.1 + P3.2 both APPROVED, IR not yet run). Nothing else has all dependencies APPROVED.
 - The `-ir.md` review files for P1.1–P1.5, P2.1, P2.2, P3.1, S2.1, S2.2, S2.3 and S2.5, and the `P3.1-ir.md`/`P3.2*.md`/`S2.5*.md`/`P5.2-ir.md` dispatch files, are **untracked**. Precedent is mixed (S2.3-ir.md and S2.4-ir.md are tracked). They are regenerated artifacts, not sources of truth; `docs/v2/cards/*.md` is.
 - `docs/v2/state/dispatch/P3.1-ir.md`, `P4.2.md` and `P5.1.md` are tracked and carry uncommitted modifications from the rebuilds that preceded those cards' runs.
+
+## Second session (2026-09-26, 18:46Z →)
+
+Resumed after the previous coordinator died of provider errors. Reconstructed
+its window (see the recovery block above), archived its two strays, and carried
+on. All subagents run `opencode-go/space-bunny-free`: the account that returned
+`402 Insufficient account funds` at 16:50Z is the Zen endpoint, and the free Go
+tier is what the rest of the plan has been running on.
+
+- 2026-09-26T19:00Z | P3.1 | **stop condition cleared** | owner ran `pkexec pacman -S --needed cmake` (polkit prompt, exit 0); cmake 4.4.3 at `/usr/bin/cmake`, `glslc` present for the `vulkan` backend the card pins, `make` for cmake's default generator. P3.1 back to NOT STARTED, checkpoint written, implementation dispatch to be rebuilt at the then-current head
+- 2026-09-26T19:05Z | P4.1 | probe re-run under owner authorisation | 7/7 artifacts, one hop-1 host `us.aws.cdn.hf.co`, the **same ten query key names** on every one: `Expires`, `Hash-Algorithm`, `Key-Pair-Id`, `Policy`, `Signature`, `X-Xet-Cas-Uid`, `response-content-disposition`, `response-content-type`, `user_id`, `xip`. The probe now records key **names**; every value is still `<redacted>`, so the signature never reaches the tree
+- 2026-09-26T19:10Z | P4.1 | **AM-042, owner-approved (option (a) with probe)** | `ACQUISITION.md` §1 gains an *Allowed query keys* column; A07's redirect cell is the single observed host; A07 enumerates the ten names, every other row is `none` (the pre-existing behaviour). A new paragraph states admission tests the parameter **name** against that cell, no wildcard or blanket permission, and an off-list name is `query_key_not_allowed`, refused before the URL is requested. Card text: refusal list, test rows 8/8a/8b, stop condition 2. P4.1 → attempt 2, budget 2 of 3 left
+- 2026-09-26T19:14Z | P5.2 | IR r1 DEFECT on IR-03/04/05/06 | **AM-043** applies all four verbatim plus the reviewer's two non-blocking clauses; re-run once (r2 dispatched at `88be917`)
+- 2026-09-26T19:12Z | S2.5 | implement a1 in flight | base `7bf379a`, port 7832
+
+**Serialization note.** Only one writer at a time. S2.5 owns `server/src/**`,
+`shared/src/**` and `web/src/**`; P4.1's and P3.1's files are disjoint from that,
+but their verification rows are whole-repo (`npm test`, `npm run lint`, `npm run
+typecheck`) or rebuild `shared/dist`, so running them beside S2.5 would race its
+build output and could turn a green row red for a reason that has nothing to do
+with either card. P4.1 attempt 2 and P3.1 attempt 1 are therefore held until
+S2.5's implementer commits and is reviewed. Read-only lanes (instruction
+reviews) still run in parallel.
