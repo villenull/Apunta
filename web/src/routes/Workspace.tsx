@@ -1,6 +1,6 @@
 import type { Note, PatientListItem } from '@apunta/shared';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import {
   deletePatient,
@@ -15,16 +15,36 @@ import {
 import { AiBanner } from '../components/AiBanner.js';
 import { BrainstormView } from '../components/BrainstormView.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
+import { Dialog } from '../components/Dialog.js';
 import { HomeLauncher } from '../components/HomeLauncher.js';
-import { BackIcon, DocumentIcon, PlusIcon } from '../components/icons.js';
+import { BackIcon, DocumentIcon, PanelLeftIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
 import { NoteView } from '../components/NoteView.js';
+import { PatientDirectory } from '../components/PatientDirectory.js';
 import { PatientsColumn } from '../components/PatientsColumn.js';
 import { PlanView } from '../components/PlanView.js';
 import { PrepView } from '../components/PrepView.js';
 import { Toast } from '../components/Toast.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLoader } from '../hooks/useLoader.js';
+import { usePatientRecency } from '../hooks/usePatientRecency.js';
+import { usePinnedPatients } from '../hooks/usePinnedPatients.js';
+import { orderPatients } from '../lib/patientOrder.js';
+import { readSidebarCollapsed, writeSidebarCollapsed } from '../lib/patientPins.js';
+
+/*
+ * Settings, opened over the workspace rather than as its own screen (owner
+ * preview, 2026-09-26: a centred panel over a blurred page, with the sections
+ * down its left, as in Claude). It stays code-split for the same reason the
+ * route is: the workspace opens first and must not carry the backup and import
+ * machinery.
+ */
+const SettingsModalPanel = lazy(async () => ({
+  default: (await import('./Settings.js')).SettingsModalPanel,
+}));
+
+/** A stable empty list, so the loaders below never see a new array identity. */
+const NO_PATIENTS: PatientListItem[] = [];
 
 /**
  * The workspace — `prototype/patients.html`. Three columns: patients, that
@@ -32,10 +52,12 @@ import { useLoader } from '../hooks/useLoader.js';
  *
  * Which patient and note are open lives in the query string rather than in
  * component state, so the capture screen can hand a freshly created draft back
- * ("/?patient=…&note=…") and a reload keeps the user where they were.
+ * ("/?patient=…&note=…") and a reload keeps the user where she were.
  */
 export function Workspace(): React.JSX.Element {
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const patientId = params.get('patient');
   const noteId = params.get('note');
   // `view` is the main pane's mode: her notes, a brainstorm, the plan, or a
@@ -45,18 +67,46 @@ export function Workspace(): React.JSX.Element {
   const view: 'notes' | 'plan' | 'prep' | 'brainstorm' =
     rawView === 'plan' || rawView === 'prep' || rawView === 'brainstorm' ? rawView : 'notes';
   const [actionError, setActionError] = useState<string | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
+  const [previewNote, setPreviewNote] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PatientListItem | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  // "View all" is a route of its own, so a reload keeps her on the full list.
+  const atDirectory = location.pathname === '/patients';
+  const [directoryTab, setDirectoryTab] = useState<'active' | 'archived'>('active');
+  // The sidebar never shows archived patients; only the Archived tab asks for
+  // them, so opening the tab is the one request that widens the list.
+  const includeArchived = atDirectory && directoryTab === 'archived';
+  // preview-only: the collapsed panel is remembered per browser (see
+  // lib/patientPins); a real card would keep it beside the other preferences.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+  const pins = usePinnedPatients();
 
   // No patient name in the tab title: it is read over a shoulder, shown in the
   // window switcher, and written into browser history.
   useDocumentTitle('Patients');
 
   const loadPatients = useCallback(
-    (signal: AbortSignal) => listPatients(signal, showArchived),
-    [showArchived],
+    (signal: AbortSignal) => listPatients(signal, includeArchived),
+    [includeArchived],
   );
   const patients = useLoader(loadPatients);
+
+  const patientList = patients.state.status === 'ready' ? patients.state.data : NO_PATIENTS;
+  const recency = usePatientRecency(patientList);
+  // The sidebar's own list: pinned first, then by when the last note was
+  // edited. The directory page keeps every row and shows the date instead.
+  const activePatients = useMemo(
+    () => patientList.filter((candidate) => candidate.archived_at === null),
+    [patientList],
+  );
+  const ordered = useMemo(
+    () => orderPatients(activePatients, recency, pins.ids),
+    [activePatients, recency, pins.ids],
+  );
+  const directoryRows = useMemo(
+    () => orderPatients(patientList, recency, pins.ids),
+    [patientList, recency, pins.ids],
+  );
 
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
   const formats = useLoader(loadFormats);
@@ -122,6 +172,18 @@ export function Workspace(): React.JSX.Element {
     [setParams],
   );
 
+  /*
+   * Opening someone from the "View all" page lands on their notes, not on the
+   * list she came from: the directory is a way into a patient, not a place to
+   * stay.
+   */
+  const selectPatientFromDirectory = useCallback(
+    (id: string) => {
+      navigate(`/?patient=${encodeURIComponent(id)}`);
+    },
+    [navigate],
+  );
+
   const selectNote = useCallback(
     (id: string) => {
       if (patientId === null) return;
@@ -182,8 +244,8 @@ export function Workspace(): React.JSX.Element {
       await setPatientArchived(target.id, archived);
       setActionError(null);
       // Archiving the open patient would leave the middle column showing
-      // someone the list no longer has.
-      if (archived && !showArchived && target.id === patientId) setParams({});
+      // someone the working list no longer has.
+      if (archived && target.id === patientId) setParams({});
       reloadPatients();
     } catch (thrown) {
       setActionError(errorMessage(thrown));
@@ -200,9 +262,17 @@ export function Workspace(): React.JSX.Element {
     }
   }
   // Home is the no-patient screen. A patient id whose list is still loading
-  // is not home yet — it would flash the welcome screen on every reload.
-  const atHome = patient === null && (patientId === null || patients.state.status !== 'loading');
-  const narrowPane = patient === null ? 'patients' : note !== null || view !== 'notes' ? 'main' : 'notes';
+  // is not home yet — it would flash the welcome screen on every reload. The
+  // full patient list is its own page, not home.
+  const atHome =
+    !atDirectory && patient === null && (patientId === null || patients.state.status !== 'loading');
+  const narrowPane = atDirectory
+    ? 'main'
+    : patient === null
+      ? 'patients'
+      : note !== null || view !== 'notes'
+        ? 'main'
+        : 'notes';
   const previousPane = useRef(narrowPane);
 
   useEffect(() => {
@@ -218,6 +288,19 @@ export function Workspace(): React.JSX.Element {
       document.querySelector<HTMLElement>(targetSelector)?.focus();
     });
   }, [narrowPane]);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((was) => {
+      writeSidebarCollapsed(!was);
+      return !was;
+    });
+  }, []);
+
+  // One place for the controls this preview has not built, so a row that says
+  // so says the same thing wherever it is pressed from.
+  const onUnavailable = useCallback((what: string) => {
+    setPreviewNote(`${what} isn't part of this preview yet.`);
+  }, []);
 
   const serverUnavailable = [patients.state, formats.state, notes.state].some(
     (state) => state.status === 'error' && state.message === NETWORK_ERROR_MESSAGE,
@@ -243,14 +326,19 @@ export function Workspace(): React.JSX.Element {
   return (
     <div className="workspace">
       <AiBanner />
-      <div className={`app-shell pane-${narrowPane}${atHome ? ' at-home' : ''}`}>
+      <div
+        className={`app-shell pane-${narrowPane}${atHome ? ' at-home' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+      >
         <PatientsColumn
           patients={patients.state}
+          ordered={ordered}
           activePatientId={patient?.id ?? null}
-          showArchived={showArchived}
+          recency={recency}
+          pinnedIds={pins.ids}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={toggleSidebar}
           onSelect={selectPatient}
           onRetry={patients.reload}
-          onToggleArchived={setShowArchived}
           onSetArchived={(target, archived) => {
             void handleSetArchived(target, archived);
           }}
@@ -258,9 +346,32 @@ export function Workspace(): React.JSX.Element {
             void handleRename(target, name);
           }}
           onDelete={setPendingDelete}
+          onTogglePin={pins.toggle}
+          onReorderPins={pins.move}
+          onOpenAll={() => {
+            navigate('/patients');
+          }}
+          onOpenSettings={() => {
+            setSettingsOpen(true);
+          }}
+          onUnavailable={onUnavailable}
         />
 
-        {!atHome && (
+        {/* The only way back once the panel is gone, so it lives over the main
+            pane rather than in the sidebar it hides. */}
+        {sidebarCollapsed && (
+          <button
+            type="button"
+            className="icon-btn sidebar-reopen"
+            aria-label="Show patients"
+            data-testid="sidebar-reopen"
+            onClick={toggleSidebar}
+          >
+            <PanelLeftIcon className="icon icon-sm" />
+          </button>
+        )}
+
+        {!atHome && !atDirectory && (
           <NotesColumn
             patient={patient}
             notes={notesForColumn}
@@ -276,7 +387,7 @@ export function Workspace(): React.JSX.Element {
         )}
 
         <div className="col col-main" data-testid="main-pane">
-          {patient !== null && (
+          {patient !== null && !atDirectory && (
             <button
               type="button"
               className="narrow-back main-back"
@@ -295,12 +406,30 @@ export function Workspace(): React.JSX.Element {
               {formats.state.message}
             </p>
           )}
-          {patient === null ? (
+          {atDirectory ? (
+            <PatientDirectory
+              patients={directoryRows}
+              status={patients.state.status}
+              errorMessage={patients.state.status === 'error' ? patients.state.message : null}
+              onRetry={patients.reload}
+              tab={directoryTab}
+              onTab={setDirectoryTab}
+              onSelect={selectPatientFromDirectory}
+              onSetArchived={(target, archived) => {
+                void handleSetArchived(target, archived);
+              }}
+              onRename={(target, name) => {
+                void handleRename(target, name);
+              }}
+              onDelete={setPendingDelete}
+              onTogglePin={pins.toggle}
+              lastNoteAt={recency}
+              pinnedIds={pins.ids}
+              onUnavailable={onUnavailable}
+            />
+          ) : patient === null ? (
             atHome ? (
-              <HomeLauncher
-                patients={patients.state.status === 'ready' ? patients.state.data : []}
-                onSelect={selectPatient}
-              />
+              <HomeLauncher patients={ordered} onSelect={selectPatient} />
             ) : null
           ) : view === 'plan' ? (
             <PlanView key={`plan-${patient.id}`} patient={patient} onOpenNote={selectNote} />
@@ -335,6 +464,27 @@ export function Workspace(): React.JSX.Element {
         />
       )}
 
+      {previewNote !== null && (
+        <Toast
+          message={previewNote}
+          onDismiss={() => {
+            setPreviewNote(null);
+          }}
+        />
+      )}
+
+      {/* Settings over the workspace: the page behind is blurred and dimmed, the
+          panel is centred (owner preview, 2026-09-26). */}
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsModal
+            onClose={() => {
+              setSettingsOpen(false);
+            }}
+          />
+        </Suspense>
+      )}
+
       {pendingDelete !== null && (
         <ConfirmDialog
           title={`Delete ${pendingDelete.name}?`}
@@ -365,6 +515,28 @@ export function Workspace(): React.JSX.Element {
         />
       )}
     </div>
+  );
+}
+
+/**
+ * The centred settings panel of the owner's preview: Claude dims and blurs the
+ * page behind it rather than replacing it, and puts the sections down the left
+ * of the panel with the open one on the right (owner preview, 2026-09-26). So
+ * `Dialog` does the work (Escape, a trapped tab order, focus returned to the
+ * row that opened it) and the workspace stays mounted underneath.
+ */
+function SettingsModal({ onClose }: { onClose: () => void }): React.JSX.Element {
+  return (
+    <Dialog
+      title="Settings"
+      onClose={onClose}
+      showTitle={false}
+      className="modal card settings-modal"
+      testId="settings-modal"
+      backdropTestId="settings-backdrop"
+    >
+      <SettingsModalPanel onClose={onClose} />
+    </Dialog>
   );
 }
 

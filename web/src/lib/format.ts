@@ -60,6 +60,25 @@ export function noteCountLabel(count: number): string {
   return `${String(count)} note${count === 1 ? '' : 's'}`;
 }
 
+/*
+ * The list meta of the owner's Claude-flavoured preview (2026-09-26): "Sep 7"
+ * for this year, the year spelled out for anything older, and an em dash for a
+ * patient who has no note to date.
+ */
+const SHORT_DATE_FORMAT = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+const SHORT_DATE_YEAR_FORMAT = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
+
+export function formatShortDate(iso: string | null, now: Date = new Date()): string {
+  if (iso === null) return '—';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return (date.getFullYear() === now.getFullYear() ? SHORT_DATE_FORMAT : SHORT_DATE_YEAR_FORMAT).format(date);
+}
+
 /**
  * A calendar date (`YYYY-MM-DD`) as the app writes dates elsewhere.
  *

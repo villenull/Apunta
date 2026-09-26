@@ -27,7 +27,17 @@ import {
 } from '../lib/appearance.js';
 import { BackupAdvanced, BackupCard, useBackup } from '../components/BackupCard.js';
 import { useSettingsContext } from '../components/SettingsProvider.js';
-import { PlusIcon } from '../components/icons.js';
+import {
+  CloseIcon,
+  DatabaseIcon,
+  DocumentIcon,
+  DownloadIcon,
+  MonitorIcon,
+  MoonIcon,
+  PlusIcon,
+  SlidersIcon,
+  SunIcon,
+} from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
@@ -45,34 +55,157 @@ import type { FormatDraft } from './formatDraft.js';
  * "Edit" reuses the onboarding confirm screen as the format editor: it is
  * already the name-plus-sections form, and M6 grows it further.
  */
+
+/**
+ * The five sections, in Apunta's order and in the shape the owner's reference
+ * gives them (owner, 2026-09-26, after Claude's settings): a tab per section
+ * down the left of the modal, that one section on the right, each tab with the
+ * icon Claude puts beside it. The standalone `/settings` screen shows the same
+ * five in the same order one after another, which is the same thing without the
+ * nav — so the two cannot drift.
+ */
+const SECTIONS = [
+  { id: 'appearance', label: 'Appearance', icon: <SunIcon className="icon icon-sm" /> },
+  { id: 'format', label: 'Format', icon: <DocumentIcon className="icon icon-sm" /> },
+  { id: 'backup', label: 'Backup', icon: <DatabaseIcon className="icon icon-sm" /> },
+  { id: 'import', label: 'Import', icon: <DownloadIcon className="icon icon-sm" /> },
+  { id: 'advanced', label: 'Advanced', icon: <SlidersIcon className="icon icon-sm" /> },
+] as const;
+
+type SectionId = (typeof SECTIONS)[number]['id'];
+
 export function Settings(): React.JSX.Element {
-  useDocumentTitle('Settings');
+  return (
+    <Screen back={{ to: '/', label: 'Patients' }}>
+      <SettingsPanel />
+    </Screen>
+  );
+}
+
+/**
+ * Everything both hosts of the settings body need: the formats, the backup
+ * card, which section is open, and the way to get to the archives from the
+ * restore link. One store, so the modal and the screen cannot disagree about
+ * what is loaded or what is open.
+ */
+function useSettingsStore() {
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
   const formats = useLoader(loadFormats);
   const backup = useBackup();
+  const [section, setSection] = useState<SectionId>('appearance');
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  // "Restore an old backup" is answered by the archives, which live under
+  // Advanced. On the screen that means opening the disclosure; in the modal it
+  // also means changing tab — so the store asks for both and scrolls once the
+  // archives are actually on the page.
+  const [wantArchives, setWantArchives] = useState(false);
+  const goToArchives = useCallback(() => {
+    setAdvancedOpen(true);
+    setSection('advanced');
+    setWantArchives(true);
+  }, []);
+  useEffect(() => {
+    if (!wantArchives) return;
+    const archives = document.getElementById('backup-archives');
+    // Not on the page yet (the modal is a tab behind): wait for the section
+    // change, which is in the dependency list below.
+    if (archives === null) return;
+    setWantArchives(false);
+    archives.scrollIntoView({ block: 'start' });
+  }, [wantArchives, section]);
 
   const newFormat: FormatDraft = { name: '', sections: [], returnTo: '/settings' };
 
-  return (
-    <Screen back={{ to: '/', label: 'Patients' }}>
-      <div className="settings">
-        <AppearanceSettings />
-        <LlmProfileSettings />
+  return { formats, backup, section, setSection, advancedOpen, setAdvancedOpen, goToArchives, newFormat };
+}
 
+type SettingsStore = ReturnType<typeof useSettingsStore>;
+
+/**
+ * The settings body on its own, without the screen around it: every section,
+ * in order, as one scrolling column.
+ */
+export function SettingsPanel(): React.JSX.Element {
+  useDocumentTitle('Settings');
+  const store = useSettingsStore();
+
+  return <SettingsSections store={store} show={SECTIONS.map((item) => item.id)} />;
+}
+
+/**
+ * The same body in Claude's shape (owner, 2026-09-26): the sections down the
+ * left as a nav, the open one on the right, and the close control at the top
+ * right of the panel. No search field over the nav — Apunta has five sections
+ * and none of them is long enough to need one, and a search box that filters
+ * two of five rows is worse than no search box.
+ */
+export function SettingsModalPanel({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const store = useSettingsStore();
+
+  return (
+    <div className="settings-shell">
+      <nav className="settings-nav" aria-label="Settings sections">
+        <h2 className="settings-nav-title">Settings</h2>
+        {SECTIONS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={store.section === item.id ? 'settings-nav-item is-active' : 'settings-nav-item'}
+            aria-current={store.section === item.id ? 'page' : undefined}
+            data-testid={`settings-tab-${item.id}`}
+            onClick={() => {
+              store.setSection(item.id);
+            }}
+          >
+            {item.icon}
+            <span className="settings-nav-label">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+      <div className="settings-pane">
+        <div className="settings-pane-bar">
+          <button type="button" className="icon-btn" aria-label="Close settings" onClick={onClose}>
+            <CloseIcon className="icon icon-sm" />
+          </button>
+        </div>
+        <div className="settings-pane-body">
+          <SettingsSections store={store} show={[store.section]} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The sections themselves, in the order asked for. */
+function SettingsSections({
+  store,
+  show,
+}: {
+  store: SettingsStore;
+  show: readonly SectionId[];
+}): React.JSX.Element {
+  return (
+    <div className="settings">
+      {show.includes('appearance') && (
+        <>
+          <AppearanceSettings />
+          <LlmProfileSettings />
+        </>
+      )}
+      {show.includes('format') && (
         <section className="card settings-card" data-testid="format-list">
           <h2 className="settings-title">Note formats</h2>
-          {formats.state.status === 'loading' && <p className="small state-note">Loading…</p>}
-          {formats.state.status === 'error' && (
+          {store.formats.state.status === 'loading' && <p className="small state-note">Loading…</p>}
+          {store.formats.state.status === 'error' && (
             <p className="small state-note error-state" role="alert">
-              {formats.state.message}{' '}
-              <button type="button" className="btn small btn-quick" onClick={formats.reload}>
+              {store.formats.state.message}{' '}
+              <button type="button" className="btn small btn-quick" onClick={store.formats.reload}>
                 Try again
               </button>
             </p>
           )}
-          {formats.state.status === 'ready' &&
-            formats.state.data.map((format) => (
+          {store.formats.state.status === 'ready' &&
+            store.formats.state.data.map((format) => (
               <div className="patient-row settings-list-row" key={format.id}>
                 <div>
                   <p className="format-name">{format.name}</p>
@@ -97,10 +230,10 @@ export function Settings(): React.JSX.Element {
               </div>
             ))}
           {/* The card's last row, not a button floating between cards. */}
-          {formats.state.status === 'ready' && (
+          {store.formats.state.status === 'ready' && (
             <Link
               to="/onboarding/format"
-              state={newFormat}
+              state={store.newFormat}
               className="patient-row settings-list-row format-add-row"
               data-testid="add-format"
             >
@@ -109,40 +242,39 @@ export function Settings(): React.JSX.Element {
             </Link>
           )}
         </section>
-
+      )}
+      {show.includes('backup') && (
         <BackupCard
-          backup={backup}
+          backup={store.backup}
           onRestore={() => {
-            // The archives are under Advanced: open it and go there.
-            setAdvancedOpen(true);
-            requestAnimationFrame(() => {
-              document.getElementById('backup-archives')?.scrollIntoView({ block: 'start' });
-            });
+            store.goToArchives();
           }}
         />
-
+      )}
+      {show.includes('import') && (
         <section className="card settings-card">
           <Link to="/import" className="settings-link-row" data-testid="settings-import">
-            <span className="settings-title">Import from Claude</span>
+            <span className="settings-link-label">Import from Claude</span>
             <span aria-hidden="true">›</span>
           </Link>
           <Link to="/import/halaxy" className="settings-link-row" data-testid="settings-import-halaxy">
-            <span className="settings-title">Import from Halaxy</span>
+            <span className="settings-link-label">Import from Halaxy</span>
             <span aria-hidden="true">›</span>
           </Link>
         </section>
-
+      )}
+      {show.includes('advanced') && (
         <details
           className="card settings-card settings-advanced"
           data-testid="settings-advanced"
-          open={advancedOpen}
+          open={store.advancedOpen}
           onToggle={(event) => {
-            setAdvancedOpen(event.currentTarget.open);
+            store.setAdvancedOpen(event.currentTarget.open);
           }}
         >
           <summary className="settings-title">Advanced</summary>
           <div id="backup-archives">
-            <BackupAdvanced backup={backup} />
+            <BackupAdvanced backup={store.backup} />
           </div>
           <div className="settings-group">
             <h3 className="settings-subtitle">App</h3>
@@ -153,8 +285,8 @@ export function Settings(): React.JSX.Element {
             </nav>
           </div>
         </details>
-      </div>
-    </Screen>
+      )}
+    </div>
   );
 }
 function LlmProfileSettings(): React.JSX.Element | null {
@@ -348,26 +480,14 @@ function AppearanceSettings(): React.JSX.Element {
         <span className="settings-label" id="theme-label">
           Theme
         </span>
-        <span className="settings-row-actions size-options" role="radiogroup" aria-labelledby="theme-label">
-          {THEMES.map((option) => (
-            <button
-              key={option}
-              type="button"
-              role="radio"
-              aria-checked={shownTheme === option}
-              tabIndex={shownTheme === option ? 0 : -1}
-              className={shownTheme === option ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
-              data-testid={`theme-${option}`}
-              onClick={() => {
-                setTheme(option);
-                applyTheme(option);
-                save({ [THEME_SETTING]: option });
-              }}
-            >
-              {THEME_LABELS[option]}
-            </button>
-          ))}
-        </span>
+        <ThemeSwitcher
+          value={shownTheme}
+          onChoose={(option) => {
+            setTheme(option);
+            applyTheme(option);
+            save({ [THEME_SETTING]: option });
+          }}
+        />
       </div>
 
       <div className="settings-row">
@@ -394,26 +514,18 @@ function AppearanceSettings(): React.JSX.Element {
                 save({ [FONT_SIZE_SETTING]: size });
               }}
               onKeyDown={(event) => {
-                const direction =
-                  event.key === 'ArrowRight' || event.key === 'ArrowDown'
-                    ? 1
-                    : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
-                      ? -1
-                      : event.key === 'Home'
-                        ? -index
-                        : event.key === 'End'
-                          ? FONT_SIZES.length - 1 - index
-                          : 0;
-                if (direction === 0) return;
-                event.preventDefault();
-                const nextIndex = (index + direction + FONT_SIZES.length) % FONT_SIZES.length;
-                const next = FONT_SIZES[nextIndex];
+                const next = rovingTarget(event, index, FONT_SIZES.length);
                 if (next === undefined) return;
-                setFontSize(next);
-                applyFontSize(next);
-                save({ [FONT_SIZE_SETTING]: next });
+                event.preventDefault();
+                const nextSize = FONT_SIZES[next];
+                if (nextSize === undefined) return;
+                setFontSize(nextSize);
+                applyFontSize(nextSize);
+                save({ [FONT_SIZE_SETTING]: nextSize });
                 requestAnimationFrame(() => {
-                  document.querySelector<HTMLButtonElement>(`[data-testid="font-size-${next}"]`)?.focus();
+                  document
+                    .querySelector<HTMLButtonElement>(`[data-testid="font-size-${nextSize}"]`)
+                    ?.focus();
                 });
               }}
             >
@@ -460,6 +572,81 @@ const FONT_SIZE_LABELS: Readonly<Record<FontSize, string>> = {
 };
 
 const THEME_LABELS: Readonly<Record<Theme, string>> = {
+  system: 'System',
   light: 'Light',
   dark: 'Dark',
 };
+
+/** One glyph per theme, in the order `THEMES` gives: monitor, sun, moon. */
+const THEME_ICONS: Readonly<Record<Theme, React.JSX.Element>> = {
+  system: <MonitorIcon className="icon icon-sm" />,
+  light: <SunIcon className="icon icon-sm" />,
+  dark: <MoonIcon className="icon icon-sm" />,
+};
+
+/**
+ * Theme as a segmented pill of three icons (owner, 2026-09-26, after Claude's
+ * own switcher): the pictures are enough on their own, and a row of three text
+ * buttons is wider than the control is tall. Each is still a `radio` in a
+ * `radiogroup` under the row's own label, and the label — plus the tooltip on
+ * each segment — is what says which is which, so the group is not three
+ * unlabelled pictures.
+ */
+function ThemeSwitcher({
+  value,
+  onChoose,
+}: {
+  value: Theme;
+  onChoose: (theme: Theme) => void;
+}): React.JSX.Element {
+  return (
+    <span className="theme-switch" role="radiogroup" aria-labelledby="theme-label">
+      {THEMES.map((option, index) => (
+        <button
+          key={option}
+          type="button"
+          role="radio"
+          aria-checked={value === option}
+          aria-label={THEME_LABELS[option]}
+          title={THEME_LABELS[option]}
+          tabIndex={value === option ? 0 : -1}
+          className={value === option ? 'theme-switch-btn is-selected' : 'theme-switch-btn'}
+          data-testid={`theme-${option}`}
+          onClick={() => {
+            onChoose(option);
+          }}
+          onKeyDown={(event) => {
+            const next = rovingTarget(event, index, THEMES.length);
+            if (next === undefined) return;
+            event.preventDefault();
+            const option = THEMES[next];
+            if (option === undefined) return;
+            onChoose(option);
+            requestAnimationFrame(() => {
+              document.querySelector<HTMLButtonElement>(`[data-testid="theme-${option}"]`)?.focus();
+            });
+          }}
+        >
+          {THEME_ICONS[option]}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * Which option an arrow key moves to, or `undefined` when the key is not one of
+ * them. A radiogroup has one tab stop, so the arrows are the only way to reach
+ * the other segments from the keyboard.
+ */
+function rovingTarget(
+  event: React.KeyboardEvent,
+  index: number,
+  length: number,
+): number | undefined {
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') return (index + 1) % length;
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') return (index - 1 + length) % length;
+  if (event.key === 'Home') return 0;
+  if (event.key === 'End') return length - 1;
+  return undefined;
+}

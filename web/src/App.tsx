@@ -91,6 +91,12 @@ function AppRoutes(): React.JSX.Element {
         <Suspense fallback={<p className="state-note">Loading…</p>}>
           <Routes>
             <Route path="/" element={<Workspace />} />
+            {/*
+              "View all" (owner preview, 2026-09-26): the full Active /
+              Archived list, shown in the workspace's main pane so the sidebar
+              stays put — the same shape as Claude's Recents page.
+            */}
+            <Route path="/patients" element={<Workspace />} />
             <Route path="/patients/new" element={<AddPatient />} />
             <Route path="/capture/:patientId" element={<Capture />} />
             <Route path="/settings" element={<Settings />} />

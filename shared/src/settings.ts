@@ -74,13 +74,22 @@ export const ANIMATIONS_SETTING = 'animations';
 
 /**
  * Colour theme, app-wide. `dark` is the default: an unset or unusable value
- * falls back to dark, so a fresh install opens dark like the OS dark style.
+ * falls back to dark, so a fresh install opens dark. `system` is the owner's
+ * reference (owner, 2026-09-26): it follows the operating system and keeps
+ * following it, so a machine that switches to dark at dusk switches Apunta
+ * with it. It is a *choice*, not the default — `DEFAULT_THEME` stays `dark`,
+ * so an install that has never been asked still opens dark as before.
+ *
+ * The order is the order the switcher shows them in: System, Light, Dark.
  */
 export const THEME_SETTING = 'theme';
-export const THEMES = ['light', 'dark'] as const;
+export const THEMES = ['system', 'light', 'dark'] as const;
 export type Theme = (typeof THEMES)[number];
 export const DEFAULT_THEME: Theme = 'dark';
 
 export function isTheme(value: unknown): value is Theme {
   return typeof value === 'string' && (THEMES as readonly string[]).includes(value);
 }
+
+/** The two themes the app can actually paint; `system` resolves to one of them. */
+export type ResolvedTheme = 'light' | 'dark';

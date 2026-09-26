@@ -2,7 +2,8 @@ import type { PatientListItem } from '@apunta/shared';
 import { useId, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { MarkIcon, PlusIcon } from './icons.js';
+import { BrandMark } from './BrandMark.js';
+import { PlusIcon } from './icons.js';
 
 export interface HomeLauncherProps {
   /** The patients the list column has loaded; empty while it is loading. */
@@ -67,8 +68,10 @@ export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.J
   return (
     <div className="home" data-testid="home">
       <div className="home-inner">
+        {/* The A mark above the greeting (A4). Decorative, so it sits outside
+            the heading and the question stays the heading's whole text. */}
+        <BrandMark />
         <h1 className="home-title">
-          <MarkIcon className="mark home-mark" />
           <span>Let’s focus on…</span>
         </h1>
         <div className="home-search">

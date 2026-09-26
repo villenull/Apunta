@@ -80,9 +80,21 @@ describe('workspace', () => {
   it('lists patients with their note counts and asks for a selection', async () => {
     renderApp();
 
-    expect(await screen.findByText('John Smith')).toBeDefined();
-    expect(screen.getByText('2 notes')).toBeDefined();
-    expect(screen.getByText('0 notes')).toBeDefined();
+    // A name now appears twice — in the row and in its hover card, as in Claude
+    // — so the assertions below ask for "at least one", not for exactly one.
+    expect((await screen.findAllByText('John Smith')).length).toBeGreaterThan(0);
+
+    // The count and the last edit moved off the row and into the hover card.
+    fireEvent.mouseOver(screen.getByTestId(`patient-row-${john.id}`));
+    const tip = await screen.findByTestId('patient-tip');
+    expect(within(tip).getByText('John Smith')).toBeDefined();
+    expect(within(tip).getByText('2 notes')).toBeDefined();
+    expect(within(tip).getByText('Aug 8')).toBeDefined();
+
+    fireEvent.mouseOver(screen.getByTestId(`patient-row-${maria.id}`));
+    const emptyTip = await screen.findByTestId('patient-tip');
+    expect(within(emptyTip).getByText('0 notes')).toBeDefined();
+    expect(within(emptyTip).getByText('—')).toBeDefined();
     // Home: the welcome question, and no notes column until a patient is chosen.
     expect(screen.getByTestId('home').textContent).toContain('Let’s focus on…');
     expect(screen.queryByTestId('note-list')).toBeNull();
@@ -90,7 +102,7 @@ describe('workspace', () => {
 
   it('finds a patient from the home search as she types', async () => {
     renderApp();
-    await screen.findByText('John Smith');
+    await screen.findAllByText('John Smith');
 
     fireEvent.change(screen.getByTestId('home-search'), { target: { value: 'jo' } });
     const results = screen.getByRole('listbox', { name: 'Patients' });
@@ -103,7 +115,7 @@ describe('workspace', () => {
 
   it('offers New with what she typed when nobody matches', async () => {
     renderApp();
-    await screen.findByText('John Smith');
+    await screen.findAllByText('John Smith');
 
     fireEvent.change(screen.getByTestId('home-search'), { target: { value: 'Ana Torres' } });
     expect(screen.getAllByRole('option')).toHaveLength(1);
@@ -129,8 +141,8 @@ describe('workspace', () => {
 
     fireEvent.change(search, { target: { value: 'maria' } });
 
-    expect(screen.queryByText('John Smith')).toBeNull();
-    expect(screen.getByText('Maria Ruiz')).toBeDefined();
+    expect(screen.queryAllByText('John Smith')).toHaveLength(0);
+    expect(screen.getAllByText('Maria Ruiz').length).toBeGreaterThan(0);
 
     fireEvent.change(search, { target: { value: 'nobody' } });
     expect(await screen.findByText(/No patients match/)).toBeDefined();
@@ -147,7 +159,7 @@ describe('workspace', () => {
   it("shows a patient with no notes the prototype's empty hint", async () => {
     renderApp();
 
-    fireEvent.click(await screen.findByText('Maria Ruiz'));
+    fireEvent.click((await screen.findAllByText('Maria Ruiz'))[0] as HTMLElement);
 
     expect((await screen.findAllByText('No notes yet for Maria Ruiz.')).length).toBeGreaterThan(0);
     expect(screen.getByTestId('notes-header').textContent).toBe('Maria');
@@ -156,7 +168,7 @@ describe('workspace', () => {
   it('opens a note, and marks drafts with a date and a Draft label', async () => {
     renderApp();
 
-    fireEvent.click(await screen.findByText('John Smith'));
+    fireEvent.click((await screen.findAllByText('John Smith'))[0] as HTMLElement);
     expect((await screen.findByTestId('notes-header')).textContent).toBe('John');
     // The note row's date line carries a Draft chip beside the date now; the
     // published note below it has the date alone.
@@ -170,10 +182,18 @@ describe('workspace', () => {
     expect(screen.getByTestId('note-meta').textContent).toContain('John Smith · created');
   });
 
-  it('deletes a patient after confirming, and empties the workspace', async () => {
-    renderApp(`/?patient=${maria.id}`);
+  /*
+   * The owner preview (2026-09-26) moved archiving out of a checkbox and the
+   * destructive item is now Delete only for an archived patient, so deleting
+   * goes through the Archived tab of the "View all" page.
+   */
+  it('deletes an archived patient after confirming', async () => {
+    renderApp();
+    await screen.findAllByText('Maria Ruiz');
 
-    fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
+    fireEvent.click(await screen.findByTestId('view-all-patients'));
+    fireEvent.click(await screen.findByTestId('directory-tab-archived'));
+    fireEvent.click(await screen.findByTestId(`patient-menu-all-${maria.id}`));
     fireEvent.click(screen.getByLabelText('Delete Maria Ruiz'));
 
     // The dialog says what deleting cannot reach, which is the half that
@@ -187,13 +207,14 @@ describe('workspace', () => {
     await waitFor(() => {
       expect(screen.queryByText('Maria Ruiz')).toBeNull();
     });
-    expect(screen.getByTestId('home')).toBeDefined();
   });
 
   it('closes the confirmation on Escape without deleting anything', async () => {
-    renderApp(`/?patient=${maria.id}`);
-
-    fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
+    renderApp();
+    await screen.findAllByText('Maria Ruiz');
+    fireEvent.click(await screen.findByTestId('view-all-patients'));
+    fireEvent.click(await screen.findByTestId('directory-tab-archived'));
+    fireEvent.click(await screen.findByTestId(`patient-menu-all-${maria.id}`));
     fireEvent.click(screen.getByLabelText('Delete Maria Ruiz'));
     expect(await screen.findByRole('dialog')).toBeDefined();
 
@@ -202,11 +223,12 @@ describe('workspace', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull();
     });
-    expect(screen.getByText('Maria Ruiz')).toBeDefined();
+    // Still listed: nothing was deleted, in the sidebar or on the page.
+    expect(screen.getAllByText('Maria Ruiz').length).toBeGreaterThan(0);
   });
 
   /** Archiving is the answer to "not seeing them any more"; it deletes nothing. */
-  it('archives a patient out of the working list and can show them again', async () => {
+  it('archives a patient out of the working list and finds them again under Archived', async () => {
     renderApp(`/?patient=${maria.id}`);
 
     fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
@@ -215,10 +237,75 @@ describe('workspace', () => {
       expect(screen.queryByText('Maria Ruiz')).toBeNull();
     });
 
-    fireEvent.click(screen.getByTestId('show-archived'));
-    expect(await screen.findByText('Maria Ruiz')).toBeDefined();
-    fireEvent.click(screen.getByLabelText('Tools for Maria Ruiz'));
-    expect(screen.getByTestId(`archive-${maria.id}`).textContent).toBe('Restore');
+    fireEvent.click(await screen.findByTestId('view-all-patients'));
+    fireEvent.click(await screen.findByTestId('directory-tab-archived'));
+    expect((await screen.findAllByText('Maria Ruiz')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByTestId(`patient-menu-all-${maria.id}`));
+    expect(screen.getByTestId(`archive-${maria.id}`).textContent).toContain('Restore');
+  });
+
+  /** The panel toggle hides the sidebar and leaves one control to bring it back. */
+  it('collapses the patients sidebar and opens it again', async () => {
+    renderApp();
+    await screen.findAllByText('John Smith');
+
+    fireEvent.click(screen.getByTestId('sidebar-toggle'));
+    expect(screen.getByTestId('sidebar-reopen')).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('sidebar-reopen'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('sidebar-reopen')).toBeNull();
+    });
+  });
+
+  /** Mission control is the sidebar's one row at the bottom; Settings is a modal. */
+  it('opens Settings as a centred modal over the workspace', async () => {
+    renderApp();
+    await screen.findAllByText('John Smith');
+
+    fireEvent.click(screen.getByTestId('mission-control'));
+    fireEvent.click(await screen.findByTestId('mission-settings'));
+
+    const modal = await screen.findByTestId('settings-modal');
+    expect(modal.textContent).toContain('Settings');
+    // The accent picker is the setting she already has; it still works here.
+    expect(within(modal).getByTestId('appearance-settings')).toBeDefined();
+    // Every section tab carries the glyph Claude puts beside it, not just the
+    // one that is open (owner preview, 2026-09-26).
+    for (const section of ['appearance', 'format', 'backup', 'import', 'advanced']) {
+      const tab = within(modal).getByTestId(`settings-tab-${section}`);
+      expect(tab.querySelector('svg'), section).not.toBeNull();
+    }
+
+    fireEvent.click(within(modal).getByLabelText('Close settings'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('settings-modal')).toBeNull();
+    });
+  });
+
+  /** The full list has its own search, its own New, and a Select this preview lacks. */
+  it('searches the full list from the page itself, with New patient beside it', async () => {
+    renderApp();
+    await screen.findAllByText('John Smith');
+
+    fireEvent.click(await screen.findByTestId('view-all-patients'));
+    const page = await screen.findByTestId('patient-directory');
+    expect(screen.queryByTestId('directory-search-input')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('directory-search-toggle'));
+    const field = screen.getByTestId('directory-search-input');
+    fireEvent.change(field, { target: { value: 'maria' } });
+    expect(within(page).getByText('Maria Ruiz')).toBeDefined();
+    expect(within(page).queryByText('John Smith')).toBeNull();
+
+    fireEvent.change(field, { target: { value: 'nobody at all' } });
+    expect(within(page).getByText(/No patients match/)).toBeDefined();
+
+    // The pill goes to the add-patient form, and Select says it is not here
+    // rather than quietly doing nothing.
+    expect(within(page).getByTestId('directory-new').getAttribute('href')).toBe('/patients/new');
+    fireEvent.click(screen.getByTestId('directory-select'));
+    expect(await screen.findByText("Select isn't part of this preview yet.")).toBeDefined();
   });
 });
 
@@ -228,7 +315,7 @@ describe('renaming a patient', () => {
     installFakeApi({ formats: [progressNote], patients: [guessed] });
     renderApp('/');
 
-    await screen.findByText('Ana');
+    await screen.findAllByText('Ana');
     // The owner asked for the "name guessed — check" badge to go (2026-09-21).
     expect(screen.queryByText(/name guessed/i)).toBeNull();
 
@@ -237,7 +324,7 @@ describe('renaming a patient', () => {
     fireEvent.change(screen.getByLabelText('Name for Ana'), { target: { value: 'Ana Torres' } });
     fireEvent.click(screen.getByTestId(`save-name-${guessed.id}`));
 
-    expect(await screen.findByText('Ana Torres')).toBeDefined();
+    expect((await screen.findAllByText('Ana Torres')).length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Name for Ana Torres')).toBeNull();
   });
 });
@@ -374,9 +461,12 @@ describe('an action that fails', () => {
    */
   it('says so in a toast that does not remove itself', async () => {
     const api = installFakeApi({ formats: [progressNote], patients: [john, maria] });
-    renderApp(`/?patient=${maria.id}`);
+    renderApp();
 
-    fireEvent.click(await screen.findByLabelText('Tools for Maria Ruiz'));
+    await screen.findAllByText('Maria Ruiz');
+    fireEvent.click(await screen.findByTestId('view-all-patients'));
+    fireEvent.click(await screen.findByTestId('directory-tab-archived'));
+    fireEvent.click(await screen.findByTestId(`patient-menu-all-${maria.id}`));
     // The patient disappears from under the delete: the request 404s.
     api.state.patients = api.state.patients.filter((candidate) => candidate.id !== maria.id);
 
@@ -1166,6 +1256,35 @@ describe('settings', () => {
       expect(api.state.settings['theme']).toBe('light');
     });
     expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
+    document.documentElement.dataset.theme = 'dark';
+  });
+
+  /**
+   * The switcher is three icons in one segmented pill (owner preview,
+   * 2026-09-26). Nothing on screen says which glyph is which, so each is named
+   * for a screen reader and the group's choice is pinned to one tab stop.
+   */
+  it('offers the three themes as one named switcher, and saves the system one', async () => {
+    const api = installFakeApi({ formats: [progressNote] });
+    renderApp('/settings');
+
+    const group = (await screen.findByTestId('theme-system')).closest('.theme-switch');
+    expect(group).not.toBeNull();
+    const switcher = within(group as HTMLElement);
+    for (const name of ['System', 'Light', 'Dark']) {
+      const segment = switcher.getByRole('radio', { name });
+      expect(segment.querySelector('svg'), name).not.toBeNull();
+    }
+    expect(switcher.getByTestId('theme-dark').getAttribute('tabindex')).toBe('0');
+    expect(switcher.getByTestId('theme-system').getAttribute('tabindex')).toBe('-1');
+
+    fireEvent.click(screen.getByTestId('theme-system'));
+    // jsdom has no matchMedia, so the platform cannot say and the system choice
+    // paints light — the stored choice is `system` either way.
+    expect(document.documentElement.dataset.theme).toBe('light');
+    await waitFor(() => {
+      expect(api.state.settings['theme']).toBe('system');
+    });
     document.documentElement.dataset.theme = 'dark';
   });
 

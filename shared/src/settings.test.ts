@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_ACCENT_COLOR, DEFAULT_THEME, isAccentColor, isTheme, SettingKeySchema } from './settings.js';
+import {
+  DEFAULT_ACCENT_COLOR,
+  DEFAULT_THEME,
+  isAccentColor,
+  isTheme,
+  SettingKeySchema,
+  UpdateSettingsRequestSchema,
+} from './settings.js';
 
 /**
  * The accent is the one setting whose value is written into a style
@@ -42,16 +49,21 @@ describe('isAccentColor', () => {
 });
 
 describe('isTheme', () => {
-  it('defaults to dark and accepts only the two themes', () => {
+  it('defaults to dark and accepts the three choices the switcher offers', () => {
     expect(DEFAULT_THEME).toBe('dark');
     expect(isTheme('dark')).toBe(true);
     expect(isTheme('light')).toBe(true);
-    for (const value of ['Dark', 'system', '', null, undefined, 42]) {
+    expect(isTheme('system')).toBe(true);
+    for (const value of ['Dark', 'System', 'auto', '', null, undefined, 42]) {
       expect(isTheme(value), String(value)).toBe(false);
     }
   });
 
-  it('is stored under a key the settings store accepts', () => {
+  it('stores the theme as a free-form JSON value the API already accepts', () => {
+    // The settings store is `record(key, json)`, so `system` needs no schema
+    // of its own — this pins that, so a future per-value schema has to be
+    // written deliberately rather than by accident.
+    expect(UpdateSettingsRequestSchema.safeParse({ theme: 'system' }).success).toBe(true);
     expect(SettingKeySchema.safeParse('theme').success).toBe(true);
   });
 });

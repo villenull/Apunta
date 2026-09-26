@@ -247,7 +247,14 @@ export {
   THEMES,
   UpdateSettingsRequestSchema,
 } from './settings.js';
-export type { FontSize, LlmProfile, Settings, Theme, UpdateSettingsRequest } from './settings.js';
+export type {
+  FontSize,
+  LlmProfile,
+  ResolvedTheme,
+  Settings,
+  Theme,
+  UpdateSettingsRequest,
+} from './settings.js';
 
 export {
   buildRefineSchema,

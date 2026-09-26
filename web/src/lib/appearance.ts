@@ -9,6 +9,7 @@ import {
   isTheme,
   THEME_SETTING,
   type FontSize,
+  type ResolvedTheme,
   type Settings,
   type Theme,
 } from '@apunta/shared';
@@ -16,14 +17,15 @@ import {
 import { applyAccentColor } from './accent.js';
 
 /**
- * Text size, animations and theme (owner, 2026-09-21; theme 2026-09-25),
- * beside the accent colour.
+ * Text size, animations and theme (owner, 2026-09-21; theme 2026-09-25; the
+ * System choice 2026-09-26), beside the accent colour.
  *
  * All four are server settings, painted onto the root element at startup
  * the same way the accent always has been. The parts that do not wait for
- * the server are the system's reduced-motion preference and the dark
- * default: `main.tsx` applies both before the first render, so a fresh
- * install never flashes light while settings load.
+ * the server are the system's reduced-motion preference, the dark
+ * default and the theme this browser last painted: `main.tsx` applies them
+ * before the first render, so neither a fresh install nor a `system` user
+ * sees a flash of the wrong theme while settings load.
  */
 
 /** The class `motion.css` keys "animations off" on. */
@@ -65,10 +67,83 @@ export function themeOrDefault(value: unknown): Theme {
 export function applyTheme(value: unknown): void {
   const root = document.documentElement;
   const theme = themeOrDefault(value);
-  root.dataset.theme = theme;
-  root.style.colorScheme = theme;
+  const resolved = resolveTheme(theme, systemPrefersDark());
+  root.dataset.theme = resolved;
+  root.style.colorScheme = resolved;
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (meta) meta.content = theme === 'dark' ? '#16150f' : '#f6f4ef';
+  if (meta) meta.content = resolved === 'dark' ? '#16150f' : '#f6f4ef';
+  writeBootTheme(resolved);
+  if (theme === 'system') watchSystemTheme();
+  else stopWatchingSystemTheme();
+}
+
+/**
+ * What a stored choice paints, given what the operating system is asking for.
+ * Pure, so the one rule that matters — `system` follows the OS, and only
+ * `system` does — is testable without a browser.
+ */
+export function resolveTheme(theme: Theme, prefersDark: boolean): ResolvedTheme {
+  return theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme;
+}
+
+/** Does the operating system ask for a dark interface? False when it cannot say. */
+export function systemPrefersDark(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+/*
+ * While the choice is `system` the app has to keep listening: a machine that
+ * switches to dark at dusk has to switch Apunta with it, without a reload.
+ * One subscription at a time, torn down the moment she picks a theme of her
+ * own, and every call optional because `matchMedia` is missing in jsdom.
+ */
+let systemQuery: MediaQueryList | null = null;
+let systemListener: (() => void) | null = null;
+
+function watchSystemTheme(): void {
+  if (systemQuery !== null || typeof window.matchMedia !== 'function') return;
+  const query = window.matchMedia('(prefers-color-scheme: dark)');
+  const listener = (): void => {
+    applyTheme('system');
+  };
+  query.addEventListener('change', listener);
+  systemQuery = query;
+  systemListener = listener;
+}
+
+function stopWatchingSystemTheme(): void {
+  if (systemQuery !== null && systemListener !== null) {
+    systemQuery.removeEventListener('change', systemListener);
+  }
+  systemQuery = null;
+  systemListener = null;
+}
+
+/**
+ * The theme this browser last painted, so the frame before the settings arrive
+ * is already the right one. Without it a `system` user gets a flash of dark on
+ * a light desktop, because `index.html` can only guess (it hard-codes dark).
+ * preview-only bargain, same as the sidebar's pin order: a local cache of
+ * something the server also knows, and losing it costs one frame.
+ */
+const BOOT_THEME_KEY = 'apunta-boot-theme-v1';
+
+function writeBootTheme(resolved: ResolvedTheme): void {
+  try {
+    window.localStorage.setItem(BOOT_THEME_KEY, resolved);
+  } catch {
+    // A store that refuses writes only costs the pre-settings frame.
+  }
+}
+
+/** The cached theme for the first paint, or undefined when there is none. */
+export function readBootTheme(): ResolvedTheme | undefined {
+  try {
+    const raw = window.localStorage.getItem(BOOT_THEME_KEY);
+    return raw === 'light' || raw === 'dark' ? raw : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Everything on the Appearance card, from a settings record. */

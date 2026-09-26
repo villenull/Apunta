@@ -271,3 +271,191 @@ export function MoreIcon({ className }: IconProps): React.JSX.Element {
     </StrokeIcon>
   );
 }
+
+/*
+ * The owner preview's Claude-flavoured glyphs. Drawn here rather than loaded
+ * anywhere: still no icon font, no sprite, nothing fetched (hard rule 1).
+ */
+
+/** The magnifier in the sidebar's search field. */
+export function SearchIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M16 16l4.5 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </StrokeIcon>
+  );
+}
+
+/** The panel toggle at the top-left of the sidebar. */
+export function PanelLeftIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9.5 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </StrokeIcon>
+  );
+}
+
+/** The pin on a pinned row, and the Pin item's icon. */
+export function PinIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M12 17.5v4M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2v.8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+/** The box a patient is archived into. */
+export function ArchiveIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M3.5 7.5h17v3h-17zM5 10.5v8.5a1 1 0 001 1h12a1 1 0 001-1v-8.5M10 14.5h4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+export function GearIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.4" />
+    </StrokeIcon>
+  );
+}
+
+export function GlobeIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M3.5 12h17M12 3.5c2.4 2.3 3.6 5.1 3.6 8.5S14.4 18.2 12 20.5c-2.4-2.3-3.6-5.1-3.6-8.5S9.6 5.8 12 3.5z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    </StrokeIcon>
+  );
+}
+
+export function HelpIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M9.6 9.4a2.5 2.5 0 114 2.2c-.9.6-1.6 1.1-1.6 2.4M12 17.2h.01"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+/*
+ * The glyphs Claude puts where Apunta has no prototype icon: the three themes,
+ * and one per settings section. Same set as everything above — the wrapper's
+ * 24-unit box drawn at 16px by `.icon-sm`, `fill="none"`, `currentColor`, and
+ * a stroke of 1.5 on every path so a row of them reads at one weight.
+ */
+
+/** Theme → System: the machine's own setting, so a display with a stand. */
+export function MonitorIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <rect x="2.5" y="4" width="19" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12 17v3.5M8.5 20.5h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </StrokeIcon>
+  );
+}
+
+/** Theme → Light. */
+export function SunIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+/** Theme → Dark. A crescent, the way every desktop app draws it. */
+export function MoonIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M20.4 14.7A8.6 8.6 0 0 1 9.3 3.6a8.6 8.6 0 1 0 11.1 11.1z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+/** Settings → Backup: the store the backups are written out of. */
+export function DatabaseIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <ellipse cx="12" cy="6" rx="7.5" ry="3" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    </StrokeIcon>
+  );
+}
+
+/** Settings → Import: the mirror of UploadIcon, which lifts a file out. */
+export function DownloadIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M12 4v12M7.5 11.5L12 16l4.5-4.5M4 20h16"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+/** Settings → Advanced: three rows, each with a knob to move. */
+export function SlidersIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M3.5 7h5M13.5 7h7M3.5 12h9.5M16.5 12h4M3.5 17h4.5M13 17h7.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="11" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="15.5" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="10.5" cy="17" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+    </StrokeIcon>
+  );
+}

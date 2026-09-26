@@ -8,6 +8,7 @@ import {
   formatInstantAsDate,
   formatNoteDate,
   formatPlanDate,
+  formatShortDate,
   initials,
   noteCountLabel,
   notePreview,
@@ -67,6 +68,20 @@ describe('noteCountLabel', () => {
     expect(noteCountLabel(0)).toBe('0 notes');
     expect(noteCountLabel(1)).toBe('1 note');
     expect(noteCountLabel(3)).toBe('3 notes');
+  });
+});
+
+describe('formatShortDate', () => {
+  const now = new Date('2026-09-26T12:00:00.000Z');
+
+  it('drops the year for this year and keeps it for anything older', () => {
+    expect(formatShortDate('2026-09-07T09:00:00.000Z', now)).toBe('Sep 7');
+    expect(formatShortDate('2025-09-07T09:00:00.000Z', now)).toBe('Sep 7, 2025');
+  });
+
+  it('says an em dash for a patient with no note, and passes junk through', () => {
+    expect(formatShortDate(null, now)).toBe('—');
+    expect(formatShortDate('not a date', now)).toBe('not a date');
   });
 });
 

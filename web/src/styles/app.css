@@ -59,8 +59,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: var(--space-20) var(--gutter-x);
-  border-bottom: 0.5px solid var(--border);
+  min-height: var(--topbar-h);
+  padding: var(--space-0) var(--gutter-x);
+  border-bottom: 1px solid var(--divider);
 }
 
 .mark {
@@ -108,39 +109,45 @@
 }
 
 /*
- * Patients and notes 17% of the page each, the note the rest (owner,
- * 2026-09-24). At home there is no notes column and the welcome screen takes
- * its space too. The chat floats over the page, so nothing else splits them.
+ * The patients column: a fixed-width panel, as in Claude — the sidebar does
+ * not grow and shrink with the window, because the names in it have to sit in
+ * the same place every time the app opens. `max-width` is the only concession
+ * to a narrow window, where it falls back to sharing the page.
  */
 .col-patients {
-  width: 17%;
+  width: var(--sidebar-w);
+  max-width: 34%;
   flex-shrink: 0;
-  border-right: 0.5px solid var(--border);
-  background: var(--col-patients-bg);
+  border-right: 1px solid var(--divider);
+  background: var(--sidebar-bg);
 }
 
 .col-notes {
   width: 17%;
   flex-shrink: 0;
-  border-right: 0.5px solid var(--border);
+  border-right: 1px solid var(--divider);
   background: var(--col-notes-bg);
 }
 
 .col-main {
   flex: 1;
   min-width: 0;
-  background: var(--col-main-bg);
+  background: var(--app-bg);
+  /* The open space's own type size, so a screen that sets no size of its own
+     lands on Claude's 14px rather than the shell's 16px. */
+  font-size: var(--main-font);
 }
 
 .col-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* Only as tall as its label (owner, 2026-09-24), and the same height in
-     both columns so the rules beneath them line up. */
-  min-height: 36px;
+  /* The same height as the sidebar's brand bar, so the two columns' rules
+     beneath them line up; the patient's column drops its rule and becomes the
+     top bar itself (see `.col-header-brand`). */
+  min-height: var(--topbar-h);
   padding: var(--space-0) var(--space-8);
-  border-bottom: 0.5px solid var(--border);
+  border-bottom: 1px solid var(--divider);
   flex-shrink: 0;
   gap: 8px;
 }
@@ -160,6 +167,15 @@
   flex: 1;
   overflow-y: auto;
   padding: var(--space-4);
+}
+
+/*
+ * The patients list lines up with the search field above it: same inset on both
+ * edges, so the field and the names share one left margin. The notes column
+ * keeps the roomier padding it has always had.
+ */
+.col-patients .col-body {
+  padding: var(--space-0) var(--field-inset) var(--space-4);
 }
 
 .icon-btn {
@@ -1312,12 +1328,49 @@ select:focus {
 }
 
 .col-search {
-  padding: var(--space-5) var(--space-6) var(--space-2px);
+  padding: var(--space-0) var(--field-inset) var(--space-6);
+  position: relative;
 }
 
+/*
+ * The search field of the owner's preview (2026-09-26): the full width of the
+ * panel less its inset, one rounded rectangle, a hairline border, a fill a
+ * shade off the panel, and a magnifier sitting inside its left edge — the
+ * whole of Claude's field, which is a single compact control rather than a
+ * boxed label with a rule under it.
+ */
 .col-search input {
-  font-size: var(--text-md);
-  padding: var(--space-4) var(--space-5);
+  width: 100%;
+  height: var(--field-h);
+  font-size: var(--row-font);
+  color: var(--text-primary);
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  border-radius: var(--field-radius);
+  padding: 0 var(--space-5) 0 32px;
+}
+
+.col-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.col-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--field-bg);
+}
+
+/* Centred on the field rather than at a guessed offset, so the field can be
+   any height without the glass drifting out of it. */
+.col-search-icon {
+  position: absolute;
+  left: calc(var(--field-inset) + 10px);
+  top: 0;
+  height: var(--field-h);
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .col-footer {
@@ -2449,6 +2502,7 @@ select:disabled {
   align-items: stretch;
   width: 100%;
   min-width: 0;
+  border-radius: var(--radius-sm);
 }
 
 .patient-entry-actions {
@@ -2474,59 +2528,121 @@ select:disabled {
   width: 24px;
   height: 24px;
   padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
 }
 
+.patient-menu-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+/*
+ * The row menu — the "⋯" on a patient row and the menu under "Mission
+ * control" — measured against Claude's own (owner, 2026-09-26): 240px wide, a
+ * 4px inset, a hairline border and a soft shadow to lift it off the page, then
+ * 32px rows. Compact on purpose: a menu is read, not lived in.
+ */
 .patient-menu {
   position: absolute;
   top: calc(100% - var(--space-2));
   right: var(--space-2);
   z-index: 40;
-  min-width: 120px;
-  padding: var(--space-3);
-  background: var(--surface);
-  border: 0.5px solid var(--border-strong);
+  width: var(--menu-w);
+  padding: var(--space-2);
+  background: var(--menu-bg);
+  color: var(--tooltip-ink);
+  border: 1px solid var(--menu-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-pop);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  /* No gap: the rows are 32px apart because they are 32px tall, and a gap on
+     top of that is what made this menu read taller than Claude's. */
+  gap: 0;
 }
 
+/*
+ * Menu rows carry their icon and, where the app has a shortcut for the action,
+ * its key on the right — the way Claude's do. The destructive one is separated
+ * from the rest by a hairline: a menu where "Archive" and "Rename" look alike
+ * is a menu she has to read every time.
+ */
 .patient-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--menu-item-h);
   text-align: left;
   font: inherit;
-  font-size: var(--text-base);
+  font-size: var(--row-font);
+  line-height: 20px;
+  font-weight: 400;
   color: var(--text-primary);
   background: none;
   border: 0;
-  border-radius: var(--radius-sm);
-  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-xs);
+  padding: 0 var(--space-4);
   cursor: pointer;
+}
+
+/* One stroke weight across every icon in a menu, so the row reads as a row
+   whatever weight each glyph drew itself at. The 16px box is `.icon-sm`. */
+.patient-menu-item .icon {
+  stroke-width: 1.5;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+/* The key on the right of the row. Decorative for a screen reader — the button
+   already says what it does — so it is hidden from the tree. */
+.patient-menu-hint {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  line-height: 16px;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .patient-menu-item:hover,
 .patient-menu-item:focus-visible {
-  background: var(--surface-muted);
+  background: var(--row-hover-bg);
 }
 
-.patient-menu-item.is-danger {
-  color: var(--danger);
+.patient-menu-item:hover .icon,
+.patient-menu-item:focus-visible .icon {
+  color: var(--text-primary);
+}
+
+.patient-menu-item.is-danger,
+.patient-menu-item.is-danger .icon,
+.patient-menu-item.is-danger .patient-menu-hint {
+  color: var(--menu-danger);
+}
+
+.patient-menu-item.is-danger:hover,
+.patient-menu-item.is-danger:focus-visible {
+  background: var(--row-hover-bg);
+}
+
+.patient-menu-sep {
+  height: 1px;
+  margin: var(--space-2) 0;
+  background: var(--divider);
 }
 
 .patient-entry:hover {
-  background: var(--surface);
+  background: var(--row-hover-bg);
 }
 
-.patient-entry:has(.list-item.active) {
-  background: var(--accent-tint);
-}
-
-.patient-entry:has(.list-item.active) .list-item.active {
-  background: transparent;
+.patient-entry:has(.project-row.is-active) {
+  background: var(--row-selected-bg);
 }
 
 /* The selected patient remains legible while the surrounding list animates. */
-.patient-entry:has(.list-item.active) {
+.patient-entry:has(.project-row.is-active) {
   animation: none;
   opacity: 1;
 }
@@ -2555,16 +2671,6 @@ select:disabled {
 
 .patient-entry.is-archived .list-item .name {
   color: var(--text-secondary);
-}
-
-.col-archived-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: var(--space-4) var(--space-8);
-  border-top: 0.5px solid var(--border);
-  color: var(--text-secondary);
-  cursor: pointer;
 }
 
 /*
@@ -3070,6 +3176,60 @@ select:disabled {
   color: var(--tint-ink);
 }
 
+/*
+ * The theme switcher: a segmented pill of three icons, as in Claude (owner,
+ * 2026-09-26). 32px tall, three equal segments, 16px glyphs, and the selected
+ * one raised a shade above the track so the choice reads without a label. The
+ * whole group is one tab stop — the arrows move between the segments, the way
+ * a native radiogroup does.
+ */
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--switch-h);
+  padding: 2px;
+  border: 0.5px solid var(--switch-track-border);
+  border-radius: var(--radius-sm);
+  background: var(--switch-track);
+}
+
+.theme-switch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--switch-seg-w);
+  height: calc(var(--switch-h) - 6px);
+  padding: 0;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.theme-switch-btn .icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+}
+
+.theme-switch-btn:hover {
+  color: var(--text-primary);
+}
+
+.theme-switch-btn.is-selected {
+  background: var(--switch-thumb);
+  color: var(--pill-ink);
+  box-shadow: var(--switch-thumb-shadow);
+}
+
+/* The selected segment sits on a light thumb in both themes, so its ink is the
+   pill's dark one rather than a text colour that would vanish on it. */
+.theme-switch-btn.is-selected .icon {
+  color: var(--pill-ink);
+}
+
 .settings-profile-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3172,11 +3332,14 @@ select:disabled {
   text-decoration: none;
 }
 
-.settings-link-row .settings-title {
-  margin: 0;
+/* A link row's label, not a card heading: the same words as before, set like
+   the other rows in a list so the modal's Import pane has no stray serif. */
+.settings-link-label {
+  font-size: var(--text-base);
+  color: var(--text-primary);
 }
 
-.settings-link-row:hover {
+.settings-link-row:hover .settings-link-label {
   color: var(--accent-ink);
 }
 
@@ -3525,4 +3688,651 @@ select:disabled {
 
 .patient-entry .list-item .sub {
   color: var(--text-secondary);
+}
+
+/* ------------------------------------------- Claude-flavoured shell (2026-09-26)
+ *
+ * The owner's reference: Claude's desktop app. A near-black sidebar, a wordmark
+ * and a panel toggle on one line, one rounded search field, compact name-only
+ * rows that lift towards white on hover and further when open, a "⋯" menu with
+ * icons and a red destructive item, a differently-coloured "View all" at the
+ * bottom, and Settings as a centred panel over a blurred page. Everything here
+ * composes the tokens in `styles/tokens.css`; no colours are spelled out.
+ */
+
+.col-header-brand {
+  /* No rule between the wordmark and the search field: the field's own border
+     is the only edge in that corner. One bar of Claude's height, the same as
+     the standalone screens' `.topbar`. */
+  border-bottom: none;
+  height: var(--topbar-h);
+  min-height: var(--topbar-h);
+  padding: var(--space-0) var(--field-inset);
+  gap: var(--space-4);
+  justify-content: flex-start;
+}
+
+.col-header-brand .brand-link {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.panel-toggle {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.panel-toggle:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+/*
+ * A patient row, in place of the old avatar-plus-two-lines `.list-item`: one
+ * name, one line, 30px tall, the pin only when there is one. `gap: 0` and the
+ * name's own padding keep the label at the same left edge whether or not the
+ * row is pinned, so nothing shifts as pins come and go.
+ */
+.project-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: var(--row-h);
+  margin-bottom: 1px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--row-font);
+}
+
+.project-row:hover {
+  background: var(--row-hover-bg);
+}
+
+.project-row.is-active {
+  background: var(--row-selected-bg);
+  font-weight: 500;
+}
+
+.project-row .name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--row-font);
+  /* Claude's list rows are set in the regular weight; only the open one is
+     lifted to medium, so the eye finds it without the others shouting. */
+  font-weight: 400;
+}
+
+.project-row.is-active .name {
+  font-weight: 500;
+}
+
+.project-row-pin {
+  flex-shrink: 0;
+  margin-right: var(--space-4);
+  color: var(--text-muted);
+}
+
+/* "New" is a row like any other, with a plus where a pin would be. */
+.new-patient-item:hover {
+  background: var(--row-hover);
+}
+
+.new-patient-icon {
+  flex-shrink: 0;
+  margin-right: var(--space-4);
+  color: var(--text-muted);
+}
+
+.patient-entry.is-pinned .project-row .name {
+  color: var(--text-primary);
+}
+
+.patient-entry.is-dragging {
+  opacity: 0.4;
+}
+
+.patient-entry.is-drop-target {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+/*
+ * The hover card. It is portalled to the body and positioned against the row
+ * that is hovered, so it opens over the page beside the sidebar — where Claude
+ * puts it — instead of being clipped by the list's own scroll box. The name is
+ * the row's 14px; only the meta line under it drops to 12px.
+ */
+.project-tip {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 132px;
+  max-width: 220px;
+  padding: var(--space-6) var(--space-7);
+  border-radius: var(--radius-sm);
+  background: var(--menu-bg);
+  color: var(--tooltip-ink);
+  border: 1px solid var(--menu-border);
+  box-shadow: var(--shadow-pop);
+  font-size: var(--text-sm);
+  pointer-events: none;
+}
+
+.project-tip-name {
+  font-size: var(--row-font);
+  font-weight: 500;
+  color: var(--tooltip-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-tip-meta {
+  display: flex;
+  gap: var(--space-5);
+  color: var(--text-muted);
+}
+
+/*
+ * "View all": the one row in the sidebar that is not a patient, so it is a
+ * step down in colour from the names rather than a second brand colour (owner,
+ * 2026-09-26) — a glance has to tell a name from a way out of the list. Same
+ * height as a patient row, so the list does not change rhythm at its foot.
+ */
+.view-all-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: var(--row-h);
+  margin-top: var(--space-4);
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--row-font);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.view-all-row:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+}
+
+/* Mission control, the sidebar's one row at the bottom. It is a patient row. */
+.mission-control {
+  position: relative;
+  padding: var(--space-4) var(--field-inset);
+  border-top: none;
+}
+
+.mission-control-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  height: var(--row-h);
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--row-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mission-control-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+}
+
+/* The one menu that opens upwards, because its row is at the foot. */
+.mission-menu {
+  top: auto;
+  bottom: calc(100% - var(--space-2));
+  left: var(--field-inset);
+  right: var(--field-inset);
+  width: auto;
+}
+
+/* The collapsed panel, and the one control that brings it back. */
+@media (min-width: 901px) {
+  .app-shell.sidebar-collapsed > .col-patients {
+    display: none;
+  }
+}
+
+.sidebar-reopen {
+  position: absolute;
+  top: calc((var(--topbar-h) - 26px) / 2);
+  left: var(--field-inset);
+  z-index: 20;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.sidebar-reopen:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+@media (max-width: 900px) {
+  /*
+   * Below 901px the sidebar is a pane of its own and there is no second column
+   * to give the space back to, so neither half of the toggle is offered: a
+   * control that hides the only pane on screen is worse than no control.
+   */
+  .panel-toggle,
+  .sidebar-reopen {
+    display: none;
+  }
+}
+
+/* "View all": the full list, in the shape of Claude's Recents page. */
+.directory {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: var(--space-32) var(--space-40) var(--space-40);
+  font-size: var(--main-font);
+}
+
+.directory-head {
+  margin-bottom: var(--space-20);
+}
+
+/* The title and the three controls at the top right, as on Claude's Recents. */
+.directory-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  min-height: var(--field-h);
+}
+
+.directory-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.directory-action-btn {
+  width: var(--field-h);
+  height: var(--field-h);
+  border-color: transparent;
+  background: transparent;
+  border-radius: var(--radius-sm);
+}
+
+.directory-action-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+/* "Select" is a text button beside the two, in Claude's own weight. */
+.directory-select-btn {
+  flex-shrink: 0;
+  height: var(--field-h);
+  padding: 0 var(--space-8);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--row-font);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.directory-select-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+}
+
+/* The one bright control on the page: a light pill with dark text, in either
+   theme, so "New patient" is the thing her eye lands on. */
+.btn.directory-new {
+  /* The label is the control: it never shrinks, whatever else the row is
+     asked to give up its width to. */
+  flex-shrink: 0;
+  height: var(--field-h);
+  padding: 0 var(--space-8);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--pill-bg);
+  color: var(--pill-ink);
+  font-size: var(--row-font);
+  font-weight: 500;
+  box-shadow: var(--shadow-switch);
+}
+
+.btn.directory-new:hover {
+  background: var(--pill-bg-hover);
+  color: var(--pill-ink);
+}
+
+/* The page's own search field, the same field the sidebar has. It opens in
+   place of nothing — the controls stay where they were. */
+.directory-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  /* The field is the only thing in the row that gives up width, and never
+     below a width a name still fits in. */
+  flex: 0 1 240px;
+  min-width: 120px;
+  height: var(--field-h);
+  padding: 0 var(--space-8);
+  border-radius: var(--field-radius);
+  background: var(--field-bg);
+  color: var(--text-secondary);
+}
+
+.directory-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--row-font);
+}
+
+.directory-search input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.directory-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.directory-search-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.directory-title {
+  font-family: var(--font-sans);
+  font-size: calc(22px * var(--font-scale));
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.directory-tabs {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-20);
+  border-bottom: 1px solid var(--divider);
+}
+
+.directory-tab {
+  padding: var(--space-5) var(--space-8);
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--row-font);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.directory-tab:hover {
+  color: var(--text-primary);
+}
+
+.directory-tab.is-active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+.directory-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.directory-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--divider);
+}
+
+.directory-row:hover {
+  background: var(--row-hover-bg);
+}
+
+.directory-row-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 0;
+  min-height: var(--directory-row-h);
+  padding: var(--space-4);
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--main-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.directory-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.directory-row-date {
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.directory-row-pin {
+  align-self: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.directory-row .patient-rename {
+  flex: 1;
+  padding: var(--space-5);
+}
+
+/* Settings over the workspace: the page behind is dimmed and blurred, and the
+   panel is centred on top of it (owner, 2026-09-26, after Claude's). */
+.modal-backdrop:has(.settings-modal) {
+  background: var(--scrim);
+  backdrop-filter: blur(var(--scrim-blur));
+}
+
+.settings-modal {
+  /* Claude's modal: a wide, short panel on a raised surface, with the corners
+     and the shadow doing the lifting rather than a border on every side. */
+  width: var(--modal-w);
+  max-width: calc(100vw - 2 * var(--space-24));
+  height: var(--modal-h);
+  max-height: calc(100vh - 2 * var(--space-24));
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: var(--modal-radius);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+}
+
+/* The modal's two halves: the sections down the left, the section down the
+   right. The nav is a fixed width because its labels are its whole content. */
+.settings-shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: var(--settings-nav-w);
+  flex: 0 0 auto;
+  padding: var(--settings-pad) var(--space-8);
+  border-right: 1px solid var(--divider);
+  overflow-y: auto;
+}
+
+.settings-nav-title {
+  margin: 0 0 var(--space-4) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  height: var(--settings-row-h);
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--row-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The tab's own glyph, 16px and a step down from its label, as Claude's are.
+   The open tab takes the label's colour and the icon goes with it. */
+.settings-nav-item .icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.5;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.settings-nav-item:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+}
+
+.settings-nav-item:hover .icon {
+  color: var(--text-primary);
+}
+
+.settings-nav-item.is-active {
+  background: var(--row-selected-bg);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.settings-nav-item.is-active .icon {
+  color: var(--text-primary);
+}
+
+/* The section itself, on the right. Only the bar at its top, which carries the
+   close control — the section's own card title is the heading, as it is on
+   the standalone settings screen. */
+.settings-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-pane-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  height: var(--topbar-h);
+  padding: 0 var(--space-8) 0 var(--settings-pad);
+}
+
+.settings-pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--settings-pad) var(--settings-pad);
+}
+
+/*
+ * Inside the modal the cards stop being cards: a border and a fill around one
+ * control is what the standalone screen needs to separate five blocks, and in
+ * a pane that holds one of them it is only a second edge. The hairlines between
+ * rows do the work instead.
+ */
+.settings-pane-body .card {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.settings-pane-body .patient-row {
+  min-height: var(--settings-row-h);
+  padding: var(--space-6) var(--space-4);
+}
+
+.settings-pane-body .settings-row {
+  min-height: var(--settings-row-h);
+  padding: var(--space-2) var(--space-0);
+}
+
+.settings-pane-body .settings-title {
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+}
+
+.settings-pane-body .settings-group {
+  margin-top: var(--space-8);
+  padding-top: var(--space-8);
+}
+
+.settings-modal .settings {
+  gap: var(--space-20);
+  padding-bottom: 0;
 }

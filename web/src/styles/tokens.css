@@ -93,15 +93,94 @@
 }
 
 :root {
-  --bg: #f6f4ef;
-  --surface: #ffffff;
-  --surface-muted: #fbfaf7;
-  --border: #e3e0d6;
-  --border-subtle: #e6e3da;
-  --border-strong: #cfcbbc;
+  color-scheme: light;
+  /*
+   * ── The palette ─────────────────────────────────────────────────────────
+   * Claude's desktop app, name by name (owner preview, 2026-09-26). These are
+   * the only colours the app has: the sidebar panel, the open space, the three
+   * steps of text, the field, the two row states, the rule between things, and
+   * the raised surfaces that float above the page (the row menu, the modal).
+   * `:root` carries the light palette; `:root[data-theme='dark']` below
+   * carries Claude's own warm near-black family. A value is tuned on the one
+   * line it lives on and nowhere else, and no component spells a colour out.
+   */
+  --sidebar-bg: #f6f4ef;
+  --app-bg: #ffffff;
   --text-primary: #262620;
   --text-secondary: #6e6c60;
   --text-muted: #716f64;
+  --field-bg: #eeece4;
+  --field-border: #dfdcd0;
+  --row-selected-bg: #e3e0d6;
+  --row-hover-bg: #ebe9e2;
+  --divider: #e3e0d6;
+  /* Raised surfaces: the row menu and the settings modal. */
+  --menu-bg: #ffffff;
+  --menu-border: #e3e0d6;
+  --menu-danger: #b54b3a;
+  --modal-bg: #ffffff;
+  --modal-border: #e3e0d6;
+
+  /*
+   * ── The proportions ─────────────────────────────────────────────────────
+   * One number each, for the same reason as the palette above. The sidebar's
+   * width, the bar's height, the mark, the search field, the row rhythm, the
+   * row menu, the settings modal and its nav.
+   */
+  --sidebar-w: 300px;
+  --topbar-h: 44px;
+  --logo-h: 20px;
+  --field-h: 36px;
+  --field-radius: 8px;
+  --field-inset: 4px;
+  --row-h: 32px;
+  --row-font: 14px;
+  --main-font: 14px;
+  --menu-w: 240px;
+  --menu-item-h: 32px;
+  --modal-w: 900px;
+  --modal-h: 620px;
+  --modal-radius: 12px;
+  --settings-nav-w: 240px;
+  --settings-pad: 24px;
+  --settings-row-h: 36px;
+  /*
+   * The theme switcher: 32px tall, three equal 36px segments. The track and
+   * the selected segment are the two surfaces, so both themes say which
+   * segment is on by a shade rather than by a colour.
+   */
+  --switch-h: 32px;
+  --switch-seg-w: 36px;
+  --switch-track: var(--field-bg);
+  --switch-track-border: var(--field-border);
+  --switch-thumb: #ffffff;
+  --switch-thumb-shadow: 0 1px 2px rgba(38, 38, 32, 0.14);
+  /*
+   * "View all" rows are roomier than the sidebar's: a full page of names is
+   * read, not scanned, and the date on the right needs somewhere to sit.
+   */
+  --directory-row-h: 44px;
+  /* Claude's light pill: the one bright thing on the page, in either theme. */
+  --pill-bg: #f0eee6;
+  --pill-ink: #262620;
+  --pill-bg-hover: #ffffff;
+  /* The page behind the settings modal: dimmed, and blurred. */
+  --scrim: rgb(38 38 36 / 0.55);
+  --scrim-blur: 6px;
+
+  /* The surfaces the app used before the palette, named from it. */
+  --bg: var(--sidebar-bg);
+  --surface: var(--app-bg);
+  --surface-muted: var(--sidebar-bg);
+  --border: var(--divider);
+  --border-subtle: #e6e3da;
+  --border-strong: #cfcbbc;
+  /*
+   * The brand mark — the wordmark and the A (P2.1, D10). Brand teal here,
+   * white in dark mode below, and deliberately *not* derived from `--accent`:
+   * the mark keeps the brand's colour whatever accent she picks.
+   */
+  --brand-mark: #1f6f63;
   --accent: #1f6f63;
   --accent-hover: color-mix(in srgb, var(--accent) 77%, #000);
   --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
@@ -169,6 +248,20 @@
 
   --radius-none: 0;
   --radius-badge: 20px;
+  /*
+   * The sidebar's own three surfaces (owner preview, 2026-09-26, after Claude's
+   * desktop app): a row lifts a shade on hover and two on the open one, and
+   * nothing about it is ever *coloured* — the accent stays for the note and the
+   * controls she acts with. The names are the palette's; these are the aliases
+   * the older rules already read, so a value is still tuned in one place.
+   */
+  --row-hover: var(--row-hover-bg);
+  --row-active: var(--row-selected-bg);
+  --row-border: var(--divider);
+  --field-fill: var(--field-bg);
+  --tooltip-bg: var(--menu-bg);
+  --tooltip-border: var(--menu-border);
+  --tooltip-ink: var(--text-primary);
   --shadow-lift: 0 1px 2px rgba(38, 38, 32, 0.04), 0 1px 12px rgba(38, 38, 32, 0.03);
   --shadow-pop: 0 4px 14px rgba(0, 0, 0, 0.18);
   --shadow-overlay: 0 12px 40px rgba(0, 0, 0, 0.16);
@@ -183,9 +276,9 @@
   --shadow: var(--shadow-lift);
 
   /* The three workspace columns, left to right. */
-  --col-patients-bg: var(--surface-muted);
-  --col-notes-bg: var(--surface);
-  --col-main-bg: var(--surface);
+  --col-patients-bg: var(--sidebar-bg);
+  --col-notes-bg: var(--app-bg);
+  --col-main-bg: var(--app-bg);
 
   --gutter-x: var(--space-6);
   --font-scale: 1;
@@ -196,28 +289,50 @@
 
 /*
  * Dark mode, the default (THEME_SETTING in shared/settings.ts). Same
- * variables, warm near-black values; the accent stays her chosen colour and
- * `--accent-tint` is remixed against the dark surface so tinted rows read
- * as tinted, not glowing.
+ * variables, Claude's own warm near-black family: the sidebar is a shade
+ * deeper than the open space, both are warm rather than neutral, and the text
+ * steps down through three greys rather than fading to black. The accent stays
+ * her chosen colour and `--accent-tint` is remixed against the dark surface so
+ * tinted rows read as tinted, not glowing.
  */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #16150f;
-  --surface: #201f18;
-  --surface-muted: #1a1914;
-  --border: #35332a;
-  --border-subtle: #2b2a23;
-  --border-strong: #4a483c;
-  --text-primary: #ece9dd;
-  --text-secondary: #b3b0a1;
-  --text-muted: #9a9789;
+
   /*
-   * Owner's swatches (2026-09-24): patients #111111, the note #151515, and
-   * the notes list the grey halfway between.
+   * The eleven palette names, in the same order as `:root`. The sidebar panel
+   * is darkest, the open space a shade above it, and the field/selected row a
+   * shade above that; the three greys are the foregrounds Claude puts on them.
+   * The row menu and the settings modal sit *on* the open space, so they take
+   * its colour and are lifted by their border and shadow instead.
    */
-  --col-patients-bg: #111111;
-  --col-notes-bg: #131313;
-  --col-main-bg: #151515;
+  --sidebar-bg: #1f1f1e;
+  --app-bg: #262624;
+  --text-primary: #f0eee6;
+  --text-secondary: #b3b0a9;
+  --text-muted: #8a8780;
+  --field-bg: #30302e;
+  --field-border: #3a3a38;
+  --row-selected-bg: #30302e;
+  --row-hover-bg: #2a2a28;
+  --divider: #3a3a38;
+  --menu-bg: #262624;
+  --menu-border: #3a3a38;
+  --menu-danger: #e5484d;
+  --modal-bg: #30302e;
+  --modal-border: #3a3a38;
+
+  /* The surfaces the app used before the palette, named from it. */
+  --bg: var(--app-bg);
+  --surface: var(--app-bg);
+  --surface-muted: var(--sidebar-bg);
+  --border: var(--divider);
+  --border-subtle: #303030;
+  --border-strong: #4d4d4a;
+  /* The brand mark in dark mode: white on the near-black surfaces (D10). */
+  --brand-mark: #ffffff;
+  --col-patients-bg: var(--sidebar-bg);
+  --col-notes-bg: var(--app-bg);
+  --col-main-bg: var(--app-bg);
   --accent-tint: color-mix(in srgb, var(--accent) 22%, #201f18);
   /*
    * The light-mode ink is a darkened accent, which vanishes on the dark
@@ -235,10 +350,6 @@
   --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.55);
   --shadow-toast: 0 6px 28px rgba(0, 0, 0, 0.5);
   --shadow-switch: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-:root[data-theme='light'] {
-  color-scheme: light;
 }
 
 * {

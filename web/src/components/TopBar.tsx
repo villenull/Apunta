@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 
-import { BackIcon, MarkIcon } from './icons.js';
+import { BrandWordmark } from './BrandWordmark.js';
+import { BackIcon } from './icons.js';
 
 /**
  * The `.topbar` from `prototype/style.css`, in its two forms: a back link
@@ -15,11 +16,13 @@ export function TopBar({ back }: TopBarProps): React.JSX.Element {
   if (!back) {
     return (
       <div className="topbar">
-        <MarkIcon />
-        {/* Lowercase wordmark, matching the workspace column header — the
-            owner-proxy's chosen brand treatment (2026-08-28) over the
-            prototype's capitalised label. */}
-        <span className="brand">Apunta</span>
+        {/* The wordmark, as outlines: the name is not typed in a font at
+            runtime (P2.1). The old prototype treatment — scribble mark plus a
+            lowercased label — is gone; `BrandWordmark` carries the colour.
+            The foreground colour (owner preview, 2026-09-26): the mark sits at
+            Claude-logo size, in the body colour rather than the brand's teal,
+            and its height is the `--logo-h` token rather than a number here. */}
+        <BrandWordmark tone="text" />
       </div>
     );
   }

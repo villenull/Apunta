@@ -1,20 +1,35 @@
 import type { PatientListItem } from '@apunta/shared';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 
+import type { RecencyMap } from '../hooks/usePatientRecency.js';
 import type { LoadState } from '../hooks/useLoader.js';
-import { initials, noteCountLabel } from '../lib/format.js';
-import { MoreIcon, PlusIcon } from './icons.js';
-import { SpellLayer } from './SpellLayer.js';
+import { formatShortDate, noteCountLabel } from '../lib/format.js';
+import { pinnedIndex } from '../lib/patientOrder.js';
+import { BrandWordmark } from './BrandWordmark.js';
+import { GearIcon, GlobeIcon, HelpIcon, PanelLeftIcon, PinIcon, PlusIcon, SearchIcon } from './icons.js';
+import { PatientMenu } from './PatientMenu.js';
+import { PatientRenameForm } from './PatientRenameForm.js';
+
+/**
+ * How many patients the sidebar shows before the "View all" row — the count
+ * Claude's own sidebar fits, and short enough that a practice with hundreds of
+ * patients still opens on a scannable list.
+ */
+const VISIBLE_PATIENTS = 13;
 
 export interface PatientsColumnProps {
   patients: LoadState<PatientListItem[]>;
+  /** The same rows in sidebar order: pinned first, then by last note edit. */
+  ordered: PatientListItem[];
   activePatientId: string | null;
-  /** Whether the list currently includes archived patients. */
-  showArchived: boolean;
+  /** When each patient's last note was edited, for the tooltip and the order. */
+  recency: RecencyMap;
+  /** Pinned ids, top of the list first. */
+  pinnedIds: readonly string[];
   onSelect: (patientId: string) => void;
   onRetry: () => void;
-  onToggleArchived: (show: boolean) => void;
   onSetArchived: (patient: PatientListItem, archived: boolean) => void;
   /**
    * Save a new name. Imported names may be misspelt; saving also clears the
@@ -23,262 +38,124 @@ export interface PatientsColumnProps {
   onRename: (patient: PatientListItem, name: string) => void;
   /** Ask to delete the patient; the workspace confirms before anything goes. */
   onDelete: (patient: PatientListItem) => void;
+  onTogglePin: (patientId: string) => void;
+  /** Move a pinned row within the pinned group. */
+  onReorderPins: (from: number, to: number) => void;
+  /** "View all": the full Active / Archived page. */
+  onOpenAll: () => void;
+  onToggleCollapsed: () => void;
+  collapsed: boolean;
+  /** Mission control → Settings, opened as a modal over the workspace. */
+  onOpenSettings: () => void;
+  /** Mission control → the two rows this preview does not build yet. */
+  onUnavailable: (what: string) => void;
 }
 
-/** Left column of `prototype/patients.html`: search, add, and the patient list. */
+/**
+ * The patients sidebar in the owner's Claude-flavoured preview (2026-09-26):
+ * a panel toggle, the wordmark, one search field, and a compact list of names
+ * with a "⋯" menu each — no avatars, no sub-line, no archived checkbox.
+ */
 export function PatientsColumn({
   patients,
+  ordered,
   activePatientId,
-  showArchived,
+  recency,
+  pinnedIds,
   onSelect,
   onRetry,
-  onToggleArchived,
   onSetArchived,
   onRename,
   onDelete,
+  onTogglePin,
+  onReorderPins,
+  onOpenAll,
+  onToggleCollapsed,
+  collapsed,
+  onOpenSettings,
+  onUnavailable,
 }: PatientsColumnProps): React.JSX.Element {
   const [query, setQuery] = useState('');
 
-  const archivedCount =
-    patients.status === 'ready' ? patients.data.filter((patient) => patient.archived_at !== null).length : 0;
-
   return (
     <div className="col col-patients">
-      {/*
-        The app's identity lives here, top-left: the wordmark alone. The owner
-        dropped the mark and the "Patients" label (2026-09-24) — the list names
-        itself — and adding a patient is the "New" row at the top of the list.
-        The wordmark goes home: no patient, the welcome search.
-      */}
       <div className="col-header col-header-brand">
+        {/* The panel toggle sits to the LEFT of the wordmark, as in Claude: it
+            is the first thing her eye lands on and the only way back once the
+            column is gone. */}
+        <button
+          type="button"
+          className="icon-btn panel-toggle"
+          aria-label={collapsed ? 'Show patients' : 'Hide patients'}
+          aria-expanded={!collapsed}
+          data-testid="sidebar-toggle"
+          onClick={onToggleCollapsed}
+        >
+          <PanelLeftIcon className="icon icon-sm" />
+        </button>
         <Link to="/" className="brand brand-link" data-testid="home-link">
-          Apunta
+          {/* The handwritten mark, in the body colour — Claude's own word is
+              not a second brand colour, and neither is this one. Its height is
+              the `--logo-h` token, the same one the standalone screens use. */}
+          <BrandWordmark tone="text" />
         </Link>
       </div>
 
       <div className="col-search">
+        <span className="col-search-icon" aria-hidden="true">
+          <SearchIcon className="icon icon-sm" />
+        </span>
         <input
           type="text"
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
           }}
-          placeholder="Search patients"
+          placeholder="Search"
           data-testid="patient-search"
           aria-label="Search patients"
         />
       </div>
 
       <div className="col-body" data-testid="patient-list">
-        <Link to="/patients/new" className="list-item new-patient-item" data-testid="new-patient">
-          <div className="avatar">
-            <PlusIcon className="icon-plus" />
-          </div>
-          <div className="patient-list-copy">
-            <div className="name">New</div>
-          </div>
+        <Link to="/patients/new" className="list-item project-row new-patient-item" data-testid="new-patient">
+          <PlusIcon className="icon icon-sm new-patient-icon" />
+          <div className="name">New</div>
         </Link>
         <PatientList
           patients={patients}
+          ordered={ordered}
           query={query}
           activePatientId={activePatientId}
-          showArchived={showArchived}
+          recency={recency}
+          pinnedIds={pinnedIds}
           onSelect={onSelect}
           onRetry={onRetry}
           onClearSearch={() => {
             setQuery('');
           }}
-          onToggleArchived={onToggleArchived}
           onSetArchived={onSetArchived}
           onRename={onRename}
           onDelete={onDelete}
+          onTogglePin={onTogglePin}
+          onReorderPins={onReorderPins}
+          onOpenAll={onOpenAll}
         />
       </div>
 
-      {/*
-        Archiving hides a patient from the working list. It deletes nothing —
-        the notes stay, the plan stays, and the retention default is unchanged
-        (`docs/research/data-at-rest-2026-08.md` §6.1). The toggle is here
-        rather than in Settings because this is the list it changes.
-      */}
-      <label className="col-archived-toggle small">
-        <input
-          type="checkbox"
-          checked={showArchived}
-          data-testid="show-archived"
-          onChange={(event) => {
-            onToggleArchived(event.target.checked);
-          }}
-        />
-        <span>
-          Show archived
-          {showArchived && archivedCount > 0 ? ` (${String(archivedCount)})` : ''}
-        </span>
-      </label>
-
-      <div className="col-footer">
-        <Link to="/settings" className="small">
-          Note formats &amp; settings
-        </Link>
-      </div>
+      <MissionControl onOpenSettings={onOpenSettings} onUnavailable={onUnavailable} />
     </div>
   );
 }
 
-function PatientList({
-  patients,
-  query,
-  activePatientId,
-  showArchived,
-  onSelect,
-  onRetry,
-  onClearSearch,
-  onSetArchived,
-  onRename,
-  onDelete,
-}: PatientsColumnProps & { query: string; onClearSearch: () => void }): React.JSX.Element {
-  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
-
-  if (patients.status === 'loading') return <p className="small state-note">Loading patients…</p>;
-
-  if (patients.status === 'error') {
-    return (
-      <p className="small state-note error-state">
-        {patients.message}{' '}
-        <button type="button" className="btn small btn-quick" onClick={onRetry}>
-          Try again
-        </button>
-      </p>
-    );
-  }
-
-  const needle = query.trim().toLowerCase();
-  const visible = patients.data.filter((patient) => patient.name.toLowerCase().includes(needle));
-
-  if (visible.length === 0) {
-    if (needle.length > 0) {
-      return (
-        <div className="empty-column-state">
-          <p className="small col-hint">No patients match “{query.trim()}”.</p>
-          <button type="button" className="btn btn-compact btn-quick" onClick={onClearSearch}>
-            Clear search
-          </button>
-        </div>
-      );
-    }
-    if (patients.data.length === 0) {
-      return (
-        <div className="empty-column-state">
-          <p className="small col-hint">Add your first patient to get started.</p>
-          <Link to="/patients/new" className="btn btn-primary btn-compact">
-            <PlusIcon className="icon icon-sm" />
-            Add your first patient
-          </Link>
-        </div>
-      );
-    }
-    return <p className="small col-hint">{showArchived ? 'No patients yet.' : 'No active patients.'}</p>;
-  }
-
-  return (
-    <>
-      {visible.map((patient) => {
-        const archived = patient.archived_at !== null;
-        return (
-          <div
-            key={patient.id}
-            className={archived ? 'patient-entry is-archived' : 'patient-entry'}
-            data-testid={`patient-entry-${patient.id}`}
-          >
-            <button
-              type="button"
-              className={patient.id === activePatientId ? 'list-item active' : 'list-item'}
-              onClick={() => {
-                onSelect(patient.id);
-              }}
-            >
-              <div className="avatar">{initials(patient.name)}</div>
-              <div className="patient-list-copy">
-                <div className="name" title={patient.name}>
-                  {patient.name}
-                </div>
-                <div className="sub">
-                  {noteCountLabel(patient.note_count)}
-                  {archived ? ' · archived' : ''}
-                </div>
-              </div>
-            </button>
-            {/* One small "⋯" instead of a row of buttons: the column is narrow
-                (owner, 2026-09-24), and three buttons on hover squeezed the
-                name to nothing. Its slot stays in the row while hidden so the
-                selection target never moves under the pointer. */}
-            {renaming?.id !== patient.id && (
-              <PatientMenu
-                patient={patient}
-                archived={archived}
-                onRename={() => {
-                  setRenaming({ id: patient.id, name: patient.name });
-                }}
-                onSetArchived={() => {
-                  onSetArchived(patient, !archived);
-                }}
-                onDelete={() => {
-                  onDelete(patient);
-                }}
-              />
-            )}
-            {renaming?.id === patient.id && (
-              <form
-                className="row gap-8 patient-rename"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const name = renaming.name.trim();
-                  if (name === '') return;
-                  if (name !== patient.name || patient.name_guessed === true) onRename(patient, name);
-                  setRenaming(null);
-                }}
-              >
-                <SpellLayer
-                  as="input"
-                  type="text"
-                  value={renaming.name}
-                  allowWords={[patient.name]}
-                  aria-label={`Name for ${patient.name}`}
-                  autoFocus
-                  onChange={(name) => {
-                    setRenaming({ id: patient.id, name });
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape') setRenaming(null);
-                  }}
-                />
-                <button type="submit" className="btn small" data-testid={`save-name-${patient.id}`}>
-                  Save
-                </button>
-              </form>
-            )}
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
-interface PatientMenuProps {
-  patient: PatientListItem;
-  archived: boolean;
-  onRename: () => void;
-  onSetArchived: () => void;
-  onDelete: () => void;
-}
-
-function PatientMenu({
-  patient,
-  archived,
-  onRename,
-  onSetArchived,
-  onDelete,
-}: PatientMenuProps): React.JSX.Element {
+/** "Mission control", where Settings, Language and Get help live. */
+function MissionControl({
+  onOpenSettings,
+  onUnavailable,
+}: {
+  onOpenSettings: () => void;
+  onUnavailable: (what: string) => void;
+}): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -306,51 +183,306 @@ function PatientMenu({
   }
 
   return (
-    <div ref={ref} className={open ? 'patient-entry-actions is-open' : 'patient-entry-actions'}>
+    <div className="col-footer mission-control" ref={ref}>
       <button
         type="button"
-        className="icon-btn patient-menu-btn"
-        aria-label={`Tools for ${patient.name}`}
+        className="mission-control-btn"
         aria-haspopup="menu"
         aria-expanded={open}
-        data-testid={`patient-menu-${patient.id}`}
+        data-testid="mission-control"
         onClick={() => {
           setOpen((was) => !was);
         }}
       >
-        <MoreIcon className="icon icon-sm" />
+        <GearIcon className="icon icon-sm" />
+        <span>Mission control</span>
       </button>
       {open && (
-        <div className="patient-menu" role="menu">
+        <div className="patient-menu mission-menu" role="menu">
           <button
             type="button"
             role="menuitem"
             className="patient-menu-item"
-            data-testid={`rename-${patient.id}`}
-            onClick={choose(onRename)}
+            data-testid="mission-settings"
+            onClick={choose(onOpenSettings)}
           >
-            Rename
+            <GearIcon className="icon icon-sm" />
+            Settings
           </button>
           <button
             type="button"
             role="menuitem"
             className="patient-menu-item"
-            data-testid={`archive-${patient.id}`}
-            onClick={choose(onSetArchived)}
+            data-testid="mission-language"
+            onClick={choose(() => {
+              onUnavailable('Language');
+            })}
           >
-            {archived ? 'Restore' : 'Archive'}
+            <GlobeIcon className="icon icon-sm" />
+            Language
           </button>
           <button
             type="button"
             role="menuitem"
-            className="patient-menu-item is-danger"
-            aria-label={`Delete ${patient.name}`}
-            onClick={choose(onDelete)}
+            className="patient-menu-item"
+            data-testid="mission-help"
+            onClick={choose(() => {
+              onUnavailable('Get help');
+            })}
           >
-            Delete
+            <HelpIcon className="icon icon-sm" />
+            Get help
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+type PatientListProps = Pick<
+  PatientsColumnProps,
+  | 'patients'
+  | 'ordered'
+  | 'activePatientId'
+  | 'recency'
+  | 'pinnedIds'
+  | 'onSelect'
+  | 'onRetry'
+  | 'onSetArchived'
+  | 'onRename'
+  | 'onDelete'
+  | 'onTogglePin'
+  | 'onReorderPins'
+  | 'onOpenAll'
+> & { query: string; onClearSearch: () => void };
+
+function PatientList({
+  patients,
+  ordered,
+  query,
+  activePatientId,
+  recency,
+  pinnedIds,
+  onSelect,
+  onRetry,
+  onClearSearch,
+  onSetArchived,
+  onRename,
+  onDelete,
+  onTogglePin,
+  onReorderPins,
+  onOpenAll,
+}: PatientListProps): React.JSX.Element {
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  // The hover card is anchored to the row that is hovered, and lives outside
+  // the sidebar: the list is a scroll box, so a card inside it would be clipped
+  // at the column's edge instead of opening over the page beside it.
+  const [tip, setTip] = useState<{ id: string; rect: DOMRect } | null>(null);
+
+  if (patients.status === 'loading') return <p className="small state-note">Loading patients…</p>;
+
+  if (patients.status === 'error') {
+    return (
+      <p className="small state-note error-state">
+        {patients.message}{' '}
+        <button type="button" className="btn small btn-quick" onClick={onRetry}>
+          Try again
+        </button>
+      </p>
+    );
+  }
+
+  const needle = query.trim().toLowerCase();
+  const visible = ordered.filter((patient) => patient.name.toLowerCase().includes(needle));
+
+  if (visible.length === 0) {
+    if (needle.length > 0) {
+      return (
+        <div className="empty-column-state">
+          <p className="small col-hint">No patients match “{query.trim()}”.</p>
+          <button type="button" className="btn btn-compact btn-quick" onClick={onClearSearch}>
+            Clear search
+          </button>
+        </div>
+      );
+    }
+    if (patients.data.length === 0) {
+      return (
+        <div className="empty-column-state">
+          <p className="small col-hint">Add your first patient to get started.</p>
+          <Link to="/patients/new" className="btn btn-primary btn-compact">
+            <PlusIcon className="icon icon-sm" />
+            Add your first patient
+          </Link>
+        </div>
+      );
+    }
+    return <p className="small col-hint">No active patients.</p>;
+  }
+
+  // Searching is a deliberate act, so it shows everyone it matched; the daily
+  // list is the one that gets cut short.
+  const shown = needle.length > 0 ? visible : visible.slice(0, VISIBLE_PATIENTS);
+
+  const tipPatient = tip === null ? null : (visible.find((patient) => patient.id === tip.id) ?? null);
+
+  return (
+    <>
+      {shown.map((patient) => {
+        const archived = patient.archived_at !== null;
+        const pinned = pinnedIndex(patient.id, pinnedIds) >= 0;
+        return (
+          <div
+            key={patient.id}
+            className={[
+              'patient-entry',
+              'project-row-wrap',
+              archived ? 'is-archived' : '',
+              pinned ? 'is-pinned' : '',
+              dragging === patient.id ? 'is-dragging' : '',
+              dropTarget === patient.id ? 'is-drop-target' : '',
+            ]
+              .filter((part) => part !== '')
+              .join(' ')}
+            data-testid={`patient-entry-${patient.id}`}
+            // Only pinned rows move: they are the ones with an order of their
+            // own. Everything else is ordered by when it was last worked on.
+            draggable={pinned}
+            onDragStart={(event) => {
+              setDragging(patient.id);
+              event.dataTransfer.effectAllowed = 'move';
+              event.dataTransfer.setData('text/plain', patient.id);
+            }}
+            onDragOver={(event) => {
+              if (!pinned || dragging === null) return;
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'move';
+              setDropTarget(patient.id);
+            }}
+            onDragLeave={() => {
+              setDropTarget((current) => (current === patient.id ? null : current));
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              const from = pinnedIndex(dragging ?? '', pinnedIds);
+              const to = pinnedIndex(patient.id, pinnedIds);
+              setDragging(null);
+              setDropTarget(null);
+              if (from >= 0 && to >= 0 && from !== to) onReorderPins(from, to);
+            }}
+            onDragEnd={() => {
+              setDragging(null);
+              setDropTarget(null);
+            }}
+          >
+            <button
+              type="button"
+              className={
+                patient.id === activePatientId ? 'list-item project-row is-active' : 'list-item project-row'
+              }
+              data-testid={`patient-row-${patient.id}`}
+              onMouseEnter={(event) => {
+                setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
+              }}
+              onMouseLeave={() => {
+                setTip((current) => (current?.id === patient.id ? null : current));
+              }}
+              onFocus={(event) => {
+                setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
+              }}
+              onBlur={() => {
+                setTip((current) => (current?.id === patient.id ? null : current));
+              }}
+              onClick={() => {
+                onSelect(patient.id);
+              }}
+              onKeyDown={(event) => {
+                // The keyboard way to reorder a pinned patient, since dragging
+                // is not reachable without a pointer: Alt with the arrows.
+                if (!pinned || !event.altKey) return;
+                const from = pinnedIndex(patient.id, pinnedIds);
+                if (event.key === 'ArrowUp' && from > 0) {
+                  event.preventDefault();
+                  onReorderPins(from, from - 1);
+                } else if (event.key === 'ArrowDown' && from >= 0 && from < pinnedIds.length - 1) {
+                  event.preventDefault();
+                  onReorderPins(from, from + 1);
+                }
+              }}
+            >
+              {pinned ? <PinIcon className="icon icon-xs project-row-pin" /> : null}
+              <span className="name">{patient.name}</span>
+            </button>
+
+            {/* One small "⋯" instead of a row of buttons: the column is narrow
+                (owner, 2026-09-24), and three buttons on hover squeezed the
+                name to nothing. Its slot stays in the row while hidden so the
+                selection target never moves under the pointer. */}
+            {renaming !== patient.id && (
+              <PatientMenu
+                patient={patient}
+                archived={archived}
+                pinned={pinned}
+                onTogglePin={() => {
+                  onTogglePin(patient.id);
+                }}
+                onRename={() => {
+                  setRenaming(patient.id);
+                }}
+                onSetArchived={(next) => {
+                  onSetArchived(patient, next);
+                }}
+                onDelete={() => {
+                  onDelete(patient);
+                }}
+              />
+            )}
+            {renaming === patient.id && (
+              <PatientRenameForm
+                patient={patient}
+                onRename={onRename}
+                onDone={() => {
+                  setRenaming(null);
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+
+      {ordered.length > 0 && (
+        <button type="button" className="view-all-row" data-testid="view-all-patients" onClick={onOpenAll}>
+          View all
+        </button>
+      )}
+
+      {/* The hover card, in the same place Claude puts it: off the right edge
+          of the row, the name, then the count and the date of the last edit.
+          Hidden from the pointer and from the accessibility tree — the row and
+          the menu beside it already say all of this. */}
+      {tip !== null &&
+        tipPatient !== null &&
+        createPortal(
+          <div
+            className="project-tip"
+            role="tooltip"
+            aria-hidden="true"
+            data-testid="patient-tip"
+            style={{
+              left: `${String(Math.round(tip.rect.right + 20))}px`,
+              top: `${String(Math.round(tip.rect.top))}px`,
+            }}
+          >
+            <div className="project-tip-name">{tipPatient.name}</div>
+            <div className="project-tip-meta">
+              <span className="project-tip-count">{noteCountLabel(tipPatient.note_count)}</span>
+              <span className="project-tip-date">{formatShortDate(recency.get(tipPatient.id) ?? null)}</span>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
