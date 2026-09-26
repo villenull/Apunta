@@ -2,7 +2,8 @@ import type { Note, PatientListItem } from '@apunta/shared';
 import { useNavigate } from 'react-router';
 
 import type { LoadState } from '../hooks/useLoader.js';
-import { firstName, formatNoteDate, notePreview } from '../lib/format.js';
+import { firstName, notePreview } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import { BackIcon, PlusIcon } from './icons.js';
 
 export interface NotesColumnProps {
@@ -17,6 +18,26 @@ export interface NotesColumnProps {
   onBackToPatients: () => void;
 }
 
+/**
+ * A note's own date, through the catalogue.
+ *
+ * `formatNoteDate` returned a whole English sentence — `Today` or `en-US`'s
+ * `Aug 8, 2026` — so the column asks for one of two keys and hands `t()` the
+ * ISO timestamp, which it formats in the active locale (Fixed decision 3).
+ * `web/src/lib/format.ts` stays the oracle; S2.3's `NoteView.tsx` has the same
+ * two-key shape.
+ */
+function noteDay(t: Translate, iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const today =
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  return today ? t('notes.today') : t('notes.date', { day: iso });
+}
+
 /** Middle column of `prototype/patients.html`. */
 export function NotesColumn({
   patient,
@@ -28,6 +49,7 @@ export function NotesColumn({
   onRetry,
   onBackToPatients,
 }: NotesColumnProps): React.JSX.Element {
+  const { t } = useI18n();
   const navigate = useNavigate();
   return (
     <div className="col col-notes">
@@ -35,10 +57,10 @@ export function NotesColumn({
         <div className="col-header-title">
           <button type="button" className="narrow-back" onClick={onBackToPatients}>
             <BackIcon className="icon icon-xs" />
-            <span>Patients</span>
+            <span>{t('common.patients')}</span>
           </button>
           <h3 data-testid="notes-header" tabIndex={-1}>
-            {patient ? firstName(patient.name) : 'Notes'}
+            {patient ? firstName(patient.name) : t('notes.title')}
           </h3>
         </div>
       </div>
@@ -53,7 +75,7 @@ export function NotesColumn({
             }}
           >
             <PlusIcon className="icon-plus" />
-            New note
+            {t('notes.new')}
           </button>
         )}
         {/* The work around a session, next to the notes that follow one.
@@ -69,7 +91,7 @@ export function NotesColumn({
                 onOpenView('brainstorm');
               }}
             >
-              Brainstorm
+              {t('brainstorm.title')}
             </button>
             <button
               type="button"
@@ -79,7 +101,7 @@ export function NotesColumn({
                 onOpenView('plan');
               }}
             >
-              Treatment plan
+              {t('plan.title')}
             </button>
             <button
               type="button"
@@ -89,7 +111,7 @@ export function NotesColumn({
                 onOpenView('prep');
               }}
             >
-              Prepare for session
+              {t('prep.title')}
             </button>
           </div>
         )}
@@ -112,15 +134,16 @@ type NoteListProps = Omit<NotesColumnProps, 'patient' | 'onBackToPatients' | 'vi
 };
 
 function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListProps): React.JSX.Element {
+  const { t } = useI18n();
   const navigate = useNavigate();
-  if (notes.status === 'loading') return <p className="small state-note">Loading notes…</p>;
+  if (notes.status === 'loading') return <p className="small state-note">{t('notes.loading')}</p>;
 
   if (notes.status === 'error') {
     return (
       <p className="small state-note error-state">
         {notes.message}{' '}
         <button type="button" className="btn small btn-quick" onClick={onRetry}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       </p>
     );
@@ -129,7 +152,7 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
   if (notes.data.length === 0) {
     return (
       <div className="empty-column-state notes-empty">
-        <p className="small col-hint notes">No notes yet for {patient.name}.</p>
+        <p className="small col-hint notes">{t('notes.emptyFor', { name: patient.name })}</p>
         <button
           type="button"
           className="btn btn-primary btn-compact"
@@ -138,7 +161,7 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
           }}
         >
           <PlusIcon className="icon icon-sm" />
-          Create first note
+          {t('notes.createFirst')}
         </button>
       </div>
     );
@@ -156,8 +179,8 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
           }}
         >
           <div className="note-date-row">
-            <span className="note-date">{formatNoteDate(note.created_at)}</span>
-            {note.status === 'draft' && <span className="draft-chip">Draft</span>}
+            <span className="note-date">{noteDay(t, note.created_at)}</span>
+            {note.status === 'draft' && <span className="draft-chip">{t('note.draftChip')}</span>}
           </div>
           <div className="note-title">{note.title}</div>
           <div className="note-preview">{notePreview(note.content)}</div>

@@ -7,6 +7,7 @@ import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { copyText } from '../lib/clipboard.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import {
   FULLY_LOCAL,
   SETUP_SCRIPT_COMMAND,
@@ -30,7 +31,8 @@ import {
  */
 
 export function Setup(): React.JSX.Element {
-  useDocumentTitle('Setup');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.setup'));
   const loadHealth = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
   const health = useLoader(loadHealth);
 
@@ -47,20 +49,17 @@ export function Setup(): React.JSX.Element {
   }
 
   return (
-    <Screen back={{ to: '/', label: 'Patients' }}>
-      <h2 className="lede">Setup</h2>
-      <p className="small note-meta lede">
-        Apunta runs on this computer. These are the pieces it needs, and what to do about any that are
-        missing.
-      </p>
+    <Screen back={{ to: '/', label: t('common.patients') }}>
+      <h2 className="lede">{t('setup.title')}</h2>
+      <p className="small note-meta lede">{t('setup.lede')}</p>
 
-      {health.state.status === 'loading' && <p className="small state-note">Checking…</p>}
+      {health.state.status === 'loading' && <p className="small state-note">{t('setup.checking')}</p>}
 
       {health.state.status === 'error' && (
         <p className="small state-note error-state" role="alert" data-testid="setup-error">
           {health.state.message}{' '}
           <button type="button" className="btn small btn-quick" onClick={recheck}>
-            Check again
+            {t('common.checkAgain')}
           </button>
         </p>
       )}
@@ -75,6 +74,7 @@ export function Setup(): React.JSX.Element {
           bundled={health.state.data.bundled}
           platform={platform}
           onRecheck={recheck}
+          t={t}
         />
       )}
     </Screen>
@@ -85,12 +85,14 @@ function SetupBody({
   bundled,
   platform,
   onRecheck,
+  t,
 }: {
   checks: SetupCheck[];
   /** Inside Apunta.app there is no Terminal to run the script in, so the card that offers it stays away. */
   bundled: boolean;
   platform: SetupPlatform;
   onRecheck: () => void;
+  t: Translate;
 }): React.JSX.Element {
   return (
     <>
@@ -100,40 +102,36 @@ function SetupBody({
 
       <ul className="card card-rows lede setup-list" data-testid="setup-checklist">
         {checks.map((check) => (
-          <SetupRow key={check.id} check={check} />
+          <SetupRow key={check.id} check={check} t={t} />
         ))}
       </ul>
 
       <button type="button" className="btn btn-block" onClick={onRecheck} data-testid="setup-recheck">
-        Check again
+        {t('common.checkAgain')}
       </button>
 
       {hasBlockingProblem(checks) && !bundled && platform === 'mac' && (
         <div className="card card-rows lede">
-          <h3 className="heading-tight">Or do all of it at once</h3>
-          <p className="small note-meta">
-            From a Terminal window in the Apunta folder. It installs what is missing, downloads the models,
-            and is safe to run again as many times as you like.
-          </p>
+          <h3 className="heading-tight">{t('setup.allAtOnce')}</h3>
+          <p className="small note-meta">{t('setup.terminalHelp')}</p>
           <CommandLine command={SETUP_SCRIPT_COMMAND} testId="setup-script-command" />
         </div>
       )}
 
       <p className="small note-meta lede">
-        Backing up is a separate question, and the one most worth getting right —{' '}
-        <Link to="/settings">Settings</Link> has it.
+        {t('setup.backingUpLead')} <Link to="/settings">{t('common.settings')}</Link> has it.
       </p>
     </>
   );
 }
-function SetupRow({ check }: { check: SetupCheck }): React.JSX.Element {
+function SetupRow({ check, t }: { check: SetupCheck; t: Translate }): React.JSX.Element {
   return (
     <li className={`setup-row is-${check.state}`} data-testid={`setup-row-${check.id}`}>
       <div className="setup-row-head">
-        <StateMark state={check.state} />
+        <StateMark state={check.state} t={t} />
         <div className="grow">
           <p className="setup-row-label">
-            {check.label} <span className="setup-row-state">{STATE_LABEL[check.state]}</span>
+            {check.label} <span className="setup-row-state">{stateLabel(t, check.state)}</span>
           </p>
           <p className="small note-meta" data-testid={`setup-detail-${check.id}`}>
             {check.detail}
@@ -158,16 +156,21 @@ function SetupRow({ check }: { check: SetupCheck }): React.JSX.Element {
   );
 }
 
-const STATE_LABEL: Record<CheckState, string> = {
-  ok: 'Ready',
-  missing: 'Missing',
-  warn: 'Not checked',
-  unknown: 'Not checked',
-  skipped: 'Not checked',
-};
-function StateMark({ state }: { state: CheckState }): React.JSX.Element {
+/**
+ * The five check states, by the value `web/src/lib/setup.ts` reports.
+ *
+ * The state itself is data and is never translated (Fixed decision 4): each is
+ * a key of its own, and `warn`, `unknown` and `skipped` are the same English
+ * string today and so share one key.
+ */
+function stateLabel(t: Translate, state: CheckState): string {
+  if (state === 'ok') return t('setup.stateOk');
+  if (state === 'missing') return t('setup.stateMissing');
+  return t('setup.stateUnknown');
+}
+function StateMark({ state, t }: { state: CheckState; t: Translate }): React.JSX.Element {
   return (
-    <span className={`setup-mark is-${state}`} aria-label={STATE_LABEL[state]} title={STATE_LABEL[state]}>
+    <span className={`setup-mark is-${state}`} aria-label={stateLabel(t, state)} title={stateLabel(t, state)}>
       {state === 'ok' ? (
         <CheckIcon className="icon icon-sm" />
       ) : state === 'missing' ? (
@@ -181,6 +184,7 @@ function StateMark({ state }: { state: CheckState }): React.JSX.Element {
 
 /** A command she is meant to paste, with the copy button beside it. */
 function CommandLine({ command, testId }: { command: string; testId: string }): React.JSX.Element {
+  const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
   return (
@@ -195,7 +199,7 @@ function CommandLine({ command, testId }: { command: string; testId: string }): 
           });
         }}
       >
-        {copied ? 'Copied' : 'Copy'}
+        {copied ? t('common.copied') : t('common.copy')}
       </button>
     </div>
   );

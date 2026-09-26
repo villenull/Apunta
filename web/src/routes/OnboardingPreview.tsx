@@ -6,6 +6,7 @@ import { CloseIcon } from '../components/icons.js';
 import { InstructionsPanel } from '../components/InstructionsPanel.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { useI18n } from '../lib/i18n.js';
 import { duplicateSection } from '../lib/sections.js';
 import { asFormatDraft } from './formatDraft.js';
 
@@ -23,7 +24,8 @@ import { asFormatDraft } from './formatDraft.js';
  * `docs/decisions.md`.
  */
 export function OnboardingPreview(): React.JSX.Element {
-  useDocumentTitle('Note format');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.noteFormat'));
   const location = useLocation();
   const navigate = useNavigate();
   const draft = asFormatDraft(location.state);
@@ -46,7 +48,7 @@ export function OnboardingPreview(): React.JSX.Element {
     const trimmed = newSection.trim();
     if (trimmed.length === 0) return;
     if (duplicateSection([...sections, trimmed]) !== null) {
-      setError(`"${trimmed}" is already a section.`);
+      setError(t('format.errorAlreadySection', { section: trimmed }));
       return;
     }
     setSections([...sections, trimmed]);
@@ -65,7 +67,7 @@ export function OnboardingPreview(): React.JSX.Element {
     }
     const next = sections.map((section, index) => (index === renaming.index ? trimmed : section));
     if (duplicateSection(next) !== null) {
-      setError(`"${trimmed}" is already a section.`);
+      setError(t('format.errorAlreadySection', { section: trimmed }));
       return;
     }
     setSections(next);
@@ -88,11 +90,11 @@ export function OnboardingPreview(): React.JSX.Element {
   async function handleSave(): Promise<void> {
     if (!draft || busy) return;
     if (name.trim().length === 0) {
-      setError('Give the format a name.');
+      setError(t('format.errorName'));
       return;
     }
     if (sections.length === 0) {
-      setError('A format needs at least one section.');
+      setError(t('format.errorNoSections'));
       return;
     }
 
@@ -112,29 +114,25 @@ export function OnboardingPreview(): React.JSX.Element {
   }
 
   return (
-    <Screen back={{ to: editing ? draft.returnTo : '/onboarding/format', label: 'Back' }}>
+    <Screen back={{ to: editing ? draft.returnTo : '/onboarding/format', label: t('common.back') }}>
       <div className="progress">
         <div className="dot done" />
         <div className={editing ? 'dot' : 'dot done'} />
       </div>
 
-      <h2 className="heading-tight">{editing ? 'Edit note format' : "Here's what we found"}</h2>
-      <p className="muted lede">
-        {editing
-          ? 'Rename it or change its sections, then save.'
-          : "Check this matches your work's format before saving."}
-      </p>
+      <h2 className="heading-tight">{editing ? t('format.editTitle') : t('format.foundTitle')}</h2>
+      <p className="muted lede">{editing ? t('format.editLede') : t('format.foundLede')}</p>
 
       {draft.truncated === true && (
         <p className="small state-note" data-testid="truncated-note">
-          That file was long, so Apunta read the first part of it. Check nothing is missing below.
+          {t('format.truncatedNote')}
         </p>
       )}
 
       <div className="card">
         <div className="field">
           <label className="label" htmlFor="preview-name">
-            Format name
+            {t('format.nameLabel')}
           </label>
           <input
             id="preview-name"
@@ -146,7 +144,7 @@ export function OnboardingPreview(): React.JSX.Element {
           />
         </div>
 
-        <span className="label">{editing ? 'Sections' : 'Sections detected'}</span>
+        <span className="label">{editing ? t('format.sectionsLabel') : t('format.sectionsDetected')}</span>
         <div data-testid="section-chips">
           {sections.map((section, index) => (
             <div className="section-chip" key={section}>
@@ -154,7 +152,7 @@ export function OnboardingPreview(): React.JSX.Element {
                 <input
                   type="text"
                   className="grow chip-rename"
-                  aria-label={`New name for ${section}`}
+                  aria-label={t('format.renameLabel', { section })}
                   value={renaming.value}
                   onChange={(event) => {
                     setRenaming({ index, value: event.target.value });
@@ -173,7 +171,7 @@ export function OnboardingPreview(): React.JSX.Element {
                 <button
                   type="button"
                   className="chip-name"
-                  aria-label={`Rename ${section}`}
+                  aria-label={t('format.renameAction', { section })}
                   onClick={() => {
                     setRenaming({ index, value: section });
                   }}
@@ -186,7 +184,7 @@ export function OnboardingPreview(): React.JSX.Element {
                 <button
                   type="button"
                   className="icon-btn chip-move"
-                  aria-label={`Move ${section} up`}
+                  aria-label={t('format.moveUp', { section })}
                   disabled={index === 0}
                   onClick={() => {
                     move(index, -1);
@@ -197,7 +195,7 @@ export function OnboardingPreview(): React.JSX.Element {
                 <button
                   type="button"
                   className="icon-btn chip-move"
-                  aria-label={`Move ${section} down`}
+                  aria-label={t('format.moveDown', { section })}
                   disabled={index === sections.length - 1}
                   onClick={() => {
                     move(index, 1);
@@ -208,7 +206,7 @@ export function OnboardingPreview(): React.JSX.Element {
                 <button
                   type="button"
                   className="icon-btn chip-remove"
-                  aria-label={`Remove ${section}`}
+                  aria-label={t('format.removeSection', { section })}
                   onClick={() => {
                     setRenaming(null);
                     setSections(sections.filter((candidate) => candidate !== section));
@@ -226,8 +224,8 @@ export function OnboardingPreview(): React.JSX.Element {
             <input
               type="text"
               className="grow"
-              placeholder="Section name"
-              aria-label="Section name"
+              placeholder={t('format.sectionNamePlaceholder')}
+              aria-label={t('format.sectionNamePlaceholder')}
               value={newSection}
               onChange={(event) => {
                 setNewSection(event.target.value);
@@ -241,7 +239,7 @@ export function OnboardingPreview(): React.JSX.Element {
               autoFocus
             />
             <button type="button" className="btn small btn-compact" onClick={addSection}>
-              Add
+              {t('common.add')}
             </button>
           </div>
         ) : (
@@ -252,16 +250,11 @@ export function OnboardingPreview(): React.JSX.Element {
               setAdding(true);
             }}
           >
-            + Add section
+            {t('format.addSection')}
           </button>
         )}
 
-        {editing && (
-          <p className="small note-meta">
-            Notes you have already written keep the sections they were written with. Changes here apply to
-            future drafts only.
-          </p>
-        )}
+        {editing && <p className="small note-meta">{t('format.existingNotesNote')}</p>}
       </div>
 
       {editing && <InstructionsPanel value={instructions} onChange={setInstructions} disabled={busy} />}
@@ -275,11 +268,11 @@ export function OnboardingPreview(): React.JSX.Element {
       <div className="row gap-12 form-actions-row">
         {editing ? (
           <Link to={draft.returnTo} className="btn grow">
-            Cancel
+            {t('common.cancel')}
           </Link>
         ) : (
           <Link to="/onboarding/format" className="btn grow">
-            Start over
+            {t('format.startOver')}
           </Link>
         )}
         <button
@@ -291,7 +284,7 @@ export function OnboardingPreview(): React.JSX.Element {
             void handleSave();
           }}
         >
-          {busy ? 'Saving…' : editing ? 'Save changes' : 'Looks right, save'}
+          {busy ? t('common.saving') : editing ? t('format.saveChanges') : t('format.looksRight')}
         </button>
       </div>
     </Screen>

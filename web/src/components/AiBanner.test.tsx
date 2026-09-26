@@ -1,3 +1,4 @@
+import { t } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -56,6 +57,27 @@ describe('AiBanner', () => {
     expect((await screen.findByTestId('ai-banner')).textContent).toContain(
       'Everything except drafting a new note still works',
     );
+  });
+
+  /**
+   * S2.4: the banner's one sentence is split by the `Setup` link and the retry
+   * button, both of which the screen needs, so it is keyed at the element
+   * boundary rather than merged. This pins each of those three pieces to its
+   * own key's English, and the stored model name to a parameter.
+   */
+  it('builds its sentence from the catalogue, with the model as a parameter', async () => {
+    installFakeApi(
+      {},
+      { health: { ollama: { reachable: true, model: 'gemma4:12b-it-qat', modelPresent: false } } },
+    );
+    renderBanner();
+
+    const banner = await screen.findByTestId('ai-banner');
+    expect(banner.textContent).toContain(t('ai.modelMissing', { model: ' (gemma4:12b-it-qat)' }));
+    expect(banner.textContent).toContain(t('common.setup'));
+    expect(banner.textContent).toContain(t('ai.bannerTail'));
+    expect(banner.textContent).toContain(t('common.checkAgain'));
+    expect(t('ai.modelMissing', { model: '' }, 'en')).toBe("Apunta can't find the AI model — see");
   });
 
   it('points at the setup screen rather than at nothing', async () => {

@@ -1,6 +1,7 @@
 import type { PatientListItem } from '@apunta/shared';
 import { useState } from 'react';
 
+import { useI18n } from '../lib/i18n.js';
 import { SpellLayer } from './SpellLayer.js';
 
 export interface PatientRenameFormProps {
@@ -15,6 +16,7 @@ export interface PatientRenameFormProps {
  * sidebar and the "View all" page so the two spell-check the same way.
  */
 export function PatientRenameForm({ patient, onRename, onDone }: PatientRenameFormProps): React.JSX.Element {
+  const { t } = useI18n();
   const [name, setName] = useState(patient.name);
 
   return (
@@ -33,7 +35,7 @@ export function PatientRenameForm({ patient, onRename, onDone }: PatientRenameFo
         type="text"
         value={name}
         allowWords={[patient.name]}
-        aria-label={`Name for ${patient.name}`}
+        aria-label={t('patients.renameLabel', { name: patient.name })}
         autoFocus
         onChange={setName}
         onKeyDown={(event) => {
@@ -41,7 +43,7 @@ export function PatientRenameForm({ patient, onRename, onDone }: PatientRenameFo
         }}
       />
       <button type="submit" className="btn small" data-testid={`save-name-${patient.id}`}>
-        Save
+        {t('common.save')}
       </button>
     </form>
   );

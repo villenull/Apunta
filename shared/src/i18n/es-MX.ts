@@ -338,4 +338,1788 @@ export const esMX = {
 
   /** `NoteView.tsx:323`. */
   'note.unsavedError': { text: 'No se pudieron guardar los cambios pendientes' },
+
+  /*
+   * El resto de la aplicación web: las doce rutas, los veintitrés componentes
+   * que S2.3 no tocó y los doce literales de `web/src/App.tsx`.
+   *
+   * La voz es la de S1.4 y la de S2.3: `tú` (O-1, §1), minúscula dentro de la
+   * frase (§2.4), `¿` en las preguntas (§2.5), `«»` para lo citado, y sin raya
+   * larga como paréntesis (§2.5). Los términos salen del glosario: *nota*,
+   * *borrador*, *copia de seguridad* (§3.3), *lluvia de ideas*, *resumen previo*,
+   * *plan de tratamiento*, *participación del cliente*, *cédula profesional*
+   * para la licencia profesional y *licencia* para la del software.
+   *
+   * Los nombres de producto y los identificadores van sin traducir (§3.4),
+   * incluso dentro de una frase: `Apunta`, `Claude`, `Halaxy`, `Mac`, `NPI`,
+   * `PDF`, `SKILL.md`, `conversations.json`, `RESTORE.txt` y
+   * `/Volumes/Backup/Apunta` se escriben igual que en inglés, nunca entran en
+   * la lista de excepciones y nunca se separan en una clave propia.
+   *
+   * Cada entrada repite el `kind` de su clave en inglés, y no por gusto:
+   * `t()` lee el `kind` de la entrada que eligió, así que una entrada en
+   * español sin `dateOnly` imprimiría `2026-11-21` donde el inglés imprime
+   * `Nov 21, 2026`. Las fechas y los números no se escriben aquí: `t()` los
+   * formatea con `Intl` en la configuración regional pedida, que es lo que
+   * produce `8 ago 2026` y `1,234` para `es-MX` (§2.1, §2.3). Los conteos
+   * plurales llevan las tres formas que `Intl.PluralRules('es-MX')` puede
+   * elegir en esta máquina: `one`, `many` y `other`.
+   *
+   * La copia es de S2.7 y S2.8: una objeción de una traductora a una palabra no
+   * es un defecto en este archivo. Dos decisiones se dejan anotadas para ellas:
+   * `plan.target` usa «objetivo» porque «meta» ya es la meta del plan, y
+   * `patients.namePlaceholder` conserva el nombre de muestra en inglés porque
+   * `e2e/fixtures/eval-es/NAMES.md` todavía no existe (O-3, §3.5).
+   */
+  'common.loading': {
+    text: 'Cargando…',
+  },
+  'common.checkAgain': {
+    text: 'Revisar de nuevo',
+  },
+  'common.setup': {
+    text: 'Configuración inicial',
+  },
+  'common.settings': {
+    text: 'Ajustes',
+  },
+  'common.back': {
+    text: 'Atrás',
+  },
+  'common.patients': {
+    text: 'Pacientes',
+  },
+  'common.search': {
+    text: 'Buscar',
+  },
+  'common.searchPatients': {
+    text: 'Buscar pacientes',
+  },
+  'common.copy': {
+    text: 'Copiar',
+  },
+  'common.copied': {
+    text: 'Copiado',
+  },
+  'common.notRecorded': {
+    text: 'No registrado',
+  },
+  'common.thinkingBusy': {
+    text: 'Pensando…',
+  },
+  'common.starting': {
+    text: 'Iniciando…',
+  },
+  'common.importing': {
+    text: 'Importando…',
+  },
+  'common.reading': {
+    text: 'Leyendo…',
+  },
+  'common.keep': {
+    text: 'Conservar',
+  },
+  'common.kept': {
+    text: 'Conservado',
+  },
+  'common.add': {
+    text: 'Agregar',
+  },
+  'common.save': {
+    text: 'Guardar',
+  },
+  'common.edit': {
+    text: 'Editar',
+  },
+  'common.archive': {
+    text: 'Archivar',
+  },
+  'common.undo': {
+    text: 'Deshacer',
+  },
+  'doc.settings': {
+    text: 'Ajustes',
+  },
+  'doc.setup': {
+    text: 'Configuración inicial',
+  },
+  'doc.about': {
+    text: 'Acerca de',
+  },
+  'doc.licences': {
+    text: 'Licencias',
+  },
+  'doc.patients': {
+    text: 'Pacientes',
+  },
+  'doc.newPatient': {
+    text: 'Nuevo paciente',
+  },
+  'doc.newNote': {
+    text: 'Nueva nota',
+  },
+  'doc.noteFormat': {
+    text: 'Formato de nota',
+  },
+  'doc.importClaude': {
+    text: 'Importar desde Claude',
+  },
+  'doc.importHalaxy': {
+    text: 'Importar desde Halaxy',
+  },
+  'app.primary.opening': {
+    text: 'Abriendo Apunta…',
+  },
+  'app.primary.checking': {
+    text: 'Comprobando cuál ventana es la principal.',
+  },
+  'app.primary.unsupportedTitle': {
+    text: 'Este navegador no puede mantener una sola ventana de edición',
+  },
+  'app.primary.unsupportedBody': {
+    text: 'Apunta necesita la API de Web Locks para asegurarse de que solo una ventana edite a la vez, y este navegador no la tiene. Esta ventana queda bloqueada y sin acceso a la edición: abre Apunta en Chromium o Safari para continuar.',
+  },
+  'app.primary.takingOver': {
+    text: 'Tomando el control…',
+  },
+  'app.primary.takingOverBody': {
+    text: 'La otra ventana está guardando sus cambios pendientes y retirándose. Esta ventana se desbloquea en cuanto lo haga.',
+  },
+  'app.primary.blockedTitle': {
+    text: 'Apunta está abierto en otra ventana',
+  },
+  'app.primary.blockedBody': {
+    text: 'Solo una ventana puede editar a la vez, así que esta ventana está bloqueada. ¿Quieres que esta ventana pase a ser la principal? La otra ventana guarda su trabajo y queda bloqueada en su lugar.',
+  },
+  'app.primary.decline': {
+    text: 'Ahora no',
+  },
+  'app.primary.takeover': {
+    text: 'Hacer esta ventana la principal',
+  },
+  'ai.modelMissing': {
+    text: 'Apunta no encuentra el modelo de IA{model} — mira',
+    kind: { model: 'text' },
+  },
+  'ai.unreachable': {
+    text: 'Apunta no puede alcanzar la IA local — mira',
+  },
+  'ai.bannerTail': {
+    text: '. Todo excepto redactar una nota nueva sigue funcionando.',
+  },
+  'backup.title': {
+    text: 'Copia de seguridad',
+  },
+  'backup.restore': {
+    text: 'Restaurar',
+  },
+  'backup.cancelPending': {
+    text: 'Cancelarla',
+  },
+  'backup.noneYet': {
+    text: 'Aún no hay copias de seguridad',
+  },
+  'backup.lastAt': {
+    text: 'Última copia de seguridad: {when}',
+    kind: { when: 'text' },
+  },
+  'backup.justNow': {
+    text: 'ahora mismo',
+  },
+  'backup.minutesAgo': {
+    text: 'hace {count} minuto',
+    plural: {
+      one: 'hace {count} minuto',
+      many: 'hace {count} minutos',
+      other: 'hace {count} minutos',
+    },
+    kind: { count: 'number' },
+  },
+  'backup.hoursAgo': {
+    text: 'hace {count} hora',
+    plural: {
+      one: 'hace {count} hora',
+      many: 'hace {count} horas',
+      other: 'hace {count} horas',
+    },
+    kind: { count: 'number' },
+  },
+  'backup.yesterday': {
+    text: 'ayer',
+  },
+  'backup.daysAgo': {
+    text: 'hace {count} días',
+    kind: { count: 'number' },
+  },
+  'backup.working': {
+    text: 'Trabajando…',
+  },
+  'backup.now': {
+    text: 'Hacer una copia ahora',
+  },
+  'backup.failed': {
+    text: 'La última copia de seguridad falló: {detail}',
+    kind: { detail: 'text' },
+  },
+  'backup.restoreWaiting': {
+    text: 'Hay una restauración pendiente: sal de Apunta y vuelve a abrirlo para terminarla.',
+  },
+  'backup.restoreCancelled': {
+    text: 'Restauración cancelada. No cambió nada.',
+  },
+  'backup.done': {
+    text: 'Copia guardada: {notes} notas, {bytes}, revisada e íntegra.',
+    kind: { notes: 'text', bytes: 'text' },
+  },
+  'backup.pruned': {
+    text: 'se eliminaron {count} más antiguas.',
+    kind: { count: 'text' },
+  },
+  'backup.folder': {
+    text: 'Carpeta',
+  },
+  'backup.sameDisk': {
+    text: 'Estas copias de seguridad están en el mismo disco que tus notas; una memoria USB es más seguro.',
+  },
+  'backup.changeFolder': {
+    text: 'Cambiar la carpeta',
+  },
+  'backup.folderPlaceholder': {
+    text: '/Volumes/Backup/Apunta',
+  },
+  'backup.passphrase': {
+    text: 'Frase de contraseña',
+  },
+  'backup.passphraseWarning': {
+    text: 'Si pierdes esta frase de contraseña, nadie podrá abrir la copia de seguridad.',
+  },
+  'backup.backUp': {
+    text: 'Hacer una copia de seguridad',
+  },
+  'backup.restoreReady': {
+    text: 'La restauración del {day} está lista. Sal de Apunta y vuelve a abrirlo para terminarla; tus notas actuales quedan guardadas en {path}.',
+    kind: { day: 'text', path: 'text' },
+  },
+  'backup.noted': {
+    text: 'Anotado.',
+  },
+  'backup.stored': {
+    text: 'Guardadas: {notes} notas de {patients} pacientes{range}, {transcripts} transcripciones, {bytes}',
+    kind: { notes: 'text', patients: 'text', range: 'text', transcripts: 'text', bytes: 'text' },
+  },
+  'backup.storedRange': {
+    text: ', desde el {day}',
+    kind: { day: 'text' },
+  },
+  'backup.encrypted': {
+    text: ', cifrada',
+  },
+  'backup.noArchives': {
+    text: 'Aún no hay archivos. Deja un archivo de copia de seguridad en la carpeta de arriba para restaurarlo.',
+  },
+  'backup.neverTested': {
+    text: 'Restauración nunca probada: abre un archivo y sigue su RESTORE.txt.',
+  },
+  'backup.markTested': {
+    text: 'Ya lo hice',
+  },
+  'backup.tested': {
+    text: 'Restauración probada por última vez el {day}.',
+    kind: { day: 'text' },
+  },
+  'notes.new': {
+    text: 'Nueva nota',
+  },
+  'notes.loading': {
+    text: 'Cargando notas…',
+  },
+  'notes.emptyFor': {
+    text: 'Aún no hay notas de {name}.',
+    kind: { name: 'text' },
+  },
+  'notes.createFirst': {
+    text: 'Crear la primera nota',
+  },
+  'notes.createNew': {
+    text: 'Crear una nota nueva',
+  },
+  'note.draftChip': {
+    text: 'Borrador',
+  },
+  'patients.showColumn': {
+    text: 'Mostrar pacientes',
+  },
+  'patients.hideColumn': {
+    text: 'Ocultar pacientes',
+  },
+  'patients.newShort': {
+    text: 'Nuevo',
+  },
+  'patients.new': {
+    text: 'Nuevo paciente',
+  },
+  'patients.loading': {
+    text: 'Cargando pacientes…',
+  },
+  'patients.tabActive': {
+    text: 'Activos',
+  },
+  'patients.tabArchived': {
+    text: 'Archivados',
+  },
+  'directory.select': {
+    text: 'Seleccionar',
+  },
+  'patients.missionControl': {
+    text: 'Control de misión',
+  },
+  'nav.language': {
+    text: 'Idioma',
+  },
+  'nav.help': {
+    text: 'Ayuda',
+  },
+  'directory.clearSearch': {
+    text: 'Limpiar la búsqueda',
+  },
+  'patients.emptyStart': {
+    text: 'Agrega tu primer paciente para empezar.',
+  },
+  'patients.addFirst': {
+    text: 'Agrega tu primer paciente',
+  },
+  'directory.emptyActive': {
+    text: 'No hay pacientes activos.',
+  },
+  'directory.emptyArchived': {
+    text: 'No hay pacientes archivados.',
+  },
+  'directory.noMatch': {
+    text: 'Ningún paciente coincide con «{query}».',
+    kind: { query: 'text' },
+  },
+  'patients.viewAll': {
+    text: 'Ver todos',
+  },
+  'preview.unavailable': {
+    text: '{what} aún no forma parte de esta vista previa.',
+    kind: { what: 'text' },
+  },
+  'workspace.serverUnreachable': {
+    text: 'Apunta no puede alcanzar su servidor',
+  },
+  'workspace.serverUnreachableBody': {
+    text: 'Vuelve a iniciar Apunta y después reintenta esta página.',
+  },
+  'workspace.deleteTitle': {
+    text: '¿Eliminar a {name}?',
+    kind: { name: 'text' },
+  },
+  'workspace.deleteConfirm': {
+    text: 'Eliminar a {name}',
+    kind: { name: 'text' },
+  },
+  'workspace.deleteBodyFirst': {
+    text: 'Esto elimina a {name}, todas sus notas, las transcripciones de esas notas y las conversaciones de refinado y de lluvia de ideas. Aquí no se puede deshacer.',
+    kind: { name: 'text' },
+  },
+  'workspace.deleteBodySecond': {
+    text: 'Tampoco puede alcanzar las copias que ya existen en otro lugar: una copia de seguridad que hayas hecho, una copia de Time Machine o el sistema de registros donde pegaste las notas terminadas.',
+  },
+  'workspace.deleteBodyThirdLead': {
+    text: 'Si solo quieres sacarlos de la lista,',
+  },
+  'workspace.deleteBodyThirdTail': {
+    text: 'eso lo hace y no elimina nada.',
+  },
+  'workspace.noNoteSelected': {
+    text: 'No hay ninguna nota seleccionada de {name}',
+    kind: { name: 'text' },
+  },
+  'brainstorm.title': {
+    text: 'Lluvia de ideas',
+  },
+  'brainstorm.new': {
+    text: 'Conversación nueva',
+  },
+  'brainstorm.placeholder': {
+    text: 'Piensa en voz alta…',
+  },
+  'brainstorm.messageLabel': {
+    text: 'Mensaje de lluvia de ideas',
+  },
+  'brainstorm.confirmTitle': {
+    text: '¿Empezar una conversación nueva?',
+  },
+  'brainstorm.confirmBody': {
+    text: 'Esto olvida la conversación de arriba. Las notas de {name} quedan tal cual.',
+    kind: { name: 'text' },
+  },
+  'brainstorm.confirmConfirm': {
+    text: 'Olvidarla',
+  },
+  'brainstorm.contextNone': {
+    text: 'Aún no hay notas',
+  },
+  'brainstorm.contextAll': {
+    text: 'Pensando con {count} nota',
+    plural: {
+      one: 'Pensando con {count} nota',
+      many: 'Pensando con {count} notas',
+      other: 'Pensando con {count} notas',
+    },
+    kind: { count: 'number' },
+  },
+  'brainstorm.contextNoneOf': {
+    text: 'No cabe ninguna de las {count} notas',
+    kind: { count: 'number' },
+  },
+  'brainstorm.contextMostRecentOne': {
+    text: 'Usando la más reciente de {count} notas',
+    kind: { count: 'number' },
+  },
+  'brainstorm.contextMostRecent': {
+    text: 'Usando la más reciente de {count} notas',
+    plural: {
+      one: 'Usando la más reciente de {count} notas',
+      many: 'Usando las {count} notas más recientes de {total}',
+      other: 'Usando las {count} notas más recientes de {total}',
+    },
+    kind: { count: 'number', total: 'number' },
+  },
+  'brainstorm.contextSome': {
+    text: 'Usando {count} de {total} notas',
+    plural: {
+      one: 'Usando {count} de {total} notas',
+      many: 'Usando {count} de {total} notas',
+      other: 'Usando {count} de {total} notas',
+    },
+    kind: { count: 'number', total: 'number' },
+  },
+  'plan.loading': {
+    text: 'Cargando el plan…',
+  },
+  'plan.title': {
+    text: 'Plan de tratamiento',
+  },
+  'prep.planHeading': {
+    text: 'El plan',
+  },
+  'plan.versionMeta': {
+    text: 'Versión {version} · {status}',
+    kind: { version: 'text', status: 'text' },
+  },
+  'plan.versionMetaEffective': {
+    text: 'Versión {version} · {status} · vigente desde el {day}',
+    kind: { version: 'text', status: 'text', day: 'dateOnly' },
+  },
+  'plan.version': {
+    text: 'Versión',
+  },
+  'plan.current': {
+    text: 'Actual',
+  },
+  'plan.versionOption': {
+    text: 'Versión {version} — {status}',
+    kind: { version: 'text', status: 'text' },
+  },
+  'plan.copy': {
+    text: 'Copiar el plan',
+  },
+  'plan.putInForce': {
+    text: 'Poner en vigencia',
+  },
+  'plan.startReview': {
+    text: 'Iniciar una revisión',
+  },
+  'plan.reviewOverdue': {
+    text: 'La revisión del plan vencía el {day} — {gap}.',
+    kind: { day: 'dateOnly', gap: 'text' },
+  },
+  'plan.reviewUpcoming': {
+    text: 'Revisión del plan el {day} ({gap}).',
+    kind: { day: 'dateOnly', gap: 'text' },
+  },
+  'plan.gapToday': {
+    text: 'hoy',
+  },
+  'plan.gapInDays': {
+    text: 'dentro de {days} día',
+    plural: {
+      one: 'dentro de {days} día',
+      many: 'dentro de {days} días',
+      other: 'dentro de {days} días',
+    },
+    kind: { days: 'number' },
+  },
+  'plan.gapDaysAgo': {
+    text: 'hace {days} día',
+    plural: {
+      one: 'hace {days} día',
+      many: 'hace {days} días',
+      other: 'hace {days} días',
+    },
+    kind: { days: 'number' },
+  },
+  'plan.superseded': {
+    text: 'Esta versión fue reemplazada. Se conserva exactamente como estaba y no se puede editar.',
+  },
+  'plan.noneYet': {
+    text: 'Aún no hay un plan de tratamiento para {name}.',
+    kind: { name: 'text' },
+  },
+  'plan.start': {
+    text: 'Iniciar un plan',
+  },
+  'plan.draftGoals': {
+    text: 'Redactar metas a partir de las notas recientes',
+  },
+  'plan.readingNotes': {
+    text: 'Leyendo tus notas…',
+  },
+  'plan.goals': {
+    text: 'Metas',
+  },
+  'plan.nothingYet': {
+    text: 'Aún no hay nada en el plan. Las sugerencias de abajo no forman parte de él hasta que aceptes una.',
+  },
+  'plan.addGoalMyself': {
+    text: 'Agregar una meta yo misma',
+  },
+  'plan.suggestedHeading': {
+    text: 'Sugeridas a partir de tus notas',
+  },
+  'plan.suggestionHelp': {
+    text: 'Las sugerencias no forman parte del plan. Acepta, edita o descarta cada una.',
+  },
+  'plan.noSuggestions': {
+    text: 'No hay sugerencias esperando.',
+  },
+  'plan.details': {
+    text: 'Detalles del plan',
+  },
+  'plan.detailsNone': {
+    text: '— diagnóstico, modalidad y frecuencia no registrados',
+  },
+  'plan.detailsList': {
+    text: '— {items}',
+    kind: { items: 'text' },
+  },
+  'plan.attestation': {
+    text: 'Declaración',
+  },
+  'plan.notAttested': {
+    text: 'Aún sin declarar. Poner esta versión en vigencia registra la fecha y copia tu nombre y tu cédula desde Ajustes.',
+  },
+  'plan.licence': {
+    text: 'Cédula {licence}',
+    kind: { licence: 'text' },
+  },
+  'plan.npi': {
+    text: 'NPI {npi}',
+    kind: { npi: 'text' },
+  },
+  'plan.attestedNote': {
+    text: 'Declarado en Apunta: firma la copia en tu sistema de registros. Apunta no tiene inicio de sesión, así que un nombre escrito aquí no es una firma.',
+  },
+  'plan.lookbackNone': {
+    text: 'Aún no hay notas de este paciente, así que no había nada de lo que redactar.',
+  },
+  'plan.lookbackRead': {
+    text: 'Se leyeron {count} nota (límite {cap}).',
+    plural: {
+      one: 'Se leyeron {count} nota (límite {cap}).',
+      many: 'Se leyeron {count} notas (límite {cap}).',
+      other: 'Se leyeron {count} notas (límite {cap}).',
+    },
+    kind: { count: 'number', cap: 'number' },
+  },
+  'plan.lookbackReadBackTo': {
+    text: 'Se leyeron {count} nota, desde el {day} (límite {cap}).',
+    plural: {
+      one: 'Se leyeron {count} nota, desde el {day} (límite {cap}).',
+      many: 'Se leyeron {count} notas, desde el {day} (límite {cap}).',
+      other: 'Se leyeron {count} notas, desde el {day} (límite {cap}).',
+    },
+    kind: { count: 'number', day: 'dateOnly', cap: 'number' },
+  },
+  'plan.lookbackSkipped': {
+    text: 'No se pudieron leer {count}.',
+    kind: { count: 'text' },
+  },
+  'plan.lookbackDroppedOne': {
+    text: 'Se redactó {count} meta borrador y luego se descartó porque no se pudo rastrear hasta nada en esas notas. No se agregó nada al plan.',
+    kind: { count: 'text' },
+  },
+  'plan.lookbackDroppedMany': {
+    text: 'Se redactaron {count} metas borrador y luego se descartaron porque no se pudieron rastrear hasta nada en esas notas. No se agregó nada al plan.',
+    kind: { count: 'text' },
+  },
+  'plan.lookbackThin': {
+    text: 'No se redactó nada a partir de ellas: todavía hay muy poco registrado en estas notas.',
+  },
+  'plan.diagnoses': {
+    text: 'Diagnósticos',
+  },
+  'plan.diagnosesNone': {
+    text: 'Ninguno registrado. Se espera que las metas se rastreen hasta un diagnóstico, y entered por ti.',
+  },
+  'plan.diagnosisCode': {
+    text: 'Código',
+  },
+  'plan.diagnosisDescription': {
+    text: 'Descripción',
+  },
+  'plan.diagnosisPrimary': {
+    text: 'Principal',
+  },
+  'plan.addDiagnosis': {
+    text: 'Agregar un diagnóstico',
+  },
+  'plan.diagnosisCodeLabel': {
+    text: 'Código del diagnóstico {n}',
+    kind: { n: 'text' },
+  },
+  'plan.diagnosisSystemLabel': {
+    text: 'Sistema del diagnóstico {n}',
+    kind: { n: 'text' },
+  },
+  'plan.diagnosisDescriptionLabel': {
+    text: 'Descripción del diagnóstico {n}',
+    kind: { n: 'text' },
+  },
+  'plan.removeDiagnosis': {
+    text: 'Quitar el diagnóstico {n}',
+    kind: { n: 'text' },
+  },
+  'plan.presentingProblem': {
+    text: 'Motivo de consulta',
+  },
+  'plan.strengths': {
+    text: 'Fortalezas',
+  },
+  'plan.modality': {
+    text: 'Modalidad del servicio',
+  },
+  'plan.frequency': {
+    text: 'Frecuencia del servicio',
+  },
+  'plan.dischargeCriteria': {
+    text: 'Criterios de alta',
+  },
+  'plan.reviewInterval': {
+    text: 'Intervalo de revisión',
+  },
+  'plan.reviewIntervalDays': {
+    text: 'Intervalo de revisión (días)',
+  },
+  'plan.everyDays': {
+    text: 'Cada {days} días',
+    kind: { days: 'text' },
+  },
+  'plan.clientParticipation': {
+    text: 'Participación del cliente',
+  },
+  'plan.participationReviewed': {
+    text: 'Revisado con el cliente',
+  },
+  'plan.participationDeclined': {
+    text: 'El cliente se negó a firmar',
+  },
+  'plan.participationSignedElsewhere': {
+    text: 'Copia firmada en mi sistema de registros',
+  },
+  'plan.participationDate': {
+    text: 'Fecha de participación del cliente',
+  },
+  'plan.participationNote': {
+    text: 'Nota de participación del cliente',
+  },
+  'plan.participationNotePlaceholder': {
+    text: 'Motivo, si no se pudo firmar',
+  },
+  'plan.saveDetails': {
+    text: 'Guardar los detalles del plan',
+  },
+  'plan.suggestedBadge': {
+    text: 'Sugerida: todavía no está en el plan',
+  },
+  'plan.accept': {
+    text: 'Aceptar',
+  },
+  'plan.met': {
+    text: 'Cumplida',
+  },
+  'plan.discontinue': {
+    text: 'Suspender',
+  },
+  'plan.discardSuggestion': {
+    text: 'Descartar esta sugerencia',
+  },
+  'plan.deleteGoal': {
+    text: 'Eliminar esta meta',
+  },
+  'plan.carriedForward': {
+    text: 'Se arrastró desde la versión anterior.',
+  },
+  'plan.noObjectives': {
+    text: 'Aún no hay objetivos.',
+  },
+  'plan.interventions': {
+    text: 'Intervenciones: {list}',
+    kind: { list: 'text' },
+  },
+  'plan.draftedFrom': {
+    text: 'Redactado a partir de tus notas:',
+  },
+  'plan.objectiveMeta': {
+    text: 'Medición: {measure} · Línea base: {baseline} · Objetivo: {target} · Para: —',
+    kind: { measure: 'text', baseline: 'text', target: 'text' },
+  },
+  'plan.objectiveMetaDated': {
+    text: 'Medición: {measure} · Línea base: {baseline} · Objetivo: {target} · Para: {day}',
+    kind: { measure: 'text', baseline: 'text', target: 'text', day: 'dateOnly' },
+  },
+  'plan.evidenceSection': {
+    text: ' · {section}',
+    kind: { section: 'text' },
+  },
+  'plan.goalLabel': {
+    text: 'Meta',
+  },
+  'plan.objectiveLabel': {
+    text: 'Objetivo {n}',
+    kind: { n: 'text' },
+  },
+  'plan.measure': {
+    text: 'Medición',
+  },
+  'plan.baseline': {
+    text: 'Línea base',
+  },
+  'plan.target': {
+    text: 'Objetivo',
+  },
+  'plan.addObjective': {
+    text: 'Agregar un objetivo',
+  },
+  'plan.interventionsLabel': {
+    text: 'Intervenciones, una por línea',
+  },
+  'plan.goalTargetDate': {
+    text: 'Fecha objetivo de la meta',
+  },
+  'plan.saveAndAccept': {
+    text: 'Guardar y aceptar',
+  },
+  'plan.objectiveMeasureLabel': {
+    text: 'Medición del objetivo {n}',
+    kind: { n: 'text' },
+  },
+  'plan.objectiveBaselineLabel': {
+    text: 'Línea base del objetivo {n}',
+    kind: { n: 'text' },
+  },
+  'plan.objectiveTargetLabel': {
+    text: 'Objetivo del objetivo {n}',
+    kind: { n: 'text' },
+  },
+  'plan.objectiveTargetDateLabel': {
+    text: 'Fecha objetivo del objetivo {n}',
+    kind: { n: 'text' },
+  },
+  'prep.title': {
+    text: 'Antes de esta sesión',
+  },
+  'prep.again': {
+    text: 'Preparar de nuevo',
+  },
+  'prep.noGoals': {
+    text: 'Aún no hay metas en el plan.',
+  },
+  'prep.objectiveBy': {
+    text: ' — para el {day}',
+    kind: { day: 'dateOnly' },
+  },
+  'prep.reviewDue': {
+    text: 'Revisión pendiente el {day}.',
+    kind: { day: 'dateOnly' },
+  },
+  'prep.sinceHeading': {
+    text: 'Desde la última vez que los viste',
+  },
+  'prep.empty': {
+    text: 'Nada que leer todavía: no hay notas de este paciente.',
+  },
+  'prep.notSaved': {
+    text: 'Este resumen previo no se guarda a menos que lo conserves.',
+  },
+  'prep.keptFor': {
+    text: '{count} conservados de {name}.',
+    kind: { count: 'text', name: 'text' },
+  },
+  'prep.lookbackNone': {
+    text: 'No se leyó ninguna nota.',
+  },
+  'prep.lookbackRead': {
+    text: 'Se leyó la última {count} nota (límite {cap}).',
+    plural: {
+      one: 'Se leyó la última {count} nota (límite {cap}).',
+      many: 'Se leyeron las últimas {count} notas (límite {cap}).',
+      other: 'Se leyeron las últimas {count} notas (límite {cap}).',
+    },
+    kind: { count: 'number', cap: 'number' },
+  },
+  'prep.lookbackReadBackTo': {
+    text: 'Se leyó la última {count} nota, desde el {day} (límite {cap}).',
+    plural: {
+      one: 'Se leyó la última {count} nota, desde el {day} (límite {cap}).',
+      many: 'Se leyeron las últimas {count} notas, desde el {day} (límite {cap}).',
+      other: 'Se leyeron las últimas {count} notas, desde el {day} (límite {cap}).',
+    },
+    kind: { count: 'number', day: 'dateOnly', cap: 'number' },
+  },
+  'prep.lookbackSkipped': {
+    text: 'No se pudieron leer {count}.',
+    kind: { count: 'text' },
+  },
+  'spelling.none': {
+    text: 'Sin sugerencias',
+  },
+  'spelling.ignore': {
+    text: 'Ignorar',
+  },
+  'spelling.add': {
+    text: 'Agregar al diccionario',
+  },
+  'spelling.menuLabel': {
+    text: 'Ortografía de {word}',
+    kind: { word: 'text' },
+  },
+  'patients.renameLabel': {
+    text: 'Nombre de {name}',
+    kind: { name: 'text' },
+  },
+  'common.name': {
+    text: 'Nombre',
+  },
+  'patients.add': {
+    text: 'Agregar paciente',
+  },
+  'common.adding': {
+    text: 'Agregando…',
+  },
+  'patients.addLede': {
+    text: 'Lo justo para organizar sus notas.',
+  },
+  'patients.namePlaceholder': {
+    text: 'p. ej. John Smith',
+  },
+  'patients.identifierLabel': {
+    text: 'Identificador (opcional)',
+  },
+  'patients.identifierPlaceholder': {
+    text: 'Referencia interna, número de expediente, etc.',
+  },
+  'format.instructions': {
+    text: 'Instrucciones',
+  },
+  'format.instructionsHelp': {
+    text: 'Lo que se le dice al modelo local sobre cómo escribir este formato. Pega aquí instrucciones de skill aplanadas; déjalo en blanco para usar el valor predeterminado integrado. La receta para aplanar una skill de Claude está en',
+  },
+  'format.instructionsHelpTail': {
+    text: 'dentro de la carpeta de Apunta.',
+  },
+  'format.instructionsPlaceholder': {
+    text: 'Déjalo en blanco para usar el valor predeterminado integrado.',
+  },
+  'format.tokensLarge': {
+    text: '≈{tokens} tokens: los modelos pequeños empiezan a desviarse a partir de unos {budget}.',
+    kind: { tokens: 'number', budget: 'number' },
+  },
+  'format.tokensOk': {
+    text: '≈{tokens} tokens: cómodo.',
+    kind: { tokens: 'number' },
+  },
+  'format.readingSkill': {
+    text: 'Leyendo la skill…',
+  },
+  'format.importFromSkill': {
+    text: 'Importar desde un archivo de skill',
+  },
+  'format.skillFileLead': {
+    text: 'Un',
+  },
+  'format.skillFileAnd': {
+    text: 'o un',
+  },
+  'format.skillFileTail': {
+    text: 'de la carpeta de la skill. No se guarda nada hasta que presiones guardar.',
+  },
+  'format.reportFrontmatter': {
+    text: 'frontmatter eliminado',
+  },
+  'format.reportCommandBlocks': {
+    text: '{count} bloque de comandos eliminado',
+    plural: {
+      one: '{count} bloque de comandos eliminado',
+      many: '{count} bloques de comandos eliminados',
+      other: '{count} bloques de comandos eliminados',
+    },
+    kind: { count: 'number' },
+  },
+  'format.reportToolLines': {
+    text: '{count} línea de herramienta eliminada',
+    plural: {
+      one: '{count} línea de herramienta eliminada',
+      many: '{count} líneas de herramienta eliminadas',
+      other: '{count} líneas de herramienta eliminadas',
+    },
+    kind: { count: 'number' },
+  },
+  'format.reportClaudeLines': {
+    text: '{count} línea específica de Claude eliminada',
+    plural: {
+      one: '{count} línea específica de Claude eliminada',
+      many: '{count} líneas específicas de Claude eliminadas',
+      other: '{count} líneas específicas de Claude eliminadas',
+    },
+    kind: { count: 'number' },
+  },
+  'format.reportEmptiedHeadings': {
+    text: '{count} encabezado vaciado eliminado',
+    plural: {
+      one: '{count} encabezado vaciado eliminado',
+      many: '{count} encabezados vaciados eliminados',
+      other: '{count} encabezados vaciados eliminados',
+    },
+    kind: { count: 'number' },
+  },
+  'format.reportNothing': {
+    text: 'no hubo nada que eliminar',
+  },
+  'format.reportReadFirst': {
+    text: 'Léelo antes de guardar: estas reglas borran de más en algunas skills.',
+  },
+  'format.referencedFiles': {
+    text: 'Esta skill se refiere a {files}, que Apunta no puede leer. Si esos archivos traen definiciones de secciones o terminología, pega tú ese texto.',
+    kind: { files: 'text' },
+  },
+  'format.instructionsWarning': {
+    text: 'Este texto se guarda y se envía a la IA con cada nota que escribes. Antes de guardar, comprueba que no contenga datos reales de clientes.',
+  },
+  'format.addTitle': {
+    text: 'Agrega tu formato de nota',
+  },
+  'format.addLede': {
+    text: 'Elige cómo definirlo: nosotros descubrimos la estructura por ti.',
+  },
+  'format.choicesLabel': {
+    text: 'Opciones de formato de nota',
+  },
+  'format.standardTitle': {
+    text: 'Mi nota de evolución estándar',
+  },
+  'format.recommended': {
+    text: 'Recomendado',
+  },
+  'format.standardSubtitle': {
+    text: '{sections}, con mis instrucciones de redacción',
+    kind: { sections: 'text' },
+  },
+  'format.templateTitle': {
+    text: 'Sube una plantilla vacía',
+  },
+  'format.templateSubtitle': {
+    text: 'Un documento de Word o un PDF con secciones vacías',
+  },
+  'format.examplesTitle': {
+    text: 'Sube algunas notas de ejemplo',
+  },
+  'format.examplesSubtitle': {
+    text: 'De 2 a 3 notas terminadas para aprender el patrón',
+  },
+  'format.manualTitle': {
+    text: 'Describirlo yo misma',
+  },
+  'format.manualSubtitle': {
+    text: 'Escribe las secciones que necesitas',
+  },
+  'format.dropTemplate': {
+    text: 'Suelta aquí una plantilla .docx o .pdf',
+  },
+  'format.dropExamples': {
+    text: 'Suelta aquí de 2 a 3 notas terminadas',
+  },
+  'format.dropClick': {
+    text: 'o haz clic para elegir un archivo',
+  },
+  'format.dropMore': {
+    text: 'Agrega una o dos más: Apunta deduce las secciones de lo que las notas tengan en común.',
+  },
+  'format.nameLabel': {
+    text: 'Nombre del formato',
+  },
+  'format.namePlaceholder': {
+    text: 'p. ej. Nota de evolución',
+  },
+  'format.sectionsLabel': {
+    text: 'Secciones',
+  },
+  'format.sectionsPlaceholder': {
+    text: 'p. ej. Subjetivo, Objetivo, Evaluación, Plan',
+  },
+  'format.errorName': {
+    text: 'Dale un nombre al formato.',
+  },
+  'format.errorSections': {
+    text: 'Enumera al menos una sección.',
+  },
+  'format.errorDuplicate': {
+    text: '«{section}» aparece dos veces: los nombres de sección tienen que ser únicos.',
+    kind: { section: 'text' },
+  },
+  'format.errorAlreadySection': {
+    text: '«{section}» ya es una sección.',
+    kind: { section: 'text' },
+  },
+  'format.errorNoSections': {
+    text: 'Un formato necesita al menos una sección.',
+  },
+  'common.saving': {
+    text: 'Guardando…',
+  },
+  'format.readingFile': {
+    text: 'Leyendo tu archivo…',
+  },
+  'common.continue': {
+    text: 'Continuar',
+  },
+  'format.readingNote': {
+    text: 'Leyendo el archivo y deduciendo sus secciones. No se guarda nada hasta que digas que está bien.',
+  },
+  'format.restoreLead': {
+    text: '¿Ya tienes una copia de seguridad de Apunta, o alguien te preparó un archivo de ajustes?',
+  },
+  'format.restoreLink': {
+    text: 'Restáurala en su lugar',
+  },
+  'format.editTitle': {
+    text: 'Editar el formato de nota',
+  },
+  'format.foundTitle': {
+    text: 'Esto es lo que encontramos',
+  },
+  'format.editLede': {
+    text: 'Cambia el nombre o las secciones, y guarda.',
+  },
+  'format.foundLede': {
+    text: 'Comprueba que coincide con el formato de tu trabajo antes de guardar.',
+  },
+  'format.truncatedNote': {
+    text: 'Ese archivo era largo, así que Apunta solo leyó la primera parte. Revisa que no falte nada abajo.',
+  },
+  'format.sectionsDetected': {
+    text: 'Secciones detectadas',
+  },
+  'format.renameLabel': {
+    text: 'Nombre nuevo para {section}',
+    kind: { section: 'text' },
+  },
+  'format.renameAction': {
+    text: 'Cambiar el nombre de {section}',
+    kind: { section: 'text' },
+  },
+  'format.moveUp': {
+    text: 'Subir {section}',
+    kind: { section: 'text' },
+  },
+  'format.moveDown': {
+    text: 'Bajar {section}',
+    kind: { section: 'text' },
+  },
+  'format.removeSection': {
+    text: 'Quitar {section}',
+    kind: { section: 'text' },
+  },
+  'format.sectionNamePlaceholder': {
+    text: 'Nombre de la sección',
+  },
+  'format.addSection': {
+    text: '+ Agregar sección',
+  },
+  'format.existingNotesNote': {
+    text: 'Las notas que ya escribiste conservan las secciones con las que se escribieron. Los cambios de aquí solo se aplican a los borradores futuros.',
+  },
+  'format.startOver': {
+    text: 'Empezar de nuevo',
+  },
+  'format.saveChanges': {
+    text: 'Guardar los cambios',
+  },
+  'format.looksRight': {
+    text: 'Está bien, guardar',
+  },
+  'settings.appearance': {
+    text: 'Apariencia',
+  },
+  'settings.format': {
+    text: 'Formato',
+  },
+  'settings.backup': {
+    text: 'Copia de seguridad',
+  },
+  'settings.import': {
+    text: 'Importar',
+  },
+  'settings.advanced': {
+    text: 'Avanzado',
+  },
+  'settings.sectionsLabel': {
+    text: 'Secciones de Ajustes',
+  },
+  'settings.closeLabel': {
+    text: 'Cerrar Ajustes',
+  },
+  'settings.formats': {
+    text: 'Formatos de nota',
+  },
+  'settings.addFormat': {
+    text: 'Agregar otro formato',
+  },
+  'settings.importClaude': {
+    text: 'Importar desde Claude',
+  },
+  'settings.importHalaxy': {
+    text: 'Importar desde Halaxy',
+  },
+  'settings.app': {
+    text: 'Aplicación',
+  },
+  'settings.about': {
+    text: 'Acerca de',
+  },
+  'settings.loadingAi': {
+    text: 'Cargando los ajustes de IA…',
+  },
+  'settings.draftingModel': {
+    text: 'Modelo de redacción',
+  },
+  'settings.quick': {
+    text: 'Rápido',
+  },
+  'settings.thorough': {
+    text: 'Exhaustivo',
+  },
+  'settings.quickHelp': {
+    text: 'Borradores más rápidos.',
+  },
+  'settings.thoroughHelp': {
+    text: 'Borradores más lentos y cuidadosos.',
+  },
+  'settings.savedDot': {
+    text: 'Guardado.',
+  },
+  'settings.loading': {
+    text: 'Cargando los ajustes…',
+  },
+  'settings.colour': {
+    text: 'Color',
+  },
+  'settings.reset': {
+    text: 'Restablecer',
+  },
+  'settings.theme': {
+    text: 'Tema',
+  },
+  'settings.fontSize': {
+    text: 'Tamaño de fuente',
+  },
+  'settings.animations': {
+    text: 'Animaciones',
+  },
+  'settings.sizeSmall': {
+    text: 'Pequeño',
+  },
+  'settings.sizeDefault': {
+    text: 'Predeterminado',
+  },
+  'settings.sizeLarge': {
+    text: 'Grande',
+  },
+  'settings.sizeExtraLarge': {
+    text: 'Extra grande',
+  },
+  'settings.themeSystem': {
+    text: 'Sistema',
+  },
+  'settings.themeLight': {
+    text: 'Claro',
+  },
+  'settings.themeDark': {
+    text: 'Oscuro',
+  },
+  'about.title': {
+    text: 'Acerca de Apunta',
+  },
+  'about.localOnlyHeading': {
+    text: 'Nada de lo que escribes aquí sale a internet',
+  },
+  'about.localOnlyBody': {
+    text: 'Apunta se ejecuta en esta computadora. Es una página web que sirve un programa de la misma computadora, y la aplicación no hace ninguna conexión de red saliente. No hay cuenta ni copia remota.',
+  },
+  'about.modelsLocalBody': {
+    text: 'El modelo de redacción y el de transcripción también se ejecutan localmente. Un programa de esta computadora lee tu grabación y nunca la sube. Apunta no usa el reconocimiento de voz integrado del navegador, porque ese puede enviar el audio a un tercero.',
+  },
+  'about.noTelemetryBody': {
+    text: 'No hay analíticas, informes de fallos, comprobación de actualizaciones ni datos de uso anónimos.',
+  },
+  'about.whereHeading': {
+    text: 'Dónde están realmente tus notas',
+  },
+  'about.dbPath': {
+    text: 'Una carpeta en esta computadora, con un solo archivo:',
+  },
+  'about.dbPathLoading': {
+    text: 'Una carpeta en esta computadora, con un solo archivo: cargando…',
+  },
+  'about.recordsBody': {
+    text: 'Ese archivo es tu historial de redacción. No es tu expediente clínico: el expediente vive en el sistema donde pegues la nota terminada. Aun así vale la pena hacer una copia de seguridad, porque las notas preliminares, las transcripciones y las conversaciones de refinado y de lluvia de ideas no existen en ningún otro lado.',
+  },
+  'about.recordsBackupTail': {
+    text: 'tiene «Copia de seguridad».',
+  },
+  'about.threatsHeading': {
+    text: 'Las dos cosas de las que esto no te protege',
+  },
+  'about.threatPerson': {
+    text: 'Alguien en tu computadora sin bloquear.',
+  },
+  'about.threatPersonBody': {
+    text: 'Apunta no tiene contraseña propia. Cualquiera que esté sentado en esta computadora mientras tú has iniciado sesión puede abrirlo y leerlo todo. La respuesta real es bloquear la pantalla cuando te alejas.',
+  },
+  'about.threatStolen': {
+    text: 'Una computadora robada con el disco sin cifrar.',
+  },
+  'about.threatStolenBody': {
+    text: 'El cifrado de disco protege a una computadora perdida de quedar al descubierto. Su estado se muestra abajo solo cuando el sistema operativo puede informarlo.',
+  },
+  'about.diskEncryption': {
+    text: 'Cifrado de disco:',
+  },
+  'about.diskNotChecked': {
+    text: 'no comprobado',
+  },
+  'about.diskReady': {
+    text: 'listo',
+  },
+  'about.diskNotReady': {
+    text: 'no listo',
+  },
+  'about.diskTailOs': {
+    text: 'en este sistema operativo. {detail}',
+    kind: { detail: 'text' },
+  },
+  'about.diskTailDetail': {
+    text: '. {detail}',
+    kind: { detail: 'text' },
+  },
+  'about.diskTailOff': {
+    text: '. Actívalo en Ajustes del sistema → Privacidad y seguridad → FileVault antes de guardar notas reales, y guarda la clave de recuperación en un lugar distinto de esta computadora.',
+  },
+  'about.diskTailUnknown': {
+    text: '. Apunta no pudo leer su estado; compruébalo tú mismo en los ajustes de seguridad del sistema operativo. {detail}',
+    kind: { detail: 'text' },
+  },
+  'about.aiHeading': {
+    text: 'Qué hace con la IA',
+  },
+  'about.aiBody': {
+    text: 'Cuando creas un borrador, el modelo recibe lo que dictaste o escribiste y la forma de tu formato de nota. Refinar y la lluvia de ideas también pueden incluir notas anteriores pertinentes cuando se usan como contexto. Se le pide escribir solo lo que tiene delante. Todavía comete errores, así que cada borrador es tuyo para leer antes de publicarlo.',
+  },
+  'about.aiUnclearBody': {
+    text: 'Donde la grabación no estaba clara, el borrador lo dice en el texto en lugar de adivinar.',
+  },
+  'about.builtFromHeading': {
+    text: 'Con qué está hecho Apunta',
+  },
+  'about.builtFromBody': {
+    text: 'La IA que redacta y el programa que lee tus grabaciones los escribieron otras personas y vienen incluidos dentro de Apunta. Sus licencias piden que este aviso viaje con la aplicación:',
+  },
+  'about.licensesLink': {
+    text: 'las licencias están aquí',
+  },
+  'about.modelsSeparateBody': {
+    text: 'Los modelos de IA en sí no forman parte de Apunta. Se instalan en esta computadora bajo sus propios términos, y Apunta no los reparte.',
+  },
+  'about.missingPieces': {
+    text: 'Lo que falta y qué ejecutar:',
+  },
+  'setup.title': {
+    text: 'Configuración inicial',
+  },
+  'setup.lede': {
+    text: 'Apunta se ejecuta en esta computadora. Estas son las piezas que necesita y qué hacer con las que falten.',
+  },
+  'setup.checking': {
+    text: 'Comprobando…',
+  },
+  'setup.allAtOnce': {
+    text: 'O hazlo todo de una vez',
+  },
+  'setup.terminalHelp': {
+    text: 'Desde una ventana de Terminal en la carpeta de Apunta. Instala lo que falte, descarga los modelos y se puede volver a ejecutar tantas veces como quieras.',
+  },
+  'setup.backingUpLead': {
+    text: 'Hacer una copia de seguridad es otra pregunta, y la que más vale la pena dejar bien:',
+  },
+  'setup.stateOk': {
+    text: 'Listo',
+  },
+  'setup.stateMissing': {
+    text: 'Falta',
+  },
+  'setup.stateUnknown': {
+    text: 'No comprobado',
+  },
+  'licenses.overview': {
+    text: 'Resumen',
+  },
+  'licenses.builtFrom': {
+    text: 'Con qué está hecho Apunta',
+  },
+  'licenses.lede': {
+    text: 'Apunta incluye programas escritos por otras personas, y sus licencias piden que este aviso viaje con la aplicación. Nada de lo que hay aquí te pide nada: está porque debería estar.',
+  },
+  'licenses.panelLabel': {
+    text: 'Licencias de terceros',
+  },
+  'licenses.filterLabel': {
+    text: 'Filtrar licencias',
+  },
+  'licenses.filterPlaceholder': {
+    text: 'Filtrar por componente o por texto',
+  },
+  'licenses.copyPlain': {
+    text: 'Copiar como texto plano',
+  },
+  'licenses.componentsLabel': {
+    text: 'Componentes con licencia',
+  },
+  'licenses.noMatch': {
+    text: 'Ningún texto de licencia coincide con «{filter}».',
+    kind: { filter: 'text' },
+  },
+  'capture.newNote': {
+    text: 'Nueva nota',
+  },
+  'capture.newNoteFor': {
+    text: 'Nueva nota para {name}',
+    kind: { name: 'text' },
+  },
+  'capture.missingPatient': {
+    text: 'Puede que este paciente se haya eliminado, así que nada de lo que se grabara aquí se podría guardar.',
+  },
+  'capture.backToPatients': {
+    text: 'Volver a pacientes',
+  },
+  'capture.formatLabel': {
+    text: 'Formato de nota',
+  },
+  'capture.noFormats': {
+    text: 'Aún no hay formatos de nota.',
+  },
+  'capture.addOneFirst': {
+    text: 'Agrega uno primero',
+  },
+  'capture.noFormatsTail': {
+    text: '— una nota necesita una estructura que seguir.',
+  },
+  'capture.sourceRecording': {
+    text: 'Empieza con una grabación',
+  },
+  'capture.sourceTail': {
+    text: '— o escribe notas en su lugar. Puedes usar una cosa, la otra, o combinarlas antes de crear el borrador.',
+  },
+  'capture.stopAndDraft': {
+    text: 'Detener y crear el borrador',
+  },
+  'capture.openingMicrophone': {
+    text: 'Abriendo el micrófono…',
+  },
+  'capture.allowMicrophone': {
+    text: 'Permite el acceso al micrófono para empezar tu grabación privada.',
+  },
+  'capture.preparingDraft': {
+    text: 'Preparando tu borrador…',
+  },
+  'capture.preparingDraftShort': {
+    text: 'Preparando tu borrador',
+  },
+  'dictation.transcribingBusy': {
+    text: 'Transcribiendo…',
+  },
+  'capture.recordingReady': {
+    text: 'Grabación lista',
+  },
+  'capture.recorded': {
+    text: '{timer} de grabación. Nada ha salido de esta Mac.',
+    kind: { timer: 'text' },
+  },
+  'capture.draftFromRecording': {
+    text: 'Crear el borrador a partir de la grabación',
+  },
+  'capture.discardRecording': {
+    text: 'Descartar la grabación',
+  },
+  'capture.recordAudio': {
+    text: 'Grabar audio',
+  },
+  'capture.recordAudioHelp': {
+    text: 'Empieza aquí: narra tus notas; agrega notas escritas antes o durante la grabación',
+  },
+  'capture.typeNotes': {
+    text: 'Escribir notas',
+  },
+  'capture.typeNotesHelp': {
+    text: 'Escribe notas antes o durante la grabación, o solo escribir',
+  },
+  'capture.summaryPlaceholder': {
+    text: 'Escribe el resumen de tu sesión...',
+  },
+  'capture.summaryLabel': {
+    text: 'Resumen de la sesión',
+  },
+  'dictation.previewNoteCapture': {
+    text: 'Todo lo dicho hasta ahora, más o menos. La nota se escribe a partir de la grabación terminada.',
+  },
+  'capture.createDraft': {
+    text: 'Crear borrador',
+  },
+  'capture.leaveTitle': {
+    text: '¿Dejar esta nota sin terminar?',
+  },
+  'capture.stay': {
+    text: 'Seguir aquí',
+  },
+  'capture.discardAndLeave': {
+    text: 'Descartar y salir',
+  },
+  'capture.leaveBodyFirst': {
+    text: 'Si sales, se descartarán tus notas escritas, tu grabación o el borrador en curso.',
+  },
+  'capture.leaveBodySecond': {
+    text: 'Quédate para seguir trabajando, o descarta esta captura sin terminar y continúa.',
+  },
+  'count.note': {
+    text: '{count} nota',
+    plural: {
+      one: '{count} nota',
+      many: '{count} notas',
+      other: '{count} notas',
+    },
+    kind: { count: 'number' },
+  },
+  'count.patient': {
+    text: '{count} paciente',
+    plural: {
+      one: '{count} paciente',
+      many: '{count} pacientes',
+      other: '{count} pacientes',
+    },
+    kind: { count: 'number' },
+  },
+  'count.conversation': {
+    text: '{count} conversación',
+    plural: {
+      one: '{count} conversación',
+      many: '{count} conversaciones',
+      other: '{count} conversaciones',
+    },
+    kind: { count: 'number' },
+  },
+  'count.session': {
+    text: '{count} sesión',
+    plural: {
+      one: '{count} sesión',
+      many: '{count} sesiones',
+      other: '{count} sesiones',
+    },
+    kind: { count: 'number' },
+  },
+  'count.newPatient': {
+    text: '{count} paciente nuevo',
+    plural: {
+      one: '{count} paciente nuevo',
+      many: '{count} pacientes nuevos',
+      other: '{count} pacientes nuevos',
+    },
+    kind: { count: 'number' },
+  },
+  'count.attachedFile': {
+    text: '{count} archivo adjunto',
+    plural: {
+      one: '{count} archivo adjunto',
+      many: '{count} archivos adjuntos',
+      other: '{count} archivos adjuntos',
+    },
+    kind: { count: 'number' },
+  },
+  'import.skip.beforeCutoff': {
+    text: 'sin actividad desde la fecha de corte',
+  },
+  'import.skip.singleSession': {
+    text: 'una sola sesión, no un historial de paciente',
+  },
+  'import.skip.notClinical': {
+    text: 'las respuestas de Claude nunca parecieron una nota',
+  },
+  'import.skip.noName': {
+    text: 'no se pudo identificar con certeza ningún nombre de paciente',
+  },
+  'import.skip.ambiguous': {
+    text: 'más de un nombre de tu lista',
+  },
+  'import.skip.excluded': {
+    text: 'desmarcaste al paciente',
+  },
+  'import.nameSource.previous': {
+    text: 'importado antes',
+  },
+  'import.nameSource.list': {
+    text: 'de tu lista',
+  },
+  'import.nameSource.existing': {
+    text: 'ya está en Apunta',
+  },
+  'import.nameSource.title': {
+    text: 'nombre deducido del título del chat: compruébalo',
+  },
+  'import.doneTitle': {
+    text: 'Importado',
+  },
+  'import.undoneTitle': {
+    text: 'Importación deshecha',
+  },
+  'import.undoneLine': {
+    text: 'Deshecho: se eliminaron {notes} y {patients}.',
+    kind: { notes: 'text', patients: 'text' },
+  },
+  'import.undoneNotesKept': {
+    text: 'Se conservó {count} nota que habías finalizado.',
+    plural: {
+      one: 'Se conservó {count} nota que habías finalizado.',
+      many: 'Se conservaron {count} notas que habías finalizado.',
+      other: 'Se conservaron {count} notas que habías finalizado.',
+    },
+    kind: { count: 'number' },
+  },
+  'import.undonePatientsKept': {
+    text: 'Se conservó {count} paciente con otro trabajo adjunto.',
+    plural: {
+      one: 'Se conservó {count} paciente con otro trabajo adjunto.',
+      many: 'Se conservaron {count} pacientes con otro trabajo adjunto.',
+      other: 'Se conservaron {count} pacientes con otro trabajo adjunto.',
+    },
+    kind: { count: 'number' },
+  },
+  'halaxy.undoneNotesKept': {
+    text: 'Se conservaron {count} notas que habías finalizado.',
+    plural: {
+      one: 'Se conservaron {count} notas que habías finalizado.',
+      many: 'Se conservaron {count} notas que habías finalizado.',
+      other: 'Se conservaron {count} notas que habías finalizado.',
+    },
+    kind: { count: 'number' },
+  },
+  'import.nothingNew': {
+    text: 'No hay nada nuevo que importar.',
+  },
+  'import.doneLine': {
+    text: '{notes} de {patients}{new}. Cada una es un borrador con la fecha en que hablaste con Claude y marcada como importada.',
+    kind: { notes: 'text', patients: 'text', new: 'text' },
+  },
+  'import.doneNewCount': {
+    text: ' ({count} nuevos)',
+    kind: { count: 'number' },
+  },
+  'halaxy.doneLine': {
+    text: '{notes} de {patients} importadas como historial publicado.',
+    kind: { notes: 'text', patients: 'text' },
+  },
+  'import.undo': {
+    text: 'Deshacer esta importación',
+  },
+  'import.goToPatients': {
+    text: 'Ir a pacientes',
+  },
+  'import.readyTitle': {
+    text: 'Listo para importar',
+  },
+  'import.summaryLine': {
+    text: '{toCreate} por crear, {notes} repartidas entre {patients}. {skipped} omitidas{ambiguous}.',
+    kind: { toCreate: 'text', notes: 'text', patients: 'text', skipped: 'text', ambiguous: 'text' },
+  },
+  'import.summaryAmbiguous': {
+    text: ', {count} de ellas por ambigüedad',
+    kind: { count: 'number' },
+  },
+  'import.summaryAgain': {
+    text: '{count} sesión ya importada antes no se importará de nuevo.',
+    plural: {
+      one: '{count} sesión ya importada antes no se importará de nuevo.',
+      many: '{count} sesiones ya importadas antes no se importarán de nuevo.',
+      other: '{count} sesiones ya importadas antes no se importarán de nuevo.',
+    },
+    kind: { count: 'number' },
+  },
+  'import.untickHelp': {
+    text: 'Desmarca a quien no sea paciente. Cada nota llega como borrador marcado como importado, y esta importación se puede deshacer con un clic después.',
+  },
+  'import.attachmentsNote': {
+    text: '{count} archivo adjunto de estas sesiones no se importa: se queda en Claude.',
+    plural: {
+      one: '{count} archivo adjunto de estas sesiones no se importa: se queda en Claude.',
+      many: '{count} archivos adjuntos de estas sesiones no se importan: se quedan en Claude.',
+      other: '{count} archivos adjuntos de estas sesiones no se importan: se quedan en Claude.',
+    },
+    kind: { count: 'number' },
+  },
+  'import.noConversations': {
+    text: 'No se encontraron conversaciones de pacientes desde {cutoff}.',
+    kind: { cutoff: 'text' },
+  },
+  'import.patientLabel': {
+    text: 'Importar a {name}',
+    kind: { name: 'text' },
+  },
+  'import.patientExcerpt': {
+    text: '{notes} · {source}',
+    kind: { notes: 'text', source: 'text' },
+  },
+  'import.whereTo': {
+    text: '¿A dónde van estas notas?',
+  },
+  'import.addTo': {
+    text: 'Agregar a {name}',
+    kind: { name: 'text' },
+  },
+  'import.createNew': {
+    text: 'Crear uno nuevo',
+  },
+  'import.notFound': {
+    text: 'No encontrados desde {cutoff}: {names}.',
+    kind: { cutoff: 'text', names: 'text' },
+  },
+  'import.runLabel': {
+    text: 'Importar {notes}',
+    kind: { notes: 'text' },
+  },
+  'import.changeSettings': {
+    text: 'Cambiar los ajustes',
+  },
+  'import.claudeLede': {
+    text: 'Trae a Apunta las notas que redactaste con Claude: cada paciente que has visto desde la fecha de corte, con todo su historial, un borrador por sesión.',
+  },
+  'import.exportHelp': {
+    text: 'En Claude, abre Ajustes → Privacidad → Exportar datos. La exportación llega por correo como un zip. Elige ese archivo aquí, o el conversations.json que viene dentro. Se lee en esta Mac y no se guarda en ninguna parte.',
+  },
+  'import.patientsSince': {
+    text: 'Pacientes vistos desde',
+  },
+  'import.namesHelp': {
+    text: 'Los nombres de tus pacientes, uno por línea (opcional: ayudan a escribir y cotejar los nombres; cualquiera que no esté en la lista se encuentra igual por el título del chat)',
+  },
+  'import.eachNoteIs': {
+    text: 'Cada nota es',
+  },
+  'import.sourceAssistant': {
+    text: 'La última respuesta de Claude en cada sesión (la nota con la que terminaste)',
+  },
+  'import.sourceHuman': {
+    text: 'Tus propios mensajes en cada sesión',
+  },
+  'import.readingExport': {
+    text: 'Leyendo la exportación…',
+  },
+  'import.check': {
+    text: 'Comprobar qué se importará',
+  },
+  'import.nothingWritten': {
+    text: 'No se escribe nada hasta que presiones Importar en la siguiente pantalla.',
+  },
+  'import.nameGuessedSuffix': {
+    text: ' · nombre deducido: compruébalo',
+  },
+  'import.skippedSummary': {
+    text: '{conversations} omitidas: {reasons}',
+    kind: { conversations: 'text', reasons: 'text' },
+  },
+  'import.why': {
+    text: 'Motivo',
+  },
+  'import.started': {
+    text: 'Inicio',
+  },
+  'import.lastMessage': {
+    text: 'Último mensaje',
+  },
+  'import.messages': {
+    text: 'Mensajes',
+  },
+  'import.undated': {
+    text: 'sin fecha',
+  },
+  'halaxy.summaryLine': {
+    text: '{notes} repartidas entre {patients}.',
+    kind: { notes: 'text', patients: 'text' },
+  },
+  'halaxy.untickHelp': {
+    text: 'Comprueba los nombres, desmarca lo que no quieras y luego importa. Las notas se guardan como historial publicado.',
+  },
+  'import.chooseDifferent': {
+    text: 'Elegir otros archivos',
+  },
+  'halaxy.lede': {
+    text: 'Trae a Apunta tus notas de Halaxy. Elige un PDF por paciente.',
+  },
+  'halaxy.localOnly': {
+    text: 'Los PDF de texto se leen en esta computadora y no se guardan en ninguna parte.',
+  },
+  'halaxy.readingPdfs': {
+    text: 'Leyendo los PDF…',
+  },
+  'import.patientName': {
+    text: 'Nombre del paciente',
+  },
+  'import.halaxyNoteLabel': {
+    text: 'Importar {date} de {name}',
+    kind: { date: 'text', name: 'text' },
+  },
+  'import.halaxyNoteLabelTitled': {
+    text: 'Importar {date} {title} de {name}',
+    kind: { date: 'text', title: 'text', name: 'text' },
+  },
+  'import.sessionTitle': {
+    text: 'Sesión',
+  },
+  'import.filesNotImported': {
+    text: 'Archivos no importados',
+  },
+  'import.earlier': {
+    text: 'Importaciones anteriores',
+  },
+  'import.batchLine': {
+    text: '{date} — {notes}',
+    kind: { date: 'text', notes: 'text' },
+  },
+  'import.batchPatients': {
+    text: ', {count} paciente nuevo',
+    plural: {
+      one: ', {count} paciente nuevo',
+      many: ', {count} pacientes nuevos',
+      other: ', {count} pacientes nuevos',
+    },
+    kind: { count: 'number' },
+  },
 } satisfies Record<MessageKey, Message>;

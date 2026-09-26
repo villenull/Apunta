@@ -11,15 +11,15 @@ import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
-import { formatInstantAsDate } from '../lib/format.js';
-import { plural } from '../lib/plural.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 /**
  * Halaxy's practitioner export is one text PDF per patient. The preview is
  * deliberately reviewable: names can be corrected and individual sessions
  * can be left out before one undoable batch is written.
  */
 export function HalaxyImport(): React.JSX.Element {
-  useDocumentTitle('Import from Halaxy');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.importHalaxy'));
   const [files, setFiles] = useState<readonly File[]>([]);
   const [summary, setSummary] = useState<HalaxyPreviewResponse | null>(null);
   const [names, setNames] = useState<Readonly<Record<string, string>>>({});
@@ -105,28 +105,32 @@ export function HalaxyImport(): React.JSX.Element {
 
   if (report !== null) {
     return (
-      <Screen back={{ to: '/settings', label: 'Settings' }}>
-        <h2 className="heading-tight">{undone === null ? 'Imported' : 'Import undone'}</h2>
+      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+        <h2 className="heading-tight">{undone === null ? t('import.doneTitle') : t('import.undoneTitle')}</h2>
         {undone !== null ? (
           <p className="lede" data-testid="halaxy-undone">
-            {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')} removed.
-            {undone.notes_kept > 0
-              ? ` ${plural(undone.notes_kept, 'note')} you had finalized were kept.`
-              : ''}
+            {t('import.undoneLine', {
+              notes: t('count.note', { count: undone.notes_deleted }),
+              patients: t('count.patient', { count: undone.patients_deleted }),
+            })}
+            {undone.notes_kept > 0 ? ` ${t('halaxy.undoneNotesKept', { count: undone.notes_kept })}` : ''}
           </p>
         ) : (
           <>
             <p className="lede" data-testid="halaxy-done">
               {report.notes === 0
-                ? 'Nothing new to import.'
-                : `${plural(report.notes, 'note')} for ${plural(report.patients.length, 'patient')} imported as published history.`}
+                ? t('import.nothingNew')
+                : t('halaxy.doneLine', {
+                    notes: t('count.note', { count: report.notes }),
+                    patients: t('count.patient', { count: report.patients.length }),
+                  })}
             </p>
             {report.patients.length > 0 && (
               <div className="card card-rows lede" data-testid="halaxy-report-patients">
                 {report.patients.map((patient) => (
                   <div className="row between" key={patient.fileName}>
                     <span>{patient.patientName}</span>
-                    <span className="small muted">{plural(patient.notes, 'note')}</span>
+                    <span className="small muted">{t('count.note', { count: patient.notes })}</span>
                   </div>
                 ))}
               </div>
@@ -141,14 +145,14 @@ export function HalaxyImport(): React.JSX.Element {
                   void undo(report.batch_id as string);
                 }}
               >
-                Undo this import
+                {t('import.undo')}
               </button>
             )}
           </>
         )}
         {errorLine}
         <Link to="/" className="btn">
-          Go to patients
+          {t('import.goToPatients')}
         </Link>
       </Screen>
     );
@@ -161,14 +165,15 @@ export function HalaxyImport(): React.JSX.Element {
       0,
     );
     return (
-      <Screen back={{ to: '/settings', label: 'Settings' }}>
-        <h2 className="heading-tight">Ready to import</h2>
+      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+        <h2 className="heading-tight">{t('import.readyTitle')}</h2>
         <p className="lede" data-testid="halaxy-summary">
-          {plural(notes, 'note')} across {plural(summary.patients.length, 'patient')}.
+          {t('halaxy.summaryLine', {
+            notes: t('count.note', { count: notes }),
+            patients: t('count.patient', { count: summary.patients.length }),
+          })}
         </p>
-        <p className="small note-meta">
-          Check the names, untick anything you do not want, then import. Notes are saved as published history.
-        </p>
+        <p className="small note-meta">{t('halaxy.untickHelp')}</p>
         {summary.patients.map((patient) => (
           <PatientReview
             key={patient.fileName}
@@ -207,7 +212,9 @@ export function HalaxyImport(): React.JSX.Element {
               void run();
             }}
           >
-            {busy ? 'Importing…' : `Import ${plural(notes, 'note')}`}
+            {busy
+              ? t('common.importing')
+              : t('import.runLabel', { notes: t('count.note', { count: notes }) })}
           </button>
           <button
             type="button"
@@ -216,7 +223,7 @@ export function HalaxyImport(): React.JSX.Element {
               setSummary(null);
             }}
           >
-            Choose different files
+            {t('import.chooseDifferent')}
           </button>
         </div>
       </Screen>
@@ -224,11 +231,11 @@ export function HalaxyImport(): React.JSX.Element {
   }
 
   return (
-    <Screen back={{ to: '/settings', label: 'Settings' }}>
-      <h2 className="heading-tight">Import from Halaxy</h2>
-      <p className="muted lede">Bring your Halaxy notes into Apunta. Choose one PDF per patient.</p>
+    <Screen back={{ to: '/settings', label: t('common.settings') }}>
+      <h2 className="heading-tight">{t('doc.importHalaxy')}</h2>
+      <p className="muted lede">{t('halaxy.lede')}</p>
       <div className="card card-rows lede">
-        <p className="small note-meta">Text PDFs are read on this computer and kept nowhere.</p>
+        <p className="small note-meta">{t('halaxy.localOnly')}</p>
         <input
           type="file"
           accept=".pdf,application/pdf"
@@ -251,9 +258,9 @@ export function HalaxyImport(): React.JSX.Element {
             void check();
           }}
         >
-          {busy ? 'Reading the PDFs…' : 'Check what will be imported'}
+          {busy ? t('halaxy.readingPdfs') : t('import.check')}
         </button>
-        <p className="small note-meta">Nothing is written until you press Import on the next screen.</p>
+        <p className="small note-meta">{t('import.nothingWritten')}</p>
       </div>
       <ImportBatchList
         batches={batches}
@@ -261,7 +268,7 @@ export function HalaxyImport(): React.JSX.Element {
         busy={busy || undoing}
         onUndo={(id) => void handleUndo(id)}
         testId="halaxy-batches"
-        formatDate={formatBatchDate}
+        formatDate={(iso) => formatBatchDate(t, iso)}
       />
     </Screen>
   );
@@ -284,10 +291,11 @@ function PatientReview({
   onChoice: (choice: string | null) => void;
   onToggle: (key: string, checked: boolean) => void;
 }): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <section className="card card-rows lede" data-testid="halaxy-patient">
       <label className="field-label import-patient-name">
-        Patient name
+        {t('import.patientName')}
         <input
           className="field-input"
           value={name}
@@ -297,7 +305,7 @@ function PatientReview({
       </label>
       {patient.existingPatients.length > 0 && (
         <div className="import-patient-choice">
-          <span className="import-patient-choice-label">Where should these notes go?</span>
+          <span className="import-patient-choice-label">{t('import.whereTo')}</span>
           <div className="import-patient-choice-options">
             {patient.existingPatients.map((existing) => (
               <label className="small" key={existing.id}>
@@ -307,7 +315,7 @@ function PatientReview({
                   checked={choice === existing.id}
                   onChange={() => onChoice(existing.id)}
                 />
-                Add to {existing.name}
+                {t('import.addTo', { name: existing.name })}
               </label>
             ))}
             <label className="small">
@@ -317,7 +325,7 @@ function PatientReview({
                 checked={choice === null}
                 onChange={() => onChoice(null)}
               />
-              Create new
+              {t('import.createNew')}
             </label>
           </div>
         </div>
@@ -328,9 +336,13 @@ function PatientReview({
           <ImportPreviewRow
             key={key}
             checked={selected.has(key)}
-            ariaLabel={`Import ${note.date}${note.title === undefined ? '' : ` ${note.title}`} for ${name}`}
+            ariaLabel={
+              note.title === undefined
+                ? t('import.halaxyNoteLabel', { date: note.date, name })
+                : t('import.halaxyNoteLabelTitled', { date: note.date, title: note.title, name })
+            }
             testId="halaxy-note"
-            title={note.title ?? 'Session'}
+            title={note.title ?? t('import.sessionTitle')}
             date={note.date}
             excerpt={excerpt(note.text)}
             onChange={(checked) => onToggle(key, checked)}
@@ -342,10 +354,11 @@ function PatientReview({
 }
 
 function Rejected({ response }: { response: HalaxyPreviewResponse }): React.JSX.Element | null {
+  const { t } = useI18n();
   if (response.rejected.length === 0) return null;
   return (
     <div className="card card-rows lede" data-testid="halaxy-rejected">
-      <h3 className="heading-tight">Files not imported</h3>
+      <h3 className="heading-tight">{t('import.filesNotImported')}</h3>
       {response.rejected.map((item) => (
         <p className="small note-meta" key={item.fileName}>
           {item.fileName}: {item.reason}
@@ -363,6 +376,10 @@ function excerpt(text: string): string {
   const compact = text.replace(/\s+/g, ' ').trim();
   return compact.length > 180 ? `${compact.slice(0, 177)}…` : compact;
 }
-function formatBatchDate(iso: string): string {
-  return formatInstantAsDate(iso);
+/**
+ * A batch's own instant, through the catalogue rather than
+ * `formatInstantAsDate`'s `en-US` string (Fixed decision 3).
+ */
+function formatBatchDate(t: Translate, iso: string): string {
+  return t('note.updatedAt', { at: iso });
 }

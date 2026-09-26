@@ -5,6 +5,7 @@ import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { copyText } from '../lib/clipboard.js';
+import { useI18n } from '../lib/i18n.js';
 
 interface LicenseSection {
   id: string;
@@ -12,7 +13,15 @@ interface LicenseSection {
   text: string;
 }
 
-function sectionsFrom(text: string): LicenseSection[] {
+/**
+ * The preamble gets a heading of its own, `Licenses.tsx:32`.
+ *
+ * It is a catalogue key rather than a literal: the checker reads a `title`
+ * property (it is one of the four names in `VISIBLE_PROPERTIES`) even though
+ * the heading then goes into an `<h2>`, and it is the only string in the file
+ * that lives outside the component.
+ */
+function sectionsFrom(text: string, overview: string): LicenseSection[] {
   const sections: LicenseSection[] = [];
   const preamble: string[] = [];
   let current: { title: string; lines: string[] } | null = null;
@@ -29,7 +38,7 @@ function sectionsFrom(text: string): LicenseSection[] {
   }
   if (current) sections.push(toSection(current));
   if (preamble.length > 0) {
-    sections.unshift({ id: 'license-overview', title: 'Overview', text: preamble.join('\n') });
+    sections.unshift({ id: 'license-overview', title: overview, text: preamble.join('\n') });
   }
   return sections;
 }
@@ -50,15 +59,17 @@ function toSection(section: { title: string; lines: string[] }): LicenseSection 
  * a licence's punctuation or Markdown.
  */
 export function Licenses(): React.JSX.Element {
-  useDocumentTitle('Licences');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.licences'));
   const load = useCallback((signal: AbortSignal) => fetchLicenses(signal), []);
   const licenses = useLoader(load);
   const [filter, setFilter] = useState('');
   const [copied, setCopied] = useState(false);
 
   const sections = useMemo(
-    () => (licenses.state.status === 'ready' ? sectionsFrom(licenses.state.data) : []),
-    [licenses.state],
+    () =>
+      licenses.state.status === 'ready' ? sectionsFrom(licenses.state.data, t('licenses.overview')) : [],
+    [licenses.state, t],
   );
   const visibleSections = useMemo(() => {
     const needle = filter.trim().toLowerCase();
@@ -76,17 +87,14 @@ export function Licenses(): React.JSX.Element {
   }, [licenses.state]);
 
   return (
-    <Screen back={{ to: '/about', label: 'About' }}>
-      <h2 className="lede">What Apunta is built from</h2>
+    <Screen back={{ to: '/about', label: t('doc.about') }}>
+      <h2 className="lede">{t('licenses.builtFrom')}</h2>
 
       <div className="card card-rows lede">
-        <p className="small note-meta">
-          Apunta includes programs written by other people, and their licences ask that this notice travels
-          with the app. Nothing here needs anything from you — it is here because it should be.
-        </p>
+        <p className="small note-meta">{t('licenses.lede')}</p>
       </div>
 
-      {licenses.state.status === 'loading' && <p className="small note-meta lede">Loading…</p>}
+      {licenses.state.status === 'loading' && <p className="small note-meta lede">{t('common.loading')}</p>}
 
       {licenses.state.status === 'error' && (
         <p className="form-error lede" role="alert">
@@ -95,10 +103,10 @@ export function Licenses(): React.JSX.Element {
       )}
 
       {licenses.state.status === 'ready' && (
-        <section className="licenses-panel lede" aria-label="Third-party licences">
+        <section className="licenses-panel lede" aria-label={t('licenses.panelLabel')}>
           <div className="licenses-toolbar">
             <label className="field-label" htmlFor="license-filter">
-              Filter licences
+              {t('licenses.filterLabel')}
             </label>
             <input
               id="license-filter"
@@ -108,13 +116,13 @@ export function Licenses(): React.JSX.Element {
               onChange={(event) => {
                 setFilter(event.target.value);
               }}
-              placeholder="Filter by component or text"
+              placeholder={t('licenses.filterPlaceholder')}
             />
             <button type="button" className="btn btn-quick" onClick={() => void handleCopy()}>
-              {copied ? 'Copied' : 'Copy plain text'}
+              {copied ? t('common.copied') : t('licenses.copyPlain')}
             </button>
           </div>
-          <nav className="licenses-index" aria-label="Licence components">
+          <nav className="licenses-index" aria-label={t('licenses.componentsLabel')}>
             {visibleSections.map((section) => (
               <a key={section.id} href={`#${section.id}`}>
                 {section.title}
@@ -123,7 +131,7 @@ export function Licenses(): React.JSX.Element {
           </nav>
           <div className="licenses-sections">
             {visibleSections.length === 0 ? (
-              <p className="small note-meta">No licence text matches “{filter.trim()}”.</p>
+              <p className="small note-meta">{t('licenses.noMatch', { filter: filter.trim() })}</p>
             ) : (
               visibleSections.map((section) => (
                 <pre className="licenses-text" id={section.id} key={section.id}>

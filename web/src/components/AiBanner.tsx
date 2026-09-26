@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 
 import { fetchHealth } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
+import { useI18n } from '../lib/i18n.js';
 
 /**
  * "Apunta can't reach the local AI — see Setup" (M3 deliverable 8).
@@ -20,6 +21,7 @@ import { useLoader } from '../hooks/useLoader.js';
  * with the exact command for the missing ones.
  */
 export function AiBanner(): React.JSX.Element | null {
+  const { t } = useI18n();
   const loadHealth = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
   const health = useLoader(loadHealth);
   const [dismissed, setDismissed] = useState(false);
@@ -31,31 +33,38 @@ export function AiBanner(): React.JSX.Element | null {
   const { ollama } = health.state.data;
   if (ollama.reachable && ollama.modelPresent) return null;
 
+  /*
+   * The banner's one sentence, keyed at the two elements it is split by rather
+   * than merged into a single string: the `Setup` link and the retry button are
+   * the whole point of the sentence, and deleting them to make it one key would
+   * change what the screen does. `{model}` is the stored model name, or empty
+   * when the server named none.
+   */
   const message = ollama.reachable
-    ? `Apunta can't find the AI model${ollama.model === null ? '' : ` (${ollama.model})`} — see`
-    : "Apunta can't reach the local AI — see";
+    ? t('ai.modelMissing', { model: ollama.model === null ? '' : ` (${ollama.model})` })
+    : t('ai.unreachable');
 
   return (
     <div className="ai-banner" role="status" data-testid="ai-banner">
       <p>
         {message}{' '}
         <Link to="/setup" data-testid="ai-banner-setup">
-          Setup
+          {t('common.setup')}
         </Link>
-        . Everything except drafting a new note still works.{' '}
+        {t('ai.bannerTail')}{' '}
         <button
           type="button"
           className="btn small btn-quick"
           onClick={health.reload}
           data-testid="ai-banner-retry"
         >
-          Check again
+          {t('common.checkAgain')}
         </button>
       </p>
       <button
         type="button"
         className="ai-banner-dismiss"
-        aria-label="Dismiss"
+        aria-label={t('common.dismiss')}
         onClick={() => {
           setDismissed(true);
         }}

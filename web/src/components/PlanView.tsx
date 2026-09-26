@@ -23,7 +23,7 @@ import {
 } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { copyText } from '../lib/clipboard.js';
-import { formatDayGap, formatInstantAsDate, formatPlanDate } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import { CheckIcon, CopyIcon, PlusIcon } from './icons.js';
 import { PlanDetails } from './PlanDetails.js';
 import { PlanGoalCard } from './PlanGoalCard.js';
@@ -45,6 +45,20 @@ import { PlanGoalCard } from './PlanGoalCard.js';
 
 const COPIED_FLASH_MS = 1400;
 
+/**
+ * The day gap the oracle `formatDayGap` produced, as a catalogue key.
+ *
+ * `web/src/lib/format.ts` is read-only for this card, and its helper returns
+ * English — `today`, `in 12 days`, `12 days ago` — so the view computes the
+ * same three shapes through three keys and lets `Intl.PluralRules` choose the
+ * form (Fixed decision 3).
+ */
+function dayGap(t: Translate, daysUntil: number): string {
+  if (daysUntil === 0) return t('plan.gapToday');
+  const magnitude = Math.abs(daysUntil);
+  return daysUntil > 0 ? t('plan.gapInDays', { days: magnitude }) : t('plan.gapDaysAgo', { days: magnitude });
+}
+
 export interface PlanViewProps {
   patient: PatientListItem;
   /** Follow a citation through to the note it came from. */
@@ -52,6 +66,7 @@ export interface PlanViewProps {
 }
 
 export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Element {
+  const { t } = useI18n();
   const patientId = patient.id;
   const [version, setVersion] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -95,13 +110,13 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
     }
   }, []);
 
-  if (plan.state.status === 'loading') return <p className="state-note">Loading the plan…</p>;
+  if (plan.state.status === 'loading') return <p className="state-note">{t('plan.loading')}</p>;
   if (plan.state.status === 'error') {
     return (
       <p className="form-error" role="alert">
         {plan.state.message}{' '}
         <button type="button" className="btn small btn-quick" onClick={reload}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       </p>
     );
@@ -120,7 +135,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
     abortRef.current = controller;
     setDrafting(true);
     setError(null);
-    setStatus('Starting…');
+    setStatus(t('common.starting'));
     setLookbackNote(null);
 
     try {
@@ -156,16 +171,24 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
         done.goals.length > 0
           ? ''
           : done.dropped > 0
-            ? ` ${String(done.dropped)} ${done.dropped === 1 ? 'draft goal was' : 'draft goals were'} written and then discarded, because ${done.dropped === 1 ? 'it' : 'they'} could not be traced to anything in those notes. Nothing was added to the plan.`
-            : ' Nothing was drafted from them: there is not much recorded in these notes yet.';
+            ? ` ${t(done.dropped === 1 ? 'plan.lookbackDroppedOne' : 'plan.lookbackDroppedMany', {
+                count: String(done.dropped),
+              })}`
+            : ` ${t('plan.lookbackThin')}`;
       setLookbackNote(
         read === 0
-          ? 'There are no notes for this patient yet, so there was nothing to draft from.'
-          : `Read ${String(read)} ${read === 1 ? 'note' : 'notes'}${
-              oldest === null ? '' : `, back to ${formatInstantAsDate(oldest)}`
-            } (limit ${String(done.lookback.cap)}).${
+          ? t('plan.lookbackNone')
+          : `${
+              oldest === null
+                ? t('plan.lookbackRead', { count: read, cap: done.lookback.cap })
+                : t('plan.lookbackReadBackTo', {
+                    count: read,
+                    day: oldest,
+                    cap: done.lookback.cap,
+                  })
+            }${
               done.lookback.skipped_note_ids.length > 0
-                ? ` ${String(done.lookback.skipped_note_ids.length)} could not be read.`
+                ? ` ${t('plan.lookbackSkipped', { count: String(done.lookback.skipped_note_ids.length) })}`
                 : ''
             }${outcome}`,
       );
@@ -186,13 +209,16 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
       <header className="note-editor-header row between">
         <div>
           <p className="small note-meta">{patient.name}</p>
-          <h2>Treatment plan</h2>
+          <h2>{t('plan.title')}</h2>
           {current && (
             <p className="small note-meta" data-testid="plan-version">
-              Version {current.version} · {current.status}
               {current.effective_from === null
-                ? ''
-                : ` · effective ${formatPlanDate(current.effective_from)}`}
+                ? t('plan.versionMeta', { version: String(current.version), status: current.status })
+                : t('plan.versionMetaEffective', {
+                    version: String(current.version),
+                    status: current.status,
+                    day: current.effective_from,
+                  })}
             </p>
           )}
         </div>
@@ -214,7 +240,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
               }}
             >
               {copied ? <CheckIcon className="icon icon-xs" /> : <CopyIcon className="icon icon-xs" />}
-              {copied ? 'Copied' : 'Copy plan'}
+              {copied ? t('common.copied') : t('plan.copy')}
             </button>
             {current.status === 'draft' && (
               <button
@@ -230,7 +256,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                   });
                 }}
               >
-                Put in force
+                {t('plan.putInForce')}
               </button>
             )}
             {current.status === 'active' && (
@@ -248,7 +274,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                   });
                 }}
               >
-                Start a review
+                {t('plan.startReview')}
               </button>
             )}
           </div>
@@ -268,14 +294,14 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
           data-testid="review-due"
         >
           {review.overdue
-            ? `Plan review was due ${formatPlanDate(review.due)} — ${formatDayGap(review.daysUntil)}.`
-            : `Plan review due ${formatPlanDate(review.due)} (${formatDayGap(review.daysUntil)}).`}
+            ? t('plan.reviewOverdue', { day: review.due, gap: dayGap(t, review.daysUntil) })
+            : t('plan.reviewUpcoming', { day: review.due, gap: dayGap(t, review.daysUntil) })}
         </p>
       )}
 
       {allVersions.length > 1 && (
         <label className="small plan-version-picker">
-          Version{' '}
+          {t('plan.version')}{' '}
           <select
             data-testid="version-picker"
             value={version === null ? 'current' : String(version)}
@@ -283,10 +309,10 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
               setVersion(event.target.value === 'current' ? null : Number(event.target.value));
             }}
           >
-            <option value="current">Current</option>
+            <option value="current">{t('plan.current')}</option>
             {allVersions.map((item) => (
               <option key={item.id} value={item.version}>
-                Version {item.version} — {item.status}
+                {t('plan.versionOption', { version: String(item.version), status: item.status })}
               </option>
             ))}
           </select>
@@ -295,13 +321,13 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
 
       {readOnly && (
         <p className="small note-meta" data-testid="read-only-note">
-          This version has been superseded. It is kept exactly as it was, and cannot be edited.
+          {t('plan.superseded')}
         </p>
       )}
 
       {current === null ? (
         <div className="empty-state" data-testid="empty-no-plan">
-          <p className="empty-message">No treatment plan for {patient.name} yet.</p>
+          <p className="empty-message">{t('plan.noneYet', { name: patient.name })}</p>
           <div className="row gap-8">
             <button
               type="button"
@@ -317,7 +343,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
               }}
             >
               <PlusIcon className="icon icon-sm" />
-              Start a plan
+              {t('plan.start')}
             </button>
             <button
               type="button"
@@ -328,7 +354,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                 void draftGoals();
               }}
             >
-              {drafting ? 'Reading your notes…' : 'Draft goals from recent notes'}
+              {drafting ? t('plan.readingNotes') : t('plan.draftGoals')}
             </button>
           </div>
           {status !== null && (
@@ -345,10 +371,10 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
       ) : (
         <>
           <section className="plan-section">
-            <h3>Goals</h3>
+            <h3>{t('plan.goals')}</h3>
             {accepted.length === 0 && (
               <p className="small note-meta" data-testid="no-accepted-goals">
-                Nothing in the plan yet. Suggestions below are not part of it until you accept one.
+                {t('plan.nothingYet')}
               </p>
             )}
             {accepted.map((goal) => (
@@ -387,7 +413,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                 }}
               >
                 <PlusIcon className="icon icon-xs" />
-                Add a goal myself
+                {t('plan.addGoalMyself')}
               </button>
             )}
           </section>
@@ -395,7 +421,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
           {!readOnly && (
             <section className="plan-section plan-suggestions" data-testid="plan-suggestions">
               <div className="row between">
-                <h3>Suggested from your notes</h3>
+                <h3>{t('plan.suggestedHeading')}</h3>
                 <button
                   type="button"
                   className="btn small btn-compact"
@@ -405,12 +431,10 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                     void draftGoals();
                   }}
                 >
-                  {drafting ? 'Reading your notes…' : 'Draft goals from recent notes'}
+                  {drafting ? t('plan.readingNotes') : t('plan.draftGoals')}
                 </button>
               </div>
-              <p className="small note-meta">
-                Suggestions are not part of the plan. Accept, edit or discard each one.
-              </p>
+              <p className="small note-meta">{t('plan.suggestionHelp')}</p>
               {status !== null && (
                 <p className="small state-note" data-testid="draft-status">
                   {status}
@@ -422,7 +446,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
                 </p>
               )}
               {proposed.length === 0 && status === null && (
-                <p className="small note-meta">No suggestions waiting.</p>
+                <p className="small note-meta">{t('plan.noSuggestions')}</p>
               )}
               {proposed.map((goal: PlanGoal) => (
                 <PlanGoalCard
@@ -457,7 +481,7 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
           */}
           <details className="plan-details-block" data-testid="plan-details-block" open={readOnly}>
             <summary data-testid="toggle-details">
-              Plan details <span className="small note-meta">{detailSummary(current)}</span>
+              {t('plan.details')} <span className="small note-meta">{detailSummary(t, current)}</span>
             </summary>
             <PlanDetails
               key={current.id}
@@ -474,31 +498,30 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
           </details>
 
           <section className="plan-section plan-attestation" data-testid="plan-attestation">
-            <h3>Attestation</h3>
+            <h3>{t('plan.attestation')}</h3>
             {current.attested_at === null ? (
-              <p className="small note-meta">
-                Not yet attested. Putting this version in force records the date, and copies your name and
-                credential from Settings onto it.
-              </p>
+              <p className="small note-meta">{t('plan.notAttested')}</p>
             ) : (
               <>
+                {/* The attestation text is hers and is stored clinical text: it
+                    is rendered as it stands and never rewritten (C-LANG@1
+                    rules 3 and 5). */}
                 <p>{current.attestation_text}</p>
                 <p className="small note-meta">
                   {[
                     current.clinician_name,
                     current.clinician_credential,
-                    current.clinician_licence === '' ? '' : `Licence ${current.clinician_licence}`,
-                    current.clinician_npi === '' ? '' : `NPI ${current.clinician_npi}`,
+                    current.clinician_licence === ''
+                      ? ''
+                      : t('plan.licence', { licence: current.clinician_licence }),
+                    current.clinician_npi === '' ? '' : t('plan.npi', { npi: current.clinician_npi }),
                   ]
                     .filter((part) => part !== '')
                     .join(' · ')}
                 </p>
               </>
             )}
-            <p className="small note-meta">
-              Attested in Apunta — sign the copy in your records system. Apunta has no login, so a name typed
-              here is not a signature.
-            </p>
+            <p className="small note-meta">{t('plan.attestedNote')}</p>
           </section>
         </>
       )}
@@ -510,11 +533,11 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
  * The one-line version of the plan-level fields, so the folded section still
  * says whether the things a payer asks for are there.
  */
-function detailSummary(plan: TreatmentPlan): string {
+function detailSummary(t: Translate, plan: TreatmentPlan): string {
   const parts = [
     ...plan.diagnoses.map((diagnosis) => diagnosis.code.trim()).filter((code) => code !== ''),
     plan.modality.trim(),
     plan.frequency.trim(),
   ].filter((part) => part !== '');
-  return parts.length === 0 ? '— diagnosis, modality and frequency not recorded' : `— ${parts.join(' · ')}`;
+  return parts.length === 0 ? t('plan.detailsNone') : t('plan.detailsList', { items: parts.join(' · ') });
 }

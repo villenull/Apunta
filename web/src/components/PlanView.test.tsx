@@ -1,4 +1,4 @@
-import type { PatientListItem } from '@apunta/shared';
+import { t, type PatientListItem } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -118,6 +118,65 @@ describe('PlanView', () => {
     const lookback = await screen.findByTestId('lookback-note');
     expect(lookback.textContent).toContain('Read 1 note');
     expect(lookback.textContent).toContain('limit 5');
+  });
+
+  /**
+   * S2.4 Fixed decision 4: `version` and `status` are stored values and go
+   * into `plan.versionMeta` verbatim — a status is never translated — and the
+   * date `effective_from` carries reaches `t()` as a raw `YYYY-MM-DD` under
+   * `dateOnly`, so the English is the same string the screen showed before and
+   * the Spanish one is the locale's date.
+   */
+  it('renders the version line as one key, with the stored status and a formatted day', async () => {
+    const patient = patientFixture();
+    const plan = makePlan(patient.id, {
+      version: 3,
+      status: 'active',
+      activated_at: '2026-05-01T09:00:00.000Z',
+      effective_from: '2026-05-01',
+    });
+    installFakeApi({ patients: [patient], plans: [plan], goals: [] });
+
+    render(<PlanView patient={patient} onOpenNote={() => {}} />);
+
+    const line = await screen.findByTestId('plan-version');
+    expect(line.textContent).toBe(
+      t('plan.versionMetaEffective', { version: '3', status: 'active', day: '2026-05-01' }),
+    );
+    expect(t('plan.versionMetaEffective', { version: '3', status: 'active', day: '2026-05-01' }, 'en')).toBe(
+      'Version 3 · active · effective May 1, 2026',
+    );
+    expect(t('plan.versionMeta', { version: '3', status: 'active' }, 'en')).toBe('Version 3 · active');
+  });
+
+  /**
+   * The lookback line is four sentences the code joins, each a key: the base
+   * sentence in its two forms (the source already branched on whether the
+   * oldest note is known), then the skipped count and the outcome.
+   */
+  it('renders the lookback line from its keys, with the day formatted by t()', async () => {
+    const patient = patientFixture();
+    const plan = makePlan(patient.id);
+    const note = makeNote(patient.id);
+    installFakeApi({ patients: [patient], notes: [note], plans: [plan], goals: [] });
+
+    render(<PlanView patient={patient} onOpenNote={() => {}} />);
+    fireEvent.click(await screen.findByTestId('draft-goals'));
+
+    const lookback = await screen.findByTestId('lookback-note');
+    // The fake server reports an oldest note, so the line takes the `backTo`
+    // form — the one whose `{day}` reaches `t()` raw.
+    expect(lookback.textContent).toContain(
+      t('plan.lookbackReadBackTo', { count: 1, day: '2026-08-08', cap: 5 }),
+    );
+    expect(t('plan.lookbackReadBackTo', { count: 1, day: '2026-08-08', cap: 5 }, 'en')).toBe(
+      'Read 1 note, back to Aug 8, 2026 (limit 5).',
+    );
+    expect(t('plan.lookbackReadBackTo', { count: 1, day: '2026-08-08', cap: 5 }, 'es-MX')).toBe(
+      'Se leyeron 1 nota, desde el 8 ago 2026 (límite 5).',
+    );
+    // The form with no oldest note, for the case the server reports none.
+    expect(t('plan.lookbackRead', { count: 3, cap: 5 }, 'en')).toBe('Read 3 notes (limit 5).');
   });
 
   it('follows a citation through to the note it came from', async () => {

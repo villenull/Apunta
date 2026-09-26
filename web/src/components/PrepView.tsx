@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { errorMessage, getPlan, listBriefings, prepareBriefing, saveBriefing } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { formatInstantAsDate, formatNoteDate, formatPlanDate } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import { CheckIcon } from './icons.js';
 
 /**
@@ -24,7 +24,24 @@ export interface PrepViewProps {
   onOpenNote: (noteId: string) => void;
 }
 
+/**
+ * A note's own date, through the catalogue: `notes.today` for one written
+ * today, `notes.date` for the rest, with the ISO timestamp handed to `t()`
+ * rather than the `en-US` string `formatNoteDate` prints (Fixed decision 3).
+ */
+function noteDay(t: Translate, iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const today =
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  return today ? t('notes.today') : t('notes.date', { day: iso });
+}
+
 export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Element {
+  const { t } = useI18n();
   const patientId = patient.id;
 
   const [lines, setLines] = useState<BriefLine[]>([]);
@@ -54,7 +71,7 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
     setSaved(null);
     setBrief(null);
     setLines([]);
-    setStatus('Starting…');
+    setStatus(t('common.starting'));
 
     try {
       const result = await prepareBriefing(
@@ -108,7 +125,7 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
       <header className="note-editor-header row between">
         <div>
           <p className="small note-meta">{patient.name}</p>
-          <h2>Before this session</h2>
+          <h2>{t('prep.title')}</h2>
         </div>
         <div className="row gap-8">
           <button
@@ -120,7 +137,7 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
               void prepare();
             }}
           >
-            {running ? 'Reading…' : 'Prepare again'}
+            {running ? t('common.reading') : t('prep.again')}
           </button>
           <button
             type="button"
@@ -140,8 +157,8 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
               })();
             }}
           >
-            {saved === null ? 'Keep' : <CheckIcon className="icon icon-xs" />}
-            {saved === null ? '' : 'Kept'}
+            {saved === null ? t('common.keep') : <CheckIcon className="icon icon-xs" />}
+            {saved === null ? '' : t('common.kept')}
           </button>
         </div>
       </header>
@@ -154,10 +171,10 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
 
       <div className="prep-split">
         <section className="prep-column" data-testid="prep-plan">
-          <h3>The plan</h3>
-          {plan.state.status === 'loading' && <p className="small state-note">Loading the plan…</p>}
+          <h3>{t('prep.planHeading')}</h3>
+          {plan.state.status === 'loading' && <p className="small state-note">{t('plan.loading')}</p>}
           {plan.state.status === 'ready' && planGoals.length === 0 && (
-            <p className="small note-meta">No goals in the plan yet.</p>
+            <p className="small note-meta">{t('prep.noGoals')}</p>
           )}
           {planGoals.map((goal) => (
             <article className="prep-goal" key={goal.id}>
@@ -165,18 +182,20 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
               {goal.objectives.map((objective, index) => (
                 <p className="small note-meta" key={`${goal.id}-${String(index)}`}>
                   {objective.statement}
-                  {objective.target_date === null ? '' : ` — by ${formatPlanDate(objective.target_date)}`}
+                  {objective.target_date === null
+                    ? ''
+                    : t('prep.objectiveBy', { day: objective.target_date })}
                 </p>
               ))}
             </article>
           ))}
           {plan.state.status === 'ready' && plan.state.data.plan?.review_due != null && (
-            <p className="small note-meta">Review due {formatPlanDate(plan.state.data.plan.review_due)}.</p>
+            <p className="small note-meta">{t('prep.reviewDue', { day: plan.state.data.plan.review_due })}</p>
           )}
         </section>
 
         <section className="prep-column" data-testid="prep-brief">
-          <h3>Since you last saw them</h3>
+          <h3>{t('prep.sinceHeading')}</h3>
           {status !== null && (
             <p className="small state-note" data-testid="prep-status">
               {status}
@@ -185,7 +204,7 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
 
           {lines.length === 0 && !running && (
             <p className="small note-meta" data-testid="prep-empty">
-              Nothing to read yet — there are no notes for this patient.
+              {t('prep.empty')}
             </p>
           )}
 
@@ -199,7 +218,7 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
                   onOpenNote(line.note_id);
                 }}
               >
-                {formatNoteDate(line.note_date)}
+                {noteDay(t, line.note_date)}
               </button>{' '}
               {line.text}
             </p>
@@ -208,24 +227,24 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
           {lookback !== null && (
             <p className="small note-meta" data-testid="prep-lookback">
               {lookback.notes_read === 0
-                ? 'Read no notes.'
-                : `Read the last ${String(lookback.notes_read)} ${
-                    lookback.notes_read === 1 ? 'note' : 'notes'
-                  }${
-                    lookback.oldest_note_date === null
-                      ? ''
-                      : `, back to ${formatInstantAsDate(lookback.oldest_note_date)}`
-                  } (limit ${String(lookback.cap)}).`}
+                ? t('prep.lookbackNone')
+                : lookback.oldest_note_date === null
+                  ? t('prep.lookbackRead', { count: lookback.notes_read, cap: lookback.cap })
+                  : t('prep.lookbackReadBackTo', {
+                      count: lookback.notes_read,
+                      day: lookback.oldest_note_date,
+                      cap: lookback.cap,
+                    })}
               {lookback.skipped_note_ids.length > 0
-                ? ` ${String(lookback.skipped_note_ids.length)} could not be read.`
+                ? ` ${t('prep.lookbackSkipped', { count: String(lookback.skipped_note_ids.length) })}`
                 : ''}
             </p>
           )}
 
           <p className="small note-meta">
-            This briefing is not saved unless you keep it.
+            {t('prep.notSaved')}
             {kept.state.status === 'ready' && kept.state.data.length > 0
-              ? ` ${String(kept.state.data.length)} kept for ${patient.name}.`
+              ? ` ${t('prep.keptFor', { count: String(kept.state.data.length), name: patient.name })}`
               : ''}
           </p>
         </section>

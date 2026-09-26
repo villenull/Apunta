@@ -1,4 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+
+import { useI18n } from '../lib/i18n.js';
+
 /**
  * The little menu under a misspelt word: the suggestions, then "Ignore" for
  * this tab and "Add to dictionary" for good. Closed by a choice, Escape, or a
@@ -26,6 +29,7 @@ export function SpellingMenu({
   readonly onAdd: () => void;
   readonly onClose: () => void;
 }): React.JSX.Element {
+  const { t } = useI18n();
   const menu = useRef<HTMLDivElement>(null);
   const [above, setAbove] = useState(false);
 
@@ -60,12 +64,12 @@ export function SpellingMenu({
       ref={menu}
       className="spelling-menu"
       role="menu"
-      aria-label={`Spelling of ${word}`}
+      aria-label={t('spelling.menuLabel', { word })}
       data-testid="spelling-menu"
       style={{ left, top: above ? top - (menu.current?.offsetHeight ?? 0) - 8 : top }}
     >
       {suggestions.length === 0 ? (
-        <p className="spelling-menu-none">No suggestions</p>
+        <p className="spelling-menu-none">{t('spelling.none')}</p>
       ) : (
         suggestions.map((suggestion) => (
           <button
@@ -83,10 +87,10 @@ export function SpellingMenu({
       )}
       <div className="spelling-menu-rule" role="separator" />
       <button type="button" role="menuitem" className="spelling-menu-item" onClick={onIgnore}>
-        Ignore
+        {t('spelling.ignore')}
       </button>
       <button type="button" role="menuitem" className="spelling-menu-item" onClick={onAdd}>
-        Add to dictionary
+        {t('spelling.add')}
       </button>
     </div>
   );

@@ -1,3 +1,4 @@
+import { t } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -208,6 +209,70 @@ describe('the backup card', () => {
     renderCard();
     await screen.findByTestId('backup-directory');
     expect(screen.queryByTestId('backup-same-disk')).toBeNull();
+  });
+
+  /**
+   * S2.4 Fixed decision 5: `BackupCard.tsx:393` is a sentence the literal
+   * checker cannot see, and it is the one place a date must NOT be given a
+   * `dateOnly` parameter — `instantToLocalDay` already returns a raw
+   * `YYYY-MM-DD`, which is what the screen shows and what the case above
+   * asserts. So the rendered line is the catalogue's English with the day
+   * passed through as a stored value.
+   */
+  it('renders the tested-on date as the catalogue does, with the raw stored day', async () => {
+    installFakeApi({}, { backup: { last_verified_restore: '2026-08-01T09:00:00.000Z' } });
+    renderCard();
+
+    expect((await screen.findByTestId('backup-verified')).textContent).toBe(
+      t('backup.tested', { day: '2026-08-01' }),
+    );
+    // The key's own English, and the reason it is `text` and not `dateOnly`.
+    expect(t('backup.tested', { day: '2026-08-01' }, 'en')).toBe('Restore last tested 2026-08-01.');
+    expect(t('backup.tested', { day: '2026-08-01' }, 'es-MX')).toBe(
+      'Restauración probada por última vez el 2026-08-01.',
+    );
+  });
+
+  /**
+   * The other pinned blind spot: `BackupCard.tsx:315-319` is one key with four
+   * counts, and the counts are `String(…)` as the card always wrote them, so a
+   * count of 1,000 is not regrouped on the way through the catalogue.
+   */
+  it('renders the retention line as the catalogue does, counts verbatim', async () => {
+    installFakeApi(
+      {},
+      {
+        backup: {
+          counts: { patients: 12, notes: 847, transcripts: 300 },
+          oldest_note_at: '2026-01-04T09:00:00.000Z',
+          db_bytes: 3_145_728,
+        },
+      },
+    );
+    renderCard();
+
+    expect((await screen.findByTestId('retention-summary')).textContent).toBe(
+      t('backup.stored', {
+        notes: '847',
+        patients: '12',
+        range: t('backup.storedRange', { day: '2026-01-04' }),
+        transcripts: '300',
+        bytes: '3.0 MB',
+      }),
+    );
+    expect(
+      t(
+        'backup.stored',
+        {
+          notes: '1000',
+          patients: '1',
+          range: '',
+          transcripts: '0',
+          bytes: '1.0 KB',
+        },
+        'en',
+      ),
+    ).toBe('Stored: 1000 notes for 1 patients, 0 transcripts, 1.0 KB');
   });
 
   it('warns about losing a passphrase only once one is typed', async () => {

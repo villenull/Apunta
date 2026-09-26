@@ -15,8 +15,7 @@ import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
-import { formatInstantAsDate } from '../lib/format.js';
-import { plural } from '../lib/plural.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 
 /**
  * Importing her Claude conversations (M11), automatically — the owner's
@@ -30,24 +29,48 @@ import { plural } from '../lib/plural.js';
  * shown at all: a reason, a date and a count.
  */
 
-const REASONS: Record<ImportSkipReason, string> = {
-  before_cutoff: 'no activity since the cutoff',
-  single_session: 'a single sitting, not a patient history',
-  not_clinical: "Claude's replies never looked like a note",
-  no_name: 'no patient name could be told with confidence',
-  ambiguous: 'more than one name from your list',
-  excluded: 'you unticked the patient',
-};
+/**
+ * Why a conversation was skipped, by the stored reason.
+ *
+ * The reason is an enum the server stored and is never translated
+ * (Fixed decision 4): each is a key of its own and the sentence around it is
+ * what a language has to translate. The same six reasons the server sends are
+ * the six the screen shows, and none of the stored text is shown.
+ */
+function skipReason(t: Translate, reason: ImportSkipReason): string {
+  switch (reason) {
+    case 'before_cutoff':
+      return t('import.skip.beforeCutoff');
+    case 'single_session':
+      return t('import.skip.singleSession');
+    case 'not_clinical':
+      return t('import.skip.notClinical');
+    case 'no_name':
+      return t('import.skip.noName');
+    case 'ambiguous':
+      return t('import.skip.ambiguous');
+    case 'excluded':
+      return t('import.skip.excluded');
+  }
+}
 
-const NAME_SOURCES: Record<ImportNameSource, string> = {
-  previous: 'imported before',
-  list: 'from your list',
-  existing: 'already in Apunta',
-  title: 'name guessed from the chat title — check',
-};
+/** Where a matched name came from, by the stored source. */
+function nameSource(t: Translate, source: ImportNameSource): string {
+  switch (source) {
+    case 'previous':
+      return t('import.nameSource.previous');
+    case 'list':
+      return t('import.nameSource.list');
+    case 'existing':
+      return t('import.nameSource.existing');
+    case 'title':
+      return t('import.nameSource.title');
+  }
+}
 
 export function Import(): React.JSX.Element {
-  useDocumentTitle('Import from Claude');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.importClaude'));
   const [file, setFile] = useState<File | null>(null);
   const [cutoff, setCutoff] = useState(DEFAULT_IMPORT_CUTOFF);
   const [names, setNames] = useState('');
@@ -127,26 +150,32 @@ export function Import(): React.JSX.Element {
 
   if (report !== null) {
     return (
-      <Screen back={{ to: '/settings', label: 'Settings' }}>
-        <h2 className="heading-tight">{undone === null ? 'Imported' : 'Import undone'}</h2>
+      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+        <h2 className="heading-tight">{undone === null ? t('import.doneTitle') : t('import.undoneTitle')}</h2>
         {undone !== null ? (
           <p className="lede" data-testid="import-undone">
-            {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')} removed.
-            {undone.notes_kept > 0
-              ? ` ${plural(undone.notes_kept, 'note')} you had finalized ${undone.notes_kept === 1 ? 'was' : 'were'} kept.`
-              : ''}
+            {t('import.undoneLine', {
+              notes: t('count.note', { count: undone.notes_deleted }),
+              patients: t('count.patient', { count: undone.patients_deleted }),
+            })}
+            {undone.notes_kept > 0 ? ` ${t('import.undoneNotesKept', { count: undone.notes_kept })}` : ''}
             {undone.patients_kept > 0
-              ? ` ${plural(undone.patients_kept, 'patient')} with other work attached ${undone.patients_kept === 1 ? 'was' : 'were'} kept.`
+              ? ` ${t('import.undonePatientsKept', { count: undone.patients_kept })}`
               : ''}
           </p>
         ) : (
           <>
             <p className="lede" data-testid="import-done">
               {report.notes === 0
-                ? 'Nothing new to import.'
-                : `${plural(report.notes, 'note')} for ${plural(report.patients.length, 'patient')}` +
-                  (report.patients_to_create > 0 ? ` (${String(report.patients_to_create)} new)` : '') +
-                  '. Each is a draft, dated when you talked to Claude, marked as imported.'}
+                ? t('import.nothingNew')
+                : t('import.doneLine', {
+                    notes: t('count.note', { count: report.notes }),
+                    patients: t('count.patient', { count: report.patients.length }),
+                    new:
+                      report.patients_to_create > 0
+                        ? t('import.doneNewCount', { count: report.patients_to_create })
+                        : '',
+                  })}
             </p>
             <PatientTable report={report} />
             {report.batch_id !== null && (
@@ -159,7 +188,7 @@ export function Import(): React.JSX.Element {
                   void undo(report.batch_id as string);
                 }}
               >
-                Undo this import
+                {t('import.undo')}
               </button>
             )}
           </>
@@ -167,7 +196,7 @@ export function Import(): React.JSX.Element {
         <Skipped report={report} />
         {errorLine}
         <Link to="/" className="btn">
-          Go to patients
+          {t('import.goToPatients')}
         </Link>
       </Screen>
     );
@@ -181,34 +210,40 @@ export function Import(): React.JSX.Element {
     const toCreate = kept.filter((patient) => chosenPatientId(patient) === null).length;
     const ambiguous = summary.skipped.filter((s) => s.reason === 'ambiguous').length;
     return (
-      <Screen back={{ to: '/settings', label: 'Settings' }}>
-        <h2 className="heading-tight">Ready to import</h2>
+      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+        <h2 className="heading-tight">{t('import.readyTitle')}</h2>
         <p className="lede" data-testid="import-summary">
-          {plural(toCreate, 'patient')} to create, {plural(notes, 'note')} across{' '}
-          {plural(kept.length, 'patient')}. {plural(summary.skipped.length, 'conversation')} skipped
-          {ambiguous > 0 ? `, ${String(ambiguous)} of them as ambiguous` : ''}.
+          {t('import.summaryLine', {
+            toCreate: t('count.patient', { count: toCreate }),
+            notes: t('count.note', { count: notes }),
+            patients: t('count.patient', { count: kept.length }),
+            skipped: t('count.conversation', { count: summary.skipped.length }),
+            ambiguous: ambiguous > 0 ? t('import.summaryAmbiguous', { count: ambiguous }) : '',
+          })}
           {summary.already_imported > 0
-            ? ` ${plural(summary.already_imported, 'session')} already imported earlier will not be imported again.`
+            ? ` ${t('import.summaryAgain', { count: summary.already_imported })}`
             : ''}
         </p>
         <p className="small note-meta">
-          Untick anyone who is not a patient. Every note arrives as a draft marked as imported, and this
-          import can be undone in one click afterwards.
+          {t('import.untickHelp')}
           {summary.totals.attachments > 0
-            ? ` ${plural(summary.totals.attachments, 'attached file')} in these sessions ${summary.totals.attachments === 1 ? 'is' : 'are'} not imported — they stay in Claude.`
+            ? ` ${t('import.attachmentsNote', { count: summary.totals.attachments })}`
             : ''}
         </p>
         <div className="card card-rows lede">
           {summary.patients.length === 0 && (
-            <p className="small muted">No patient conversations were found since {summary.cutoff}.</p>
+            <p className="small muted">{t('import.noConversations', { cutoff: summary.cutoff })}</p>
           )}
           {summary.patients.map((patient) => (
             <div className="import-patient-row" key={patient.key} data-testid="import-patient">
               <ImportPreviewRow
                 checked={!unticked.has(patient.key)}
-                ariaLabel={`Import ${patient.name}`}
+                ariaLabel={t('import.patientLabel', { name: patient.name })}
                 title={patient.name}
-                excerpt={`${plural(patient.notes, 'note')} · ${NAME_SOURCES[patient.source]}`}
+                excerpt={t('import.patientExcerpt', {
+                  notes: t('count.note', { count: patient.notes }),
+                  source: nameSource(t, patient.source),
+                })}
                 onChange={(checked) => {
                   const next = new Set(unticked);
                   if (checked) next.delete(patient.key);
@@ -218,7 +253,7 @@ export function Import(): React.JSX.Element {
               />
               {patient.patient_id !== null ? (
                 <div className="import-patient-choice">
-                  <span className="import-patient-choice-label">Where should these notes go?</span>
+                  <span className="import-patient-choice-label">{t('import.whereTo')}</span>
                   <div className="import-patient-choice-options">
                     <label className="small">
                       <input
@@ -229,7 +264,7 @@ export function Import(): React.JSX.Element {
                           setPatientChoices((current) => ({ ...current, [patient.key]: patient.patient_id }));
                         }}
                       />
-                      Add to {patient.name}
+                      {t('import.addTo', { name: patient.name })}
                     </label>
                     <label className="small">
                       <input
@@ -240,18 +275,21 @@ export function Import(): React.JSX.Element {
                           setPatientChoices((current) => ({ ...current, [patient.key]: null }));
                         }}
                       />
-                      Create new
+                      {t('import.createNew')}
                     </label>
                   </div>
                 </div>
               ) : (
-                <span className="small muted">Create new patient</span>
+                <span className="small muted">{t('patients.new')}</span>
               )}
             </div>
           ))}
           {summary.unmatched_names.length > 0 && (
             <p className="small note-meta" data-testid="import-unmatched">
-              Not found since {summary.cutoff}: {summary.unmatched_names.join(', ')}.
+              {t('import.notFound', {
+                cutoff: summary.cutoff,
+                names: summary.unmatched_names.join(', '),
+              })}
             </p>
           )}
         </div>
@@ -266,7 +304,9 @@ export function Import(): React.JSX.Element {
               void run();
             }}
           >
-            {busy ? 'Importing…' : `Import ${plural(notes, 'note')}`}
+            {busy
+              ? t('common.importing')
+              : t('import.runLabel', { notes: t('count.note', { count: notes }) })}
           </button>
           <button
             type="button"
@@ -275,7 +315,7 @@ export function Import(): React.JSX.Element {
               setSummary(null);
             }}
           >
-            Change the settings
+            {t('import.changeSettings')}
           </button>
         </div>
       </Screen>
@@ -283,17 +323,11 @@ export function Import(): React.JSX.Element {
   }
 
   return (
-    <Screen back={{ to: '/settings', label: 'Settings' }}>
-      <h2 className="heading-tight">Import from Claude</h2>
-      <p className="muted lede">
-        Bring the notes you drafted with Claude into Apunta: every patient you have seen since the cutoff,
-        with their whole history, one draft per session.
-      </p>
+    <Screen back={{ to: '/settings', label: t('common.settings') }}>
+      <h2 className="heading-tight">{t('doc.importClaude')}</h2>
+      <p className="muted lede">{t('import.claudeLede')}</p>
       <div className="card card-rows lede">
-        <p className="small note-meta">
-          In Claude, open Settings → Privacy → Export data. The export arrives by email as a zip. Choose that
-          file here, or the conversations.json inside it. It is read on this Mac and kept nowhere.
-        </p>
+        <p className="small note-meta">{t('import.exportHelp')}</p>
         <input
           className="field-input"
           type="file"
@@ -305,7 +339,7 @@ export function Import(): React.JSX.Element {
           }}
         />
         <label className="field-label">
-          Patients seen since
+          {t('import.patientsSince')}
           <input
             className="field-input"
             type="date"
@@ -317,8 +351,7 @@ export function Import(): React.JSX.Element {
           />
         </label>
         <label className="field-label">
-          Your patients&rsquo; names, one per line (optional — they help spell and match names; anyone not
-          listed is still found from the chat title)
+          {t('import.namesHelp')}
           <textarea
             className="field-input"
             rows={5}
@@ -330,7 +363,7 @@ export function Import(): React.JSX.Element {
           />
         </label>
         <fieldset className="small note-meta">
-          <legend>Each note is</legend>
+          <legend>{t('import.eachNoteIs')}</legend>
           <label className="row gap-8">
             <input
               type="radio"
@@ -340,7 +373,7 @@ export function Import(): React.JSX.Element {
                 setSource('assistant');
               }}
             />
-            Claude&rsquo;s last reply in each session (the note you ended up with)
+            {t('import.sourceAssistant')}
           </label>
           <label className="row gap-8">
             <input
@@ -351,7 +384,7 @@ export function Import(): React.JSX.Element {
                 setSource('human');
               }}
             />
-            Your own messages in each session
+            {t('import.sourceHuman')}
           </label>
         </fieldset>
         {errorLine}
@@ -364,9 +397,9 @@ export function Import(): React.JSX.Element {
             void check();
           }}
         >
-          {busy ? 'Reading the export…' : 'Check what will be imported'}
+          {busy ? t('import.readingExport') : t('import.check')}
         </button>
-        <p className="small note-meta">Nothing is written until you press Import on the next screen.</p>
+        <p className="small note-meta">{t('import.nothingWritten')}</p>
       </div>
 
       <ImportBatchList
@@ -376,13 +409,14 @@ export function Import(): React.JSX.Element {
         onUndo={(id) => void handleUndo(id)}
         testId="import-batches"
         showPatients
-        formatDate={formatBatchDate}
+        formatDate={(iso) => formatBatchDate(t, iso)}
       />
     </Screen>
   );
 }
 
 function PatientTable({ report }: { report: ClaudeImportReport }): React.JSX.Element | null {
+  const { t } = useI18n();
   if (report.patients.length === 0) return null;
   return (
     <div className="card card-rows lede" data-testid="import-report-patients">
@@ -390,9 +424,11 @@ function PatientTable({ report }: { report: ClaudeImportReport }): React.JSX.Ele
         <div className="row between" key={patient.key}>
           <span>
             {patient.name}
-            {patient.name_guessed ? <span className="small muted"> · name guessed — check</span> : null}
+            {patient.name_guessed ? (
+              <span className="small muted">{t('import.nameGuessedSuffix')}</span>
+            ) : null}
           </span>
-          <span className="small muted">{plural(patient.notes, 'note')}</span>
+          <span className="small muted">{t('count.note', { count: patient.notes })}</span>
         </div>
       ))}
     </div>
@@ -401,30 +437,35 @@ function PatientTable({ report }: { report: ClaudeImportReport }): React.JSX.Ele
 
 /** Reasons, dates and counts — never a title or a word of text. */
 function Skipped({ report }: { report: ClaudeImportReport }): React.JSX.Element | null {
+  const { t } = useI18n();
   if (report.skipped.length === 0) return null;
   const counts = new Map<ImportSkipReason, number>();
   for (const item of report.skipped) counts.set(item.reason, (counts.get(item.reason) ?? 0) + 1);
   return (
     <details className="card card-rows lede" data-testid="import-skipped">
       <summary className="small">
-        {plural(report.skipped.length, 'conversation')} skipped:{' '}
-        {[...counts].map(([reason, count]) => `${String(count)} ${REASONS[reason]}`).join('; ')}
+        {t('import.skippedSummary', {
+          conversations: t('count.conversation', { count: report.skipped.length }),
+          reasons: [...counts]
+            .map(([reason, count]) => `${String(count)} ${skipReason(t, reason)}`)
+            .join('; '),
+        })}
       </summary>
       <table className="small">
         <thead>
           <tr>
-            <th>Why</th>
-            <th>Started</th>
-            <th>Last message</th>
-            <th>Messages</th>
+            <th>{t('import.why')}</th>
+            <th>{t('import.started')}</th>
+            <th>{t('import.lastMessage')}</th>
+            <th>{t('import.messages')}</th>
           </tr>
         </thead>
         <tbody>
           {report.skipped.map((item, index) => (
             <tr key={index}>
-              <td>{REASONS[item.reason]}</td>
-              <td>{day(item.recorded_at)}</td>
-              <td>{day(item.last_at)}</td>
+              <td>{skipReason(t, item.reason)}</td>
+              <td>{day(t, item.recorded_at)}</td>
+              <td>{day(t, item.last_at)}</td>
               <td>{item.messages}</td>
             </tr>
           ))}
@@ -433,10 +474,15 @@ function Skipped({ report }: { report: ClaudeImportReport }): React.JSX.Element 
     </details>
   );
 }
-function formatBatchDate(iso: string): string {
-  return formatInstantAsDate(iso);
+/**
+ * A batch's own instant, through the catalogue rather than
+ * `formatInstantAsDate`'s `en-US` string (Fixed decision 3).
+ */
+function formatBatchDate(t: Translate, iso: string): string {
+  return t('note.updatedAt', { at: iso });
 }
 
-function day(iso: string | null): string {
-  return iso === null ? 'undated' : calendarDay(iso.slice(0, 10));
+/** A stored day as the app stores it, or the word for a conversation with none. */
+function day(t: Translate, iso: string | null): string {
+  return iso === null ? t('import.undated') : calendarDay(iso.slice(0, 10));
 }

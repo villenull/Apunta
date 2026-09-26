@@ -5,7 +5,8 @@ import { Link } from 'react-router';
 
 import type { RecencyMap } from '../hooks/usePatientRecency.js';
 import type { LoadState } from '../hooks/useLoader.js';
-import { formatShortDate, noteCountLabel } from '../lib/format.js';
+import { formatShortDate } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import { pinnedIndex } from '../lib/patientOrder.js';
 import { BrandWordmark } from './BrandWordmark.js';
 import { GearIcon, GlobeIcon, HelpIcon, PanelLeftIcon, PinIcon, PlusIcon, SearchIcon } from './icons.js';
@@ -47,7 +48,13 @@ export interface PatientsColumnProps {
   collapsed: boolean;
   /** Mission control → Settings, opened as a modal over the workspace. */
   onOpenSettings: () => void;
-  /** Mission control → the two rows this preview does not build yet. */
+  /**
+   * Mission control → the two rows this preview does not build yet.
+   *
+   * `what` is the control's own label, already in the active locale: the caller
+   * passes `t(…)` rather than a string, so a Spanish toast names the control in
+   * Spanish.
+   */
   onUnavailable: (what: string) => void;
 }
 
@@ -75,6 +82,7 @@ export function PatientsColumn({
   onOpenSettings,
   onUnavailable,
 }: PatientsColumnProps): React.JSX.Element {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
 
   return (
@@ -86,7 +94,7 @@ export function PatientsColumn({
         <button
           type="button"
           className="icon-btn panel-toggle"
-          aria-label={collapsed ? 'Show patients' : 'Hide patients'}
+          aria-label={collapsed ? t('patients.showColumn') : t('patients.hideColumn')}
           aria-expanded={!collapsed}
           data-testid="sidebar-toggle"
           onClick={onToggleCollapsed}
@@ -111,16 +119,16 @@ export function PatientsColumn({
           onChange={(event) => {
             setQuery(event.target.value);
           }}
-          placeholder="Search"
+          placeholder={t('common.search')}
           data-testid="patient-search"
-          aria-label="Search patients"
+          aria-label={t('common.searchPatients')}
         />
       </div>
 
       <div className="col-body" data-testid="patient-list">
         <Link to="/patients/new" className="list-item project-row new-patient-item" data-testid="new-patient">
           <PlusIcon className="icon icon-sm new-patient-icon" />
-          <div className="name">New</div>
+          <div className="name">{t('patients.newShort')}</div>
         </Link>
         <PatientList
           patients={patients}
@@ -143,16 +151,18 @@ export function PatientsColumn({
         />
       </div>
 
-      <MissionControl onOpenSettings={onOpenSettings} onUnavailable={onUnavailable} />
+      <MissionControl t={t} onOpenSettings={onOpenSettings} onUnavailable={onUnavailable} />
     </div>
   );
 }
 
 /** "Mission control", where Settings, Language and Get help live. */
 function MissionControl({
+  t,
   onOpenSettings,
   onUnavailable,
 }: {
+  t: Translate;
   onOpenSettings: () => void;
   onUnavailable: (what: string) => void;
 }): React.JSX.Element {
@@ -195,7 +205,7 @@ function MissionControl({
         }}
       >
         <GearIcon className="icon icon-sm" />
-        <span>Mission control</span>
+        <span>{t('patients.missionControl')}</span>
       </button>
       {open && (
         <div className="patient-menu mission-menu" role="menu">
@@ -207,7 +217,7 @@ function MissionControl({
             onClick={choose(onOpenSettings)}
           >
             <GearIcon className="icon icon-sm" />
-            Settings
+            {t('common.settings')}
           </button>
           <button
             type="button"
@@ -215,11 +225,11 @@ function MissionControl({
             className="patient-menu-item"
             data-testid="mission-language"
             onClick={choose(() => {
-              onUnavailable('Language');
+              onUnavailable(t('nav.language'));
             })}
           >
             <GlobeIcon className="icon icon-sm" />
-            Language
+            {t('nav.language')}
           </button>
           <button
             type="button"
@@ -227,11 +237,11 @@ function MissionControl({
             className="patient-menu-item"
             data-testid="mission-help"
             onClick={choose(() => {
-              onUnavailable('Get help');
+              onUnavailable(t('nav.help'));
             })}
           >
             <HelpIcon className="icon icon-sm" />
-            Get help
+            {t('nav.help')}
           </button>
         </div>
       )}
@@ -273,6 +283,7 @@ function PatientList({
   onReorderPins,
   onOpenAll,
 }: PatientListProps): React.JSX.Element {
+  const { t } = useI18n();
   const [renaming, setRenaming] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
@@ -281,14 +292,14 @@ function PatientList({
   // at the column's edge instead of opening over the page beside it.
   const [tip, setTip] = useState<{ id: string; rect: DOMRect } | null>(null);
 
-  if (patients.status === 'loading') return <p className="small state-note">Loading patients…</p>;
+  if (patients.status === 'loading') return <p className="small state-note">{t('patients.loading')}</p>;
 
   if (patients.status === 'error') {
     return (
       <p className="small state-note error-state">
         {patients.message}{' '}
         <button type="button" className="btn small btn-quick" onClick={onRetry}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       </p>
     );
@@ -301,9 +312,9 @@ function PatientList({
     if (needle.length > 0) {
       return (
         <div className="empty-column-state">
-          <p className="small col-hint">No patients match “{query.trim()}”.</p>
+          <p className="small col-hint">{t('directory.noMatch', { query: query.trim() })}</p>
           <button type="button" className="btn btn-compact btn-quick" onClick={onClearSearch}>
-            Clear search
+            {t('directory.clearSearch')}
           </button>
         </div>
       );
@@ -311,15 +322,15 @@ function PatientList({
     if (patients.data.length === 0) {
       return (
         <div className="empty-column-state">
-          <p className="small col-hint">Add your first patient to get started.</p>
+          <p className="small col-hint">{t('patients.emptyStart')}</p>
           <Link to="/patients/new" className="btn btn-primary btn-compact">
             <PlusIcon className="icon icon-sm" />
-            Add your first patient
+            {t('patients.addFirst')}
           </Link>
         </div>
       );
     }
-    return <p className="small col-hint">No active patients.</p>;
+    return <p className="small col-hint">{t('directory.emptyActive')}</p>;
   }
 
   // Searching is a deliberate act, so it shows everyone it matched; the daily
@@ -454,7 +465,7 @@ function PatientList({
 
       {ordered.length > 0 && (
         <button type="button" className="view-all-row" data-testid="view-all-patients" onClick={onOpenAll}>
-          View all
+          {t('patients.viewAll')}
         </button>
       )}
 
@@ -477,7 +488,7 @@ function PatientList({
           >
             <div className="project-tip-name">{tipPatient.name}</div>
             <div className="project-tip-meta">
-              <span className="project-tip-count">{noteCountLabel(tipPatient.note_count)}</span>
+              <span className="project-tip-count">{t('notes.count', { count: tipPatient.note_count })}</span>
               <span className="project-tip-date">{formatShortDate(recency.get(tipPatient.id) ?? null)}</span>
             </div>
           </div>,

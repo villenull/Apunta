@@ -1,7 +1,7 @@
 import type { PlanGoal, PlanObjective } from '@apunta/shared';
 import { useState } from 'react';
 
-import { formatNoteDate, formatPlanDate } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import { CheckIcon, CloseIcon, PencilIcon, TrashIcon } from './icons.js';
 
 /**
@@ -40,6 +40,12 @@ export interface PlanGoalCardProps {
   onOpenNote: (noteId: string) => void;
 }
 
+/**
+ * The em dash a blank field reads as, `PlanGoalCard.tsx:43`.
+ *
+ * A separator, not a string: it renders as it is in every language, so it is
+ * not a catalogue key and never a parameter either (Fixed decision 2).
+ */
 const BLANK = '—';
 
 export function PlanGoalCard({
@@ -50,6 +56,7 @@ export function PlanGoalCard({
   onDelete,
   onOpenNote,
 }: PlanGoalCardProps): React.JSX.Element {
+  const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const proposed = goal.status === 'proposed';
 
@@ -75,7 +82,7 @@ export function PlanGoalCard({
     >
       <header className="plan-goal-header">
         <div>
-          {proposed && <span className="badge badge-proposed">Suggested — not in the plan yet</span>}
+          {proposed && <span className="badge badge-proposed">{t('plan.suggestedBadge')}</span>}
           {!proposed && goal.status !== 'accepted' && <span className="badge">{goal.status}</span>}
           <p className="plan-goal-statement">{goal.statement}</p>
         </div>
@@ -92,7 +99,7 @@ export function PlanGoalCard({
                 }}
               >
                 <CheckIcon className="icon icon-xs" />
-                Accept
+                {t('plan.accept')}
               </button>
             )}
             <button
@@ -105,7 +112,7 @@ export function PlanGoalCard({
               }}
             >
               <PencilIcon className="icon icon-xs" />
-              Edit
+              {t('common.edit')}
             </button>
             {!proposed && goal.status === 'accepted' && (
               <>
@@ -117,7 +124,7 @@ export function PlanGoalCard({
                     onUpdate(goal, { status: 'met' });
                   }}
                 >
-                  Met
+                  {t('plan.met')}
                 </button>
                 <button
                   type="button"
@@ -127,15 +134,15 @@ export function PlanGoalCard({
                     onUpdate(goal, { status: 'discontinued' });
                   }}
                 >
-                  Discontinue
+                  {t('plan.discontinue')}
                 </button>
               </>
             )}
             <button
               type="button"
               className="btn small btn-compact-icon"
-              title={proposed ? 'Discard this suggestion' : 'Delete this goal'}
-              aria-label={proposed ? 'Discard this suggestion' : 'Delete this goal'}
+              title={proposed ? t('plan.discardSuggestion') : t('plan.deleteGoal')}
+              aria-label={proposed ? t('plan.discardSuggestion') : t('plan.deleteGoal')}
               data-testid="discard-goal"
               disabled={busy}
               onClick={() => {
@@ -148,32 +155,47 @@ export function PlanGoalCard({
         )}
       </header>
 
-      {goal.carried_from_goal_id !== null && (
-        <p className="small note-meta">Carried forward from the previous version.</p>
-      )}
+      {goal.carried_from_goal_id !== null && <p className="small note-meta">{t('plan.carriedForward')}</p>}
 
       <dl className="plan-objectives">
-        {goal.objectives.length === 0 && <p className="small note-meta">No objectives yet.</p>}
+        {goal.objectives.length === 0 && <p className="small note-meta">{t('plan.noObjectives')}</p>}
         {goal.objectives.map((objective, index) => (
           <div className="plan-objective" key={`${goal.id}-${String(index)}`}>
             <p>{objective.statement}</p>
+            {/*
+              One key for the whole meta line, in the two forms the screen
+              already branches on: the stored `measure`, `baseline` and
+              `target_value` are data, and the target date reaches `t()` as a
+              `YYYY-MM-DD` under `dateOnly` rather than as the `en-US` string
+              `formatPlanDate` prints (Fixed decision 3).
+            */}
             <p className="small note-meta">
-              Measure: {objective.measure.trim() === '' ? BLANK : objective.measure} · Baseline:{' '}
-              {objective.baseline.trim() === '' ? BLANK : objective.baseline} · Target:{' '}
-              {objective.target_value.trim() === '' ? BLANK : objective.target_value} · By:{' '}
-              {objective.target_date === null ? BLANK : formatPlanDate(objective.target_date)}
+              {objective.target_date === null
+                ? t('plan.objectiveMeta', {
+                    measure: objective.measure.trim() === '' ? BLANK : objective.measure,
+                    baseline: objective.baseline.trim() === '' ? BLANK : objective.baseline,
+                    target: objective.target_value.trim() === '' ? BLANK : objective.target_value,
+                  })
+                : t('plan.objectiveMetaDated', {
+                    measure: objective.measure.trim() === '' ? BLANK : objective.measure,
+                    baseline: objective.baseline.trim() === '' ? BLANK : objective.baseline,
+                    target: objective.target_value.trim() === '' ? BLANK : objective.target_value,
+                    day: objective.target_date,
+                  })}
             </p>
           </div>
         ))}
       </dl>
 
       {goal.interventions.length > 0 && (
-        <p className="small plan-interventions">Interventions: {goal.interventions.join('; ')}</p>
+        <p className="small plan-interventions">
+          {t('plan.interventions', { list: goal.interventions.join('; ') })}
+        </p>
       )}
 
       {goal.evidence.length > 0 && (
         <div className="plan-evidence" data-testid="goal-evidence">
-          <p className="small note-meta">Drafted from your notes:</p>
+          <p className="small note-meta">{t('plan.draftedFrom')}</p>
           {goal.evidence.map((evidence, index) => (
             <blockquote key={`${goal.id}-evidence-${String(index)}`}>
               <span>“{evidence.excerpt}”</span>
@@ -185,8 +207,8 @@ export function PlanGoalCard({
                   onOpenNote(evidence.note_id);
                 }}
               >
-                {formatNoteDate(evidence.note_date)}
-                {evidence.section === null ? '' : ` · ${evidence.section}`}
+                {noteDay(t, evidence.note_date)}
+                {evidence.section === null ? '' : t('plan.evidenceSection', { section: evidence.section })}
               </button>
             </blockquote>
           ))}
@@ -194,6 +216,26 @@ export function PlanGoalCard({
       )}
     </article>
   );
+}
+
+/**
+ * The date an evidence quotation came from, through the catalogue.
+ *
+ * `formatNoteDate` returned a whole English sentence — `Today` or `en-US`'s
+ * `Aug 8, 2026` — so the component asks the catalogue for one of two keys and
+ * hands `t()` the ISO timestamp, which it formats in the active locale
+ * (Fixed decision 3). `web/src/lib/format.ts` stays the oracle and keeps the
+ * helper; S2.3's `NoteView.tsx` carries the same two-key shape.
+ */
+function noteDay(t: Translate, iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const today =
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  return today ? t('notes.today') : t('notes.date', { day: iso });
 }
 
 interface GoalEditorProps {
@@ -207,6 +249,7 @@ interface GoalEditorProps {
  * server. Accepting a suggestion she has edited saves both in one PATCH.
  */
 function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Element {
+  const { t } = useI18n();
   const [statement, setStatement] = useState(goal.statement);
   const [objectives, setObjectives] = useState<PlanObjective[]>(goal.objectives);
   const [interventions, setInterventions] = useState(goal.interventions.join('\n'));
@@ -221,7 +264,7 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
   return (
     <article className="plan-goal is-editing" data-testid="goal-editor">
       <label className="label" htmlFor={`goal-${goal.id}-statement`}>
-        Goal
+        {t('plan.goalLabel')}
       </label>
       <textarea
         id={`goal-${goal.id}-statement`}
@@ -235,10 +278,10 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
 
       {objectives.map((objective, index) => (
         <fieldset className="plan-objective-editor" key={`${goal.id}-edit-${String(index)}`}>
-          <legend className="small note-meta">Objective {index + 1}</legend>
+          <legend className="small note-meta">{t('plan.objectiveLabel', { n: String(index + 1) })}</legend>
           <textarea
             className="plan-input"
-            aria-label={`Objective ${String(index + 1)}`}
+            aria-label={t('plan.objectiveLabel', { n: String(index + 1) })}
             rows={2}
             value={objective.statement}
             onChange={(event) => {
@@ -248,8 +291,8 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
           <div className="plan-objective-fields">
             <input
               className="plan-input"
-              aria-label={`Objective ${String(index + 1)} measure`}
-              placeholder="Measure"
+              aria-label={t('plan.objectiveMeasureLabel', { n: String(index + 1) })}
+              placeholder={t('plan.measure')}
               value={objective.measure}
               onChange={(event) => {
                 patchObjective(index, { measure: event.target.value });
@@ -257,8 +300,8 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
             />
             <input
               className="plan-input"
-              aria-label={`Objective ${String(index + 1)} baseline`}
-              placeholder="Baseline"
+              aria-label={t('plan.objectiveBaselineLabel', { n: String(index + 1) })}
+              placeholder={t('plan.baseline')}
               value={objective.baseline}
               onChange={(event) => {
                 patchObjective(index, { baseline: event.target.value });
@@ -266,8 +309,8 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
             />
             <input
               className="plan-input"
-              aria-label={`Objective ${String(index + 1)} target`}
-              placeholder="Target"
+              aria-label={t('plan.objectiveTargetLabel', { n: String(index + 1) })}
+              placeholder={t('plan.target')}
               value={objective.target_value}
               onChange={(event) => {
                 patchObjective(index, { target_value: event.target.value });
@@ -276,7 +319,7 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
             <input
               className="plan-input"
               type="date"
-              aria-label={`Objective ${String(index + 1)} target date`}
+              aria-label={t('plan.objectiveTargetDateLabel', { n: String(index + 1) })}
               value={objective.target_date ?? ''}
               onChange={(event) => {
                 patchObjective(index, { target_date: event.target.value === '' ? null : event.target.value });
@@ -303,11 +346,11 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
           ]);
         }}
       >
-        Add objective
+        {t('plan.addObjective')}
       </button>
 
       <label className="label" htmlFor={`goal-${goal.id}-interventions`}>
-        Interventions, one per line
+        {t('plan.interventionsLabel')}
       </label>
       <textarea
         id={`goal-${goal.id}-interventions`}
@@ -320,7 +363,7 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
       />
 
       <label className="label" htmlFor={`goal-${goal.id}-target`}>
-        Goal target date
+        {t('plan.goalTargetDate')}
       </label>
       <input
         id={`goal-${goal.id}-target`}
@@ -354,11 +397,11 @@ function GoalEditor({ goal, onCancel, onSave }: GoalEditorProps): React.JSX.Elem
           }}
         >
           <CheckIcon className="icon icon-xs" />
-          {goal.status === 'proposed' ? 'Save and accept' : 'Save'}
+          {goal.status === 'proposed' ? t('plan.saveAndAccept') : t('common.save')}
         </button>
         <button type="button" className="btn small btn-compact" onClick={onCancel}>
           <CloseIcon className="icon icon-xs" />
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
     </article>

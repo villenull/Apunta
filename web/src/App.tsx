@@ -5,7 +5,7 @@ import { SettingsProvider, useSettingsContext } from './components/SettingsProvi
 import { SpellingProvider } from './components/SpellingProvider.js';
 
 import { applyAppearance } from './lib/appearance.js';
-import { I18nProvider } from './lib/i18n.js';
+import { I18nProvider, useI18n } from './lib/i18n.js';
 
 import { AddPatient } from './routes/AddPatient.js';
 import { Capture } from './routes/Capture.js';
@@ -37,9 +37,10 @@ const Setup = lazy(async () => ({ default: (await import('./routes/Setup.js')).S
  * `I18nProvider` sits inside `SettingsProvider` and above the router, which is
  * the only place it can be: it reads the `language` setting through the
  * settings provider's own state, and every screen under it reads its strings
- * through the `t()` it provides. Mounted with no string of its own here —
- * `App.tsx`'s own literals (the primary-window blocker, the loading note) are
- * S2.4's and are not in this card's path list.
+ * through the `t()` it provides. S2.3 mounted it with no string of its own;
+ * S2.4 then moved this file's own literals — the loading note and the whole
+ * primary-window blocker — onto the catalogues, which is why `AppRoutes` and
+ * `PrimaryBlocker` both sit under the provider and can call `useI18n()`.
  */
 export function App(): React.JSX.Element {
   return (
@@ -54,6 +55,7 @@ export function App(): React.JSX.Element {
 }
 
 function AppRoutes(): React.JSX.Element {
+  const { t } = useI18n();
   const location = useLocation();
   const { state } = useSettingsContext();
   const primary = usePrimaryWindow();
@@ -98,7 +100,7 @@ function AppRoutes(): React.JSX.Element {
         className="route-transition"
         tabIndex={-1}
       >
-        <Suspense fallback={<p className="state-note">Loading…</p>}>
+        <Suspense fallback={<p className="state-note">{t('common.loading')}</p>}>
           <Routes>
             <Route path="/" element={<Workspace />} />
             {/*
@@ -492,6 +494,7 @@ function PrimaryBlocker({
   onCancel,
   onDecline,
 }: PrimaryBlockerProps): React.JSX.Element | null {
+  const { t } = useI18n();
   const dialogRef = useRef<HTMLDivElement>(null);
   const primaryActionRef = useRef<HTMLButtonElement>(null);
 
@@ -545,56 +548,46 @@ function PrimaryBlocker({
         {phase === 'acquiring' ? (
           <>
             <h2 id="primary-blocker-title" className="heading-tight">
-              Opening Apunta…
+              {t('app.primary.opening')}
             </h2>
             <div className="small note-meta modal-body">
-              <p>Checking which window is the primary one.</p>
+              <p>{t('app.primary.checking')}</p>
             </div>
           </>
         ) : phase === 'unsupported' ? (
           <>
             <h2 id="primary-blocker-title" className="heading-tight">
-              This browser can’t keep one editing window
+              {t('app.primary.unsupportedTitle')}
             </h2>
             <div className="small note-meta modal-body">
-              <p>
-                Apunta needs the Web Locks API to make sure only one window edits at a time, and this browser
-                doesn’t have it. This window stays blocked with no edit access — open Apunta in Chromium or
-                Safari to continue.
-              </p>
+              <p>{t('app.primary.unsupportedBody')}</p>
             </div>
           </>
         ) : pending ? (
           <>
             <h2 id="primary-blocker-title" className="heading-tight">
-              Taking over…
+              {t('app.primary.takingOver')}
             </h2>
             <div className="small note-meta modal-body">
-              <p>
-                The other window is saving its pending edits and stepping down. This window unlocks as soon as
-                it does.
-              </p>
+              <p>{t('app.primary.takingOverBody')}</p>
             </div>
             <div className="modal-actions">
               <button type="button" ref={primaryActionRef} className="btn" onClick={onCancel}>
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </>
         ) : (
           <>
             <h2 id="primary-blocker-title" className="heading-tight">
-              Apunta is open in another window
+              {t('app.primary.blockedTitle')}
             </h2>
             <div className="small note-meta modal-body">
-              <p>
-                Only one window can edit at a time, so this window is blocked. Should this window become
-                primary? The other window saves its work and becomes blocked instead.
-              </p>
+              <p>{t('app.primary.blockedBody')}</p>
             </div>
             <div className="modal-actions">
               <button type="button" className="btn" data-testid="primary-decline" onClick={onDecline}>
-                Not now
+                {t('app.primary.decline')}
               </button>
               <button
                 type="button"
@@ -603,7 +596,7 @@ function PrimaryBlocker({
                 data-testid="primary-takeover"
                 onClick={onBegin}
               >
-                Make this the primary window
+                {t('app.primary.takeover')}
               </button>
             </div>
           </>

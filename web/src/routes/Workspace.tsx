@@ -29,6 +29,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { usePatientRecency } from '../hooks/usePatientRecency.js';
 import { usePinnedPatients } from '../hooks/usePinnedPatients.js';
+import { useI18n } from '../lib/i18n.js';
 import { orderPatients } from '../lib/patientOrder.js';
 import { readSidebarCollapsed, writeSidebarCollapsed } from '../lib/patientPins.js';
 
@@ -55,6 +56,7 @@ const NO_PATIENTS: PatientListItem[] = [];
  * ("/?patient=…&note=…") and a reload keeps the user where she were.
  */
 export function Workspace(): React.JSX.Element {
+  const { t } = useI18n();
   const [params, setParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -83,7 +85,7 @@ export function Workspace(): React.JSX.Element {
 
   // No patient name in the tab title: it is read over a shoulder, shown in the
   // window switcher, and written into browser history.
-  useDocumentTitle('Patients');
+  useDocumentTitle(t('doc.patients'));
 
   const loadPatients = useCallback(
     (signal: AbortSignal) => listPatients(signal, includeArchived),
@@ -298,9 +300,15 @@ export function Workspace(): React.JSX.Element {
 
   // One place for the controls this preview has not built, so a row that says
   // so says the same thing wherever it is pressed from.
-  const onUnavailable = useCallback((what: string) => {
-    setPreviewNote(`${what} isn't part of this preview yet.`);
-  }, []);
+  const onUnavailable = useCallback(
+    (what: string) => {
+      // `what` arrives already localised: `PatientsColumn` and
+      // `PatientDirectory` pass `t(…)`, so the toast names the control in the
+      // same language as the button that was pressed.
+      setPreviewNote(t('preview.unavailable', { what }));
+    },
+    [t],
+  );
 
   const serverUnavailable = [patients.state, formats.state, notes.state].some(
     (state) => state.status === 'error' && state.message === NETWORK_ERROR_MESSAGE,
@@ -309,10 +317,10 @@ export function Workspace(): React.JSX.Element {
   if (serverUnavailable) {
     return (
       <div className="empty-state" data-testid="server-unavailable" role="alert">
-        <h1>Apunta can’t reach its server</h1>
-        <p>Start Apunta again, then try this page again.</p>
+        <h1>{t('workspace.serverUnreachable')}</h1>
+        <p>{t('workspace.serverUnreachableBody')}</p>
         <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       </div>
     );
@@ -363,7 +371,7 @@ export function Workspace(): React.JSX.Element {
           <button
             type="button"
             className="icon-btn sidebar-reopen"
-            aria-label="Show patients"
+            aria-label={t('patients.showColumn')}
             data-testid="sidebar-reopen"
             onClick={toggleSidebar}
           >
@@ -396,7 +404,7 @@ export function Workspace(): React.JSX.Element {
               }}
             >
               <BackIcon className="icon icon-xs" />
-              <span>Notes</span>
+              <span>{t('notes.title')}</span>
             </button>
           )}
           {/* Formats are loaded to decide the first-run redirect; if that call
@@ -487,20 +495,15 @@ export function Workspace(): React.JSX.Element {
 
       {pendingDelete !== null && (
         <ConfirmDialog
-          title={`Delete ${pendingDelete.name}?`}
-          confirmLabel={`Delete ${pendingDelete.name}`}
+          title={t('workspace.deleteTitle', { name: pendingDelete.name })}
+          confirmLabel={t('workspace.deleteConfirm', { name: pendingDelete.name })}
           body={
             <>
+              <p>{t('workspace.deleteBodyFirst', { name: pendingDelete.name })}</p>
+              <p>{t('workspace.deleteBodySecond')}</p>
               <p>
-                This removes {pendingDelete.name}, every note for them, the transcripts of those notes, and
-                the refine and brainstorm conversations. It cannot be undone here.
-              </p>
-              <p>
-                It also cannot reach copies that already exist elsewhere: a backup you have written, a Time
-                Machine copy, or the records system you pasted the finished notes into.
-              </p>
-              <p>
-                If you only want them out of the list, <strong>Archive</strong> does that and deletes nothing.
+                {t('workspace.deleteBodyThirdLead')} <strong>{t('common.archive')}</strong>{' '}
+                {t('workspace.deleteBodyThirdTail')}
               </p>
             </>
           }
@@ -526,9 +529,10 @@ export function Workspace(): React.JSX.Element {
  * row that opened it) and the workspace stays mounted underneath.
  */
 function SettingsModal({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <Dialog
-      title="Settings"
+      title={t('common.settings')}
       onClose={onClose}
       showTitle={false}
       className="modal card settings-modal"
@@ -547,15 +551,18 @@ function NoNoteSelected({
   patient: PatientListItem;
   emptyNotes: boolean;
 }): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="empty-state" data-testid="empty-no-note">
       <DocumentIcon />
       <p className="empty-message">
-        {emptyNotes ? `No notes yet for ${patient.name}.` : `No note selected for ${patient.name}`}
+        {emptyNotes
+          ? t('notes.emptyFor', { name: patient.name })
+          : t('workspace.noNoteSelected', { name: patient.name })}
       </p>
       <Link to={`/capture/${patient.id}`} className="btn btn-primary">
         <PlusIcon className="icon icon-sm" />
-        {emptyNotes ? 'Create first note' : 'Create new note'}
+        {emptyNotes ? t('notes.createFirst') : t('notes.createNew')}
       </Link>
     </div>
   );

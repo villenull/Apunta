@@ -59,7 +59,7 @@ import ts from 'typescript';
  * the bare invocation then exits 1 with the report, while `--report` keeps
  * printing and exiting 0.
  */
-const REPORT_ONLY = true;
+const REPORT_ONLY = false;
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ALLOWLIST_PATH = join(repoRoot, 'scripts', 'check-ui-strings.allow.json');

@@ -6,6 +6,7 @@ import { createStandardFormat, detectFormat, errorMessage } from '../api/index.j
 import { DocumentIcon, ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { useI18n } from '../lib/i18n.js';
 import { duplicateSection, parseSections } from '../lib/sections.js';
 import { asFormatDraft, type FormatDraft } from './formatDraft.js';
 
@@ -22,7 +23,8 @@ type Choice = 'standard' | 'template' | 'examples' | 'manual';
  * the only path that cannot fail, so every failure message points back at it.
  */
 export function OnboardingFormat(): React.JSX.Element {
-  useDocumentTitle('Note format');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.noteFormat'));
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = asFormatDraft(location.state)?.returnTo ?? '/patients/new';
@@ -48,15 +50,15 @@ export function OnboardingFormat(): React.JSX.Element {
     const duplicate = duplicateSection(sections);
 
     if (trimmedName.length === 0) {
-      setError('Give the format a name.');
+      setError(t('format.errorName'));
       return;
     }
     if (sections.length === 0) {
-      setError('List at least one section.');
+      setError(t('format.errorSections'));
       return;
     }
     if (duplicate !== null) {
-      setError(`"${duplicate}" is listed twice — section names have to be unique.`);
+      setError(t('format.errorDuplicate', { section: duplicate }));
       return;
     }
 
@@ -102,25 +104,27 @@ export function OnboardingFormat(): React.JSX.Element {
     (choice === 'examples' && files.length >= 2);
 
   return (
-    <Screen {...(returnTo === '/settings' ? { back: { to: '/settings', label: 'Settings' } } : {})}>
+    <Screen {...(returnTo === '/settings' ? { back: { to: '/settings', label: t('common.settings') } } : {})}>
       <div className="progress">
         <div className="dot done" />
         <div className="dot" />
       </div>
 
-      <h2 className="heading-tight">Add your note format</h2>
-      <p className="muted lede">Choose how to define it — we&apos;ll figure out the structure for you.</p>
+      <h2 className="heading-tight">{t('format.addTitle')}</h2>
+      <p className="muted lede">{t('format.addLede')}</p>
 
-      <div className="stack" role="radiogroup" aria-label="Note format choices">
+      <div className="stack" role="radiogroup" aria-label={t('format.choicesLabel')}>
         <Option
           selected={choice === 'standard'}
           onSelect={() => {
             choose('standard');
           }}
           icon={<DocumentIcon />}
-          title="My standard progress note"
-          badge="Recommended"
-          subtitle={`${STANDARD_PROGRESS_FORMAT.sections.join(', ')}, with my drafting instructions`}
+          title={t('format.standardTitle')}
+          badge={t('format.recommended')}
+          subtitle={t('format.standardSubtitle', {
+            sections: STANDARD_PROGRESS_FORMAT.sections.join(', '),
+          })}
           testId="option-standard"
         />
         <Option
@@ -129,8 +133,8 @@ export function OnboardingFormat(): React.JSX.Element {
             choose('template');
           }}
           icon={<TemplateIcon />}
-          title="Upload a blank template"
-          subtitle="A Word doc or PDF with empty sections"
+          title={t('format.templateTitle')}
+          subtitle={t('format.templateSubtitle')}
         />
         <Option
           selected={choice === 'examples'}
@@ -138,8 +142,8 @@ export function OnboardingFormat(): React.JSX.Element {
             choose('examples');
           }}
           icon={<ExamplesIcon />}
-          title="Upload a few example notes"
-          subtitle="2-3 completed notes to learn the pattern from"
+          title={t('format.examplesTitle')}
+          subtitle={t('format.examplesSubtitle')}
         />
         <Option
           selected={choice === 'manual'}
@@ -147,8 +151,8 @@ export function OnboardingFormat(): React.JSX.Element {
             choose('manual');
           }}
           icon={<PencilIcon />}
-          title="Describe it myself"
-          subtitle="Type out the sections you need"
+          title={t('format.manualTitle')}
+          subtitle={t('format.manualSubtitle')}
         />
       </div>
 
@@ -156,7 +160,7 @@ export function OnboardingFormat(): React.JSX.Element {
         <Dropzone
           testId="area-template"
           inputId="file-template"
-          hint="Drop a .docx or .pdf template here"
+          hint={t('format.dropTemplate')}
           multiple={false}
           files={files}
           onFiles={setFiles}
@@ -167,7 +171,7 @@ export function OnboardingFormat(): React.JSX.Element {
         <Dropzone
           testId="area-examples"
           inputId="file-examples"
-          hint="Drop 2-3 completed notes here"
+          hint={t('format.dropExamples')}
           multiple
           files={files}
           onFiles={setFiles}
@@ -178,12 +182,12 @@ export function OnboardingFormat(): React.JSX.Element {
         <div className="onboarding-area" data-testid="area-manual">
           <div className="field">
             <label className="label" htmlFor="format-name">
-              Format name
+              {t('format.nameLabel')}
             </label>
             <input
               id="format-name"
               type="text"
-              placeholder="e.g. Progress note"
+              placeholder={t('format.namePlaceholder')}
               value={name}
               onChange={(event) => {
                 setName(event.target.value);
@@ -193,11 +197,11 @@ export function OnboardingFormat(): React.JSX.Element {
           </div>
           <div className="field field-last">
             <label className="label" htmlFor="format-sections">
-              Sections
+              {t('format.sectionsLabel')}
             </label>
             <textarea
               id="format-sections"
-              placeholder="e.g. Subjective, Objective, Assessment, Plan"
+              placeholder={t('format.sectionsPlaceholder')}
               value={sectionsText}
               onChange={(event) => {
                 setSectionsText(event.target.value);
@@ -217,7 +221,7 @@ export function OnboardingFormat(): React.JSX.Element {
               choose('manual');
             }}
           >
-            Describe it myself
+            {t('format.manualTitle')}
           </button>
         </p>
       )}
@@ -233,12 +237,12 @@ export function OnboardingFormat(): React.JSX.Element {
           else if (choice === 'template' || choice === 'examples') void handleUpload(choice);
         }}
       >
-        {busy ? (choice === 'standard' ? 'Saving…' : 'Reading your file…') : 'Continue'}
+        {busy ? (choice === 'standard' ? t('common.saving') : t('format.readingFile')) : t('common.continue')}
       </button>
 
       {busy && choice !== 'standard' && (
         <p className="small state-note" role="status">
-          Reading the file and working out its sections. Nothing is saved until you say it looks right.
+          {t('format.readingNote')}
         </p>
       )}
 
@@ -251,9 +255,9 @@ export function OnboardingFormat(): React.JSX.Element {
         Settings; this is the door to it.
       */}
       <p className="small note-meta onboarding-restore">
-        Already have an Apunta backup, or a settings file someone prepared for you?{' '}
+        {t('format.restoreLead')}{' '}
         <Link to="/settings" data-testid="onboarding-restore">
-          Restore it instead
+          {t('format.restoreLink')}
         </Link>
         .
       </p>
@@ -329,6 +333,7 @@ function Dropzone({
   onFiles,
   disabled,
 }: DropzoneProps): React.JSX.Element {
+  const { t } = useI18n();
   const [over, setOver] = useState(false);
 
   function accept(list: FileList | null): void {
@@ -356,7 +361,7 @@ function Dropzone({
       >
         <UploadIcon />
         <p className="small">{hint}</p>
-        <p className="small later-milestone">or click to choose a file</p>
+        <p className="small later-milestone">{t('format.dropClick')}</p>
         <input
           id={inputId}
           type="file"
@@ -380,11 +385,7 @@ function Dropzone({
           ))}
         </ul>
       )}
-      {multiple && files.length === 1 && (
-        <p className="small later-milestone">
-          Add one or two more — Apunta works out the sections from what the notes have in common.
-        </p>
-      )}
+      {multiple && files.length === 1 && <p className="small later-milestone">{t('format.dropMore')}</p>}
     </div>
   );
 }

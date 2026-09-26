@@ -1,4 +1,4 @@
-import type { ClaudeImportReport } from '@apunta/shared';
+import { t, type ClaudeImportReport } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -106,6 +106,48 @@ describe('the import screen', () => {
     expect(rows[1]).toContain('name guessed from the chat title — check');
     expect(screen.getByTestId('import-unmatched').textContent).toContain('Ana Torres');
     expect(screen.getByTestId('import-run').textContent).toBe('Import 5 notes');
+  });
+
+  /**
+   * S2.4: the summary is one key with three already-rendered count phrases and
+   * the conditional ambiguity clause, so this pins the whole line to the
+   * catalogue's English rather than to fragments of it. The counts are
+   * `count.*` keys in their own right, so the singular/plural form is `Intl`'s
+   * to pick in each locale.
+   */
+  it('builds the summary from the catalogue, counts and all', async () => {
+    installFakeApi({}, { importReport: REPORT });
+    renderImport();
+    await chooseAndCheck();
+
+    expect(screen.getByTestId('import-summary').textContent).toBe(
+      t('import.summaryLine', {
+        toCreate: t('count.patient', { count: 2 }),
+        notes: t('count.note', { count: 5 }),
+        patients: t('count.patient', { count: 2 }),
+        skipped: t('count.conversation', { count: 2 }),
+        ambiguous: t('import.summaryAmbiguous', { count: 1 }),
+      }),
+    );
+    expect(t('count.patient', { count: 1 }, 'en')).toBe('1 patient');
+    expect(t('count.patient', { count: 1 }, 'es-MX')).toBe('1 paciente');
+    expect(screen.getByTestId('import-run').textContent).toBe(
+      t('import.runLabel', { notes: t('count.note', { count: 5 }) }),
+    );
+  });
+
+  /**
+   * `Mac` is a keep-as-is token inside a translatable sentence, so it appears
+   * verbatim in both catalogue values and never in the allowlist.
+   */
+  it('keeps Mac verbatim in the export help, and the file name with it', () => {
+    const english = t('import.exportHelp', {}, 'en');
+    expect(english).toContain('conversations.json');
+    expect(english).toContain('read on this Mac and kept nowhere');
+    const spanish = t('import.exportHelp', {}, 'es-MX');
+    expect(spanish).toContain('conversations.json');
+    expect(spanish).toContain('esta Mac');
+    expect(spanish).not.toBe(english);
   });
 
   it('leaves out a patient she unticks, and sends the settings she chose', async () => {

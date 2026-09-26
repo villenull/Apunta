@@ -1,7 +1,7 @@
 import type { ClientParticipation, Diagnosis, TreatmentPlan, UpdatePlanRequest } from '@apunta/shared';
 import { useState } from 'react';
 
-import { formatPlanDate } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import { TrashIcon } from './icons.js';
 
 /**
@@ -20,14 +20,25 @@ export interface PlanDetailsProps {
   onSave: (patch: UpdatePlanRequest) => void;
 }
 
-const PARTICIPATION_LABELS: Record<ClientParticipation, string> = {
-  not_recorded: 'Not recorded',
-  reviewed_with_client: 'Reviewed with client',
-  declined: 'Client declined to sign',
-  signed_elsewhere: 'Signed copy in my records system',
-};
+/**
+ * The four participation states, by the stored enum.
+ *
+ * The value is data and is never translated (Fixed decision 4): each state is
+ * a key of its own, and `common.notRecorded` is the one both the read-only view
+ * and the default option already used.
+ */
+function participationLabels(t: Translate): Record<ClientParticipation, string> {
+  return {
+    not_recorded: t('common.notRecorded'),
+    reviewed_with_client: t('plan.participationReviewed'),
+    declined: t('plan.participationDeclined'),
+    signed_elsewhere: t('plan.participationSignedElsewhere'),
+  };
+}
 
 export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps): React.JSX.Element {
+  const { t } = useI18n();
+  const labels = participationLabels(t);
   const [diagnoses, setDiagnoses] = useState<Diagnosis[]>(plan.diagnoses);
   const [presenting, setPresenting] = useState(plan.presenting_problem);
   const [strengths, setStrengths] = useState(plan.strengths);
@@ -42,18 +53,23 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
   if (readOnly) {
     return (
       <section className="plan-details" data-testid="plan-details">
-        <Read label="Diagnoses" value={diagnoses.map(describe).join('; ')} />
-        <Read label="Presenting problem" value={plan.presenting_problem} />
-        <Read label="Strengths" value={plan.strengths} />
-        <Read label="Service modality" value={plan.modality} />
-        <Read label="Service frequency" value={plan.frequency} />
-        <Read label="Discharge criteria" value={plan.discharge_criteria} />
-        <Read label="Review interval" value={`Every ${String(plan.review_interval_days)} days`} />
+        <Read label={t('plan.diagnoses')} value={diagnoses.map(describe).join('; ')} />
+        <Read label={t('plan.presentingProblem')} value={plan.presenting_problem} />
+        <Read label={t('plan.strengths')} value={plan.strengths} />
+        <Read label={t('plan.modality')} value={plan.modality} />
+        <Read label={t('plan.frequency')} value={plan.frequency} />
+        <Read label={t('plan.dischargeCriteria')} value={plan.discharge_criteria} />
         <Read
-          label="Client participation"
+          label={t('plan.reviewInterval')}
+          value={t('plan.everyDays', { days: String(plan.review_interval_days) })}
+        />
+        <Read
+          label={t('plan.clientParticipation')}
           value={[
-            PARTICIPATION_LABELS[plan.client_participation],
-            plan.client_participation_on === null ? '' : formatPlanDate(plan.client_participation_on),
+            labels[plan.client_participation],
+            plan.client_participation_on === null
+              ? ''
+              : t('notes.date', { day: plan.client_participation_on }),
             plan.client_participation_note,
           ]
             .filter((part) => part !== '')
@@ -65,18 +81,14 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
 
   return (
     <section className="plan-details" data-testid="plan-details">
-      <p className="label">Diagnoses</p>
-      {diagnoses.length === 0 && (
-        <p className="small note-meta">
-          None recorded. Goals are expected to trace to a diagnosis, and it is yours to enter.
-        </p>
-      )}
+      <p className="label">{t('plan.diagnoses')}</p>
+      {diagnoses.length === 0 && <p className="small note-meta">{t('plan.diagnosesNone')}</p>}
       {diagnoses.map((diagnosis, index) => (
         <div className="plan-diagnosis" key={`diagnosis-${String(index)}`}>
           <input
             className="plan-input"
-            aria-label={`Diagnosis ${String(index + 1)} code`}
-            placeholder="Code"
+            aria-label={t('plan.diagnosisCodeLabel', { n: String(index + 1) })}
+            placeholder={t('plan.diagnosisCode')}
             value={diagnosis.code}
             onChange={(event) => {
               patch(index, { code: event.target.value });
@@ -84,7 +96,7 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
           />
           <select
             className="plan-input"
-            aria-label={`Diagnosis ${String(index + 1)} system`}
+            aria-label={t('plan.diagnosisSystemLabel', { n: String(index + 1) })}
             value={diagnosis.system}
             onChange={(event) => {
               patch(index, { system: event.target.value as Diagnosis['system'] });
@@ -95,8 +107,8 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
           </select>
           <input
             className="plan-input"
-            aria-label={`Diagnosis ${String(index + 1)} description`}
-            placeholder="Description"
+            aria-label={t('plan.diagnosisDescriptionLabel', { n: String(index + 1) })}
+            placeholder={t('plan.diagnosisDescription')}
             value={diagnosis.description}
             onChange={(event) => {
               patch(index, { description: event.target.value });
@@ -110,12 +122,12 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
                 patch(index, { primary: event.target.checked });
               }}
             />{' '}
-            Primary
+            {t('plan.diagnosisPrimary')}
           </label>
           <button
             type="button"
             className="btn small btn-compact-icon"
-            aria-label={`Remove diagnosis ${String(index + 1)}`}
+            aria-label={t('plan.removeDiagnosis', { n: String(index + 1) })}
             onClick={() => {
               setDiagnoses((current) => current.filter((_, position) => position !== index));
             }}
@@ -135,18 +147,18 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
           ]);
         }}
       >
-        Add diagnosis
+        {t('plan.addDiagnosis')}
       </button>
 
-      <Field label="Presenting problem" value={presenting} onChange={setPresenting} multiline />
-      <Field label="Strengths" value={strengths} onChange={setStrengths} multiline />
-      <Field label="Service modality" value={modality} onChange={setModality} />
-      <Field label="Service frequency" value={frequency} onChange={setFrequency} />
-      <Field label="Discharge criteria" value={discharge} onChange={setDischarge} multiline />
-      <Field label="Review interval (days)" value={interval} onChange={setInterval} />
+      <Field label={t('plan.presentingProblem')} value={presenting} onChange={setPresenting} multiline />
+      <Field label={t('plan.strengths')} value={strengths} onChange={setStrengths} multiline />
+      <Field label={t('plan.modality')} value={modality} onChange={setModality} />
+      <Field label={t('plan.frequency')} value={frequency} onChange={setFrequency} />
+      <Field label={t('plan.dischargeCriteria')} value={discharge} onChange={setDischarge} multiline />
+      <Field label={t('plan.reviewIntervalDays')} value={interval} onChange={setInterval} />
 
       <label className="label" htmlFor="plan-participation">
-        Client participation
+        {t('plan.clientParticipation')}
       </label>
       <select
         id="plan-participation"
@@ -156,7 +168,7 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
           setParticipation(event.target.value as ClientParticipation);
         }}
       >
-        {Object.entries(PARTICIPATION_LABELS).map(([value, label]) => (
+        {Object.entries(labels).map(([value, label]) => (
           <option key={value} value={value}>
             {label}
           </option>
@@ -166,7 +178,7 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
         <input
           className="plan-input"
           type="date"
-          aria-label="Client participation date"
+          aria-label={t('plan.participationDate')}
           value={participationOn}
           onChange={(event) => {
             setParticipationOn(event.target.value);
@@ -174,8 +186,8 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
         />
         <input
           className="plan-input"
-          aria-label="Client participation note"
-          placeholder="Reason, if it could not be signed"
+          aria-label={t('plan.participationNote')}
+          placeholder={t('plan.participationNotePlaceholder')}
           value={participationNote}
           onChange={(event) => {
             setParticipationNote(event.target.value);
@@ -204,7 +216,7 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
           });
         }}
       >
-        Save plan details
+        {t('plan.saveDetails')}
       </button>
     </section>
   );
@@ -216,6 +228,7 @@ export function PlanDetails({ plan, readOnly, busy, onSave }: PlanDetailsProps):
   }
 }
 
+/** The stored code, its system and the description she typed — all data. */
 function describe(diagnosis: Diagnosis): string {
   const system = diagnosis.system === 'icd-10-cm' ? 'ICD-10-CM' : 'DSM-5-TR';
   return [diagnosis.code, `(${system})`, diagnosis.description]
@@ -224,11 +237,12 @@ function describe(diagnosis: Diagnosis): string {
 }
 
 function Read({ label, value }: { label: string; value: string }): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="plan-read-field">
       <p className="label">{label}</p>
       <p className={value.trim() === '' ? 'small note-meta' : ''}>
-        {value.trim() === '' ? 'Not recorded' : value}
+        {value.trim() === '' ? t('common.notRecorded') : value}
       </p>
     </div>
   );

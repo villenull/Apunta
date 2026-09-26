@@ -20,6 +20,7 @@ import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLiveRecording } from '../hooks/useLiveRecording.js';
+import { useI18n } from '../lib/i18n.js';
 import { formatTimer } from '../lib/recorder.js';
 
 /**
@@ -66,7 +67,8 @@ interface CaptureScreenProps {
 }
 
 function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.Element {
-  useDocumentTitle('New note');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.newNote'));
   const { patientId = '' } = useParams();
   const navigate = useNavigate();
 
@@ -227,7 +229,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
     setBusy(true);
     setError(null);
     setDraft({});
-    setStatus(recorded === null ? 'Thinking…' : 'Transcribing…');
+    setStatus(recorded === null ? t('common.thinkingBusy') : t('dictation.transcribingBusy'));
     latest.current = { ...latest.current, busy: true };
 
     const controller = new AbortController();
@@ -268,7 +270,10 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
     }
   }
 
-  const heading = patient.state.status === 'ready' ? `New note for ${patient.state.data.name}` : 'New note';
+  const heading =
+    patient.state.status === 'ready'
+      ? t('capture.newNoteFor', { name: patient.state.data.name })
+      : t('capture.newNote');
   const sections = format?.sections ?? [];
   const drafting = busy && Object.keys(draft).length > 0;
   const canProcess = wav !== null || text.trim().length > 0;
@@ -278,26 +283,26 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
   // (seen live 2026-09-04, a full dictation lost to a stale tab).
   if (patient.state.status === 'error') {
     return (
-      <Screen back={{ to: '/', label: 'Patients' }}>
+      <Screen back={{ to: '/', label: t('common.patients') }}>
         <h2 className="heading-tight capture-heading" data-testid="capture-heading">
-          New note
+          {t('capture.newNote')}
         </h2>
         <p className="form-error" role="alert" data-testid="capture-missing-patient">
-          {patient.state.message} This patient may have been deleted, so nothing recorded here could be saved.{' '}
-          <Link to="/">Back to patients</Link>
+          {patient.state.message} {t('capture.missingPatient')}{' '}
+          <Link to="/">{t('capture.backToPatients')}</Link>
         </p>
       </Screen>
     );
   }
 
   return (
-    <Screen back={{ to: `/?patient=${patientId}`, label: 'Patients' }}>
+    <Screen back={{ to: `/?patient=${patientId}`, label: t('common.patients') }}>
       <h2 className="heading-tight capture-heading" data-testid="capture-heading">
         {heading}
       </h2>
       <div className="field field-narrow lede">
         <label className="label" htmlFor="note-format">
-          Note format
+          {t('capture.formatLabel')}
         </label>
         <select
           id="note-format"
@@ -307,7 +312,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
             setChosenFormatId(event.target.value);
           }}
         >
-          {formats.state.status === 'loading' && <option value="">Loading…</option>}
+          {formats.state.status === 'loading' && <option value="">{t('common.loading')}</option>}
           {available.map((candidate) => (
             <option key={candidate.id} value={candidate.id}>
               {candidate.name}
@@ -320,21 +325,22 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
         <p className="form-error" role="alert">
           {formats.state.message}{' '}
           <button type="button" className="btn small btn-quick" onClick={formats.reload}>
-            Try again
+            {t('common.tryAgain')}
           </button>
         </p>
       )}
 
       {formats.state.status === 'ready' && available.length === 0 ? (
         <p className="muted">
-          No note formats yet. <Link to="/onboarding/format">Add one first</Link> — a note needs a structure
-          to follow.
+          {t('capture.noFormats')} <Link to="/onboarding/format">{t('capture.addOneFirst')}</Link>{' '}
+          {t('capture.noFormatsTail')}
         </p>
       ) : (
         <>
+          {/* Split by the `<strong>` the screen needs, so two keys rather than
+              one with the emphasis deleted; the English reads as it did. */}
           <p className="capture-source" data-testid="capture-source">
-            <strong>Start with a recording</strong> — or type notes instead. You can use either, or combine
-            both before you create the draft.
+            <strong>{t('capture.sourceRecording')}</strong> {t('capture.sourceTail')}
           </p>
 
           <div className="stack">
@@ -344,7 +350,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                 seconds={seconds}
                 previewCommitted={live.committedPreview}
                 previewTentative={live.tentativePreview}
-                previewNote="Everything so far, roughly. The note is written from the finished recording."
+                previewNote={t('dictation.previewNoteCapture')}
               >
                 <button
                   type="button"
@@ -354,21 +360,21 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                     void stopRecording();
                   }}
                 >
-                  Stop and create draft
+                  {t('capture.stopAndDraft')}
                 </button>
               </LiveRecording>
             ) : recording === 'starting' ? (
               <div className="record-ui capture-stage" data-testid="record-stage">
                 <p className="capture-stage-status" role="status">
-                  Opening microphone…
+                  {t('capture.openingMicrophone')}
                 </p>
-                <p className="small muted">Allow microphone access to begin your private recording.</p>
+                <p className="small muted">{t('capture.allowMicrophone')}</p>
               </div>
             ) : busy ? (
               <div className="capture-stage draft-progress" data-testid="draft-progress">
                 <p className="capture-stage-status draft-status" role="status" data-testid="draft-status">
-                  <span data-testid="draft-status-label">{status ?? 'Preparing your draft…'}</span>{' '}
-                  <ThinkingDots ariaLabel={status ?? 'Preparing your draft'} />
+                  <span data-testid="draft-status-label">{status ?? t('capture.preparingDraft')}</span>{' '}
+                  <ThinkingDots ariaLabel={status ?? t('capture.preparingDraftShort')} />
                 </p>
                 {drafting && (
                   <div className="draft-preview capture-stage-preview" data-testid="draft-preview">
@@ -383,11 +389,13 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
             ) : wav !== null ? (
               <div className="record-ui capture-stage" data-testid="record-done">
                 <p className="capture-stage-status" role="status">
-                  Recording ready
+                  {t('capture.recordingReady')}
                 </p>
-                <p className="muted record-label">
-                  {formatTimer(seconds)} recorded. Nothing has left this Mac.
-                </p>
+                {/* `Mac` is a keep-as-is token inside a translatable sentence, so
+                    it is written out verbatim in both catalogue values, never
+                    allowlisted and never split off into a key (Fixed
+                    decision 2). */}
+                <p className="muted record-label">{t('capture.recorded', { timer: formatTimer(seconds) })}</p>
                 <div className="row gap-12 record-actions">
                   <button
                     type="button"
@@ -397,7 +405,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                       void process();
                     }}
                   >
-                    Create draft from recording
+                    {t('capture.draftFromRecording')}
                   </button>
                   <button
                     type="button"
@@ -405,7 +413,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                     data-testid="record-discard"
                     onClick={discardRecording}
                   >
-                    Discard recording
+                    {t('capture.discardRecording')}
                   </button>
                 </div>
               </div>
@@ -420,10 +428,8 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
               >
                 <MicIcon />
                 <div className="capture-source-copy">
-                  <div className="opt-title">Record audio</div>
-                  <div className="opt-sub">
-                    Start here — narrate your notes; add typed notes before or while recording
-                  </div>
+                  <div className="opt-title">{t('capture.recordAudio')}</div>
+                  <div className="opt-sub">{t('capture.recordAudioHelp')}</div>
                 </div>
               </button>
             ) : null}
@@ -432,15 +438,15 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
               <div className="row gap-12 capture-typed-head">
                 <KeyboardIcon />
                 <div className="capture-source-copy">
-                  <div className="opt-title">Type notes</div>
-                  <div className="opt-sub">Type notes before or while recording, or use typing alone</div>
+                  <div className="opt-title">{t('capture.typeNotes')}</div>
+                  <div className="opt-sub">{t('capture.typeNotesHelp')}</div>
                 </div>
               </div>
               <SpellLayer
                 as="textarea"
                 className="capture-editor"
-                placeholder="Type your session summary..."
-                aria-label="Session summary"
+                placeholder={t('capture.summaryPlaceholder')}
+                aria-label={t('capture.summaryLabel')}
                 data-testid="summary-input"
                 value={text}
                 readOnly={busy}
@@ -473,22 +479,22 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                 void process();
               }}
             >
-              Create draft
+              {t('capture.createDraft')}
             </button>
           )}
         </>
       )}
       {blocker.state === 'blocked' && (
         <ConfirmDialog
-          title="Leave this unfinished note?"
-          cancelLabel="Stay"
-          confirmLabel="Discard and leave"
+          title={t('capture.leaveTitle')}
+          cancelLabel={t('capture.stay')}
+          confirmLabel={t('capture.discardAndLeave')}
           onCancel={stayOnCapture}
           onConfirm={confirmLeave}
           body={
             <>
-              <p>Your typed notes, recording, or draft in progress will be discarded if you leave.</p>
-              <p>Stay to keep working, or discard this unfinished capture and continue.</p>
+              <p>{t('capture.leaveBodyFirst')}</p>
+              <p>{t('capture.leaveBodySecond')}</p>
             </>
           }
         />

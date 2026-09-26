@@ -1,3 +1,4 @@
+import { t } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -113,6 +114,29 @@ describe('PrepView', () => {
 
     expect((await screen.findByTestId('prep-empty')).textContent).toContain('no notes for this patient');
     expect((await screen.findByTestId('prep-lookback')).textContent).toContain('Read no notes');
+  });
+
+  /**
+   * S2.4 Fixed decision 5: the review-due line is a sentence JSX split around
+   * an interpolation, so the literal checker cannot see it, and the date it
+   * composes is the one the app must never hand a catalogue pre-formatted. The
+   * rendered line is therefore the catalogue's own English, with the day passed
+   * raw and formatted by `t()`.
+   */
+  it("says the review is due in the catalogue's words, with the day formatted by t()", async () => {
+    const patient = makePatient('John Smith', { note_count: 1 });
+    const plan = makePlan(patient.id, { review_due: '2026-11-21' });
+    installFakeApi({ patients: [patient], notes: [makeNote(patient.id)], plans: [plan] });
+
+    render(<PrepView patient={patient} onOpenNote={() => {}} />);
+
+    expect((await screen.findByTestId('prep-plan')).textContent).toContain(
+      t('prep.reviewDue', { day: '2026-11-21' }),
+    );
+    // …and the date is the locale's, not the `en-US` string `formatPlanDate`
+    // used to compose into this line.
+    expect(t('prep.reviewDue', { day: '2026-11-21' }, 'en')).toBe('Review due Nov 21, 2026.');
+    expect(t('prep.reviewDue', { day: '2026-11-21' }, 'es-MX')).toBe('Revisión pendiente el 21 nov 2026.');
   });
 
   it('reports a failure inside the stream without losing the screen', async () => {

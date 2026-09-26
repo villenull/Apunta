@@ -5,10 +5,12 @@ import { createPatient, errorMessage } from '../api/index.js';
 import { SpellLayer } from '../components/SpellLayer.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { useI18n } from '../lib/i18n.js';
 
 /** `prototype/add-patient.html` — name plus an optional internal reference. */
 export function AddPatient(): React.JSX.Element {
-  useDocumentTitle('New patient');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.newPatient'));
   const navigate = useNavigate();
   // The home search's "New" option hands over what she typed.
   const [params] = useSearchParams();
@@ -37,9 +39,9 @@ export function AddPatient(): React.JSX.Element {
   }
 
   return (
-    <Screen back={{ to: '/', label: 'Back' }}>
-      <h2 className="heading-tight">Add patient</h2>
-      <p className="muted lede">Just enough to organize her notes.</p>
+    <Screen back={{ to: '/', label: t('common.back') }}>
+      <h2 className="heading-tight">{t('patients.add')}</h2>
+      <p className="muted lede">{t('patients.addLede')}</p>
 
       <form
         onSubmit={(event) => {
@@ -49,13 +51,13 @@ export function AddPatient(): React.JSX.Element {
         <div className="card">
           <div className="field">
             <label className="label" htmlFor="patient-name">
-              Name
+              {t('common.name')}
             </label>
             <SpellLayer
               as="input"
               id="patient-name"
               type="text"
-              placeholder="e.g. John Smith"
+              placeholder={t('patients.namePlaceholder')}
               value={name}
               onChange={(value) => {
                 setName(value);
@@ -65,12 +67,12 @@ export function AddPatient(): React.JSX.Element {
           </div>
           <div className="field field-last">
             <label className="label" htmlFor="patient-identifier">
-              Identifier (optional)
+              {t('patients.identifierLabel')}
             </label>
             <input
               id="patient-identifier"
               type="text"
-              placeholder="Internal reference, chart number, etc."
+              placeholder={t('patients.identifierPlaceholder')}
               value={identifier}
               onChange={(event) => {
                 setIdentifier(event.target.value);
@@ -90,7 +92,7 @@ export function AddPatient(): React.JSX.Element {
           className="btn btn-primary btn-block form-actions"
           disabled={busy || name.trim().length === 0}
         >
-          {busy ? 'Adding…' : 'Add patient'}
+          {busy ? t('common.adding') : t('patients.add')}
         </button>
       </form>
     </Screen>

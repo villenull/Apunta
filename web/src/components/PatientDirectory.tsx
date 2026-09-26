@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
 import { formatShortDate } from '../lib/format.js';
+import { useI18n } from '../lib/i18n.js';
 import { PinIcon, SearchIcon } from './icons.js';
 import { PatientMenu } from './PatientMenu.js';
 import { PatientRenameForm } from './PatientRenameForm.js';
@@ -22,7 +23,12 @@ export interface PatientDirectoryProps {
   /** patientId → when their last note was edited. */
   lastNoteAt: ReadonlyMap<string, string | null>;
   pinnedIds: readonly string[];
-  /** Multi-select is not in this preview; the button says so rather than lying. */
+  /**
+   * Multi-select is not in this preview; the button says so rather than lying.
+   *
+   * `what` is the control's own label, already in the active locale, so the
+   * workspace's toast names it in the same language.
+   */
   onUnavailable: (what: string) => void;
 }
 
@@ -50,6 +56,7 @@ export function PatientDirectory({
   pinnedIds,
   onUnavailable,
 }: PatientDirectoryProps): React.JSX.Element {
+  const { t } = useI18n();
   const [renaming, setRenaming] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -77,8 +84,8 @@ export function PatientDirectory({
         ref={searchRef}
         type="text"
         value={query}
-        placeholder="Search"
-        aria-label="Search patients"
+        placeholder={t('common.search')}
+        aria-label={t('common.searchPatients')}
         data-testid="directory-search-input"
         onChange={(event) => {
           setQuery(event.target.value);
@@ -96,13 +103,13 @@ export function PatientDirectory({
     <div className="directory" data-testid="patient-directory">
       <div className="directory-head">
         <div className="directory-head-top">
-          <h1 className="directory-title">Patients</h1>
+          <h1 className="directory-title">{t('common.patients')}</h1>
           <div className="directory-actions">
             {searching && search}
             <button
               type="button"
               className="icon-btn directory-action-btn"
-              aria-label={searching ? 'Hide search' : 'Search patients'}
+              aria-label={searching ? t('directory.clearSearch') : t('common.searchPatients')}
               aria-expanded={searching}
               data-testid="directory-search-toggle"
               onClick={() => {
@@ -119,17 +126,17 @@ export function PatientDirectory({
               className="directory-select-btn"
               data-testid="directory-select"
               onClick={() => {
-                onUnavailable('Select');
+                onUnavailable(t('directory.select'));
               }}
             >
-              Select
+              {t('directory.select')}
             </button>
             <Link to="/patients/new" className="btn directory-new" data-testid="directory-new">
-              New patient
+              {t('patients.new')}
             </Link>
           </div>
         </div>
-        <div className="directory-tabs" role="tablist" aria-label="Patients">
+        <div className="directory-tabs" role="tablist" aria-label={t('common.patients')}>
           <button
             type="button"
             role="tab"
@@ -140,7 +147,7 @@ export function PatientDirectory({
               onTab('active');
             }}
           >
-            Active
+            {t('patients.tabActive')}
           </button>
           <button
             type="button"
@@ -152,25 +159,27 @@ export function PatientDirectory({
               onTab('archived');
             }}
           >
-            Archived
+            {t('patients.tabArchived')}
           </button>
         </div>
       </div>
 
-      {status === 'loading' && <p className="small state-note">Loading patients…</p>}
+      {status === 'loading' && <p className="small state-note">{t('patients.loading')}</p>}
       {status === 'error' && (
         <p className="small state-note error-state" role="alert">
           {failure}{' '}
           <button type="button" className="btn small btn-quick" onClick={onRetry}>
-            Try again
+            {t('common.tryAgain')}
           </button>
         </p>
       )}
       {status === 'ready' && patients.length === 0 && (
-        <p className="small col-hint">{archived ? 'No archived patients.' : 'No active patients.'}</p>
+        <p className="small col-hint">
+          {archived ? t('directory.emptyArchived') : t('directory.emptyActive')}
+        </p>
       )}
       {status === 'ready' && patients.length > 0 && visible.length === 0 && (
-        <p className="small col-hint">No patients match “{query.trim()}”.</p>
+        <p className="small col-hint">{t('directory.noMatch', { query: query.trim() })}</p>
       )}
 
       <ul className="directory-list">

@@ -41,6 +41,7 @@ import {
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import type { FormatDraft } from './formatDraft.js';
 
 /**
@@ -64,19 +65,35 @@ import type { FormatDraft } from './formatDraft.js';
  * five in the same order one after another, which is the same thing without the
  * nav — so the two cannot drift.
  */
-const SECTIONS = [
-  { id: 'appearance', label: 'Appearance', icon: <SunIcon className="icon icon-sm" /> },
-  { id: 'format', label: 'Format', icon: <DocumentIcon className="icon icon-sm" /> },
-  { id: 'backup', label: 'Backup', icon: <DatabaseIcon className="icon icon-sm" /> },
-  { id: 'import', label: 'Import', icon: <DownloadIcon className="icon icon-sm" /> },
-  { id: 'advanced', label: 'Advanced', icon: <SlidersIcon className="icon icon-sm" /> },
-] as const;
+/**
+ * The five sections, in Apunta's order and in the shape the owner's reference
+ * gives them (owner, 2026-09-26, after Claude's settings): a tab per section
+ * down the left of the modal, that one section on the right, each tab with the
+ * icon Claude puts beside it. The standalone `/settings` screen shows the same
+ * five in the same order one after another, which is the same thing without the
+ * nav — so the two cannot drift.
+ *
+ * The labels are catalogue keys rather than the English they used to be, which
+ * the literal checker could not see: `label` is a `PropertyAssignment`, and
+ * `VISIBLE_PROPERTIES` (`check-ui-strings.mjs:77`) is the four visible
+ * attributes only. The icon is a node, so it stays with the label.
+ */
+function sections(t: Translate) {
+  return [
+    { id: 'appearance', label: t('settings.appearance'), icon: <SunIcon className="icon icon-sm" /> },
+    { id: 'format', label: t('settings.format'), icon: <DocumentIcon className="icon icon-sm" /> },
+    { id: 'backup', label: t('settings.backup'), icon: <DatabaseIcon className="icon icon-sm" /> },
+    { id: 'import', label: t('settings.import'), icon: <DownloadIcon className="icon icon-sm" /> },
+    { id: 'advanced', label: t('settings.advanced'), icon: <SlidersIcon className="icon icon-sm" /> },
+  ] as const;
+}
 
-type SectionId = (typeof SECTIONS)[number]['id'];
+type SectionId = ReturnType<typeof sections>[number]['id'];
 
 export function Settings(): React.JSX.Element {
+  const { t } = useI18n();
   return (
-    <Screen back={{ to: '/', label: 'Patients' }}>
+    <Screen back={{ to: '/', label: t('common.patients') }}>
       <SettingsPanel />
     </Screen>
   );
@@ -126,10 +143,11 @@ type SettingsStore = ReturnType<typeof useSettingsStore>;
  * in order, as one scrolling column.
  */
 export function SettingsPanel(): React.JSX.Element {
-  useDocumentTitle('Settings');
+  const { t } = useI18n();
+  useDocumentTitle(t('doc.settings'));
   const store = useSettingsStore();
 
-  return <SettingsSections store={store} show={SECTIONS.map((item) => item.id)} />;
+  return <SettingsSections store={store} show={sections(t).map((item) => item.id)} />;
 }
 
 /**
@@ -140,13 +158,14 @@ export function SettingsPanel(): React.JSX.Element {
  * two of five rows is worse than no search box.
  */
 export function SettingsModalPanel({ onClose }: { onClose: () => void }): React.JSX.Element {
+  const { t } = useI18n();
   const store = useSettingsStore();
 
   return (
     <div className="settings-shell">
-      <nav className="settings-nav" aria-label="Settings sections">
-        <h2 className="settings-nav-title">Settings</h2>
-        {SECTIONS.map((item) => (
+      <nav className="settings-nav" aria-label={t('settings.sectionsLabel')}>
+        <h2 className="settings-nav-title">{t('doc.settings')}</h2>
+        {sections(t).map((item) => (
           <button
             key={item.id}
             type="button"
@@ -164,7 +183,7 @@ export function SettingsModalPanel({ onClose }: { onClose: () => void }): React.
       </nav>
       <div className="settings-pane">
         <div className="settings-pane-bar">
-          <button type="button" className="icon-btn" aria-label="Close settings" onClick={onClose}>
+          <button type="button" className="icon-btn" aria-label={t('settings.closeLabel')} onClick={onClose}>
             <CloseIcon className="icon icon-sm" />
           </button>
         </div>
@@ -184,6 +203,7 @@ function SettingsSections({
   store: SettingsStore;
   show: readonly SectionId[];
 }): React.JSX.Element {
+  const { t } = useI18n();
   return (
     <div className="settings">
       {show.includes('appearance') && (
@@ -194,13 +214,15 @@ function SettingsSections({
       )}
       {show.includes('format') && (
         <section className="card settings-card" data-testid="format-list">
-          <h2 className="settings-title">Note formats</h2>
-          {store.formats.state.status === 'loading' && <p className="small state-note">Loading…</p>}
+          <h2 className="settings-title">{t('settings.formats')}</h2>
+          {store.formats.state.status === 'loading' && (
+            <p className="small state-note">{t('common.loading')}</p>
+          )}
           {store.formats.state.status === 'error' && (
             <p className="small state-note error-state" role="alert">
               {store.formats.state.message}{' '}
               <button type="button" className="btn small btn-quick" onClick={store.formats.reload}>
-                Try again
+                {t('common.tryAgain')}
               </button>
             </p>
           )}
@@ -225,7 +247,7 @@ function SettingsSections({
                     } satisfies FormatDraft
                   }
                 >
-                  Edit
+                  {t('common.edit')}
                 </Link>
               </div>
             ))}
@@ -238,7 +260,7 @@ function SettingsSections({
               data-testid="add-format"
             >
               <PlusIcon className="icon icon-sm" />
-              Add another format
+              {t('settings.addFormat')}
             </Link>
           )}
         </section>
@@ -254,11 +276,11 @@ function SettingsSections({
       {show.includes('import') && (
         <section className="card settings-card">
           <Link to="/import" className="settings-link-row" data-testid="settings-import">
-            <span className="settings-link-label">Import from Claude</span>
+            <span className="settings-link-label">{t('settings.importClaude')}</span>
             <span aria-hidden="true">›</span>
           </Link>
           <Link to="/import/halaxy" className="settings-link-row" data-testid="settings-import-halaxy">
-            <span className="settings-link-label">Import from Halaxy</span>
+            <span className="settings-link-label">{t('settings.importHalaxy')}</span>
             <span aria-hidden="true">›</span>
           </Link>
         </section>
@@ -272,16 +294,16 @@ function SettingsSections({
             store.setAdvancedOpen(event.currentTarget.open);
           }}
         >
-          <summary className="settings-title">Advanced</summary>
+          <summary className="settings-title">{t('settings.advanced')}</summary>
           <div id="backup-archives">
             <BackupAdvanced backup={store.backup} />
           </div>
           <div className="settings-group">
-            <h3 className="settings-subtitle">App</h3>
+            <h3 className="settings-subtitle">{t('settings.app')}</h3>
             <nav className="settings-links">
-              <Link to="/setup">Setup</Link>
-              <Link to="/about">About</Link>
-              <Link to="/licenses">Licences</Link>
+              <Link to="/setup">{t('common.setup')}</Link>
+              <Link to="/about">{t('settings.about')}</Link>
+              <Link to="/licenses">{t('doc.licences')}</Link>
             </nav>
           </div>
         </details>
@@ -290,17 +312,19 @@ function SettingsSections({
   );
 }
 function LlmProfileSettings(): React.JSX.Element | null {
+  const { t } = useI18n();
   const settings = useSettingsContext();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (settings.state.status === 'loading') return <p className="small state-note">Loading AI settings…</p>;
+  if (settings.state.status === 'loading')
+    return <p className="small state-note">{t('settings.loadingAi')}</p>;
   if (settings.state.status === 'error') {
     return (
       <p className="small state-note error-state" role="alert">
         {settings.state.message}{' '}
         <button type="button" className="btn small btn-quick" onClick={settings.reload}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       </p>
     );
@@ -341,8 +365,8 @@ function LlmProfileSettings(): React.JSX.Element | null {
 
   return (
     <section className="card settings-card" data-testid="llm-profile-settings">
-      <h2 className="settings-title">Drafting model</h2>
-      <div className="settings-profile-options" role="radiogroup" aria-label="Drafting model">
+      <h2 className="settings-title">{t('settings.draftingModel')}</h2>
+      <div className="settings-profile-options" role="radiogroup" aria-label={t('settings.draftingModel')}>
         {offered.map((profile, index) => (
           <button
             key={profile}
@@ -371,14 +395,16 @@ function LlmProfileSettings(): React.JSX.Element | null {
               });
             }}
           >
-            <span className="settings-profile-name">{profile === 'quick' ? 'Quick' : 'Thorough'}</span>
+            <span className="settings-profile-name">
+              {profile === 'quick' ? t('settings.quick') : t('settings.thorough')}
+            </span>
             <span className="small settings-profile-help">
-              {profile === 'quick' ? 'Faster drafts.' : 'Slower, more careful drafts.'}
+              {profile === 'quick' ? t('settings.quickHelp') : t('settings.thoroughHelp')}
             </span>
           </button>
         ))}
       </div>
-      {saved && <p className="small state-note">Saved.</p>}
+      {saved && <p className="small state-note">{t('settings.savedDot')}</p>}
       {error !== null && (
         <p className="form-error" role="alert">
           {error}
@@ -399,17 +425,18 @@ function LlmProfileSettings(): React.JSX.Element | null {
  * painted from (C-SETTINGS@1).
  */
 function AppearanceSettings(): React.JSX.Element {
+  const { t } = useI18n();
   const settings = useSettingsContext();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (settings.state.status === 'loading') return <p className="small state-note">Loading settings…</p>;
+  if (settings.state.status === 'loading') return <p className="small state-note">{t('settings.loading')}</p>;
   if (settings.state.status === 'error') {
     return (
       <p className="small state-note error-state" role="alert">
         {settings.state.message}{' '}
         <button type="button" className="btn small btn-quick" onClick={settings.reload}>
-          Try again
+          {t('common.tryAgain')}
         </button>
       </p>
     );
@@ -436,17 +463,17 @@ function AppearanceSettings(): React.JSX.Element {
   return (
     <section className="card settings-card" data-testid="appearance-settings">
       <div className="settings-card-header">
-        <h2 className="settings-title">Appearance</h2>
+        <h2 className="settings-title">{t('settings.appearance')}</h2>
         {saved && (
           <span className="settings-saved" data-testid="appearance-saved">
-            Saved
+            {t('note.saveSaved')}
           </span>
         )}
       </div>
 
       <div className="settings-row">
         <label className="settings-label" htmlFor="accent-color">
-          Colour
+          {t('settings.colour')}
         </label>
         <span className="settings-row-actions">
           <input
@@ -469,14 +496,14 @@ function AppearanceSettings(): React.JSX.Element {
               save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
             }}
           >
-            Reset
+            {t('settings.reset')}
           </button>
         </span>
       </div>
 
       <div className="settings-row">
         <span className="settings-label" id="theme-label">
-          Theme
+          {t('settings.theme')}
         </span>
         <ThemeSwitcher
           value={shownTheme}
@@ -489,7 +516,7 @@ function AppearanceSettings(): React.JSX.Element {
 
       <div className="settings-row">
         <span className="settings-label" id="font-size-label">
-          Font size
+          {t('settings.fontSize')}
         </span>
         <span
           className="settings-row-actions size-options"
@@ -522,7 +549,7 @@ function AppearanceSettings(): React.JSX.Element {
                 });
               }}
             >
-              {FONT_SIZE_LABELS[size]}
+              {fontSizeLabels(t)[size]}
             </button>
           ))}
         </span>
@@ -530,7 +557,7 @@ function AppearanceSettings(): React.JSX.Element {
 
       <div className="settings-row">
         <label className="settings-label" htmlFor="animations-toggle">
-          Animations
+          {t('settings.animations')}
         </label>
         <input
           id="animations-toggle"
@@ -556,18 +583,28 @@ function AppearanceSettings(): React.JSX.Element {
   );
 }
 
-const FONT_SIZE_LABELS: Readonly<Record<FontSize, string>> = {
-  small: 'Small',
-  default: 'Default',
-  large: 'Large',
-  'extra-large': 'Extra large',
-};
+/**
+ * The four text sizes and the three themes, by the stored value.
+ *
+ * Both were module-level records of English. The stored value is data and is
+ * never translated (Fixed decision 4), so each is a key of its own.
+ */
+function fontSizeLabels(t: Translate): Readonly<Record<FontSize, string>> {
+  return {
+    small: t('settings.sizeSmall'),
+    default: t('settings.sizeDefault'),
+    large: t('settings.sizeLarge'),
+    'extra-large': t('settings.sizeExtraLarge'),
+  };
+}
 
-const THEME_LABELS: Readonly<Record<Theme, string>> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-};
+function themeLabels(t: Translate): Readonly<Record<Theme, string>> {
+  return {
+    system: t('settings.themeSystem'),
+    light: t('settings.themeLight'),
+    dark: t('settings.themeDark'),
+  };
+}
 
 /** One glyph per theme, in the order `THEMES` gives: monitor, sun, moon. */
 const THEME_ICONS: Readonly<Record<Theme, React.JSX.Element>> = {
@@ -591,6 +628,8 @@ function ThemeSwitcher({
   value: Theme;
   onChoose: (theme: Theme) => void;
 }): React.JSX.Element {
+  const { t } = useI18n();
+  const labels = themeLabels(t);
   return (
     <span className="theme-switch" role="radiogroup" aria-labelledby="theme-label">
       {THEMES.map((option, index) => (
@@ -599,8 +638,8 @@ function ThemeSwitcher({
           type="button"
           role="radio"
           aria-checked={value === option}
-          aria-label={THEME_LABELS[option]}
-          title={THEME_LABELS[option]}
+          aria-label={labels[option]}
+          title={labels[option]}
           tabIndex={value === option ? 0 : -1}
           className={value === option ? 'theme-switch-btn is-selected' : 'theme-switch-btn'}
           data-testid={`theme-${option}`}

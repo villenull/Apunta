@@ -6,6 +6,7 @@ import { useChatStream, type ChatStreamHandlers } from '../hooks/useChatStream.j
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { firstName } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import { Markdown } from '../lib/markdown.js';
 import { ChatComposer } from './ChatComposer.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
@@ -16,6 +17,7 @@ export interface BrainstormViewProps {
 
 /** Brainstorm is a thinking aid, never a record. */
 export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Element {
+  const { t } = useI18n();
   const patientId = patient.id;
   const loadThread = useCallback((signal: AbortSignal) => listBrainstorm(patientId, signal), [patientId]);
   const thread = useLoader(loadThread);
@@ -126,7 +128,7 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
       <header className="note-editor-header row between">
         <div>
           <p className="small note-meta">{patient.name}</p>
-          <h2>Brainstorm</h2>
+          <h2>{t('brainstorm.title')}</h2>
         </div>
         <button
           type="button"
@@ -135,13 +137,13 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
           disabled={sending}
           onClick={() => setConfirmingNew(true)}
         >
-          New conversation
+          {t('brainstorm.new')}
         </button>
       </header>
 
       {context !== null && (
         <details className="brainstorm-context" data-testid="brainstorm-context">
-          <summary className="small note-meta">{contextSummary(context)}</summary>
+          <summary className="small note-meta">{contextSummary(t, context)}</summary>
           {context.notes.length > 0 && (
             <ul className="brainstorm-context-notes">
               {context.notes.map((note) => (
@@ -163,19 +165,18 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
           stickRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 40;
         }}
       >
-        {thread.state.status === 'loading' && <p className="small state-note">Loading…</p>}
+        {thread.state.status === 'loading' && <p className="small state-note">{t('common.loading')}</p>}
         {thread.state.status === 'error' && (
           <p className="small state-note error-state" role="alert">
             {thread.state.message}{' '}
             <button type="button" className="btn small btn-quick" onClick={reloadThread}>
-              Try again
+              {t('common.tryAgain')}
             </button>
           </p>
         )}
         {thread.state.status === 'ready' && messages.length === 0 && !sending && (
           <p className="small state-note" data-testid="brainstorm-empty">
-            Think out loud about {firstName(patient.name)} — this conversation is never written into their
-            notes.
+            {t('brainstorm.empty', { name: firstName(patient.name) })}
           </p>
         )}
         {messages.map((message) =>
@@ -189,7 +190,9 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
         )}
         {streaming !== null && (
           <div className="chat-msg ai" data-testid="brainstorm-streaming">
-            <div className="chat-bubble">{streaming === '' ? (status ?? 'Thinking…') : streaming}</div>
+            <div className="chat-bubble">
+              {streaming === '' ? (status ?? t('common.thinkingBusy')) : streaming}
+            </div>
           </div>
         )}
       </div>
@@ -208,22 +211,17 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
         onStop={stop}
         dictation={dictation}
         sending={sending}
-        placeholder="Think out loud…"
-        ariaLabel="Brainstorm message"
+        placeholder={t('brainstorm.placeholder')}
+        ariaLabel={t('brainstorm.messageLabel')}
         testId="brainstorm-input"
         className="brainstorm-composer"
       />
 
       {confirmingNew && (
         <ConfirmDialog
-          title="Start a new conversation?"
-          body={
-            <p>
-              This forgets the conversation above. {firstName(patient.name)}&rsquo;s notes stay exactly as
-              they are.
-            </p>
-          }
-          confirmLabel="Forget it"
+          title={t('brainstorm.confirmTitle')}
+          body={<p>{t('brainstorm.confirmBody', { name: firstName(patient.name) })}</p>}
+          confirmLabel={t('brainstorm.confirmConfirm')}
           onCancel={() => setConfirmingNew(false)}
           onConfirm={() => void startNew()}
         />
@@ -246,13 +244,21 @@ const MarkdownBubble = memo(function MarkdownBubble({
   );
 });
 
-function contextSummary(context: BrainstormContext): string {
+/**
+ * The one line under the header saying which notes are in context.
+ *
+ * Five shapes, and the counts reach `t()` as `number` parameters so
+ * `Intl.PluralRules` picks the form in the active locale — the English forms
+ * are the ones the screen has always shown.
+ */
+function contextSummary(t: Translate, context: BrainstormContext): string {
   const count = context.notes.length;
   const total = Math.max(context.total, count);
-  if (total === 0) return 'No notes yet';
-  if (count === total) return `Thinking with ${String(count)} note${count === 1 ? '' : 's'}`;
-  if (count === 0) return `No room for any of ${String(total)} notes`;
-  return context.most_recent
-    ? `Using the ${count === 1 ? 'most recent' : `${String(count)} most recent`} of ${String(total)} notes`
-    : `Using ${String(count)} of ${String(total)} notes`;
+  if (total === 0) return t('brainstorm.contextNone');
+  if (count === total) return t('brainstorm.contextAll', { count });
+  if (count === 0) return t('brainstorm.contextNoneOf', { count: total });
+  if (!context.most_recent) return t('brainstorm.contextSome', { count, total });
+  return count === 1
+    ? t('brainstorm.contextMostRecentOne', { count: total })
+    : t('brainstorm.contextMostRecent', { count, total });
 }

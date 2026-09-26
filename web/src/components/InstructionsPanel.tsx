@@ -2,6 +2,7 @@ import { approximateTokens, SKILL_TOKEN_BUDGET, type SkillFlattenResponse } from
 import { useState } from 'react';
 
 import { errorMessage, flattenSkill } from '../api/index.js';
+import { useI18n } from '../lib/i18n.js';
 
 /**
  * The drafting instructions for one format (M6 deliverable 4), plus the
@@ -26,6 +27,7 @@ export interface InstructionsPanelProps {
 }
 
 export function InstructionsPanel({ value, onChange, disabled }: InstructionsPanelProps): React.JSX.Element {
+  const { t } = useI18n();
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState<SkillFlattenResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,21 +51,19 @@ export function InstructionsPanel({ value, onChange, disabled }: InstructionsPan
 
   return (
     <div className="card lede" data-testid="instructions-panel">
-      <span className="label">Instructions</span>
+      <span className="label">{t('format.instructions')}</span>
       <p className="small note-meta">
-        What the local model is told about writing this format. Paste flattened skill instructions here; leave
-        blank to use the built-in default. The recipe for flattening a Claude skill is in{' '}
-        <code>docs/skill-porting.md</code> in the Apunta folder.
+        {t('format.instructionsHelp')} <code>docs/skill-porting.md</code> {t('format.instructionsHelpTail')}
       </p>
 
       <textarea
         id="format-instructions"
-        aria-label="Instructions"
+        aria-label={t('format.instructions')}
         className="instructions-textarea"
         rows={10}
         value={value}
         disabled={disabled === true}
-        placeholder="Leave blank to use the built-in default."
+        placeholder={t('format.instructionsPlaceholder')}
         onChange={(event) => {
           onChange(event.target.value);
         }}
@@ -72,13 +72,13 @@ export function InstructionsPanel({ value, onChange, disabled }: InstructionsPan
       {value.trim() !== '' && (
         <p className="small note-meta" data-testid="instructions-budget">
           {tokens > SKILL_TOKEN_BUDGET
-            ? `≈${tokens.toLocaleString()} tokens — small models start to drift past about ${SKILL_TOKEN_BUDGET.toLocaleString()}.`
-            : `≈${tokens.toLocaleString()} tokens — comfortable.`}
+            ? t('format.tokensLarge', { tokens, budget: SKILL_TOKEN_BUDGET })
+            : t('format.tokensOk', { tokens })}
         </p>
       )}
 
       <label className="btn small btn-compact import-skill" htmlFor="skill-file">
-        {importing ? 'Reading the skill…' : 'Import from skill file'}
+        {importing ? t('format.readingSkill') : t('format.importFromSkill')}
         <input
           id="skill-file"
           type="file"
@@ -92,44 +92,40 @@ export function InstructionsPanel({ value, onChange, disabled }: InstructionsPan
         />
       </label>
       <p className="small note-meta">
-        A <code>SKILL.md</code>, or a <code>.zip</code> of the skill folder. Nothing is saved until you press
-        save.
+        {t('format.skillFileLead')} <code>SKILL.md</code> {t('format.skillFileAnd')} <code>.zip</code>{' '}
+        {t('format.skillFileTail')}
       </p>
 
       {imported !== null && (
         <div className="import-report" data-testid="import-report">
           <p className="small">
             {[
-              imported.removed.frontmatter ? 'frontmatter removed' : null,
+              imported.removed.frontmatter ? t('format.reportFrontmatter') : null,
               imported.removed.commandBlocks > 0
-                ? `${String(imported.removed.commandBlocks)} command block${imported.removed.commandBlocks === 1 ? '' : 's'} dropped`
+                ? t('format.reportCommandBlocks', { count: imported.removed.commandBlocks })
                 : null,
               imported.removed.toolLines > 0
-                ? `${String(imported.removed.toolLines)} tool line${imported.removed.toolLines === 1 ? '' : 's'} dropped`
+                ? t('format.reportToolLines', { count: imported.removed.toolLines })
                 : null,
               imported.removed.mechanics > 0
-                ? `${String(imported.removed.mechanics)} Claude-specific line${imported.removed.mechanics === 1 ? '' : 's'} dropped`
+                ? t('format.reportClaudeLines', { count: imported.removed.mechanics })
                 : null,
               imported.removed.emptiedHeadings > 0
-                ? `${String(imported.removed.emptiedHeadings)} emptied heading${imported.removed.emptiedHeadings === 1 ? '' : 's'} dropped`
+                ? t('format.reportEmptiedHeadings', { count: imported.removed.emptiedHeadings })
                 : null,
             ]
               .filter((part) => part !== null)
-              .join(' · ') || 'nothing needed removing'}
+              .join(' · ') || t('format.reportNothing')}
           </p>
-          <p className="small">Read it through before you save — these rules over-delete on some skills.</p>
+          <p className="small">{t('format.reportReadFirst')}</p>
 
           {imported.referencedFiles.length > 0 && (
             <p className="small warn-note" data-testid="import-references" role="alert">
-              This skill refers to {imported.referencedFiles.join(', ')}, which Apunta cannot read. If those
-              files hold section definitions or terminology, paste that text in yourself.
+              {t('format.referencedFiles', { files: imported.referencedFiles.join(', ') })}
             </p>
           )}
 
-          <p className="small warn-note">
-            This text is saved and is sent to the AI with every note you write. Check it doesn&apos;t contain
-            real client details before you save.
-          </p>
+          <p className="small warn-note">{t('format.instructionsWarning')}</p>
         </div>
       )}
 

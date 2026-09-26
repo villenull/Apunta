@@ -1,4 +1,4 @@
-import type { Settings } from '@apunta/shared';
+import { t, type Settings } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -360,5 +360,46 @@ describe('the drafting model radio group', () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(quick);
     });
+  });
+
+  /**
+   * S2.4: the five section names, the four text sizes and the three themes were
+   * three module-level records of English in this file. The stored value is data
+   * and is never translated, so each is a key of its own, and the theme
+   * segments' own `aria-label` and `title` are that same key.
+   */
+  it('names its sections, sizes and themes from the catalogue, by the stored value', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    renderApp();
+
+    expect((await screen.findByTestId('format-list')).textContent).toContain(t('settings.formats'));
+    expect(screen.getByTestId('settings-advanced').textContent).toContain(t('settings.advanced'));
+    expect(screen.getByTestId('appearance-settings').textContent).toContain(t('settings.appearance'));
+    expect(screen.getByTestId('llm-profile-settings').textContent).toContain(t('settings.draftingModel'));
+
+    for (const theme of ['system', 'light', 'dark'] as const) {
+      const key =
+        theme === 'system'
+          ? 'settings.themeSystem'
+          : theme === 'light'
+            ? 'settings.themeLight'
+            : 'settings.themeDark';
+      const button = screen.getByTestId(`theme-${theme}`);
+      expect(button.getAttribute('aria-label')).toBe(t(key));
+      expect(button.getAttribute('title')).toBe(t(key));
+    }
+    for (const size of ['small', 'default', 'large', 'extra-large'] as const) {
+      const key =
+        size === 'small'
+          ? 'settings.sizeSmall'
+          : size === 'default'
+            ? 'settings.sizeDefault'
+            : size === 'large'
+              ? 'settings.sizeLarge'
+              : 'settings.sizeExtraLarge';
+      expect(screen.getByTestId(`font-size-${size}`).textContent).toBe(t(key));
+    }
+    expect(t('settings.themeDark', {}, 'en')).toBe('Dark');
+    expect(t('settings.themeDark', {}, 'es-MX')).toBe('Oscuro');
   });
 });

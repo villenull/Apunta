@@ -4,6 +4,7 @@ import {
   PREVIEW_INTERVAL_MS,
   PREVIEW_MAX_SECONDS,
   PREVIEW_SLOW_GAP_MS,
+  t,
   WAV_CONTENT_TYPE,
 } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -269,6 +270,32 @@ describe('recording on the capture screen', () => {
     await waitFor(() => {
       expect(api.calls.filter((call) => call === 'POST /api/transcribe')).toHaveLength(2);
     });
+  });
+
+  /**
+   * S2.4 Fixed decision 2: `Mac` here is a keep-as-is token *inside* a
+   * translatable sentence. The allowlist matches whole strings only, so the
+   * sentence is one key with `Mac` written out verbatim in both catalogues —
+   * never allowlisted, never dropped, never split off into a key of its own.
+   */
+  it('keeps Mac verbatim inside the recorded sentence, and the timer as data', async () => {
+    installFakeApi(
+      { formats: [progressNote], patients: [john] },
+      { transcribeError: { code: 'whisper_missing', message: 'no whisper here' } },
+    );
+    renderCapture();
+    await startRecording();
+    fireEvent.click(screen.getByTestId('record-stop'));
+
+    const done = await screen.findByTestId('record-done');
+    // The timer is whatever `formatTimer` printed, so the assertion is on the
+    // sentence with a fixed timer and on the shape the screen rendered.
+    expect(done.textContent).toMatch(/recorded\. Nothing has left this Mac\./);
+    expect(t('capture.recorded', { timer: '0:03' }, 'en')).toBe('0:03 recorded. Nothing has left this Mac.');
+    // …and the Spanish value keeps `Mac` too, because it is a product name.
+    expect(t('capture.recorded', { timer: '0:03' }, 'es-MX')).toBe(
+      '0:03 de grabación. Nada ha salido de esta Mac.',
+    );
   });
 
   it('discards the recording when she asks it to', async () => {

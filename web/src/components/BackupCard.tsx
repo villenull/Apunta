@@ -15,7 +15,7 @@ import {
   restoreBackup,
 } from '../api/index.js';
 import { useLoader, type LoadState } from '../hooks/useLoader.js';
-import { formatRelativeTime } from '../lib/format.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 
 /**
  * Settings → Backup (M7 deliverable 4), in two parts since the Settings
@@ -35,6 +35,26 @@ import { formatRelativeTime } from '../lib/format.js';
 
 /** Which half of the screen an action came from, so its result shows there. */
 type Origin = 'card' | 'advanced';
+
+/**
+ * How long ago a backup ran, as a catalogue key.
+ *
+ * The oracle `formatRelativeTime` (`web/src/lib/format.ts:119-128`) returns
+ * whole English phrases — `just now`, `5 minutes ago`, `yesterday` — and that
+ * module is read-only for this card, so the card computes the same five shapes
+ * here and lets `Intl.PluralRules` choose the form in the active locale
+ * (Fixed decision 3). The arithmetic and the thresholds are the oracle's,
+ * unchanged.
+ */
+function relativeTime(t: Translate, iso: string, now: Date = new Date()): string {
+  const minutes = Math.max(0, Math.floor((now.getTime() - Date.parse(iso)) / 60_000));
+  if (minutes < 1) return t('backup.justNow');
+  if (minutes < 60) return t('backup.minutesAgo', { count: minutes });
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return t('backup.hoursAgo', { count: hours });
+  const days = Math.floor(hours / 24);
+  return days === 1 ? t('backup.yesterday') : t('backup.daysAgo', { count: days });
+}
 
 export interface BackupControls {
   readonly status: LoadState<BackupStatusResponse>;
@@ -94,7 +114,7 @@ export function useBackup(): BackupControls {
   };
 }
 
-function backUp(backup: BackupControls, origin: Origin, toFolder: boolean): void {
+function backUp(backup: BackupControls, origin: Origin, toFolder: boolean, t: Translate): void {
   backup.run(origin, async () => {
     const directory = backup.directory.trim();
     const result = await createBackup({
@@ -102,10 +122,14 @@ function backUp(backup: BackupControls, origin: Origin, toFolder: boolean): void
       ...(backup.passphrase === '' ? {} : { passphrase: backup.passphrase }),
     });
     backup.setPassphrase('');
-    const pruned = result.pruned.length === 0 ? '' : ` ${String(result.pruned.length)} older removed.`;
-    return `Backed up: ${String(result.manifest.counts['notes'] ?? 0)} notes, ${formatBytes(
-      result.file.bytes,
-    )}, checked and intact.${pruned}`;
+    const pruned =
+      result.pruned.length === 0 ? '' : ` ${t('backup.pruned', { count: String(result.pruned.length) })}`;
+    return (
+      t('backup.done', {
+        notes: String(result.manifest.counts['notes'] ?? 0),
+        bytes: formatBytes(result.file.bytes),
+      }) + pruned
+    );
   });
 }
 
@@ -135,17 +159,18 @@ export function BackupCard({
   /** Restoring picks an archive, and the archives live under Advanced. */
   onRestore: () => void;
 }): React.JSX.Element {
+  const { t } = useI18n();
   const { status } = backup;
 
   return (
     <section className="card settings-card" data-testid="backup-card">
-      <h2 className="settings-title">Backup</h2>
-      {status.status === 'loading' && <p className="small state-note">Loading…</p>}
+      <h2 className="settings-title">{t('backup.title')}</h2>
+      {status.status === 'loading' && <p className="small state-note">{t('common.loading')}</p>}
       {status.status === 'error' && (
         <p className="small state-note error-state" role="alert">
           {status.message}{' '}
           <button type="button" className="btn small btn-quick" onClick={backup.reload}>
-            Try again
+            {t('common.tryAgain')}
           </button>
         </p>
       )}
@@ -154,8 +179,8 @@ export function BackupCard({
           <div className="settings-row">
             <span className={status.data.stale ? 'backup-stale' : undefined} data-testid="backup-last">
               {status.data.last_backup_at === null
-                ? 'No backup yet'
-                : `Last backup: ${formatRelativeTime(status.data.last_backup_at)}`}
+                ? t('backup.noneYet')
+                : t('backup.lastAt', { when: relativeTime(t, status.data.last_backup_at) })}
             </span>
             <span className="settings-row-actions">
               <button
@@ -164,25 +189,25 @@ export function BackupCard({
                 disabled={backup.busy}
                 data-testid="backup-now"
                 onClick={() => {
-                  backUp(backup, 'card', false);
+                  backUp(backup, 'card', false, t);
                 }}
               >
-                {backup.busy ? 'Working…' : 'Back up now'}
+                {backup.busy ? t('backup.working') : t('backup.now')}
               </button>
               <button type="button" className="btn small" data-testid="backup-restore" onClick={onRestore}>
-                Restore
+                {t('backup.restore')}
               </button>
             </span>
           </div>
 
           {status.data.stale && status.data.last_backup_at !== null && (
             <p className="backup-warning" role="alert" data-testid="backup-stale">
-              No backup for over {String(BACKUP_STALE_DAYS)} days.
+              {t('backup.stale', { days: BACKUP_STALE_DAYS })}
             </p>
           )}
           {status.data.last_backup_error !== null && (
             <p className="form-error" role="alert" data-testid="backup-error">
-              The last backup failed: {status.data.last_backup_error}
+              {t('backup.failed', { detail: status.data.last_backup_error })}
             </p>
           )}
           {status.data.destination.warning !== '' && (
@@ -192,7 +217,7 @@ export function BackupCard({
           )}
           {status.data.pending_restore && (
             <p className="backup-warning" role="alert" data-testid="backup-pending">
-              A restore is waiting: quit Apunta and open it again to finish.{' '}
+              {t('backup.restoreWaiting')}{' '}
               <button
                 type="button"
                 className="btn small btn-quick"
@@ -200,11 +225,11 @@ export function BackupCard({
                 onClick={() => {
                   backup.run('card', async () => {
                     await cancelRestore();
-                    return 'Restore cancelled. Nothing changed.';
+                    return t('backup.restoreCancelled');
                   });
                 }}
               >
-                Cancel it
+                {t('backup.cancelPending')}
               </button>
             </p>
           )}
@@ -217,33 +242,34 @@ export function BackupCard({
 
 /** Advanced → Backup: the folder, the passphrase, the archives, the numbers. */
 export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JSX.Element | null {
+  const { t } = useI18n();
   if (backup.status.status !== 'ready') return null;
   const data = backup.status.data;
 
   return (
     <div className="settings-group" data-testid="backup-advanced">
-      <h3 className="settings-subtitle">Backup</h3>
+      <h3 className="settings-subtitle">{t('backup.title')}</h3>
 
       <div className="settings-field">
-        <span className="label">Folder</span>
+        <span className="label">{t('backup.folder')}</span>
         <span className="settings-path" data-testid="backup-directory">
           {data.directory}
         </span>
       </div>
       {data.destination.risk === 'data-dir' && (
         <p className="small note-meta" data-testid="backup-same-disk">
-          These backups are on the same disk as your notes; a USB drive is safer.
+          {t('backup.sameDisk')}
         </p>
       )}
 
       <div className="settings-field">
         <label className="label" htmlFor="backup-directory-input">
-          Change folder
+          {t('backup.changeFolder')}
         </label>
         <input
           id="backup-directory-input"
           value={backup.directory}
-          placeholder="/Volumes/Backup/Apunta"
+          placeholder={t('backup.folderPlaceholder')}
           onChange={(event) => {
             backup.setDirectory(event.target.value);
           }}
@@ -252,7 +278,7 @@ export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JS
 
       <div className="settings-field">
         <label className="label" htmlFor="backup-passphrase">
-          Passphrase
+          {t('backup.passphrase')}
         </label>
         <input
           id="backup-passphrase"
@@ -265,7 +291,7 @@ export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JS
         />
         {backup.passphrase !== '' && (
           <p className="small backup-stale" data-testid="backup-passphrase-warning">
-            Lose this passphrase and the backup cannot be opened by anyone.
+            {t('backup.passphraseWarning')}
           </p>
         )}
       </div>
@@ -277,10 +303,10 @@ export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JS
           disabled={backup.busy}
           data-testid="backup-to-folder"
           onClick={() => {
-            backUp(backup, 'advanced', true);
+            backUp(backup, 'advanced', true, t);
           }}
         >
-          Back up
+          {t('backup.backUp')}
         </button>
       </div>
 
@@ -294,7 +320,10 @@ export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JS
               ...(backup.passphrase === '' ? {} : { passphrase: backup.passphrase }),
             });
             backup.setPassphrase('');
-            return `Restore of ${instantToLocalDay(result.manifest.generated_at)} is ready. Quit Apunta and open it again to finish; your current notes are kept at ${result.safety_copy}.`;
+            return t('backup.restoreReady', {
+              day: instantToLocalDay(result.manifest.generated_at),
+              path: result.safety_copy,
+            });
           });
         }}
       />
@@ -306,17 +335,27 @@ export function BackupAdvanced({ backup }: { backup: BackupControls }): React.JS
         onConfirm={() => {
           backup.run('advanced', async () => {
             await markRestoreVerified();
-            return 'Noted.';
+            return t('backup.noted');
           });
         }}
       />
 
+      {/*
+        One key with four counts, plus the conditional range as a fifth. The
+        counts are `String(…)` exactly as the card wrote them, so `847` is
+        `847` and a count of 1,000 is not regrouped.
+      */}
       <p className="small note-meta" data-testid="retention-summary">
-        Stored: {String(data.counts['notes'] ?? 0)} notes for {String(data.counts['patients'] ?? 0)} patients
-        {data.oldest_note_at === null
-          ? ''
-          : `, going back to ${instantToLocalDay(data.oldest_note_at)}`},{' '}
-        {String(data.counts['transcripts'] ?? 0)} transcripts, {formatBytes(data.db_bytes)}.
+        {t('backup.stored', {
+          notes: String(data.counts['notes'] ?? 0),
+          patients: String(data.counts['patients'] ?? 0),
+          range:
+            data.oldest_note_at === null
+              ? ''
+              : t('backup.storedRange', { day: instantToLocalDay(data.oldest_note_at) }),
+          transcripts: String(data.counts['transcripts'] ?? 0),
+          bytes: formatBytes(data.db_bytes),
+        })}
       </p>
     </div>
   );
@@ -331,6 +370,7 @@ function BackupList({
   busy: boolean;
   onRestore: (file: BackupFile) => void;
 }): React.JSX.Element {
+  const { t } = useI18n();
   if (files.length === 0) {
     /*
      * The empty state still has to teach the way in (day-one rehearsal,
@@ -340,7 +380,7 @@ function BackupList({
      */
     return (
       <p className="small note-meta" data-testid="backup-empty">
-        No archives yet. Put a backup file in the folder above to restore it.
+        {t('backup.noArchives')}
       </p>
     );
   }
@@ -354,7 +394,7 @@ function BackupList({
             <span className="note-meta">
               {' '}
               · {formatBytes(file.bytes)}
-              {file.encrypted ? ', encrypted' : ''}
+              {file.encrypted ? t('backup.encrypted') : ''}
             </span>
           </span>
           <button
@@ -365,7 +405,7 @@ function BackupList({
               onRestore(file);
             }}
           >
-            Restore
+            {t('backup.restore')}
           </button>
         </li>
       ))}
@@ -386,19 +426,23 @@ function VerifyRestore({
   busy: boolean;
   onConfirm: () => void;
 }): React.JSX.Element {
+  const { t } = useI18n();
   const yearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
   if (lastVerified !== null && Date.parse(lastVerified) > yearAgo) {
+    // The day is `instantToLocalDay`'s raw `YYYY-MM-DD`, which is what the
+    // screen shows today, so it is a stored value and a `text` parameter rather
+    // than a `dateOnly` one (Fixed decision 3 and 4).
     return (
       <p className="small note-meta" data-testid="backup-verified">
-        Restore last tested {instantToLocalDay(lastVerified)}.
+        {t('backup.tested', { day: instantToLocalDay(lastVerified) })}
       </p>
     );
   }
   return (
     <p className="small note-meta" data-testid="backup-verify-nudge">
-      Restore never tested: open an archive and follow its RESTORE.txt.{' '}
+      {t('backup.neverTested')}{' '}
       <button type="button" className="btn small btn-quick" disabled={busy} onClick={onConfirm}>
-        I have done this
+        {t('backup.markTested')}
       </button>
     </p>
   );

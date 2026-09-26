@@ -1,3 +1,4 @@
+import { t } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -95,6 +96,23 @@ describe('BrainstormView', () => {
 
     expect((await screen.findByTestId('brainstorm-empty')).textContent).toContain(
       'never written into their notes',
+    );
+  });
+
+  /**
+   * S2.4 Fixed decision 5: the empty state is a sentence JSX split around
+   * `{firstName(patient.name)}`, so the literal checker cannot see it. It is one
+   * key with the name as a parameter, and this pins the rendered line to that
+   * key's English rather than to a fragment of it.
+   */
+  it("renders its empty state as the catalogue's own sentence, whole", async () => {
+    const patient = makePatient('John Smith');
+    installFakeApi({ patients: [patient] });
+
+    render(<BrainstormView patient={patient} />);
+
+    expect((await screen.findByTestId('brainstorm-empty')).textContent).toBe(
+      t('brainstorm.empty', { name: 'John' }),
     );
   });
 

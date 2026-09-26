@@ -1,6 +1,6 @@
 import type { ImportBatch, ImportUndoResponse } from '@apunta/shared';
 
-import { plural } from '../lib/plural.js';
+import { useI18n } from '../lib/i18n.js';
 
 export interface ImportBatchListProps {
   readonly batches: readonly ImportBatch[];
@@ -12,7 +12,13 @@ export interface ImportBatchListProps {
   readonly formatDate: (createdAt: string) => string;
 }
 
-/** Shared history/undo presentation for both import sources. */
+/**
+ * Shared history/undo presentation for both import sources.
+ *
+ * `formatDate` stays a prop: the caller owns the locale, and both routes hand it
+ * the catalogue's own `note.updatedAt` rather than `formatInstantAsDate`'s
+ * `en-US` string (Fixed decision 3).
+ */
 export function ImportBatchList({
   batches,
   undone,
@@ -22,21 +28,27 @@ export function ImportBatchList({
   showPatients = false,
   formatDate,
 }: ImportBatchListProps): React.JSX.Element | null {
+  const { t } = useI18n();
   if (batches.length === 0 && undone === null) return null;
   return (
     <div className="card card-rows lede" data-testid={testId}>
-      <h3 className="heading-tight">Earlier imports</h3>
+      <h3 className="heading-tight">{t('import.earlier')}</h3>
       {undone !== null && (
         <p className="small note-meta" data-testid={testId.replace('batches', 'undone')}>
-          Undone: {plural(undone.notes_deleted, 'note')} and {plural(undone.patients_deleted, 'patient')}{' '}
-          removed.
+          {t('import.undoneLine', {
+            notes: t('count.note', { count: undone.notes_deleted }),
+            patients: t('count.patient', { count: undone.patients_deleted }),
+          })}
         </p>
       )}
       {batches.map((batch) => (
         <div className="row between" key={batch.id}>
           <span className="small">
-            {formatDate(batch.created_at)} — {plural(batch.notes, 'note')}
-            {showPatients && batch.patients > 0 ? `, ${plural(batch.patients, 'new patient')}` : ''}
+            {t('import.batchLine', {
+              date: formatDate(batch.created_at),
+              notes: t('count.note', { count: batch.notes }),
+            })}
+            {showPatients && batch.patients > 0 ? t('import.batchPatients', { count: batch.patients }) : ''}
           </span>
           <button
             type="button"
@@ -44,7 +56,7 @@ export function ImportBatchList({
             disabled={busy}
             onClick={() => onUndo(batch.id)}
           >
-            Undo
+            {t('common.undo')}
           </button>
         </div>
       ))}

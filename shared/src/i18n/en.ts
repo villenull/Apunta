@@ -404,4 +404,1638 @@ export const en = {
    */
   'note.unsavedConflict': { text: 'Unresolved conflict' },
   'note.unsavedError': { text: 'Unsaved changes could not be saved' },
+
+  /*
+   * Everything else in the web app: the twelve routes, the twenty-three
+   * components S2.3 left alone, and `web/src/App.tsx`'s own twelve literals.
+   *
+   * Every entry names the line that carried the string at commit `dac687b`, so
+   * a reviewer can tell a moved sentence from a rewritten one, and each English
+   * value is that line's text character for character (Fixed decision 7). The
+   * namespaces are the screens: `settings.`, `setup.`, `about.`, `licenses.`,
+   * `backup.`, `plan.`, `prep.`, `import.`, `halaxy.`, `format.`, `capture.`,
+   * `spelling.`, `brainstorm.`, `directory.`, `workspace.`, `app.` — plus
+   * `common.` for the handful of strings more than one screen writes, `doc.`
+   * for the browser tab's own name, and `count.` for a countable noun on its
+   * own.
+   *
+   * Three shapes recur and are worth naming once.
+   *
+   * **A parameter that is stored data.** A version number, a status, a section
+   * name, a file path, a patient name: passed verbatim, never translated
+   * (Fixed decision 4, C-LANG@1 rule 5). Most are declared `text`, which is the
+   * default, and the `kind` map spells them out wherever a key has parameters.
+   *
+   * **A date that reached `t()` raw.** `notes.date` (`dateOnly`) and
+   * `note.updatedAt` (`date`) are the two the oracle `web/src/lib/format.ts`
+   * was pinned to, and a `YYYY-MM-DD` string reaches one of them rather than
+   * the `Aug 8, 2026` `formatPlanDate` prints (Fixed decision 3). The one
+   * exception is stated at its own entry, `backup.tested`.
+   *
+   * **A sentence split around an inline element.** The literal checker cannot
+   * see one of these, and where the element is a link, a button or a `<strong>`
+   * the app needs, the two halves are two keys rather than one key with the
+   * element deleted. The `about.` block is the worked example and says so at
+   * each seam.
+   */
+
+  /**
+   * `Loading…`, on its own: the formats list (`Settings.tsx:198`), the licences
+   * (`Licenses.tsx:89`), the backup card (`BackupCard.tsx:143`), the brainstorm
+   * thread (`BrainstormView.tsx:166`) and the route's own `Suspense` fallback
+   * (`App.tsx:101`).
+   */
+  'common.loading': { text: 'Loading…' },
+
+  /** `AiBanner.tsx:52`, `Setup.tsx:63` and `Setup.tsx:108`. */
+  'common.checkAgain': { text: 'Check again' },
+
+  /** The `/setup` link, `AiBanner.tsx:43`, `About.tsx:100`, `Settings.tsx:282`. */
+  'common.setup': { text: 'Setup' },
+
+  /** `About.tsx:55`, `Settings.tsx:531`, `Workspace.tsx:531`, and the back labels. */
+  'common.settings': { text: 'Settings' },
+
+  /** The `Screen` back label, `AddPatient.tsx:40` and `OnboardingPreview.tsx:115`. */
+  'common.back': { text: 'Back' },
+
+  /** The back label and the notes-column back control, `NotesColumn.tsx:38`. */
+  'common.patients': { text: 'Patients' },
+
+  /** The two search fields' placeholder, `PatientDirectory.tsx:80` and `PatientsColumn.tsx:114`. */
+  'common.search': { text: 'Search' },
+
+  /** The same two fields' spoken name, `PatientDirectory.tsx:81` and `PatientsColumn.tsx:116`. */
+  'common.searchPatients': { text: 'Search patients' },
+
+  /** The licence copy control, `Licenses.tsx:114`, and the setup command, `Setup.tsx:198`. */
+  'common.copy': { text: 'Copy' },
+
+  /** The same control once it has worked, `Licenses.tsx:114` and `Setup.tsx:198`. */
+  'common.copied': { text: 'Copied' },
+
+  /** An empty plan field, and the participation default, `PlanDetails.tsx:231` and `:24`. */
+  'common.notRecorded': { text: 'Not recorded' },
+
+  /** The floor under a streaming reply's own status, `BrainstormView.tsx:192`. */
+  'common.thinkingBusy': { text: 'Thinking…' },
+
+  /** The first status a drafting run shows, `Capture.tsx:230`, `PlanView.tsx:123`, `PrepView.tsx:57`. */
+  'common.starting': { text: 'Starting…' },
+
+  /** Both import screens' submit button while it runs, `Import.tsx:269`, `HalaxyImport.tsx:210`. */
+  'common.importing': { text: 'Importing…' },
+
+  /** The briefing's button while it runs, `PrepView.tsx:123`. */
+  'common.reading': { text: 'Reading…' },
+
+  /** The briefing's Keep control, `PrepView.tsx:143`. */
+  'common.keep': { text: 'Keep' },
+
+  /** The same control once the briefing is stored, `PrepView.tsx:144`. */
+  'common.kept': { text: 'Kept' },
+
+  /** The section-chip add control, `OnboardingPreview.tsx:244`. */
+  'common.add': { text: 'Add' },
+
+  /** The rename form's submit, `PatientRenameForm.tsx:44`. */
+  'common.save': { text: 'Save' },
+
+  /** The formats list, `Settings.tsx:228`, and the goal editor, `PlanGoalCard.tsx:108`. */
+  'common.edit': { text: 'Edit' },
+
+  /** The workspace's delete dialog, `Workspace.tsx:503`. */
+  'common.archive': { text: 'Archive' },
+
+  /** Both import histories, `ImportBatchList.tsx:47`. */
+  'common.undo': { text: 'Undo' },
+
+  /*
+   * The browser tab's own name, `useDocumentTitle`. The hook composes
+   * `${title} · Apunta` and `APP_NAME` is a keep-as-is token it owns
+   * (`web/src/hooks/useDocumentTitle.ts:14`), so only the part this app
+   * chooses is a key — and no patient name ever goes in it, which is why the
+   * workspace says `Patients`.
+   */
+
+  /** `Settings.tsx:129` and `About.tsx:15`. */
+  'doc.settings': { text: 'Settings' },
+  /** `Setup.tsx:33`. */
+  'doc.setup': { text: 'Setup' },
+  /** `About.tsx:15`. */
+  'doc.about': { text: 'About' },
+  /** `Licenses.tsx:53`. */
+  'doc.licences': { text: 'Licences' },
+  /** `Workspace.tsx:86`. */
+  'doc.patients': { text: 'Patients' },
+  /** `AddPatient.tsx:11`. */
+  'doc.newPatient': { text: 'New patient' },
+  /** `Capture.tsx:69`. */
+  'doc.newNote': { text: 'New note' },
+  /** `OnboardingFormat.tsx:25` and `OnboardingPreview.tsx:26`. */
+  'doc.noteFormat': { text: 'Note format' },
+  /** `Import.tsx:50`. */
+  'doc.importClaude': { text: 'Import from Claude' },
+  /** `HalaxyImport.tsx:22`. */
+  'doc.importHalaxy': { text: 'Import from Halaxy' },
+
+  /*
+   * `web/src/App.tsx` — the loading note and the whole primary-window blocker,
+   * the twelve literals the `web/src/routes/*.tsx` glob could never reach.
+   * Every one of them renders inside `AppRoutes`, which is inside
+   * `I18nProvider` (`App.tsx:41-52`), so `useI18n()` reaches all of them.
+   */
+
+  /** `App.tsx:548`. */
+  'app.primary.opening': { text: 'Opening Apunta…' },
+  /** `App.tsx:551`. */
+  'app.primary.checking': { text: 'Checking which window is the primary one.' },
+  /** `App.tsx:557`. */
+  'app.primary.unsupportedTitle': { text: 'This browser can’t keep one editing window' },
+  /** `App.tsx:561`. */
+  'app.primary.unsupportedBody': {
+    text: 'Apunta needs the Web Locks API to make sure only one window edits at a time, and this browser doesn’t have it. This window stays blocked with no edit access — open Apunta in Chromium or Safari to continue.',
+  },
+  /** `App.tsx:570`. */
+  'app.primary.takingOver': { text: 'Taking over…' },
+  /** `App.tsx:574`. */
+  'app.primary.takingOverBody': {
+    text: 'The other window is saving its pending edits and stepping down. This window unlocks as soon as it does.',
+  },
+  /** `App.tsx:587`. */
+  'app.primary.blockedTitle': { text: 'Apunta is open in another window' },
+  /** `App.tsx:591`. */
+  'app.primary.blockedBody': {
+    text: 'Only one window can edit at a time, so this window is blocked. Should this window become primary? The other window saves its work and becomes blocked instead.',
+  },
+  /** `App.tsx:597`. */
+  'app.primary.decline': { text: 'Not now' },
+  /** `App.tsx:606`. */
+  'app.primary.takeover': { text: 'Make this the primary window' },
+
+  /*
+   * The AI banner, `AiBanner.tsx`. The sentence is split by a `<Link>` and a
+   * `<button>`, both of which the screen needs, so it is keyed at the element
+   * boundary: what leads into the link, the link, what follows, and the button.
+   * `{model}` is the stored model name, or empty when the server named none.
+   */
+
+  /** `AiBanner.tsx:35`. */
+  'ai.modelMissing': { text: "Apunta can't find the AI model{model} — see", kind: { model: 'text' } },
+  /** `AiBanner.tsx:36`. */
+  'ai.unreachable': { text: "Apunta can't reach the local AI — see" },
+  /** `AiBanner.tsx:45`, after the `Setup` link. */
+  'ai.bannerTail': { text: '. Everything except drafting a new note still works.' },
+
+  /*
+   * `web/src/components/BackupCard.tsx` — the one-line card and the Advanced
+   * half. Four of these are the class `check-ui-strings.mjs` cannot see
+   * (Fixed decision 5): the stale warning it already had as `backup.stale`,
+   * `BackupCard.tsx:158`'s relative time, `:315-318`'s retention line, and
+   * `:393`'s tested-on date. `BackupCard.test.tsx` pins the last two.
+   */
+
+  /** The card's and the Advanced half's heading, `BackupCard.tsx:142` and `:225`. */
+  'backup.title': { text: 'Backup' },
+
+  /** The card's restore control and each archive's, `BackupCard.tsx:173` and `:368`. */
+  'backup.restore': { text: 'Restore' },
+
+  /** Beside a staged restore, `BackupCard.tsx:207`. */
+  'backup.cancelPending': { text: 'Cancel it' },
+
+  /** No backup has ever run, `BackupCard.tsx:157`. */
+  'backup.noneYet': { text: 'No backup yet' },
+
+  /**
+   * `BackupCard.tsx:158`, with the relative time the oracle
+   * `formatRelativeTime` (`format.ts:119-128`) produced: `just now`, `5
+   * minutes ago`, `3 hours ago`, `yesterday`, `4 days ago`.
+   *
+   * The card computes that from the same ISO string through the same five keys
+   * rather than through the helper, because a helper in a read-only module
+   * hands `t()` an English phrase (Fixed decision 3's rule, applied to a
+   * relative time rather than a date). `{when}` is that phrase, already in the
+   * active locale.
+   */
+  'backup.lastAt': { text: 'Last backup: {when}', kind: { when: 'text' } },
+  /** `format.ts:121`. */
+  'backup.justNow': { text: 'just now' },
+  /** `format.ts:122`. */
+  'backup.minutesAgo': {
+    text: '{count} minutes ago',
+    plural: { one: '{count} minute ago', other: '{count} minutes ago' },
+    kind: { count: 'number' },
+  },
+  /** `format.ts:124`. */
+  'backup.hoursAgo': {
+    text: '{count} hours ago',
+    plural: { one: '{count} hour ago', other: '{count} hours ago' },
+    kind: { count: 'number' },
+  },
+  /** `format.ts:126`. */
+  'backup.yesterday': { text: 'yesterday' },
+  /**
+   * `format.ts:127`. No singular form, because the oracle has none: a one-day
+   * gap is `backup.yesterday`, so this key only ever renders a count of two or
+   * more and the number stays a `number` parameter.
+   */
+  'backup.daysAgo': { text: '{count} days ago', kind: { count: 'number' } },
+
+  /** The card's own button while the archive is being written, `BackupCard.tsx:170`. */
+  'backup.working': { text: 'Working…' },
+  /** The card's own button, `BackupCard.tsx:170`. */
+  'backup.now': { text: 'Back up now' },
+
+  /** `BackupCard.tsx:185`, with the server's own failure text as data. */
+  'backup.failed': { text: 'The last backup failed: {detail}', kind: { detail: 'text' } },
+
+  /** `BackupCard.tsx:195`, before the Cancel it control. */
+  'backup.restoreWaiting': { text: 'A restore is waiting: quit Apunta and open it again to finish.' },
+
+  /** `BackupCard.tsx:203`. */
+  'backup.restoreCancelled': { text: 'Restore cancelled. Nothing changed.' },
+
+  /**
+   * `BackupCard.tsx:106`, with `{pruned}` appended when the server pruned
+   * older archives. `{notes}` and `{bytes}` are `String(...)` exactly as the
+   * card wrote them, so a count of 1,000 is not regrouped.
+   */
+  'backup.done': {
+    text: 'Backed up: {notes} notes, {bytes}, checked and intact.',
+    kind: { notes: 'text', bytes: 'text' },
+  },
+  /** `BackupCard.tsx:105`, joined to `backup.done` with one space. */
+  'backup.pruned': { text: '{count} older removed.', kind: { count: 'text' } },
+
+  /** The folder row's label, `BackupCard.tsx:228`. */
+  'backup.folder': { text: 'Folder' },
+  /** `BackupCard.tsx:235`. */
+  'backup.sameDisk': { text: 'These backups are on the same disk as your notes; a USB drive is safer.' },
+  /** The folder field's label, `BackupCard.tsx:241`. */
+  'backup.changeFolder': { text: 'Change folder' },
+  /**
+   * `BackupCard.tsx:246`. A path, so it is a keep-as-is token inside a
+   * translatable value (Fixed decision 2): written out verbatim in both
+   * catalogues, never allowlisted — the allowlist matches whole strings, and
+   * this is a `placeholder` attribute rather than one.
+   */
+  'backup.folderPlaceholder': { text: '/Volumes/Backup/Apunta' },
+
+  /** The passphrase field's label, `BackupCard.tsx:255`. */
+  'backup.passphrase': { text: 'Passphrase' },
+  /** `BackupCard.tsx:268`. */
+  'backup.passphraseWarning': {
+    text: 'Lose this passphrase and the backup cannot be opened by anyone.',
+  },
+
+  /** The Advanced half's own button, `BackupCard.tsx:283`. */
+  'backup.backUp': { text: 'Back up' },
+
+  /**
+   * `BackupCard.tsx:297`, with the manifest's own day (`instantToLocalDay`, a
+   * raw `YYYY-MM-DD`) and the safety copy's path. Both are stored values.
+   */
+  'backup.restoreReady': {
+    text: 'Restore of {day} is ready. Quit Apunta and open it again to finish; your current notes are kept at {path}.',
+    kind: { day: 'text', path: 'text' },
+  },
+
+  /** `BackupCard.tsx:309`. */
+  'backup.noted': { text: 'Noted.' },
+
+  /**
+   * `BackupCard.tsx:315-319`: one key with four parameters, plus the
+   * conditional range as a fifth. `{notes}`, `{patients}` and `{transcripts}`
+   * are `String(...)` as the card wrote them — the sentence reads
+   * `847 notes for 12 patients` whatever the count, and making that a plural
+   * would change the English at 1.
+   */
+  'backup.stored': {
+    text: 'Stored: {notes} notes for {patients} patients{range}, {transcripts} transcripts, {bytes}',
+    kind: { notes: 'text', patients: 'text', range: 'text', transcripts: 'text', bytes: 'text' },
+  },
+  /**
+   * `BackupCard.tsx:318`, or empty when there is no oldest note. `{day}` is
+   * `instantToLocalDay`'s raw `YYYY-MM-DD`, so it is a stored value under
+   * Fixed decision 4 — a `date` parameter would print the day for anyone west
+   * of Greenwich, and `BackupCard.test.tsx:170` pins the raw string.
+   */
+  'backup.storedRange': { text: ', going back to {day}', kind: { day: 'text' } },
+
+  /** `BackupCard.tsx:357`, after the archive's size. */
+  'backup.encrypted': { text: ', encrypted' },
+
+  /** The archives list's empty state, `BackupCard.tsx:343`. */
+  'backup.noArchives': { text: 'No archives yet. Put a backup file in the folder above to restore it.' },
+
+  /** `BackupCard.tsx:399`, before the I have done this control. */
+  'backup.neverTested': { text: 'Restore never tested: open an archive and follow its RESTORE.txt.' },
+  /** `BackupCard.tsx:401`. `RESTORE.txt` is a file name, kept as-is. */
+  'backup.markTested': { text: 'I have done this' },
+
+  /**
+   * `BackupCard.tsx:393` — the other of the two blind spots a test pins.
+   *
+   * `instantToLocalDay` composes no English at all: it returns a raw
+   * `YYYY-MM-DD`, which is what the screen shows today and what
+   * `BackupCard.test.tsx:170` asserts. So `{day}` is a stored value and the
+   * parameter is `text`, not `dateOnly`; declaring it `dateOnly` would print
+   * `Aug 1, 2026` and break that test (Fixed decision 3).
+   */
+  'backup.tested': { text: 'Restore last tested {day}.', kind: { day: 'text' } },
+
+  /*
+   * The notes column, the patient lists, and the workspace around them.
+   */
+
+  /** `NotesColumn.tsx:56`, and the add-patient row's heading in `Capture.tsx`. */
+  'notes.new': { text: 'New note' },
+  /** `NotesColumn.tsx:116`. */
+  'notes.loading': { text: 'Loading notes…' },
+  /** `NotesColumn.tsx:132` — a split sentence the checker cannot see. */
+  'notes.emptyFor': { text: 'No notes yet for {name}.', kind: { name: 'text' } },
+  /** `NotesColumn.tsx:141` and `Workspace.tsx:558`. */
+  'notes.createFirst': { text: 'Create first note' },
+  /** `Workspace.tsx:558`. */
+  'notes.createNew': { text: 'Create new note' },
+  /** The draft chip on a note row, `NotesColumn.tsx:160`. */
+  'note.draftChip': { text: 'Draft' },
+
+  /** `PatientsColumn.tsx:89` and `Workspace.tsx:366`. */
+  'patients.showColumn': { text: 'Show patients' },
+  /** `PatientsColumn.tsx:89`. */
+  'patients.hideColumn': { text: 'Hide patients' },
+  /** The sidebar's new-patient row, `PatientsColumn.tsx:123`. */
+  'patients.newShort': { text: 'New' },
+  /** `PatientDirectory.tsx:128`. */
+  'patients.new': { text: 'New patient' },
+  /** `PatientDirectory.tsx:160` and `PatientsColumn.tsx:284`. */
+  'patients.loading': { text: 'Loading patients…' },
+  /** `PatientDirectory.tsx:143`. */
+  'patients.tabActive': { text: 'Active' },
+  /** `PatientDirectory.tsx:155`. */
+  'patients.tabArchived': { text: 'Archived' },
+  /** `PatientDirectory.tsx:125`, and the name `Workspace.tsx:302` is given. */
+  'directory.select': { text: 'Select' },
+  /** `PatientsColumn.tsx:198`. */
+  'patients.missionControl': { text: 'Mission control' },
+  /** `PatientsColumn.tsx:222`. */
+  'nav.language': { text: 'Language' },
+  /** `PatientsColumn.tsx:234`. */
+  'nav.help': { text: 'Get help' },
+  /** `PatientsColumn.tsx:306`. */
+  'directory.clearSearch': { text: 'Clear search' },
+  /** `PatientsColumn.tsx:314`. */
+  'patients.emptyStart': { text: 'Add your first patient to get started.' },
+  /** `PatientsColumn.tsx:317`. */
+  'patients.addFirst': { text: 'Add your first patient' },
+  /** `PatientsColumn.tsx:322` and `PatientDirectory.tsx:170`. */
+  'directory.emptyActive': { text: 'No active patients.' },
+  /** `PatientDirectory.tsx:170`. */
+  'directory.emptyArchived': { text: 'No archived patients.' },
+  /** `PatientsColumn.tsx:304` and `PatientDirectory.tsx:173`, both split sentences. */
+  'directory.noMatch': { text: 'No patients match “{query}”.', kind: { query: 'text' } },
+  /** `PatientsColumn.tsx:457`. */
+  'patients.viewAll': { text: 'View all' },
+
+  /**
+   * `Workspace.tsx:302` — the one place this preview says a control is not
+   * built. `{what}` is the control's own label, already in the active locale,
+   * because the caller passes `t(…)` rather than a string.
+   */
+  'preview.unavailable': { text: "{what} isn't part of this preview yet.", kind: { what: 'text' } },
+
+  /** `Workspace.tsx:312`. */
+  'workspace.serverUnreachable': { text: 'Apunta can’t reach its server' },
+  /** `Workspace.tsx:313`. */
+  'workspace.serverUnreachableBody': { text: 'Start Apunta again, then try this page again.' },
+
+  /** `Workspace.tsx:490`. */
+  'workspace.deleteTitle': { text: 'Delete {name}?', kind: { name: 'text' } },
+  /** `Workspace.tsx:491`. */
+  'workspace.deleteConfirm': { text: 'Delete {name}', kind: { name: 'text' } },
+  /** `Workspace.tsx:495-496`. */
+  'workspace.deleteBodyFirst': {
+    text: 'This removes {name}, every note for them, the transcripts of those notes, and the refine and brainstorm conversations. It cannot be undone here.',
+    kind: { name: 'text' },
+  },
+  /** `Workspace.tsx:499-500`. */
+  'workspace.deleteBodySecond': {
+    text: 'It also cannot reach copies that already exist elsewhere: a backup you have written, a Time Machine copy, or the records system you pasted the finished notes into.',
+  },
+  /** `Workspace.tsx:503`, before the `Archive` emphasis. */
+  'workspace.deleteBodyThirdLead': { text: 'If you only want them out of the list,' },
+  /** `Workspace.tsx:503`, after the `Archive` emphasis. */
+  'workspace.deleteBodyThirdTail': { text: 'does that and deletes nothing.' },
+
+  /** `Workspace.tsx:554`, the other half of `notes.emptyFor`. */
+  'workspace.noNoteSelected': { text: 'No note selected for {name}', kind: { name: 'text' } },
+
+  /*
+   * `web/src/components/BrainstormView.tsx`. The empty state was seeded by
+   * S2.2 as `brainstorm.empty`; the rest of the screen is here.
+   */
+
+  /** `BrainstormView.tsx:129`. */
+  'brainstorm.title': { text: 'Brainstorm' },
+  /** `BrainstormView.tsx:138`. */
+  'brainstorm.new': { text: 'New conversation' },
+  /** `BrainstormView.tsx:211`. */
+  'brainstorm.placeholder': { text: 'Think out loud…' },
+  /** `BrainstormView.tsx:212`, the composer's spoken name. */
+  'brainstorm.messageLabel': { text: 'Brainstorm message' },
+  /** `BrainstormView.tsx:219`. */
+  'brainstorm.confirmTitle': { text: 'Start a new conversation?' },
+  /** `BrainstormView.tsx:222-223`, a split sentence with `firstName` in it. */
+  'brainstorm.confirmBody': {
+    text: 'This forgets the conversation above. {name}’s notes stay exactly as they are.',
+    kind: { name: 'text' },
+  },
+  /** `BrainstormView.tsx:226`. */
+  'brainstorm.confirmConfirm': { text: 'Forget it' },
+
+  /*
+   * The context summary under the header, `BrainstormView.tsx:249-257` — a
+   * module function whose five shapes are five keys, each with the count as a
+   * `number` parameter so `Intl.PluralRules` picks the form.
+   */
+
+  /** `:252`. */
+  'brainstorm.contextNone': { text: 'No notes yet' },
+  /** `:253`, when every one of the notes is in context. */
+  'brainstorm.contextAll': {
+    text: 'Thinking with {count} notes',
+    plural: { one: 'Thinking with {count} note', other: 'Thinking with {count} notes' },
+    kind: { count: 'number' },
+  },
+  /** `:254`. */
+  'brainstorm.contextNoneOf': { text: 'No room for any of {count} notes', kind: { count: 'number' } },
+  /** `:256`, one note of the total. */
+  'brainstorm.contextMostRecentOne': {
+    text: 'Using the most recent of {count} notes',
+    kind: { count: 'number' },
+  },
+  /** `:256`, more than one. */
+  'brainstorm.contextMostRecent': {
+    text: 'Using the {count} most recent of {total} notes',
+    plural: {
+      one: 'Using the {count} most recent of {total} notes',
+      other: 'Using the {count} most recent of {total} notes',
+    },
+    kind: { count: 'number', total: 'number' },
+  },
+  /** `:257`. */
+  'brainstorm.contextSome': {
+    text: 'Using {count} of {total} notes',
+    plural: {
+      one: 'Using {count} of {total} notes',
+      other: 'Using {count} of {total} notes',
+    },
+    kind: { count: 'number', total: 'number' },
+  },
+
+  /*
+   * The treatment plan: `PlanView.tsx`, `PlanDetails.tsx` and
+   * `PlanGoalCard.tsx`.
+   *
+   * Two of the keys are the shape Fixed decision 4 names. `version` and
+   * `status` are stored values and go into `plan.versionMeta` verbatim; a
+   * status that wanted a display name would be a key with the stored value as
+   * its parameter, never a translation of it. And every date here reaches a
+   * catalogue as a raw `YYYY-MM-DD` under `dateOnly`, so `t()` prints it in the
+   * active locale instead of `formatPlanDate`'s `en-US` reaching the screen
+   * unchanged.
+   */
+
+  /** `PlanView.tsx:98` and `PrepView.tsx:158`. */
+  'plan.loading': { text: 'Loading the plan…' },
+  /** `PlanView.tsx:189` and `NotesColumn.tsx:82`. */
+  'plan.title': { text: 'Treatment plan' },
+  /** The plan column's heading, `PrepView.tsx:157`. */
+  'prep.planHeading': { text: 'The plan' },
+
+  /**
+   * `PlanView.tsx:192` and `:289`'s two forms. `{version}` and `{status}` are
+   * stored values (Fixed decision 4); the two keys exist because the screen
+   * already branches on whether the version has taken effect, and putting the
+   * date in a `{date}` parameter of a single key would hand `t()` the
+   * `en-US` string `formatPlanDate` prints.
+   */
+  'plan.versionMeta': {
+    text: 'Version {version} · {status}',
+    kind: { version: 'text', status: 'text' },
+  },
+  /** `PlanView.tsx:193-195`. */
+  'plan.versionMetaEffective': {
+    text: 'Version {version} · {status} · effective {day}',
+    kind: { version: 'text', status: 'text', day: 'dateOnly' },
+  },
+  /** The picker that chooses which version to read, `PlanView.tsx:278`. */
+  'plan.version': { text: 'Version' },
+  /** `PlanView.tsx:286`. */
+  'plan.current': { text: 'Current' },
+  /** `PlanView.tsx:289`. */
+  'plan.versionOption': {
+    text: 'Version {version} — {status}',
+    kind: { version: 'text', status: 'text' },
+  },
+
+  /** `PlanView.tsx:217`. */
+  'plan.copy': { text: 'Copy plan' },
+  /** `PlanView.tsx:233`. */
+  'plan.putInForce': { text: 'Put in force' },
+  /** `PlanView.tsx:251`. */
+  'plan.startReview': { text: 'Start a review' },
+
+  /** `PlanView.tsx:271`. `{gap}` is one of the three `plan.gap*` keys below. */
+  'plan.reviewOverdue': {
+    text: 'Plan review was due {day} — {gap}.',
+    kind: { day: 'dateOnly', gap: 'text' },
+  },
+  /** `PlanView.tsx:272`. */
+  'plan.reviewUpcoming': {
+    text: 'Plan review due {day} ({gap}).',
+    kind: { day: 'dateOnly', gap: 'text' },
+  },
+  /**
+   * The day gap the oracle `formatDayGap` (`format.ts:111-116`) produced.
+   * The view computes the same three shapes through these keys rather than
+   * through the helper, which is a read-only module whose English would
+   * otherwise reach a Spanish screen (Fixed decision 3).
+   */
+  'plan.gapToday': { text: 'today' },
+  'plan.gapInDays': {
+    text: 'in {days} days',
+    plural: { one: 'in {days} day', other: 'in {days} days' },
+    kind: { days: 'number' },
+  },
+  'plan.gapDaysAgo': {
+    text: '{days} days ago',
+    plural: { one: '{days} day ago', other: '{days} days ago' },
+    kind: { days: 'number' },
+  },
+
+  /** `PlanView.tsx:298`. */
+  'plan.superseded': {
+    text: 'This version has been superseded. It is kept exactly as it was, and cannot be edited.',
+  },
+  /** `PlanView.tsx:304` — a split sentence the checker cannot see. */
+  'plan.noneYet': { text: 'No treatment plan for {name} yet.', kind: { name: 'text' } },
+  /** `PlanView.tsx:320`. */
+  'plan.start': { text: 'Start a plan' },
+  /** `PlanView.tsx:331` and `:408`. */
+  'plan.draftGoals': { text: 'Draft goals from recent notes' },
+  /** `PlanView.tsx:331` and `:408`. */
+  'plan.readingNotes': { text: 'Reading your notes…' },
+  /** `PlanView.tsx:348`. */
+  'plan.goals': { text: 'Goals' },
+  /** `PlanView.tsx:351`. */
+  'plan.nothingYet': {
+    text: 'Nothing in the plan yet. Suggestions below are not part of it until you accept one.',
+  },
+  /** `PlanView.tsx:390`. */
+  'plan.addGoalMyself': { text: 'Add a goal myself' },
+  /** `PlanView.tsx:398`. */
+  'plan.suggestedHeading': { text: 'Suggested from your notes' },
+  /** `PlanView.tsx:412`. */
+  'plan.suggestionHelp': {
+    text: 'Suggestions are not part of the plan. Accept, edit or discard each one.',
+  },
+  /** `PlanView.tsx:425`. */
+  'plan.noSuggestions': { text: 'No suggestions waiting.' },
+  /** `PlanView.tsx:460`, before the folded section's own summary. */
+  'plan.details': { text: 'Plan details' },
+  /** `PlanView.tsx:519`, when nothing is recorded. */
+  'plan.detailsNone': { text: '— diagnosis, modality and frequency not recorded' },
+  /** `PlanView.tsx:519`, with the recorded values as stored data. */
+  'plan.detailsList': { text: '— {items}', kind: { items: 'text' } },
+  /** `PlanView.tsx:477`. */
+  'plan.attestation': { text: 'Attestation' },
+  /** `PlanView.tsx:480`. */
+  'plan.notAttested': {
+    text: 'Not yet attested. Putting this version in force records the date, and copies your name and credential from Settings onto it.',
+  },
+  /** `PlanView.tsx:490`, with the clinician's own licence number as data. */
+  'plan.licence': { text: 'Licence {licence}', kind: { licence: 'text' } },
+  /** `PlanView.tsx:491`. `NPI` is a keep-as-is identifier. */
+  'plan.npi': { text: 'NPI {npi}', kind: { npi: 'text' } },
+  /** `PlanView.tsx:499`. */
+  'plan.attestedNote': {
+    text: 'Attested in Apunta — sign the copy in your records system. Apunta has no login, so a name typed here is not a signature.',
+  },
+
+  /*
+   * The drafting run's lookback line, `PlanView.tsx:155-171`. The source
+   * concatenates three optional sentences onto one base sentence; each is a
+   * key of its own and the code joins them with the single spaces the source
+   * had, so the English line is unchanged. Two of the base keys are split by
+   * `oldest_note_date` being null, for the reason `plan.versionMeta` gives.
+   */
+  'plan.lookbackNone': {
+    text: 'There are no notes for this patient yet, so there was nothing to draft from.',
+  },
+  'plan.lookbackRead': {
+    text: 'Read {count} notes (limit {cap}).',
+    plural: {
+      one: 'Read {count} note (limit {cap}).',
+      other: 'Read {count} notes (limit {cap}).',
+    },
+    kind: { count: 'number', cap: 'number' },
+  },
+  'plan.lookbackReadBackTo': {
+    text: 'Read {count} notes, back to {day} (limit {cap}).',
+    plural: {
+      one: 'Read {count} note, back to {day} (limit {cap}).',
+      other: 'Read {count} notes, back to {day} (limit {cap}).',
+    },
+    kind: { count: 'number', day: 'dateOnly', cap: 'number' },
+  },
+  'plan.lookbackSkipped': { text: '{count} could not be read.', kind: { count: 'text' } },
+  'plan.lookbackDroppedOne': {
+    text: '{count} draft goal was written and then discarded, because it could not be traced to anything in those notes. Nothing was added to the plan.',
+    kind: { count: 'text' },
+  },
+  'plan.lookbackDroppedMany': {
+    text: '{count} draft goals were written and then discarded, because they could not be traced to anything in those notes. Nothing was added to the plan.',
+    kind: { count: 'text' },
+  },
+  'plan.lookbackThin': {
+    text: 'Nothing was drafted from them: there is not much recorded in these notes yet.',
+  },
+
+  /*
+   * The plan-level fields, `PlanDetails.tsx`. The four `PARTICIPATION_LABELS`
+   * were a module-level `Record` of English; they are four keys now, chosen by
+   * the stored enum value rather than translated from it.
+   */
+  'plan.diagnoses': { text: 'Diagnoses' },
+  'plan.diagnosesNone': {
+    text: 'None recorded. Goals are expected to trace to a diagnosis, and it is yours to enter.',
+  },
+  'plan.diagnosisCode': { text: 'Code' },
+  'plan.diagnosisDescription': { text: 'Description' },
+  'plan.diagnosisPrimary': { text: 'Primary' },
+  'plan.addDiagnosis': { text: 'Add diagnosis' },
+  'plan.diagnosisCodeLabel': { text: 'Diagnosis {n} code', kind: { n: 'text' } },
+  'plan.diagnosisSystemLabel': { text: 'Diagnosis {n} system', kind: { n: 'text' } },
+  'plan.diagnosisDescriptionLabel': { text: 'Diagnosis {n} description', kind: { n: 'text' } },
+  'plan.removeDiagnosis': { text: 'Remove diagnosis {n}', kind: { n: 'text' } },
+  'plan.presentingProblem': { text: 'Presenting problem' },
+  'plan.strengths': { text: 'Strengths' },
+  'plan.modality': { text: 'Service modality' },
+  'plan.frequency': { text: 'Service frequency' },
+  'plan.dischargeCriteria': { text: 'Discharge criteria' },
+  'plan.reviewInterval': { text: 'Review interval' },
+  'plan.reviewIntervalDays': { text: 'Review interval (days)' },
+  /** `PlanDetails.tsx:51`. */
+  'plan.everyDays': { text: 'Every {days} days', kind: { days: 'text' } },
+  'plan.clientParticipation': { text: 'Client participation' },
+  'plan.participationReviewed': { text: 'Reviewed with client' },
+  'plan.participationDeclined': { text: 'Client declined to sign' },
+  'plan.participationSignedElsewhere': { text: 'Signed copy in my records system' },
+  'plan.participationDate': { text: 'Client participation date' },
+  'plan.participationNote': { text: 'Client participation note' },
+  'plan.participationNotePlaceholder': { text: 'Reason, if it could not be signed' },
+  'plan.saveDetails': { text: 'Save plan details' },
+
+  /*
+   * One goal, `PlanGoalCard.tsx`. `BLANK` (`:43`) is a separator and stays a
+   * separator: it renders as it is in every language, so it is not a key
+   * (Fixed decision 2).
+   */
+  'plan.suggestedBadge': { text: 'Suggested — not in the plan yet' },
+  'plan.accept': { text: 'Accept' },
+  'plan.met': { text: 'Met' },
+  'plan.discontinue': { text: 'Discontinue' },
+  'plan.discardSuggestion': { text: 'Discard this suggestion' },
+  'plan.deleteGoal': { text: 'Delete this goal' },
+  'plan.carriedForward': { text: 'Carried forward from the previous version.' },
+  'plan.noObjectives': { text: 'No objectives yet.' },
+  /** `PlanGoalCard.tsx:171`. */
+  'plan.interventions': { text: 'Interventions: {list}', kind: { list: 'text' } },
+  /** `PlanGoalCard.tsx:176`. */
+  'plan.draftedFrom': { text: 'Drafted from your notes:' },
+  /**
+   * `PlanGoalCard.tsx:161-164`, the objective's own meta line. The stored
+   * `measure`, `baseline` and `target_value` are data, and the target date
+   * reaches `t()` raw. Two keys because the screen already branches on
+   * `target_date`; a single key would have to hand `t()` the `en-US` date
+   * `formatPlanDate` prints, which is the one thing Fixed decision 3 forbids.
+   */
+  'plan.objectiveMeta': {
+    text: 'Measure: {measure} · Baseline: {baseline} · Target: {target} · By: —',
+    kind: { measure: 'text', baseline: 'text', target: 'text' },
+  },
+  'plan.objectiveMetaDated': {
+    text: 'Measure: {measure} · Baseline: {baseline} · Target: {target} · By: {day}',
+    kind: { measure: 'text', baseline: 'text', target: 'text', day: 'dateOnly' },
+  },
+  /** `PlanGoalCard.tsx:189`, the section a quotation came from. */
+  'plan.evidenceSection': { text: ' · {section}', kind: { section: 'text' } },
+  /** `PlanGoalCard.tsx:224`. */
+  'plan.goalLabel': { text: 'Goal' },
+  /** `PlanGoalCard.tsx:238`. */
+  'plan.objectiveLabel': { text: 'Objective {n}', kind: { n: 'text' } },
+  'plan.measure': { text: 'Measure' },
+  'plan.baseline': { text: 'Baseline' },
+  'plan.target': { text: 'Target' },
+  'plan.addObjective': { text: 'Add objective' },
+  /** `PlanGoalCard.tsx:310`. */
+  'plan.interventionsLabel': { text: 'Interventions, one per line' },
+  /** `PlanGoalCard.tsx:323`. */
+  'plan.goalTargetDate': { text: 'Goal target date' },
+  /** `PlanGoalCard.tsx:357`. */
+  'plan.saveAndAccept': { text: 'Save and accept' },
+  /** `PlanGoalCard.tsx:238`'s own field names, `aria-label` and `placeholder`. */
+  'plan.objectiveMeasureLabel': { text: 'Objective {n} measure', kind: { n: 'text' } },
+  'plan.objectiveBaselineLabel': { text: 'Objective {n} baseline', kind: { n: 'text' } },
+  'plan.objectiveTargetLabel': { text: 'Objective {n} target', kind: { n: 'text' } },
+  'plan.objectiveTargetDateLabel': { text: 'Objective {n} target date', kind: { n: 'text' } },
+
+  /*
+   * The session briefing, `PrepView.tsx`. `Review due` is one of the two blind
+   * spots `PrepView.test.tsx` pins: `formatPlanDate` returned English and the
+   * day now reaches `t()` as a `YYYY-MM-DD` under `dateOnly`, so `t()` prints
+   * it in the active locale.
+   */
+
+  /** `PrepView.tsx:111`. */
+  'prep.title': { text: 'Before this session' },
+  /** `PrepView.tsx:123`. */
+  'prep.again': { text: 'Prepare again' },
+  /** `PrepView.tsx:160`. */
+  'prep.noGoals': { text: 'No goals in the plan yet.' },
+  /** `PrepView.tsx:168`, appended to an objective's own statement. */
+  'prep.objectiveBy': { text: ' — by {day}', kind: { day: 'dateOnly' } },
+  /** `PrepView.tsx:174` — the pinned date sentence. */
+  'prep.reviewDue': { text: 'Review due {day}.', kind: { day: 'dateOnly' } },
+  /** `PrepView.tsx:179`. */
+  'prep.sinceHeading': { text: 'Since you last saw them' },
+  /** `PrepView.tsx:188`. */
+  'prep.empty': { text: 'Nothing to read yet — there are no notes for this patient.' },
+  /** `PrepView.tsx:226`. */
+  'prep.notSaved': { text: 'This briefing is not saved unless you keep it.' },
+  /** `PrepView.tsx:228`. */
+  'prep.keptFor': { text: '{count} kept for {name}.', kind: { count: 'text', name: 'text' } },
+
+  /** `PrepView.tsx:211`. */
+  'prep.lookbackNone': { text: 'Read no notes.' },
+  'prep.lookbackRead': {
+    text: 'Read the last {count} notes (limit {cap}).',
+    plural: {
+      one: 'Read the last {count} note (limit {cap}).',
+      other: 'Read the last {count} notes (limit {cap}).',
+    },
+    kind: { count: 'number', cap: 'number' },
+  },
+  'prep.lookbackReadBackTo': {
+    text: 'Read the last {count} notes, back to {day} (limit {cap}).',
+    plural: {
+      one: 'Read the last {count} note, back to {day} (limit {cap}).',
+      other: 'Read the last {count} notes, back to {day} (limit {cap}).',
+    },
+    kind: { count: 'number', day: 'dateOnly', cap: 'number' },
+  },
+  /** `PrepView.tsx:220`, joined to the line above with one space. */
+  'prep.lookbackSkipped': { text: '{count} could not be read.', kind: { count: 'text' } },
+
+  /*
+   * The spelling marks, `SpellingMenu.tsx`, and the two inline rename fields
+   * whose `aria-label` is a template literal the checker cannot see.
+   */
+
+  /** `SpellingMenu.tsx:68`. */
+  'spelling.none': { text: 'No suggestions' },
+  /** `SpellingMenu.tsx:86`. */
+  'spelling.ignore': { text: 'Ignore' },
+  /** `SpellingMenu.tsx:89`. */
+  'spelling.add': { text: 'Add to dictionary' },
+  /** `SpellingMenu.tsx:63`. */
+  'spelling.menuLabel': { text: 'Spelling of {word}', kind: { word: 'text' } },
+  /** `PatientRenameForm.tsx:36`. */
+  'patients.renameLabel': { text: 'Name for {name}', kind: { name: 'text' } },
+
+  /** `AddPatient.tsx:52`. */
+  'common.name': { text: 'Name' },
+  /** `AddPatient.tsx:41` and `:93`. */
+  'patients.add': { text: 'Add patient' },
+  /** `AddPatient.tsx:93`. */
+  'common.adding': { text: 'Adding…' },
+  /** `AddPatient.tsx:42`. */
+  'patients.addLede': { text: 'Just enough to organize her notes.' },
+  /**
+   * `AddPatient.tsx:58`. The prototype's sample patient (HS-8), which
+   * S1.4 §3.5 leaves in place until `e2e/fixtures/eval-es/NAMES.md` exists:
+   * the Spanish value keeps the English sample and translates only `e.g.`.
+   */
+  'patients.namePlaceholder': { text: 'e.g. John Smith' },
+  /** `AddPatient.tsx:68`. */
+  'patients.identifierLabel': { text: 'Identifier (optional)' },
+  /** `AddPatient.tsx:73`. */
+  'patients.identifierPlaceholder': { text: 'Internal reference, chart number, etc.' },
+
+  /*
+   * `web/src/components/InstructionsPanel.tsx` — the drafting instructions for
+   * one format, and the "Import from skill file" affordance.
+   */
+
+  /** `InstructionsPanel.tsx:52` and `:61`. */
+  'format.instructions': { text: 'Instructions' },
+  /** `InstructionsPanel.tsx:53-55`, before the `<code>` file name. */
+  'format.instructionsHelp': {
+    text: 'What the local model is told about writing this format. Paste flattened skill instructions here; leave blank to use the built-in default. The recipe for flattening a Claude skill is in',
+  },
+  /** `InstructionsPanel.tsx:56`, after it. `docs/skill-porting.md` is a path. */
+  'format.instructionsHelpTail': { text: 'in the Apunta folder.' },
+  /** `InstructionsPanel.tsx:66`. */
+  'format.instructionsPlaceholder': { text: 'Leave blank to use the built-in default.' },
+  /** `InstructionsPanel.tsx:75`. */
+  'format.tokensLarge': {
+    text: '≈{tokens} tokens — small models start to drift past about {budget}.',
+    kind: { tokens: 'number', budget: 'number' },
+  },
+  /** `InstructionsPanel.tsx:76`. */
+  'format.tokensOk': { text: '≈{tokens} tokens — comfortable.', kind: { tokens: 'number' } },
+  /** `InstructionsPanel.tsx:81`. */
+  'format.readingSkill': { text: 'Reading the skill…' },
+  /** `InstructionsPanel.tsx:81`. */
+  'format.importFromSkill': { text: 'Import from skill file' },
+  /**
+   * `InstructionsPanel.tsx:94-96`, the sentence that sits either side of two
+   * `<code>` file names. Three keys because the sentence is split by the
+   * elements themselves, and §3.6's fragments are what a language has to
+   * choose: `A` opens it, `, or a` joins the two file names, and the tail
+   * carries the promise.
+   */
+  'format.skillFileLead': { text: 'A' },
+  'format.skillFileAnd': { text: ', or a' },
+  'format.skillFileTail': { text: 'of the skill folder. Nothing is saved until you press save.' },
+
+  /** The import report's own list, `InstructionsPanel.tsx:103-118`. */
+  'format.reportFrontmatter': { text: 'frontmatter removed' },
+  'format.reportCommandBlocks': {
+    text: '{count} command block dropped',
+    plural: { one: '{count} command block dropped', other: '{count} command blocks dropped' },
+    kind: { count: 'number' },
+  },
+  'format.reportToolLines': {
+    text: '{count} tool line dropped',
+    plural: { one: '{count} tool line dropped', other: '{count} tool lines dropped' },
+    kind: { count: 'number' },
+  },
+  'format.reportClaudeLines': {
+    text: '{count} Claude-specific line dropped',
+    plural: {
+      one: '{count} Claude-specific line dropped',
+      other: '{count} Claude-specific lines dropped',
+    },
+    kind: { count: 'number' },
+  },
+  'format.reportEmptiedHeadings': {
+    text: '{count} emptied heading dropped',
+    plural: { one: '{count} emptied heading dropped', other: '{count} emptied headings dropped' },
+    kind: { count: 'number' },
+  },
+  'format.reportNothing': { text: 'nothing needed removing' },
+  /** `InstructionsPanel.tsx:120`. */
+  'format.reportReadFirst': {
+    text: 'Read it through before you save — these rules over-delete on some skills.',
+  },
+  /** `InstructionsPanel.tsx:124-125`; `{files}` is the flattener's own list. */
+  'format.referencedFiles': {
+    text: 'This skill refers to {files}, which Apunta cannot read. If those files hold section definitions or terminology, paste that text in yourself.',
+    kind: { files: 'text' },
+  },
+  /** `InstructionsPanel.tsx:130-131`. */
+  'format.instructionsWarning': {
+    text: "This text is saved and is sent to the AI with every note you write. Check it doesn't contain real client details before you save.",
+  },
+
+  /*
+   * Onboarding: `OnboardingFormat.tsx` chooses how a format is defined, and
+   * `OnboardingPreview.tsx` confirms it. The three errors the first sets are
+   * module-level `setError(…)` calls the literal checker cannot see, and they
+   * are keys like any other (Fixed decision 1).
+   */
+
+  /** `OnboardingFormat.tsx:111`. */
+  'format.addTitle': { text: 'Add your note format' },
+  /** `OnboardingFormat.tsx:112`. */
+  'format.addLede': { text: "Choose how to define it — we'll figure out the structure for you." },
+  /** `OnboardingFormat.tsx:114`, the four options' spoken name. */
+  'format.choicesLabel': { text: 'Note format choices' },
+  /** `OnboardingFormat.tsx:121`. */
+  'format.standardTitle': { text: 'My standard progress note' },
+  /** `OnboardingFormat.tsx:122`. */
+  'format.recommended': { text: 'Recommended' },
+  /** `OnboardingFormat.tsx:123`, with the standard format's own section names. */
+  'format.standardSubtitle': {
+    text: '{sections}, with my drafting instructions',
+    kind: { sections: 'text' },
+  },
+  /** `OnboardingFormat.tsx:132`. */
+  'format.templateTitle': { text: 'Upload a blank template' },
+  /** `OnboardingFormat.tsx:133`. */
+  'format.templateSubtitle': { text: 'A Word doc or PDF with empty sections' },
+  /** `OnboardingFormat.tsx:141`. */
+  'format.examplesTitle': { text: 'Upload a few example notes' },
+  /** `OnboardingFormat.tsx:142`. */
+  'format.examplesSubtitle': { text: '2-3 completed notes to learn the pattern from' },
+  /** `OnboardingFormat.tsx:150` and `:220`. */
+  'format.manualTitle': { text: 'Describe it myself' },
+  /** `OnboardingFormat.tsx:151`. */
+  'format.manualSubtitle': { text: 'Type out the sections you need' },
+  /** `OnboardingFormat.tsx:159`. */
+  'format.dropTemplate': { text: 'Drop a .docx or .pdf template here' },
+  /** `OnboardingFormat.tsx:168`. */
+  'format.dropExamples': { text: 'Drop 2-3 completed notes here' },
+  /** `OnboardingFormat.tsx:359`. */
+  'format.dropClick': { text: 'or click to choose a file' },
+  /** `OnboardingFormat.tsx:385`. */
+  'format.dropMore': {
+    text: 'Add one or two more — Apunta works out the sections from what the notes have in common.',
+  },
+  /** `OnboardingFormat.tsx:181` and `OnboardingPreview.tsx:137`. */
+  'format.nameLabel': { text: 'Format name' },
+  /** `OnboardingFormat.tsx:186`. */
+  'format.namePlaceholder': { text: 'e.g. Progress note' },
+  /** `OnboardingFormat.tsx:196` and `OnboardingPreview.tsx:149`. */
+  'format.sectionsLabel': { text: 'Sections' },
+  /** `OnboardingFormat.tsx:200`. */
+  'format.sectionsPlaceholder': { text: 'e.g. Subjective, Objective, Assessment, Plan' },
+  /** `OnboardingFormat.tsx:51` and `OnboardingPreview.tsx:91`. */
+  'format.errorName': { text: 'Give the format a name.' },
+  /** `OnboardingFormat.tsx:55`. */
+  'format.errorSections': { text: 'List at least one section.' },
+  /** `OnboardingFormat.tsx:59`, with the repeated section name as data. */
+  'format.errorDuplicate': {
+    text: '"{section}" is listed twice — section names have to be unique.',
+    kind: { section: 'text' },
+  },
+  /** `OnboardingPreview.tsx:49` and `:69`. */
+  'format.errorAlreadySection': { text: '"{section}" is already a section.', kind: { section: 'text' } },
+  /** `OnboardingPreview.tsx:95`. */
+  'format.errorNoSections': { text: 'A format needs at least one section.' },
+  /** `OnboardingFormat.tsx:236` and `OnboardingPreview.tsx:294`. */
+  'common.saving': { text: 'Saving…' },
+  /** `OnboardingFormat.tsx:236`. */
+  'format.readingFile': { text: 'Reading your file…' },
+  /** `OnboardingFormat.tsx:236`. */
+  'common.continue': { text: 'Continue' },
+  /** `OnboardingFormat.tsx:241`. */
+  'format.readingNote': {
+    text: 'Reading the file and working out its sections. Nothing is saved until you say it looks right.',
+  },
+  /** `OnboardingFormat.tsx:254`. */
+  'format.restoreLead': {
+    text: 'Already have an Apunta backup, or a settings file someone prepared for you?',
+  },
+  /** `OnboardingFormat.tsx:256`. */
+  'format.restoreLink': { text: 'Restore it instead' },
+
+  /** `OnboardingPreview.tsx:121`, when a format is being edited. */
+  'format.editTitle': { text: 'Edit note format' },
+  /** `OnboardingPreview.tsx:121`, when one has just been detected. */
+  'format.foundTitle': { text: "Here's what we found" },
+  /** `OnboardingPreview.tsx:124`. */
+  'format.editLede': { text: 'Rename it or change its sections, then save.' },
+  /** `OnboardingPreview.tsx:125`. */
+  'format.foundLede': { text: "Check this matches your work's format before saving." },
+  /** `OnboardingPreview.tsx:130`. */
+  'format.truncatedNote': {
+    text: 'That file was long, so Apunta read the first part of it. Check nothing is missing below.',
+  },
+  /** `OnboardingPreview.tsx:149`, when the sections were detected. */
+  'format.sectionsDetected': { text: 'Sections detected' },
+  /** `OnboardingPreview.tsx:157`. */
+  'format.renameLabel': { text: 'New name for {section}', kind: { section: 'text' } },
+  /** `OnboardingPreview.tsx:176`. */
+  'format.renameAction': { text: 'Rename {section}', kind: { section: 'text' } },
+  /** `OnboardingPreview.tsx:189`. */
+  'format.moveUp': { text: 'Move {section} up', kind: { section: 'text' } },
+  /** `OnboardingPreview.tsx:197`. */
+  'format.moveDown': { text: 'Move {section} down', kind: { section: 'text' } },
+  /** `OnboardingPreview.tsx:212`. */
+  'format.removeSection': { text: 'Remove {section}', kind: { section: 'text' } },
+  /** `OnboardingPreview.tsx:229-230`, placeholder and spoken name. */
+  'format.sectionNamePlaceholder': { text: 'Section name' },
+  /** `OnboardingPreview.tsx:255`. */
+  'format.addSection': { text: '+ Add section' },
+  /** `OnboardingPreview.tsx:261-262`. */
+  'format.existingNotesNote': {
+    text: 'Notes you have already written keep the sections they were written with. Changes here apply to future drafts only.',
+  },
+  /** `OnboardingPreview.tsx:282`. */
+  'format.startOver': { text: 'Start over' },
+  /** `OnboardingPreview.tsx:294`. */
+  'format.saveChanges': { text: 'Save changes' },
+  /** `OnboardingPreview.tsx:294`. */
+  'format.looksRight': { text: 'Looks right, save' },
+
+  /*
+   * `web/src/routes/Settings.tsx`, in its two hosts: the standalone screen and
+   * the modal over the workspace.
+   *
+   * The five section names were a module-level `SECTIONS` array whose `label`
+   * property the checker does not read (`VISIBLE_PROPERTIES` at `:77` is the
+   * four visible attributes and `label` is not one of them), so they are keys
+   * now like any other. `FONT_SIZE_LABELS` and `THEME_LABELS` were two more
+   * module records of English in the same file.
+   */
+
+  /** `Settings.tsx:68` and `:439`. */
+  'settings.appearance': { text: 'Appearance' },
+  /** `Settings.tsx:69`. */
+  'settings.format': { text: 'Format' },
+  /** `Settings.tsx:70`, and the card's own heading in `BackupCard.tsx`. */
+  'settings.backup': { text: 'Backup' },
+  /** `Settings.tsx:71`. */
+  'settings.import': { text: 'Import' },
+  /** `Settings.tsx:72` and `:275`. */
+  'settings.advanced': { text: 'Advanced' },
+  /** `Settings.tsx:147`, the modal nav's spoken name. */
+  'settings.sectionsLabel': { text: 'Settings sections' },
+  /** `Settings.tsx:167`. */
+  'settings.closeLabel': { text: 'Close settings' },
+  /** `Settings.tsx:197`. */
+  'settings.formats': { text: 'Note formats' },
+  /** `Settings.tsx:241`. */
+  'settings.addFormat': { text: 'Add another format' },
+  /** `Settings.tsx:257`. */
+  'settings.importClaude': { text: 'Import from Claude' },
+  /** `Settings.tsx:261`. */
+  'settings.importHalaxy': { text: 'Import from Halaxy' },
+  /** `Settings.tsx:280`. */
+  'settings.app': { text: 'App' },
+  /** `Settings.tsx:283`. */
+  'settings.about': { text: 'About' },
+  /** `Settings.tsx:297`. */
+  'settings.loadingAi': { text: 'Loading AI settings…' },
+  /** `Settings.tsx:344` and `:345`. */
+  'settings.draftingModel': { text: 'Drafting model' },
+  /** `Settings.tsx:374`. */
+  'settings.quick': { text: 'Quick' },
+  /** `Settings.tsx:374`. */
+  'settings.thorough': { text: 'Thorough' },
+  /** `Settings.tsx:376`. */
+  'settings.quickHelp': { text: 'Faster drafts.' },
+  /** `Settings.tsx:376`. */
+  'settings.thoroughHelp': { text: 'Slower, more careful drafts.' },
+  /** `Settings.tsx:381`. */
+  'settings.savedDot': { text: 'Saved.' },
+  /** `Settings.tsx:406`. */
+  'settings.loading': { text: 'Loading settings…' },
+  /** `Settings.tsx:449`. */
+  'settings.colour': { text: 'Colour' },
+  /** `Settings.tsx:472`. */
+  'settings.reset': { text: 'Reset' },
+  /** `Settings.tsx:479`. */
+  'settings.theme': { text: 'Theme' },
+  /** `Settings.tsx:492`. */
+  'settings.fontSize': { text: 'Font size' },
+  /** `Settings.tsx:533`. */
+  'settings.animations': { text: 'Animations' },
+  /** `Settings.tsx:560-563`, the four text sizes. */
+  'settings.sizeSmall': { text: 'Small' },
+  'settings.sizeDefault': { text: 'Default' },
+  'settings.sizeLarge': { text: 'Large' },
+  'settings.sizeExtraLarge': { text: 'Extra large' },
+  /** `Settings.tsx:567-570`, the three themes; also each segment's name. */
+  'settings.themeSystem': { text: 'System' },
+  'settings.themeLight': { text: 'Light' },
+  'settings.themeDark': { text: 'Dark' },
+
+  /*
+   * `web/src/routes/About.tsx` — the local-only guarantee in plain language.
+   *
+   * This file is where the split-sentence shape is most visible, and every
+   * seam is deliberate: the sentence is broken by a `<strong>`, a `<Link>` or a
+   * `<code>`, and each of those is something the screen needs, so the halves
+   * are keys and the element stays. English is unchanged, which is what
+   * `setup.spec.ts`'s two About assertions and `check-ui-strings.mjs`'s
+   * `TOTAL 0` both rest on.
+   */
+
+  /** `About.tsx:22`. */
+  'about.title': { text: 'About Apunta' },
+  /** `About.tsx:25`. */
+  'about.localOnlyHeading': { text: 'Nothing you write here goes onto the internet' },
+  /** `About.tsx:27-28`. */
+  'about.localOnlyBody': {
+    text: 'Apunta runs on this computer. It is a web page served by a program on the same computer, and the app makes no outbound network connections. There is no account and no remote copy.',
+  },
+  /** `About.tsx:31-33`. */
+  'about.modelsLocalBody': {
+    text: "The writing model and transcription model run locally too. Your recording is read by a program on this computer and is never uploaded. Apunta does not use the browser's built-in speech recognition, because that can send audio to a third party.",
+  },
+  /** `About.tsx:36`. */
+  'about.noTelemetryBody': {
+    text: 'There is no analytics, crash reporting, update check, or anonymous usage data.',
+  },
+
+  /** `About.tsx:41`. */
+  'about.whereHeading': { text: 'Where your notes actually are' },
+  /** `About.tsx:43`, before the path is known. */
+  'about.dbPath': { text: 'One folder on this computer, holding one file:' },
+  /** `About.tsx:43-44`, the same line while the path is still loading. */
+  'about.dbPathLoading': { text: 'One folder on this computer, holding one file: loading…' },
+  /** `About.tsx:52-54`. */
+  'about.recordsBody': {
+    text: 'That file is your drafting history. It is not your clinical record — the record lives in whatever system you paste the finished note into. It is still worth backing up, because the rough notes, the transcripts and the refine and brainstorm conversations exist nowhere else.',
+  },
+  /** `About.tsx:55`, after the `Settings` link. */
+  'about.recordsBackupTail': { text: 'has “Backup”.' },
+
+  /** `About.tsx:60`. */
+  'about.threatsHeading': { text: 'The two things this does not protect you from' },
+  /** `About.tsx:62`, inside the `<strong>`. */
+  'about.threatPerson': { text: 'Someone at your unlocked computer.' },
+  /** `About.tsx:62-64`, after it. */
+  'about.threatPersonBody': {
+    text: 'Apunta has no password of its own. Anyone sitting at this computer while you are logged in can open it and read everything. Locking the screen when you walk away is the real answer.',
+  },
+  /** `About.tsx:67`, inside the `<strong>`. */
+  'about.threatStolen': { text: 'A stolen computer with an unencrypted disk.' },
+  /** `About.tsx:67-68`, after it. */
+  'about.threatStolenBody': {
+    text: 'Disk encryption protects a lost computer from disclosure. Its status is shown below only when the operating system can report it.',
+  },
+
+  /**
+   * `About.tsx:110-132`, the four states the operating system can report. The
+   * prefix and the bold verdict are one key each, and each state has its own
+   * tail; `{detail}` is the server's own explanation, passed as data.
+   */
+  'about.diskEncryption': { text: 'Disk encryption:' },
+  'about.diskNotChecked': { text: 'not checked' },
+  'about.diskReady': { text: 'ready' },
+  'about.diskNotReady': { text: 'not ready' },
+  'about.diskTailOs': { text: 'on this operating system. {detail}', kind: { detail: 'text' } },
+  'about.diskTailDetail': { text: '. {detail}', kind: { detail: 'text' } },
+  'about.diskTailOff': {
+    text: '. Turn it on in System Settings → Privacy & Security → FileVault before real notes go in, and keep the recovery key somewhere other than this computer.',
+  },
+  'about.diskTailUnknown': {
+    text: ". Apunta could not read its status; check it yourself in the operating system's security settings. {detail}",
+    kind: { detail: 'text' },
+  },
+
+  /** `About.tsx:74`. */
+  'about.aiHeading': { text: 'What it does with the AI' },
+  /** `About.tsx:76-79`. */
+  'about.aiBody': {
+    text: 'When you create a draft, the model receives what you dictated or typed and the shape of your note format. Refine and brainstorm can also include relevant prior notes when they are used as background. It is asked to write only what is in front of it. It still makes mistakes, so every draft is yours to read before you publish it.',
+  },
+  /** `About.tsx:82`. */
+  'about.aiUnclearBody': {
+    text: 'Where the recording was unclear, the draft says so in the text rather than guessing.',
+  },
+
+  /** `About.tsx:87` and `Licenses.tsx:80`. */
+  'about.builtFromHeading': { text: 'What Apunta is built from' },
+  /** `About.tsx:89-91`, before the licences link. */
+  'about.builtFromBody': {
+    text: 'The AI that writes and the program that reads your recordings were written by other people and are included inside Apunta. Their licences ask that the notice travels with the app:',
+  },
+  /** `About.tsx:91`, the link's own text. */
+  'about.licensesLink': { text: 'the licences are here' },
+  /** `About.tsx:94-95`. */
+  'about.modelsSeparateBody': {
+    text: 'The AI models themselves are not part of Apunta. They are installed on this computer under their own terms, and Apunta does not pass them on.',
+  },
+  /** `About.tsx:100`, before the `Setup` link. */
+  'about.missingPieces': { text: 'Missing pieces and what to run:' },
+
+  /*
+   * `web/src/routes/Setup.tsx`. The rows' own `label`, `detail`, `note` and
+   * `fix` come from `web/src/lib/setup.ts`, which is read-only for this card,
+   * so the four `STATE_LABEL` values are this screen's own and the rest is
+   * reported rather than moved.
+   */
+
+  /** `Setup.tsx:51`. */
+  'setup.title': { text: 'Setup' },
+  /** `Setup.tsx:53-54`. */
+  'setup.lede': {
+    text: 'Apunta runs on this computer. These are the pieces it needs, and what to do about any that are missing.',
+  },
+  /** `Setup.tsx:57`. */
+  'setup.checking': { text: 'Checking…' },
+  /** `Setup.tsx:113`. */
+  'setup.allAtOnce': { text: 'Or do all of it at once' },
+  /** `Setup.tsx:115-116`. */
+  'setup.terminalHelp': {
+    text: 'From a Terminal window in the Apunta folder. It installs what is missing, downloads the models, and is safe to run again as many times as you like.',
+  },
+  /** `Setup.tsx:123`, before the `Settings` link. */
+  'setup.backingUpLead': {
+    text: 'Backing up is a separate question, and the one most worth getting right —',
+  },
+  /** `STATE_LABEL` of `Setup.tsx:161-167`, the four states. */
+  'setup.stateOk': { text: 'Ready' },
+  'setup.stateMissing': { text: 'Missing' },
+  'setup.stateUnknown': { text: 'Not checked' },
+
+  /*
+   * `web/src/routes/Licenses.tsx`. The legal text stays verbatim; only the
+   * index, the filter and the empty state are keys. `Overview` is the heading
+   * this screen gives the file's preamble, and it is a `title` property, which
+   * is one of the four attributes the checker reads.
+   */
+
+  /** `Licenses.tsx:32`. */
+  'licenses.overview': { text: 'Overview' },
+  /** `Licenses.tsx:80`. */
+  'licenses.builtFrom': { text: 'What Apunta is built from' },
+  /** `Licenses.tsx:84-85`. */
+  'licenses.lede': {
+    text: 'Apunta includes programs written by other people, and their licences ask that this notice travels with the app. Nothing here needs anything from you — it is here because it should be.',
+  },
+  /** `Licenses.tsx:98`. */
+  'licenses.panelLabel': { text: 'Third-party licences' },
+  /** `Licenses.tsx:101`. */
+  'licenses.filterLabel': { text: 'Filter licences' },
+  /** `Licenses.tsx:111`. */
+  'licenses.filterPlaceholder': { text: 'Filter by component or text' },
+  /** `Licenses.tsx:114`. */
+  'licenses.copyPlain': { text: 'Copy plain text' },
+  /** `Licenses.tsx:117`. */
+  'licenses.componentsLabel': { text: 'Licence components' },
+  /** `Licenses.tsx:126`. */
+  'licenses.noMatch': { text: 'No licence text matches “{filter}”.', kind: { filter: 'text' } },
+
+  /*
+   * `web/src/routes/Capture.tsx`.
+   *
+   * Two of these are named in Fixed decision 2 and 3. `capture.recorded`
+   * carries `Mac` — a keep-as-is token *inside* a sentence — so it is written
+   * out verbatim in both catalogues, never allowlisted and never split off
+   * into a key of its own: the allowlist matches whole strings only.
+   * `capture.missingPatient` is the sentence JSX left in two pieces around the
+   * `patient.state.message` and the `Back to patients` link.
+   */
+
+  /** `Capture.tsx:283`, and the heading while the patient is unknown. */
+  'capture.newNote': { text: 'New note' },
+  /** `Capture.tsx:271`, the heading once the patient is known. */
+  'capture.newNoteFor': { text: 'New note for {name}', kind: { name: 'text' } },
+  /** `Capture.tsx:286`, after the server's own message. */
+  'capture.missingPatient': {
+    text: 'This patient may have been deleted, so nothing recorded here could be saved.',
+  },
+  /** `Capture.tsx:287`, the link out of that error. */
+  'capture.backToPatients': { text: 'Back to patients' },
+  /** `Capture.tsx:300`. */
+  'capture.formatLabel': { text: 'Note format' },
+  /** `Capture.tsx:330`, before the `Add one first` link. */
+  'capture.noFormats': { text: 'No note formats yet.' },
+  /** `Capture.tsx:330`, the link itself. */
+  'capture.addOneFirst': { text: 'Add one first' },
+  /** `Capture.tsx:330-331`, after it. */
+  'capture.noFormatsTail': { text: '— a note needs a structure to follow.' },
+  /** `Capture.tsx:336`, inside the `<strong>`. */
+  'capture.sourceRecording': { text: 'Start with a recording' },
+  /** `Capture.tsx:336-337`, after it. */
+  'capture.sourceTail': {
+    text: '— or type notes instead. You can use either, or combine both before you create the draft.',
+  },
+  /** `Capture.tsx:357`. */
+  'capture.stopAndDraft': { text: 'Stop and create draft' },
+  /** `Capture.tsx:363`. */
+  'capture.openingMicrophone': { text: 'Opening microphone…' },
+  /** `Capture.tsx:365`. */
+  'capture.allowMicrophone': {
+    text: 'Allow microphone access to begin your private recording.',
+  },
+  /** `Capture.tsx:370`. */
+  'capture.preparingDraft': { text: 'Preparing your draft…' },
+  /** `Capture.tsx:371`, the dots' spoken name while nothing else is said. */
+  'capture.preparingDraftShort': { text: 'Preparing your draft' },
+  /** `Capture.tsx:230`. */
+  'dictation.transcribingBusy': { text: 'Transcribing…' },
+  /** `Capture.tsx:386`. */
+  'capture.recordingReady': { text: 'Recording ready' },
+  /**
+   * `Capture.tsx:389`, with `formatTimer`'s own `0:42` as data and `Mac` kept
+   * verbatim (Fixed decision 2).
+   */
+  'capture.recorded': { text: '{timer} recorded. Nothing has left this Mac.', kind: { timer: 'text' } },
+  /** `Capture.tsx:400`. */
+  'capture.draftFromRecording': { text: 'Create draft from recording' },
+  /** `Capture.tsx:408`. */
+  'capture.discardRecording': { text: 'Discard recording' },
+  /** `Capture.tsx:423`. */
+  'capture.recordAudio': { text: 'Record audio' },
+  /** `Capture.tsx:425`. */
+  'capture.recordAudioHelp': {
+    text: 'Start here — narrate your notes; add typed notes before or while recording',
+  },
+  /** `Capture.tsx:435`. */
+  'capture.typeNotes': { text: 'Type notes' },
+  /** `Capture.tsx:436`. */
+  'capture.typeNotesHelp': { text: 'Type notes before or while recording, or use typing alone' },
+  /** `Capture.tsx:442`. */
+  'capture.summaryPlaceholder': { text: 'Type your session summary...' },
+  /** `Capture.tsx:443`. */
+  'capture.summaryLabel': { text: 'Session summary' },
+  /**
+   * `Capture.tsx:347` — the capture screen's own variant of
+   * `dictation.previewNote`, handed to `LiveRecording` as a prop.
+   */
+  'dictation.previewNoteCapture': {
+    text: 'Everything so far, roughly. The note is written from the finished recording.',
+  },
+  /** `Capture.tsx:476`. */
+  'capture.createDraft': { text: 'Create draft' },
+  /** `Capture.tsx:483`, the leave dialog's title. */
+  'capture.leaveTitle': { text: 'Leave this unfinished note?' },
+  /** `Capture.tsx:484`, that dialog's other button. */
+  'capture.stay': { text: 'Stay' },
+  /** `Capture.tsx:485`, that dialog's confirm button. */
+  'capture.discardAndLeave': { text: 'Discard and leave' },
+  /** `Capture.tsx:490`. */
+  'capture.leaveBodyFirst': {
+    text: 'Your typed notes, recording, or draft in progress will be discarded if you leave.',
+  },
+  /** `Capture.tsx:491`. */
+  'capture.leaveBodySecond': {
+    text: 'Stay to keep working, or discard this unfinished capture and continue.',
+  },
+
+  /*
+   * A countable noun on its own, `count.`.
+   *
+   * The oracle `web/src/lib/plural.ts` was `${count} ${word}${count === 1 ? '' : 's'}`,
+   * and it is what these six keys replace: each count is a `number` parameter
+   * so `Intl.PluralRules` picks the form, and each sentence that needs one
+   * passes the rendered phrase as a `text` parameter. A sentence with two counts
+   * of different nouns therefore composes two of these, which is the only shape
+   * `Message` can express — its plural map is selected by one name.
+   */
+  'count.note': {
+    text: '{count} note',
+    plural: { one: '{count} note', other: '{count} notes' },
+    kind: { count: 'number' },
+  },
+  'count.patient': {
+    text: '{count} patient',
+    plural: { one: '{count} patient', other: '{count} patients' },
+    kind: { count: 'number' },
+  },
+  'count.conversation': {
+    text: '{count} conversation',
+    plural: { one: '{count} conversation', other: '{count} conversations' },
+    kind: { count: 'number' },
+  },
+  'count.session': {
+    text: '{count} session',
+    plural: { one: '{count} session', other: '{count} sessions' },
+    kind: { count: 'number' },
+  },
+  'count.newPatient': {
+    text: '{count} new patient',
+    plural: { one: '{count} new patient', other: '{count} new patients' },
+    kind: { count: 'number' },
+  },
+  'count.attachedFile': {
+    text: '{count} attached file',
+    plural: { one: '{count} attached file', other: '{count} attached files' },
+    kind: { count: 'number' },
+  },
+
+  /*
+   * The two imports and the history they share.
+   *
+   * `REASONS` and `NAME_SOURCES` were two module-level `Record`s of English
+   * keyed by a stored enum. They are keys now, chosen by the stored value and
+   * never a translation of it (Fixed decision 4): the enum is what the server
+   * stored, and the sentence around it is what a language has to translate.
+   */
+
+  /** `Import.tsx:34`. */
+  'import.skip.beforeCutoff': { text: 'no activity since the cutoff' },
+  /** `Import.tsx:35`. */
+  'import.skip.singleSession': { text: 'a single sitting, not a patient history' },
+  /** `Import.tsx:36`. */
+  'import.skip.notClinical': { text: "Claude's replies never looked like a note" },
+  /** `Import.tsx:37`. */
+  'import.skip.noName': { text: 'no patient name could be told with confidence' },
+  /** `Import.tsx:38`. */
+  'import.skip.ambiguous': { text: 'more than one name from your list' },
+  /** `Import.tsx:39`. */
+  'import.skip.excluded': { text: 'you unticked the patient' },
+  /** `Import.tsx:43`. */
+  'import.nameSource.previous': { text: 'imported before' },
+  /** `Import.tsx:44`. */
+  'import.nameSource.list': { text: 'from your list' },
+  /** `Import.tsx:45`. */
+  'import.nameSource.existing': { text: 'already in Apunta' },
+  /** `Import.tsx:46`. */
+  'import.nameSource.title': { text: 'name guessed from the chat title — check' },
+
+  /** `Import.tsx:131` and `HalaxyImport.tsx:109`. */
+  'import.doneTitle': { text: 'Imported' },
+  /** `Import.tsx:131` and `HalaxyImport.tsx:109`. */
+  'import.undoneTitle': { text: 'Import undone' },
+  /** `ImportBatchList.tsx:31`. */
+  'import.undoneLine': {
+    text: 'Undone: {notes} and {patients} removed.',
+    kind: { notes: 'text', patients: 'text' },
+  },
+  /** `Import.tsx:136`, where the two English verb forms differ. */
+  'import.undoneNotesKept': {
+    text: '{count} note you had finalized was kept.',
+    plural: {
+      one: '{count} note you had finalized was kept.',
+      other: '{count} notes you had finalized were kept.',
+    },
+    kind: { count: 'number' },
+  },
+  /** `Import.tsx:139`. */
+  'import.undonePatientsKept': {
+    text: '{count} patient with other work attached was kept.',
+    plural: {
+      one: '{count} patient with other work attached was kept.',
+      other: '{count} patients with other work attached were kept.',
+    },
+    kind: { count: 'number' },
+  },
+  /** `HalaxyImport.tsx:114`, which reads `were` at one as well. */
+  'halaxy.undoneNotesKept': {
+    text: '{count} note you had finalized were kept.',
+    plural: {
+      one: '{count} note you had finalized were kept.',
+      other: '{count} notes you had finalized were kept.',
+    },
+    kind: { count: 'number' },
+  },
+  /** `Import.tsx:146` and `HalaxyImport.tsx:121`. */
+  'import.nothingNew': { text: 'Nothing new to import.' },
+  /** `Import.tsx:147-149`. */
+  'import.doneLine': {
+    text: '{notes} for {patients}{new}. Each is a draft, dated when you talked to Claude, marked as imported.',
+    kind: { notes: 'text', patients: 'text', new: 'text' },
+  },
+  /** `Import.tsx:148`, or empty. */
+  'import.doneNewCount': { text: ' ({count} new)', kind: { count: 'number' } },
+  /** `HalaxyImport.tsx:122`. */
+  'halaxy.doneLine': {
+    text: '{notes} for {patients} imported as published history.',
+    kind: { notes: 'text', patients: 'text' },
+  },
+  /** `Import.tsx:162` and `HalaxyImport.tsx:141`. */
+  'import.undo': { text: 'Undo this import' },
+  /** `Import.tsx:170` and `HalaxyImport.tsx:151`. */
+  'import.goToPatients': { text: 'Go to patients' },
+
+  /** `Import.tsx:185` and `HalaxyImport.tsx:165`. */
+  'import.readyTitle': { text: 'Ready to import' },
+  /** `Import.tsx:186-189`. */
+  'import.summaryLine': {
+    text: '{toCreate} to create, {notes} across {patients}. {skipped} skipped{ambiguous}.',
+    kind: { toCreate: 'text', notes: 'text', patients: 'text', skipped: 'text', ambiguous: 'text' },
+  },
+  /** `Import.tsx:189`, or empty. */
+  'import.summaryAmbiguous': { text: ', {count} of them as ambiguous', kind: { count: 'number' } },
+  /** `Import.tsx:191`, joined to the line above with one space. */
+  'import.summaryAgain': {
+    text: '{count} session already imported earlier will not be imported again.',
+    plural: {
+      one: '{count} session already imported earlier will not be imported again.',
+      other: '{count} sessions already imported earlier will not be imported again.',
+    },
+    kind: { count: 'number' },
+  },
+  /** `Import.tsx:194-196`. */
+  'import.untickHelp': {
+    text: 'Untick anyone who is not a patient. Every note arrives as a draft marked as imported, and this import can be undone in one click afterwards.',
+  },
+  /** `Import.tsx:198`, where the two English verb forms differ. */
+  'import.attachmentsNote': {
+    text: '{count} attached file in these sessions is not imported — they stay in Claude.',
+    plural: {
+      one: '{count} attached file in these sessions is not imported — they stay in Claude.',
+      other: '{count} attached files in these sessions are not imported — they stay in Claude.',
+    },
+    kind: { count: 'number' },
+  },
+  /** `Import.tsx:203`. `{cutoff}` is the stored `YYYY-MM-DD`, shown as it is. */
+  'import.noConversations': {
+    text: 'No patient conversations were found since {cutoff}.',
+    kind: { cutoff: 'text' },
+  },
+  /** `Import.tsx:209`, a preview row's spoken name. */
+  'import.patientLabel': { text: 'Import {name}', kind: { name: 'text' } },
+  /** `Import.tsx:211`, the count and where the name came from. */
+  'import.patientExcerpt': {
+    text: '{notes} · {source}',
+    kind: { notes: 'text', source: 'text' },
+  },
+  /** `Import.tsx:221` and `HalaxyImport.tsx:300`. */
+  'import.whereTo': { text: 'Where should these notes go?' },
+  /** `Import.tsx:232` and `HalaxyImport.tsx:310`. */
+  'import.addTo': { text: 'Add to {name}', kind: { name: 'text' } },
+  /** `Import.tsx:243` and `HalaxyImport.tsx:320`. */
+  'import.createNew': { text: 'Create new' },
+  /** `Import.tsx:254`. */
+  'import.notFound': { text: 'Not found since {cutoff}: {names}.', kind: { cutoff: 'text', names: 'text' } },
+  /** `Import.tsx:269` and `HalaxyImport.tsx:210`, with the count already rendered. */
+  'import.runLabel': { text: 'Import {notes}', kind: { notes: 'text' } },
+  /** `Import.tsx:278`. */
+  'import.changeSettings': { text: 'Change the settings' },
+  /** `Import.tsx:289-291`. */
+  'import.claudeLede': {
+    text: 'Bring the notes you drafted with Claude into Apunta: every patient you have seen since the cutoff, with their whole history, one draft per session.',
+  },
+  /**
+   * `Import.tsx:294-296`. `Claude`, `conversations.json` and `Mac` are
+   * keep-as-is tokens inside a translatable sentence: verbatim in both
+   * catalogues, never allowlisted, never split off (Fixed decision 2).
+   */
+  'import.exportHelp': {
+    text: 'In Claude, open Settings → Privacy → Export data. The export arrives by email as a zip. Choose that file here, or the conversations.json inside it. It is read on this Mac and kept nowhere.',
+  },
+  /** `Import.tsx:308`. */
+  'import.patientsSince': { text: 'Patients seen since' },
+  /** `Import.tsx:320-321`. */
+  'import.namesHelp': {
+    text: 'Your patients’ names, one per line (optional — they help spell and match names; anyone not listed is still found from the chat title)',
+  },
+  /** `Import.tsx:333`. */
+  'import.eachNoteIs': { text: 'Each note is' },
+  /** `Import.tsx:343`. */
+  'import.sourceAssistant': { text: 'Claude’s last reply in each session (the note you ended up with)' },
+  /** `Import.tsx:354`. */
+  'import.sourceHuman': { text: 'Your own messages in each session' },
+  /** `Import.tsx:367`. */
+  'import.readingExport': { text: 'Reading the export…' },
+  /** `Import.tsx:367` and `HalaxyImport.tsx:254`. */
+  'import.check': { text: 'Check what will be imported' },
+  /** `Import.tsx:369` and `HalaxyImport.tsx:256`. */
+  'import.nothingWritten': { text: 'Nothing is written until you press Import on the next screen.' },
+  /** `Import.tsx:393`, after a guessed name in the report. */
+  'import.nameGuessedSuffix': { text: ' · name guessed — check' },
+  /** `Import.tsx:410`, with the reasons already rendered. */
+  'import.skippedSummary': {
+    text: '{conversations} skipped: {reasons}',
+    kind: { conversations: 'text', reasons: 'text' },
+  },
+  /** `Import.tsx:416`. */
+  'import.why': { text: 'Why' },
+  /** `Import.tsx:417`. */
+  'import.started': { text: 'Started' },
+  /** `Import.tsx:418`. */
+  'import.lastMessage': { text: 'Last message' },
+  /** `Import.tsx:419`. */
+  'import.messages': { text: 'Messages' },
+  /** `Import.tsx:441`, for a skipped conversation with no date at all. */
+  'import.undated': { text: 'undated' },
+
+  /** `HalaxyImport.tsx:167`. */
+  'halaxy.summaryLine': {
+    text: '{notes} across {patients}.',
+    kind: { notes: 'text', patients: 'text' },
+  },
+  /** `HalaxyImport.tsx:170-171`. */
+  'halaxy.untickHelp': {
+    text: 'Check the names, untick anything you do not want, then import. Notes are saved as published history.',
+  },
+  /** `HalaxyImport.tsx:219`. */
+  'import.chooseDifferent': { text: 'Choose different files' },
+  /** `HalaxyImport.tsx:229`. */
+  'halaxy.lede': { text: 'Bring your Halaxy notes into Apunta. Choose one PDF per patient.' },
+  /** `HalaxyImport.tsx:231`. */
+  'halaxy.localOnly': { text: 'Text PDFs are read on this computer and kept nowhere.' },
+  /** `HalaxyImport.tsx:254`. */
+  'halaxy.readingPdfs': { text: 'Reading the PDFs…' },
+  /** `HalaxyImport.tsx:290`. */
+  'import.patientName': { text: 'Patient name' },
+  /** `HalaxyImport.tsx:331`, for a session with no title. */
+  'import.halaxyNoteLabel': { text: 'Import {date} for {name}', kind: { date: 'text', name: 'text' } },
+  /** `HalaxyImport.tsx:331`, for one with a title. */
+  'import.halaxyNoteLabelTitled': {
+    text: 'Import {date} {title} for {name}',
+    kind: { date: 'text', title: 'text', name: 'text' },
+  },
+  /** `HalaxyImport.tsx:333`, a session with no title of its own. */
+  'import.sessionTitle': { text: 'Session' },
+  /** `HalaxyImport.tsx:348`. */
+  'import.filesNotImported': { text: 'Files not imported' },
+
+  /*
+   * The history both imports share, `ImportBatchList.tsx`. The `·` and the `—`
+   * are punctuation and separators, so they render as they are (Fixed
+   * decision 2); `{date}` is the batch's own instant through `note.updatedAt`.
+   */
+  /** `ImportBatchList.tsx:28`. */
+  'import.earlier': { text: 'Earlier imports' },
+  /** `ImportBatchList.tsx:38`. */
+  'import.batchLine': { text: '{date} — {notes}', kind: { date: 'text', notes: 'text' } },
+  /** `ImportBatchList.tsx:39`, or empty. */
+  'import.batchPatients': {
+    text: ', {count} new patient',
+    plural: { one: ', {count} new patient', other: ', {count} new patients' },
+    kind: { count: 'number' },
+  },
 } as const satisfies Record<string, Message>;
