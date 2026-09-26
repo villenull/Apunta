@@ -74,7 +74,7 @@ export type { Locale } from './i18n/locales.js';
 export const ACCENT_COLOR_SETTING = 'accent_color';
 
 /** The prototype's green, and what an unset or unusable value falls back to. */
-export const DEFAULT_ACCENT_COLOR = '#1f6f63';
+export const DEFAULT_ACCENT_COLOR = '#d97757';
 
 /**
  * Settings values are free-form JSON, so this reads whatever is in the row

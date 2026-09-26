@@ -32,8 +32,8 @@ import { expect, test, uniqueName } from '../support/fixtures';
  *
  * Both tokens are literal hex rather than derived from anything, so **both are
  * accent-invariant**: that is what the four states are for. Two of them PUT a
- * purple (`#7c3aed`, far enough from a teal to prove something — the default
- * accent *is* `#1f6f63`, byte-identical to the light brand mark) and then
+ * purple (`#7c3aed`, far enough from the default clay accent to prove
+ * something) and then
  * require the brand colours to be byte-identical to what the default-accent run
  * measured. A mark or a wordmark that started following `--accent` would pass
  * every unit test in the tree and fail here.
@@ -48,7 +48,7 @@ import { expect, test, uniqueName } from '../support/fixtures';
  */
 
 /** `DEFAULT_ACCENT_COLOR` (`shared/src/settings.ts:36`), PUT explicitly. */
-const DEFAULT_ACCENT = '#1f6f63';
+const DEFAULT_ACCENT = '#d97757';
 /** A purple no teal-ish brand colour can be confused with. */
 const OTHER_ACCENT = '#7c3aed';
 

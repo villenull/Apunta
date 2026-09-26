@@ -182,7 +182,15 @@
    * the mark keeps the brand's colour whatever accent she picks.
    */
   --brand-mark: #1f6f63;
-  --accent: #1f6f63;
+  /*
+   * The accent default, claude.ai's clay. AM-047, owner-approved. It is a
+   * setting she changes in Appearance, so this is only what a fresh install
+   * and a reset-to-default get. `--accent-ink`, `--accent-tint` and
+   * `--accent-hover` all derive from it, so they follow. `--brand-mark` stays
+   * teal above, deliberately: the mark keeps the brand's colour whatever
+   * accent she picks (D10), which is what brand.spec.ts proves.
+   */
+  --accent: #d97757;
   /*
    * The Patients heading on the View-all page. It was the owner's #2596be
    * until AM-047, when claude.ai's look replaced it: claude.ai sets its page

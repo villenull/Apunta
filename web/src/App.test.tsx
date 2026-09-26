@@ -1164,7 +1164,7 @@ describe('settings', () => {
     renderApp('/settings');
 
     const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
-    expect(picker.value).toBe('#1f6f63');
+    expect(picker.value).toBe('#d97757');
     expect(screen.queryByTestId('appearance-saved')).toBeNull();
 
     fireEvent.change(picker, { target: { value: '#8b2f6b' } });
@@ -1338,14 +1338,14 @@ describe('settings', () => {
     fireEvent.click(screen.getByTestId('reset-accent'));
 
     await waitFor(() => {
-      expect(api.state.settings['accent_color']).toBe('#1f6f63');
+      expect(api.state.settings['accent_color']).toBe('#d97757');
     });
-    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#1f6f63');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#d97757');
     expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
 
     // Every change is saved, so leaving the screen keeps the stored colour.
     cleanup();
-    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#1f6f63');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#d97757');
     document.documentElement.style.removeProperty('--accent');
   });
 });
