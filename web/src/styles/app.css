@@ -4084,7 +4084,7 @@ select:disabled {
   font-size: calc(22px * var(--font-scale));
   font-weight: 500;
   letter-spacing: -0.01em;
-  color: var(--text-primary);
+  color: var(--patients-title);
 }
 
 .directory-tabs {

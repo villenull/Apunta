@@ -182,6 +182,15 @@
    */
   --brand-mark: #1f6f63;
   --accent: #1f6f63;
+  /*
+   * The Patients column heading on the View-all page, the owner's exact
+   * colour. A fixed value in both themes and deliberately not derived from
+   * `--accent`: she picked this one, and it must not move when she changes
+   * the accent in Settings. Its contrast is 3.40:1 on `--app-bg` (#fff) and
+   * 4.47:1 on the dark surface — the owner has seen both numbers and chose
+   * the colour anyway.
+   */
+  --patients-title: #2596be;
   --accent-hover: color-mix(in srgb, var(--accent) 77%, #000);
   --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
   --on-accent: #fff;
@@ -330,6 +339,9 @@
   --border-strong: #4d4d4a;
   /* The brand mark in dark mode: white on the near-black surfaces (D10). */
   --brand-mark: #ffffff;
+  /* The Patients column heading, the owner's exact colour, unchanged in dark
+     mode — she asked for this value, not a variant of it. */
+  --patients-title: #2596be;
   --col-patients-bg: var(--sidebar-bg);
   --col-notes-bg: var(--app-bg);
   --col-main-bg: var(--app-bg);
