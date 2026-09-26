@@ -131,8 +131,19 @@ class RawHttpError extends HttpError {
   private readonly raw: string;
 
   constructor(statusCode: number, code: ApiErrorCode, message: string, details?: unknown) {
+    // `errors.internal_error` is a placeholder, because this error's sentence is
+    // not in the catalogue and `key` is the only thing the base constructor can
+    // render from. Nothing reads it here — `messageIn` is the reader, and it
+    // answers with `raw` — so the two things that *do* read a sentence are given
+    // the real one.
     super(statusCode, code, 'errors.internal_error', {}, details);
     this.raw = message;
+    // `Error.message` is writable, and left as the base class set it this error
+    // would say "Something went wrong on the server." — so a 400 or a 409 whose
+    // sentence is not in the catalogue would log as a 500 whatever the wire
+    // carried. The bytes on the wire are unchanged: `messageIn` is what the
+    // handler answers with.
+    this.message = message;
   }
 
   override messageIn(): string {
@@ -266,7 +277,12 @@ export function registerErrorHandler(app: FastifyInstance, options: ErrorHandler
     if (options.dataDir !== undefined) {
       const storage = storageErrorFor(error, options.dataDir, requestLocale(options));
       if (storage !== null) {
-        request.log.error({ err: error, code: storage.causeCode }, storage.message);
+        // Rendered in `locale` for the reply, in **English** for the log: a pino
+        // line is not a sentence anyone chose to read in a language, it is
+        // something a grep has to find whatever the request's language was.
+        // `storage.message` is the request's locale, so the log renders the
+        // sentence again from the key and the parameters rather than reusing it.
+        request.log.error({ err: error, code: storage.causeCode }, msg('en', storage.key, storage.params));
         return reply.code(storage.statusCode).send(body(storage.code, storage.message, storage.details));
       }
     }
