@@ -563,3 +563,4 @@ export type { SectionRole, SectionRoleId } from './section-roles.js';
 
 export { captureJobContext } from './job-context.js';
 export type { JobContext, JobContextInput } from './job-context.js';
+export { platformDataDir } from './platform-paths.js';

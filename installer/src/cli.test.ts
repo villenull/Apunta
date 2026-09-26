@@ -23,6 +23,16 @@ describe('parseArgs', () => {
   });
 
   /**
+   * R13: the installer had no `win32` branch, so on Windows it fell through to
+   * the Linux-style default. C-PATH@1's table now decides, and this is the
+   * caller-level half of that: with no flag and no environment, `parseArgs`
+   * hands back exactly what `defaultDataDir` says for the platform.
+   */
+  it('defaults a win32 run to the Windows data folder, not the Linux-style one', () => {
+    expect(parseArgs(['run'], {}, 'win32').dataDir).toBe(defaultDataDir('win32', {}));
+  });
+
+  /**
    * This process runs outside the server's egress guard, so its own URL check
    * is the guard. A non-loopback runtime would be handed the prompt — the
    * therapist's account of a session.
@@ -48,6 +58,22 @@ describe('defaultDataDir', () => {
     expect(defaultDataDir('darwin', {})).toContain('Library/Application Support/Apunta');
     expect(defaultDataDir('linux', { XDG_DATA_HOME: '/data' })).toBe('/data/apunta');
     expect(defaultDataDir('linux', {})).toContain('.local/share/apunta');
+  });
+
+  /**
+   * The two `win32` rows, asserted as suffixes because the wrapper reads the
+   * real `homedir()`. The exact strings live in
+   * `shared/src/platform-paths.test.ts`; these prove the installer reaches the
+   * shared function rather than keeping its own copy of the table.
+   */
+  it('uses APPDATA on win32', () => {
+    expect(defaultDataDir('win32', { APPDATA: '/appdata' })).toBe('/appdata/Apunta');
+  });
+
+  it('falls back to Roaming under the home folder on win32, never to the XDG default', () => {
+    const dir = defaultDataDir('win32', {});
+    expect(dir.endsWith('AppData/Roaming/Apunta')).toBe(true);
+    expect(dir).not.toContain('.local/share');
   });
 });
 

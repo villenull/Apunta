@@ -1,3 +1,5 @@
+import { platformDataDir } from '@apunta/shared';
+
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -31,13 +33,9 @@ const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
 
 export class UsageError extends Error {}
 
-/** Default data directory — the same one `server/src/config.ts` computes. */
+/** Default data directory — C-PATH@1's table, shared with `server/src/config.ts`. */
 export function defaultDataDir(platformName: string, env: NodeJS.ProcessEnv): string {
-  const override = env['APUNTA_DATA_DIR'];
-  if (override !== undefined && override !== '') return resolve(override);
-  if (platformName === 'darwin') return join(homedir(), 'Library', 'Application Support', 'Apunta');
-  const xdg = env['XDG_DATA_HOME'];
-  return xdg !== undefined && xdg !== '' ? join(xdg, 'apunta') : join(homedir(), '.local', 'share', 'apunta');
+  return platformDataDir(platformName, env, homedir());
 }
 
 export function parseArgs(argv: readonly string[], env: NodeJS.ProcessEnv, platformName: string): CliOptions {

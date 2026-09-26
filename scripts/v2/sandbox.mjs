@@ -39,6 +39,13 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'node:net';
 
+// C-PATH@1's one function, imported from the TypeScript source so this wrapper
+// keeps its "no dependencies" promise: no build step, no `shared/dist`, and no
+// second copy of the table to drift. Node 24 strips the annotations. Re-exported
+// because `sandbox.test.mjs` reads `platformDataDir` from here.
+import { platformDataDir } from '../../shared/src/platform-paths.ts';
+export { platformDataDir };
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const serverEntry = join(repoRoot, 'server', 'dist', 'index.js');
 
@@ -50,27 +57,6 @@ export const UPDATER_MIN = 7890;
 export const UPDATER_MAX = 7899;
 
 export class SandboxRefusal extends Error {}
-
-/**
- * Local copy of the C-PATH@1 table (shared/src/platform-paths.ts does not
- * exist yet). Compared against **as a string only**: the wrapper never lists
- * or opens the default folder.
- *
- * Replace with shared platformDataDir when P4.2 lands.
- */
-export function platformDataDir(platform, env, home) {
-  const override = env['APUNTA_DATA_DIR'];
-  if (override !== undefined && override !== '') return resolve(override);
-  if (platform === 'darwin') return join(home, 'Library', 'Application Support', 'Apunta');
-  if (platform === 'win32') {
-    const appData = env['APPDATA'];
-    if (appData !== undefined && appData !== '') return join(appData, 'Apunta');
-    return join(home, 'AppData', 'Roaming', 'Apunta');
-  }
-  const xdg = env['XDG_DATA_HOME'];
-  if (xdg !== undefined && xdg !== '') return join(xdg, 'apunta');
-  return join(home, '.local', 'share', 'apunta');
-}
 
 export function validatePort(raw) {
   const port = typeof raw === 'number' ? raw : Number(raw);
@@ -169,6 +155,21 @@ export function ensureRunDir(runId) {
 }
 
 /**
+ * C-ISO@1's guard is a comparison of two strings, and the two arrive in
+ * different shapes: the shared function returns `/`-separated paths, while
+ * `resolve()` above returns whatever the host separates with. Both sides are
+ * therefore put in the same shape first, or a native-separator `dataDir` would
+ * stop matching a `/`-separated default on Windows and the guard would quietly
+ * stop refusing.
+ */
+function comparablePath(value) {
+  return value
+    .replace(/\\/g, '/')
+    .replace(/\/{2,}/g, '/')
+    .replace(/\/+$/, '');
+}
+
+/**
  * The data folder is never the platform default: the wrapper computes the
  * default as a string and refuses when the sandbox path equals it or sits
  * inside it. It also refuses anything outside `/tmp/apunta-v2/`.
@@ -184,7 +185,9 @@ export function resolveSandboxDataDir(env, runDataDir) {
     // Not created yet: fall back to the resolved (not yet canonical) path.
   }
   const def = platformDataDir(process.platform, process.env, homedir());
-  if (dataDir === def || dataDir.startsWith(def + sep)) {
+  const defKey = comparablePath(def);
+  const dataKey = comparablePath(dataDir);
+  if (dataKey === defKey || dataKey.startsWith(defKey + '/')) {
     throw new SandboxRefusal(
       `refusing data folder ${dataDir}: it equals (or sits inside) the platform default ${def}. Sandbox runs never touch the live data folder.`,
     );

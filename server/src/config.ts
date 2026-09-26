@@ -1,3 +1,5 @@
+import { platformDataDir } from '@apunta/shared';
+
 import { mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { homedir, platform } from 'node:os';
@@ -132,19 +134,12 @@ export interface AppConfig {
 }
 
 /**
- * Default data directory. macOS is the target platform; other platforms get a
- * sensible equivalent so the server stays portable (CI runs on Linux).
+ * Default data directory. One line, because C-PATH@1's table in
+ * `shared/src/platform-paths.ts` is the single source of truth for every
+ * consumer; the platform is read here and nowhere else.
  */
 export function defaultDataDir(): string {
-  if (platform() === 'darwin') {
-    return join(homedir(), 'Library', 'Application Support', 'Apunta');
-  }
-  if (platform() === 'win32') {
-    const appData = process.env['APPDATA'];
-    return appData ? join(appData, 'Apunta') : join(homedir(), 'Apunta');
-  }
-  const xdg = process.env['XDG_DATA_HOME'];
-  return xdg ? join(xdg, 'apunta') : join(homedir(), '.local', 'share', 'apunta');
+  return platformDataDir(platform(), process.env, homedir());
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {

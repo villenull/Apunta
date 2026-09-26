@@ -1,7 +1,8 @@
 import { existsSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, platform, tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { platformDataDir } from '@apunta/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { DEFAULT_OLLAMA_URL, DEFAULT_PORT, defaultDataDir, ensureDataDir, loadConfig } from './config.js';
@@ -58,6 +59,18 @@ describe('loadConfig', () => {
   it('rejects a negative fake stream delay', () => {
     expect(() => loadConfig({ APUNTA_FAKE_STREAM_DELAY_MS: '-1' })).toThrow(/APUNTA_FAKE_STREAM_DELAY_MS/);
     expect(loadConfig({ APUNTA_FAKE_STREAM_DELAY_MS: '0' }).fakeStreamDelayMs).toBe(0);
+  });
+});
+
+describe('defaultDataDir', () => {
+  /**
+   * The server's wrapper is a one-line delegation to C-PATH@1's shared
+   * function, and this is what proves it: the two agree on this host, with
+   * the same `process.platform`, the same `process.env` and the same
+   * `homedir()`. A copy of the table in this file would drift and fail here.
+   */
+  it('is the shared platformDataDir for this platform, environment and home', () => {
+    expect(defaultDataDir()).toBe(platformDataDir(platform(), process.env, homedir()));
   });
 });
 
