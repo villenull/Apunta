@@ -66,3 +66,11 @@ One entry per coordinator step, newest last:
 2026-09-26T08:25:00Z | P0.4 | impl review | in flight (793ace42) | reviewer told to re-derive all rates, not re-run all 8.
 2026-09-26T08:25:00Z | ALL | repo lint | GREEN | AM-030 fixed the formatting debt from the UI baseline; `npm run lint` exits 0.
 2026-09-26T07:xx | (side) | pw-prompt mechanism | FOUND + VERIFIED | The greyed, centered password prompt is **Omarchy's quickshell polkit agent** (`/usr/share/omarchy/shell/plugins/polkit/PolkitAgent.qml`), triggered by polkit, not terminal `sudo`. `pkexec /usr/bin/mkdir -p /tmp/...` → exit 0, dir root-owned; bare `sudo` in an agent shell cannot prompt (no TTY / no askpass). For future owner-authorised privileged ops, agents use `pkexec <cmd>` (wrap with a timeout; must inherit the active session env: XDG_SESSION_ID, DBUS_SESSION_BUS_ADDRESS/XDG_RUNTIME_DIR, WAYLAND_DISPLAY; must not run under a systemd unit or another session).
+
+## Overnight digest (2026-09-26, coordinator, owner asleep)
+- Milestones complete: C0.1, P0 (+P0.R), S1 (+S1.R), P7a.1, P1 (+P1.R), S3.1, S1.1-S1.5.
+- Blocked (owner decision): P0.2 (resolved via AM-022/P0.5), S4a.1 (Piper non-determinism; see BLOCKED.md).
+- Out-of-band: owner-approved Claude-style UI baseline committed (AM-028, b366be1) after coordinator review via Chromium screenshots; System theme added; AM-030/032 fixed its lint/e2e fallout.
+- Ollama installed + enabled (AM-020); qwen3.5:4b-q4_K_M on GPU; P0.4 English provider baseline recorded (fabrication 20%/0%, safety 85%/100%).
+- P1: shared settings mutation (P1.1), theme-radio coverage (P1.2 rewritten coverage-only after AM-028 shipped it), request guard (P1.3), effective-model policy (P1.4, 2 attempts), licence/docs (P1.5, +AM-034/035). P1.R all PASS.
+- Next: P2 brand (P2.1/P2.2 likely mostly shipped by AM-028 -> reconcile then verify), then S2 language, P3 shell, S3/S4/S5 Spanish, P4-P6, P7b, Q1.
