@@ -1,0 +1,27 @@
+{
+  "card": "C0.1",
+  "planVersion": 2,
+  "contracts": [],
+  "baseCommit": "4b7826759325b0c80c3a1171e56b21efdfbd4501",
+  "attempt": 1,
+  "status": "APPROVED",
+  "lastCompletedStep": "coordinator-run setup: harness recorded, feature/v2 created, plan committed, all verifications PASS",
+  "nextAllowedAction": "done",
+  "sideEffectsDone": [
+    "created branch feature/v2 from main HEAD 4b78267",
+    "pushed feature/v2 to origin"
+  ],
+  "changedFiles": [
+    "CLAUDE.md",
+    ".prettierignore",
+    "docs/v2/"
+  ],
+  "criteria": {
+    "V1": "PASS",
+    "V2": "PASS",
+    "V3": "PASS",
+    "V4": "PASS"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T01:00:31Z"
+}
