@@ -13,8 +13,9 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { hashFile, type hashFile as HashFile } from './checksum.js';
 import {
   A07_ALLOWED_QUERY_KEYS,
   SPEECH_DOWNLOAD_ALLOWANCE,
@@ -27,10 +28,21 @@ import { receiptPathFor, writeReceiptFor } from './readiness.js';
 import {
   downloadSpeechFile,
   previewModelPath,
+  probeState,
   runSetup,
   speechModelPath,
   type SetupEnvironment,
 } from './run.js';
+
+/** The module shape `vi.mock` re-exports, named so the cast needs no `import()`. */
+type ChecksumModule = { hashFile: typeof HashFile };
+
+// The real hasher, wrapped, so "how many times was 75 MiB read" is a count and
+// not a stopwatch. Every other case in this file is unaffected: it delegates.
+vi.mock('./checksum.js', async (importOriginal) => {
+  const actual = await importOriginal<ChecksumModule>();
+  return { ...actual, hashFile: vi.fn(actual.hashFile) };
+});
 
 /**
  * The whole first run, orchestrated, against a fake runtime and a fake
@@ -508,5 +520,33 @@ describe('downloading one speech file', () => {
     expect(digest).toContain(PROMOTED_DEFAULT_MODEL);
     // The sentence has to say the pull was the runtime's, because it was.
     expect(digest).toMatch(/AI engine/);
+  });
+});
+
+describe('readiness of the two speech entries', () => {
+  /**
+   * English-only dictation means both entries name one file, so a naive probe
+   * would read and hash the same 75 MiB twice at once to answer one question
+   * twice. The hasher is wrapped above, so the count is observable rather than
+   * timed.
+   */
+  it('reads the shared file once, not once per entry', async () => {
+    const { environment, modelsDir } = harness();
+    // The pinned length with no receipt: the one state that has to hash at all.
+    const path = speechModelPath(modelsDir);
+    writeFileSync(path, MODEL_BODY);
+    truncateSync(path, SPEECH_MODEL.sizeBytes);
+    expect(previewModelPath(modelsDir)).toBe(path);
+
+    vi.mocked(hashFile).mockClear();
+    const state = await probeState(environment);
+
+    expect(state.speechModelPresent).toBe(false);
+    expect(state.previewModelPresent).toBe(false);
+    // One read of the file, even though two entries asked about it. The old
+    // `size > 0` rule read nothing at all; the mistake this fixes is the
+    // opposite one.
+    expect(vi.mocked(hashFile)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(hashFile).mock.calls[0]?.[0]).toBe(path);
   });
 });

@@ -10,7 +10,7 @@ import { describeFailure, setupError } from './errors.js';
 import { hasModel, pullModel, waitForOllama, type PullResult } from './ollama.js';
 import { buildPlan, describeWeightsProvenance } from './plan.js';
 import type { PlanEvent, SetupEvent } from './protocol.js';
-import { assessModel, ModelRefusedError, writeReceiptFor } from './readiness.js';
+import { assessModel, ModelRefusedError, writeReceiptFor, type ReadinessVerdict } from './readiness.js';
 
 /**
  * First-run setup, start to finish.
@@ -91,10 +91,7 @@ export async function probeState(environment: SetupEnvironment): Promise<ProbedS
   const writingModelPresent =
     runtimeReachable && tag !== null && tag !== '' ? await hasModel(tag, client) : false;
 
-  const [speech, preview] = await Promise.all([
-    assessModel(SPEECH_MODEL, speechModelPath(environment.modelsDir)),
-    assessModel(PREVIEW_SPEECH_MODEL, previewModelPath(environment.modelsDir)),
-  ]);
+  const [speech, preview] = await assessBothSpeechModels(environment.modelsDir);
 
   return {
     speechModelPresent: speech.state === 'ready',
@@ -103,6 +100,23 @@ export async function probeState(environment: SetupEnvironment): Promise<ProbedS
     freeBytes: (environment.freeBytesImpl ?? freeBytesFor)(environment.dataDir),
     runtimeReachable,
   };
+}
+
+/**
+ * Readiness for the note's model and the preview's, hashed once between them.
+ *
+ * English-only dictation means the two entries name literally the same file, so
+ * the naive `Promise.all` would read and hash the same 75 MiB twice, at the same
+ * moment, to answer one question twice. When the catalogue ever splits them —
+ * a different file for the preview — this asks each separately and the extra
+ * hash is the honest price.
+ */
+async function assessBothSpeechModels(modelsDir: string): Promise<[ReadinessVerdict, ReadinessVerdict]> {
+  const speech = await assessModel(SPEECH_MODEL, speechModelPath(modelsDir));
+  if (previewModelPath(modelsDir) === speechModelPath(modelsDir)) {
+    return [speech, speech];
+  }
+  return [speech, await assessModel(PREVIEW_SPEECH_MODEL, previewModelPath(modelsDir))];
 }
 
 /**
