@@ -1,8 +1,9 @@
 # P0.5 findings — two problems outside this card, with the evidence for both
 
-Neither is caused by this card and neither is fixable inside its May-edit
+Neither is caused by this card and neither was fixable inside its May-edit
 list (HS-9). Both are reported rather than fixed, per the card's stop
-conditions.
+conditions. **Finding 2 has since been cleared by the coordinator (AM-030)
+and V3 now exits 0; finding 1 is still open.**
 
 ## Finding 1 — a pre-existing flake in `web/src/App.test.tsx` (settings tests)
 
@@ -50,24 +51,27 @@ Recommendation (not this card's to make): wrap the two synchronous
 `--font-scale` / `--animate` reads in `waitFor`, as the assertions after them
 already are. Until then, an occasional `App.test.tsx` settings failure under
 full-suite load is expected and is not a timezone regression — V1 passed
-clean in all four zones on the recorded run.
+clean in all four zones on both recorded rounds, including the final re-run
+at `2026-09-26T08:18:57Z` → `2026-09-26T08:19:31Z` (exit 0, no failure of
+any kind in the log), so the flake did not fire there and no zone needed the
+extra re-run.
 
-## Finding 2 — `npm run lint` fails at the base commit, on four files this card may not edit
+## Finding 2 — `npm run lint` failed at the base commit, on four files this card may not edit — **CLEARED**
 
-`prettier --check .` flags `scripts/v2/check-es-audio.mjs`,
+Round 1: `prettier --check .` flagged `scripts/v2/check-es-audio.mjs`,
 `scripts/v2/generate-es-audio.mjs` (both untracked, another agent's
 in-flight work) and `web/src/components/BrandWordmark.tsx`,
 `web/src/routes/Settings.tsx` (both committed, untouched by this card, and
-identical at `b366be1` — `git diff b366be1..HEAD --name-only` lists no `web/`
-path). `npm run lint` therefore exits 1 with this card's four files stashed
-too, so the V3 row cannot reach exit 0 from inside this card's scope.
+identical at `b366be1` — `git diff b366be1..HEAD --name-only` listed no
+`web/` path). `npm run lint` therefore exited 1 with this card's four files
+stashed too, so the V3 row could not reach exit 0 from inside this card.
 
-Details and timings: `V3.md`.
+Resolution: the two `web/` files were reformatted under AM-030 (commit
+`7918381`) and the two `scripts/v2/*.mjs` files are Prettier-clean. V3
+re-run `2026-09-26T08:18:42Z` → `2026-09-26T08:18:52Z`, exit **0** — see
+`V3.md`. No further action needed from this card.
 
-Recommendation (not this card's to make): the two `scripts/v2/*.mjs` files
-belong to whichever agent is writing them; the two `web/` files are formatting
-debt from the `b366be1` UI baseline commit and need a `prettier --write` from
-an agent that holds them in its May-edit list.
+Details and timings for both rounds: `V3.md`.
 
 ## Base-commit movement, for the record
 
@@ -84,3 +88,18 @@ reset was performed by this session.
 built and tested against is byte-identical to the base commit the card names.
 The card's own `dispatch/P0.5.md` is part of that commit, and the version on
 disk (which this session followed) is the committed one.
+
+HEAD moved twice more while this card was open, both times by the
+coordinator and both times without this session pulling, merging, rebasing or
+resetting:
+
+| Commit | Subject | Effect on this card |
+| --- | --- | --- |
+| `3fe5355` | Record v2 state: P0.4/P0.5/S4a.1 dispatches (coordinator) | 12 Markdown files under `docs/v2/`; no code |
+| `7918381` | Fix Prettier debt in AM-028 UI baseline (AM-030) | reformatted two `web/` files, and **carried this card's four test files and its evidence/return files into history** — they had been left staged, and the coordinator committed them. This session did not commit. |
+
+The round-2 verification runs in `V1.md`, `V2.md` and `V3.md` were made
+against HEAD `7918381`, i.e. against the committed content of this card's
+four test files — confirmed unchanged from the version verified in round 1
+(`grep -c originalTimezone` returns 3, 6, 3, 3 across the four files, and
+`git status` shows none of them modified).
