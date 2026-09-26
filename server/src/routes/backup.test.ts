@@ -4,10 +4,25 @@ import { dirname, join } from 'node:path';
 import { DB_ENTRY_NAME, MANIFEST_FILENAME, PENDING_RESTORE_DIRNAME } from '@apunta/shared';
 import type { BackupStatus, CreateBackupResponse, RestoreBackupResponse } from '@apunta/shared';
 import { strFromU8, unzipSync } from 'fflate';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type * as BackupModule from '../backup/index.js';
 import { seedDatabase } from '../seed.js';
 import { createTestApp, type TestApp } from '../test/harness.js';
+
+/**
+ * `runBackupAsync` is spied rather than mocked away, so the route's error
+ * mapping can be exercised without waiting out rule 3's real 60 s. Everything
+ * else in the module — `backupStatus`, the restore calls, the lock — is the
+ * real one, and every case in this file that writes an archive goes through it.
+ */
+vi.mock('../backup/index.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof BackupModule>();
+  return { ...actual, runBackupAsync: vi.fn(actual.runBackupAsync) };
+});
+
+const { BackupError, runBackupAsync } = await import('../backup/index.js');
+const runBackupAsyncSpy = vi.mocked(runBackupAsync);
 
 let harness: TestApp;
 
@@ -87,6 +102,40 @@ describe('POST /api/backup', () => {
     } finally {
       await logged.close();
     }
+  });
+
+  /**
+   * C-SNAP@1 rule 3 as the caller sees it: 409 `backup_in_progress`, and a
+   * `backup_in_progress` code the client can branch on rather than the generic
+   * `conflict` every other conflict gets. Every other `BackupError` stays the
+   * 400 it has always been, which the cases above and below both show.
+   *
+   * The refusal is a spy rather than a real wait: rule 3's 60 s belongs to the
+   * contract and a test may not shorten it (HS-7), so a suite cannot afford to
+   * wait a minute for every 409. That the lock really does refuse is proved in
+   * `backup.test.ts`, where the wait is the test's own `lockWaitMs`; what is
+   * under test here is only the mapping.
+   */
+  it('answers 409 backup_in_progress while another backup holds the lock', async () => {
+    runBackupAsyncSpy.mockRejectedValueOnce(
+      new BackupError(
+        'another backup is already running. Wait for it to finish, then try again.',
+        'backup_in_progress',
+      ),
+    );
+
+    const response = await harness.app.inject({ method: 'POST', url: '/api/backup', payload: {} });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json<{ error: string; message: string }>()).toMatchObject({
+      error: 'backup_in_progress',
+      message: expect.stringContaining('another backup'),
+    });
+    // Nothing was written, and the archive folder is untouched: a refusal is
+    // not a backup that quietly happened.
+    const status = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(status.last_backup_at).toBeNull();
+    expect(status.backups).toEqual([]);
   });
 });
 

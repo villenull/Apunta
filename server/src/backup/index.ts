@@ -13,8 +13,10 @@ import type { Database } from 'better-sqlite3';
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
 import { getSetting, putSettings } from '../db/settings.js';
+import { snapshotDatabase, type SnapshotMethod } from '../db/snapshot.js';
 import { createBackup, createBackupAsync } from './archive.js';
 import { tableCounts } from './dump.js';
+import { withBackupLock, withBackupLockSync } from './lock.js';
 import {
   describeDestination,
   ensureBackupDir,
@@ -28,9 +30,11 @@ import {
   resolveBackupDir,
 } from './store.js';
 
-export { BackupError, createBackup, createBackupAsync } from './archive.js';
+export { snapshotDatabase, type SnapshotMethod };
+export { BackupError, createBackup, createBackupAsync, type BackupOperation } from './archive.js';
 export { encryptPayload, decryptPayload, sha256 } from './crypto.js';
 export { dumpDatabase, tableCounts, listUserTables } from './dump.js';
+export { BACKUP_LOCK_WAIT_MS, withBackupLock, withBackupLockSync } from './lock.js';
 export { noteEntries, planEntries, noteFileText } from './readable.js';
 export { renderRestoreText, DECRYPT_SCRIPT } from './restore-txt.js';
 export {
@@ -61,6 +65,12 @@ export interface RunBackupOptions {
   /** Remember `directory` as the destination from now on. */
   readonly remember?: boolean | undefined;
   readonly now?: Date | undefined;
+  /**
+   * How long to wait for the backup already running, instead of
+   * `BACKUP_LOCK_WAIT_MS`. A seam for tests; production callers omit it, and
+   * the production number is the contract's (C-SNAP@1 rule 3, HS-7).
+   */
+  readonly lockWaitMs?: number | undefined;
 }
 
 /**
@@ -70,6 +80,11 @@ export interface RunBackupOptions {
  * leaves last week's timestamp in place is a backup that appears to exist —
  * which the research ranks as the single most likely way this practice loses
  * its data — so a failure writes the error into Settings and Settings shows it.
+ *
+ * The work happens under the backup lock and the bookkeeping is outside it, so
+ * a run that lost the wait for another one is recorded as the failure it is.
+ * The lock is here rather than in the route so the daily automatic backup is
+ * covered by the same rule (C-SNAP@1 rule 3).
  */
 export function runBackup(
   db: Database,
@@ -81,36 +96,38 @@ export function runBackup(
   const destination = describeDestination(directory, config.dataDir);
 
   try {
-    ensureBackupDir(directory);
-    const created = createBackup({
-      db,
-      dataDir: config.dataDir,
-      directory,
-      appVersion: config.version,
-      passphrase: options.passphrase,
-      now,
-    });
+    return withBackupLockSync(() => {
+      ensureBackupDir(directory);
+      const created = createBackup({
+        db,
+        dataDir: config.dataDir,
+        directory,
+        appVersion: config.version,
+        passphrase: options.passphrase,
+        now,
+      });
 
-    const settings: Settings = {
-      [LAST_BACKUP_AT_SETTING]: now.toISOString(),
-      [LAST_BACKUP_FILE_SETTING]: created.path,
-      [LAST_BACKUP_ERROR_SETTING]: '',
-    };
-    if (options.remember === true) settings[BACKUP_DIR_SETTING] = directory;
-    putSettings(db, settings);
+      const settings: Settings = {
+        [LAST_BACKUP_AT_SETTING]: now.toISOString(),
+        [LAST_BACKUP_FILE_SETTING]: created.path,
+        [LAST_BACKUP_ERROR_SETTING]: '',
+      };
+      if (options.remember === true) settings[BACKUP_DIR_SETTING] = directory;
+      putSettings(db, settings);
 
-    return {
-      file: {
-        filename: created.filename,
-        path: created.path,
-        bytes: created.bytes,
-        created_at: now.toISOString(),
-        encrypted: created.manifest.encrypted,
-      },
-      manifest: created.manifest,
-      destination,
-      pruned: pruneBackups(directory),
-    };
+      return {
+        file: {
+          filename: created.filename,
+          path: created.path,
+          bytes: created.bytes,
+          created_at: now.toISOString(),
+          encrypted: created.manifest.encrypted,
+        },
+        manifest: created.manifest,
+        destination,
+        pruned: pruneBackups(directory),
+      };
+    }, options.lockWaitMs);
   } catch (error) {
     putSettings(db, {
       [LAST_BACKUP_ERROR_SETTING]: `${now.toISOString()} — ${
@@ -132,36 +149,38 @@ export async function runBackupAsync(
   const destination = describeDestination(directory, config.dataDir);
 
   try {
-    ensureBackupDir(directory);
-    const created = await createBackupAsync({
-      db,
-      dataDir: config.dataDir,
-      directory,
-      appVersion: config.version,
-      passphrase: options.passphrase,
-      now,
-    });
+    return await withBackupLock(async () => {
+      ensureBackupDir(directory);
+      const created = await createBackupAsync({
+        db,
+        dataDir: config.dataDir,
+        directory,
+        appVersion: config.version,
+        passphrase: options.passphrase,
+        now,
+      });
 
-    const settings: Settings = {
-      [LAST_BACKUP_AT_SETTING]: now.toISOString(),
-      [LAST_BACKUP_FILE_SETTING]: created.path,
-      [LAST_BACKUP_ERROR_SETTING]: '',
-    };
-    if (options.remember === true) settings[BACKUP_DIR_SETTING] = directory;
-    putSettings(db, settings);
+      const settings: Settings = {
+        [LAST_BACKUP_AT_SETTING]: now.toISOString(),
+        [LAST_BACKUP_FILE_SETTING]: created.path,
+        [LAST_BACKUP_ERROR_SETTING]: '',
+      };
+      if (options.remember === true) settings[BACKUP_DIR_SETTING] = directory;
+      putSettings(db, settings);
 
-    return {
-      file: {
-        filename: created.filename,
-        path: created.path,
-        bytes: created.bytes,
-        created_at: now.toISOString(),
-        encrypted: created.manifest.encrypted,
-      },
-      manifest: created.manifest,
-      destination,
-      pruned: pruneBackups(directory),
-    };
+      return {
+        file: {
+          filename: created.filename,
+          path: created.path,
+          bytes: created.bytes,
+          created_at: now.toISOString(),
+          encrypted: created.manifest.encrypted,
+        },
+        manifest: created.manifest,
+        destination,
+        pruned: pruneBackups(directory),
+      };
+    }, options.lockWaitMs);
   } catch (error) {
     putSettings(db, {
       [LAST_BACKUP_ERROR_SETTING]: `${now.toISOString()} — ${

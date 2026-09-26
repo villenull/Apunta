@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -17,6 +17,8 @@ import BetterSqlite3, { type Database } from 'better-sqlite3';
 import { strToU8, zip, zipSync } from 'fflate';
 
 import { migrationLevel } from '../db/index.js';
+import { snapshotDatabase } from '../db/snapshot.js';
+import { uuidv7 } from '../db/uuid.js';
 import { encryptPayload, sha256 } from './crypto.js';
 import { dumpDatabase, tableCounts } from './dump.js';
 import { noteEntries, planEntries } from './readable.js';
@@ -36,17 +38,37 @@ import { renderRestoreText } from './restore-txt.js';
  * Then it is verified before it is called a backup: `PRAGMA integrity_check`
  * runs on the copy, and its result and SHA-256 go into the manifest. A backup
  * nobody validated is a rumour (§5.2).
+ *
+ * And every part of the archive describes the same moment (C-SNAP@1 rule 2).
+ * The copy is made in `server/src/db/snapshot.ts` into a staging folder of its
+ * own, and everything derived from it — the counts, `data.json`, the readable
+ * notes, the plans — is read from **that copy**, opened read-only. Reading any
+ * of it from the live handle is how an archive ends up with a database from one
+ * moment and a manifest from the next.
  */
+
+export type BackupErrorCode =
+  'integrity_failed' | 'destination_unwritable' | 'vacuum_failed' | 'backup_in_progress';
 
 export class BackupError extends Error {
   constructor(
     message: string,
-    readonly code: 'integrity_failed' | 'destination_unwritable' | 'vacuum_failed',
+    readonly code: BackupErrorCode,
   ) {
     super(message);
     this.name = 'BackupError';
   }
 }
+
+/**
+ * What the staging folder of one operation is called.
+ *
+ * `backup` is a manual or daily backup; `pre-migrate` is the safety snapshot
+ * C-UPD@1 step 3 takes before a migration. The name is in the path, so a
+ * safety copy is identifiable by looking at it rather than by opening it, and
+ * P5.2 needs no contract change to use the same mechanism.
+ */
+export type BackupOperation = 'backup' | 'pre-migrate';
 
 export interface CreateBackupOptions {
   readonly db: Database;
@@ -58,6 +80,18 @@ export interface CreateBackupOptions {
   /** Set to encrypt the archive body. */
   readonly passphrase?: string | undefined;
   readonly now?: Date | undefined;
+  /**
+   * Called once the copy exists and has passed its integrity check, and before
+   * anything is derived from it — on both the sync and the async path, so a
+   * caller can act in exactly that window.
+   *
+   * An ordinary optional field rather than a test-only export: production
+   * callers omit it, and it is the one honest place to hang behaviour that has
+   * to happen between the copy and the derivation.
+   */
+  readonly onCopied?: (() => void) | undefined;
+  /** Which operation this is, for the staging folder's name. */
+  readonly op?: BackupOperation | undefined;
 }
 
 export interface CreatedBackup {
@@ -81,9 +115,24 @@ interface BackupPreparation {
   readonly copyPath: string;
 }
 
+/** Sibling of `backups/`, not a child of it. C-SNAP@1 rule 1. */
+const STAGING_DIRNAME = 'staging';
+/** Where the copy used to be made, by an install that predates C-SNAP@1. */
+const LEGACY_STAGING_DIRNAME = '.staging';
+
 function beginBackup(options: CreateBackupOptions): BackupPreparation {
   const now = options.now ?? new Date();
-  const staging = join(options.dataDir, BACKUP_DIRNAME, '.staging');
+  // Inside the data dir on purpose: this is the second plaintext copy, and it
+  // must never be somewhere nothing in this project manages — and beside the
+  // archives folder rather than inside it, so a half-written copy is never
+  // something that folder has to be searched for.
+  const root = join(options.dataDir, STAGING_DIRNAME);
+  mkdirSync(root, { recursive: true, mode: 0o700 });
+  removeLegacyStaging(options.dataDir);
+  // One folder per operation, named with a fresh id: two runs can never share
+  // a staging folder, which is the whole of rule 3's "cleanup deletes only its
+  // own" promise.
+  const staging = join(root, `${options.op ?? 'backup'}-${uuidv7()}`);
   mkdirSync(staging, { recursive: true, mode: 0o700 });
   try {
     try {
@@ -97,11 +146,29 @@ function beginBackup(options: CreateBackupOptions): BackupPreparation {
     return {
       now,
       staging,
-      copyPath: join(staging, `${DB_ENTRY_NAME}.${String(now.getTime())}`),
+      copyPath: join(staging, DB_ENTRY_NAME),
     };
   } catch (error) {
+    // Its own folder and nothing else: another run's folder is a different path.
     rmSync(staging, { recursive: true, force: true });
     throw error;
+  }
+}
+
+/**
+ * An install from before C-SNAP@1 left `backups/.staging` behind, and it is
+ * removed only while it is empty. If anything is in it then something is in
+ * there that is not ours to guess at, and deleting it recursively is the very
+ * accident rule 3 exists to prevent.
+ */
+function removeLegacyStaging(dataDir: string): void {
+  const legacy = join(dataDir, BACKUP_DIRNAME, LEGACY_STAGING_DIRNAME);
+  try {
+    if (readdirSync(legacy).length > 0) return;
+    rmSync(legacy, { recursive: true, force: true });
+  } catch {
+    // Absent, not a folder, or not ours to delete. A backup is not the place
+    // to fail over a tidy-up.
   }
 }
 
@@ -116,47 +183,57 @@ function finishPreparation(options: CreateBackupOptions, preparation: BackupPrep
     );
   }
 
-  const level = migrationLevel(options.db);
-  const manifest: BackupManifest = {
-    format: 1,
-    app_version: options.appVersion,
-    generated_at: now.toISOString(),
-    migration_level: level,
-    sqlite_version: sqliteVersion(options.db),
-    db_bytes: dbBytes.byteLength,
-    db_sha256: sha256(dbBytes),
-    integrity_check: integrity,
-    counts: tableCounts(options.db),
-    encrypted: options.passphrase !== undefined,
-  };
+  // C-SNAP@1 rule 2. The live handle is not read again after this line: a write
+  // landing now cannot put the manifest, the dump and the readable notes out of
+  // step with the database beside them.
+  const copy = openReadOnly(copyPath);
+  try {
+    options.onCopied?.();
 
-  const plans = planEntries(options.db);
-  const restoreText = renderRestoreText({
-    manifest,
-    dataDir: options.dataDir,
-    encrypted: manifest.encrypted,
-    // Described only when it is there. A file that promises a folder the zip
-    // does not contain is a file nobody trusts the rest of.
-    hasPlans: plans.length > 0,
-  });
+    // From the copy, including its `schema_migrations` table — the level is a
+    // table, not a file header, so it is exactly as pinned as the counts.
+    const level = migrationLevel(copy);
+    const manifest: BackupManifest = {
+      format: 1,
+      app_version: options.appVersion,
+      generated_at: now.toISOString(),
+      migration_level: level,
+      sqlite_version: sqliteVersion(copy),
+      db_bytes: dbBytes.byteLength,
+      db_sha256: sha256(dbBytes),
+      integrity_check: integrity,
+      counts: tableCounts(copy),
+      encrypted: options.passphrase !== undefined,
+    };
 
-  const body: Record<string, Uint8Array> = {
-    [DB_ENTRY_NAME]: dbBytes,
-    [DATA_JSON_FILENAME]: strToU8(JSON.stringify(dumpDatabase(options.db, level, now), null, 2)),
-    [MANIFEST_FILENAME]: strToU8(JSON.stringify(manifest, null, 2)),
-  };
-  for (const entry of [...noteEntries(options.db), ...plans]) {
-    body[entry.path] = strToU8(entry.text);
+    const plans = planEntries(copy);
+    const restoreText = renderRestoreText({
+      manifest,
+      dataDir: options.dataDir,
+      encrypted: manifest.encrypted,
+      // Described only when it is there. A file that promises a folder the zip
+      // does not contain is a file nobody trusts the rest of.
+      hasPlans: plans.length > 0,
+    });
+
+    const body: Record<string, Uint8Array> = {
+      [DB_ENTRY_NAME]: dbBytes,
+      [DATA_JSON_FILENAME]: strToU8(JSON.stringify(dumpDatabase(copy, level, now), null, 2)),
+      [MANIFEST_FILENAME]: strToU8(JSON.stringify(manifest, null, 2)),
+    };
+    for (const entry of [...noteEntries(copy), ...plans]) {
+      body[entry.path] = strToU8(entry.text);
+    }
+
+    return { now, staging, manifest, restoreText, body };
+  } finally {
+    copy.close();
   }
-
-  return { now, staging, manifest, restoreText, body };
 }
 
 function prepareBackup(options: CreateBackupOptions): PreparedBackup {
   const preparation = beginBackup(options);
   try {
-    // Inside the data dir on purpose: this is the second plaintext copy, and
-    // it must never be somewhere nothing in this project manages.
     vacuumInto(options.db, preparation.copyPath);
     return finishPreparation(options, preparation);
   } catch (error) {
@@ -278,20 +355,28 @@ function encryptedArchive(
   };
 }
 
-/** `VACUUM INTO`, never bare `VACUUM`. See the note at the top of this file. */
+/**
+ * `VACUUM INTO`, never bare `VACUUM`. See the note at the top of this file.
+ *
+ * Both of these are the same copy, made two ways, and both stay: the archive
+ * builder is synchronous or not depending on its caller, and HTTP and the
+ * start-up backup are the async one. The copy itself is `db/snapshot.ts`'s
+ * single function; what lives here is the backup's own vocabulary for it, and
+ * the one error code a failed copy is reported as.
+ */
 export function vacuumInto(db: Database, destination: string): void {
   try {
-    db.prepare('VACUUM INTO ?').run(destination);
+    snapshotDatabase(db, destination);
   } catch (error) {
-    throw new BackupError(`VACUUM INTO failed: ${describe(error)}`, 'vacuum_failed');
+    throw new BackupError(describe(error), 'vacuum_failed');
   }
 }
 
 export async function backupInto(db: Database, destination: string): Promise<void> {
   try {
-    await db.backup(destination);
+    await snapshotDatabase(db, destination, 'online-backup');
   } catch (error) {
-    throw new BackupError(`online backup failed: ${describe(error)}`, 'vacuum_failed');
+    throw new BackupError(describe(error), 'vacuum_failed');
   }
 }
 
@@ -308,9 +393,16 @@ async function encryptedArchiveAsync(
     [ENCRYPTED_PAYLOAD_NAME]: new Uint8Array(ciphertext),
   };
 }
-/** Opened read-only, so checking a copy can never modify it. */
+/**
+ * A copy is opened read-only, so deriving from it can never modify it — and so
+ * that a mistake here cannot become a write to somebody's only backup.
+ */
+function openReadOnly(file: string): Database {
+  return new BetterSqlite3(file, { readonly: true });
+}
+
 export function integrityCheck(file: string): string {
-  const copy = new BetterSqlite3(file, { readonly: true });
+  const copy = openReadOnly(file);
   try {
     const rows = copy.pragma('integrity_check') as { integrity_check: string }[];
     return rows.map((row) => row.integrity_check).join('; ');

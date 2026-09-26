@@ -26,7 +26,7 @@ import {
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
 import { putSettings } from '../db/settings.js';
-import { badRequest, conflict, notFound } from '../http/errors.js';
+import { badRequest, conflict, HttpError, notFound } from '../http/errors.js';
 import { parseBody } from '../http/validate.js';
 
 /**
@@ -71,7 +71,15 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
       );
       return reply.code(201).send(result);
     } catch (error) {
-      if (error instanceof BackupError) throw badRequest(error.message);
+      if (error instanceof BackupError) {
+        // C-SNAP@1 rule 3. 409 and its own code rather than the generic
+        // `conflict`: the client can tell "a backup is already running" from
+        // "the archive is from a newer schema" and say so, and every other
+        // `BackupError` stays the 400 it has always been.
+        throw error.code === 'backup_in_progress'
+          ? new HttpError(409, 'backup_in_progress', error.message)
+          : badRequest(error.message);
+      }
       throw error;
     }
   });

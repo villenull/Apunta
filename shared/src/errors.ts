@@ -17,6 +17,9 @@ export const ApiErrorCodeSchema = z.enum([
   // Language control is hidden. A 400, because the request asked for something
   // this build does not offer rather than for something that conflicts.
   'language_unavailable',
+  // C-SNAP@1 rule 3: a backup was already running and the second request waited
+  // its 60 s. A 409 — the request was fine, it lost the wait.
+  'backup_in_progress',
   'internal_error',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCodeSchema>;
