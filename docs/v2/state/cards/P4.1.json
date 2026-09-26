@@ -2,11 +2,11 @@
   "card": "P4.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "f4e62cf",
-  "attempt": 2,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "attempt 1 BLOCKED on stop condition 2; owner resolved it via AM-042 (allowed-query-keys column, probe re-run, names observed); card set back to runnable and dispatched as attempt 2 - the coordinator had left it BLOCKED for two hours after unblocking the question",
-  "nextAllowedAction": "implement",
+  "baseCommit": "5a4b79b",
+  "attempt": 3,
+  "status": "NOT STARTED",
+  "lastCompletedStep": "attempt 2 dispatched at 104501d and DIED MID-WORK, committing nothing: its last message was the truncated fragment 'Now the tests. First readiness.test.ts:'. It left installer/src/{catalog,download,ollama,run}.ts modified and installer/src/{readiness.ts,readiness.test.ts} new. Coordinator measured the fragment: it typechecked and linted clean, but broke 18 existing tests across 4 files, because it had rewired run.ts and ollama.ts without updating their tests - so it could not be committed. Attempt 2 is therefore SPENT and attempt 3 is the LAST",
+  "nextAllowedAction": "implement - the two new files survive whole in docs/v2/evidence/P4.1/attempt2-partial.patch (readiness.ts 562 lines exporting assertRequestAllowed, queryParameterNames, the READINESS_CODES verdict vocabulary and the whole receipt mechanism; readiness.test.ts 465 lines, ~20 named cases, truncated mid-comment at the end). The REWIRING of catalog.ts/download.ts/run.ts/ollama.ts that called into it (481 insertions) was LOST: the coordinator reverted those four files to HEAD and then deleted the patch that still held them before capturing the two new ones. Redo that wiring from the card and AM-042; the module and its tests are the surviving half and should be reused as the starting point, not rewritten",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
@@ -15,5 +15,5 @@
     "V3": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T21:58:00Z"
+  "updatedUtc": "2026-09-26T22:12:00Z"
 }
