@@ -156,12 +156,12 @@ describe('the writing models', () => {
    * moved on purpose and on a read.
    */
   it('pins the licence record of each writing model whose terms were read', () => {
-    expect(WRITING_MODELS['gemma4:12b-it-qat'].licence).toEqual({
+    expect(WRITING_MODELS['gemma4:12b-it-qat']?.licence).toEqual({
       name: 'Gemma Terms of Use',
       url: 'https://ollama.com/library/gemma4',
       verified: false,
     });
-    expect(WRITING_MODELS['qwen3.6:35b-a3b'].licence).toEqual({
+    expect(WRITING_MODELS['qwen3.6:35b-a3b']?.licence).toEqual({
       name: 'Apache-2.0',
       url: 'https://ollama.com/library/qwen3.6',
       verified: false,
