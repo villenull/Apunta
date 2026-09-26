@@ -47,3 +47,4 @@ One entry per coordinator step, newest last:
 2026-09-26T05:40:01Z | P7a.1 | research attempt 1 | SUBMITTED, committed 1a81d91 | PUBLIC-REPO-AUDIT.md — no secret/patient content in tree or history; exposure is owner name/mailbox metadata + home/host/Tailscale strings; UNLICENSED is the gating decision
 2026-09-26T05:40:01Z | P7a.1 | research review | all PASS (3 cosmetic notes) | docs/v2/state/reviews/P7a.1-impl.md. Card APPROVED.
 2026-09-26T05:40:01Z | S1.R | parent review | in flight (space-bunny-free)
+2026-09-26T05:44:00Z | S1.R | parent review | all PASS (10 non-blocking findings) | docs/v2/state/reviews/S1.R-impl.md — milestone S1 complete. Findings 1-3 (S1.4 false coverage claim, S1.3 quantisation claim S4a leans on, S1.4 cross-ref) recorded for bundling before S2/S4a treat files as final.
