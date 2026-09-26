@@ -33,13 +33,11 @@ import { fitNotesNewestFirst, notesBeforeThisOne, type FittedNote } from '../ai/
 import { buildRefinePrompt, refineBackgroundOverheadTokens } from '../ai/prompts.js';
 import { GUARD_NOTICE_OPENING, guardNotice, guardRefinedSections } from '../ai/refine-guard.js';
 import {
-  ALREADY_THERE_NOTICE,
-  QUESTION_LEFT_ALONE,
-  UNCHANGED_NOTICE,
   assessRefine,
   enforceRefineScope,
   isQuestion,
   parseRefineRequest,
+  questionLeftAlone,
   type RefineVerdict,
 } from '../ai/refine-request.js';
 import { RETRACTION_NOTICE_OPENING } from '../ai/retractions.js';
@@ -357,7 +355,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         // authorised is gone before anything else judges it.
         const previous = textToSections(note.content, format.sections);
         const intent = parseRefineRequest(input.message, format.sections);
-        const scoped = enforceRefineScope(previous, updatedSections, intent);
+        const scoped = enforceRefineScope(previous, updatedSections, intent, locale);
         if (scoped.held.length > 0) logScoped(request, scoped.held.length);
 
         // The boilerplate lock, the published lock's sibling (found necessary
@@ -421,19 +419,22 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         // model reported adding a medication over a note without it and invented
         // a removal that never happened, so its prose is not the account of the
         // turn: this is.
-        verdict = assessRefine({
-          intent,
-          previous,
-          updated: updatedSections,
-          held: scoped.held,
-          lockedSections,
-          notices,
-          changed,
-        });
+        verdict = assessRefine(
+          {
+            intent,
+            previous,
+            updated: updatedSections,
+            held: scoped.held,
+            lockedSections,
+            notices,
+            changed,
+          },
+          locale,
+        );
         replyText = verdict.reply;
       }
 
-      if (attachedRewrite) replyText = `${replyText}\n\n${QUESTION_LEFT_ALONE}`;
+      if (attachedRewrite) replyText = `${replyText}\n\n${questionLeftAlone(locale)}`;
 
       let rewritten: Note | undefined;
       if (changed && content !== null) {
@@ -448,7 +449,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
           replyText = msg(locale, 'chat.publishedRefusal');
           verdict = {
             outcome: 'withheld',
-            reason: 'The note became published before the edit could be applied.',
+            reason: msg(locale, 'chat.publishedMidEdit'),
             reply: msg(locale, 'chat.publishedRefusal'),
           };
         }
@@ -565,47 +566,55 @@ function requireNote(db: Database, id: string): Note {
  * each one is its own paragraph. The thread shows them to her; the model never
  * sees them (see `recentTurns`).
  *
- * `Apunta left` covers the two "left alone" sentences and the request-scope
- * holds ("Apunta left Note for next session as it was: your message asked
- * about Discussion only"), `Apunta could not` every unmet-request sentence
- * ("could not add …", "could not shorten …", "could not clear …"), and the
- * no-change sentences are the whole reply on a turn that changed nothing.
- * Since 2026-09-23 a reply can be *entirely* the server's — an edit turn's
- * reply is written from the diff — which is why the whole paragraph is matched
- * rather than only what follows the model's prose.
+ * `chat.request.leftAlone` covers the "left alone" sentence and the
+ * request-scope holds ("Apunta left Note for next session as it was: your
+ * message asked about Discussion only"), `chat.request.couldNot` every
+ * unmet-request sentence ("could not add …", "could not shorten …", "could not
+ * clear …"), and the two no-change notices are the whole reply on a turn that
+ * changed nothing. Since 2026-09-23 a reply can be *entirely* the server's — an
+ * edit turn's reply is written from the diff — which is why the whole paragraph
+ * is matched rather than only what follows the model's prose.
  *
- * The three lock openings are listed in **both** languages. They are the only
- * sentences here a route writes in the note's own locale rather than in
- * English, so a Spanish note's thread holds a notice this list would otherwise
- * not recognise — and a notice the model then reads is exactly the "rule in a
- * prompt can be talked out of" failure the locks exist to prevent.
+ * **Every one of these openings is listed in both languages.** All of them are
+ * persisted in the note's own locale, so a Spanish note's thread holds sentences
+ * this list would otherwise not recognise — and a notice the model then reads is
+ * exactly the "rule in a prompt can be talked out of" failure the locks exist to
+ * prevent. The strings are read from the catalogues rather than written out
+ * here, which is what keeps the strip and the sentence from drifting apart.
+ *
+ * `GUARD_NOTICE_OPENING`, `FACT_NOTICE_OPENING` and
+ * `PRIOR_NOTE_NOTICE_OPENING` are the English halves of the first three entries
+ * — the guard modules keep exporting them and the catalogue is what both agree
+ * on, so the list is built from the keys and the constants stay for the guards'
+ * own callers.
  */
-const LOCK_NOTICE_KEYS = [
+const SERVER_SENTENCE_KEYS = [
   'chat.guardNotice.opening',
   'chat.factNotice.opening',
   'chat.priorNoteNotice.opening',
+  'chat.retractionNotice.opening',
+  'chat.unchangedNotice',
+  'chat.alreadyThereNotice',
+  'chat.questionLeftAlone',
+  'chat.request.leftAlone',
+  'chat.request.couldNot',
 ] as const satisfies readonly MessageKey[];
 
-const LOCK_NOTICE_OPENINGS: readonly string[] = LOCK_NOTICE_KEYS.flatMap((key) => [
+const SERVER_SENTENCE_OPENINGS: readonly string[] = SERVER_SENTENCE_KEYS.flatMap((key) => [
   t(key, {}, 'en'),
   t(key, {}, 'es-MX'),
 ]);
 
+// The four constants are each defined as `msg('en', <its own key>)` in the
+// module that exports them, so listing both is deliberate rather than
+// redundant: if one of them ever stopped being its key's English, the strip
+// would still cover what that module actually writes.
 const SERVER_SENTENCES = [
   GUARD_NOTICE_OPENING,
   FACT_NOTICE_OPENING,
   PRIOR_NOTE_NOTICE_OPENING,
   RETRACTION_NOTICE_OPENING,
-  UNCHANGED_NOTICE,
-  ALREADY_THERE_NOTICE,
-  QUESTION_LEFT_ALONE,
-  'Apunta could not',
-  // The three lock notices are persisted in the note's own locale, so a thread
-  // can hold a notice whose opening is not the English string above. Both
-  // languages' openings are listed here, read from the catalogues rather than
-  // written out, so the strip keeps working on a note written in Spanish
-  // instead of quietly feeding the model its own lock notice back.
-  ...LOCK_NOTICE_OPENINGS,
+  ...SERVER_SENTENCE_OPENINGS,
 ].map((sentence) => sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 const SERVER_SENTENCE_START = new RegExp(`^(?:${SERVER_SENTENCES.join('|')})`);
 
