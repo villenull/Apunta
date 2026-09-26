@@ -591,10 +591,9 @@ export function factNotice(dropped: readonly DroppedFact[], locale: Locale = DEF
 }
 
 /**
- * The notice's first sentence in English — what the thread is stripped of
- * before the model sees it again, and deliberately the same string in every
- * language so the strip recognises a notice written in the note's locale. See
- * `GUARD_NOTICE_OPENING` in `refine-guard.ts`.
+ * The notice's first sentence in **English**, for the same reason as
+ * `GUARD_NOTICE_OPENING` in `refine-guard.ts`, which also says what the strip
+ * list does about the other language.
  */
 export const FACT_NOTICE_OPENING = msg('en', 'chat.factNotice.opening');
 

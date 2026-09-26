@@ -189,9 +189,8 @@ export function priorNoteNotice(carried: readonly CarriedOver[], locale: Locale 
 }
 
 /**
- * The notice's first sentence in English — what the thread is stripped of
- * before the model sees it again, and deliberately the same string in every
- * language so the strip recognises a notice written in the note's locale. See
- * `GUARD_NOTICE_OPENING` in `refine-guard.ts`.
+ * The notice's first sentence in **English**, for the same reason as
+ * `GUARD_NOTICE_OPENING` in `refine-guard.ts`, which also says what the strip
+ * list does about the other language.
  */
 export const PRIOR_NOTE_NOTICE_OPENING = msg('en', 'chat.priorNoteNotice.opening');

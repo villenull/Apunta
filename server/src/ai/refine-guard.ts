@@ -97,11 +97,14 @@ export function guardNotice(blocked: readonly BlockedRevision[], locale: Locale 
 }
 
 /**
- * The notice's first sentence in English — what the thread is stripped of
- * before the model sees it again, and the marker `routes/chat.ts` matches
- * server-written paragraphs by. It is the catalogue's English rather than a
- * second copy, and it is the same string in every language on purpose: the
- * thread may hold a notice written in the note's locale, and the strip has to
- * recognise it either way.
+ * The notice's first sentence in **English** — the catalogue's English rather
+ * than a second copy, and the marker this module's own callers and
+ * `routes/chat.ts` match a server-written paragraph by.
+ *
+ * The sentence itself is *not* the same string in every language: the es-MX
+ * catalogue says `Apunta bloqueó una parte de esta revisión.` and the thread may
+ * hold a notice written in the note's locale. What covers both is the **strip
+ * list**, which `routes/chat.ts` builds by reading this key in both languages —
+ * so a notice in either one is recognised and neither reaches the model.
  */
 export const GUARD_NOTICE_OPENING = msg('en', 'chat.guardNotice.opening');
