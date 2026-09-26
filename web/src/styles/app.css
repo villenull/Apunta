@@ -1734,6 +1734,9 @@ select:disabled {
 }
 
 .col-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   text-align: left;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-sm);
@@ -1744,6 +1747,18 @@ select:disabled {
   font-size: var(--text-md);
   font-weight: 500;
   cursor: pointer;
+}
+
+/* The glyph takes the label's colour, so the two can never disagree — the
+   button is accent by default and `--tint-ink` when active, and `inherit`
+   tracks both without a second rule. The row menu deliberately does the
+   opposite (its icons sit in `--text-secondary`, a shade under the label)
+   because those are dense utility rows; these three are the column's primary
+   actions, so they read as one mark and one word. Stroke weight matches the
+   menu's, so every 16px glyph in the app draws at one weight. */
+.col-action-btn .icon {
+  color: inherit;
+  stroke-width: 1.5;
 }
 
 .col-action-btn:hover {

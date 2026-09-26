@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import type { LoadState } from '../hooks/useLoader.js';
 import { firstName, notePreview } from '../lib/format.js';
 import { useI18n, type Translate } from '../lib/i18n.js';
-import { BackIcon, PlusIcon } from './icons.js';
+import { BackIcon, ChatIcon, DocumentIcon, ExamplesIcon, PlusIcon } from './icons.js';
 
 export interface NotesColumnProps {
   patient: PatientListItem | null;
@@ -91,6 +91,7 @@ export function NotesColumn({
                 onOpenView('brainstorm');
               }}
             >
+              <ChatIcon className="icon icon-sm" />
               {t('brainstorm.title')}
             </button>
             <button
@@ -101,6 +102,7 @@ export function NotesColumn({
                 onOpenView('plan');
               }}
             >
+              <DocumentIcon className="icon icon-sm" />
               {t('plan.title')}
             </button>
             <button
@@ -111,6 +113,7 @@ export function NotesColumn({
                 onOpenView('prep');
               }}
             >
+              <ExamplesIcon className="icon icon-sm" />
               {t('notes.prepareForSession')}
             </button>
           </div>
