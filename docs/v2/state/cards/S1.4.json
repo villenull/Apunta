@@ -1,0 +1,19 @@
+{
+  "card": "S1.4",
+  "planVersion": 2,
+  "contracts": [],
+  "baseCommit": "46216fe",
+  "attempt": 3,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "attempt 2 returned good research edits but was REJECTED for scope (eslint.config.js edited; committed lintable .cjs under docs/) — counts as attempt 2; eslint.config.js reverted; dispatch rebuilt for final attempt 3 with findings; repairer dispatched (space-bunny-free)",
+  "nextAllowedAction": "check instruction review return",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T02:28:19Z"
+}

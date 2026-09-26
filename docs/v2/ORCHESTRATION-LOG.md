@@ -33,3 +33,8 @@ One entry per coordinator step, newest last:
 2026-09-26T02:28:19Z | S1.3 | IR round 2 | CLEAR all ten | docs/v2/state/reviews/S1.3-ir.md
 2026-09-26T02:28:19Z | S1.3 | research attempt 1 | SUBMITTED, committed 9413108 | es-mx-speech.md (ranked D9 markers, fillers, whisper evidence, Piper voices + redistribution silence); V1 PASS, V2 for review
 2026-09-26T02:28:19Z | S1.3 | research review | all PASS, zero findings | docs/v2/state/reviews/S1.3-impl.md — reviewer independently fetched 3 voice cards + Vocova benchmark, all match. Card APPROVED.
+2026-09-26T03:0x | S1.4 | implement a2 | RETURN REJECTED (scope) | eslint.config.js edited (outside May-edit, reverted) and a lintable .cjs committed under docs/; counts as attempt 2; research edits kept; dispatch rebuilt for attempt 3
+2026-09-26T03:0x | S1.4 | implement a3 | SUBMITTED, committed 085d892 | coverage 195→218 entries, URLs, evidence wording; no script under docs/, config untouched; review r2 dispatched
+2026-09-26T03:0x | S1.5 | IR round 1 | 8x CLEAR, IR-04 + IR-10 | IR-04: markdown prettier check vacuous; IR-10: evidence dir vs May-edit tension
+2026-09-26T03:0x | P7a.1 | IR round 1 | 7x CLEAR, IR-03 + IR-05 + IR-08 | IR-05: same vacuous markdown check; IR-03: no home-path placeholder; IR-08: git log -p --all to stdout vs HS-5
+2026-09-26T03:0x | ALL-L0 | owner decision | markdown prettier rows NON-BINDING (AM-014) | owner also authorised AM-015 (format S1.2 JSON to restore npm run lint) and AM-016 (P7a.1 safe secret handling). S1.5/P7a.1 IR re-runs next.

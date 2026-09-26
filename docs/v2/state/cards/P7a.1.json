@@ -1,0 +1,20 @@
+{
+  "card": "P7a.1",
+  "planVersion": 2,
+  "contracts": [],
+  "baseCommit": "46216fe",
+  "attempt": 1,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "dispatch built (L0, no port); AM-013 logged; instruction review dispatched in parallel with S1.4 repair and S1.5 (docs-only lane)",
+  "nextAllowedAction": "check instruction review return",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN",
+    "V4": "NOT RUN"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T03:00:00Z"
+}

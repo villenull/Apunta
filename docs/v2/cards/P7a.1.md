@@ -15,8 +15,15 @@ Know what would become public (current tree **and full history**) without
 writing any private detail into the repository.
 
 ## Read
-The repository via git only: `git log -p --all`, `git log --format='%an %ae %cn %ce'`,
-`git rev-list --objects --all`, `git ls-files`.
+The repository via git only — but **every raw result is written into
+`~/.local/state/apunta-v2-audit/` (create with mode `700`) and never printed
+to the console or into a repo file**, then inspected there:
+`git log -p --all > ~/.local/state/apunta-v2-audit/history-patches.txt`,
+`git log --format='%an %ae %cn %ce' > ~/.local/state/apunta-v2-audit/identities.txt`,
+`git rev-list --objects --all > ~/.local/state/apunta-v2-audit/objects.txt`,
+`git ls-files > ~/.local/state/apunta-v2-audit/tracked.txt`. Grep the saved
+files, never history on stdout. If a secret-like value is found, do not echo
+it; record only "secret-like value in <path> at <short commit>".
 
 ## May edit
 `docs/v2/PUBLIC-REPO-AUDIT.md` (new, sanitized). Raw findings go only to
@@ -28,8 +35,10 @@ file; record only "secret-like value in <path> at <short commit>".
 
 ## Method
 1. Secrets and credentials across history (keys, tokens, passwords, `.env`,
-   auth headers). 2. Personal identifiers: usernames, hostnames, home paths,
-   emails including commit author and committer emails. 3. Owner-authored
+   auth headers) — searched only inside the saved raw files under the mode-700
+   folder, never by re-running history to stdout.
+2. Personal identifiers: usernames, hostnames, home paths, emails including
+   commit author and committer emails. 3. Owner-authored
    material (`docs/feedback/`, `docs/note-instructions/`). 4. Anything
    possibly patient-derived (fixtures, reports, images in history, eval and
    probe outputs). 5. Agent traces (`.claude/`, hooks). 6. Large binaries in
@@ -38,7 +47,8 @@ file; record only "secret-like value in <path> at <short commit>".
 ## Report shape
 A table: `finding ID | category | location (path, short commit) | risk |
 recommendation (keep / fix in tree / owner history decision)`, using
-redacted identifiers (`<user-1>`, `<host-1>`, `<email-1>`). Then a history
+redacted identifiers (`<user-1>`, `<home-1>`, `<host-1>`, `<email-1>`) — home
+paths must use a placeholder, never the literal path. Then a history
 cleanup plan marked **OWNER ONLY** (for example `git filter-repo` on a fresh
 clone; every hash changes; needs a force-push only the owner may do; any
 secret found must be revoked or rotated, not just removed).
