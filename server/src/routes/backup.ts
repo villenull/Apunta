@@ -26,7 +26,8 @@ import {
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
 import { putSettings } from '../db/settings.js';
-import { badRequest, conflict, HttpError, notFound } from '../http/errors.js';
+import { badRequest, HttpError, notFound, rawHttpError } from '../http/errors.js';
+import { storedLanguage } from '../http/locale.js';
 import { parseBody } from '../http/validate.js';
 
 /**
@@ -46,14 +47,20 @@ import { parseBody } from '../http/validate.js';
  */
 export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db: Database): void {
   app.get('/api/backup', async (): Promise<BackupStatusResponse> => {
-    return { ...backupStatus(db, config), pending_restore: hasPendingRestore(config.dataDir) };
+    // The stored setting, read here rather than inside `backupStatus`: a
+    // request that is not a job and not a refine is answered in it
+    // (C-LANG@1 rule 3), and it is what renders `last_backup_error`.
+    return {
+      ...backupStatus(db, config, new Date(), storedLanguage(db)),
+      pending_restore: hasPendingRestore(config.dataDir),
+    };
   });
 
   /** Back up now. The archive is written before this answers, so a 200 means it exists. */
   app.post('/api/backup', async (request, reply): Promise<CreateBackupResponse> => {
     const input = parseBody(CreateBackupRequestSchema, request.body ?? {});
     if (input.directory !== undefined && !isAbsolute(input.directory)) {
-      throw badRequest('A backup folder must be an absolute path.');
+      throw badRequest('errors.bad_request.backup_path_not_absolute');
     }
 
     try {
@@ -76,9 +83,13 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
         // `conflict`: the client can tell "a backup is already running" from
         // "the archive is from a newer schema" and say so, and every other
         // `BackupError` stays the 400 it has always been.
+        // `backup_in_progress` is the one `BackupError` code with a single
+        // sentence, so it is keyed and rendered like every other 409. The rest
+        // share their codes two or three ways and keep their own English; see
+        // `rawHttpError` in `http/errors.ts`.
         throw error.code === 'backup_in_progress'
-          ? new HttpError(409, 'backup_in_progress', error.message)
-          : badRequest(error.message);
+          ? new HttpError(409, 'backup_in_progress', 'errors.backup_in_progress')
+          : rawHttpError(400, 'bad_request', error.message);
       }
       throw error;
     }
@@ -107,7 +118,11 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
       return { staged: true, manifest: staged.manifest, safety_copy: staged.safetyCopy };
     } catch (error) {
       if (error instanceof RestoreError) {
-        throw error.code === 'schema_too_new' ? conflict(error.message) : badRequest(error.message);
+        // No `RestoreError` code has a single sentence, so none of these can be
+        // keyed from the route; the sentence is forwarded as it stands today.
+        throw error.code === 'schema_too_new'
+          ? rawHttpError(409, 'conflict', error.message)
+          : rawHttpError(400, 'bad_request', error.message);
       }
       throw error;
     }
@@ -155,12 +170,12 @@ function resolveArchivePath(db: Database, config: AppConfig, file: string): stri
   if (isAbsolute(file)) {
     const name = file.split('/').pop() ?? '';
     if (backupFilenameDate(name) === null) {
-      throw badRequest(`${name} is not an Apunta backup filename (apunta-backup-YYYY-MM-DD.zip).`);
+      throw badRequest('errors.bad_request.backup_filename_invalid', { name });
     }
     return file;
   }
   if (basename(file) !== file || !file.toLowerCase().endsWith('.zip')) {
-    throw notFound(`${file} is not a backup file in the backup folder.`);
+    throw notFound('errors.not_found.backup_file', { file });
   }
   return join(resolveBackupDir(db, config.dataDir), file);
 }

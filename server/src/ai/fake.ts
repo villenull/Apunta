@@ -1,4 +1,5 @@
 import {
+  DEFAULT_LOCALE,
   MAX_BRIEF_LINES,
   MAX_SUMMARY_EXCERPTS,
   MAX_SUMMARY_POINTS,
@@ -10,9 +11,11 @@ import {
   type PlanSuggestion,
   type RetractionCorrection,
   type Sections,
+  type Locale,
   type SuggestedGoal,
 } from '@apunta/shared';
 
+import { msg } from '../http/locale.js';
 import { JsonStringStreamDecoder } from './json-stream.js';
 import { orderSections } from './prompts.js';
 import { applyRetractions, hasRetraction, retractionMarkerMatches } from './retractions.js';
@@ -33,6 +36,7 @@ import type {
   SttProvider,
   SummariseNoteRequest,
   SuggestPlanGoalsRequest,
+  TranscribeOptions,
   TranscribeRequest,
 } from './types.js';
 
@@ -272,25 +276,28 @@ export class FakeLlmProvider implements LlmProvider {
     return Promise.resolve();
   }
 
-  async *generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
+  async *generateNote(
+    request: GenerateNoteRequest,
+    locale: Locale = DEFAULT_LOCALE,
+  ): AsyncIterable<LlmEvent> {
     // The same pass the real provider runs, on the same server-side checks.
     let drafted = request;
     const transcript = request.transcript ?? '';
     if (hasRetraction(transcript)) {
-      yield { type: 'status', stage: 'correcting', message: 'Applying your corrections…' };
+      yield { type: 'status', stage: 'correcting', message: msg(locale, 'status.applying_corrections') };
       const corrections = fakeExtractRetractions(transcript);
       const outcome = applyRetractions(transcript, corrections);
       yield { type: 'retractions', applied: outcome.applied, offered: corrections.length };
       drafted = { ...request, transcript: outcome.text };
     }
     const sections = orderSections(fakeSectionsFor(drafted), request.sections);
-    yield { type: 'status', stage: 'drafting', message: 'Drafting the note…' };
+    yield { type: 'status', stage: 'drafting', message: msg(locale, 'status.drafting_note') };
     yield* this.streamJson(JSON.stringify(sections));
     yield { type: 'sections', sections, stats: FAKE_STATS };
   }
 
   /** The prototype's canned refine logic, in the order `sendChat` applies it. */
-  async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+  async *refineNote(request: RefineNoteRequest, locale: Locale = DEFAULT_LOCALE): AsyncIterable<LlmEvent> {
     const current = textToSections(request.noteText, request.sections);
     const { reply, updatedSections } = fakeRefine(
       request.message,
@@ -300,16 +307,19 @@ export class FakeLlmProvider implements LlmProvider {
       request.priorNotes,
     );
 
-    yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+    yield { type: 'status', stage: 'drafting', message: msg(locale, 'status.thinking') };
     yield* this.streamJson(JSON.stringify({ reply, updatedSections }), request.sections);
     yield { type: 'refined', reply, updatedSections, stats: FAKE_STATS };
   }
 
   /** A brainstorm reply: one thought, grounded in what went in. */
-  async *discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent> {
+  async *discussPatient(
+    request: BrainstormRequest,
+    locale: Locale = DEFAULT_LOCALE,
+  ): AsyncIterable<LlmEvent> {
     const reply = fakeBrainstorm(request);
 
-    yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+    yield { type: 'status', stage: 'drafting', message: msg(locale, 'status.thinking') };
     yield* this.streamJson(JSON.stringify({ reply }));
     yield { type: 'discussed', reply, stats: FAKE_STATS };
   }
@@ -525,9 +535,10 @@ export class FakeSttProvider implements SttProvider {
     });
   }
 
-  async *transcribe(request: TranscribeRequest): AsyncIterable<SttEvent> {
+  async *transcribe(request: TranscribeRequest, options: TranscribeOptions = {}): AsyncIterable<SttEvent> {
+    const locale = options.locale ?? 'en';
     for (const fraction of [0.25, 0.5, 0.75, 1]) {
-      yield { type: 'progress', fraction, message: 'Transcribing…' };
+      yield { type: 'progress', fraction, message: msg(locale, 'progress.transcribing') };
     }
     const vocabulary = request.vocabulary.length > 0 ? ` Discussed ${request.vocabulary[0] ?? ''}.` : '';
     yield {

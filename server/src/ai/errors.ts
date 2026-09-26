@@ -1,4 +1,6 @@
-import type { AiErrorCode } from '@apunta/shared';
+import { DEFAULT_LOCALE, type AiErrorCode } from '@apunta/shared';
+
+import { msg, type Locale, type MessageKey } from '../http/locale.js';
 
 /**
  * A local-AI failure the user can act on.
@@ -24,61 +26,90 @@ export class AiError extends Error {
    */
   readonly detail: string | undefined;
 
-  constructor(code: AiErrorCode, message: string, detail?: string) {
+  /**
+   * The locale this failure's sentence is rendered in.
+   *
+   * It is a field rather than an argument every `aiError()` call has to grow,
+   * because most of those calls are deep inside a provider that has no locale
+   * to give: they are diagnostics about a failed request, and the route that
+   * owns the job re-renders with `inLocale` on the way out (C-LANG@1 rule 4 —
+   * the job's captured context, not the provider's guess at it).
+   */
+  readonly locale: Locale;
+
+  constructor(code: AiErrorCode, message: string, detail?: string, locale: Locale = DEFAULT_LOCALE) {
     super(message);
     this.name = 'AiError';
     this.code = code;
+    this.locale = locale;
     Object.defineProperty(this, 'detail', { value: detail, enumerable: false, writable: false });
+  }
+
+  /**
+   * The same failure, sentence rendered in `locale`.
+   *
+   * A route calls this on the way to `stream.send('error', …)`, so the `code`
+   * the client branches on is untouched and only the words change. Detail
+   * travels with it and is still never enumerable.
+   */
+  inLocale(locale: Locale): AiError {
+    if (this.locale === locale) return this;
+    return new AiError(this.code, aiMessage(this.code, locale), this.detail, locale);
   }
 }
 
 /** The exact banner copy from the M3 packet, so the two paths agree. */
-export const UNREACHABLE_MESSAGE = "Apunta can't reach the local AI — see Setup";
+export const UNREACHABLE_MESSAGE = msg('en', 'ai.unreachable_banner');
 
-const MESSAGES: Record<AiErrorCode, string> = {
-  ollama_unreachable: `${UNREACHABLE_MESSAGE}. Ollama does not appear to be running on this machine.`,
+/**
+ * Which catalogue entry each closed `AiErrorCode` is rendered from.
+ *
+ * A `Record` over the whole enum on purpose: a code added to
+ * `AiErrorCodeSchema` without a sentence here is a `tsc` error, not a runtime
+ * `undefined` that would reach the browser as a hole. The enum is closed and
+ * this card does not open it; a code is never added to make a sentence fit.
+ */
+const MESSAGE_KEYS: Record<AiErrorCode, MessageKey> = {
+  ollama_unreachable: 'ai.ollama_unreachable',
   // "See Setup" rather than a command: the right way to get a model differs
   // between the packaged app and a source checkout, and the Setup screen is
   // the one place that knows which of the two it is in.
-  model_missing: "Apunta's AI model isn't installed yet — see Setup, which says how to get it.",
-  non_gguf_model:
-    'The configured model is not a GGUF build, and Apunta cannot make it follow the note format reliably. Choose a GGUF model in Settings.',
-  unsupported_model_tag:
-    'That model tag is an MLX/safetensors build. Apunta cannot make those follow the note format reliably — pick a GGUF tag instead.',
-  insufficient_memory:
-    'This machine ran out of memory loading the AI model. Choose a smaller model in Settings and try again.',
-  input_too_long:
-    'This session summary is too long for the AI to read in one go. Shorten it, or split it into two notes.',
-  context_overflow:
-    "The AI ran out of room and had to drop part of Apunta's instructions, so the draft was thrown away. Shorten the summary and try again.",
-  output_truncated: 'The AI ran out of room mid-note. Try again, or shorten the summary.',
-  empty_response: 'The AI returned nothing. Try again — if it keeps happening, check Setup.',
-  invalid_output:
-    "The AI returned something that wasn't a note. Try again — if it keeps happening, the model may not be following the note format.",
-  degenerate_output:
-    'The AI got stuck repeating itself instead of writing the note. Try again — if it keeps happening, try a different model in Settings.',
-  timeout: 'The AI took too long to answer. It may still be loading the model — try again in a moment.',
-  ollama_error: 'The local AI reported an error. Check Setup, then try again.',
+  model_missing: 'ai.model_missing',
+  non_gguf_model: 'ai.non_gguf_model',
+  unsupported_model_tag: 'ai.unsupported_model_tag',
+  insufficient_memory: 'ai.insufficient_memory',
+  input_too_long: 'ai.input_too_long',
+  context_overflow: 'ai.context_overflow',
+  output_truncated: 'ai.output_truncated',
+  empty_response: 'ai.empty_response',
+  invalid_output: 'ai.invalid_output',
+  degenerate_output: 'ai.degenerate_output',
+  timeout: 'ai.timeout',
+  ollama_error: 'ai.ollama_error',
 
   // Speech-to-text (M5). The recording still exists in the browser when one of
   // these fires, so every message ends somewhere she can act.
-  whisper_missing:
-    "Apunta can't find whisper on this machine, so it can't transcribe the recording. See Setup, or set the whisper path in Settings.",
-  whisper_model_missing:
-    "Apunta's transcription model isn't installed yet — see Setup, which says how to get it.",
-  audio_unsupported:
-    'That recording is in a format Apunta cannot transcribe. Record it again from this screen.',
-  audio_decode_failed:
-    'The recording could not be read — it may have been cut off mid-save. Please record it again.',
-  transcription_failed: 'Transcribing the recording failed. Try again — if it keeps happening, check Setup.',
-  transcription_timeout:
-    'Transcribing took too long and was stopped. A shorter recording will go through; a very long one may need a faster machine.',
-  transcription_empty:
-    'No speech was picked up in that recording. Check that the right microphone is selected, then record again.',
+  whisper_missing: 'ai.whisper_missing',
+  whisper_model_missing: 'ai.whisper_model_missing',
+  audio_unsupported: 'ai.audio_unsupported',
+  audio_decode_failed: 'ai.audio_decode_failed',
+  transcription_failed: 'ai.transcription_failed',
+  transcription_timeout: 'ai.transcription_timeout',
+  transcription_empty: 'ai.transcription_empty',
 };
 
-export function aiError(code: AiErrorCode, detail?: string): AiError {
-  return new AiError(code, MESSAGES[code], detail);
+/** The catalogue key an `AiErrorCode`'s sentence comes from. */
+export function aiMessageKey(code: AiErrorCode): MessageKey {
+  return MESSAGE_KEYS[code];
+}
+
+/** The sentence for `code`, in `locale`. */
+export function aiMessage(code: AiErrorCode, locale: Locale = DEFAULT_LOCALE): string {
+  return msg(locale, MESSAGE_KEYS[code], { banner: UNREACHABLE_MESSAGE });
+}
+
+export function aiError(code: AiErrorCode, detail?: string, locale: Locale = DEFAULT_LOCALE): AiError {
+  return new AiError(code, aiMessage(code, locale), detail, locale);
 }
 
 /**

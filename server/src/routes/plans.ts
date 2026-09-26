@@ -22,6 +22,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import { msg, storedLanguage } from '../http/locale.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import type { AiProviders } from '../ai/types.js';
 import { getFormat } from '../db/formats.js';
@@ -86,7 +87,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
     requirePatient(db, id);
 
     const plan = version === undefined ? getCurrentPlan(db, id) : getPlanVersion(db, id, version);
-    if (version !== undefined && !plan) throw notFound('No such plan version');
+    if (version !== undefined && !plan) throw notFound('errors.not_found.plan_version');
     // No plan yet is an ordinary state of the screen, not an error.
     if (!plan) return { plan: null, goals: [] };
     return { plan, goals: listPlanGoals(db, plan.id) };
@@ -113,7 +114,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
 
     const previous = getCurrentPlan(db, id);
     if (previous && previous.status === 'draft') {
-      throw conflict('This plan already has a draft version. Activate or edit it first.');
+      throw conflict('errors.conflict.plan_draft_exists');
     }
 
     const created = createPlanVersion(db, {
@@ -185,7 +186,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
         ? {}
         : { client_participation_note: patch.client_participation_note }),
     });
-    if (!updated) throw notFound('Plan not found');
+    if (!updated) throw notFound('errors.not_found.plan');
     return updated;
   });
 
@@ -202,11 +203,11 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
     const { id } = parseParams(IdParamsSchema, request.params);
     const input = parseBody(ActivatePlanRequestSchema, request.body ?? {});
     const plan = requirePlan(db, id);
-    if (plan.status === 'superseded') throw conflict('A superseded plan version cannot be reactivated.');
+    if (plan.status === 'superseded') throw conflict('errors.conflict.plan_superseded_activate');
     // Re-activating would move `effective_from` and re-date the attestation on
     // a version that is already in force — rewriting when it took effect, and
     // what she attested to, on the record a payer reads against a service date.
-    if (plan.status === 'active') throw conflict('This version is already in force.');
+    if (plan.status === 'active') throw conflict('errors.conflict.plan_already_active');
 
     const effectiveFrom = input?.effective_from ?? today();
     const reviewDue =
@@ -218,7 +219,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
       attestation_text: ATTESTATION_TEXT,
       ...resolveClinician(db),
     });
-    if (!activated) throw notFound('Plan not found');
+    if (!activated) throw notFound('errors.not_found.plan');
     return { plan: activated, goals: listPlanGoals(db, activated.id) };
   });
 
@@ -288,7 +289,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
             })),
           }),
     });
-    if (!updated) throw notFound('Goal not found');
+    if (!updated) throw notFound('errors.not_found.goal');
     return updated;
   });
 
@@ -316,8 +317,12 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
     const notes = listNotesForPatient(db, id).slice(0, cap);
     const existing = currentGoals(db, id);
 
+    // Captured at the start of the goal-drafting job (C-LANG@1 rule 4): the
+    // frames below and the error event are all rendered from this value.
+    const locale = storedLanguage(db);
+
     const stream = openSse(reply);
-    stream.send('status', { stage: 'connecting', message: 'Thinking…' });
+    stream.send('status', { stage: 'connecting', message: msg(locale, 'status.thinking') });
 
     // Declared without a value: every path out of the `catch` below returns,
     // so these are read only when the read actually finished.
@@ -334,7 +339,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
         onProgress: (index, total) => {
           stream.send('status', {
             stage: 'reading-notes',
-            message: `Reading note ${String(index)} of ${String(total)}…`,
+            message: msg(locale, 'status.reading_note', { index, total }),
           });
         },
         onStats: (stats) => {
@@ -346,7 +351,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
       lookback = read.lookback;
 
       if (materials.length > 0 && !stream.closed) {
-        stream.send('status', { stage: 'drafting', message: 'Drafting goals…' });
+        stream.send('status', { stage: 'drafting', message: msg(locale, 'status.drafting_goals') });
         const plan = getCurrentPlan(db, id);
         const result = await providers.llm.suggestPlanGoals({
           diagnoses: (plan?.diagnoses ?? []).map(describeDiagnosis),
@@ -363,7 +368,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
         logStats(request, result.stats, 'plan goals drafted');
       }
     } catch (error) {
-      const failure = toAiError(error);
+      const failure = toAiError(error).inLocale(locale);
       logFailure(request, failure, 'plan suggestion failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
@@ -444,7 +449,7 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
 
 function requirePlan(db: Database, id: string): TreatmentPlan {
   const plan = getPlan(db, id);
-  if (!plan) throw notFound('Plan not found');
+  if (!plan) throw notFound('errors.not_found.plan');
   return plan;
 }
 
@@ -456,14 +461,14 @@ function requirePlan(db: Database, id: string): TreatmentPlan {
 function requireEditablePlan(db: Database, id: string): TreatmentPlan {
   const plan = requirePlan(db, id);
   if (plan.status === 'superseded') {
-    throw conflict('This plan version has been superseded and is read-only. Start a review instead.');
+    throw conflict('errors.conflict.plan_superseded_readonly');
   }
   return plan;
 }
 
 function requireGoal(db: Database, planId: string, goalId: string): PlanGoal {
   const goal = getPlanGoal(db, goalId);
-  if (!goal || goal.plan_id !== planId) throw notFound('Goal not found');
+  if (!goal || goal.plan_id !== planId) throw notFound('errors.not_found.goal');
   return goal;
 }
 

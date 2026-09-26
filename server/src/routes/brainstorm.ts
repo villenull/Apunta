@@ -10,6 +10,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 
 import { aiError } from '../ai/errors.js';
+import { storedLanguage } from '../http/locale.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import { brainstormPromptTokens } from '../ai/ollama.js';
 import { fitNotesNewestFirst } from '../ai/prior-notes.js';
@@ -149,6 +150,12 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
       text: input.message,
     });
 
+    // Captured at the start of the brainstorm job and used by every sentence
+    // it writes: the frames the provider renders and the error event below
+    // (C-LANG@1 rule 4). A brainstorm creates no document, so this is the
+    // stored setting rather than any note's locale.
+    const locale = storedLanguage(db);
+
     const stream = openSse(reply);
     stream.send('message', { message: userMessage });
     stream.send('context', { context: assembled.context });
@@ -158,13 +165,16 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
     let sawDiscussed = false;
 
     try {
-      const events = providers.llm.discussPatient({
-        patientName: patient.name,
-        notes: assembled.notes,
-        omittedNotes: assembled.omittedNotes,
-        history: assembled.history,
-        message: input.message,
-      });
+      const events = providers.llm.discussPatient(
+        {
+          patientName: patient.name,
+          notes: assembled.notes,
+          omittedNotes: assembled.omittedNotes,
+          history: assembled.history,
+          message: input.message,
+        },
+        locale,
+      );
 
       for await (const event of events) {
         // She closed the tab or switched patients: stop, and let the
@@ -186,7 +196,7 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
         }
       }
     } catch (error) {
-      const failure = toAiError(error);
+      const failure = toAiError(error).inLocale(locale);
       logFailure(request, failure, 'brainstorm discussion failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
@@ -198,7 +208,7 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
       return;
     }
     if (!sawDiscussed) {
-      const failure = aiError('empty_response', 'discussPatient finished without producing a reply');
+      const failure = aiError('empty_response', 'discussPatient finished without producing a reply', locale);
       logFailure(request, failure, 'brainstorm discussion failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
@@ -234,7 +244,7 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
 
 function requirePatient(db: Database, id: string): Patient {
   const patient = getPatient(db, id);
-  if (!patient) throw notFound('Patient not found');
+  if (!patient) throw notFound('errors.not_found.patient');
   return patient;
 }
 

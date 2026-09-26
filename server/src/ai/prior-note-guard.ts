@@ -1,5 +1,6 @@
-import type { Sections } from '@apunta/shared';
+import { DEFAULT_LOCALE, type Sections } from '@apunta/shared';
 
+import { msg, type Locale } from '../http/locale.js';
 import { allFactTokens } from './fact-guard.js';
 
 /**
@@ -176,13 +177,21 @@ function runs(text: string): Map<string, string> {
  * is from her earlier note, shown only in her own thread, as the fact lock's
  * is.
  */
-export function priorNoteNotice(carried: readonly CarriedOver[]): string {
-  const parts = carried.map(
-    (c) =>
-      `${c.section} was kept as it was: the revision would have brought in "${c.phrase}" from another of your notes.`,
+export function priorNoteNotice(carried: readonly CarriedOver[], locale: Locale = DEFAULT_LOCALE): string {
+  const parts = carried.map((c) =>
+    msg(locale, 'chat.priorNoteNotice.section', { section: c.section, phrase: c.phrase }),
   );
-  return `${PRIOR_NOTE_NOTICE_OPENING} ${parts.join(' ')} To bring something over from another session, ask for it.`;
+  return [
+    msg(locale, 'chat.priorNoteNotice.opening'),
+    ...parts,
+    msg(locale, 'chat.priorNoteNotice.tail'),
+  ].join(' ');
 }
 
-/** The notice's first sentence — what the thread is stripped of before the model sees it again. */
-export const PRIOR_NOTE_NOTICE_OPENING = 'Apunta kept your other notes out of this revision.';
+/**
+ * The notice's first sentence in English — what the thread is stripped of
+ * before the model sees it again, and deliberately the same string in every
+ * language so the strip recognises a notice written in the note's locale. See
+ * `GUARD_NOTICE_OPENING` in `refine-guard.ts`.
+ */
+export const PRIOR_NOTE_NOTICE_OPENING = msg('en', 'chat.priorNoteNotice.opening');

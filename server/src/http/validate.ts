@@ -11,7 +11,7 @@ import { badRequest } from './errors.js';
 export function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) {
-    throw badRequest('Request body is invalid', result.error.issues);
+    throw badRequest('errors.bad_request.body_invalid', {}, result.error.issues);
   }
   return result.data;
 }
@@ -19,7 +19,7 @@ export function parseBody<T>(schema: z.ZodType<T>, value: unknown): T {
 export function parseQuery<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) {
-    throw badRequest('Query string is invalid', result.error.issues);
+    throw badRequest('errors.bad_request.query_invalid', {}, result.error.issues);
   }
   return result.data;
 }
@@ -27,7 +27,7 @@ export function parseQuery<T>(schema: z.ZodType<T>, value: unknown): T {
 export function parseParams<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) {
-    throw badRequest('Route parameters are invalid', result.error.issues);
+    throw badRequest('errors.bad_request.params_invalid', {}, result.error.issues);
   }
   return result.data;
 }

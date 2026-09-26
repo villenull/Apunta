@@ -5,6 +5,7 @@ import {
   briefCompositionJsonSchema,
   buildRefineSchema,
   buildSectionsSchema,
+  DEFAULT_LOCALE,
   DetectedFormatSchema,
   detectedFormatJsonSchema,
   NoteSummarySchema,
@@ -19,6 +20,7 @@ import {
   type DetectedFormat,
   type GenerateStage,
   type JsonSchemaObject,
+  type Locale,
   type NoteSummary,
   type PlanSuggestion,
   type RefineResult,
@@ -28,6 +30,7 @@ import {
 import type { z } from 'zod';
 
 import { DEFAULT_OLLAMA_URL } from '../config.js';
+import { msg } from '../http/locale.js';
 import { findDegeneration, findDegenerateSection } from './degenerate.js';
 import { aiError, AiError, isConnectionFailure } from './errors.js';
 import { JsonStringStreamDecoder, stripCodeFence } from './json-stream.js';
@@ -168,6 +171,12 @@ interface OllamaMessage {
 }
 
 interface ChatAttempt {
+  /**
+   * The job's captured locale (C-LANG@1 rule 4), carried on the attempt
+   * because the two `status` frames below are pushed from inside the read
+   * loop, where nothing else knows which language the caller asked for.
+   */
+  readonly locale: Locale;
   readonly messages: readonly OllamaMessage[];
   readonly format: JsonSchemaObject;
   /** `undefined` omits the field entirely, which is the documented workaround. */
@@ -351,9 +360,12 @@ export class OllamaProvider implements LlmProvider {
 
   // --- drafting ----------------------------------------------------------
 
-  async *generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent> {
+  async *generateNote(
+    request: GenerateNoteRequest,
+    locale: Locale = DEFAULT_LOCALE,
+  ): AsyncIterable<LlmEvent> {
     const model = await this.resolveModel();
-    yield status('connecting', 'Thinking…');
+    yield status('connecting', msg(locale, 'status.thinking'));
     await this.requireUsableModel(model);
 
     // A spoken retraction is cut out of the transcript before the drafting
@@ -361,7 +373,7 @@ export class OllamaProvider implements LlmProvider {
     let drafted = request;
     const transcript = request.transcript ?? '';
     if (hasRetraction(transcript)) {
-      yield status('correcting', 'Applying your corrections…');
+      yield status('correcting', msg(locale, 'status.applying_corrections'));
       const corrections = await this.extractRetractions(model, transcript);
       const outcome = applyRetractions(transcript, corrections);
       yield { type: 'retractions', applied: outcome.applied, offered: corrections.length };
@@ -388,6 +400,7 @@ export class OllamaProvider implements LlmProvider {
     };
 
     const { value, stats } = yield* this.runLadder<Sections>({
+      locale,
       model,
       system: prompt.system,
       user: prompt.user,
@@ -398,9 +411,9 @@ export class OllamaProvider implements LlmProvider {
     yield { type: 'sections', sections: value, stats };
   }
 
-  async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+  async *refineNote(request: RefineNoteRequest, locale: Locale = DEFAULT_LOCALE): AsyncIterable<LlmEvent> {
     const model = await this.resolveModel();
-    yield status('connecting', 'Thinking…');
+    yield status('connecting', msg(locale, 'status.thinking'));
     await this.requireUsableModel(model);
 
     const prompt = buildRefinePrompt(request);
@@ -419,6 +432,7 @@ export class OllamaProvider implements LlmProvider {
     };
 
     const { value, stats } = yield* this.runLadder<RefineResult>({
+      locale,
       model,
       system: prompt.system,
       user: prompt.user,
@@ -437,9 +451,12 @@ export class OllamaProvider implements LlmProvider {
    * deliberately, so this path cannot fail in a way the others have already
    * learned to report.
    */
-  async *discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent> {
+  async *discussPatient(
+    request: BrainstormRequest,
+    locale: Locale = DEFAULT_LOCALE,
+  ): AsyncIterable<LlmEvent> {
     const model = await this.resolveModel();
-    yield status('connecting', 'Thinking…');
+    yield status('connecting', msg(locale, 'status.thinking'));
     await this.requireUsableModel(model);
 
     const prompt = buildBrainstormPrompt(request);
@@ -452,6 +469,7 @@ export class OllamaProvider implements LlmProvider {
     };
 
     const { value, stats } = yield* this.runLadder<string>({
+      locale,
       model,
       system: prompt.system,
       user: prompt.user,
@@ -543,7 +561,12 @@ export class OllamaProvider implements LlmProvider {
       return parsed.data;
     };
 
+    // English: a non-streamed call drains the ladder's events instead of
+    // forwarding them, so no `status` it yields ever reaches a browser. The
+    // argument is still passed rather than left optional so a caller that
+    // *does* forward them cannot forget to.
     const generator = this.runLadder<T>({
+      locale: DEFAULT_LOCALE,
       model,
       system: prompt.system,
       user: prompt.user,
@@ -665,6 +688,8 @@ export class OllamaProvider implements LlmProvider {
    * still costs at most two calls.
    */
   private async *runLadder<T>(options: {
+    /** The captured locale every `status` this ladder yields is rendered in. */
+    locale: Locale;
     model: string;
     system: string;
     user: string;
@@ -680,7 +705,7 @@ export class OllamaProvider implements LlmProvider {
 
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       if (attempt > 1) {
-        yield status('retrying', 'That draft came back malformed. Trying again…');
+        yield status('retrying', msg(options.locale, 'status.drafting_retry'));
       }
 
       const messages: OllamaMessage[] = [
@@ -699,6 +724,7 @@ export class OllamaProvider implements LlmProvider {
       }
 
       const outcome = yield* this.streamChat(options.model, {
+        locale: options.locale,
         messages,
         format: options.format,
         think,
@@ -931,7 +957,7 @@ export class OllamaProvider implements LlmProvider {
       if (!response.body) throw aiError('ollama_error', 'Ollama returned no response body');
 
       const loading = setTimeout(() => {
-        push(status('loading-model', 'Loading the model — the first note after a restart is slower…'));
+        push(status('loading-model', msg(attempt.locale, 'status.loading_model')));
       }, LOADING_STATUS_AFTER_MS);
       timers.push(loading);
 
@@ -968,7 +994,7 @@ export class OllamaProvider implements LlmProvider {
             clearTimeout(loading);
             if (!started) {
               started = true;
-              push(status('drafting', 'Drafting the note…'));
+              push(status('drafting', msg(attempt.locale, 'status.drafting_note')));
             }
             for (const delta of decoder.push(content)) {
               push({ type: 'token', section: delta.key, text: delta.text });

@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { HealthResponseSchema } from '@apunta/shared';
+import { HealthResponseSchema, t } from '@apunta/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { DB_FILENAME } from './config.js';
@@ -47,6 +47,12 @@ describe('unknown routes', () => {
     const response = await harness.app.inject({ method: 'GET', url: '/api/nope' });
 
     expect(response.statusCode).toBe(404);
-    expect(response.json()).toMatchObject({ error: 'not_found', message: 'Not Found' });
+    // The bytes are pinned to the catalogue's English, which is what the app
+    // sent before the sentence moved into it (C-LANG@1 rule 3).
+    expect(response.json()).toMatchObject({
+      error: 'not_found',
+      message: t('errors.not_found.route', {}, 'en'),
+    });
+    expect(t('errors.not_found.route', {}, 'en')).toBe('Not Found');
   });
 });

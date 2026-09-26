@@ -2,6 +2,7 @@ import type {
   BriefComposition,
   DetectedFormat,
   GenerateStage,
+  Locale,
   NoteSummary,
   PlanSuggestion,
   Sections,
@@ -196,12 +197,24 @@ export interface LlmResult<T> {
 }
 
 export interface LlmProvider {
-  /** Streams a draft, then yields the validated sections object. Throws `AiError`. */
-  generateNote(request: GenerateNoteRequest): AsyncIterable<LlmEvent>;
+  /**
+   * Streams a draft, then yields the validated sections object. Throws `AiError`.
+   *
+   * `locale` is the job's captured locale (C-LANG@1 rule 4), passed in rather
+   * than read: the provider builds the `status` frames, and a frame rendered
+   * from a setting read mid-stream would change language under a job that
+   * already started in one. The `stage` cannot stand in for it — `drafting`
+   * alone carries two different sentences.
+   *
+   * Optional, defaulting to English, so a caller with no locale to give stays
+   * the caller it was before this parameter existed rather than a compile
+   * error; all four production call sites pass one.
+   */
+  generateNote(request: GenerateNoteRequest, locale?: Locale): AsyncIterable<LlmEvent>;
   /** Streams the assistant's reply, then yields it with any rewritten sections (M4). */
-  refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent>;
+  refineNote(request: RefineNoteRequest, locale?: Locale): AsyncIterable<LlmEvent>;
   /** Streams a brainstorm reply, then yields it (M12). Nothing is revised. */
-  discussPatient(request: BrainstormRequest): AsyncIterable<LlmEvent>;
+  discussPatient(request: BrainstormRequest, locale?: Locale): AsyncIterable<LlmEvent>;
   /** Reads a template or an example note and names its sections (M6). */
   detectFormat(request: DetectFormatRequest): Promise<DetectedFormat>;
   /** Stage one of both M9 paths: one note in, a small structured object out. */
@@ -269,9 +282,26 @@ export interface SttDescription {
   readonly model: string;
 }
 
+/**
+ * How one transcription is carried out, as the caller sees it.
+ *
+ * Only the locale is a caller's decision. Everything else on
+ * `WhisperOptions` (`ai/whisper.ts`) is the provider's own configuration and
+ * stays there; this is the slice of it a request has to be able to set, which
+ * is what lets the STT frame say the same thing in the same language as the
+ * rest of the job without the request knowing what a GGUF file is.
+ */
+export interface TranscribeOptions {
+  /**
+   * The job's captured locale, for the `progress` frames (C-LANG@1 rule 4).
+   * Absent means English, which is what a preview outside a job gets.
+   */
+  readonly locale?: Locale;
+}
+
 export interface SttProvider {
   /** Streams progress, then yields the transcript. Throws `AiError`. */
-  transcribe(request: TranscribeRequest): AsyncIterable<SttEvent>;
+  transcribe(request: TranscribeRequest, options?: TranscribeOptions): AsyncIterable<SttEvent>;
   describe(): Promise<SttDescription>;
 }
 

@@ -12,6 +12,7 @@ import type { Database } from 'better-sqlite3';
 
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
+import { msg, type Locale } from '../http/locale.js';
 import { getSetting, putSettings } from '../db/settings.js';
 import { snapshotDatabase, type SnapshotMethod } from '../db/snapshot.js';
 import { createBackup, createBackupAsync } from './archive.js';
@@ -23,7 +24,6 @@ import {
   isDueToday,
   isStale,
   lastBackupAt,
-  lastBackupError,
   lastBackupFile,
   listRestorableBackups,
   pruneBackups,
@@ -130,9 +130,7 @@ export function runBackup(
     }, options.lockWaitMs);
   } catch (error) {
     putSettings(db, {
-      [LAST_BACKUP_ERROR_SETTING]: `${now.toISOString()} — ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      [LAST_BACKUP_ERROR_SETTING]: backupFailure(error, now),
     });
     throw error;
   }
@@ -183,9 +181,7 @@ export async function runBackupAsync(
     }, options.lockWaitMs);
   } catch (error) {
     putSettings(db, {
-      [LAST_BACKUP_ERROR_SETTING]: `${now.toISOString()} — ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      [LAST_BACKUP_ERROR_SETTING]: backupFailure(error, now),
     });
     throw error;
   }
@@ -220,7 +216,12 @@ export function maybeRunDailyBackup(
   return runBackup(db, config, { now });
 }
 
-export function backupStatus(db: Database, config: AppConfig, now: Date = new Date()): BackupStatus {
+export function backupStatus(
+  db: Database,
+  config: AppConfig,
+  now: Date = new Date(),
+  locale: Locale = 'en',
+): BackupStatus {
   const directory = resolveBackupDir(db, config.dataDir);
   const lastAt = lastBackupAt(db);
   const oldest = db.prepare('SELECT MIN(created_at) AS oldest FROM notes').get() as {
@@ -232,7 +233,11 @@ export function backupStatus(db: Database, config: AppConfig, now: Date = new Da
     destination: describeDestination(directory, config.dataDir),
     last_backup_at: lastAt,
     last_backup_file: lastBackupFile(db),
-    last_backup_error: lastBackupError(db),
+    // Read through `getSetting` rather than `store.ts`'s `lastBackupError`,
+    // which is typed `string | null` and would answer null for this card's
+    // object. The legacy string still comes back as a string, so the renderer
+    // sees both shapes and no other module has to change.
+    last_backup_error: renderBackupError(getSetting<unknown>(db, LAST_BACKUP_ERROR_SETTING), locale),
     stale: isStale(lastAt, now),
     last_verified_restore: readString(db, LAST_VERIFIED_RESTORE_SETTING),
     backups: listRestorableBackups(directory),
@@ -240,6 +245,62 @@ export function backupStatus(db: Database, config: AppConfig, now: Date = new Da
     oldest_note_at: oldest.oldest,
     db_bytes: databaseBytes(db),
   };
+}
+
+/**
+ * What a failed backup stores, from this card on: a catalogue key, the
+ * parameters it renders, and the ISO stamp.
+ *
+ * It replaces a string that was two things joined by an em dash, which could be
+ * neither re-rendered nor re-translated: the wire field is still a string
+ * (`shared/src/backup.ts:221`) and `BackupCard.tsx:210` still shows it inside
+ * `backup.failed`, so `GET /api/backup` renders this object in the request's
+ * language and the browser is unchanged.
+ *
+ * `{detail}` is the failure's own words — a `BackupError`'s message, which
+ * names a path or a parser's complaint and is data rather than copy this card
+ * may translate. The frame around it is `backup.failure`, and the stamp is a
+ * `date` parameter, so it comes out through `Intl` like every other date.
+ */
+// A `type` and not an `interface`: `putSettings` takes `Settings`, whose value
+// type is `z.json()`, and only a type alias carries the implicit index signature
+// that makes an object literal assignable to it.
+type StoredBackupFailure = {
+  code: 'backup.failure';
+  params: { detail: string };
+  at: string;
+};
+
+function backupFailure(error: unknown, now: Date): StoredBackupFailure {
+  return {
+    code: 'backup.failure',
+    params: { detail: error instanceof Error ? error.message : String(error) },
+    at: now.toISOString(),
+  };
+}
+
+/**
+ * The wire string for `last_backup_error`.
+ *
+ * A row this card wrote is re-rendered in `locale`; **a row that predates it is
+ * displayed exactly as stored** — never re-rendered, never re-translated,
+ * never rewritten. The two are told apart by shape rather than by a marker: the
+ * new row is a JSON object, and a legacy row is the `<iso> — <message>` string,
+ * which does not parse. A row that parses but is not this card's shape is also
+ * shown as it stands, so a hand-edited value is never fed to `t()` as a key.
+ * No migration deletes or rewrites either.
+ */
+function renderBackupError(stored: unknown, locale: Locale): string | null {
+  // Absent, or the empty string a successful backup writes: no failure.
+  if (stored === undefined || stored === null || stored === '') return null;
+  // A legacy row is a plain string, and the only thing this card may do with
+  // one is show it.
+  if (typeof stored === 'string') return stored;
+  if (typeof stored !== 'object') return String(stored);
+  const row = stored as { code?: unknown; params?: { detail?: unknown }; at?: unknown };
+  if (row.code !== 'backup.failure' || typeof row.at !== 'string') return null;
+  if (typeof row.params?.detail !== 'string') return null;
+  return msg(locale, 'backup.failure', { at: row.at, detail: row.params.detail });
 }
 
 /** Pages × page size, which is the file's own account of its size. */

@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import type { AiProviders } from '../ai/types.js';
 import { getFormat } from '../db/formats.js';
 import { notFound } from '../http/errors.js';
+import { msg, storedLanguage } from '../http/locale.js';
 import { openSse } from '../http/sse.js';
 import { parseBody } from '../http/validate.js';
 import { persistDraft, streamDraft } from './draft.js';
@@ -30,7 +31,12 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
     const input = parseBody(GenerateRequestSchema, request.body);
     requirePatient(db, input.patient_id);
     const format = getFormat(db, input.format_id);
-    if (!format) throw notFound('Note format not found');
+    if (!format) throw notFound('errors.not_found.note_format');
+
+    // Captured here, before the stream opens, and handed to everything this
+    // request writes (C-LANG@1 rule 4): the drafting frames inside
+    // `streamDraft`, the `saving` frame below, and the note's opening turn.
+    const locale = storedLanguage(db);
 
     const stream = openSse(reply);
 
@@ -42,13 +48,14 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
       source: { typedNotes: input.typed_notes, transcript: input.transcript },
       stream,
       request,
+      locale,
     });
     if (sections === null || stream.closed) {
       stream.end();
       return;
     }
 
-    stream.send('status', { stage: 'saving', message: 'Saving the draft…' });
+    stream.send('status', { stage: 'saving', message: msg(locale, 'status.saving_draft') });
     const note = persistDraft(db, input, format, sections, retractions);
 
     stream.send('note', {

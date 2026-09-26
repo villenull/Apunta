@@ -20,17 +20,16 @@ import { conflict, HttpError, notFound } from '../http/errors.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
 import { requirePatient } from './patients.js';
 
-/** The prototype's wording when the user tries to change a published note. */
-const PUBLISHED_LOCK_MESSAGE =
-  'This note is published, so its content is locked. Unpublish it first, then edit.';
-
 function requireNote(db: Database, id: string): Note {
   const note = getNote(db, id);
-  if (!note) throw notFound('Note not found');
+  if (!note) throw notFound('errors.not_found.note');
   return note;
 }
 function staleWrite(note: Note): HttpError {
-  return new HttpError(409, 'stale_write', 'This note changed in another window.', { note });
+  // `errors.conflict.note_published_lock` keeps the prototype's own wording for
+  // the same refusal, and this is its 409 sibling: the record she is editing
+  // has moved under her, and the current note travels in `details`.
+  return new HttpError(409, 'stale_write', 'errors.stale_write.note_changed', {}, { note });
 }
 
 export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
@@ -49,7 +48,7 @@ export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
     requirePatient(db, input.patient_id);
 
     const format = getFormat(db, input.format_id);
-    if (!format) throw notFound('Note format not found');
+    if (!format) throw notFound('errors.not_found.note_format');
 
     const note = createNote(db, {
       patient_id: input.patient_id,
@@ -82,7 +81,7 @@ export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
 
     if (patch.revision !== note.revision) throw staleWrite(note);
     if (note.status === 'published' && patch.content !== undefined) {
-      throw conflict(PUBLISHED_LOCK_MESSAGE);
+      throw conflict('errors.conflict.note_published_lock');
     }
 
     const updated = updateNote(db, id, {
@@ -94,33 +93,33 @@ export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
 
     const latest = requireNote(db, id);
     if (latest.revision !== patch.revision) throw staleWrite(latest);
-    throw notFound('Note not found');
+    throw notFound('errors.not_found.note');
   });
 
   /** Cascades to the note's transcripts and chat messages. */
   app.delete('/api/notes/:id', async (request, reply) => {
     const { id } = parseParams(IdParamsSchema, request.params);
-    if (!deleteNote(db, id)) throw notFound('Note not found');
+    if (!deleteNote(db, id)) throw notFound('errors.not_found.note');
     return reply.code(204).send();
   });
 
   app.post('/api/notes/:id/publish', async (request): Promise<Note> => {
     const { id } = parseParams(IdParamsSchema, request.params);
     const note = requireNote(db, id);
-    if (note.status === 'published') throw conflict('This note is already published.');
+    if (note.status === 'published') throw conflict('errors.conflict.note_published');
 
     const published = setNotePublished(db, id, true);
-    if (!published) throw notFound('Note not found');
+    if (!published) throw notFound('errors.not_found.note');
     return published;
   });
 
   app.post('/api/notes/:id/unpublish', async (request): Promise<Note> => {
     const { id } = parseParams(IdParamsSchema, request.params);
     const note = requireNote(db, id);
-    if (note.status === 'draft') throw conflict('This note is not published.');
+    if (note.status === 'draft') throw conflict('errors.conflict.note_not_published');
 
     const unpublished = setNotePublished(db, id, false);
-    if (!unpublished) throw notFound('Note not found');
+    if (!unpublished) throw notFound('errors.not_found.note');
     return unpublished;
   });
 }

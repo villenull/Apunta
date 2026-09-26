@@ -22,7 +22,7 @@ const ListQuerySchema = z.object({ include_archived: BooleanQueryFlagSchema });
 
 export function requirePatient(db: Database, id: string): Patient {
   const patient = getPatient(db, id);
-  if (!patient) throw notFound('Patient not found');
+  if (!patient) throw notFound('errors.not_found.patient');
   return patient;
 }
 
@@ -56,14 +56,14 @@ export function registerPatientRoutes(app: FastifyInstance, db: Database): void 
       ...(patch.identifier === undefined ? {} : { identifier: patch.identifier }),
       ...(patch.archived === undefined ? {} : { archived: patch.archived }),
     });
-    if (!updated) throw notFound('Patient not found');
+    if (!updated) throw notFound('errors.not_found.patient');
     return updated;
   });
 
   /** Cascades: the patient's notes, their transcripts and their refine and brainstorm chat go too. */
   app.delete('/api/patients/:id', async (request, reply) => {
     const { id } = parseParams(IdParamsSchema, request.params);
-    if (!deletePatient(db, id)) throw notFound('Patient not found');
+    if (!deletePatient(db, id)) throw notFound('errors.not_found.patient');
     return reply.code(204).send();
   });
 }

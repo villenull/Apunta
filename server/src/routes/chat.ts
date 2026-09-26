@@ -4,11 +4,12 @@ import {
   approximateTokens,
   emptySectionNames,
   instantToLocalDay,
-  PUBLISHED_REFUSAL,
   sectionsToText,
+  t,
   textToSections,
   type ChatMessage,
   type ChatMessageListResponse,
+  type MessageKey,
   type Note,
   type Sections,
 } from '@apunta/shared';
@@ -48,6 +49,7 @@ import { getFormat } from '../db/formats.js';
 import { getNote, listNotesForPatient, updateDraftNoteContent } from '../db/notes.js';
 import { listTranscriptsForNote } from '../db/transcripts.js';
 import { notFound } from '../http/errors.js';
+import { msg, type Locale } from '../http/locale.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
 import { begin, end } from '../jobs/registry.js';
@@ -97,7 +99,20 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
     const input = parseBody(ChatRequestSchema, request.body);
     const note = requireNote(db, id);
     const format = getFormat(db, note.format_id);
-    if (!format) throw notFound('Note format not found');
+    if (!format) throw notFound('errors.not_found.note_format');
+
+    /**
+     * C-LANG@1 rule 4's named exception, and the whole reason this handler does
+     * not read the setting: a refine answers in the **target note's** locale,
+     * whatever the app is set to and whatever language the instruction is typed
+     * in. The contract's own rejection example is a Spanish instruction against
+     * an English note.
+     *
+     * It is read once, here, and every sentence this request writes — the
+     * frames, the refusal, the notices, the persisted reply — is rendered from
+     * this value.
+     */
+    const locale: Locale = note.locale;
 
     /**
      * The registry's second user (C-LANG@1 rule 6): a refine is in flight for
@@ -132,7 +147,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       // right one. A question still gets asked — she may simply want to know
       // something about a note she has already filed.
       if (locked && !isQuestion(input.message)) {
-        finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
+        finishWithReply(db, stream, note.id, msg(locale, 'chat.publishedRefusal'));
         return;
       }
 
@@ -160,14 +175,14 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         // violates a clinical or fact invariant, this request takes the normal
         // model path instead of bypassing that protection.
         if (guarded.blocked.length === 0 && kept.dropped.length === 0) {
-          stream.send('status', { stage: 'drafting', message: 'Applying the move…' });
+          stream.send('status', { stage: 'drafting', message: msg(locale, 'status.applying_move') });
           if (stream.closed) {
             stream.end();
             return;
           }
           const rewritten = updateDraftNoteContent(db, note.id, fastPath.content);
           if (rewritten === undefined) {
-            finishWithReply(db, stream, note.id, PUBLISHED_REFUSAL);
+            finishWithReply(db, stream, note.id, msg(locale, 'chat.publishedRefusal'));
             return;
           }
           if (stream.closed) {
@@ -181,7 +196,10 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
             outcome: 'applied',
             outcome_reason: null,
           });
-          const replyText = `Moved the quoted text from ${fastPath.source} to ${fastPath.target}.`;
+          const replyText = msg(locale, 'chat.moveReply', {
+            source: fastPath.source,
+            target: fastPath.target,
+          });
           stream.send('token', { text: replyText });
           stream.send('message', { message: persistReply(db, note.id, replyText) });
           stream.end();
@@ -222,6 +240,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
                 noteDate: instantToLocalDay(note.created_at),
                 priorNotes: priorNotes.map(({ title, date, text }) => ({ title, date, text })),
               },
+          locale,
         );
 
         for await (const event of events) {
@@ -239,7 +258,10 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
               streamedRewriteSections.add(rewriteSection);
               stream.send('status', {
                 stage: 'drafting',
-                message: `Rewriting ${String(streamedRewriteSections.size)} of ${String(format.sections.length)} sections…`,
+                message: msg(locale, 'status.rewriting_sections', {
+                  done: streamedRewriteSections.size,
+                  total: format.sections.length,
+                }),
               });
             }
             if (event.section === 'reply') {
@@ -265,7 +287,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
           }
         }
       } catch (error) {
-        const failure = toAiError(error);
+        const failure = toAiError(error).inLocale(locale);
         logFailure(request, failure, 'note refinement failed');
         stream.send('error', { code: failure.code, message: failure.message });
         stream.end();
@@ -277,7 +299,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         return;
       }
       if (!sawRefined) {
-        const failure = aiError('empty_response', 'refineNote finished without producing a reply');
+        const failure = aiError('empty_response', 'refineNote finished without producing a reply', locale);
         logFailure(request, failure, 'note refinement failed');
         stream.send('error', { code: failure.code, message: failure.message });
         stream.end();
@@ -291,7 +313,12 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         // note has effectively read the message as an instruction, so its reply
         // may well describe an edit that did not happen — say the true thing
         // instead. An answer that touched nothing is hers to keep.
-        finishWithReply(db, stream, note.id, updatedSections === null ? replyText : PUBLISHED_REFUSAL);
+        finishWithReply(
+          db,
+          stream,
+          note.id,
+          updatedSections === null ? replyText : msg(locale, 'chat.publishedRefusal'),
+        );
         return;
       }
 
@@ -356,7 +383,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
           bringOver ? [...sources, ...priorTexts] : sources,
         );
         if (guarded.blocked.length > 0) {
-          notices.push(guardNotice(guarded.blocked));
+          notices.push(guardNotice(guarded.blocked, locale));
           lockedSections.push(...guarded.blocked.map((block) => block.section));
           logBlocked(request, guarded.blocked.length);
         }
@@ -367,7 +394,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         // "shorter" is not permission to lose what it says.
         const kept = guardDroppedFacts(previous, guarded.sections, input.message);
         if (kept.dropped.length > 0) {
-          notices.push(factNotice(kept.dropped));
+          notices.push(factNotice(kept.dropped, locale));
           lockedSections.push(...kept.dropped.map((drop) => drop.section));
           logKept(request, kept.dropped.length);
         }
@@ -376,7 +403,7 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         // the other locks let through, so a section any lock kept stays kept.
         const fenced = guardPriorNoteContent(previous, kept.sections, sources, priorTexts, input.message);
         if (fenced.carried.length > 0) {
-          notices.push(priorNoteNotice(fenced.carried));
+          notices.push(priorNoteNotice(fenced.carried, locale));
           lockedSections.push(...fenced.carried.map((carry) => carry.section));
           logFenced(request, fenced.carried.length);
         }
@@ -418,11 +445,11 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
         // lock, so the thread tells the truth about the race too.
         rewritten = updateDraftNoteContent(db, note.id, content);
         if (rewritten === undefined) {
-          replyText = PUBLISHED_REFUSAL;
+          replyText = msg(locale, 'chat.publishedRefusal');
           verdict = {
             outcome: 'withheld',
             reason: 'The note became published before the edit could be applied.',
-            reply: PUBLISHED_REFUSAL,
+            reply: msg(locale, 'chat.publishedRefusal'),
           };
         }
       }
@@ -529,7 +556,7 @@ function fitRefineBackground(db: Database, note: Note, request: RefineNoteReques
 
 function requireNote(db: Database, id: string): Note {
   const note = getNote(db, id);
-  if (!note) throw notFound('Note not found');
+  if (!note) throw notFound('errors.not_found.note');
   return note;
 }
 
@@ -546,7 +573,24 @@ function requireNote(db: Database, id: string): Note {
  * Since 2026-09-23 a reply can be *entirely* the server's — an edit turn's
  * reply is written from the diff — which is why the whole paragraph is matched
  * rather than only what follows the model's prose.
+ *
+ * The three lock openings are listed in **both** languages. They are the only
+ * sentences here a route writes in the note's own locale rather than in
+ * English, so a Spanish note's thread holds a notice this list would otherwise
+ * not recognise — and a notice the model then reads is exactly the "rule in a
+ * prompt can be talked out of" failure the locks exist to prevent.
  */
+const LOCK_NOTICE_KEYS = [
+  'chat.guardNotice.opening',
+  'chat.factNotice.opening',
+  'chat.priorNoteNotice.opening',
+] as const satisfies readonly MessageKey[];
+
+const LOCK_NOTICE_OPENINGS: readonly string[] = LOCK_NOTICE_KEYS.flatMap((key) => [
+  t(key, {}, 'en'),
+  t(key, {}, 'es-MX'),
+]);
+
 const SERVER_SENTENCES = [
   GUARD_NOTICE_OPENING,
   FACT_NOTICE_OPENING,
@@ -556,6 +600,12 @@ const SERVER_SENTENCES = [
   ALREADY_THERE_NOTICE,
   QUESTION_LEFT_ALONE,
   'Apunta could not',
+  // The three lock notices are persisted in the note's own locale, so a thread
+  // can hold a notice whose opening is not the English string above. Both
+  // languages' openings are listed here, read from the catalogues rather than
+  // written out, so the strip keeps working on a note written in Spanish
+  // instead of quietly feeding the model its own lock notice back.
+  ...LOCK_NOTICE_OPENINGS,
 ].map((sentence) => sentence.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 const SERVER_SENTENCE_START = new RegExp(`^(?:${SERVER_SENTENCES.join('|')})`);
 

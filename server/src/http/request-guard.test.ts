@@ -23,10 +23,14 @@ const BOOT_PORT = 7812;
 
 const FOREIGN_ORIGIN = 'http://evil.example:5173';
 
+// The boot page renders a catalogue key in both languages and answers its two
+// JSON bodies in English, so what a test gives it is a key and its parameters
+// rather than a finished sentence.
 const BOOT_OPTIONS = {
   dataDir: '/tmp/apunta-guard-boot',
-  message: 'Apunta cannot write because the disk is full.',
-};
+  key: 'errors.storage_error.disk_full',
+  params: { dir: '/tmp/apunta-guard-boot' },
+} as const;
 
 interface Servers {
   readonly main: TestApp;

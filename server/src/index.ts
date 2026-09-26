@@ -5,7 +5,7 @@ import { openBrowser } from './boot.js';
 import { appUrl, ensureDataDir, loadConfig } from './config.js';
 import { installEgressGuard } from './egress-guard.js';
 import { openDatabase, type OpenedDatabase } from './db/index.js';
-import { storageBootMessage } from './http/errors.js';
+import { storageBootFailure } from './http/errors.js';
 import { serveBootError } from './boot-error.js';
 import {
   DATA_FOLDER_IN_USE,
@@ -54,9 +54,13 @@ async function start(): Promise<void> {
         console.error('Apunta could not roll back the failed restore', rollbackError);
       }
     }
-    const message = storageBootMessage(error, config.dataDir, config.dbFile);
-    const app = await serveBootError(config, { dataDir: config.dataDir, message });
-    app.log.error({ err: error, dataDir: config.dataDir, db: config.dbFile }, message);
+    const failure = storageBootFailure(error, config.dataDir, config.dbFile);
+    const app = await serveBootError(config, {
+      dataDir: config.dataDir,
+      key: failure.key,
+      params: failure.params,
+    });
+    app.log.error({ err: error, dataDir: config.dataDir, db: config.dbFile }, failure.message);
     const url = appUrl(config);
     const openedBrowser = openBrowser({ url, disabled: process.env['APUNTA_NO_OPEN'] === '1' });
     if (!openedBrowser.opened && openedBrowser.reason !== undefined) {

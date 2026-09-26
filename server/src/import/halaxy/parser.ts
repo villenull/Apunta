@@ -1,5 +1,7 @@
 import { calendarDay, type HalaxyPreviewNote, type HalaxyPreviewPatient } from '@apunta/shared';
 
+import { msg, type Locale, type MessageKey, type MessageParams } from '../../http/locale.js';
+
 const MONTHS: Record<string, number> = {
   january: 1,
   february: 2,
@@ -19,13 +21,28 @@ const SHORT_MONTHS: Record<string, number> = Object.fromEntries(
   Object.entries(MONTHS).map(([name, month]) => [name.slice(0, 3), month]),
 );
 
+/**
+ * A Halaxy PDF the parser could not read.
+ *
+ * `reason` is the category the route and the log branch on; `key` and `params`
+ * are the sentence, which `routes/halaxy.ts` shows in the request's language
+ * and `routes/halaxy.ts`'s importer turns into a 400. The two are separate on
+ * purpose: two of the three sentences share the `missing_sessions` category,
+ * so a key cannot be derived from the reason.
+ */
 export class HalaxyParseError extends Error {
   constructor(
     readonly reason: 'missing_patient' | 'missing_sessions' | 'ambiguous_sessions',
-    message: string,
+    readonly key: MessageKey,
+    readonly params: MessageParams = {},
   ) {
-    super(message);
+    super(msg('en', key, params));
     this.name = 'HalaxyParseError';
+  }
+
+  /** The same failure, sentence rendered in `locale`. */
+  messageIn(locale: Locale): string {
+    return msg(locale, this.key, this.params);
   }
 }
 
@@ -40,12 +57,12 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
   const lines = cleanLines(text);
   const patientName = findPatientName(lines);
   if (patientName === null) {
-    throw new HalaxyParseError('missing_patient', 'The PDF does not identify a patient in its header.');
+    throw new HalaxyParseError('missing_patient', 'errors.bad_request.halaxy_no_patient_header');
   }
 
   const headings = findDateHeadings(lines);
   if (headings.length === 0) {
-    throw new HalaxyParseError('missing_sessions', 'The PDF has no unambiguous dated sessions to import.');
+    throw new HalaxyParseError('missing_sessions', 'errors.bad_request.halaxy_no_dated_sessions');
   }
 
   const warnings: string[] = [];
@@ -85,7 +102,7 @@ export function parseHalaxyText(text: string, fileName: string): HalaxyPreviewPa
   });
 
   if (notes.length === 0) {
-    throw new HalaxyParseError('missing_sessions', 'The PDF has dated headings but no session text.');
+    throw new HalaxyParseError('missing_sessions', 'errors.bad_request.halaxy_no_session_text');
   }
   return { fileName, patientName, existingPatients: [], notes, warnings };
 }

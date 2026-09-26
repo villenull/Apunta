@@ -13,7 +13,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { AiProviders } from '../ai/types.js';
 import { concatenateForDetection } from '../extract/concat.js';
 import { ExtractError, extractDocument } from '../extract/index.js';
-import { badRequest } from '../http/errors.js';
+import { badRequest, rawHttpError } from '../http/errors.js';
 import { flattenSkill } from '../skill/flatten.js';
 import { readSkillMarkdown } from '../skill/zip.js';
 
@@ -42,13 +42,13 @@ export function registerFormatDetectRoutes(app: FastifyInstance, providers: AiPr
 
       const kindField = DetectKindSchema.safeParse(upload.fields['kind']);
       if (!kindField.success) {
-        throw badRequest('Tell Apunta whether these are a blank template or completed notes.');
+        throw badRequest('errors.bad_request.format_detect_kind');
       }
       const kind: DetectKind = kindField.data;
 
-      if (upload.files.length === 0) throw badRequest('Choose a file to read the format from.');
+      if (upload.files.length === 0) throw badRequest('errors.bad_request.format_detect_no_file');
       if (kind === 'examples' && upload.files.length < 2) {
-        throw badRequest('Upload 2 or 3 completed notes so Apunta can see what they have in common.');
+        throw badRequest('errors.bad_request.format_detect_examples');
       }
 
       const texts: string[] = [];
@@ -65,9 +65,7 @@ export function registerFormatDetectRoutes(app: FastifyInstance, providers: AiPr
       // section. A model that returns them is a bad answer, not a 500.
       const sections = SectionsSchema.safeParse(detected.sections);
       if (!sections.success) {
-        throw badRequest(
-          "Apunta read the file but couldn't make a usable format out of it. Try describing the sections yourself.",
-        );
+        throw badRequest('errors.bad_request.format_detect_unusable');
       }
 
       return {
@@ -89,7 +87,7 @@ export function registerFormatDetectRoutes(app: FastifyInstance, providers: AiPr
     asClientErrors(1, async () => {
       const upload = await readUpload(request, 1);
       const file = upload.files[0];
-      if (file === undefined) throw badRequest('Choose a SKILL.md file, or a .zip of the skill folder.');
+      if (file === undefined) throw badRequest('errors.bad_request.format_detect_skill_file');
 
       const flattened = flattenSkill(readSkillMarkdown(file));
       return {
@@ -156,9 +154,9 @@ async function readUpload(request: FastifyRequest, maxFiles: number): Promise<Up
 }
 
 function tooManyFiles(maxFiles: number) {
-  return badRequest(
-    maxFiles === 1 ? 'Upload one file at a time.' : `Upload at most ${String(maxFiles)} files at once.`,
-  );
+  return maxFiles === 1
+    ? badRequest('errors.bad_request.format_detect_one_file')
+    : badRequest('errors.bad_request.format_detect_too_many_files', { max: maxFiles });
 }
 
 /**
@@ -172,19 +170,20 @@ async function asClientErrors<T>(maxFiles: number, run: () => Promise<T>): Promi
   try {
     return await run();
   } catch (error) {
-    if (error instanceof ExtractError) throw badRequest(error.message);
+    // Forwarded as it stands: two `ExtractFailure` categories each back two
+    // different sentences, so the category does not identify the one held here.
+    // See `rawHttpError` in `http/errors.ts`.
+    if (error instanceof ExtractError) throw rawHttpError(400, 'bad_request', error.message);
 
     const code = (error as { code?: unknown }).code;
     if (code === 'FST_REQ_FILE_TOO_LARGE') {
-      throw badRequest(
-        "That file is larger than 10 MB. If it's a scan, Apunta can't read it anyway — it does no OCR.",
-      );
+      throw badRequest('errors.bad_request.format_detect_file_too_large');
     }
     if (code === 'FST_FILES_LIMIT' || code === 'FST_PARTS_LIMIT' || code === 'FST_FIELDS_LIMIT') {
       throw tooManyFiles(maxFiles);
     }
     if (code === 'FST_INVALID_MULTIPART_CONTENT_TYPE') {
-      throw badRequest('Upload the file with the form on the previous screen.');
+      throw badRequest('errors.bad_request.format_detect_not_multipart');
     }
     throw error;
   }

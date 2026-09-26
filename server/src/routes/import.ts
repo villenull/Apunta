@@ -69,8 +69,7 @@ export function registerImportRoutes(app: FastifyInstance, db: Database): void {
   app.post('/api/import/claude/run', async (request, reply): Promise<ClaudeImportReport> => {
     const upload = await receiveExport(request);
     const format = listFormats(db)[0];
-    if (!format)
-      throw badRequest('Create a note format before importing, so the notes have somewhere to go.');
+    if (!format) throw badRequest('errors.bad_request.needs_format');
 
     // Planned and written in one transaction, so what is skipped as already
     // imported is judged against the database this run writes to.
@@ -126,7 +125,7 @@ export function registerImportRoutes(app: FastifyInstance, db: Database): void {
   app.get('/api/import/batches', (): ImportBatchListResponse => ({ batches: listImportBatches(db) }));
 
   app.post<{ Params: { id: string } }>('/api/import/batches/:id/undo', (request): ImportUndoResponse => {
-    if (!importBatchExists(db, request.params.id)) throw notFound('That import has already been undone.');
+    if (!importBatchExists(db, request.params.id)) throw notFound('errors.not_found.import_undone');
     const result = undoImportBatch(db, request.params.id);
     request.log.info(result, 'claude import undone');
     return result;
@@ -159,7 +158,7 @@ interface ExportUpload {
 
 /** The whole file into memory, and nowhere else; the form fields beside it. */
 async function receiveExport(request: FastifyRequest): Promise<ExportUpload> {
-  if (!request.isMultipart()) throw badRequest('Send the export as multipart/form-data with one file.');
+  if (!request.isMultipart()) throw badRequest('errors.bad_request.import_not_multipart');
 
   let file: { bytes: Buffer; filename: string } | null = null;
   const fields = new Map<string, string>();
@@ -177,26 +176,24 @@ async function receiveExport(request: FastifyRequest): Promise<ExportUpload> {
     }
     const chunks: Buffer[] = [];
     for await (const chunk of part.file) chunks.push(chunk as Buffer);
-    if (part.file.truncated) throw badRequest('That export is too large to read in one go.');
+    if (part.file.truncated) throw badRequest('errors.bad_request.import_too_large');
     file = { bytes: Buffer.concat(chunks), filename: part.filename };
   }
-  if (file === null || file.bytes.length === 0)
-    throw badRequest('No file arrived. Choose the export Claude sent you.');
+  if (file === null || file.bytes.length === 0) throw badRequest('errors.bad_request.import_no_file');
 
   const names = parsePatientList(fields.get('names') ?? '');
   if (names.length > MAX_IMPORT_PATIENTS)
-    throw badRequest(`List at most ${String(MAX_IMPORT_PATIENTS)} names.`);
+    throw badRequest('errors.bad_request.import_patient_limit', { max: MAX_IMPORT_PATIENTS });
   const source = ImportNoteSourceSchema.safeParse(fields.get('source') ?? 'assistant');
-  if (!source.success || source.data === 'halaxy')
-    throw badRequest('The note source must be "assistant" or "human".');
+  if (!source.success || source.data === 'halaxy') throw badRequest('errors.bad_request.import_bad_source');
   const cutoff = ImportCutoffSchema.safeParse(fields.get('cutoff') ?? DEFAULT_IMPORT_CUTOFF);
-  if (!cutoff.success) throw badRequest('Use a cutoff date like 2026-07-01.');
+  if (!cutoff.success) throw badRequest('errors.bad_request.import_bad_cutoff');
   let exclude: string[] = [];
   try {
     const parsed = JSON.parse(fields.get('exclude') ?? '[]') as unknown;
     if (Array.isArray(parsed)) exclude = parsed.filter((key): key is string => typeof key === 'string');
   } catch {
-    throw badRequest('Could not read the list of unticked patients.');
+    throw badRequest('errors.bad_request.import_bad_exclude');
   }
   let existingPatientIds: Map<string, string | null> | undefined;
   try {
@@ -209,14 +206,17 @@ async function receiveExport(request: FastifyRequest): Promise<ExportUpload> {
       );
     }
   } catch {
-    throw badRequest('Could not read the patient import choices.');
+    throw badRequest('errors.bad_request.import_bad_existing');
   }
 
   let read: ReadExport;
   try {
     read = openExport(file.bytes, file.filename);
   } catch (error) {
-    if (error instanceof ImportFormatError) throw badRequest(error.message);
+    // The reader's own key travels with the error, so the 400 is the same
+    // sentence in the request's language without this route knowing which of
+    // the four it is holding.
+    if (error instanceof ImportFormatError) throw badRequest(error.key, error.params);
     throw error;
   }
   return {

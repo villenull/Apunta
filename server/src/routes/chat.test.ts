@@ -2,6 +2,7 @@ import {
   FIRST_PASS_MESSAGE,
   PUBLISHED_REFUSAL,
   approximateTokens,
+  t,
   textToSections,
   type ChatMessage,
   type Note,
@@ -437,6 +438,40 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
     expect(reply).not.toContain(UNCHANGED_NOTICE);
     expect(noteUpdated(events)?.data['outcome']).toBe('withheld');
     expect(getNote(harness.db, note.id)?.content).toBe(FACT_NOTE);
+  });
+
+  /**
+   * C-LANG@1 rule 4's named exception, and the contract's own rejection
+   * example: the app is in English, the instruction is typed in Spanish, and
+   * the target note is `es-MX` — so the note's language wins and the notice
+   * comes back in it. The reverse of the example above the other way round.
+   *
+   * The setting is deliberately left at its default: this suite never writes a
+   * `language` row, so `storedLanguage` answers English and the only thing that
+   * can put Spanish on the screen is `notes.locale`.
+   */
+  it("answers a Spanish instruction on an es-MX note in the note's language", async () => {
+    const note = await freshNote();
+    // The column, not the API: a note's locale is its format's at creation
+    // (C-LANG@1 rule 3) and no route relabels one afterwards.
+    harness.db.prepare('UPDATE notes SET locale = ? WHERE id = ?').run('es-MX', note.id);
+    expect(getNote(harness.db, note.id)?.locale).toBe('es-MX');
+
+    // Spanish throughout — and `formal` is the fake's own trigger word in this
+    // language too, which is what puts the boilerplate lock on the reply.
+    const { events } = await chat(harness.app, note.id, { message: 'Ponlo en un registro más formal' });
+
+    const reply = assistantReply(events);
+    expect(reply).toContain(t('chat.guardNotice.opening', {}, 'es-MX'));
+    expect(reply).toContain('Objective se dejó como estaba');
+    // The English opening is the strip marker, and it is not what she reads.
+    expect(reply).not.toContain(t('chat.guardNotice.opening', {}, 'en'));
+
+    // Persisted as text in the note's language, and stripped from the history
+    // the model sees next turn in either language.
+    expect(listChatMessagesForNote(harness.db, note.id).at(-1)?.text).toBe(reply);
+    const next = await chat(harness.app, note.id, { message: 'Y ahora más formal' });
+    expect(withoutServerSentences(assistantReply(next.events))).not.toContain('Apunta bloqueó');
   });
 
   it('lets the shortening through when there was no fact to lose', async () => {

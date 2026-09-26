@@ -76,12 +76,10 @@ export function registerSettingsRoutes(app: FastifyInstance, db: Database, confi
       if (key === SPANISH_AVAILABLE_SETTING) continue;
       if (key === LANGUAGE_SETTING) {
         if (!isLanguage(value)) {
-          throw badRequest('Language must be "en" or "es-MX".', { language: value });
+          throw badRequest('errors.bad_request.settings_bad_language', {}, { language: value });
         }
         if (value === HELD_LOCALE && !spanishAvailable()) {
-          throw languageUnavailable(
-            'Español is not available in this build of Apunta. Choose English, or install the Spanish edition.',
-          );
+          throw languageUnavailable();
         }
       }
       writable[key] = value;

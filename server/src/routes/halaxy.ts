@@ -15,10 +15,14 @@ import { createImportBatch, addBatchNote, addBatchPatient } from '../db/import-b
 import { createNote, setNotePublished } from '../db/notes.js';
 import { createPatient, listPatients } from '../db/patients.js';
 import { badRequest } from '../http/errors.js';
+import { msg, storedLanguage, type Locale } from '../http/locale.js';
 import { HalaxyParseError, parseHalaxyText } from '../import/halaxy/parser.js';
 
 export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
   app.post('/api/import/halaxy/preview', async (request): Promise<HalaxyPreviewResponse> => {
+    // Read once, at the start: every rejection reason below is rendered from
+    // this value, not from the setting as it stands after each PDF.
+    const locale = storedLanguage(db);
     const files = await receiveFiles(request);
     const activePatients = listPatients(db);
     const patients: HalaxyPreviewResponse['patients'] = [];
@@ -32,7 +36,7 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
           .map((patient) => ({ id: patient.id, name: patient.name }));
         patients.push({ ...parsed, existingPatients });
       } catch (error) {
-        rejected.push({ fileName: file.filename, reason: rejectionMessage(error) });
+        rejected.push({ fileName: file.filename, reason: rejectionMessage(error, locale) });
       }
     }
     request.log.info(
@@ -43,12 +47,11 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
   });
   app.post('/api/import/halaxy', (request, reply): HalaxyImportResponse => {
     const parsed = HalaxyImportRequestSchema.safeParse(request.body);
-    if (!parsed.success) throw badRequest('The Halaxy review selection is not valid.');
-    if (parsed.data.patients.length === 0) throw badRequest('Select at least one patient to import.');
+    if (!parsed.success) throw badRequest('errors.bad_request.halaxy_selection_invalid');
+    if (parsed.data.patients.length === 0) throw badRequest('errors.bad_request.halaxy_no_patients');
     const format = db.prepare('SELECT id FROM note_formats ORDER BY created_at, id LIMIT 1').get() as
       { id: string } | undefined;
-    if (!format)
-      throw badRequest('Create a note format before importing, so the notes have somewhere to go.');
+    if (!format) throw badRequest('errors.bad_request.needs_format');
     const response = db.transaction((): HalaxyImportResponse => {
       const batchId = createImportBatch(db, 'halaxy');
       const activePatients = listPatients(db).map(({ id, name }) => ({ id, name }));
@@ -72,7 +75,7 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
           patient = createPatient(db, { name: planned.patientName });
           created = true;
         }
-        if (!patient) throw badRequest('Choose an active matching patient or Create new before importing.');
+        if (!patient) throw badRequest('errors.bad_request.halaxy_patient_unmatched');
         if (created) {
           addBatchPatient(db, batchId, patient.id);
           activePatients.push(patient);
@@ -110,8 +113,7 @@ interface HalaxyFile {
 }
 
 async function receiveFiles(request: FastifyRequest): Promise<HalaxyFile[]> {
-  if (!request.isMultipart())
-    throw badRequest('Send one or more PDFs as multipart/form-data using the files field.');
+  if (!request.isMultipart()) throw badRequest('errors.bad_request.halaxy_not_multipart');
   const files: HalaxyFile[] = [];
   let total = 0;
   const parts = request.parts({
@@ -121,28 +123,37 @@ async function receiveFiles(request: FastifyRequest): Promise<HalaxyFile[]> {
     if (part.type !== 'file') continue;
     if (part.fieldname !== 'files') {
       part.file.resume();
-      throw badRequest('Upload PDFs in the files field.');
+      throw badRequest('errors.bad_request.halaxy_wrong_field');
     }
     if (!part.filename.toLowerCase().endsWith('.pdf')) {
       part.file.resume();
-      throw badRequest('Halaxy exports must be PDF files.');
+      throw badRequest('errors.bad_request.halaxy_not_pdf');
     }
     const chunks: Buffer[] = [];
     for await (const chunk of part.file) chunks.push(chunk as Buffer);
-    if (part.file.truncated) throw badRequest('A PDF is too large to read in one go.');
+    if (part.file.truncated) throw badRequest('errors.bad_request.halaxy_pdf_too_large');
     const bytes = Buffer.concat(chunks);
     total += bytes.length;
-    if (total > MAX_HALAXY_TOTAL_BYTES)
-      throw badRequest('The selected PDFs are too large to read in one go.');
+    if (total > MAX_HALAXY_TOTAL_BYTES) throw badRequest('errors.bad_request.halaxy_pdfs_too_large');
     files.push({ filename: part.filename, bytes });
   }
-  if (files.length === 0) throw badRequest('Choose at least one Halaxy PDF.');
+  if (files.length === 0) throw badRequest('errors.bad_request.halaxy_no_files');
   return files;
 }
 
-function rejectionMessage(error: unknown): string {
-  if (error instanceof ExtractError || error instanceof HalaxyParseError) return error.message;
-  return "Apunta couldn't read that PDF. Choose a text-based Halaxy export.";
+/**
+ * Why one PDF did not make it into the preview.
+ *
+ * `HalaxyParseError` carries its own key, so its sentence is rendered here in
+ * the request's language. `ExtractError` still hands over its own English:
+ * two of its categories each back two different sentences, so which one it is
+ * cannot be told from the category, and the module that could say is outside
+ * this card's write scope. See `rawHttpError` in `http/errors.ts`.
+ */
+function rejectionMessage(error: unknown, locale: Locale): string {
+  if (error instanceof HalaxyParseError) return error.messageIn(locale);
+  if (error instanceof ExtractError) return error.message;
+  return msg(locale, 'errors.bad_request.halaxy_unreadable');
 }
 
 function normalizePatientName(name: string): string {

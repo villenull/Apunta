@@ -1,7 +1,13 @@
 import { copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { DB_ENTRY_NAME, MANIFEST_FILENAME, PENDING_RESTORE_DIRNAME } from '@apunta/shared';
+import {
+  DB_ENTRY_NAME,
+  LANGUAGE_SETTING,
+  MANIFEST_FILENAME,
+  PENDING_RESTORE_DIRNAME,
+  t,
+} from '@apunta/shared';
 import type { BackupStatus, CreateBackupResponse, RestoreBackupResponse } from '@apunta/shared';
 import { strFromU8, unzipSync } from 'fflate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -51,6 +57,66 @@ describe('GET /api/backup', () => {
     expect(body.oldest_note_at).toBe('2026-07-24T09:00:00.000Z');
     expect(body.db_bytes).toBeGreaterThan(0);
     expect(body.pending_restore).toBe(false);
+  });
+
+  /**
+   * `settings.last_backup_error` is stored as `{ code, params, at }` from this
+   * card on, and rendered per request by `GET /api/backup` — so the **wire**
+   * field is still a string, `BackupCard.tsx:210` and `shared/src/backup.ts`
+   * are untouched, and the stamp comes out through `Intl` because the key
+   * declares `at` as a `date`.
+   */
+  it('renders a stored failure in the language of the request', async () => {
+    const at = '2026-09-06T15:04:05.000Z';
+    harness.db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(
+      'last_backup_error',
+      JSON.stringify({
+        code: 'backup.failure',
+        params: { detail: 'cannot create the backup folder' },
+        at,
+      }),
+    );
+
+    const english = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    const expectedEnglish = t('backup.failure', { at, detail: 'cannot create the backup folder' }, 'en');
+    expect(english.last_backup_error).toBe(expectedEnglish);
+    expect(english.last_backup_error).toContain('cannot create the backup folder');
+
+    harness.db
+      .prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
+      .run(LANGUAGE_SETTING, JSON.stringify('es-MX'));
+    const spanish = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(spanish.last_backup_error).toBe(
+      t('backup.failure', { at, detail: 'cannot create the backup folder' }, 'es-MX'),
+    );
+    // The failure's own words are data, so they survive translation untouched.
+    expect(spanish.last_backup_error).toContain('cannot create the backup folder');
+  });
+
+  /**
+   * A row written before this card is **displayed exactly as stored**: never
+   * re-rendered, never re-translated, never rewritten. It is recognised by not
+   * being this card's shape — the old value was one string with an em dash.
+   */
+  it('shows a pre-card last_backup_error row byte for byte, in either language', async () => {
+    const legacy = '2026-09-01T09:00:00.000Z — cannot create the backup folder /data/backups';
+    harness.db
+      .prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
+      .run('last_backup_error', JSON.stringify(legacy));
+
+    const english = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(english.last_backup_error).toBe(legacy);
+
+    harness.db
+      .prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)')
+      .run(LANGUAGE_SETTING, JSON.stringify('es-MX'));
+    const spanish = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(spanish.last_backup_error).toBe(legacy);
+
+    // And nothing rewrote it on the way past.
+    const stored = harness.db.prepare('SELECT value FROM settings WHERE key = ?').get('last_backup_error') as
+      { value: string } | undefined;
+    expect(JSON.parse(stored?.value ?? 'null')).toBe(legacy);
   });
 });
 

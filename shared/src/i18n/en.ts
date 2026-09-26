@@ -165,6 +165,536 @@ export const en = {
   },
 
   /*
+   * The server's own sentences — S2.5's list.
+   *
+   * Everything a person reads that the *server* produced: the API error bodies
+   * (`{ error, message, details }`), the twenty AI failures sent as SSE
+   * `error` events, the refine-lock notices, the `status` and `progress`
+   * frames, the import and backup sentences, the two persisted strings and the
+   * boot-error page.
+   *
+   * **The wire does not change.** `message` still carries a finished string;
+   * `error` and `code` stay the machine-readable field a client branches on.
+   * Each entry below names the `file:line` that sends those exact bytes today,
+   * because "English unchanged" (C-LANG@1 rules 3 and 5) is only checkable
+   * against the line it came from.
+   *
+   * `errors.<code>` is a code's single generic sentence; every *other*
+   * sentence under a code takes a short kebab-case slug
+   * (`errors.bad_request.wav_unreadable`). The namespace and the closed
+   * `ApiErrorCodeSchema` are unchanged, so no code is added here — a sentence
+   * that cannot be told from its code's generic one gets a slug, not a code.
+   */
+
+  /**
+   * The handler's own 500, `http/errors.ts:134`. The one API code with exactly
+   * one sentence, so its key is the bare code.
+   */
+  'errors.internal_error': { text: 'Something went wrong on the server.' },
+
+  /**
+   * The app's own 404 for an unknown route, `app.ts:150`. A framework-ish
+   * string by design: it names no resource, and the SPA fallback answers
+   * everything that is not under `/api`.
+   */
+  'errors.not_found.route': { text: 'Not Found' },
+
+  /**
+   * C-SNAP@1 rule 3's 409, from the lock's one sentence
+   * (`backup/lock.ts:51`) — the only `BackupError` whose code has exactly one
+   * sentence, so the route can key it without widening `BackupError`.
+   */
+  'errors.backup_in_progress': {
+    text: 'another backup is already running. Wait for it to finish, then try again.',
+  },
+
+  /** `shared/src/note.ts`'s 409 on a note another window just wrote. */
+  'errors.stale_write.note_changed': { text: 'This note changed in another window.' },
+
+  /* --- errors.bad_request: the validation and refusal sentences --- */
+
+  /** `http/validate.ts:14`, carried by every schema failure in `shared/`. */
+  'errors.bad_request.body_invalid': { text: 'Request body is invalid' },
+  /** `http/validate.ts:22`. */
+  'errors.bad_request.query_invalid': { text: 'Query string is invalid' },
+  /** `http/validate.ts:30`. */
+  'errors.bad_request.params_invalid': { text: 'Route parameters are invalid' },
+
+  /**
+   * One sentence, two routes: `routes/import.ts:73` and `routes/halaxy.ts:51`
+   * both refuse an import with no format to put the notes in. A key per
+   * *sentence*, not per file.
+   */
+  'errors.bad_request.needs_format': {
+    text: 'Create a note format before importing, so the notes have somewhere to go.',
+  },
+
+  /** `routes/backup.ts:56` — the folder is resolved, not created, on a GET. */
+  'errors.bad_request.backup_path_not_absolute': {
+    text: 'A backup folder must be an absolute path.',
+  },
+  /** `routes/backup.ts:158`. `{name}` is the filename she typed: data. */
+  'errors.bad_request.backup_filename_invalid': {
+    text: '{name} is not an Apunta backup filename (apunta-backup-YYYY-MM-DD.zip).',
+    kind: { name: 'text' },
+  },
+
+  /** `routes/formats-detect.ts:45` — the `kind` field, read by hand. */
+  'errors.bad_request.format_detect_kind': {
+    text: 'Tell Apunta whether these are a blank template or completed notes.',
+  },
+  /** `routes/formats-detect.ts:49`. */
+  'errors.bad_request.format_detect_no_file': { text: 'Choose a file to read the format from.' },
+  /** `routes/formats-detect.ts:51`. */
+  'errors.bad_request.format_detect_examples': {
+    text: 'Upload 2 or 3 completed notes so Apunta can see what they have in common.',
+  },
+  /** `routes/formats-detect.ts:68` — a valid answer that is not a format. */
+  'errors.bad_request.format_detect_unusable': {
+    text: "Apunta read the file but couldn't make a usable format out of it. Try describing the sections yourself.",
+  },
+  /** `routes/formats-detect.ts:92`. */
+  'errors.bad_request.format_detect_skill_file': {
+    text: 'Choose a SKILL.md file, or a .zip of the skill folder.',
+  },
+  /** `routes/formats-detect.ts:159`, the one-file branch of it. */
+  'errors.bad_request.format_detect_one_file': { text: 'Upload one file at a time.' },
+  /** `routes/formats-detect.ts:159`, the many branch. */
+  'errors.bad_request.format_detect_too_many_files': {
+    text: 'Upload at most {max} files at once.',
+    kind: { max: 'number' },
+  },
+  /** `routes/formats-detect.ts:179` — the 10 MB document ceiling. */
+  'errors.bad_request.format_detect_file_too_large': {
+    text: "That file is larger than 10 MB. If it's a scan, Apunta can't read it anyway — it does no OCR.",
+  },
+  /** `routes/formats-detect.ts:187`. */
+  'errors.bad_request.format_detect_not_multipart': {
+    text: 'Upload the file with the form on the previous screen.',
+  },
+
+  /** `routes/halaxy.ts:46` — the review-selection field. */
+  'errors.bad_request.halaxy_selection_invalid': {
+    text: 'The Halaxy review selection is not valid.',
+  },
+  /** `routes/halaxy.ts:47`. */
+  'errors.bad_request.halaxy_no_patients': { text: 'Select at least one patient to import.' },
+  /** `routes/halaxy.ts:75` — neither matched nor created. */
+  'errors.bad_request.halaxy_patient_unmatched': {
+    text: 'Choose an active matching patient or Create new before importing.',
+  },
+  /** `routes/halaxy.ts:114`. */
+  'errors.bad_request.halaxy_not_multipart': {
+    text: 'Send one or more PDFs as multipart/form-data using the files field.',
+  },
+  /** `routes/halaxy.ts:124`. */
+  'errors.bad_request.halaxy_wrong_field': { text: 'Upload PDFs in the files field.' },
+  /** `routes/halaxy.ts:128`. */
+  'errors.bad_request.halaxy_not_pdf': { text: 'Halaxy exports must be PDF files.' },
+  /** `routes/halaxy.ts:132`. */
+  'errors.bad_request.halaxy_pdf_too_large': { text: 'A PDF is too large to read in one go.' },
+  /** `routes/halaxy.ts:136`. */
+  'errors.bad_request.halaxy_pdfs_too_large': {
+    text: 'The selected PDFs are too large to read in one go.',
+  },
+  /** `routes/halaxy.ts:139`. */
+  'errors.bad_request.halaxy_no_files': { text: 'Choose at least one Halaxy PDF.' },
+  /** `routes/halaxy.ts:144` — the fallback when nothing more specific applies. */
+  'errors.bad_request.halaxy_unreadable': {
+    text: "Apunta couldn't read that PDF. Choose a text-based Halaxy export.",
+  },
+  /** `import/halaxy/parser.ts:43` — the header names no patient. */
+  'errors.bad_request.halaxy_no_patient_header': {
+    text: 'The PDF does not identify a patient in its header.',
+  },
+  /** `import/halaxy/parser.ts:48` — no dated heading survived the date rules. */
+  'errors.bad_request.halaxy_no_dated_sessions': {
+    text: 'The PDF has no unambiguous dated sessions to import.',
+  },
+  /** `import/halaxy/parser.ts:88` — headings, but no text under any of them. */
+  'errors.bad_request.halaxy_no_session_text': {
+    text: 'The PDF has dated headings but no session text.',
+  },
+
+  /** `routes/import.ts:162`. */
+  'errors.bad_request.import_not_multipart': {
+    text: 'Send the export as multipart/form-data with one file.',
+  },
+  /** `routes/import.ts:180`. */
+  'errors.bad_request.import_too_large': { text: 'That export is too large to read in one go.' },
+  /** `routes/import.ts:184`. */
+  'errors.bad_request.import_no_file': {
+    text: 'No file arrived. Choose the export Claude sent you.',
+  },
+  /** `routes/import.ts:188`. */
+  'errors.bad_request.import_patient_limit': {
+    text: 'List at most {max} names.',
+    kind: { max: 'number' },
+  },
+  /** `routes/import.ts:191`. */
+  'errors.bad_request.import_bad_source': { text: 'The note source must be "assistant" or "human".' },
+  /** `routes/import.ts:193`. */
+  'errors.bad_request.import_bad_cutoff': { text: 'Use a cutoff date like 2026-07-01.' },
+  /** `routes/import.ts:199`. */
+  'errors.bad_request.import_bad_exclude': {
+    text: 'Could not read the list of unticked patients.',
+  },
+  /** `routes/import.ts:212`. */
+  'errors.bad_request.import_bad_existing': {
+    text: 'Could not read the patient import choices.',
+  },
+  /** `import/claude.ts:84` — a zip that is not a Claude export. */
+  'errors.bad_request.import_not_claude_export': {
+    text: 'That file is not a Claude export. Expected the zip Claude sent you, or its conversations.json.',
+  },
+  /** `import/claude.ts:92`. */
+  'errors.bad_request.import_no_conversations_json': {
+    text: 'That zip has no conversations.json in it, so it is not a Claude export.',
+  },
+  /** `import/claude.ts:101`. `{filename}` is a name from the upload: data. */
+  'errors.bad_request.import_json_unreadable': {
+    text: '{filename} could not be read as JSON.',
+    kind: { filename: 'text' },
+  },
+  /** `import/claude.ts:109`. */
+  'errors.bad_request.import_no_conversations': { text: 'No conversations were found in that file.' },
+
+  /**
+   * `routes/prep.ts:137` — a cited note belongs to another patient, and this
+   * one has no full stop today. Not fixed here: the copy is the owner's.
+   */
+  'errors.bad_request.prep_foreign_note': {
+    text: 'This briefing cites a note that does not belong to this patient',
+  },
+
+  /** `routes/settings.ts:79` — a `language` that is neither `en` nor `es-MX`. */
+  'errors.bad_request.settings_bad_language': { text: 'Language must be "en" or "es-MX".' },
+
+  /** `routes/transcribe.ts:106,169` — one sentence, two upload paths. */
+  'errors.bad_request.wav_unreadable': { text: 'That audio could not be read as a WAV.' },
+  /** `routes/transcribe.ts:174`. */
+  'errors.bad_request.dictation_too_long': {
+    text: 'A dictated message can be up to {max} minutes long.',
+    kind: { max: 'number' },
+  },
+  /** `routes/transcribe.ts:376`. */
+  'errors.bad_request.transcribe_not_multipart': {
+    text: 'Send the recording as multipart/form-data with one audio file.',
+  },
+  /** `routes/transcribe.ts:405,424` — the preview and the note's own path. */
+  'errors.bad_request.transcribe_too_long': {
+    text: 'That recording is too long to upload. Record it in shorter sittings.',
+  },
+  /** `routes/transcribe.ts:420`. */
+  'errors.bad_request.transcribe_no_audio': { text: 'No audio was uploaded.' },
+
+  /* --- errors.not_found --- */
+
+  /** `routes/notes.ts:29,97,103,113,123` and `routes/chat.ts:532`. */
+  'errors.not_found.note': { text: 'Note not found' },
+  /** `routes/formats.ts:25,93`, `routes/notes.ts:52`, `routes/chat.ts:100`, … */
+  'errors.not_found.note_format': { text: 'Note format not found' },
+  /** `routes/patients.ts:25,59,66` and `routes/brainstorm.ts:237`. */
+  'errors.not_found.patient': { text: 'Patient not found' },
+  /** `routes/plans.ts:188,221,447`. */
+  'errors.not_found.plan': { text: 'Plan not found' },
+  /** `routes/plans.ts:89`. */
+  'errors.not_found.plan_version': { text: 'No such plan version' },
+  /** `routes/plans.ts:291,466`. */
+  'errors.not_found.goal': { text: 'Goal not found' },
+  /** `routes/import.ts:129` — an undone import, asked about twice. */
+  'errors.not_found.import_undone': { text: 'That import has already been undone.' },
+  /** `routes/backup.ts:163`. `{file}` is what she asked for: data. */
+  'errors.not_found.backup_file': {
+    text: '{file} is not a backup file in the backup folder.',
+    kind: { file: 'text' },
+  },
+
+  /* --- errors.conflict --- */
+
+  /**
+   * `routes/formats.ts:107`. The count is a `number` and the entry is a
+   * `plural` one, which is how `Intl` groups it (S2.2's fixed decision 4) —
+   * `1 note` and `2 notes` are two forms of one sentence.
+   */
+  'errors.conflict.format_in_use': {
+    text: 'This format is used by {count} note and cannot be deleted.',
+    plural: {
+      one: 'This format is used by {count} note and cannot be deleted.',
+      other: 'This format is used by {count} notes and cannot be deleted.',
+    },
+    kind: { count: 'number' },
+  },
+  /** `routes/plans.ts:116`. */
+  'errors.conflict.plan_draft_exists': {
+    text: 'This plan already has a draft version. Activate or edit it first.',
+  },
+  /** `routes/plans.ts:205`. */
+  'errors.conflict.plan_superseded_activate': {
+    text: 'A superseded plan version cannot be reactivated.',
+  },
+  /** `routes/plans.ts:209`. */
+  'errors.conflict.plan_already_active': { text: 'This version is already in force.' },
+  /** `routes/plans.ts:459`. */
+  'errors.conflict.plan_superseded_readonly': {
+    text: 'This plan version has been superseded and is read-only. Start a review instead.',
+  },
+  /** `routes/notes.ts:110`. */
+  'errors.conflict.note_published': { text: 'This note is already published.' },
+  /** `routes/notes.ts:120`. */
+  'errors.conflict.note_not_published': { text: 'This note is not published.' },
+  /**
+   * `routes/notes.ts:24-25`, used at `:85` — the prototype's own wording, kept
+   * verbatim like `chat.publishedRefusal` below.
+   */
+  'errors.conflict.note_published_lock': {
+    text: 'This note is published, so its content is locked. Unpublish it first, then edit.',
+  },
+
+  /* --- errors.storage_error: the two mapped failures and the boot page --- */
+
+  /** `http/errors.ts:71` (ENOSPC, SQLITE_FULL). `{dir}` is the data folder. */
+  'errors.storage_error.disk_full': {
+    text: 'Apunta cannot write to {dir} because the disk is full. Free space and try again. Your existing data was left untouched.',
+    kind: { dir: 'text' },
+  },
+  /** `http/errors.ts:84` (EACCES, EPERM, EROFS, SQLITE_READONLY*, CANTOPEN). */
+  'errors.storage_error.read_only': {
+    text: 'Apunta cannot write to {dir} because the folder is read-only or permissions do not allow access. Choose a writable folder or fix its permissions, then try again. Your existing data was left untouched.',
+    kind: { dir: 'text' },
+  },
+  /**
+   * `http/errors.ts:95` — the boot page's own sentence when nothing mapped.
+   * It cannot be localised from the setting (storage is what failed), so the
+   * page renders it in both languages and these two JSON bodies carry English.
+   */
+  'errors.storage_error.cannot_open': {
+    text: 'Apunta could not open its database at {file}. Check that the folder is writable, then try again.',
+    kind: { file: 'text' },
+  },
+  /**
+   * `http/errors.ts:94` — an `Error` that is not a mapped storage failure.
+   * `{detail}` is the lower layer's own English message, shown as data; the
+   * frame around it is what this card localises.
+   */
+  'errors.storage_error.cause': {
+    text: '{detail} Database: {file}.',
+    kind: { detail: 'text', file: 'text' },
+  },
+
+  /*
+   * The twenty AI failures, `ai/errors.ts`'s `MESSAGES`. They ride the SSE
+   * `error` event as `{ code, message }`, so `code` is the branch and this
+   * sentence is what she reads; `AiErrorCodeSchema` is closed and unchanged.
+   */
+
+  /** The banner inside `ai.ollama_unreachable`, and its own string today. */
+  'ai.unreachable_banner': { text: "Apunta can't reach the local AI — see Setup" },
+  /** `ai/errors.ts:39`. */
+  'ai.ollama_unreachable': {
+    text: '{banner}. Ollama does not appear to be running on this machine.',
+    kind: { banner: 'text' },
+  },
+  /** `ai/errors.ts:43`. */
+  'ai.model_missing': {
+    text: "Apunta's AI model isn't installed yet — see Setup, which says how to get it.",
+  },
+  /** `ai/errors.ts:45`. */
+  'ai.non_gguf_model': {
+    text: 'The configured model is not a GGUF build, and Apunta cannot make it follow the note format reliably. Choose a GGUF model in Settings.',
+  },
+  /** `ai/errors.ts:47`. */
+  'ai.unsupported_model_tag': {
+    text: 'That model tag is an MLX/safetensors build. Apunta cannot make those follow the note format reliably — pick a GGUF tag instead.',
+  },
+  /** `ai/errors.ts:49`. */
+  'ai.insufficient_memory': {
+    text: 'This machine ran out of memory loading the AI model. Choose a smaller model in Settings and try again.',
+  },
+  /** `ai/errors.ts:51`. */
+  'ai.input_too_long': {
+    text: 'This session summary is too long for the AI to read in one go. Shorten it, or split it into two notes.',
+  },
+  /** `ai/errors.ts:53`. */
+  'ai.context_overflow': {
+    text: "The AI ran out of room and had to drop part of Apunta's instructions, so the draft was thrown away. Shorten the summary and try again.",
+  },
+  /** `ai/errors.ts:54`. */
+  'ai.output_truncated': { text: 'The AI ran out of room mid-note. Try again, or shorten the summary.' },
+  /** `ai/errors.ts:55`. */
+  'ai.empty_response': { text: 'The AI returned nothing. Try again — if it keeps happening, check Setup.' },
+  /** `ai/errors.ts:57`. */
+  'ai.invalid_output': {
+    text: "The AI returned something that wasn't a note. Try again — if it keeps happening, the model may not be following the note format.",
+  },
+  /** `ai/errors.ts:59`. */
+  'ai.degenerate_output': {
+    text: 'The AI got stuck repeating itself instead of writing the note. Try again — if it keeps happening, try a different model in Settings.',
+  },
+  /** `ai/errors.ts:60`. */
+  'ai.timeout': {
+    text: 'The AI took too long to answer. It may still be loading the model — try again in a moment.',
+  },
+  /** `ai/errors.ts:61`. */
+  'ai.ollama_error': { text: 'The local AI reported an error. Check Setup, then try again.' },
+  /** `ai/errors.ts:66`. */
+  'ai.whisper_missing': {
+    text: "Apunta can't find whisper on this machine, so it can't transcribe the recording. See Setup, or set the whisper path in Settings.",
+  },
+  /** `ai/errors.ts:68`. */
+  'ai.whisper_model_missing': {
+    text: "Apunta's transcription model isn't installed yet — see Setup, which says how to get it.",
+  },
+  /** `ai/errors.ts:70`. */
+  'ai.audio_unsupported': {
+    text: 'That recording is in a format Apunta cannot transcribe. Record it again from this screen.',
+  },
+  /** `ai/errors.ts:72`. */
+  'ai.audio_decode_failed': {
+    text: 'The recording could not be read — it may have been cut off mid-save. Please record it again.',
+  },
+  /** `ai/errors.ts:73`. */
+  'ai.transcription_failed': {
+    text: 'Transcribing the recording failed. Try again — if it keeps happening, check Setup.',
+  },
+  /** `ai/errors.ts:75`. */
+  'ai.transcription_timeout': {
+    text: 'Transcribing took too long and was stopped. A shorter recording will go through; a very long one may need a faster machine.',
+  },
+  /** `ai/errors.ts:77`. */
+  'ai.transcription_empty': {
+    text: 'No speech was picked up in that recording. Check that the right microphone is selected, then record again.',
+  },
+
+  /*
+   * The SSE `status` and `progress` frames. A provider renders these from the
+   * locale its job captured, and a route forwards the finished sentence
+   * untouched — the `stage` cannot be the key, because `drafting` carries two
+   * different sentences (`ai/ollama.ts` and `ai/fake.ts`).
+   */
+
+  /** `ai/ollama.ts:356,403,442`; `ai/fake.ts:303,312`; `routes/plans.ts:320`; `routes/prep.ts:61`. */
+  'status.thinking': { text: 'Thinking…' },
+  /** `ai/ollama.ts:364`; `ai/fake.ts:280`. */
+  'status.applying_corrections': { text: 'Applying your corrections…' },
+  /** `ai/ollama.ts:683` — the one retry that is not a transport retry. */
+  'status.drafting_retry': { text: 'That draft came back malformed. Trying again…' },
+  /** `ai/ollama.ts:934`. */
+  'status.loading_model': {
+    text: 'Loading the model — the first note after a restart is slower…',
+  },
+  /** `ai/ollama.ts:971`; `ai/fake.ts:287`. */
+  'status.drafting_note': { text: 'Drafting the note…' },
+  /** `routes/generate.ts:51`; `routes/transcribe.ts:261`. */
+  'status.saving_draft': { text: 'Saving the draft…' },
+  /** `routes/chat.ts:163` — the quoted-move fast path. */
+  'status.applying_move': { text: 'Applying the move…' },
+  /** `routes/chat.ts:240`; `{done}` and `{total}` are counts. */
+  'status.rewriting_sections': {
+    text: 'Rewriting {done} of {total} sections…',
+    kind: { done: 'number', total: 'number' },
+  },
+  /** `routes/plans.ts:335`; `routes/prep.ts:74`. */
+  'status.reading_note': {
+    text: 'Reading note {index} of {total}…',
+    kind: { index: 'number', total: 'number' },
+  },
+  /** `routes/plans.ts:349`. */
+  'status.drafting_goals': { text: 'Drafting goals…' },
+  /** `routes/prep.ts:87`. */
+  'status.writing_briefing': { text: 'Writing the briefing…' },
+  /**
+   * Three twins, all in this card: `ai/whisper.ts:475` and `:508` in
+   * production, `ai/fake.ts:530` in the demo path, plus the one frame
+   * `routes/transcribe.ts:313` sends before the provider starts. Keying two of
+   * the three would leave `APUNTA_FAKE_AI=1` bilingual and production English.
+   */
+  'progress.transcribing': { text: 'Transcribing…' },
+
+  /*
+   * The refine chat's server-written sentences. Each is persisted as text at
+   * write time in the target note's locale (C-LANG@1 rule 4), so a row already
+   * stored is shown as stored.
+   */
+
+  /**
+   * `shared/src/chat.ts`'s `PUBLISHED_REFUSAL`, kept from the prototype
+   * (`prototype/patients.html`, `sendChat`) word for word, curly quotes and
+   * all: the copy is the owner's.
+   */
+  'chat.publishedRefusal': {
+    text: 'This note is published, so I won’t change it. Click “Published (click to edit)” to unlock it first, then ask me again.',
+  },
+  /**
+   * `FIRST_PASS_MESSAGE`, also kept verbatim from the prototype — "dictation"
+   * included, though typed capture turned out to be the primary path.
+   */
+  'chat.firstPass': {
+    text: "Here's a first pass based on your dictation. Tell me what to change — shorten a section, add something I missed, adjust tone — and I'll update it. Highlight any part of the note to point me right at it.",
+  },
+  /**
+   * `routes/chat.ts:184`, the fast path's own sentence. `{source}` and
+   * `{target}` are section names — stored clinical text, passed as data and
+   * never translated (C-LANG@1 rule 5).
+   */
+  'chat.moveReply': {
+    text: 'Moved the quoted text from {source} to {target}.',
+    kind: { source: 'text', target: 'text' },
+  },
+
+  /**
+   * The three lock notices. `…Notice.opening` is the sentence the thread is
+   * stripped by (`routes/chat.ts`'s `SERVER_SENTENCES`), so it is the same
+   * string in every language; `…Notice.section` is the per-block sentence, and
+   * `{section}` and `{phrase}` are note content shown as data.
+   */
+  'chat.guardNotice.opening': { text: 'Apunta blocked part of this revision.' },
+  'chat.guardNotice.section': {
+    text: '{section} was kept as it was: the revision would have added "{phrase}", which is not in the note or your dictation.',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  'chat.factNotice.opening': { text: 'Apunta held back part of this revision.' },
+  'chat.factNotice.section': {
+    text: '{section} was kept as it was: the change would have lost "{phrase}", and nothing in your message asked to remove it.',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  'chat.factNotice.tail': { text: 'To take something out, say so and name it.' },
+  'chat.priorNoteNotice.opening': { text: 'Apunta kept your other notes out of this revision.' },
+  'chat.priorNoteNotice.section': {
+    text: '{section} was kept as it was: the revision would have brought in "{phrase}" from another of your notes.',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  'chat.priorNoteNotice.tail': {
+    text: 'To bring something over from another session, ask for it.',
+  },
+
+  /**
+   * `settings.last_backup_error` as it is stored from this card on: an ISO
+   * `at` plus the failure's own words. The wire field stays a string
+   * (`shared/src/backup.ts:221`) rendered by `GET /api/backup` in the request's
+   * language, so `BackupCard.tsx:210` and the shared schema do not change.
+   */
+  'backup.failure': {
+    text: '{at} — {detail}',
+    kind: { at: 'date', detail: 'text' },
+  },
+
+  /*
+   * The boot-error page. Storage is what failed, so nothing on it can read the
+   * setting: the page renders the English sentence and then the Spanish one
+   * under `<html lang="en">`, and the two JSON bodies carry English.
+   */
+
+  /** `boot-error.ts:22,24` — the title and the one heading. */
+  'boot.title': { text: 'Apunta could not start' },
+  /** `boot-error.ts:24`, the label over the data folder. */
+  'boot.dataFolder': { text: 'Data folder:' },
+  /** `boot-error.ts:24` — what to do about it. */
+  'boot.recovery': {
+    text: 'Make sure the disk has space and this folder is available and writable, then start Apunta again. Your existing database was left untouched.',
+  },
+
+  /*
    * The shell, the home launcher, the capture panel, the note view and the
    * refine chat — S2.3's fourteen components, every visible string in them.
    *

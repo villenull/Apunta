@@ -37,7 +37,7 @@ beforeAll(async () => {
   dataDir = mkdtempSync(join(tmpdir(), 'apunta-guard-real-'));
   app = await serveBootError(
     { host: '127.0.0.1', port: PORT },
-    { dataDir, message: 'Apunta cannot write because the disk is full.' },
+    { dataDir, key: 'errors.storage_error.disk_full', params: { dir: dataDir } },
   );
 });
 

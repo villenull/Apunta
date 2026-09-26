@@ -1,5 +1,6 @@
-import type { Sections } from '@apunta/shared';
+import { DEFAULT_LOCALE, type Sections } from '@apunta/shared';
 
+import { msg, type Locale } from '../http/locale.js';
 import { positiveRiskTokens, riskTokens } from './clinical-phrases.js';
 
 /**
@@ -582,16 +583,20 @@ export function guardDroppedFacts(previous: Sections, updated: Sections, message
  * be explaining the deletion as a correction. Distinct from the boilerplate
  * lock's opening words so the harness can count the two apart.
  */
-export function factNotice(dropped: readonly DroppedFact[]): string {
-  const parts = dropped.map(
-    (d) =>
-      `${d.section} was kept as it was: the change would have lost "${d.phrase}", and nothing in your message asked to remove it.`,
+export function factNotice(dropped: readonly DroppedFact[], locale: Locale = DEFAULT_LOCALE): string {
+  const parts = dropped.map((d) =>
+    msg(locale, 'chat.factNotice.section', { section: d.section, phrase: d.phrase }),
   );
-  return `${FACT_NOTICE_OPENING} ${parts.join(' ')} To take something out, say so and name it.`;
+  return [msg(locale, 'chat.factNotice.opening'), ...parts, msg(locale, 'chat.factNotice.tail')].join(' ');
 }
 
-/** The notice's first sentence — what the thread is stripped of before the model sees it again. */
-export const FACT_NOTICE_OPENING = 'Apunta held back part of this revision.';
+/**
+ * The notice's first sentence in English — what the thread is stripped of
+ * before the model sees it again, and deliberately the same string in every
+ * language so the strip recognises a notice written in the note's locale. See
+ * `GUARD_NOTICE_OPENING` in `refine-guard.ts`.
+ */
+export const FACT_NOTICE_OPENING = msg('en', 'chat.factNotice.opening');
 
 /**
  * Explicit current-quantity absences, preserved verbatim through drafting.

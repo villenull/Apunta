@@ -10,6 +10,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 
+import { msg, storedLanguage } from '../http/locale.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import type { AiProviders } from '../ai/types.js';
 import { createSessionBrief, listSessionBriefs } from '../db/briefs.js';
@@ -57,8 +58,12 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
     const cap = resolveLookback(db);
     const notes = listNotesForPatient(db, id).slice(0, cap);
 
+    // Captured at the start of the briefing job (C-LANG@1 rule 4): the frames
+    // below and the error event are all rendered from this value.
+    const locale = storedLanguage(db);
+
     const stream = openSse(reply);
-    stream.send('status', { stage: 'connecting', message: 'Thinking…' });
+    stream.send('status', { stage: 'connecting', message: msg(locale, 'status.thinking') });
 
     let lines: BriefLine[] = [];
     // Assigned in the try; every path out of the catch returns.
@@ -73,7 +78,7 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
         onProgress: (index, total) => {
           stream.send('status', {
             stage: 'reading-notes',
-            message: `Reading note ${String(index)} of ${String(total)}…`,
+            message: msg(locale, 'status.reading_note', { index, total }),
           });
         },
         onStats: (stats) => {
@@ -84,7 +89,7 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
       lookback = read.lookback;
 
       if (read.materials.length > 0 && !stream.closed) {
-        stream.send('status', { stage: 'drafting', message: 'Writing the briefing…' });
+        stream.send('status', { stage: 'drafting', message: msg(locale, 'status.writing_briefing') });
         const composed = await providers.llm.composeBrief({
           notes: read.materials.map((material) => ({
             index: material.index,
@@ -97,7 +102,7 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
         lines = resolveLines(composed.value.lines, read.materials);
       }
     } catch (error) {
-      const failure = toAiError(error);
+      const failure = toAiError(error).inLocale(locale);
       logFailure(request, failure, 'session prep failed');
       stream.send('error', { code: failure.code, message: failure.message });
       stream.end();
@@ -134,7 +139,7 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
     for (const noteId of noteIds) {
       const note = getNote(db, noteId);
       if (!note || note.patient_id !== id) {
-        throw badRequest('This briefing cites a note that does not belong to this patient');
+        throw badRequest('errors.bad_request.prep_foreign_note');
       }
     }
 

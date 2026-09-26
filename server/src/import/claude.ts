@@ -7,6 +7,8 @@ import {
   type ImportSkippedConversation,
   type ImportSkipReason,
 } from '@apunta/shared';
+
+import { msg, type Locale, type MessageKey, type MessageParams } from '../http/locale.js';
 import { plainFromMarkdown } from './markdown.js';
 import { readZip, ZipFormatError } from './zip.js';
 
@@ -35,10 +37,27 @@ import { readZip, ZipFormatError } from './zip.js';
  * one odd row.
  */
 
+/**
+ * A Claude export the reader could not make sense of.
+ *
+ * The sentence is a catalogue key and its parameters, not a literal, because
+ * `routes/import.ts` re-throws this as a 400 and the browser shows it: the
+ * words have to be the ones of the request's language. `message` is the
+ * English of `key`, kept on the error so a log line and a test can still read
+ * it without a database, and `messageIn` is what the route renders.
+ */
 export class ImportFormatError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(
+    readonly key: MessageKey,
+    readonly params: MessageParams = {},
+  ) {
+    super(msg('en', key, params));
     this.name = 'ImportFormatError';
+  }
+
+  /** The same failure, sentence rendered in `locale`. */
+  messageIn(locale: Locale): string {
+    return msg(locale, this.key, this.params);
   }
 }
 
@@ -81,15 +100,13 @@ export function openExport(upload: Buffer, filename: string): ReadExport {
     entries = readZip(upload);
   } catch (error) {
     if (error instanceof ZipFormatError) {
-      throw new ImportFormatError(
-        'That file is not a Claude export. Expected the zip Claude sent you, or its conversations.json.',
-      );
+      throw new ImportFormatError('errors.bad_request.import_not_claude_export');
     }
     throw error;
   }
   const conversations = entries.find((entry) => /(^|\/)conversations\.json$/i.test(entry.name));
   if (!conversations) {
-    throw new ImportFormatError('That zip has no conversations.json in it, so it is not a Claude export.');
+    throw new ImportFormatError('errors.bad_request.import_no_conversations_json');
   }
   return readConversations(parseJson(conversations.read(), conversations.name));
 }
@@ -98,7 +115,7 @@ function parseJson(bytes: Buffer, filename: string): unknown {
   try {
     return JSON.parse(bytes.toString('utf8')) as unknown;
   } catch {
-    throw new ImportFormatError(`${filename} could not be read as JSON.`);
+    throw new ImportFormatError('errors.bad_request.import_json_unreadable', { filename });
   }
 }
 
@@ -106,7 +123,7 @@ function parseJson(bytes: Buffer, filename: string): unknown {
 export function readConversations(json: unknown): ReadExport {
   const list = conversationList(json);
   if (list === null) {
-    throw new ImportFormatError('No conversations were found in that file.');
+    throw new ImportFormatError('errors.bad_request.import_no_conversations');
   }
 
   const conversations: RawConversation[] = [];

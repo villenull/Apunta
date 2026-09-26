@@ -1,4 +1,4 @@
-import { SettingsSchema, type Settings } from '@apunta/shared';
+import { SettingsSchema, t, type Settings } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createTestApp, type TestApp } from '../test/harness.js';
@@ -200,10 +200,64 @@ describe('C-LANG@1 rule 1 — the language', () => {
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
       error: 'bad_request',
+      message: t('errors.bad_request.settings_bad_language', {}, 'en'),
+      details: { language: 'de' },
+    });
+    // The bytes the wire carried before the sentence moved into the catalogue.
+    expect(t('errors.bad_request.settings_bad_language', {}, 'en')).toBe('Language must be "en" or "es-MX".');
+    expect(storedRows()).toEqual({});
+  });
+
+  /**
+   * The same request, in the language of the setting, with the wire unchanged.
+   *
+   * C-LANG@1 rule 3: a request that is not a job and not a refine is answered
+   * in the stored `language`, and the server is what renders it — `error` is
+   * still the code a client branches on and `message` is still a finished
+   * string, so `web/src/api/client.ts` needs nothing.
+   */
+  it('renders the same 400 in Spanish once the setting is es-MX, with the code unchanged', async () => {
+    process.env[DEV_SPANISH] = '1';
+    const spanish = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/settings',
+      payload: { language: 'es-MX' },
+    });
+    expect(spanish.statusCode).toBe(200);
+
+    const response = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/settings',
+      payload: { language: 'de' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      error: 'bad_request',
+      message: t('errors.bad_request.settings_bad_language', {}, 'es-MX'),
+      details: { language: 'de' },
+    });
+    expect(t('errors.bad_request.settings_bad_language', {}, 'es-MX')).toBe(
+      'El idioma debe ser "en" o "es-MX".',
+    );
+
+    // And back in English it is today's English again, byte for byte.
+    const back = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/settings',
+      payload: { language: 'en' },
+    });
+    expect(back.statusCode).toBe(200);
+    const again = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/settings',
+      payload: { language: 'de' },
+    });
+    expect(again.json()).toEqual({
+      error: 'bad_request',
       message: 'Language must be "en" or "es-MX".',
       details: { language: 'de' },
     });
-    expect(storedRows()).toEqual({});
   });
 
   it('never stores spanish_available, whatever a client sends', async () => {

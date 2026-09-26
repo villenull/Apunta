@@ -22,7 +22,7 @@ import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
 
 function requireFormat(db: Database, id: string): NoteFormat {
   const format = getFormat(db, id);
-  if (!format) throw notFound('Note format not found');
+  if (!format) throw notFound('errors.not_found.note_format');
   return format;
 }
 
@@ -90,7 +90,7 @@ export function registerFormatRoutes(app: FastifyInstance, db: Database): void {
       ...(patch.source === undefined ? {} : { source: patch.source }),
       ...(patch.locale === undefined ? {} : { locale: patch.locale }),
     });
-    if (!updated) throw notFound('Note format not found');
+    if (!updated) throw notFound('errors.not_found.note_format');
     return updated;
   });
 
@@ -104,9 +104,7 @@ export function registerFormatRoutes(app: FastifyInstance, db: Database): void {
 
     const noteCount = countNotesForFormat(db, id);
     if (noteCount > 0) {
-      throw conflict(
-        `This format is used by ${String(noteCount)} note${noteCount === 1 ? '' : 's'} and cannot be deleted.`,
-      );
+      throw conflict('errors.conflict.format_in_use', { count: noteCount });
     }
 
     deleteFormat(db, id);

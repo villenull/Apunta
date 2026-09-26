@@ -11,6 +11,7 @@ import type { AiProviders } from './ai/types.js';
 import { loadConfig, type AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { registerErrorHandler } from './http/errors.js';
+import { msg, storedLanguage } from './http/locale.js';
 import { registerRequestGuard } from './http/request-guard.js';
 import { registerBackupRoutes } from './routes/backup.js';
 import { registerBrainstormRoutes } from './routes/brainstorm.js';
@@ -117,7 +118,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     },
   });
 
-  registerErrorHandler(app, { dataDir: config.dataDir });
+  // The `locale` reader is why this line is here and not a bare `dataDir`: the
+  // handler is built once, before any route exists, and it renders four bodies
+  // of its own. C-LANG@1 rule 3 — a request that is not a job and not a refine
+  // is answered in the stored setting, which is what this closure reads.
+  registerErrorHandler(app, { dataDir: config.dataDir, locale: () => storedLanguage(db) });
 
   registerHealthRoute(app, config, db, providers, options.installedModels);
   registerLicensesRoute(app, config);
@@ -147,7 +152,11 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   // SPA shell so client-side routes survive a reload (when a build exists).
   app.setNotFoundHandler((request, reply) => {
     if (request.url.startsWith('/api') || !hasBuiltSpa || request.method !== 'GET') {
-      return reply.code(404).send({ error: 'not_found', message: 'Not Found', path: request.url });
+      return reply.code(404).send({
+        error: 'not_found',
+        message: msg(storedLanguage(db), 'errors.not_found.route'),
+        path: request.url,
+      });
     }
     return reply.sendFile('index.html');
   });

@@ -1,5 +1,4 @@
 import {
-  FIRST_PASS_MESSAGE,
   sectionsToText,
   type AppliedRetraction,
   type Note,
@@ -20,6 +19,7 @@ import {
   sectionForRole,
 } from '../ai/clinical-knowledge/integration.js';
 import type { AiProviders, DraftSource, LlmStats } from '../ai/types.js';
+import { msg, type Locale } from '../http/locale.js';
 import { fitDraftingPriorNotes } from '../ai/prior-notes.js';
 import { createChatMessage } from '../db/chat-messages.js';
 import { createNote, listNotesForPatient } from '../db/notes.js';
@@ -62,8 +62,17 @@ export async function streamDraft(params: {
   readonly source: DraftSource;
   readonly stream: SseStream;
   readonly request: FastifyRequest;
+  /**
+   * The locale the drafting job captured at its start (C-LANG@1 rule 4).
+   *
+   * Passed in rather than read here so the one value covers the whole request:
+   * the frames the provider renders, the error event below, and the sentence
+   * the note is opened with. A reader that ran per sentence could change
+   * language under a job that already started in one.
+   */
+  readonly locale: Locale;
 }): Promise<DraftOutcome> {
-  const { providers, db, patientId, format, source, stream, request } = params;
+  const { providers, db, patientId, format, source, stream, request, locale } = params;
 
   /**
    * The registry's first user (C-LANG@1 rule 6): a draft is in flight for as
@@ -86,15 +95,18 @@ export async function streamDraft(params: {
     const discussionSection = sectionForRole(format.sections, 'discussion');
     try {
       const priorNotes = fitDraftingPriorNotes(listNotesForPatient(db, patientId));
-      const events = providers.llm.generateNote({
-        instructions: format.instructions,
-        formatName: format.name,
-        sections: format.sections,
-        clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
-        typedNotes: source.typedNotes,
-        transcript: source.transcript,
-        ...(priorNotes.length === 0 ? {} : { priorNotes }),
-      });
+      const events = providers.llm.generateNote(
+        {
+          instructions: format.instructions,
+          formatName: format.name,
+          sections: format.sections,
+          clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
+          typedNotes: source.typedNotes,
+          transcript: source.transcript,
+          ...(priorNotes.length === 0 ? {} : { priorNotes }),
+        },
+        locale,
+      );
 
       for await (const event of events) {
         // The client navigated away or closed the tab: stop drafting. Breaking
@@ -138,7 +150,7 @@ export async function streamDraft(params: {
         }
       }
     } catch (error) {
-      const failure = toAiError(error);
+      const failure = toAiError(error).inLocale(locale);
       logFailure(request, failure, 'note drafting failed');
       stream.send('error', { code: failure.code, message: failure.message });
       return { sections: null, stats: null, retractions: [], failure };
@@ -147,7 +159,7 @@ export async function streamDraft(params: {
     if (stream.closed) return { sections, stats, retractions, failure: null };
 
     if (sections === null) {
-      const failure = aiError('empty_response', 'the provider finished without producing a note');
+      const failure = aiError('empty_response', 'the provider finished without producing a note', locale);
       logFailure(request, failure, 'note drafting failed');
       stream.send('error', { code: failure.code, message: failure.message });
       return { sections: null, stats: null, retractions: [], failure };
@@ -239,10 +251,14 @@ export function persistDraft(
   // What was cut before drafting is told to her here, in her own words, where
   // the note's history lives — and stripped from what the model sees of that
   // history (`chat.ts`), so a retracted claim cannot come back through it.
-  const opening =
-    retractions.length === 0
-      ? FIRST_PASS_MESSAGE
-      : `${FIRST_PASS_MESSAGE}\n\n${retractionNotice(retractions)}`;
+  // The note's own locale, not the request's: this row is written with the
+  // note and shown under every later draft of it, and a refine answers in the
+  // note's language (C-LANG@1 rule 4). A note is written in its format's
+  // language (`createNote` above), which is the locale to render this in.
+  const opening = (() => {
+    const firstPass = msg(format.locale, 'chat.firstPass');
+    return retractions.length === 0 ? firstPass : `${firstPass}\n\n${retractionNotice(retractions)}`;
+  })();
   createChatMessage(db, {
     note_id: note.id,
     role: 'assistant',

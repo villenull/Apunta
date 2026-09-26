@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ChatMessageSchema } from './chat-message.js';
 import { boundedText, MAX_BODY_CHARS, optionalText } from './common.js';
 import { GenerateErrorEventSchema, GenerateStatusEventSchema, type GenerateErrorEvent } from './generate.js';
+import { t } from './i18n/t.js';
 import { NoteSchema } from './note.js';
 
 /**
@@ -109,9 +110,16 @@ export type ChatErrorEvent = GenerateErrorEvent;
  * The published-lock is enforced by the server, never by asking the model to
  * respect it: a rule in a prompt can be talked out of, and a published note is
  * a filed clinical record.
+ *
+ * The words live in the catalogues as `chat.publishedRefusal`, and this is the
+ * English of that entry read through `t()` rather than a second copy of it —
+ * one sentence, one place, and `t.test.ts` checks the two catalogues against
+ * each other. A route renders the other locales itself with
+ * `t('chat.publishedRefusal', {}, locale)`, because `shared/src/index.ts` is
+ * read-only for the card that added the key and a server that cannot name it
+ * would have no way to say it.
  */
-export const PUBLISHED_REFUSAL =
-  'This note is published, so I won’t change it. Click “Published (click to edit)” to unlock it first, then ask me again.';
+export const PUBLISHED_REFUSAL = t('chat.publishedRefusal');
 
 /**
  * The assistant's opening turn, written by `POST /api/generate` the moment a
@@ -120,9 +128,13 @@ export const PUBLISHED_REFUSAL =
  * Kept verbatim from the prototype, "dictation" included, even though typed
  * capture turned out to be the primary path — the copy is the owner's call,
  * and every other string on this screen is hers too.
+ *
+ * Persisted as **text** at write time, in the new note's locale, because
+ * C-LANG@1 rule 4 makes persistence use the captured context; a row stored
+ * before that is displayed as stored. `chat.firstPass` is the key a route
+ * renders it from.
  */
-export const FIRST_PASS_MESSAGE =
-  "Here's a first pass based on your dictation. Tell me what to change — shorten a section, add something I missed, adjust tone — and I'll update it. Highlight any part of the note to point me right at it.";
+export const FIRST_PASS_MESSAGE = t('chat.firstPass');
 
 /**
  * How much of the thread goes back to the model on each turn.

@@ -6,9 +6,10 @@ import { basename } from 'node:path';
 
 import { DEFAULT_STT_LANGUAGE, MAX_STT_PROMPT_TOKENS } from '@apunta/shared';
 
+import { msg, type Locale } from '../http/locale.js';
 import { aiError } from './errors.js';
 import { approximateTokens } from './prompts.js';
-import type { SttDescription, SttEvent, SttProvider, TranscribeRequest } from './types.js';
+import type { SttDescription, SttEvent, SttProvider, TranscribeOptions, TranscribeRequest } from './types.js';
 
 /**
  * The real speech-to-text provider: `whisper-cli` (whisper.cpp) as a child
@@ -43,7 +44,7 @@ const PROBE_TIMEOUT_MS = 5000;
 
 type Spawn = typeof spawn;
 
-export interface WhisperOptions {
+export interface WhisperOptions extends TranscribeOptions {
   /** `whisper-cli` on PATH, or an absolute path from Settings. */
   readonly resolveBinary: () => string;
   /** Absolute path of the GGUF model file. */
@@ -401,7 +402,13 @@ export class WhisperCppSttProvider implements SttProvider {
     };
   }
 
-  async *transcribe(request: TranscribeRequest): AsyncIterable<SttEvent> {
+  async *transcribe(request: TranscribeRequest, options: TranscribeOptions = {}): AsyncIterable<SttEvent> {
+    // The locale the caller's job captured, or English for a preview outside
+    // one: the two `progress` frames below are the only sentences this provider
+    // writes, and they are written in the language of the job they belong to
+    // (C-LANG@1 rule 4). The spawn, the timeout and the progress parsing below
+    // are untouched by that.
+    const locale: Locale = options.locale ?? 'en';
     const binary = this.options.resolveBinary();
     const model = this.options.resolveModel();
 
@@ -472,7 +479,7 @@ export class WhisperCppSttProvider implements SttProvider {
         // movement is worth an SSE frame.
         if (fraction <= lastFraction) continue;
         lastFraction = fraction;
-        events.push({ type: 'progress', fraction, message: 'Transcribing…' });
+        events.push({ type: 'progress', fraction, message: msg(locale, 'progress.transcribing') });
       }
     });
 
@@ -505,7 +512,8 @@ export class WhisperCppSttProvider implements SttProvider {
       }
       // whisper usually reports 100% itself; this is for the builds that stop
       // at 90-something, so the bar never freezes just short of the end.
-      if (lastFraction < 1) events.push({ type: 'progress', fraction: 1, message: 'Transcribing…' });
+      if (lastFraction < 1)
+        events.push({ type: 'progress', fraction: 1, message: msg(locale, 'progress.transcribing') });
       this.options.log?.('transcription finished', {
         seconds: Math.round(request.durationSeconds),
         preview: request.preview === true,

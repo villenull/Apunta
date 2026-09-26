@@ -20,14 +20,15 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
-import { AiError, aiError } from '../ai/errors.js';
+import { AiError, aiError, aiMessage } from '../ai/errors.js';
 import { collapseRepeats } from '../ai/preview-text.js';
 import { resolveKeepAudio, resolveVocabulary } from '../ai/stt-settings.js';
 import type { AiProviders } from '../ai/types.js';
 import { ensureDir, type AppConfig } from '../config.js';
 import { getFormat } from '../db/formats.js';
 import { uuidv7 } from '../db/uuid.js';
-import { badRequest, HttpError, notFound } from '../http/errors.js';
+import { badRequest, notFound, rawHttpError } from '../http/errors.js';
+import { msg, storedLanguage, type Locale } from '../http/locale.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { parseBody } from '../http/validate.js';
 import { logFailure, toAiError } from './ai.js';
@@ -92,6 +93,11 @@ export function registerTranscribeRoute(
    */
   app.post('/api/transcribe/preview', async (request, reply): Promise<TranscribePreviewResponse> => {
     const upload = await receiveUpload(request, config);
+    // Captured at the start of the job, and handed to the provider below so
+    // its progress frames are in the language the recording started in
+    // (C-LANG@1 rule 4). A preview creates nothing and persists nothing, so
+    // this is the only sentence it can produce.
+    const locale = storedLanguage(db);
     const cancellation = requestCancellation(request, reply);
     try {
       // Not `readWavFormat`: that helper throws on a recording too short to
@@ -103,7 +109,7 @@ export function registerTranscribeRoute(
       try {
         wav = parseWavHeader(upload.head, upload.bytes);
       } catch (error) {
-        if (error instanceof WavFormatError) throw badRequest('That audio could not be read as a WAV.');
+        if (error instanceof WavFormatError) throw badRequest('errors.bad_request.wav_unreadable');
         throw error;
       }
       if (wav.durationSeconds < MIN_RECORDING_SECONDS) {
@@ -117,14 +123,17 @@ export function registerTranscribeRoute(
 
       let text = '';
       try {
-        for await (const event of providers.stt.transcribe({
-          wavPath: upload.path,
-          durationSeconds: wav.durationSeconds,
-          vocabulary: resolveVocabulary(db),
-          // The fast, rough pass. Only here — never for a transcript that is kept.
-          preview: true,
-          signal: cancellation.signal,
-        })) {
+        for await (const event of providers.stt.transcribe(
+          {
+            wavPath: upload.path,
+            durationSeconds: wav.durationSeconds,
+            vocabulary: resolveVocabulary(db),
+            // The fast, rough pass. Only here — never for a transcript that is kept.
+            preview: true,
+            signal: cancellation.signal,
+          },
+          { locale },
+        )) {
           if (event.type === 'transcript') text = event.text;
         }
       } catch (error) {
@@ -160,20 +169,24 @@ export function registerTranscribeRoute(
    */
   app.post('/api/transcribe/dictation', async (request, reply): Promise<TranscribeDictationResponse> => {
     const upload = await receiveUpload(request, config);
+    // The setting, once: a clip dictated into an English note while the app is
+    // in Spanish is a preview of words she has not sent yet, and the failure
+    // that comes back is about the machine rather than the note.
+    const locale = storedLanguage(db);
     const cancellation = requestCancellation(request, reply);
     try {
       let wav: WavFormat;
       try {
         wav = parseWavHeader(upload.head, upload.bytes);
       } catch (error) {
-        if (error instanceof WavFormatError) throw badRequest('That audio could not be read as a WAV.');
+        if (error instanceof WavFormatError) throw badRequest('errors.bad_request.wav_unreadable');
         throw error;
       }
       if (wav.durationSeconds < MIN_RECORDING_SECONDS) return { text: '', seconds: wav.durationSeconds };
       if (wav.durationSeconds > MAX_DICTATION_SECONDS) {
-        throw badRequest(
-          `A dictated message can be up to ${String(Math.floor(MAX_DICTATION_SECONDS / 60))} minutes long.`,
-        );
+        throw badRequest('errors.bad_request.dictation_too_long', {
+          max: Math.floor(MAX_DICTATION_SECONDS / 60),
+        });
       }
 
       request.log.info(
@@ -183,13 +196,16 @@ export function registerTranscribeRoute(
 
       let text = '';
       try {
-        for await (const event of providers.stt.transcribe({
-          wavPath: upload.path,
-          durationSeconds: wav.durationSeconds,
-          vocabulary: resolveVocabulary(db),
-          fitted: true,
-          signal: cancellation.signal,
-        })) {
+        for await (const event of providers.stt.transcribe(
+          {
+            wavPath: upload.path,
+            durationSeconds: wav.durationSeconds,
+            vocabulary: resolveVocabulary(db),
+            fitted: true,
+            signal: cancellation.signal,
+          },
+          { locale },
+        )) {
           if (event.type === 'transcript') text = event.text;
         }
       } catch (error) {
@@ -198,7 +214,11 @@ export function registerTranscribeRoute(
         // in whisper's own words — a generic 500 would hide "not installed".
         if (error instanceof AiError && error.code === 'transcription_empty')
           return { text: '', seconds: wav.durationSeconds };
-        if (error instanceof AiError) throw new HttpError(503, 'ai_unavailable', error.message);
+        // The AI catalogue's own sentence for the code, in this request's
+        // language: `ai_unavailable` is the wire code and the code the client
+        // branches on, and the words are `ai.<code>`'s.
+        if (error instanceof AiError)
+          throw rawHttpError(503, 'ai_unavailable', aiMessage(error.code, locale));
         throw error;
       }
       return { text, seconds: wav.durationSeconds };
@@ -225,6 +245,11 @@ export function registerTranscribeRoute(
     }
     const { input, format } = target;
 
+    // Read once, before the stream opens, and used by every sentence this
+    // request writes: the `progress` frames, the drafting frames inside
+    // `streamDraft`, the `saving` frame and the error event (C-LANG@1 rule 4).
+    const locale = storedLanguage(db);
+
     const stream = openSse(reply);
     let audioPath: string | null = upload.path;
 
@@ -235,7 +260,7 @@ export function registerTranscribeRoute(
         'recording received',
       );
 
-      const transcript = await runTranscription(providers, db, stream, upload.path, wav);
+      const transcript = await runTranscription(providers, db, stream, upload.path, wav, locale);
       if (transcript === null || stream.closed) return;
 
       const { sections, retractions } = await streamDraft({
@@ -246,6 +271,7 @@ export function registerTranscribeRoute(
         source: { typedNotes: input.typed_notes, transcript },
         stream,
         request,
+        locale,
       });
       if (sections === null || stream.closed) return;
 
@@ -258,7 +284,7 @@ export function registerTranscribeRoute(
         audioPath = null;
       }
 
-      stream.send('status', { stage: 'saving', message: 'Saving the draft…' });
+      stream.send('status', { stage: 'saving', message: msg(locale, 'status.saving_draft') });
       const note = persistDraft(
         db,
         {
@@ -277,7 +303,7 @@ export function registerTranscribeRoute(
 
       stream.send('note', { note, empty_sections: emptySectionNames(sections, format.sections) });
     } catch (error) {
-      const failure = toAiError(error);
+      const failure = toAiError(error).inLocale(locale);
       logFailure(request, failure, 'transcription failed');
       stream.send('error', { code: failure.code, message: failure.message });
     } finally {
@@ -298,7 +324,7 @@ function resolveTarget(
   const input = parseBody(TranscribeFieldsSchema, fields);
   requirePatient(db, input.patient_id);
   const format = getFormat(db, input.format_id);
-  if (!format) throw notFound('Note format not found');
+  if (!format) throw notFound('errors.not_found.note_format');
   return { input, format };
 }
 
@@ -309,15 +335,22 @@ async function runTranscription(
   stream: SseStream,
   wavPath: string,
   wav: WavFormat,
+  locale: Locale,
 ): Promise<string | null> {
-  stream.send('progress', { fraction: 0, message: 'Transcribing…' });
+  // The first frame is the route's, before the provider starts, so it is the
+  // same `progress.transcribing` the provider's own two frames use rather than
+  // a second string that could drift from them.
+  stream.send('progress', { fraction: 0, message: msg(locale, 'progress.transcribing') });
 
   let text: string | null = null;
-  const events = providers.stt.transcribe({
-    wavPath,
-    durationSeconds: wav.durationSeconds,
-    vocabulary: resolveVocabulary(db),
-  });
+  const events = providers.stt.transcribe(
+    {
+      wavPath,
+      durationSeconds: wav.durationSeconds,
+      vocabulary: resolveVocabulary(db),
+    },
+    { locale },
+  );
 
   for await (const event of events) {
     // She closed the tab. Leaving the loop runs the provider's cleanup, which
@@ -331,7 +364,7 @@ async function runTranscription(
   }
 
   if (text === null || text.trim() === '') {
-    throw aiError('transcription_empty', 'the provider finished without a transcript');
+    throw aiError('transcription_empty', 'the provider finished without a transcript', locale);
   }
   return text;
 }
@@ -373,7 +406,7 @@ function requestCancellation(
  */
 async function receiveUpload(request: FastifyRequest, config: AppConfig): Promise<Upload> {
   if (!request.isMultipart()) {
-    throw badRequest('Send the recording as multipart/form-data with one audio file.');
+    throw badRequest('errors.bad_request.transcribe_not_multipart');
   }
 
   const filename = `${uuidv7()}.wav`;
@@ -402,7 +435,7 @@ async function receiveUpload(request: FastifyRequest, config: AppConfig): Promis
         await pipeline(part.file, sink);
         bytes = sink.bytesWritten;
         if (part.file.truncated) {
-          throw badRequest('That recording is too long to upload. Record it in shorter sittings.');
+          throw badRequest('errors.bad_request.transcribe_too_long');
         }
       } else if (typeof part.value === 'string') {
         fields[part.fieldname] = part.value;
@@ -417,11 +450,11 @@ async function receiveUpload(request: FastifyRequest, config: AppConfig): Promis
 
   if (!received || bytes === 0) {
     await discard(path);
-    throw badRequest('No audio was uploaded.');
+    throw badRequest('errors.bad_request.transcribe_no_audio');
   }
   if (bytes > MAX_AUDIO_BYTES) {
     await discard(path);
-    throw badRequest('That recording is too long to upload. Record it in shorter sittings.');
+    throw badRequest('errors.bad_request.transcribe_too_long');
   }
 
   return { path, filename, bytes, head: await readHead(path), fields };

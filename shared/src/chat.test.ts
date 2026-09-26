@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ChatRequestSchema, ChatTokenEventSchema, FIRST_PASS_MESSAGE, PUBLISHED_REFUSAL } from './chat.js';
+import { t } from './i18n/t.js';
 
 describe('ChatRequestSchema', () => {
   it('accepts a message on its own — the highlight is optional', () => {
@@ -33,14 +34,29 @@ describe('ChatTokenEventSchema', () => {
   });
 });
 
+/**
+ * The prototype copy, now asserted against the catalogue's English rather than
+ * a literal here — the same assertion, one source of truth. The bytes are
+ * unchanged: `PUBLISHED_REFUSAL` and `FIRST_PASS_MESSAGE` are the English of
+ * `chat.publishedRefusal` and `chat.firstPass` read through `t()`, so if either
+ * ever drifted from the copy the prototype fixed, these two cases would go red
+ * with it.
+ */
 describe('the prototype copy', () => {
   it('refuses a published note in the prototype’s own words', () => {
+    expect(PUBLISHED_REFUSAL).toBe(t('chat.publishedRefusal', {}, 'en'));
     expect(PUBLISHED_REFUSAL).toContain('This note is published, so I won’t change it.');
     expect(PUBLISHED_REFUSAL).toContain('“Published (click to edit)”');
   });
 
   it('opens the thread with the prototype’s first-pass line', () => {
+    expect(FIRST_PASS_MESSAGE).toBe(t('chat.firstPass', {}, 'en'));
     expect(FIRST_PASS_MESSAGE).toContain("Here's a first pass based on your dictation.");
     expect(FIRST_PASS_MESSAGE).toContain('Highlight any part of the note to point me right at it.');
+  });
+
+  it('says both sentences in Spanish as well, from the same keys', () => {
+    expect(t('chat.publishedRefusal', {}, 'es-MX')).toContain('no la voy a cambiar');
+    expect(t('chat.firstPass', {}, 'es-MX')).toContain('primer borrador');
   });
 });

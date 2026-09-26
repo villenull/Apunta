@@ -1,5 +1,6 @@
-import type { Sections } from '@apunta/shared';
+import { DEFAULT_LOCALE, type Sections } from '@apunta/shared';
 
+import { msg, type Locale } from '../http/locale.js';
 import { clinicalAssertionTokens } from './clinical-phrases.js';
 
 /**
@@ -88,13 +89,19 @@ function newAssertion(before: string, revised: string, sources: readonly string[
  * well be claiming it added nothing. The phrase shown is the matched
  * boilerplate, never dictation content, so it is safe for the thread.
  */
-export function guardNotice(blocked: readonly BlockedRevision[]): string {
-  const parts = blocked.map(
-    (b) =>
-      `${b.section} was kept as it was: the revision would have added "${b.phrase}", which is not in the note or your dictation.`,
+export function guardNotice(blocked: readonly BlockedRevision[], locale: Locale = DEFAULT_LOCALE): string {
+  const parts = blocked.map((b) =>
+    msg(locale, 'chat.guardNotice.section', { section: b.section, phrase: b.phrase }),
   );
-  return `${GUARD_NOTICE_OPENING} ${parts.join(' ')}`;
+  return `${msg(locale, 'chat.guardNotice.opening')} ${parts.join(' ')}`;
 }
 
-/** The notice's first sentence — what the thread is stripped of before the model sees it again. */
-export const GUARD_NOTICE_OPENING = 'Apunta blocked part of this revision.';
+/**
+ * The notice's first sentence in English — what the thread is stripped of
+ * before the model sees it again, and the marker `routes/chat.ts` matches
+ * server-written paragraphs by. It is the catalogue's English rather than a
+ * second copy, and it is the same string in every language on purpose: the
+ * thread may hold a notice written in the note's locale, and the strip has to
+ * recognise it either way.
+ */
+export const GUARD_NOTICE_OPENING = msg('en', 'chat.guardNotice.opening');

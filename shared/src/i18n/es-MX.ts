@@ -132,6 +132,333 @@ export const esMX = {
   },
 
   /*
+   * Las frases del servidor: la lista de S2.5. Los mismos siete comentarios que
+   * en `en.ts`, con el vocabulario de S1.4: *tú* (O-1, §1), minúscula en la
+   * frase (§2.4), «Configuración inicial» por Setup y «Ajustes» por Settings
+   * (§3.3), y los nombres propios sin traducir (§3.4). El texto entrecomillado
+   * que nombra un control de la interfaz se traduce con él, porque así es como
+   * se lee en la pantalla española.
+   */
+
+  'errors.internal_error': { text: 'Algo salió mal en el servidor.' },
+  'errors.not_found.route': { text: 'No encontrado' },
+  'errors.backup_in_progress': {
+    text: 'Ya hay otra copia de seguridad en curso. Espera a que termine e inténtalo de nuevo.',
+  },
+  'errors.stale_write.note_changed': { text: 'Esta nota cambió en otra ventana.' },
+
+  'errors.bad_request.body_invalid': { text: 'El cuerpo de la solicitud no es válido' },
+  'errors.bad_request.query_invalid': { text: 'La cadena de consulta no es válida' },
+  'errors.bad_request.params_invalid': { text: 'Los parámetros de la ruta no son válidos' },
+  'errors.bad_request.needs_format': {
+    text: 'Crea un formato de nota antes de importar, para que las notas tengan a dónde ir.',
+  },
+  'errors.bad_request.backup_path_not_absolute': {
+    text: 'La carpeta de la copia de seguridad debe ser una ruta absoluta.',
+  },
+  'errors.bad_request.backup_filename_invalid': {
+    text: '{name} no es un nombre de archivo de copia de seguridad de Apunta (apunta-backup-YYYY-MM-DD.zip).',
+    kind: { name: 'text' },
+  },
+  'errors.bad_request.format_detect_kind': {
+    text: 'Dile a Apunta si son una plantilla vacía o notas completadas.',
+  },
+  'errors.bad_request.format_detect_no_file': {
+    text: 'Elige un archivo para leer el formato.',
+  },
+  'errors.bad_request.format_detect_examples': {
+    text: 'Sube 2 o 3 notas completadas para que Apunta vea qué tienen en común.',
+  },
+  'errors.bad_request.format_detect_unusable': {
+    text: 'Apunta leyó el archivo pero no pudo armar un formato utilizable. Describe tú las secciones.',
+  },
+  'errors.bad_request.format_detect_skill_file': {
+    text: 'Elige un archivo SKILL.md o un .zip de la carpeta de la habilidad.',
+  },
+  'errors.bad_request.format_detect_one_file': { text: 'Sube un archivo a la vez.' },
+  'errors.bad_request.format_detect_too_many_files': {
+    text: 'Sube como máximo {max} archivos a la vez.',
+    kind: { max: 'number' },
+  },
+  'errors.bad_request.format_detect_file_too_large': {
+    text: 'Ese archivo pesa más de 10 MB. Si es un escaneo, Apunta tampoco puede leerlo: no hace OCR.',
+  },
+  'errors.bad_request.format_detect_not_multipart': {
+    text: 'Sube el archivo con el formulario de la pantalla anterior.',
+  },
+
+  'errors.bad_request.halaxy_selection_invalid': {
+    text: 'La selección de la revisión de Halaxy no es válida.',
+  },
+  'errors.bad_request.halaxy_no_patients': {
+    text: 'Selecciona al menos un paciente para importar.',
+  },
+  'errors.bad_request.halaxy_patient_unmatched': {
+    text: 'Elige un paciente activo que coincida o crea uno nuevo antes de importar.',
+  },
+  'errors.bad_request.halaxy_not_multipart': {
+    text: 'Envía uno o más PDF como multipart/form-data usando el campo files.',
+  },
+  'errors.bad_request.halaxy_wrong_field': { text: 'Sube los PDF en el campo files.' },
+  'errors.bad_request.halaxy_not_pdf': {
+    text: 'Las exportaciones de Halaxy deben ser archivos PDF.',
+  },
+  'errors.bad_request.halaxy_pdf_too_large': {
+    text: 'Un PDF es demasiado grande para leerlo de una vez.',
+  },
+  'errors.bad_request.halaxy_pdfs_too_large': {
+    text: 'Los PDF seleccionados son demasiado grandes para leerlos de una vez.',
+  },
+  'errors.bad_request.halaxy_no_files': { text: 'Elige al menos un PDF de Halaxy.' },
+  'errors.bad_request.halaxy_unreadable': {
+    text: 'Apunta no pudo leer ese PDF. Elige una exportación de Halaxy con texto.',
+  },
+  'errors.bad_request.halaxy_no_patient_header': {
+    text: 'El PDF no identifica a ningún paciente en su encabezado.',
+  },
+  'errors.bad_request.halaxy_no_dated_sessions': {
+    text: 'El PDF no tiene sesiones fechadas inequívocas para importar.',
+  },
+  'errors.bad_request.halaxy_no_session_text': {
+    text: 'El PDF tiene encabezados con fecha pero ningún texto de sesión.',
+  },
+
+  'errors.bad_request.import_not_multipart': {
+    text: 'Envía la exportación como multipart/form-data con un solo archivo.',
+  },
+  'errors.bad_request.import_too_large': {
+    text: 'Esa exportación es demasiado grande para leerla de una vez.',
+  },
+  'errors.bad_request.import_no_file': {
+    text: 'No llegó ningún archivo. Elige la exportación que te envió Claude.',
+  },
+  'errors.bad_request.import_patient_limit': {
+    text: 'Escribe como máximo {max} nombres.',
+    kind: { max: 'number' },
+  },
+  'errors.bad_request.import_bad_source': {
+    text: 'El origen de las notas debe ser "assistant" o "human".',
+  },
+  'errors.bad_request.import_bad_cutoff': { text: 'Usa una fecha de corte como 2026-07-01.' },
+  'errors.bad_request.import_bad_exclude': {
+    text: 'No se pudo leer la lista de pacientes desmarcados.',
+  },
+  'errors.bad_request.import_bad_existing': {
+    text: 'No se pudieron leer las opciones de importación de pacientes.',
+  },
+  'errors.bad_request.import_not_claude_export': {
+    text: 'Ese archivo no es una exportación de Claude. Se esperaba el zip que te envió Claude, o su conversations.json.',
+  },
+  'errors.bad_request.import_no_conversations_json': {
+    text: 'Ese zip no trae conversations.json, así que no es una exportación de Claude.',
+  },
+  'errors.bad_request.import_json_unreadable': {
+    text: 'No se pudo leer {filename} como JSON.',
+    kind: { filename: 'text' },
+  },
+  'errors.bad_request.import_no_conversations': {
+    text: 'No se encontró ninguna conversación en ese archivo.',
+  },
+  'errors.bad_request.prep_foreign_note': {
+    text: 'Este resumen previo cita una nota que no pertenece a este paciente',
+  },
+  'errors.bad_request.settings_bad_language': { text: 'El idioma debe ser "en" o "es-MX".' },
+  'errors.bad_request.wav_unreadable': { text: 'No se pudo leer ese audio como WAV.' },
+  'errors.bad_request.dictation_too_long': {
+    text: 'Un mensaje dictado puede durar hasta {max} minutos.',
+    kind: { max: 'number' },
+  },
+  'errors.bad_request.transcribe_not_multipart': {
+    text: 'Envía la grabación como multipart/form-data con un solo archivo de audio.',
+  },
+  'errors.bad_request.transcribe_too_long': {
+    text: 'Esa grabación es demasiado larga para subirla. Graba en sesiones más cortas.',
+  },
+  'errors.bad_request.transcribe_no_audio': { text: 'No se subió ningún audio.' },
+
+  'errors.not_found.note': { text: 'No se encontró la nota' },
+  'errors.not_found.note_format': { text: 'No se encontró el formato de nota' },
+  'errors.not_found.patient': { text: 'No se encontró el paciente' },
+  'errors.not_found.plan': { text: 'No se encontró el plan' },
+  'errors.not_found.plan_version': { text: 'No existe esa versión del plan' },
+  'errors.not_found.goal': { text: 'No se encontró la meta' },
+  'errors.not_found.import_undone': { text: 'Esa importación ya se ha deshecho.' },
+  'errors.not_found.backup_file': {
+    text: '{file} no es un archivo de copia de seguridad en la carpeta de copias.',
+    kind: { file: 'text' },
+  },
+
+  'errors.conflict.format_in_use': {
+    text: 'Este formato lo usa {count} nota y no se puede eliminar.',
+    plural: {
+      one: 'Este formato lo usa {count} nota y no se puede eliminar.',
+      many: 'Este formato lo usan {count} notas y no se puede eliminar.',
+      other: 'Este formato lo usan {count} notas y no se puede eliminar.',
+    },
+    kind: { count: 'number' },
+  },
+  'errors.conflict.plan_draft_exists': {
+    text: 'Este plan ya tiene una versión en borrador. Actívala o edítala primero.',
+  },
+  'errors.conflict.plan_superseded_activate': {
+    text: 'Una versión de plan que quedó obsoleta no se puede volver a activar.',
+  },
+  'errors.conflict.plan_already_active': { text: 'Esta versión ya está en vigencia.' },
+  'errors.conflict.plan_superseded_readonly': {
+    text: 'Esta versión del plan quedó obsoleta y es de solo lectura. Empieza una revisión.',
+  },
+  'errors.conflict.note_published': { text: 'Esta nota ya está publicada.' },
+  'errors.conflict.note_not_published': { text: 'Esta nota no está publicada.' },
+  'errors.conflict.note_published_lock': {
+    text: 'Esta nota está publicada, así que su contenido está bloqueado. Despublica primero y después edítala.',
+  },
+
+  'errors.storage_error.disk_full': {
+    text: 'Apunta no puede escribir en {dir} porque el disco está lleno. Libera espacio e inténtalo de nuevo. Tus datos existentes quedaron intactos.',
+    kind: { dir: 'text' },
+  },
+  'errors.storage_error.read_only': {
+    text: 'Apunta no puede escribir en {dir} porque la carpeta es de solo lectura o los permisos no permiten el acceso. Elige una carpeta donde se pueda escribir o corrige sus permisos e inténtalo de nuevo. Tus datos existentes quedaron intactos.',
+    kind: { dir: 'text' },
+  },
+  'errors.storage_error.cannot_open': {
+    text: 'Apunta no pudo abrir su base de datos en {file}. Revisa que la carpeta permita escritura e inténtalo de nuevo.',
+    kind: { file: 'text' },
+  },
+  'errors.storage_error.cause': {
+    text: '{detail} Base de datos: {file}.',
+    kind: { detail: 'text', file: 'text' },
+  },
+
+  /* Los veinte fallos de IA. `configuración inicial` en minúscula dentro de la frase. */
+  'ai.unreachable_banner': {
+    text: 'Apunta no puede acceder a la IA local: ve a Configuración inicial',
+  },
+  'ai.ollama_unreachable': {
+    text: '{banner}. Ollama no parece estar ejecutándose en esta computadora.',
+    kind: { banner: 'text' },
+  },
+  'ai.model_missing': {
+    text: 'El modelo de IA de Apunta todavía no está instalado: ve a Configuración inicial, que te explica cómo obtenerlo.',
+  },
+  'ai.non_gguf_model': {
+    text: 'El modelo configurado no es una compilación GGUF, y Apunta no puede hacer que siga el formato de nota de forma confiable. Elige un modelo GGUF en Ajustes.',
+  },
+  'ai.unsupported_model_tag': {
+    text: 'Esa etiqueta de modelo es una compilación MLX/safetensors. Apunta no puede hacer que esas sigan el formato de nota de forma confiable: elige una etiqueta GGUF.',
+  },
+  'ai.insufficient_memory': {
+    text: 'A esta computadora le faltó memoria al cargar el modelo de IA. Elige un modelo más pequeño en Ajustes e inténtalo de nuevo.',
+  },
+  'ai.input_too_long': {
+    text: 'Este resumen de sesión es demasiado largo para que la IA lo lea de una vez. Acórtalo o divídelo en dos notas.',
+  },
+  'ai.context_overflow': {
+    text: 'A la IA se le acabó el espacio y tuvo que descartar parte de las instrucciones de Apunta, así que se tiró el borrador. Acorta el resumen e inténtalo de nuevo.',
+  },
+  'ai.output_truncated': {
+    text: 'A la IA se le acabó el espacio a media nota. Inténtalo de nuevo o acorta el resumen.',
+  },
+  'ai.empty_response': {
+    text: 'La IA no devolvió nada. Inténtalo de nuevo; si sigue pasando, revisa Configuración inicial.',
+  },
+  'ai.invalid_output': {
+    text: 'La IA devolvió algo que no era una nota. Inténtalo de nuevo; si sigue pasando, puede que el modelo no esté siguiendo el formato de nota.',
+  },
+  'ai.degenerate_output': {
+    text: 'La IA se atascó repitiéndose en vez de escribir la nota. Inténtalo de nuevo; si sigue pasando, prueba con otro modelo en Ajustes.',
+  },
+  'ai.timeout': {
+    text: 'La IA tardó demasiado en responder. Puede que todavía esté cargando el modelo: inténtalo de nuevo en un momento.',
+  },
+  'ai.ollama_error': {
+    text: 'La IA local reportó un error. Revisa Configuración inicial e inténtalo de nuevo.',
+  },
+  'ai.whisper_missing': {
+    text: 'Apunta no encuentra whisper en esta computadora, así que no puede transcribir la grabación. Ve a Configuración inicial o ajusta la ruta de whisper en Ajustes.',
+  },
+  'ai.whisper_model_missing': {
+    text: 'El modelo de transcripción de Apunta todavía no está instalado: ve a Configuración inicial, que te explica cómo obtenerlo.',
+  },
+  'ai.audio_unsupported': {
+    text: 'Esa grabación está en un formato que Apunta no puede transcribir. Grábala de nuevo desde esta pantalla.',
+  },
+  'ai.audio_decode_failed': {
+    text: 'No se pudo leer la grabación; puede que se haya cortado a media guardar. Grábala de nuevo.',
+  },
+  'ai.transcription_failed': {
+    text: 'Falló la transcripción de la grabación. Inténtalo de nuevo; si sigue pasando, revisa Configuración inicial.',
+  },
+  'ai.transcription_timeout': {
+    text: 'La transcripción tardó demasiado y se detuvo. Una grabación más corta sí va a pasar; una muy larga puede necesitar una computadora más rápida.',
+  },
+  'ai.transcription_empty': {
+    text: 'No se detectó voz en esa grabación. Revisa que esté seleccionado el micrófono correcto y graba de nuevo.',
+  },
+
+  /* Los cuadros `status` y `progress`. */
+  'status.thinking': { text: 'Pensando…' },
+  'status.applying_corrections': { text: 'Aplicando tus correcciones…' },
+  'status.drafting_retry': { text: 'Ese borrador salió mal formado. Intentando de nuevo…' },
+  'status.loading_model': {
+    text: 'Cargando el modelo: la primera nota después de reiniciar tarda más…',
+  },
+  'status.drafting_note': { text: 'Redactando la nota…' },
+  'status.saving_draft': { text: 'Guardando el borrador…' },
+  'status.applying_move': { text: 'Aplicando el movimiento…' },
+  'status.rewriting_sections': {
+    text: 'Reescribiendo {done} de {total} secciones…',
+    kind: { done: 'number', total: 'number' },
+  },
+  'status.reading_note': {
+    text: 'Leyendo la nota {index} de {total}…',
+    kind: { index: 'number', total: 'number' },
+  },
+  'status.drafting_goals': { text: 'Redactando las metas…' },
+  'status.writing_briefing': { text: 'Redactando el resumen previo…' },
+  'progress.transcribing': { text: 'Transcribiendo…' },
+
+  /* Las frases del chat de refinado. */
+  'chat.publishedRefusal': {
+    text: 'Esta nota está publicada, así que no la voy a cambiar. Haz clic en «Publicada (haz clic para editar)» para desbloquearla primero y después pídemelo otra vez.',
+  },
+  'chat.firstPass': {
+    text: 'Este es un primer borrador basado en tu dictado. Dime qué cambiar —acortar una sección, agregar algo que se me pasó, ajustar el tono— y lo actualizo. Resalta cualquier parte de la nota para señalarme exactamente dónde.',
+  },
+  'chat.moveReply': {
+    text: 'Moví el texto citado de {source} a {target}.',
+    kind: { source: 'text', target: 'text' },
+  },
+  'chat.guardNotice.opening': { text: 'Apunta bloqueó una parte de esta revisión.' },
+  'chat.guardNotice.section': {
+    text: '{section} se dejó como estaba: la revisión habría agregado "{phrase}", que no está en la nota ni en tu dictado.',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  'chat.factNotice.opening': { text: 'Apunta retuvo una parte de esta revisión.' },
+  'chat.factNotice.section': {
+    text: '{section} se dejó como estaba: el cambio habría perdido "{phrase}", y nada en tu mensaje pedía quitarla.',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  'chat.factNotice.tail': { text: 'Para quitar algo, dilo y nomíbralo.' },
+  'chat.priorNoteNotice.opening': { text: 'Apunta dejó fuera tus otras notas de esta revisión.' },
+  'chat.priorNoteNotice.section': {
+    text: '{section} se dejó como estaba: la revisión habría traído "{phrase}" de otra de tus notas.',
+    kind: { section: 'text', phrase: 'text' },
+  },
+  'chat.priorNoteNotice.tail': {
+    text: 'Para traer algo de otra sesión, pídelo.',
+  },
+
+  'backup.failure': { text: '{at} — {detail}', kind: { at: 'date', detail: 'text' } },
+
+  /* La página de error de arranque, en los dos idiomas. */
+  'boot.title': { text: 'Apunta no pudo iniciar' },
+  'boot.dataFolder': { text: 'Carpeta de datos:' },
+  'boot.recovery': {
+    text: 'Asegúrate de que el disco tenga espacio y de que esta carpeta esté disponible y permita escritura, y luego inicia Apunta de nuevo. Tu base de datos existente quedó intacta.',
+  },
+
+  /*
    * La concha, la pantalla de inicio, el panel de captura, la nota y el chat de
    * refinado: los catorce componentes de S2.3. Los términos salen del glosario
    * de S1.4 y la voz de sus decisiones: `tú` (O-1, §1), minúscula en la frase
