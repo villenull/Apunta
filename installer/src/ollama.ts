@@ -100,6 +100,16 @@ export interface PullProgress {
   readonly status: string;
 }
 
+export interface PullResult {
+  readonly tag: string;
+  /**
+   * The digest the runtime reports for the tag it now holds, read back with
+   * `POST /api/show` after the pull succeeded — or null when the runtime named
+   * none. It is never invented: a digest nobody reported is not a digest.
+   */
+  readonly digest: string | null;
+}
+
 export interface PullOptions extends OllamaClientOptions {
   readonly tag: string;
   readonly onProgress?: (progress: PullProgress) => void;
@@ -118,8 +128,16 @@ export interface PullOptions extends OllamaClientOptions {
  * interrupted leaves its finished blobs in the model store, and pulling again
  * skips them. That is what makes "kill it mid-download and relaunch" work for
  * the writing model without any bookkeeping here.
+ *
+ * **The pull is the daemon's, not ours.** This function asks the loopback
+ * runtime to do it; it does not know, and cannot find out, which registry the
+ * runtime then spoke to. What it can do is read the resulting tag's digest back
+ * afterwards and hand it to the caller, so the tag in the store is named exactly
+ * rather than assumed — and the caller says in as many words which of the two
+ * programs did the fetching. There is no call in this module that removes or
+ * replaces a tag, and adding one would need its own card.
  */
-export async function pullModel(options: PullOptions): Promise<void> {
+export async function pullModel(options: PullOptions): Promise<PullResult> {
   const fetchImpl = options.fetchImpl ?? fetch;
 
   const response = await fetchImpl(`${options.baseUrl}/api/pull`, {
@@ -172,6 +190,60 @@ export async function pullModel(options: PullOptions): Promise<void> {
   if (!sawSuccess) {
     throw setupError('model_pull_failed', `the pull of ${options.tag} ended without succeeding`);
   }
+
+  return { tag: options.tag, digest: await readModelDigest(options.tag, options) };
+}
+
+/**
+ * The digest the runtime reports for a tag, read with one `POST /api/show`.
+ *
+ * This is the whole of what Apunta can say about a writing model after pulling
+ * it: the tag is there, and this is the digest the runtime says is behind it.
+ *
+ * A runtime that answers nothing useful is **not** a failed pull. The model is
+ * in the store and the install succeeded; the one thing missing is a name for
+ * the bytes, so the caller is handed `null` and says so. Failing the whole
+ * setup over a missing label would strand a machine that works.
+ */
+export async function readModelDigest(tag: string, options: OllamaClientOptions): Promise<string | null> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  let payload: unknown;
+  try {
+    const response = await fetchImpl(`${options.baseUrl}/api/show`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ model: tag }),
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+    });
+    if (!response.ok) return null;
+    payload = await response.json();
+  } catch {
+    return null;
+  }
+  return digestFrom(payload);
+}
+
+/**
+ * The digest out of an `/api/show` payload.
+ *
+ * Two shapes are read because the endpoint has carried both: the digest at the
+ * top level, and a `models` array whose first entry names it. Nothing else is
+ * consulted, and a payload that names no digest yields null rather than a guess
+ * assembled out of the other fields.
+ */
+function digestFrom(payload: unknown): string | null {
+  if (typeof payload !== 'object' || payload === null) return null;
+  const record = payload as Record<string, unknown>;
+  const direct = record['digest'];
+  if (typeof direct === 'string' && direct !== '') return direct;
+  const models = record['models'];
+  if (Array.isArray(models)) {
+    for (const entry of models) {
+      const digest = (entry as { digest?: unknown }).digest;
+      if (typeof digest === 'string' && digest !== '') return digest;
+    }
+  }
+  return null;
 }
 
 /**

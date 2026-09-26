@@ -3,13 +3,14 @@ import { join } from 'node:path';
 
 import { describeProgress, progressSnapshot } from './bytes.js';
 import { PREVIEW_SPEECH_MODEL, SPEECH_MODEL, type SpeechModelEntry } from './catalog.js';
-import { verifyFile } from './checksum.js';
+import { hashFile, verifyFile } from './checksum.js';
 import { freeBytesFor } from './disk.js';
 import { commitDownload, discardDownload, downloadWithResume } from './download.js';
 import { describeFailure, setupError } from './errors.js';
-import { hasModel, pullModel, waitForOllama } from './ollama.js';
+import { hasModel, pullModel, waitForOllama, type PullResult } from './ollama.js';
 import { buildPlan, describeWeightsProvenance } from './plan.js';
 import type { PlanEvent, SetupEvent } from './protocol.js';
+import { assessModel, ModelRefusedError, writeReceiptFor } from './readiness.js';
 
 /**
  * First-run setup, start to finish.
@@ -65,20 +66,14 @@ export function previewModelPath(modelsDir: string): string {
 }
 
 /**
- * A file counts as present only at its final name.
+ * A file counts as present only if readiness says it is *ready* — the exact
+ * pinned bytes, verified — and never merely because something is there.
  *
- * A `.part` is not the model, and a zero-byte file left by a disk that filled
- * up is not either — treating either as "done" is how an app decides it is set
- * up and then fails at the first recording.
+ * The three booleans are all the plan is allowed to see, and they are derived
+ * from `readiness.ts`'s verdict and from nothing else. The verdict's own code
+ * is not widened into `ProbedState`, because `plan.ts` and `protocol.ts` are
+ * not this card's to change; putting a code on the wire is P4.4's.
  */
-function fileIsPresent(path: string): boolean {
-  try {
-    return statSync(path).size > 0;
-  } catch {
-    return false;
-  }
-}
-
 export async function probeState(environment: SetupEnvironment): Promise<ProbedState> {
   const client = {
     baseUrl: environment.ollamaBaseUrl,
@@ -96,9 +91,14 @@ export async function probeState(environment: SetupEnvironment): Promise<ProbedS
   const writingModelPresent =
     runtimeReachable && tag !== null && tag !== '' ? await hasModel(tag, client) : false;
 
+  const [speech, preview] = await Promise.all([
+    assessModel(SPEECH_MODEL, speechModelPath(environment.modelsDir)),
+    assessModel(PREVIEW_SPEECH_MODEL, previewModelPath(environment.modelsDir)),
+  ]);
+
   return {
-    speechModelPresent: fileIsPresent(speechModelPath(environment.modelsDir)),
-    previewModelPresent: fileIsPresent(previewModelPath(environment.modelsDir)),
+    speechModelPresent: speech.state === 'ready',
+    previewModelPresent: preview.state === 'ready',
     writingModelPresent,
     freeBytes: (environment.freeBytesImpl ?? freeBytesFor)(environment.dataDir),
     runtimeReachable,
@@ -202,8 +202,16 @@ export async function runSetup(environment: SetupEnvironment): Promise<boolean> 
   }
 }
 
-/** One whisper file, verified against its pinned checksum; the two speech models differ only in entry and step. */
-async function downloadSpeechFile(
+/**
+ * One whisper file, verified against its pinned checksum; the two speech models
+ * differ only in entry and step.
+ *
+ * The receipt is written here and nowhere else, and only after the bytes have
+ * been checked — either by the fresh hash that just passed, or by the rename of
+ * a verified `.part`. `assessModel` never writes: a run that only probes has
+ * written nothing by the time this is reached.
+ */
+export async function downloadSpeechFile(
   environment: SetupEnvironment,
   entry: SpeechModelEntry,
   stepId: 'speech_model' | 'preview_model',
@@ -211,10 +219,20 @@ async function downloadSpeechFile(
   const destination = join(environment.modelsDir, entry.filename);
   const checksum = entry.sha256 ?? entry.sha1;
 
+  // An entry with no pinned digest can never be verified, so it is refused
+  // before a socket opens rather than after 75 MiB have been fetched. This
+  // refusal used to sit below the download, where it could only be reached by
+  // first downloading a file nobody would accept.
+  if (checksum === null || checksum === '') {
+    throw setupError('checksum_mismatch', `no checksum is pinned for ${entry.filename}`);
+  }
+
   const result = await downloadWithResume({
     url: entry.url,
     destination,
     checksum,
+    allowance: entry.allowance,
+    allowedQueryKeys: entry.allowedQueryKeys,
     signal: environment.signal,
     ...(environment.fetchImpl === undefined ? {} : { fetchImpl: environment.fetchImpl }),
     ...(environment.now === undefined ? {} : { now: environment.now }),
@@ -255,11 +273,6 @@ async function downloadSpeechFile(
 
   if (!verification.ok) {
     await discardDownload(destination);
-    if (verification.checked.length === 0) {
-      // A catalogue entry with no checksum at all. Refusing is the only safe
-      // answer: an unverified 574 MB file is exactly what a checksum is for.
-      throw setupError('checksum_mismatch', `no checksum is pinned for ${entry.filename}`);
-    }
     throw setupError(
       'checksum_mismatch',
       `${verification.algorithm ?? 'checksum'} mismatch: expected ${verification.expected ?? '?'}, got ${verification.actual ?? '?'}`,
@@ -267,11 +280,33 @@ async function downloadSpeechFile(
   }
 
   await commitDownload(destination);
+
+  // A file whose bytes match the pinned digest and whose size is not the pinned
+  // size is a contradiction: the pin is wrong, not the file, and downloading
+  // again cannot fix it. The verified file is left where it is rather than
+  // deleted — it is not corrupt — and no receipt is written, because a receipt
+  // asserting the pinned size would be false.
+  const size = statSync(destination).size;
+  if (size !== entry.sizeBytes) {
+    throw new ModelRefusedError(
+      'size_mismatch',
+      `The downloaded file is ${String(size)} bytes and the catalogue pins ${String(entry.sizeBytes)} for ` +
+        `${entry.filename}. The bytes match the pinned digest, so the pin is wrong rather than the download; ` +
+        'this is not something trying again can fix.',
+    );
+  }
+
+  // One extra hash of the committed file, to record the digest the receipt
+  // asserts. `verifyFile` checks but does not return, and `checksum.ts` is not
+  // this card's to change; correctness is worth one hash of 75 MiB.
+  const algorithm = entry.sha256 !== null ? 'sha256' : 'sha1';
+  const digest = await hashFile(destination, algorithm, environment.signal);
+  writeReceiptFor(destination, entry, digest);
 }
 
 async function pullWritingModel(environment: SetupEnvironment, tag: string): Promise<void> {
   const startedAt = (environment.now ?? Date.now)();
-  await pullModel({
+  const result = await pullModel({
     tag,
     baseUrl: environment.ollamaBaseUrl,
     ...(environment.fetchImpl === undefined ? {} : { fetchImpl: environment.fetchImpl }),
@@ -295,4 +330,32 @@ async function pullWritingModel(environment: SetupEnvironment, tag: string): Pro
       });
     },
   });
+
+  environment.emit({ event: 'message', text: describePulledTag(result) });
+}
+
+/**
+ * What Apunta can honestly say about a writing model it asked the runtime to
+ * pull.
+ *
+ * The digest is the part worth having: it names the exact bytes now in the
+ * runtime's store, read back over loopback with `POST /api/show`. The
+ * sentence around it is not decoration — the fetch was the **runtime's**, from
+ * whatever registry the runtime chose, and Apunta checked the tag afterwards
+ * rather than the journey there. A user who cannot tell which of the two
+ * programs reached the internet cannot reason about either one, and this is
+ * where they are told. (`WritingModelEntry`'s doc comment in `catalog.ts` is
+ * the other half of the same statement.)
+ */
+export function describePulledTag(result: PullResult): string {
+  const named =
+    result.digest === null
+      ? `Apunta's AI engine did not report a digest for ${result.tag}, so the exact bytes in its store ` +
+        'cannot be named here.'
+      : `It reports digest ${result.digest} for ${result.tag}.`;
+  return (
+    `${result.tag} is downloaded. ${named} The download was done by Apunta's own AI engine rather than by ` +
+    'the installer, so where that engine fetched it from is its own business and Apunta did not check — it ' +
+    'asked the engine afterwards which model it ended up holding.'
+  );
 }

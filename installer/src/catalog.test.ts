@@ -5,16 +5,29 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
+  A07_ALLOWED_QUERY_KEYS,
   ALLOWED_DOWNLOAD_HOSTS,
-  assertAllowedHost,
-  DisallowedHostError,
+  C_STT_CANDIDATE_ALLOWANCE,
+  LICENCE_PAGE_HOSTS,
   PREVIEW_SPEECH_MODEL,
+  SPEECH_DOWNLOAD_ALLOWANCE,
   SPEECH_MODEL,
   WRITING_MODELS,
   writingModel,
 } from './catalog.js';
+import { assertRequestAllowed, RequestRefusedError } from './readiness.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+/** The guard, applied the way the downloader applies it to the pinned entry. */
+function check(raw: string, keys: readonly string[] = A07_ALLOWED_QUERY_KEYS): void {
+  assertRequestAllowed({
+    url: raw,
+    allowance: SPEECH_DOWNLOAD_ALLOWANCE,
+    allowedQueryKeys: keys,
+    redirect: false,
+  });
+}
 
 /**
  * The exemption in `eslint.config.js` switches the outbound-URL rule off for
@@ -22,8 +35,13 @@ const here = dirname(fileURLToPath(import.meta.url));
  * mattering: they pin the hosts, and they assert the exemption has not spread.
  */
 describe('the download allow-list', () => {
-  it('is three hosts, and every URL in the catalogue is on it', () => {
-    expect([...ALLOWED_DOWNLOAD_HOSTS]).toEqual(['huggingface.co', 'registry.ollama.ai', 'ollama.com']);
+  it('is four hosts, and every URL the catalogue names is on one of them', () => {
+    expect([...ALLOWED_DOWNLOAD_HOSTS]).toEqual([
+      'huggingface.co',
+      'us.aws.cdn.hf.co',
+      'registry.ollama.ai',
+      'ollama.com',
+    ]);
 
     const urls = [
       SPEECH_MODEL.url,
@@ -32,38 +50,105 @@ describe('the download allow-list', () => {
       writingModel('something:unheard-of').licence.url,
     ];
     for (const url of urls) {
-      expect(() => {
-        assertAllowedHost(url);
-      }, url).not.toThrow();
+      expect(ALLOWED_DOWNLOAD_HOSTS, url).toContain(new URL(url).hostname);
     }
+  });
+
+  /**
+   * The union is derived, so admitting a redirect host cannot be forgotten
+   * here. This is the arithmetic, asserted rather than assumed.
+   */
+  it('is exactly the union of every allowance and the licence-page hosts', () => {
+    const expected = [
+      ...SPEECH_DOWNLOAD_ALLOWANCE.allowedHosts,
+      ...SPEECH_DOWNLOAD_ALLOWANCE.allowedRedirectHosts,
+      ...C_STT_CANDIDATE_ALLOWANCE.allowedHosts,
+      ...C_STT_CANDIDATE_ALLOWANCE.allowedRedirectHosts,
+      ...LICENCE_PAGE_HOSTS,
+    ];
+
+    expect([...ALLOWED_DOWNLOAD_HOSTS].sort()).toEqual([...new Set(expected)].sort());
+    // No host is listed twice: a duplicate would be a second place to edit.
+    expect(ALLOWED_DOWNLOAD_HOSTS.length).toBe(new Set(ALLOWED_DOWNLOAD_HOSTS).size);
   });
 
   it('refuses anything else, including a lookalike host', () => {
     for (const url of [
       'https://example.com/model.bin',
       'https://huggingface.co.evil.test/model.bin',
+      'https://us.aws.cdn.hf.co.evil.test/model.bin',
       'https://notollama.com/library/gemma4',
       'http://huggingface.co/model.bin',
       'not a url',
     ]) {
       expect(() => {
-        assertAllowedHost(url);
-      }, url).toThrow(DisallowedHostError);
+        check(url);
+      }, url).toThrow(RequestRefusedError);
     }
   });
 
   /**
-   * A query string is where a download URL turns into a message: an id, a
-   * token, a machine fingerprint. The weights-at-arm's-length reasoning only
-   * holds while the request is a plain file path.
+   * A fragment is never sent to a server, so its presence in a download
+   * address is a smell and nothing else. A query, on the other hand, is how a
+   * Hugging Face signed URL has to look — so what is refused is a query whose
+   * *names* are not enumerated for that row, never a blanket refusal of
+   * queries. The two rules that replaced the old one are asserted side by side
+   * here because that is exactly what the amendment changed.
    */
-  it('refuses a query string or a fragment', () => {
+  it('refuses a fragment always, and a query only for a row that admits none', () => {
     expect(() => {
-      assertAllowedHost('https://huggingface.co/x/y.bin?telemetry=1');
-    }).toThrow(DisallowedHostError);
+      check('https://huggingface.co/x/y.bin#frag');
+    }).toThrow(RequestRefusedError);
+
     expect(() => {
-      assertAllowedHost('https://huggingface.co/x/y.bin#frag');
-    }).toThrow(DisallowedHostError);
+      check('https://huggingface.co/x/y.bin?telemetry=1', []);
+    }).toThrow(RequestRefusedError);
+
+    // A07 enumerates these names, so a query carrying only them is admitted.
+    expect(() => {
+      check('https://huggingface.co/x/y.bin?Policy=p&Signature=s');
+    }).not.toThrow();
+  });
+});
+
+describe('the allowed query keys', () => {
+  it('are the ten names `ACQUISITION.md` §1 enumerates for A07, and no others', () => {
+    expect([...A07_ALLOWED_QUERY_KEYS]).toEqual([
+      'Expires',
+      'Hash-Algorithm',
+      'Key-Pair-Id',
+      'Policy',
+      'Signature',
+      'X-Xet-Cas-Uid',
+      'response-content-disposition',
+      'response-content-type',
+      'user_id',
+      'xip',
+    ]);
+  });
+
+  /**
+   * The enumeration is the complete permission: membership of a name set, not a
+   * prefix, a wildcard or a blanket permission. The test that matters is the
+   * negative one — a name that merely *starts with* an allowed name is refused.
+   */
+  it('is a name set, so a prefix of an allowed name is not allowed', () => {
+    for (const name of ['Sign', 'Signature2', 'Policy-', 'expires', 'X-Xet']) {
+      expect(() => {
+        check(`https://huggingface.co/x/y.bin?${name}=1`);
+      }, name).toThrow(RequestRefusedError);
+    }
+  });
+
+  it('is attached to the two speech entries, which is where the vendor sends one', () => {
+    // The two entries name literally the same download, so both present the
+    // same signed `Location` and both must carry the same enumeration. An
+    // entry that presented a query while its twin admitted none would be a
+    // first-run failure nobody could explain.
+    expect(SPEECH_MODEL.allowedQueryKeys).toEqual([...A07_ALLOWED_QUERY_KEYS]);
+    expect(PREVIEW_SPEECH_MODEL.allowedQueryKeys).toEqual([...A07_ALLOWED_QUERY_KEYS]);
+    // And no other entry exists yet, so nothing else carries a permission.
+    expect(C_STT_CANDIDATE_ALLOWANCE.allowedRedirectHosts).toEqual(['us.aws.cdn.hf.co']);
   });
 });
 
@@ -108,6 +193,26 @@ describe('the speech model entry', () => {
     expect(SPEECH_MODEL.sha256).toBe('921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f');
   });
 
+  /**
+   * The size is a pin now, not a comment. 77,704,715 is upstream's own measured
+   * figure, quoted in whisper.cpp's `models/README.md`; until P4.1 it lived in
+   * an `approxBytes` comment, which is why nothing could be measured against it.
+   */
+  it('pins the exact byte count, and keeps `approxBytes` for the disk check', () => {
+    expect(SPEECH_MODEL.sizeBytes).toBe(77_704_715);
+    expect(SPEECH_MODEL.sizeBytes).toBeGreaterThan(0);
+    expect(Number.isSafeInteger(SPEECH_MODEL.sizeBytes)).toBe(true);
+    // `approxBytes` keeps its one job, which is a coarse refusal before a
+    // download starts. It is rounded up, so it is never below the pin.
+    expect(SPEECH_MODEL.approxBytes).toBe(75 * 1024 * 1024);
+    expect(SPEECH_MODEL.approxBytes).toBeGreaterThanOrEqual(SPEECH_MODEL.sizeBytes);
+  });
+
+  it('is fetched under its own allowance, never a global one', () => {
+    expect(SPEECH_MODEL.allowance).toBe(SPEECH_DOWNLOAD_ALLOWANCE);
+    expect(SPEECH_MODEL.allowance.allowedHosts).toEqual(['huggingface.co']);
+  });
+
   it('pins the preview to the same English-only file as the note, from the same publisher', () => {
     expect(PREVIEW_SPEECH_MODEL.filename).toBe('ggml-tiny.en.bin');
     expect(PREVIEW_SPEECH_MODEL.url).toContain('/ggerganov/whisper.cpp/');
@@ -125,9 +230,10 @@ describe('the writing models', () => {
     for (const entry of Object.values(WRITING_MODELS)) {
       expect(entry.publisher.length, entry.tag).toBeGreaterThan(0);
       expect(entry.licence.name.length, entry.tag).toBeGreaterThan(0);
-      expect(() => {
-        assertAllowedHost(entry.licence.url);
-      }, entry.tag).not.toThrow();
+      // The window shows this page; Apunta never requests it, so the guard
+      // does not apply to it. What must hold is that it is a host the product
+      // is on the record for.
+      expect(ALLOWED_DOWNLOAD_HOSTS, entry.tag).toContain(new URL(entry.licence.url).hostname);
       expect(entry.approxBytes, entry.tag).toBeGreaterThan(0);
       expect(Number.isSafeInteger(entry.approxBytes), entry.tag).toBe(true);
     }

@@ -1,8 +1,30 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { hasModel, ndjson, pullModel, waitForOllama } from './ollama.js';
+import { hasModel, ndjson, pullModel, readModelDigest, waitForOllama } from './ollama.js';
 
 const BASE = 'http://127.0.0.1:11434';
+const TAG = 'gemma4:12b-it-qat';
+
+/** A recorded request: which endpoint, which method, and what body it carried. */
+interface Request {
+  readonly url: string;
+  readonly method: string;
+  readonly body: string;
+}
+
+function recorder(handler: (request: Request) => Response): { fetchImpl: typeof fetch; requests: Request[] } {
+  const requests: Request[] = [];
+  const fetchImpl = ((url: string, init?: RequestInit) => {
+    const record: Request = {
+      url,
+      method: init?.method ?? 'GET',
+      body: typeof init?.body === 'string' ? init.body : '',
+    };
+    requests.push(record);
+    return Promise.resolve(handler(record));
+  }) as unknown as typeof fetch;
+  return { fetchImpl, requests };
+}
 
 function streamOf(lines: readonly string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -144,5 +166,98 @@ describe('pullModel', () => {
         fetchImpl: fetchReturning(new Response('no', { status: 500 })),
       }),
     ).rejects.toMatchObject({ code: 'model_pull_failed' });
+  });
+});
+
+/** Rule 7: the tag is pulled, then its digest is read back and named. */
+describe('the digest a pull leaves behind', () => {
+  const pullLines = ['{"status":"pulling manifest"}\n', '{"status":"success"}\n'];
+
+  it('reads one /api/show after a successful pull, and reports the digest', async () => {
+    const digest = 'sha256:9f8e7d6c5b4a39281706f5e4d3c2b1a0998877665544332211ffeeddccbbaa';
+    const { fetchImpl, requests } = recorder((request) => {
+      if (request.url.endsWith('/api/pull')) {
+        return new Response(streamOf(pullLines), { status: 200 });
+      }
+      return new Response(JSON.stringify({ models: [{ name: TAG, digest }] }), { status: 200 });
+    });
+
+    const result = await pullModel({ tag: TAG, baseUrl: BASE, fetchImpl });
+
+    expect(result).toEqual({ tag: TAG, digest });
+    // Exactly two requests, in this order, and nothing else.
+    expect(requests.map((request) => request.url)).toEqual([`${BASE}/api/pull`, `${BASE}/api/show`]);
+    // The read is for the tag that was just pulled, by name in the body — the
+    // tag is not in the URL, so a URL-only assertion would prove nothing.
+    expect(requests[1]?.method).toBe('POST');
+    expect(JSON.parse(requests[1]?.body ?? '{}')).toEqual({ model: TAG });
+  });
+
+  it('reads a digest carried at the top level, which is the other shape of /api/show', async () => {
+    const { fetchImpl } = recorder(
+      () => new Response(JSON.stringify({ digest: 'sha256:abc' }), { status: 200 }),
+    );
+    expect(await readModelDigest(TAG, { baseUrl: BASE, fetchImpl })).toBe('sha256:abc');
+  });
+
+  /**
+   * No call in this module removes or replaces a tag, and a pull is never
+   * repeated. `hasModel` is what stops the second one, so the shape of the
+   * guarantee is: nothing here is a DELETE, and nothing here is a second pull.
+   */
+  it('never removes, replaces or re-pulls anything', async () => {
+    const { fetchImpl, requests } = recorder((request) => {
+      if (request.url.endsWith('/api/pull')) {
+        return new Response(streamOf(pullLines), { status: 200 });
+      }
+      return new Response(JSON.stringify({ digest: 'sha256:abc' }), { status: 200 });
+    });
+
+    await pullModel({ tag: TAG, baseUrl: BASE, fetchImpl });
+
+    // One pull, one read, and nothing that could take a tag away. The runtime
+    // being the thing that stores the tag is why this list is worth asserting
+    // rather than trusting: the client has no call for it.
+    expect(requests.map((request) => `${request.method} ${request.url}`)).toEqual([
+      `POST ${BASE}/api/pull`,
+      `POST ${BASE}/api/show`,
+    ]);
+    expect(requests.some((request) => request.method === 'DELETE')).toBe(false);
+  });
+
+  it('reports no digest rather than inventing one when the runtime names none', async () => {
+    const { fetchImpl, requests } = recorder((request) => {
+      if (request.url.endsWith('/api/pull')) {
+        return new Response(streamOf(pullLines), { status: 200 });
+      }
+      // A runtime that answers `/api/show` with something that is not a digest.
+      return new Response(JSON.stringify({ license: 'Apache-2.0' }), { status: 200 });
+    });
+
+    const result = await pullModel({ tag: TAG, baseUrl: BASE, fetchImpl });
+
+    expect(result.digest).toBeNull();
+    expect(requests).toHaveLength(2);
+  });
+
+  it('does not fail a pull that succeeded just because the label could not be read', async () => {
+    const { fetchImpl } = recorder((request) => {
+      if (request.url.endsWith('/api/pull')) {
+        return new Response(streamOf(pullLines), { status: 200 });
+      }
+      return new Response('no', { status: 500 });
+    });
+
+    // The model is in the store. Stranding a working install over a missing
+    // label would be worse than saying the label is missing.
+    await expect(pullModel({ tag: TAG, baseUrl: BASE, fetchImpl })).resolves.toMatchObject({
+      tag: TAG,
+      digest: null,
+    });
+  });
+
+  it('answers null rather than throwing when the runtime is not there at all', async () => {
+    const fetchImpl = (() => Promise.reject(new Error('refused'))) as unknown as typeof fetch;
+    expect(await readModelDigest(TAG, { baseUrl: BASE, fetchImpl })).toBeNull();
   });
 });

@@ -4,8 +4,9 @@ import { dirname } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
-import { assertAllowedHost } from './catalog.js';
+import type { DownloadAllowance } from './catalog.js';
 import { setupError } from './errors.js';
+import { assertRequestAllowed, clearReceipt, MAX_REDIRECT_HOPS, RequestRefusedError } from './readiness.js';
 import {
   clearSidecar,
   partBytes,
@@ -19,17 +20,24 @@ import {
 /**
  * One resumable, verifiable download.
  *
- * The shape is deliberately boring: fetch with a `Range` header, append to
- * `<file>.part`, keep a sidecar saying what that file is, and only rename it
- * into place once a checksum has passed. Every interesting decision — whether
- * to resume, and from where — lives in `resume.ts` as a pure function, and is
- * tested there.
+ * The shape is deliberately boring: fetch, append to `<file>.part`, keep a
+ * sidecar saying what that file is, and only rename it into place once a
+ * checksum has passed. Every interesting decision — whether to resume, and from
+ * where — lives in `resume.ts` as a pure function, and is tested there.
  *
  * What is *not* boring, and is the reason for the branching below: a server
  * that ignores `Range` answers 200 with the whole file, and appending that to
  * a half-finished file produces a corrupt one of plausible length. So a 200 in
  * response to a `Range` request truncates and starts over, and only a 206
  * appends.
+ *
+ * **Redirects are followed by hand, one at a time.** `redirect: 'manual'` and a
+ * loop: each `Location` is resolved, checked against the artifact's own
+ * allowance, and only then requested. The runtime's own redirect following is
+ * the wrong thing twice over — it would follow a `Location` to any host at all,
+ * and it would carry the `Range` header along with it, asking a CDN for a range
+ * it was never offered the whole of. Here the initial request is the only one
+ * that carries a header, and a redirect hop restarts from byte 0.
  */
 
 export interface DownloadOptions {
@@ -38,6 +46,16 @@ export interface DownloadOptions {
   readonly destination: string;
   /** Pinned checksum, used to invalidate a stale `.part` from an older pin. */
   readonly checksum: string | null;
+  /**
+   * The allowance for the artifact being fetched. Required, and not a global
+   * list, so rule 2 is decided per artifact.
+   */
+  readonly allowance: DownloadAllowance;
+  /**
+   * The artifact's enumerated query parameter names. Empty means no query is
+   * admitted at all. Only names are ever tested; a value is never read.
+   */
+  readonly allowedQueryKeys: readonly string[];
   readonly signal?: AbortSignal | undefined;
   readonly fetchImpl?: typeof fetch;
   readonly onProgress?: (progress: DownloadProgress) => void;
@@ -71,7 +89,14 @@ const DEFAULT_PROGRESS_INTERVAL_MS = 250;
  * file" a recoverable state rather than a file the app will try to load.
  */
 export async function downloadWithResume(options: DownloadOptions): Promise<DownloadResult> {
-  assertAllowedHost(options.url);
+  // The initial request is checked before anything is written and before any
+  // socket opens, exactly as every `Location` is.
+  const initial = assertRequestAllowed({
+    url: options.url,
+    allowance: options.allowance,
+    allowedQueryKeys: options.allowedQueryKeys,
+    redirect: false,
+  });
 
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? Date.now;
@@ -92,39 +117,113 @@ export async function downloadWithResume(options: DownloadOptions): Promise<Down
   }
 
   const offset = plan.mode === 'resume' ? plan.offset : 0;
-  const headers: Record<string, string> = {};
-  if (offset > 0) headers['range'] = `bytes=${String(offset)}-`;
+  const requested = new Set<string>([initial.href]);
+  let current = initial;
+  let hop = 0;
 
-  const response = await fetchImpl(options.url, {
-    headers,
-    redirect: 'follow',
-    ...(options.signal === undefined ? {} : { signal: options.signal }),
-  });
+  for (;;) {
+    // The `Range` header goes to the first host and to no other: a redirect
+    // hop carries no header at all, so a resumed download that meets a
+    // redirect restarts from byte 0 at the new host rather than asking it for
+    // a range it was never offered the whole of.
+    const headers: Record<string, string> = {};
+    if (hop === 0 && offset > 0) headers['range'] = `bytes=${String(offset)}-`;
+
+    const response = await fetchImpl(current.href, {
+      headers,
+      redirect: 'manual',
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+    });
+
+    const location = response.headers.get('location');
+    if (location !== null && isRedirect(response.status)) {
+      if (hop >= MAX_REDIRECT_HOPS) {
+        throw new RequestRefusedError(
+          'too_many_hops',
+          `Refused to follow a ${String(hop + 1)}th redirect: at most ${String(MAX_REDIRECT_HOPS)} ` +
+            'are followed, and the address it named was never requested',
+        );
+      }
+      const next = assertRequestAllowed({
+        url: new URL(location, current).href,
+        allowance: options.allowance,
+        allowedQueryKeys: options.allowedQueryKeys,
+        redirect: true,
+      });
+      if (requested.has(next.href)) {
+        throw new RequestRefusedError(
+          'redirect_loop',
+          'Refused to follow a redirect back to an address this download already requested',
+        );
+      }
+      requested.add(next.href);
+      current = next;
+      hop += 1;
+      continue;
+    }
+
+    return await receive({
+      options,
+      part,
+      response,
+      plan,
+      offset: hop === 0 ? offset : 0,
+      restart: hop > 0 && offset > 0,
+      now,
+      interval,
+    });
+  }
+}
+
+/** Statuses that carry a `Location` to be followed rather than a body to read. */
+function isRedirect(status: number): boolean {
+  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
+}
+
+interface ReceiveInput {
+  readonly options: DownloadOptions;
+  readonly part: string;
+  readonly response: Response;
+  /** The decision `planResume` reached, reported back to the caller. */
+  readonly plan: ResumePlan;
+  /** Bytes to resume from, or 0 when this hop restarts the transfer. */
+  readonly offset: number;
+  /** True when a redirect has already invalidated what is on disk. */
+  readonly restart: boolean;
+  readonly now: () => number;
+  readonly interval: number;
+}
+
+/** The last hop: check the status, stream the body, keep the sidecar honest. */
+async function receive(input: ReceiveInput): Promise<DownloadResult> {
+  const { options, part, response, now, interval } = input;
+  const { destination } = options;
+  const url = options.url;
 
   // 416 means the server thinks we already have all of it. Fall back to a
   // clean download rather than guessing which of us is right.
   if (response.status === 416) {
     await rm(part, { force: true });
-    clearSidecar(options.destination);
-    throw setupError('download_failed', `range request rejected for ${options.url}`);
+    clearSidecar(destination);
+    throw setupError('download_failed', `range request rejected for ${url}`);
   }
   if (!response.ok) {
-    throw setupError('download_failed', `HTTP ${String(response.status)} for ${options.url}`);
+    throw setupError('download_failed', `HTTP ${String(response.status)} for ${url}`);
   }
   if (response.body === null) {
-    throw setupError('download_failed', `no response body for ${options.url}`);
+    throw setupError('download_failed', `no response body for ${url}`);
   }
 
   // A server that ignored `Range` answers 200 with the whole file.
-  const appending = offset > 0 && response.status === 206;
-  const startBytes = appending ? offset : 0;
-  if (!appending && offset > 0) {
+  const appending = input.offset > 0 && response.status === 206;
+  const startBytes = appending ? input.offset : 0;
+  if (!appending && (input.offset > 0 || input.restart)) {
     await rm(part, { force: true });
   }
 
   const totalBytes = totalFrom(response, startBytes);
-  writeSidecar(options.destination, {
-    url: options.url,
+  writeSidecar(destination, {
+    url,
     expectedBytes: totalBytes,
     downloadedBytes: startBytes,
     checksum: options.checksum,
@@ -157,8 +256,8 @@ export async function downloadWithResume(options: DownloadOptions): Promise<Down
     // "trying again continues rather than starting over" is a promise the
     // failure copy makes.
     const written = await sizeOf(part);
-    writeSidecar(options.destination, {
-      url: options.url,
+    writeSidecar(destination, {
+      url,
       expectedBytes: totalBytes,
       downloadedBytes: written,
       checksum: options.checksum,
@@ -168,26 +267,51 @@ export async function downloadWithResume(options: DownloadOptions): Promise<Down
 
   completedBytes = await sizeOf(part);
   report(true);
-  writeSidecar(options.destination, {
-    url: options.url,
+  writeSidecar(destination, {
+    url,
     expectedBytes: totalBytes,
     downloadedBytes: completedBytes,
     checksum: options.checksum,
   });
 
-  return { bytes: completedBytes, resumedFromBytes: startBytes, plan };
+  return {
+    bytes: completedBytes,
+    resumedFromBytes: startBytes,
+    // A redirect that arrived after a partial transfer has already thrown those
+    // bytes away, so reporting "resumed" would be a lie about the bytes.
+    plan: input.restart
+      ? {
+          mode: 'fresh',
+          reason: 'the address redirected, so the transfer starts again from the beginning',
+        }
+      : input.plan,
+  };
 }
 
-/** Move the verified `.part` into place and forget the bookkeeping. */
+/**
+ * Move the verified `.part` into place and forget the bookkeeping.
+ *
+ * The receipt goes with it, for the same reason the sidecar does: a receipt
+ * describes one file, and the file it described is not the file now at this
+ * name. The caller writes the new receipt after verifying what it just moved.
+ */
 export async function commitDownload(destination: string): Promise<void> {
   await rename(partPathFor(destination), destination);
   clearSidecar(destination);
+  clearReceipt(destination);
 }
 
-/** Throw away a download that failed its checksum, so a retry starts clean. */
+/**
+ * Throw away a download that failed its checksum, so a retry starts clean.
+ *
+ * The receipt goes with the file, for the same reason the old `.part` does: a
+ * receipt that outlived its file would vouch for bytes that are no longer
+ * there.
+ */
 export async function discardDownload(destination: string): Promise<void> {
   await rm(partPathFor(destination), { force: true });
   clearSidecar(destination);
+  clearReceipt(destination);
 }
 
 /**
