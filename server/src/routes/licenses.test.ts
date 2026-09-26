@@ -2,12 +2,13 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { LANGUAGE_SETTING, t } from '@apunta/shared';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../app.js';
 import { loadConfig } from '../config.js';
-import { openDatabase } from '../db/index.js';
+import { openDatabase, type Database } from '../db/index.js';
 
 /**
  * The licence file has to reach the machine the app is installed on, not just
@@ -25,7 +26,7 @@ afterEach(async () => {
   dir = null;
 });
 
-async function appWithLicenses(text: string | null): Promise<FastifyInstance> {
+async function appWithLicenses(text: string | null): Promise<{ app: FastifyInstance; db: Database }> {
   dir = mkdtempSync(join(tmpdir(), 'apunta-licenses-'));
   const licensesFile = join(dir, 'THIRD-PARTY-LICENSES.md');
   if (text !== null) writeFileSync(licensesFile, text);
@@ -39,14 +40,15 @@ async function appWithLicenses(text: string | null): Promise<FastifyInstance> {
     APUNTA_LICENSES_FILE: licensesFile,
   });
   const { db } = openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir });
-  app = await buildApp({ config, db, logger: false });
-  return app;
+  const built = await buildApp({ config, db, logger: false });
+  app = built;
+  return { app: built, db };
 }
 
 describe('GET /api/licenses', () => {
   it('serves the file verbatim', async () => {
     const text = '# Third-party licences\n\nMIT License\n\nCopyright (c) Ollama\n';
-    const server = await appWithLicenses(text);
+    const { app: server } = await appWithLicenses(text);
 
     const response = await server.inject({ method: 'GET', url: '/api/licenses' });
     expect(response.statusCode).toBe(200);
@@ -54,10 +56,30 @@ describe('GET /api/licenses', () => {
   });
 
   it('says the file is missing rather than failing with a 500', async () => {
-    const server = await appWithLicenses(null);
+    const { app: server } = await appWithLicenses(null);
     const response = await server.inject({ method: 'GET', url: '/api/licenses' });
     expect(response.statusCode).toBe(404);
     expect((response.json() as { message: string }).message).toContain('licence file');
+  });
+
+  /**
+   * The 404 is a `not_found` the About page shows, and it is answered in the
+   * stored language: the route holds no `db` and no job, so the error handler is
+   * what renders it (C-LANG@1 rule 3). The code on the wire is unchanged.
+   */
+  it('answers the missing file in the stored language, with the same code', async () => {
+    const { app: server, db } = await appWithLicenses(null);
+    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(
+      LANGUAGE_SETTING,
+      JSON.stringify('es-MX'),
+    );
+
+    const response = await server.inject({ method: 'GET', url: '/api/licenses' });
+    const body = response.json() as { error: string; message: string };
+    expect(response.statusCode).toBe(404);
+    expect(body.error).toBe('not_found');
+    expect(body.message).toBe(t('errors.not_found.licenses_file', {}, 'es-MX'));
+    expect(body.message).not.toBe(t('errors.not_found.licenses_file', {}, 'en'));
   });
 
   it('defaults to the file in the repository when nothing overrides it', () => {
