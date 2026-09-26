@@ -12,10 +12,10 @@ import {
   type FontSize,
   type Theme,
 } from '@apunta/shared';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
-import { errorMessage, listFormats, putSettings } from '../api/index.js';
+import { errorMessage, listFormats } from '../api/index.js';
 import { accentColorOrDefault, applyAccentColor } from '../lib/accent.js';
 import {
   animationsEnabled,
@@ -291,7 +291,6 @@ function SettingsSections({
 }
 function LlmProfileSettings(): React.JSX.Element | null {
   const settings = useSettingsContext();
-  const [selected, setSelected] = useState<LlmProfile | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -312,45 +311,72 @@ function LlmProfileSettings(): React.JSX.Element | null {
     Array.isArray(stored.llm_available_profiles) ? stored.llm_available_profiles : []
   ).filter((profile): profile is LlmProfile => profile === 'quick' || profile === 'thorough');
   if (available.length < 2) return null;
-  const effective =
-    selected ??
-    (stored.llm_effective_profile === 'quick' || stored.llm_effective_profile === 'thorough'
-      ? stored.llm_effective_profile
-      : (available[0] ?? 'quick'));
+  const offered = (['quick', 'thorough'] as const).filter((profile) => available.includes(profile));
+  /*
+   * Her own choice first, then what the server says it will use. The choice is
+   * a stored setting, so it is read from the provider like every other one —
+   * which is also what makes the click below show at once instead of waiting
+   * for a round trip (C-SETTINGS@1).
+   */
+  const chosen = stored[LLM_PROFILE_SETTING];
+  const effective = offered.includes(chosen as LlmProfile)
+    ? (chosen as LlmProfile)
+    : offered.includes(stored.llm_effective_profile as LlmProfile)
+      ? (stored.llm_effective_profile as LlmProfile)
+      : (offered[0] ?? 'quick');
 
   const save = (profile: LlmProfile): void => {
-    setSelected(profile);
     setSaved(false);
-    void putSettings({ [LLM_PROFILE_SETTING]: profile })
-      .then(() => {
+    void settings.update({ [LLM_PROFILE_SETTING]: profile }).then(
+      () => {
         setSaved(true);
         setError(null);
-      })
-      .catch((thrown: unknown) => setError(errorMessage(thrown)));
+      },
+      (thrown: unknown) => {
+        setSaved(false);
+        setError(errorMessage(thrown));
+      },
+    );
   };
 
   return (
     <section className="card settings-card" data-testid="llm-profile-settings">
       <h2 className="settings-title">Drafting model</h2>
       <div className="settings-profile-options" role="radiogroup" aria-label="Drafting model">
-        {(['quick', 'thorough'] as const)
-          .filter((profile) => available.includes(profile))
-          .map((profile) => (
-            <button
-              key={profile}
-              type="button"
-              role="radio"
-              aria-checked={effective === profile}
-              className={effective === profile ? 'settings-profile is-selected' : 'settings-profile'}
-              data-testid={`llm-profile-${profile}`}
-              onClick={() => save(profile)}
-            >
-              <span className="settings-profile-name">{profile === 'quick' ? 'Quick' : 'Thorough'}</span>
-              <span className="small settings-profile-help">
-                {profile === 'quick' ? 'Faster drafts.' : 'Slower, more careful drafts.'}
-              </span>
-            </button>
-          ))}
+        {offered.map((profile, index) => (
+          <button
+            key={profile}
+            type="button"
+            role="radio"
+            aria-checked={effective === profile}
+            // One tab stop, on the selected option, like the theme and text
+            // size groups: Tab lands where the choice already is.
+            tabIndex={effective === profile ? 0 : -1}
+            className={effective === profile ? 'settings-profile is-selected' : 'settings-profile'}
+            data-testid={`llm-profile-${profile}`}
+            onClick={() => {
+              save(profile);
+            }}
+            onKeyDown={(event) => {
+              const next = rovingTarget(event, index, offered.length);
+              if (next === undefined) return;
+              event.preventDefault();
+              const nextProfile = offered[next];
+              if (nextProfile === undefined) return;
+              save(nextProfile);
+              requestAnimationFrame(() => {
+                document
+                  .querySelector<HTMLButtonElement>(`[data-testid="llm-profile-${nextProfile}"]`)
+                  ?.focus();
+              });
+            }}
+          >
+            <span className="settings-profile-name">{profile === 'quick' ? 'Quick' : 'Thorough'}</span>
+            <span className="small settings-profile-help">
+              {profile === 'quick' ? 'Faster drafts.' : 'Slower, more careful drafts.'}
+            </span>
+          </button>
+        ))}
       </div>
       {saved && <p className="small state-note">Saved.</p>}
       {error !== null && (
@@ -367,38 +393,15 @@ function LlmProfileSettings(): React.JSX.Element | null {
  * animations (owner, 2026-09-21).
  *
  * Every control saves as it moves, so what she sees is what is stored —
- * there is no unsaved preview left to put back on leaving.
+ * there is no unsaved preview left to put back on leaving. What each row
+ * *shows* is the provider's own value, never a copy of it: leaving the screen
+ * and coming back must not find a card that disagrees with the page it was
+ * painted from (C-SETTINGS@1).
  */
 function AppearanceSettings(): React.JSX.Element {
   const settings = useSettingsContext();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accentColor, setAccentColor] = useState<string | null>(null);
-  const [fontSize, setFontSize] = useState<FontSize | null>(null);
-  const [animations, setAnimations] = useState<boolean | null>(null);
-  const [theme, setTheme] = useState<Theme | null>(null);
-  /*
-   * The settings actually stored, kept current with every save so rapid
-   * successive changes never leave stale state behind. It is a ref because
-   * the saves resolving after a render read it long after that render — and
-   * it is written from the loaded *value* plus each save's own patch, never
-   * from every render: seeding it from the loader's cached data each time
-   * meant a save was immediately forgotten.
-   */
-  const savedRef = useRef<SettingsRecord | null>(null);
-  const stored = settings.state.status === 'ready' ? (settings.state.data as SettingsRecord) : null;
-  const loaded = stored === null ? null : accentColorOrDefault(stored[ACCENT_COLOR_SETTING]);
-
-  useEffect(() => {
-    if (stored !== null && savedRef.current === null) {
-      savedRef.current = {
-        [ACCENT_COLOR_SETTING]: stored[ACCENT_COLOR_SETTING] ?? null,
-        [FONT_SIZE_SETTING]: stored[FONT_SIZE_SETTING] ?? null,
-        [ANIMATIONS_SETTING]: stored[ANIMATIONS_SETTING] ?? null,
-        [THEME_SETTING]: stored[THEME_SETTING] ?? null,
-      };
-    }
-  }, [stored]);
 
   if (settings.state.status === 'loading') return <p className="small state-note">Loading settings…</p>;
   if (settings.state.status === 'error') {
@@ -412,25 +415,22 @@ function AppearanceSettings(): React.JSX.Element {
     );
   }
 
-  const shownAccent = accentColor ?? loaded ?? DEFAULT_ACCENT_COLOR;
-  const shownSize = fontSize ?? fontSizeOrDefault(stored?.[FONT_SIZE_SETTING]);
-  const shownAnimations = animations ?? animationsEnabled(stored?.[ANIMATIONS_SETTING]);
-  const shownTheme = theme ?? themeOrDefault(stored?.[THEME_SETTING]);
+  const stored = settings.state.data as SettingsRecord;
+  const shownAccent = accentColorOrDefault(stored[ACCENT_COLOR_SETTING]);
+  const shownSize = fontSizeOrDefault(stored[FONT_SIZE_SETTING]);
+  const shownAnimations = animationsEnabled(stored[ANIMATIONS_SETTING]);
+  const shownTheme = themeOrDefault(stored[THEME_SETTING]);
   const save = (patch: SettingsRecord): void => {
-    void (async () => {
-      try {
-        await putSettings(patch);
-        savedRef.current = { ...(savedRef.current ?? {}), ...patch };
-        // The reset button saves a colour the picker is not showing, so it
-        // is painted here too; every other caller already previewed.
-        if (ACCENT_COLOR_SETTING in patch) applyAccentColor(patch[ACCENT_COLOR_SETTING]);
+    void settings.update(patch).then(
+      () => {
         setSaved(true);
         setError(null);
-      } catch (thrown) {
+      },
+      (thrown: unknown) => {
         setSaved(false);
         setError(errorMessage(thrown));
-      }
-    })();
+      },
+    );
   };
 
   return (
@@ -456,7 +456,6 @@ function AppearanceSettings(): React.JSX.Element {
             value={shownAccent}
             onChange={(event) => {
               const next = event.target.value;
-              setAccentColor(next);
               applyAccentColor(next);
               save({ [ACCENT_COLOR_SETTING]: next });
             }}
@@ -466,7 +465,6 @@ function AppearanceSettings(): React.JSX.Element {
             className="btn small btn-quick"
             data-testid="reset-accent"
             onClick={() => {
-              setAccentColor(DEFAULT_ACCENT_COLOR);
               applyAccentColor(DEFAULT_ACCENT_COLOR);
               save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
             }}
@@ -483,7 +481,6 @@ function AppearanceSettings(): React.JSX.Element {
         <ThemeSwitcher
           value={shownTheme}
           onChoose={(option) => {
-            setTheme(option);
             applyTheme(option);
             save({ [THEME_SETTING]: option });
           }}
@@ -509,7 +506,6 @@ function AppearanceSettings(): React.JSX.Element {
               className={shownSize === size ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
               data-testid={`font-size-${size}`}
               onClick={() => {
-                setFontSize(size);
                 applyFontSize(size);
                 save({ [FONT_SIZE_SETTING]: size });
               }}
@@ -519,7 +515,6 @@ function AppearanceSettings(): React.JSX.Element {
                 event.preventDefault();
                 const nextSize = FONT_SIZES[next];
                 if (nextSize === undefined) return;
-                setFontSize(nextSize);
                 applyFontSize(nextSize);
                 save({ [FONT_SIZE_SETTING]: nextSize });
                 requestAnimationFrame(() => {
@@ -546,7 +541,6 @@ function AppearanceSettings(): React.JSX.Element {
           data-testid="animations-toggle"
           onChange={(event) => {
             const next = event.target.checked;
-            setAnimations(next);
             applyAnimations(next);
             save({ [ANIMATIONS_SETTING]: next });
           }}
