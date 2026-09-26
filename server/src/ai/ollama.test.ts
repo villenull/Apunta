@@ -1,4 +1,5 @@
 import type { Sections } from '@apunta/shared';
+import { PROMOTED_DEFAULT_MODEL } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import { AiError } from './errors.js';
@@ -693,6 +694,27 @@ describe('OllamaProvider.describe', () => {
     await expect(
       new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).describe(),
     ).resolves.toMatchObject({ reachable: false, modelPresent: false });
+  });
+
+  /**
+   * A provider built without `resolveModel` — which is the shape every
+   * unconfigured construction takes — must land on the promoted default. It
+   * used to land on `defaultModelForMachine()`, i.e. on the RAM table, and
+   * that is the drift this card closes.
+   */
+  it('falls back to the promoted default, not the memory picker, with no resolveModel', async () => {
+    const fetchImpl = (async () =>
+      new Response(JSON.stringify({ models: [{ name: PROMOTED_DEFAULT_MODEL }] }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })) as unknown as typeof globalThis.fetch;
+
+    await expect(new OllamaProvider({ fetchImpl }).describe()).resolves.toEqual({
+      reachable: true,
+      model: PROMOTED_DEFAULT_MODEL,
+      modelPresent: true,
+      weightsFormat: null,
+    });
   });
 });
 

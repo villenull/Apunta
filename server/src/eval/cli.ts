@@ -1,9 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { PROMOTED_DEFAULT_MODEL } from '@apunta/shared';
 
 import { installEgressGuard } from '../egress-guard.js';
 import { approximateTokens } from '../ai/prompts.js';
-import { defaultModelForMachine } from '../ai/model-picker.js';
 import { runEval, sensitivity } from './run.js';
 
 /**
@@ -168,11 +170,26 @@ function printUsage(): void {
   );
 }
 
+/**
+ * The models a run measures, with no `--models` given.
+ *
+ * Exported and pure so C-MODEL@1's rule is checkable without running an eval:
+ * the default is the promoted default, not the RAM picker, and fake mode still
+ * yields `'fake'` so the CI self-check is untouched.
+ */
+export function defaultModels(args: {
+  readonly models: readonly string[];
+  readonly fake: boolean;
+}): string[] {
+  if (args.models.length > 0) return [...args.models];
+  return [args.fake ? 'fake' : PROMOTED_DEFAULT_MODEL];
+}
+
 async function main(): Promise<void> {
   installEgressGuard();
 
   const args = parseArgs(process.argv.slice(2));
-  const models = args.models.length > 0 ? args.models : [args.fake ? 'fake' : defaultModelForMachine()];
+  const models = defaultModels(args);
 
   if (args.fake) {
     console.error('Running against the fake provider. This proves the harness, not the model.\n');
@@ -272,4 +289,16 @@ async function main(): Promise<void> {
   process.exit(gated ? 1 : 0);
 }
 
-await main();
+/**
+ * Run only when this file is the entry point.
+ *
+ * The bare `await main()` this replaces ran on import, so a test could not
+ * import `defaultModels()` above without starting a full eval and calling
+ * `process.exit`. Comparing the resolved script path against this module's own
+ * is the same check `npm` uses to decide what to run, and it works the same
+ * under `tsx` and under compiled output.
+ */
+const invokedPath = process.argv[1];
+if (invokedPath !== undefined && resolve(invokedPath) === fileURLToPath(import.meta.url)) {
+  await main();
+}

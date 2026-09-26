@@ -102,7 +102,8 @@ export {
   defaultModelForMachine,
   isSupportedModelName,
   LARGE_MODEL,
-  modelForMemory,
+  PROMOTED_DEFAULT_MODEL,
+  recommendedModelForMemory,
   SMALL_MODEL,
 } from './model-picker.js';
 export {

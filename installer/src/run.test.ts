@@ -1,4 +1,4 @@
-import { DEFAULT_MODEL } from '@apunta/shared';
+import { DEFAULT_MODEL, LARGE_MODEL, PROMOTED_DEFAULT_MODEL } from '@apunta/shared';
 import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -25,6 +25,8 @@ interface Harness {
   readonly environment: SetupEnvironment;
   readonly modelsDir: string;
   readonly requested: string[];
+  /** Every tag asked of `POST /api/pull`, in order. */
+  readonly pulledTags: string[];
 }
 
 let dir: string | null = null;
@@ -54,10 +56,11 @@ function harness(
 
   const events: SetupEvent[] = [];
   const requested: string[] = [];
+  const pulledTags: string[] = [];
   const pulled = options.pulled ?? [];
   const runtimeUp = options.runtimeUp ?? true;
 
-  const fetchImpl = ((url: string) => {
+  const fetchImpl = (async (url: string, init?: RequestInit) => {
     requested.push(url);
     if (url.startsWith(BASE)) {
       if (!runtimeUp) return Promise.reject(new Error('connection refused'));
@@ -66,6 +69,10 @@ function harness(
         return Promise.resolve(new Response(body, { status: 200 }));
       }
       if (url.endsWith('/api/pull')) {
+        // The tag is in the body, not the URL, so "only the effective tag was
+        // pulled" has to read it from here.
+        const body = JSON.parse(String(init?.body ?? '{}')) as { model?: unknown };
+        if (typeof body.model === 'string') pulledTags.push(body.model);
         const encoder = new TextEncoder();
         const lines = [
           '{"status":"pulling manifest"}\n',
@@ -101,7 +108,7 @@ function harness(
     freeBytesImpl: () => (options.freeBytes === undefined ? TB : options.freeBytes),
   };
 
-  return { events, environment, modelsDir, requested };
+  return { events, environment, modelsDir, requested, pulledTags };
 }
 
 function eventsOf<K extends SetupEvent['event']>(
@@ -115,7 +122,7 @@ describe('runSetup', () => {
   it('does nothing and reports ready when both models are already there', async () => {
     const { events, environment, requested } = harness({
       speechModelPresent: true,
-      pulled: ['gemma4:12b-it-qat'],
+      pulled: [PROMOTED_DEFAULT_MODEL],
     });
 
     expect(await runSetup(environment)).toBe(true);
@@ -151,7 +158,7 @@ describe('runSetup', () => {
     const messages = eventsOf(events, 'message').map((event) => event.text);
     const provenance = messages.find((text) => text.includes('published by'));
     expect(provenance).toBeDefined();
-    expect(provenance).toContain('ollama.com/library/gemma4');
+    expect(provenance).toContain('ollama.com/library/qwen3.5');
     expect(provenance).toContain('does not host or copy');
   });
 
@@ -181,7 +188,9 @@ describe('runSetup', () => {
    * bytes a second time.
    */
   it('downloads the shared whisper file once, for both the note and the preview', async () => {
-    const { events, environment, modelsDir, requested } = harness({ pulled: [DEFAULT_MODEL] });
+    const { events, environment, modelsDir, requested } = harness({
+      pulled: [PROMOTED_DEFAULT_MODEL],
+    });
 
     const ok = await runSetup(environment);
 
@@ -200,7 +209,7 @@ describe('runSetup', () => {
   });
 
   it('deletes a download that fails its checksum, and says so in plain words', async () => {
-    const { events, environment, modelsDir } = harness({ pulled: ['gemma4:12b-it-qat'] });
+    const { events, environment, modelsDir } = harness({ pulled: [PROMOTED_DEFAULT_MODEL] });
 
     expect(await runSetup(environment)).toBe(false);
     const failure = eventsOf(events, 'failed')[0];
@@ -210,18 +219,46 @@ describe('runSetup', () => {
     expect(() => statSync(speechModelPath(modelsDir))).toThrow();
   });
 
-  it('reports the model it chose and why, before doing anything', async () => {
+  /**
+   * C-MODEL@1's normal example, end to end: a 16 GB machine that used to pull
+   * `gemma4:12b-it-qat` now pulls the promoted tag, and the reason says so
+   * without citing the 8 GB it used to be chosen by.
+   */
+  it('reports the effective model and why, before doing anything', async () => {
     const { events, environment } = harness({ memoryGib: 8, speechModelPresent: true });
     await runSetup(environment);
 
     const plan = eventsOf(events, 'plan')[0];
-    expect(plan?.model.tag).toBe('qwen3.5:4b-q4_K_M');
-    expect(plan?.model.reason).toContain('8 GB');
+    expect(plan?.model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+    expect(plan?.model.reason).toContain(PROMOTED_DEFAULT_MODEL);
+    // The old row said "8 GB" and named the tier boundary. Neither is a fact
+    // about the choice any more, and the reason must not imply it is.
+    expect(plan?.model.reason).not.toContain('8 GB');
+    // `memoryGib` is still reported — the window shows what it read.
     expect(plan?.memoryGib).toBe(8);
   });
 
+  /**
+   * The "no pull" leg. One policy means the setup run pulls the effective tag
+   * and nothing else, whatever this machine could have run: no tier the RAM
+   * table would have chosen, and no second model.
+   */
+  it('pulls only the effective tag, and no tier the machine could have used', async () => {
+    // 64 GiB, 16 GiB and 8 GiB between them cover every branch of the old
+    // table: large, middle, small, and the unreadable-memory fallback.
+    for (const memoryGib of [64, 16, 8, null]) {
+      const { events, environment, pulledTags } = harness({ memoryGib, speechModelPresent: true });
+
+      expect(await runSetup(environment)).toBe(true);
+      expect(pulledTags).toEqual([PROMOTED_DEFAULT_MODEL]);
+      expect(pulledTags).not.toContain(LARGE_MODEL);
+      expect(pulledTags).not.toContain(DEFAULT_MODEL);
+      expect(eventsOf(events, 'plan')[0]?.model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+    }
+  });
+
   it('never lets an internal detail out as an event', async () => {
-    const { events, environment } = harness({ pulled: ['gemma4:12b-it-qat'] });
+    const { events, environment } = harness({ pulled: [PROMOTED_DEFAULT_MODEL] });
     await runSetup(environment);
 
     for (const event of events) {

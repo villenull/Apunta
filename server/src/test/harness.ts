@@ -43,7 +43,14 @@ export interface TestAppOptions {
 export async function createTestApp(options: TestAppOptions = {}): Promise<TestApp> {
   const dataDir = mkdtempSync(join(tmpdir(), 'apunta-test-'));
   const config = loadConfig({
-    APUNTA_PORT: '0',
+    /**
+     * The port an injected request presents: `light-my-request` writes
+     * `Host: localhost:80` for a path-only URL, and C-REQ@1's guard checks a
+     * request that is not listening against the configured port (P1.3). A
+     * suite that listens on an ephemeral port is checked against the port
+     * actually bound instead, so it needs no change.
+     */
+    APUNTA_PORT: '80',
     APUNTA_DATA_DIR: dataDir,
     APUNTA_FAKE_AI: '1',
     // Pacing is a demo concern; an integration suite should not pay for it.

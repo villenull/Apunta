@@ -1,7 +1,8 @@
-import type { HealthResponse } from '@apunta/shared';
+import { effectiveModel, type HealthResponse } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 
+import { installedModelTags, llmModelOverride } from '../ai/profiles.js';
 import type { AiProviders } from '../ai/types.js';
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
@@ -29,12 +30,44 @@ export async function buildHealthResponse(
   config: AppConfig,
   db: Database,
   providers: AiProviders,
+  /**
+   * C-MODEL@1's installed-tag list. Production passes nothing and the route
+   * asks `profiles.ts`, exactly as it does today; the parameter exists so a
+   * test can make `present: false` without a listener or a stub HTTP server.
+   * A stub `providers.llm` cannot do it — it decides only `describe()`.
+   */
+  injectedInstalledModels?: readonly string[] | null,
 ): Promise<HealthResponse & { testRunId?: string }> {
   const [llm, stt, fileVault] = await Promise.all([
     providers.llm.describe(),
     providers.stt.describe(),
     fileVaultStatus(),
   ]);
+
+  /**
+   * C-MODEL@1's `{ tag, source, present }`, from the same resolver the server
+   * and the installer use. The three fields are the resolver's answer and the
+   * `describe()`-derived `model`/`modelPresent` beside them are unchanged,
+   * which is what lets the setup UI keep reading the pair it reads today.
+   */
+  const override = llmModelOverride(db);
+  const resolved = config.fakeAi
+    ? // Fake mode has no runtime to ask, so the installed list is not read at
+      // all. `FakeLlmProvider.describe()` reports the model as present, so
+      // `present` is `true`; the agreement rule below is real-mode only.
+      { ...effectiveModel({ override, installed: null }), present: true as const }
+    : effectiveModel({
+        override,
+        // `undefined` means "nobody injected a list", so the route asks
+        // `profiles.ts`. An explicit `null` is itself the answer — the caller
+        // is saying the runtime could not be asked — and must not be turned
+        // into a fetch by `??`.
+        installed:
+          injectedInstalledModels === undefined
+            ? await installedModelTags({ baseUrl: config.ollamaUrl })
+            : injectedInstalledModels,
+      });
+
   // The sandbox wrapper's ownership check (C-ISO@1 rule 5): when the server
   // runs inside a sandbox run, it says which one, so the wrapper can refuse
   // a foreign server answering on its port. The field never appears
@@ -47,7 +80,14 @@ export async function buildHealthResponse(
     // The bundled runtime is the one thing only the packaged app sets (M8).
     bundled: config.ollamaBin !== undefined,
     db: { path: config.dbFile, migrationLevel: migrationLevel(db) },
-    ollama: { reachable: llm.reachable, model: llm.model, modelPresent: llm.modelPresent },
+    ollama: {
+      reachable: llm.reachable,
+      model: llm.model,
+      modelPresent: llm.modelPresent,
+      tag: resolved.tag,
+      source: resolved.source,
+      present: resolved.present,
+    },
     whisper: {
       binaryPresent: stt.binaryPresent,
       modelPresent: stt.modelPresent,
@@ -64,8 +104,9 @@ export function registerHealthRoute(
   config: AppConfig,
   db: Database,
   providers: AiProviders,
+  installedModels?: readonly string[] | null,
 ): void {
   app.get('/api/health', async (): Promise<HealthResponse & { testRunId?: string }> =>
-    buildHealthResponse(config, db, providers),
+    buildHealthResponse(config, db, providers, installedModels),
   );
 }

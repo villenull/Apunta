@@ -2,10 +2,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Sections } from '@apunta/shared';
-import { STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
+import { PROMOTED_DEFAULT_MODEL, STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import { OWNER_PROGRESS_INSTRUCTIONS, PROGRESS_NOTE_INSTRUCTIONS } from '../ai/default-instructions.js';
+import { defaultModels } from './cli.js';
 import { assertFixture, denominators, draftSourceFor, loadCorpus, type Fixture } from './corpus.js';
 import { loadLexicon, stem } from './lexicon.js';
 import { f6Core, h1Narrated, h1Placeholder } from './patterns.js';
@@ -470,6 +471,30 @@ describe('the negative control', () => {
     });
 
     expect(scoreNote(target, note, { lexicon }).quotedViolations).toHaveLength(1);
+  });
+});
+
+describe('the eval CLI default', () => {
+  /**
+   * C-MODEL@1: "the eval CLI with no `--models` uses the promoted default, not
+   * the memory picker". Asserted through the pure `defaultModels()`, so this
+   * row runs no eval and the module's top-level `await main()` is guarded by
+   * an entry-point check — importing this file above already proves it.
+   */
+  it('measures the promoted default when no --models was given', () => {
+    expect(defaultModels({ models: [], fake: false })).toEqual([PROMOTED_DEFAULT_MODEL]);
+  });
+
+  it('still yields the fake provider in fake mode, so the CI self-check is unchanged', () => {
+    expect(defaultModels({ models: [], fake: true })).toEqual(['fake']);
+  });
+
+  it('never overrides an explicit --models', () => {
+    expect(defaultModels({ models: ['gemma4:12b-it-qat', 'qwen3.6:35b-a3b'], fake: false })).toEqual([
+      'gemma4:12b-it-qat',
+      'qwen3.6:35b-a3b',
+    ]);
+    expect(defaultModels({ models: ['a:1'], fake: true })).toEqual(['a:1']);
   });
 });
 

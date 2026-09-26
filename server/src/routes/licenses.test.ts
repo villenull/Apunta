@@ -31,7 +31,9 @@ async function appWithLicenses(text: string | null): Promise<FastifyInstance> {
   if (text !== null) writeFileSync(licensesFile, text);
 
   const config = loadConfig({
-    APUNTA_PORT: '0',
+    // The port these injected requests present: `light-my-request` writes
+    // `Host: localhost:80` for a path-only URL (C-REQ@1, P1.3).
+    APUNTA_PORT: '80',
     APUNTA_DATA_DIR: dir,
     APUNTA_FAKE_AI: '1',
     APUNTA_LICENSES_FILE: licensesFile,

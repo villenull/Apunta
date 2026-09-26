@@ -1,0 +1,123 @@
+# P1.3 — V3, lint and typecheck
+
+- cwd: ~/Projects/Apunta
+- node: v24.19.0
+- start: 2026-09-26T09:33:08Z
+- command: npm run lint && npm run typecheck
+
+
+> apunta@0.0.0 lint
+> eslint . && prettier --check . && node scripts/check-no-external-urls.mjs && node scripts/collect-licenses.mjs --check
+
+
+~/Projects/Apunta/server/src/ai/model-picker.ts
+  4:56  error  'recommendedModelForMemory' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 1 problem (1 error, 0 warnings)
+
+exit=1
+end: 2026-09-26T09:33:10Z
+
+=== P1.3 supplementary: the same two tools over this card's paths only
+- command: npx eslint server/src/http/request-guard.ts server/src/http/request-guard.test.ts server/src/test/real-socket-guard.test.ts server/src/app.ts server/src/boot-error.ts server/src/boot-error.test.ts server/src/test/harness.ts server/src/routes/health.test.ts server/src/routes/licenses.test.ts shared/src/errors.ts
+- start: 2026-09-26T09:33:15Z
+- command: npx prettier --check server/src/http/request-guard.ts server/src/http/request-guard.test.ts server/src/test/real-socket-guard.test.ts server/src/app.ts server/src/boot-error.ts server/src/boot-error.test.ts server/src/test/harness.ts server/src/routes/health.test.ts server/src/routes/licenses.test.ts shared/src/errors.ts
+- start: 2026-09-26T09:33:15Z
+Checking formatting...
+[warn] server/src/http/request-guard.ts
+[warn] server/src/http/request-guard.test.ts
+[warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+
+=== P1.3 supplementary: typecheck on its own (lint's eslint step failed first)
+- command: npm run typecheck
+- start: 2026-09-26T09:33:23Z
+
+> apunta@0.0.0 typecheck
+> npm run build:shared && npm run typecheck --workspaces --if-present
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+> @apunta/shared@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+src/effective-model.test.ts(56,29): error TS2379: Argument of type '{ override: string | null | undefined; installed: string[]; }' is not assignable to parameter of type 'EffectiveModelInput' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'override' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path ~/Projects/Apunta/shared
+npm error workspace @apunta/shared@0.0.0
+npm error location ~/Projects/Apunta/shared
+npm error command failed
+npm error command sh -c tsc -p tsconfig.typecheck.json
+
+
+> @apunta/server@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+src/ai/model-picker.ts(4,56): error TS6133: 'recommendedModelForMemory' is declared but its value is never read.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path ~/Projects/Apunta/server
+npm error workspace @apunta/server@0.0.0
+npm error location ~/Projects/Apunta/server
+npm error command failed
+npm error command sh -c tsc -p tsconfig.typecheck.json
+
+
+> @apunta/installer@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+src/catalog.test.ts(159,12): error TS2532: Object is possibly 'undefined'.
+src/catalog.test.ts(164,12): error TS2532: Object is possibly 'undefined'.
+src/plan.ts(73,35): error TS2379: Argument of type '{ override: string | null | undefined; installed: null; }' is not assignable to parameter of type 'EffectiveModelInput' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'override' are incompatible.
+    Type 'string | null | undefined' is not assignable to type 'string | null'.
+      Type 'undefined' is not assignable to type 'string | null'.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path ~/Projects/Apunta/installer
+npm error workspace @apunta/installer@0.0.0
+npm error location ~/Projects/Apunta/installer
+npm error command failed
+npm error command sh -c tsc -p tsconfig.typecheck.json
+
+
+> @apunta/web@0.0.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @apunta/e2e@0.0.0 typecheck
+> tsc -p tsconfig.json
+
+exit=2
+end: 2026-09-26T09:33:28Z
+
+=== P1.3 supplementary: the server workspace typecheck, minus P1.4's in-flight file
+- command: npx tsc -p server/tsconfig.typecheck.json (all of server/src except src/ai/model-picker.ts is P1.4's)
+
+=== P1.3 supplementary: the two remaining lint steps, which the eslint failure above prevented from running
+- command: node scripts/check-no-external-urls.mjs
+- exit: 0
+- command: node scripts/collect-licenses.mjs --check
+- exit: 0 (THIRD-PARTY-LICENSES.md lists all 111 shipped packages.)
+- command: npx prettier --check .
+- exit: 1, and every file it names belongs to P1.4: server/src/ai/profiles.test.ts,
+  server/src/ai/profiles.ts, server/src/eval/cli.ts. No P1.3 path is listed.
+
+=== P1.3 supplementary: typecheck, per workspace
+- shared: src/effective-model.test.ts(56,29) TS2379 — P1.4's untracked file.
+- server: src/ai/model-picker.ts(4,56) TS6133 — P1.4's file. Nothing else, so every
+  P1.3 path (including both new test files, which tsconfig.typecheck.json includes)
+  typechecks clean.
+- installer: src/catalog.test.ts(159,12) and (164,12) TS2532, src/plan.ts(73,35) TS2379
+  — all P1.4's files.
+- web, e2e: clean.

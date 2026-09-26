@@ -1,0 +1,70 @@
+# P1.3 — V3, retry
+
+- cwd: ~/Projects/Apunta
+- node: v24.19.0
+- start: 2026-09-26T09:35:59Z
+- command: npm run lint && npm run typecheck
+
+
+> apunta@0.0.0 lint
+> eslint . && prettier --check . && node scripts/check-no-external-urls.mjs && node scripts/collect-licenses.mjs --check
+
+Checking formatting...
+All matched files use Prettier code style!
+THIRD-PARTY-LICENSES.md lists all 111 shipped packages.
+
+> apunta@0.0.0 typecheck
+> npm run build:shared && npm run typecheck --workspaces --if-present
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+> @apunta/shared@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+
+> @apunta/server@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+
+> @apunta/installer@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+src/catalog.test.ts(159,12): error TS2532: Object is possibly 'undefined'.
+src/catalog.test.ts(164,12): error TS2532: Object is possibly 'undefined'.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path ~/Projects/Apunta/installer
+npm error workspace @apunta/installer@0.0.0
+npm error location ~/Projects/Apunta/installer
+npm error command failed
+npm error command sh -c tsc -p tsconfig.typecheck.json
+
+
+> @apunta/web@0.0.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @apunta/e2e@0.0.0 typecheck
+> tsc -p tsconfig.json
+
+exit=2
+end: 2026-09-26T09:36:11Z
+
+=== P1.3 supplementary: attribution of the two remaining typecheck errors
+- npx tsc -p installer/tsconfig.typecheck.json against a pristine export of the base commit
+  (git archive 9bb587b into a temp directory, repo node_modules symlinked):
+    installer/src/catalog.test.ts(159,12): error TS2532: Object is possibly 'undefined'.
+    installer/src/catalog.test.ts(164,12): error TS2532: Object is possibly 'undefined'.
+  The same two errors, on the same lines, with none of P1.3's changes present. They come
+  from P1.5's licence assertions (commit 0841207) read through noUncheckedIndexedAccess,
+  live in a file outside this card's May-edit list, and are already recorded in
+  docs/v2/evidence/P1.4/verification.md as the same pre-existing failure.
+- npm run lint is green in full: eslint, prettier --check ., check-no-external-urls.mjs,
+  collect-licenses.mjs --check.

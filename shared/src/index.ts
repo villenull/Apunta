@@ -48,9 +48,18 @@ export {
   isSupportedModelName,
   LARGE_MODEL,
   LARGE_TIER_GIB,
-  modelForMemory,
+  PROMOTED_DEFAULT_MODEL,
+  recommendedModelForMemory,
   SMALL_MODEL,
 } from './models.js';
+
+/**
+ * C-MODEL@1's resolver, in the block that re-exports `./models.js`, so
+ * `@apunta/shared`'s single `exports` entry carries the new module
+ * deliberately. `shared/package.json` is not touched.
+ */
+export { effectiveModel } from './effective-model.js';
+export type { EffectiveModel, EffectiveModelInput, EffectiveModelSource } from './effective-model.js';
 
 export { FileVaultStateSchema, FileVaultStatusSchema, HealthResponseSchema } from './health.js';
 export type { FileVaultState, FileVaultStatus, HealthResponse } from './health.js';

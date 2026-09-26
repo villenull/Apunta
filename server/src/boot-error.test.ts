@@ -11,7 +11,7 @@ describe('boot error page', () => {
     expect(bootErrorHtml(options)).toContain(options.dataDir);
     expect(bootErrorHtml(options)).toContain('start Apunta again');
 
-    const app = buildBootErrorApp(options);
+    const app = buildBootErrorApp(options, 80);
     const response = await app.inject({ method: 'GET', url: '/' });
     expect(response.statusCode).toBe(503);
     expect(response.headers['content-type']).toContain('text/html');

@@ -1,0 +1,354 @@
+# P1.3 — tests first, recorded failures
+
+- cwd: ~/Projects/Apunta
+- node: v24.19.0
+- start: 2026-09-26T09:25:27Z
+- command: npm run build:shared && npx vitest run server/src/http/request-guard.test.ts server/src/test/real-socket-guard.test.ts
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v4.1.11 ~/Projects/Apunta
+
+{"level":30,"time":1790414727948,"pid":<pid>,"hostname":"<host>","msg":"Server listening at http://127.0.0.1:7812"}
+{"level":30,"time":1790414727953,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"evil.example:7812","remoteAddress":"127.0.0.1","remotePort":38578},"msg":"incoming request"}
+{"level":30,"time":1790414727954,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":1.1788650000000018,"msg":"request completed"}
+{"level":30,"time":1790414727959,"pid":<pid>,"hostname":"<host>","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"","remoteAddress":"127.0.0.1","remotePort":38590},"msg":"incoming request"}
+{"level":30,"time":1790414727960,"pid":<pid>,"hostname":"<host>","reqId":"req-2","res":{"statusCode":503},"responseTime":0.2672369999999944,"msg":"request completed"}
+{"level":30,"time":1790414727961,"pid":<pid>,"hostname":"<host>","reqId":"req-3","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":38578},"msg":"incoming request"}
+{"level":30,"time":1790414727961,"pid":<pid>,"hostname":"<host>","reqId":"req-3","res":{"statusCode":503},"responseTime":0.09260800000001268,"msg":"request completed"}
+{"level":30,"time":1790414727966,"pid":<pid>,"hostname":"<host>","reqId":"req-4","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":38598},"msg":"incoming request"}
+{"level":30,"time":1790414727966,"pid":<pid>,"hostname":"<host>","reqId":"req-4","res":{"statusCode":503},"responseTime":0.12477799999999206,"msg":"request completed"}
+{"level":30,"time":1790414727969,"pid":<pid>,"hostname":"<host>","reqId":"req-5","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":38600},"msg":"incoming request"}
+{"level":30,"time":1790414727969,"pid":<pid>,"hostname":"<host>","reqId":"req-5","res":{"statusCode":503},"responseTime":0.10755899999998064,"msg":"request completed"}
+{"level":30,"time":1790414727971,"pid":<pid>,"hostname":"<host>","reqId":"req-6","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":38598},"msg":"incoming request"}
+{"level":30,"time":1790414727971,"pid":<pid>,"hostname":"<host>","reqId":"req-6","res":{"statusCode":503},"responseTime":0.11275900000001116,"msg":"request completed"}
+{"level":30,"time":1790414727973,"pid":<pid>,"hostname":"<host>","reqId":"req-7","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":38600},"msg":"incoming request"}
+{"level":30,"time":1790414727973,"pid":<pid>,"hostname":"<host>","reqId":"req-7","res":{"statusCode":503},"responseTime":0.13804900000002363,"msg":"request completed"}
+{"level":30,"time":1790414727975,"pid":<pid>,"hostname":"<host>","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":38598},"msg":"incoming request"}
+{"level":30,"time":1790414727975,"pid":<pid>,"hostname":"<host>","reqId":"req-8","res":{"statusCode":503},"responseTime":0.09751799999997957,"msg":"request completed"}
+{"level":30,"time":1790414727978,"pid":<pid>,"hostname":"<host>","reqId":"req-9","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":38600},"msg":"incoming request"}
+{"level":30,"time":1790414727978,"pid":<pid>,"hostname":"<host>","reqId":"req-9","res":{"statusCode":503},"responseTime":0.10512900000000514,"msg":"request completed"}
+ ❯ |server| src/test/real-socket-guard.test.ts (9 tests | 6 failed) 68ms
+     × answers 403 for a foreign Host, which fetch could never have shown 10ms
+     × answers 403 for a missing Host, which only a raw HTTP/1.0 line can send 2ms
+     × answers 403 for a foreign Origin 6ms
+     × answers 403 for Sec-Fetch-Site: cross-site 1ms
+     × answers 403 for Sec-Fetch-Site: same-site, which is not the app either 2ms
+     × answers 403 for OPTIONS from a foreign origin 2ms
+{"level":30,"time":1790414728313,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728326,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728340,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728352,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728313,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.1763080000000059,"msg":"request completed"}
+{"level":30,"time":1790414728326,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.08978899999999612,"msg":"request completed"}
+{"level":30,"time":1790414728340,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.08361899999999878,"msg":"request completed"}
+{"level":30,"time":1790414728353,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.5030739999999696,"msg":"request completed"}
+{"level":30,"time":1790414728375,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/formats/detect","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728386,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728398,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728407,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728416,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728425,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414728375,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.14191799999991872,"msg":"request completed"}
+{"level":30,"time":1790414728386,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.07700899999997546,"msg":"request completed"}
+{"level":30,"time":1790414728398,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.07623899999998685,"msg":"request completed"}
+{"level":30,"time":1790414728407,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.06450900000004367,"msg":"request completed"}
+{"level":30,"time":1790414728425,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.06469900000001871,"msg":"request completed"}
+{"level":30,"time":1790414728416,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.06714899999997215,"msg":"request completed"}
+ ❯ |server| src/http/request-guard.test.ts (23 tests | 16 failed) 192ms
+     × main app rejects an Origin of "null", which is what a sandboxed frame sends 52ms
+     × boot-error server rejects an Origin of "null", which is what a sandboxed frame sends 8ms
+     × main app rejects a malformed Origin 7ms
+     × boot-error server rejects a malformed Origin 6ms
+     × main app rejects an Origin on the wrong port 6ms
+     × boot-error server rejects an Origin on the wrong port 7ms
+     × main app rejects a foreign Origin on a JSON route 7ms
+     × boot-error server rejects a foreign Origin on a JSON route 6ms
+     × main app rejects a foreign Origin on a multipart route 16ms
+     × boot-error server rejects a foreign Origin on a multipart route 6ms
+     × main app rejects Sec-Fetch-Site: cross-site, on a request from a page on another site 5ms
+     × boot-error server rejects Sec-Fetch-Site: cross-site, on a request from a page on another site 5ms
+     × main app rejects OPTIONS from a foreign origin 7ms
+     × boot-error server rejects OPTIONS from a foreign origin 5ms
+     × logs the method, the path and which rule failed, and never the body 5ms
+     × names the OPTIONS rule on its own, so the two rejections are told apart 5ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 22 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > main app rejects an Origin of "null", which is what a sandboxed frame sends
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > main app rejects a malformed Origin
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > main app rejects an Origin on the wrong port
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > main app rejects a foreign Origin on a multipart route
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > main app rejects Sec-Fetch-Site: cross-site, on a request from a page on another site
+AssertionError: expected 200 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 200
+
+ ❯ expectForbidden src/http/request-guard.test.ts:88:31
+     86|
+     87| function expectForbidden(response: LightMyRequestResponse): void {
+     88|   expect(response.statusCode).toBe(403);
+       |                               ^
+     89|   expect(response.json()).toEqual({ error: { code: 'forbidden_request'…
+     90|   expectNoCorsHeaders(response);
+ ❯ src/http/request-guard.test.ts:204:36
+ ❯ withServers src/http/request-guard.test.ts:55:5
+ ❯ src/http/request-guard.test.ts:187:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/22]⎯
+
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > boot-error server rejects an Origin of "null", which is what a sandboxed frame sends
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > boot-error server rejects a malformed Origin
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > boot-error server rejects an Origin on the wrong port
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > boot-error server rejects a foreign Origin on a JSON route
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > boot-error server rejects a foreign Origin on a multipart route
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > boot-error server rejects Sec-Fetch-Site: cross-site, on a request from a page on another site
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > boot-error server rejects OPTIONS from a foreign origin
+AssertionError: expected 503 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 503
+
+ ❯ expectForbidden src/http/request-guard.test.ts:88:31
+     86|
+     87| function expectForbidden(response: LightMyRequestResponse): void {
+     88|   expect(response.statusCode).toBe(403);
+       |                               ^
+     89|   expect(response.json()).toEqual({ error: { code: 'forbidden_request'…
+     90|   expectNoCorsHeaders(response);
+ ❯ src/http/request-guard.test.ts:204:36
+ ❯ withServers src/http/request-guard.test.ts:55:5
+ ❯ src/http/request-guard.test.ts:187:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/22]⎯
+
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > main app rejects a foreign Origin on a JSON route
+AssertionError: expected 201 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 201
+
+ ❯ expectForbidden src/http/request-guard.test.ts:88:31
+     86|
+     87| function expectForbidden(response: LightMyRequestResponse): void {
+     88|   expect(response.statusCode).toBe(403);
+       |                               ^
+     89|   expect(response.json()).toEqual({ error: { code: 'forbidden_request'…
+     90|   expectNoCorsHeaders(response);
+ ❯ src/http/request-guard.test.ts:204:36
+ ❯ withServers src/http/request-guard.test.ts:55:5
+ ❯ src/http/request-guard.test.ts:187:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/22]⎯
+
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > main app rejects OPTIONS from a foreign origin
+AssertionError: expected 404 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 404
+
+ ❯ expectForbidden src/http/request-guard.test.ts:88:31
+     86|
+     87| function expectForbidden(response: LightMyRequestResponse): void {
+     88|   expect(response.statusCode).toBe(403);
+       |                               ^
+     89|   expect(response.json()).toEqual({ error: { code: 'forbidden_request'…
+     90|   expectNoCorsHeaders(response);
+ ❯ src/http/request-guard.test.ts:204:36
+ ❯ withServers src/http/request-guard.test.ts:55:5
+ ❯ src/http/request-guard.test.ts:187:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/22]⎯
+
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > logs the method, the path and which rule failed, and never the body
+AssertionError: expected 201 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 201
+
+ ❯ expectForbidden src/http/request-guard.test.ts:88:31
+     86|
+     87| function expectForbidden(response: LightMyRequestResponse): void {
+     88|   expect(response.statusCode).toBe(403);
+       |                               ^
+     89|   expect(response.json()).toEqual({ error: { code: 'forbidden_request'…
+     90|   expectNoCorsHeaders(response);
+ ❯ withServers.logs.logs src/http/request-guard.test.ts:246:9
+ ❯ withServers src/http/request-guard.test.ts:55:5
+ ❯ src/http/request-guard.test.ts:238:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/22]⎯
+
+ FAIL  |server| src/http/request-guard.test.ts > the request guard on both servers > names the OPTIONS rule on its own, so the two rejections are told apart
+AssertionError: expected 404 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 404
+
+ ❯ expectForbidden src/http/request-guard.test.ts:88:31
+     86|
+     87| function expectForbidden(response: LightMyRequestResponse): void {
+     88|   expect(response.statusCode).toBe(403);
+       |                               ^
+     89|   expect(response.json()).toEqual({ error: { code: 'forbidden_request'…
+     90|   expectNoCorsHeaders(response);
+ ❯ withServers.logs.logs src/http/request-guard.test.ts:267:9
+ ❯ withServers src/http/request-guard.test.ts:55:5
+ ❯ src/http/request-guard.test.ts:260:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/22]⎯
+
+ FAIL  |server| src/test/real-socket-guard.test.ts > the request guard on the boot-error server over a real socket > answers 403 for a foreign Host, which fetch could never have shown
+AssertionError: expected 503 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 503
+
+ ❯ src/test/real-socket-guard.test.ts:131:33
+    129|     });
+    130|
+    131|     expect(response.statusCode).toBe(403);
+       |                                 ^
+    132|     expect(JSON.parse(response.body)).toEqual(FORBIDDEN_BODY);
+    133|     expectNoCorsHeaders(response.headers);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/22]⎯
+
+ FAIL  |server| src/test/real-socket-guard.test.ts > the request guard on the boot-error server over a real socket > answers 403 for a missing Host, which only a raw HTTP/1.0 line can send
+AssertionError: expected 'HTTP/1.1 503 Service Unavailable\r\nc…' to contain '403'
+
+- Expected
++ Received
+
+- 403
++ HTTP/1.1 503 Service Unavailable
++ content-type: application/json; charset=utf-8
++ content-length: 83
++ Date: Sat, 26 Sep 2026 09:25:27 GMT
++ Connection: close
++ 
++ {"error":"storage_error","message":"Apunta cannot write because the disk is full."}
+
+ ❯ src/test/real-socket-guard.test.ts:139:17
+    137|     const raw = await rawHttp1_0('/api/health');
+    138|
+    139|     expect(raw).toContain('403');
+       |                 ^
+    140|     expect(raw).toContain('forbidden_request');
+    141|     expect(raw.toLowerCase()).not.toContain('access-control-allow');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/22]⎯
+
+ FAIL  |server| src/test/real-socket-guard.test.ts > the request guard on the boot-error server over a real socket > answers 403 for a foreign Origin
+AssertionError: expected 503 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 503
+
+ ❯ src/test/real-socket-guard.test.ts:160:29
+    158|     const response = await viaFetch('/api/health', { headers: { Origin…
+    159|
+    160|     expect(response.status).toBe(403);
+       |                             ^
+    161|     expect(await response.json()).toEqual(FORBIDDEN_BODY);
+    162|     expectNoCorsHeaders(response.headers);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/22]⎯
+
+ FAIL  |server| src/test/real-socket-guard.test.ts > the request guard on the boot-error server over a real socket > answers 403 for Sec-Fetch-Site: cross-site
+AssertionError: expected 503 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 503
+
+ ❯ src/test/real-socket-guard.test.ts:168:29
+    166|     const response = await viaFetch('/api/health', { headers: { 'Sec-F…
+    167|
+    168|     expect(response.status).toBe(403);
+       |                             ^
+    169|     expect(await response.json()).toEqual(FORBIDDEN_BODY);
+    170|     expectNoCorsHeaders(response.headers);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/22]⎯
+
+ FAIL  |server| src/test/real-socket-guard.test.ts > the request guard on the boot-error server over a real socket > answers 403 for Sec-Fetch-Site: same-site, which is not the app either
+AssertionError: expected 503 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 503
+
+ ❯ src/test/real-socket-guard.test.ts:176:29
+    174|     const response = await viaFetch('/api/health', { headers: { 'Sec-F…
+    175|
+    176|     expect(response.status).toBe(403);
+       |                             ^
+    177|     expect(await response.json()).toEqual(FORBIDDEN_BODY);
+    178|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/22]⎯
+
+ FAIL  |server| src/test/real-socket-guard.test.ts > the request guard on the boot-error server over a real socket > answers 403 for OPTIONS from a foreign origin
+AssertionError: expected 503 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 503
+
+ ❯ src/test/real-socket-guard.test.ts:186:29
+    184|     });
+    185|
+    186|     expect(response.status).toBe(403);
+       |                             ^
+    187|     expect(await response.json()).toEqual(FORBIDDEN_BODY);
+    188|     expectNoCorsHeaders(response.headers);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/22]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  22 failed | 10 passed (32)
+   Start at  03:25:27
+   Duration  629ms (transform 246ms, setup 0ms, import 424ms, tests 261ms, environment 0ms)
+
+exit=1
+end: 2026-09-26T09:25:28Z

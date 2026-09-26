@@ -1,0 +1,1425 @@
+# P1.3 — V2, full test suite
+
+- cwd: ~/Projects/Apunta
+- node: v24.19.0
+- start: 2026-09-26T09:29:15Z
+- command: npm test
+
+
+> apunta@0.0.0 test
+> npm run build:shared && vitest run
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v4.1.11 ~/Projects/Apunta
+
+ ❯ |installer| src/plan.test.ts (18 tests | 7 failed) 18ms
+     × picks the effective model from the shared resolver, not from a RAM table 6ms
+     × treats a blank override as no override 0ms
+     × reports the memory it read, without letting it choose the model 0ms
+     × sizes the writing step from the effective tag 2ms
+     × says the promoted tag is the same on every machine, not a choice from this one 1ms
+     × names an override and says it was chosen for the machine 4ms
+     × never cites the machine’s memory as the reason 0ms
+ ❯ |installer| src/run.test.ts (10 tests | 4 failed) 62ms
+     × does nothing and reports ready when both models are already there 26ms
+     × names the model and links its terms before pulling it 6ms
+     × reports the effective model and why, before doing anything 2ms
+     × pulls only the effective tag, and no tier the machine could have used 3ms
+{"level":30,"time":1790414958341,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958381,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958419,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958441,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790414958342,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790414958342,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.3017960000000244,"msg":"request completed"}
+{"level":40,"time":1790414958381,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790414958381,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1314279999999144,"msg":"request completed"}
+{"level":40,"time":1790414958419,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790414958420,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":1.321833999999967,"msg":"request completed"}
+{"level":40,"time":1790414958441,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790414958441,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.10912900000005266,"msg":"request completed"}
+{"level":30,"time":1790414958465,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/formats/detect","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958478,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958491,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958506,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958537,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414958554,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790414958465,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/formats/detect","msg":"request rejected by the guard"}
+{"level":30,"time":1790414958465,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1332790000000159,"msg":"request completed"}
+{"level":40,"time":1790414958478,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"sec_fetch_site","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790414958478,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.0910790000000361,"msg":"request completed"}
+{"level":40,"time":1790414958491,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"options_origin","method":"OPTIONS","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790414958492,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.09953900000004978,"msg":"request completed"}
+{"level":30,"time":1790414958506,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.13441900000009355,"msg":"request completed"}
+{"level":30,"time":1790414958537,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.1355190000000448,"msg":"request completed"}
+{"level":30,"time":1790414958554,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.09083899999995992,"msg":"request completed"}
+ ❯ |server| src/platform/setup-script.test.ts (15 tests | 2 failed) 312ms
+     × picks the same model the app would pick, at the same boundaries 3ms
+     × names the promoted default among the tags it already knows 2ms
+{"level":30,"time":1790414959728,"pid":<pid>,"hostname":"<host>","msg":"Server listening at http://127.0.0.1:7812"}
+{"level":30,"time":1790414959735,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"evil.example:7812","remoteAddress":"127.0.0.1","remotePort":60296},"msg":"incoming request"}
+{"level":40,"time":1790414959736,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790414959737,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":1.0995080000000144,"msg":"request completed"}
+{"level":30,"time":1790414959740,"pid":<pid>,"hostname":"<host>","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"","remoteAddress":"127.0.0.1","remotePort":60302},"msg":"incoming request"}
+{"level":40,"time":1790414959740,"pid":<pid>,"hostname":"<host>","reqId":"req-2","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790414959741,"pid":<pid>,"hostname":"<host>","reqId":"req-2","res":{"statusCode":403},"responseTime":0.30589699999998743,"msg":"request completed"}
+{"level":30,"time":1790414959743,"pid":<pid>,"hostname":"<host>","reqId":"req-3","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":60296},"msg":"incoming request"}
+{"level":30,"time":1790414959743,"pid":<pid>,"hostname":"<host>","reqId":"req-3","res":{"statusCode":503},"responseTime":0.33890599999998017,"msg":"request completed"}
+{"level":30,"time":1790414959754,"pid":<pid>,"hostname":"<host>","reqId":"req-4","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":60316},"msg":"incoming request"}
+{"level":40,"time":1790414959754,"pid":<pid>,"hostname":"<host>","reqId":"req-4","rule":"origin","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790414959754,"pid":<pid>,"hostname":"<host>","reqId":"req-4","res":{"statusCode":403},"responseTime":0.20243800000000078,"msg":"request completed"}
+{"level":30,"time":1790414959758,"pid":<pid>,"hostname":"<host>","reqId":"req-5","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":60322},"msg":"incoming request"}
+{"level":40,"time":1790414959758,"pid":<pid>,"hostname":"<host>","reqId":"req-5","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790414959758,"pid":<pid>,"hostname":"<host>","reqId":"req-5","res":{"statusCode":403},"responseTime":0.11805900000001657,"msg":"request completed"}
+{"level":30,"time":1790414959761,"pid":<pid>,"hostname":"<host>","reqId":"req-6","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":60316},"msg":"incoming request"}
+{"level":40,"time":1790414959761,"pid":<pid>,"hostname":"<host>","reqId":"req-6","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790414959761,"pid":<pid>,"hostname":"<host>","reqId":"req-6","res":{"statusCode":403},"responseTime":0.20723800000001802,"msg":"request completed"}
+{"level":30,"time":1790414959765,"pid":<pid>,"hostname":"<host>","reqId":"req-7","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":60322},"msg":"incoming request"}
+{"level":40,"time":1790414959765,"pid":<pid>,"hostname":"<host>","reqId":"req-7","rule":"options_origin","method":"OPTIONS","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790414959765,"pid":<pid>,"hostname":"<host>","reqId":"req-7","res":{"statusCode":403},"responseTime":0.12864799999999832,"msg":"request completed"}
+{"level":30,"time":1790414959767,"pid":<pid>,"hostname":"<host>","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":60316},"msg":"incoming request"}
+{"level":30,"time":1790414959768,"pid":<pid>,"hostname":"<host>","reqId":"req-8","res":{"statusCode":503},"responseTime":0.1660280000000114,"msg":"request completed"}
+{"level":30,"time":1790414959770,"pid":<pid>,"hostname":"<host>","reqId":"req-9","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":60322},"msg":"incoming request"}
+{"level":30,"time":1790414959771,"pid":<pid>,"hostname":"<host>","reqId":"req-9","res":{"statusCode":503},"responseTime":0.11250800000001959,"msg":"request completed"}
+ ❯ |server| src/routes/health.test.ts (11 tests | 8 failed) 192ms
+     × reports the promoted tag and source when no override is set 13ms
+     × reports present: false when the tag is not in the installed list 9ms
+     × reports an override as its own tag with source override 13ms
+     × reports an override that is not installed as present: false 5ms
+     × reports present: null, and never false, when the runtime could not be asked 8ms
+     × keeps describe() and the resolver in agreement whenever the runtime answers 7ms
+     × reports present: null exactly when the runtime is unreachable 6ms
+     × reports the promoted tag and source, with present: true, and no rule asserted 9ms
+  qwen3.5:4b-q4_K_M · 01-terse-jotting.txt · run 1
+ ❯ |server| src/ai/profiles.test.ts (10 tests | 7 failed) 148ms
+     × points the quick profile at the promoted default 8ms
+     × resolves an override that is not installed as absent, and pulls nothing 15ms
+     × resolves the promoted default when no override is set 9ms
+     × treats a blank llm_model as no override 8ms
+     × never selects cloud-backed configured models, and says the one that is not here 9ms
+     × answers the tags the runtime reports, and null when it could not be asked 6ms
+     × drops a cloud-backed tag, because a local list never has one 5ms
+ ❯ |server| src/ai/ollama.test.ts (43 tests | 1 failed) 72ms
+     × falls back to the promoted default, not the memory picker, with no resolveModel 8ms
+{"level":30,"time":1790414960748,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790414960751,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":1.5149020000000064,"msg":"request completed"}
+  qwen3.5:4b-q4_K_M · 01-terse-jotting.txt · run 2
+effective time zone: America/Mexico_City (TZ=<unset>)
+ ❯ |server| src/ai/model-picker.test.ts (9 tests | 5 failed) 9ms
+     × follows PLAN §2’s table 2ms
+     × keeps a 32GB Mac off the large tier 0ms
+     × falls back to the small model where RAM cannot be read 0ms
+     × pins explicit tags — never `:latest`, never a bare family name 1ms
+     × returns the promoted default, and does not consult the memory reading 1ms
+ ❯ |shared| src/effective-model.test.ts (0 test)
+  qwen3.5:4b-q4_K_M · 01-terse-jotting.txt · run 3
+  qwen3.5:4b-q4_K_M · 02-dictated-sleep-progress.txt · run 1
+  qwen3.5:4b-q4_K_M · 02-dictated-sleep-progress.txt · run 2
+  qwen3.5:4b-q4_K_M · 02-dictated-sleep-progress.txt · run 3
+  qwen3.5:4b-q4_K_M · 03-rambling-work-stress.txt · run 1
+  qwen3.5:4b-q4_K_M · 03-rambling-work-stress.txt · run 2
+  qwen3.5:4b-q4_K_M · 03-rambling-work-stress.txt · run 3
+  qwen3.5:4b-q4_K_M · 04-dictation-with-retraction.txt · run 1
+  qwen3.5:4b-q4_K_M · 04-dictation-with-retraction.txt · run 2
+  qwen3.5:4b-q4_K_M · 04-dictation-with-retraction.txt · run 3
+  qwen3.5:4b-q4_K_M · 05-garbled-medication.txt · run 1
+  qwen3.5:4b-q4_K_M · 05-garbled-medication.txt · run 2
+  qwen3.5:4b-q4_K_M · 05-garbled-medication.txt · run 3
+  qwen3.5:4b-q4_K_M · 06-shorthand-no-plan.txt · run 1
+  qwen3.5:4b-q4_K_M · 06-shorthand-no-plan.txt · run 2
+  qwen3.5:4b-q4_K_M · 06-shorthand-no-plan.txt · run 3
+  qwen3.5:4b-q4_K_M · 07-out-of-order-grief.txt · run 1
+  qwen3.5:4b-q4_K_M · 07-out-of-order-grief.txt · run 2
+  qwen3.5:4b-q4_K_M · 07-out-of-order-grief.txt · run 3
+  qwen3.5:4b-q4_K_M · 08-intake-dictated.txt · run 1
+  qwen3.5:4b-q4_K_M · 08-intake-dictated.txt · run 2
+  qwen3.5:4b-q4_K_M · 08-intake-dictated.txt · run 3
+  qwen3.5:4b-q4_K_M · 09-intake-history-declined.txt · run 1
+  qwen3.5:4b-q4_K_M · 09-intake-history-declined.txt · run 2
+  qwen3.5:4b-q4_K_M · 09-intake-history-declined.txt · run 3
+  qwen3.5:4b-q4_K_M · 10-intake-messy-mixed.txt · run 1
+  qwen3.5:4b-q4_K_M · 10-intake-messy-mixed.txt · run 2
+  qwen3.5:4b-q4_K_M · 10-intake-messy-mixed.txt · run 3
+  qwen3.5:4b-q4_K_M · 11-terse-observations-no-read.txt · run 1
+  qwen3.5:4b-q4_K_M · 11-terse-observations-no-read.txt · run 2
+  qwen3.5:4b-q4_K_M · 11-terse-observations-no-read.txt · run 3
+  qwen3.5:4b-q4_K_M · 12-dictated-observation-only.txt · run 1
+  qwen3.5:4b-q4_K_M · 12-dictated-observation-only.txt · run 2
+  qwen3.5:4b-q4_K_M · 12-dictated-observation-only.txt · run 3
+  qwen3.5:4b-q4_K_M · 13-phone-check-in-no-objective.txt · run 1
+  qwen3.5:4b-q4_K_M · 13-phone-check-in-no-objective.txt · run 2
+  qwen3.5:4b-q4_K_M · 13-phone-check-in-no-objective.txt · run 3
+  qwen3.5:4b-q4_K_M · 14-intake-long-no-formulation.txt · run 1
+  qwen3.5:4b-q4_K_M · 14-intake-long-no-formulation.txt · run 2
+  qwen3.5:4b-q4_K_M · 14-intake-long-no-formulation.txt · run 3
+  qwen3.5:4b-q4_K_M · 15-shorthand-cut-short.txt · run 1
+  qwen3.5:4b-q4_K_M · 15-shorthand-cut-short.txt · run 2
+  qwen3.5:4b-q4_K_M · 15-shorthand-cut-short.txt · run 3
+  qwen3.5:4b-q4_K_M · 16-intake-partial-no-plan.txt · run 1
+  qwen3.5:4b-q4_K_M · 16-intake-partial-no-plan.txt · run 2
+  qwen3.5:4b-q4_K_M · 16-intake-partial-no-plan.txt · run 3
+  qwen3.5:4b-q4_K_M · 17-nothing-changed-phrase-bait.txt · run 1
+  qwen3.5:4b-q4_K_M · 17-nothing-changed-phrase-bait.txt · run 2
+  qwen3.5:4b-q4_K_M · 17-nothing-changed-phrase-bait.txt · run 3
+  qwen3.5:4b-q4_K_M · 18-long-dictation-no-read.txt · run 1
+  qwen3.5:4b-q4_K_M · 18-long-dictation-no-read.txt · run 2
+  qwen3.5:4b-q4_K_M · 18-long-dictation-no-read.txt · run 3
+  qwen3.5:4b-q4_K_M · 19-intake-dictated-no-formulation.txt · run 1
+  qwen3.5:4b-q4_K_M · 19-intake-dictated-no-formulation.txt · run 2
+  qwen3.5:4b-q4_K_M · 19-intake-dictated-no-formulation.txt · run 3
+  qwen3.5:4b-q4_K_M · 20-two-topics-no-synthesis.txt · run 1
+  qwen3.5:4b-q4_K_M · 20-two-topics-no-synthesis.txt · run 2
+  qwen3.5:4b-q4_K_M · 20-two-topics-no-synthesis.txt · run 3
+# Apunta model eval
+
+Run 2026-09-26T09:29:20.099Z · 20 fixtures · qwen3.5:4b-q4_K_M x3 · 166.4s
+
+> **Previous-note retrieval.** disabled.
+
+## Fabrication rate
+
+The number to read first.
+
+| Model | Fabrication rate | Gated runs | F1 banned strings | Gating F6 | Novel dx/risk |
+| --- | --- | --- | --- | --- | --- |
+| qwen3.5:4b-q4_K_M | **15.0%** (9/60) | 9/60 | 9 | 0 | 0 |
+
+`Fabrication rate` is the fraction of runs with any F1 banned-string hit or any
+gating F6 unsupported conclusion or any novel diagnosis/risk term. Each of those
+zeroes its fixture.
+
+**qwen3.5:4b-q4_K_M — banned strings**
+
+- `09-intake-history-declined.txt` run 1: family history -> "family history"; no substance -> "no substance"; no medical -> "no medical"
+- `09-intake-history-declined.txt` run 2: family history -> "family history"; no substance -> "no substance"; no medical -> "no medical"
+- `09-intake-history-declined.txt` run 3: family history -> "family history"; no substance -> "no substance"; no medical -> "no medical"
+- `10-intake-messy-mixed.txt` run 1: \bthree years\b -> "three years"
+- `10-intake-messy-mixed.txt` run 2: \bthree years\b -> "three years"
+- `10-intake-messy-mixed.txt` run 3: \bthree years\b -> "three years"
+- `19-intake-dictated-no-formulation.txt` run 1: compulsi -> "compulsi"
+- `19-intake-dictated-no-formulation.txt` run 2: compulsi -> "compulsi"
+- `19-intake-dictated-no-formulation.txt` run 3: compulsi -> "compulsi"
+
+## Restraint
+
+A blank section is correct output where the source said nothing about that
+topic — the practice owner asked for a blank she can fill in, not a sentence
+explaining the emptiness. H4 measures that; S4 measures the opposite error.
+
+| Model | Unsupported conclusion (per section) | Blank preserved | Unwarranted blanks | Narrated | Filled | Marker kept |
+| --- | --- | --- | --- | --- | --- | --- |
+| qwen3.5:4b-q4_K_M | 0.0% (n=207) | 93.3% (n=45) | 0.0% (n=240) | 0 | 3 | 100.0% (n=9) |
+
+Corpus denominators per run: 80 sections, 15 blank, 2 stated absences, 44 no-conclusion sections on gating fixtures and 25 on flagged ones, 3 marker items.
+
+The corpus is deliberately unbalanced toward blanks and no-conclusion sections.
+That is a property of a corpus built to measure restraint, not an estimate of how
+often a real session leaves a section empty.
+
+## Completeness
+
+Below fabrication on purpose. A model that dumps the transcript into every
+section aces this and should be losing the points back above.
+
+| Model | Salient facts (C1) | Safety facts (C2) | Hedges met (H2) | Expansion ratio |
+| --- | --- | --- | --- | --- |
+| qwen3.5:4b-q4_K_M | 84.5% (n=849) | 85.0% (n=60) | 100.0% (n=27) | 0.69x |
+
+**Safety facts (C2)** are the `tags: ["safety"]` facts, and a run passes only when it
+captured every one of them. Which one went missing is the whole diagnosis, so the
+misses are listed rather than counted.
+
+**qwen3.5:4b-q4_K_M — safety facts not captured**
+
+- `10-intake-messy-mixed.txt`: risk-denial, risk-denial, risk-denial (3/3 runs)
+- `14-intake-long-no-formulation.txt`: risk, risk, risk (3/3 runs)
+- `19-intake-dictated-no-formulation.txt`: risk+risk-injury, risk+risk-injury, risk+risk-injury (3/3 runs)
+
+## Structure, tone and voice
+
+| Model | Schema valid (S1+S2) | Quoted-phrase violations | Number flags | Medication flags | Novel clinical terms /100w | Novel content words /100w |
+| --- | --- | --- | --- | --- | --- | --- |
+| qwen3.5:4b-q4_K_M | 100.0% | 6 | 9 | 6 | 0.08 | 55.6 |
+
+Number and medication flags are AUTO-FLAG: legitimate paraphrase trips them, so
+they are printed for a human to confirm or dismiss, never scored as failures.
+
+## Cost, and the trap that would read as a pass
+
+| Model | Mean wall clock | Mean prompt tokens | Mean output tokens | Tokens/sec | Context full | Retries |
+| --- | --- | --- | --- | --- | --- | --- |
+| qwen3.5:4b-q4_K_M | 2.8s | 2444 | 207 | 102.4 | 0 | 0 |
+
+**Context full** counts runs where `prompt_eval_count` reached the context
+window. Ollama truncates an over-long prompt from the head, which drops the
+instructions and keeps the patient material — so those runs are not results,
+they are failed runs, and they are gated as such. A note produced from
+truncated instructions is exactly the confident fabrication this eval exists to
+measure, and it would otherwise score as a pass.
+
+## Per fixture
+
+Pooled rates let one 19-word fixture and one 521-word fixture count the same.
+This table is where that becomes visible.
+
+| Fixture | Struct /20 | Faith /37 | Compl /16 | Hedge /8 | Tone /7 | Total /88 | Gating |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 01-terse-jotting.txt | 20 | 37 | 16 | 8 | 7 | 88 | — |
+| 02-dictated-sleep-progress.txt | 20 | 37 | 15 | 8 | 7 | 87 | — |
+| 03-rambling-work-stress.txt | 20 | 33 | 15 | 8 | 7 | 83 | — |
+| 04-dictation-with-retraction.txt | 20 | 37 | 16 | 8 | 7 | 88 | — |
+| 05-garbled-medication.txt | 20 | 33 | 13 | 8 | 7 | 81 | — |
+| 06-shorthand-no-plan.txt | 20 | 36 | 15 | 7 | 7 | 85 | — |
+| 07-out-of-order-grief.txt | 20 | 37 | 16 | 8 | 7 | 88 | — |
+| 08-intake-dictated.txt | 20 | 33 | 16 | 8 | 7 | 84 | — |
+| 09-intake-history-declined.txt | 20 | 20 | 14 | 8 | 7 | 0 | F1 banned string |
+| 10-intake-messy-mixed.txt | 20 | 18 | 9 | 8 | 7 | 0 | F1 banned string |
+| 11-terse-observations-no-read.txt | 20 | 37 | 16 | 8 | 7 | 88 | — |
+| 12-dictated-observation-only.txt | 20 | 33 | 16 | 8 | 7 | 84 | — |
+| 13-phone-check-in-no-objective.txt | 20 | 37 | 13 | 8 | 7 | 85 | — |
+| 14-intake-long-no-formulation.txt | 20 | 37 | 7 | 8 | 7 | 79 | — |
+| 15-shorthand-cut-short.txt | 20 | 37 | 15 | 8 | 7 | 87 | — |
+| 16-intake-partial-no-plan.txt | 20 | 37 | 16 | 8 | 7 | 88 | — |
+| 17-nothing-changed-phrase-bait.txt | 20 | 37 | 12 | 7 | 7 | 83 | — |
+| 18-long-dictation-no-read.txt | 20 | 37 | 16 | 8 | 7 | 88 | — |
+| 19-intake-dictated-no-formulation.txt | 20 | 18 | 7 | 8 | 7 | 0 | F1 banned string |
+| 20-two-topics-no-synthesis.txt | 20 | 33 | 13 | 8 | 7 | 81 | — |
+
+The HUMAN criteria (F5 3, C3 4, H3 2, T5 3) cannot be scored by a script, so
+their 12 points are withheld rather than granted. The maxima above are the
+automatic subtotals and add to 88, not to the rubric's 100 — a note scoring 88
+here has passed everything a script can see and has not yet been read.
+
+## What this script could not check
+
+Rubric §11. Sample these by hand rather than trusting the totals above:
+
+- **F5** — an unsupported inference built entirely from the clinician's own
+  words. F6 keys on a marker list and cannot see this. Read `12`, `18`, `20`.
+- **C3** — salient material the fact list did not anticipate. Read `03`, `10`, `14`.
+- **H3** — over-hedging. A note where every sentence says "reportedly may
+  possibly" is unusable even though it never lies.
+- **T5** — register.
+- **Section routing.** Whether Objective material landed in Objective is only
+  crudely checkable. Read `07`. And read `15` before believing its label: the
+  patient left early, that belongs in Objective, and a model that files it
+  under Plan fails H4 correctly but for a reason this report renders as
+  "invented a plan".
+
+Fixtures in this run: 01-terse-jotting.txt, 02-dictated-sleep-progress.txt, 03-rambling-work-stress.txt, 04-dictation-with-retraction.txt, 05-garbled-medication.txt, 06-shorthand-no-plan.txt, 07-out-of-order-grief.txt, 08-intake-dictated.txt, 09-intake-history-declined.txt, 10-intake-messy-mixed.txt, 11-terse-observations-no-read.txt, 12-dictated-observation-only.txt, 13-phone-check-in-no-objective.txt, 14-intake-long-no-formulation.txt, 15-shorthand-cut-short.txt, 16-intake-partial-no-plan.txt, 17-nothing-changed-phrase-bait.txt, 18-long-dictation-no-read.txt, 19-intake-dictated-no-formulation.txt, 20-two-topics-no-synthesis.txt
+
+ ❯ |server| src/eval/eval.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |shared| src/effective-model.test.ts [ shared/src/effective-model.test.ts ]
+Error: Cannot find module './effective-model.js' imported from ~/Projects/Apunta/shared/src/effective-model.test.ts
+ ❯ src/effective-model.test.ts:3:1
+      1| import { describe, expect, it } from 'vitest';
+      2|
+      3| import { effectiveModel } from './effective-model.js';
+       | ^
+      4| import {
+      5|   DEFAULT_MODEL,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/36]⎯
+
+ FAIL  |server| src/eval/eval.test.ts [ server/src/eval/eval.test.ts ]
+Error: process.exit unexpectedly called with "1"
+ ❯ main src/eval/cli.ts:272:11
+    270|
+    271|   const gated = result.models.some((model) => model.scores.some((score…
+    272|   process.exit(gated ? 1 : 0);
+       |           ^
+    273| }
+    274|
+ ❯ src/eval/cli.ts:275:1
+ ❯ src/eval/eval.test.ts:9:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/36]⎯
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 34 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |installer| src/plan.test.ts > buildPlan > picks the effective model from the shared resolver, not from a RAM table
+AssertionError: expected 'qwen3.5:4b-q4_K_M' to be undefined // Object.is equality
+
+- Expected:
+undefined
+
++ Received:
+"qwen3.5:4b-q4_K_M"
+
+ ❯ src/plan.test.ts:37:48
+     35|   it('picks the effective model from the shared resolver, not from a R…
+     36|     for (const memoryGib of [null, 8, 16, 32, 64]) {
+     37|       expect(planFor({ memoryGib }).model.tag).toBe(PROMOTED_DEFAULT_M…
+       |                                                ^
+     38|     }
+     39|     // The tier table is still there, and still says what it always sa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/36]⎯
+
+ FAIL  |installer| src/plan.test.ts > buildPlan > treats a blank override as no override
+AssertionError: expected 'gemma4:12b-it-qat' to be undefined // Object.is equality
+
+- Expected:
+undefined
+
++ Received:
+"gemma4:12b-it-qat"
+
+ ❯ src/plan.test.ts:52:57
+     50|
+     51|   it('treats a blank override as no override', () => {
+     52|     expect(planFor({ modelOverride: '   ' }).model.tag).toBe(PROMOTED_…
+       |                                                         ^
+     53|     expect(planFor({ modelOverride: null }).model.tag).toBe(PROMOTED_D…
+     54|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/36]⎯
+
+ FAIL  |installer| src/plan.test.ts > buildPlan > reports the memory it read, without letting it choose the model
+AssertionError: expected 'qwen3.5:4b-q4_K_M' to be undefined // Object.is equality
+
+- Expected:
+undefined
+
++ Received:
+"qwen3.5:4b-q4_K_M"
+
+ ❯ src/plan.test.ts:64:30
+     62|       const plan = planFor({ memoryGib });
+     63|       expect(plan.memoryGib).toBe(memoryGib);
+     64|       expect(plan.model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+       |                              ^
+     65|     }
+     66|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/36]⎯
+
+ FAIL  |installer| src/plan.test.ts > buildPlan > sizes the writing step from the effective tag
+AssertionError: expected 'qwen3.5:4b-q4_K_M' to be 'qwen3.6:35b-a3b' // Object.is equality
+
+Expected: "qwen3.6:35b-a3b"
+Received: "qwen3.5:4b-q4_K_M"
+
+ ❯ src/plan.test.ts:84:29
+     82|     const small = planFor({ memoryGib: 8 });
+     83|     const large = planFor({ memoryGib: 64 });
+     84|     expect(small.model.tag).toBe(large.model.tag);
+       |                             ^
+     85|     expect(small.disk.requiredBytes).toBe(large.disk.requiredBytes);
+     86|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/36]⎯
+
+ FAIL  |installer| src/plan.test.ts > explainChoice > says the promoted tag is the same on every machine, not a choice from this one
+AssertionError: expected 'This Mac has NaN GB of memory, so Apu…' to include undefined
+ ❯ src/plan.test.ts:136:22
+    134|     for (const tag of [PROMOTED_DEFAULT_MODEL, DEFAULT_MODEL, LARGE_MO…
+    135|       const reason = explainChoice(tag, 'promoted');
+    136|       expect(reason).toContain(tag);
+       |                      ^
+    137|       expect(reason).toMatch(/same .*every machine/i);
+    138|       expect(reason).toMatch(/not .*from this Mac/i);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/36]⎯
+
+ FAIL  |installer| src/plan.test.ts > explainChoice > names an override and says it was chosen for the machine
+AssertionError: expected 'This Mac has NaN GB of memory, so Apu…' to contain 'gemma4:12b-it-qat'
+
+Expected: "gemma4:12b-it-qat"
+Received: "This Mac has NaN GB of memory, so Apunta chose override — the smallest of three writing models. The next one up needs 16 GB. This one works; the notes are a little rougher, and there is more to read before publishing."
+
+ ❯ src/plan.test.ts:148:20
+    146|   it('names an override and says it was chosen for the machine', () =>…
+    147|     const reason = explainChoice('gemma4:12b-it-qat', 'override');
+    148|     expect(reason).toContain('gemma4:12b-it-qat');
+       |                    ^
+    149|     expect(reason).toContain('chosen for this Mac rather than by Apunt…
+    150|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/36]⎯
+
+ FAIL  |installer| src/plan.test.ts > explainChoice > never cites the machine’s memory as the reason
+AssertionError: expected 'This Mac has NaN GB of memory, so Apu…' not to match /\d+\s*GB/
+
+- Expected:
+/\d+\s*GB/
+
++ Received:
+"This Mac has NaN GB of memory, so Apunta chose promoted — the smallest of three writing models. The next one up needs 16 GB. This one works; the notes are a little rougher, and there is more to read before publishing."
+
+ ❯ src/plan.test.ts:159:26
+    157|     for (const source of ['promoted', 'override'] as const) {
+    158|       const reason = explainChoice(PROMOTED_DEFAULT_MODEL, source);
+    159|       expect(reason).not.toMatch(/\d+\s*GB/);
+       |                          ^
+    160|       expect(reason).not.toMatch(/GiB|memory size|hw\.memsize|smallest…
+    161|       // And still no instructions to run.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/36]⎯
+
+ FAIL  |installer| src/run.test.ts > runSetup > does nothing and reports ready when both models are already there
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/run.test.ts:130:48
+    128|     expect(await runSetup(environment)).toBe(true);
+    129|     expect(eventsOf(events, 'done')).toHaveLength(1);
+    130|     expect(eventsOf(events, 'plan')[0]?.ready).toBe(true);
+       |                                                ^
+    131|     expect(requested.some((url) => url.includes('huggingface'))).toBe(…
+    132|     expect(requested.some((url) => url.endsWith('/api/pull'))).toBe(fa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/36]⎯
+
+ FAIL  |installer| src/run.test.ts > runSetup > names the model and links its terms before pulling it
+AssertionError: expected 'Apunta will download gemma4:12b-it-qa…' to contain 'ollama.com/library/qwen3.5'
+
+Expected: "ollama.com/library/qwen3.5"
+Received: "Apunta will download gemma4:12b-it-qat, published by Google. Apunta does not host or copy these models — this Mac downloads it from its publisher, under the publisher’s terms, which are here: https://ollama.com/library/gemma4"
+
+ ❯ src/run.test.ts:161:24
+    159|     const provenance = messages.find((text) => text.includes('publishe…
+    160|     expect(provenance).toBeDefined();
+    161|     expect(provenance).toContain('ollama.com/library/qwen3.5');
+       |                        ^
+    162|     expect(provenance).toContain('does not host or copy');
+    163|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/36]⎯
+
+ FAIL  |installer| src/run.test.ts > runSetup > reports the effective model and why, before doing anything
+AssertionError: expected 'qwen3.5:4b-q4_K_M' to be undefined // Object.is equality
+
+- Expected:
+undefined
+
++ Received:
+"qwen3.5:4b-q4_K_M"
+
+ ❯ src/run.test.ts:232:29
+    230|
+    231|     const plan = eventsOf(events, 'plan')[0];
+    232|     expect(plan?.model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+       |                             ^
+    233|     expect(plan?.model.reason).toContain(PROMOTED_DEFAULT_MODEL);
+    234|     // The old row said "8 GB" and named the tier boundary. Neither is…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/36]⎯
+
+ FAIL  |installer| src/run.test.ts > runSetup > pulls only the effective tag, and no tier the machine could have used
+AssertionError: expected [ 'qwen3.6:35b-a3b' ] to deeply equal [ undefined ]
+
+- Expected
++ Received
+
+  [
+-   undefined,
++   "qwen3.6:35b-a3b",
+  ]
+
+ ❯ src/run.test.ts:253:26
+    251|
+    252|       expect(await runSetup(environment)).toBe(true);
+    253|       expect(pulledTags).toEqual([PROMOTED_DEFAULT_MODEL]);
+       |                          ^
+    254|       expect(pulledTags).not.toContain(LARGE_MODEL);
+    255|       expect(pulledTags).not.toContain(DEFAULT_MODEL);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/36]⎯
+
+ FAIL  |server| src/ai/model-picker.test.ts > recommendedModelForMemory > follows PLAN §2’s table
+TypeError: recommendedModelForMemory is not a function
+ ❯ src/ai/model-picker.test.ts:24:12
+     22| describe('recommendedModelForMemory', () => {
+     23|   it('follows PLAN §2’s table', () => {
+     24|     expect(recommendedModelForMemory(48)).toBe(LARGE_MODEL);
+       |            ^
+     25|     expect(recommendedModelForMemory(36)).toBe(LARGE_MODEL);
+     26|     expect(recommendedModelForMemory(32)).toBe(DEFAULT_MODEL);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/36]⎯
+
+ FAIL  |server| src/ai/model-picker.test.ts > recommendedModelForMemory > keeps a 32GB Mac off the large tier
+TypeError: recommendedModelForMemory is not a function
+ ❯ src/ai/model-picker.test.ts:36:12
+     34|    */
+     35|   it('keeps a 32GB Mac off the large tier', () => {
+     36|     expect(recommendedModelForMemory(35.9)).toBe(DEFAULT_MODEL);
+       |            ^
+     37|   });
+     38|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/36]⎯
+
+ FAIL  |server| src/ai/model-picker.test.ts > recommendedModelForMemory > falls back to the small model where RAM cannot be read
+TypeError: recommendedModelForMemory is not a function
+ ❯ src/ai/model-picker.test.ts:40:12
+     38|
+     39|   it('falls back to the small model where RAM cannot be read', () => {
+     40|     expect(recommendedModelForMemory(null)).toBe(SMALL_MODEL);
+       |            ^
+     41|   });
+     42|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/36]⎯
+
+ FAIL  |server| src/ai/model-picker.test.ts > recommendedModelForMemory > pins explicit tags — never `:latest`, never a bare family name
+AssertionError: the given combination of arguments (undefined and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string
+ ❯ src/ai/model-picker.test.ts:45:21
+     43|   it('pins explicit tags — never `:latest`, never a bare family name',…
+     44|     for (const model of [LARGE_MODEL, DEFAULT_MODEL, SMALL_MODEL, PROM…
+     45|       expect(model).toContain(':');
+       |                     ^
+     46|       expect(model).not.toContain(':latest');
+     47|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/36]⎯
+
+ FAIL  |server| src/ai/model-picker.test.ts > defaultModelForMachine > returns the promoted default, and does not consult the memory reading
+AssertionError: expected 'qwen3.5:4b-q4_K_M' to be undefined // Object.is equality
+
+- Expected:
+undefined
+
++ Received:
+"qwen3.5:4b-q4_K_M"
+
+ ❯ src/ai/model-picker.test.ts:64:38
+     62|    */
+     63|   it('returns the promoted default, and does not consult the memory re…
+     64|     expect(defaultModelForMachine()).toBe(PROMOTED_DEFAULT_MODEL);
+       |                                      ^
+     65|     // The machine reading survives only as the recommendation's input.
+     66|     const recommendation = recommendedModelForMemory(machineMemoryGib(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/36]⎯
+
+ FAIL  |server| src/ai/ollama.test.ts > OllamaProvider.describe > falls back to the promoted default, not the memory picker, with no resolveModel
+AssertionError: expected { reachable: true, …(3) } to deeply equal { reachable: true, …(3) }
+
+- Expected
++ Received
+
+  {
+-   "model": undefined,
+-   "modelPresent": true,
++   "model": "qwen3.5:4b-q4_K_M",
++   "modelPresent": false,
+    "reachable": true,
+    "weightsFormat": null,
+  }
+
+ ❯ src/ai/ollama.test.ts:712:63
+    710|       })) as unknown as typeof globalThis.fetch;
+    711|
+    712|     await expect(new OllamaProvider({ fetchImpl }).describe()).resolve…
+       |                                                               ^
+    713|       reachable: true,
+    714|       model: PROMOTED_DEFAULT_MODEL,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/36]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > resolveLlmProfile > points the quick profile at the promoted default
+AssertionError: expected 'qwen3.5:4b-q4_K_M' to be undefined // Object.is equality
+
+- Expected:
+undefined
+
++ Received:
+"qwen3.5:4b-q4_K_M"
+
+ ❯ src/ai/profiles.test.ts:67:39
+     65|    */
+     66|   it('points the quick profile at the promoted default', () => {
+     67|     expect(LLM_PROFILES.quick?.model).toBe(PROMOTED_DEFAULT_MODEL);
+       |                                       ^
+     68|   });
+     69|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/36]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > resolveLlmProfile > resolves an override that is not installed as absent, and pulls nothing
+TypeError: resolveEffectiveModel is not a function
+ ❯ src/ai/profiles.test.ts:81:28
+     79|     const requested: string[] = [];
+     80|
+     81|     const resolved = await resolveEffectiveModel(harness.db, {
+       |                            ^
+     82|       fetchImpl: recordingTags([PROMOTED_DEFAULT_MODEL], requested),
+     83|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/36]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > resolveLlmProfile > resolves the promoted default when no override is set
+TypeError: resolveEffectiveModel is not a function
+ ❯ src/ai/profiles.test.ts:103:28
+    101|
+    102|   it('resolves the promoted default when no override is set', async ()…
+    103|     const resolved = await resolveEffectiveModel(harness.db, {
+       |                            ^
+    104|       fetchImpl: async () => tags([PROMOTED_DEFAULT_MODEL]),
+    105|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/36]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > resolveLlmProfile > treats a blank llm_model as no override
+TypeError: resolveEffectiveModel is not a function
+ ❯ src/ai/profiles.test.ts:115:28
+    113|   it('treats a blank llm_model as no override', async () => {
+    114|     putSettings(harness.db, { llm_model: '   ' });
+    115|     const resolved = await resolveEffectiveModel(harness.db, {
+       |                            ^
+    116|       fetchImpl: async () => tags([PROMOTED_DEFAULT_MODEL]),
+    117|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/36]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > resolveLlmProfile > never selects cloud-backed configured models, and says the one that is not here
+TypeError: resolveEffectiveModel is not a function
+ ❯ src/ai/profiles.test.ts:131:28
+    129|   it('never selects cloud-backed configured models, and says the one t…
+    130|     putSettings(harness.db, { llm_model: 'qwen3.5:4b-q4_K_M-cloud' });
+    131|     const resolved = await resolveEffectiveModel(harness.db, {
+       |                            ^
+    132|       fetchImpl: async () => tags(['qwen3.5:4b-q4_K_M-cloud']),
+    133|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/36]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > installedModelTags > answers the tags the runtime reports, and null when it could not be asked
+TypeError: installedModelTags is not a function
+ ❯ src/ai/profiles.test.ts:154:18
+    152| describe('installedModelTags', () => {
+    153|   it('answers the tags the runtime reports, and null when it could not…
+    154|     expect(await installedModelTags({ fetchImpl: async () => tags(['a:…
+       |                  ^
+    155|       'a:1',
+    156|       'b:2',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/36]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > installedModelTags > drops a cloud-backed tag, because a local list never has one
+TypeError: installedModelTags is not a function
+ ❯ src/ai/profiles.test.ts:169:13
+    167|   it('drops a cloud-backed tag, because a local list never has one', a…
+    168|     expect(
+    169|       await installedModelTags({ fetchImpl: async () => tags(['a:1', '…
+       |             ^
+    170|     ).toEqual(['a:1', 'b:2']);
+    171|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports the promoted tag and source when no override is set
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ ollamaOf src/routes/health.test.ts:100:31
+     98| }
+     99|
+    100| async function ollamaOf(server: FastifyInstance): Promise<HealthOllama…
+       |                               ^
+    101|   const response = await server.inject({ method: 'GET', url: '/api/hea…
+    102|   expect(response.statusCode).toBe(200);
+ ❯ src/routes/health.test.ts:170:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports present: false when the tag is not in the installed list
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ ollamaOf src/routes/health.test.ts:100:31
+     98| }
+     99|
+    100| async function ollamaOf(server: FastifyInstance): Promise<HealthOllama…
+       |                               ^
+    101|   const response = await server.inject({ method: 'GET', url: '/api/hea…
+    102|   expect(response.statusCode).toBe(200);
+ ❯ src/routes/health.test.ts:183:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports an override as its own tag with source override
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ ollamaOf src/routes/health.test.ts:100:31
+     98| }
+     99|
+    100| async function ollamaOf(server: FastifyInstance): Promise<HealthOllama…
+       |                               ^
+    101|   const response = await server.inject({ method: 'GET', url: '/api/hea…
+    102|   expect(response.statusCode).toBe(200);
+ ❯ src/routes/health.test.ts:197:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports an override that is not installed as present: false
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ ollamaOf src/routes/health.test.ts:100:31
+     98| }
+     99|
+    100| async function ollamaOf(server: FastifyInstance): Promise<HealthOllama…
+       |                               ^
+    101|   const response = await server.inject({ method: 'GET', url: '/api/hea…
+    102|   expect(response.statusCode).toBe(200);
+ ❯ src/routes/health.test.ts:211:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports present: null, and never false, when the runtime could not be asked
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ ollamaOf src/routes/health.test.ts:100:31
+     98| }
+     99|
+    100| async function ollamaOf(server: FastifyInstance): Promise<HealthOllama…
+       |                               ^
+    101|   const response = await server.inject({ method: 'GET', url: '/api/hea…
+    102|   expect(response.statusCode).toBe(200);
+ ❯ src/routes/health.test.ts:234:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > keeps describe() and the resolver in agreement whenever the runtime answers
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ ollamaOf src/routes/health.test.ts:100:31
+     98| }
+     99|
+    100| async function ollamaOf(server: FastifyInstance): Promise<HealthOllama…
+       |                               ^
+    101|   const response = await server.inject({ method: 'GET', url: '/api/hea…
+    102|   expect(response.statusCode).toBe(200);
+ ❯ src/routes/health.test.ts:256:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports present: null exactly when the runtime is unreachable
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ ollamaOf src/routes/health.test.ts:100:31
+     98| }
+     99|
+    100| async function ollamaOf(server: FastifyInstance): Promise<HealthOllama…
+       |                               ^
+    101|   const response = await server.inject({ method: 'GET', url: '/api/hea…
+    102|   expect(response.statusCode).toBe(200);
+ ❯ src/routes/health.test.ts:281:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/36]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (fake mode) > reports the promoted tag and source, with present: true, and no rule asserted
+AssertionError: expected { reachable: true, …(2) } to match object { reachable: true, …(5) }
+
+- Expected
++ Received
+
+  {
+    "model": "fake-llm",
+    "modelPresent": true,
+-   "present": true,
+    "reachable": true,
+-   "source": "promoted",
+-   "tag": undefined,
+  }
+
+ ❯ src/routes/health.test.ts:297:36
+    295| describe('GET /api/health — the effective model (fake mode)', () => {
+    296|   it('reports the promoted tag and source, with present: true, and no …
+    297|     const server = await healthApp();
+       |                                    ^
+    298|
+    299|     expect(await ollamaOf(server)).toMatchObject({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/36]⎯
+
+ FAIL  |server| src/platform/setup-script.test.ts > setup-macos.sh > picks the same model the app would pick, at the same boundaries
+TypeError: recommendedModelForMemory is not a function
+ ❯ src/platform/setup-script.test.ts:152:12
+    150|     const large = tier('LARGE_TIER_GIB');
+    151|     const middle = tier('DEFAULT_TIER_GIB');
+    152|     expect(recommendedModelForMemory(large)).toBe(LARGE_MODEL);
+       |            ^
+    153|     expect(recommendedModelForMemory(large - 1)).toBe(DEFAULT_MODEL);
+    154|     expect(recommendedModelForMemory(middle)).toBe(DEFAULT_MODEL);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/36]⎯
+
+ FAIL  |server| src/platform/setup-script.test.ts > setup-macos.sh > names the promoted default among the tags it already knows
+AssertionError: expected '#!/bin/bash\n#\n# Apunta — macOS setu…' to contain 'SMALL_TAG="undefined"'
+
+- Expected
++ Received
+
+- SMALL_TAG="undefined"
++ #!/bin/bash
++ #
++ # Apunta — macOS setup. The mutating counterpart to preflight-macos.sh.
++ #
++ #   bash scripts/setup-macos.sh              # install what is missing
++ #   bash scripts/setup-macos.sh --dry-run    # print every command, run none
++ #   bash scripts/setup-macos.sh --help       # all options
++ #
++ # WHAT THIS IS
++ # ------------
++ # preflight-macos.sh reads; this one writes. It installs the two local AI
++ # tools through Homebrew, starts Ollama, picks the writing model from this
++ # Mac's RAM, pulls it, downloads the speech model into Apunta's data folder
++ # and verifies its checksum, and records the model choice. Then it stops and
++ # tells you to run `npm start`.
++ #
++ # It is safe to re-run. Everything it does is guarded: `brew install` on an
++ # installed formula exits 0, `ollama pull` on a present model is a fast no-op,
++ # and the speech model is only downloaded when the file is absent or its
++ # checksum does not match.
++ #
++ # WHAT IT DELIBERATELY DOES NOT DO
++ # --------------------------------
++ #   * It does not install ffmpeg. Nothing in Apunta invokes ffmpeg or ffprobe:
++ #     the browser records 16 kHz mono WAV and whisper-cli decodes it directly.
++ #     Installing a GPL-3.0 tool the app never calls is noise that M8 would have
++ #     to undo (docs/research/m8-bundling-2026-08.md §11, m8-shell-and-runtime
++ #     §4).
++ #   * It does not check FileVault, iCloud sync, or Time Machine. Those are
++ #     preflight-macos.sh's job and it does them better; this script prints a
++ #     reminder to run it.
++ #   * It does not touch the database beyond one settings row, and never
++ #     while the app is running.
++ #   * It never sets OLLAMA_DEBUG. With it on, Ollama writes the full text of
++ #     every prompt — which is patient material — into a log file that stays on
++ #     disk (docs/research/data-at-rest-2026-08.md §2.4).
++ #
++ # WHAT WE COULD AND COULD NOT VERIFY WHILE WRITING THIS
++ # -----------------------------------------------------
++ # Written on Linux. **No line below has ever been executed on macOS.** It has
++ # been checked with `bash -n` and `shellcheck`, and every fact it depends on
++ # comes from a primary source recorded in docs/research/macos-setup-
++ # verification.md — the Homebrew formula sources for `ollama` and
++ # `whisper-cpp`, and whisper.cpp's own download script for the model URL and
++ # its SHA-1. What is *not* verified is that those still hold today and that the
++ # whole sequence works end to end. Treat the first run as the verification:
++ # `--dry-run` prints every command without running one.
++ #
++ # Portability: /bin/bash on macOS is 3.2, so nothing below uses bash 4 syntax.
++
++ set -u
++
++ VERSION="1.0"
++
++ # --- constants, kept identical to scripts/preflight-macos.sh ----------------
++ LARGE_TAG="qwen3.6:35b-a3b"
++ DEFAULT_TAG="gemma4:12b-it-qat"
++ SMALL_TAG="qwen3.5:4b-q4_K_M"
++ LARGE_TIER_GIB=36
++ DEFAULT_TIER_GIB=16
++
++ WHISPER_MODEL="ggml-tiny.en.bin"
++ # From whisper.cpp's own models/download-ggml-model.sh: src is the ggerganov
++ # HF repo (NOT ggml-org — the GitHub org was renamed, the model repo was not),
++ # and the path is resolve/main/ggml-<model>.bin. -L is required: the resolve
++ # path redirects to a CDN.
++ WHISPER_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${WHISPER_MODEL}"
++ # Published in whisper.cpp's models/README.md. There is no published SHA-256,
++ # so this is shasum -a 1, not -a 256.
++ WHISPER_SHA1="c78c86eb1a8faa21b369bcd33207cc90d64ae9df"
++ WHISPER_MIB=75
++ # The live preview runs on the same English-only file: dictation is
++ # English-only and tiny.en is small enough that serving the note and the
++ # preview from one download is the right trade. Kept as its own pair of
++ # constants so a future larger preview is a one-line change. Same repository
++ # and publisher; SHA-1 from whisper.cpp's models/README.md.
++ PREVIEW_MODEL="ggml-tiny.en.bin"
++ PREVIEW_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/${PREVIEW_MODEL}"
++ PREVIEW_SHA1="c78c86eb1a8faa21b369bcd33207cc90d64ae9df"
++ PREVIEW_MIB=75
++
++ # Overridable for the same reason the server honours it (M2): tests probe a
++ # port that is guaranteed dead, so a live Ollama on the machine running the
++ # suite cannot flip the dry run onto its "already answering" branch.
++ OLLAMA_URL="${APUNTA_OLLAMA_URL:-http://127.0.0.1:11434}"
++ NODE_MIN_MAJOR=22
++
++ # --- options ----------------------------------------------------------------
++ DRY_RUN=0
++ ASSUME_YES=0
++ MODEL_OVERRIDE=""
++ SKIP_OLLAMA=0
++ SKIP_MODELS=0
++ DATA_DIR_OVERRIDE=""
++ USE_COLOR=auto
++
++ usage() {
++   cat <<'USAGE'
++ Apunta macOS setup — installs the local AI stack and downloads the models.
++
++   bash scripts/setup-macos.sh [options]
++
++   --dry-run          print every command it would run, and run none of them
++   --yes              do not ask before a large download (for scripts and CI)
++   --model TAG        use this Ollama tag instead of the one this Mac's RAM picks
++   --skip-ollama      leave Ollama alone (already installed as the desktop app,
++                      or managed some other way)
++   --skip-models      install the tools but download nothing
++   --data-dir PATH    Apunta's data folder (same meaning as APUNTA_DATA_DIR)
++   --no-color         plain text, no ANSI colour
++   --help             this message
++
++ Exit status: 0 when the stack is ready, 1 when something needs your attention.
++ USAGE
++ }
++
++ while [ $# -gt 0 ]; do
++   case "$1" in
++     --dry-run)      DRY_RUN=1 ;;
++     --yes|-y)       ASSUME_YES=1 ;;
++     --model)        shift; MODEL_OVERRIDE="${1:-}" ;;
++     --skip-ollama)  SKIP_OLLAMA=1 ;;
++     --skip-models)  SKIP_MODELS=1 ;;
++     --data-dir)     shift; DATA_DIR_OVERRIDE="${1:-}" ;;
++     --no-color)     USE_COLOR=never ;;
++     -h|--help)      usage; exit 0 ;;
++     *) printf 'unknown option: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
++   esac
++   shift
++ done
++
++ # --- colour -----------------------------------------------------------------
++ C_RESET=""; C_DIM=""; C_BOLD=""; C_GREEN=""; C_YELLOW=""; C_RED=""
++ if [ "$USE_COLOR" = auto ] && [ -t 1 ] && [ "${TERM:-dumb}" != dumb ]; then
++   C_RESET=$(printf '\033[0m');  C_DIM=$(printf '\033[2m');   C_BOLD=$(printf '\033[1m')
++   C_GREEN=$(printf '\033[32m'); C_YELLOW=$(printf '\033[33m'); C_RED=$(printf '\033[31m')
++ fi
++
++ STEP_N=0
++ step()  { STEP_N=$(( STEP_N + 1 )); printf '\n%s[%d]%s %s\n' "$C_BOLD" "$STEP_N" "$C_RESET" "$1"; }
++ ok()    { printf '    %s✓%s %s\n' "$C_GREEN" "$C_RESET" "$1"; }
++ warn()  { printf '    %s!%s %s\n' "$C_YELLOW" "$C_RESET" "$1"; }
++ fail()  { printf '    %s✗%s %s\n' "$C_RED" "$C_RESET" "$1"; }
++ note()  { printf '      %s%s%s\n' "$C_DIM" "$1" "$C_RESET"; }
++ have()  { command -v "$1" >/dev/null 2>&1; }
++
++ # Every mutating command goes through this, so --dry-run is complete by
++ # construction rather than by remembering to guard each call site.
++ run() {
++   if [ "$DRY_RUN" = 1 ]; then
++     printf '    %s$ %s%s\n' "$C_DIM" "$*" "$C_RESET"
++     return 0
++   fi
++   printf '    %s$ %s%s\n' "$C_DIM" "$*" "$C_RESET"
++   "$@"
++ }
++
++ confirm() {
++   [ "$ASSUME_YES" = 1 ] && return 0
++   [ "$DRY_RUN" = 1 ] && return 0
++   printf '    %s [y/N] ' "$1"
++   read -r reply
++   case "$reply" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
++ }
++
++ PROBLEMS=0
++ problem() { PROBLEMS=$(( PROBLEMS + 1 )); fail "$1"; }
++
++ # ---------------------------------------------------------------------------
++ # Preconditions
++ # ---------------------------------------------------------------------------
++ # APUNTA_SETUP_ALLOW_NON_MACOS=1 exists so `--dry-run` can be exercised off a
++ # Mac — which is the only way any of this gets checked before it meets one.
++ # It is honoured for a dry run only: nothing here should ever *run* on Linux.
++ if [ "$(uname -s 2>/dev/null || echo unknown)" != "Darwin" ]; then
++   if [ "${APUNTA_SETUP_ALLOW_NON_MACOS:-0}" != "1" ] || [ "$DRY_RUN" != 1 ]; then
++     printf 'This installs the macOS stack and this machine is not a Mac. Nothing was changed.\n' >&2
++     exit 2
++   fi
++   printf '%sNot a Mac: dry run only, and some branches below cannot be evaluated here.%s\n' \
++     "$C_YELLOW" "$C_RESET"
++ fi
++
++ if [ "$(id -u)" = "0" ]; then
++   printf '%sDo not run this with sudo.%s Homebrew refuses to run as root, and the model\n' "$C_RED" "$C_RESET"
++   printf 'files would land in root'"'"'s home instead of yours.\n'
++   # A dry run executes nothing, so being root is only a warning there.
++   [ "$DRY_RUN" = 1 ] || exit 2
++ fi
++
++ printf '%sApunta setup%s  v%s   %s\n' "$C_BOLD" "$C_RESET" "$VERSION" "$(date '+%Y-%m-%d %H:%M')"
++ if [ "$DRY_RUN" = 1 ]; then
++   printf '%sDry run: every command is printed and none is executed.%s\n' "$C_YELLOW" "$C_RESET"
++ fi
++
++ DATA_DIR="${DATA_DIR_OVERRIDE:-${APUNTA_DATA_DIR:-$HOME/Library/Application Support/Apunta}}"
++ MODELS_DIR="$DATA_DIR/models"
++ MODEL_FILE="$MODELS_DIR/$WHISPER_MODEL"
++
++ # ===========================================================================
++ step "Homebrew"
++ # ===========================================================================
++ if have brew; then
++   ok "$(brew --version 2>/dev/null | head -n 1)"
++ else
++   problem "Homebrew is not installed."
++   note "Install it from https://brew.sh, then run this again."
++   note "It is the only prerequisite; everything else is installed below."
++   # A dry run keeps going so the whole plan is visible; a real run stops,
++   # because every remaining step needs brew.
++   [ "$DRY_RUN" = 1 ] || exit 1
++ fi
++
++ # ===========================================================================
++ step "Ollama — the program that runs the writing model"
++ # ===========================================================================
++ if [ "$SKIP_OLLAMA" = 1 ]; then
++   warn "skipped (--skip-ollama)"
++ elif [ -d /Applications/Ollama.app ]; then
++   # The formula and the cask conflict; brew will fight this and lose loudly.
++   problem "Ollama.app is installed, and it conflicts with the 'ollama' formula."
++   note "Either remove Ollama.app and re-run this, or keep the app, start it"
++   note "yourself, and re-run with --skip-ollama."
++ elif brew list --formula ollama >/dev/null 2>&1; then
++   ok "ollama is already installed"
++ else
++   # The formula, not the cask: CLI and server only, no GUI, no onboarding, no
++   # account — and it carries a launchd service block, which the cask does not.
++   run brew install ollama || problem "brew install ollama failed"
++ fi
++
++ # ===========================================================================
++ step "whisper.cpp — the program that reads recordings"
++ # ===========================================================================
++ if brew list --formula whisper-cpp >/dev/null 2>&1; then
++   ok "whisper-cpp is already installed"
++ else
++   run brew install whisper-cpp || problem "brew install whisper-cpp failed"
++ fi
++
++ if have whisper-cli || [ "$DRY_RUN" = 1 ]; then
++   ok "whisper-cli is on the PATH"
++ else
++   warn "whisper-cli is not on the PATH yet — open a new Terminal window"
++ fi
++
++ # ===========================================================================
++ step "Node — what Apunta itself runs on"
++ # ===========================================================================
++ NODE_MAJOR=0
++ if have node; then
++   NODE_MAJOR=$(node -v 2>/dev/null | sed 's/^v//' | cut -d. -f1)
++   case "$NODE_MAJOR" in ''|*[!0-9]*) NODE_MAJOR=0 ;; esac
++ fi
++
++ if [ "$NODE_MAJOR" -ge "$NODE_MIN_MAJOR" ]; then
++   ok "node $(node -v)"
++ elif [ "$NODE_MAJOR" = 0 ]; then
++   run brew install node@22 || problem "brew install node@22 failed"
++   note "node@22 is keg-only: if 'node -v' still finds nothing, add it to your PATH"
++   note "with the line 'brew info node@22' prints."
++ else
++   warn "node v$NODE_MAJOR is older than v$NODE_MIN_MAJOR, which Apunta needs"
++   run brew install node@22 || problem "brew install node@22 failed"
++ fi
++
++ # ===========================================================================
++ step "Starting Ollama, and keeping it started"
++ # ===========================================================================
++ ollama_up() { curl -fsS --max-time 3 "$OLLAMA_URL/" 2>/dev/null | grep -q "Ollama is running"; }
++
++ if [ "$SKIP_OLLAMA" = 1 ]; then
++   warn "skipped (--skip-ollama)"
++ elif ollama_up; then
++   ok "already answering at $OLLAMA_URL"
++ else
++   # `brew services start` runs it now and at login. The formula's service block
++   # sets OLLAMA_FLASH_ATTENTION=1 and OLLAMA_KV_CACHE_TYPE=q8_0 for us; the
++   # second is what makes a 16K context affordable on a 16 GB Mac. Do not undo
++   # them (docs/research/macos-setup-verification.md §1.3).
++   run brew services start ollama || problem "brew services start ollama failed"
++
++   if [ "$DRY_RUN" = 0 ]; then
++     printf '    waiting for Ollama'
++     i=0
++     while [ "$i" -lt 30 ]; do
++       if ollama_up; then break; fi
++       printf '.'
++       sleep 1
++       i=$(( i + 1 ))
++     done
++     printf '\n'
++     if ollama_up; then
++       ok "answering at $OLLAMA_URL"
++     else
++       problem "Ollama did not start within 30s"
++       note "Look at $(brew --prefix)/var/log/ollama.log"
++     fi
++   fi
++ fi
++
++ # ===========================================================================
++ step "Choosing the writing model for this Mac"
++ # ===========================================================================
++ # hw.memsize is total physical RAM in bytes. Not hw.physmem, which saturates
++ # at 4 GB and is wrong on every modern Mac.
++ RAM_BYTES=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
++ case "$RAM_BYTES" in ''|*[!0-9]*) RAM_BYTES=0 ;; esac
++ RAM_GIB=$(( RAM_BYTES / 1073741824 ))
++
++ if [ -n "$MODEL_OVERRIDE" ]; then
++   MODEL="$MODEL_OVERRIDE"
++   ok "using $MODEL (--model)"
++ elif [ "$RAM_GIB" -ge "$LARGE_TIER_GIB" ]; then
++   MODEL="$LARGE_TAG"
++   ok "${RAM_GIB} GB of memory → $MODEL"
++ elif [ "$RAM_GIB" -ge "$DEFAULT_TIER_GIB" ]; then
++   MODEL="$DEFAULT_TAG"
++   ok "${RAM_GIB} GB of memory → $MODEL"
++ else
++   MODEL="$SMALL_TAG"
++   ok "${RAM_GIB} GB of memory → $MODEL"
++   note "This is the small-model tier. It works; the notes will be rougher."
++ fi
++
++ # An MLX or safetensors flavour routes to Ollama's MLX engine, which silently
++ # ignores the JSON-schema `format` parameter — so the note's structure is not
++ # enforced at all, with no error (ollama#16563). Refuse the tag rather than
++ # discover it in a note.
++ case "$MODEL" in
++   *-mlx|*-mlx:*|*-nvfp4*|*-mxfp8*|*-bf16*)
++     problem "$MODEL names a non-GGUF weight format."
++     note "Ollama routes those to its MLX engine, which ignores the JSON schema"
++     note "that keeps a note in its sections — silently, with no error."
++     note "Use a GGUF tag: $DEFAULT_TAG"
++     MODEL=""
++     ;;
++ esac
++
++ # ===========================================================================
++ step "Downloading the writing model"
++ # ===========================================================================
++ if [ "$SKIP_MODELS" = 1 ] || [ -z "$MODEL" ]; then
++   warn "skipped"
++ elif [ "$SKIP_OLLAMA" = 0 ] && ! ollama_up && [ "$DRY_RUN" = 0 ]; then
++   warn "skipped — Ollama is not answering"
++ elif [ "$DRY_RUN" = 0 ] && ollama list 2>/dev/null | grep -q "^${MODEL}[[:space:]]"; then
++   ok "$MODEL is already downloaded"
++ else
++   note "This is a large download — several gigabytes."
++   if confirm "Pull $MODEL now?"; then
++     run ollama pull "$MODEL" || problem "ollama pull $MODEL failed"
++   else
++     warn "skipped. Run 'ollama pull $MODEL' when you are ready."
++   fi
++ fi
++
++ # ===========================================================================
++ step "Downloading the speech model"
++ # ===========================================================================
++ model_ok() {
++   [ -f "$MODEL_FILE" ] || return 1
++   actual=$(shasum -a 1 "$MODEL_FILE" 2>/dev/null | cut -d' ' -f1)
++   [ "$actual" = "$WHISPER_SHA1" ]
++ }
++
++ if [ "$SKIP_MODELS" = 1 ]; then
++   warn "skipped (--skip-models)"
++ elif [ "$DRY_RUN" = 0 ] && model_ok; then
++   ok "$WHISPER_MODEL is already there and its checksum matches"
++ else
++   note "$WHISPER_MODEL — about ${WHISPER_MIB} MB, into"
++   note "$MODELS_DIR"
++   if confirm "Download it now?"; then
++     # 0700: the data folder holds clinical notes, and Node's default 0755 is
++     # wrong the moment APUNTA_DATA_DIR points somewhere shared
++     # (docs/research/data-at-rest-2026-08.md §2.2).
++     run mkdir -p "$MODELS_DIR"
++     run chmod 700 "$DATA_DIR" "$MODELS_DIR"
++     # To .part first, then verify, then rename: a half-downloaded file that
++     # already has the real name is a file whisper will fail on confusingly.
++     run curl -fL --retry 3 --progress-bar -o "$MODEL_FILE.part" "$WHISPER_URL" \
++       || problem "downloading the speech model failed"
++
++     if [ "$DRY_RUN" = 0 ] && [ -f "$MODEL_FILE.part" ]; then
++       actual=$(shasum -a 1 "$MODEL_FILE.part" | cut -d' ' -f1)
++       if [ "$actual" = "$WHISPER_SHA1" ]; then
++         run mv "$MODEL_FILE.part" "$MODEL_FILE"
++         ok "downloaded and verified"
++       else
++         rm -f "$MODEL_FILE.part"
++         problem "checksum mismatch — expected $WHISPER_SHA1, got $actual"
++         note "The download was discarded. Try again; if it keeps failing, the"
++         note "published file may have changed and this script needs updating."
++       fi
++     fi
++   else
++     warn "skipped. Recording will not work until this file exists."
++   fi
++ fi
++
++ # ===========================================================================
++ step "Downloading the preview model"
++ # ===========================================================================
++ PREVIEW_FILE="$MODELS_DIR/$PREVIEW_MODEL"
++ preview_ok() {
++   [ -f "$PREVIEW_FILE" ] || return 1
++   actual=$(shasum -a 1 "$PREVIEW_FILE" 2>/dev/null | cut -d' ' -f1)
++   [ "$actual" = "$PREVIEW_SHA1" ]
++ }
++
++ if [ "$SKIP_MODELS" = 1 ]; then
++   warn "skipped (--skip-models)"
++ elif [ "$PREVIEW_MODEL" = "$WHISPER_MODEL" ]; then
++   # English-only dictation: the preview and the note are one file, and the
++   # speech-model step above has already downloaded and verified it.
++   ok "$PREVIEW_MODEL is the same file the note is transcribed with"
++ elif [ "$DRY_RUN" = 0 ] && preview_ok; then
++   ok "$PREVIEW_MODEL is already there and its checksum matches"
++ else
++   note "$PREVIEW_MODEL — about ${PREVIEW_MIB} MB. It shows her words while she is"
++   note "still speaking; without it the preview runs on the note's model."
++   if confirm "Download it now?"; then
++     run mkdir -p "$MODELS_DIR"
++     run curl -fL --retry 3 --progress-bar -o "$PREVIEW_FILE.part" "$PREVIEW_URL" \
++       || problem "downloading the preview model failed"
++     if [ "$DRY_RUN" = 0 ] && [ -f "$PREVIEW_FILE.part" ]; then
++       actual=$(shasum -a 1 "$PREVIEW_FILE.part" | cut -d' ' -f1)
++       if [ "$actual" = "$PREVIEW_SHA1" ]; then
++         run mv "$PREVIEW_FILE.part" "$PREVIEW_FILE"
++         ok "downloaded and verified"
++       else
++         rm -f "$PREVIEW_FILE.part"
++         problem "checksum mismatch — expected $PREVIEW_SHA1, got $actual"
++         note "The download was discarded. The preview still works without it."
++       fi
++     fi
++   else
++     warn "skipped. The live preview will use the big model, which is slower to show words."
++   fi
++ fi
++
++ # ===========================================================================
++ step "Recording the model choice"
++ # ===========================================================================
++ # Belt and braces: Apunta picks the same model from this Mac's RAM at runtime
++ # using the same table, so an unwritten setting is not a broken install. This
++ # only pins the choice so a later RAM change or a --model override sticks.
++ DB_FILE="$DATA_DIR/apunta.db"
++
++ if [ -z "$MODEL" ]; then
++   warn "no model chosen, nothing to record"
++ elif curl -fsS --max-time 3 "http://127.0.0.1:7717/api/health" >/dev/null 2>&1; then
++   # Apunta is running: go through its own API rather than writing to a
++   # database it has open.
++   run curl -fsS -X PUT "http://127.0.0.1:7717/api/settings" \
++     -H 'content-type: application/json' \
++     -d "{\"llm_model\":\"$MODEL\"}" >/dev/null \
++     && ok "recorded through the running app"
++ elif [ -f "$DB_FILE" ] && have sqlite3; then
++   # Values in `settings` are JSON-encoded, hence the inner quotes.
++   run sqlite3 "$DB_FILE" \
++     "INSERT INTO settings (key, value) VALUES ('llm_model', '\"$MODEL\"')
++        ON CONFLICT(key) DO UPDATE SET value = excluded.value;" \
++     && ok "recorded in $DB_FILE"
++ else
++   ok "nothing to record yet — Apunta picks $MODEL from this Mac's memory on its own"
++ fi
++
++ # ===========================================================================
++ printf '\n%s────────────────────────────────────────────────────────────%s\n' "$C_BOLD" "$C_RESET"
++ if [ "$PROBLEMS" -eq 0 ]; then
++   printf '%sReady.%s\n\n' "$C_GREEN$C_BOLD" "$C_RESET"
++   printf 'Start Apunta:\n\n'
++   printf '    %snpm start%s\n\n' "$C_BOLD" "$C_RESET"
++   printf 'It opens http://127.0.0.1:7717 in your browser.\n\n'
++   printf 'Two things worth doing next, in this order:\n\n'
++   printf '  1. %sbash scripts/preflight-macos.sh%s\n' "$C_BOLD" "$C_RESET"
++   printf '     Read-only. It checks the things this script does not: whether the\n'
++   printf '     disk is encrypted, whether iCloud is syncing the folders you would\n'
++   printf '     naturally save a backup into, and whether you have a Time Machine\n'
++   printf '     backup at all. See docs/PREFLIGHT.md.\n\n'
++   printf '  2. %snpm run smoke:live -- --runs 5%s\n' "$C_BOLD" "$C_RESET"
++   printf '     Puts a real dictation through the real model five times and checks\n'
++   printf '     what comes back. Everything automated in this project runs against a\n'
++   printf '     fake AI, so this is the first evidence the model itself works.\n'
++   printf '     The %s--%s is not optional.\n\n' "$C_BOLD" "$C_RESET"
++   exit 0
++ fi
++
++ printf '%s%d thing(s) need your attention.%s\n' "$C_RED$C_BOLD" "$PROBLEMS" "$C_RESET"
++ printf 'Nothing above is destructive, so fixing them and re-running is safe.\n'
++ exit 1
++
+
+ ❯ src/platform/setup-script.test.ts:165:20
+    163|    */
+    164|   it('names the promoted default among the tags it already knows', () …
+    165|     expect(source).toContain(`SMALL_TAG="${PROMOTED_DEFAULT_MODEL}"`);
+       |                    ^
+    166|   });
+    167|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/36]⎯
+
+
+ Test Files  9 failed | 118 passed (127)
+      Tests  34 failed | 1549 passed (1583)
+   Start at  03:29:16
+   Duration  170.04s (transform 5.22s, setup 0ms, import 20.00s, tests 21.60s, environment 11.36s)
+
+exit=1
+end: 2026-09-26T09:32:06Z

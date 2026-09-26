@@ -1,0 +1,78 @@
+# P1.3 — V1, final run (after the last edit to the test file)
+
+- cwd: ~/Projects/Apunta
+- node: v24.19.0
+- start: 2026-09-26T09:35:00Z
+- command: npm run build:shared && npx vitest run server/src/http/request-guard.test.ts server/src/test/real-socket-guard.test.ts
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v4.1.11 ~/Projects/Apunta
+
+{"level":30,"time":1790415301120,"pid":<pid>,"hostname":"<host>","msg":"Server listening at http://127.0.0.1:7812"}
+{"level":30,"time":1790415301124,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"evil.example:7812","remoteAddress":"127.0.0.1","remotePort":37438},"msg":"incoming request"}
+{"level":40,"time":1790415301125,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301126,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":1.0827779999999905,"msg":"request completed"}
+{"level":30,"time":1790415301129,"pid":<pid>,"hostname":"<host>","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"","remoteAddress":"127.0.0.1","remotePort":37442},"msg":"incoming request"}
+{"level":40,"time":1790415301129,"pid":<pid>,"hostname":"<host>","reqId":"req-2","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301129,"pid":<pid>,"hostname":"<host>","reqId":"req-2","res":{"statusCode":403},"responseTime":0.3504259999999988,"msg":"request completed"}
+{"level":30,"time":1790415301130,"pid":<pid>,"hostname":"<host>","reqId":"req-3","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":37438},"msg":"incoming request"}
+{"level":30,"time":1790415301130,"pid":<pid>,"hostname":"<host>","reqId":"req-3","res":{"statusCode":503},"responseTime":0.33100600000000213,"msg":"request completed"}
+{"level":30,"time":1790415301135,"pid":<pid>,"hostname":"<host>","reqId":"req-4","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":37452},"msg":"incoming request"}
+{"level":40,"time":1790415301135,"pid":<pid>,"hostname":"<host>","reqId":"req-4","rule":"origin","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301135,"pid":<pid>,"hostname":"<host>","reqId":"req-4","res":{"statusCode":403},"responseTime":0.13965799999999717,"msg":"request completed"}
+{"level":30,"time":1790415301138,"pid":<pid>,"hostname":"<host>","reqId":"req-5","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":37456},"msg":"incoming request"}
+{"level":40,"time":1790415301138,"pid":<pid>,"hostname":"<host>","reqId":"req-5","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301138,"pid":<pid>,"hostname":"<host>","reqId":"req-5","res":{"statusCode":403},"responseTime":0.11613800000000651,"msg":"request completed"}
+{"level":30,"time":1790415301140,"pid":<pid>,"hostname":"<host>","reqId":"req-6","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":37452},"msg":"incoming request"}
+{"level":40,"time":1790415301140,"pid":<pid>,"hostname":"<host>","reqId":"req-6","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301141,"pid":<pid>,"hostname":"<host>","reqId":"req-6","res":{"statusCode":403},"responseTime":0.11800800000000322,"msg":"request completed"}
+{"level":30,"time":1790415301142,"pid":<pid>,"hostname":"<host>","reqId":"req-7","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":37456},"msg":"incoming request"}
+{"level":40,"time":1790415301143,"pid":<pid>,"hostname":"<host>","reqId":"req-7","rule":"options_origin","method":"OPTIONS","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301143,"pid":<pid>,"hostname":"<host>","reqId":"req-7","res":{"statusCode":403},"responseTime":0.13007899999999495,"msg":"request completed"}
+{"level":30,"time":1790415301144,"pid":<pid>,"hostname":"<host>","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":37452},"msg":"incoming request"}
+{"level":30,"time":1790415301145,"pid":<pid>,"hostname":"<host>","reqId":"req-8","res":{"statusCode":503},"responseTime":0.1615579999999852,"msg":"request completed"}
+{"level":30,"time":1790415301147,"pid":<pid>,"hostname":"<host>","reqId":"req-9","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":37456},"msg":"incoming request"}
+{"level":30,"time":1790415301147,"pid":<pid>,"hostname":"<host>","reqId":"req-9","res":{"statusCode":503},"responseTime":0.10851800000000367,"msg":"request completed"}
+{"level":30,"time":1790415301455,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301468,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301481,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301492,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790415301455,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301455,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.18188799999995808,"msg":"request completed"}
+{"level":40,"time":1790415301468,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301468,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.11565799999999626,"msg":"request completed"}
+{"level":40,"time":1790415301481,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301481,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.10854899999998224,"msg":"request completed"}
+{"level":40,"time":1790415301492,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301492,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.12114800000000514,"msg":"request completed"}
+{"level":30,"time":1790415301510,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/formats/detect","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301520,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301532,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301541,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301550,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415301559,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790415301510,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/formats/detect","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301510,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.11695800000006784,"msg":"request completed"}
+{"level":40,"time":1790415301520,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"sec_fetch_site","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301520,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.08151899999995749,"msg":"request completed"}
+{"level":30,"time":1790415301550,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.07111900000006699,"msg":"request completed"}
+{"level":30,"time":1790415301541,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.10668899999996029,"msg":"request completed"}
+{"level":40,"time":1790415301532,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"options_origin","method":"OPTIONS","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415301532,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.08864900000003217,"msg":"request completed"}
+{"level":30,"time":1790415301560,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.07452999999998156,"msg":"request completed"}
+
+ Test Files  2 passed (2)
+      Tests  32 passed (32)
+   Start at  03:35:00
+   Duration  591ms (transform 226ms, setup 0ms, import 400ms, tests 246ms, environment 0ms)
+
+exit=0
+end: 2026-09-26T09:35:01Z

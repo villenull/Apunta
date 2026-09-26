@@ -11,6 +11,7 @@ import type { AiProviders } from './ai/types.js';
 import { loadConfig, type AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { registerErrorHandler } from './http/errors.js';
+import { registerRequestGuard } from './http/request-guard.js';
 import { registerBackupRoutes } from './routes/backup.js';
 import { registerBrainstormRoutes } from './routes/brainstorm.js';
 import { registerImportRoutes } from './routes/import.js';
@@ -47,6 +48,14 @@ export interface BuildAppOptions {
    * exercise the "local AI is not running" path.
    */
   providers?: AiProviders;
+  /**
+   * C-MODEL@1's installed-tag list, carried through to `registerHealthRoute`.
+   * Production passes nothing and the route asks `ai/profiles.ts` itself; the
+   * field exists so `routes/health.test.ts` can make `ollama.present` false
+   * without a listener or a stub HTTP server. A stub `providers.llm` decides
+   * only `describe()`, so it cannot do that on its own.
+   */
+  installedModels?: readonly string[] | null;
 }
 
 /**
@@ -56,6 +65,12 @@ export interface BuildAppOptions {
 export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyInstance> {
   const config = options.config ?? loadConfig();
   const app = Fastify({ logger: options.logger ?? true });
+
+  /**
+   * C-REQ@1, first so that no route, body parser or upload handler registered
+   * below can run ahead of it. The boot-error server registers the same guard.
+   */
+  registerRequestGuard(app, { port: config.port });
 
   const ownsDb = options.db === undefined;
   const db = options.db ?? openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir }).db;
@@ -104,7 +119,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
 
   registerErrorHandler(app, { dataDir: config.dataDir });
 
-  registerHealthRoute(app, config, db, providers);
+  registerHealthRoute(app, config, db, providers, options.installedModels);
   registerLicensesRoute(app, config);
   registerPatientRoutes(app, db);
   registerNoteRoutes(app, db);

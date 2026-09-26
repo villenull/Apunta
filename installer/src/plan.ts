@@ -1,4 +1,4 @@
-import { DEFAULT_TIER_GIB, LARGE_TIER_GIB, modelForMemory } from '@apunta/shared';
+import { effectiveModel, type EffectiveModelSource } from '@apunta/shared';
 
 import { formatBytes } from './bytes.js';
 import { PREVIEW_SPEECH_MODEL, SPEECH_MODEL, writingModel } from './catalog.js';
@@ -11,18 +11,20 @@ import type { ChosenModel, DiskReport, PlanEvent, PlannedStep } from './protocol
  *
  * Entirely pure: memory in, file-presence in, free bytes in — a plan out. The
  * window is a view over this object, which is what lets the disk arithmetic,
- * the tier choice and the wording all be tested on Linux
+ * the model choice and the wording all be tested on Linux
  * (`docs/agents/M8-installer.md`, acceptance criteria).
  *
- * The tier table itself is `@apunta/shared`'s, the same one the server and
- * `scripts/setup-macos.sh` use. Reimplementing it here is the specific mistake
- * the packet names.
+ * The model is `shared/`'s resolver's answer, not a table lookup: C-MODEL@1
+ * makes one policy across the installer, the server, health, preflight and the
+ * eval CLI, and this is the installer's end of it. `memoryGib` is still read
+ * and still reported — the window shows what it read and what else the machine
+ * could run — but it no longer chooses anything.
  */
 
 export interface PlanInput {
-  /** Installed RAM, or null where it could not be read. */
+  /** Installed RAM, or null where it could not be read. Reported, not obeyed. */
   readonly memoryGib: number | null;
-  /** `llm_model` from Settings, or a `--model` override. Beats the table. */
+  /** `llm_model` from Settings, or a `--model` override. Beats the default. */
   readonly modelOverride?: string | null;
   readonly speechModelPresent: boolean;
   readonly previewModelPresent: boolean;
@@ -32,40 +34,22 @@ export interface PlanInput {
 }
 
 /**
- * Why this Mac got this model, in words she can check against the machine.
+ * Why this Mac is getting this model, in words she can check against the
+ * machine.
  *
- * The boundaries are named because the answer "it chose the small one" is
- * useless without "because this Mac has 8 GB and the middle model needs 16".
+ * The answer is no longer a function of the memory, so the sentence is no
+ * longer a function of the memory either. "This Mac has 8 GB, so Apunta chose
+ * the small one" was true and is now the sort of half-truth that teaches an
+ * owner to distrust the rest of the setup screen: the same run on a 64 GB Mac
+ * would have said something different about the same model.
  */
-export function explainChoice(memoryGib: number | null, tag: string, overridden: boolean): string {
-  if (overridden) {
+export function explainChoice(tag: string, source: EffectiveModelSource): string {
+  if (source === 'override') {
     return `Apunta is set to use ${tag}. That was chosen for this Mac rather than by Apunta.`;
   }
-  if (memoryGib === null) {
-    return (
-      `Apunta could not read how much memory this Mac has, so it chose ${tag} — the smallest of ` +
-      'the three writing models. It works on any Mac; the notes are a little rougher than the ' +
-      'larger models produce.'
-    );
-  }
-  const rounded = Math.round(memoryGib);
-  if (memoryGib >= LARGE_TIER_GIB) {
-    return (
-      `This Mac has ${String(rounded)} GB of memory, which is enough for the largest of the three ` +
-      `writing models, so Apunta chose ${tag}. It writes the best notes and is the slowest.`
-    );
-  }
-  if (memoryGib >= DEFAULT_TIER_GIB) {
-    return (
-      `This Mac has ${String(rounded)} GB of memory, so Apunta chose ${tag} — the middle of three ` +
-      `writing models. The largest one needs ${String(LARGE_TIER_GIB)} GB, because the Mac can only ` +
-      'give the model about three quarters of its memory.'
-    );
-  }
   return (
-    `This Mac has ${String(rounded)} GB of memory, so Apunta chose ${tag} — the smallest of three ` +
-    `writing models. The next one up needs ${String(DEFAULT_TIER_GIB)} GB. This one works; the notes ` +
-    'are a little rougher, and there is more to read before publishing.'
+    `Apunta uses the same writing model on every machine, and on this one that is ${tag}. It was ` +
+    'not chosen from this Mac’s memory, so it is the same choice here as anywhere else.'
   );
 }
 
@@ -84,9 +68,10 @@ function previewNeedsItsOwnDownload(previewModelPresent: boolean): boolean {
 }
 
 export function buildPlan(input: PlanInput): PlanEvent {
-  const override = input.modelOverride?.trim();
-  const overridden = typeof override === 'string' && override !== '';
-  const tag = overridden ? override : modelForMemory(input.memoryGib);
+  // The installer has not pulled anything yet, so it has no installed list and
+  // asks the resolver for the tag alone. Nothing here reads `present`.
+  const resolved = effectiveModel({ override: input.modelOverride ?? null, installed: null });
+  const { tag } = resolved;
   const entry = writingModel(tag);
 
   const steps: PlannedStep[] = [
@@ -131,7 +116,7 @@ export function buildPlan(input: PlanInput): PlanEvent {
   const model: ChosenModel = {
     tag,
     publisher: entry.publisher,
-    reason: explainChoice(input.memoryGib, tag, overridden),
+    reason: explainChoice(tag, resolved.source),
     licence: entry.licence,
   };
 

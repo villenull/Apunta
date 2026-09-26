@@ -1,7 +1,13 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { DEFAULT_MODEL, LARGE_MODEL, SMALL_MODEL } from '@apunta/shared';
+import {
+  DEFAULT_MODEL,
+  LARGE_MODEL,
+  PROMOTED_DEFAULT_MODEL,
+  recommendedModelForMemory,
+  SMALL_MODEL,
+} from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
 import { checkDiskSpace, DISK_HEADROOM_BYTES, freeBytesFor } from './disk.js';
@@ -21,17 +27,42 @@ function planFor(overrides: Partial<Parameters<typeof buildPlan>[0]> = {}) {
 }
 
 describe('buildPlan', () => {
-  it('picks the model from the shared tier table, not a copy of it', () => {
-    expect(planFor({ memoryGib: 64 }).model.tag).toBe(LARGE_MODEL);
-    expect(planFor({ memoryGib: 32 }).model.tag).toBe(DEFAULT_MODEL);
-    expect(planFor({ memoryGib: 8 }).model.tag).toBe(SMALL_MODEL);
-    expect(planFor({ memoryGib: null }).model.tag).toBe(SMALL_MODEL);
+  /**
+   * C-MODEL@1. The first run downloads **the effective model**, and the
+   * effective model does not come from this Mac's memory — so the RAM table is
+   * now a recommendation the plan may report and never a selection.
+   */
+  it('picks the effective model from the shared resolver, not from a RAM table', () => {
+    for (const memoryGib of [null, 8, 16, 32, 64]) {
+      expect(planFor({ memoryGib }).model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+    }
+    // The tier table is still there, and still says what it always said.
+    expect(recommendedModelForMemory(64)).toBe(LARGE_MODEL);
+    expect(recommendedModelForMemory(32)).toBe(DEFAULT_MODEL);
+    expect(recommendedModelForMemory(8)).toBe(SMALL_MODEL);
   });
 
-  it('lets an explicit setting beat the table', () => {
+  it('lets an explicit setting beat the promoted default', () => {
     const plan = planFor({ memoryGib: 8, modelOverride: 'gemma4:12b-it-qat' });
     expect(plan.model.tag).toBe('gemma4:12b-it-qat');
     expect(plan.model.reason).toContain('chosen for this Mac rather than by Apunta');
+  });
+
+  it('treats a blank override as no override', () => {
+    expect(planFor({ modelOverride: '   ' }).model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+    expect(planFor({ modelOverride: null }).model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+  });
+
+  /**
+   * `memoryGib` stays on the event. It is reported, not obeyed: the window can
+   * show what else the machine could run, and the owner can see what was read.
+   */
+  it('reports the memory it read, without letting it choose the model', () => {
+    for (const memoryGib of [null, 8, 16, 32, 64]) {
+      const plan = planFor({ memoryGib });
+      expect(plan.memoryGib).toBe(memoryGib);
+      expect(plan.model.tag).toBe(PROMOTED_DEFAULT_MODEL);
+    }
   });
 
   it('is ready when both models are already there', () => {
@@ -39,6 +70,19 @@ describe('buildPlan', () => {
     expect(plan.ready).toBe(true);
     expect(plan.disk.requiredBytes).toBe(0);
     expect(plan.steps.every((step) => !step.needed)).toBe(true);
+  });
+
+  /**
+   * The size of the download follows the effective tag, not the tier the
+   * machine would have landed on. A 64 GB Mac that would have pulled 24 GB of
+   * weights now pulls the promoted 4B model's, and the disk check has to be
+   * checking that.
+   */
+  it('sizes the writing step from the effective tag', () => {
+    const small = planFor({ memoryGib: 8 });
+    const large = planFor({ memoryGib: 64 });
+    expect(small.model.tag).toBe(large.model.tag);
+    expect(small.disk.requiredBytes).toBe(large.disk.requiredBytes);
   });
 
   it('only counts what is missing towards the download size', () => {
@@ -80,21 +124,41 @@ describe('buildPlan', () => {
 });
 
 describe('explainChoice', () => {
-  it('says which model and why, naming the boundary that decided it', () => {
-    expect(explainChoice(8, SMALL_MODEL, false)).toContain('16 GB');
-    expect(explainChoice(32, DEFAULT_MODEL, false)).toContain('36 GB');
-    expect(explainChoice(64, LARGE_MODEL, false)).toContain('largest');
+  /**
+   * The reason is no longer the machine. It says which model, and that Apunta
+   * picks the same one everywhere — which is the sentence a first-run window
+   * can show without the owner wondering why *her* Mac got a different answer
+   * from the last person who ran it.
+   */
+  it('says the promoted tag is the same on every machine, not a choice from this one', () => {
+    for (const tag of [PROMOTED_DEFAULT_MODEL, DEFAULT_MODEL, LARGE_MODEL]) {
+      const reason = explainChoice(tag, 'promoted');
+      expect(reason).toContain(tag);
+      expect(reason).toMatch(/same .*every machine/i);
+      expect(reason).toMatch(/not .*from this Mac/i);
+    }
   });
 
-  it('is honest when the memory could not be read', () => {
-    const reason = explainChoice(null, SMALL_MODEL, false);
-    expect(reason).toContain('could not read');
-    expect(reason).toContain(SMALL_MODEL);
+  /**
+   * An override keeps naming the tag and says where it came from, so the owner
+   * can tell her own setting from Apunta's default.
+   */
+  it('names an override and says it was chosen for the machine', () => {
+    const reason = explainChoice('gemma4:12b-it-qat', 'override');
+    expect(reason).toContain('gemma4:12b-it-qat');
+    expect(reason).toContain('chosen for this Mac rather than by Apunta');
   });
 
-  it('never asks the reader to run anything', () => {
-    for (const memory of [null, 8, 16, 32, 64]) {
-      const reason = explainChoice(memory, DEFAULT_MODEL, false);
+  /**
+   * The card's prohibition, asserted directly: no number from `sysctl` may
+   * appear in the reason, because the reason is no longer a function of it.
+   */
+  it('never cites the machine’s memory as the reason', () => {
+    for (const source of ['promoted', 'override'] as const) {
+      const reason = explainChoice(PROMOTED_DEFAULT_MODEL, source);
+      expect(reason).not.toMatch(/\d+\s*GB/);
+      expect(reason).not.toMatch(/GiB|memory size|hw\.memsize|smallest of|middle of|largest of/);
+      // And still no instructions to run.
       expect(reason).not.toMatch(/Terminal|command line|sudo|npm |brew /);
     }
   });

@@ -5,6 +5,11 @@ export const ApiErrorCodeSchema = z.enum([
   'bad_request',
   'not_found',
   'conflict',
+  // C-REQ@1's request guard. Reachable from the client only when a request
+  // fails the guard, which is logged server-side; the body the guard sends is
+  // the contract's `{ "error": { "code": "forbidden_request" } }` and is not
+  // an `ApiErrorSchema`.
+  'forbidden_request',
   'storage_error',
   'stale_write',
   'ai_unavailable',

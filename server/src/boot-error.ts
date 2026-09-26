@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import type { AppConfig } from './config.js';
+import { registerRequestGuard } from './http/request-guard.js';
 
 export interface BootErrorOptions {
   readonly dataDir: string;
@@ -23,8 +24,16 @@ export function bootErrorHtml(options: BootErrorOptions): string {
 <body><main><h1>Apunta could not start</h1><p>${escapeHtml(options.message)}</p><p><strong>Data folder:</strong> <code>${escapeHtml(options.dataDir)}</code></p><p>Make sure the disk has space and this folder is available and writable, then start Apunta again. Your existing database was left untouched.</p></main></body></html>`;
 }
 
-export function buildBootErrorApp(options: BootErrorOptions): FastifyInstance {
+/**
+ * The boot-error page still answers a browser on loopback, so it runs the same
+ * request guard as the main app (C-REQ@1). `port` is the port `serveBootError`
+ * is about to listen on: an injected request is not listening and is checked
+ * against it, and a request on the real socket is checked against the port
+ * actually bound.
+ */
+export function buildBootErrorApp(options: BootErrorOptions, port: number): FastifyInstance {
   const app = Fastify({ logger: true });
+  registerRequestGuard(app, { port });
   const html = bootErrorHtml(options);
   app.get('/', (_request, reply) => reply.type('text/html').code(503).send(html));
   app.get('/api/health', (_request, reply) =>
@@ -42,7 +51,7 @@ export async function serveBootError(
   config: Pick<AppConfig, 'host' | 'port'>,
   options: BootErrorOptions,
 ): Promise<FastifyInstance> {
-  const app = buildBootErrorApp(options);
+  const app = buildBootErrorApp(options, config.port);
   await app.listen({ host: config.host, port: config.port });
   return app;
 }

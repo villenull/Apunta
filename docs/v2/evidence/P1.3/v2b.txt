@@ -1,0 +1,398 @@
+# P1.3 — V2, full test suite (second run)
+
+- cwd: ~/Projects/Apunta
+- node: v24.19.0
+- start: 2026-09-26T09:32:37Z
+- command: npm test
+- note: the first V2 run overlapped P1.4's uncommitted rewrite of
+  server/src/routes/health.test.ts, whose second buildApp helper presented
+  Host: localhost:80 against APUNTA_PORT 0. P1.4 has since set that helper's
+  APUNTA_PORT to 80 as well, so this run is against a settled tree for that file.
+
+
+> apunta@0.0.0 test
+> npm run build:shared && vitest run
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v4.1.11 ~/Projects/Apunta
+
+ ❯ |server| src/ai/model-picker.test.ts (9 tests | 1 failed) 5ms
+     × returns the promoted default, and does not consult the memory reading 1ms
+ ❯ |server| src/eval/eval.test.ts (0 test)
+ ❯ |server| src/ai/ollama.test.ts (43 tests | 1 failed) 56ms
+     × falls back to the promoted default, not the memory picker, with no resolveModel 4ms
+ ❯ |server| src/ai/profiles.test.ts (10 tests | 2 failed) 145ms
+     × resolves an override that is not installed as absent, and pulls nothing 11ms
+     × answers the tags the runtime reports, and null when it could not be asked 7ms
+ ❯ |server| src/routes/health.test.ts (11 tests | 8 failed) 150ms
+     × reports the promoted tag and source when no override is set 14ms
+     × reports present: false when the tag is not in the installed list 6ms
+     × reports an override as its own tag with source override 6ms
+     × reports an override that is not installed as present: false 6ms
+     × reports present: null, and never false, when the runtime could not be asked 9ms
+     × keeps describe() and the resolver in agreement whenever the runtime answers 6ms
+     × reports present: null exactly when the runtime is unreachable 6ms
+     × reports the promoted tag and source, with present: true, and no rule asserted 6ms
+{"level":30,"time":1790415159884,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415159900,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415159918,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415159932,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790415159884,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415159885,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.224316999999985,"msg":"request completed"}
+{"level":40,"time":1790415159900,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415159900,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1680780000000368,"msg":"request completed"}
+{"level":40,"time":1790415159918,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415159918,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1120379999999841,"msg":"request completed"}
+{"level":40,"time":1790415159932,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415159932,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.11271900000002688,"msg":"request completed"}
+{"level":30,"time":1790415159954,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"POST","url":"/api/formats/detect","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415159973,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415159987,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415160001,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415160022,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415160033,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1790415159954,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"origin","method":"POST","url":"/api/formats/detect","msg":"request rejected by the guard"}
+{"level":30,"time":1790415159954,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.14704799999998386,"msg":"request completed"}
+{"level":40,"time":1790415159973,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"sec_fetch_site","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415159973,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.09863899999999148,"msg":"request completed"}
+{"level":40,"time":1790415159987,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"options_origin","method":"OPTIONS","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1790415159987,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1537689999999543,"msg":"request completed"}
+{"level":30,"time":1790415160001,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.13536800000002813,"msg":"request completed"}
+{"level":30,"time":1790415160022,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.08295899999995981,"msg":"request completed"}
+{"level":30,"time":1790415160033,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":0.08496999999999844,"msg":"request completed"}
+{"level":30,"time":1790415160544,"pid":<pid>,"hostname":"<host>","msg":"Server listening at http://127.0.0.1:7812"}
+{"level":30,"time":1790415160554,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"evil.example:7812","remoteAddress":"127.0.0.1","remotePort":34524},"msg":"incoming request"}
+{"level":40,"time":1790415160555,"pid":<pid>,"hostname":"<host>","reqId":"req-1","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415160556,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":403},"responseTime":1.154786999999999,"msg":"request completed"}
+{"level":30,"time":1790415160560,"pid":<pid>,"hostname":"<host>","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"","remoteAddress":"127.0.0.1","remotePort":34540},"msg":"incoming request"}
+{"level":40,"time":1790415160560,"pid":<pid>,"hostname":"<host>","reqId":"req-2","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415160560,"pid":<pid>,"hostname":"<host>","reqId":"req-2","res":{"statusCode":403},"responseTime":0.3022070000000099,"msg":"request completed"}
+{"level":30,"time":1790415160561,"pid":<pid>,"hostname":"<host>","reqId":"req-3","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":34524},"msg":"incoming request"}
+{"level":30,"time":1790415160561,"pid":<pid>,"hostname":"<host>","reqId":"req-3","res":{"statusCode":503},"responseTime":0.3412759999999935,"msg":"request completed"}
+{"level":30,"time":1790415160566,"pid":<pid>,"hostname":"<host>","reqId":"req-4","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":34552},"msg":"incoming request"}
+{"level":40,"time":1790415160566,"pid":<pid>,"hostname":"<host>","reqId":"req-4","rule":"origin","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415160566,"pid":<pid>,"hostname":"<host>","reqId":"req-4","res":{"statusCode":403},"responseTime":0.1736879999999985,"msg":"request completed"}
+{"level":30,"time":1790415160570,"pid":<pid>,"hostname":"<host>","reqId":"req-5","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":34558},"msg":"incoming request"}
+{"level":40,"time":1790415160570,"pid":<pid>,"hostname":"<host>","reqId":"req-5","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415160570,"pid":<pid>,"hostname":"<host>","reqId":"req-5","res":{"statusCode":403},"responseTime":0.12586899999999446,"msg":"request completed"}
+{"level":30,"time":1790415160573,"pid":<pid>,"hostname":"<host>","reqId":"req-6","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":34552},"msg":"incoming request"}
+{"level":40,"time":1790415160573,"pid":<pid>,"hostname":"<host>","reqId":"req-6","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415160573,"pid":<pid>,"hostname":"<host>","reqId":"req-6","res":{"statusCode":403},"responseTime":0.15536799999998152,"msg":"request completed"}
+{"level":30,"time":1790415160575,"pid":<pid>,"hostname":"<host>","reqId":"req-7","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":34558},"msg":"incoming request"}
+{"level":40,"time":1790415160575,"pid":<pid>,"hostname":"<host>","reqId":"req-7","rule":"options_origin","method":"OPTIONS","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1790415160575,"pid":<pid>,"hostname":"<host>","reqId":"req-7","res":{"statusCode":403},"responseTime":0.13609800000000405,"msg":"request completed"}
+{"level":30,"time":1790415160578,"pid":<pid>,"hostname":"<host>","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":34552},"msg":"incoming request"}
+{"level":30,"time":1790415160578,"pid":<pid>,"hostname":"<host>","reqId":"req-8","res":{"statusCode":503},"responseTime":0.18114800000000741,"msg":"request completed"}
+{"level":30,"time":1790415160579,"pid":<pid>,"hostname":"<host>","reqId":"req-9","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":34558},"msg":"incoming request"}
+{"level":30,"time":1790415160579,"pid":<pid>,"hostname":"<host>","reqId":"req-9","res":{"statusCode":503},"responseTime":0.11328800000001138,"msg":"request completed"}
+{"level":30,"time":1790415161007,"pid":<pid>,"hostname":"<host>","reqId":"req-1","req":{"method":"GET","url":"/","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1790415161009,"pid":<pid>,"hostname":"<host>","reqId":"req-1","res":{"statusCode":503},"responseTime":1.5748810000000049,"msg":"request completed"}
+effective time zone: America/Mexico_City (TZ=<unset>)
+ ❯ |shared| src/effective-model.test.ts (13 tests | 1 failed) 6ms
+     × resolves to the promoted default on every one of those inputs 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |server| src/eval/eval.test.ts [ server/src/eval/eval.test.ts ]
+ReferenceError: modelForMemory is not defined
+ ❯ defaultModelForMachine src/ai/model-picker.ts:79:3
+     78|   }
+     79| }
+     80|
+       | ^
+     81| /**
+     82|  * A historical name, kept because `scripts/smoke-live.mjs` imports it
+ ❯ main src/eval/cli.ts:175:79
+ ❯ src/eval/cli.ts:275:7
+ ❯ src/eval/eval.test.ts:9:1
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |shared| src/effective-model.test.ts > recommendedModelForMemory > resolves to the promoted default on every one of those inputs
+AssertionError: expected 'qwen3.5:4b-q4_K_M' not to be 'qwen3.5:4b-q4_K_M' // Object.is equality
+ ❯ src/effective-model.test.ts:140:32
+    138|       const resolved = effectiveModel({ installed: INSTALLED });
+    139|       expect(resolved.tag).toBe(PROMOTED_DEFAULT_MODEL);
+    140|       expect(resolved.tag).not.toBe(recommendation);
+       |                                ^
+    141|       // The recommendation is still a real tag, and it still runs.
+    142|       expect(INSTALLED).toContain(recommendation);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  |server| src/ai/model-picker.test.ts > defaultModelForMachine > returns the promoted default, and does not consult the memory reading
+ReferenceError: modelForMemory is not defined
+ ❯ defaultModelForMachine src/ai/model-picker.ts:79:3
+     78|   }
+     79| }
+     80|
+       | ^
+     81| /**
+     82|  * A historical name, kept because `scripts/smoke-live.mjs` imports it
+ ❯ src/ai/model-picker.test.ts:64:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  |server| src/ai/ollama.test.ts > OllamaProvider.describe > falls back to the promoted default, not the memory picker, with no resolveModel
+AssertionError: promise rejected "ReferenceError: modelForMemory is not def…" instead of resolving
+ ❯ src/ai/ollama.test.ts:712:63
+    710|       })) as unknown as typeof globalThis.fetch;
+    711|
+    712|     await expect(new OllamaProvider({ fetchImpl }).describe()).resolve…
+       |                                                               ^
+    713|       reachable: true,
+    714|       model: PROMOTED_DEFAULT_MODEL,
+
+Caused by: ReferenceError: modelForMemory is not defined
+ ❯ OllamaProvider.defaultModelForMachine [as resolveModel] src/ai/model-picker.ts:79:3
+ ❯ OllamaProvider.describe src/ai/ollama.ts:246:30
+ ❯ src/ai/ollama.test.ts:712:52
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > resolveLlmProfile > resolves an override that is not installed as absent, and pulls nothing
+AssertionError: expected [ 'http://127.0.0.1:11434/api/tags' ] to have a length of 2 but got 1
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/ai/profiles.test.ts:98:66
+     96|     expect(profile.available).toEqual([]);
+     97|     // One `/api/tags` per call, and not one `/api/pull`.
+     98|     expect(requested.filter((url) => url.endsWith('/api/tags'))).toHav…
+       |                                                                  ^
+     99|     expect(requested.filter((url) => url.endsWith('/api/pull'))).toEqu…
+    100|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  |server| src/ai/profiles.test.ts > installedModelTags > answers the tags the runtime reports, and null when it could not be asked
+AssertionError: expected [ 'a:1', 'b:2' ] to be null
+
+- Expected:
+null
+
++ Received:
+[
+  "a:1",
+  "b:2",
+]
+
+ ❯ src/ai/profiles.test.ts:163:7
+    161|         fetchImpl: () => Promise.reject(new Error('connection refused'…
+    162|       }),
+    163|     ).toBeNull();
+       |       ^
+    164|     expect(await installedModelTags({ fetchImpl: async () => tags([]) …
+    165|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports the promoted tag and source when no override is set
+AssertionError: expected { reachable: true, …(2) } to match object { tag: 'qwen3.5:4b-q4_K_M', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "present": true,
+-   "source": "promoted",
+-   "tag": "qwen3.5:4b-q4_K_M",
++   "model": "qwen3.5:4b-q4_K_M",
++   "modelPresent": true,
++   "reachable": true,
+  }
+
+ ❯ src/routes/health.test.ts:172:36
+    170|     });
+    171|
+    172|     expect(await ollamaOf(server)).toMatchObject({
+       |                                    ^
+    173|       tag: PROMOTED_DEFAULT_MODEL,
+    174|       source: 'promoted',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports present: false when the tag is not in the installed list
+AssertionError: expected { reachable: true, …(2) } to match object { tag: 'qwen3.5:4b-q4_K_M', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "present": false,
+-   "source": "promoted",
+-   "tag": "qwen3.5:4b-q4_K_M",
++   "model": "qwen3.5:4b-q4_K_M",
++   "modelPresent": false,
++   "reachable": true,
+  }
+
+ ❯ src/routes/health.test.ts:185:36
+    183|     });
+    184|
+    185|     expect(await ollamaOf(server)).toMatchObject({
+       |                                    ^
+    186|       tag: PROMOTED_DEFAULT_MODEL,
+    187|       source: 'promoted',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports an override as its own tag with source override
+AssertionError: expected { reachable: true, …(2) } to match object { tag: 'gemma4:12b-it-qat', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "present": true,
+-   "source": "override",
+-   "tag": "gemma4:12b-it-qat",
++   "model": "gemma4:12b-it-qat",
++   "modelPresent": true,
++   "reachable": true,
+  }
+
+ ❯ src/routes/health.test.ts:199:36
+    197|     });
+    198|
+    199|     expect(await ollamaOf(server)).toMatchObject({
+       |                                    ^
+    200|       tag: 'gemma4:12b-it-qat',
+    201|       source: 'override',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports an override that is not installed as present: false
+AssertionError: expected { reachable: true, …(2) } to match object { tag: 'gemma4:12b-it-qat', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "present": false,
+-   "source": "override",
+-   "tag": "gemma4:12b-it-qat",
++   "model": "gemma4:12b-it-qat",
++   "modelPresent": false,
++   "reachable": true,
+  }
+
+ ❯ src/routes/health.test.ts:213:36
+    211|     });
+    212|
+    213|     expect(await ollamaOf(server)).toMatchObject({
+       |                                    ^
+    214|       tag: 'gemma4:12b-it-qat',
+    215|       source: 'override',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports present: null, and never false, when the runtime could not be asked
+AssertionError: expected undefined to be null
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/routes/health.test.ts:237:28
+    235|
+    236|     const ollama = await ollamaOf(server);
+    237|     expect(ollama.present).toBeNull();
+       |                            ^
+    238|     expect(ollama.tag).toBe(PROMOTED_DEFAULT_MODEL);
+    239|     expect(ollama.source).toBe('promoted');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > keeps describe() and the resolver in agreement whenever the runtime answers
+AssertionError: expected 'qwen3.5:4b-q4_K_M' to be undefined // Object.is equality
+
+- Expected:
+undefined
+
++ Received:
+"qwen3.5:4b-q4_K_M"
+
+ ❯ src/routes/health.test.ts:260:28
+    258|       const ollama = await ollamaOf(server);
+    259|       expect(ollama.reachable).toBe(true);
+    260|       expect(ollama.model).toBe(ollama.tag);
+       |                            ^
+    261|       expect(ollama.modelPresent).toBe(ollama.present === true);
+    262|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (real mode) > reports present: null exactly when the runtime is unreachable
+AssertionError: expected undefined to be null
+
+- Expected:
+null
+
++ Received:
+undefined
+
+ ❯ src/routes/health.test.ts:285:28
+    283|     const ollama = await ollamaOf(server);
+    284|     expect(ollama.reachable).toBe(false);
+    285|     expect(ollama.present).toBeNull();
+       |                            ^
+    286|   });
+    287| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/14]⎯
+
+ FAIL  |server| src/routes/health.test.ts > GET /api/health — the effective model (fake mode) > reports the promoted tag and source, with present: true, and no rule asserted
+AssertionError: expected { reachable: true, …(2) } to match object { reachable: true, …(5) }
+
+- Expected
++ Received
+
+  {
+    "model": "fake-llm",
+    "modelPresent": true,
+-   "present": true,
+    "reachable": true,
+-   "source": "promoted",
+-   "tag": "qwen3.5:4b-q4_K_M",
+  }
+
+ ❯ src/routes/health.test.ts:299:36
+    297|     const server = await healthApp();
+    298|
+    299|     expect(await ollamaOf(server)).toMatchObject({
+       |                                    ^
+    300|       reachable: true,
+    301|       model: 'fake-llm',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/14]⎯
+
+
+ Test Files  6 failed | 121 passed (127)
+      Tests  13 failed | 1583 passed (1596)
+   Start at  03:32:38
+   Duration  7.17s (transform 3.28s, setup 0ms, import 12.56s, tests 16.23s, environment 9.09s)
+
+exit=1
+end: 2026-09-26T09:32:45Z

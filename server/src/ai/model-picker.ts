@@ -1,18 +1,21 @@
 import { execFileSync } from 'node:child_process';
 import { platform } from 'node:os';
 
-import { isSupportedModelName, modelForMemory } from '@apunta/shared';
+import { isSupportedModelName, PROMOTED_DEFAULT_MODEL } from '@apunta/shared';
 
 import { aiError } from './errors.js';
 
 /**
  * Which model to run, and which models must be refused.
  *
- * The tiers themselves — the tags and the RAM boundaries — moved to
- * `shared/src/models.ts` in M8, because the first-run installer picks a model
- * from the same table and a second copy would drift. What stays here is the
- * part that needs the server: reading this machine's memory, and turning a
- * refusal into an `AiError` the API already knows how to render.
+ * The tags and the RAM boundaries live in `shared/src/models.ts`, because the
+ * setup scripts carry the same table in bash and a test asserts they agree.
+ * What stays here is the part that needs the server: reading this machine's
+ * memory, and turning a refusal into an `AiError` the API already knows how to
+ * render.
+ *
+ * Nothing here **selects** anything. C-MODEL@1's `effectiveModel()` does, and
+ * the RAM table survives only as the recommendation the setup screens show.
  *
  * Everything M3 imported from this module still resolves from this module.
  */
@@ -23,7 +26,8 @@ export {
   isSupportedModelName,
   LARGE_MODEL,
   LARGE_TIER_GIB,
-  modelForMemory,
+  PROMOTED_DEFAULT_MODEL,
+  recommendedModelForMemory,
   SMALL_MODEL,
 } from '@apunta/shared';
 
@@ -57,8 +61,11 @@ export function assertGgufWeights(model: string, weightsFormat: string | null): 
  * Installed RAM in GiB, or null when it cannot be read.
  *
  * `sysctl -n hw.memsize` on darwin per the packet. Everywhere else falls back
- * to the small model — server logic stays OS-portable, and a Linux CI box is
- * not a machine anyone drafts notes on.
+ * to null — server logic stays OS-portable, and a Linux CI box is not a machine
+ * anyone drafts notes on.
+ *
+ * The reading survives only as the input to `recommendedModelForMemory()`.
+ * Nothing selects from it.
  */
 export function machineMemoryGib(): number | null {
   if (platform() !== 'darwin') return null;
@@ -71,6 +78,13 @@ export function machineMemoryGib(): number | null {
   }
 }
 
+/**
+ * A historical name, kept because `scripts/smoke-live.mjs` imports it
+ * dynamically and that script is outside C-MODEL@1's scope. It no longer reads
+ * the machine: it returns the promoted default, which is what
+ * `OllamaProvider`'s `resolveModel` fallback and the eval CLI's default both
+ * want. A second policy would be worse than a stale name.
+ */
 export function defaultModelForMachine(): string {
-  return modelForMemory(machineMemoryGib());
+  return PROMOTED_DEFAULT_MODEL;
 }

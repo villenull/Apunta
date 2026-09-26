@@ -7,7 +7,13 @@ import { fileURLToPath } from 'node:url';
 import { WHISPER_MODEL_FILENAME } from '@apunta/shared';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { DEFAULT_MODEL, LARGE_MODEL, SMALL_MODEL, modelForMemory } from '../ai/model-picker.js';
+import {
+  DEFAULT_MODEL,
+  LARGE_MODEL,
+  PROMOTED_DEFAULT_MODEL,
+  recommendedModelForMemory,
+  SMALL_MODEL,
+} from '../ai/model-picker.js';
 
 /**
  * What can be checked about `scripts/setup-macos.sh` from a Linux container.
@@ -116,10 +122,18 @@ describe('setup-macos.sh', () => {
     expect(source).not.toMatch(/^[^#\n]*OLLAMA_DEBUG=/m);
   });
 
+  /**
+   * Two copies of the RAM table exist — one in bash, one in TypeScript — and
+   * a Mac where the script pulls one model and the app asks for another is
+   * a Mac that looks set up and cannot draft.
+   *
+   * Under C-MODEL@1 that table no longer *selects* anything on either side; it
+   * is the informational recommendation. So this row now proves two things:
+   * the literals still agree with `shared/`, and the tag the resolver will
+   * return is one of them — which is what keeps a constant from becoming the
+   * answer on one side only.
+   */
   it('picks the same model the app would pick, at the same boundaries', () => {
-    // Two copies of the RAM table exist — one in bash, one in TypeScript — and
-    // a Mac where the script pulls one model and the app asks for another is
-    // a Mac that looks set up and cannot draft.
     const tag = (name: string): string => {
       const match = new RegExp(`^${name}="([^"]+)"`, 'm').exec(source);
       return match?.[1] ?? '';
@@ -135,10 +149,20 @@ describe('setup-macos.sh', () => {
 
     const large = tier('LARGE_TIER_GIB');
     const middle = tier('DEFAULT_TIER_GIB');
-    expect(modelForMemory(large)).toBe(LARGE_MODEL);
-    expect(modelForMemory(large - 1)).toBe(DEFAULT_MODEL);
-    expect(modelForMemory(middle)).toBe(DEFAULT_MODEL);
-    expect(modelForMemory(middle - 1)).toBe(SMALL_MODEL);
+    expect(recommendedModelForMemory(large)).toBe(LARGE_MODEL);
+    expect(recommendedModelForMemory(large - 1)).toBe(DEFAULT_MODEL);
+    expect(recommendedModelForMemory(middle)).toBe(DEFAULT_MODEL);
+    expect(recommendedModelForMemory(middle - 1)).toBe(SMALL_MODEL);
+  });
+
+  /**
+   * The promoted default is a tag both scripts already carry, which is why
+   * neither needed a new literal (C-MODEL@1's fixed decision). A tag nothing
+   * in the scripts knows is a model no machine can install, so this is the row
+   * that would have caught that.
+   */
+  it('names the promoted default among the tags it already knows', () => {
+    expect(source).toContain(`SMALL_TAG="${PROMOTED_DEFAULT_MODEL}"`);
   });
 
   it('downloads the speech model under the name the app looks for', () => {
