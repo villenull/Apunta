@@ -5,19 +5,19 @@
     "C-ISO@1",
     "C-LANG@1"
   ],
-  "baseCommit": "bf7415f",
-  "attempt": 2,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "attempt 2 SUBMITTED at 1a6540a; coordinator verified scope (22 files, all inside AM-045, no web/, no read-only oracle) and the pino fix (log renders msg('en',...), body keeps request locale); implementer reports FOUR further on-screen sentences in ai/refine-request.ts outside AM-045's line list (:329, :496, :497, :564) - claim independently confirmed",
-  "nextAllowedAction": "implementation-review",
+  "baseCommit": "8867ecb",
+  "attempt": 3,
+  "status": "NOT STARTED",
+  "lastCompletedStep": "attempt 2 review FAIL at 1a6540a (all four rows PASS, every hard stop respected, objective unmet on four refine-request sentences); AM-046 re-encoded the scope by output instead of line numbers; dispatch rebuilt at 8867ecb, port 7836, attempt 3 OF 3 - the last",
+  "nextAllowedAction": "implement",
   "sideEffectsDone": [],
   "changedFiles": 44,
   "criteria": {
-    "V1": "PASS (claimed, unverified)",
-    "V2": "PASS (claimed, unverified)",
-    "V3": "PASS (claimed, unverified)",
-    "V4": "PASS (claimed, unverified)"
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN",
+    "V4": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T20:05:00Z"
+  "updatedUtc": "2026-09-26T21:05:00Z"
 }
