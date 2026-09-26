@@ -83,67 +83,140 @@ const PLACEHOLDER = /\{(\w+)\}/g;
  * in. `locale` defaults to English (D11 — every document that exists today is
  * English), and the web provider passes the `language` setting through.
  *
- * What it will not do is print a raw key, an empty string or `undefined`:
+ * What it will not do is print a raw key, an empty string or `undefined`.
+ * There are exactly three runtime paths where a lookup does not have what its
+ * entry asks for, and Fixed decision 7 fixes all three — two of them answer
+ * and one is a defect with nothing to answer:
  *
- * - a key the locale has not translated falls back to the **English** entry;
- * - a `{name}` the entry names and `params` does not carry throws in a test
- *   build, and leaves the hole empty rather than showing `{name}` anywhere
- *   else;
- * - a parameter the entry does not name is ignored, not an error.
+ * 1. **A key in no catalogue.** A cast away from `MessageKey`, which is
+ *    `keyof typeof en`, and no English entry to fall back to for it, so the
+ *    three prohibitions leave nothing to return: it **throws in every build**,
+ *    a test build or not.
+ * 2. **A key the locale has not translated.** The English entry is the answer,
+ *    because the English catalogue is the one that has to be complete: a
+ *    **test build throws** — a catalogue and its callers are expected to
+ *    agree, and a disagreement should be red rather than quietly English —
+ *    and anywhere else it renders English.
+ * 3. **A value the chosen form needs and `params` does not carry**: a
+ *    `{name}` the form names, or the number a plural entry selects its
+ *    category from. A **test build throws**, and anywhere else it renders the
+ *    **English** entry with the hole left empty — never `{name}`, never the
+ *    raw key, never nothing at all.
  *
- * In a test build the first two throw instead, because a catalogue and its
- * callers are expected to agree and a disagreement should be red rather than
- * quietly English. The test build is read as `VITEST`, which vitest sets
- * (`vitest@4.1.11`) and the browser bundle never does.
+ * A parameter the entry does not name is ignored, not an error: `params` is a
+ * flat bag and one caller may pass more than a single entry needs.
+ *
+ * Two more throws are catalogue defects rather than lookup conditions — a
+ * plural entry with no `kind: 'number'` to select on, and one with no `other`
+ * to fall back to — and they throw in every build too. Neither is reachable
+ * without editing `en.ts` or `es-MX.ts`, where the seed entries all carry both.
+ *
+ * The test build is read as `VITEST`, which vitest sets (`vitest@4.1.11`) and
+ * the browser bundle never does.
  */
 export function t(key: MessageKey, params: MessageParams = {}, locale: Locale = DEFAULT_LOCALE): string {
-  const localised: Message | undefined = CATALOGUES[locale][key];
-  if (localised !== undefined) {
-    return render(key, localised, form(key, localised, params, locale), params, locale);
-  }
   const english: Message | undefined = ENGLISH[key];
   if (english === undefined) {
-    // A key in no catalogue is a cast away from `MessageKey`, and there is no
-    // English entry to fall back to for it: the three things `t()` is
-    // forbidden to return leave nothing to return but a defect, so this one
-    // throws in every build rather than in a test build only.
+    // Path 1, above.
     throw new Error(`t('${key}'): the key is in no catalogue; MessageKey is \`keyof typeof en\``);
   }
-  if (isTestBuild()) {
+  const localised: Message | undefined = CATALOGUES[locale][key];
+  if (localised === undefined && isTestBuild()) {
+    // Path 2, above.
     throw new Error(
       `t('${key}'): no ${locale} entry, and the English catalogue is the one that must be complete`,
     );
   }
-  return render(key, english, form(key, english, params, DEFAULT_LOCALE), params, DEFAULT_LOCALE);
+  const entry = localised ?? english;
+  // An entry that came from the English catalogue formats its dates and
+  // numbers in English, whichever locale was asked for.
+  const entryLocale = localised === undefined ? DEFAULT_LOCALE : locale;
+  const template = form(key, entry, params, entryLocale);
+  if (template !== undefined) return render(key, entry, template, params, entryLocale);
+  // Path 3, above, for a plural entry whose counted parameter is not here as a
+  // number: the same throw a missing `{name}` gets in a test build, and the
+  // English `other` form everywhere else.
+  if (isTestBuild()) {
+    throw new Error(`t('${key}'): {${countedParam(key, entry)}} is in the message and not in params`);
+  }
+  return render(
+    key,
+    english,
+    otherForm(key, english),
+    without(params, countedParam(key, entry)),
+    DEFAULT_LOCALE,
+  );
 }
 
 /**
- * The string this entry renders for these values: the `one` form of a plural
- * key, chosen by the numeric parameter the entry's own `kind` map declares.
+ * `params` without `name`.
+ *
+ * A value that will not coerce to a number is not a value the English
+ * fallback can render either — its `{count}` would come out as `NaN` — so the
+ * name is dropped and `render` leaves the hole empty, exactly as it does for a
+ * value that was never passed. Fixed decision 7 asks for the same answer
+ * either way, and never for a raw key or an empty string.
  */
-function form(key: MessageKey, entry: Message, params: MessageParams, locale: Locale): string {
+function without(params: MessageParams, name: string): MessageParams {
+  if (!(name in params)) return params;
+  const rest: Record<string, string | number> = { ...params };
+  delete rest[name];
+  return rest;
+}
+
+/**
+ * The template this entry renders for these values: the per-category form of a
+ * plural key, chosen by the numeric parameter the entry's own `kind` map
+ * declares.
+ *
+ * `undefined` is the one answer `t()` has to act on, and it means the counted
+ * parameter is not in `params` as a number. Fixed decision 7 makes that a
+ * fallback and not a failure, so the decision belongs to the caller.
+ */
+function form(key: MessageKey, entry: Message, params: MessageParams, locale: Locale): string | undefined {
   if (entry.plural === undefined) return entry.text;
-  const counted = countedParam(entry);
-  if (counted === undefined) {
+  const value = params[countedParam(key, entry)];
+  // `MessageParams` admits `string | number`, `tsc` accepts a count written as
+  // a string, and both oracles Fixed decision 6 pins `notes.count` to
+  // stringify it — `noteCountLabel` (`format.ts:60`) and `plural`
+  // (`plural.ts:3`) — so a caller written to look like the oracle hands `t()`
+  // a string. Coerced the way `format()` coerces, never thrown on; a value
+  // that will not coerce to a number is the missing-value case, not a
+  // category.
+  const number = value === undefined ? Number.NaN : Number(value);
+  if (Number.isNaN(number)) return undefined;
+  const category = new Intl.PluralRules(locale).select(number);
+  return entry.plural[category] ?? otherForm(key, entry);
+}
+
+/**
+ * The category every plural entry falls back to — Fixed decision 4 makes `other`
+ * the one form no plural key may leave out — and the whole `text` of an entry
+ * that has no `plural` map at all.
+ */
+function otherForm(key: MessageKey, entry: Message): string {
+  if (entry.plural === undefined) return entry.text;
+  const other = entry.plural.other;
+  if (other === undefined) {
+    throw new Error(`t('${key}'): the entry has a plural map but no \`other\` form to fall back to`);
+  }
+  return other;
+}
+
+/**
+ * The one `{name}` whose `kind` is `number` — the plural selector.
+ *
+ * A plural entry that declares none is a catalogue defect no caller can cause,
+ * so it throws in every build, like the two `otherForm` cases.
+ */
+function countedParam(key: MessageKey, entry: Message): string {
+  const name = Object.keys(entry.kind ?? {}).find((candidate) => entry.kind?.[candidate] === 'number');
+  if (name === undefined) {
     throw new Error(
       `t('${key}'): the entry has a plural map but no \`kind: { name: 'number' }\` to select on`,
     );
   }
-  const value = params[counted];
-  if (typeof value !== 'number') {
-    throw new Error(`t('${key}'): \`${counted}\` must be a number to select a plural category`);
-  }
-  const category = new Intl.PluralRules(locale).select(value);
-  const chosen = entry.plural[category] ?? entry.plural.other;
-  if (chosen === undefined) {
-    throw new Error(`t('${key}'): no \`${category}\` form and no \`other\` to fall back to`);
-  }
-  return chosen;
-}
-
-/** The one `{name}` whose `kind` is `number` — the plural selector. */
-function countedParam(entry: Message): string | undefined {
-  return Object.keys(entry.kind ?? {}).find((name) => entry.kind?.[name] === 'number');
+  return name;
 }
 
 function render(

@@ -256,6 +256,43 @@ describe("Fixed decision 7's fallbacks", () => {
     expect(() => t('notes.count', {}, 'en')).toThrow(/count/);
   });
 
+  it('coerces a count that arrived as a string, in a test build too', () => {
+    // `MessageParams` admits `string | number`, so `{ count: '3' }` is a legal
+    // argument and `tsc` accepts it — and both oracles FD 6 pins this key to
+    // stringify the count, so a caller written to look like them hands `t()`
+    // one. Coerced the way `format()` coerces, never thrown on.
+    expect(t('notes.count', { count: '3' }, 'en')).toBe(`${grouped(3, 'en')} notes`);
+    expect(t('notes.count', { count: '3' }, 'es-MX')).toBe('3 notas');
+    expect(t('notes.count', { count: '1' }, 'en')).toBe('1 note');
+    // The coerced number is the one `Intl.PluralRules` selects on, so a large
+    // count still takes es-MX's `many` and en's `other`.
+    expect(t('notes.count', { count: '1000000' }, 'es-MX')).toBe(`${grouped(1_000_000, 'es-MX')} notas`);
+    expect(t('notes.count', { count: '1000000' }, 'en')).toBe(`${grouped(1_000_000, 'en')} notes`);
+    // A string that is not a number is not a count at all, and that is the
+    // missing-value case rather than a category: strict in a test build.
+    expect(() => t('notes.count', { count: 'three' }, 'en')).toThrow(/\{count\}/);
+  });
+
+  it('answers a missing count with the English `other` form outside a test build', () => {
+    // The third of FD 7's three paths, in the build the browser is: a count
+    // `params` does not carry must not crash a render, and must not leave a
+    // raw key, a `{count}` or an empty string behind either.
+    vi.stubEnv('VITEST', 'false');
+    // Exactly the English `other` form with the hole left empty — not the raw
+    // key, not `{count}`, not `NaN`, and not the empty string.
+    const missing = t('notes.count', {}, 'en');
+    expect(missing).toBe(' notes');
+    expect(missing).not.toBe('');
+    expect(missing).not.toContain('{count}');
+    // FD 7 says the *English* string, and the English catalogue is the one
+    // required to be complete — so this is English even where a translation
+    // exists, and the same for a count that cannot be coerced.
+    expect(t('notes.count', {}, 'es-MX')).toBe(missing);
+    expect(t('notes.count', { count: 'three' }, 'es-MX')).toBe(missing);
+    expect(t('notes.count', { count: 'three' }, 'en')).toBe(missing);
+    expect(t('backup.stale', {}, 'es-MX')).toBe('No backup for over  days.');
+  });
+
   it('throws on a key no catalogue has', () => {
     const unknown = 'notes.nonexistent' as MessageKey;
     expect(() => t(unknown, {}, 'en')).toThrow(/no catalogue/);
