@@ -1,1 +1,19 @@
-{"card": "P4.1", "planVersion": 2, "contracts": [], "baseCommit": "ba63695", "attempt": 2, "status": "NOT STARTED", "lastCompletedStep": "attempt 1 BLOCKED on stop condition 2; owner approved option (a) with probe (AM-042); probe re-run and evidence regenerated with query key names; card text, ACQUISITION.md and tests amended", "nextAllowedAction": "instruction-review-or-implement", "sideEffectsDone": [], "changedFiles": [], "criteria": {"V1": "NOT RUN", "V2": "NOT RUN", "V3": "NOT RUN"}, "sandboxRuns": [], "updatedUtc": "2026-09-26T19:12:00Z"}
+{
+  "card": "P4.1",
+  "planVersion": 2,
+  "contracts": [],
+  "baseCommit": "f4e62cf",
+  "attempt": 2,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "attempt 1 BLOCKED on stop condition 2; owner resolved it via AM-042 (allowed-query-keys column, probe re-run, names observed); card set back to runnable and dispatched as attempt 2 - the coordinator had left it BLOCKED for two hours after unblocking the question",
+  "nextAllowedAction": "implement",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T21:58:00Z"
+}
