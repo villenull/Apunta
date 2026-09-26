@@ -1,1 +1,14 @@
-["Apunta", "Claude", "DSM-5-TR", "Halaxy", "ICD-10-CM", "Mac", "MXN", "NPI", "PDF", "SKILL.md"]
+[
+  ".zip",
+  "Apunta",
+  "Claude",
+  "DSM-5-TR",
+  "Halaxy",
+  "ICD-10-CM",
+  "MXN",
+  "Mac",
+  "NPI",
+  "PDF",
+  "SKILL.md",
+  "docs/skill-porting.md"
+]
