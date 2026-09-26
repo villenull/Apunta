@@ -1,12 +1,14 @@
 import type { PatientListItem } from '@apunta/shared';
 import { useEffect, useRef, useState } from 'react';
 
-import { ArchiveIcon, MoreIcon, PencilIcon, PinIcon, TrashIcon } from './icons.js';
+import { useI18n } from '../lib/i18n.js';
+import { ArchiveIcon, MoreIcon, PencilIcon, StarIcon, TrashIcon } from './icons.js';
 
 export interface PatientMenuProps {
   patient: PatientListItem;
   /** Archived patients offer Restore and, as the red item, Delete. */
   archived: boolean;
+  /** Starred, in claude.ai's word; the data underneath is still the pin list. */
   pinned: boolean;
   onTogglePin: () => void;
   onRename: () => void;
@@ -22,14 +24,13 @@ export interface PatientMenuProps {
 }
 
 /**
- * The "⋯" on a patient row, in the owner's preview (2026-09-26): small
- * labelled rows with an icon each, then a separator, then the one red
- * destructive item — Archive for a working patient, Delete for an archived
- * one. "Add to project" and "Move to group" are deliberately absent; there is
- * no such thing in Apunta.
+ * The "⋯" on a patient row, after claude.ai's (AM-047): Star, Rename, then a
+ * separator, then the one red destructive item — Archive for a working
+ * patient, Delete for an archived one. "Add to project" is deliberately
+ * absent; there is no such thing in Apunta.
  *
  * Each row carries its shortcut on the right, as Claude's do, and the shortcuts
- * work while the menu is open: P pins, R renames, D archives or deletes. They
+ * work while the menu is open: S stars, R renames, D archives or deletes. They
  * are letters rather than a modifier chord because the menu is a short-lived
  * thing over a short-lived list — a chord would be quicker and less
  * discoverable, and she reads the row before she presses anything.
@@ -46,6 +47,7 @@ export function PatientMenu({
   onDelete,
   scope = 'sidebar',
 }: PatientMenuProps): React.JSX.Element {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -65,7 +67,7 @@ export function PatientMenu({
       if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, [contenteditable="true"]')) return;
-      if (event.key === 'p' || event.key === 'P') {
+      if (event.key === 's' || event.key === 'S') {
         event.preventDefault();
         setOpen(false);
         onTogglePin();
@@ -130,19 +132,20 @@ export function PatientMenu({
             data-testid={`pin-${patient.id}`}
             onClick={choose(onTogglePin)}
           >
-            <PinIcon className="icon icon-sm" />
-            {pinned ? 'Unpin' : 'Pin'}
-            {hint('P')}
+            <StarIcon className="icon icon-sm" filled={pinned} />
+            {pinned ? t('patients.unstar') : t('patients.star')}
+            {hint('S')}
           </button>
           <button
             type="button"
             role="menuitem"
             className="patient-menu-item"
+            aria-label={t('patients.renameAction', { name: patient.name })}
             data-testid={`rename-${patient.id}`}
             onClick={choose(onRename)}
           >
             <PencilIcon className="icon icon-sm" />
-            Rename
+            {t('patients.renameShort')}
             {hint('R')}
           </button>
           {archived && (
@@ -156,7 +159,7 @@ export function PatientMenu({
               })}
             >
               <ArchiveIcon className="icon icon-sm" />
-              Restore
+              {t('patients.restore')}
             </button>
           )}
           <div className="patient-menu-sep" role="separator" />
@@ -170,7 +173,7 @@ export function PatientMenu({
               onClick={choose(onDelete)}
             >
               <TrashIcon className="icon icon-sm" />
-              Delete
+              {t('patients.delete')}
               {hint('D')}
             </button>
           ) : (
@@ -185,7 +188,7 @@ export function PatientMenu({
               })}
             >
               <ArchiveIcon className="icon icon-sm" />
-              Archive
+              {t('common.archive')}
               {hint('D')}
             </button>
           )}

@@ -2653,21 +2653,46 @@ select:disabled {
   font-size: var(--text-base);
 }
 
-.patient-rename {
-  padding: var(--space-0) var(--space-5) var(--space-4);
+/*
+ * Rename, as claude.ai's: a narrow modal on the raised surface, the title in
+ * the display serif, one full-width field, Cancel and Save on the right.
+ */
+.rename-modal {
+  max-width: 400px;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: var(--modal-radius);
+}
+
+.rename-modal h2 {
+  font-size: calc(20px * var(--font-scale));
+  margin-bottom: var(--space-8);
 }
 
 .patient-rename {
-  flex: 1 1 auto;
+  gap: 0;
+}
+
+.patient-rename .spell-input-wrap,
+.patient-rename input {
+  width: 100%;
+  min-width: 0;
 }
 
 .patient-rename input {
-  flex: 1;
-  min-width: 0;
+  height: var(--field-h);
+  padding: 0 var(--space-6);
+  border: 1px solid var(--field-border);
+  border-radius: var(--field-radius);
+  background: var(--field-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-base);
 }
-.patient-rename .spell-input-wrap {
-  flex: 1;
-  min-width: 0;
+
+.patient-rename input:focus {
+  outline: none;
+  border-color: var(--border-strong);
 }
 
 .patient-entry.is-archived .list-item .name {
@@ -3735,9 +3760,8 @@ select:disabled {
 
 /*
  * A patient row, in place of the old avatar-plus-two-lines `.list-item`: one
- * name, one line, 30px tall, the pin only when there is one. `gap: 0` and the
- * name's own padding keep the label at the same left edge whether or not the
- * row is pinned, so nothing shifts as pins come and go.
+ * name, one line, 32px tall. Starred rows carry no glyph of their own — the
+ * "Starred" label over their group says it, as claude.ai's sidebar does.
  */
 .project-row {
   display: flex;
@@ -3779,12 +3803,6 @@ select:disabled {
 
 .project-row.is-active .name {
   font-weight: 500;
-}
-
-.project-row-pin {
-  flex-shrink: 0;
-  margin-right: var(--space-4);
-  color: var(--text-muted);
 }
 
 /* "New" is a row like any other, with a plus where a pin would be. */
@@ -4186,11 +4204,6 @@ select:disabled {
   align-self: center;
   flex-shrink: 0;
   color: var(--text-muted);
-}
-
-.directory-row .patient-rename {
-  flex: 1;
-  padding: var(--space-5);
 }
 
 /* Settings over the workspace: the page behind is dimmed and blurred, and the

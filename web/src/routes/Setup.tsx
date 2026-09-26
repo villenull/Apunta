@@ -119,7 +119,8 @@ function SetupBody({
       )}
 
       <p className="small note-meta lede">
-        {t('setup.backingUpLead')} <Link to="/settings">{t('common.settings')}</Link> has it.
+        {t('setup.backingUpLead')} <Link to="/settings">{t('common.settings')}</Link>{' '}
+        {t('setup.backingUpTail')}
       </p>
     </>
   );

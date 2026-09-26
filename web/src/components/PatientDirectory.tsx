@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 
 import { formatShortDate } from '../lib/format.js';
 import { useI18n } from '../lib/i18n.js';
-import { PinIcon, SearchIcon } from './icons.js';
+import { SearchIcon, StarIcon } from './icons.js';
 import { PatientMenu } from './PatientMenu.js';
 import { PatientRenameForm } from './PatientRenameForm.js';
 
@@ -191,21 +191,19 @@ export function PatientDirectory({
               className={pinned ? 'directory-row is-pinned' : 'directory-row'}
               data-testid={`directory-row-${patient.id}`}
             >
-              {renaming !== patient.id && (
-                <button
-                  type="button"
-                  className="directory-row-main"
-                  onClick={() => {
-                    onSelect(patient.id);
-                  }}
-                >
-                  {pinned ? <PinIcon className="icon icon-xs directory-row-pin" /> : null}
-                  <span className="directory-row-name">{patient.name}</span>
-                  <span className="directory-row-date">
-                    {formatShortDate(lastNoteAt.get(patient.id) ?? null)}
-                  </span>
-                </button>
-              )}
+              <button
+                type="button"
+                className="directory-row-main"
+                onClick={() => {
+                  onSelect(patient.id);
+                }}
+              >
+                {pinned ? <StarIcon className="icon icon-xs directory-row-pin" filled /> : null}
+                <span className="directory-row-name">{patient.name}</span>
+                <span className="directory-row-date">
+                  {formatShortDate(lastNoteAt.get(patient.id) ?? null)}
+                </span>
+              </button>
               {renaming === patient.id && (
                 <PatientRenameForm
                   patient={patient}

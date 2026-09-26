@@ -1,5 +1,5 @@
 import type { PatientListItem } from '@apunta/shared';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 
@@ -9,7 +9,7 @@ import { formatShortDate } from '../lib/format.js';
 import { useI18n, type Translate } from '../lib/i18n.js';
 import { pinnedIndex } from '../lib/patientOrder.js';
 import { BrandWordmark } from './BrandWordmark.js';
-import { GearIcon, GlobeIcon, HelpIcon, PanelLeftIcon, PinIcon, PlusIcon, SearchIcon } from './icons.js';
+import { GearIcon, GlobeIcon, HelpIcon, PanelLeftIcon, PlusIcon, SearchIcon } from './icons.js';
 import { PatientMenu } from './PatientMenu.js';
 import { PatientRenameForm } from './PatientRenameForm.js';
 
@@ -341,97 +341,113 @@ function PatientList({
 
   return (
     <>
-      {shown.map((patient) => {
+      {shown.map((patient, index) => {
         const archived = patient.archived_at !== null;
         const pinned = pinnedIndex(patient.id, pinnedIds) >= 0;
+        // claude.ai heads its sidebar "Starred" and "Recents". The order is
+        // already starred-first, so a label goes wherever the group changes.
+        const previous = index > 0 ? shown[index - 1] : undefined;
+        const previousPinned = previous !== undefined && pinnedIndex(previous.id, pinnedIds) >= 0;
+        const label =
+          index === 0 || pinned !== previousPinned
+            ? pinned
+              ? t('patients.starred')
+              : t('patients.recents')
+            : null;
         return (
-          <div
-            key={patient.id}
-            className={[
-              'patient-entry',
-              'project-row-wrap',
-              archived ? 'is-archived' : '',
-              pinned ? 'is-pinned' : '',
-              dragging === patient.id ? 'is-dragging' : '',
-              dropTarget === patient.id ? 'is-drop-target' : '',
-            ]
-              .filter((part) => part !== '')
-              .join(' ')}
-            data-testid={`patient-entry-${patient.id}`}
-            // Only pinned rows move: they are the ones with an order of their
-            // own. Everything else is ordered by when it was last worked on.
-            draggable={pinned}
-            onDragStart={(event) => {
-              setDragging(patient.id);
-              event.dataTransfer.effectAllowed = 'move';
-              event.dataTransfer.setData('text/plain', patient.id);
-            }}
-            onDragOver={(event) => {
-              if (!pinned || dragging === null) return;
-              event.preventDefault();
-              event.dataTransfer.dropEffect = 'move';
-              setDropTarget(patient.id);
-            }}
-            onDragLeave={() => {
-              setDropTarget((current) => (current === patient.id ? null : current));
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              const from = pinnedIndex(dragging ?? '', pinnedIds);
-              const to = pinnedIndex(patient.id, pinnedIds);
-              setDragging(null);
-              setDropTarget(null);
-              if (from >= 0 && to >= 0 && from !== to) onReorderPins(from, to);
-            }}
-            onDragEnd={() => {
-              setDragging(null);
-              setDropTarget(null);
-            }}
-          >
-            <button
-              type="button"
-              className={
-                patient.id === activePatientId ? 'list-item project-row is-active' : 'list-item project-row'
-              }
-              data-testid={`patient-row-${patient.id}`}
-              onMouseEnter={(event) => {
-                setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
+          <Fragment key={patient.id}>
+            {label !== null && (
+              <div
+                className="sidebar-section-label"
+                data-testid={pinned ? 'section-starred' : 'section-recents'}
+              >
+                {label}
+              </div>
+            )}
+            <div
+              className={[
+                'patient-entry',
+                'project-row-wrap',
+                archived ? 'is-archived' : '',
+                pinned ? 'is-pinned' : '',
+                dragging === patient.id ? 'is-dragging' : '',
+                dropTarget === patient.id ? 'is-drop-target' : '',
+              ]
+                .filter((part) => part !== '')
+                .join(' ')}
+              data-testid={`patient-entry-${patient.id}`}
+              // Only pinned rows move: they are the ones with an order of their
+              // own. Everything else is ordered by when it was last worked on.
+              draggable={pinned}
+              onDragStart={(event) => {
+                setDragging(patient.id);
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', patient.id);
               }}
-              onMouseLeave={() => {
-                setTip((current) => (current?.id === patient.id ? null : current));
+              onDragOver={(event) => {
+                if (!pinned || dragging === null) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                setDropTarget(patient.id);
               }}
-              onFocus={(event) => {
-                setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
+              onDragLeave={() => {
+                setDropTarget((current) => (current === patient.id ? null : current));
               }}
-              onBlur={() => {
-                setTip((current) => (current?.id === patient.id ? null : current));
+              onDrop={(event) => {
+                event.preventDefault();
+                const from = pinnedIndex(dragging ?? '', pinnedIds);
+                const to = pinnedIndex(patient.id, pinnedIds);
+                setDragging(null);
+                setDropTarget(null);
+                if (from >= 0 && to >= 0 && from !== to) onReorderPins(from, to);
               }}
-              onClick={() => {
-                onSelect(patient.id);
-              }}
-              onKeyDown={(event) => {
-                // The keyboard way to reorder a pinned patient, since dragging
-                // is not reachable without a pointer: Alt with the arrows.
-                if (!pinned || !event.altKey) return;
-                const from = pinnedIndex(patient.id, pinnedIds);
-                if (event.key === 'ArrowUp' && from > 0) {
-                  event.preventDefault();
-                  onReorderPins(from, from - 1);
-                } else if (event.key === 'ArrowDown' && from >= 0 && from < pinnedIds.length - 1) {
-                  event.preventDefault();
-                  onReorderPins(from, from + 1);
-                }
+              onDragEnd={() => {
+                setDragging(null);
+                setDropTarget(null);
               }}
             >
-              {pinned ? <PinIcon className="icon icon-xs project-row-pin" /> : null}
-              <span className="name">{patient.name}</span>
-            </button>
+              <button
+                type="button"
+                className={
+                  patient.id === activePatientId ? 'list-item project-row is-active' : 'list-item project-row'
+                }
+                data-testid={`patient-row-${patient.id}`}
+                onMouseEnter={(event) => {
+                  setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
+                }}
+                onMouseLeave={() => {
+                  setTip((current) => (current?.id === patient.id ? null : current));
+                }}
+                onFocus={(event) => {
+                  setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
+                }}
+                onBlur={() => {
+                  setTip((current) => (current?.id === patient.id ? null : current));
+                }}
+                onClick={() => {
+                  onSelect(patient.id);
+                }}
+                onKeyDown={(event) => {
+                  // The keyboard way to reorder a pinned patient, since dragging
+                  // is not reachable without a pointer: Alt with the arrows.
+                  if (!pinned || !event.altKey) return;
+                  const from = pinnedIndex(patient.id, pinnedIds);
+                  if (event.key === 'ArrowUp' && from > 0) {
+                    event.preventDefault();
+                    onReorderPins(from, from - 1);
+                  } else if (event.key === 'ArrowDown' && from >= 0 && from < pinnedIds.length - 1) {
+                    event.preventDefault();
+                    onReorderPins(from, from + 1);
+                  }
+                }}
+              >
+                <span className="name">{patient.name}</span>
+              </button>
 
-            {/* One small "⋯" instead of a row of buttons: the column is narrow
+              {/* One small "⋯" instead of a row of buttons: the column is narrow
                 (owner, 2026-09-24), and three buttons on hover squeezed the
                 name to nothing. Its slot stays in the row while hidden so the
                 selection target never moves under the pointer. */}
-            {renaming !== patient.id && (
               <PatientMenu
                 patient={patient}
                 archived={archived}
@@ -449,17 +465,17 @@ function PatientList({
                   onDelete(patient);
                 }}
               />
-            )}
-            {renaming === patient.id && (
-              <PatientRenameForm
-                patient={patient}
-                onRename={onRename}
-                onDone={() => {
-                  setRenaming(null);
-                }}
-              />
-            )}
-          </div>
+              {renaming === patient.id && (
+                <PatientRenameForm
+                  patient={patient}
+                  onRename={onRename}
+                  onDone={() => {
+                    setRenaming(null);
+                  }}
+                />
+              )}
+            </div>
+          </Fragment>
         );
       })}
 
