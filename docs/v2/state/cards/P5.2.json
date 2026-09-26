@@ -1,0 +1,22 @@
+{
+  "card": "P5.2",
+  "planVersion": 2,
+  "contracts": [
+    "C-UPD@1",
+    "C-SNAP@1",
+    "C-OWN@1"
+  ],
+  "baseCommit": null,
+  "attempt": 1,
+  "status": "NOT STARTED",
+  "lastCompletedStep": "IR rounds 1-3 done: r1 DEFECT x4 (AM-043), r2 DEFECT x1 (AM-044), r3 all ten CLEAR at 5c71ecf; card is implementable as it stands",
+  "nextAllowedAction": "implement - HELD for the writer lock: P5.2 and S2.5 both list server/src/index.ts in May edit (P5.2 'ordering'; S2.5 ':57-58 only'), and P5.2's V2 is whole-repo npm test/lint/typecheck. Rebuild this card's implementation dispatch at the then-current head when S2.5 is committed and reviewed.",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {
+    "V1": "NOT RUN",
+    "V2": "NOT RUN"
+  },
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-26T19:22:00Z"
+}
