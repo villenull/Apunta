@@ -523,9 +523,7 @@ function AppearanceSettings(): React.JSX.Element {
                 applyFontSize(nextSize);
                 save({ [FONT_SIZE_SETTING]: nextSize });
                 requestAnimationFrame(() => {
-                  document
-                    .querySelector<HTMLButtonElement>(`[data-testid="font-size-${nextSize}"]`)
-                    ?.focus();
+                  document.querySelector<HTMLButtonElement>(`[data-testid="font-size-${nextSize}"]`)?.focus();
                 });
               }}
             >
@@ -639,11 +637,7 @@ function ThemeSwitcher({
  * them. A radiogroup has one tab stop, so the arrows are the only way to reach
  * the other segments from the keyboard.
  */
-function rovingTarget(
-  event: React.KeyboardEvent,
-  index: number,
-  length: number,
-): number | undefined {
+function rovingTarget(event: React.KeyboardEvent, index: number, length: number): number | undefined {
   if (event.key === 'ArrowRight' || event.key === 'ArrowDown') return (index + 1) % length;
   if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') return (index - 1 + length) % length;
   if (event.key === 'Home') return 0;

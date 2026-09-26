@@ -129,6 +129,19 @@ describe('POST /api/import/claude/preview', () => {
 });
 
 describe('POST /api/import/claude/run', () => {
+  // Session titles and provenance name the local day a session was recorded
+  // on, so every case pins a zone: the fixture's 17:00Z sessions are the same
+  // day in Denver but the next day in Sydney, which moved all three of John's
+  // dates (and the `recorded` line in his transcript) by one.
+  const originalTimezone = process.env.TZ;
+  beforeEach(() => {
+    process.env.TZ = 'America/Denver';
+  });
+  afterEach(() => {
+    if (originalTimezone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimezone;
+  });
+
   it('writes the preview as drafts, one batch, with provenance and guessed names flagged', async () => {
     const { statusCode, body } = await post('run');
 

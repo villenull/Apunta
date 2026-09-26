@@ -1,5 +1,5 @@
 import { backupFilename, type BackupFile } from '@apunta/shared';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { isDueToday, isStale, selectPrunable } from './store.js';
 
@@ -62,6 +62,18 @@ describe('the pruning ladder', () => {
 });
 
 describe('when the next backup is due', () => {
+  // "Did today's backup happen" is a question about her day, so every case
+  // pins a zone: 22:00Z is still 24 August in Denver, but already 25 August
+  // in Sydney, where the evening run is correctly due for the new day.
+  const originalTimezone = process.env.TZ;
+  beforeEach(() => {
+    process.env.TZ = 'America/Denver';
+  });
+  afterEach(() => {
+    if (originalTimezone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimezone;
+  });
+
   it('is due when there has never been one', () => {
     expect(isDueToday(null, new Date())).toBe(true);
     expect(isStale(null, new Date())).toBe(true);

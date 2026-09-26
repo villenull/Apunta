@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   firstName,
   formatDayGap,
   formatRelativeTime,
   formatEditedDate,
-  formatInstantAsDate,
+  type formatInstantAsDate,
   formatNoteDate,
   formatPlanDate,
   formatShortDate,
@@ -33,6 +33,18 @@ describe('firstName', () => {
 });
 
 describe('note dates', () => {
+  // "Today" means the local day, so every case pins a zone: 18:00Z is 12:00
+  // on 22 August in Denver, but already 04:00 on 23 August in Sydney, where
+  // a note written the evening before is correctly not from today.
+  const originalTimezone = process.env.TZ;
+  beforeEach(() => {
+    process.env.TZ = 'America/Denver';
+  });
+  afterEach(() => {
+    if (originalTimezone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimezone;
+  });
+
   const now = new Date('2026-08-22T18:00:00.000Z');
 
   it('spells out an older date and says Today for this one', () => {
@@ -109,9 +121,29 @@ describe('formatDayGap', () => {
 });
 
 describe('formatInstantAsDate', () => {
+  // The local day the instant fell on, so the case pins a zone: 15:00Z is
+  // still 12 August in Denver but already 13 August in Sydney.
+  //
+  // Pinning `TZ` is not enough on its own here. `format.ts` builds its
+  // `Intl.DateTimeFormat` at module load, and a formatter keeps the zone it
+  // was constructed in — so the module is re-imported *under* the pinned
+  // zone, and the assertion below stays the literal local day it claims to
+  // be. No production change: this is what the browser's own zone does.
+  const originalTimezone = process.env.TZ;
+  let formatInstantAsLocalDay: typeof formatInstantAsDate;
+  beforeEach(async () => {
+    process.env.TZ = 'America/Denver';
+    vi.resetModules();
+    ({ formatInstantAsDate: formatInstantAsLocalDay } = await import('./format.js'));
+  });
+  afterEach(() => {
+    if (originalTimezone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimezone;
+  });
+
   it('reads an instant as the local day it fell on, with no "Today"', () => {
-    expect(formatInstantAsDate('2026-08-12T15:00:00.000Z')).toBe('Aug 12, 2026');
-    expect(formatInstantAsDate('nonsense')).toBe('nonsense');
+    expect(formatInstantAsLocalDay('2026-08-12T15:00:00.000Z')).toBe('Aug 12, 2026');
+    expect(formatInstantAsLocalDay('nonsense')).toBe('nonsense');
   });
 });
 

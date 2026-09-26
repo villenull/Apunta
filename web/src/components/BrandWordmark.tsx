@@ -25,11 +25,7 @@ export interface BrandWordmarkProps {
   height?: number | undefined;
 }
 
-export function BrandWordmark({
-  className,
-  tone = 'brand',
-  height,
-}: BrandWordmarkProps): React.JSX.Element {
+export function BrandWordmark({ className, tone = 'brand', height }: BrandWordmarkProps): React.JSX.Element {
   return (
     <svg
       className={className}

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { backupFilename, backupFilenameDate, classifyBackupDestination, safeFilePart } from './backup.js';
 
@@ -43,6 +43,19 @@ describe('classifyBackupDestination', () => {
 });
 
 describe('backup filenames', () => {
+  // A backup is named for the day it happened on, in her timezone, so every
+  // case pins a zone: 22:15Z is still 24 August in Denver but already
+  // 25 August in Sydney, and the archive would then be named for the wrong
+  // day of her week.
+  const originalTimezone = process.env.TZ;
+  beforeEach(() => {
+    process.env.TZ = 'America/Denver';
+  });
+  afterEach(() => {
+    if (originalTimezone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimezone;
+  });
+
   it('names the day, and numbers a second run within it', () => {
     const day = new Date('2026-08-24T22:15:00.000Z');
     expect(backupFilename(day)).toBe('apunta-backup-2026-08-24.zip');
