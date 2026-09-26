@@ -4,15 +4,15 @@
   "contracts": [],
   "baseCommit": "46216fe",
   "attempt": 1,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "instruction review CLEAR on all ten (round 2 after AM-014/AM-017); researcher dispatched (space-bunny-free)",
-  "nextAllowedAction": "check instruction review return",
+  "status": "APPROVED",
+  "lastCompletedStep": "research review all PASS (f71e16f; 7 non-blocking findings); card APPROVED",
+  "nextAllowedAction": "done",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
-    "V1": "NOT RUN",
-    "V2": "NOT RUN"
+    "V1": "PASS",
+    "V2": "PASS"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T03:00:00Z"
+  "updatedUtc": "2026-09-26T05:34:32Z"
 }

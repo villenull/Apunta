@@ -43,3 +43,4 @@ One entry per coordinator step, newest last:
 2026-09-26T05:26:34Z | S1.4 | review attempt 3 | all PASS | docs/v2/state/reviews/S1.4-impl.md — 6 non-blocking findings (link rot in a citation, one verb, one file:line, wording drift, vacuous V2, delta-check note). Card APPROVED.
 2026-09-26T05:26:34Z | S1.5 | research attempt 1 | SUBMITTED, committed f71e16f | es-mx-spellcheck.md — dictionary-es-mx@2.0.0 FITS via MPL-1.1 election; review dispatched
 2026-09-26T05:26:34Z | P7a.1 | research | in flight (space-bunny-free)
+2026-09-26T05:34:32Z | S1.5 | research review | all PASS, 7 non-blocking findings | docs/v2/state/reviews/S1.5-impl.md — MPL-1.1 election verified verbatim. Card APPROVED.
