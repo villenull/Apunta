@@ -2,6 +2,7 @@ import { listTranscriptsForNote } from '../db/transcripts.js';
 import {
   FIRST_PASS_MESSAGE,
   STANDARD_PROGRESS_FORMAT,
+  t,
   textToSections,
   type Note,
   type NoteFormat,
@@ -15,7 +16,7 @@ import { OllamaProvider } from '../ai/ollama.js';
 import { FakeLlmProvider, FakeSttProvider } from '../ai/fake.js';
 import type { GenerateNoteRequest, LlmEvent } from '../ai/types.js';
 import { listChatMessagesForNote } from '../db/chat-messages.js';
-import { listNotesForPatient } from '../db/notes.js';
+import { getNote, listNotesForPatient } from '../db/notes.js';
 import { active, type ActiveJob } from '../jobs/registry.js';
 import { createTestApp, seedFormat, seedPatient, type TestApp } from '../test/harness.js';
 
@@ -329,6 +330,38 @@ describe('POST /api/generate — spoken retractions', () => {
     );
     // The transcript row keeps her words as transcribed, retraction and all.
     expect(listTranscriptsForNote(harness.db, note.id)[0]?.raw_text).toContain('scratch that');
+  });
+
+  /**
+   * The row is written in the **note's** language (a note takes its format's
+   * locale, C-LANG@1 rule 3), and the retraction notice is part of that row —
+   * so on an `es-MX` format the opening and the notice are both Spanish. The
+   * notice used to be a raw English string, which put an English paragraph
+   * under a Spanish one in the same persisted row.
+   */
+  it('writes the retraction notice in the note’s own language, not English', async () => {
+    harness.db.prepare("UPDATE note_formats SET locale = 'es-MX' WHERE id = ?").run(format.id);
+    try {
+      const { events } = await generate(harness.app, {
+        patient_id: patient.id,
+        format_id: format.id,
+        transcript:
+          'Okay, John Smith today. He walked to the shop twice this week, scratch that, three times this week.',
+      });
+
+      const note = events.at(-1)?.data['note'] as Note;
+      expect(getNote(harness.db, note.id)?.locale).toBe('es-MX');
+
+      const [opening] = listChatMessagesForNote(harness.db, note.id);
+      expect(opening?.text).toContain(t('chat.firstPass', {}, 'es-MX'));
+      expect(opening?.text).toContain('dejó fuera «He walked to the shop twice this week»');
+      // No English left in the row: neither sentence.
+      expect(opening?.text).not.toContain('left out');
+      expect(opening?.text).not.toContain('before drafting');
+      expect(opening?.text).not.toContain('first pass based on your dictation');
+    } finally {
+      harness.db.prepare("UPDATE note_formats SET locale = 'en' WHERE id = ?").run(format.id);
+    }
   });
 });
 

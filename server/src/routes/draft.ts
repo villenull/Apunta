@@ -257,7 +257,9 @@ export function persistDraft(
   // language (`createNote` above), which is the locale to render this in.
   const opening = (() => {
     const firstPass = msg(format.locale, 'chat.firstPass');
-    return retractions.length === 0 ? firstPass : `${firstPass}\n\n${retractionNotice(retractions)}`;
+    return retractions.length === 0
+      ? firstPass
+      : `${firstPass}\n\n${retractionNotice(retractions, format.locale)}`;
   })();
   createChatMessage(db, {
     note_id: note.id,

@@ -1,9 +1,12 @@
 import {
+  DEFAULT_LOCALE,
   MAX_RETRACTION_GAP_WORDS,
   MAX_WITHDRAWN_WORDS,
   type AppliedRetraction,
   type RetractionCorrection,
 } from '@apunta/shared';
+
+import { msg, type Locale } from '../http/locale.js';
 
 /**
  * Applying spoken retractions to a transcript, server-side.
@@ -251,18 +254,33 @@ function tidy(text: string): string {
 }
 
 /** The opening of the sentence the server adds under the first-pass message. Stripped from the model's history. */
-export const RETRACTION_NOTICE_OPENING = 'Apunta applied the corrections you made as you spoke';
+export const RETRACTION_NOTICE_OPENING = msg('en', 'chat.retractionNotice.opening');
 
 /** For the note's opening chat turn: what was left out, in her own words. */
-export function retractionNotice(applied: readonly AppliedRetraction[]): string {
+export function retractionNotice(
+  applied: readonly AppliedRetraction[],
+  locale: Locale = DEFAULT_LOCALE,
+): string {
   const items = applied.map((item) =>
     item.replacement === ''
-      ? `left out “${item.withdrawn}”`
-      : `left out “${item.withdrawn}” in favour of “${item.replacement}”`,
+      ? msg(locale, 'chat.retractionNotice.dropped', { withdrawn: item.withdrawn })
+      : msg(locale, 'chat.retractionNotice.replaced', {
+          withdrawn: item.withdrawn,
+          replacement: item.replacement,
+        }),
   );
+  // The conjunction is a key rather than an `and` in the template: Spanish joins
+  // the last item with `y`, and the list is the one part of this sentence whose
+  // length is not known here.
   const list =
     items.length <= 1
       ? (items[0] ?? '')
-      : `${items.slice(0, -1).join('; ')}; and ${items[items.length - 1]!}`;
-  return `${RETRACTION_NOTICE_OPENING}, before drafting: ${list}.`;
+      : msg(locale, 'chat.retractionNotice.list', {
+          first: items.slice(0, -1).join('; '),
+          last: items[items.length - 1]!,
+        });
+  return msg(locale, 'chat.retractionNotice.sentence', {
+    opening: msg(locale, 'chat.retractionNotice.opening'),
+    list,
+  });
 }

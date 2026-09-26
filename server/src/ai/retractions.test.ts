@@ -179,4 +179,35 @@ describe('retractionNotice', () => {
       'Apunta applied the corrections you made as you spoke, before drafting: left out “the old plan”.',
     );
   });
+
+  /**
+   * The notice is appended to the first-pass opening in the note's own chat
+   * (`routes/draft.ts`), so it is persisted text in the note's language — the
+   * same rule the lock notices follow. English before: it used to be a raw
+   * string, which put "…left out “four hours”." under a Spanish opening.
+   */
+  it('renders the whole notice in the note’s language, list and all', () => {
+    expect(
+      retractionNotice([{ withdrawn: 'four hours at night', replacement: 'six hours now' }], 'es-MX'),
+    ).toBe(
+      'Apunta aplicó las correcciones que hiciste al hablar, antes de redactar: dejó fuera «four hours at night» en lugar de «six hours now».',
+    );
+    // Two items, so the conjunction is exercised: Spanish joins the last one
+    // with `y`, and the two joining keys have to agree with that.
+    expect(
+      retractionNotice(
+        [
+          { withdrawn: 'four hours at night', replacement: 'six hours now' },
+          { withdrawn: 'every other week', replacement: '' },
+        ],
+        'es-MX',
+      ),
+    ).toBe(
+      'Apunta aplicó las correcciones que hiciste al hablar, antes de redactar: dejó fuera «four hours at night» en lugar de «six hours now»; y dejó fuera «every other week».',
+    );
+    // Her own words are never translated — only the sentence around them.
+    expect(retractionNotice([{ withdrawn: 'cuatro horas', replacement: '' }], 'es-MX')).toContain(
+      '«cuatro horas»',
+    );
+  });
 });
