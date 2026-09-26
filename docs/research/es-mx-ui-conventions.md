@@ -94,34 +94,43 @@
 - One entry per **noun and verb** visible in the UI, including inflected forms that appear verbatim ("Saving…", "Copied", "Try again"). Multi-word feature names are entries in their own right ("Treatment plan", "Finish & copy", "Prepare for session").
 - Proper nouns and identifiers are listed as **keep as-is** entries (Apunta, Claude, Halaxy, SKILL.md, ICD-10-CM, DSM-5-TR, NPI, PDF, Mac).
 
+**Coverage (reproducible).** The enumeration and the match are mechanical, not a reading of the files by eye, and the method is written out in full in `docs/v2/evidence/S1.4/evidence.md` (§ "The enumeration method (reproducible)"), with the complete script quoted in its Appendix A. It runs from the repository root and lives **outside** the checkout, because every `.cjs`/`.mjs`/`.js` under `docs/` is linted by `eslint .` and would fail the repo lint for reasons unrelated to this research:
+
+```sh
+NODE_PATH="$PWD/node_modules" node /tmp/s14/ui-string-coverage.cjs
+```
+
+It parses both globs with the TypeScript compiler API, takes JSX text nodes plus `placeholder`/`aria-label`/`title`/`alt` string attributes (`*.test.tsx` excluded), normalises whitespace and entity references, and classifies each candidate as exact-mapped, template-mapped, fragment, non-text or unmapped. At commit `46216fe` it reports 218 entries and 341 distinct visible candidates: 296 map exactly, 27 map through a `{…}` placeholder in a `ui` entry, 6 are the pieces a sentence breaks into at an inline element or an interpolation, and 12 are symbols and separators. **0 translatable visible strings are unmapped.** The two classes that are deliberately not given entries of their own are listed in §3.6.
+
 ### 3.2 Cross-references to earlier cards
 
 - **Clinical note vocabulary** (diagnosis, intervention, risk, techniques, medications) is mapped in `docs/research/es-mx-clinical-glossary.json` (S1.2). This card does not duplicate it; it reuses its renderings for the few clinical UI terms that surface (diagnosis, intervention, plan, patient).
 - **Section names** for the note formats are decided in `docs/research/es-mx-clinical-documentation.md` (S1.1, §5): e.g. *nota de evolución* for a session note, *paciente* for patient, *motivo de consulta*, *antecedentes*, *plan terapéutico*. This card follows those.
 - **Spoken-correction vocabulary and fillers** are in `docs/research/es-mx-speech.md` (S1.3) and are not UI strings.
+- **Citation rule.** A term reused from S1.1–S1.3 names the upstream decision in its `note` and carries the *primary* source URL in the JSON `source` (NOM-004, CONASAMA, UNAM ECLIME, FENAPSIME, RAE DLE, or the Microsoft/Ubuntu style guide); the local cross-reference path is never the citation. The sole non-URL `source` is the sample-patient-name placeholder, which cites the repo policy file `docs/v2/HARD-STOPS.md` (HS-8) — a policy reference, not a factual web claim.
 
 ### 3.3 Key naming decisions
 
-| English UI | es-MX | Basis |
+| English UI | es-MX | Basis (with URL) |
 | --- | --- | --- |
-| note | **nota** | `[verified]` RAE DLE (https://dle.rae.es/nota). In clinical context, *nota de evolución* `[verified]` NOM-004 §6.2. |
-| draft | **borrador** | `[verified]` RAE DLE: "Texto provisional susceptible de modificación y desarrollo" (https://dle.rae.es/borrador). |
-| brainstorm | **lluvia de ideas** | `[verified]` FundéuRAE: the DLE records both *lluvia de ideas* and *tormenta de ideas* (https://www.fundeu.es/consulta/brainstorming-16047/). Feature title and verb phrase ("Think out loud…" = "Piensa en voz alta…") both mapped. |
-| backup | **copia de seguridad** | `[verified]` FundéuRAE: English *backup* = *copia de seguridad*, *copia de respaldo* or *copia* (https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/). Verb *back up* = **hacer una copia de seguridad**. |
-| settings | **Ajustes** | `[inferred]` es-MX consumer convention (Samsung Mexico and Audible es_MX both use *Ajustes*: https://www.samsung.com/mx/support/mobile-devices/how-to-change-the-language-settings-of-each-app-in-your-galaxy-device/, https://help.audible.com/s/article/set-your-language-preference?language=es_MX). *Configuración* is the Microsoft/enterprise variant and is recorded as an accepted alternative. |
-| patient | **paciente** | `[verified]` NOM-004 defines *paciente*; follows S1.1 §2.3. |
-| session | **sesión** | `[verified]` standard clinical term; UNAM/CONASAMA use *sesión* and *nota de sesión*. |
-| treatment plan | **plan de tratamiento** | `[verified]` NOM-004 D2/6.3 uses *plan de tratamiento*; FENAPSIME art. 10 *plan de trabajo*; S1.1 §5.3. |
-| briefing (prepare) | **resumen previo** | `[inferred]` the feature is a pre-session briefing assembled from past notes; literal *informe* suggests a formal report. *Resumen previo* avoids claiming it is a saved document (the UI says it is not saved unless kept). |
-| attestation | **declaración** | `[inferred]` English *attestation* is the act of putting a version in force and recording name/credential. *Declaración* reads naturally; the literal *atestación/atestar* is archaic outside law. Flag O-4. |
-| licensing (professional) | **cédula profesional** | `[verified]` NOM-004 Appendix D2/D12 lists "cédula profesional"; S1.1 §3.4. Distinct from **licencia** = software licence, so the two English strings "Licence" (plan) and "Licences" (legal) get different Spanish words. |
-| licence (software) | **licencia** | `[verified]` standard legal term, used throughout THIRD-PARTY-LICENSES and Software licence practice. |
-| transcript | **transcripción** | `[inferred]` standard Spanish noun for the written record of speech; S1.3 uses *transcripción*. |
-| dictation | **dictado**; verb **dictar** | `[verified]` RAE/libro de estilo uses *dictar* for dictating to a machine (https://www.rae.es/libro-estilo-lengua-espa%C3%B1ola/comunicaci%C3%B3n-ser-humanom%C3%A1quina). |
-| refine | **refinar** | `[inferred]` standard Spanish verb; the UI label "Refine note" renders as "Refinar nota". |
-| publish | **publicar** | `[inferred]` standard Spanish verb for making the draft final. Flag O-2 (see below). |
-| format | **formato** | `[inferred]` standard; the earlier format work already names them *formatos de notas*. |
-| section | **sección** | `[inferred]` standard; S1.1 calls the parts *secciones*. |
+| note | **nota** | `[verified]` RAE DLE, *nota* — https://dle.rae.es/nota. In the clinical record the session note is *nota de evolución* `[verified]` NOM-004 §6.2 — https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787. |
+| draft | **borrador** | `[verified]` RAE DLE, *borrador*: "Texto provisional susceptible de modificación y desarrollo" — https://dle.rae.es/borrador. |
+| brainstorm | **lluvia de ideas** | `[verified]` FundéuRAE (the DLE records both *lluvia de ideas* and *tormenta de ideas*) — https://www.fundeu.es/consulta/brainstorming-16047/. Feature title and verb phrase ("Think out loud…" = "Piensa en voz alta…") both mapped. |
+| backup | **copia de seguridad** | `[verified]` FundéuRAE: English *backup* = *copia de seguridad*, *copia de respaldo* or *copia* — https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/. Verb *back up* = **hacer una copia de seguridad**. |
+| settings | **Ajustes** | `[inferred]` from es-MX consumer convention: Samsung Mexico — https://www.samsung.com/mx/support/mobile-devices/how-to-change-the-language-settings-of-each-app-in-your-galaxy-device/ — and Audible es_MX — https://help.audible.com/s/article/set-your-language-preference?language=es_MX. *Configuración* is the Microsoft/enterprise variant and is recorded as an accepted alternative. |
+| patient | **paciente** | `[verified]` NOM-004 defines *paciente*; follows S1.1 §2.3 — https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787. |
+| session | **sesión** | `[verified]` standard clinical term; UNAM ECLIME Psicología uses *sesión* — https://www.zaragoza.unam.mx/wp-content/Portal2015/eclime/ECLIME_Psicologia_2025.pdf — and CONASAMA uses *nota de sesión* — https://www.conasama.salud.gob.mx/Residenciales/Guxa_expediente_res_profesional_13_09_21.pdf. |
+| treatment plan | **plan de tratamiento** | `[verified]` NOM-004 D2/6.3 uses *plan de tratamiento* — https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787; FENAPSIME art. 10 *plan de trabajo* — https://fenapsime.org/wp-content/uploads/2022/11/Codigo-de-Etica-FENAPSIME.pdf; S1.1 §5.3. |
+| briefing (prepare) | **resumen previo** | `[inferred]` from the feature shape (a pre-session summary assembled from past notes that the UI says is not saved unless kept) plus standard Spanish for a summary: RAE DLE, *resumen* — https://dle.rae.es/resumen. Literal *informe* suggests a formal filed report, which the feature is not. |
+| attestation | **declaración** | `[inferred]` from NOM-004's name-and-credential record (cédula profesional) — https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787 — plus standard Spanish: RAE DLE, *declaración* — https://dle.rae.es/declaraci%C3%B3n. The literal *atestación/atestar* is archaic outside law. Flag O-4. |
+| licensing (professional) | **cédula profesional** | `[verified]` NOM-004 Appendix D2/D12 lists "cédula profesional"; S1.1 §3.4 — https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787. Distinct from **licencia** = software licence, so the two English strings "Licence" (plan) and "Licences" (legal) get different Spanish words. |
+| licence (software) | **licencia** | `[verified]` standard legal noun: RAE DLE, *licencia* — https://dle.rae.es/licencia — used throughout THIRD-PARTY-LICENSES and Software licence practice. |
+| transcript | **transcripción** | `[inferred]` standard Spanish noun for the written record of speech: RAE DLE, *transcripción* — https://dle.rae.es/transcripci%C3%B3n; S1.3 uses *transcripción*. |
+| dictation | **dictado**; verb **dictar** | `[verified]` RAE *Libro de estilo* uses *dictar* for dictating to a machine — https://www.rae.es/libro-estilo-lengua-espa%C3%B1ola/comunicaci%C3%B3n-ser-humanom%C3%A1quina. |
+| refine | **refinar** | `[inferred]` standard Spanish verb: RAE DLE, *refinar* — https://dle.rae.es/refinar. The UI label "Refine note" renders as "Refinar nota". |
+| publish | **publicar** | `[inferred]` standard software verb for making the draft final: RAE DLE, *publicar* — https://dle.rae.es/publicar. Flag O-2 (see below). |
+| format | **formato** | `[inferred]` standard Spanish noun: RAE DLE, *formato* — https://dle.rae.es/formato. NOM-004 §5.13 lets providers design their own note formats — https://dof.gob.mx/nota_detalle_popup.php?codigo=5272787. |
+| section | **sección** | `[inferred]` standard Spanish noun: RAE DLE, *sección* — https://dle.rae.es/secci%C3%B3n; S1.1 calls the note parts *secciones*. |
 
 ### 3.4 Deliberately kept in English (proper nouns and identifiers)
 
@@ -130,6 +139,20 @@ Apunta · Claude · Halaxy · SKILL.md · ICD-10-CM · DSM-5-TR · NPI · PDF ·
 ### 3.5 Sample names in placeholder text
 
 The UI has an English placeholder *"e.g. John Smith"* (Add patient) and Spanish fixtures may not use invented names. `e2e/fixtures/eval-es/NAMES.md` does **not** exist in the tree at this commit `[verified]` (checked with `find`/`git ls-files`, no such path). Per HS-8, Spanish placeholder names must come only from that file **when it is created**; until then, S2 must leave the placeholder as the prototype's English sample or blank and flag it. Do not invent a Spanish name. Flag O-3.
+
+### 3.6 Visible strings that get no entry of their own
+
+The coverage check in §3.1 finds **0 translatable strings without an entry**. Two classes of extracted string are intentionally not given their own entry:
+
+| Class | Members at `46216fe` | Reason |
+| --- | --- | --- |
+| Symbols and separators | `.` `:` `,.` `” .` `↑` `↓` `›` `·` `×` `,` `—` `“` `”` (12) | Punctuation, arrows and typographic glyphs. They render as-is; a translator changes nothing, so an entry would only be noise. |
+| Sentence fragments | `and` `across` `days.` `A` `, or a` `yet.` (6) | JSX splits a sentence into separate text nodes at an inline element or an interpolation, so the extractor sees the pieces rather than the sentence. Each piece is glue: `A` and `, or a` sit around two `<code>` elements in `InstructionsPanel.tsx:95`, `and` falls at a line break in `Workspace.tsx:345`, `days.` around `{String(BACKUP_STALE_DAYS)}` in `BackupCard.tsx:180`, `yet.` around `{patient.name}` in `PlanView.tsx:304`, `across` around a `{' '}` expression in `Import.tsx:187`. The **complete** sentence is a `ui` string, so S2 translates the sentence and the fragments follow it — for example `No backup for over {n} days.` under *backup status and warnings* and `No treatment plan for {name} yet.` under *Plan help and attestation*. |
+
+Two things that look like they belong in that table, and do not:
+
+- **File names and paths** — `RESTORE.txt`, `SKILL.md`, `conversations.json`, `/Volumes/Backup/Apunta`, `docs/skill-porting.md`. These *are* visible and are *not* unmapped: each is already a `ui` string in a keep-as-is entry, so the check counts them as mapped (§3.4).
+- **Keyboard key names** — `Escape`, `Tab`, `Enter`, `ArrowDown`, `Home`, `End`. In these globs they occur only inside event-handler comparisons (`event.key === 'Escape'`), never as visible text, so the extractor never sees them and no entry is needed. The enumerator keeps them in its `non-text` list defensively.
 
 ---
 
@@ -161,7 +184,9 @@ Primary standards and authorities:
 - FundéuRAE: cómo se escriben las fechas — https://www.fundeu.es/recomendacion/como-se-escriben-las-fechas/; horas — https://www.fundeu.es/recomendacion/horas-grafia/; meses en minúscula — https://www.fundeu.es/recomendacion/dias-de-la-semana-meses-estaciones-minuscula/; noon — https://www.fundeu.es/consulta/horarios/; backup — https://www.fundeu.es/recomendacion/backup-es-copia-de-seguridad-respaldo/; brainstorming — https://www.fundeu.es/consulta/brainstorming-16047/
 - Microsoft Spanish (Mexico) Localization Style Guide — https://download.microsoft.com/download/9/0/1/9016efc5-6455-4a9d-ae78-ed3df93b2851/spa-mex-StyleGuide.pdf
 - Ubuntu Spanish Translators style — https://wiki.ubuntu.com/UbuntuSpanishTranslators/Estilo
-- RAE DLE — *nota* https://dle.rae.es/nota; *borrador* https://dle.rae.es/borrador
+- RAE DLE — *nota* https://dle.rae.es/nota; *borrador* https://dle.rae.es/borrador; *descripción* https://dle.rae.es/descripci%C3%B3n; *sección* https://dle.rae.es/secci%C3%B3n; *vigente* https://dle.rae.es/vigente; *transcripción* https://dle.rae.es/transcripci%C3%B3n; *resumen* https://dle.rae.es/resumen; *declaración* https://dle.rae.es/declaraci%C3%B3n; *refinar* https://dle.rae.es/refinar; *publicar* https://dle.rae.es/publicar; *formato* https://dle.rae.es/formato; *licencia* https://dle.rae.es/licencia
+- FundéuRAE, *inteligencia artificial* (for the "as AI" disclosure) — https://www.fundeu.es/recomendacion/inteligencia-artificial/
+- ICD-10-CM, official US clinical modification — https://www.cdc.gov/nchs/icd/icd-10-cm.htm; DSM-5-TR — https://www.psychiatry.org/psychiatrists/practice/dsm
 
 Clinical/practice references (reused from S1.1 and S1.2):
 
