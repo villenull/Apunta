@@ -1,0 +1,15 @@
+{
+  "card": "{{CARD_ID}}",
+  "planVersion": 2,
+  "contracts": [],
+  "baseCommit": null,
+  "attempt": 0,
+  "status": "NOT STARTED",
+  "lastCompletedStep": null,
+  "nextAllowedAction": "instruction-review",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {},
+  "sandboxRuns": [],
+  "updatedUtc": null
+}

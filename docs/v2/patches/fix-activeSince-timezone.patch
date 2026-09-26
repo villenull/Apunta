@@ -1,0 +1,46 @@
+--- a/server/src/import/claude.test.ts	2026-09-25 04:58:04.000000000 +0000
++++ b/server/src/import/claude.test.ts	2026-09-25 19:55:37.339155473 +0000
+@@ -2,7 +2,7 @@
+ import { join } from 'node:path';
+ 
+ import { instantToLocalDay } from '@apunta/shared';
+-import { describe, expect, it } from 'vitest';
++import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+ 
+ import {
+   activeSince,
+@@ -208,6 +208,16 @@
+ });
+ 
+ describe('activeSince', () => {
++  // `activeSince` reads the local calendar day, so every case pins a zone:
++  // 01:00Z on 1 July is 30 June in Denver but 1 July on a UTC CI runner.
++  const originalTimezone = process.env.TZ;
++  beforeEach(() => {
++    process.env.TZ = 'America/Denver';
++  });
++  afterEach(() => {
++    if (originalTimezone === undefined) delete process.env.TZ;
++    else process.env.TZ = originalTimezone;
++  });
+   it('counts a message on the cutoff day, and not one the day before', () => {
+     const on: RawTurn = { id: 'a', role: 'human', text: 'x', at: '2026-07-01T07:30:00.000Z', attachments: 0 };
+     const before: RawTurn = { ...on, at: '2026-07-01T01:00:00.000Z' };
+@@ -215,8 +225,6 @@
+     expect(activeSince([before], CUTOFF)).toBe(false);
+   });
+   it('uses the local day for a late-evening instant before the cutoff', () => {
+-    const timezone = process.env.TZ;
+-    process.env.TZ = 'America/Denver';
+     const beforeCutoff: RawTurn = {
+       id: 'late',
+       role: 'human',
+@@ -225,8 +233,6 @@
+       attachments: 0,
+     };
+     expect(activeSince([beforeCutoff], CUTOFF)).toBe(false);
+-    if (timezone === undefined) delete process.env.TZ;
+-    else process.env.TZ = timezone;
+   });
+ });
+ 

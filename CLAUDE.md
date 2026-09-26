@@ -93,6 +93,8 @@ under the first-pass message in the note's chat.
 
 ## Conventions
 
+Temporary (v2): work for Apunta v2 happens on `feature/v2` until the owner merges it. Every other rule in this file still applies. See `docs/v2/`.
+
 - TypeScript strict everywhere; zod schemas in `shared/` are the single
   source of truth for API and LLM-output shapes.
 - UUIDv7 ids; UTC ISO-8601 timestamps; SQLite via better-sqlite3 with

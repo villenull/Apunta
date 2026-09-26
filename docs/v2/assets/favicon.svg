@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!--
+    The Apunta mark: a handwritten A (Kalam, SIL OFL 1.1, converted to outlines).
+    Served from web/public/ so it reaches the browser byte for byte and is
+    bundled with the app: no CDN, no external asset (CLAUDE.md hard rule 1).
+    Colours are written out because a favicon cannot see CSS custom properties.
+  -->
+  <rect x="0.25" y="0.25" width="23.5" height="23.5" rx="5" fill="#f6f4ef" stroke="#e3e0d6" stroke-width="0.5"/>
+  <path fill="#1f6f63" transform="translate(5.634 20.036) scale(0.02101 -0.02101)" d="M564 363Q564 344 476 319Q484 215 484 142Q484 16 452 16Q435 16 425.0 37.0Q415 58 409 110Q402 206 394 298Q349 286 312.0 276.5Q275 267 200 246Q112 16 96.0 16.0Q80 16 61.5 35.5Q43 55 43 77Q43 87 100 219H93Q73 219 57.5 232.0Q42 245 42.0 264.5Q42 284 141 316Q157 352 167 381Q190 438 231.0 537.0Q272 636 283.0 663.5Q294 691 321.5 710.5Q349 730 375 730Q406 730 430.5 631.0Q455 532 470 386Q498 389 519 389Q564 389 564 363ZM237 342Q308 361 387 374Q369 545 352 631Q307 528 237 342Z"/>
+</svg>

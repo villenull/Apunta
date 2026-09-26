@@ -6,3 +6,5 @@ test-results
 package-lock.json
 prototype
 *.md
+docs/v2/state/
+docs/v2/evidence/
