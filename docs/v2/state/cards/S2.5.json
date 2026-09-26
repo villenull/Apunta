@@ -5,10 +5,10 @@
     "C-ISO@1",
     "C-LANG@1"
   ],
-  "baseCommit": "8867ecb",
+  "baseCommit": "3421a91",
   "attempt": 3,
   "status": "NOT STARTED",
-  "lastCompletedStep": "attempt 2 review FAIL at 1a6540a (all four rows PASS, every hard stop respected, objective unmet on four refine-request sentences); AM-046 re-encoded the scope by output instead of line numbers; dispatch rebuilt at 8867ecb, port 7836, attempt 3 OF 3 - the last",
+  "lastCompletedStep": "attempt 2 review FAIL at 1a6540a (all four rows PASS, every hard stop respected, objective unmet on four refine-request sentences); AM-046 re-encoded the scope by output instead of line numbers; attempt-3 dispatch built with base fd2e318 and committed in 3421a91, so the work starts at 3421a91 (its parent is the stated base) - same shape as attempt 2, whose implementer recognised the dispatch commit and proceeded",
   "nextAllowedAction": "implement",
   "sideEffectsDone": [],
   "changedFiles": 44,
