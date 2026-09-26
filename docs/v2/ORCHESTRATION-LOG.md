@@ -29,3 +29,7 @@ One entry per coordinator step, newest last:
 2026-09-26T02:18:21Z | S1.2 | IR round 2 | CLEAR all ten | docs/v2/state/reviews/S1.2-ir.md
 2026-09-26T02:18:21Z | S1.2 | research attempt 1 | SUBMITTED, committed 9cbdefd | 399-entry glossary (6 unmapped with reasons); V1/V2 PASS, V3 for review
 2026-09-26T02:18:21Z | S1.2 | research review | all PASS, 1 non-blocking advisory | docs/v2/state/reviews/S1.2-impl.md — advisory: add [not found] labels to the 6 UNMAPPED entries if a future machine label-coverage check needs it. Card APPROVED.
+2026-09-26T02:28:19Z | S1.3 | IR round 1 | 9x CLEAR, IR-05 UNKNOWN | inputs lacked package.json evidence; AM-010 supplied prettier@base fact, re-review run once
+2026-09-26T02:28:19Z | S1.3 | IR round 2 | CLEAR all ten | docs/v2/state/reviews/S1.3-ir.md
+2026-09-26T02:28:19Z | S1.3 | research attempt 1 | SUBMITTED, committed 9413108 | es-mx-speech.md (ranked D9 markers, fillers, whisper evidence, Piper voices + redistribution silence); V1 PASS, V2 for review
+2026-09-26T02:28:19Z | S1.3 | research review | all PASS, zero findings | docs/v2/state/reviews/S1.3-impl.md — reviewer independently fetched 3 voice cards + Vocova benchmark, all match. Card APPROVED.
