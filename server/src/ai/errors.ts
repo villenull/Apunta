@@ -58,7 +58,15 @@ export class AiError extends Error {
   }
 }
 
-/** The exact banner copy from the M3 packet, so the two paths agree. */
+/**
+ * The exact banner copy from the M3 packet, so the two paths agree.
+ *
+ * English, and English on purpose: it is the marker a log line carries and the
+ * base for the catalogue lookups below. A sentence a person reads is rendered
+ * from the key, not from this constant — `aiMessage` interpolates
+ * `ai.unreachable_banner` **in the requested locale**, which is why the es-MX
+ * entry is not dead code.
+ */
 export const UNREACHABLE_MESSAGE = msg('en', 'ai.unreachable_banner');
 
 /**
@@ -105,7 +113,11 @@ export function aiMessageKey(code: AiErrorCode): MessageKey {
 
 /** The sentence for `code`, in `locale`. */
 export function aiMessage(code: AiErrorCode, locale: Locale = DEFAULT_LOCALE): string {
-  return msg(locale, MESSAGE_KEYS[code], { banner: UNREACHABLE_MESSAGE });
+  // The banner is a placeholder of `ai.ollama_unreachable`, so it is looked up
+  // in `locale` like every other word in the sentence. Reading it from the
+  // English constant here is what made a Spanish `ollama_unreachable` half
+  // Spanish — the es-MX entry existed and nothing ever rendered it.
+  return msg(locale, MESSAGE_KEYS[code], { banner: msg(locale, 'ai.unreachable_banner') });
 }
 
 export function aiError(code: AiErrorCode, detail?: string, locale: Locale = DEFAULT_LOCALE): AiError {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { msg } from '../http/locale.js';
 import { AiError, aiError, isConnectionFailure, UNREACHABLE_MESSAGE } from './errors.js';
 
 describe('AiError', () => {
@@ -9,6 +10,30 @@ describe('AiError', () => {
     expect(aiError('model_missing').message).toContain('see Setup');
     expect(aiError('model_missing').message).not.toContain('script');
     expect(aiError('invalid_output').message).not.toMatch(/schema|zod|parse/i);
+  });
+
+  /**
+   * `ai.ollama_unreachable` is the one sentence assembled from another key, and
+   * the banner used to be interpolated as the English constant — so a Spanish
+   * install read "Apunta can't reach the local AI — see Setup. Ollama no parece
+   * estar ejecutándose…", and the es-MX entry for the banner was never rendered
+   * by anything. The banner is looked up in the requested locale instead.
+   */
+  it('interpolates the banner in the requested language, not the English one', () => {
+    const spanish = aiError('ollama_unreachable').inLocale('es-MX');
+    expect(spanish.message).toBe(
+      msg('es-MX', 'ai.ollama_unreachable', { banner: msg('es-MX', 'ai.unreachable_banner') }),
+    );
+    expect(spanish.message).not.toContain(UNREACHABLE_MESSAGE);
+    expect(spanish.message).toContain(msg('es-MX', 'ai.unreachable_banner'));
+    // The es-MX banner is a real translation, not the English bytes.
+    expect(msg('es-MX', 'ai.unreachable_banner')).not.toBe(UNREACHABLE_MESSAGE);
+
+    // The English constant stays the English sentence — the log line and the
+    // base-import sites read it, and a log line is never in the request's
+    // language.
+    expect(aiError('ollama_unreachable').message).toContain(UNREACHABLE_MESSAGE);
+    expect(UNREACHABLE_MESSAGE).toBe(msg('en', 'ai.unreachable_banner'));
   });
 
   /**
