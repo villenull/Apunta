@@ -5,19 +5,19 @@
     "C-ISO@1",
     "C-LANG@1"
   ],
-  "baseCommit": "2a2f3f9",
-  "attempt": 1,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "implement a1 SUBMITTED at bafdcff (impl f33776c, evidence+return 96470b4, row re-run 2b62e6e); coordinator verified scope independently - 44 source files, no web/ or prototype/, and shared/src/errors.ts + shared/src/i18n/{t,locales,t.test}.ts + shared/src/index.ts untouched; review dispatched on base 2a2f3f9 head bafdcff",
-  "nextAllowedAction": "implementation-review",
+  "baseCommit": "fdec649",
+  "attempt": 2,
+  "status": "NOT STARTED",
+  "lastCompletedStep": "attempt 1 review FAIL at bafdcff (all four rows PASS, objective unmet); AM-045 owner-approved May-edit widening; dispatch rebuilt at fdec649, port 7834, attempt 2",
+  "nextAllowedAction": "implement",
   "sideEffectsDone": [],
   "changedFiles": 44,
   "criteria": {
-    "V1": "PASS (claimed, unverified)",
-    "V2": "PASS (claimed, unverified)",
-    "V3": "PASS (claimed, unverified)",
-    "V4": "PASS (claimed, unverified)"
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN",
+    "V4": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T19:32:00Z"
+  "updatedUtc": "2026-09-26T19:45:00Z"
 }
