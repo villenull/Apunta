@@ -8,6 +8,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from '../App.js';
+import { beginWork } from '../lib/i18n.js';
 import { installFakeApi, makeFormat, type FakeApi } from '../test/fakeApi.js';
 
 /**
@@ -122,6 +123,7 @@ afterEach(() => {
   document.documentElement.style.removeProperty('--accent-hover');
   document.documentElement.style.removeProperty('--accent-tint');
   document.documentElement.classList.remove('no-motion');
+  document.documentElement.lang = 'en';
 });
 
 describe('settings appearance controls', () => {
@@ -489,4 +491,135 @@ describe('the accent low-contrast note', () => {
       });
     });
   }
+});
+
+/**
+ * Language / Idioma (C-LANG@1 rules 1 and 6, C-SETTINGS@1): hidden unless the
+ * build offers Spanish, applied without a reload, disabled with its reason
+ * while work is in flight, and put back when the server refuses the change.
+ */
+describe('the Language row', () => {
+  const OFFERED: Settings = { ...STORED, spanish_available: true, language: 'en' };
+
+  it('is not there on a build that does not offer Spanish', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED, spanish_available: false } });
+    renderApp();
+    await screen.findByTestId('appearance-settings');
+    expect(screen.queryByTestId('language-settings')).toBeNull();
+    expect(screen.queryByText(t('settings.language'))).toBeNull();
+  });
+
+  it('sits first, and switches the page and <html lang> at once, without a reload', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...OFFERED } });
+    const puts = holdSettingsPuts(api);
+    renderApp();
+    const row = await screen.findByTestId('language-settings');
+    // First in the settings body: nothing is above it for a Spanish speaker to
+    // read past.
+    expect(row.parentElement?.firstElementChild).toBe(row);
+    const group = within(row).getByRole('radiogroup', { name: 'Language / Idioma' });
+    const english = within(group).getByTestId('language-en');
+    const spanish = within(group).getByTestId('language-es-MX');
+    expect(english.textContent).toBe('English');
+    expect(english.getAttribute('lang')).toBe('en');
+    expect(spanish.textContent).toBe('Español');
+    expect(spanish.getAttribute('lang')).toBe('es-MX');
+    await waitFor(() => {
+      expect(english.getAttribute('aria-checked')).toBe('true');
+    });
+    expect(document.documentElement.lang).toBe('en');
+    expect(screen.getByTestId('appearance-settings').textContent).toContain(
+      t('settings.appearance', {}, 'en'),
+    );
+
+    fireEvent.click(spanish);
+
+    // Before the server has answered: the provider's value, the control, the
+    // page's words and the document's language all say Spanish.
+    expect(puts.sent).toEqual([{ language: 'es-MX' }]);
+    expect(spanish.getAttribute('aria-checked')).toBe('true');
+    expect(document.documentElement.lang).toBe('es-MX');
+    expect(screen.getByTestId('appearance-settings').textContent).toContain(
+      t('settings.appearance', {}, 'es-MX'),
+    );
+    // The row's own label does not change: it is the same in both catalogues.
+    expect(within(row).getByRole('radiogroup', { name: 'Language / Idioma' })).toBe(group);
+
+    puts.settle(0, { ok: true });
+    await flush();
+    expect(api.state.settings['language']).toBe('es-MX');
+    expect(document.documentElement.lang).toBe('es-MX');
+  });
+
+  it('is disabled with its reason while work is in flight, and comes back when it ends', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...OFFERED } });
+    renderApp();
+    const spanish = await screen.findByTestId('language-es-MX');
+    const english = screen.getByTestId('language-en');
+    expect(screen.queryByTestId('language-busy')).toBeNull();
+
+    let release = (): void => undefined;
+    act(() => {
+      release = beginWork();
+    });
+    // Released in `finally`: the count is module state, and a failure here must
+    // not leave every later case looking at work that never ends.
+    try {
+      expect((spanish as HTMLButtonElement).disabled).toBe(true);
+      expect((english as HTMLButtonElement).disabled).toBe(true);
+      const reason = screen.getByTestId('language-busy');
+      expect(reason.textContent).toBe(t('settings.languageChangeBlocked', {}, 'en'));
+      expect(
+        screen.getByRole('radiogroup', { name: 'Language / Idioma' }).getAttribute('aria-describedby'),
+      ).toBe(reason.id);
+
+      // A click on a disabled option asks the server nothing.
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+      fireEvent.click(spanish);
+      expect(fetchSpy.mock.calls.filter(([, init]) => init?.method === 'PUT')).toEqual([]);
+      expect(api.state.settings['language']).toBe('en');
+    } finally {
+      act(() => {
+        release();
+      });
+    }
+    expect((spanish as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByTestId('language-busy')).toBeNull();
+  });
+
+  it('puts English back, in the page and in <html lang>, when the server refuses with a 409', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...OFFERED } });
+    const inner = globalThis.fetch as unknown as FetchFn;
+    const refusal = t('settings.languageChangeBlocked', {}, 'en');
+    vi.stubGlobal('fetch', (path: string, init: RequestInit = {}): Promise<Response> => {
+      if (path === '/api/settings' && init.method === 'PUT') {
+        return Promise.resolve(
+          new Response(JSON.stringify({ error: 'language_change_blocked', message: refusal }), {
+            status: 409,
+            headers: { 'content-type': 'application/json' },
+          }),
+        );
+      }
+      return inner(path, init);
+    });
+    renderApp();
+    const spanish = await screen.findByTestId('language-es-MX');
+    const english = screen.getByTestId('language-en');
+    await waitFor(() => {
+      expect(english.getAttribute('aria-checked')).toBe('true');
+    });
+
+    fireEvent.click(spanish);
+    await flush();
+    await waitFor(() => {
+      expect(screen.getByTestId('language-error').textContent).toBe(refusal);
+    });
+    expect(english.getAttribute('aria-checked')).toBe('true');
+    expect(spanish.getAttribute('aria-checked')).toBe('false');
+    expect(document.documentElement.lang).toBe('en');
+    expect(screen.getByTestId('appearance-settings').textContent).toContain(
+      t('settings.appearance', {}, 'en'),
+    );
+    expect(api.state.settings['language']).toBe('en');
+  });
 });

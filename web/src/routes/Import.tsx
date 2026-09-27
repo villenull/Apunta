@@ -15,7 +15,7 @@ import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 
 /**
  * Importing her Claude conversations (M11), automatically — the owner's
@@ -80,6 +80,8 @@ export function Import(): React.JSX.Element {
   const [unticked, setUnticked] = useState<ReadonlySet<string>>(new Set());
   const [report, setReport] = useState<ClaudeImportReport | null>(null);
   const [busy, setBusy] = useState(false);
+  // A preview or import in flight holds the Language control (C-LANG@1 rule 6).
+  useReportWork(busy);
   const [error, setError] = useState<string | null>(null);
   const { batches, undone, undoing, reload, undo } = useImportBatch();
 

@@ -15,7 +15,7 @@ import {
   restoreBackup,
 } from '../api/index.js';
 import { useLoader, type LoadState } from '../hooks/useLoader.js';
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 
 /**
  * Settings → Backup (M7 deliverable 4), in two parts since the Settings
@@ -74,6 +74,8 @@ export function useBackup(): BackupControls {
   const load = useCallback((signal: AbortSignal) => fetchBackupStatus(signal), []);
   const status = useLoader(load);
   const [busy, setBusy] = useState(false);
+  // A backup or restore in flight holds the Language control (C-LANG@1 rule 6).
+  useReportWork(busy);
   const [error, setError] = useState<BackupControls['error']>(null);
   const [message, setMessage] = useState<BackupControls['message']>(null);
   const [directory, setDirectory] = useState('');

@@ -6,7 +6,7 @@ import { useChatStream, type ChatStreamHandlers } from '../hooks/useChatStream.j
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { firstName } from '../lib/format.js';
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 import { Markdown } from '../lib/markdown.js';
 import { ChatComposer } from './ChatComposer.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
@@ -95,6 +95,8 @@ export function BrainstormView({ patient }: BrainstormViewProps): React.JSX.Elem
     onContext: setContext,
   });
   const { clearError, error, send, sending, status, streaming, stop } = chat;
+  // A reply or a dictation in flight holds the Language control (C-LANG@1 rule 6).
+  useReportWork(sending || dictation.listening || dictation.transcribing);
 
   useEffect(() => {
     if (error !== null) reloadThread();

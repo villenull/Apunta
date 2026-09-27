@@ -20,7 +20,7 @@ import {
 } from '../api/index.js';
 import { copyText } from '../lib/clipboard.js';
 import { wasEdited } from '../lib/format.js';
-import { useI18n } from '../lib/i18n.js';
+import { useI18n, useReportWork } from '../lib/i18n.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
 import { ChatIcon, CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
 import { InterventionApproachSuggestion } from './InterventionApproachSuggestion.js';
@@ -113,6 +113,8 @@ export function NoteView({
   const [refined, setRefined] = useState(false);
   /** A refine request is in flight: the editor breathes and says updating…. */
   const [refining, setRefining] = useState(false);
+  // A save, publish or delete in flight holds the Language control (C-LANG@1 rule 6).
+  useReportWork(busy || saveState === 'saving');
   const [chatOpen, setChatOpen] = useState(() => chatStorage()?.getItem(CHAT_OPEN_KEY) === '1');
   /** Which sections the last rewrite changed, named for a moment. */
   const [changedSections, setChangedSections] = useState<readonly string[]>([]);

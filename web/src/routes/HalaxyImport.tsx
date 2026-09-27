@@ -11,7 +11,7 @@ import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 /**
  * Halaxy's practitioner export is one text PDF per patient. The preview is
  * deliberately reviewable: names can be corrected and individual sessions
@@ -27,6 +27,8 @@ export function HalaxyImport(): React.JSX.Element {
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [report, setReport] = useState<HalaxyImportResponse | null>(null);
   const [busy, setBusy] = useState(false);
+  // A preview or import in flight holds the Language control (C-LANG@1 rule 6).
+  useReportWork(busy);
   const [error, setError] = useState<string | null>(null);
   const importBatch = useImportBatch();
   const { batches, undone, undoing, reload, undo } = importBatch;

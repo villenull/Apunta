@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { errorMessage, getPlan, listBriefings, prepareBriefing, saveBriefing } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 import { CheckIcon } from './icons.js';
 
 /**
@@ -48,6 +48,8 @@ export function PrepView({ patient, onOpenNote }: PrepViewProps): React.JSX.Elem
   const [brief, setBrief] = useState<PrepBriefEvent | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  // A briefing being prepared holds the Language control (C-LANG@1 rule 6).
+  useReportWork(running);
   const [saved, setSaved] = useState<SessionBrief | null>(null);
   const [error, setError] = useState<string | null>(null);
 

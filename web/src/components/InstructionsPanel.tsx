@@ -2,7 +2,7 @@ import { approximateTokens, SKILL_TOKEN_BUDGET, type SkillFlattenResponse } from
 import { useState } from 'react';
 
 import { errorMessage, flattenSkill } from '../api/index.js';
-import { useI18n } from '../lib/i18n.js';
+import { useI18n, useReportWork } from '../lib/i18n.js';
 
 /**
  * The drafting instructions for one format (M6 deliverable 4), plus the
@@ -29,6 +29,8 @@ export interface InstructionsPanelProps {
 export function InstructionsPanel({ value, onChange, disabled }: InstructionsPanelProps): React.JSX.Element {
   const { t } = useI18n();
   const [importing, setImporting] = useState(false);
+  // Flattening a skill holds the Language control (C-LANG@1 rule 6).
+  useReportWork(importing);
   const [imported, setImported] = useState<SkillFlattenResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 

@@ -2,11 +2,17 @@ import {
   ACCENT_COLOR_SETTING,
   ANIMATIONS_SETTING,
   DEFAULT_ACCENT_COLOR,
+  DEFAULT_LANGUAGE,
   FONT_SIZE_SETTING,
   FONT_SIZES,
+  isLanguage,
+  LANGUAGE_SETTING,
+  LANGUAGES,
   LLM_PROFILE_SETTING,
+  SPANISH_AVAILABLE_SETTING,
   THEME_SETTING,
   THEMES,
+  type Language,
   type LlmProfile,
   type Settings as SettingsRecord,
   type FontSize,
@@ -41,7 +47,7 @@ import {
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n, useWorkInFlight, type Translate } from '../lib/i18n.js';
 import type { FormatDraft } from './formatDraft.js';
 
 /**
@@ -208,6 +214,7 @@ function SettingsSections({
     <div className="settings">
       {show.includes('appearance') && (
         <>
+          <LanguageSettings />
           <AppearanceSettings />
           <LlmProfileSettings />
         </>
@@ -311,6 +318,105 @@ function SettingsSections({
     </div>
   );
 }
+/**
+ * Language / Idioma, at the top of Settings (C-LANG@1 rules 1 and 6).
+ *
+ * Shown only on a build that offers Spanish: `spanish_available` is the
+ * server's to say, and a build that does not offer it has no control to find.
+ * The label is the same in both catalogues on purpose — it is the one row a
+ * Spanish speaker has to find before switching — and each option names its
+ * language in that language, marked with `lang` so it is read that way.
+ *
+ * The choice goes through the settings provider like every other control
+ * (C-SETTINGS@1), so the page changes language at once, `<html lang>` follows
+ * from `I18nProvider`, and a refused save puts the old language back. While a
+ * job or a save is in flight anywhere in the app the options are disabled and
+ * the reason is shown; the server refuses the same change with a 409
+ * `language_change_blocked` for anything that did not see this control.
+ */
+function LanguageSettings(): React.JSX.Element | null {
+  const { t } = useI18n();
+  const settings = useSettingsContext();
+  const working = useWorkInFlight();
+  const [error, setError] = useState<string | null>(null);
+
+  if (settings.state.status !== 'ready') return null;
+  const stored = settings.state.data as SettingsRecord;
+  if (stored[SPANISH_AVAILABLE_SETTING] !== true) return null;
+  const storedLanguage = stored[LANGUAGE_SETTING];
+  const chosen: Language = isLanguage(storedLanguage) ? storedLanguage : DEFAULT_LANGUAGE;
+  const labels: Readonly<Record<Language, string>> = {
+    en: t('settings.languageEnglish'),
+    'es-MX': t('settings.languageSpanish'),
+  };
+
+  const choose = (language: Language): void => {
+    if (working || language === chosen) return;
+    setError(null);
+    void settings.update({ [LANGUAGE_SETTING]: language }).catch((thrown: unknown) => {
+      setError(errorMessage(thrown));
+    });
+  };
+
+  return (
+    <section className="card settings-card" data-testid="language-settings">
+      <div className="settings-row">
+        <span className="settings-label" id="language-label">
+          {t('settings.language')}
+        </span>
+        <span
+          className="settings-row-actions size-options"
+          role="radiogroup"
+          aria-labelledby="language-label"
+          aria-describedby={working ? 'language-busy' : undefined}
+        >
+          {LANGUAGES.map((language, index) => (
+            <button
+              key={language}
+              type="button"
+              role="radio"
+              lang={language}
+              aria-checked={chosen === language}
+              tabIndex={chosen === language ? 0 : -1}
+              disabled={working}
+              className={chosen === language ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
+              data-testid={`language-${language}`}
+              onClick={() => {
+                choose(language);
+              }}
+              onKeyDown={(event) => {
+                const next = rovingTarget(event, index, LANGUAGES.length);
+                if (next === undefined) return;
+                event.preventDefault();
+                const nextLanguage = LANGUAGES[next];
+                if (nextLanguage === undefined) return;
+                choose(nextLanguage);
+                requestAnimationFrame(() => {
+                  document
+                    .querySelector<HTMLButtonElement>(`[data-testid="language-${nextLanguage}"]`)
+                    ?.focus();
+                });
+              }}
+            >
+              {labels[language]}
+            </button>
+          ))}
+        </span>
+        {working && (
+          <p className="small settings-row-note" id="language-busy" role="status" data-testid="language-busy">
+            {t('settings.languageChangeBlocked')}
+          </p>
+        )}
+      </div>
+      {error !== null && (
+        <p className="form-error" role="alert" data-testid="language-error">
+          {error}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function LlmProfileSettings(): React.JSX.Element | null {
   const { t } = useI18n();
   const settings = useSettingsContext();

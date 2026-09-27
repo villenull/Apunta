@@ -20,7 +20,7 @@ import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLiveRecording } from '../hooks/useLiveRecording.js';
-import { useI18n } from '../lib/i18n.js';
+import { useI18n, useReportWork } from '../lib/i18n.js';
 import { formatTimer } from '../lib/recorder.js';
 
 /**
@@ -119,6 +119,8 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
   });
   const recording = live.phase;
   const seconds = live.seconds;
+  // Recording, transcribing and drafting all hold the Language control (C-LANG@1 rule 6).
+  useReportWork(busy || recording !== 'idle');
 
   const available = formats.state.status === 'ready' ? formats.state.data : [];
   const format = available.find((candidate) => candidate.id === chosenFormatId) ?? available[0];

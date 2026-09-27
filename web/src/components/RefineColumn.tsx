@@ -5,7 +5,7 @@ import { listChatMessages, sendChatMessage } from '../api/index.js';
 import { useChatStream, type ChatStreamHandlers } from '../hooks/useChatStream.js';
 import { appendHeard, useDictation } from '../hooks/useDictation.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { useI18n } from '../lib/i18n.js';
+import { useI18n, useReportWork } from '../lib/i18n.js';
 import { ChatComposer } from './ChatComposer.js';
 import { Dialog } from './Dialog.js';
 import { ThinkingDots } from './ThinkingDots.js';
@@ -144,6 +144,8 @@ export function RefineColumn({
   useEffect(() => {
     onRefiningChange?.(chat.sending);
   }, [chat.sending, onRefiningChange]);
+  // A refine or a dictation in flight holds the Language control (C-LANG@1 rule 6).
+  useReportWork(chat.sending || dictation.listening || dictation.transcribing);
 
   useEffect(() => {
     if (chat.error !== null) reloadThread();

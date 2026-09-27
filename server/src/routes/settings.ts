@@ -13,7 +13,8 @@ import type { FastifyInstance } from 'fastify';
 import type { AppConfig } from '../config.js';
 import { getSetting, putSettings } from '../db/settings.js';
 import { settingsWithLlmProfiles } from '../ai/profiles.js';
-import { badRequest, languageUnavailable } from '../http/errors.js';
+import { HttpError, badRequest, languageUnavailable } from '../http/errors.js';
+import { anyActive } from '../jobs/registry.js';
 import { parseBody } from '../http/validate.js';
 
 /**
@@ -67,7 +68,9 @@ export function registerSettingsRoutes(app: FastifyInstance, db: Database, confi
    * outlive the build that made the offer; and `language` is checked against
    * the offer, so a request that asks for Spanish on a build that does not
    * offer it is refused with the code the client branches on rather than
-   * silently stored.
+   * silently stored. A language change while a job is running is refused too,
+   * with a 409 `language_change_blocked`: the web control is already disabled
+   * then, and this holds for a stale tab, a second tab or a direct call.
    */
   app.put('/api/settings', async (request): Promise<Settings> => {
     const patch = parseBody(UpdateSettingsRequestSchema, request.body);
@@ -80,6 +83,14 @@ export function registerSettingsRoutes(app: FastifyInstance, db: Database, confi
         }
         if (value === HELD_LOCALE && !spanishAvailable()) {
           throw languageUnavailable();
+        }
+        // C-LANG@1 rule 6, the server's half: a job captured its locale when it
+        // began, and a change landing under it would leave the job and the
+        // screen in different languages. Only a *change* is refused — writing
+        // back the language already stored is not one, and a second tab that
+        // re-saves its settings must not fail for it.
+        if (value !== storedLanguage(db) && anyActive()) {
+          throw new HttpError(409, 'language_change_blocked', 'settings.languageChangeBlocked');
         }
       }
       writable[key] = value;

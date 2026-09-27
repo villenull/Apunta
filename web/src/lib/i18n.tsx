@@ -8,7 +8,7 @@ import {
   type MessageKey,
   type Settings,
 } from '@apunta/shared';
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 
 import { useSettingsContext } from '../components/SettingsProvider.js';
 
@@ -72,12 +72,8 @@ function resolveLocale(settings: Settings): Locale {
  * owner, and a language change is whatever the settings provider says it is,
  * including its optimistic apply and its rollback.
  *
- * It sits *inside* `SettingsProvider` and beside it in the tree. It is not
- * mounted in `web/src/App.tsx` by the card that added it, because no S2 card
- * is licensed to edit that file: **S2.3** owns the mount (the import and the
- * wrapper element around `<AppRoutes />`, no string), and S2.6's `<html lang>`
- * depends on it. Until that amendment lands this provider is reachable only
- * from a test that mounts both itself, which is what `i18n.test.tsx` does.
+ * It sits *inside* `SettingsProvider`, above the router (`web/src/App.tsx`,
+ * S2.3's mount), and it keeps `<html lang>` in step with the locale (S2.6).
  */
 export function I18nProvider({ children }: { readonly children: React.ReactNode }): React.JSX.Element {
   const { state } = useSettingsContext();
@@ -85,5 +81,76 @@ export function I18nProvider({ children }: { readonly children: React.ReactNode 
   // One object per locale, so a settings reload that does not change the
   // language does not re-render every screen that reads a message.
   const value = useMemo<I18nContextValue>(() => ({ locale, t: bound(locale) }), [locale]);
+  // The document says which language it is in, so a screen reader reads
+  // Spanish as Spanish and the browser's own spell check and hyphenation
+  // follow the switch without a reload.
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+/*
+ * Work in flight, for the Language control (C-LANG@1 rule 6).
+ *
+ * A job captures its locale when it starts, so a language change that landed
+ * under a running job would leave the screen in one language and the job's
+ * output in the other. The control is therefore disabled while anything is
+ * running, and this is how it knows: each component that starts a job — a
+ * recording, a transcription, a draft, a refine, a plan, a briefing, a
+ * brainstorm, an import, a backup or restore — or a save reports it here while
+ * it is in flight. The server's 409 `language_change_blocked` is the same rule
+ * for a request that never saw this control.
+ *
+ * A counter, not a list: the control's question is only "is anything
+ * running", and naming the job would put a sentence on screen that goes stale
+ * the day a job is added.
+ */
+let workInFlight = 0;
+const workListeners = new Set<() => void>();
+
+function notifyWork(): void {
+  for (const listener of workListeners) listener();
+}
+
+function subscribeWork(listener: () => void): () => void {
+  workListeners.add(listener);
+  return () => {
+    workListeners.delete(listener);
+  };
+}
+
+/**
+ * Count one piece of work as running until the returned function is called.
+ * The release is idempotent, so a `finally` that may run twice cannot drive
+ * the count below what is really in flight.
+ */
+export function beginWork(): () => void {
+  workInFlight += 1;
+  notifyWork();
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    workInFlight -= 1;
+    notifyWork();
+  };
+}
+
+/** Whether any job or save is in flight anywhere in the app. */
+export function useWorkInFlight(): boolean {
+  return useSyncExternalStore(
+    subscribeWork,
+    () => workInFlight > 0,
+    () => false,
+  );
+}
+
+/**
+ * Report work while `active` is true: counted from the render it turns on to
+ * the render it turns off, or to unmount — so a screen that is left mid-job
+ * never leaves the control disabled behind it.
+ */
+export function useReportWork(active: boolean): void {
+  useEffect(() => (active ? beginWork() : undefined), [active]);
 }

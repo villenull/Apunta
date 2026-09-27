@@ -23,7 +23,7 @@ import {
 } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { copyText } from '../lib/clipboard.js';
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 import { CheckIcon, CopyIcon, PlusIcon } from './icons.js';
 import { PlanDetails } from './PlanDetails.js';
 import { PlanGoalCard } from './PlanGoalCard.js';
@@ -75,6 +75,8 @@ export function PlanView({ patient, onOpenNote }: PlanViewProps): React.JSX.Elem
 
   /** What the drafting run is doing, and what it read when it finished. */
   const [drafting, setDrafting] = useState(false);
+  // A plan being drafted or saved holds the Language control (C-LANG@1 rule 6).
+  useReportWork(busy || drafting);
   const [status, setStatus] = useState<string | null>(null);
   const [lookbackNote, setLookbackNote] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);

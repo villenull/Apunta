@@ -6,7 +6,7 @@ import { createStandardFormat, detectFormat, errorMessage } from '../api/index.j
 import { DocumentIcon, ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
 import { Screen } from '../components/TopBar.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { useI18n } from '../lib/i18n.js';
+import { useI18n, useReportWork } from '../lib/i18n.js';
 import { duplicateSection, parseSections } from '../lib/sections.js';
 import { asFormatDraft, type FormatDraft } from './formatDraft.js';
 
@@ -36,6 +36,8 @@ export function OnboardingFormat(): React.JSX.Element {
   const [sectionsText, setSectionsText] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  // Reading a format file holds the Language control (C-LANG@1 rule 6).
+  useReportWork(busy);
   const [error, setError] = useState<string | null>(null);
 
   function choose(next: Choice): void {
