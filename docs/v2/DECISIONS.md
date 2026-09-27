@@ -21,7 +21,7 @@ blocks the card (COORDINATOR.md §6).
 | D7 | Spanish speech model chosen by benchmark (contract C-STT). English keeps `ggml-tiny.en.bin`. | OWNER |
 | D8 | Default Spanish note format: the owner's seven-section note in Spanish, adapted from es-MX research. | OWNER |
 | D9 | Spanish spoken corrections seeded from research, marked provisional. | OWNER |
-| D10 | Wordmark and A mark: `#1f6f63` in light mode, `#ffffff` in dark mode, independent of accent. | OWNER |
+| D10 | Wordmark and A mark: `#1f6f63` in **both** light and dark mode, independent of accent. **Amended 2026-09-27** on the owner's explicit choice, over the white option: the white-in-dark half is reversed, so the mark is teal in both themes. The *independence of accent* is unchanged and still what `e2e/tests/brand.spec.ts` exists to prove — and because the default accent is now the same `#1f6f63`, the spec's purple-accent half is what can still detect a mark that started following `--accent`, not the default-accent half. | OWNER |
 | D11 | **Existing notes and formats keep their language.** Changing Language never translates or relabels existing content. The Language control is disabled while any recording, transcription, draft, refine, plan, briefing, brainstorm reply or save is in flight, with a visible reason. | OWNER |
 | D12 | **All of Spanish mode is held until every Spanish check passes** (contract C-ES-GATE), including the owner's clinical review. Until then, Español is hidden in release builds and available only with the development switch `APUNTA_DEV_SPANISH=1`. | OWNER |
 | D13 | **The owner reviews Spanish notes for clinical meaning.** Model review is never clinical sign-off. | OWNER |

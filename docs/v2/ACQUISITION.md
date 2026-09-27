@@ -25,6 +25,7 @@ fixed; a worker applies it, never replaces it.
 | A13 | Ollama `qwen3.5:2b-q4_K_M`, **only if absent** — the small sibling in the owner's authorised four-arm local-model comparison | Ollama registry via the local daemon | daemon-controlled | none | no | none (measurement only) |
 | A14 | `prism-ml/Bonsai-8B-gguf`, the single file `Bonsai-8B-Q1_0.gguf` and nothing else in the repository | `huggingface.co` (prism-ml/Bonsai-8B-gguf) | Hugging Face CDN hosts, on A07's terms | A07's | no | none (measurement only) |
 | A15 | `prism-ml/Bonsai-4B-gguf`, the single file `Bonsai-4B-Q1_0.gguf` and nothing else in the repository | `huggingface.co` (prism-ml/Bonsai-4B-gguf) | Hugging Face CDN hosts, on A07's terms | A07's | no | none (measurement only) |
+| A16 | `Fraunces[SOFT,WONK,opsz,wght].ttf` from `github.com/google/fonts` at `ofl/fraunces`, SHA-256 `177ff6c0f14e5550a3c624247cd1189611d4eb65d000b14944c63d967958abbb`, plus its OFL 1.1 text. **Committed to the repo** beside Kalam's, used only to generate the wordmark and A outlines | `github.com` (one fetch, then never again) | `raw.githubusercontent.com` | none | no — outlines only, no font file in the bundle | P2.1 (owner amendment 2026-09-27) |
 
 **Redirect admission (rule 1).** A redirect is followed only when its `Location`
 resolves to `https:`, port 443, no user-info, no fragment, a host the row's
@@ -68,6 +69,8 @@ are not negotiable per run:
 3. **The GPU is not shared.** One model loaded at a time, `keep_alive` set so
    each unloads after its arm, and no arm runs while the owner is testing on the
    machine or a live instance is in use. A four-arm run is long and real.
+
+**Fraunces (A16) follows Kalam, not a build-time download.** Both source TTFs live in `docs/v2/assets/` with their OFL texts, and `build-brand-fraunces.py` reads the local file and touches no network — regenerating the wordmark in six years must not depend on a `/tmp` file or a download working. A16 permits exactly that one fetch, to obtain the file committed beside it. Fraunces is a **variable** font; the committed cut is the variable one, and the generator pins `wght 500`, `opsz 14`, `SOFT 0`, `WONK 0`, because a static instance could not set optical size and an unpinned variable font would not reproduce. The TTF is never bundled: the app ships outlines only.
 
 **Owner-run items.** `apt` needs `sudo`. The coordinator writes the exact
 command to `docs/v2/state/OWNER-ACTIONS.md`, stops the dependent cards, and
