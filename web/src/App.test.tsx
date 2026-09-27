@@ -95,8 +95,9 @@ describe('workspace', () => {
     const emptyTip = await screen.findByTestId('patient-tip');
     expect(within(emptyTip).getByText('0 notes')).toBeDefined();
     expect(within(emptyTip).getByText('—')).toBeDefined();
-    // Home: the welcome question, and no notes column until a patient is chosen.
-    expect(screen.getByTestId('home').textContent).toContain('Let’s focus on…');
+    // Home: the workbench's question, and no notes column until a patient is
+    // chosen (owner, 2026-09-27).
+    expect(screen.getByTestId('home').textContent).toContain('What would you like to work on?');
     expect(screen.queryByTestId('note-list')).toBeNull();
   });
 
@@ -104,6 +105,8 @@ describe('workspace', () => {
     renderApp();
     await screen.findAllByText('John Smith');
 
+    // The search is the second step now: an action first, then a patient.
+    fireEvent.click(screen.getByTestId('home-action-draft'));
     fireEvent.change(screen.getByTestId('home-search'), { target: { value: 'jo' } });
     const results = screen.getByRole('listbox', { name: 'Patients' });
     expect(within(results).getByText('John Smith')).toBeDefined();
@@ -117,6 +120,7 @@ describe('workspace', () => {
     renderApp();
     await screen.findAllByText('John Smith');
 
+    fireEvent.click(screen.getByTestId('home-action-note'));
     fireEvent.change(screen.getByTestId('home-search'), { target: { value: 'Ana Torres' } });
     expect(screen.getAllByRole('option')).toHaveLength(1);
     fireEvent.keyDown(screen.getByTestId('home-search'), { key: 'Enter' });
@@ -258,7 +262,7 @@ describe('workspace', () => {
     });
   });
 
-  /** Mission control is the sidebar's one row at the bottom; Settings is a modal. */
+  /** "More" is the sidebar's one row at the bottom; Settings is a modal. */
   it('opens Settings as a centred modal over the workspace', async () => {
     renderApp();
     await screen.findAllByText('John Smith');
@@ -272,7 +276,10 @@ describe('workspace', () => {
     expect(within(modal).getByTestId('appearance-settings')).toBeDefined();
     // Every section tab carries the glyph Claude puts beside it, not just the
     // one that is open (owner preview, 2026-09-26).
-    for (const section of ['appearance', 'format', 'backup', 'import', 'advanced']) {
+    // Import is no longer a section (owner, 2026-09-27): it is a first-level row
+    // in "More", so it is absent here and asserted in
+    // `PatientsColumn.test.tsx`, where the row now lives.
+    for (const section of ['appearance', 'format', 'backup', 'advanced']) {
       const tab = within(modal).getByTestId(`settings-tab-${section}`);
       expect(tab.querySelector('svg'), section).not.toBeNull();
     }
@@ -841,13 +848,16 @@ describe('the add-patient window', () => {
 
     // The scrim rule Settings already had, now naming this panel too — one
     // rule for "a modal over the workspace", not a second copy of the blur.
-    const scrim = appCss.match(/\.modal-backdrop:has\(\.add-patient-modal\)\s*\{[^}]*\}/);
-    expect(scrim?.[0]).toContain('background: var(--scrim)');
-    expect(scrim?.[0]).toContain('backdrop-filter: blur(var(--scrim-blur))');
-    // Shared with Settings rather than duplicated, so the two cannot drift.
-    expect(appCss).toMatch(
-      /\.modal-backdrop:has\(\.settings-modal\),\s*\.modal-backdrop:has\(\.add-patient-modal\)\s*\{/,
+    // One rule for every window that sits over the workspace — Settings, adding
+    // a patient, and the language chooser — rather than one copy of the blur
+    // each, which is how three windows end up blurring three different amounts.
+    const shared = appCss.match(
+      /\.modal-backdrop:has\(\.settings-modal\),\s*\.modal-backdrop:has\(\.add-patient-modal\),\s*\.modal-backdrop:has\(\.language-modal\)\s*\{[^}]*\}/,
     );
+    expect(shared?.[0]).toContain('background: var(--scrim)');
+    expect(shared?.[0]).toContain('backdrop-filter: blur(var(--scrim-blur))');
+    // And it is still the only place the blur is written.
+    expect([...appCss.matchAll(/backdrop-filter:\s*blur\(var\(--scrim-blur\)\)/g)]).toHaveLength(1);
 
     // The × wears no box, as Settings' does.
     const close = appCss.match(/\.add-patient-head \.icon-btn\s*\{[^}]*\}/);
@@ -1299,19 +1309,24 @@ describe('settings', () => {
     document.documentElement.style.removeProperty('--accent');
   });
 
-  it('orders the screen Appearance, Note formats, Backup, then Import', async () => {
+  it('orders the screen Appearance, Note formats, Backup, then Advanced', async () => {
     installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
     const appearance = await screen.findByTestId('appearance-settings');
-    const formats = await screen.findByTestId('format-list');
-    const backup = await screen.findByTestId('backup-card');
-    const importLink = screen.getByTestId('settings-import');
+    const formats = screen.getByTestId('format-list');
+    const backup = screen.getByTestId('backup-card');
     const follows = (a: Node, b: Node): boolean =>
       (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
     expect(follows(appearance, formats)).toBe(true);
     expect(follows(formats, backup)).toBe(true);
-    expect(follows(backup, importLink)).toBe(true);
+    // And Import is not here any more: it moved to "More" (owner,
+    // 2026-09-27), so the section and its two links are **gone** rather than
+    // left behind as a second door to the same screens. Two doors is how two
+    // places end up disagreeing about where importing lives.
+    expect(screen.queryByTestId('settings-import')).toBeNull();
+    expect(screen.queryByTestId('settings-import-halaxy')).toBeNull();
+    expect(screen.queryByTestId('settings-tab-import')).toBeNull();
 
     // "Add another format" is the format card's last row.
     const add = within(formats).getByTestId('add-format');
@@ -1494,5 +1509,119 @@ describe('a browser without Web Locks', () => {
     expect(screen.queryByTestId('primary-takeover')).toBeNull();
     const content = document.getElementById('apunta-content') as unknown as { inert?: boolean };
     expect(content.inert).toBe(true);
+  });
+});
+
+/**
+ * Groups as sidebar headings (owner, 2026-09-27), driven through the real
+ * workspace against the fake API.
+ *
+ * The two halves that matter are both invisible in a diff of the components: a
+ * patient she has filed appears under the group's heading and **leaves** Recents,
+ * and a patient she has not filed is left exactly where they were. The second is
+ * the one that would quietly ruin the sidebar for every patient she already has
+ * the day this feature arrived, so it is its own case rather than an assumption.
+ */
+describe('patient groups in the sidebar', () => {
+  const family = {
+    id: '0198c0f0-0000-7000-8000-0000000000a1',
+    name: 'Family therapy',
+    created_at: '2026-03-01T09:00:00.000Z',
+    position: null,
+  };
+  const court = {
+    id: '0198c0f0-0000-7000-8000-0000000000a2',
+    name: 'Court-mandated',
+    created_at: '2026-03-02T09:00:00.000Z',
+    position: null,
+  };
+
+  /**
+   * The heading a patient's row sits under, as she reads it. By the label's own
+   * text rather than a testid, because the heading is the thing she sees and a
+   * testid on the wrapper would only prove the wrapper is where it always was.
+   */
+  function headingOf(patientId: string): string {
+    const section = screen.getByTestId(`patient-entry-${patientId}`).closest('.sidebar-section');
+    return section?.querySelector('.sidebar-section-label')?.textContent ?? 'no heading';
+  }
+
+  it('puts a filed patient under the heading and takes them out of Recents', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john, maria], groups: [family] });
+    renderApp('/');
+    await screen.findByTestId(`patient-entry-${john.id}`);
+    expect(headingOf(john.id)).toBe('Recents');
+
+    fireEvent.click(screen.getByTestId(`patient-menu-${john.id}`));
+    fireEvent.click(screen.getByTestId(`move-to-group-${john.id}`));
+    fireEvent.click(screen.getByTestId(`group-${family.id}`));
+
+    await waitFor(() => {
+      expect(headingOf(john.id)).toBe('Family therapy');
+    });
+    expect(api.state.patients.find((patient) => patient.id === john.id)?.group_id).toBe(family.id);
+    // The patient she did not move has not moved.
+    expect(headingOf(maria.id)).toBe('Recents');
+  });
+
+  it('leaves everyone she has not moved exactly where they were', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john, maria], groups: [family, court] });
+    renderApp('/');
+    await screen.findByTestId(`patient-entry-${john.id}`);
+
+    // Both headings are there, and both say they are empty — the owner made a
+    // group, saw nothing at all, and could not tell that from broken (fixed
+    // 2026-09-27). The patients are untouched either way.
+    for (const group of [family, court]) {
+      expect(screen.getByTestId(`section-group-${group.id}`)).toBeDefined();
+      expect(screen.getByTestId(`group-empty-${group.id}`)).toBeDefined();
+    }
+    expect(headingOf(john.id)).toBe('Recents');
+    expect(headingOf(maria.id)).toBe('Recents');
+  });
+
+  it('gives each of her groups its own heading', async () => {
+    const api = installFakeApi({
+      formats: [progressNote],
+      patients: [
+        { ...john, group_id: family.id },
+        { ...maria, group_id: court.id },
+      ],
+      groups: [family, court],
+    });
+    renderApp('/');
+    await screen.findByTestId(`patient-entry-${john.id}`);
+
+    expect(headingOf(john.id)).toBe('Family therapy');
+    expect(headingOf(maria.id)).toBe('Court-mandated');
+    // Both have left Recents, so it is not drawn with nobody in it.
+    expect(api.state.patients.every((patient) => patient.group_id !== null)).toBe(true);
+    expect(screen.getByTestId(`section-group-${family.id}`)).toBeDefined();
+    expect(screen.getByTestId(`section-group-${court.id}`)).toBeDefined();
+  });
+
+  it('makes a group from the submenu and files the patient in it', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john], groups: [] });
+    renderApp('/');
+    await screen.findByTestId(`patient-entry-${john.id}`);
+
+    fireEvent.click(screen.getByTestId(`patient-menu-${john.id}`));
+    fireEvent.click(screen.getByTestId(`move-to-group-${john.id}`));
+    expect(screen.getByText('No groups yet')).toBeDefined();
+    fireEvent.click(screen.getByTestId('group-new'));
+    fireEvent.change(screen.getByLabelText('Group name'), { target: { value: 'Family work' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create group' }));
+
+    await waitFor(() => {
+      expect(api.state.groups.map((group) => group.name)).toEqual(['Family work']);
+    });
+    const created = api.state.groups[0];
+    expect(created).toBeDefined();
+    await waitFor(() => {
+      expect(api.state.patients[0]?.group_id).toBe(created?.id);
+    });
+    await waitFor(() => {
+      expect(headingOf(john.id)).toBe('Family work');
+    });
   });
 });

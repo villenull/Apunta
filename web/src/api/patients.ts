@@ -47,3 +47,15 @@ export async function updatePatient(id: string, patch: UpdatePatientRequest): Pr
 export async function deletePatient(id: string): Promise<void> {
   return requestVoid(`/api/patients/${id}`, { method: 'DELETE' });
 }
+
+/**
+ * Filing a patient under a group, and taking them out again, is the same PATCH
+ * the archive uses: `group_id` is one nullable column, and `null` is a state
+ * she can put a patient back into rather than an undo.
+ */
+export async function setPatientGroup(id: string, groupId: string | null): Promise<Patient> {
+  return requestJson(`/api/patients/${id}`, PatientSchema, {
+    method: 'PATCH',
+    body: { group_id: groupId },
+  });
+}

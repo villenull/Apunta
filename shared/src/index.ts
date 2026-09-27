@@ -65,17 +65,25 @@ export { FileVaultStateSchema, FileVaultStatusSchema, HealthResponseSchema } fro
 export type { FileVaultState, FileVaultStatus, HealthResponse } from './health.js';
 
 export {
+  CreatePatientGroupRequestSchema,
   CreatePatientRequestSchema,
+  PatientGroupListResponseSchema,
+  PatientGroupSchema,
   PatientListItemSchema,
   PatientListResponseSchema,
   PatientSchema,
+  UpdatePatientGroupRequestSchema,
   UpdatePatientRequestSchema,
 } from './patient.js';
 export type {
+  CreatePatientGroupRequest,
   CreatePatientRequest,
   Patient,
+  PatientGroup,
+  PatientGroupListResponse,
   PatientListItem,
   PatientListResponse,
+  UpdatePatientGroupRequest,
   UpdatePatientRequest,
 } from './patient.js';
 

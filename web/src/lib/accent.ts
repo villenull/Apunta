@@ -42,6 +42,17 @@ export function accentInk(value: string): string {
 }
 
 /**
+ * How far white may fall before the label on the accent stops being white.
+ *
+ * The same 3:1 the picker warns under (`settings.accentLowContrast`), and for
+ * the same reason: 3:1 is where a glyph stops being a shape and starts being a
+ * smudge. Above it the label is white, which is what the owner's teal and every
+ * other accent of hers wants; below it there is no white to have, and the
+ * near-black is the only readable thing left.
+ */
+const MIN_WHITE_ON_ACCENT = 3;
+
+/**
  * Paint the chosen accent and its readable foreground/ink variants.
  */
 export function applyAccentColor(value: unknown): void {
@@ -54,9 +65,15 @@ export function applyAccentColor(value: unknown): void {
   }
   const luminance = accentLuminance(value);
   const whiteContrast = contrast(luminance, 1);
-  const blackContrast = contrast(luminance, 0);
   root.style.setProperty('--accent', value);
-  root.style.setProperty('--on-accent', whiteContrast >= blackContrast ? '#ffffff' : '#111111');
+  // White unless it is unreadable, rather than whichever of the two happens to
+  // score higher. Those disagree often enough to be visible: the Apunta teal
+  // scores 3.32:1 in white and 5.68:1 in near-black, so picking the winner
+  // painted a dark label on a mid-tone button, and the dark one looked like the
+  // odd setting rather than the rule (owner, 2026-09-27, reversing the choice
+  // made earlier the same day). An accent light enough to need the fallback —
+  // `#ffff00` scores 1.07:1 in white — still gets it.
+  root.style.setProperty('--on-accent', whiteContrast >= MIN_WHITE_ON_ACCENT ? '#ffffff' : '#111111');
   root.style.setProperty('--accent-ink', accentInk(value));
 }
 

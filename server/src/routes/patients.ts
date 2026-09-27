@@ -8,6 +8,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
+import { getPatientGroup } from '../db/patientGroups.js';
 import { createPatient, deletePatient, getPatient, listPatients, updatePatient } from '../db/patients.js';
 import { notFound } from '../http/errors.js';
 import {
@@ -45,16 +46,29 @@ export function registerPatientRoutes(app: FastifyInstance, db: Database): void 
     return requirePatient(db, id);
   });
 
-  /** Archiving is `{ archived: true }` here rather than a separate endpoint. */
+  /**
+   * Archiving is `{ archived: true }` here rather than a separate endpoint, and
+   * filing a patient under a group is `{ group_id }` on the same call: both are
+   * one nullable column, and both are undone by sending the other value.
+   *
+   * The group is checked here so a typo or a deleted group is a 404 she can
+   * read rather than a foreign-key failure; the constraint itself is the
+   * backstop, and `ON DELETE SET NULL` means it can never strand a patient.
+   */
   app.patch('/api/patients/:id', async (request): Promise<Patient> => {
     const { id } = parseParams(IdParamsSchema, request.params);
     const patch = parseBody(UpdatePatientRequestSchema, request.body);
     requirePatient(db, id);
+    if (patch.group_id != null && getPatientGroup(db, patch.group_id) === undefined) {
+      throw notFound('errors.not_found.group');
+    }
 
     const updated = updatePatient(db, id, {
       ...(patch.name === undefined ? {} : { name: patch.name }),
       ...(patch.identifier === undefined ? {} : { identifier: patch.identifier }),
       ...(patch.archived === undefined ? {} : { archived: patch.archived }),
+      ...(patch.group_id === undefined ? {} : { groupId: patch.group_id }),
+      ...(patch.group_position === undefined ? {} : { groupPosition: patch.group_position }),
     });
     if (!updated) throw notFound('errors.not_found.patient');
     return updated;

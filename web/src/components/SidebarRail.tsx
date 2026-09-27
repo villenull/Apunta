@@ -14,6 +14,8 @@ export interface SidebarRailProps {
   onOpenAll: () => void;
   onOpenSettings: () => void;
   onUnavailable: (what: string) => void;
+  /** Opens the language chooser; omitted by a rail rendered without one. */
+  onOpenLanguage?: (() => void) | undefined;
 }
 
 /**
@@ -21,7 +23,7 @@ export interface SidebarRailProps {
  * icons for the main things instead of nothing at all. The A at the top opens
  * the sidebar again — the panel glyph takes its place under the pointer, so
  * the control says what it does — then New patient, Search and Patients, and
- * Mission control's gear at the foot where the full sidebar keeps it. No
+ * "More"'s gear at the foot where the full sidebar keeps it. No
  * library: Apunta has nothing to put there.
  */
 export function SidebarRail({
@@ -30,6 +32,7 @@ export function SidebarRail({
   onOpenAll,
   onOpenSettings,
   onUnavailable,
+  onOpenLanguage,
 }: SidebarRailProps): React.JSX.Element {
   const { t } = useI18n();
 
@@ -80,7 +83,13 @@ export function SidebarRail({
       </div>
 
       <div className="rail-foot">
-        <MissionControl t={t} onOpenSettings={onOpenSettings} onUnavailable={onUnavailable} compact />
+        <MissionControl
+          t={t}
+          onOpenSettings={onOpenSettings}
+          onUnavailable={onUnavailable}
+          onOpenLanguage={onOpenLanguage}
+          compact
+        />
       </div>
     </nav>
   );

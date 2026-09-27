@@ -233,9 +233,16 @@ export function HalaxyImport(): React.JSX.Element {
   }
 
   return (
-    <Screen back={{ to: '/settings', label: t('common.settings') }}>
+    <Screen back={{ to: '/', label: t('common.patients') }}>
       <h2 className="heading-tight">{t('doc.importHalaxy')}</h2>
       <p className="muted lede">{t('halaxy.lede')}</p>
+      {/* The other importer, since the row in "More" that brought her here
+          serves both and this screen used to be linked only from Settings. */}
+      <p className="small">
+        <Link to="/import" data-testid="import-switch-claude">
+          {t('import.switchToClaude')}
+        </Link>
+      </p>
       <div className="card card-rows lede">
         <p className="small note-meta">{t('halaxy.localOnly')}</p>
         <input

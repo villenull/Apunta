@@ -145,6 +145,12 @@
   --main-font: 14px;
   --menu-w: 240px;
   --menu-item-h: 32px;
+  /*
+   * The width of the right-hand glyph column in a row menu: the shortcut letter
+   * and the submenu's chevron share it, so they line up down the column instead
+   * of each sitting at the end of a box sized to its own glyph.
+   */
+  --menu-glyph-w: 18px;
   --modal-w: 1024px;
   --modal-h: 800px;
   --modal-radius: 12px;
@@ -228,12 +234,16 @@
    * and recorded, not an oversight to be tidied away — the threshold, its
    * comparison and `PAGE_SURFACES` are not to be moved to widen the margin.
    *
-   * `--on-accent` below is `#111111` rather than white, and that is not a
-   * separate choice: `applyAccentColor` picks whichever of white/near-black
-   * contrasts better, and for this teal near-black wins (6.32:1 against the
-   * 3.32:1 white would give). Declaring the same value here keeps a fresh
-   * install — where nothing is stored and `applyAccentColor` never runs — from
-   * painting the one label colour the live code would never choose.
+   * `--on-accent` below is `#ffffff`, and the reason it is worth saying out
+   * loud is that the alternative was tried and reversed. Picking whichever of
+   * white and near-black scores higher put a **dark** label on this teal
+   * (3.32:1 in white against 5.68:1 in near-black), which reads as a different
+   * setting rather than as the rule — and it was the near-black that looked
+   * wrong on a mid-tone button (owner, 2026-09-27). So the label is white, and
+   * `applyAccentColor` now agrees: white unless white drops under 3:1, which
+   * is the same line the picker warns under. The two paths have to match,
+   * because this declaration is what a fresh install uses and the function is
+   * what she gets the moment she touches the colour picker.
    *
    * It is a setting she changes in Appearance, so this is only what a fresh
    * install and a reset-to-default get; `--accent-ink`, `--accent-tint` and
@@ -252,8 +262,8 @@
   --patients-title: var(--text-primary);
   --accent-hover: color-mix(in srgb, var(--accent) 77%, #000);
   --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
-  /* Matches `applyAccentColor`'s own choice for this accent; see above. */
-  --on-accent: #111111;
+  /* Agrees with `applyAccentColor` for this accent; see above. */
+  --on-accent: #ffffff;
   --accent-ink: var(--accent-hover);
   /*
    * Text that sits on an accent-tinted background (the empty-sections

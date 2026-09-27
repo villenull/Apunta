@@ -23,6 +23,7 @@ import { registerGenerateRoute } from './routes/generate.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerLicensesRoute } from './routes/licenses.js';
 import { registerNoteRoutes } from './routes/notes.js';
+import { registerPatientGroupRoutes } from './routes/patientGroups.js';
 import { registerPatientRoutes } from './routes/patients.js';
 import { registerPlanRoutes } from './routes/plans.js';
 import { registerPrepRoutes } from './routes/prep.js';
@@ -127,6 +128,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerHealthRoute(app, config, db, providers, options.installedModels);
   registerLicensesRoute(app, config);
   registerPatientRoutes(app, db);
+  registerPatientGroupRoutes(app, db);
   registerNoteRoutes(app, db);
   registerFormatRoutes(app, db);
   // Deliberately given no `db`: an uploaded template or example note is never

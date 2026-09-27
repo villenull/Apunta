@@ -61,7 +61,7 @@ describe('the collapsed sidebar', () => {
   /**
    * Owner, 2026-09-26, after ChatGPT's: collapsing leaves a rail of icons —
    * the A that brings the sidebar back, New patient, Search, Patients, and
-   * Mission control's gear — and Ctrl+B toggles it from anywhere.
+   * "More"'s gear — and Ctrl+B toggles it from anywhere.
    */
   it('leaves a rail behind, and Ctrl+B brings the sidebar back', async () => {
     installFakeApi({ formats: [progressNote], patients: [john, maria], notes: [makeNote(john.id)] });
@@ -76,7 +76,10 @@ describe('the collapsed sidebar', () => {
     expect(screen.getByTestId('rail-new').getAttribute('href')).toBe('/patients/new');
     expect(screen.getByTestId('rail-new').getAttribute('aria-label')).toBe('New patient');
     expect(screen.getByTestId('rail-search').getAttribute('aria-label')).toBe('Search patients');
-    expect(screen.getByTestId('rail-mission-control').getAttribute('aria-label')).toBe('Mission control');
+    // "More", after Claude's own (owner, 2026-09-27) — and the rail's name is
+    // the same word, since the rail shows the gear alone with its name on the
+    // button rather than beside it.
+    expect(screen.getByTestId('rail-mission-control').getAttribute('aria-label')).toBe('More');
     expect(rail.querySelectorAll('svg').length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByTestId('rail-patients'));

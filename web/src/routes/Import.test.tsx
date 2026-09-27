@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { HalaxyImport } from './HalaxyImport.js';
 import { Import } from './Import.js';
 import { installFakeApi } from '../test/fakeApi.js';
 
@@ -229,5 +230,45 @@ describe('the import screen', () => {
     fireEvent.click(screen.getByTestId('import-check'));
 
     expect((await screen.findByTestId('import-error')).textContent).toContain('not a Claude export');
+  });
+});
+
+/**
+ * Import is a first-level row in the workspace's "More" menu now (owner,
+ * 2026-09-27) rather than a section of Settings, and that move left Halaxy with
+ * no link to it anywhere: a route with no way in, reached by nothing. This is
+ * the regression that cost the e2e suite a green run, and it is invisible in a
+ * unit test of either screen alone — each renders fine, and the gap is between
+ * them.
+ */
+describe('the other importer is still reachable', () => {
+  it('offers Halaxy from the Claude import screen, and back again', async () => {
+    installFakeApi();
+    render(
+      <MemoryRouter>
+        <Import />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('import-switch-halaxy')).toBeDefined();
+    });
+    const link = screen.getByTestId('import-switch-halaxy');
+    expect(link.getAttribute('href')).toBe('/import/halaxy');
+    expect(link.textContent).toBe(t('import.switchToHalaxy'));
+  });
+
+  it('offers Claude from the Halaxy screen, so neither is a dead end', async () => {
+    installFakeApi();
+    render(
+      <MemoryRouter>
+        <HalaxyImport />
+      </MemoryRouter>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId('import-switch-claude')).toBeDefined();
+    });
+    const link = screen.getByTestId('import-switch-claude');
+    expect(link.getAttribute('href')).toBe('/import');
+    expect(link.textContent).toBe(t('import.switchToClaude'));
   });
 });

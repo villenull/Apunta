@@ -47,8 +47,11 @@ export {
   getPatient,
   listPatients,
   setPatientArchived,
+  setPatientGroup,
   updatePatient,
 } from './patients.js';
+
+export { createPatientGroup, listPatientGroups, updatePatientGroup } from './patientGroups.js';
 
 export {
   createNote,

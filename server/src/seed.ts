@@ -4,7 +4,8 @@ import type { Database } from 'better-sqlite3';
 import { OWNER_PROGRESS_INSTRUCTIONS } from './ai/default-instructions.js';
 import { createFormat, listFormats } from './db/formats.js';
 import { createNote, setNotePublished } from './db/notes.js';
-import { createPatient } from './db/patients.js';
+import { createPatientGroup } from './db/patientGroups.js';
+import { createPatient, updatePatient } from './db/patients.js';
 
 /**
  * Development seed data, taken from `prototype/patients.html` and
@@ -24,11 +25,19 @@ interface SeedNote {
   /** The note's date in the prototype, as a UTC timestamp. */
   readonly created_at: string;
   readonly content: string;
+  /**
+   * Whether to publish it. The prototype's samples are all published, so this
+   * defaults to publishing; the generated practice leaves every other note a
+   * draft on purpose.
+   */
+  readonly published?: boolean;
 }
 
 interface SeedPatient {
   readonly name: string;
   readonly notes: readonly SeedNote[];
+  /** The practice group this patient is filed under, if any. */
+  readonly group?: string;
 }
 
 export const SEED_FORMATS: readonly {
@@ -125,12 +134,136 @@ export const SEED_PATIENTS: readonly SeedPatient[] = [
   { name: 'Ana Torres', notes: [] },
 ];
 
+/**
+ * A throwaway practice, for looking at a list that has something in it:
+ * fifteen patients with five to ten notes each, spread over the last few months
+ * so the sidebar's "Last activity" windows have something to bite on, and
+ * alternating published and **draft** so "Continue a draft" has real drafts to
+ * find rather than only published notes.
+ *
+ * **Opt-in** (`npm run seed -- --practice`), because it is noise next to the
+ * sample practice and nobody wants it in a database they meant to be small.
+ *
+ * Hard rule 2: every name and every line here is invented and says nothing about
+ * any person or any session. These are deliberately *not* the prototype's
+ * sample names — a bulk list of fifteen would make those look like a real
+ * caseload rather than the three fabricated examples they are — and they are
+ * built deterministically from the index, so two runs of the seeder produce the
+ * same database and a test can count them.
+ */
+const PRACTICE_PATIENT_COUNT = 15;
+const PRACTICE_NOTES_MIN = 5;
+const PRACTICE_NOTES_MAX = 10;
+/** How far back the newest note in the practice reaches, in days. */
+const PRACTICE_SPAN_DAYS = 120;
+
+const PRACTICE_FIRST_NAMES = [
+  'Ana',
+  'Bruno',
+  'Carla',
+  'Diego',
+  'Elena',
+  'Farid',
+  'Gina',
+  'Hugo',
+  'Ines',
+  'Julio',
+  'Karina',
+  'Liam',
+  'Marta',
+  'Nadia',
+  'Omar',
+] as const;
+const PRACTICE_LAST_NAMES = [
+  'Alvarez',
+  'Bianchi',
+  'Cardoso',
+  'Duarte',
+  'Esquivel',
+  'Fuentes',
+  'Gallardo',
+  'Herrera',
+  'Ibarra',
+  'Jimenez',
+  'Kruger',
+  'Lombardi',
+  'Molina',
+  'Navarro',
+  'Ortega',
+] as const;
+
+/**
+ * Two groups in the practice, and which of the generated patients are in them
+ * (owner, 2026-09-27). A practice with eighteen patients and no groups does not
+ * exercise the sidebar's group headings at all, and a heading with nobody in it
+ * is exactly the case that reads as broken.
+ *
+ * Deliberately **not** all of them: leaving most patients ungrouped is what
+ * "no group, no change" looks like, and a seed where everybody is filed is not
+ * the shape a real list is in.
+ */
+export const PRACTICE_GROUPS: readonly {
+  readonly name: string;
+  readonly first: number;
+  readonly count: number;
+}[] = [
+  { name: 'Family therapy', first: 0, count: 4 },
+  { name: 'Court-mandated', first: 5, count: 3 },
+];
+
+export function buildPracticePatients(now: Date = new Date()): readonly SeedPatient[] {
+  return Array.from({ length: PRACTICE_PATIENT_COUNT }, (_, index) => {
+    const first = PRACTICE_FIRST_NAMES[index % PRACTICE_FIRST_NAMES.length] ?? 'Ana';
+    const last = PRACTICE_LAST_NAMES[index % PRACTICE_LAST_NAMES.length] ?? 'Alvarez';
+    // 5..10, by index, so the spread is deterministic and every count in the
+    // range is exercised rather than clustering.
+    const noteCount = PRACTICE_NOTES_MIN + (index % (PRACTICE_NOTES_MAX - PRACTICE_NOTES_MIN + 1));
+    const notes = Array.from({ length: noteCount }, (_, noteIndex) => {
+      /*
+       * Newest first, one note every few days.
+       *
+       * The span is the *newest* note's reach, so the oldest note in a practice
+       * runs a little past it: the per-patient `+ index` offset (each patient
+       * starts further back than the last) is added on top of the 120-day
+       * spread, and the last patient reaches 123 days. Saying "all inside the
+       * span" here was true of the spread and not of the result.
+       */
+      const daysAgo = 1 + Math.round((noteIndex * PRACTICE_SPAN_DAYS) / noteCount) + index;
+      const at = new Date(now.getTime() - daysAgo * 86_400_000);
+      return {
+        title: `Session ${String(noteCount - noteIndex)}`,
+        format: STANDARD_PROGRESS_FORMAT.name,
+        created_at: at.toISOString(),
+        // Every other note stays a draft, which is what makes the workbench's
+        // "Continue a draft" card mean something on a practice this size.
+        published: noteIndex % 2 === 1,
+        content: [
+          `Fabricated sample note ${String(noteCount - noteIndex)} for ${first} ${last}.`,
+          '',
+          'Presenting concern, observations and plan were discussed and recorded.',
+          'This text is invented for development and describes no real person.',
+        ].join('\n'),
+      };
+    });
+    // The first few go into the practice groups, the rest stay ungrouped.
+    const group = PRACTICE_GROUPS.find(
+      (candidate) => index >= candidate.first && index < candidate.first + candidate.count,
+    )?.name;
+    return { name: `${first} ${last}`, notes, ...(group === undefined ? {} : { group }) };
+  });
+}
+
 export interface SeedOptions {
   /**
    * Wipe everything first, patients and notes included. Without it a database
    * that already has content is refused.
    */
   readonly reset?: boolean;
+  /**
+   * Also write the fifteen-patient throwaway practice after the sample one.
+   * Opt-in, and additive: the sample practice is still there beside it.
+   */
+  readonly practice?: boolean;
 }
 
 export interface SeedResult {
@@ -144,7 +277,16 @@ export interface SeedResult {
 
 function wipe(db: Database): void {
   // Notes cascade to transcripts and chat messages; formats must go last.
-  db.exec('DELETE FROM notes; DELETE FROM patients; DELETE FROM note_formats; DELETE FROM settings;');
+  //
+  // `patient_groups` is in here because `--reset` is documented as leaving an
+  // empty database, and a group left behind is not empty: a patient created
+  // later could be filed into a list from a previous life, with nothing in the
+  // seed to explain where it came from. It is written before the patients are
+  // deleted purely for readability — the patients' foreign key is
+  // `ON DELETE SET NULL`, so either order works.
+  db.exec(
+    'DELETE FROM notes; DELETE FROM patients; DELETE FROM patient_groups; DELETE FROM note_formats; DELETE FROM settings;',
+  );
 }
 
 /** Thrown instead of seeding over a practice: the CLI turns it into a non-zero exit. */
@@ -186,6 +328,8 @@ export function seedDatabase(db: Database, options: SeedOptions = {}): SeedResul
     };
   }
 
+  const practicePatients = options.practice === true ? buildPracticePatients() : [];
+
   const run = db.transaction(() => {
     if (populated) wipe(db);
 
@@ -216,8 +360,34 @@ export function seedDatabase(db: Database, options: SeedOptions = {}): SeedResul
           created_at: note.created_at,
         });
         // Every sample note in the prototype is already published.
-        setNotePublished(db, inserted.id, true, note.created_at);
+        if (note.published !== false) setNotePublished(db, inserted.id, true, note.created_at);
         noteCount += 1;
+      }
+    }
+
+    if (options.practice === true) {
+      const practiceGroupIds = new Map<string, string>();
+      for (const group of PRACTICE_GROUPS) {
+        practiceGroupIds.set(group.name, createPatientGroup(db, group.name).id);
+      }
+      for (const patient of practicePatients) {
+        const created = createPatient(db, { name: patient.name });
+        const groupId = patient.group === undefined ? undefined : practiceGroupIds.get(patient.group);
+        if (groupId !== undefined) updatePatient(db, created.id, { groupId });
+        for (const note of patient.notes) {
+          const formatId = formatIds.get(note.format);
+          if (!formatId) throw new Error(`Practice note references unknown format "${note.format}"`);
+
+          const inserted = createNote(db, {
+            patient_id: created.id,
+            format_id: formatId,
+            title: note.title,
+            content: note.content,
+            created_at: note.created_at,
+          });
+          if (note.published !== false) setNotePublished(db, inserted.id, true, note.created_at);
+          noteCount += 1;
+        }
       }
     }
 
@@ -229,7 +399,7 @@ export function seedDatabase(db: Database, options: SeedOptions = {}): SeedResul
   return {
     seeded: true,
     formats: SEED_FORMATS.length,
-    patients: SEED_PATIENTS.length,
+    patients: SEED_PATIENTS.length + practicePatients.length,
     notes,
   };
 }

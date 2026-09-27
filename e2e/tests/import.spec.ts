@@ -23,8 +23,12 @@ test.describe('importing from Claude', () => {
     // The counts the sentences below are built from, in the project's words.
     const notes = (count: number): string => tr('count.note', { count });
     const patients = (count: number): string => tr('count.patient', { count });
-    await page.goto('/settings');
-    await page.getByTestId('settings-import').click();
+    // Import is a first-level row in the workspace's "More" menu, not a section
+    // of Settings (owner, 2026-09-27). The import screens themselves are
+    // untouched — only where she starts them moved.
+    await page.goto('/');
+    await page.getByTestId('mission-control').click();
+    await page.getByTestId('mission-import').click();
     await expect(page.getByRole('heading', { name: tr('doc.importClaude') })).toBeVisible();
     await expect(page.getByTestId('import-cutoff')).toHaveValue('2026-07-01');
     await checkScreen(page, 'Import from Claude');

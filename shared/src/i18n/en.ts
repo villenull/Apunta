@@ -421,6 +421,8 @@ export const en = {
   'errors.not_found.note_format': { text: 'Note format not found' },
   /** `routes/patients.ts:25,59,66` and `routes/brainstorm.ts:237`. */
   'errors.not_found.patient': { text: 'Patient not found' },
+  /** `routes/patientGroups.ts`. A patient cannot be filed under a group that is gone. */
+  'errors.not_found.group': { text: 'Group not found' },
   /** `routes/plans.ts:188,221,447`. */
   'errors.not_found.plan': { text: 'Plan not found' },
   /** `routes/plans.ts:89`. */
@@ -444,6 +446,13 @@ export const en = {
   },
 
   /* --- errors.conflict --- */
+
+  /**
+   * `routes/patientGroups.ts`. The unique index behind the route is case
+   * -insensitive, so this is the sentence for "Family" as well as "family" —
+   * two headings that look identical in the sidebar are one heading too many.
+   */
+  'errors.conflict.group_name_taken': { text: 'You already have a group with that name.' },
 
   /**
    * `routes/formats.ts:107`. The count is a `number` and the entry is a
@@ -955,6 +964,19 @@ export const en = {
    * The last row of the home results, `HomeLauncher.tsx:146`: "New: John".
    * `{name}` is what she typed, so it is data and never translated.
    */
+  /* --- The home screen as a workbench (owner, 2026-09-27) --- */
+  /**
+   * Three actions and a question, replacing the greeting and the search-first
+   * home. "Choose an action, then a patient" is the whole instruction, so it is
+   * said on the screen: the two steps are otherwise a surprise.
+   */
+  'home.ask': { text: 'What would you like to work on?' },
+
+  'home.actionNote': { text: 'Write a note' },
+  'home.actionDraft': { text: 'Continue a draft' },
+  'home.actionPlan': { text: 'Create a treatment plan' },
+  'home.pickPatient': { text: 'Who is this for?' },
+  'home.actionsLabel': { text: 'Actions' },
   'home.newWith': { text: 'New: {name}', kind: { name: 'text' } },
 
   /**
@@ -1536,9 +1558,70 @@ export const en = {
   },
   'patients.pin': { text: 'Pin' },
   'patients.unpin': { text: 'Unpin' },
+  /* --- Patient groups (owner, 2026-09-27) --- */
+  /**
+   * The submenu item, with its chevron. Apunta has no projects, so this is the
+   * one row in the menu that opens another menu.
+   */
+  'patients.moveToGroup': { text: 'Move to group' },
+  /** The submenu's own heading, so the list is not floating in a box. */
+  'patients.moveToGroupLabel': { text: 'Move to group' },
+  /** Creates a group and files the patient under it, in one go. */
+  'patients.newGroup': { text: 'New group…' },
+  'patients.groupName': { text: 'Group name' },
+  'patients.groupNamePlaceholder': { text: 'e.g. Family therapy' },
+  'patients.createGroup': { text: 'Create group' },
+  /**
+   * The row that takes a patient back out to where ungrouped patients sit.
+   * "Ungrouped", which is the word for the state rather than for the action
+   * (owner, 2026-09-27) — "No group" read as a place that did not exist.
+   */
+  'patients.noGroup': { text: 'Ungrouped' },
+  /** The submenu when there are no groups yet: the one row that makes one. */
+  'patients.noGroupsYet': { text: 'No groups yet' },
+  /**
+   * The three states of a group list are three different sentences (F5), and the
+   * third one used to be missing: a failed request rendered as "No groups yet",
+   * which is a claim about her data rather than about the app.
+   */
+  'patients.groupsLoading': { text: 'Loading groups…' },
+  'patients.groupsFailed': { text: "Couldn't load your groups." },
   'patients.pinned': { text: 'Pinned' },
   /** The empty "Pinned" group's one row, after claude.ai's for projects. */
   'patients.pinHint': { text: 'Pin patients to keep them here' },
+  /* --- The control beside "Recents" (owner, 2026-09-27) --- */
+  /**
+   * Four sections in one menu, from the owner's own screenshots. Only options
+   * that are real today are here: "Group by" carries her groups or none, because
+   * unread has no stored meaning yet and a row that changes nothing is worse than
+   * a row that is absent.
+   */
+  /**
+   * The sidebar, empty because a filter is hiding everyone. It has to say that
+   * rather than "no active patients", which is a different and untrue thing when
+   * her patients are right there (owner, 2026-09-27).
+   */
+  'patients.filteredOut': { text: 'No patients match these filters.' },
+  'patients.clearFilters': { text: 'Clear filters' },
+  /** The line inside a group nobody is in yet, so an empty heading reads as
+   * "empty" rather than as "broken" (owner, 2026-09-27). */
+  'patients.groupEmpty': { text: 'No patients in this group yet' },
+  'patients.viewOptions': { text: 'View options' },
+  'patients.statusLabel': { text: 'Status' },
+  'patients.statusActive': { text: 'Active' },
+  'patients.statusArchived': { text: 'Archived' },
+  'patients.statusAll': { text: 'All' },
+  'patients.activityLabel': { text: 'Last activity' },
+  'patients.activityDay': { text: 'Past day' },
+  'patients.activity3d': { text: 'Past 3 days' },
+  'patients.activity7d': { text: 'Past week' },
+  'patients.activity30d': { text: 'Past month' },
+  'patients.activityAll': { text: 'Any time' },
+  'patients.groupByLabel': { text: 'Group by' },
+  'patients.groupByGroups': { text: 'My groups' },
+  'patients.groupByNone': { text: 'Nothing' },
+  'patients.sortLabel': { text: 'Sort by' },
+  'patients.sortCreated': { text: 'Date created' },
   'patients.recents': { text: 'Recents' },
   /** The control beside "Recents" and the two orders it offers. */
   'patients.sortList': { text: 'Sort patients' },
@@ -1567,9 +1650,28 @@ export const en = {
   'patients.tabArchived': { text: 'Archived' },
   /** `PatientDirectory.tsx:125`, and the name `Workspace.tsx:302` is given. */
   'directory.select': { text: 'Select' },
-  /** `PatientsColumn.tsx:198`. */
-  'patients.missionControl': { text: 'Mission control' },
+  /**
+   * `PatientsColumn.tsx`, the sidebar's one row at the foot.
+   *
+   * "More", after Claude's own (owner, 2026-09-27). "Mission control" named
+   * the container rather than anything in it, and the gear beside it already
+   * says what its first row does.
+   */
+  'patients.missionControl': { text: 'More' },
   /** `PatientsColumn.tsx:222`. */
+  /* --- Choosing the language (owner, 2026-09-27) --- */
+  /**
+   * The window, its close control, and one pair of names per language: the
+   * language's own name for itself with the region, and the name in English
+   * underneath it. Both are needed — someone who has landed here in the wrong
+   * language is reading the English line to find their way out.
+   */
+  'language.choose': { text: 'Choose your language' },
+  'language.close': { text: 'Close language chooser' },
+  'language.en.endonym': { text: 'English (United States)' },
+  'language.en.english': { text: 'English (United States)' },
+  'language.es-MX.endonym': { text: 'Español (México)' },
+  'language.es-MX.english': { text: 'Spanish (Mexico)' },
   'nav.language': { text: 'Language' },
   /** `PatientsColumn.tsx:234`. */
   'nav.help': { text: 'Get help' },
@@ -2257,10 +2359,6 @@ export const en = {
   'settings.formats': { text: 'Note formats' },
   /** `Settings.tsx:241`. */
   'settings.addFormat': { text: 'Add another format' },
-  /** `Settings.tsx:257`. */
-  'settings.importClaude': { text: 'Import from Claude' },
-  /** `Settings.tsx:261`. */
-  'settings.importHalaxy': { text: 'Import from Halaxy' },
   /** `Settings.tsx:280`. */
   'settings.app': { text: 'App' },
   /** `Settings.tsx:283`. */
@@ -2758,6 +2856,15 @@ export const en = {
     text: 'In Claude, open Settings → Privacy → Export data. The export arrives by email as a zip. Choose that file here, or the conversations.json inside it. It is read on this Mac and kept nowhere.',
   },
   /** `Import.tsx:308`. */
+  /**
+   * The other importer. Import is a first-level row in the workspace's "More"
+   * menu now (owner, 2026-09-27) rather than a section of Settings, and one row
+   * has to lead to both of the importers she has — otherwise the second is a
+   * route with no way in, which is what removing the Settings links did to
+   * Halaxy until this existed.
+   */
+  'import.switchToClaude': { text: 'Import from Claude instead' },
+  'import.switchToHalaxy': { text: 'Import from Halaxy instead' },
   'import.patientsSince': { text: 'Patients seen since' },
   /** `Import.tsx:320-321`. */
   'import.namesHelp': {

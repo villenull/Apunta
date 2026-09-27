@@ -8,6 +8,7 @@ import {
   type Note,
   type NoteFormat,
   type Patient,
+  type PatientGroup,
   type PatientListItem,
   type PlanGoal,
   PUBLISHED_REFUSAL,
@@ -31,6 +32,8 @@ import { vi } from 'vitest';
  */
 export interface FakeApiState {
   patients: PatientListItem[];
+  /** Named lists patients can be filed under, in creation order (owner, 2026-09-27). */
+  groups: PatientGroup[];
   notes: Note[];
   formats: NoteFormat[];
   /** Refine-chat turns, across every note. */
@@ -75,6 +78,8 @@ export function makePatient(name: string, overrides: Partial<PatientListItem> = 
     identifier: null,
     created_at: '2026-07-01T09:00:00.000Z',
     archived_at: null,
+    group_id: null,
+    group_position: null,
     note_count: 0,
     ...overrides,
   };
@@ -335,6 +340,12 @@ function apiError(status: number, code: string, message: string, details?: unkno
 export interface FakeApiOptions {
   /** Overrides for `GET /api/health` — the AI banner and /setup read this. */
   health?: Partial<HealthResponse>;
+  /**
+   * Make `GET /api/patient-groups` fail (F5). The point of the option is that a
+   * failed group fetch has to be *distinguishable* from an empty one, and there
+   * is no other way to reach that state in a test.
+   */
+  groupsError?: { status: number; code: string; message: string };
   /** Overrides for `GET /api/backup` — the Settings backup card reads this. */
   backup?: Record<string, unknown>;
   /** Structured note outcome for a refine stream, without inferring from prose. */
@@ -484,6 +495,7 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
   let previewCalls = 0;
   const state: FakeApiState = {
     patients: [],
+    groups: [],
     notes: [],
     formats: [],
     messages: [],
@@ -738,6 +750,56 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         return json(updated);
       }
 
+      if (path === '/api/patient-groups' && method === 'GET') {
+        if (options.groupsError) {
+          return apiError(options.groupsError.status, options.groupsError.code, options.groupsError.message);
+        }
+        // Her order, then the order she made them in — the same rule the
+        // server's ORDER BY expresses, so a drag in fake mode behaves as it
+        // will against the database (migration 011).
+        const groups = [...state.groups].sort((left, right) => {
+          if (left.position === null && right.position !== null) return 1;
+          if (right.position === null && left.position !== null) return -1;
+          if (left.position !== right.position) return (left.position ?? 0) - (right.position ?? 0);
+          return left.created_at.localeCompare(right.created_at);
+        });
+        return json({ groups });
+      }
+
+      if (path === '/api/patient-groups' && method === 'POST') {
+        const name = typeof body['name'] === 'string' ? body['name'].trim() : '';
+        if (name === '') return apiError(400, 'validation', 'A group needs a name');
+        if (state.groups.some((group) => group.name.toLowerCase() === name.toLowerCase())) {
+          return apiError(409, 'conflict', 'You already have a group with that name.');
+        }
+        const group: PatientGroup = { id: fakeId(), name, created_at: stamp(), position: null };
+        state.groups = [...state.groups, group];
+        return json(group, 201);
+      }
+
+      const groupMatch = /^\/api\/patient-groups\/([^/]+)$/.exec(path);
+      if (groupMatch && method === 'PATCH') {
+        const group = state.groups.find((candidate) => candidate.id === groupMatch[1]);
+        if (!group) return apiError(404, 'not_found', 'Group not found');
+        // Name, position, or both — the same PATCH the server has. A move sends
+        // no name, so a fake that demanded one would make the reorder untestable.
+        const updated: PatientGroup = { ...group };
+        if (body['name'] !== undefined) {
+          const name = typeof body['name'] === 'string' ? body['name'].trim() : '';
+          if (name === '') return apiError(400, 'validation', 'A group needs a name');
+          const clash = state.groups.find(
+            (candidate) => candidate.id !== group.id && candidate.name.toLowerCase() === name.toLowerCase(),
+          );
+          if (clash) return apiError(409, 'conflict', 'You already have a group with that name.');
+          updated.name = name;
+        }
+        if (body['position'] !== undefined) {
+          updated.position = typeof body['position'] === 'number' ? body['position'] : null;
+        }
+        state.groups = state.groups.map((candidate) => (candidate.id === group.id ? updated : candidate));
+        return json(updated);
+      }
+
       if (path.startsWith('/api/patients') && method === 'GET' && path.split('?')[0] === '/api/patients') {
         // Archived patients are hidden unless asked for, exactly as the server
         // does it — a fake that always returned everyone would make the
@@ -831,6 +893,23 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
           );
           const { note_count: _archivedCount, ...archivedRest } = updated;
           return json(archivedRest satisfies Patient);
+        }
+        if (method === 'PATCH' && ('group_id' in body || 'group_position' in body)) {
+          const groupId = 'group_id' in body ? body['group_id'] : patient.group_id;
+          if (groupId !== null && !state.groups.some((group) => group.id === groupId)) {
+            return apiError(404, 'not_found', 'Group not found');
+          }
+          const position = 'group_position' in body ? body['group_position'] : patient.group_position;
+          const moved = {
+            ...patient,
+            group_id: (groupId as string | null) ?? null,
+            group_position: (position as number | null) ?? null,
+          };
+          state.patients = state.patients.map((candidate) =>
+            candidate.id === patientId ? moved : candidate,
+          );
+          const { note_count: _movedCount, ...movedRest } = moved;
+          return json(movedRest satisfies Patient);
         }
         if (method === 'PATCH' && typeof body['name'] === 'string') {
           const renamed = { ...patient, name: body['name'], name_guessed: false };

@@ -1,0 +1,15 @@
+-- Where a group sits among the others (owner, 2026-09-27).
+--
+-- She drags one group above another. That has to still be true tomorrow, so it
+-- is a column rather than an array in the browser: `localStorage` would work
+-- until she opened the app on another machine, and this is a decision about her
+-- patients, not about this window.
+--
+-- **Nullable and sparse, like `patients.group_position` in 010.** A new group
+-- with no position sorts after everything that has one, which is what makes
+-- "created later, goes last" true without a write at creation time. The unique
+-- index on the name (009) still keeps two groups from looking identical.
+--
+-- Pinned and Recents are not rows here: Pinned is always the top section and
+-- Recents always the bottom, by the app's own rules rather than by a position.
+ALTER TABLE patient_groups ADD COLUMN position INTEGER;

@@ -104,9 +104,11 @@ describe('migrate', () => {
     const second = openDatabase({ file, migrationsDir });
 
     expect(second.migrations.applied).toEqual([]);
-    // The shipped level, written out. 008 (C-LANG@1 rule 3) is the migration
-    // that made `7` stale; the expectation stays exactly as strict.
-    expect(second.migrations.level).toBe(8);
+    // The shipped level, written out. 011 (where a group sits among the others)
+    // is the migration that made `10` stale; the expectation stays exactly as
+    // strict — this is the assertion that fails when a migration is added and
+    // not accounted for.
+    expect(second.migrations.level).toBe(11);
     expect(
       (
         second.db.prepare('SELECT applied_at FROM schema_migrations WHERE version = 1').get() as {
@@ -270,11 +272,14 @@ describe('migrate', () => {
     const formatBefore = first.db.prepare(`SELECT ${FORMAT_COLUMNS} FROM note_formats`).get();
     first.db.close();
 
-    // Re-open with the shipped directory: 008 is the only pending migration.
+    // Re-open with the shipped directory: 008 is the first pending migration,
+    // and 009, 010 and 011 follow it in the same call, so all four are listed —
+    // this test is about what 008 did to the notes, and the later migrations'
+    // own effects on the same data are asserted separately below.
     const second = openDatabase({ file, migrationsDir });
     try {
-      expect(second.migrations.applied).toEqual([8]);
-      expect(second.migrations.level).toBe(8);
+      expect(second.migrations.applied).toEqual([8, 9, 10, 11]);
+      expect(second.migrations.level).toBe(11);
 
       // The new column is last in each table and is the only one that is new.
       expect(Object.keys(second.db.prepare('SELECT * FROM notes').get() as object)).toEqual([
@@ -295,6 +300,114 @@ describe('migrate', () => {
     } finally {
       second.db.close();
       rmSync(before008, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * 009 (patient groups, owner, 2026-09-27) runs against a practice that
+   * already has patients, notes and an archive flag. Three things have to be
+   * true afterwards and none of them is visible in the app if it is not the
+   * case, so they are asserted here rather than eyeballed in a preview:
+   *
+   * 1. **Nothing is lost or rewritten.** The column is added nullable with no
+   *    default, so every pre-existing row is the row it was — including the
+   *    archived one, which is the row a rewrite is most likely to drop.
+   * 2. **Nobody is silently filed.** `group_id` is NULL everywhere, because the
+   *    new table starts empty and "no group" has to mean what it says.
+   * 3. **The foreign key is real.** A patient cannot be filed under a group that
+   *    does not exist, and emptying a group cannot fail or strand them.
+   */
+  it('adds groups without moving, rewriting or filing a single patient', () => {
+    const file = join(dataDir, 'apunta.db');
+    // A directory holding the shipped 001–008 and nothing else, so the first
+    // open stops at the level this migration starts from.
+    const before009 = mkdtempSync(join(tmpdir(), 'apunta-migrations-'));
+    for (const migration of loadMigrations(migrationsDir)) {
+      if (migration.version > 8) continue;
+      writeFileSync(
+        join(before009, `${String(migration.version).padStart(3, '0')}_${migration.name}.sql`),
+        migration.sql,
+      );
+    }
+
+    const PATIENT_COLUMNS = 'id, name, identifier, created_at, archived_at, name_guessed';
+    const first = openDatabase({ file, migrationsDir: before009 });
+    expect(first.migrations.level).toBe(8);
+    first.db
+      .prepare(
+        'INSERT INTO patients (id, name, identifier, created_at, archived_at) VALUES (?, ?, ?, ?, NULL)',
+      )
+      .run('0198c0f0-0000-7000-8000-00000000c0de', 'John Smith', 'CHART-1', '2026-01-01T09:00:00.000Z');
+    // An archived patient too: the row a rewrite is most likely to lose.
+    first.db
+      .prepare('INSERT INTO patients (id, name, created_at, archived_at) VALUES (?, ?, ?, ?)')
+      .run(
+        '0198c0f0-0000-7000-8000-00000000c1de',
+        'Maria Ruiz',
+        '2026-01-02T09:00:00.000Z',
+        '2026-02-02T09:00:00.000Z',
+      );
+    const patientsBefore = first.db
+      .prepare(`SELECT ${PATIENT_COLUMNS} FROM patients ORDER BY created_at`)
+      .all();
+    expect(patientsBefore).toHaveLength(2);
+    first.db.close();
+
+    const second = openDatabase({ file, migrationsDir });
+    try {
+      expect(second.migrations.applied).toEqual([9, 10, 11]);
+      expect(second.migrations.level).toBe(11);
+
+      // Its own new column, then 010's. Both are additive and both are null, and
+      // that is the whole preservation claim: nothing existing is rewritten.
+      const columns = Object.keys(second.db.prepare('SELECT * FROM patients').get() as object);
+      expect(columns).toEqual([...PATIENT_COLUMNS.split(', '), 'group_id', 'group_position']);
+      expect(second.db.prepare('SELECT COUNT(*) AS count FROM patient_groups').get()).toEqual({
+        count: 0,
+      });
+
+      // 1 & 2: every row is byte-identical and nobody gained a group.
+      expect(second.db.prepare(`SELECT ${PATIENT_COLUMNS} FROM patients ORDER BY created_at`).all()).toEqual(
+        patientsBefore,
+      );
+      expect(second.db.prepare('SELECT group_id FROM patients ORDER BY created_at').all()).toEqual([
+        { group_id: null },
+        { group_id: null },
+      ]);
+
+      // 3: the key is enforced, and clearing a group cannot strand anybody.
+      const group = second.db
+        .prepare('INSERT INTO patient_groups (id, name, created_at) VALUES (?, ?, ?)')
+        .run('0198c0f0-0000-7000-8000-00000000a0de', 'Family therapy', '2026-03-01T09:00:00.000Z');
+      expect(group.changes).toBe(1);
+      expect(() =>
+        second.db
+          .prepare("UPDATE patients SET group_id = '0198c0f0-0000-7000-8000-00000000ffffffff' WHERE id = ?")
+          .run('0198c0f0-0000-7000-8000-00000000c0de'),
+      ).toThrow();
+
+      second.db
+        .prepare('UPDATE patients SET group_id = ? WHERE id = ?')
+        .run('0198c0f0-0000-7000-8000-00000000a0de', '0198c0f0-0000-7000-8000-00000000c0de');
+      expect(
+        second.db
+          .prepare('SELECT group_id FROM patients WHERE id = ?')
+          .get('0198c0f0-0000-7000-8000-00000000c0de'),
+      ).toEqual({ group_id: '0198c0f0-0000-7000-8000-00000000a0de' });
+
+      // `ON DELETE SET NULL`: emptying a group puts the patient back where
+      // ungrouped patients sit, and does not fail.
+      second.db
+        .prepare('DELETE FROM patient_groups WHERE id = ?')
+        .run('0198c0f0-0000-7000-8000-00000000a0de');
+      expect(
+        second.db
+          .prepare('SELECT group_id FROM patients WHERE id = ?')
+          .get('0198c0f0-0000-7000-8000-00000000c0de'),
+      ).toEqual({ group_id: null });
+    } finally {
+      second.db.close();
+      rmSync(before009, { recursive: true, force: true });
     }
   });
 });

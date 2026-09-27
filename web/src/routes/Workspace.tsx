@@ -9,13 +9,17 @@ import {
   listNotes,
   listPatients,
   NETWORK_ERROR_MESSAGE,
+  createPatientGroup,
+  updatePatientGroup,
   setPatientArchived,
+  setPatientGroup,
   updatePatient,
 } from '../api/index.js';
 import { AiBanner } from '../components/AiBanner.js';
 import { BrainstormView } from '../components/BrainstormView.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { Dialog } from '../components/Dialog.js';
+import { LanguageDialog } from '../components/LanguageDialog.js';
 import { HomeLauncher } from '../components/HomeLauncher.js';
 import { BackIcon, DocumentIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
@@ -30,7 +34,9 @@ import { Toast } from '../components/Toast.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { usePatientRecency } from '../hooks/usePatientRecency.js';
+import { usePatientGroups } from '../hooks/usePatientGroups.js';
 import { usePinnedPatients } from '../hooks/usePinnedPatients.js';
+import { readSidebarView } from '../lib/sidebarView.js';
 import { useI18n } from '../lib/i18n.js';
 import { orderPatients } from '../lib/patientOrder.js';
 import {
@@ -80,18 +86,45 @@ export function Workspace(): React.JSX.Element {
   const [previewNote, setPreviewNote] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PatientListItem | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // The language chooser (owner, 2026-09-27): a window over the workspace, not
+  // a settings row, because every word changes underneath it.
+  const [languageOpen, setLanguageOpen] = useState(false);
   // "View all" is a route of its own, so a reload keeps her on the full list.
   const atDirectory = location.pathname === '/patients';
   const [directoryTab, setDirectoryTab] = useState<'active' | 'archived'>('active');
   // The sidebar never shows archived patients; only the Archived tab asks for
   // them, so opening the tab is the one request that widens the list.
-  const includeArchived = atDirectory && directoryTab === 'archived';
+  /*
+   * Archived patients are fetched when the "View all" page asks for them **or**
+   * when the sidebar's Status filter does (owner, 2026-09-27) — otherwise
+   * choosing "Archived" beside Recents would show an empty list, because the
+   * working list never contained them in the first place.
+   *
+   * The filter itself is owned and written by the column, which is where the
+   * rest of the view state lives; this mirrors the one field that decides what
+   * has to be on the wire. Read once, at mount: changing it re-reads the same
+   * stored value, and the column re-renders its own list when she picks another.
+   */
+  /*
+   * Whether the patient fetch has to include archived patients, and **reactive**
+   * (F1). This used to be `useMemo(..., [])` — read once at mount — so choosing
+   * `Status: Archived` beside Recents fetched the same active-only list, the
+   * column filtered it to nothing, and she was told "No patients match these
+   * filters" until she reloaded the tab. At mount the stored value is still the
+   * right answer (and avoids a flash), and after that the column reports the
+   * field, because the column is what owns and writes it.
+   */
+  const [sidebarWantsArchived, setSidebarWantsArchived] = useState(
+    () => readSidebarView().status !== 'active',
+  );
+  const includeArchived = (atDirectory && directoryTab === 'archived') || sidebarWantsArchived;
   // preview-only: the collapsed panel is remembered per browser (see
   // lib/patientPins); a real card would keep it beside the other preferences.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
   // `null` until she drags the edge: the token's default width applies.
   const [sidebarWidth, setSidebarWidth] = useState<number | null>(readSidebarWidth);
   const pins = usePinnedPatients();
+  const groups = usePatientGroups();
 
   // No patient name in the tab title: it is read over a shoulder, shown in the
   // window switcher, and written into browser history.
@@ -258,6 +291,90 @@ export function Workspace(): React.JSX.Element {
     }
   }
 
+  /**
+   * Filing a patient under a group, and taking them out again (owner,
+   * 2026-09-27). Same shape as archiving: the call, then the list, and a failure
+   * said out loud rather than swallowed — she has just pointed at a group and
+   * nothing moving would look like the app ignoring her.
+   */
+  async function handleMoveToGroup(target: PatientListItem, groupId: string | null): Promise<void> {
+    try {
+      await setPatientGroup(target.id, groupId);
+      setActionError(null);
+      reloadPatients();
+    } catch (thrown) {
+      setActionError(errorMessage(thrown));
+    }
+  }
+
+  /**
+   * The end of a group, for a drop on its heading: one past the highest position
+   * anyone holds, so the patient lands at the bottom rather than colliding with
+   * somebody else's number.
+   */
+  const endOfGroup = (groupId: string): number => {
+    const positions = patientList
+      .filter((candidate) => candidate.group_id === groupId && candidate.group_position !== null)
+      .map((candidate) => candidate.group_position ?? 0);
+    return positions.length === 0 ? 0 : Math.max(...positions) + 1;
+  };
+
+  /**
+   * Putting a patient at a place in a group by dragging them there (owner,
+   * 2026-09-27). One PATCH carries both halves — which group, and where in it —
+   * because a drop that moved a patient between groups and left their position
+   * behind would be a drop that half happened.
+   */
+  async function handleMoveIntoGroup(
+    target: PatientListItem,
+    groupId: string,
+    position: number | null,
+  ): Promise<void> {
+    try {
+      await updatePatient(target.id, {
+        group_id: groupId,
+        group_position: position ?? endOfGroup(groupId),
+      });
+      setActionError(null);
+      reloadPatients();
+    } catch (thrown) {
+      setActionError(errorMessage(thrown));
+    }
+  }
+
+  /**
+   * A group and a filing in one go, because that is the only way she reaches
+   * this: the submenu's "New group…" row. If the patient cannot be filed after
+   * the group exists, the group is still there and the error names the move —
+   * dropping the new group on the floor would be the more destructive of the
+   * two surprises.
+   */
+  async function handleCreateGroup(target: PatientListItem, name: string): Promise<void> {
+    try {
+      const group = await createPatientGroup({ name });
+      groups.reload();
+      await handleMoveToGroup(target, group.id);
+    } catch (thrown) {
+      setActionError(errorMessage(thrown));
+    }
+  }
+
+  /**
+   * Put one group above another. The server is the order of record (migration
+   * 011) so it is the only place the decision lives — an optimistic guess here
+   * would put the sidebar out of step with the database every time it guessed
+   * wrong, and she would find out tomorrow.
+   */
+  async function handleReorderGroup(groupId: string, index: number): Promise<void> {
+    try {
+      await updatePatientGroup(groupId, { position: index });
+      setActionError(null);
+      groups.reload();
+    } catch (thrown) {
+      setActionError(errorMessage(thrown));
+    }
+  }
+
   async function handleRename(target: PatientListItem, name: string): Promise<void> {
     try {
       await updatePatient(target.id, { name });
@@ -381,6 +498,7 @@ export function Workspace(): React.JSX.Element {
           activePatientId={patient?.id ?? null}
           recency={recency}
           pinnedIds={pins.ids}
+          sidebarPatients={patientList}
           collapsed={sidebarCollapsed}
           onToggleCollapsed={toggleSidebar}
           onSelect={selectPatient}
@@ -394,6 +512,24 @@ export function Workspace(): React.JSX.Element {
           onDelete={setPendingDelete}
           onTogglePin={pins.toggle}
           onReorderPins={pins.move}
+          groups={groups.groups}
+          groupsState={groups.state}
+          onReloadGroups={groups.reload}
+          onMoveToGroup={(target, groupId) => {
+            void handleMoveToGroup(target, groupId);
+          }}
+          onCreateGroup={(target, name) => {
+            void handleCreateGroup(target, name);
+          }}
+          onStatusChange={(status) => {
+            setSidebarWantsArchived(status !== 'active');
+          }}
+          onReorderGroup={(groupId, index) => {
+            void handleReorderGroup(groupId, index);
+          }}
+          onMoveIntoGroup={(target, groupId, position) => {
+            void handleMoveIntoGroup(target, groupId, position);
+          }}
           onOpenAll={() => {
             navigate('/patients');
           }}
@@ -401,6 +537,15 @@ export function Workspace(): React.JSX.Element {
             setSettingsOpen(true);
           }}
           onUnavailable={onUnavailable}
+          onOpenLanguage={() => {
+            setLanguageOpen(true);
+          }}
+          onOpenImport={() => {
+            // A first-level row in "More" (owner, 2026-09-27), so
+            // importing is where she expects it and not two levels into
+            // Settings. The import screens themselves are untouched.
+            navigate('/import');
+          }}
           edge={
             <SidebarResizer
               width={sidebarWidth ?? SIDEBAR_DEFAULT_W}
@@ -423,6 +568,9 @@ export function Workspace(): React.JSX.Element {
               setSettingsOpen(true);
             }}
             onUnavailable={onUnavailable}
+            onOpenLanguage={() => {
+              setLanguageOpen(true);
+            }}
           />
         )}
 
@@ -480,6 +628,13 @@ export function Workspace(): React.JSX.Element {
               onTogglePin={pins.toggle}
               lastNoteAt={recency}
               pinnedIds={pins.ids}
+              groups={groups.groups}
+              onMoveToGroup={(target, groupId) => {
+                void handleMoveToGroup(target, groupId);
+              }}
+              onCreateGroup={(target, name) => {
+                void handleCreateGroup(target, name);
+              }}
               onUnavailable={onUnavailable}
             />
           ) : patient === null ? (
@@ -524,6 +679,14 @@ export function Workspace(): React.JSX.Element {
           message={previewNote}
           onDismiss={() => {
             setPreviewNote(null);
+          }}
+        />
+      )}
+
+      {languageOpen && (
+        <LanguageDialog
+          onClose={() => {
+            setLanguageOpen(false);
           }}
         />
       )}

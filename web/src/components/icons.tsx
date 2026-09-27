@@ -355,6 +355,60 @@ export function ArchiveIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
+/**
+ * The group a patient is filed under (owner, 2026-09-27). Drawn here rather than
+ * borrowed because the prototype has no folders — the patient list grew groups
+ * after the prototype was superseded (D15) — and the one rule is that an icon is
+ * inlined, never fetched.
+ */
+export function FolderIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M3.5 6.5a1 1 0 011-1h4l2 2.5h8a1 1 0 011 1v9.5a1 1 0 01-1 1h-14a1 1 0 01-1-1z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+/** The "there is a second page this way" chevron, on the group's own row. */
+export function ChevronRightIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M9.5 5.5l6.5 6.5-6.5 6.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
+/**
+ * A sidebar section's fold: down when the section is open, turned on its side
+ * when it is folded (owner, 2026-09-27). The rotation is CSS — this is the open
+ * state, and `.sidebar-section-label[data-collapsed='true']` turns it.
+ */
+export function ChevronDownIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path
+        d="M5.5 9.5l6.5 6.5 6.5-6.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </StrokeIcon>
+  );
+}
+
 export function GearIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>

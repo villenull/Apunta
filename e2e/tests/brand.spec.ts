@@ -24,10 +24,11 @@ import { expect, test, uniqueName } from '../support/fixtures';
  *   `BrandMark` and `BrandWordmark` paint `currentColor` — so the mark and the
  *   wordmark take **the accent's** colour in every theme, including dark. There
  *   is no longer a fixed brand teal anywhere on screen;
- * - the accent default is `#2a9d8f` (`shared/src/settings.ts`), and
- *   `applyAccentColor` puts `#111111` on it for `--on-accent` because near-black
- *   beats white on this teal (6.32:1 against 3.32:1). The tables below carry the
- *   painted value, not the hex.
+ * - the accent default is `#2a9d8f` (`shared/src/settings.ts`), and the label
+ *   on it is white — `applyAccentColor` keeps white until it falls under 3:1
+ *   rather than taking whichever of white and near-black scores higher, which
+ *   on this teal would have put a dark label on a mid-tone button. The tables
+ *   below carry the painted value, not the hex.
  *
  * **What this spec is for changed on 2026-09-27, and the old reasoning is
  * wrong.** It used to hold the mark accent-**invariant**: D10 fixed the brand
@@ -384,8 +385,14 @@ test.describe('rendered colours and 200% zoom', () => {
    * only child and in the sidebar's bar the toggle is to its **left** and the
    * wordmark is last. What is assertable, and what is pinned here: the two
    * boxes do not intersect, the wordmark stays inside its bar, the A mark is
-   * 48 px tall and centred in `.home-inner`, and it is clear of the search
-   * field above nothing.
+   * 48 px tall and centred in `.home-inner`, and it is clear of the first
+   * thing under it.
+   *
+   * That first thing is the **first action card**, not the search field: home
+   * is the Simple workbench the owner asked for, and the search field belongs
+   * to the patient picker one click further in (owner, 2026-09-27). What is
+   * pinned is the property, not the element — the mark must not collide with
+   * whatever content starts the column.
    */
   const ZOOM_WINDOW = { width: 1920, height: 1080 };
   const ZOOM = 2;
@@ -423,9 +430,12 @@ test.describe('rendered colours and 200% zoom', () => {
     const toggle = await boxOf(page.getByTestId('sidebar-toggle'), 'the sidebar toggle');
     const bar = await boxOf(page.locator('.col-header-brand'), 'the sidebar top bar');
     const inner = await boxOf(page.locator('.home-inner'), 'the home column');
-    const search = await boxOf(page.getByTestId('home-search'), 'the home search field');
+    const firstCard = await boxOf(
+      page.getByTestId('home').locator('.home-actions > li').first(),
+      "the workbench's first action card",
+    );
     record(
-      `zoom: window ${ZOOM_WINDOW.width}×${ZOOM_WINDOW.height} at ${String(ZOOM)}× → layout ${layout.innerWidth}×${layout.innerHeight} CSS px, dpr ${layout.devicePixelRatio}; ${JSON.stringify({ mark, wordmark, toggle, bar, inner, search })}`,
+      `zoom: window ${ZOOM_WINDOW.width}×${ZOOM_WINDOW.height} at ${String(ZOOM)}× → layout ${layout.innerWidth}×${layout.innerHeight} CSS px, dpr ${layout.devicePixelRatio}; ${JSON.stringify({ mark, wordmark, toggle, bar, inner, firstCard })}`,
     );
 
     expect(
@@ -450,12 +460,12 @@ test.describe('rendered colours and 200% zoom', () => {
       `the A mark's offset from the column's centre (${String(centreOffset)}px)`,
     ).toBeLessThanOrEqual(TOLERANCE);
     expect(
-      intersects(mark, search),
-      `the A mark ${JSON.stringify(mark)} vs the search field ${JSON.stringify(search)}`,
+      intersects(mark, firstCard),
+      `the A mark ${JSON.stringify(mark)} vs the first action card ${JSON.stringify(firstCard)}`,
     ).toBe(false);
     expect(
       mark.y + mark.height,
-      'the A mark is above the search field, not overlapping it',
-    ).toBeLessThanOrEqual(search.y + TOLERANCE);
+      'the A mark is above the action cards, not overlapping them',
+    ).toBeLessThanOrEqual(firstCard.y + TOLERANCE);
   });
 });

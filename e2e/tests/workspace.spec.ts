@@ -154,19 +154,25 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('patient-list')).toContainText('No patients match');
   });
 
-  test('opens on home, and finds a patient from its search', async ({ page, request }) => {
+  test('opens on home, and finds a patient from its search', async ({ page, request, tr }) => {
     const patientName = uniqueName('E2E Home');
     await request.post('/api/formats', { data: { name: uniqueName('E2E format'), sections: ['Plan'] } });
     await request.post('/api/patients', { data: { name: patientName } });
 
     await page.goto('/');
 
-    await expect(page.getByTestId('home')).toContainText('Let’s focus on…');
+    // Home is the Simple workbench: a question and three things she could be
+    // doing, rather than a search box (owner, 2026-09-27). The search belongs
+    // to the picker one click in, which is where "who is this for?" is asked.
+    await expect(page.getByTestId('home')).toContainText(tr('home.ask'));
     await expect(page.locator('.col-notes')).toHaveCount(0);
+    await page.getByTestId('home-action-draft').click();
+    await expect(page.getByTestId('home-search')).toBeVisible();
     await page.getByTestId('home-search').fill(patientName);
     await page.getByRole('option', { name: patientName, exact: true }).click();
     await expect(page.getByTestId('notes-header')).toHaveText(patientName.split(' ')[0] ?? '');
 
+    // The wordmark in the sidebar is still the way home.
     await page.getByTestId('home-link').click();
     await expect(page.getByTestId('home')).toBeVisible();
   });

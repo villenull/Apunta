@@ -37,7 +37,6 @@ import {
   CloseIcon,
   DatabaseIcon,
   DocumentIcon,
-  DownloadIcon,
   MonitorIcon,
   MoonIcon,
   PlusIcon,
@@ -89,7 +88,6 @@ function sections(t: Translate) {
     { id: 'appearance', label: t('settings.appearance'), icon: <SunIcon className="icon icon-sm" /> },
     { id: 'format', label: t('settings.format'), icon: <DocumentIcon className="icon icon-sm" /> },
     { id: 'backup', label: t('settings.backup'), icon: <DatabaseIcon className="icon icon-sm" /> },
-    { id: 'import', label: t('settings.import'), icon: <DownloadIcon className="icon icon-sm" /> },
     { id: 'advanced', label: t('settings.advanced'), icon: <SlidersIcon className="icon icon-sm" /> },
   ] as const;
 }
@@ -279,18 +277,6 @@ function SettingsSections({
             store.goToArchives();
           }}
         />
-      )}
-      {show.includes('import') && (
-        <section className="card settings-card">
-          <Link to="/import" className="settings-link-row" data-testid="settings-import">
-            <span className="settings-link-label">{t('settings.importClaude')}</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-          <Link to="/import/halaxy" className="settings-link-row" data-testid="settings-import-halaxy">
-            <span className="settings-link-label">{t('settings.importHalaxy')}</span>
-            <span aria-hidden="true">›</span>
-          </Link>
-        </section>
       )}
       {show.includes('advanced') && (
         <details

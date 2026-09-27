@@ -1,4 +1,4 @@
-import type { PatientListItem } from '@apunta/shared';
+import type { PatientGroup, PatientListItem } from '@apunta/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
@@ -23,6 +23,10 @@ export interface PatientDirectoryProps {
   /** patientId → when their last note was edited. */
   lastNoteAt: ReadonlyMap<string, string | null>;
   pinnedIds: readonly string[];
+  /** The named lists patients can be filed under (owner, 2026-09-27). */
+  groups?: readonly PatientGroup[] | undefined;
+  onMoveToGroup?: ((patient: PatientListItem, groupId: string | null) => void) | undefined;
+  onCreateGroup?: ((patient: PatientListItem, name: string) => void) | undefined;
   /**
    * Multi-select is not in this preview; the button says so rather than lying.
    *
@@ -53,6 +57,9 @@ export function PatientDirectory({
   onRename,
   onDelete,
   onTogglePin,
+  groups,
+  onMoveToGroup,
+  onCreateGroup,
   lastNoteAt,
   pinnedIds,
   onUnavailable,
@@ -232,6 +239,13 @@ export function PatientDirectory({
                   archived={archived}
                   pinned={pinned}
                   scope="directory"
+                  groups={groups}
+                  onMoveToGroup={(groupId) => {
+                    onMoveToGroup?.(patient, groupId);
+                  }}
+                  onCreateGroup={(name) => {
+                    onCreateGroup?.(patient, name);
+                  }}
                   onSelectMode={() => {
                     onUnavailable(t('directory.select'));
                   }}

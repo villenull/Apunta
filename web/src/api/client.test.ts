@@ -12,6 +12,8 @@ const patient: Patient = {
   identifier: null,
   created_at: '2026-08-22T09:00:00.000Z',
   archived_at: null,
+  group_id: null,
+  group_position: null,
 };
 
 const format = {

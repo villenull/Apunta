@@ -325,9 +325,15 @@ export function Import(): React.JSX.Element {
   }
 
   return (
-    <Screen back={{ to: '/settings', label: t('common.settings') }}>
+    <Screen back={{ to: '/', label: t('common.patients') }}>
       <h2 className="heading-tight">{t('doc.importClaude')}</h2>
       <p className="muted lede">{t('import.claudeLede')}</p>
+      {/* The other importer, for the same reason as on the Halaxy screen. */}
+      <p className="small">
+        <Link to="/import/halaxy" data-testid="import-switch-halaxy">
+          {t('import.switchToHalaxy')}
+        </Link>
+      </p>
       <div className="card card-rows lede">
         <p className="small note-meta">{t('import.exportHelp')}</p>
         <input

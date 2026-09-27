@@ -50,7 +50,7 @@ async function storedLanguage(request: APIRequestContext): Promise<unknown> {
   return ((await (await request.get('/api/settings')).json()) as Settings)['language'];
 }
 
-/** Open Settings from the workspace's Mission control, as she would mid-session. */
+/** Open Settings from the workspace's "More" menu, as she would mid-session. */
 async function openSettingsModal(page: Page): Promise<void> {
   await page.getByTestId('mission-control').click();
   await page.getByTestId('mission-settings').click();

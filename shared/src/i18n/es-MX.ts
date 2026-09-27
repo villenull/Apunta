@@ -297,6 +297,7 @@ export const esMX = {
   'errors.not_found.note': { text: 'No se encontró la nota' },
   'errors.not_found.note_format': { text: 'No se encontró el formato de nota' },
   'errors.not_found.patient': { text: 'No se encontró el paciente' },
+  'errors.not_found.group': { text: 'No se encontró el grupo' },
   'errors.not_found.plan': { text: 'No se encontró el plan' },
   'errors.not_found.plan_version': { text: 'No existe esa versión del plan' },
   'errors.not_found.goal': { text: 'No se encontró la meta' },
@@ -309,6 +310,9 @@ export const esMX = {
     text: 'No se encontró el archivo de licencias en esta compilación de Apunta.',
   },
 
+  'errors.conflict.group_name_taken': {
+    text: 'Ya tienes un grupo con ese nombre.',
+  },
   'errors.conflict.format_in_use': {
     text: 'Este formato lo usa {count} nota y no se puede eliminar.',
     plural: {
@@ -623,6 +627,14 @@ export const esMX = {
   'home.resultsLabel': { text: 'Pacientes' },
 
   /** `HomeLauncher.tsx:146`. `{name}` es lo que ella escribió. */
+  /* --- La pantalla de inicio como banco de trabajo (owner, 2026-09-27) --- */
+  'home.ask': { text: '¿En qué te gustaría trabajar?' },
+
+  'home.actionNote': { text: 'Escribir una nota' },
+  'home.actionDraft': { text: 'Continuar un borrador' },
+  'home.actionPlan': { text: 'Crear un plan de tratamiento' },
+  'home.pickPatient': { text: '¿Para quién es?' },
+  'home.actionsLabel': { text: 'Acciones' },
   'home.newWith': { text: 'Nuevo: {name}', kind: { name: 'text' } },
 
   /** `LiveRecording.tsx:50`. */
@@ -1125,12 +1137,43 @@ export const esMX = {
   'patients.unpin': {
     text: 'Dejar de fijar',
   },
+  /* --- Grupos de pacientes (owner, 2026-09-27) --- */
+  'patients.moveToGroup': { text: 'Mover al grupo' },
+  'patients.moveToGroupLabel': { text: 'Mover al grupo' },
+  'patients.newGroup': { text: 'Nuevo grupo…' },
+  'patients.groupName': { text: 'Nombre del grupo' },
+  'patients.groupNamePlaceholder': { text: 'p. ej. Terapia familiar' },
+  'patients.createGroup': { text: 'Crear grupo' },
+  'patients.noGroup': { text: 'Sin agrupar' },
+  'patients.noGroupsYet': { text: 'Aún no hay grupos' },
+  'patients.groupsLoading': { text: 'Cargando grupos…' },
+  'patients.groupsFailed': { text: 'No se pudieron cargar tus grupos.' },
   'patients.pinned': {
     text: 'Fijados',
   },
   'patients.pinHint': {
     text: 'Fija pacientes para tenerlos aquí',
   },
+  /* --- El control junto a "Recientes" (owner, 2026-09-27) --- */
+  'patients.filteredOut': { text: 'Ningún paciente coincide con estos filtros.' },
+  'patients.clearFilters': { text: 'Quitar filtros' },
+  'patients.groupEmpty': { text: 'Aún no hay pacientes en este grupo' },
+  'patients.viewOptions': { text: 'Opciones de vista' },
+  'patients.statusLabel': { text: 'Estado' },
+  'patients.statusActive': { text: 'Activos' },
+  'patients.statusArchived': { text: 'Archivados' },
+  'patients.statusAll': { text: 'Todos' },
+  'patients.activityLabel': { text: 'Última actividad' },
+  'patients.activityDay': { text: 'Último día' },
+  'patients.activity3d': { text: 'Últimos 3 días' },
+  'patients.activity7d': { text: 'Última semana' },
+  'patients.activity30d': { text: 'Último mes' },
+  'patients.activityAll': { text: 'Cualquier momento' },
+  'patients.groupByLabel': { text: 'Agrupar por' },
+  'patients.groupByGroups': { text: 'Mis grupos' },
+  'patients.groupByNone': { text: 'Nada' },
+  'patients.sortLabel': { text: 'Ordenar por' },
+  'patients.sortCreated': { text: 'Fecha de creación' },
   'patients.recents': { text: 'Recientes' },
   'patients.sortList': {
     text: 'Ordenar pacientes',
@@ -1171,12 +1214,19 @@ export const esMX = {
   'directory.select': {
     text: 'Seleccionar',
   },
+  /** "More", as Claude's own; owner, 2026-09-27. */
   'patients.missionControl': {
-    text: 'Control de misión',
+    text: 'Más',
   },
   'nav.language': {
     text: 'Idioma',
   },
+  'language.choose': { text: 'Elige tu idioma' },
+  'language.close': { text: 'Cerrar selector de idioma' },
+  'language.en.endonym': { text: 'English (United States)' },
+  'language.en.english': { text: 'Inglés (Estados Unidos)' },
+  'language.es-MX.endonym': { text: 'Español (México)' },
+  'language.es-MX.english': { text: 'Spanish (Mexico)' },
   'nav.help': {
     text: 'Ayuda',
   },
@@ -2002,12 +2052,6 @@ export const esMX = {
   'settings.addFormat': {
     text: 'Agregar otro formato',
   },
-  'settings.importClaude': {
-    text: 'Importar desde Claude',
-  },
-  'settings.importHalaxy': {
-    text: 'Importar desde Halaxy',
-  },
   'settings.app': {
     text: 'Aplicación',
   },
@@ -2541,6 +2585,12 @@ export const esMX = {
   },
   'import.exportHelp': {
     text: 'En Claude, abre Ajustes → Privacidad → Exportar datos. La exportación llega por correo como un zip. Elige ese archivo aquí, o el conversations.json que viene dentro. Se lee en esta Mac y no se guarda en ninguna parte.',
+  },
+  'import.switchToClaude': {
+    text: 'Importar desde Claude en su lugar',
+  },
+  'import.switchToHalaxy': {
+    text: 'Importar desde Halaxy en su lugar',
   },
   'import.patientsSince': {
     text: 'Pacientes vistos desde',
