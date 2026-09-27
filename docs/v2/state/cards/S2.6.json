@@ -8,8 +8,8 @@
   "baseCommit": "7d70502",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "Resume instruction review found out-of-scope English stored attestation; coordinator baseline exit 1, 8 passed/1 skipped/1 failed. Attempt 2 is incomplete, not newly spent. Owner approved AM-059; amendment applied 2026-09-27.",
-  "nextAllowedAction": "Fresh instruction review of approved forward-only attestation scope/wording; resume attempt 2 after UI writer release. Historical rows unchanged; Spanish release gate retained.",
+  "lastCompletedStep": "AM-059 instruction review CLEAR all ten; coordinator verified restored historical IR after rejecting reviewer out-of-scope output. Corrected review: reviews/S2.6-AM059-ir.md.",
+  "nextAllowedAction": "After UI handoff/released writer lane, regenerate implementation dispatch at current HEAD and resume attempt 2 under AM-059; no historical rewrite or no-English suppression. Spanish release clinical gate separate.",
   "sideEffectsDone": [],
   "changedFiles": 0,
   "criteria": {
