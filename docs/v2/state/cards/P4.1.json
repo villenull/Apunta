@@ -5,9 +5,11 @@
   "baseCommit": "5a4b79b",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "Attempt 2 implementation and independent review are committed. Follow-up IR confirms probe diagnostics defects and conflicting plan text. Prior checkpoint describing reverted in-flight work was stale.",
-  "nextAllowedAction": "AM-057 approved/applied. Fresh attempt-3 instruction review, then regenerate implementation dispatch after UI writer release. Attempt remains 2 until implementation starts. Preserve exact size and digest guards.",
-  "sideEffectsDone": [],
+  "lastCompletedStep": "Attempt 2 implementation and independent review are committed. Follow-up IR confirms probe diagnostics defects and conflicting plan text. Prior checkpoint describing reverted in-flight work was stale. AM-057 fresh IR reviewed; stale read references corrected. Reviewer claim V1 demands 12/130 rejected: that count is expressly failure, historical baseline clarified without changing acceptance.",
+  "nextAllowedAction": "Regenerate attempt-3 IR after docs corrections and obtain corrected verdict; implement only after UI writer release, updating base/attempt then. Preserve original V1 tripwire and all 23 cases plus V4.",
+  "sideEffectsDone": [
+    "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
+  ],
   "changedFiles": [],
   "criteria": {
     "V1": "NOT RUN",
