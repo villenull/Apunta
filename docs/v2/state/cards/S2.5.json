@@ -7,17 +7,17 @@
   ],
   "baseCommit": "28a9235",
   "attempt": 4,
-  "status": "NOT STARTED",
-  "lastCompletedStep": "AM-049: owner authorised a fourth attempt as an explicit exception to COORDINATOR section 4, on the reviewer's own recommendation; the fix is the English join plus the missing multi-part assertion",
-  "nextAllowedAction": "implement - LAST attempt; there is no attempt 5, so this one is approved or blocked on its own merits",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "attempt 4 SUBMITTED at bc7528e (evidence 49ebdbb, return bea4b40); all four rows PASS, re-run at the tip and reproduced; final review dispatched on base 2dd09d2 head bea4b40",
+  "nextAllowedAction": "implementation-review - the last word on the card; a PASS closes S2.5 and releases S2.6 -> S2.R -> S3.2 -> S3.3 -> S3.R -> S5.1-S5.7, a FAIL blocks it for the owner because there is no attempt 5",
   "sideEffectsDone": [],
   "changedFiles": 44,
   "criteria": {
-    "V1": "NOT RUN",
-    "V2": "NOT RUN",
-    "V3": "NOT RUN",
-    "V4": "NOT RUN"
+    "V1": "PASS (claimed, unverified)",
+    "V2": "PASS (claimed, unverified)",
+    "V3": "PASS (claimed, unverified)",
+    "V4": "PASS (claimed, unverified)"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T22:35:00Z"
+  "updatedUtc": "2026-09-27T00:55:00Z"
 }
