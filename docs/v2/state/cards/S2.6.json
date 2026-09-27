@@ -5,23 +5,23 @@
     "C-LANG@1",
     "C-SETTINGS@1"
   ],
-  "baseCommit": "cd1936f",
-  "attempt": 1,
+  "baseCommit": "(this commit)",
+  "attempt": 2,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Dispatched as attempt 1. The card was HELD until the owner-run UI agent finished its last queued work in web/; that condition now holds. The card was amended BEFORE dispatch, not after: AM-051 adds shared/src/i18n/t.test.ts and shared/src/i18n/es-MX.ts to May edit (the unioning {name} oracle that hid a defect for three attempts, plus the two 'de 1 notas' es-MX values it hid) and AM-053 adds the accent picker's low-contrast warning (key shipped in 199e6c6, behaviour never built). Three rows added, V5-V7; V5 is the load-bearing one and requires the stricter oracle to FAIL against a deliberately wrong per-form value, because a green run of a stricter test proves only that the code did not crash",
-  "nextAllowedAction": "Implementer returns with all four original rows plus V5-V7 re-run. On SUBMITTED, dispatch the final review; a PASS closes the card and releases S2.R",
+  "lastCompletedStep": "Attempt 1 SUBMITTED work and returned BLOCKED at ff3c734, and the block was correct: the card required work in files it forbade the agent to edit. Verified by the coordinator, not accepted: language_change_blocked absent from ApiErrorCodeSchema (errors.ts:4-24); no catalogue entry for the row with en.ts unwritable and check-ui-strings rejecting literal text; data-i18n at 0 marks across 41 files and 715 t() sites. Landed before the block and kept: AM-051 in the required order (cc71e31 oracle only, committed FAILING on purpose, six lines in brainstorm.contextMostRecent; d509986 the strings, which also fixed a third form the card had not anticipated - text missing {total}, invisible because text never renders on a plural key). V5 is a controlled demonstration, not a failed run: the injected {total}->{count} leaves the token UNION unchanged, so the old union test passed 21/21 against the same catalogue while the per-form check exited 1 naming the key. AM-053 landed at 34b6514 and was run in real Chromium through the sandbox on 7831 in both themes, with two deliberately-wrong variants (checking against white/black, and refusing the colour) both failing its tests. V4 386/386, strings 0",
+  "nextAllowedAction": "Attempt 2 may build V1-V3: AM-054 adds shared/src/errors.ts, shared/src/i18n/en.ts (settings.language* keys ALREADY WRITTEN by the coordinator) and web/src/styles/app.css to May edit; replaces the data-i18n decision with a catalogue-walk from e2e/support/* using the en/esMX exports already public from @apunta/shared; and corrects AM-053's surface list, which was wrong in the one place the brand mark is painted. On SUBMITTED, dispatch the final review. A PASS closes the card and releases S2.R",
   "sideEffectsDone": [],
   "changedFiles": 0,
   "criteria": {
-    "V1": "not run",
-    "V2": "not run",
-    "V3": "not run",
-    "V4": "not run",
-    "V5": "not run",
-    "V6": "not run",
-    "V7": "not run"
+    "V4": "PASS (verified, attempt 1)",
+    "V5": "PASS (verified, attempt 1)",
+    "V6": "PASS (verified, attempt 1)",
+    "V7": "PASS (verified, attempt 1)",
+    "V1": "BLOCKED (attempt 1) - unblocked by AM-054",
+    "V2": "BLOCKED (attempt 1) - unblocked by AM-054",
+    "V3": "BLOCKED (attempt 1) - unblocked by AM-054"
   },
   "sandboxRuns": [],
-  "notes": "Port 7831. AM-051's internal order is a requirement, not a preference: fix the oracle first, then the two strings. Fixed the other way, the still-unioning oracle reports green and the hole ships inside the commit meant to close it. AM-053's threshold is 3:1 against the real surface tokens (#faf9f5 light, #151515/#111111 dark), not against white or black; warn, never refuse",
-  "updatedUtc": "2026-09-27T01:50:00Z"
+  "notes": "Port 7831. AM-051's internal order remains a requirement. OPEN, not this card's to fix: halaxy.undoneNotesKept renders '1 note you had finalized were kept' (en) and 'Se conservaron 1 notas' (es-MX) at count 1. AM-051's per-form oracle PASSES both, because every form carries exactly the tokens its kind declares - the oracle checks placeholder parity and these are agreement defects. en.ts is writable under AM-054 for settings.language* only, and copy wrong in English as well as Spanish belongs to whoever owns that surface",
+  "updatedUtc": "2026-09-27T03:20:00Z"
 }

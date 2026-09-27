@@ -17,6 +17,14 @@ export const ApiErrorCodeSchema = z.enum([
   // Language control is hidden. A 400, because the request asked for something
   // this build does not offer rather than for something that conflicts.
   'language_unavailable',
+  // C-LANG@1 rule 2's server-side half: a language change was refused because
+  // a job or a save was in flight. A 409, and distinct from
+  // `language_unavailable` on purpose — that one says this build does not offer
+  // the language (a 400, the request asked for something impossible), this one
+  // says the language exists and the moment is wrong (the request was fine, it
+  // lost the wait). The client's own disabling is convenience; this is the
+  // guard that holds when the client is stale, a second tab, or a direct call.
+  'language_change_blocked',
   // C-SNAP@1 rule 3: a backup was already running and the second request waited
   // its 60 s. A 409 — the request was fine, it lost the wait.
   'backup_in_progress',

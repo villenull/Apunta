@@ -1526,6 +1526,12 @@ export const en = {
    * accent, so a colour that is hard to see on the page takes the wordmark with
    * it. Owner-approved 2026-09-27.
    */
+  'settings.language': { text: 'Language / Idioma' },
+  /* Bilingual on purpose and identical in both catalogues: the row is the one control a Spanish speaker must be able to find *before* they have switched, so translating it would hide it from the people who need it. */
+  'settings.languageEnglish': { text: 'English' },
+  'settings.languageSpanish': { text: 'Español' },
+  'settings.languageBusy': { text: 'Applies when the current task finishes.' },
+  'settings.languageChangeBlocked': { text: 'Language cannot change while a task is running.' },
   'settings.accentLowContrast': {
     text: 'This colour may be hard to see on the page, and the Apunta logo uses it too.',
   },
