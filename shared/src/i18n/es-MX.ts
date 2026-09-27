@@ -1101,9 +1101,6 @@ export const esMX = {
   'patients.hideColumn': {
     text: 'Ocultar pacientes',
   },
-  'patients.newShort': {
-    text: 'Nuevo',
-  },
 
   /*
    * El apartado de fijados y anteriores, y el menu de fila, anadidos con el

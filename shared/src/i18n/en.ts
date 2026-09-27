@@ -1505,7 +1505,6 @@ export const en = {
   /** `PatientsColumn.tsx:89`. */
   'patients.hideColumn': { text: 'Hide patients' },
   /** The sidebar's new-patient row, `PatientsColumn.tsx:123`. */
-  'patients.newShort': { text: 'New' },
 
   /*
    * The pinned/older sidebar sections and the row menu, added with the
