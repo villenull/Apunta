@@ -53,16 +53,94 @@ const DAY = '2026-08-08';
 /** The instant the seed table is written against, in the box's own zone. */
 const INSTANT = '2026-08-08T12:00:00.000Z';
 
-/** `{name}` tokens in one entry: its `text` and every one of its plural forms. */
-function placeholders(entry: Message): string[] {
+/** `{name}` tokens in one form, sorted and without repeats. */
+function placeholders(form: string): string[] {
   const names = new Set<string>();
-  for (const form of [entry.text, ...Object.values(entry.plural ?? {})]) {
-    for (const match of form.matchAll(/\{(\w+)\}/g)) {
-      const name = match[1];
-      if (name !== undefined) names.add(name);
-    }
+  for (const match of form.matchAll(/\{(\w+)\}/g)) {
+    const name = match[1];
+    if (name !== undefined) names.add(name);
   }
   return [...names].sort();
+}
+
+/** The forms an entry writes out: `text`, then each plural category it names. */
+function forms(entry: Message): [string, string][] {
+  return [['text', entry.text], ...Object.entries(entry.plural ?? {})];
+}
+
+/**
+ * The form `t()` renders from `entry` for `name` — `text`, or a plural
+ * category: the category itself, else `other`, else `text` for an entry with
+ * no plural map. This is `form()` and `otherForm()` of `t.ts`, so a form is
+ * held against the one the other locale would actually print in its place.
+ */
+function counterpart(entry: Message, name: string): string {
+  if (name === 'text' || entry.plural === undefined) return entry.text;
+  return entry.plural[name as Intl.LDMLPluralRule] ?? entry.plural.other ?? entry.text;
+}
+
+/**
+ * AM-051's oracle: every disagreement over `{name}` tokens, compared **per
+ * form** and never as a union across forms.
+ *
+ * Two rules, and each line returned names the key, the locale and the form:
+ *
+ * 1. Each form of one catalogue carries exactly the tokens of its counterpart
+ *    in the other, in both directions — so a Spanish `one` form is held
+ *    against English `one`, a Spanish `many` against English `other`, and an
+ *    entry that has a plural map on one side only is held form by form
+ *    against the other side's `text`.
+ * 2. Each form carries every name its own entry's `kind` declares, so a form
+ *    that drops a number its siblings print is caught even where both
+ *    locales dropped it alike.
+ *
+ * The union this replaces (`t.test.ts:57-66` at `cb3f8ba`) gathered the
+ * tokens of `text` and every plural form into one set per entry and compared
+ * the sets, so a form missing `{total}` while its siblings carried it matched
+ * whenever any sibling did — which is how `brainstorm.contextMostRecent`'s
+ * `one` form shipped without `{total}`. `unioned` below keeps that behaviour
+ * only so the self-test can show the difference.
+ */
+function perFormMismatches(
+  english: Readonly<Record<string, Message | undefined>>,
+  spanish: Readonly<Record<string, Message | undefined>>,
+): string[] {
+  const found: string[] = [];
+  const sides = [
+    ['en', english, 'es-MX', spanish],
+    ['es-MX', spanish, 'en', english],
+  ] as const;
+  for (const key of Object.keys(english)) {
+    for (const [name, catalogue, otherName, other] of sides) {
+      const entry = catalogue[key];
+      const opposite = other[key];
+      if (entry === undefined || opposite === undefined) continue;
+      for (const [form, text] of forms(entry)) {
+        const mine = placeholders(text);
+        const theirs = placeholders(counterpart(opposite, form));
+        if (mine.join() !== theirs.join()) {
+          found.push(
+            `${key} ${name} ${form}: {${mine.join('}{')}} but ${otherName} prints {${theirs.join('}{')}}`,
+          );
+        }
+        for (const declared of Object.keys(entry.kind ?? {})) {
+          if (!mine.includes(declared)) {
+            found.push(`${key} ${name} ${form}: kind declares {${declared}} and the form does not print it`);
+          }
+        }
+      }
+    }
+  }
+  return found;
+}
+
+/** The union the per-form oracle replaced, kept only for the self-test. */
+function unioned(entry: Message): string[] {
+  return placeholders(
+    forms(entry)
+      .map(([, text]) => text)
+      .join(' '),
+  );
 }
 
 /**
@@ -111,19 +189,46 @@ describe('the two catalogues', () => {
     }
   });
 
-  it('names the same placeholders in both, for every key either holds', () => {
+  it('names the same placeholders in both, form by form, for every key either holds', () => {
     // A type cannot see inside a string, so this is the check that a
-    // translation kept the placeholders its English entry names. It reads both
-    // catalogues rather than a list, so a key added by a later card is covered
-    // the day it is added and a tenth key cannot quietly break the file.
+    // translation kept the placeholders its English entry names — in every
+    // form, not somewhere across them (AM-051). It reads both catalogues rather
+    // than a list, so a key added by a later card is covered the day it is
+    // added and a tenth key cannot quietly break the file.
     for (const key of KEYS) {
-      const english = en[key] as Message;
-      const spanish = (esMX as Record<string, Message | undefined>)[key];
-      expect(spanish, `es-MX has no ${key}`).toBeDefined();
-      expect(placeholders(spanish as Message), `${key} in es-MX`).toEqual(placeholders(english));
+      expect((esMX as Record<string, Message | undefined>)[key], `es-MX has no ${key}`).toBeDefined();
     }
-    expect(placeholders(en['notes.count'])).toEqual(['count']);
-    expect(placeholders(en['brainstorm.empty'])).toEqual(['name']);
+    expect(perFormMismatches(en, esMX)).toEqual([]);
+    expect(placeholders(en['notes.count'].text)).toEqual(['count']);
+    expect(placeholders(en['brainstorm.empty'].text)).toEqual(['name']);
+  });
+
+  it('fails on a wrong `{name}` in one form, which the union it replaced let through', () => {
+    // The oracle's own proof that it can fail (AM-051, V5). Each case edits
+    // one form of `brainstorm.contextSome` in a scratch copy of the Spanish
+    // catalogue, checks that the union it replaced still matches English —
+    // the siblings keep printing `{total}` — and then asks for exactly the
+    // lines the edit adds, so the case does not depend on the real catalogue
+    // being clean. The second edit is the shape `brainstorm.contextMostRecent`'s
+    // `one` form shipped in: `{total}` dropped from one form only.
+    const baseline = perFormMismatches(en, esMX);
+    const injected = (edit: Partial<Record<Intl.LDMLPluralRule, string>>): string[] => {
+      const scratch = structuredClone(esMX) as Record<string, Message>;
+      const entry = scratch['brainstorm.contextSome'] as Message;
+      entry.plural = { ...entry.plural, ...edit };
+      expect(unioned(entry)).toEqual(unioned(en['brainstorm.contextSome']));
+      return perFormMismatches(en, scratch).filter((line) => !baseline.includes(line));
+    };
+
+    expect(injected({ many: 'Usando {count} de {count} notas' })).toEqual([
+      'brainstorm.contextSome es-MX many: {count} but en prints {count}{total}',
+      'brainstorm.contextSome es-MX many: kind declares {total} and the form does not print it',
+    ]);
+    expect(injected({ one: 'Usando {count} nota' })).toEqual([
+      'brainstorm.contextSome en one: {count}{total} but es-MX prints {count}',
+      'brainstorm.contextSome es-MX one: {count} but en prints {count}{total}',
+      'brainstorm.contextSome es-MX one: kind declares {total} and the form does not print it',
+    ]);
   });
 
   it('gives every counted key the plural floor its locale can select', () => {
