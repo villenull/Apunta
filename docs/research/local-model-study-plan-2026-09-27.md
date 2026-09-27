@@ -28,17 +28,25 @@ No Linux measurement is presented as a Mac memory/speed result.
 - Execution worker writes harness/fixtures/results ONLY in scratch root and
   docs/v2/evidence/MODEL-STUDY/{execution.md,results.md,blind-review.md}. It may
   not edit application/UI/scorer/prompts/contracts or any other repo path.
+- A separate corpus author prepares the supplemental fixtures/gold in scratch.
+  A bilingual reviewer, distinct from that author and the execution worker,
+  reviews both languages and gold before freeze; uncertain clinical or Spanish
+  judgments remain explicitly unresolved, never certified by an AI alone.
 - Independent reviewer writes only MODEL-STUDY-review.md under state/reviews;
   validates frozen fixtures/gold, scoring, raw traces, failures and reproducibility.
 - Scratch root: /home/villenull/.cache/apunta-model-study/2026-09-27.
   Use real disk, not /tmp (tmpfs currently only8GB free). No secrets in artifacts.
 - Export a frozen committed-source snapshot with git archive. Record commit,
-  source/fixture/prompt hashes. Copy dependencies using reflinks (preserve
+  source/fixture/prompt hashes. Copy dependencies, attempting reflinks with ordinary-copy fallback; record
+  commands, exit codes, byte counts and resolved workspace links (preserve
   relative workspace links into snapshot); do not symlink @apunta to live tree.
   Build only snapshot shared/server if needed, pinned Node24.19.0.
 - Any app/database launch uses snapshot scripts/v2/sandbox.mjs env, free
   port7800-7889, synthetic data and verified ownership. Prefer pure model
-  requests with no database/app server. Do not invoke unrelated model-lab
+  requests with no database/app server. The wrapper places small synthetic DBs
+  under /tmp/apunta-v2; weights, corpora, traces and outputs stay on disk in the
+  study scratch root. Pass absolute paths for every corpus/output argument,
+  avoiding INIT_CWD resolution into the live checkout. Do not invoke unrelated model-lab
   run-consented, gpu-free, live-dump or recovery scripts.
 - UI agent retains exclusive live-tree code writer lane. Study writes only
   disjoint documentation and scratch files. No study commits by workers.
@@ -76,6 +84,12 @@ no worker-owned simultaneous benchmarks, no harness concurrency >1.
 Use local Ollama only; record version/hardware/model residency before each arm.
 Do not kill/unload unrelated processes or models. If unrelated inference or
 heavy GPU use is detected, pause and report contamination; do not change services.
+The lease serializes study requests only; unrelated Ollama clients do not honor
+it. Capture model residency and available GPU/process telemetry before and after
+each arm, and during execution where possible. Mark contaminated timing windows
+invalid, retain their outputs and traces, and use at most the existing one
+diagnostic rerun budget once resources are clear. Missing telemetry means
+contamination could not be excluded, not proven absence of contention.
 Downloads may run while read-only review proceeds; downloads themselves serial.
 Only unload a study-owned model after its requests finish. Existing4B need not
 be force-unloaded; distinguish cold/warm observations honestly.
@@ -86,6 +100,11 @@ where supported; record exact settings. Thinking uses separate output budget
 (up to8192 vs baseline3072), reported as extra compute, not an equal-compute win.
 Per request timeout300s, no silent retry or best-of selection. One diagnostic
 retry permitted, original failure retained. Whole stage cap6h then checkpoint.
+The shipped provider has an internal retry ladder: retain it for Track1, record
+LlmStats.attempts and each exposed retry/mode change. Report first-attempt and
+eventual results separately where available; never call differing retry counts
+equal compute. The diagnostic retry budget is additional harness execution,
+not permission to hide internal provider retries.
 
 ## Two distinct tracks
 
@@ -95,6 +114,9 @@ and guard thresholds verbatim; report fabrication/coverage/errors before style.
 B is experimental: a scoped scratch-only adapter enables thinking, and is never
 labelled unmodified production behavior. Prove that adapter forwards identical
 baseline prompts/options except declared arm settings, using request traces.
+Hash the original provider, experimental copy and exact patch; isolate B so
+A/C/D/E still use the untouched provider. Do not silently count a fallback that
+disables thinking as a successful thinking-enabled response.
 
 Track2: model-only bilingual quality study. Existing Spanish runtime/scorer
 is incomplete (S3.2/S5 work); do NOT feed Spanish to English scoring and claim
@@ -135,11 +157,35 @@ unflagged outputs, blind to model. If false negatives appear, expand review to
 all outputs in affected category. Report reviewed counts and uncertain cases.
 Use stable blinded aliases and a separately stored mapping; owner receives a
 small balanced blinded comparison pack, not hundreds of outputs to read.
-Assess style (clarity/naturalness/format) separately from factual faithfulness.
+Assess style separately from factual faithfulness using a frozen rubric: clarity
+(unambiguous and easy to follow), naturalness (idiomatic professional EN/es-MX),
+and format (requested structure, concise without losing required detail). Score
+each dimension 1–5 with written anchors in the pre-reviewed corpus manifest;
+compare factual-equivalent pairs by the sum, equal sums are ties. The blinded
+sample is run 1 of all 16 scenarios per language for each arm versus A. Expand
+factual review on false negatives as stated above without changing the original
+style-preference sample or selecting more favorable runs.
 Report per-task/per-language results and repeated-run variability; don't claim
 statistical significance from small samples or average away a safety regression.
 
 ## Decision rule and completion
+
+Pre-register the following exploratory decision criteria before scored outputs:
+
+- Compare critical-error counts and rates per language and task; a candidate
+  must have no higher observed critical-error rate than baseline A and no new
+  observed critical error class. Failures remain in denominators, with separate
+  failure-rate reporting; refusal does not earn a factual-quality win.
+- Structured-output, refusal, timeout and guard-failure rates must not worsen.
+- On the frozen balanced blinded review sample, a candidate needs at least
+  60% preference among non-tied factual-equivalent pairs and wins exceeding
+  losses by at least four pairs in EACH language to justify a bilingual quality
+  recommendation. Report ties, sample size and uncertainty; this is an
+  exploratory decision threshold, not statistical or clinical validation.
+- F must additionally reduce observed critical source-fidelity errors versus
+  direct A Spanish, with no new critical class; style alone cannot select it.
+- If review coverage or unresolved judgments prevent these comparisons, the
+  decision is INCONCLUSIVE. Never adjust thresholds after viewing outputs.
 
 Recommend an optional candidate only if independent results demonstrate a
 meaningful quality gain with no observed increase in critical unsupported facts,
@@ -152,6 +198,10 @@ on source fidelity enough to justify extra failure points/latency, not just styl
 
 Mac validation remains a separately marked NOT RUN gate: actual8GB M2, ordinary
 apps open, cold/warm runs, peak memory, sustained swap, long inputs and UI response.
+Before Mac testing, report a rough memory screen with a 2 GiB reserve for OS
+and ordinary apps; separately estimate resident weights, KV at context16384
+and runtime overhead. Unknown overhead stays unknown. This estimate neither
+proves fit nor substitutes for measurements on the actual Mac.
 Do not install/change live Mac software remotely. Final disk budget includes app,
 runtime, both retained writers and speech weights; user data/update staging
 accounted separately. No model promotion, clinical release, or production setting

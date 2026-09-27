@@ -228,3 +228,23 @@ reviews) still run in parallel.
 - 2026-09-27 | owner-authorized model study | Owner explicitly requested coordinator-authored testing plan and delegated execution, authorising needed model downloads on PC with sequential GPU/RAM use. Authored docs/research/local-model-study-plan-2026-09-27.md: installed4B fast/thinking, text-only9B Q4/Q3, Gemma12B comparator and translation challenger, separate shipped-English vs experimental bilingual tracks, frozen synthetic supplementary corpus, no protected Spanish heldout tuning, one GPU runner/lease, independent review, no Mac-fit claim. UI live tree isolated; real-disk scratch root because /tmp is tmpfs. No model default or production acquisition changes.
 
 - 2026-09-27 | model study launched | Instruction reviewer d11f38c6 and acquisition-only worker f044198c running. Owner-authorized scratch directory access allowed for downloader. Denied reviewer unnecessary out-of-scope write probe; coordinator supplied successful snapshot evidence. Exported committed05d9b10 to real-disk scratch/snapshot and copied283MB dependency tree with cp -a --reflink=auto; verified @apunta workspace links resolve only inside snapshot, exit0. ollama list contains only installed4B; ollama ps empty before study. No inference yet; GPU runner starts after instruction review.
+
+
+### 2026-09-27 — permission watch and study review follow-through
+
+Owner requested proactive permission monitoring after missed events. Approved
+acquisition worker registry-manifest access persistently for the specific library
+directory; heartbeat fb0718a5 checks permissions/completion every two minutes
+for up to 12 hours, to be removed when delegated monitoring is unnecessary.
+Direct snapshots showed pendingPermissions even when requiresAttention=false;
+use pendingPermissions as evidence. Latest check: UI, acquisition and instruction
+review workers active, no pending permissions. Retain UI owner per instruction.
+
+Processed initial MODEL-STUDY IR; assigned one bounded correction to distinguish
+existing adapter/acquisition provisions from actual missing measurement details.
+Coordinator amended research plan before any scored generation: independent
+bilingual gold review, frozen factual/style decision rules, retry disclosure,
+absolute scratch paths, contamination handling, copy provenance and honest Mac
+memory uncertainty. No production or UI files changed. Reviewed own plan diff;
+git diff --check exit 0. Acquisition final evidence still being written; no
+acquisition acceptance or model quality result claimed.
