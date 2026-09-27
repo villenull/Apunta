@@ -325,3 +325,16 @@ migration/navigation/test review, report-only path UI-BATCH2-review.md. Current
 diff43tracked paths plus13new application paths and unrelated P3 report; no
 source staged or committed. S2.6 attestation repair already owner-authorized
 AM059, to proceed in correct lane after handoff; no new owner question needed.
+
+
+### 2026-09-27 — UI frozen, browser failure count corrected from evidence
+
+UI owner confirmed writer lock released, no further writes, no owned running
+processes, retained for owner. Coordinator read /tmp/e2e-final.log tail:16 es-MX
+failures,4skipped,86passed; this supersedes earlier12failures claim. Full command
+uses sandbox port7887 and system Chromium, serial workers. No clean-base
+comparison exists; do not label failures pre-existing. Independent reviewer
+7ee8af9c received exact log and correction incl workspace.spec.ts41 omitted in
+author prose list. git diff --check rerun exit0. Simple workbench and Import
+relocation complete per handoff; Continue a draft currently opens general patient
+list, not an indexed draft. Production source integration remains unaccepted.
