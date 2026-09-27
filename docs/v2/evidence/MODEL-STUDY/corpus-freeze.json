@@ -1,0 +1,34 @@
+{
+  "status": "FROZEN_FOR_EXPLORATORY_TRACK2",
+  "dateUtc": "2026-09-27T21:53:41.467011+00:00",
+  "corpusRoot": "/home/villenull/.cache/apunta-model-study/2026-09-27/corpus",
+  "sourceBase": "05d9b1025e0e61be16489e12ba3109d63d48fa76",
+  "review": "docs/v2/evidence/MODEL-STUDY/corpus-final-review.md",
+  "reviewerAgent": "af557188-467b-4728-9536-259c030a5de0",
+  "hashes": {
+    "manifest.json": "145e70e99b2452d371491fc026a2a3e019641aff2aded8276645500273f9ee03",
+    "HASHES.sha256": "539df637e1ca4db734f31afa21db6f39ef7fb379be21e3199467c51f3e3ca976",
+    "test/gold.en.json": "b49b504aa797d9f8d52769e9ec2fa4f2f77490a79d0530166b6ec3a26d9514fe",
+    "test/gold.es-MX.json": "b582ac4ebae9691cc77ebe35cbc199963ca907613b06abc33574218d36213d92",
+    "dev/gold.en.json": "699217e6f205961d7da8ee33b2fade33e69955ae3d8e389d945e6e9196162207",
+    "dev/gold.es-MX.json": "bed7bba3d0a6044d14d654ec37e7358b610976bbd3ecc4e06943e5e2ea6d3d4b",
+    "prompts/frozen-prompts.json": "0a537eda549645df419ddb5a20d82f4a8b8e388aa305a010324220f05e3a691e",
+    "rubric/rubric.md": "f3bb58cba809bb67dc3fd3118ca02409efed9ada41045efd35501933ecdc7ca4",
+    "schema/gold.schema.json": "c10ef013021081771ceacb202242305630750db172c0af3d85180467f2504a17",
+    "validate-corpus.mjs": "9236cb2d66a9c935c180f027a09e7920fd3dc8228a611ad863efa50e45ee0117",
+    "check-repairs.mjs": "9f80c3b20e29212de7183431153f59eb145fa77eab08ced96116d862e8437c0f",
+    "review/alias-map.sealed.json": "f7b5b7f771f0babaab4be38efcf5846834d5955b2fa2bf22dfa643ae86dc3fc5"
+  },
+  "authority": "Coordinator acceptance following independent bilingual review and two bounded repairs; owner authorized study",
+  "contentMutation": false,
+  "interpretation": "External record authorizes the exact reviewed bytes despite internal DRAFT and annotated-not-cleared labels. No corpus schema or flags rewritten. Twenty-four historical blocking flags have recorded documentation-fidelity dispositions accepted for this exploratory comparison only. Clinical adequacy remains unassessed.",
+  "limits": [
+    "Cue hits are candidates for independent factual adjudication, never automatic critical-error scores.",
+    "Track2 is not production C-EVAL acceptance or clinical release certification.",
+    "No native clinician review claimed.",
+    "Report coverage omissions separately; do not conceal them in style conclusions.",
+    "Two repair attempts spent; new material defects make affected comparisons inconclusive, no further repair loop.",
+    "Fresh blind style reviewer required; author/repair/review/executor contexts must not judge style."
+  ],
+  "verification": "Coordinator sha256sum -c HASHES.sha256 exit0,20/20; pinned validator/check-repairs independently rerun exit0 before final review."
+}

@@ -363,3 +363,16 @@ acceptance reviewer assigned bounded verification, no further repair loop.
 Actual unresolved defects mean affected comparisons INCONCLUSIVE; unavoidable
 regex limitations with independent adjudication do not create a new owner gate.
 Track2 remains held pending final freeze record.
+
+
+### 2026-09-27 — bilingual corpus frozen for exploratory execution
+
+Final independent review READY FOR EXPLORATORY FREEZE. Coordinator read report,
+reran sha256sum -c:exit0,20/20. External corpus-freeze.json records exact hashes
+and limited acceptance without editing corpus content/status/schema. Historical
+flags retain their annotations; clinical adequacy unresolved, no release claim.
+Reviewer reports throwaway falsification copies despite report-only write scope;
+this scope deviation is recorded, not endorsed, and results are accepted based
+on unchanged corpus hashes/coordinator checks and substantive independent review.
+Reviewer archived; sole serial executor authorized Track2 following Track1,
+with unchanged GPU lease, prompts/gold and independent adjudication requirements.
