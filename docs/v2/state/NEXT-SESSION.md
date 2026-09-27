@@ -3,6 +3,10 @@
 Owner requested an audit of the idle Paseo agents, archival, a current preview,
 and recommended next work. This was an audit, not a card acceptance round.
 
+## Latest: UI batch integrated
+
+Owner ended UI iteration for tonight; keep agent `f0bd1c61-253b-46ce-b59b-080334f6cb07` available for tomorrow. Its reviewed batch includes lighter teal #2a9d8f, Add patient modal, rail hover swap and sidebar animation with immediate drag resizing. Coordinator checks: lint/typecheck/build exit 0, full unit/integration 1,967 passed, final targeted Chromium 23 passed. One earlier intermittent cold-load spelling failure is retained in `evidence/UI-BATCH/integration.md`; no claimed fix. Preview remains http://127.0.0.1:7811/. Writer lock released, no further UI batch started. S2.6/P4.1 remain blocked independently; unread/groups/sort-menu implementation has not started.
+
 ## Continuation after the audit
 
 Owner continued with Space Bunny Free agents and supplied the Claude menu references, then requested unread tracking and custom groups too. Dedicated direct UI owner: `f0bd1c61-253b-46ce-b59b-080334f6cb07`; keep this owner-facing agent available. Its first reserved five-file batch changes the default teal to `#2a9d8f` (AM-055); the owner subsequently removed the per-tweak IR hold. The UI agent iterates freely with the owner in its sandbox and submits one finished batch for independent review and coordinator integration. Other implementation workers must wait for release of its lock. Menu data-design report is advisory: `state/reviews/UI-SORT-ir.md`, not approved product decisions.

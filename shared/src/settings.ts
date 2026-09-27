@@ -73,8 +73,24 @@ export type { Locale } from './i18n/locales.js';
  */
 export const ACCENT_COLOR_SETTING = 'accent_color';
 
-/** The prototype's green, and what an unset or unusable value falls back to. */
-export const DEFAULT_ACCENT_COLOR = '#218677';
+/**
+ * The Apunta teal, and what an unset or unusable value falls back to.
+ *
+ * The owner's own value, and the second one: she first took `#218677` from the
+ * measured contrast figures, then on 2026-09-27 asked for it "slightly lighter"
+ * and chose `#2a9d8f` from the same table, accepting that a lighter teal trades
+ * light-background contrast for dark-surface contrast and that button labels
+ * flip to near-black. Measured with `web/src/lib/accent.ts`'s own formula:
+ * 3.16:1 on `#faf9f5`, 5.49:1 on `#151515`, 5.68:1 on `#111111`, and 3.01:1 on
+ * the light sidebar `#f5f4ed` — which clears AM-053's 3:1 warning line, but only
+ * just, and that narrow margin is a known and accepted property of this value
+ * rather than an oversight. Do not "fix" it by moving the threshold, the
+ * comparison or the surface list.
+ *
+ * This is a setting she changes in Appearance, so it is only what a fresh
+ * install and a reset-to-default get; an existing stored colour is untouched.
+ */
+export const DEFAULT_ACCENT_COLOR = '#2a9d8f';
 
 /**
  * Settings values are free-form JSON, so this reads whatever is in the row

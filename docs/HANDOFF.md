@@ -1,5 +1,10 @@
 # Where Apunta is — the handoff
 
+**Active v2 work (2026-09-27):** see `docs/v2/state/NEXT-SESSION.md` and
+`docs/v2/state/PROGRESS.json` for current status on `feature/v2`. The latest
+owner-reviewed UI batch includes the lighter teal, add-patient modal and sidebar
+motion; synthetic preview is on port 7811. The live-v1 record below is unchanged.
+
 **Updated 2026-09-24.** Live runs `5573afb` (welcome-search home, patient-name notes header, 17% list columns) with the owner's revised
 progress instructions (hash `23135cae…`, verified by
 `scripts/recover-current-linux.mjs verify`). The owner is restoring this PC:

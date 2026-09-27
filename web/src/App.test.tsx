@@ -734,6 +734,128 @@ describe('the format editor', () => {
   });
 });
 
+/**
+ * Adding a patient as a window over the workspace rather than a screen of its
+ * own (owner, 2026-09-27, after Claude's): the practice stays behind, dimmed
+ * and blurred, and the way out is the × at the top right.
+ *
+ * The blurred scrim and the ×'s bare glyph are CSS, and jsdom has no cascade —
+ * so what is pinned here is the half a diff would hide: that the workspace is
+ * really still mounted behind the window, that both ways out close it, and that
+ * the field she is here to fill is the one holding focus. The scrim itself is
+ * read off the stylesheet in `addPatientWindowStyles`.
+ */
+describe('the add-patient window', () => {
+  it('is a dialog over the workspace, not a screen that replaced it', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john, maria] });
+    renderApp('/patients/new');
+
+    const dialog = await screen.findByTestId('add-patient-modal');
+    expect(dialog.getAttribute('role')).toBe('dialog');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    // The name of the window is what the owner asked for and the lede she did
+    // not: "Just enough to organize her notes." is gone from the tree.
+    expect(within(dialog).getByRole('heading', { name: 'Add patient' })).toBeDefined();
+    expect(document.body.textContent).not.toContain('Just enough to organize');
+    // Both fields, and nothing else in the way.
+    expect(within(dialog).getByLabelText('Name')).toBeDefined();
+    expect(within(dialog).getByLabelText('Identifier (optional)')).toBeDefined();
+
+    // The practice is still there behind it: the sidebar, its search field and
+    // her patients are all mounted, which is the whole point of a window.
+    expect(screen.getByTestId(`patient-row-${john.id}`)).toBeDefined();
+    expect(screen.queryByTestId('sidebar-rail')).toBeNull();
+    expect(screen.getByLabelText('Search patients')).toBeDefined();
+  });
+
+  it('puts the caret in the name, not on the × that comes first in the panel', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderApp('/');
+    // One frame first. When the app mounts, `usePrimaryWindow` parks focus on
+    // the route wrapper as the window wins the primary lock, and it does that
+    // in the *next* frame — so a click landing inside that frame races it. In
+    // the app she cannot click that fast; a test can, so the frame is waited
+    // out here rather than the race being papered over in the component.
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        resolve(undefined);
+      });
+    });
+
+    // Opened the way every entry point opens it — a click in the sidebar, so a
+    // client-side navigation rather than a cold load of /patients/new.
+    fireEvent.click(await screen.findByTestId('new-patient'));
+    const dialog = await screen.findByTestId('add-patient-modal');
+    const name = within(dialog).getByLabelText('Name') as HTMLInputElement;
+    await waitFor(() => {
+      expect(document.activeElement).toBe(name);
+    });
+  });
+
+  it('closes on the × and on Escape, leaving the workspace as it was', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderApp('/');
+    const router = activeRouter;
+    fireEvent.click(await screen.findByTestId('new-patient'));
+    expect(await screen.findByTestId('add-patient-modal')).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('add-patient-close'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('add-patient-modal')).toBeNull();
+    });
+    // Back in the workspace, not on a blank screen: the route that opened it.
+    expect(router?.state.location.pathname).toBe('/');
+    expect(screen.getByTestId(`patient-row-${john.id}`)).toBeDefined();
+
+    // And the keyboard way out is the same door.
+    fireEvent.click(screen.getByTestId('new-patient'));
+    expect(await screen.findByTestId('add-patient-modal')).toBeDefined();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByTestId('add-patient-modal')).toBeNull();
+    });
+  });
+
+  it('opens from the sidebar New row, and the × is the only way out of it', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderApp('/');
+
+    fireEvent.click(await screen.findByTestId('new-patient'));
+    const dialog = await screen.findByTestId('add-patient-modal');
+
+    // A Back link was the old way out of a screen; the × is the new one, and it
+    // is named for the window it closes rather than for the word "close".
+    expect(dialog.querySelector('.back')).toBeNull();
+    expect(within(dialog).getByLabelText('Close add patient')).toBeDefined();
+  });
+
+  /**
+   * The blurred page behind, which is the part of "a little window, like Claude"
+   * that lives entirely in the stylesheet. Read as source for the reason given
+   * above: the web vitest project stubs CSS imports, so a rendered element
+   * cannot show what the backdrop resolved to.
+   */
+  it('dims and blurs the page behind it, and keeps the × a bare glyph', () => {
+    const appCss = readFileSync(join(import.meta.dirname, 'styles', 'app.css'), 'utf8');
+
+    // The scrim rule Settings already had, now naming this panel too — one
+    // rule for "a modal over the workspace", not a second copy of the blur.
+    const scrim = appCss.match(/\.modal-backdrop:has\(\.add-patient-modal\)\s*\{[^}]*\}/);
+    expect(scrim?.[0]).toContain('background: var(--scrim)');
+    expect(scrim?.[0]).toContain('backdrop-filter: blur(var(--scrim-blur))');
+    // Shared with Settings rather than duplicated, so the two cannot drift.
+    expect(appCss).toMatch(
+      /\.modal-backdrop:has\(\.settings-modal\),\s*\.modal-backdrop:has\(\.add-patient-modal\)\s*\{/,
+    );
+
+    // The × wears no box, as Settings' does.
+    const close = appCss.match(/\.add-patient-head \.icon-btn\s*\{[^}]*\}/);
+    expect(close?.[0]).toContain('border-color: transparent');
+    expect(close?.[0]).toContain('background: transparent');
+  });
+});
+
 describe('adding a patient and a typed note', () => {
   it('adds a patient and opens the workspace on them', async () => {
     const api = installFakeApi({ formats: [progressNote], patients: [] });
@@ -745,7 +867,6 @@ describe('adding a patient and a typed note', () => {
     expect(await screen.findByText('Ana Torres')).toBeDefined();
     expect(api.state.patients).toHaveLength(1);
   });
-
   it('drafts a typed summary into a new note and selects it in the workspace', async () => {
     const typed = 'Sleep better this week, still anxious about work.';
     const api = installFakeApi({ formats: [progressNote], patients: [john] });
@@ -1165,7 +1286,7 @@ describe('settings', () => {
     renderApp('/settings');
 
     const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
-    expect(picker.value).toBe('#218677');
+    expect(picker.value).toBe('#2a9d8f');
     expect(screen.queryByTestId('appearance-saved')).toBeNull();
 
     fireEvent.change(picker, { target: { value: '#8b2f6b' } });
@@ -1327,7 +1448,7 @@ describe('settings', () => {
     document.documentElement.classList.remove('no-motion');
   });
 
-  it('puts the original green back, and keeps a saved colour on leaving', async () => {
+  it('puts the default teal back, and keeps a saved colour on leaving', async () => {
     const api = installFakeApi({ formats: [progressNote] });
     renderApp('/settings');
 
@@ -1339,14 +1460,14 @@ describe('settings', () => {
     fireEvent.click(screen.getByTestId('reset-accent'));
 
     await waitFor(() => {
-      expect(api.state.settings['accent_color']).toBe('#218677');
+      expect(api.state.settings['accent_color']).toBe('#2a9d8f');
     });
-    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#218677');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2a9d8f');
     expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
 
     // Every change is saved, so leaving the screen keeps the stored colour.
     cleanup();
-    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#218677');
+    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2a9d8f');
     document.documentElement.style.removeProperty('--accent');
   });
 });

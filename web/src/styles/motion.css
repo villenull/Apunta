@@ -235,6 +235,77 @@
   background-color: var(--accent-tint);
   border-radius: var(--radius);
 }
+/* --- The sidebar, going and coming back --- */
+
+/*
+ * Owner, 2026-09-27: collapsing and expanding the sidebar is a movement, not a
+ * cut. The column's width carries it, so the notes column slides across behind
+ * rather than jumping.
+ *
+ * The state itself is in `app.css` (`.sidebar-collapsed > .col-patients` sets
+ * the width to zero); only the timing is here, because this file is where the
+ * app's one pace lives.
+ *
+ * `visibility` is the awkward half and the reason this is worth writing down.
+ * A width of zero still leaves every name, button and field inside it in the
+ * tab order and still hit-testable, and a column of names that cannot be seen
+ * but can be tabbed into is a trap. `visibility` fixes that and is not
+ * animatable, so it is switched by a zero-duration step whose *delay* is the
+ * width's own duration: hidden once the collapse has finished, and — because
+ * the rule for the expanded state sets that delay back to zero — visible the
+ * instant the width starts growing again. Which is what makes the sidebar come
+ * back rather than blink into place.
+ */
+@media (min-width: 901px) {
+  .col-patients {
+    transition:
+      width var(--motion-base) var(--motion-ease),
+      opacity var(--motion-fast) var(--motion-ease),
+      visibility 0s linear var(--motion-base);
+  }
+
+  .app-shell.sidebar-collapsed > .col-patients {
+    visibility: hidden;
+  }
+
+  .app-shell:not(.sidebar-collapsed) > .col-patients {
+    visibility: visible;
+    transition:
+      width var(--motion-base) var(--motion-ease),
+      opacity var(--motion-fast) var(--motion-ease),
+      visibility 0s;
+  }
+
+  /*
+   * A drag is not a collapse. The width transition above would make the edge
+   * chase the pointer for the length of the transition, so the column tracks
+   * the drag directly and only the collapse animates. The selector carries
+   * `.app-shell` so it outranks the `:not(.sidebar-collapsed)` rule above, which
+   * is the one in force during a drag.
+   */
+  body.is-resizing-sidebar .app-shell > .col-patients {
+    transition: none;
+  }
+
+  /* The rail is only in the tree while the sidebar is away, so it arrives with
+     the app's ordinary entrance and leaves instantly, as everything else does. */
+  .sidebar-rail {
+    animation: fade-in var(--motion-base) var(--motion-ease);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .col-patients,
+  .app-shell.sidebar-collapsed > .col-patients,
+  .app-shell:not(.sidebar-collapsed) > .col-patients {
+    transition: none;
+  }
+
+  .sidebar-rail {
+    animation: none;
+  }
+}
+
 /* Navigation labels use the same quiet acknowledgement as other controls. */
 .narrow-back {
   transition: color var(--motion-fast) var(--motion-ease);

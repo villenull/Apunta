@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ACCENT_COLOR_SETTING, t, type Settings } from '@apunta/shared';
+import { ACCENT_COLOR_SETTING, DEFAULT_ACCENT_COLOR, t, type Settings } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -434,8 +434,17 @@ describe('the accent low-contrast note', () => {
   /**
    * Colours chosen to sit either side of the line, with the three that tell the
    * real surfaces apart from white and black. Ratios from WCAG's formula.
+   *
+   * `CLEAR` is the shipped default rather than a literal, so this cannot drift
+   * away from the value the app actually starts on: the whole point of the note
+   * is that the colour the owner did *not* have to choose must not be the one
+   * the app warns her about. `#2a9d8f` is 3.16 on `#faf9f5` and 3.01 on the
+   * light sidebar `#f5f4ed` — it clears 3:1 on all four surfaces, but on the
+   * sidebar by 0.015, which is a narrow and accepted margin. That number is
+   * written here so the next person to move the teal can see what it costs
+   * before moving it.
    */
-  const CLEAR = '#218677'; // the default: 4.20 light, 4.12 and 4.26 dark
+  const CLEAR = DEFAULT_ACCENT_COLOR; // 3.16 and 3.01 light, 5.49 and 5.68 dark
   const PALE = '#939393'; // 3.07 on white, 2.92 on #faf9f5
   const DIM = '#5d5d5d'; // 3.19 on black, 2.77 on #151515, 2.87 on #111111
   const EDGE = '#606060'; // 2.90 on #151515 but 3.00 on #111111
@@ -450,6 +459,28 @@ describe('the accent low-contrast note', () => {
     expect(t('settings.accentLowContrast', {}, 'en')).toContain('logo');
     expect(t('settings.accentLowContrast', {}, 'es-MX')).toContain('logotipo');
   });
+
+  /**
+   * The case the loop below cannot reach: the colour the practice never chose.
+   * `CLEAR` is stored there, which asks whether a deliberate pick is safe; this
+   * asks whether a fresh install is, with nothing in the settings row at all,
+   * where `accentColorOrDefault` supplies the default. If a future teal drops
+   * under 3:1 on any of the four surfaces, the app would greet the owner with
+   * a warning about her own brand colour — and `accentIsHardToSee` checks both
+   * themes whatever is on screen, so both are walked here.
+   */
+  for (const theme of ['light', 'dark'] as const) {
+    it(`shows the shipped default without warning about it (${theme}, nothing stored)`, async () => {
+      installFakeApi({ formats: [format], settings: { ...STORED, theme } });
+      renderApp();
+      const picker = (await screen.findByLabelText(t('settings.colour'))) as HTMLInputElement;
+      await waitFor(() => {
+        expect(picker.value).toBe(DEFAULT_ACCENT_COLOR);
+      });
+      expect(screen.queryByTestId('accent-low-contrast')).toBeNull();
+      expect(picker.getAttribute('aria-describedby')).toBeNull();
+    });
+  }
 
   for (const theme of ['light', 'dark'] as const) {
     it(`warns under 3:1 on the real surfaces, keeps the colour, and clears when raised (${theme})`, async () => {

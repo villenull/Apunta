@@ -1724,8 +1724,8 @@ export const esMX = {
   'common.adding': {
     text: 'Agregando…',
   },
-  'patients.addLede': {
-    text: 'Lo justo para organizar sus notas.',
+  'patients.addClose': {
+    text: 'Cerrar agregar paciente',
   },
   'patients.namePlaceholder': {
     text: 'p. ej. John Smith',

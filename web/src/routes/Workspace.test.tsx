@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -85,5 +88,48 @@ describe('the collapsed sidebar', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('sidebar-rail')).toBeNull();
     });
+  });
+
+  /**
+   * Collapsing is a movement, not a cut (owner, 2026-09-27), which is a change
+   * from `display: none` to a width that goes to zero — so the notes column can
+   * be seen sliding across behind it.
+   *
+   * That swap is invisible from a rendered element: jsdom applies no cascade,
+   * and `display: none` and `width: 0` are the same node to `querySelector`.
+   * The two halves are therefore read off the stylesheets, and what is pinned
+   * is the reason the old value could not be kept — a width of zero still leaves
+   * every name in the tab order, so `visibility` has to be part of it — plus
+   * the two escape hatches, because a movement nobody can switch off is a bug
+   * with a settings toggle next to it.
+   */
+  it('collapses by width so the movement can be seen, and stops dead when asked to', () => {
+    const appCss = readFileSync(join(import.meta.dirname, '..', 'styles', 'app.css'), 'utf8');
+    const motionCss = readFileSync(join(import.meta.dirname, '..', 'styles', 'motion.css'), 'utf8');
+
+    // The state: no longer removed from the tree, so there is something to move.
+    const collapsed = appCss.match(/\.app-shell\.sidebar-collapsed > \.col-patients\s*\{[^}]*\}/);
+    expect(collapsed?.[0]).toContain('width: 0');
+    expect(collapsed?.[0]).not.toContain('display: none');
+
+    // The movement, at the app's one pace rather than an invented timing.
+    expect(motionCss).toMatch(/\.col-patients\s*\{[^}]*width var\(--motion-base\) var\(--motion-ease\)/);
+    // Names you cannot see must not be tabbable, and the delay is what makes
+    // the sidebar come back rather than blink into place.
+    expect(motionCss).toMatch(/\.app-shell\.sidebar-collapsed > \.col-patients\s*\{[^}]*visibility: hidden/);
+    expect(motionCss).toMatch(
+      /\.app-shell:not\(\.sidebar-collapsed\) > \.col-patients\s*\{[^}]*visibility 0s;/,
+    );
+    // The rail is the sidebar's other half and arrives with the usual entrance.
+    expect(motionCss).toMatch(/\.sidebar-rail\s*\{\s*animation: fade-in var\(--motion-base\)/);
+
+    // Both ways of asking for stillness, honoured here rather than only by the
+    // global `:root.no-motion *` rule.
+    expect(motionCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.col-patients[\s\S]*?transition: none;/,
+    );
+    expect(motionCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.sidebar-rail\s*\{\s*animation: none;/,
+    );
   });
 });

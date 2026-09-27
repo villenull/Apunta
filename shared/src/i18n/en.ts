@@ -2017,8 +2017,8 @@ export const en = {
   'patients.add': { text: 'Add patient' },
   /** `AddPatient.tsx:93`. */
   'common.adding': { text: 'Adding…' },
-  /** `AddPatient.tsx:42`. */
-  'patients.addLede': { text: 'Just enough to organize her notes.' },
+  /** The × on the add-patient window; `AddPatient.tsx:107`. */
+  'patients.addClose': { text: 'Close add patient' },
   /**
    * `AddPatient.tsx:58`. The prototype's sample patient (HS-8), which
    * S1.4 §3.5 leaves in place until `e2e/fixtures/eval-es/NAMES.md` exists:

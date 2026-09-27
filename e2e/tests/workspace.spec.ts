@@ -56,7 +56,9 @@ test.describe('the workspace', () => {
     // --- Add the patient the prototype's flow lands on ----------------------
     await expect(page.getByRole('heading', { name: 'Add patient' })).toBeVisible();
     await page.getByLabel('Name').fill(patientName);
-    await page.getByRole('button', { name: 'Add patient' }).click();
+    // `exact`: the window's close control is named "Close add patient", and
+    // `name` matches on a substring, so without it this is two buttons.
+    await page.getByRole('button', { name: 'Add patient', exact: true }).click();
 
     // --- Empty states: no notes yet, nothing selected -----------------------
     await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);

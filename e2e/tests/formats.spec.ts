@@ -103,7 +103,10 @@ test.describe('reading a format out of an uploaded file', () => {
     // The prototype's flow: saving a format lands on adding a patient.
     await expect(page.getByRole('heading', { name: 'Add patient' })).toBeVisible();
     await page.getByLabel('Name').fill(patientName);
-    await page.getByRole('button', { name: 'Add patient' }).click();
+    // `exact`: the add-patient window also carries a close control named
+    // "Close add patient", and Playwright's `name` matches on a substring, so
+    // without it this resolves to two buttons and strict mode refuses.
+    await page.getByRole('button', { name: 'Add patient', exact: true }).click();
 
     // The whole point of the upload: the format is usable for a note.
     await page.getByRole('button', { name: 'New note' }).click();

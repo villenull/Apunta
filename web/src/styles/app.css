@@ -4069,8 +4069,19 @@ select:disabled {
 
 /* The collapsed panel, and the one control that brings it back. */
 @media (min-width: 901px) {
+  /*
+   * Collapsed, the patients column's width goes to zero rather than
+   * `display: none`, so the pane can be *seen* going and the notes column
+   * slides across behind it (owner, 2026-09-27). The timings live in
+   * `motion.css`, which is also where the delayed `visibility` that keeps the
+   * collapsed column out of the tab order is written — this rule is the state,
+   * that file is the motion.
+   */
   .app-shell.sidebar-collapsed > .col-patients {
-    display: none;
+    width: 0;
+    overflow: hidden;
+    opacity: 0;
+    border-right-color: transparent;
   }
 }
 
@@ -4115,20 +4126,41 @@ select:disabled {
 /* The A sits in a 24px em box, so its 0.8em height lands near 19px. */
 .rail-brand {
   font-size: 24px;
+  /* Both glyphs share one cell, so the panel glyph *replaces* the A under the
+     pointer instead of being pushed along beside it. */
+  display: grid;
+  place-items: center;
 }
 
+.rail-brand-mark,
 .rail-brand-panel {
-  display: none;
+  grid-area: 1 / 1;
+}
+
+/*
+ * The swap is `visibility`, not `display`, and that is load-bearing.
+ *
+ * `BrandMark` sets `display: inline-block` as an **inline style**
+ * (`BrandMark.tsx`, asserted by `BrandMark.test.tsx`), and an inline style
+ * outranks every rule in this file — so the `display: none` this used to carry
+ * was dead CSS, the A sat there through the whole hover, and the panel glyph
+ * was laid out beside it rather than in its place. `visibility` is not set
+ * inline, so a rule can still reach it; it also takes the hidden glyph out of
+ * hit-testing and out of the accessibility tree while leaving its cell to its
+ * sibling. `SidebarRail.test.tsx` holds both halves of that.
+ */
+.rail-brand-panel {
+  visibility: hidden;
 }
 
 .rail-brand:hover .rail-brand-mark,
 .rail-brand:focus-visible .rail-brand-mark {
-  display: none;
+  visibility: hidden;
 }
 
 .rail-brand:hover .rail-brand-panel,
 .rail-brand:focus-visible .rail-brand-panel {
-  display: block;
+  visibility: visible;
 }
 
 /* ChatGPT's rail glyphs are a size up from the sidebar's 16px. */
@@ -4574,11 +4606,50 @@ body.is-resizing-sidebar {
   display: none;
 }
 
-/* Settings over the workspace: the page behind is dimmed and blurred, and the
-   panel is centred on top of it (owner, 2026-09-26, after Claude's). */
-.modal-backdrop:has(.settings-modal) {
+/* A modal over the workspace: the page behind is dimmed and blurred, and the
+   panel is centred on top of it (owner, 2026-09-26, after Claude's). Settings
+   was the first; adding a patient is the second (owner, 2026-09-27), and the
+   treatment is the same, so the rule is shared rather than the second panel
+   carrying a copy of the scrim. */
+.modal-backdrop:has(.settings-modal),
+.modal-backdrop:has(.add-patient-modal) {
   background: var(--scrim);
   backdrop-filter: blur(var(--scrim-blur));
+}
+
+/*
+ * The add-patient window: the small one, not Settings' wall. `.modal card`
+ * already gives it the raised surface, the radius and the shadow, and the
+ * fields sit straight on it — a bordered card inside a raised panel is a box
+ * inside a box, which is not what a little window looks like.
+ */
+.add-patient-modal {
+  max-width: 420px;
+}
+
+/* The title row: what it is on the left, the way out on the right. */
+.add-patient-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-bottom: var(--space-10);
+}
+
+.add-patient-head .heading-tight {
+  margin-bottom: 0;
+}
+
+/* The close control is a bare glyph, as claude.ai's is and as Settings' is. */
+.add-patient-head .icon-btn {
+  border-color: transparent;
+  background: transparent;
+}
+
+.add-patient-head .icon-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
 }
 
 .settings-modal {

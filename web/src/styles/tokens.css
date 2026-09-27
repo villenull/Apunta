@@ -210,22 +210,40 @@
    */
   --brand-mark: var(--accent);
   /*
-   * The accent default. AM-047, then the owner's own value on 2026-09-27 after
-   * she saw the contrast figures: `#218677`, one value in both themes because
-   * she declined a per-theme pair. It clears 4.5:1 against the dark surfaces
-   * (`#151515` 4.12:1, `#111111` 4.26:1) and the light one (4.20:1) — the
-   * earlier brand teal `#1f6f63` managed only 3.05:1 on `#151515`, which is why
-   * it went. `accentInk` darkens this to `#000000` for `--on-accent`, so text
-   * on the accent is 4.74:1 rather than the 4.43:1 white would have given.
+   * The accent default, and the one value both themes share. AM-047 first, then
+   * the owner's own `#218677` on 2026-09-27 from the contrast figures, then her
+   * own `#2a9d8f` the same day when she asked for it lighter and picked it from
+   * the same table. Measured with `web/src/lib/accent.ts`'s own formula:
+   *
+   *   surface      #218677   #2a9d8f
+   *   #faf9f5        4.20       3.16
+   *   #f5f4ed        4.02       3.01
+   *   #151515        4.12       5.49
+   *   #111111        4.26       5.68
+   *
+   * So the lighter teal trades light-background contrast for dark-surface
+   * contrast, and the trade is hers, made knowingly. The 3.01 on the light
+   * sidebar is worth naming: it clears AM-053's 3:1 warning line by 0.015, so
+   * the default sits close to the line the picker warns under. That is accepted
+   * and recorded, not an oversight to be tidied away — the threshold, its
+   * comparison and `PAGE_SURFACES` are not to be moved to widen the margin.
+   *
+   * `--on-accent` below is `#111111` rather than white, and that is not a
+   * separate choice: `applyAccentColor` picks whichever of white/near-black
+   * contrasts better, and for this teal near-black wins (6.32:1 against the
+   * 3.32:1 white would give). Declaring the same value here keeps a fresh
+   * install — where nothing is stored and `applyAccentColor` never runs — from
+   * painting the one label colour the live code would never choose.
+   *
    * It is a setting she changes in Appearance, so this is only what a fresh
    * install and a reset-to-default get; `--accent-ink`, `--accent-tint` and
    * `--accent-hover` all derive from it and follow.
    *
-   * `--brand-mark` above now resolves to this, which reverses the other half
-   * of D10: the mark follows the accent instead of being fixed brand teal. See
+   * `--brand-mark` above resolves to this, which reverses the other half of
+   * D10: the mark follows the accent instead of being fixed brand teal. See
    * `docs/v2/DECISIONS.md` for what that costs and what still holds.
    */
-  --accent: #218677;
+  --accent: #2a9d8f;
   /*
    * The Patients heading on the View-all page. It was the owner's #2596be
    * until AM-047, when claude.ai's look replaced it: claude.ai sets its page
@@ -234,7 +252,8 @@
   --patients-title: var(--text-primary);
   --accent-hover: color-mix(in srgb, var(--accent) 77%, #000);
   --accent-tint: color-mix(in srgb, var(--accent) 12%, #fff);
-  --on-accent: #fff;
+  /* Matches `applyAccentColor`'s own choice for this accent; see above. */
+  --on-accent: #111111;
   --accent-ink: var(--accent-hover);
   /*
    * Text that sits on an accent-tinted background (the empty-sections

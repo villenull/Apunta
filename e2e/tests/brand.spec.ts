@@ -2,6 +2,8 @@ import { resolve } from 'node:path';
 
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
+import { DEFAULT_ACCENT_COLOR } from '@apunta/shared';
+
 import { expect, test, uniqueName } from '../support/fixtures';
 
 /**
@@ -22,9 +24,10 @@ import { expect, test, uniqueName } from '../support/fixtures';
  *   `BrandMark` and `BrandWordmark` paint `currentColor` — so the mark and the
  *   wordmark take **the accent's** colour in every theme, including dark. There
  *   is no longer a fixed brand teal anywhere on screen;
- * - the accent default is `#218677` (`shared/src/settings.ts`), and
- *   `accentInk` darkens it to `#000000` for `--on-accent`, so text on the
- *   accent is 4.74:1. The tables below carry the painted value, not the hex.
+ * - the accent default is `#2a9d8f` (`shared/src/settings.ts`), and
+ *   `applyAccentColor` puts `#111111` on it for `--on-accent` because near-black
+ *   beats white on this teal (6.32:1 against 3.32:1). The tables below carry the
+ *   painted value, not the hex.
  *
  * **What this spec is for changed on 2026-09-27, and the old reasoning is
  * wrong.** It used to hold the mark accent-**invariant**: D10 fixed the brand
@@ -43,7 +46,7 @@ import { expect, test, uniqueName } from '../support/fixtures';
  * resolving — which would pass every unit test in the tree, because the unit
  * tests pin values and not relationships. That is what the purple half is for,
  * and it is now the *primary* assertion rather than the discriminating one:
- * `#7c3aed` is far enough from the default `#218677` that the two runs cannot
+ * `#7c3aed` is far enough from the default `#2a9d8f` that the two runs cannot
  * be confused.
  *
  * The cost, stated plainly because it is a real one: the brand's legibility is
@@ -62,8 +65,14 @@ import { expect, test, uniqueName } from '../support/fixtures';
  * home screen rather than a redirect to onboarding.
  */
 
-/** `DEFAULT_ACCENT_COLOR` (`shared/src/settings.ts`), PUT explicitly. */
-const DEFAULT_ACCENT = '#218677';
+/**
+ * `DEFAULT_ACCENT_COLOR` (`shared/src/settings.ts`), PUT explicitly.
+ *
+ * Imported rather than written out, so this spec cannot assert a painted colour
+ * the app has stopped shipping: the hex and the painted value below are the
+ * same value twice over, and only one of them is allowed to be a literal.
+ */
+const DEFAULT_ACCENT = DEFAULT_ACCENT_COLOR;
 /** A purple far enough from the default teal to prove the mark followed. */
 const OTHER_ACCENT = '#7c3aed';
 
@@ -88,9 +97,9 @@ interface Appearance {
 const LIGHT_DEFAULT: Appearance = {
   theme: 'light',
   accent: DEFAULT_ACCENT,
-  accentPainted: 'rgb(33, 134, 119)',
-  mark: 'rgb(33, 134, 119)',
-  wordmark: 'rgb(33, 134, 119)',
+  accentPainted: 'rgb(42, 157, 143)',
+  mark: 'rgb(42, 157, 143)',
+  wordmark: 'rgb(42, 157, 143)',
 };
 const LIGHT_OTHER: Appearance = {
   ...LIGHT_DEFAULT,
@@ -102,9 +111,9 @@ const LIGHT_OTHER: Appearance = {
 const DARK_DEFAULT: Appearance = {
   theme: 'dark',
   accent: DEFAULT_ACCENT,
-  accentPainted: 'rgb(33, 134, 119)',
-  mark: 'rgb(33, 134, 119)',
-  wordmark: 'rgb(33, 134, 119)',
+  accentPainted: 'rgb(42, 157, 143)',
+  mark: 'rgb(42, 157, 143)',
+  wordmark: 'rgb(42, 157, 143)',
 };
 const DARK_OTHER: Appearance = {
   ...DARK_DEFAULT,
@@ -219,9 +228,21 @@ async function painted(page: Page): Promise<Painted> {
 const measured = new Map<string, Painted>();
 
 /**
- * Assert one appearance state: the accent really moved, both brand colours are
- * the pinned pair, and — in a non-default state — both are byte-identical to
- * what the default-accent run of the same theme measured.
+ * Assert one appearance state: the accent really moved, and both brand
+ * colours are the pinned pair for that state.
+ *
+ * The cross-run check is the one the file's own header argues for: because
+ * `--brand-mark` resolves to `var(--accent)`, the two accents in a theme must
+ * paint two different marks. **This was previously the opposite claim** — it
+ * asserted the second run's mark was byte-identical to the first and called
+ * that "accent-invariant", which is what the spec used to guard before D10 was
+ * reversed. Left as it was, it failed a correct build on purpose.
+ *
+ * What it is *not* allowed to become is nothing: the discrimination is the
+ * assertion. A hard-coded brand teal creeping back into a component, or a token
+ * quietly ceasing to resolve, paints the same mark for both accents and fails
+ * here — while every per-state expectation above still passes, because those
+ * are literals this file owns.
  */
 async function assertPainted(page: Page, state: Appearance, slug: string): Promise<void> {
   const observed = await painted(page);
@@ -234,8 +255,12 @@ async function assertPainted(page: Page, state: Appearance, slug: string): Promi
   expect(observed.wordmark, `the wordmark painted in ${key}`).toBe(state.wordmark);
   const reference = measured.get(`${state.theme}/${DEFAULT_ACCENT}`);
   if (reference !== undefined) {
-    expect(observed.mark, `the A mark is accent-invariant in ${key}`).toBe(reference.mark);
-    expect(observed.wordmark, `the wordmark is accent-invariant in ${key}`).toBe(reference.wordmark);
+    expect(observed.mark, `the mark followed the accent in ${key}, not the default's`).not.toBe(
+      reference.mark,
+    );
+    expect(observed.wordmark, `the wordmark followed the accent in ${key}, not the default's`).not.toBe(
+      reference.wordmark,
+    );
   }
   measured.set(key, observed);
   await page.screenshot({ path: screenshotPath(slug) });
