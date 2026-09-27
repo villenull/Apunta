@@ -7,17 +7,17 @@
   ],
   "baseCommit": "28a9235",
   "attempt": 4,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "attempt 4 SUBMITTED at bc7528e (evidence 49ebdbb, return bea4b40); all four rows PASS, re-run at the tip and reproduced; final review dispatched on base 2dd09d2 head bea4b40",
-  "nextAllowedAction": "implementation-review - the last word on the card; a PASS closes S2.5 and releases S2.6 -> S2.R -> S3.2 -> S3.3 -> S3.R -> S5.1-S5.7, a FAIL blocks it for the owner because there is no attempt 5",
+  "status": "APPROVED",
+  "lastCompletedStep": "APPROVED. Attempt 4 review PASS at head bea4b40: all four rows re-run and green, the wire's English derived by executing 77767c2 rather than taken on trust, byte-identical at 1/2/3/4/**five** parts, plus an 18-case whole-module differential (outcome|reason|reply) with 0 byte-differences, and the head's own test file shown to BITE against the pre-fix code on the three- and four-part cases. Reviewer corrected a false premise of the coordinator's (2dd09d2 already contained the defect). Releases S2.6 -> S2.R -> S3.2 -> S3.3 -> S3.R -> S5.1-S5.7",
+  "nextAllowedAction": "done - S2.6 is now dispatchable (deps S2.4, S2.5 both APPROVED) but is HELD because the owner-run UI agent is live in web/ and S2.6's May edit is web/src/routes/Settings.tsx, web/src/lib/i18n.tsx, the job-triggering components and e2e/**",
   "sideEffectsDone": [],
   "changedFiles": 44,
   "criteria": {
-    "V1": "PASS (claimed, unverified)",
-    "V2": "PASS (claimed, unverified)",
-    "V3": "PASS (claimed, unverified)",
-    "V4": "PASS (claimed, unverified)"
+    "V1": "PASS (verified)",
+    "V2": "PASS (verified)",
+    "V3": "PASS (verified)",
+    "V4": "PASS (verified)"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-27T00:55:00Z"
+  "updatedUtc": "2026-09-27T01:15:00Z"
 }
