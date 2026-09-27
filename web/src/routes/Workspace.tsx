@@ -167,19 +167,13 @@ export function Workspace(): React.JSX.Element {
       ? (formats.state.data.find((candidate) => candidate.id === note.format_id) ?? null)
       : null;
 
-  const selectPatient = useCallback(
-    (id: string) => {
-      setParams({ patient: id });
-    },
-    [setParams],
-  );
-
   /*
-   * Opening someone from the "View all" page lands on their notes, not on the
-   * list she came from: the directory is a way into a patient, not a place to
-   * stay.
+   * Opening a patient always lands on their notes at `/`, wherever she clicked
+   * from. Setting only the query string kept the path, so a sidebar click made
+   * while "View all" (`/patients`) was open changed nothing on screen (owner,
+   * 2026-09-26): the directory is a way into a patient, not a place to stay.
    */
-  const selectPatientFromDirectory = useCallback(
+  const selectPatient = useCallback(
     (id: string) => {
       navigate(`/?patient=${encodeURIComponent(id)}`);
     },
@@ -422,7 +416,7 @@ export function Workspace(): React.JSX.Element {
               onRetry={patients.reload}
               tab={directoryTab}
               onTab={setDirectoryTab}
-              onSelect={selectPatientFromDirectory}
+              onSelect={selectPatient}
               onSetArchived={(target, archived) => {
                 void handleSetArchived(target, archived);
               }}
