@@ -5,10 +5,9 @@
  * no-font-in-the-bundle rule).
  *
  * Decorative — the wordmark or the page title already names the app — so it is
- * `aria-hidden`. It sits inline before the home greeting, where Claude puts its
- * own mark before "… returns!" (owner, 2026-09-26): sized in `em` so it tracks
- * the heading it stands in, and coloured by `--brand-mark`, not by `--accent`
- * (D10).
+ * `aria-hidden`. Sized in `em` so it tracks the text it stands beside, and
+ * coloured by `--brand-mark`, which follows the accent (D10 as amended
+ * 2026-09-26).
  */
 export interface BrandMarkProps {
   className?: string | undefined;

@@ -23,32 +23,28 @@ import { HomeLauncher } from './HomeLauncher.js';
  * and the rendered colours are asserted for real in `e2e/tests/brand.spec.ts`.
  */
 
-/** The A mark's own viewBox, the only one in the tree (`BrandMark.tsx:18`). */
-const MARK_VIEWBOX = '0 0 1419 1440';
+/** The wordmark's own viewBox (`BrandWordmark.tsx`). */
+const WORDMARK_VIEWBOX = '0 0 7044 1946';
 
 /**
- * The A marks inside `root`, found by the viewBox value the e2e spec selects on.
- *
- * Not by a CSS attribute selector: jsdom's `querySelector` never matches
- * `svg[viewBox="…"]`, because the HTML parser rewrites that SVG attribute's
- * camelCase and the selector engine never lines up with the result. A real
- * browser has no such problem, which is why `e2e/tests/brand.spec.ts` can use
- * the selector verbatim. So the same *value* is matched here, by hand.
+ * The wordmarks inside `root`, found by viewBox value by hand: jsdom's
+ * `querySelector` never matches `svg[viewBox="…"]`, because the HTML parser
+ * rewrites that SVG attribute's camelCase. A real browser has no such problem.
  */
-function marksIn(root: ParentNode): SVGSVGElement[] {
-  return [...root.querySelectorAll('svg')].filter((svg) => svg.getAttribute('viewBox') === MARK_VIEWBOX);
+function wordmarksIn(root: ParentNode): SVGSVGElement[] {
+  return [...root.querySelectorAll('svg')].filter((svg) => svg.getAttribute('viewBox') === WORDMARK_VIEWBOX);
 }
 
 interface Home {
   /** `.home`, the `data-testid="home"` screen itself. */
   screen: HTMLElement;
-  /** `.home-inner`, the centred column the mark and the question share. */
+  /** `.home-inner`, the centred column the wordmark and the question share. */
   inner: HTMLElement;
   heading: HTMLHeadingElement;
-  mark: SVGSVGElement;
+  wordmark: SVGSVGElement;
 }
 
-/** `HomeLauncher` calls `useNavigate` (`:25`), so the render needs a router. */
+/** `HomeLauncher` calls `useNavigate`, so the render needs a router. */
 function renderHome(): Home {
   const { container } = render(
     <MemoryRouter>
@@ -58,11 +54,11 @@ function renderHome(): Home {
   const home = container.querySelector<HTMLElement>('[data-testid="home"]');
   const inner = home?.querySelector<HTMLElement>('.home-inner') ?? null;
   const heading = home?.querySelector('h1') ?? null;
-  const mark = inner === null ? null : (marksIn(inner)[0] ?? null);
-  if (home === null || inner === null || heading === null || mark === null) {
-    throw new Error('HomeLauncher rendered no home screen, or none with a mark in its heading');
+  const wordmark = inner === null ? null : (wordmarksIn(inner)[0] ?? null);
+  if (home === null || inner === null || heading === null || wordmark === null) {
+    throw new Error('HomeLauncher rendered no home screen, or none with a wordmark above its heading');
   }
-  return { screen: home, inner, heading, mark };
+  return { screen: home, inner, heading, wordmark };
 }
 
 /** One keystroke's worth of search, which is what opens the listbox. */
@@ -112,23 +108,21 @@ describe('the "New" row of the results list', () => {
   });
 });
 
-describe('the A mark before the home greeting', () => {
+describe('the wordmark above the home greeting', () => {
   /**
-   * Read as structure rather than as pixels: the mark is the heading's first
-   * child, so it paints to the left of the question, as Claude puts its own
-   * mark before "… returns!" (owner, 2026-09-26; it used to stand above).
+   * Owner, 2026-09-26: the full Apunta wordmark stands immediately above
+   * "Let's focus on…", in place of the A. Read as structure: it is the first
+   * child of the centred column and the heading's sibling, not its child, so
+   * the heading's text stays the question alone.
    */
-  it('is the first thing in the heading, before the question', () => {
-    const { heading, mark } = renderHome();
+  it('stands first in the column, directly above the heading', () => {
+    const { inner, heading, wordmark } = renderHome();
 
-    expect(heading.firstElementChild).toBe(mark);
-    expect(mark.parentElement).toBe(heading);
+    expect(inner.firstElementChild).toBe(wordmark);
+    expect(wordmark.nextElementSibling).toBe(heading);
+    expect(heading.querySelector('svg')).toBeNull();
   });
 
-  /**
-   * The greeting is a question, and the mark never joins it: an svg with no
-   * text and `aria-hidden`, so the heading still reads as the question alone.
-   */
   it('leaves the greeting as exactly the question', () => {
     const { heading } = renderHome();
 
@@ -137,56 +131,27 @@ describe('the A mark before the home greeting', () => {
   });
 
   /**
-   * The one interaction the home screen has. Typing opens the listbox, whose
-   * "New" row carries a `PlusIcon` — and every `StrokeIcon` is
-   * `viewBox="0 0 24 24"` (`icons.tsx:18`), so the A mark stays the only
-   * element with its own viewBox however many icons are on screen. This is
-   * the same selector the e2e spec scopes to `[data-testid="home"]`, and the
-   * same value `BrandMark.test.tsx:58` pins: the three cannot drift apart.
+   * A second copy of the name: the sidebar's wordmark already announces
+   * "Apunta", so this one is hidden and never answers as an image — with the
+   * listbox closed or open.
    */
-  it('stays the only mark once typing puts an icon on the screen', () => {
-    const { screen: home, heading, mark } = renderHome();
+  it('is decorative, so the name is announced once, listbox open or not', () => {
+    const { wordmark } = renderHome();
 
-    typeSearch('Jo');
-
-    expect(screen.getByRole('listbox', { name: 'Patients' })).not.toBeNull();
-    expect(marksIn(home)).toHaveLength(1);
-    // The listbox's "New" row put a second svg inside `.home`, so the count
-    // above is the viewBox doing the work rather than there being one svg.
-    expect(home.querySelectorAll('svg')).toHaveLength(2);
-    expect(heading.firstElementChild).toBe(mark);
-    expect(heading.textContent).toBe('Let’s focus on…');
-  });
-
-  /**
-   * Decorative where it actually renders, not only in isolation: with the
-   * listbox open there are two svgs on the home screen and neither may answer
-   * as an image, because the page already names the app in its title bar.
-   */
-  it('is decorative where it renders, listbox open or not', () => {
-    const { mark } = renderHome();
-
-    expect(mark.getAttribute('aria-hidden')).toBe('true');
-    expect(mark.getAttribute('focusable')).toBe('false');
+    expect(wordmark.getAttribute('aria-hidden')).toBe('true');
     expect(screen.queryByRole('img')).toBeNull();
 
     typeSearch('Jo');
 
     expect(screen.queryByRole('img')).toBeNull();
+    expect(wordmarksIn(document.body)).toHaveLength(1);
   });
 
-  /**
-   * The size and the inline placement are inline styles on the mark, so they
-   * are the first thing a refactor to a stylesheet or a wrapper would drop.
-   * `em`, so it tracks the heading at every font size she can pick. jsdom has
-   * no layout; the geometry itself is for a browser to measure.
-   */
-  it('keeps its heading-relative size and inline placement through that interaction', () => {
-    const { mark } = renderHome();
+  /** Larger than the sidebar's, and coloured by the brand token. */
+  it('is drawn at 48px in the brand colour', () => {
+    const { wordmark } = renderHome();
 
-    typeSearch('Jo');
-
-    expect(mark.style.height).toBe('0.8em');
-    expect(mark.style.display).toBe('inline-block');
+    expect(wordmark.style.height).toBe('48px');
+    expect(wordmark.style.color).toBe('var(--brand-mark)');
   });
 });

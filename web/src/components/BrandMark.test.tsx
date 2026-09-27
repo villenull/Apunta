@@ -15,7 +15,7 @@ afterEach(() => {
  * The A mark shipped in AM-028 (`b366be1`), redrawn in Fraunces and moved
  * inline before the home greeting on 2026-09-26 (`HomeLauncher.tsx`). It is the wordless half of the brand, so these cases
  * pin the two things that would be invisible in a diff: that it is decorative,
- * and that its colour comes from D10's pair rather than from `--accent`.
+ * and that its colour comes from the brand token, which follows `--accent`.
  *
  * The token sheet is read off disk rather than imported: Vite rewrites the
  * `new URL(…, import.meta.url)` pattern at transform time, and a `?raw` import
@@ -91,18 +91,19 @@ describe('the A mark', () => {
   });
 
   /**
-   * D10's pair, each declared exactly once and written as a literal hex rather
-   * than derived from anything — in particular not from `--accent`, which the
-   * owner can change in Settings. Amended 2026-09-26: teal in dark mode too.
+   * D10 as amended (owner, 2026-09-26): the brand colour is the accent. The
+   * token is declared once, as `var(--accent)`, so the colour she picks in
+   * Settings recolours the mark and the default accent is the Apunta teal.
    */
-  it('follows D10 as amended: the brand teal in both themes, declared once each', () => {
-    expect(brandMarkColours()).toEqual(['#1f6f63', '#1f6f63']);
+  it('follows the accent through the brand token, declared once', () => {
+    expect(brandMarkColours()).toEqual(['var(--accent)']);
   });
 
-  it('never resolves its colour from the accent', () => {
+  /** The component itself only ever names the brand token, never the accent. */
+  it('reaches the accent only through --brand-mark', () => {
     const { container } = render(<BrandMark />);
 
     expect(container.innerHTML).not.toContain('--accent');
-    expect(renderMark().getAttribute('style')).not.toContain('--accent');
+    expect(renderMark().style.color).toBe('var(--brand-mark)');
   });
 });

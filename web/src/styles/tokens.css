@@ -196,12 +196,12 @@
   --border-subtle: #e6e3da;
   --border-strong: #cfcbbc;
   /*
-   * The brand mark — the wordmark and the A (P2.1, D10). Brand teal in both
-   * themes (owner, 2026-09-26, over the earlier white-in-dark rule), and
-   * deliberately *not* derived from `--accent`: the mark keeps the brand's
-   * colour whatever accent she picks.
+   * The brand mark — the wordmark and the A (P2.1, D10). It follows the accent
+   * (owner, 2026-09-26, reversing D10's "independent of accent"): the colour
+   * she picks in Settings recolours the logo too, and the default accent is
+   * the Apunta teal. Declared once; the dark theme's `--accent` flows through.
    */
-  --brand-mark: #1f6f63;
+  --brand-mark: var(--accent);
   /*
    * The accent default, claude.ai's clay. AM-047, owner-approved. It is a
    * setting she changes in Appearance, so this is only what a fresh install
@@ -397,9 +397,6 @@
   --border: var(--divider);
   --border-subtle: #303030;
   --border-strong: #4d4d4a;
-  /* The brand mark in dark mode: the same brand teal (owner, 2026-09-26, amending
-     D10's white), declared again so the pair stays a literal per theme. */
-  --brand-mark: #1f6f63;
   --patients-title: var(--text-primary);
   --col-patients-bg: var(--sidebar-bg);
   --col-notes-bg: var(--app-bg);

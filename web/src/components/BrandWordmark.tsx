@@ -6,10 +6,10 @@
  * font at runtime and no font file rides along in the bundle — the glyphs are
  * the `path` below.
  *
- * `tone="brand"` colours it with `--brand-mark` (brand teal in both themes,
- * D10 as amended 2026-09-26), which is the house default and what both call
- * sites use. `tone="text"` paints it with the foreground text colour instead.
- * Neither ever follows `--accent`.
+ * `tone="brand"` colours it with `--brand-mark`, which follows the accent she
+ * picks (D10 as amended 2026-09-26; the default accent is the Apunta teal).
+ * It is the house default and what every call site uses. `tone="text"` paints
+ * it with the foreground text colour instead.
  *
  * Height defaults to `--logo-h` (20px, the mark's height in Claude's own top
  * bar), so the wordmark is one number in `styles/tokens.css` rather than one
@@ -23,15 +23,24 @@ export interface BrandWordmarkProps {
   tone?: 'brand' | 'text';
   /** An exact height in px; omit it for the `--logo-h` token. */
   height?: number | undefined;
+  /**
+   * Hidden from assistive technology, for a second copy on a screen that
+   * already names the app (the home page, beside the sidebar's).
+   */
+  decorative?: boolean;
 }
 
-export function BrandWordmark({ className, tone = 'brand', height }: BrandWordmarkProps): React.JSX.Element {
+export function BrandWordmark({
+  className,
+  tone = 'brand',
+  height,
+  decorative = false,
+}: BrandWordmarkProps): React.JSX.Element {
   return (
     <svg
       className={className}
       viewBox="0 0 7044 1946"
-      role="img"
-      aria-label="Apunta"
+      {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': 'Apunta' })}
       focusable="false"
       style={{
         color: tone === 'text' ? 'var(--text-primary)' : 'var(--brand-mark)',

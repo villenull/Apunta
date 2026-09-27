@@ -98,13 +98,27 @@ describe('the wordmark', () => {
   });
 
   /**
-   * D10: `--brand-mark` is the brand's own pair, deliberately not derived from
-   * `--accent`, so the name can never be recoloured by the accent picker.
+   * D10 as amended (owner, 2026-09-26): the accent picker recolours the logo.
+   * It does so through `--brand-mark`, which the token sheet points at
+   * `--accent`; the component names only the brand token.
    */
-  it('never takes its colour from the accent', () => {
+  it('follows the accent through the brand token', () => {
     const { container } = render(<BrandWordmark />);
 
     expect(container.innerHTML).not.toContain('--accent');
-    expect(renderWordmark({ tone: 'text' }).getAttribute('style')).not.toContain('--accent');
+    expect(TOKENS).toMatch(/^[ \t]*--brand-mark:[ \t]*var\(--accent\);/m);
+  });
+
+  /**
+   * A second copy on a screen that already names the app (the home page) is
+   * hidden, so a screen reader hears "Apunta" once.
+   */
+  it('can stand as a decorative second copy, out of the accessibility tree', () => {
+    const wordmark = renderWordmark({ decorative: true });
+
+    expect(wordmark.getAttribute('aria-hidden')).toBe('true');
+    expect(wordmark.getAttribute('role')).toBeNull();
+    expect(wordmark.getAttribute('aria-label')).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Apunta' })).toBeNull();
   });
 });

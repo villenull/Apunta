@@ -3,7 +3,7 @@ import { useId, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useI18n } from '../lib/i18n.js';
-import { BrandMark } from './BrandMark.js';
+import { BrandWordmark } from './BrandWordmark.js';
 import { PlusIcon } from './icons.js';
 
 export interface HomeLauncherProps {
@@ -78,11 +78,11 @@ export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.J
   return (
     <div className="home" data-testid="home">
       <div className="home-inner">
-        {/* The A mark before the greeting, as Claude puts its own mark before
-            "… returns!" (owner, 2026-09-26). It is `aria-hidden` and has no
-            text, so the question is still the heading's whole accessible name. */}
+        {/* The full wordmark immediately above the greeting (owner,
+            2026-09-26). Decorative here: the sidebar's wordmark already names
+            the app, and a screen reader should hear the name once. */}
+        <BrandWordmark className="home-wordmark" height={48} decorative />
         <h1 className="home-title">
-          <BrandMark className="home-title-mark" />
           <span>{t('home.title')}</span>
         </h1>
         <div className="home-search">
