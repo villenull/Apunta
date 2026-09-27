@@ -22,6 +22,9 @@ fixed; a worker applies it, never replaces it.
 | A10 | Piper voices: one `en_US` voice for the English spoken fixture; `es_MX` voices (all listed on acquisition day, at most 3); `es_ES` only if no `es_MX` voice exists | `huggingface.co` (rhasspy/piper-voices) | Hugging Face CDN hosts | none| no | P3.5, S4a.1 |
 | A11 | The Spanish Hunspell dictionary S1.5 recommends | npm registry | n/a | none| yes, if L-POLICY allows | S6.1 |
 | A12 | `tauri-apps/tauri-action`, referenced by an immutable commit SHA in the release workflow (not downloaded locally) | `github.com` | n/a | none| no | P6.2 |
+| A13 | Ollama `qwen3.5:2b-q4_K_M`, **only if absent** — the small sibling in the owner's authorised four-arm local-model comparison | Ollama registry via the local daemon | daemon-controlled | none | no | none (measurement only) |
+| A14 | `prism-ml/Bonsai-8B-gguf`, the single file `Bonsai-8B-Q1_0.gguf` and nothing else in the repository | `huggingface.co` (prism-ml/Bonsai-8B-gguf) | Hugging Face CDN hosts, on A07's terms | A07's | no | none (measurement only) |
+| A15 | `prism-ml/Bonsai-4B-gguf`, the single file `Bonsai-4B-Q1_0.gguf` and nothing else in the repository | `huggingface.co` (prism-ml/Bonsai-4B-gguf) | Hugging Face CDN hosts, on A07's terms | A07's | no | none (measurement only) |
 
 **Redirect admission (rule 1).** A redirect is followed only when its `Location`
 resolves to `https:`, port 443, no user-info, no fragment, a host the row's
@@ -46,6 +49,25 @@ query string is where a download URL turns into a message" — is about
 *outbound* data, and none of these names carries any: the probe records the
 **names** only and writes every value as `<redacted>`, so a signature is never
 in the repository, the evidence or any log.
+
+**The four-arm comparison (A13, A14, A15).** Added 2026-09-26 on the owner's
+approval, for one measurement round and nothing else. The arms are
+`qwen3.5:4b-q4_K_M` as the control (A08; already present, and A08's "never pulled
+if present" still holds), plus A13, A14 and A15. Three rules bind the round and
+are not negotiable per run:
+
+1. **No candidate becomes a default.** A07's "selected one only" and A08's tag
+   are unchanged. The round measures; it does not promote.
+2. **The licence of A14 and A15 is unknown to the coordinator and must be found
+   before either is pulled.** These are models downloaded by the user at setup,
+   so L-POLICY@1's row for that applies: per the publisher's licence, shown and
+   recorded. Prism's licence for these repositories is not asserted here because
+   it was not verified — anyone pulling them records the licence text and the
+   URL it came from, or reports `BLOCKED`. Guessing it is exactly the failure
+   this manifest exists to prevent.
+3. **The GPU is not shared.** One model loaded at a time, `keep_alive` set so
+   each unloads after its arm, and no arm runs while the owner is testing on the
+   machine or a live instance is in use. A four-arm run is long and real.
 
 **Owner-run items.** `apt` needs `sudo`. The coordinator writes the exact
 command to `docs/v2/state/OWNER-ACTIONS.md`, stops the dependent cards, and
