@@ -1539,8 +1539,8 @@ export const en = {
   'patients.pinned': { text: 'Pinned' },
   /** The empty "Pinned" group's one row, after claude.ai's for projects. */
   'patients.pinHint': { text: 'Pin patients to keep them here' },
-  'patients.older': { text: 'Older' },
-  /** The control beside "Older" and the two orders it offers. */
+  'patients.recents': { text: 'Recents' },
+  /** The control beside "Recents" and the two orders it offers. */
   'patients.sortList': { text: 'Sort patients' },
   'patients.sortRecent': { text: 'Recent activity' },
   'patients.sortName': { text: 'Name' },

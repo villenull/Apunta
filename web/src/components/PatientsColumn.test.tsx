@@ -8,7 +8,7 @@ import { PatientsColumn } from './PatientsColumn.js';
 
 /**
  * The sidebar's two groups, headed as claude.ai heads its own: "Pinned", which
- * is always there and says how to fill it while it is empty, then "Older" with
+ * is always there and says how to fill it while it is empty, then "Recents" with
  * its sort control over everyone else.
  */
 
@@ -73,9 +73,9 @@ function sidebarOrder(): string[] {
 }
 
 describe('the sidebar groups', () => {
-  it('heads pinned patients "Pinned" and the rest "Older"', () => {
+  it('heads pinned patients "Pinned" and the rest "Recents"', () => {
     renderColumn([john, ana, maria], [john.id]);
-    expect(sidebarOrder()).toEqual(['Pinned', 'John Smith', 'Older', 'Ana Torres', 'Maria Ruiz']);
+    expect(sidebarOrder()).toEqual(['Pinned', 'John Smith', 'Recents', 'Ana Torres', 'Maria Ruiz']);
     expect(screen.queryByTestId('pin-hint')).toBeNull();
   });
 
@@ -84,24 +84,24 @@ describe('the sidebar groups', () => {
     expect(sidebarOrder()).toEqual([
       'Pinned',
       'Pin patients to keep them here',
-      'Older',
+      'Recents',
       'Ana Torres',
       'John Smith',
     ]);
   });
 
-  it('orders "Older" by name from the control beside it, and remembers it', () => {
+  it('orders "Recents" by name from the control beside it, and remembers it', () => {
     renderColumn([maria, ana, john], []);
     fireEvent.click(screen.getByRole('button', { name: 'Sort patients' }));
     expect(screen.getByRole('menuitemradio', { name: 'Recent activity' }).getAttribute('aria-checked')).toBe(
       'true',
     );
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Name' }));
-    expect(sidebarOrder().slice(2)).toEqual(['Older', 'Ana Torres', 'John Smith', 'Maria Ruiz']);
+    expect(sidebarOrder().slice(2)).toEqual(['Recents', 'Ana Torres', 'John Smith', 'Maria Ruiz']);
 
     cleanup();
     renderColumn([maria, ana, john], []);
-    expect(sidebarOrder().slice(2)).toEqual(['Older', 'Ana Torres', 'John Smith', 'Maria Ruiz']);
+    expect(sidebarOrder().slice(2)).toEqual(['Recents', 'Ana Torres', 'John Smith', 'Maria Ruiz']);
   });
 
   it('renames in the row itself, the name selected, and saves on Enter', () => {

@@ -329,7 +329,7 @@ export function PinIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
-/** Two upright sliders, the control beside claude.ai's "Older" label. */
+/** Two upright sliders, the control beside claude.ai's "Recents" label. */
 export function SortIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>

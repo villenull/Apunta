@@ -1131,9 +1131,7 @@ export const esMX = {
   'patients.pinHint': {
     text: 'Fija pacientes para tenerlos aquí',
   },
-  'patients.older': {
-    text: 'Anteriores',
-  },
+  'patients.recents': { text: 'Recientes' },
   'patients.sortList': {
     text: 'Ordenar pacientes',
   },

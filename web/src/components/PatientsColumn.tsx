@@ -370,17 +370,19 @@ function PatientList({
 
   // claude.ai's sidebar: a "Projects" group that is always there, reading
   // "Pin projects to keep them here" while it is empty, then everything else
-  // under "Older". The order arrives pinned-first; the pinned group keeps the
-  // order she gave it, and "Older" follows the control beside its label.
+  // under "Recents". The order arrives pinned-first; the pinned group keeps
+  // the order she gave it, and "Recents" follows the control beside its label.
   const pinnedRows = visible.filter((patient) => pinnedIndex(patient.id, pinnedIds) >= 0);
-  const olderByRecency = visible.filter((patient) => pinnedIndex(patient.id, pinnedIds) < 0);
-  const older =
+  const recentsByActivity = visible.filter((patient) => pinnedIndex(patient.id, pinnedIds) < 0);
+  const recents =
     sort === 'name'
-      ? [...olderByRecency].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
-      : olderByRecency;
+      ? [...recentsByActivity].sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+        )
+      : recentsByActivity;
   // Searching is a deliberate act, so it shows everyone it matched; the daily
   // list is the one that gets cut short.
-  const olderShown = searching ? older : older.slice(0, VISIBLE_PATIENTS);
+  const recentsShown = searching ? recents : recents.slice(0, VISIBLE_PATIENTS);
 
   const tipPatient = tip === null ? null : (visible.find((patient) => patient.id === tip.id) ?? null);
 
@@ -529,10 +531,10 @@ function PatientList({
         </section>
       )}
 
-      {older.length > 0 && (
-        <section className="sidebar-section" aria-labelledby="sidebar-older-label">
-          <div className="sidebar-section-label" data-testid="section-older">
-            <span id="sidebar-older-label">{t('patients.older')}</span>
+      {recents.length > 0 && (
+        <section className="sidebar-section" aria-labelledby="sidebar-recents-label">
+          <div className="sidebar-section-label" data-testid="section-recents">
+            <span id="sidebar-recents-label">{t('patients.recents')}</span>
             <SortControl
               sort={sort}
               onSort={(next) => {
@@ -541,7 +543,7 @@ function PatientList({
               }}
             />
           </div>
-          {olderShown.map(renderRow)}
+          {recentsShown.map(renderRow)}
         </section>
       )}
 
@@ -580,7 +582,7 @@ function PatientList({
   );
 }
 
-/** The sliders beside "Older", as claude.ai's: how that group is ordered. */
+/** The sliders beside "Recents", as claude.ai's: how that group is ordered. */
 function SortControl({
   sort,
   onSort,

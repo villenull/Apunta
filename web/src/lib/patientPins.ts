@@ -51,7 +51,7 @@ export function writeSidebarCollapsed(collapsed: boolean): void {
   }
 }
 
-/** How the sidebar's "Older" group is ordered; same preview-only bargain. */
+/** How the sidebar's "Recents" group is ordered; same preview-only bargain. */
 export type SidebarSort = 'recent' | 'name';
 const SORT_KEY = 'apunta-sidebar-sort-v1';
 
