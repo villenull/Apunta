@@ -5,11 +5,11 @@
     "C-LANG@1",
     "C-SETTINGS@1"
   ],
-  "baseCommit": "7d70502",
+  "baseCommit": "58247c8",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "AM-059 instruction review CLEAR all ten; coordinator verified restored historical IR after rejecting reviewer out-of-scope output. Corrected review: reviews/S2.6-AM059-ir.md.",
-  "nextAllowedAction": "After UI handoff/released writer lane, regenerate implementation dispatch at current HEAD and resume attempt 2 under AM-059; no historical rewrite or no-English suppression. Spanish release clinical gate separate.",
+  "lastCompletedStep": "UI writer released after committed/pushed batch58247c8; prior AM059 IR CLEAR, targeted post-UI instruction drift review dispatched.",
+  "nextAllowedAction": "Process reviews/S2.6-postUI-ir.md then regenerate implementation dispatch at current HEAD and resume attempt2; no suppression/history rewrite.",
   "sideEffectsDone": [],
   "changedFiles": 0,
   "criteria": {

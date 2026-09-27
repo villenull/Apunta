@@ -1,3 +1,43 @@
+# Current continuation — 2026-09-27, owner away about one day
+
+This section supersedes the historical continuation below.
+
+- Owner authorizes autonomous verified commits and normal pushes to feature/v2;
+  stop only genuinely owner-blocked portions, continue independent work.
+- UI batch committed/pushed58247c8 by UI owner at explicit owner request.
+  Preview http://127.0.0.1:7867/ verified HTTP200/health ok, fakeAI, synthetic,
+  migration11, runId2026-09-27T22-10-53-535Z-68445ebb, pid1693890.
+  Retain UI agent f0bd1c61-253b-46ce-b59b-080334f6cb07, writer released.
+- UI independent rereview a7c2f04e-8029-470a-8798-6229b00f7583 active.
+  Gates:2075unit author-reported; coordinator82focused passed. Chromium50pass;
+  full86pass4skip16Spanishfail. No clean-base causation claim. Four historical
+  PNGs restored by author. Accent default-white owner wording recovered from
+  UI history; corrected test contrast math committed. Ledger reconciliation due.
+- S2.6 AM059 already owner-approved; prior instruction review CLEAR. Current
+  post-UI drift reviewer d7923020-3e60-46ed-b79c-c8c5f5fa57c3; attempt2/3.
+  Next implement forward-only localized attestation and in-scope language-aware
+  browser assertions after that targeted review. No new clinical-release grant.
+- Model corpus independently accepted and externally frozen in
+  evidence/MODEL-STUDY/corpus-freeze.json; bytes retain internal DRAFT labels.
+  Two corpus repair attempts spent. No more repair loop; material new defects
+  make affected comparisons inconclusive. All corpus workers archived.
+- Sole model executor490ebfe8-0a4a-4bf5-9020-26a3b38b4b92 runs Track1 then
+  bilingual Track2 serially under GPU lease. All5model artifacts downloaded;
+  coordinator verified QwenGGUF hashes. Scratch ~/.cache/apunta-model-study/
+  2026-09-27; source snapshot05d9b10. Track2 now authorized. Need independent
+  results/factual review and fresh blind style reviewer before conclusions.
+- Monitoring heartbeat4ce8f0b5 every2min expires2026-09-29T10:11Z. Check actual
+  pendingPermissions, not requiresAttention. Archive processed agents except
+  retained UI. No busy polling outside owner-requested heartbeat/notifications.
+- P4.1 AM057 approved, final attempt3 available; instruction textual fixes done.
+  P3.1 AM058 approved but residual metadata/lint/ownership-proof findings need
+  coordinator processing (untracked P3.1-AM058-ir.md). P5.2 readiness CLEAR.
+- Never7717/live data, explicit staged paths, one source writer, no forcepush.
+
+---
+
+## Historical continuation (superseded where inconsistent)
+
 # Orchestrator handoff — 2026-09-27
 
 Owner requested an audit of the idle Paseo agents, archival, a current preview,

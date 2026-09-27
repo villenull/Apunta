@@ -376,3 +376,13 @@ this scope deviation is recorded, not endorsed, and results are accepted based
 on unchanged corpus hashes/coordinator checks and substantive independent review.
 Reviewer archived; sole serial executor authorized Track2 following Track1,
 with unchanged GPU lease, prompts/gold and independent adjudication requirements.
+
+
+### 2026-09-27 — owner away authorization and resumed S2.6 preparation
+
+Verified remote feature/v2 equals58247c8 and preview7867 health/page. Owner
+authorizes continued verified commits/pushes while away about24h; replaced
+heartbeat with4ce8f0b5 for36h. UI writer released and retained. Refreshed
+NEXT-SESSION/current checkpoint and generated S2.6 post-UI IR dispatch at
+58247c8; distinct reviewer d7923020 checks actual drift, priorAM059 remains
+authorized. No source edits by coordinator, no new owner gate.
