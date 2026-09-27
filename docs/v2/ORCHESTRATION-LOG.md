@@ -338,3 +338,16 @@ comparison exists; do not label failures pre-existing. Independent reviewer
 author prose list. git diff --check rerun exit0. Simple workbench and Import
 relocation complete per handoff; Continue a draft currently opens general patient
 list, not an indexed draft. Production source integration remains unaccepted.
+
+
+### 2026-09-27 — UI integration defects verified and assigned
+
+Processed independent UI-BATCH2-review.md; coordinator directly inspected
+Workspace mount-only archived flag, sidebarView dropped created-sort storage
+and portal menu focus path, corroborating F1/F2/F3. Archived reviewer7ee8af9c.
+UI owner granted bounded repair1/2 for F1–F5, relevant viewport/accessibility
+checks and meaningful F6 foreground-policy regression; request existing direct
+owner decision evidence for ledger reconciliation, not repeat approval.
+S2.6 remains separate, awaiting writer release. Browser16-failure classification
+remains static evidence, not a clean-base counterfactual. No app source accepted
+or committed yet; source writer is again UI owner exclusively.
