@@ -20,3 +20,6 @@ S2.6 | 2026-09-27 resume IR: V1 fails on new Spanish plan attestation stored in 
 P4.1 | 2026-09-27 follow-up IR: probe diagnostic defects and conflicting receipt/query card text. | state/reviews/P4.1-followup-ir.md | Approve state/P4.1-AMENDMENT-PROPOSAL.md then attempt-3 instruction review and repair. Coordinator rejects reviewer suggestion to override size guard | S4a.2 and downstream acquisition chain
 
   → P4.1 owner scope block RESOLVED 2026-09-27 by AM-057; fresh instruction review and final repair verification still pending, so card remains unapproved.
+
+P3.1 metadata scope approved as AM-058; instruction review and implementation still pending. No ownership guard waiver.
+S2.6 attestation scope/wording owner block resolved by AM-059; instruction review, UI writer release and acceptance checks still pending.

@@ -321,6 +321,12 @@ server routes, AI prompts, guards, speech, spell check, formats, backup.
    `locale: 'es-MX'`; English formats are untouched. Imported formats take
    the UI language at import time; the user can change a format's locale.
 9. Backups and restores carry the `locale` columns.
+10. Treatment-plan activation writes its attestation in the stored language
+    captured once at activation, because activation is not a generation job.
+    Existing attestations are never rewritten or translated on read. Generated
+    plan documents carry the stored value verbatim; document headings are a
+    separate surface (AM-059).
+
 
 **Rejection example.** UI switched to Español, user refines an existing
 English note with a Spanish instruction → the note stays English, the reply

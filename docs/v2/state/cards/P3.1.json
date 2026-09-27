@@ -7,8 +7,8 @@
   "baseCommit": null,
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "IR round 3 all ten CLEAR at fe6d1c9; stop condition cleared 2026-09-26T19:00Z - owner installed cmake 4.4.3 (pkexec pacman -S --needed cmake), so the vulkan backend is now buildable; implementation dispatch must be rebuilt at the then-current head",
-  "nextAllowedAction": "build-dispatch",
+  "lastCompletedStep": "IR round 3 all ten CLEAR at fe6d1c9; stop condition cleared 2026-09-26T19:00Z - owner installed cmake 4.4.3 (pkexec pacman -S --needed cmake), so the vulkan backend is now buildable; implementation dispatch must be rebuilt at the then-current head Owner approved AM-058; amendment applied 2026-09-27.",
+  "nextAllowedAction": "Fresh instruction review of version injection and negative-case C-ISO ownership proof; regenerate implementation dispatch after UI writer release.",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {

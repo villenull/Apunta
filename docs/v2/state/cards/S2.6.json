@@ -8,8 +8,8 @@
   "baseCommit": "7d70502",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "Resume instruction review found out-of-scope English stored attestation; coordinator baseline exit 1, 8 passed/1 skipped/1 failed. Attempt 2 is incomplete, not newly spent.",
-  "nextAllowedAction": "Owner/plan-editor scope decision for forward-only localized attestations; preserve existing stored content and strict leak detector. UI owner holds implementation lane. Then repair stale dispatch/checkpoint inputs and re-review instructions.",
+  "lastCompletedStep": "Resume instruction review found out-of-scope English stored attestation; coordinator baseline exit 1, 8 passed/1 skipped/1 failed. Attempt 2 is incomplete, not newly spent. Owner approved AM-059; amendment applied 2026-09-27.",
+  "nextAllowedAction": "Fresh instruction review of approved forward-only attestation scope/wording; resume attempt 2 after UI writer release. Historical rows unchanged; Spanish release gate retained.",
   "sideEffectsDone": [],
   "changedFiles": 0,
   "criteria": {
