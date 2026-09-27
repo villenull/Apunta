@@ -351,3 +351,15 @@ owner decision evidence for ledger reconciliation, not repeat approval.
 S2.6 remains separate, awaiting writer release. Browser16-failure classification
 remains static evidence, not a clean-base counterfactual. No app source accepted
 or committed yet; source writer is again UI owner exclusively.
+
+
+### 2026-09-27 — corpus repair budget spent; final acceptance review
+
+Coordinator reran pinned validator/check-repairs after repair2:both exit0.
+Read report; cue screening now0unadjudicated collisions,2retracted-source
+exceptions,12proximities; all are screening not automatic factual verdicts.
+Archived implementer aa0073eb immediately after processing. Fresh final
+acceptance reviewer assigned bounded verification, no further repair loop.
+Actual unresolved defects mean affected comparisons INCONCLUSIVE; unavoidable
+regex limitations with independent adjudication do not create a new owner gate.
+Track2 remains held pending final freeze record.
