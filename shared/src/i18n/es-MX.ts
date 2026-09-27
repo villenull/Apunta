@@ -1273,14 +1273,25 @@ export const esMX = {
     text: 'No cabe ninguna de las {count} notas',
     kind: { count: 'number' },
   },
+  /**
+   * `{count}` is the total here, and Spanish agrees the noun with it, so this
+   * key has a plural map where English has none: "de 1 notas" was the one
+   * form the flat string could not say (AM-051).
+   */
   'brainstorm.contextMostRecentOne': {
     text: 'Usando la más reciente de {count} notas',
+    plural: {
+      one: 'Usando la más reciente de {count} nota',
+      many: 'Usando la más reciente de {count} notas',
+      other: 'Usando la más reciente de {count} notas',
+    },
     kind: { count: 'number' },
   },
+  /** Every form prints `{total}`, the way its English does (AM-051). */
   'brainstorm.contextMostRecent': {
-    text: 'Usando la más reciente de {count} notas',
+    text: 'Usando las {count} notas más recientes de {total}',
     plural: {
-      one: 'Usando la más reciente de {count} notas',
+      one: 'Usando la {count} nota más reciente de {total}',
       many: 'Usando las {count} notas más recientes de {total}',
       other: 'Usando las {count} notas más recientes de {total}',
     },

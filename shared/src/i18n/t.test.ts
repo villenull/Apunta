@@ -301,6 +301,27 @@ describe('plurals', () => {
     expect((esMX['notes.count'] as Message).plural?.['many']).toBe('{count} notas');
   });
 
+  it('says "de 1 nota", not "de 1 notas", on the brainstorm banner (AM-051)', () => {
+    // `contextSummary`, `BrainstormView.tsx:255-264`, with the counts each key
+    // is called with. A placeholder check cannot hear agreement, so the two
+    // values AM-051 corrected are pinned as rendered text.
+    expect(t('brainstorm.contextMostRecentOne', { count: 1 }, 'es-MX')).toBe(
+      'Usando la más reciente de 1 nota',
+    );
+    expect(t('brainstorm.contextMostRecentOne', { count: 3 }, 'es-MX')).toBe(
+      'Usando la más reciente de 3 notas',
+    );
+    expect(t('brainstorm.contextMostRecent', { count: 1, total: 3 }, 'es-MX')).toBe(
+      'Usando la 1 nota más reciente de 3',
+    );
+    expect(t('brainstorm.contextMostRecent', { count: 2, total: 3 }, 'es-MX')).toBe(
+      'Usando las 2 notas más recientes de 3',
+    );
+    expect(t('brainstorm.contextMostRecent', { count: 1_000_000, total: 2_000_000 }, 'es-MX')).toBe(
+      `Usando las ${grouped(1_000_000, 'es-MX')} notas más recientes de ${grouped(2_000_000, 'es-MX')}`,
+    );
+  });
+
   it('pluralises the stale-backup sentence the way the warning reads today', () => {
     expect(t('backup.stale', { days: 7 }, 'en')).toBe(staleWarning(7));
     expect(t('backup.stale', { days: 1 }, 'en')).toBe(staleWarning(1));
