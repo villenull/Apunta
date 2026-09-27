@@ -301,3 +301,14 @@ deviation explicitly reserved for independent judgment. Corpus remains draft.
 Archived repair implementer ee21d4ff after processing, dispatched fresh
 independent corpus freeze reviewer. No scored Track2 approval yet; English
 executor and UI owner continue in their existing lanes.
+
+
+### 2026-09-27 — final corpus screening repair dispatched
+
+Independent freeze review886a3e10 reports one residual defect class: critical
+cue collisions with required content. Coordinator inspected check-repairs sweep
+(only mustState.any, one direction) and confirmed incomplete coverage. M3
+omission-severity deviation accepted by independent reviewer. Archived reviewer
+after processing; dispatched final repair2/2 limited to corpus and repair2 report.
+Cues remain screening candidates, not automatic verdicts; factual requirements
+and thresholds unchanged. Track2 freeze remains withheld pending verification.
