@@ -141,12 +141,12 @@
   --main-font: 14px;
   --menu-w: 240px;
   --menu-item-h: 32px;
-  --modal-w: 900px;
-  --modal-h: 620px;
+  --modal-w: 1024px;
+  --modal-h: 800px;
   --modal-radius: 12px;
-  --settings-nav-w: 240px;
+  --settings-nav-w: 192px;
   --settings-pad: 24px;
-  --settings-row-h: 36px;
+  --settings-row-h: 56px;
   /*
    * The theme switcher: 32px tall, three equal 36px segments. The track and
    * the selected segment are the two surfaces, so both themes say which
@@ -157,6 +157,7 @@
   --switch-track: var(--field-bg);
   --switch-track-border: var(--field-border);
   --switch-thumb: #ffffff;
+  --switch-thumb-ink: var(--text-primary);
   --switch-thumb-shadow: 0 1px 2px rgba(38, 38, 32, 0.14);
   /*
    * "View all" rows are roomier than the sidebar's: a full page of names is
@@ -168,13 +169,24 @@
   /* The open tab and the Select button on that page. */
   --tab-active-bg: var(--row-selected-bg);
   --select-bg: var(--row-selected-bg);
-  /* Claude's light pill: the one bright thing on the page, in either theme. */
-  --pill-bg: #f0eee6;
-  --pill-ink: #262620;
-  --pill-bg-hover: #ffffff;
-  /* The page behind the settings modal: dimmed, and blurred. */
-  --scrim: rgb(38 38 36 / 0.55);
+  /* The one filled button on a page, as Claude's: dark on the light theme,
+     white on the dark one (below), so it stands apart from the grey "Select". */
+  --pill-bg: #1f1e1d;
+  --pill-ink: #ffffff;
+  --pill-bg-hover: #3d3d3a;
+  /* The page behind the settings modal: dimmed towards black, and blurred —
+     never tinted grey, which lifts the page instead of lowering it. */
+  --scrim: rgb(0 0 0 / 0.3);
   --scrim-blur: 6px;
+  /*
+   * The settings modal's own surfaces, after Claude's: the nav on one shade,
+   * the section on another, a hairline between them, the rules between rows,
+   * and the open section's fill.
+   */
+  --modal-nav-bg: var(--sidebar-bg);
+  --modal-divider: var(--divider);
+  --modal-rule: var(--divider);
+  --modal-nav-active: var(--row-selected-bg);
 
   /* The surfaces the app used before the palette, named from it. */
   --bg: var(--sidebar-bg);
@@ -363,8 +375,19 @@
   --pill-bg: #ffffff;
   --pill-ink: #0b0b0b;
   --pill-bg-hover: #e8e8e6;
-  --modal-bg: #1f1e1d;
-  --modal-border: rgb(222 220 209 / 0.15);
+  /* The settings modal, sampled from Claude's (owner, 2026-09-26). */
+  --modal-bg: #1a1a19;
+  --modal-border: #262625;
+  --modal-nav-bg: #151515;
+  --modal-divider: #2d2d2d;
+  --modal-rule: #262625;
+  --modal-nav-active: #383838;
+  --switch-track: #262625;
+  --switch-track-border: #262625;
+  --switch-thumb: #3c3c3b;
+  --switch-thumb-ink: var(--text-primary);
+  --switch-thumb-shadow: none;
+  --scrim: rgb(0 0 0 / 0.5);
 
   /* The surfaces the app used before the palette, named from it. */
   --bg: var(--app-bg);

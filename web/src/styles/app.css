@@ -3218,14 +3218,12 @@ select:disabled {
 
 .theme-switch-btn.is-selected {
   background: var(--switch-thumb);
-  color: var(--pill-ink);
+  color: var(--switch-thumb-ink);
   box-shadow: var(--switch-thumb-shadow);
 }
 
-/* The selected segment sits on a light thumb in both themes, so its ink is the
-   pill's dark one rather than a text colour that would vanish on it. */
 .theme-switch-btn.is-selected .icon {
-  color: var(--pill-ink);
+  color: var(--switch-thumb-ink);
 }
 
 .settings-profile-options {
@@ -4385,30 +4383,32 @@ select:disabled {
 .settings-nav {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 1px;
   width: var(--settings-nav-w);
   flex: 0 0 auto;
-  padding: var(--settings-pad) var(--space-8);
-  /* claude.ai runs the nav and the section on one surface, no rule between. */
+  padding: var(--space-8) var(--space-6);
+  /* claude.ai's nav sits on its own, darker shade, a hairline from the section. */
+  background: var(--modal-nav-bg);
+  border-right: 1px solid var(--modal-divider);
   overflow-y: auto;
 }
 
-/* claude.ai's "Settings": the display serif, large and regular, over the nav. */
+/* claude.ai heads its nav groups with a small muted label ("Settings"). */
 .settings-nav-title {
-  margin: 0 0 var(--space-8) var(--space-4);
-  font-family: var(--font-serif);
-  font-size: calc(24px * var(--font-scale));
+  margin: var(--space-8) 0 var(--space-4) var(--space-3);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
   font-weight: 400;
-  line-height: 1.2;
-  color: var(--text-primary);
+  line-height: 16px;
+  color: var(--text-muted);
 }
 
 .settings-nav-item {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: 14px;
   width: 100%;
-  height: var(--settings-row-h);
+  height: var(--row-h);
   padding: 0 var(--space-4);
   border: none;
   border-radius: var(--radius-sm);
@@ -4420,11 +4420,12 @@ select:disabled {
   cursor: pointer;
 }
 
-/* The tab's own glyph, 16px and a step down from its label, as Claude's are.
-   The open tab takes the label's colour and the icon goes with it. */
+/* The tab's own glyph, 16px and a step down from its label, as Claude's are
+   (its nav has icons again as of 2026-09-26). The open tab takes the label's
+   colour and the icon goes with it. */
 .settings-nav-item .icon {
-  /* claude.ai's settings nav is words only (AM-047). */
-  display: none;
+  flex-shrink: 0;
+  color: var(--text-secondary);
 }
 
 .settings-nav-item:hover {
@@ -4437,7 +4438,7 @@ select:disabled {
 }
 
 .settings-nav-item.is-active {
-  background: var(--row-selected-bg);
+  background: var(--modal-nav-active);
   color: var(--text-primary);
 }
 
@@ -4493,6 +4494,47 @@ select:disabled {
 .settings-pane-body .settings-row {
   min-height: var(--settings-row-h);
   padding: var(--space-2) var(--space-0);
+}
+
+/* Claude's rules between settings rows: a full pixel, one shade off the pane. */
+.settings-pane-body .settings-row + .settings-row {
+  border-top: 1px solid var(--modal-rule);
+}
+
+/*
+ * The font sizes as one segmented control, like Claude's "Motion": a track in
+ * the switch's colour with the chosen size raised on the thumb, instead of four
+ * outlined buttons with the accent on one.
+ */
+.settings-pane-body .size-options {
+  gap: 2px;
+  padding: 2px;
+  border: 0.5px solid var(--switch-track-border);
+  border-radius: var(--radius-sm);
+  background: var(--switch-track);
+}
+
+.settings-pane-body .size-options .btn {
+  height: calc(var(--switch-h) - 6px);
+  padding: 0 var(--space-5);
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--row-font);
+  font-weight: 400;
+  box-shadow: none;
+}
+
+.settings-pane-body .size-options .btn:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.settings-pane-body .size-options .btn.is-selected {
+  background: var(--switch-thumb);
+  color: var(--switch-thumb-ink);
+  box-shadow: var(--switch-thumb-shadow);
 }
 
 .settings-pane-body .settings-title {
