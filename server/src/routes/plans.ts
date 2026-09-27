@@ -1,7 +1,6 @@
 import {
   ActivatePlanRequestSchema,
   addDays,
-  ATTESTATION_TEXT,
   CreateGoalRequestSchema,
   instantToLocalDay,
   planDocumentText,
@@ -198,6 +197,11 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
    * cannot make a typed name attributable to the signer, so it records a dated
    * claim and says so — the signature belongs to the records system the note
    * already goes to (`docs/research/m9-plan-requirements-2026-08.md` §4).
+   *
+   * The claim is **written in the language stored when it was made, and never
+   * rewritten** (C-LANG@1 rule 10). Forward-only: a later change to Language
+   * does not re-date, re-word or re-translate an attestation already on a
+   * version, because that record is what she attested to on a service date.
    */
   app.post('/api/plans/:id/activate', async (request): Promise<PlanResponse> => {
     const { id } = parseParams(IdParamsSchema, request.params);
@@ -213,10 +217,19 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
     const reviewDue =
       input?.review_due ?? plan.review_due ?? addDays(effectiveFrom, plan.review_interval_days);
 
+    // Activation is not a generation job, so it captures the setting itself
+    // rather than a job context (C-LANG@1 rule 10, and the second sentence of
+    // the rejection example): read once, here, and the sentence written below
+    // is in the language stored at the moment she put the version in force.
+    // The English value is `ATTESTATION_TEXT` byte for byte, so an English
+    // activation stores exactly what it stored before this existed — which is
+    // why `plans.test.ts` holds the two against each other.
+    const locale = storedLanguage(db);
+
     const activated = activatePlan(db, id, {
       effective_from: effectiveFrom,
       review_due: reviewDue,
-      attestation_text: ATTESTATION_TEXT,
+      attestation_text: msg(locale, 'plan.attestationStatement'),
       ...resolveClinician(db),
     });
     if (!activated) throw notFound('errors.not_found.plan');

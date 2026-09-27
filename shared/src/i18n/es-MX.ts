@@ -1487,6 +1487,18 @@ export const esMX = {
   'plan.attestedNote': {
     text: 'Declarado en Apunta: firma la copia en tu sistema de registros. Apunta no tiene inicio de sesión, así que un nombre escrito aquí no es una firma.',
   },
+  /**
+   * The attestation as it is **stored** at activation in Spanish, not the note
+   * under it: `plan.attestedNote` is what the screen says around a name she
+   * typed, this is the claim activation writes onto the record. Wording is the
+   * owner's, approved in AM-059 byte for byte. It differs from the English in
+   * the key's own right — the matcher compares the two per key, so the
+   * Spanish value must not be the English one with a word swapped, or the
+   * leak it fixes would read as a legitimate identical pair.
+   */
+  'plan.attestationStatement': {
+    text: 'Yo redacté y revisé este plan de tratamiento. Declarado en Apunta: firma la copia en tu sistema de registros.',
+  },
   'plan.lookbackNone': {
     text: 'Aún no hay notas de este paciente, así que no había nada de lo que redactar.',
   },

@@ -38,36 +38,41 @@ test.describe('the workspace', () => {
     permissions: ['clipboard-read', 'clipboard-write'],
   });
 
-  test('takes a practice from onboarding to a published note', async ({ page }) => {
+  test('takes a practice from onboarding to a published note', async ({ page, tr }) => {
     const formatName = uniqueName('E2E progress note');
     const patientName = uniqueName('E2E Patient');
 
     // --- Onboarding: define a note format by hand ----------------------------
     await page.goto('/onboarding/format');
-    await page.getByText('Describe it myself').click();
-    await page.getByLabel('Format name').fill(formatName);
-    await page.getByLabel('Sections').fill('Subjective, Objective, Assessment, Plan');
+    await page.getByText(tr('format.manualTitle')).click();
+    await page.getByLabel(tr('format.nameLabel')).fill(formatName);
+    await page.getByLabel(tr('format.sectionsLabel')).fill('Subjective, Objective, Assessment, Plan');
     await page.getByTestId('format-continue').click();
 
-    await expect(page.getByRole('heading', { name: "Here's what we found" })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('format.foundTitle') })).toBeVisible();
+    // The section names are what she typed a moment ago — data, not chrome.
     await expect(page.getByTestId('section-chips')).toContainText('Subjective');
     await page.getByTestId('save-format').click();
 
     // --- Add the patient the prototype's flow lands on ----------------------
-    await expect(page.getByRole('heading', { name: 'Add patient' })).toBeVisible();
-    await page.getByLabel('Name').fill(patientName);
+    await expect(page.getByRole('heading', { name: tr('patients.add') })).toBeVisible();
+    await page.getByLabel(tr('common.name')).fill(patientName);
     // `exact`: the window's close control is named "Close add patient", and
     // `name` matches on a substring, so without it this is two buttons.
-    await page.getByRole('button', { name: 'Add patient', exact: true }).click();
+    await page.getByRole('button', { name: tr('patients.add'), exact: true }).click();
 
     // --- Empty states: no notes yet, nothing selected -----------------------
-    await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);
-    await expect(page.getByTestId('empty-no-note')).toContainText(`No notes yet for ${patientName}`);
+    await expect(page.getByTestId('note-list')).toContainText(tr('notes.emptyFor', { name: patientName }));
+    await expect(page.getByTestId('empty-no-note')).toContainText(
+      tr('notes.emptyFor', { name: patientName }).replace(/\.$/, ''),
+    );
 
     // --- Capture: type a summary, watch it drafted, land on the note --------
-    await page.getByRole('button', { name: 'New note' }).click();
-    await expect(page.getByTestId('capture-heading')).toHaveText(`New note for ${patientName}`);
-    await page.getByLabel('Note format').selectOption({ label: formatName });
+    await page.getByRole('button', { name: tr('doc.newNote') }).click();
+    await expect(page.getByTestId('capture-heading')).toHaveText(
+      tr('capture.newNoteFor', { name: patientName }),
+    );
+    await page.getByLabel(tr('capture.formatLabel')).selectOption({ label: formatName });
     await page.getByTestId('summary-input').fill('Sleep improved, intrusive thoughts less frequent.');
     await page.getByTestId('process-note').click();
 
@@ -78,14 +83,25 @@ test.describe('the workspace', () => {
     await expect(preview).toContainText('Subjective:');
     await expect(preview).not.toContainText('{"');
 
+    // The body is the model's own draft, and this format was created without a
+    // locale so it is `en` (C-LANG@1 rule 3) — the fake model answers in the
+    // note's language, which here is English in both projects.
     const body = page.getByTestId('note-body');
     await expect(body).toContainText('Subjective: Patient reports improved sleep');
     await expect(body).toContainText('Plan: Continue weekly sessions.');
     await expect(page.getByTestId('note-title')).toHaveText(formatName);
-    await expect(page.getByTestId('note-list')).toContainText('Draft');
+    await expect(page.getByTestId('note-list')).toContainText(tr('note.draftChip'));
 
     // The chat lives behind its launcher now; opened, the refine thread has
     // already introduced itself, so it is never a blank panel.
+    //
+    // `chat.firstPass` stays an English literal, and it is the first line of
+    // C-LANG@1 rule 4 rather than a leftover: this note was made from a format
+    // with no locale, so it is `en`, and a refine speaks **the note's**
+    // language whatever the UI is set to. In the es-MX project the screen around
+    // it is Spanish and the thread is English, which is the contract's own
+    // rejection example happening for real. Asserting `t('chat.firstPass')` here
+    // would have asserted the opposite of the rule.
     await page.getByTestId('chat-fab').click();
     await expect(page.getByTestId('chat-thread')).toContainText(
       "Here's a first pass based on your dictation.",
@@ -96,46 +112,59 @@ test.describe('the workspace', () => {
     const edited = 'Subjective: Sleep improved.\n\nPlan: Continue weekly sessions.';
     await body.fill(edited);
     await body.blur();
-    await expect(page.getByTestId('note-meta')).toContainText('edited');
+    await expect(page.getByTestId('note-meta')).toContainText(
+      tr('note.editedMetaToday', { today: tr('note.editedToday') }),
+    );
 
     // --- Publish: copies to the clipboard and locks the body ----------------
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toContainText('Edit again');
+    await expect(page.getByTestId('publish-button')).toContainText(tr('note.editAgain'));
     await expect(body).toHaveAttribute('readonly', '');
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboard).toBe(edited);
-    await expect(page.getByTestId('note-list')).not.toContainText('Draft');
+    await expect(page.getByTestId('note-list')).not.toContainText(tr('note.draftChip'));
 
     // --- Unlock, then delete the note ---------------------------------------
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toHaveText('Finish & copy');
+    await expect(page.getByTestId('publish-button')).toHaveText(tr('note.finishAndCopy'));
     await expect(page.getByTestId('note-body')).not.toHaveAttribute('readonly', '');
 
     // M7 replaced window.confirm with an in-app dialog, so the copy can say
     // what deleting does *not* reach as well as what it does.
-    await page.getByLabel('Delete note').click();
-    await expect(page.getByRole('dialog')).toContainText('records system');
+    await page.getByLabel(tr('note.deleteLabel')).click();
+    await expect(page.getByRole('dialog')).toContainText(tr('note.deleteBodySecond'));
     await page.getByTestId('confirm-accept').click();
     await expect(page.getByTestId('empty-no-note')).toBeVisible();
-    await expect(page.getByTestId('note-list')).toContainText(`No notes yet for ${patientName}.`);
+    await expect(page.getByTestId('note-list')).toContainText(tr('notes.emptyFor', { name: patientName }));
 
     // --- Archive the patient, then delete it from View all -> Archived ------
     // AM-028: an active patient's row menu offers Archive, not Delete; Delete is
     // the red item on an archived patient's row in the View all page.
+    //
+    // The three labels in this block stay English literals, for one reason:
+    // `PatientMenu.tsx:437`, `:593` and `:606` build `Tools for {name}`,
+    // `Delete {name}` and `Archive {name}` as `aria-label` templates in English
+    // in every language, while the row's own text sits behind
+    // `patients.renameAction` and `common.archive` and is translated. The
+    // component is outside this card's May edit. Each label is the same English
+    // in both projects, so the assertions hold either way, and they are reported
+    // rather than suppressed — see the S2.6 return, "Unresolved items". Each
+    // item is named by that label rather than by its visible text, because the
+    // aria-label is what its accessible name actually is.
     await page.getByLabel(`Tools for ${patientName}`).click();
-    await page.getByRole('menuitem', { name: 'Archive' }).click();
+    await page.getByLabel(`Archive ${patientName}`).click();
     await expect(page.getByTestId('patient-list')).not.toContainText(patientName);
 
     await page.goto('/patients');
     await page.getByTestId('directory-tab-archived').click();
     await page.getByLabel(`Tools for ${patientName}, all patients`).click();
     await page.getByLabel(`Delete ${patientName}`).click();
-    await expect(page.getByRole('dialog')).toContainText('Time Machine');
+    await expect(page.getByRole('dialog')).toContainText(tr('workspace.deleteBodySecond'));
     await page.getByTestId('confirm-accept').click();
     await expect(page.getByTestId('patient-list')).not.toContainText(patientName);
   });
 
-  test('filters the patient list from the search box', async ({ page, request }) => {
+  test('filters the patient list from the search box', async ({ page, request, tr }) => {
     const kept = uniqueName('E2E Findable');
     const hidden = uniqueName('E2E Hidden');
     await request.post('/api/formats', { data: { name: uniqueName('E2E format'), sections: ['Plan'] } });
@@ -145,13 +174,18 @@ test.describe('the workspace', () => {
     await page.goto('/');
     await expect(page.getByTestId('patient-list')).toContainText(kept);
 
-    await page.getByLabel('Search patients').fill(kept);
+    await page.getByLabel(tr('common.searchPatients')).fill(kept);
 
     await expect(page.getByTestId('patient-list')).toContainText(kept);
     await expect(page.getByTestId('patient-list')).not.toContainText(hidden);
 
-    await page.getByLabel('Search patients').fill('no such patient exists');
-    await expect(page.getByTestId('patient-list')).toContainText('No patients match');
+    // A search that matches nothing is its own empty state, and it names the
+    // query — the "clear your filters" state is a different one with a
+    // different key, and a search box filled is what puts this test here.
+    await page.getByLabel(tr('common.searchPatients')).fill('no such patient exists');
+    await expect(page.getByTestId('patient-list')).toContainText(
+      tr('directory.noMatch', { query: 'no such patient exists' }),
+    );
   });
 
   test('opens on home, and finds a patient from its search', async ({ page, request, tr }) => {
@@ -185,6 +219,7 @@ test.describe('the workspace', () => {
   test('refines a note by chat, refuses on a published one, and survives a reload', async ({
     page,
     request,
+    tr,
   }) => {
     const format = (await (
       await request.post('/api/formats', {
@@ -216,8 +251,10 @@ test.describe('the workspace', () => {
 
     const body = page.getByTestId('note-body');
     const thread = page.getByTestId('chat-thread');
+    // The panel's own prompt is UI chrome and follows the UI language; the
+    // replies under it do not, because the note is English (C-LANG@1 rule 4).
     await page.getByTestId('chat-fab').click();
-    await expect(thread).toContainText('Ask a question about this note, or give feedback to refine it.');
+    await expect(thread).toContainText(tr('refine.empty'));
 
     // The card floats over the note's corner, so reaching the text means
     // putting it away first — and highlighting brings it straight back.
@@ -243,10 +280,12 @@ test.describe('the workspace', () => {
     // The excerpt travels with the message, and the chip is cleared after.
     await expect(thread).toContainText('“Subjective: Patient reports improved sleep”');
     await expect(page.getByTestId('ref-chip')).toBeHidden();
+    // The fake model's own sentence, in English in both projects: fake AI is
+    // fake, and it does not read the UI language. A real model in a real
+    // Spanish session is a different question, and not this card's.
     await expect(thread).toContainText('Based on the note');
     // A question changes nothing.
     await expect(body).toContainText('Introduce grounding exercises');
-
     // --- Asking to expand the plan preserves grounded material --------------
     const planBeforeExpand = await body.inputValue();
     const expandRequest = page.waitForRequest(
@@ -264,10 +303,12 @@ test.describe('the workspace', () => {
 
     // --- Publishing locks it, and the chat says so rather than editing -----
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toContainText('Edit again');
+    await expect(page.getByTestId('publish-button')).toContainText(tr('note.editAgain'));
 
     await page.getByTestId('chat-input').fill('Make the plan much shorter');
     await page.getByTestId('chat-send').click();
+    // The refusal is the server's, in the note's language — English, while the
+    // button above it is Spanish. See the note at the first pass.
     await expect(thread).toContainText('This note is published, so I won’t change it.');
     await expect(body).toContainText(
       'Plan: Continue weekly sessions. Introduce grounding exercises for use between sessions.',
@@ -275,12 +316,13 @@ test.describe('the workspace', () => {
 
     // --- Unlock, and the same request goes through ------------------------
     await page.getByTestId('publish-button').click();
-    await expect(page.getByTestId('publish-button')).toHaveText('Finish & copy');
+    await expect(page.getByTestId('publish-button')).toHaveText(tr('note.finishAndCopy'));
 
     await page.getByTestId('chat-input').fill('Add something about sleep');
     await page.getByTestId('chat-send').click();
     // The reply is the server's own account of the diff since 2026-09-23, not
     // the model's prose, so it names the section that actually changed.
+    // The server's own account of the diff, likewise in the note's language.
     await expect(thread).toContainText('I expanded the Subjective section.');
     await expect(body).toContainText('Also noted improved appetite this week.');
 
@@ -299,7 +341,7 @@ test.describe('the workspace', () => {
    * neither blocks anything — the owner declined a gate on each (design
    * questions 5 and 11).
    */
-  test('marks a blank section and an unclear flag without gating copy', async ({ page, request }) => {
+  test('marks a blank section and an unclear flag without gating copy', async ({ page, request, tr }) => {
     const format = (await (
       await request.post('/api/formats', {
         data: { name: uniqueName('E2E marker format'), sections: ['Subjective', 'Objective', 'Plan'] },
@@ -324,8 +366,10 @@ test.describe('the workspace', () => {
 
     await page.goto(`/?patient=${patient.id}&note=${note.id}`);
 
+    // `Objective` is the format's own section name — data joined into the
+    // sentence by `common.listLast` when there is more than one.
     await expect(page.getByTestId('empty-sections')).toHaveText(
-      'Nothing recorded in Objective — add or leave blank.',
+      tr('notes.emptySections', { sections: 'Objective' }),
     );
     await expect(page.locator('.marker-unclear')).toHaveText('[unclear in dictation]');
     await expect(page.locator('.marker-empty-section')).toHaveText('Objective:');
@@ -393,7 +437,12 @@ test.describe('when the local AI is not there', () => {
    * technique the first-run spec uses, and for the same reason: other specs are
    * mid-flow against this database.
    */
-  test('shows a dismissible banner and leaves the rest of the app working', async ({ page, request }) => {
+  test('shows a dismissible banner and leaves the rest of the app working', async ({
+    page,
+    request,
+    tr,
+    trRe,
+  }) => {
     const patientName = uniqueName('E2E Patient');
     await request.post('/api/formats', { data: { name: uniqueName('E2E format'), sections: ['Plan'] } });
     await request.post('/api/patients', { data: { name: patientName } });
@@ -409,11 +458,16 @@ test.describe('when the local AI is not there', () => {
     await page.goto('/');
 
     const banner = page.getByTestId('ai-banner');
-    await expect(banner).toContainText("Apunta can't reach the local AI — see Setup");
+    // The banner is the opening clause, a link, and a tail — three pieces the
+    // component joins, so the joined shape is asserted rather than the single
+    // `ai.unreachable_banner` key, which nothing renders.
+    await expect(banner).toContainText(
+      new RegExp(`${trRe('ai.unreachable').source}[\\s\\S]*${trRe('ai.bannerTail').source}`),
+    );
     // Not a blocker: the practice is still there behind it.
     await expect(page.getByTestId('patient-list')).toContainText(patientName);
 
-    await banner.getByLabel('Dismiss').click();
+    await banner.getByLabel(tr('common.dismiss')).click();
     await expect(banner).toBeHidden();
   });
 });
@@ -424,7 +478,7 @@ test.describe('first run', () => {
    * practice is faked at the network boundary rather than by wiping data other
    * specs are using.
    */
-  test('sends a practice with no note format to onboarding', async ({ page }) => {
+  test('sends a practice with no note format to onboarding', async ({ page, tr }) => {
     await page.route('**/api/formats', async (route) => {
       if (route.request().method() !== 'GET') {
         await route.fallback();
@@ -436,32 +490,33 @@ test.describe('first run', () => {
     await page.goto('/');
 
     await expect(page).toHaveURL(/\/onboarding\/format$/);
-    await expect(page.getByRole('heading', { name: 'Add your note format' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('format.addTitle') })).toBeVisible();
   });
 
   /** What the uploads do once a file is chosen is `tests/formats.spec.ts`. */
   test('offers her standard note first, then the three other paths, with the uploads waiting on a file', async ({
     page,
+    tr,
   }) => {
     await page.goto('/onboarding/format');
 
     // Her standard progress note is first and already chosen: Continue is live.
     await expect(page.getByTestId('option-standard')).toHaveClass(/selected/);
-    await expect(page.getByTestId('option-standard')).toContainText('Recommended');
+    await expect(page.getByTestId('option-standard')).toContainText(tr('format.recommended'));
     await expect(page.getByTestId('format-continue')).toBeEnabled();
 
-    await page.getByText('Upload a blank template').click();
-    await expect(page.getByTestId('area-template')).toContainText('Drop a .docx or .pdf template here');
+    await page.getByText(tr('format.templateTitle')).click();
+    await expect(page.getByTestId('area-template')).toContainText(tr('format.dropTemplate'));
     await expect(page.getByTestId('format-continue')).toBeDisabled();
 
-    await page.getByText('Upload a few example notes').click();
-    await expect(page.getByTestId('area-examples')).toContainText('Drop 2-3 completed notes here');
+    await page.getByText(tr('format.examplesTitle')).click();
+    await expect(page.getByTestId('area-examples')).toContainText(tr('format.dropExamples'));
     await expect(page.getByTestId('format-continue')).toBeDisabled();
   });
 });
 
 test.describe('settings', () => {
-  test('lists formats and edits one through the format editor', async ({ page, request }) => {
+  test('lists formats and edits one through the format editor', async ({ page, request, tr }) => {
     const name = uniqueName('E2E adjustable format');
     await request.post('/api/formats', { data: { name, sections: ['Subjective', 'Plan'] } });
 
@@ -470,10 +525,10 @@ test.describe('settings', () => {
     await expect(row).toContainText('Subjective, Plan');
 
     await row.getByRole('link', { name: 'Edit' }).click();
-    await expect(page.getByRole('heading', { name: 'Edit note format' })).toBeVisible();
-    await page.getByRole('button', { name: '+ Add section' }).click();
-    await page.getByLabel('Section name').fill('Assessment');
-    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await expect(page.getByRole('heading', { name: tr('format.editTitle') })).toBeVisible();
+    await page.getByRole('button', { name: tr('format.addSection') }).click();
+    await page.getByLabel(tr('format.sectionNamePlaceholder')).fill('Assessment');
+    await page.getByRole('button', { name: tr('common.add'), exact: true }).click();
     await page.getByTestId('save-format').click();
 
     await expect(page.getByTestId('format-list').locator('.patient-row', { hasText: name })).toContainText(
@@ -486,13 +541,13 @@ test.describe('settings', () => {
    * autosaves, so a change must both persist and raise its "Saved" line
    * without shifting the card under it.
    */
-  test('autosaves an appearance change and shows Saved in the card header', async ({ page }) => {
+  test('autosaves an appearance change and shows Saved in the card header', async ({ page, tr }) => {
     await page.goto('/settings');
     const card = page.getByTestId('appearance-settings');
     await expect(card.getByTestId('appearance-saved')).toHaveCount(0);
 
     await card.getByTestId('theme-light').click();
-    await expect(card.getByTestId('appearance-saved')).toHaveText('Saved');
+    await expect(card.getByTestId('appearance-saved')).toHaveText(tr('note.saveSaved'));
 
     const box = await card.getByTestId('appearance-saved').boundingBox();
     const titleBox = await card.locator('.settings-card-header').boundingBox();

@@ -1921,6 +1921,19 @@ export const en = {
   'plan.attestedNote': {
     text: 'Attested in Apunta — sign the copy in your records system. Apunta has no login, so a name typed here is not a signature.',
   },
+  /**
+   * The sentence written onto the version at activation, in the stored
+   * language captured at that moment (C-LANG@1 rule 10, AM-059). It is
+   * **stored**, not rendered: `PlanView.tsx:511` shows `attestation_text`
+   * verbatim and an exported plan document carries it verbatim, so this is the
+   * one place the sentence is ever chosen. The English value must stay
+   * byte-identical to `ATTESTATION_TEXT` in `plan.ts` — the row already in
+   * every English plan in every database — and `plans.test.ts` holds the two
+   * against each other.
+   */
+  'plan.attestationStatement': {
+    text: 'I authored and reviewed this treatment plan. Attested in Apunta — sign the copy in your records system.',
+  },
 
   /*
    * The drafting run's lookback line, `PlanView.tsx:155-171`. The source

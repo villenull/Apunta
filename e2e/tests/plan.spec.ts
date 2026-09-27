@@ -1,4 +1,7 @@
+import { ATTESTATION_TEXT, en, esMX } from '@apunta/shared';
+
 import { expect, test, uniqueName } from '../support/fixtures';
+import { englishMatches } from '../support/no-english';
 
 /**
  * The treatment plan and session prep, end to end in fake-AI mode (M9).
@@ -14,6 +17,16 @@ import { expect, test, uniqueName } from '../support/fixtures';
 interface Created {
   id: string;
 }
+
+/**
+ * The attestation as activation stores it in Spanish, written out rather than
+ * read from the catalogue: this is the wording the owner approved in AM-059,
+ * and a test that read it back from `esMX` could not tell a correct Spanish
+ * word from a wrong one. `shared/src/i18n/t.test.ts` holds the same sentence
+ * against the catalogue, so the two are a pair rather than a circle.
+ */
+const SPANISH_ATTESTATION =
+  'Yo redacté y revisé este plan de tratamiento. Declarado en Apunta: firma la copia en tu sistema de registros.';
 
 const SOAP = ['Subjective', 'Objective', 'Assessment', 'Plan'];
 
@@ -45,6 +58,7 @@ test.describe('the treatment plan', () => {
   test('drafts goals she owns, reviews the plan, and prepares for the session', async ({
     page,
     request,
+    appLocale,
     tr,
     trRe,
     checkScreen,
@@ -138,6 +152,13 @@ test.describe('the treatment plan', () => {
     await page.getByTestId('activate-plan').click();
     await expect(page.getByTestId('plan-version')).toContainText('active');
     await expect(page.getByTestId('plan-attestation')).toContainText(trRe('plan.attestedNote'));
+    // AM-059, and the reason this row existed: the sentence activation *stored*
+    // is in the language stored at that moment, rendered verbatim. Spanish here,
+    // English in the English project, and the check below is what proves the
+    // Spanish screen carries no English catalogue text.
+    await expect(page.getByTestId('plan-attestation')).toContainText(
+      appLocale === 'es-MX' ? SPANISH_ATTESTATION : ATTESTATION_TEXT,
+    );
     await expect(page.getByTestId('review-due')).toContainText(trRe('plan.reviewUpcoming'));
     await checkScreen(page, 'the treatment plan in force');
 
@@ -199,4 +220,57 @@ test.describe('the treatment plan', () => {
     await page.getByTestId('prep-citation').first().click();
     await expect(page.getByTestId('note-body')).toBeVisible();
   });
+});
+
+/**
+ * The matcher itself, on the one string AM-059 changed (V14).
+ *
+ * The screen assertion above proves the Spanish sentence reaches the Spanish
+ * screen. This proves two things no screen assertion can:
+ *
+ * 1. **The attribution is the new key.** Before `plan.attestationStatement`
+ *    existed, the English attestation matched `chat.change.summary` — whose
+ *    English is `I {changes}.` and so swallows any sentence starting with "I "
+ *    and ending in a period. The coordinator's baseline found it there and
+ *    called the attribution coincidental, which it was. It is now attributable
+ *    to the key that owns the sentence, and that is asserted rather than
+ *    assumed, because a matcher that names the wrong key is a matcher whose
+ *    report a reviewer cannot act on.
+ * 2. **The Spanish sentence matches nothing at all.** Not one English form of
+ *    any key, and specifically not an identical-value pair — the matcher skips
+ *    a key whose two values are equal, which is right for `Ctrl+B` and wrong
+ *    here. So this also pins that the two catalogue values differ, which is
+ *    what stops the identical-value rule from silencing the very leak.
+ */
+test('V14: the English attestation is attributed to its own key, and the Spanish one to none', () => {
+  // The English is still a leak, and it is now named by the key that is
+  // responsible for it. `chat.change.summary` is left in the result: AM-059
+  // forbids suppressing it, and this assertion is what would notice if someone
+  // did.
+  const english = englishMatches(ATTESTATION_TEXT);
+  expect(english.map((form) => form.key)).toContain('plan.attestationStatement');
+  expect(english.map((form) => form.key)).toContain('chat.change.summary');
+
+  // The form reported is the entry's own `text`, from the key's own catalogue
+  // value — read from `esMX` here only to show the matcher paired them.
+  const attributed = english.find((form) => form.key === 'plan.attestationStatement');
+  expect(attributed?.form).toBe('text');
+  expect(attributed?.spanish).toBe(SPANISH_ATTESTATION);
+  expect(attributed?.spanish).toBe(
+    (esMX as Record<string, { text: string }>)['plan.attestationStatement']?.text,
+  );
+  expect(attributed?.english).toBe(
+    (en as Record<string, { text: string }>)['plan.attestationStatement']?.text,
+  );
+
+  // And the Spanish sentence reads as no English form of any key at all.
+  expect(englishMatches(SPANISH_ATTESTATION)).toEqual([]);
+
+  // A substring of it is not a leak either: the matcher reads whole text nodes,
+  // and the stored sentence is one node. Pinned so a future change that splits
+  // the sentence into parts cannot quietly reintroduce the leak the whole-node
+  // rule is currently there to prevent.
+  for (const part of SPANISH_ATTESTATION.split('. ')) {
+    expect(englishMatches(part), part).toEqual([]);
+  }
 });

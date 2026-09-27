@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { ATTESTATION_TEXT } from '../plan.js';
+
 import { en } from './en.js';
 import { esMX } from './es-MX.js';
 import type { Message, MessageKey } from './t.js';
@@ -229,6 +231,30 @@ describe('the two catalogues', () => {
       'brainstorm.contextSome es-MX one: {count} but en prints {count}{total}',
       'brainstorm.contextSome es-MX one: kind declares {total} and the form does not print it',
     ]);
+  });
+
+  it('gives the attestation sentence the English that is already stored, and the Spanish the owner approved', () => {
+    // AM-059. Two pins, and neither is derivable from the other:
+    //
+    // 1. The English value must equal `ATTESTATION_TEXT` in `plan.ts` byte for
+    //    byte. That constant is what `POST /api/plans/:id/activate` wrote onto
+    //    every version in every database before this key existed, so a reword
+    //    of the English here is not a translation change — it is a different
+    //    sentence on records that have already been attested to.
+    // 2. The Spanish value must equal the wording the owner approved, written
+    //    out here. Reading it back from the catalogue would prove only that the
+    //    catalogue agrees with itself, which is what a missing key looks like
+    //    too.
+    //
+    // And the two must differ, because the no-English matcher compares a key's
+    //    two values to decide whether an identical string is a leak: a Spanish
+    //    value equal to the English one would silence the very sentence this
+    //    key exists to translate.
+    expect(t('plan.attestationStatement', {}, 'en')).toBe(ATTESTATION_TEXT);
+    expect(t('plan.attestationStatement', {}, 'es-MX')).toBe(
+      'Yo redacté y revisé este plan de tratamiento. Declarado en Apunta: firma la copia en tu sistema de registros.',
+    );
+    expect(t('plan.attestationStatement', {}, 'en')).not.toBe(t('plan.attestationStatement', {}, 'es-MX'));
   });
 
   it('gives every counted key the plural floor its locale can select', () => {

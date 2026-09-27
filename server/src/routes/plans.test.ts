@@ -1,4 +1,12 @@
-import type { NoteFormat, Patient, PlanGoal, PlanResponse, TreatmentPlan } from '@apunta/shared';
+import {
+  ATTESTATION_TEXT,
+  t,
+  type NoteFormat,
+  type Patient,
+  type PlanGoal,
+  type PlanResponse,
+  type TreatmentPlan,
+} from '@apunta/shared';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -604,6 +612,185 @@ describe('reviews and versions', () => {
         'version',
       ].sort(),
     );
+  });
+});
+
+/**
+ * C-LANG@1 rule 10 and AM-059: the attestation is written in the language
+ * stored **when the version was put in force**, and never again.
+ *
+ * Three properties, and each is a separate case because they fail separately:
+ *
+ * 1. **Forward-only.** An activation reads the setting once and persists the
+ *    sentence. A later change to Language does not touch an attestation
+ *    already on a version — no backfill, no read-time translation, no
+ *    re-dating — because that record is what she attested to on a service
+ *    date.
+ * 2. **English is unchanged.** The English catalogue value is
+ *    `ATTESTATION_TEXT` byte for byte, so an English activation stores exactly
+ *    the string that is already in every plan in every existing database. This
+ *    is the case that would catch a well-meaning reword of the English.
+ * 3. **The Spanish is the owner's.** `ATTESTATION_PROPOSAL`'s wording, written
+ *    out here rather than read back from the catalogue, so the two can part
+ *    company and this case says so.
+ */
+describe('the attestation is written in the language stored at activation', () => {
+  const DEV_SPANISH = 'APUNTA_DEV_SPANISH';
+  let previousDevSpanish: string | undefined;
+
+  beforeEach(() => {
+    previousDevSpanish = process.env[DEV_SPANISH];
+  });
+
+  afterEach(() => {
+    if (previousDevSpanish === undefined) delete process.env[DEV_SPANISH];
+    else process.env[DEV_SPANISH] = previousDevSpanish;
+  });
+
+  /** A fresh version to put in force. "Fresh" is what makes it forward-only. */
+  async function newVersion(): Promise<TreatmentPlan> {
+    const response = await harness.app.inject({
+      method: 'POST',
+      url: `/api/patients/${patient.id}/plan`,
+      payload: {},
+    });
+    return response.json<PlanResponse>().plan as TreatmentPlan;
+  }
+
+  async function activate(plan: TreatmentPlan): Promise<TreatmentPlan> {
+    return (
+      await harness.app.inject({
+        method: 'POST',
+        url: `/api/plans/${plan.id}/activate`,
+        payload: {},
+      })
+    ).json<PlanResponse>().plan as TreatmentPlan;
+  }
+
+  async function setLanguage(language: 'en' | 'es-MX'): Promise<number> {
+    const response = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/settings',
+      payload: { language },
+    });
+    return response.statusCode;
+  }
+
+  it('V8: stores ATTESTATION_TEXT byte for byte, with no language row and with an explicit English one', async () => {
+    // No row at all is the fresh-install case, and it is the one that would
+    // silently become "undefined" if the handler ever read the raw row instead
+    // of `storedLanguage`'s synthesised default.
+    const implicit = await activate(await newVersion());
+    expect(implicit.attestation_text).toBe(ATTESTATION_TEXT);
+
+    // A stored row, so the value comes from the catalogue rather than the
+    // fallback. A new version, because the first is in force and may not be
+    // re-activated.
+    expect(await setLanguage('en')).toBe(200);
+    const explicit = await activate(await newVersion());
+    expect(explicit.attestation_text).toBe(ATTESTATION_TEXT);
+
+    // And the two agree with the catalogue's own English, not merely with each
+    // other — the constant and the key are two spellings of one sentence.
+    expect(explicit.attestation_text).toBe(t('plan.attestationStatement', {}, 'en'));
+  });
+
+  it('V9: stores the exact approved Spanish sentence when Spanish is the stored language', async () => {
+    process.env[DEV_SPANISH] = '1';
+    expect(await setLanguage('es-MX')).toBe(200);
+
+    const activated = await activate(await newVersion());
+    // Written out rather than read from the catalogue: this is the owner's
+    // wording, approved in AM-059, and a test that read it back from the
+    // catalogue could not tell a correct Spanish word from a wrong one.
+    expect(activated.attestation_text).toBe(
+      'Yo redacté y revisé este plan de tratamiento. Declarado en Apunta: firma la copia en tu sistema de registros.',
+    );
+    // The English is not what got stored, which is the whole point of the row.
+    expect(activated.attestation_text).not.toBe(ATTESTATION_TEXT);
+  });
+
+  it('V10: leaves the first attestation alone, refuses re-activation, and writes the new one in the language stored then', async () => {
+    process.env[DEV_SPANISH] = '1';
+    await setLanguage('es-MX');
+    const first = await newVersion();
+    const spanish = await activate(first);
+    expect(spanish.attestation_text).toBe(
+      'Yo redacté y revisé este plan de tratamiento. Declarado en Apunta: firma la copia en tu sistema de registros.',
+    );
+    const firstVersion = first.version;
+
+    // She changes her mind about the language. Nothing re-reads or rewrites the
+    // version already in force.
+    expect(await setLanguage('en')).toBe(200);
+    const reread = await readPlan('?version=1');
+    expect(reread.plan?.attestation_text).toBe(spanish.attestation_text);
+    expect(reread.plan?.attested_at).toBe(spanish.attested_at);
+
+    // The record is not re-datable either: re-activation stays refused.
+    const again = await harness.app.inject({
+      method: 'POST',
+      url: `/api/plans/${first.id}/activate`,
+      payload: {},
+    });
+    expect(again.statusCode).toBe(409);
+    expect((await readPlan('?version=1')).plan?.attestation_text).toBe(spanish.attestation_text);
+
+    // A new version, activated now, takes the language stored now.
+    const review = await newVersion();
+    expect(review.version).toBe(firstVersion + 1);
+    const english = await activate(review);
+    expect(english.attestation_text).toBe(ATTESTATION_TEXT);
+
+    // And the Spanish one is still there, in the history, in Spanish.
+    const history = await harness.app.inject({
+      method: 'GET',
+      url: `/api/patients/${patient.id}/plan/versions`,
+    });
+    const versions = history.json<{ versions: TreatmentPlan[] }>().versions;
+    expect(versions.find((entry) => entry.version === firstVersion)?.attestation_text).toBe(
+      spanish.attestation_text,
+    );
+  });
+
+  it('V11: reads a pre-existing English attestation under a Spanish setting, unchanged and untranslated', async () => {
+    // A version activated before any of this existed, with no language row.
+    const first = await newVersion();
+    const english = await activate(first);
+    expect(english.attestation_text).toBe(ATTESTATION_TEXT);
+
+    // The setting moves to Spanish. Reading is not translating: the sentence
+    // already on the record is the sentence that stays.
+    process.env[DEV_SPANISH] = '1';
+    expect(await setLanguage('es-MX')).toBe(200);
+    expect(t('plan.attestationStatement', {}, 'es-MX')).not.toBe(ATTESTATION_TEXT);
+
+    const reread = await readPlan();
+    expect(reread.plan?.attestation_text).toBe(ATTESTATION_TEXT);
+    expect(reread.plan?.attested_at).toBe(english.attested_at);
+
+    // The payer-facing document carries the stored value verbatim too, which is
+    // where a read-time translation would have leaked (C-LANG@1 rule 10).
+    const document = await harness.app.inject({
+      method: 'GET',
+      url: `/api/plans/${first.id}/export`,
+    });
+    expect(document.body).toContain(ATTESTATION_TEXT);
+
+    // And no backfill: read the stored row itself rather than through the API,
+    // so "unchanged" is about the bytes on disk and not about a read path that
+    // happens to agree with the setting.
+    const stored = harness.db
+      .prepare('SELECT attestation_text, attested_at FROM treatment_plans WHERE id = ?')
+      .get(first.id) as { attestation_text: string; attested_at: string | null };
+    expect(stored.attestation_text).toBe(ATTESTATION_TEXT);
+    expect(stored.attested_at).toBe(english.attested_at);
+    // Nothing anywhere holds the Spanish sentence, which is what a backfill
+    // would have written.
+    const spanishRows = harness.db
+      .prepare('SELECT COUNT(*) AS n FROM treatment_plans WHERE attestation_text LIKE ?')
+      .get('%redacté%') as { n: number };
+    expect(spanishRows.n).toBe(0);
   });
 });
 

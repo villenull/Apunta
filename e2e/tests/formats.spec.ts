@@ -31,23 +31,37 @@ function drop(collected: string[], line: string): void {
 }
 
 test.describe('her standard progress note', () => {
-  test('is one click from first run, with her sections and her instructions', async ({ page, request }) => {
+  test('is one click from first run, with her sections and her instructions', async ({
+    page,
+    request,
+    tr,
+  }) => {
     const before = ((await (await request.get('/api/formats')).json()) as { formats: { id: string }[] })
       .formats.length;
 
     await page.goto('/onboarding/format');
+    // The seven section names are the shared constant's own, joined as data, so
+    // the option card says them in the card's language and the names stay as
+    // the format stores them.
     await expect(page.getByTestId('option-standard')).toContainText(
       'Location, Client presentation, Risk review',
     );
     await page.getByTestId('format-continue').click();
 
-    await expect(page.getByRole('heading', { name: 'Add patient' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('patients.add') })).toBeVisible();
 
     const { formats } = (await (await request.get('/api/formats')).json()) as {
       formats: { name: string; sections: string[]; instructions: string }[];
     };
     expect(formats).toHaveLength(before + 1);
     const created = formats.at(-1);
+    // C-LANG@1 rule 8 asks for a *separate* Spanish standard format alongside
+    // this one, and only the English one is created from this option in either
+    // project. That is a server-side gap in `routes/formats.ts`, which is
+    // outside this card's May edit, so these three assertions stay as the
+    // English data the server actually stores rather than being made
+    // locale-aware against behaviour that does not exist. Reported, not
+    // worked around: see the S2.6 return, "Unresolved items".
     expect(created?.name).toBe('Progress note');
     expect(created?.sections).toEqual([
       'Location',
@@ -63,12 +77,12 @@ test.describe('her standard progress note', () => {
 });
 
 test.describe('reading a format out of an uploaded file', () => {
-  test('takes a .docx template through the confirm screen and into a note', async ({ page }) => {
+  test('takes a .docx template through the confirm screen and into a note', async ({ page, tr }) => {
     const formatName = uniqueName('E2E uploaded intake');
     const patientName = uniqueName('E2E Upload Patient');
 
     await page.goto('/onboarding/format');
-    await page.getByText('Upload a blank template').click();
+    await page.getByText(tr('format.templateTitle')).click();
 
     // Exactly what a real drop does — the dashed area and the picker write the
     // same state, so setting files on the input exercises the shipped path.
@@ -76,41 +90,45 @@ test.describe('reading a format out of an uploaded file', () => {
     await expect(page.getByTestId('area-template-files')).toContainText('template-table.docx');
 
     await page.getByTestId('format-continue').click();
-    await expect(page.getByRole('heading', { name: "Here's what we found" })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('format.foundTitle') })).toBeVisible();
 
     // These four came out of the document. A template laid out as a table is
     // the shape that breaks a naive parser, so seeing its labels as chips is
-    // the assertion that the file was actually read.
+    // the assertion that the file was actually read. They are the document's
+    // own words — the fixture is English, and the chips are data, not chrome.
     const chips = chipsOf(page);
     await expect(chips).toContainText('Presenting problem');
     await expect(chips).toContainText('History');
     await expect(chips).toContainText('Formulation');
     await expect(chips).toContainText('Plan');
 
-    // Rename and reorder before saving — up/down rather than drag.
-    await chips.getByRole('button', { name: 'Rename History' }).click();
-    await chips.getByLabel('New name for History').fill('Background');
-    await chips.getByLabel('New name for History').press('Enter');
+    // Rename and reorder before saving — up/down rather than drag. The section
+    // names in these labels are the document's own words, passed as data to a
+    // catalogue sentence (`format.renameAction`, `format.renameLabel`,
+    // `format.moveUp`), so the label is language-aware and the name is not.
+    await chips.getByRole('button', { name: tr('format.renameAction', { section: 'History' }) }).click();
+    await chips.getByLabel(tr('format.renameLabel', { section: 'History' })).fill('Background');
+    await chips.getByLabel(tr('format.renameLabel', { section: 'History' })).press('Enter');
     await expect(chips).toContainText('Background');
 
-    await chips.getByRole('button', { name: 'Move Plan up' }).click();
+    await chips.getByRole('button', { name: tr('format.moveUp', { section: 'Plan' }) }).click();
     await expect(chips.locator('.section-chip').nth(2)).toContainText('Plan');
     await expect(chips.locator('.section-chip').nth(3)).toContainText('Formulation');
 
-    await page.getByLabel('Format name').fill(formatName);
+    await page.getByLabel(tr('format.nameLabel')).fill(formatName);
     await page.getByTestId('save-format').click();
 
     // The prototype's flow: saving a format lands on adding a patient.
-    await expect(page.getByRole('heading', { name: 'Add patient' })).toBeVisible();
-    await page.getByLabel('Name').fill(patientName);
+    await expect(page.getByRole('heading', { name: tr('patients.add') })).toBeVisible();
+    await page.getByLabel(tr('common.name')).fill(patientName);
     // `exact`: the add-patient window also carries a close control named
     // "Close add patient", and Playwright's `name` matches on a substring, so
     // without it this resolves to two buttons and strict mode refuses.
-    await page.getByRole('button', { name: 'Add patient', exact: true }).click();
+    await page.getByRole('button', { name: tr('patients.add'), exact: true }).click();
 
     // The whole point of the upload: the format is usable for a note.
-    await page.getByRole('button', { name: 'New note' }).click();
-    await page.getByLabel('Note format').selectOption({ label: formatName });
+    await page.getByRole('button', { name: tr('doc.newNote') }).click();
+    await page.getByLabel(tr('capture.formatLabel')).selectOption({ label: formatName });
     await page.getByTestId('summary-input').fill('First session, new client, anxious about work.');
     await page.getByTestId('process-note').click();
 
@@ -121,9 +139,9 @@ test.describe('reading a format out of an uploaded file', () => {
     await expect(body).toContainText(/Plan:[\s\S]*Formulation:/);
   });
 
-  test('needs two example notes before it will read them', async ({ page }) => {
+  test('needs two example notes before it will read them', async ({ page, tr }) => {
     await page.goto('/onboarding/format');
-    await page.getByText('Upload a few example notes').click();
+    await page.getByText(tr('format.examplesTitle')).click();
 
     await page.getByTestId('area-examples-input').setInputFiles([EXAMPLE_NOTE]);
     await expect(page.getByTestId('format-continue')).toBeDisabled();
@@ -132,19 +150,26 @@ test.describe('reading a format out of an uploaded file', () => {
     await expect(page.getByTestId('format-continue')).toBeEnabled();
 
     await page.getByTestId('format-continue').click();
-    await expect(page.getByRole('heading', { name: "Here's what we found" })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('format.foundTitle') })).toBeVisible();
     await expect(chipsOf(page)).toContainText('Subjective');
   });
 
-  test('refuses a scan and offers the path that cannot fail', async ({ page, consoleErrors }) => {
+  test('refuses a scan and offers the path that cannot fail', async ({ page, consoleErrors, tr }) => {
     await page.goto('/onboarding/format');
-    await page.getByText('Upload a blank template').click();
+    await page.getByText(tr('format.templateTitle')).click();
     await page.getByTestId('area-template-input').setInputFiles(SCAN);
     await page.getByTestId('format-continue').click();
 
+    // `scan` stays English on purpose, and this is the reason. The refusal is
+    // the extractor answering with a literal — `server/src/extract/pdf.ts:58`
+    // and `index.ts:27` — and no catalogue key carries it, so there is no
+    // Spanish to assert instead. S2.5 was given the sentences those two
+    // functions return; this one is outside that card's licence and outside
+    // this one's. Reported, not suppressed: a check tuned to pass is worse
+    // than a check that says what it cannot yet see.
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('scan');
-    await alert.getByRole('button', { name: 'Describe it myself' }).click();
+    await alert.getByRole('button', { name: tr('format.manualTitle') }).click();
     await expect(page.getByTestId('area-manual')).toBeVisible();
 
     // The 400 is the point of this test, and Chrome logs every failed request
@@ -157,50 +182,54 @@ test.describe('reading a format out of an uploaded file', () => {
 });
 
 test.describe('editing a format from Settings', () => {
-  test('renames a section and saves drafting instructions', async ({ page }) => {
+  test('renames a section and saves drafting instructions', async ({ page, tr, trRe }) => {
     const formatName = uniqueName('E2E editable note');
 
     // Create it through the Settings entry point, so saving returns there.
     await page.goto('/settings');
-    await page.getByRole('link', { name: 'Add another format' }).click();
-    await page.getByText('Describe it myself').click();
-    await page.getByLabel('Format name').fill(formatName);
-    await page.getByLabel('Sections').fill('Subjective, Objective, Assessment, Plan');
+    await page.getByRole('link', { name: tr('settings.addFormat') }).click();
+    await page.getByText(tr('format.manualTitle')).click();
+    await page.getByLabel(tr('format.nameLabel')).fill(formatName);
+    await page.getByLabel(tr('format.sectionsLabel')).fill('Subjective, Objective, Assessment, Plan');
     await page.getByTestId('format-continue').click();
     await page.getByTestId('save-format').click();
 
     const row = page.getByTestId('format-list').locator('.patient-row').filter({ hasText: formatName });
     await expect(row).toBeVisible();
-    await row.getByRole('link', { name: 'Edit' }).click();
+    await row.getByRole('link', { name: tr('common.edit') }).click();
 
-    await expect(page.getByRole('heading', { name: 'Edit note format' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('format.editTitle') })).toBeVisible();
     // The packet's rule, said out loud on the screen she is editing.
-    await expect(page.getByText(/keep the sections they were written with/)).toBeVisible();
+    await expect(page.getByText(trRe('format.existingNotesNote'))).toBeVisible();
 
     const chips = chipsOf(page);
-    await chips.getByRole('button', { name: 'Rename Objective' }).click();
-    await chips.getByLabel('New name for Objective').fill('Observations');
-    await chips.getByLabel('New name for Objective').press('Enter');
+    await chips.getByRole('button', { name: tr('format.renameAction', { section: 'Objective' }) }).click();
+    await chips.getByLabel(tr('format.renameLabel', { section: 'Objective' })).fill('Observations');
+    await chips.getByLabel(tr('format.renameLabel', { section: 'Objective' })).press('Enter');
 
     const instructions = 'Use "client", not "patient". Keep her hedging exactly as she voiced it.';
-    await page.getByLabel('Instructions').fill(instructions);
-    await expect(page.getByTestId('instructions-budget')).toContainText('tokens');
+    await page.getByLabel(tr('format.instructions')).fill(instructions);
+    // The count is the panel's arithmetic and the two lines are chosen by it, so
+    // both are alternatives and the number is left open.
+    await expect(page.getByTestId('instructions-budget')).toContainText(
+      new RegExp([trRe('format.tokensOk'), trRe('format.tokensLarge')].map((p) => p.source).join('|')),
+    );
     await page.getByTestId('save-format').click();
 
     // Back on Settings, and both changes survived a round trip to the server.
     await expect(row).toContainText('Observations');
-    await row.getByRole('link', { name: 'Edit' }).click();
-    await expect(page.getByLabel('Instructions')).toHaveValue(instructions);
+    await row.getByRole('link', { name: tr('common.edit') }).click();
+    await expect(page.getByLabel(tr('format.instructions'))).toHaveValue(instructions);
   });
 
-  test('imports a skill file into the instructions and warns about its references', async ({ page }) => {
+  test('imports a skill file into the instructions and warns about its references', async ({ page, tr }) => {
     const formatName = uniqueName('E2E skill note');
 
     await page.goto('/settings');
-    await page.getByRole('link', { name: 'Add another format' }).click();
-    await page.getByText('Describe it myself').click();
-    await page.getByLabel('Format name').fill(formatName);
-    await page.getByLabel('Sections').fill('Subjective, Plan');
+    await page.getByRole('link', { name: tr('settings.addFormat') }).click();
+    await page.getByText(tr('format.manualTitle')).click();
+    await page.getByLabel(tr('format.nameLabel')).fill(formatName);
+    await page.getByLabel(tr('format.sectionsLabel')).fill('Subjective, Plan');
     await page.getByTestId('format-continue').click();
     await page.getByTestId('save-format').click();
 
@@ -208,7 +237,7 @@ test.describe('editing a format from Settings', () => {
       .getByTestId('format-list')
       .locator('.patient-row')
       .filter({ hasText: formatName })
-      .getByRole('link', { name: 'Edit' })
+      .getByRole('link', { name: tr('common.edit') })
       .click();
 
     await page
@@ -219,10 +248,10 @@ test.describe('editing a format from Settings', () => {
 
     // The frontmatter is gone, the instruction body is not, and the panel says
     // what it did rather than rewriting silently.
-    const textarea = page.getByLabel('Instructions');
+    const textarea = page.getByLabel(tr('format.instructions'));
     await expect(textarea).toHaveValue(/Willow Creek progress note/);
     await expect(textarea).not.toHaveValue(/allowed-tools/);
-    await expect(page.getByTestId('import-report')).toContainText('frontmatter removed');
+    await expect(page.getByTestId('import-report')).toContainText(tr('format.reportFrontmatter'));
 
     // It warns rather than inlining: choosing what part of a reference file is
     // the needed content is judgement, and a wrong inline blows the budget.
