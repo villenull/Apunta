@@ -51,7 +51,29 @@ if (port !== undefined || needsPort) {
 const head = opt('--head');
 if (mode === 'review' && !head) fail(2, '--review needs --head <commit>');
 const attempt = Number(opt('--attempt') ?? '1');
-if (!(attempt >= 1 && attempt <= 3)) fail(2, '--attempt must be 1, 2 or 3');
+/*
+ * The budget is three attempts (COORDINATOR.md §4). Attempt 4 exists only
+ * because S2.5's third attempt failed and the owner resolved the block by
+ * authorising one corrective attempt (AM-049), so it is reachable *only* by
+ * naming the amendment that authorised it, and the generated dispatch says so.
+ * The ceiling stays 3 without that flag: the guard has not been relaxed, it has
+ * been given a keyed exception, and there is no attempt 5 for any card.
+ */
+const exception = opt('--attempt-exception');
+if (attempt === 4) {
+  if (exception === undefined || !/^AM-\d{3}$/.test(exception))
+    fail(
+      2,
+      '--attempt 4 requires --attempt-exception <AM-nnn> naming the owner amendment that authorised it',
+    );
+} else if (attempt >= 5) {
+  fail(
+    2,
+    `--attempt must be 1, 2, 3, or 4 with --attempt-exception; ${attempt} is beyond any authorised budget`,
+  );
+} else if (!(attempt >= 1 && attempt <= 3)) {
+  fail(2, '--attempt must be 1, 2 or 3');
+}
 
 // Dependencies must be APPROVED.
 const progressPath = join(planDir, 'state', 'PROGRESS.json');
@@ -128,7 +150,7 @@ const parts = [
   `- Mode: **${mode === 'ir' ? 'INSTRUCTION REVIEW' : mode === 'review' ? 'IMPLEMENTATION REVIEW' : card.role}**`,
   `- Base commit: \`${base}\`${head ? `; head \`${head}\`` : ''}`,
   port ? `- Sandbox port for this card: ${port}` : '- No sandbox port assigned',
-  `- Attempt ${attempt} of 3. Checkpoint: \`docs/v2/state/cards/${id}.json\`.`,
+  `- Attempt ${attempt} of ${attempt === 4 ? '3, plus one corrective attempt the owner authorised by ' + exception + ' — there is no attempt 5' : '3'}. Checkpoint: \`docs/v2/state/cards/${id}.json\`.`,
   '- Do not pull, merge, rebase or reset. If HEAD is not the base commit (implementation) or the head commit (review), stop and report.',
   '',
   read('HARD-STOPS.md'),
