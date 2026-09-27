@@ -101,9 +101,14 @@ Temporary (v2): work for Apunta v2 happens on `feature/v2` until the owner merge
   numbered migrations in `server/migrations/`.
 - Streaming responses are SSE (`text/event-stream`), event names documented
   in `shared/` types.
-- The prototype is historical reference only; the UI may intentionally drift.
-  Reuse its design tokens and copy where useful, but do not treat its layout
-  or text as binding.
+- The prototype is historical reference only, and since D15 (2026-09-27) it is
+  **superseded as a design source for v2**: the Claude-like UI the owner built
+  with a dedicated agent is the interface, not a drift from one. Its tokens and
+  copy are still good source material, but **a prototype value is not a
+  default** — if a card, token or test names one, re-derive it from `web/` as it
+  now stands. Reintroducing a prototype value is a regression, not fidelity.
+  (Cards still legitimately use the prototype for one thing: the synthetic
+  sample data, John Smith and co, per HS-8.)
 - Tests colocated as `*.test.ts`; e2e in `e2e/`. New behavior lands with
   tests in the same commit.
 - Commits: imperative subject, body says why.
