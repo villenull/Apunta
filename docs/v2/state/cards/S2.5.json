@@ -5,19 +5,19 @@
     "C-ISO@1",
     "C-LANG@1"
   ],
-  "baseCommit": "13e50c8",
-  "attempt": 3,
-  "status": "BLOCKED",
-  "lastCompletedStep": "attempt 3 review FAIL at 6e77654: all four rows PASS and the 'no English left' claim VERIFIED true by the reviewer's own AST walk, but attempt 3 introduced an FD6 stop - chat.list.last renders 3+ changes as 'a, b and c' where the wire sends 'a and b and c'. Attempt budget 3/3 exhausted, so the card is BLOCKED for the owner per COORDINATOR section 4",
-  "nextAllowedAction": "owner decision: authorise one corrective attempt (restore the wire's English join, add the missing 3-part assertion) or accept the regression and carry it as a follow-up",
+  "baseCommit": "28a9235",
+  "attempt": 4,
+  "status": "NOT STARTED",
+  "lastCompletedStep": "AM-049: owner authorised a fourth attempt as an explicit exception to COORDINATOR section 4, on the reviewer's own recommendation; the fix is the English join plus the missing multi-part assertion",
+  "nextAllowedAction": "implement - LAST attempt; there is no attempt 5, so this one is approved or blocked on its own merits",
   "sideEffectsDone": [],
   "changedFiles": 44,
   "criteria": {
-    "V1": "PASS (verified)",
-    "V2": "PASS (verified)",
-    "V3": "PASS (verified)",
-    "V4": "PASS (verified)"
+    "V1": "NOT RUN",
+    "V2": "NOT RUN",
+    "V3": "NOT RUN",
+    "V4": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T21:45:00Z"
+  "updatedUtc": "2026-09-26T22:35:00Z"
 }
