@@ -220,7 +220,7 @@ export function PatientDirectory({
                       onSelect(patient.id);
                     }}
                   >
-                    {pinned ? <PinIcon className="icon icon-xs directory-row-pin" /> : null}
+                    {pinned ? <PinIcon className="icon icon-sm directory-row-pin" /> : null}
                     <span className="directory-row-name">{patient.name}</span>
                     <span className="directory-row-date">
                       {formatShortDate(lastNoteAt.get(patient.id) ?? null)}

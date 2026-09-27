@@ -304,15 +304,15 @@ export function PanelLeftIcon({ className }: IconProps): React.JSX.Element {
 export function PinIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>
-      <g transform="rotate(45 12 12)">
+      <g transform="translate(12 12) rotate(45) scale(1.15) translate(-12 -12)">
         <path
-          d="M8.5 3.5h7M10 3.5v5.5L7 13h10l-3-4V3.5z"
+          d="M7.5 2h9M9 2v6.5L5.5 14h13L15 8.5V2z"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <path d="M12 13v7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M12 14v7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </g>
     </StrokeIcon>
   );

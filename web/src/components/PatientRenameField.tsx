@@ -1,5 +1,5 @@
 import type { PatientListItem } from '@apunta/shared';
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 
 import { useI18n } from '../lib/i18n.js';
 import { SpellLayer } from './SpellLayer.js';
@@ -30,6 +30,23 @@ export function PatientRenameField({
   // Enter saves and then unmounts the field, which blurs it: without this the
   // blur would save a second time.
   const settled = useRef(false);
+  const input = useRef<HTMLInputElement>(null);
+
+  // Focus and select once the field is in place. `autoFocus` alone lands the
+  // caret at the end in Chromium: the menu that opened the field is still
+  // closing, and the selection made on focus is collapsed before paint.
+  useLayoutEffect(() => {
+    const element = input.current;
+    if (element === null) return undefined;
+    element.focus();
+    element.select();
+    const frame = requestAnimationFrame(() => {
+      if (document.activeElement === element) element.select();
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+    };
+  }, []);
 
   function finish(save: boolean): void {
     if (settled.current) return;
@@ -54,15 +71,12 @@ export function PatientRenameField({
     >
       <SpellLayer
         as="input"
+        ref={input}
         type="text"
         value={name}
         allowWords={[patient.name]}
         aria-label={t('patients.renameLabel', { name: patient.name })}
-        autoFocus
         onChange={setName}
-        onFocus={(event) => {
-          event.currentTarget.select();
-        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
             event.preventDefault();

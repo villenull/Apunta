@@ -3899,15 +3899,19 @@ select:disabled {
   border: none;
   font: inherit;
   line-height: normal;
-  color: var(--text-primary);
 }
 
+/* Only the input carries ink: the spelling layer behind it mirrors the text
+   and must stay transparent, or the name is drawn twice. */
 .rename-field input.spell-layer {
   outline: none;
+  color: var(--text-primary);
 }
 
 .project-row-rename {
   height: var(--row-h);
+  /* The row's own 1px gap, so the rows below do not move when it opens. */
+  margin-bottom: 1px;
 }
 
 /* One pixel of padding less than the row, for the border's pixel. */
