@@ -1,3 +1,13 @@
+# Latest handoff — S2.6 partial integration
+
+Supersedes S2.6 and UI-review status below. UI rereview accepted and archived.
+AM059 implementation independently accepted; coordinator 55 tests passed.
+S2.6 remains BLOCKED, V1 FAIL on one English-name catalogue inconsistency.
+Evidence correction worker archived after comments/docs verification. No guards
+or assertions changed. Endonym key and LanguageDialog.test.tsx need a bounded
+May-edit amendment; see S2.6-AM059-implementation.md. Model runner remains active.
+Preview remains http://127.0.0.1:7867/ on the committed UI build.
+
 # Current continuation — 2026-09-27, owner away about one day
 
 This section supersedes the historical continuation below.

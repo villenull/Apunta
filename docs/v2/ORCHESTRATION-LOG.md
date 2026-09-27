@@ -386,3 +386,57 @@ heartbeat with4ce8f0b5 for36h. UI writer released and retained. Refreshed
 NEXT-SESSION/current checkpoint and generated S2.6 post-UI IR dispatch at
 58247c8; distinct reviewer d7923020 checks actual drift, priorAM059 remains
 authorized. No source edits by coordinator, no new owner gate.
+
+
+### 2026-09-27 — UI repair review accepted; Spanish implementation resumed
+
+Processed UI-BATCH2-rereview.md: independent review recommends integration,
+with 82 focused tests and 2075 UTC tests, lint and typecheck exiting 0.
+Coordinator previously reran the 82 focused tests and verified pushed UI commit
+58247c8 and the synthetic preview at http://127.0.0.1:7867/.
+The full browser gate still has 16 Spanish failures; identical before/after
+failure lists do not establish clean-base causation. S2.6 now owns the scoped
+locale assertions and approved forward-only attestation repair. Stale sidebar
+comments and remaining minor menu observations are nonblocking follow-ups.
+White foreground/disabled opacity are implementation choices supporting the
+owner's label request, not a separately stated global contrast-policy decision.
+Archived completed reviewer a7c2f04e; retained UI owner f0bd1c61 as instructed.
+
+Post-UI S2.6 instruction drift was reconciled in AM-062 without changing guards.
+Implementer c521fdc6 holds the sole source writer lane at base 812da7c, with
+ports 7831/7832 and prior V4–V7 evidence preserved. Coordinator plan/checkpoint
+edits remain uncommitted until the worker releases the lane, keeping its base
+stable. Model executor 490ebfe8 continues serially in study scratch. The bounded
+heartbeat check found no pending permissions on either active worker.
+
+
+### 2026-09-27 — S2.6 implementation returned with explicit V1 failure
+
+Worker c521fdc6 released source lane; processed return and archived worker.
+Coordinator read production/catalogue diff and reran plans.test.ts + t.test.ts
+on pinned Node: 55 passed, exit 0. Full V1 remains FAIL (one open-language-dialog
+endonym match); supplementary Spanish project success is not a replacement gate.
+Independent reviewer 643131f0 now checks implementation, evidence, and exact
+contract-compatible treatment of the endonym failure and reported oracle gaps.
+No translation or guard change approved merely to evade an English match.
+The author's claim that CPU/browser work cannot affect model timing is not
+accepted: overlap remains subject to study contamination telemetry criteria.
+Source stays uncommitted pending independent review. Model runner continues.
+
+
+### 2026-09-27 — independent AM-059 acceptance with evidence corrections
+
+Reviewer 643131f0 independently accepted attestation semantics and 55 tests,
+lint and typecheck (all exit 0), but V1 remains FAIL. Archived reviewer after
+processing. Assigned corrective implementer 7c562ffd only the false opacity
+comments and return/evidence corrections; no assertions, catalogue or guards
+may change. Its source lane is limited to language-control.spec.ts comments.
+The English-name key's existing component semantics support an exact endonym
+repair, but current S2.6 May-edit does not license that key or its component
+test. This remains a separately scoped follow-up; card is not approved.
+No model timing claim follows merely from absence of inference in the UI tests.
+
+
+### 2026-09-27 — reviewed partial S2.6 integration
+
+Verified corrective return: false opacity mechanism withdrawn, forbidden allowlist alternative removed, timing claim limited to no own inference. Assertions retained. Archived corrective worker 7c562ffd. Integrating independently accepted AM059 plus locale-aware browser assertions as partial work; S2.6 remains BLOCKED with V1 FAIL, not approved. Source and evidence are frozen; model scratch remains active and excluded.

@@ -70,3 +70,5 @@ AM-059 | S2.6 / C-LANG | Owner approved four-path attestation scope and exact Sp
 AM-060 | P4.1 documentation corrections | Refresh Read references to existing attempt-2 symbols, mark readiness files existing, clarify original pre-implementation baseline tense without changing V1 acceptance, and document catalogue-derived offline fixtures within existing lint policy. Coordinator rejects IR claim that V1 demands 12/130: it explicitly fails that count. No scope/guard/threshold change.
 
 AM-061 | P4.1 references | Correct remaining superseded assertAllowedHost references to current assertRequestAllowed in readiness.ts; describe existing catalogue allowances and original probe sequence as history. No guard/scope/acceptance change; closes rereview D5 by direct symbol verification.
+
+AM-062 | S2.6 runtime/placement reconciliation | Record already owner-approved More Language dialog as additional verification surface while retaining Settings row; preserve dev/active-work/409 semantics. Resume attempt2 without repeating V5 scratch mutation; refresh base/port/checkpoint and direct Playwright command. No scope, threshold, release gate or product change.

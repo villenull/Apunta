@@ -23,3 +23,5 @@ P4.1 | 2026-09-27 follow-up IR: probe diagnostic defects and conflicting receipt
 
 P3.1 metadata scope approved as AM-058; instruction review and implementation still pending. No ownership guard waiver.
 S2.6 attestation scope/wording owner block resolved by AM-059; instruction review, UI writer release and acceptance checks still pending.
+
+S2.6 | AM059 partial implementation accepted; V1 FAIL on language.en.english in Spanish catalogue. Current May-edit excludes this key and LanguageDialog.test.tsx. | state/reviews/S2.6-AM059-implementation.md | Bounded plan-editor amendment for the established English-name semantics, Spanish-locale regression, then unchanged V1 rerun. No ALLOWED entry or guard change. | S2.7/S2.R
