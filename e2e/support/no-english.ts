@@ -8,7 +8,8 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * It reads every visible text node on the page, and every visible
  * `placeholder`, and matches each one against every **English** catalogue
- * value with each `{name}` widened to a wildcard, so `3 notes` is caught as
+ * value with each `{name}` widened to what it can render — a number for a
+ * `number` placeholder, anything for the rest — so `3 notes` is caught as
  * `notes.count` and not missed as a number. A match is a leak when that key's
  * Spanish value, in the same form, differs from its English one: a key whose
  * two values are identical — the brand, the language names, `Language /
@@ -31,6 +32,7 @@ import { expect, test, type Page } from '@playwright/test';
 interface Entry {
   readonly text: string;
   readonly plural?: Partial<Record<Intl.LDMLPluralRule, string>>;
+  readonly kind?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -62,11 +64,28 @@ function escape(literal: string): string {
   return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** One English form as a whole-node pattern: literal text, each `{name}` a wildcard. */
-function pattern(value: string): RegExp {
+/**
+ * What `t()` can put where a placeholder is: a `number` is only ever a number
+ * `Intl.NumberFormat` wrote — a digit, then digits and its separators — so it matches only
+ * that, and every other kind matches anything, empty included. Widening a
+ * `number` to anything would read `…rehearsed in session` as `{count} session`;
+ * narrowing it this far drops nothing `t()` could have rendered.
+ */
+function slot(kind: string | undefined): string {
+  return kind === 'number' ? '(\\d[\\d.,\\u00a0\\u202f]*)' : '(.*?)';
+}
+
+/** One English form as a whole-node pattern: literal text, each `{name}` its slot. */
+function pattern(value: string, kind: Entry['kind']): RegExp {
   const normalised = value.replace(/\s+/g, ' ').trim();
-  const parts = normalised.split(/\{\w+\}/);
-  return new RegExp(`^${parts.map(escape).join('(.*?)')}$`, 's');
+  const source = normalised
+    .split(/(\{\w+\})/)
+    .map((part) => {
+      const name = /^\{(\w+)\}$/.exec(part)?.[1];
+      return name === undefined ? escape(part) : slot(kind?.[name]);
+    })
+    .join('');
+  return new RegExp(`^${source}$`, 's');
 }
 
 interface EnglishForm {
@@ -91,7 +110,7 @@ export const ENGLISH_FORMS: readonly EnglishForm[] = (() => {
     for (const [form, english] of named) {
       const spanish = counterpart(spanishEntry, form);
       if (spanish.replace(/\s+/g, ' ').trim() === english.replace(/\s+/g, ' ').trim()) continue;
-      forms.push({ key, form, english, spanish, regex: pattern(english) });
+      forms.push({ key, form, english, spanish, regex: pattern(english, value.kind) });
     }
   }
   return forms;

@@ -42,7 +42,16 @@ const NOTES = [
 test.describe('the treatment plan', () => {
   test.use({ viewport: { width: 1280, height: 800 }, permissions: ['clipboard-read', 'clipboard-write'] });
 
-  test('drafts goals she owns, reviews the plan, and prepares for the session', async ({ page, request }) => {
+  test('drafts goals she owns, reviews the plan, and prepares for the session', async ({
+    page,
+    request,
+    tr,
+    trRe,
+    checkScreen,
+  }) => {
+    /** Either sentence: the lookback says "back to {day}" only when it stopped at a date. */
+    const either = (...patterns: RegExp[]): RegExp =>
+      new RegExp(patterns.map((pattern) => pattern.source).join('|'));
     const format = (await (
       await request.post('/api/formats', { data: { name: uniqueName('E2E plan format'), sections: SOAP } })
     ).json()) as Created;
@@ -60,6 +69,7 @@ test.describe('the treatment plan', () => {
     // --- Nothing yet, and the plan is reachable beside the notes -----------
     await page.getByTestId('open-plan').click();
     await expect(page.getByTestId('empty-no-plan')).toBeVisible();
+    await checkScreen(page, 'the treatment plan, empty');
 
     // --- Draft goals from the notes ----------------------------------------
     await page.getByTestId('draft-goals').click();
@@ -68,7 +78,10 @@ test.describe('the treatment plan', () => {
     await expect(proposals).toHaveCount(3, { timeout: 30_000 });
     // Nothing is in the plan yet: a suggestion is not a goal.
     await expect(page.getByTestId('no-accepted-goals')).toBeVisible();
-    await expect(page.getByTestId('lookback-note')).toContainText('Read 3 notes');
+    await expect(page.getByTestId('lookback-note')).toContainText(
+      either(trRe('plan.lookbackRead', { count: 3 }), trRe('plan.lookbackReadBackTo', { count: 3 })),
+    );
+    await checkScreen(page, 'the treatment plan with proposed goals');
 
     // Each one shows the note text it was drafted from.
     const evidence = proposals.first().getByTestId('goal-evidence');
@@ -94,7 +107,7 @@ test.describe('the treatment plan', () => {
     await proposals.first().getByTestId('edit-goal').click();
     const editor = page.getByTestId('goal-editor');
     await editor
-      .getByLabel('Goal', { exact: true })
+      .getByLabel(tr('plan.goalLabel'), { exact: true })
       .fill('A goal in her own words, edited before she accepted it.');
     await editor.getByTestId('save-goal').click();
 
@@ -110,23 +123,28 @@ test.describe('the treatment plan', () => {
     await expect(page.getByTestId('plan-details-block')).not.toHaveAttribute('open', '');
     await page.getByTestId('toggle-details').click();
     await page.getByTestId('add-diagnosis').click();
-    await page.getByLabel('Diagnosis 1 code').fill('F41.1');
-    await page.getByLabel('Diagnosis 1 description').fill('Generalized anxiety disorder');
-    await page.getByLabel('Service modality').fill('Individual psychotherapy (CBT)');
-    await page.getByLabel('Service frequency').fill('Weekly, 50 minutes');
+    const code = page.getByLabel(tr('plan.diagnosisCodeLabel', { n: '1' }));
+    await code.fill('F41.1');
+    await page
+      .getByLabel(tr('plan.diagnosisDescriptionLabel', { n: '1' }))
+      .fill('Generalized anxiety disorder');
+    await page.getByLabel(tr('plan.modality')).fill('Individual psychotherapy (CBT)');
+    await page.getByLabel(tr('plan.frequency')).fill('Weekly, 50 minutes');
+    await checkScreen(page, 'the treatment plan details');
     await page.getByTestId('save-plan-details').click();
-    await expect(page.getByLabel('Diagnosis 1 code')).toHaveValue('F41.1');
+    await expect(code).toHaveValue('F41.1');
 
     // --- Put it in force, which dates the attestation ----------------------
     await page.getByTestId('activate-plan').click();
     await expect(page.getByTestId('plan-version')).toContainText('active');
-    await expect(page.getByTestId('plan-attestation')).toContainText('sign the copy in your records system');
-    await expect(page.getByTestId('review-due')).toContainText('Plan review due');
+    await expect(page.getByTestId('plan-attestation')).toContainText(trRe('plan.attestedNote'));
+    await expect(page.getByTestId('review-due')).toContainText(trRe('plan.reviewUpcoming'));
+    await checkScreen(page, 'the treatment plan in force');
 
     // --- The document is copyable ------------------------------------------
     await page.getByTestId('copy-plan').click();
     // The document is fetched before it is copied, so wait for the flash.
-    await expect(page.getByTestId('copy-plan')).toContainText('Copied');
+    await expect(page.getByTestId('copy-plan')).toContainText(tr('common.copied'));
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     expect(clipboard).toContain('TREATMENT PLAN');
     expect(clipboard).toContain('F41.1 (ICD-10-CM) Generalized anxiety disorder — primary');
@@ -135,9 +153,10 @@ test.describe('the treatment plan', () => {
 
     // --- A review makes version 2 and carries the goals forward ------------
     await page.getByTestId('start-review').click();
-    await expect(page.getByTestId('plan-version')).toContainText('Version 2');
+    await expect(page.getByTestId('plan-version')).toContainText(trRe('plan.versionMeta', { version: '2' }));
     await expect(page.getByTestId('plan-goal')).toHaveCount(2);
-    await expect(page.getByTestId('plan-view')).toContainText('Carried forward from the previous version.');
+    await expect(page.getByTestId('plan-view')).toContainText(tr('plan.carriedForward'));
+    await checkScreen(page, 'a plan review in draft');
 
     // The version in force does not change while she drafts the review: a
     // practice with no plan in force is worse than the one she started in.
@@ -147,10 +166,13 @@ test.describe('the treatment plan', () => {
 
     // --- Once the review is in force, the old version is a record ----------
     await page.getByTestId('activate-plan').click();
-    await expect(page.getByTestId('plan-version')).toContainText('Version 2 · active');
+    await expect(page.getByTestId('plan-version')).toContainText(
+      trRe('plan.versionMeta', { version: '2', status: 'active' }),
+    );
 
     await page.getByTestId('version-picker').selectOption('1');
     await expect(page.getByTestId('read-only-note')).toBeVisible();
+    await checkScreen(page, 'a superseded plan version');
     await expect(page.getByTestId('plan-version')).toContainText('superseded');
     await expect(page.getByTestId('plan-view')).toContainText('Individual psychotherapy (CBT)');
     await expect(page.getByTestId('plan-goal')).toHaveCount(2);
@@ -162,13 +184,16 @@ test.describe('the treatment plan', () => {
     await expect(page.getByTestId('prep-view')).toBeVisible();
     const lines = page.getByTestId('prep-line');
     await expect(lines.first()).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId('prep-lookback')).toContainText('Read the last 3 notes');
+    await expect(page.getByTestId('prep-lookback')).toContainText(
+      either(trRe('prep.lookbackRead', { count: 3 }), trRe('prep.lookbackReadBackTo', { count: 3 })),
+    );
     await expect(page.getByTestId('prep-plan')).toContainText(acceptedStatement);
-    await expect(page.getByTestId('prep-view')).toContainText('not saved unless you keep it');
+    await expect(page.getByTestId('prep-view')).toContainText(tr('prep.notSaved'));
+    await checkScreen(page, 'the session briefing');
 
     // --- Keep it -----------------------------------------------------------
     await page.getByTestId('keep-brief').click();
-    await expect(page.getByTestId('keep-brief')).toContainText('Kept');
+    await expect(page.getByTestId('keep-brief')).toContainText(tr('common.kept'));
 
     // --- Follow a citation through to the note it came from ----------------
     await page.getByTestId('prep-citation').first().click();

@@ -16,10 +16,12 @@ interface Fixtures {
   /** The project's words for a key, so one spec asserts in either language. */
   tr: Tr;
   /**
-   * The project's words for a key as a pattern, each `{name}` a wildcard, empty included —
-   * for a sentence whose values the spec does not control (a size, a path).
+   * The project's words for a key as a pattern: the values in `params` rendered
+   * as `t()` renders them (so a count still picks its plural form), and every
+   * other `{name}` a wildcard, empty included — for a sentence whose remaining
+   * values the spec does not control (a size, a path, a limit).
    */
-  trRe: (key: MessageKey, flags?: string) => RegExp;
+  trRe: (key: MessageKey, params?: Parameters<typeof t>[1]) => RegExp;
   /**
    * `expectNoEnglishUi` in the es-MX project, and nothing in English. Called
    * once a screen has settled, with the screen's name.
@@ -55,7 +57,7 @@ export const test = base.extend<Fixtures & AppOptions>({
     await use((key, params) => t(key, params, appLocale));
   },
   trRe: async ({ appLocale }, use) => {
-    await use((key, flags) => messagePattern(key, appLocale, flags));
+    await use((key, params) => messagePattern(key, appLocale, params));
   },
   checkScreen: async ({ appLocale }, use) => {
     await use(async (page, screen) => {
@@ -83,30 +85,66 @@ export const test = base.extend<Fixtures & AppOptions>({
 export { expect };
 
 /**
- * `key`'s text in `locale` as a pattern: the literal parts escaped, every
- * `{name}` a wildcard. Every plural form is an alternative, so a count the spec
- * does not pick still matches.
+ * `key`'s text in `locale` as a pattern, every value the caller leaves out a
+ * wildcard (empty included).
+ *
+ * When the entry has no plural map, or the caller gave its count, the text is
+ * rendered by `t()` itself — so the count picks its form and numbers are
+ * grouped the locale's way — with a sentinel for each missing value, and each
+ * sentinel becomes the wildcard. With the count left open, every plural form
+ * is an alternative, the given values written in as they are.
  */
-export function messagePattern(key: MessageKey, locale: Locale, flags = ''): RegExp {
+export function messagePattern(
+  key: MessageKey,
+  locale: Locale,
+  params: Parameters<typeof t>[1] = {},
+): RegExp {
   const entry = (locale === 'en' ? en : esMX)[key] as {
     text: string;
     plural?: Partial<Record<string, string>>;
+    kind?: Record<string, string>;
   };
-  const forms = [...new Set([entry.text, ...Object.values(entry.plural ?? {})])].filter(
+  const escape = (literal: string): string => literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const counted = Object.entries(entry.kind ?? {}).find(([, kind]) => kind === 'number')?.[0];
+  const forms = [entry.text, ...Object.values(entry.plural ?? {})].filter(
     (form): form is string => form !== undefined,
   );
-  const escape = (literal: string): string => literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(
-    forms
-      .map((form) =>
-        form
-          .split(/\{\w+\}/)
-          .map(escape)
-          .join('.*?'),
-      )
-      .join('|'),
-    flags,
-  );
+
+  if (entry.plural !== undefined && counted !== undefined && !(counted in params)) {
+    const alternatives = [...new Set(forms)].map((form) =>
+      form
+        .split(/(\{\w+\})/)
+        .map((part) => {
+          const name = /^\{(\w+)\}$/.exec(part)?.[1];
+          if (name === undefined) return escape(part);
+          const given = params[name];
+          return given === undefined ? '.*?' : escape(String(given));
+        })
+        .join(''),
+    );
+    return new RegExp(alternatives.join('|'));
+  }
+
+  const names = [
+    ...new Set(forms.flatMap((form) => [...form.matchAll(/\{(\w+)\}/g)].map((match) => match[1]))),
+  ];
+  const filled: Record<string, string | number> = { ...params };
+  const sentinels: string[] = [];
+  names.forEach((name, index) => {
+    if (name === undefined || name in filled) return;
+    if (entry.kind?.[name] === 'number') {
+      const value = 987_650 + index;
+      filled[name] = value;
+      sentinels.push(new Intl.NumberFormat(locale).format(value));
+    } else {
+      const value = `\u0000${name}\u0000`;
+      filled[name] = value;
+      sentinels.push(value);
+    }
+  });
+  let source = escape(t(key, filled, locale));
+  for (const sentinel of sentinels) source = source.split(escape(sentinel)).join('.*?');
+  return new RegExp(source);
 }
 
 /** Unique per run, so specs sharing one database never collide on a name. */

@@ -15,25 +15,41 @@ import { expect, test } from '../support/fixtures';
 const EXPORT = fileURLToPath(new URL('../fixtures/claude-export/patient-chats.json', import.meta.url));
 
 test.describe('importing from Claude', () => {
-  test('imports the patients seen since the cutoff, and undoes it in one click', async ({ page }) => {
+  test('imports the patients seen since the cutoff, and undoes it in one click', async ({
+    page,
+    tr,
+    checkScreen,
+  }) => {
+    // The counts the sentences below are built from, in the project's words.
+    const notes = (count: number): string => tr('count.note', { count });
+    const patients = (count: number): string => tr('count.patient', { count });
     await page.goto('/settings');
     await page.getByTestId('settings-import').click();
-    await expect(page.getByRole('heading', { name: 'Import from Claude' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('doc.importClaude') })).toBeVisible();
     await expect(page.getByTestId('import-cutoff')).toHaveValue('2026-07-01');
+    await checkScreen(page, 'Import from Claude');
 
     await page.getByTestId('import-file').setInputFiles(EXPORT);
     await page.getByTestId('import-check').click();
-    await expect(page.getByTestId('import-summary')).toContainText('7 notes across 3 patients');
+    const summary = page.getByTestId('import-summary');
+    await expect(summary).toContainText(notes(7));
+    await expect(summary).toContainText(patients(3));
+    await checkScreen(page, 'the Claude import preview');
 
     // A glance, not a review: untick one, and the button says what is left.
-    await page.getByLabel('Import Maria (2)').uncheck();
-    await expect(page.getByTestId('import-run')).toHaveText('Import 5 notes');
+    await page.getByLabel(tr('import.patientLabel', { name: 'Maria (2)' })).uncheck();
+    await expect(page.getByTestId('import-run')).toHaveText(tr('import.runLabel', { notes: notes(5) }));
     await page.getByTestId('import-run').click();
-    await expect(page.getByTestId('import-done')).toContainText('5 notes for 2 patients');
-    await expect(page.getByTestId('import-skipped')).toContainText('not a patient history');
+    await expect(page.getByTestId('import-done')).toContainText(`${notes(5)}`);
+    await expect(page.getByTestId('import-done')).toContainText(patients(2));
+    await expect(page.getByTestId('import-skipped')).toContainText(tr('import.skip.singleSession'));
+    await checkScreen(page, 'the Claude import report');
     await expect(page.getByTestId('import-skipped')).not.toContainText('Garden');
 
     await page.getByTestId('import-undo').click();
-    await expect(page.getByTestId('import-undone')).toContainText('5 notes and 2 patients removed');
+    await expect(page.getByTestId('import-undone')).toContainText(
+      tr('import.undoneLine', { notes: notes(5), patients: patients(2) }),
+    );
+    await checkScreen(page, 'the Claude import, undone');
   });
 });
