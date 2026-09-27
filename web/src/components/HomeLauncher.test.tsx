@@ -24,7 +24,7 @@ import { HomeLauncher } from './HomeLauncher.js';
  */
 
 /** The A mark's own viewBox, the only one in the tree (`BrandMark.tsx:18`). */
-const MARK_VIEWBOX = '0 0 562 754';
+const MARK_VIEWBOX = '0 0 1419 1440';
 
 /**
  * The A marks inside `root`, found by the viewBox value the e2e spec selects on.
@@ -60,7 +60,7 @@ function renderHome(): Home {
   const heading = home?.querySelector('h1') ?? null;
   const mark = inner === null ? null : (marksIn(inner)[0] ?? null);
   if (home === null || inner === null || heading === null || mark === null) {
-    throw new Error('HomeLauncher rendered no home screen, or none with a mark above its heading');
+    throw new Error('HomeLauncher rendered no home screen, or none with a mark in its heading');
   }
   return { screen: home, inner, heading, mark };
 }
@@ -112,25 +112,28 @@ describe('the "New" row of the results list', () => {
   });
 });
 
-describe('the A mark above the home greeting', () => {
+describe('the A mark before the home greeting', () => {
   /**
-   * A4, read as structure rather than as pixels: the mark is the first child of
-   * `.home-inner`, so it paints above the question, and it is a **sibling** of
-   * the `h1`, not a child — so the heading's text stays the question alone.
+   * Read as structure rather than as pixels: the mark is the heading's first
+   * child, so it paints to the left of the question, as Claude puts its own
+   * mark before "… returns!" (owner, 2026-09-26; it used to stand above).
    */
-  it('is the first child of the column, and a sibling of the heading', () => {
-    const { inner, heading, mark } = renderHome();
+  it('is the first thing in the heading, before the question', () => {
+    const { heading, mark } = renderHome();
 
-    expect(inner.firstElementChild).toBe(mark);
-    expect(mark.parentElement).toBe(inner);
-    expect(heading.querySelector('svg')).toBeNull();
+    expect(heading.firstElementChild).toBe(mark);
+    expect(mark.parentElement).toBe(heading);
   });
 
-  /** The greeting is a question, and the mark never joins it. */
+  /**
+   * The greeting is a question, and the mark never joins it: an svg with no
+   * text and `aria-hidden`, so the heading still reads as the question alone.
+   */
   it('leaves the greeting as exactly the question', () => {
     const { heading } = renderHome();
 
     expect(heading.textContent).toBe('Let’s focus on…');
+    expect(screen.getByRole('heading', { level: 1, name: 'Let’s focus on…' })).toBe(heading);
   });
 
   /**
@@ -142,7 +145,7 @@ describe('the A mark above the home greeting', () => {
    * same value `BrandMark.test.tsx:58` pins: the three cannot drift apart.
    */
   it('stays the only mark once typing puts an icon on the screen', () => {
-    const { screen: home, inner, heading, mark } = renderHome();
+    const { screen: home, heading, mark } = renderHome();
 
     typeSearch('Jo');
 
@@ -151,8 +154,7 @@ describe('the A mark above the home greeting', () => {
     // The listbox's "New" row put a second svg inside `.home`, so the count
     // above is the viewBox doing the work rather than there being one svg.
     expect(home.querySelectorAll('svg')).toHaveLength(2);
-    expect(inner.firstElementChild).toBe(mark);
-    expect(heading.querySelector('svg')).toBeNull();
+    expect(heading.firstElementChild).toBe(mark);
     expect(heading.textContent).toBe('Let’s focus on…');
   });
 
@@ -174,22 +176,17 @@ describe('the A mark above the home greeting', () => {
   });
 
   /**
-   * The size and the centring are inline styles on the mark, so they are the
-   * first thing a refactor to a stylesheet or a wrapper would drop — and the
-   * second thing the same refactor would have to reproduce. jsdom normalises
-   * `0 auto` to `0px auto`, which is why the two declarations are read apart,
-   * as `BrandMark.test.tsx:77-84` does. The centred geometry itself is
-   * measured for real in the e2e spec; jsdom has no layout.
+   * The size and the inline placement are inline styles on the mark, so they
+   * are the first thing a refactor to a stylesheet or a wrapper would drop.
+   * `em`, so it tracks the heading at every font size she can pick. jsdom has
+   * no layout; the geometry itself is for a browser to measure.
    */
-  it('keeps its 48px height and its centring through that interaction', () => {
+  it('keeps its heading-relative size and inline placement through that interaction', () => {
     const { mark } = renderHome();
 
     typeSearch('Jo');
 
-    expect(mark.style.height).toBe('48px');
-    expect(mark.style.display).toBe('block');
-    expect(mark.style.marginLeft).toBe('auto');
-    expect(mark.style.marginRight).toBe('auto');
-    expect(mark.style.margin).toBe('0px auto');
+    expect(mark.style.height).toBe('0.8em');
+    expect(mark.style.display).toBe('inline-block');
   });
 });

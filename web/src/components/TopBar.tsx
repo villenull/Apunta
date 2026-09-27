@@ -28,10 +28,10 @@ export function TopBar({ back }: TopBarProps): React.JSX.Element {
         {/* The wordmark, as outlines: the name is not typed in a font at
             runtime (P2.1). The old prototype treatment — scribble mark plus a
             lowercased label — is gone; `BrandWordmark` carries the colour.
-            The foreground colour (owner preview, 2026-09-26): the mark sits at
-            Claude-logo size, in the body colour rather than the brand's teal,
-            and its height is the `--logo-h` token rather than a number here. */}
-        <BrandWordmark tone="text" />
+            The brand's teal in both themes (owner, 2026-09-26), at
+            Claude-logo size; its height is the `--logo-h` token rather than a
+            number here. */}
+        <BrandWordmark />
       </div>
     );
   }

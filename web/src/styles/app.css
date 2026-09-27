@@ -2912,7 +2912,9 @@ select:disabled {
 
 .home-title {
   display: flex;
-  align-items: center;
+  /* Baseline, so the A before the greeting stands on the letters' line rather
+     than floating at the line's centre. */
+  align-items: baseline;
   justify-content: center;
   gap: var(--space-5);
   margin: 0 0 var(--space-24);
@@ -2921,11 +2923,6 @@ select:disabled {
   font-size: calc(34px * var(--font-scale));
   line-height: 1.2;
   color: var(--text-primary);
-}
-
-.home-mark {
-  width: 40px;
-  height: 40px;
 }
 
 .home-search {

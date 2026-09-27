@@ -29,7 +29,7 @@ function renderTopBar(props: TopBarProps = {}): Element {
  * screen reader would hear the name twice and nobody looking would necessarily
  * say so. So the absence is asserted as carefully as the presence.
  */
-const WORDMARK_VIEWBOX = '0 0 2903 1012';
+const WORDMARK_VIEWBOX = '0 0 7044 1946';
 
 describe('the top bar with no back link', () => {
   it('is the wordmark and nothing else', () => {
@@ -49,16 +49,15 @@ describe('the top bar with no back link', () => {
   });
 
   /**
-   * The owner preview (2026-09-26) put the mark where Claude puts its own word:
-   * in the body colour, at Claude-logo size, one token rather than a number.
-   * This card's own earlier text said `--brand-mark` and 22px; both were
-   * retired by owner decision and the code wins, so both are pinned here.
+   * The Fraunces wordmark in the brand's teal, both themes (owner, 2026-09-26,
+   * replacing the body-colour placement), at Claude-logo size: one token
+   * rather than a number.
    */
-  it('paints the mark in the foreground colour at the --logo-h height', () => {
+  it('paints the mark in the brand colour at the --logo-h height', () => {
     renderTopBar();
     const wordmark = screen.getByRole('img', { name: 'Apunta' });
 
-    expect(wordmark.style.color).toBe('var(--text-primary)');
+    expect(wordmark.style.color).toBe('var(--brand-mark)');
     expect(wordmark.style.height).toBe('var(--logo-h)');
   });
 

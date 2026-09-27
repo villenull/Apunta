@@ -52,14 +52,14 @@ describe('the wordmark', () => {
   });
 
   /**
-   * Kalam ships as outlines precisely so the name is never typed in a font at
-   * runtime. One path, filled with whatever colour it inherits: a second fill,
+   * Fraunces ships as outlines (owner, 2026-09-26, replacing Kalam) precisely
+   * so the name is never typed in a font at runtime. One path, filled with whatever colour it inherits: a second fill,
    * or any text node at all, means the name came back as text.
    */
   it('is the name as outlines, in one path that takes its colour from the caller', () => {
     const wordmark = renderWordmark();
 
-    expect(wordmark.getAttribute('viewBox')).toBe('0 0 2903 1012');
+    expect(wordmark.getAttribute('viewBox')).toBe('0 0 7044 1946');
     const paths = wordmark.querySelectorAll('path');
     expect(paths).toHaveLength(1);
     expect(paths[0]?.getAttribute('fill')).toBe('currentColor');
@@ -72,9 +72,8 @@ describe('the wordmark', () => {
   });
 
   /**
-   * The owner preview (2026-09-26) puts the mark where Claude puts its own
-   * word: a name in the body colour, not a second brand colour. `tone="text"`
-   * is what TopBar and PatientsColumn ask for.
+   * `tone="text"` stays available for a placement that wants the body colour;
+   * TopBar and PatientsColumn now take the brand teal (owner, 2026-09-26).
    */
   it('paints in the foreground colour when the caller asks for that placement', () => {
     expect(renderWordmark({ tone: 'text' }).style.color).toBe('var(--text-primary)');

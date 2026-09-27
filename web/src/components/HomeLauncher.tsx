@@ -78,10 +78,11 @@ export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.J
   return (
     <div className="home" data-testid="home">
       <div className="home-inner">
-        {/* The A mark above the greeting (A4). Decorative, so it sits outside
-            the heading and the question stays the heading's whole text. */}
-        <BrandMark />
+        {/* The A mark before the greeting, as Claude puts its own mark before
+            "… returns!" (owner, 2026-09-26). It is `aria-hidden` and has no
+            text, so the question is still the heading's whole accessible name. */}
         <h1 className="home-title">
+          <BrandMark className="home-title-mark" />
           <span>{t('home.title')}</span>
         </h1>
         <div className="home-search">

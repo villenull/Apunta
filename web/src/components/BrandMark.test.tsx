@@ -12,8 +12,8 @@ afterEach(() => {
 });
 
 /**
- * The A mark shipped in AM-028 (`b366be1`) and is placed above the home greeting
- * (`HomeLauncher.tsx:73`). It is the wordless half of the brand, so these cases
+ * The A mark shipped in AM-028 (`b366be1`), redrawn in Fraunces and moved
+ * inline before the home greeting on 2026-09-26 (`HomeLauncher.tsx`). It is the wordless half of the brand, so these cases
  * pin the two things that would be invisible in a diff: that it is decorative,
  * and that its colour comes from D10's pair rather than from `--accent`.
  *
@@ -55,32 +55,35 @@ describe('the A mark', () => {
   it('is the outline in one path, not the name in a font', () => {
     const mark = renderMark();
 
-    expect(mark.getAttribute('viewBox')).toBe('0 0 562 754');
+    expect(mark.getAttribute('viewBox')).toBe('0 0 1419 1440');
     const paths = mark.querySelectorAll('path');
     expect(paths).toHaveLength(1);
     expect(paths[0]?.getAttribute('fill')).toBe('currentColor');
     expect(mark.textContent).toBe('');
   });
 
-  it('is 48px tall, and its width follows the outline', () => {
+  /**
+   * Sized in `em`, so it tracks the heading it stands in at every font size the
+   * owner can pick, and its width follows the outline.
+   */
+  it('is sized by the text it stands beside, and its width follows the outline', () => {
     const mark = renderMark();
 
-    expect(mark.style.height).toBe('48px');
+    expect(mark.style.height).toBe('0.8em');
     expect(mark.style.width).toBe('auto');
   });
 
   /**
-   * Centred in whatever block it sits in, so P2.2 can drop it above the home
-   * greeting without a wrapper. jsdom normalises `0 auto` to `0px auto`, which
-   * is why this reads the two declarations rather than the shorthand.
+   * Inline, not a centred block: the owner moved it from above the home
+   * greeting to before it, where Claude puts its own mark (2026-09-26). It must
+   * not shrink when the heading is squeezed.
    */
-  it('centres itself in its block', () => {
+  it('sits inline beside its text rather than centred on a line of its own', () => {
     const mark = renderMark();
 
-    expect(mark.style.display).toBe('block');
-    expect(mark.style.marginLeft).toBe('auto');
-    expect(mark.style.marginRight).toBe('auto');
-    expect(mark.style.margin).toBe('0px auto');
+    expect(mark.style.display).toBe('inline-block');
+    expect(mark.style.flexShrink).toBe('0');
+    expect(mark.style.marginLeft).toBe('');
   });
 
   it('is coloured by the brand token, not by the accent', () => {
@@ -90,10 +93,10 @@ describe('the A mark', () => {
   /**
    * D10's pair, each declared exactly once and written as a literal hex rather
    * than derived from anything — in particular not from `--accent`, which the
-   * owner can change in Settings.
+   * owner can change in Settings. Amended 2026-09-26: teal in dark mode too.
    */
-  it('follows D10: the brand teal in light mode, white in dark, declared once each', () => {
-    expect(brandMarkColours()).toEqual(['#1f6f63', '#ffffff']);
+  it('follows D10 as amended: the brand teal in both themes, declared once each', () => {
+    expect(brandMarkColours()).toEqual(['#1f6f63', '#1f6f63']);
   });
 
   it('never resolves its colour from the accent', () => {

@@ -113,10 +113,10 @@ export function PatientsColumn({
           <PanelLeftIcon className="icon icon-sm" />
         </button>
         <Link to="/" className="brand brand-link" data-testid="home-link">
-          {/* The handwritten mark, in the body colour — Claude's own word is
-              not a second brand colour, and neither is this one. Its height is
-              the `--logo-h` token, the same one the standalone screens use. */}
-          <BrandWordmark tone="text" />
+          {/* The Fraunces wordmark in the brand's teal, both themes (owner,
+              2026-09-26). Its height is the `--logo-h` token, the same one the
+              standalone screens use. */}
+          <BrandWordmark />
         </Link>
       </div>
 
