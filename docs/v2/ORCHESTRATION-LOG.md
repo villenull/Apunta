@@ -263,3 +263,17 @@ report retained as submitted, not rewritten to claim a CLEAR it did not give.
 Spawned Space Bunny Free corpus author f8ddc7a6, limited to scratch corpus/
 and corpus-author.md, no inference. Separate bilingual gold review follows.
 No profiles configured. UI owner remains active and retained.
+
+
+### 2026-09-27 — corpus draft validated; review and serial runner dispatched
+
+Coordinator reran corpus validator using pinned Node: exit0. Found incorrect
+snapshot-base prose; recorded correction in receipt, no semantic acceptance.
+Archived author f8ddc7a6. Dispatched separate bilingual reviewer15965cb4 to
+review all paired inputs/gold and resolve research conventions without inventing
+owner gates. Corpus remains draft until review/repairs/freeze.
+
+Dispatched sole execution worker for frozen shipped English Track1 and harness
+preflight under exclusive GPU lock; Track2 scored generation explicitly held
+until reviewed gold freeze. Independent corpus review uses no inference.
+UI retains live source lane; study operates in committed scratch snapshot.
