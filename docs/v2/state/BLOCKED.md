@@ -18,3 +18,5 @@ S2.5 | **Attempt budget 3/3 exhausted with a review FAIL.** All four verificatio
 
 S2.6 | 2026-09-27 resume IR: V1 fails on new Spanish plan attestation stored in English, outside card scope. Do not suppress chat.change.summary to hide it. | state/reviews/S2.6-ir.md; evidence/S2.6/coordinator-resume-baseline.md | Owner/plan-editor forward-only attestation scope decision, instruction repair, and released implementation lock | S2.7/S2.R and dependent Spanish chain
 P4.1 | 2026-09-27 follow-up IR: probe diagnostic defects and conflicting receipt/query card text. | state/reviews/P4.1-followup-ir.md | Approve state/P4.1-AMENDMENT-PROPOSAL.md then attempt-3 instruction review and repair. Coordinator rejects reviewer suggestion to override size guard | S4a.2 and downstream acquisition chain
+
+  → P4.1 owner scope block RESOLVED 2026-09-27 by AM-057; fresh instruction review and final repair verification still pending, so card remains unapproved.

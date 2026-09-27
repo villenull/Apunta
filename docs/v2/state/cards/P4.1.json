@@ -6,13 +6,14 @@
   "attempt": 2,
   "status": "BLOCKED",
   "lastCompletedStep": "Attempt 2 implementation and independent review are committed. Follow-up IR confirms probe diagnostics defects and conflicting plan text. Prior checkpoint describing reverted in-flight work was stale.",
-  "nextAllowedAction": "Await approval of P4.1-AMENDMENT-PROPOSAL.md. Keep exact size guard; do not adopt follow-up reviewer D1 override recommendation. Then regenerate attempt 3 dispatch and get independent instruction review before repair.",
+  "nextAllowedAction": "AM-057 approved/applied. Fresh attempt-3 instruction review, then regenerate implementation dispatch after UI writer release. Attempt remains 2 until implementation starts. Preserve exact size and digest guards.",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
     "V1": "NOT RUN",
     "V2": "NOT RUN",
-    "V3": "NOT RUN"
+    "V3": "NOT RUN",
+    "V4": "NOT RUN"
   },
   "sandboxRuns": [],
   "updatedUtc": "2026-09-27"

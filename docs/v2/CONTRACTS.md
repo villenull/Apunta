@@ -259,7 +259,10 @@ setup screens, Spanish speech acquisition.
 5. A model file is ready only if it is a regular file (not a directory or
    symlink to one), its size equals the pinned size, and either a receipt
    `<file>.receipt.json` records the pinned SHA-256 with matching size,
-   mtime and inode, or a fresh hash matches (then a receipt is written).
+   mtime and inode, or a fresh hash matches. A fresh matching hash also
+   establishes readiness without writing a receipt. Readiness probes never
+   write receipts; explicit acquisition or repair writes a receipt only after
+   verification.
 6. Wrong size, wrong hash, directory, stale pin or dangling `.part` →
    state `invalid` with a code; repair only after the user presses Start.
 7. Ollama pulls are performed by the daemon, outside these checks. The
