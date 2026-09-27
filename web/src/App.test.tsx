@@ -321,8 +321,9 @@ describe('renaming a patient', () => {
 
     fireEvent.click(screen.getByLabelText('Tools for Ana'));
     fireEvent.click(screen.getByTestId(`rename-${guessed.id}`));
-    fireEvent.change(screen.getByLabelText('Name for Ana'), { target: { value: 'Ana Torres' } });
-    fireEvent.click(screen.getByTestId(`save-name-${guessed.id}`));
+    const field = screen.getByLabelText('Name for Ana');
+    fireEvent.change(field, { target: { value: 'Ana Torres' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
 
     expect((await screen.findAllByText('Ana Torres')).length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('Name for Ana Torres')).toBeNull();

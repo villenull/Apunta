@@ -4,9 +4,9 @@ import { Link } from 'react-router';
 
 import { formatShortDate } from '../lib/format.js';
 import { useI18n } from '../lib/i18n.js';
-import { SearchIcon, StarIcon } from './icons.js';
+import { PinIcon, SearchIcon } from './icons.js';
 import { PatientMenu } from './PatientMenu.js';
-import { PatientRenameForm } from './PatientRenameForm.js';
+import { PatientRenameField } from './PatientRenameField.js';
 
 export interface PatientDirectoryProps {
   patients: PatientListItem[];
@@ -34,11 +34,12 @@ export interface PatientDirectoryProps {
 
 /**
  * "View all" — the full patient list, in the shape of Claude's Recents page
- * (owner preview, 2026-09-26): a page title with the three controls Claude puts
- * at its top right (search, Select, a light "New" pill), an Active / Archived
- * tab pair, and one row per patient with the name on the left and the date of
- * their last note on the right. The archived practice lives here rather than
- * behind a checkbox in the sidebar.
+ * (owner preview, 2026-09-26): one centred column with the title on its own
+ * line, then a bar with the Active / Archived tabs on the left and the three
+ * controls Claude puts on the right (search, Select, a light "New" pill), and
+ * one row per patient with the name on the left and the date of their last
+ * note on the right. The archived practice lives here rather than behind a
+ * checkbox in the sidebar.
  */
 export function PatientDirectory({
   patients,
@@ -99,142 +100,156 @@ export function PatientDirectory({
     </div>
   );
 
+  const tabs = (
+    <div className="directory-tabs" role="tablist" aria-label={t('common.patients')}>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={!archived}
+        className={archived ? 'directory-tab' : 'directory-tab is-active'}
+        data-testid="directory-tab-active"
+        onClick={() => {
+          onTab('active');
+        }}
+      >
+        {t('patients.tabActive')}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={archived}
+        className={archived ? 'directory-tab is-active' : 'directory-tab'}
+        data-testid="directory-tab-archived"
+        onClick={() => {
+          onTab('archived');
+        }}
+      >
+        {t('patients.tabArchived')}
+      </button>
+    </div>
+  );
+
   return (
     <div className="directory" data-testid="patient-directory">
-      <div className="directory-head">
-        <div className="directory-head-top">
+      <div className="directory-inner">
+        <div className="directory-head">
           <h1 className="directory-title">{t('common.patients')}</h1>
-          <div className="directory-actions">
-            {searching && search}
-            <button
-              type="button"
-              className="icon-btn directory-action-btn"
-              aria-label={searching ? t('directory.hideSearch') : t('common.searchPatients')}
-              aria-expanded={searching}
-              data-testid="directory-search-toggle"
-              onClick={() => {
-                setSearching((was) => {
-                  if (was) setQuery('');
-                  return !was;
-                });
-              }}
-            >
-              <SearchIcon className="icon icon-sm" />
-            </button>
-            <button
-              type="button"
-              className="directory-select-btn"
-              data-testid="directory-select"
-              onClick={() => {
-                onUnavailable(t('directory.select'));
-              }}
-            >
-              {t('directory.select')}
-            </button>
-            <Link to="/patients/new" className="btn directory-new" data-testid="directory-new">
-              {t('patients.new')}
-            </Link>
-          </div>
-        </div>
-        <div className="directory-tabs" role="tablist" aria-label={t('common.patients')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={!archived}
-            className={archived ? 'directory-tab' : 'directory-tab is-active'}
-            data-testid="directory-tab-active"
-            onClick={() => {
-              onTab('active');
-            }}
-          >
-            {t('patients.tabActive')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={archived}
-            className={archived ? 'directory-tab is-active' : 'directory-tab'}
-            data-testid="directory-tab-archived"
-            onClick={() => {
-              onTab('archived');
-            }}
-          >
-            {t('patients.tabArchived')}
-          </button>
-        </div>
-      </div>
-
-      {status === 'loading' && <p className="small state-note">{t('patients.loading')}</p>}
-      {status === 'error' && (
-        <p className="small state-note error-state" role="alert">
-          {failure}{' '}
-          <button type="button" className="btn small btn-quick" onClick={onRetry}>
-            {t('common.tryAgain')}
-          </button>
-        </p>
-      )}
-      {status === 'ready' && patients.length === 0 && (
-        <p className="small col-hint">
-          {archived ? t('directory.emptyArchived') : t('directory.emptyActive')}
-        </p>
-      )}
-      {status === 'ready' && patients.length > 0 && visible.length === 0 && (
-        <p className="small col-hint">{t('directory.noMatch', { query: query.trim() })}</p>
-      )}
-
-      <ul className="directory-list">
-        {visible.map((patient) => {
-          const pinned = pinnedIds.includes(patient.id);
-          return (
-            <li
-              key={patient.id}
-              className={pinned ? 'directory-row is-pinned' : 'directory-row'}
-              data-testid={`directory-row-${patient.id}`}
-            >
+          <div className="directory-bar">
+            {tabs}
+            <div className="directory-actions">
+              {searching && search}
               <button
                 type="button"
-                className="directory-row-main"
+                className="icon-btn directory-action-btn"
+                aria-label={searching ? t('directory.hideSearch') : t('common.searchPatients')}
+                aria-expanded={searching}
+                data-testid="directory-search-toggle"
                 onClick={() => {
-                  onSelect(patient.id);
+                  setSearching((was) => {
+                    if (was) setQuery('');
+                    return !was;
+                  });
                 }}
               >
-                {pinned ? <StarIcon className="icon icon-xs directory-row-pin" filled /> : null}
-                <span className="directory-row-name">{patient.name}</span>
-                <span className="directory-row-date">
-                  {formatShortDate(lastNoteAt.get(patient.id) ?? null)}
-                </span>
+                <SearchIcon className="icon icon-sm" />
               </button>
-              {renaming === patient.id && (
-                <PatientRenameForm
+              <button
+                type="button"
+                className="directory-select-btn"
+                data-testid="directory-select"
+                onClick={() => {
+                  onUnavailable(t('directory.select'));
+                }}
+              >
+                {t('directory.select')}
+              </button>
+              <Link to="/patients/new" className="btn directory-new" data-testid="directory-new">
+                {t('patients.new')}
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {status === 'loading' && <p className="small state-note">{t('patients.loading')}</p>}
+        {status === 'error' && (
+          <p className="small state-note error-state" role="alert">
+            {failure}{' '}
+            <button type="button" className="btn small btn-quick" onClick={onRetry}>
+              {t('common.tryAgain')}
+            </button>
+          </p>
+        )}
+        {status === 'ready' && patients.length === 0 && (
+          <p className="small col-hint">
+            {archived ? t('directory.emptyArchived') : t('directory.emptyActive')}
+          </p>
+        )}
+        {status === 'ready' && patients.length > 0 && visible.length === 0 && (
+          <p className="small col-hint">{t('directory.noMatch', { query: query.trim() })}</p>
+        )}
+
+        <ul className="directory-list">
+          {visible.map((patient) => {
+            const pinned = pinnedIds.includes(patient.id);
+            return (
+              <li
+                key={patient.id}
+                className={[
+                  'directory-row',
+                  pinned ? 'is-pinned' : '',
+                  renaming === patient.id ? 'is-renaming' : '',
+                ]
+                  .filter((part) => part !== '')
+                  .join(' ')}
+                data-testid={`directory-row-${patient.id}`}
+              >
+                {renaming === patient.id ? (
+                  <PatientRenameField
+                    patient={patient}
+                    className="directory-row-rename"
+                    onRename={onRename}
+                    onDone={() => {
+                      setRenaming(null);
+                    }}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="directory-row-main"
+                    onClick={() => {
+                      onSelect(patient.id);
+                    }}
+                  >
+                    {pinned ? <PinIcon className="icon icon-xs directory-row-pin" /> : null}
+                    <span className="directory-row-name">{patient.name}</span>
+                    <span className="directory-row-date">
+                      {formatShortDate(lastNoteAt.get(patient.id) ?? null)}
+                    </span>
+                  </button>
+                )}
+                <PatientMenu
                   patient={patient}
-                  onRename={onRename}
-                  onDone={() => {
-                    setRenaming(null);
+                  archived={archived}
+                  pinned={pinned}
+                  scope="directory"
+                  onTogglePin={() => {
+                    onTogglePin(patient.id);
+                  }}
+                  onRename={() => {
+                    setRenaming(patient.id);
+                  }}
+                  onSetArchived={(next) => {
+                    onSetArchived(patient, next);
+                  }}
+                  onDelete={() => {
+                    onDelete(patient);
                   }}
                 />
-              )}
-              <PatientMenu
-                patient={patient}
-                archived={archived}
-                pinned={pinned}
-                scope="directory"
-                onTogglePin={() => {
-                  onTogglePin(patient.id);
-                }}
-                onRename={() => {
-                  setRenaming(patient.id);
-                }}
-                onSetArchived={(next) => {
-                  onSetArchived(patient, next);
-                }}
-                onDelete={() => {
-                  onDelete(patient);
-                }}
-              />
-            </li>
-          );
-        })}
-      </ul>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }

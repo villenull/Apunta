@@ -1505,21 +1505,26 @@ export const en = {
   'patients.newShort': { text: 'New' },
 
   /*
-   * The starred/recents sidebar sections and the row menu, added with the
-   * owner's out-of-band UI work (2026-09-26). The row menu's visible words are
-   * JSX text beside an icon, which `check-ui-strings.mjs` exempts, so these
-   * keys are what actually get them onto the catalogues.
+   * The pinned/older sidebar sections and the row menu, added with the
+   * owner's out-of-band UI work (2026-09-26), in claude.ai's words. The row
+   * menu's visible words. They were JSX text beside an icon, which
+   * `check-ui-strings.mjs` used to exempt - AM-048 removed that exemption, so
+   * these keys are now the only reason those words are on the catalogues.
    */
-  'patients.star': { text: 'Star' },
-  'patients.unstar': { text: 'Unstar' },
-  'patients.starred': { text: 'Starred' },
-  'patients.recents': { text: 'Recents' },
+  'patients.pin': { text: 'Pin' },
+  'patients.unpin': { text: 'Unpin' },
+  'patients.pinned': { text: 'Pinned' },
+  /** The empty "Pinned" group's one row, after claude.ai's for projects. */
+  'patients.pinHint': { text: 'Pin patients to keep them here' },
+  'patients.older': { text: 'Older' },
+  /** The control beside "Older" and the two orders it offers. */
+  'patients.sortList': { text: 'Sort patients' },
+  'patients.sortRecent': { text: 'Recent activity' },
+  'patients.sortName': { text: 'Name' },
   /** The row's accessible name; `patients.renameShort` is its visible word. */
   'patients.renameAction': { text: 'Rename {name}' },
   /** The bare word for a narrow menu row, beside `patients.renameAction`. */
   'patients.renameShort': { text: 'Rename' },
-  /** The rename modal's title, shaped like `workspace.deleteTitle`. */
-  'patients.renameTitle': { text: 'Rename {name}' },
   'patients.restore': { text: 'Restore' },
   'patients.delete': { text: 'Delete' },
   /**

@@ -1329,7 +1329,8 @@ select:focus {
 }
 
 .col-search {
-  padding: var(--space-0) var(--field-inset) var(--space-6);
+  /* Claude's field sits 8px under the brand bar and 8px over the first row. */
+  padding: var(--space-4) var(--field-inset);
   position: relative;
 }
 
@@ -1366,7 +1367,7 @@ select:focus {
 .col-search-icon {
   position: absolute;
   left: calc(var(--field-inset) + 10px);
-  top: 0;
+  top: var(--space-4);
   height: var(--field-h);
   display: flex;
   align-items: center;
@@ -2668,48 +2669,6 @@ select:disabled {
   font-size: var(--text-base);
 }
 
-/*
- * Rename, as claude.ai's: a narrow modal on the raised surface, the title in
- * the display serif, one full-width field, Cancel and Save on the right.
- */
-.rename-modal {
-  max-width: 400px;
-  background: var(--modal-bg);
-  border: 1px solid var(--modal-border);
-  border-radius: var(--modal-radius);
-}
-
-.rename-modal h2 {
-  font-size: calc(20px * var(--font-scale));
-  margin-bottom: var(--space-8);
-}
-
-.patient-rename {
-  gap: 0;
-}
-
-.patient-rename .spell-input-wrap,
-.patient-rename input {
-  width: 100%;
-  min-width: 0;
-}
-
-.patient-rename input {
-  height: var(--field-h);
-  padding: 0 var(--space-6);
-  border: 1px solid var(--field-border);
-  border-radius: var(--field-radius);
-  background: var(--field-bg);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: var(--text-base);
-}
-
-.patient-rename input:focus {
-  outline: none;
-  border-color: var(--border-strong);
-}
-
 .patient-entry.is-archived .list-item .name {
   color: var(--text-secondary);
 }
@@ -3722,7 +3681,9 @@ select:disabled {
 }
 
 .patient-entry .list-item .name {
-  color: var(--text-primary);
+  /* The row's own colour: Claude's names sit a step below the primary ink
+     until the pointer or the open patient lifts them. */
+  color: inherit;
 }
 
 .patient-entry .list-item .sub {
@@ -3782,7 +3743,8 @@ select:disabled {
   gap: 0;
   height: var(--row-h);
   margin-bottom: 1px;
-  padding: 0 var(--space-4);
+  /* 6px, so a name starts 14px from the panel's edge, where Claude's do. */
+  padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
   background: transparent;
   /* claude.ai's recents are set a step below the primary ink; the row under
@@ -3825,25 +3787,142 @@ select:disabled {
 
 .new-patient-icon {
   flex-shrink: 0;
-  margin-right: var(--space-4);
-  color: var(--text-muted);
+  /* The glyph lands 16px in and the word 46px in, as Claude's "New" does. */
+  margin: 0 14px 0 2px;
+  color: var(--text-secondary);
 }
 
 /*
- * The "Starred" and "Recents" labels over the two groups of rows, as claude.ai
- * heads its sidebar: small, medium weight, the muted ink, inset to the names.
+ * The "Pinned" and "Older" labels over the two groups of rows, as claude.ai
+ * heads its sidebar's: a row of their own, small and regular in the muted ink,
+ * inset to the names, with room on the right for the label's one control.
  */
 .sidebar-section-label {
-  margin: var(--space-8) 0 var(--space-2);
-  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--row-h);
+  margin-top: var(--space-24);
+  padding: 0 var(--space-3);
   font-size: var(--text-sm);
   line-height: 16px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text-muted);
 }
 
-.sidebar-section-label:first-child {
-  margin-top: var(--space-4);
+/* The control beside a label: a bare glyph in the names' ink, as Claude's. */
+.sidebar-section-btn {
+  width: 24px;
+  height: 24px;
+  margin-right: -4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.sidebar-section-btn:hover,
+.sidebar-section-btn[aria-expanded='true'] {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+.sidebar-sort {
+  position: relative;
+}
+
+.sidebar-sort-menu {
+  top: calc(100% + var(--space-2));
+  right: -4px;
+  width: 200px;
+}
+
+/* The tick on the order in use, on the right where a shortcut would sit. */
+.patient-menu-check {
+  margin-left: auto;
+}
+
+/* The empty "Pinned" group's one line, as Claude's "Pin projects to keep them
+   here": the pin and the words in the muted ink, laid out like "New". */
+.sidebar-pin-hint {
+  display: flex;
+  align-items: center;
+  height: var(--row-h);
+  padding: 0 var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--row-font);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-pin-hint .icon {
+  flex-shrink: 0;
+  margin: 0 14px 0 2px;
+}
+
+.sidebar-pin-hint span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Rename in place (owner, 2026-09-26, after Claude's): the row becomes the
+ * field, the name selected in the system's own highlight colour — there is no
+ * `::selection` rule anywhere in the app, so the colour is the computer's.
+ * The field keeps the row's height and the name's position, so nothing moves
+ * when it opens; the wrapper carries the edge so the spelling layer, which
+ * mirrors the input, stays aligned with it.
+ */
+.rename-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius-sm);
+  background: var(--row-selected-bg);
+}
+
+.rename-field:focus-within {
+  border-color: var(--text-muted);
+}
+
+.rename-field .spell-input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.rename-field .spell-layer {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: none;
+  font: inherit;
+  line-height: normal;
+  color: var(--text-primary);
+}
+
+.rename-field input.spell-layer {
+  outline: none;
+}
+
+.project-row-rename {
+  height: var(--row-h);
+}
+
+/* One pixel of padding less than the row, for the border's pixel. */
+.project-row-rename .spell-layer {
+  padding: 0 calc(var(--space-3) - 1px);
+  font-size: var(--row-font);
+  line-height: calc(var(--row-h) - 2px);
+}
+
+.patient-entry.is-renaming {
+  background: transparent;
+}
+
+.patient-entry.is-renaming .patient-entry-actions {
+  display: none;
 }
 
 .patient-entry.is-dragging {
@@ -3904,15 +3983,14 @@ select:disabled {
   align-items: center;
   width: 100%;
   height: var(--row-h);
-  margin-top: var(--space-4);
-  padding: 0 var(--space-4);
+  padding: 0 var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font: inherit;
   font-size: var(--row-font);
-  font-weight: 500;
+  font-weight: 400;
   text-align: left;
   cursor: pointer;
 }
@@ -3935,7 +4013,7 @@ select:disabled {
   gap: var(--space-4);
   width: 100%;
   height: var(--row-h);
-  padding: 0 var(--space-4);
+  padding: 0 var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -3995,26 +4073,48 @@ select:disabled {
   }
 }
 
-/* "View all": the full list, in the shape of Claude's Recents page. */
+/*
+ * "View all": the full list, in the shape of Claude's Recents page, measured on
+ * the owner's screen (2026-09-26): one centred column, the serif title alone
+ * on its line, then a bar with the tabs on the left and the controls on the
+ * right, then rows 52px apart with a faint rule between them and no inset —
+ * the names start where the tabs do.
+ */
 .directory {
-  display: flex;
-  flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  padding: var(--space-32) var(--space-40) var(--space-40);
+  padding: var(--space-40) var(--space-32);
   font-size: var(--main-font);
+}
+
+.directory-inner {
+  display: flex;
+  flex-direction: column;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .directory-head {
   margin-bottom: var(--space-20);
 }
 
-/* The title and the three controls at the top right, as on Claude's Recents. */
-.directory-head-top {
+.directory-title {
+  /* claude.ai's page titles: the display serif, regular weight. */
+  font-family: var(--font-serif);
+  font-size: calc(28px * var(--font-scale));
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--patients-title);
+}
+
+/* Tabs on the left, controls on the right, one line under the title. */
+.directory-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-8);
+  margin-top: var(--space-24);
   min-height: var(--field-h);
 }
 
@@ -4022,7 +4122,7 @@ select:disabled {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  flex-shrink: 0;
+  min-width: 0;
 }
 
 .directory-action-btn {
@@ -4031,6 +4131,7 @@ select:disabled {
   border-color: transparent;
   background: transparent;
   border-radius: var(--radius-sm);
+  color: var(--text-secondary);
 }
 
 .directory-action-btn:hover {
@@ -4039,24 +4140,23 @@ select:disabled {
   border-color: transparent;
 }
 
-/* "Select" is a text button beside the two, in Claude's own weight. */
+/* "Select": a filled grey button, in Claude's own weight. */
 .directory-select-btn {
   flex-shrink: 0;
   height: var(--field-h);
-  padding: 0 var(--space-8);
+  padding: 0 var(--space-6);
   border: none;
   border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
+  background: var(--select-bg);
+  color: var(--text-primary);
   font: inherit;
   font-size: var(--row-font);
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
 }
 
 .directory-select-btn:hover {
-  background: var(--row-hover-bg);
-  color: var(--text-primary);
+  background: var(--row-selected-bg);
 }
 
 /* The one bright control on the page: a light pill with dark text, in either
@@ -4066,13 +4166,13 @@ select:disabled {
      asked to give up its width to. */
   flex-shrink: 0;
   height: var(--field-h);
-  padding: 0 var(--space-8);
+  padding: 0 var(--space-6);
   border: none;
   border-radius: var(--radius-sm);
   background: var(--pill-bg);
   color: var(--pill-ink);
   font-size: var(--row-font);
-  font-weight: 500;
+  font-weight: 400;
   box-shadow: var(--shadow-switch);
 }
 
@@ -4092,7 +4192,8 @@ select:disabled {
   flex: 0 1 240px;
   min-width: 120px;
   height: var(--field-h);
-  padding: 0 var(--space-8);
+  padding: 0 var(--space-6);
+  border: 1px solid var(--field-border);
   border-radius: var(--field-radius);
   background: var(--field-bg);
   color: var(--text-secondary);
@@ -4128,32 +4229,22 @@ select:disabled {
   color: var(--text-muted);
 }
 
-.directory-title {
-  /* claude.ai's page titles: the display serif, regular weight. */
-  font-family: var(--font-serif);
-  font-size: calc(28px * var(--font-scale));
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  color: var(--patients-title);
-}
-
+/* Claude's tabs are pills: the open one on a grey fill, the others bare. */
 .directory-tabs {
   display: flex;
-  gap: var(--space-4);
-  margin-top: var(--space-20);
-  border-bottom: 1px solid var(--divider);
+  gap: var(--space-2);
 }
 
 .directory-tab {
-  padding: var(--space-5) var(--space-8);
+  height: var(--field-h);
+  padding: 0 var(--space-6);
   border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
   font: inherit;
   font-size: var(--row-font);
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -4162,8 +4253,8 @@ select:disabled {
 }
 
 .directory-tab.is-active {
+  background: var(--tab-active-bg);
   color: var(--text-primary);
-  border-bottom-color: var(--accent);
 }
 
 .directory-list {
@@ -4172,14 +4263,17 @@ select:disabled {
   padding: 0;
 }
 
+/* The rule sits between rows, never under the last one. */
 .directory-row {
+  position: relative;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--divider);
+  min-height: var(--directory-row-h);
+  border-radius: var(--radius-sm);
 }
 
-.directory-row:hover {
-  background: var(--row-hover-bg);
+.directory-row + .directory-row {
+  border-top: 1px solid var(--list-rule);
 }
 
 .directory-row-main {
@@ -4189,7 +4283,7 @@ select:disabled {
   flex: 1;
   min-width: 0;
   min-height: var(--directory-row-h);
-  padding: var(--space-4);
+  padding: 0;
   border: none;
   background: transparent;
   color: var(--text-primary);
@@ -4213,10 +4307,42 @@ select:disabled {
   color: var(--text-muted);
 }
 
+/* The "⋯" takes the date's place under the pointer, so the row's right edge
+   is the date at rest and the menu when she reaches for it. */
+.directory-row .patient-entry-actions {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0;
+  background: var(--app-bg);
+  opacity: 0;
+}
+
+.directory-row:hover .patient-entry-actions,
+.directory-row:focus-within .patient-entry-actions,
+.directory-row .patient-entry-actions.is-open {
+  opacity: 1;
+}
+
 .directory-row-pin {
   align-self: center;
   flex-shrink: 0;
   color: var(--text-muted);
+}
+
+.directory-row-rename {
+  height: calc(var(--directory-row-h) - 12px);
+  margin: 6px 0;
+}
+
+.directory-row-rename .spell-layer {
+  padding: 0 var(--space-3);
+  font-size: var(--main-font);
+}
+
+.directory-row.is-renaming .patient-entry-actions {
+  display: none;
 }
 
 /* Settings over the workspace: the page behind is dimmed and blurred, and the

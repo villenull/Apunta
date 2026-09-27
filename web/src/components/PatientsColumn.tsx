@@ -1,5 +1,5 @@
 import type { PatientListItem } from '@apunta/shared';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 
@@ -8,15 +8,26 @@ import type { LoadState } from '../hooks/useLoader.js';
 import { formatShortDate } from '../lib/format.js';
 import { useI18n, type Translate } from '../lib/i18n.js';
 import { pinnedIndex } from '../lib/patientOrder.js';
+import { readSidebarSort, writeSidebarSort, type SidebarSort } from '../lib/patientPins.js';
 import { BrandWordmark } from './BrandWordmark.js';
-import { GearIcon, GlobeIcon, HelpIcon, PanelLeftIcon, PlusIcon, SearchIcon } from './icons.js';
+import {
+  CheckIcon,
+  GearIcon,
+  GlobeIcon,
+  HelpIcon,
+  PanelLeftIcon,
+  PinIcon,
+  PlusIcon,
+  SearchIcon,
+  SortIcon,
+} from './icons.js';
 import { PatientMenu } from './PatientMenu.js';
-import { PatientRenameForm } from './PatientRenameForm.js';
+import { PatientRenameField } from './PatientRenameField.js';
 
 /**
- * How many patients the sidebar shows before the "View all" row — the count
- * Claude's own sidebar fits, and short enough that a practice with hundreds of
- * patients still opens on a scannable list.
+ * How many unpinned patients the sidebar shows before the "View all" row — the
+ * count Claude's own sidebar fits, and short enough that a practice with
+ * hundreds of patients still opens on a scannable list.
  */
 const VISIBLE_PATIENTS = 13;
 
@@ -156,19 +167,9 @@ export function PatientsColumn({
   );
 }
 
-/** "Mission control", where Settings, Language and Get help live. */
-function MissionControl({
-  t,
-  onOpenSettings,
-  onUnavailable,
-}: {
-  t: Translate;
-  onOpenSettings: () => void;
-  onUnavailable: (what: string) => void;
-}): React.JSX.Element {
-  const [open, setOpen] = useState(false);
+/** Closes a small menu on a click outside it or on Escape. */
+function useDismiss(open: boolean, setOpen: (open: boolean) => void): React.RefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (!open) return undefined;
     function onPointerDown(event: PointerEvent): void {
@@ -183,7 +184,22 @@ function MissionControl({
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [open]);
+  }, [open, setOpen]);
+  return ref;
+}
+
+/** "Mission control", where Settings, Language and Get help live. */
+function MissionControl({
+  t,
+  onOpenSettings,
+  onUnavailable,
+}: {
+  t: Translate;
+  onOpenSettings: () => void;
+  onUnavailable: (what: string) => void;
+}): React.JSX.Element {
+  const [open, setOpen] = useState(false);
+  const ref = useDismiss(open, setOpen);
 
   function choose(action: () => void): () => void {
     return () => {
@@ -287,6 +303,7 @@ function PatientList({
   const [renaming, setRenaming] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const [sort, setSort] = useState<SidebarSort>(readSidebarSort);
   // The hover card is anchored to the row that is hovered, and lives outside
   // the sidebar: the list is a scroll box, so a card inside it would be clipped
   // at the column's edge instead of opening over the page beside it.
@@ -306,10 +323,11 @@ function PatientList({
   }
 
   const needle = query.trim().toLowerCase();
+  const searching = needle.length > 0;
   const visible = ordered.filter((patient) => patient.name.toLowerCase().includes(needle));
 
   if (visible.length === 0) {
-    if (needle.length > 0) {
+    if (searching) {
       return (
         <div className="empty-column-state">
           <p className="small col-hint">{t('directory.noMatch', { query: query.trim() })}</p>
@@ -333,151 +351,182 @@ function PatientList({
     return <p className="small col-hint">{t('directory.emptyActive')}</p>;
   }
 
+  // claude.ai's sidebar: a "Projects" group that is always there, reading
+  // "Pin projects to keep them here" while it is empty, then everything else
+  // under "Older". The order arrives pinned-first; the pinned group keeps the
+  // order she gave it, and "Older" follows the control beside its label.
+  const pinnedRows = visible.filter((patient) => pinnedIndex(patient.id, pinnedIds) >= 0);
+  const olderByRecency = visible.filter((patient) => pinnedIndex(patient.id, pinnedIds) < 0);
+  const older =
+    sort === 'name'
+      ? [...olderByRecency].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+      : olderByRecency;
   // Searching is a deliberate act, so it shows everyone it matched; the daily
   // list is the one that gets cut short.
-  const shown = needle.length > 0 ? visible : visible.slice(0, VISIBLE_PATIENTS);
+  const olderShown = searching ? older : older.slice(0, VISIBLE_PATIENTS);
 
   const tipPatient = tip === null ? null : (visible.find((patient) => patient.id === tip.id) ?? null);
 
-  return (
-    <>
-      {shown.map((patient, index) => {
-        const archived = patient.archived_at !== null;
-        const pinned = pinnedIndex(patient.id, pinnedIds) >= 0;
-        // claude.ai heads its sidebar "Starred" and "Recents". The order is
-        // already starred-first, so a label goes wherever the group changes.
-        const previous = index > 0 ? shown[index - 1] : undefined;
-        const previousPinned = previous !== undefined && pinnedIndex(previous.id, pinnedIds) >= 0;
-        const label =
-          index === 0 || pinned !== previousPinned
-            ? pinned
-              ? t('patients.starred')
-              : t('patients.recents')
-            : null;
-        return (
-          <Fragment key={patient.id}>
-            {label !== null && (
-              <div
-                className="sidebar-section-label"
-                data-testid={pinned ? 'section-starred' : 'section-recents'}
-              >
-                {label}
-              </div>
-            )}
-            <div
-              className={[
-                'patient-entry',
-                'project-row-wrap',
-                archived ? 'is-archived' : '',
-                pinned ? 'is-pinned' : '',
-                dragging === patient.id ? 'is-dragging' : '',
-                dropTarget === patient.id ? 'is-drop-target' : '',
-              ]
-                .filter((part) => part !== '')
-                .join(' ')}
-              data-testid={`patient-entry-${patient.id}`}
-              // Only pinned rows move: they are the ones with an order of their
-              // own. Everything else is ordered by when it was last worked on.
-              draggable={pinned}
-              onDragStart={(event) => {
-                setDragging(patient.id);
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', patient.id);
+  function renderRow(patient: PatientListItem): React.JSX.Element {
+    const archived = patient.archived_at !== null;
+    const pinned = pinnedIndex(patient.id, pinnedIds) >= 0;
+    const editing = renaming === patient.id;
+    return (
+      <div
+        key={patient.id}
+        className={[
+          'patient-entry',
+          'project-row-wrap',
+          archived ? 'is-archived' : '',
+          pinned ? 'is-pinned' : '',
+          editing ? 'is-renaming' : '',
+          dragging === patient.id ? 'is-dragging' : '',
+          dropTarget === patient.id ? 'is-drop-target' : '',
+        ]
+          .filter((part) => part !== '')
+          .join(' ')}
+        data-testid={`patient-entry-${patient.id}`}
+        // Only pinned rows move: they are the ones with an order of their
+        // own. Everything else is ordered by when it was last worked on.
+        draggable={pinned && !editing}
+        onDragStart={(event) => {
+          setDragging(patient.id);
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', patient.id);
+        }}
+        onDragOver={(event) => {
+          if (!pinned || dragging === null) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+          setDropTarget(patient.id);
+        }}
+        onDragLeave={() => {
+          setDropTarget((current) => (current === patient.id ? null : current));
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          const from = pinnedIndex(dragging ?? '', pinnedIds);
+          const to = pinnedIndex(patient.id, pinnedIds);
+          setDragging(null);
+          setDropTarget(null);
+          if (from >= 0 && to >= 0 && from !== to) onReorderPins(from, to);
+        }}
+        onDragEnd={() => {
+          setDragging(null);
+          setDropTarget(null);
+        }}
+      >
+        {editing ? (
+          <PatientRenameField
+            patient={patient}
+            className="project-row-rename"
+            onRename={onRename}
+            onDone={() => {
+              setRenaming(null);
+            }}
+          />
+        ) : (
+          <>
+            <button
+              type="button"
+              className={
+                patient.id === activePatientId ? 'list-item project-row is-active' : 'list-item project-row'
+              }
+              data-testid={`patient-row-${patient.id}`}
+              onMouseEnter={(event) => {
+                setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
               }}
-              onDragOver={(event) => {
-                if (!pinned || dragging === null) return;
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
-                setDropTarget(patient.id);
+              onMouseLeave={() => {
+                setTip((current) => (current?.id === patient.id ? null : current));
               }}
-              onDragLeave={() => {
-                setDropTarget((current) => (current === patient.id ? null : current));
+              onFocus={(event) => {
+                setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
               }}
-              onDrop={(event) => {
-                event.preventDefault();
-                const from = pinnedIndex(dragging ?? '', pinnedIds);
-                const to = pinnedIndex(patient.id, pinnedIds);
-                setDragging(null);
-                setDropTarget(null);
-                if (from >= 0 && to >= 0 && from !== to) onReorderPins(from, to);
+              onBlur={() => {
+                setTip((current) => (current?.id === patient.id ? null : current));
               }}
-              onDragEnd={() => {
-                setDragging(null);
-                setDropTarget(null);
+              onClick={() => {
+                onSelect(patient.id);
+              }}
+              onKeyDown={(event) => {
+                // The keyboard way to reorder a pinned patient, since dragging
+                // is not reachable without a pointer: Alt with the arrows.
+                if (!pinned || !event.altKey) return;
+                const from = pinnedIndex(patient.id, pinnedIds);
+                if (event.key === 'ArrowUp' && from > 0) {
+                  event.preventDefault();
+                  onReorderPins(from, from - 1);
+                } else if (event.key === 'ArrowDown' && from >= 0 && from < pinnedIds.length - 1) {
+                  event.preventDefault();
+                  onReorderPins(from, from + 1);
+                }
               }}
             >
-              <button
-                type="button"
-                className={
-                  patient.id === activePatientId ? 'list-item project-row is-active' : 'list-item project-row'
-                }
-                data-testid={`patient-row-${patient.id}`}
-                onMouseEnter={(event) => {
-                  setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
-                }}
-                onMouseLeave={() => {
-                  setTip((current) => (current?.id === patient.id ? null : current));
-                }}
-                onFocus={(event) => {
-                  setTip({ id: patient.id, rect: event.currentTarget.getBoundingClientRect() });
-                }}
-                onBlur={() => {
-                  setTip((current) => (current?.id === patient.id ? null : current));
-                }}
-                onClick={() => {
-                  onSelect(patient.id);
-                }}
-                onKeyDown={(event) => {
-                  // The keyboard way to reorder a pinned patient, since dragging
-                  // is not reachable without a pointer: Alt with the arrows.
-                  if (!pinned || !event.altKey) return;
-                  const from = pinnedIndex(patient.id, pinnedIds);
-                  if (event.key === 'ArrowUp' && from > 0) {
-                    event.preventDefault();
-                    onReorderPins(from, from - 1);
-                  } else if (event.key === 'ArrowDown' && from >= 0 && from < pinnedIds.length - 1) {
-                    event.preventDefault();
-                    onReorderPins(from, from + 1);
-                  }
-                }}
-              >
-                <span className="name">{patient.name}</span>
-              </button>
+              <span className="name">{patient.name}</span>
+            </button>
 
-              {/* One small "⋯" instead of a row of buttons: the column is narrow
+            {/* One small "⋯" instead of a row of buttons: the column is narrow
                 (owner, 2026-09-24), and three buttons on hover squeezed the
                 name to nothing. Its slot stays in the row while hidden so the
                 selection target never moves under the pointer. */}
-              <PatientMenu
-                patient={patient}
-                archived={archived}
-                pinned={pinned}
-                onTogglePin={() => {
-                  onTogglePin(patient.id);
-                }}
-                onRename={() => {
-                  setRenaming(patient.id);
-                }}
-                onSetArchived={(next) => {
-                  onSetArchived(patient, next);
-                }}
-                onDelete={() => {
-                  onDelete(patient);
-                }}
-              />
-              {renaming === patient.id && (
-                <PatientRenameForm
-                  patient={patient}
-                  onRename={onRename}
-                  onDone={() => {
-                    setRenaming(null);
-                  }}
-                />
-              )}
+            <PatientMenu
+              patient={patient}
+              archived={archived}
+              pinned={pinned}
+              onTogglePin={() => {
+                onTogglePin(patient.id);
+              }}
+              onRename={() => {
+                setTip(null);
+                setRenaming(patient.id);
+              }}
+              onSetArchived={(next) => {
+                onSetArchived(patient, next);
+              }}
+              onDelete={() => {
+                onDelete(patient);
+              }}
+            />
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* A search that matched no pinned patient has nothing to say about pins. */}
+      {(!searching || pinnedRows.length > 0) && (
+        <section className="sidebar-section" aria-labelledby="sidebar-pinned-label">
+          <div className="sidebar-section-label" data-testid="section-pinned">
+            <span id="sidebar-pinned-label">{t('patients.pinned')}</span>
+          </div>
+          {pinnedRows.length === 0 ? (
+            <div className="sidebar-pin-hint" data-testid="pin-hint">
+              <PinIcon className="icon icon-sm" />
+              <span>{t('patients.pinHint')}</span>
             </div>
-          </Fragment>
-        );
-      })}
+          ) : (
+            pinnedRows.map(renderRow)
+          )}
+        </section>
+      )}
+
+      {older.length > 0 && (
+        <section className="sidebar-section" aria-labelledby="sidebar-older-label">
+          <div className="sidebar-section-label" data-testid="section-older">
+            <span id="sidebar-older-label">{t('patients.older')}</span>
+            <SortControl
+              sort={sort}
+              onSort={(next) => {
+                setSort(next);
+                writeSidebarSort(next);
+              }}
+            />
+          </div>
+          {olderShown.map(renderRow)}
+        </section>
+      )}
 
       {ordered.length > 0 && (
         <button type="button" className="view-all-row" data-testid="view-all-patients" onClick={onOpenAll}>
@@ -511,5 +560,61 @@ function PatientList({
           document.body,
         )}
     </>
+  );
+}
+
+/** The sliders beside "Older", as claude.ai's: how that group is ordered. */
+function SortControl({
+  sort,
+  onSort,
+}: {
+  sort: SidebarSort;
+  onSort: (sort: SidebarSort) => void;
+}): React.JSX.Element {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useDismiss(open, setOpen);
+  const options: { value: SidebarSort; label: string }[] = [
+    { value: 'recent', label: t('patients.sortRecent') },
+    { value: 'name', label: t('patients.sortName') },
+  ];
+
+  return (
+    <div className="sidebar-sort" ref={ref}>
+      <button
+        type="button"
+        className="icon-btn sidebar-section-btn"
+        aria-label={t('patients.sortList')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        data-testid="sidebar-sort"
+        onClick={() => {
+          setOpen((was) => !was);
+        }}
+      >
+        <SortIcon className="icon icon-sm" />
+      </button>
+      {open && (
+        <div className="patient-menu sidebar-sort-menu" role="menu" aria-label={t('patients.sortList')}>
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="menuitemradio"
+              aria-checked={sort === option.value}
+              className="patient-menu-item"
+              data-testid={`sidebar-sort-${option.value}`}
+              onClick={() => {
+                setOpen(false);
+                onSort(option.value);
+              }}
+            >
+              {option.label}
+              {sort === option.value && <CheckIcon className="icon icon-sm patient-menu-check" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

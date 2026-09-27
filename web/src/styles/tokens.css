@@ -128,12 +128,14 @@
    * width, the bar's height, the mark, the search field, the row rhythm, the
    * row menu, the settings modal and its nav.
    */
-  --sidebar-w: 300px;
+  /* claude.ai's sidebar, measured on the owner's screen (2026-09-26): 288px
+     with its hairline, a 32px search field 8px in from each edge. */
+  --sidebar-w: 288px;
   --topbar-h: 44px;
   --logo-h: 20px;
-  --field-h: 36px;
+  --field-h: 32px;
   --field-radius: 8px;
-  --field-inset: 4px;
+  --field-inset: 8px;
   --row-h: 32px;
   --row-font: 14px;
   --main-font: 14px;
@@ -160,7 +162,12 @@
    * "View all" rows are roomier than the sidebar's: a full page of names is
    * read, not scanned, and the date on the right needs somewhere to sit.
    */
-  --directory-row-h: 44px;
+  --directory-row-h: 52px;
+  /* The rule between those rows: fainter than `--divider`, as Claude's is. */
+  --list-rule: rgb(31 30 29 / 0.08);
+  /* The open tab and the Select button on that page. */
+  --tab-active-bg: var(--row-selected-bg);
+  --select-bg: var(--row-selected-bg);
   /* Claude's light pill: the one bright thing on the page, in either theme. */
   --pill-bg: #f0eee6;
   --pill-ink: #262620;
@@ -325,25 +332,37 @@
    * The two base surfaces are the owner's exact values (2026-09-26): the
    * Patients column is `#111111` and the open space the note and the home
    * screen sit on is `#151515`, both neutral greys where this ramp had a warm
-   * cast. The steps above them are still this ramp's own values, so they now
-   * read further from the base than the "a shade above" above describes —
-   * `--menu-bg` in particular no longer equals `--app-bg`, which the paragraph
-   * above says it should. The owner has the measured offsets and has not asked
-   * for the ramp to be re-stepped; do not re-step it unasked.
+   * cast. The owner then asked for the rest of the ramp to match Claude too
+   * (2026-09-26, later), so the steps above them are Claude's sampled values
+   * rather than this ramp's old warm ones; `--menu-bg` is Claude's menu grey,
+   * a shade above `--app-bg`, not equal to it.
    */
   --sidebar-bg: #111111;
   --app-bg: #151515;
-  --text-primary: #faf9f5;
-  --text-secondary: #c2c0b6;
-  --text-muted: #9c9a92;
-  --field-bg: #30302e;
-  --field-border: rgb(222 220 209 / 0.15);
-  --row-selected-bg: #262624;
-  --row-hover-bg: #1f1e1d;
-  --divider: rgb(222 220 209 / 0.15);
-  --menu-bg: #262624;
-  --menu-border: rgb(222 220 209 / 0.15);
-  --menu-danger: #fe8181;
+  /*
+   * Everything from here to `--menu-danger` was sampled from claude.ai on the
+   * owner's screen (2026-09-26): neutral greys for the field, the rows, the
+   * rules and the menu, where this ramp used to carry a warm cast, and the
+   * three inks Claude sets on them.
+   */
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --field-bg: #1d1d1d;
+  --field-border: #343434;
+  --row-selected-bg: #343434;
+  --row-hover-bg: #1f1f1f;
+  --divider: rgb(255 255 255 / 0.1);
+  --menu-bg: #20201f;
+  --menu-border: #373736;
+  --menu-danger: #ec7e7e;
+  --list-rule: rgb(255 255 255 / 0.05);
+  --tab-active-bg: #262626;
+  --select-bg: #2d2d2d;
+  /* Claude's "New session": a white pill with near-black ink. */
+  --pill-bg: #ffffff;
+  --pill-ink: #0b0b0b;
+  --pill-bg-hover: #e8e8e6;
   --modal-bg: #1f1e1d;
   --modal-border: rgb(222 220 209 / 0.15);
 

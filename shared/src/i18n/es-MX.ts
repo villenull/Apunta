@@ -1106,29 +1106,38 @@ export const esMX = {
   },
 
   /*
-   * El apartado de destacados y recientes, y el menu de fila, anadidos con el
+   * El apartado de fijados y anteriores, y el menu de fila, anadidos con el
    * trabajo de interfaz fuera de tarjeta (2026-09-26).
    */
-  'patients.star': {
-    text: 'Destacar',
+  'patients.pin': {
+    text: 'Fijar',
   },
-  'patients.unstar': {
-    text: 'Quitar de destacados',
+  'patients.unpin': {
+    text: 'Dejar de fijar',
   },
-  'patients.starred': {
-    text: 'Destacados',
+  'patients.pinned': {
+    text: 'Fijados',
   },
-  'patients.recents': {
-    text: 'Recientes',
+  'patients.pinHint': {
+    text: 'Fija pacientes para tenerlos aquí',
+  },
+  'patients.older': {
+    text: 'Anteriores',
+  },
+  'patients.sortList': {
+    text: 'Ordenar pacientes',
+  },
+  'patients.sortRecent': {
+    text: 'Actividad reciente',
+  },
+  'patients.sortName': {
+    text: 'Nombre',
   },
   'patients.renameAction': {
     text: 'Cambiar el nombre de {name}',
   },
   'patients.renameShort': {
     text: 'Cambiar nombre',
-  },
-  'patients.renameTitle': {
-    text: 'Cambiar el nombre de {name}',
   },
   'patients.restore': {
     text: 'Restaurar',

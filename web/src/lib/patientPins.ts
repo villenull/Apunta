@@ -50,3 +50,24 @@ export function writeSidebarCollapsed(collapsed: boolean): void {
     // Losing the layout preference is not worth an error path.
   }
 }
+
+/** How the sidebar's "Older" group is ordered; same preview-only bargain. */
+export type SidebarSort = 'recent' | 'name';
+const SORT_KEY = 'apunta-sidebar-sort-v1';
+
+export function readSidebarSort(): SidebarSort {
+  try {
+    return window.localStorage.getItem(SORT_KEY) === 'name' ? 'name' : 'recent';
+  } catch {
+    return 'recent';
+  }
+}
+
+export function writeSidebarSort(sort: SidebarSort): void {
+  try {
+    if (sort === 'name') window.localStorage.setItem(SORT_KEY, 'name');
+    else window.localStorage.removeItem(SORT_KEY);
+  } catch {
+    // Losing the order preference is not worth an error path.
+  }
+}

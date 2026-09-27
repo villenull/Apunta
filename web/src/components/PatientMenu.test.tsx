@@ -3,12 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makePatient } from '../test/fakeApi.js';
 import { PatientMenu, type PatientMenuProps } from './PatientMenu.js';
-import { PatientRenameForm } from './PatientRenameForm.js';
+import { PatientRenameField } from './PatientRenameField.js';
 
 /**
- * The row menu and the rename modal, after claude.ai's (AM-047): Star rather
- * than Pin, a bare "Rename" row, and a rename that opens a small modal with
- * Cancel and Save instead of editing the row in place.
+ * The row menu and rename, after claude.ai's: Pin with P, a bare "Rename"
+ * row, and a rename that turns the row itself into the field (owner,
+ * 2026-09-26).
  */
 
 afterEach(cleanup);
@@ -32,18 +32,18 @@ function renderMenu(overrides: Partial<PatientMenuProps> = {}): PatientMenuProps
 }
 
 describe('the patient row menu', () => {
-  it('offers Star, a bare Rename, and Archive, in that order', () => {
+  it('offers Pin, a bare Rename, and Archive, in that order', () => {
     renderMenu();
     const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
-    expect(items.map((item) => item.textContent)).toEqual(['StarS', 'RenameR', 'ArchiveD']);
+    expect(items.map((item) => item.textContent)).toEqual(['PinP', 'RenameR', 'ArchiveD']);
     // The row reads "Rename"; its accessible name says whom.
     expect(screen.getByRole('menuitem', { name: 'Rename John Smith' })).toBeDefined();
   });
 
-  it('says Unstar for a starred patient, and S toggles it while open', () => {
+  it('says Unpin for a pinned patient, and P toggles it while open', () => {
     const props = renderMenu({ pinned: true });
-    expect(screen.getByTestId(`pin-${john.id}`).textContent).toContain('Unstar');
-    fireEvent.keyDown(document.body, { key: 's' });
+    expect(screen.getByTestId(`pin-${john.id}`).textContent).toContain('Unpin');
+    fireEvent.keyDown(document.body, { key: 'p' });
     expect(props.onTogglePin).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('menu')).toBeNull();
   });
@@ -56,32 +56,51 @@ describe('the patient row menu', () => {
   });
 });
 
-describe('the rename modal', () => {
-  it('opens as a dialog titled with the name, and saves the trimmed new one', () => {
+describe('renaming in place', () => {
+  it('opens with the whole name selected, and Enter saves the trimmed new one', () => {
     const onRename = vi.fn();
     const onDone = vi.fn();
-    render(<PatientRenameForm patient={john} onRename={onRename} onDone={onDone} />);
+    render(<PatientRenameField patient={john} onRename={onRename} onDone={onDone} />);
 
-    const dialog = screen.getByRole('dialog', { name: 'Rename John Smith' });
-    fireEvent.change(within(dialog).getByLabelText('Name for John Smith'), {
-      target: { value: '  Jon Smith ' },
-    });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    const field = screen.getByLabelText('Name for John Smith') as HTMLInputElement;
+    expect(document.activeElement).toBe(field);
+    expect([field.selectionStart, field.selectionEnd]).toEqual([0, 'John Smith'.length]);
 
+    fireEvent.change(field, { target: { value: '  Jon Smith ' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    // The field unmounting blurs it; that must not save a second time.
+    fireEvent.blur(field);
+
+    expect(onRename).toHaveBeenCalledTimes(1);
     expect(onRename).toHaveBeenCalledWith(john, 'Jon Smith');
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('cancels without saving, and will not save an empty name', () => {
+  it('saves when she clicks away', () => {
+    const onRename = vi.fn();
+    render(<PatientRenameField patient={john} onRename={onRename} onDone={vi.fn()} />);
+    const field = screen.getByLabelText('Name for John Smith');
+    fireEvent.change(field, { target: { value: 'Jon Smith' } });
+    fireEvent.blur(field);
+    expect(onRename).toHaveBeenCalledWith(john, 'Jon Smith');
+  });
+
+  it('puts the old name back on Escape, and will not save an empty name', () => {
     const onRename = vi.fn();
     const onDone = vi.fn();
-    render(<PatientRenameForm patient={john} onRename={onRename} onDone={onDone} />);
+    render(<PatientRenameField patient={john} onRename={onRename} onDone={onDone} />);
+    const field = screen.getByLabelText('Name for John Smith');
 
-    fireEvent.change(screen.getByLabelText('Name for John Smith'), { target: { value: '   ' } });
-    expect((screen.getByTestId(`save-name-${john.id}`) as HTMLButtonElement).disabled).toBe(true);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    fireEvent.change(field, { target: { value: 'Someone else' } });
+    fireEvent.keyDown(field, { key: 'Escape' });
     expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onRename).not.toHaveBeenCalled();
+    cleanup();
+
+    render(<PatientRenameField patient={john} onRename={onRename} onDone={onDone} />);
+    const again = screen.getByLabelText('Name for John Smith');
+    fireEvent.change(again, { target: { value: '   ' } });
+    fireEvent.keyDown(again, { key: 'Enter' });
     expect(onRename).not.toHaveBeenCalled();
   });
 });

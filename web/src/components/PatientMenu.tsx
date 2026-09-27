@@ -2,13 +2,13 @@ import type { PatientListItem } from '@apunta/shared';
 import { useEffect, useRef, useState } from 'react';
 
 import { useI18n } from '../lib/i18n.js';
-import { ArchiveIcon, MoreIcon, PencilIcon, StarIcon, TrashIcon } from './icons.js';
+import { ArchiveIcon, MoreIcon, PencilIcon, PinIcon, TrashIcon } from './icons.js';
 
 export interface PatientMenuProps {
   patient: PatientListItem;
   /** Archived patients offer Restore and, as the red item, Delete. */
   archived: boolean;
-  /** Starred, in claude.ai's word; the data underneath is still the pin list. */
+  /** Pinned to the top of the sidebar, in its own "Pinned" group. */
   pinned: boolean;
   onTogglePin: () => void;
   onRename: () => void;
@@ -24,13 +24,13 @@ export interface PatientMenuProps {
 }
 
 /**
- * The "⋯" on a patient row, after claude.ai's (AM-047): Star, Rename, then a
+ * The "⋯" on a patient row, after claude.ai's (AM-047): Pin, Rename, then a
  * separator, then the one red destructive item — Archive for a working
  * patient, Delete for an archived one. "Add to project" is deliberately
  * absent; there is no such thing in Apunta.
  *
  * Each row carries its shortcut on the right, as Claude's do, and the shortcuts
- * work while the menu is open: S stars, R renames, D archives or deletes. They
+ * work while the menu is open: P pins, R renames, D archives or deletes. They
  * are letters rather than a modifier chord because the menu is a short-lived
  * thing over a short-lived list — a chord would be quicker and less
  * discoverable, and she reads the row before she presses anything.
@@ -67,7 +67,7 @@ export function PatientMenu({
       if (event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, [contenteditable="true"]')) return;
-      if (event.key === 's' || event.key === 'S') {
+      if (event.key === 'p' || event.key === 'P') {
         event.preventDefault();
         setOpen(false);
         onTogglePin();
@@ -132,9 +132,9 @@ export function PatientMenu({
             data-testid={`pin-${patient.id}`}
             onClick={choose(onTogglePin)}
           >
-            <StarIcon className="icon icon-sm" filled={pinned} />
-            {pinned ? t('patients.unstar') : t('patients.star')}
-            {hint('S')}
+            <PinIcon className="icon icon-sm" />
+            {pinned ? t('patients.unpin') : t('patients.pin')}
+            {hint('P')}
           </button>
           <button
             type="button"

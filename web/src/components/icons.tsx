@@ -297,41 +297,39 @@ export function PanelLeftIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
-/** The pin on a pinned row, and the Pin item's icon. */
+/**
+ * A pushpin leaning to the right, as claude.ai draws its Pin: the head up and to
+ * the right, the needle down and to the left.
+ */
 export function PinIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>
-      <path
-        d="M12 17.5v4M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2v.8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <g transform="rotate(45 12 12)">
+        <path
+          d="M8.5 3.5h7M10 3.5v5.5L7 13h10l-3-4V3.5z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path d="M12 13v7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </g>
+    </StrokeIcon>
+  );
+}
+
+/** Two upright sliders, the control beside claude.ai's "Older" label. */
+export function SortIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <path d="M8 4v2M8 10v10M16 4v9M16 17v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="16" cy="15" r="2" stroke="currentColor" strokeWidth="1.5" />
     </StrokeIcon>
   );
 }
 
 /** The box a patient is archived into. */
-/**
- * Star, for claude.ai's "Star" on a row menu (AM-047). Drawn here rather than
- * copied: a five-point star at the menu's 1.5 stroke, rounded joins. `filled`
- * is the Unstar row's glyph, so the menu says which state the patient is in.
- */
-export function StarIcon({ className, filled = false }: IconProps & { filled?: boolean }): React.JSX.Element {
-  return (
-    <StrokeIcon className={className}>
-      <path
-        d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"
-        stroke="currentColor"
-        fill={filled ? 'currentColor' : 'none'}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </StrokeIcon>
-  );
-}
-
 export function ArchiveIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>
