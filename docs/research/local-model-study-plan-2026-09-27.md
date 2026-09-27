@@ -32,6 +32,8 @@ No Linux measurement is presented as a Mac memory/speed result.
   A bilingual reviewer, distinct from that author and the execution worker,
   reviews both languages and gold before freeze; uncertain clinical or Spanish
   judgments remain explicitly unresolved, never certified by an AI alone.
+  Record reviewer identity/role, date, exact gold/rubric hashes, verdict and
+  unresolved items in docs/v2/evidence/MODEL-STUDY/corpus-review.md before freeze.
 - Independent reviewer writes only MODEL-STUDY-review.md under state/reviews;
   validates frozen fixtures/gold, scoring, raw traces, failures and reproducibility.
 - Scratch root: /home/villenull/.cache/apunta-model-study/2026-09-27.
@@ -85,7 +87,11 @@ Use local Ollama only; record version/hardware/model residency before each arm.
 Do not kill/unload unrelated processes or models. If unrelated inference or
 heavy GPU use is detected, pause and report contamination; do not change services.
 The lease serializes study requests only; unrelated Ollama clients do not honor
-it. Capture model residency and available GPU/process telemetry before and after
+it. Minimum telemetry is ollama ps and host load average before/after each arm;
+record GPU process/utilization telemetry when available. Missing GPU tooling
+alone does not invalidate observed wall-clock timing: label contention visibility
+limited. If minimum telemetry is absent, timing comparisons are NOT MEASURED;
+retain factual outputs. Capture model residency and available GPU/process telemetry before and after
 each arm, and during execution where possible. Mark contaminated timing windows
 invalid, retain their outputs and traces, and use at most the existing one
 diagnostic rerun budget once resources are clear. Missing telemetry means
@@ -162,7 +168,8 @@ Assess style separately from factual faithfulness using a frozen rubric: clarity
 and format (requested structure, concise without losing required detail). Score
 each dimension 1–5 with written anchors in the pre-reviewed corpus manifest;
 compare factual-equivalent pairs by the sum, equal sums are ties. The blinded
-sample is run 1 of all 16 scenarios per language for each arm versus A. Expand
+sample is run 1 of all 16 scenarios per language for each arm versus A
+(maximum 16 pairs per language per candidate; F has 16 Spanish pairs only). Expand
 factual review on false negatives as stated above without changing the original
 style-preference sample or selecting more favorable runs.
 Report per-task/per-language results and repeated-run variability; don't claim

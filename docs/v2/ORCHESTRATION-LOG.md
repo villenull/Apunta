@@ -248,3 +248,18 @@ absolute scratch paths, contamination handling, copy provenance and honest Mac
 memory uncertainty. No production or UI files changed. Reviewed own plan diff;
 git diff --check exit 0. Acquisition final evidence still being written; no
 acquisition acceptance or model quality result claimed.
+
+
+### 2026-09-27 — model acquisition processed; corpus work dispatched
+
+Acquisition report read in full. Coordinator sha256sum verified C/D against
+expected digests (exit 0); ollama list confirms five tags/baseline identity
+(exit 0). Preserved caveats in report; no inference or quality pass claimed.
+Archived acquisition agent f044198c and instruction reviewer d11f38c6 after
+processing outputs. Reviewer residuals closed by explicit minimum telemetry,
+pre-freeze review artifact and existing baseline pairing plus maximum16 pairs;
+report retained as submitted, not rewritten to claim a CLEAR it did not give.
+
+Spawned Space Bunny Free corpus author f8ddc7a6, limited to scratch corpus/
+and corpus-author.md, no inference. Separate bilingual gold review follows.
+No profiles configured. UI owner remains active and retained.
