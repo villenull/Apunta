@@ -1109,6 +1109,12 @@ export const esMX = {
    * El apartado de fijados y anteriores, y el menu de fila, anadidos con el
    * trabajo de interfaz fuera de tarjeta (2026-09-26).
    */
+  'patients.dragToResize': {
+    text: 'Arrastra para cambiar el tamaño',
+  },
+  'settings.accentLowContrast': {
+    text: 'Este color puede verse poco en la página, y el logotipo de Apunta también lo usa.',
+  },
   'patients.pin': {
     text: 'Fijar',
   },

@@ -1514,6 +1514,22 @@ export const en = {
    * `check-ui-strings.mjs` used to exempt - AM-048 removed that exemption, so
    * these keys are now the only reason those words are on the catalogues.
    */
+  /*
+   * The sidebar resize edge's hover card, second line. The first line reuses
+   * `patients.hideColumn`; the shortcut beside it is a literal, not a key — see
+   * the note in `PatientMenu.tsx`'s `hint()`. Owner-approved 2026-09-27.
+   */
+  'patients.dragToResize': { text: 'Drag to resize' },
+  /*
+   * The accent picker's low-contrast note. It appears when the chosen colour
+   * falls under 3:1 against the page surface in either theme, and she can keep
+   * the colour anyway. It names the logo because `--brand-mark` resolves to the
+   * accent, so a colour that is hard to see on the page takes the wordmark with
+   * it. Owner-approved 2026-09-27.
+   */
+  'settings.accentLowContrast': {
+    text: 'This colour may be hard to see on the page, and the Apunta logo uses it too.',
+  },
   'patients.pin': { text: 'Pin' },
   'patients.unpin': { text: 'Unpin' },
   'patients.pinned': { text: 'Pinned' },

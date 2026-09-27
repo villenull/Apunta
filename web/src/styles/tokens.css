@@ -131,6 +131,8 @@
   /* claude.ai's sidebar, measured on the owner's screen (2026-09-26): 288px
      with its hairline, a 32px search field 8px in from each edge. */
   --sidebar-w: 288px;
+  /* The collapsed sidebar's icon rail, as ChatGPT's. */
+  --rail-w: 52px;
   --topbar-h: 44px;
   --logo-h: 20px;
   --field-h: 32px;
@@ -203,14 +205,22 @@
    */
   --brand-mark: var(--accent);
   /*
-   * The accent default, claude.ai's clay. AM-047, owner-approved. It is a
-   * setting she changes in Appearance, so this is only what a fresh install
-   * and a reset-to-default get. `--accent-ink`, `--accent-tint` and
-   * `--accent-hover` all derive from it, so they follow. `--brand-mark` stays
-   * teal above, deliberately: the mark keeps the brand's colour whatever
-   * accent she picks (D10), which is what brand.spec.ts proves.
+   * The accent default. AM-047, then the owner's own value on 2026-09-27 after
+   * she saw the contrast figures: `#218677`, one value in both themes because
+   * she declined a per-theme pair. It clears 4.5:1 against the dark surfaces
+   * (`#151515` 4.12:1, `#111111` 4.26:1) and the light one (4.20:1) — the
+   * earlier brand teal `#1f6f63` managed only 3.05:1 on `#151515`, which is why
+   * it went. `accentInk` darkens this to `#000000` for `--on-accent`, so text
+   * on the accent is 4.74:1 rather than the 4.43:1 white would have given.
+   * It is a setting she changes in Appearance, so this is only what a fresh
+   * install and a reset-to-default get; `--accent-ink`, `--accent-tint` and
+   * `--accent-hover` all derive from it and follow.
+   *
+   * `--brand-mark` above now resolves to this, which reverses the other half
+   * of D10: the mark follows the accent instead of being fixed brand teal. See
+   * `docs/v2/DECISIONS.md` for what that costs and what still holds.
    */
-  --accent: #d97757;
+  --accent: #218677;
   /*
    * The Patients heading on the View-all page. It was the owner's #2596be
    * until AM-047, when claude.ai's look replaced it: claude.ai sets its page
