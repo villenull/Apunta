@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/fixtures';
 
 /** Narrow an API response body to its synthetic record id. */
 function idOf(payload: unknown, label: string): string {
@@ -22,7 +22,12 @@ function contentInertScript(): string {
   })()`;
 }
 
-test('a primary handoff flushes the pending edit and blocks the old window', async ({ browser, request }) => {
+test('a primary handoff flushes the pending edit and blocks the old window', async ({
+  browser,
+  request,
+  tr,
+  checkScreen,
+}) => {
   const formatId = idOf(
     await (
       await request.post('/api/formats', {
@@ -68,12 +73,13 @@ test('a primary handoff flushes the pending edit and blocks the old window', asy
     await pageB.goto(url);
     // B probes the held lock and stays covered by the takeover prompt.
     await expect(pageB.getByTestId('primary-blocker')).toBeVisible();
-    await expect(pageB.getByRole('button', { name: 'Make this the primary window' })).toBeVisible();
+    await expect(pageB.getByRole('button', { name: tr('app.primary.takeover') })).toBeVisible();
     // Exactly one primary: A still edits while B is covered.
     await expect(pageA.getByTestId('primary-blocker')).toHaveCount(0);
     // The app behind B's prompt is inert and the prompt holds focus.
     expect(await pageB.evaluate(contentInertScript())).toBe(true);
-    await expect(pageB.getByRole('button', { name: 'Make this the primary window' })).toBeFocused();
+    await expect(pageB.getByRole('button', { name: tr('app.primary.takeover') })).toBeFocused();
+    await checkScreen(pageB, 'the blocked second window');
 
     // An explicit decline leaves ownership untouched: B stays blocked.
     await pageB.getByTestId('primary-decline').click();
@@ -103,15 +109,15 @@ test('a primary handoff flushes the pending edit and blocks the old window', asy
     await pageA.getByTestId('note-body').fill(flushed);
     // The debounced save is genuinely in flight before B asks for the lock.
     await patchInFlight;
-    await expect(pageA.getByTestId('note-save-status')).toHaveText('Saving…');
-    await pageB.getByRole('button', { name: 'Make this the primary window' }).click();
+    await expect(pageA.getByTestId('note-save-status')).toHaveText(tr('note.saveSaving'));
+    await pageB.getByRole('button', { name: tr('app.primary.takeover') }).click();
 
     // The handoff waits on the flush: B sits pending behind its prompt while
     // A is still the unblocked primary with its save outstanding.
-    await expect(pageB.getByRole('heading', { name: 'Taking over…' })).toBeVisible();
+    await expect(pageB.getByRole('heading', { name: tr('app.primary.takingOver') })).toBeVisible();
     await expect(pageB.getByTestId('primary-blocker')).toBeVisible();
     await expect(pageA.getByTestId('primary-blocker')).toHaveCount(0);
-    await expect(pageA.getByTestId('note-save-status')).toHaveText('Saving…');
+    await expect(pageA.getByTestId('note-save-status')).toHaveText(tr('note.saveSaving'));
 
     // Let the held save land; the ordered handoff follows.
     releasePatch();
@@ -121,7 +127,7 @@ test('a primary handoff flushes the pending edit and blocks the old window', asy
     await expect(pageB.getByTestId('primary-blocker')).toHaveCount(0);
     // B reloads onto the flushed revision with no visibilitychange involved.
     await expect(pageB.getByTestId('note-body')).toHaveValue(flushed);
-    await expect(pageB.getByTestId('note-save-status')).toHaveText('Saved');
+    await expect(pageB.getByTestId('note-save-status')).toHaveText(tr('note.saveSaved'));
 
     const finalResponse = await request.get(`/api/notes/${noteId}`);
     const finalNote: unknown = await finalResponse.json();
@@ -145,7 +151,7 @@ test('a primary handoff flushes the pending edit and blocks the old window', asy
   }
 });
 
-test('a failed flush keeps the old primary and leaves takeover blocked', async ({ browser, request }) => {
+test('a failed flush keeps the old primary and leaves takeover blocked', async ({ browser, request, tr }) => {
   const original = 'Subjective: Original body.\n\nPlan: Continue weekly.';
   const unsaved = 'Subjective: Unsaved edit blocked on handoff.\n\nPlan: Continue weekly.';
   const formatId = idOf(
@@ -186,7 +192,7 @@ test('a failed flush keeps the old primary and leaves takeover blocked', async (
 
     await pageB.goto(url);
     await expect(pageB.getByTestId('primary-blocker')).toBeVisible();
-    await expect(pageB.getByRole('button', { name: 'Make this the primary window' })).toBeVisible();
+    await expect(pageB.getByRole('button', { name: tr('app.primary.takeover') })).toBeVisible();
     await expect(pageA.getByTestId('primary-blocker')).toHaveCount(0);
 
     // Every save PATCH for this note fails, so both the debounced save and
@@ -201,21 +207,21 @@ test('a failed flush keeps the old primary and leaves takeover blocked', async (
     });
     await pageA.getByTestId('note-body').fill(unsaved);
     // The debounced save genuinely failed before B asks for the lock.
-    await expect(pageA.getByTestId('note-save-status')).toHaveText('Couldn’t save');
-    await pageB.getByRole('button', { name: 'Make this the primary window' }).click();
+    await expect(pageA.getByTestId('note-save-status')).toHaveText(tr('note.saveError'));
+    await pageB.getByRole('button', { name: tr('app.primary.takeover') }).click();
 
     // The handoff waits on the flush, which rejects: B sits pending behind
     // its prompt while A stays the unblocked, editable primary.
-    await expect(pageB.getByRole('heading', { name: 'Taking over…' })).toBeVisible();
+    await expect(pageB.getByRole('heading', { name: tr('app.primary.takingOver') })).toBeVisible();
     await expect(pageB.getByTestId('primary-blocker')).toBeVisible();
     await expect(pageA.getByTestId('primary-blocker')).toHaveCount(0);
     await expect(pageA.getByTestId('note-body')).toBeEditable();
     await expect(pageA.getByTestId('note-body')).toHaveValue(unsaved);
-    await expect(pageA.getByTestId('note-save-status')).toHaveText('Couldn’t save');
+    await expect(pageA.getByTestId('note-save-status')).toHaveText(tr('note.saveError'));
 
     // B's existing request timeout unwinds the takeover: the prompt returns
     // to its decision state, still blocked, with ownership untouched.
-    await expect(pageB.getByRole('button', { name: 'Make this the primary window' })).toBeVisible({
+    await expect(pageB.getByRole('button', { name: tr('app.primary.takeover') })).toBeVisible({
       timeout: 15000,
     });
     await expect(pageB.getByTestId('primary-blocker')).toBeVisible();

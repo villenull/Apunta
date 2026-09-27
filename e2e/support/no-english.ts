@@ -34,11 +34,23 @@ interface Entry {
 }
 
 /**
- * Keys whose English may appear on a Spanish screen, and why. Empty until a
- * run shows a coincidence it cannot avoid; each entry is a key and a reason,
- * never a pattern, so it can only ever silence the one key it names.
+ * Keys whose English may appear on a Spanish screen, and why. Each entry is a
+ * key and a reason, never a pattern, so it can only ever silence the one key it
+ * names — and each was added because a run reported it, not in advance.
+ *
+ * What an entry costs is written beside it: the key's own English, rendered on
+ * its own, would no longer be caught on any Spanish screen.
  */
-export const ALLOWED: Readonly<Partial<Record<MessageKey, string>>> = {};
+export const ALLOWED: Readonly<Partial<Record<MessageKey, string>>> = {
+  // `{first} and {last}` and `{items} and {last}` have " and " as their only
+  // literal, so any English sentence with an "and" in it matches them: the fake
+  // transcript ("…less frequent, and I want to…") and the fake brainstorm
+  // reply, which are model output and English in both projects. Cost: a list
+  // joined in English and shown as a node of its own. A joined list shown
+  // inside a sentence is still caught, as that sentence's own key.
+  'chat.list.last': 'matches any English sentence containing " and " (fake transcript, fake model replies)',
+  'common.listLast': 'matches any English sentence containing " and " (fake transcript, fake model replies)',
+};
 
 /** The form of `entry` a locale prints in `form`'s place: category, else `other`, else `text`. */
 function counterpart(entry: Entry, form: string): string {
@@ -54,7 +66,7 @@ function escape(literal: string): string {
 function pattern(value: string): RegExp {
   const normalised = value.replace(/\s+/g, ' ').trim();
   const parts = normalised.split(/\{\w+\}/);
-  return new RegExp(`^${parts.map(escape).join('(.+?)')}$`, 's');
+  return new RegExp(`^${parts.map(escape).join('(.*?)')}$`, 's');
 }
 
 interface EnglishForm {

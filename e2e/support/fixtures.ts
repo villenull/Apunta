@@ -1,4 +1,4 @@
-import { t, type Locale, type MessageKey } from '@apunta/shared';
+import { en, esMX, t, type Locale, type MessageKey } from '@apunta/shared';
 import { test as base, expect, type Page } from '@playwright/test';
 
 import { expectNoEnglishUi } from './no-english';
@@ -15,6 +15,11 @@ interface Fixtures {
   consoleErrors: string[];
   /** The project's words for a key, so one spec asserts in either language. */
   tr: Tr;
+  /**
+   * The project's words for a key as a pattern, each `{name}` a wildcard, empty included —
+   * for a sentence whose values the spec does not control (a size, a path).
+   */
+  trRe: (key: MessageKey, flags?: string) => RegExp;
   /**
    * `expectNoEnglishUi` in the es-MX project, and nothing in English. Called
    * once a screen has settled, with the screen's name.
@@ -49,6 +54,9 @@ export const test = base.extend<Fixtures & AppOptions>({
   tr: async ({ appLocale }, use) => {
     await use((key, params) => t(key, params, appLocale));
   },
+  trRe: async ({ appLocale }, use) => {
+    await use((key, flags) => messagePattern(key, appLocale, flags));
+  },
   checkScreen: async ({ appLocale }, use) => {
     await use(async (page, screen) => {
       if (appLocale === 'es-MX') await expectNoEnglishUi(page, screen);
@@ -73,6 +81,33 @@ export const test = base.extend<Fixtures & AppOptions>({
 });
 
 export { expect };
+
+/**
+ * `key`'s text in `locale` as a pattern: the literal parts escaped, every
+ * `{name}` a wildcard. Every plural form is an alternative, so a count the spec
+ * does not pick still matches.
+ */
+export function messagePattern(key: MessageKey, locale: Locale, flags = ''): RegExp {
+  const entry = (locale === 'en' ? en : esMX)[key] as {
+    text: string;
+    plural?: Partial<Record<string, string>>;
+  };
+  const forms = [...new Set([entry.text, ...Object.values(entry.plural ?? {})])].filter(
+    (form): form is string => form !== undefined,
+  );
+  const escape = (literal: string): string => literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(
+    forms
+      .map((form) =>
+        form
+          .split(/\{\w+\}/)
+          .map(escape)
+          .join('.*?'),
+      )
+      .join('|'),
+    flags,
+  );
+}
 
 /** Unique per run, so specs sharing one database never collide on a name. */
 export function uniqueName(prefix: string): string {

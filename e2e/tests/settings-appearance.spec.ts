@@ -21,6 +21,8 @@ import { expect, test, uniqueName } from '../support/fixtures';
 test('settings appearance: keeps the chosen theme after leaving Settings and coming back, no reload', async ({
   page,
   request,
+  tr,
+  checkScreen,
 }) => {
   // Deterministic starting point: Dark, whatever a sibling spec left behind.
   await request.put('/api/settings', { data: { theme: 'dark' } });
@@ -36,6 +38,7 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
   const root = page.locator('html');
   await expect(dark).toHaveAttribute('aria-checked', 'true');
   await expect(root).toHaveAttribute('data-theme', 'dark');
+  await checkScreen(page, 'Settings');
 
   await light.click();
   await expect(light).toHaveAttribute('aria-checked', 'true');
@@ -44,8 +47,9 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
   // Home, then back to Settings. Both are in-app: the first is the card's own
   // back link, the second is the browser's history, so no document is loaded
   // and the provider survives it.
-  await page.getByRole('link', { name: 'Patients' }).click();
+  await page.getByRole('link', { name: tr('common.patients') }).click();
   await expect(page.getByTestId('home')).toBeVisible();
+  await checkScreen(page, 'Home');
   await page.goBack();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByTestId('appearance-settings')).toBeVisible();
@@ -70,7 +74,11 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
  * the selection, and `data-theme` carries the **resolved** theme — `system` is
  * the stored choice, never what the page is painted.
  */
-test('settings appearance: moves and selects the theme with the arrow keys', async ({ page, request }) => {
+test('settings appearance: moves and selects the theme with the arrow keys', async ({
+  page,
+  request,
+  tr,
+}) => {
   // Deterministic starting point: Dark, whatever a sibling spec left behind.
   await request.put('/api/settings', { data: { theme: 'dark' } });
   // Order-independent: a run that reaches this test first still has a note
@@ -103,7 +111,7 @@ test('settings appearance: moves and selects the theme with the arrow keys', asy
   await expect(light).toHaveAttribute('tabindex', '0');
   await expect(light).toBeFocused();
   await expect(root).toHaveAttribute('data-theme', 'light');
-  await expect(page.getByTestId('appearance-saved')).toHaveText('Saved');
+  await expect(page.getByTestId('appearance-saved')).toHaveText(tr('note.saveSaved'));
 
   // `THEMES` is `system, light, dark`, so Home is System. What persists is the
   // choice `system`; what the page is painted is the resolved theme, and

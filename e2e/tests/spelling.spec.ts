@@ -11,7 +11,12 @@ interface Created {
   id: string;
 }
 
-test('marks a typo in the note body and corrects it from the menu', async ({ page, request }) => {
+test('marks a typo in the note body and corrects it from the menu', async ({
+  page,
+  request,
+  tr,
+  checkScreen,
+}) => {
   const sttTerm = 'Zxqvterm';
   const addedTerm = 'Qvplum';
   await request.put('/api/settings', { data: { stt_vocabulary: [sttTerm], spelling_words: [addedTerm] } });
@@ -41,6 +46,7 @@ test('marks a typo in the note body and corrects it from the menu', async ({ pag
   await expect(marks).toHaveText(['Teh', 'criticised']);
   // The browser's own checker is off: this is the app's, from its own origin.
   await expect(body).toHaveAttribute('spellcheck', 'false');
+  await checkScreen(page, 'a note with spelling marks');
 
   await body.click();
   await body.evaluate((element: HTMLTextAreaElement) => {
@@ -54,6 +60,7 @@ test('marks a typo in the note body and corrects it from the menu', async ({ pag
 
   const menu = page.getByTestId('spelling-menu');
   await expect(menu).toBeVisible();
+  await checkScreen(page, 'the spelling menu');
   await menu.getByRole('menuitem', { name: 'The' }).click();
 
   await expect(body).toHaveValue(
@@ -75,7 +82,7 @@ test('marks a typo in the note body and corrects it from the menu', async ({ pag
   await page.screenshot({ path: '/tmp/apunta-spelling-chat.png' });
 
   await page.goto('/patients/new');
-  const patientName = page.getByLabel('Name');
+  const patientName = page.getByLabel(tr('common.name'));
   await patientName.fill('Teh');
   await expect(page.locator('.spell-input-wrap .misspelt')).toHaveText(['Teh']);
   await expect(patientName).toHaveAttribute('spellcheck', 'false');

@@ -48,23 +48,25 @@ async function practice(page: Page): Promise<{ patient: string; format: string }
 test.describe('recording a session', () => {
   test.use({ permissions: ['microphone'] });
 
-  test('records, transcribes and lands on the drafted note', async ({ page }) => {
+  test('records, transcribes and lands on the drafted note', async ({ page, tr, checkScreen }) => {
     await page.goto('/');
     const { patient, format } = await practice(page);
 
     await page.goto(`/capture/${patient}`);
-    await page.getByLabel('Note format').selectOption({ label: format });
+    await page.getByLabel(tr('capture.formatLabel')).selectOption({ label: format });
+    await checkScreen(page, 'Capture');
 
     // --- Record ------------------------------------------------------------
     await page.getByTestId('record-start').click();
 
     const panel = page.getByTestId('record-panel');
     await expect(panel).toBeVisible();
-    await expect(panel).toContainText('Recording');
+    await expect(panel).toContainText(tr('capture.recordingSession'));
 
     // The prototype's mm:ss timer, running off the samples that have actually
     // arrived — so a timer moving past 00:00 means audio is flowing.
     await expect(page.getByTestId('record-timer')).toHaveText(/00:0[1-9]/, { timeout: 10_000 });
+    await checkScreen(page, 'Capture while recording');
 
     // --- Stop and process --------------------------------------------------
     // "Transcribing… 25%" — whisper's progress, or the fake's stand-in for it.
@@ -82,7 +84,7 @@ test.describe('recording a session', () => {
 
     await expect(page.getByTestId('draft-status').getByTestId('thinking-dots')).toHaveAttribute(
       'aria-label',
-      /Transcribing…/,
+      new RegExp(tr('progress.transcribing')),
     );
 
     // The draft is visible while it is still being written, and it is prose:
@@ -95,5 +97,6 @@ test.describe('recording a session', () => {
     const body = page.getByTestId('note-body');
     await expect(body).toContainText('Subjective: Patient reports improved sleep');
     await expect(page.getByTestId('note-list')).toContainText(format);
+    await checkScreen(page, 'the drafted note');
   });
 });

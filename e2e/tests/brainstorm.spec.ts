@@ -26,14 +26,20 @@ const NOTE = [
 ].join('\n\n');
 
 test.describe('brainstorm', () => {
-  test('thinks out loud with the notes, then starts over after a confirm', async ({ page, request }) => {
+  test('thinks out loud with the notes, then starts over after a confirm', async ({
+    page,
+    request,
+    tr,
+    checkScreen,
+  }) => {
     const format = (await (
       await request.post('/api/formats', {
         data: { name: uniqueName('E2E brainstorm format'), sections: SOAP },
       })
     ).json()) as Created;
+    const patientName = uniqueName('E2E Brainstorm');
     const patient = (await (
-      await request.post('/api/patients', { data: { name: uniqueName('E2E Brainstorm') } })
+      await request.post('/api/patients', { data: { name: patientName } })
     ).json()) as Created;
     await request.post('/api/notes', {
       data: { patient_id: patient.id, format_id: format.id, content: NOTE },
@@ -48,20 +54,29 @@ test.describe('brainstorm', () => {
     );
     await page.getByTestId('open-brainstorm').click();
     await expect(page.getByTestId('brainstorm-view')).toBeVisible();
-    await expect(page.getByTestId('brainstorm-empty')).toContainText('never written into their notes');
+    // The first name, the way the view takes it from the patient's full name.
+    const first = patientName.split(' ')[0] ?? patientName;
+    await expect(page.getByTestId('brainstorm-empty')).toContainText(tr('brainstorm.empty', { name: first }));
 
     // The Context line says which notes the model is thinking with.
-    await expect(page.getByTestId('brainstorm-context')).toContainText('Thinking with 1 note');
+    await expect(page.getByTestId('brainstorm-context')).toContainText(
+      tr('brainstorm.contextAll', { count: 1 }),
+    );
+    await checkScreen(page, 'Brainstorm, empty');
 
     // Think out loud: Enter sends, the reply streams in, both turns persist.
     await page.getByTestId('brainstorm-input').fill('What stands out lately?');
     await page.getByTestId('brainstorm-input').press('Enter');
+    // The fake model's own reply, which is English in both projects: it is
+    // model output, not the app's words.
     await expect(page.getByTestId('brainstorm-reply')).toContainText('Thinking with', { timeout: 30_000 });
     await expect(page.getByTestId('brainstorm-empty')).toHaveCount(0);
+    await checkScreen(page, 'Brainstorm, after a reply');
 
     // A new conversation asks first, then forgets the thread and nothing else.
     await page.getByTestId('brainstorm-new').click();
     await expect(page.getByTestId('confirm-backdrop')).toBeVisible();
+    await checkScreen(page, 'Brainstorm, new-conversation confirm');
     await page.getByTestId('confirm-accept').click();
     await expect(page.getByTestId('brainstorm-empty')).toBeVisible();
     await expect(page.getByTestId('brainstorm-reply')).toHaveCount(0);

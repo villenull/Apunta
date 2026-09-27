@@ -31,7 +31,7 @@ function unhealthy(base: HealthPayload): HealthPayload {
 }
 
 test.describe('the setup wizard', () => {
-  test('shows what is missing, then recovers when health flips', async ({ page, request }) => {
+  test('shows what is missing, then recovers when health flips', async ({ page, request, checkScreen }) => {
     const real = (await (await request.get('/api/health')).json()) as HealthPayload;
 
     let healthy = false;
@@ -71,6 +71,8 @@ test.describe('the setup wizard', () => {
     );
 
     // She fixes it in another window, and presses the button.
+    await checkScreen(page, 'Setup, with the local AI missing');
+
     healthy = true;
     await page.getByTestId('setup-recheck').click();
 
@@ -101,17 +103,18 @@ test.describe('the setup wizard', () => {
     await expect(page.getByTestId('setup-checklist')).toBeVisible();
   });
 
-  test('the About page says what local-only does not protect her from', async ({ page }) => {
+  test('the About page says what local-only does not protect her from', async ({ page, tr, checkScreen }) => {
     await page.goto('/about');
 
-    await expect(page.getByRole('heading', { name: 'About Apunta' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('about.title') })).toBeVisible();
     const body = page.locator('.content');
-    await expect(body).toContainText('no account');
+    await expect(body).toContainText(tr('about.localOnlyBody'));
     // The two honest caveats, not just the guarantee. The copy says "computer",
     // not "Mac", and the disk-encryption line names its own state.
-    await expect(body).toContainText('Someone at your unlocked computer');
-    await expect(page.getByTestId('about-filevault')).toContainText('Disk encryption');
+    await expect(body).toContainText(tr('about.threatPerson'));
+    await expect(page.getByTestId('about-filevault')).toContainText(tr('about.diskEncryption'));
     await expect(page.getByTestId('about-db-path')).toContainText('apunta.db');
+    await checkScreen(page, 'About');
   });
 
   /**
@@ -120,17 +123,19 @@ test.describe('the setup wizard', () => {
    * that only exists in the repository has not travelled anywhere. This is the
    * path from "About" to the actual text, through the running server.
    */
-  test('About links the licences, and the licences are really there', async ({ page }) => {
+  test('About links the licences, and the licences are really there', async ({ page, tr }) => {
     await page.goto('/about');
 
-    await page.getByRole('link', { name: 'the licences are here' }).click();
+    await page.getByRole('link', { name: tr('about.licensesLink') }).click();
     await expect(page).toHaveURL(/\/licenses$/);
-    await expect(page.getByRole('heading', { name: 'What Apunta is built from' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: tr('licenses.builtFrom') })).toBeVisible();
 
     // The licences are one section per component now, with an index and a
     // filter over them, so the panel is the thing that has to be there — and
     // the obligation is that the text itself is really rendered.
-    const text = page.getByRole('region', { name: 'Third-party licences' });
+    // The licence text itself is the upstream projects' own English in both
+    // projects: it is quoted, not translated.
+    const text = page.getByRole('region', { name: tr('licenses.panelLabel') });
     await expect(text).toBeVisible();
     // The components that carry an obligation, and the text that satisfies it.
     await expect(text).toContainText('MIT License');

@@ -17,7 +17,12 @@ interface Created {
 test.describe('dictating into the chat', () => {
   test.use({ permissions: ['microphone'] });
 
-  test('puts what whisper heard into the composer, and leaves sending to her', async ({ page, request }) => {
+  test('puts what whisper heard into the composer, and leaves sending to her', async ({
+    page,
+    request,
+    tr,
+    checkScreen,
+  }) => {
     const format = (await (
       await request.post('/api/formats', {
         data: { name: uniqueName('E2E dictation format'), sections: ['Subjective', 'Plan'] },
@@ -40,20 +45,21 @@ test.describe('dictating into the chat', () => {
     await page.getByTestId('chat-fab').click();
 
     const mic = page.getByTestId('chat-mic');
-    await expect(mic).toHaveAttribute('aria-label', 'Dictate a message');
+    await expect(mic).toHaveAttribute('aria-label', tr('dictation.mic'));
     await mic.click();
-    await expect(mic).toHaveAttribute('aria-label', 'Stop dictating');
+    await expect(mic).toHaveAttribute('aria-label', tr('dictation.stop'));
     // The capture screen's panel, inside the chat: the dot, the timer and the
     // provisional words as whisper hears them.
     await expect(page.getByTestId('record-panel')).toBeVisible();
     await expect(page.getByTestId('record-preview-text')).toContainText('John Smith');
+    await checkScreen(page, 'the refine chat while dictating');
     // Let the fake microphone play for a second or two so there is a clip to send.
     await expect(page.getByTestId('record-timer')).toHaveText(/00:0[2-9]/);
     await page.getByTestId('record-stop').click();
 
     const input = page.getByTestId('chat-input');
     await expect(input).toHaveValue(/John Smith/);
-    await expect(mic).toHaveAttribute('aria-label', 'Dictate a message');
+    await expect(mic).toHaveAttribute('aria-label', tr('dictation.mic'));
     // Nothing went to the model: the thread still shows only its empty-state line.
     await expect(page.getByTestId('chat-thread')).not.toContainText('John Smith');
   });
