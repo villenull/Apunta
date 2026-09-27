@@ -4469,6 +4469,13 @@ body.is-resizing-sidebar {
   background: transparent;
 }
 
+/* The ⋮'s box is centred with a transform, which traps its menu's z-index
+   inside the row; so the row whose menu is open rises above the rows after
+   it, or their dates would show through the menu. */
+.directory-row:has(.patient-entry-actions.is-open) {
+  z-index: 5;
+}
+
 .directory-row:hover .directory-row-date,
 .directory-row:focus-within .directory-row-date,
 .directory-row:has(.patient-entry-actions.is-open) .directory-row-date {
