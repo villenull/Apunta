@@ -1113,7 +1113,6 @@ export const esMX = {
   /* Bilingual on purpose and identical in both catalogues: the row is the one control a Spanish speaker must be able to find *before* they have switched, so translating it would hide it from the people who need it. */
   'settings.languageEnglish': { text: 'English' },
   'settings.languageSpanish': { text: 'Español' },
-  'settings.languageBusy': { text: 'Se aplicará cuando termine la tarea actual.' },
   'settings.languageChangeBlocked': {
     text: 'No se puede cambiar el idioma mientras hay una tarea en curso.',
   },

@@ -1530,7 +1530,6 @@ export const en = {
   /* Bilingual on purpose and identical in both catalogues: the row is the one control a Spanish speaker must be able to find *before* they have switched, so translating it would hide it from the people who need it. */
   'settings.languageEnglish': { text: 'English' },
   'settings.languageSpanish': { text: 'Español' },
-  'settings.languageBusy': { text: 'Applies when the current task finishes.' },
   'settings.languageChangeBlocked': { text: 'Language cannot change while a task is running.' },
   'settings.accentLowContrast': {
     text: 'This colour may be hard to see on the page, and the Apunta logo uses it too.',
