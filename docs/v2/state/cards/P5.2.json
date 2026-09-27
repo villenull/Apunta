@@ -9,8 +9,8 @@
   "baseCommit": null,
   "attempt": 1,
   "status": "NOT STARTED",
-  "lastCompletedStep": "IR rounds 1-3 done: r1 DEFECT x4 (AM-043), r2 DEFECT x1 (AM-044), r3 all ten CLEAR at 5c71ecf; card is implementable as it stands",
-  "nextAllowedAction": "implement - HELD for the writer lock: P5.2 and S2.5 both list server/src/index.ts in May edit (P5.2 'ordering'; S2.5 ':57-58 only'), and P5.2's V2 is whole-repo npm test/lint/typecheck. Rebuild this card's implementation dispatch at the then-current head when S2.5 is committed and reviewed.",
+  "lastCompletedStep": "Prior IR CLEAR; readiness delta at c1d897f verified 2026-09-27. Reviewer rollback-loss claim withdrawn after coordinator checked actual call order; no blocking finding. See reviews/P5.2-readiness-2026-09-27.md.",
+  "nextAllowedAction": "After direct UI owner releases code-writer lane, regenerate implementation dispatch at current HEAD and implement under existing card scope. Preserve restore bookkeeping; verify read-only snapshot and schema inspection in scoped tests. Full verification requires stable tree. S2.5 hold obsolete.",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
@@ -18,5 +18,5 @@
     "V2": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T19:22:00Z"
+  "updatedUtc": "2026-09-27"
 }
