@@ -648,3 +648,109 @@ describe('assessRefine', () => {
     );
   });
 });
+
+/**
+ * `changeSentence` — the first paragraph of every successful refine reply — for
+ * each number of parts, in the default locale.
+ *
+ * These four cases are the FD6 oracle for that sentence, and they exist because
+ * nothing pinned it. The reply is persisted into the note's thread at write
+ * time (FD5) and a stored row is displayed as stored, so the English bytes of
+ * each part count are the bytes earlier turns in real notes are already stored
+ * with. The wire has always joined the parts with `and` — `a and b and c` for
+ * three, and the same for four — and the awkwardness is the guarantee: a tidier
+ * `a, b and c` is a silent rewrite of one note's own history, and better
+ * English belongs to S2.7 and S2.8.
+ *
+ * Every expectation is built by `wire()` from the parts spelled out beside it,
+ * which is the wire's own frame plus `parts.join(' and ')` and nothing else, so
+ * a change to the separator fails here at every part count instead of passing
+ * quietly on the two-part form the other cases happened to use.
+ */
+describe('the diff sentence’s English, part count by part count', () => {
+  /** The base commit's sentence: the frame, then `parts.join(' and ')`. */
+  const wire = (parts: readonly string[]): string => `I ${parts.join(' and ')}.`;
+
+  /** Bodies shorter than `NOTE`'s, in `NOTE`'s own key order. */
+  const SHORTER: Readonly<Record<string, string>> = {
+    'Client presentation': 'Reports better sleep.',
+    Discussion: 'She wanted to talk about her sister’s wedding.',
+    Intervention: 'Cognitive restructuring.',
+    'Out of session actions': 'Write down her worries.',
+  };
+  const SHORTENED = Object.keys(SHORTER);
+  const shortens = (name: string): string => `shortened the ${name} section`;
+
+  /** A diff that shortens the first `count` of `SHORTER`, and the request that asked for it. */
+  const diff = (count: number) => {
+    const names = SHORTENED.slice(0, count);
+    const updated: Sections = { ...NOTE };
+    for (const name of names) updated[name] = SHORTER[name] as string;
+    return {
+      intent: parseRefineRequest(`Make the ${names.join(', the ')} shorter`, OWNER),
+      previous: NOTE,
+      updated,
+      held: [],
+      lockedSections: [],
+      notices: [],
+      changed: true,
+    };
+  };
+
+  const reply = (count: number, locale?: 'en' | 'es-MX'): string => assessRefine(diff(count), locale).reply;
+
+  it('one change: the frame around a single part, no separator at all', () => {
+    expect(reply(1)).toBe(wire([shortens('Client presentation')]));
+    expect(reply(1)).toBe('I shortened the Client presentation section.');
+  });
+
+  it('two changes: one and', () => {
+    expect(reply(2)).toBe(wire([shortens('Client presentation'), shortens('Discussion')]));
+    expect(reply(2)).toBe(
+      'I shortened the Client presentation section and shortened the Discussion section.',
+    );
+  });
+
+  it('three changes: and and — no comma, which is what the wire has always carried', () => {
+    // The form the review named: `chat.list.last` renders this as
+    // `a, b and c`, and every thread refined before this card is stored with
+    // the `and and` below.
+    expect(reply(3)).toBe(
+      wire([shortens('Client presentation'), shortens('Discussion'), shortens('Intervention')]),
+    );
+    expect(reply(3)).toBe(
+      'I shortened the Client presentation section and shortened the Discussion section and shortened the Intervention section.',
+    );
+    expect(reply(3)).not.toContain(',');
+  });
+
+  it('four changes: still and and and, and still no comma', () => {
+    expect(reply(4)).toBe(
+      wire([
+        shortens('Client presentation'),
+        shortens('Discussion'),
+        shortens('Intervention'),
+        shortens('Out of session actions'),
+      ]),
+    );
+    expect(reply(4)).toBe(
+      'I shortened the Client presentation section and shortened the Discussion section and shortened the Intervention section and shortened the Out of session actions section.',
+    );
+    expect(reply(4)).not.toContain(',');
+  });
+
+  it('a non-default locale still joins through the catalogue, so Spanish reads as a list', () => {
+    // The same separator question, the other answer: there is no stored
+    // Spanish to match, and `a, b y c` is how Spanish writes three items.
+    expect(reply(1, 'es-MX')).toBe('Cambié lo siguiente: acorté la sección de Client presentation.');
+    expect(reply(2, 'es-MX')).toBe(
+      'Cambié lo siguiente: acorté la sección de Client presentation y acorté la sección de Discussion.',
+    );
+    expect(reply(3, 'es-MX')).toBe(
+      'Cambié lo siguiente: acorté la sección de Client presentation, acorté la sección de Discussion y acorté la sección de Intervention.',
+    );
+    expect(reply(4, 'es-MX')).toBe(
+      'Cambié lo siguiente: acorté la sección de Client presentation, acorté la sección de Discussion, acorté la sección de Intervention y acorté la sección de Out of session actions.',
+    );
+  });
+});

@@ -801,8 +801,11 @@ export const en = {
   /**
    * The conjunction that joins the last of a server-built list to the ones
    * before it. Two callers, one string: the scope a hold names
-   * (`chat.scopeHold.outOfScope`'s `{scope}`) and the diff sentence's parts.
-   * The separator before that is a comma, which is punctuation and not a
+   * (`chat.scopeHold.outOfScope`'s `{scope}`) and the diff sentence's parts
+   * outside the default locale — the default locale joins those with `and` and
+   * nothing else, because its bytes are already stored in notes' threads
+   * (`refine-request.ts`'s `changeSentence`, and the comment there). The
+   * separator before that is a comma, which is punctuation and not a
    * language's, so only this one word is a key — the same reason
    * `chat.retractionNotice.list` is.
    */

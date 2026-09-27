@@ -327,9 +327,9 @@ export function enforceRefineScope(
 /**
  * Her request's scope, named in one breath: two sections read "A and B", three
  * read "A, B and C". The `and` is a word the server owns, so it comes from the
- * catalogue (`chat.list.last`, shared with the diff sentence's parts) — an `and`
- * written here is English inside a Spanish sentence. The comma between the
- * others is punctuation and stays.
+ * catalogue (`chat.list.last`, which `changeSentence` also reaches for outside
+ * the default locale) — an `and` written here is English inside a Spanish
+ * sentence. The comma between the others is punctuation and stays.
  */
 function listSections(names: readonly string[], locale: Locale): string {
   if (names.length <= 1) return names[0] ?? '';
@@ -560,11 +560,25 @@ function replyFor(
  * returned in English whatever locale it was given.
  *
  * Every word of it is a key: the verb (four of them, one per way a section can
- * have moved), the addition, the conjunction, and the frame. The frame is a key
- * for the same reason the verb is — `I` does not open a Spanish sentence — and
- * the parts are joined by `chat.list.last`, so a two-part and a three-part list
- * read the way the language reads. The English is unchanged, character for
- * character: this is the sentence the wire has always carried.
+ * have moved), the addition, and the frame. The frame is a key for the same
+ * reason the verb is — `I` does not open a Spanish sentence.
+ *
+ * **The default locale's separator is the wire's, and it is not a key.** The
+ * sentence has been persisted into the note's thread at write time since before
+ * this card (FD5), so its English bytes are the bytes earlier turns are stored
+ * with: three changes have always read `a and b and c`, and a stored row is
+ * displayed as stored (FD5). `chat.list.last` would render that as `a, b and c`
+ * — tidier English, and a silent rewrite of history inside one note's own
+ * thread — so the default locale joins with `and` and nothing else. That
+ * awkwardness is the guarantee, not an oversight: better English is S2.7's and
+ * S2.8's to write, and only there, with a migration's worth of stored replies
+ * behind it. `refine-request.test.ts` pins one, two, three and four parts
+ * against `parts.join(' and ')` for exactly this reason.
+ *
+ * A non-default locale has no stored English to match, and Spanish writes a
+ * three-item list with a comma, so every other locale joins through
+ * `chat.list.last` — the key that exists so that `y` is a word the server owns
+ * rather than an English `and` inside a Spanish sentence.
  */
 function changeSentence(
   previous: Sections,
@@ -590,12 +604,14 @@ function changeSentence(
   for (const addition of additions) parts.push(msg(locale, 'chat.change.addition', { label: addition }));
   if (parts.length === 0) return '';
   const changes =
-    parts.length === 1
-      ? (parts[0] as string)
-      : msg(locale, 'chat.list.last', {
-          first: parts.slice(0, -1).join(', '),
-          last: parts[parts.length - 1] as string,
-        });
+    locale === DEFAULT_LOCALE
+      ? parts.join(' and ')
+      : parts.length === 1
+        ? (parts[0] as string)
+        : msg(locale, 'chat.list.last', {
+            first: parts.slice(0, -1).join(', '),
+            last: parts[parts.length - 1] as string,
+          });
   return msg(locale, 'chat.change.summary', { changes });
 }
 
