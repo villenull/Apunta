@@ -501,18 +501,22 @@ function AppearanceSettings(): React.JSX.Element {
             {t('settings.reset')}
           </button>
         </span>
+        {/*
+         * A note, never a refusal (AM-053): the colour is already saved. Inside
+         * the row, on a line of its own, so the Theme row below is still the
+         * row's next sibling and keeps the divider between them.
+         */}
+        {lowContrast && (
+          <p
+            className="small settings-row-note"
+            id="accent-low-contrast"
+            role="status"
+            data-testid="accent-low-contrast"
+          >
+            {t('settings.accentLowContrast')}
+          </p>
+        )}
       </div>
-      {/* A note, never a refusal (AM-053): the colour is already saved. */}
-      {lowContrast && (
-        <p
-          className="small state-note"
-          id="accent-low-contrast"
-          role="status"
-          data-testid="accent-low-contrast"
-        >
-          {t('settings.accentLowContrast')}
-        </p>
-      )}
 
       <div className="settings-row">
         <span className="settings-label" id="theme-label">
@@ -597,14 +601,19 @@ function AppearanceSettings(): React.JSX.Element {
 }
 
 /**
- * The page surfaces the accent is drawn on, one per line of `tokens.css`:
- * light `--app-bg`, then dark `--app-bg` and dark `--sidebar-bg`. The real
- * tokens and not white or black — `#939393` clears 3:1 on white and not on
- * `#faf9f5`, and `#5d5d5d` clears it on black and on neither dark surface — so
- * a check against the extremes would stay quiet about exactly the colours this
- * exists for. `Settings.test.tsx` reads `tokens.css` to hold these to it.
+ * Every surface the accent — and so the brand mark — is drawn on, read off
+ * `tokens.css`: light `--sidebar-bg` and `--app-bg`, then dark `--sidebar-bg`
+ * and `--app-bg`. The sidebar is where the wordmark and the rail's A sit, and
+ * a screen's top bar sits on `--bg`, which is `--sidebar-bg` in light and
+ * `--app-bg` in dark, so these four are all of them (AM-054: the light sidebar
+ * was missing, and `#8f8f8f` clears 3:1 on `#faf9f5` but not on `#f5f4ed`).
+ * The real tokens and not white or black — `#939393` clears 3:1 on white and
+ * not on `#faf9f5`, and `#5d5d5d` clears it on black and on neither dark
+ * surface — so a check against the extremes would stay quiet about exactly
+ * the colours this exists for. `Settings.test.tsx` reads `tokens.css` to hold
+ * these to it.
  */
-const PAGE_SURFACES = ['#faf9f5', '#151515', '#111111'] as const;
+const PAGE_SURFACES = ['#f5f4ed', '#faf9f5', '#111111', '#151515'] as const;
 
 /** AM-053's line: under this against any page surface, the note appears. */
 const LOW_CONTRAST_RATIO = 3;

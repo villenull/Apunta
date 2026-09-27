@@ -3153,6 +3153,17 @@ select:disabled {
   color: var(--text-primary);
 }
 
+/*
+ * The accent's low-contrast note (AM-053): inside the colour row, wrapped onto
+ * a line of its own, so the next row is still a sibling of this one and the
+ * divider rules above and in the settings modal keep drawing the line.
+ */
+.settings-row-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 .settings-row-actions {
   display: flex;
   align-items: center;

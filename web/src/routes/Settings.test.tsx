@@ -410,10 +410,11 @@ describe('the drafting model radio group', () => {
 
 /**
  * AM-053: the accent picker's low-contrast note. Under 3:1 against the page
- * surface in either theme — `#faf9f5` light, `#151515` and `#111111` dark — it
+ * surface in either theme — `#f5f4ed` and `#faf9f5` light, `#111111` and
+ * `#151515` dark (AM-054 added the light sidebar) — it
  * appears; it never stops the colour being kept; and it clears once the colour
  * is raised. The token sheet is read off disk the way `BrandMark.test.tsx`
- * reads it, so the three surfaces the check uses cannot drift from the page.
+ * reads it, so the four surfaces the check uses cannot drift from the page.
  */
 describe('the accent low-contrast note', () => {
   const TOKENS = readFileSync(
@@ -436,10 +437,11 @@ describe('the accent low-contrast note', () => {
   const PALE = '#939393'; // 3.07 on white, 2.92 on #faf9f5
   const DIM = '#5d5d5d'; // 3.19 on black, 2.77 on #151515, 2.87 on #111111
   const EDGE = '#606060'; // 2.90 on #151515 but 3.00 on #111111
+  const SIDEBAR = '#8f8f8f'; // 3.07 on #faf9f5 but 2.93 on the light sidebar #f5f4ed
 
-  it('reads the same three surfaces the page is painted with', () => {
+  it('reads the same four surfaces the page is painted with', () => {
+    expect(tokenValues('--sidebar-bg')).toEqual(['#f5f4ed', '#111111']);
     expect(tokenValues('--app-bg')).toEqual(['#faf9f5', '#151515']);
-    expect(tokenValues('--sidebar-bg')[1]).toBe('#111111');
   });
 
   it('names the logo in both languages', () => {
@@ -461,11 +463,16 @@ describe('the accent low-contrast note', () => {
       expect(paintedTheme()).toBe(theme);
       expect(screen.queryByTestId('accent-low-contrast')).toBeNull();
 
-      for (const low of [PALE, DIM, EDGE]) {
+      for (const low of [PALE, DIM, EDGE, SIDEBAR]) {
         fireEvent.change(picker, { target: { value: low } });
         const note = screen.getByTestId('accent-low-contrast');
         expect(note.textContent).toBe(t('settings.accentLowContrast'));
         expect(picker.getAttribute('aria-describedby')).toBe(note.id);
+        // Inside the colour row, so the Theme row is still its next sibling and
+        // `.settings-row + .settings-row` still draws the divider between them.
+        const row = picker.closest('.settings-row');
+        expect(note.parentElement).toBe(row);
+        expect(row?.nextElementSibling?.classList.contains('settings-row')).toBe(true);
         // Warn, not refuse: the pick is shown, painted and saved.
         expect(picker.value).toBe(low);
         expect(document.documentElement.style.getPropertyValue('--accent')).toBe(low);
