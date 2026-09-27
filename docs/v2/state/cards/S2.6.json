@@ -5,7 +5,7 @@
     "C-LANG@1",
     "C-SETTINGS@1"
   ],
-  "baseCommit": "(this commit)",
+  "baseCommit": "7d70502",
   "attempt": 2,
   "status": "IN PROGRESS",
   "lastCompletedStep": "Attempt 1 SUBMITTED work and returned BLOCKED at ff3c734, and the block was correct: the card required work in files it forbade the agent to edit. Verified by the coordinator, not accepted: language_change_blocked absent from ApiErrorCodeSchema (errors.ts:4-24); no catalogue entry for the row with en.ts unwritable and check-ui-strings rejecting literal text; data-i18n at 0 marks across 41 files and 715 t() sites. Landed before the block and kept: AM-051 in the required order (cc71e31 oracle only, committed FAILING on purpose, six lines in brainstorm.contextMostRecent; d509986 the strings, which also fixed a third form the card had not anticipated - text missing {total}, invisible because text never renders on a plural key). V5 is a controlled demonstration, not a failed run: the injected {total}->{count} leaves the token UNION unchanged, so the old union test passed 21/21 against the same catalogue while the per-form check exited 1 naming the key. AM-053 landed at 34b6514 and was run in real Chromium through the sandbox on 7831 in both themes, with two deliberately-wrong variants (checking against white/black, and refusing the colour) both failing its tests. V4 386/386, strings 0",
