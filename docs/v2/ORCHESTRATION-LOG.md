@@ -277,3 +277,16 @@ Dispatched sole execution worker for frozen shipped English Track1 and harness
 preflight under exclusive GPU lock; Track2 scored generation explicitly held
 until reviewed gold freeze. Independent corpus review uses no inference.
 UI retains live source lane; study operates in committed scratch snapshot.
+
+
+### 2026-09-27 — bilingual review processed, corpus repairs assigned
+
+Read independent corpus-review findings, checked gold schema/critical fields
+against scratch. Draft is NOT READY to freeze: quotation direction, excerpt
+index definition, omission severity and protected-name separation need repair;
+additional language/cue/structural checks accompany same batch. No scored
+Track2 generation authorized. Fresh repair worker assigned corpus-only scope
+and repair report; original author/reviewer evidence preserved. Reviewer
+15965cb4 archived immediately after processing. Fresh blind style-review context
+will be used, avoiding reviewer exposure to alias generation rule. English
+Track1 executor notified to continue independently under exclusive GPU lease.
