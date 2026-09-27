@@ -7,9 +7,9 @@
   ],
   "baseCommit": "7d70502",
   "attempt": 2,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 1 SUBMITTED work and returned BLOCKED at ff3c734, and the block was correct: the card required work in files it forbade the agent to edit. Verified by the coordinator, not accepted: language_change_blocked absent from ApiErrorCodeSchema (errors.ts:4-24); no catalogue entry for the row with en.ts unwritable and check-ui-strings rejecting literal text; data-i18n at 0 marks across 41 files and 715 t() sites. Landed before the block and kept: AM-051 in the required order (cc71e31 oracle only, committed FAILING on purpose, six lines in brainstorm.contextMostRecent; d509986 the strings, which also fixed a third form the card had not anticipated - text missing {total}, invisible because text never renders on a plural key). V5 is a controlled demonstration, not a failed run: the injected {total}->{count} leaves the token UNION unchanged, so the old union test passed 21/21 against the same catalogue while the per-form check exited 1 naming the key. AM-053 landed at 34b6514 and was run in real Chromium through the sandbox on 7831 in both themes, with two deliberately-wrong variants (checking against white/black, and refusing the colour) both failing its tests. V4 386/386, strings 0",
-  "nextAllowedAction": "Attempt 2 may build V1-V3: AM-054 adds shared/src/errors.ts, shared/src/i18n/en.ts (settings.language* keys ALREADY WRITTEN by the coordinator) and web/src/styles/app.css to May edit; replaces the data-i18n decision with a catalogue-walk from e2e/support/* using the en/esMX exports already public from @apunta/shared; and corrects AM-053's surface list, which was wrong in the one place the brand mark is painted. On SUBMITTED, dispatch the final review. A PASS closes the card and releases S2.R",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Resume instruction review found out-of-scope English stored attestation; coordinator baseline exit 1, 8 passed/1 skipped/1 failed. Attempt 2 is incomplete, not newly spent.",
+  "nextAllowedAction": "Owner/plan-editor scope decision for forward-only localized attestations; preserve existing stored content and strict leak detector. UI owner holds implementation lane. Then repair stale dispatch/checkpoint inputs and re-review instructions.",
   "sideEffectsDone": [],
   "changedFiles": 0,
   "criteria": {
@@ -23,5 +23,5 @@
   },
   "sandboxRuns": [],
   "notes": "Port 7831. AM-051's internal order remains a requirement. OPEN, not this card's to fix: halaxy.undoneNotesKept renders '1 note you had finalized were kept' (en) and 'Se conservaron 1 notas' (es-MX) at count 1. AM-051's per-form oracle PASSES both, because every form carries exactly the tokens its kind declares - the oracle checks placeholder parity and these are agreement defects. en.ts is writable under AM-054 for settings.language* only, and copy wrong in English as well as Spanish belongs to whoever owns that surface",
-  "updatedUtc": "2026-09-27T03:20:00Z"
+  "updatedUtc": "2026-09-27"
 }

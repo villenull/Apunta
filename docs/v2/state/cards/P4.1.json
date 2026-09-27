@@ -4,9 +4,9 @@
   "contracts": [],
   "baseCommit": "5a4b79b",
   "attempt": 2,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "attempt 2 dispatched at 104501d, STILL IN PROGRESS. A truncated turn was reported to the coordinator as 'finished' and read as a dead agent; the coordinator then reverted installer/ to HEAD, deleted the two new files, and committed a patch plus a checkpoint calling attempt 2 spent. **All four of those were coordinator errors and the agent was never dead** - it resumed and was mid-flow on download.test.ts. Disclosed to the agent in full, with the patch named as the recovery path. Attempt 2 is NOT spent and has one attempt after it",
-  "nextAllowedAction": "implement - the agent continues attempt 2 from HEAD plus git apply docs/v2/evidence/P4.1/attempt2-partial.patch (readiness.ts 562 lines and readiness.test.ts 465 lines, ~20 cases, both captured whole before deletion). The rewiring of catalog.ts/download.ts/run.ts/ollama.ts was reverted and must be redone from the card and AM-042; the agent's own session history holds what it wrote",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Attempt 2 implementation and independent review are committed. Follow-up IR confirms probe diagnostics defects and conflicting plan text. Prior checkpoint describing reverted in-flight work was stale.",
+  "nextAllowedAction": "Await approval of P4.1-AMENDMENT-PROPOSAL.md. Keep exact size guard; do not adopt follow-up reviewer D1 override recommendation. Then regenerate attempt 3 dispatch and get independent instruction review before repair.",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
@@ -15,5 +15,5 @@
     "V3": "NOT RUN"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T22:18:00Z"
+  "updatedUtc": "2026-09-27"
 }

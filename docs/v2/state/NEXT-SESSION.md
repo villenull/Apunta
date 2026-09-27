@@ -3,6 +3,12 @@
 Owner requested an audit of the idle Paseo agents, archival, a current preview,
 and recommended next work. This was an audit, not a card acceptance round.
 
+## Continuation after the audit
+
+Owner continued with Space Bunny Free agents and supplied the Claude menu references, then requested unread tracking and custom groups too. Dedicated direct UI owner: `f0bd1c61-253b-46ce-b59b-080334f6cb07`; keep this owner-facing agent available. Its first reserved five-file batch changes the default teal to `#2a9d8f` (AM-055); the owner subsequently removed the per-tweak IR hold. The UI agent iterates freely with the owner in its sandbox and submits one finished batch for independent review and coordinator integration. Other implementation workers must wait for release of its lock. Menu data-design report is advisory: `state/reviews/UI-SORT-ir.md`, not approved product decisions.
+
+S2.6 and P4.1 are now explicitly BLOCKED on instruction/scope decisions; see their updated checkpoints. S2.6 baseline: 8 pass, 1 skip, 1 fail (Spanish stored attestation). P4.1 proposal awaits owner approval; all size and checksum checks stay strict. The three completed instruction reviewers have been archived. This continuation supersedes stale holds/status recommendations in the original audit below.
+
 ## Agent cleanup
 
 Reviewed recent Paseo activity for the S2.6 worker, UI worker, and previous
