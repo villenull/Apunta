@@ -68,3 +68,5 @@ AM-058 | P3.1 / P6.1 | Owner approved bounded metadata proposal with coordinator
 AM-059 | S2.6 / C-LANG | Owner approved four-path attestation scope and exact Spanish wording in ATTESTATION-PROPOSAL; capture setting at activation, persist once, preserve English/history, add V8-V14, no suppressions/migration/backfill. Attempt remains 2; separate clinical/release gates unchanged.
 
 AM-060 | P4.1 documentation corrections | Refresh Read references to existing attempt-2 symbols, mark readiness files existing, clarify original pre-implementation baseline tense without changing V1 acceptance, and document catalogue-derived offline fixtures within existing lint policy. Coordinator rejects IR claim that V1 demands 12/130: it explicitly fails that count. No scope/guard/threshold change.
+
+AM-061 | P4.1 references | Correct remaining superseded assertAllowedHost references to current assertRequestAllowed in readiness.ts; describe existing catalogue allowances and original probe sequence as history. No guard/scope/acceptance change; closes rereview D5 by direct symbol verification.
