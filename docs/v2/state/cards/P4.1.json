@@ -2,20 +2,20 @@
   "card": "P4.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "5a4b79b",
-  "attempt": 2,
+  "baseCommit": "d0b8292",
+  "attempt": 3,
   "status": "BLOCKED",
-  "lastCompletedStep": "AM-057 re-review: IR02-10 CLEAR, only IR01 stale guard reference (D5). Coordinator verified assertRequestAllowed in readiness.ts:191 and corrected all three stale assertAllowedHost references, AM-061. No implementation acceptance.",
-  "nextAllowedAction": "After UI writer release, regenerate attempt3 implementation dispatch at current HEAD; final guard-name documentation correction verified by coordinator. Preserve V1-V4; increment attempt to3 only when implementation starts.",
+  "lastCompletedStep": "Attempt3 reviewed: V1/V3/V4 independently green, V2 evidence inspected; remaining malformed query-name URIError independently reproduced by coordinator. Attempt3 return absent.",
+  "nextAllowedAction": "Owner/plan-editor decision required for additional repair budget; no fourth attempt automatically. Continue P5.2 and model study.",
   "sideEffectsDone": [
     "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
   ],
   "changedFiles": [],
   "criteria": {
-    "V1": "NOT RUN",
-    "V2": "NOT RUN",
-    "V3": "NOT RUN",
-    "V4": "NOT RUN"
+    "V1": "PASS (reviewed)",
+    "V2": "PASS (author evidence inspected; no repeated egress)",
+    "V3": "PASS (reviewed)",
+    "V4": "PASS (14 cases; missing malformed percent query coverage recorded as DEF-1)"
   },
   "sandboxRuns": [],
   "updatedUtc": "2026-09-27"

@@ -25,3 +25,5 @@ P3.1 metadata scope approved as AM-058; instruction review and implementation st
 S2.6 attestation scope/wording owner block resolved by AM-059; instruction review, UI writer release and acceptance checks still pending.
 
 S2.6 | AM059 partial implementation accepted; V1 FAIL on language.en.english in Spanish catalogue. Current May-edit excludes this key and LanguageDialog.test.tsx. | state/reviews/S2.6-AM059-implementation.md | Bounded plan-editor amendment for the established English-name semantics, Spanish-locale regression, then unchanged V1 rerun. No ALLOWED entry or guard change. | S2.7/S2.R
+
+P4.1 | Attempt3/3 budget spent; malformed percent escape in parseable Location query throws URIError before evidence write, independently reproduced. No attempt3 return. | state/reviews/P4.1-attempt3-impl.md | Owner-authorized bounded additional repair for fail-closed query decoding and safe offline evidence test; no threshold changes, no new egress needed. | acquisition dependents

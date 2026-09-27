@@ -440,3 +440,18 @@ No model timing claim follows merely from absence of inference in the UI tests.
 ### 2026-09-27 — reviewed partial S2.6 integration
 
 Verified corrective return: false opacity mechanism withdrawn, forbidden allowlist alternative removed, timing claim limited to no own inference. Assertions retained. Archived corrective worker 7c562ffd. Integrating independently accepted AM059 plus locale-aware browser assertions as partial work; S2.6 remains BLOCKED with V1 FAIL, not approved. Source and evidence are frozen; model scratch remains active and excluded.
+
+
+### 2026-09-27 — final P4.1 attempt dispatched
+
+S2.6 partial work pushed through d0b8292; independent acquisition task proceeds. Regenerated P4.1 attempt3 dispatch at d0b8292 after AM061 correction. Worker owns source lane for bounded AM057 repairs and unchanged V1-V4. Prior egress is recorded, no unbounded repeat authorization. Model executor continues serially; no pending permissions.
+
+
+### 2026-09-27 — P4.1 repair returned for independent review
+
+Coordinator read probe diff and reran offline V4: 14/14, exit0. Author reports V1-V4 green and second bounded seven-HEAD V2 draw, recorded distinctly from prior egress. Archived author ca6bbda3; independent reviewer ffcf4528 owns report-only lane. Reviewer must verify stub/import ordering and hostname evidence policy without repeating network requests. No acceptance yet; model executor continues.
+
+
+### 2026-09-27 — P4.1 partial repair preserved, remaining defect blocked
+
+Independent reviewer ffcf4528 reran V1/V3/V4 green and inspected V2; archived after processing. Coordinator reproduced queryKeyNames on fabricated malformed percent name throwing URIError (offline assertion exit0). This violates the intended diagnostic robustness despite green enumerated tests; P4.1 not approved. Attempt3 return is absent; original attempt2 return preserved rather than misattributed. Budget3/3 spent, additional repair requires owner/plan-editor action. Public vendor CDN names are accepted as acquisition evidence under the card explicit narrow privacy interpretation; no local hostname disclosure authorized. Preserving verified partial repair, no installer/guard changes.

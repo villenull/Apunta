@@ -26,16 +26,22 @@
  *    and a query string's **values** are never written: the file carries
  *    `<redacted>` in their place plus the parameter *names*, which are public
  *    vocabulary that an allow-list has to name anyway.
+ *  - **Importing it requests nothing.** The descriptive helpers are pure and
+ *    exported for the offline regression, so the network call lives behind an
+ *    entry-point guard. A top-level `await main()` would turn every import into
+ *    a run, and the regression could not then assert the one property the guard
+ *    exists for.
  *
  * It writes `docs/v2/evidence/P4.1/redirects.md` itself. A hand-transcribed
  * version of that file would be worth nothing, because the run is the evidence.
  */
 
+import { realpathSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PREVIEW_SPEECH_MODEL, SPEECH_MODEL } from '../../installer/dist/catalog.js';
+import { A07_ALLOWED_QUERY_KEYS, PREVIEW_SPEECH_MODEL, SPEECH_MODEL } from '../../installer/dist/catalog.js';
 
 /**
  * The six C-STT candidates (`docs/v2/CONTRACTS.md`), as filenames.
@@ -60,6 +66,21 @@ const REQUEST_TIMEOUT_MS = 30_000;
 
 /** What §1's size and SHA-256 fields say when no bytes were acquired. */
 const NOT_ACQUIRED = 'not acquired — HEAD only, no bytes';
+
+/**
+ * What every derived field reads when the `Location` did not parse at all.
+ *
+ * A `Location` need not be an absolute URL — a relative reference is legal and
+ * Node hands the header value back exactly as the origin sent it — so this
+ * outcome is reachable, and it has to be readable. "Unparseable" is not a
+ * finding: nothing was learned about the host, so no field is guessed and no
+ * rule is claimed to have fired.
+ */
+const UNDETERMINED = 'not determined — the `Location` did not parse as a URL';
+
+/** The one refusal-shaped sentence an unparseable `Location` produces. */
+const UNDETERMINED_REASON =
+  'the `Location` could not be parsed as a URL, so rule 1 could not be applied to it at all';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const evidencePath = join(repoRoot, 'docs', 'v2', 'evidence', 'P4.1', 'redirects.md');
@@ -89,7 +110,7 @@ function candidateUrl(filename) {
  * candidates. Seven requests, seven URLs, and no host that is not the pinned
  * one.
  */
-const ARTIFACTS = [
+export const ARTIFACTS = [
   {
     key: 'speech',
     filename: SPEECH_MODEL.filename,
@@ -97,6 +118,7 @@ const ARTIFACTS = [
     attribution:
       'The two catalogue entries name literally the same file (`catalog.test.ts` pins them equal), so this is **one** request recorded under both entry names.',
     url: SPEECH_MODEL.url,
+    allowedQueryKeys: SPEECH_MODEL.allowedQueryKeys,
     licence: SPEECH_MODEL.licence,
     licenceNote: 'Read from the catalogue entry itself.',
   },
@@ -107,6 +129,10 @@ const ARTIFACTS = [
     attribution:
       'A C-STT candidate. Its URL is the pinned speech URL with this filename substituted into the path, so it is the same host and the same repository as the pinned entry.',
     url: candidateUrl(filename),
+    // The manifest row that covers a candidate is A07, so the candidate's
+    // allowance is A07's enumerated names. Read out of the catalogue rather
+    // than written here: this probe names no host and no query name of its own.
+    allowedQueryKeys: A07_ALLOWED_QUERY_KEYS,
     licence: SPEECH_MODEL.licence,
     licenceNote:
       'Inherited from the pinned entry: same publisher and same repository, not a separate read of this artifact’s terms.',
@@ -148,7 +174,7 @@ function describeTransportFailure(error) {
 }
 
 /** Does a host end in one of the CDN domains, on a dot boundary? */
-function passesDomainRule(host) {
+export function passesDomainRule(host) {
   const lower = host.toLowerCase();
   return CDN_DOMAIN_SUFFIXES.some((suffix) => lower === suffix || lower.endsWith(`.${suffix}`));
 }
@@ -159,7 +185,7 @@ function passesDomainRule(host) {
  * parameter with no `=` still contributes its name, because that is exactly
  * the case where a name alone is the whole of what an allow-list must name.
  */
-function queryKeyNames(search) {
+export function queryKeyNames(search) {
   if (search === '') return [];
   return [
     ...new Set(
@@ -172,8 +198,22 @@ function queryKeyNames(search) {
   ].sort();
 }
 
-/** Everything rule 1 checks about a `Location`, recorded per hop. */
-function describeLocation(raw) {
+/**
+ * Everything rule 1 checks about a `Location`, recorded per hop.
+ *
+ * `allowedQueryKeys` is the artifact's own exact-name allowance, read out of
+ * the catalogue for the artifact this `Location` came from, so the query
+ * verdict is the one the downloader would actually reach rather than a flat
+ * refusal of every query: a row that admits no query at all refuses any query
+ * (`query_not_allowed`), a row that enumerates names refuses only a name
+ * outside that list (`query_key_not_allowed`, with the offending name written
+ * out, because a name is public vocabulary and the plan editor has to be able
+ * to see which one would have to be added), and a name on the list triggers
+ * nothing at all. Membership is exact — never a prefix, a wildcard or a blanket
+ * permission — and it is decided from names alone: no value is read, compared
+ * or written.
+ */
+export function describeLocation(raw, allowedQueryKeys = []) {
   let parsed;
   try {
     parsed = new URL(raw);
@@ -181,14 +221,18 @@ function describeLocation(raw) {
     return {
       unparseable: true,
       raw,
-      host: '(unparseable)',
-      scheme: '(unparseable)',
-      port: '(unparseable)',
-      query: '(unparseable)',
-      queryKeys: '(unparseable)',
-      userInfo: '(unparseable)',
-      fragment: '(unparseable)',
-      refusals: ['the Location could not be parsed as a URL at all'],
+      host: UNDETERMINED,
+      scheme: UNDETERMINED,
+      port: UNDETERMINED,
+      query: UNDETERMINED,
+      // An array in every branch, always. The renderer reads `.length` and
+      // `.map` off this field whichever outcome it is in, so a bare string
+      // sentinel here is what used to throw the moment a relative `Location`
+      // arrived — a crash in the one branch that must never crash.
+      queryKeys: [],
+      userInfo: UNDETERMINED,
+      fragment: UNDETERMINED,
+      refusals: [UNDETERMINED_REASON],
       domainRule: false,
     };
   }
@@ -197,7 +241,16 @@ function describeLocation(raw) {
   if (parsed.port !== '' && parsed.port !== '443') refusals.push('`port_not_allowed`');
   if (parsed.username !== '' || parsed.password !== '') refusals.push('`user_info_present`');
   if (parsed.hash !== '') refusals.push('`fragment_present`');
-  if (parsed.search !== '') refusals.push('`query_not_allowed`');
+  if (parsed.search !== '') {
+    if (allowedQueryKeys.length === 0) {
+      refusals.push('`query_not_allowed`');
+    } else {
+      for (const name of queryKeyNames(parsed.search)) {
+        if (allowedQueryKeys.includes(name)) continue;
+        refusals.push(`\`query_key_not_allowed\` — \`${name}\``);
+      }
+    }
+  }
   return {
     unparseable: false,
     raw,
@@ -219,12 +272,12 @@ function describeLocation(raw) {
 }
 
 /** The `Location` as observed, with any query string replaced, never pasted. */
-function redactQuery(raw) {
+export function redactQuery(raw) {
   const mark = raw.indexOf('?');
   return mark === -1 ? raw : `${raw.slice(0, mark)}?<redacted>`;
 }
 
-function renderArtifact(artifact, observation, when) {
+export function renderArtifact(artifact, observation, when) {
   const lines = [];
   lines.push(`### \`${artifact.filename}\``, '');
   lines.push(`- **Catalogue entries:** ${artifact.entries}`);
@@ -247,7 +300,16 @@ function renderArtifact(artifact, observation, when) {
     const location = observation.location;
     lines.push('- **`Location` observed (would be hop 1; never requested):**', '');
     if (location.unparseable) {
-      lines.push(`  - raw: \`${location.raw}\``);
+      // The one branch that used to write the raw header verbatim, reachable
+      // with exactly the input that matters most: a legal relative reference
+      // carrying a signed query. It is redacted here as the parseable branch
+      // is, and it says outright that the record is incomplete, so a reviewer
+      // can tell "the vendor sent something I could not describe" from "there
+      // was nothing to describe".
+      lines.push(
+        '  - **record incomplete:** the `Location` did not parse as a URL. Every field below is `not determined`, rule 1 was not applied, and no host here is a candidate for any allowance. This is not a finding.',
+      );
+      lines.push(`  - raw, query redacted: \`${redactQuery(location.raw)}\``);
     }
     lines.push(`  - host: \`${location.host}\``);
     lines.push(`  - scheme: \`${location.scheme}\``);
@@ -255,11 +317,13 @@ function renderArtifact(artifact, observation, when) {
     lines.push(`  - query: ${location.query}`);
     lines.push(
       `  - query key names (values never read): ${
-        location.queryKeys.length === 0
-          ? location.query === 'absent'
-            ? 'none — the query is absent'
-            : 'none — the query has no parameter name'
-          : location.queryKeys.map((name) => `\`${name}\``).join(', ')
+        location.unparseable
+          ? 'not determined — nothing parsed, so no parameter name was read'
+          : location.queryKeys.length === 0
+            ? location.query === 'absent'
+              ? 'none — the query is absent'
+              : 'none — the query has no parameter name'
+            : location.queryKeys.map((name) => `\`${name}\``).join(', ')
       }`,
     );
     lines.push(`  - user-info: ${location.userInfo}`);
@@ -268,12 +332,16 @@ function renderArtifact(artifact, observation, when) {
       `  - attributable to this artifact alone: yes — this is the \`Location\` this artifact's own request returned`,
     );
     lines.push(
-      `  - A07's domain rule (\`huggingface.co\` or \`hf.co\` on a dot boundary): ${location.domainRule ? '**passes**' : '**fails** — stop condition 1, never an admission'}`,
+      location.unparseable
+        ? "  - A07's domain rule (`huggingface.co` or `hf.co` on a dot boundary): not determined — no host was read, so the rule was not applied and stop condition 1 was not reached"
+        : `  - A07's domain rule (\`huggingface.co\` or \`hf.co\` on a dot boundary): ${location.domainRule ? '**passes**' : '**fails** — stop condition 1, never an admission'}`,
     );
     lines.push(
-      location.refusals.length === 0
-        ? '  - rule 1 refusals triggered: none'
-        : `  - rule 1 refusals triggered: ${location.refusals.join(', ')}`,
+      location.unparseable
+        ? `  - rule 1: not applied — ${location.refusals.join(', ')}`
+        : location.refusals.length === 0
+          ? '  - rule 1 refusals triggered: none'
+          : `  - rule 1 refusals triggered: ${location.refusals.join(', ')}`,
     );
     lines.push(`  - exact \`Location\`, query redacted: \`${redactQuery(location.raw)}\``);
   }
@@ -291,10 +359,16 @@ function renderArtifact(artifact, observation, when) {
   return lines;
 }
 
-function render(observations, when, nodeVersion) {
+export function render(observations, when, nodeVersion) {
+  // A `Location` that did not parse yielded no host, so it contributes no row:
+  // the table is a list of hosts that were actually read, and putting a
+  // placeholder in it would name something nobody observed.
+  const incomplete = observations.filter(
+    (observation) => observation.location !== null && observation.location.unparseable,
+  );
   const observedHosts = [];
   for (const observation of observations) {
-    if (observation.location !== null) {
+    if (observation.location !== null && !observation.location.unparseable) {
       const host = observation.location.host;
       if (!observedHosts.includes(host)) observedHosts.push(host);
     }
@@ -339,6 +413,17 @@ function render(observations, when, nodeVersion) {
       lines.push(`| \`${host}\` | ${names.join(', ')} | ${verdict} |`);
     }
   }
+  if (incomplete.length > 0) {
+    lines.push('');
+    lines.push(
+      `${String(incomplete.length)} of ${String(observations.length)} artifacts returned a \`Location\` that ` +
+        'did not parse as a URL, so no host was read from ' +
+        `${incomplete.length === 1 ? 'it' : 'them'} and ${incomplete.length === 1 ? 'it is' : 'they are'} ` +
+        'absent from the table above by design. Each is marked **record incomplete** in its own section, ' +
+        'with its raw value redacted. An unparseable `Location` is never a redirect host candidate and never ' +
+        'reaches an allowance.',
+    );
+  }
   lines.push('');
 
   lines.push('## Per artifact');
@@ -373,7 +458,7 @@ async function main() {
       url: entry.url,
       status: result.status,
       failure: result.failure,
-      location: result.location === null ? null : describeLocation(result.location),
+      location: result.location === null ? null : describeLocation(result.location, entry.allowedQueryKeys),
     });
   }
 
@@ -382,7 +467,7 @@ async function main() {
 
   const hosts = new Set(
     observations
-      .filter((observation) => observation.location !== null)
+      .filter((observation) => observation.location !== null && !observation.location.unparseable)
       .map((observation) => observation.location.host),
   );
   process.stderr.write(
@@ -397,4 +482,29 @@ async function main() {
   process.exitCode = transportFailures === 0 ? 0 : 1;
 }
 
-await main();
+/**
+ * Was this file *run*, rather than imported?
+ *
+ * The helpers above are pure and are exported so the offline regression can
+ * reach them without a network, which is only true if importing this module
+ * does not run the probe. A bare top-level `await main()` would make every
+ * import seven `HEAD` requests against the card's egress grant, so the network
+ * call lives behind this guard — and the regression asserts the guard by
+ * importing the module with a `fetch` that throws if it is touched.
+ */
+export function isEntryPoint() {
+  const invoked = process.argv[1];
+  if (invoked === undefined) return false;
+  const self = fileURLToPath(import.meta.url);
+  if (resolve(invoked) === self) return true;
+  // A symlinked checkout, a `.mjs` reached through a loader, a different but
+  // equivalent spelling of the same file: none of those may silently skip the
+  // run the card's V2 row depends on.
+  try {
+    return realpathSync(resolve(invoked)) === realpathSync(self);
+  } catch {
+    return false;
+  }
+}
+
+if (isEntryPoint()) await main();
