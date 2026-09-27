@@ -290,3 +290,14 @@ and repair report; original author/reviewer evidence preserved. Reviewer
 15965cb4 archived immediately after processing. Fresh blind style-review context
 will be used, avoiding reviewer exposure to alias generation rule. English
 Track1 executor notified to continue independently under exclusive GPU lease.
+
+
+### 2026-09-27 — corpus repair1 verified mechanically, final review dispatched
+
+Coordinator reran validate-corpus.mjs and check-repairs.mjs on pinned Node:
+both exit0,44 gold records/20 hashes,10 correct-content seeds,7 value-agnostic
+seeds and14 structural invariant checks. Read repair report; omission-severity
+deviation explicitly reserved for independent judgment. Corpus remains draft.
+Archived repair implementer ee21d4ff after processing, dispatched fresh
+independent corpus freeze reviewer. No scored Track2 approval yet; English
+executor and UI owner continue in their existing lanes.
