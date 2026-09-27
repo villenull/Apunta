@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
 import { errorMessage, listFormats } from '../api/index.js';
-import { accentColorOrDefault, applyAccentColor } from '../lib/accent.js';
+import { accentColorOrDefault, accentLuminance, applyAccentColor } from '../lib/accent.js';
 import {
   animationsEnabled,
   applyAnimations,
@@ -447,6 +447,7 @@ function AppearanceSettings(): React.JSX.Element {
   const shownSize = fontSizeOrDefault(stored[FONT_SIZE_SETTING]);
   const shownAnimations = animationsEnabled(stored[ANIMATIONS_SETTING]);
   const shownTheme = themeOrDefault(stored[THEME_SETTING]);
+  const lowContrast = accentIsHardToSee(shownAccent);
   const save = (patch: SettingsRecord): void => {
     void settings.update(patch).then(
       () => {
@@ -481,6 +482,7 @@ function AppearanceSettings(): React.JSX.Element {
             name={ACCENT_COLOR_SETTING}
             type="color"
             value={shownAccent}
+            aria-describedby={lowContrast ? 'accent-low-contrast' : undefined}
             onChange={(event) => {
               const next = event.target.value;
               applyAccentColor(next);
@@ -500,6 +502,17 @@ function AppearanceSettings(): React.JSX.Element {
           </button>
         </span>
       </div>
+      {/* A note, never a refusal (AM-053): the colour is already saved. */}
+      {lowContrast && (
+        <p
+          className="small state-note"
+          id="accent-low-contrast"
+          role="status"
+          data-testid="accent-low-contrast"
+        >
+          {t('settings.accentLowContrast')}
+        </p>
+      )}
 
       <div className="settings-row">
         <span className="settings-label" id="theme-label">
@@ -581,6 +594,36 @@ function AppearanceSettings(): React.JSX.Element {
       )}
     </section>
   );
+}
+
+/**
+ * The page surfaces the accent is drawn on, one per line of `tokens.css`:
+ * light `--app-bg`, then dark `--app-bg` and dark `--sidebar-bg`. The real
+ * tokens and not white or black — `#939393` clears 3:1 on white and not on
+ * `#faf9f5`, and `#5d5d5d` clears it on black and on neither dark surface — so
+ * a check against the extremes would stay quiet about exactly the colours this
+ * exists for. `Settings.test.tsx` reads `tokens.css` to hold these to it.
+ */
+const PAGE_SURFACES = ['#faf9f5', '#151515', '#111111'] as const;
+
+/** AM-053's line: under this against any page surface, the note appears. */
+const LOW_CONTRAST_RATIO = 3;
+
+/**
+ * Whether the accent is under 3:1 against the page in either theme (AM-053).
+ *
+ * Both themes, not the one on screen: the accent is one value for both, and a
+ * colour that is fine in light and lost in dark is still lost the evening she
+ * switches. It matters beyond the buttons because `--brand-mark` resolves to
+ * `--accent`, so the logo goes with it — which is why the note says so.
+ */
+function accentIsHardToSee(accent: string): boolean {
+  const own = accentLuminance(accent);
+  return PAGE_SURFACES.some((surface) => {
+    const other = accentLuminance(surface);
+    const ratio = (Math.max(own, other) + 0.05) / (Math.min(own, other) + 0.05);
+    return ratio < LOW_CONTRAST_RATIO;
+  });
 }
 
 /**

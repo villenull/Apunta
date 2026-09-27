@@ -1,4 +1,8 @@
-import { t, type Settings } from '@apunta/shared';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { ACCENT_COLOR_SETTING, t, type Settings } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -402,4 +406,80 @@ describe('the drafting model radio group', () => {
     expect(t('settings.themeDark', {}, 'en')).toBe('Dark');
     expect(t('settings.themeDark', {}, 'es-MX')).toBe('Oscuro');
   });
+});
+
+/**
+ * AM-053: the accent picker's low-contrast note. Under 3:1 against the page
+ * surface in either theme — `#faf9f5` light, `#151515` and `#111111` dark — it
+ * appears; it never stops the colour being kept; and it clears once the colour
+ * is raised. The token sheet is read off disk the way `BrandMark.test.tsx`
+ * reads it, so the three surfaces the check uses cannot drift from the page.
+ */
+describe('the accent low-contrast note', () => {
+  const TOKENS = readFileSync(
+    resolve(dirname(fileURLToPath(import.meta.url)), '../styles/tokens.css'),
+    'utf8',
+  );
+
+  /** Every value `name` is given in the token sheet, in source order: light, then dark. */
+  function tokenValues(name: string): string[] {
+    return [...TOKENS.matchAll(new RegExp(`^[ \\t]*${name}:[ \\t]*([^;]+);`, 'gm'))].map((match) =>
+      (match[1] ?? '').trim(),
+    );
+  }
+
+  /**
+   * Colours chosen to sit either side of the line, with the three that tell the
+   * real surfaces apart from white and black. Ratios from WCAG's formula.
+   */
+  const CLEAR = '#218677'; // the default: 4.20 light, 4.12 and 4.26 dark
+  const PALE = '#939393'; // 3.07 on white, 2.92 on #faf9f5
+  const DIM = '#5d5d5d'; // 3.19 on black, 2.77 on #151515, 2.87 on #111111
+  const EDGE = '#606060'; // 2.90 on #151515 but 3.00 on #111111
+
+  it('reads the same three surfaces the page is painted with', () => {
+    expect(tokenValues('--app-bg')).toEqual(['#faf9f5', '#151515']);
+    expect(tokenValues('--sidebar-bg')[1]).toBe('#111111');
+  });
+
+  it('names the logo in both languages', () => {
+    expect(t('settings.accentLowContrast', {}, 'en')).toContain('logo');
+    expect(t('settings.accentLowContrast', {}, 'es-MX')).toContain('logotipo');
+  });
+
+  for (const theme of ['light', 'dark'] as const) {
+    it(`warns under 3:1 on the real surfaces, keeps the colour, and clears when raised (${theme})`, async () => {
+      const api = installFakeApi({
+        formats: [format],
+        settings: { ...STORED, theme, [ACCENT_COLOR_SETTING]: CLEAR },
+      });
+      renderApp();
+      const picker = (await screen.findByLabelText(t('settings.colour'))) as HTMLInputElement;
+      await waitFor(() => {
+        expect(picker.value).toBe(CLEAR);
+      });
+      expect(paintedTheme()).toBe(theme);
+      expect(screen.queryByTestId('accent-low-contrast')).toBeNull();
+
+      for (const low of [PALE, DIM, EDGE]) {
+        fireEvent.change(picker, { target: { value: low } });
+        const note = screen.getByTestId('accent-low-contrast');
+        expect(note.textContent).toBe(t('settings.accentLowContrast'));
+        expect(picker.getAttribute('aria-describedby')).toBe(note.id);
+        // Warn, not refuse: the pick is shown, painted and saved.
+        expect(picker.value).toBe(low);
+        expect(document.documentElement.style.getPropertyValue('--accent')).toBe(low);
+        await waitFor(() => {
+          expect(api.state.settings[ACCENT_COLOR_SETTING]).toBe(low);
+        });
+      }
+
+      fireEvent.change(picker, { target: { value: CLEAR } });
+      expect(screen.queryByTestId('accent-low-contrast')).toBeNull();
+      expect(picker.getAttribute('aria-describedby')).toBeNull();
+      await waitFor(() => {
+        expect(api.state.settings[ACCENT_COLOR_SETTING]).toBe(CLEAR);
+      });
+    });
+  }
 });
