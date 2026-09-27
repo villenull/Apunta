@@ -232,6 +232,9 @@ export function PatientDirectory({
                   archived={archived}
                   pinned={pinned}
                   scope="directory"
+                  onSelectMode={() => {
+                    onUnavailable(t('directory.select'));
+                  }}
                   onTogglePin={() => {
                     onTogglePin(patient.id);
                   }}

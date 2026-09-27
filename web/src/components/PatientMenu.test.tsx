@@ -15,6 +15,19 @@ afterEach(cleanup);
 
 const john = makePatient('John Smith');
 
+/** The menu's props with no-op handlers, for a render that sets its own. */
+function renderlessProps(): PatientMenuProps {
+  return {
+    patient: john,
+    archived: false,
+    pinned: false,
+    onTogglePin: vi.fn(),
+    onRename: vi.fn(),
+    onSetArchived: vi.fn(),
+    onDelete: vi.fn(),
+  };
+}
+
 function renderMenu(overrides: Partial<PatientMenuProps> = {}): PatientMenuProps {
   const props: PatientMenuProps = {
     patient: john,
@@ -46,6 +59,26 @@ describe('the patient row menu', () => {
     fireEvent.keyDown(document.body, { key: 'p' });
     expect(props.onTogglePin).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  /**
+   * On "View all" the menu takes Claude's Recents shape (owner, 2026-09-26):
+   * upright dots, and "Select" above the rest with a rule under it. The
+   * sidebar's menu keeps its own shape.
+   */
+  it('puts Select first on the View all page, and only there', () => {
+    const onSelectMode = vi.fn();
+    render(<PatientMenu {...renderlessProps()} scope="directory" onSelectMode={onSelectMode} />);
+    fireEvent.click(screen.getByLabelText('Tools for John Smith, all patients'));
+
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual(['Select', 'PinP', 'RenameR', 'ArchiveD']);
+    fireEvent.click(items[0] as HTMLElement);
+    expect(onSelectMode).toHaveBeenCalledTimes(1);
+    cleanup();
+
+    renderMenu();
+    expect(screen.queryByRole('menuitem', { name: 'Select' })).toBeNull();
   });
 
   it('offers Restore and Delete for an archived patient', () => {

@@ -170,6 +170,9 @@
   --directory-row-h: 52px;
   /* The rule between those rows: fainter than `--divider`, as Claude's is. */
   --list-rule: rgb(31 30 29 / 0.08);
+  /* A hovered row on that page, and the box its "⋮" sits in. */
+  --directory-row-hover: var(--row-hover-bg);
+  --directory-kebab-bg: var(--row-selected-bg);
   /* The open tab and the Select button on that page. */
   --tab-active-bg: var(--row-selected-bg);
   --select-bg: var(--row-selected-bg);
@@ -382,6 +385,8 @@
   --menu-border: #373736;
   --menu-danger: #ec7e7e;
   --list-rule: rgb(255 255 255 / 0.05);
+  --directory-row-hover: #242424;
+  --directory-kebab-bg: #333333;
   --tab-active-bg: #262626;
   --new-circle-bg: #3a3a3a;
   --select-bg: #2d2d2d;

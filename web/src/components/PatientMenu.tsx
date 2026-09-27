@@ -2,7 +2,15 @@ import type { PatientListItem } from '@apunta/shared';
 import { useEffect, useRef, useState } from 'react';
 
 import { useI18n } from '../lib/i18n.js';
-import { ArchiveIcon, MoreIcon, PencilIcon, PinIcon, TrashIcon } from './icons.js';
+import {
+  ArchiveIcon,
+  CheckIcon,
+  MoreIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  PinIcon,
+  TrashIcon,
+} from './icons.js';
 
 export interface PatientMenuProps {
   patient: PatientListItem;
@@ -21,6 +29,11 @@ export interface PatientMenuProps {
    * so a screen reader never hears two identical buttons.
    */
   scope?: 'sidebar' | 'directory';
+  /**
+   * "Select", at the top of the menu with a rule under it, as on Claude's
+   * Recents page. Only the "View all" page passes it.
+   */
+  onSelectMode?: () => void;
 }
 
 /**
@@ -35,7 +48,9 @@ export interface PatientMenuProps {
  * thing over a short-lived list — a chord would be quicker and less
  * discoverable, and she reads the row before she presses anything.
  *
- * Shared by the sidebar and the "View all" page so the two cannot drift.
+ * Shared by the sidebar and the "View all" page so the two cannot drift. On
+ * the page it takes Claude's Recents shape (owner, 2026-09-26): upright dots,
+ * and "Select" above the rest.
  */
 export function PatientMenu({
   patient,
@@ -46,6 +61,7 @@ export function PatientMenu({
   onSetArchived,
   onDelete,
   scope = 'sidebar',
+  onSelectMode,
 }: PatientMenuProps): React.JSX.Element {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
@@ -121,10 +137,29 @@ export function PatientMenu({
           setOpen((was) => !was);
         }}
       >
-        <MoreIcon className="icon icon-sm" />
+        {scope === 'directory' ? (
+          <MoreVerticalIcon className="icon icon-sm" />
+        ) : (
+          <MoreIcon className="icon icon-sm" />
+        )}
       </button>
       {open && (
         <div className="patient-menu" role="menu">
+          {onSelectMode !== undefined && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className="patient-menu-item"
+                data-testid={`select-${patient.id}`}
+                onClick={choose(onSelectMode)}
+              >
+                <CheckIcon className="icon icon-sm" />
+                {t('directory.select')}
+              </button>
+              <div className="patient-menu-sep" role="separator" />
+            </>
+          )}
           <button
             type="button"
             role="menuitem"

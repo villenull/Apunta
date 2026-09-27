@@ -272,6 +272,17 @@ export function MoreIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
+/** The same three dots stood upright, as Claude's Recents rows carry them. */
+export function MoreVerticalIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <StrokeIcon className={className}>
+      <circle cx="12" cy="5" r="1.6" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+      <circle cx="12" cy="19" r="1.6" fill="currentColor" />
+    </StrokeIcon>
+  );
+}
+
 /*
  * The owner preview's Claude-flavoured glyphs. Drawn here rather than loaded
  * anywhere: still no icon font, no sprite, nothing fetched (hard rule 1).

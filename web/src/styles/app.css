@@ -4427,17 +4427,52 @@ body.is-resizing-sidebar {
   padding: 0;
 }
 
-/* The rule sits between rows, never under the last one. */
+/*
+ * A row, as Claude's Recents (owner, 2026-09-26): under the pointer it lifts
+ * onto a rounded fill that reaches 12px past the names on either side, the
+ * date gives way to an upright "⋮" in a small filled box, and the rules above
+ * and below it step aside so the fill reads as one shape. The rule sits
+ * between rows, never under the last one.
+ */
 .directory-row {
   position: relative;
   display: flex;
   align-items: center;
   min-height: var(--directory-row-h);
-  border-radius: var(--radius-sm);
+  margin: 0 calc(-1 * var(--space-6));
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-md);
 }
 
-.directory-row + .directory-row {
-  border-top: 1px solid var(--list-rule);
+.directory-row + .directory-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--space-6);
+  right: var(--space-6);
+  height: 1px;
+  background: var(--list-rule);
+}
+
+.directory-row:hover,
+.directory-row:focus-within,
+.directory-row:has(.patient-entry-actions.is-open) {
+  background: var(--directory-row-hover);
+}
+
+.directory-row:hover::before,
+.directory-row:focus-within::before,
+.directory-row:has(.patient-entry-actions.is-open)::before,
+.directory-row:hover + .directory-row::before,
+.directory-row:focus-within + .directory-row::before,
+.directory-row:has(.patient-entry-actions.is-open) + .directory-row::before {
+  background: transparent;
+}
+
+.directory-row:hover .directory-row-date,
+.directory-row:focus-within .directory-row-date,
+.directory-row:has(.patient-entry-actions.is-open) .directory-row-date {
+  visibility: hidden;
 }
 
 .directory-row-main {
@@ -4471,16 +4506,28 @@ body.is-resizing-sidebar {
   color: var(--text-muted);
 }
 
-/* The "⋯" takes the date's place under the pointer, so the row's right edge
-   is the date at rest and the menu when she reaches for it. */
+/* The "⋮" takes the date's place under the pointer, in a small filled box, so
+   the row's right edge is the date at rest and the menu when she reaches. */
 .directory-row .patient-entry-actions {
   position: absolute;
-  right: 0;
+  right: var(--space-4);
   top: 50%;
   transform: translateY(-50%);
   padding: 0;
-  background: var(--app-bg);
   opacity: 0;
+}
+
+.directory-row .patient-menu-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background: var(--directory-kebab-bg);
+  color: var(--text-primary);
+}
+
+.directory-row .patient-menu {
+  top: calc(100% + var(--space-2));
+  right: 0;
 }
 
 .directory-row:hover .patient-entry-actions,
