@@ -17,10 +17,12 @@ import { BrainstormView } from '../components/BrainstormView.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { Dialog } from '../components/Dialog.js';
 import { HomeLauncher } from '../components/HomeLauncher.js';
-import { BackIcon, DocumentIcon, PanelLeftIcon, PlusIcon } from '../components/icons.js';
+import { BackIcon, DocumentIcon, PlusIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
 import { NoteView } from '../components/NoteView.js';
 import { PatientDirectory } from '../components/PatientDirectory.js';
+import { SidebarRail } from '../components/SidebarRail.js';
+import { SidebarResizer } from '../components/SidebarResizer.js';
 import { PatientsColumn } from '../components/PatientsColumn.js';
 import { PlanView } from '../components/PlanView.js';
 import { PrepView } from '../components/PrepView.js';
@@ -31,7 +33,13 @@ import { usePatientRecency } from '../hooks/usePatientRecency.js';
 import { usePinnedPatients } from '../hooks/usePinnedPatients.js';
 import { useI18n } from '../lib/i18n.js';
 import { orderPatients } from '../lib/patientOrder.js';
-import { readSidebarCollapsed, writeSidebarCollapsed } from '../lib/patientPins.js';
+import {
+  readSidebarCollapsed,
+  readSidebarWidth,
+  SIDEBAR_DEFAULT_W,
+  writeSidebarCollapsed,
+  writeSidebarWidth,
+} from '../lib/patientPins.js';
 
 /*
  * Settings, opened over the workspace rather than as its own screen (owner
@@ -81,6 +89,8 @@ export function Workspace(): React.JSX.Element {
   // preview-only: the collapsed panel is remembered per browser (see
   // lib/patientPins); a real card would keep it beside the other preferences.
   const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+  // `null` until she drags the edge: the token's default width applies.
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(readSidebarWidth);
   const pins = usePinnedPatients();
 
   // No patient name in the tab title: it is read over a shoulder, shown in the
@@ -292,6 +302,35 @@ export function Workspace(): React.JSX.Element {
     });
   }, []);
 
+  /** The rail's Search: the sidebar comes back with its search field focused. */
+  const searchFromRail = useCallback(() => {
+    setSidebarCollapsed(false);
+    writeSidebarCollapsed(false);
+    window.requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>("[data-testid='patient-search']")?.focus();
+    });
+  }, []);
+
+  const resizeSidebar = useCallback((width: number, done: boolean) => {
+    setSidebarWidth(width);
+    if (done) writeSidebarWidth(width);
+  }, []);
+
+  // Ctrl+B (⌘B on a Mac) shows and hides the sidebar from anywhere, as in
+  // Claude. The note editor is plain text, so the chord has no bold to steal.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+      if (event.key !== 'b' && event.key !== 'B') return;
+      event.preventDefault();
+      toggleSidebar();
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [toggleSidebar]);
+
   // One place for the controls this preview has not built, so a row that says
   // so says the same thing wherever it is pressed from.
   const onUnavailable = useCallback(
@@ -330,6 +369,11 @@ export function Workspace(): React.JSX.Element {
       <AiBanner />
       <div
         className={`app-shell pane-${narrowPane}${atHome ? ' at-home' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+        style={
+          sidebarWidth === null
+            ? undefined
+            : ({ '--sidebar-w': `${String(sidebarWidth)}px` } as React.CSSProperties)
+        }
       >
         <PatientsColumn
           patients={patients.state}
@@ -357,20 +401,29 @@ export function Workspace(): React.JSX.Element {
             setSettingsOpen(true);
           }}
           onUnavailable={onUnavailable}
+          edge={
+            <SidebarResizer
+              width={sidebarWidth ?? SIDEBAR_DEFAULT_W}
+              onResize={resizeSidebar}
+              onCollapse={toggleSidebar}
+            />
+          }
         />
 
-        {/* The only way back once the panel is gone, so it lives over the main
-            pane rather than in the sidebar it hides. */}
+        {/* Collapsed, the sidebar leaves a rail of icons behind rather than
+            nothing (owner, 2026-09-26): the way back, and the main things. */}
         {sidebarCollapsed && (
-          <button
-            type="button"
-            className="icon-btn sidebar-reopen"
-            aria-label={t('patients.showColumn')}
-            data-testid="sidebar-reopen"
-            onClick={toggleSidebar}
-          >
-            <PanelLeftIcon className="icon icon-sm" />
-          </button>
+          <SidebarRail
+            onExpand={toggleSidebar}
+            onSearch={searchFromRail}
+            onOpenAll={() => {
+              navigate('/patients');
+            }}
+            onOpenSettings={() => {
+              setSettingsOpen(true);
+            }}
+            onUnavailable={onUnavailable}
+          />
         )}
 
         {!atHome && !atDirectory && (

@@ -53,3 +53,37 @@ describe('leaving "View all" for a patient', () => {
     expect(new URLSearchParams(router.state.location.search).get('patient')).toBe(maria.id);
   });
 });
+
+describe('the collapsed sidebar', () => {
+  /**
+   * Owner, 2026-09-26, after ChatGPT's: collapsing leaves a rail of icons —
+   * the A that brings the sidebar back, New patient, Search, Patients, and
+   * Mission control's gear — and Ctrl+B toggles it from anywhere.
+   */
+  it('leaves a rail behind, and Ctrl+B brings the sidebar back', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john, maria], notes: [makeNote(john.id)] });
+    const router = createMemoryRouter([{ path: '*', element: <App /> }], { initialEntries: ['/'] });
+    render(<RouterProvider router={router} />);
+    await screen.findByTestId(`patient-row-${john.id}`);
+
+    fireEvent.keyDown(document.body, { key: 'b', ctrlKey: true });
+
+    const rail = await screen.findByTestId('sidebar-rail');
+    expect(screen.getByTestId('sidebar-reopen').getAttribute('aria-label')).toBe('Show patients');
+    expect(screen.getByTestId('rail-new').getAttribute('href')).toBe('/patients/new');
+    expect(screen.getByTestId('rail-new').getAttribute('aria-label')).toBe('New patient');
+    expect(screen.getByTestId('rail-search').getAttribute('aria-label')).toBe('Search patients');
+    expect(screen.getByTestId('rail-mission-control').getAttribute('aria-label')).toBe('Mission control');
+    expect(rail.querySelectorAll('svg').length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByTestId('rail-patients'));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/patients');
+    });
+
+    fireEvent.keyDown(document.body, { key: 'b', ctrlKey: true });
+    await waitFor(() => {
+      expect(screen.queryByTestId('sidebar-rail')).toBeNull();
+    });
+  });
+});

@@ -115,6 +115,8 @@
  * to a narrow window, where it falls back to sharing the page.
  */
 .col-patients {
+  /* The resize edge is drawn against this column's right border. */
+  position: relative;
   width: var(--sidebar-w);
   max-width: 34%;
   flex-shrink: 0;
@@ -3783,11 +3785,25 @@ select:disabled {
   background: var(--row-hover);
 }
 
+/* The plus in a filled circle, as Claude's "New": the circle lands 16px in
+   and the word 46px in, where Claude's do. */
 .new-patient-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  /* The glyph lands 16px in and the word 46px in, as Claude's "New" does. */
-  margin: 0 14px 0 2px;
-  color: var(--text-secondary);
+  width: 20px;
+  height: 20px;
+  margin: 0 12px 0 2px;
+  border-radius: 50%;
+  background: var(--new-circle-bg);
+  color: var(--text-primary);
+}
+
+.new-patient-icon .icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.75;
 }
 
 /*
@@ -4047,20 +4063,165 @@ select:disabled {
   }
 }
 
-.sidebar-reopen {
-  position: absolute;
-  top: calc((var(--topbar-h) - 26px) / 2);
-  left: var(--field-inset);
-  z-index: 20;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
+/*
+ * The collapsed sidebar's rail (owner, 2026-09-26, after ChatGPT's): the A at
+ * the top, which becomes the panel glyph under the pointer because what it
+ * does is open the sidebar; then New, Search and Patients; the gear at the
+ * foot. On the panel's own colour, with the same hairline on its right.
+ */
+.sidebar-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: var(--rail-w);
+  padding: var(--space-4) 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--divider);
 }
 
-.sidebar-reopen:hover {
+.rail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.rail-btn:hover,
+.rail-btn[aria-expanded='true'] {
   background: var(--row-hover-bg);
   color: var(--text-primary);
-  border-color: transparent;
+}
+
+/* The A sits in a 24px em box, so its 0.8em height lands near 19px. */
+.rail-brand {
+  font-size: 24px;
+}
+
+.rail-brand-panel {
+  display: none;
+}
+
+.rail-brand:hover .rail-brand-mark,
+.rail-brand:focus-visible .rail-brand-mark {
+  display: none;
+}
+
+.rail-brand:hover .rail-brand-panel,
+.rail-brand:focus-visible .rail-brand-panel {
+  display: block;
+}
+
+/* ChatGPT's rail glyphs are a size up from the sidebar's 16px. */
+.rail-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.rail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.rail-foot {
+  margin-top: auto;
+}
+
+.mission-control.is-compact {
+  position: relative;
+  padding: 0;
+}
+
+/* The rail's menu opens to its right, level with the gear's foot. */
+.mission-control.is-compact .mission-menu {
+  top: auto;
+  bottom: 0;
+  left: calc(100% + var(--space-4));
+  right: auto;
+  width: var(--menu-w);
+}
+
+/*
+ * The sidebar's resize edge, straddling its border: 8px to aim at, with a
+ * hairline that brightens under the pointer and while dragging.
+ */
+.sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  z-index: 30;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background var(--dur-fast, 120ms) ease;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+.sidebar-resizer.is-dragging::after {
+  background: var(--border-strong);
+}
+
+.sidebar-resizer:focus-visible {
+  outline: none;
+}
+
+body.is-resizing-sidebar {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* The card beside the edge: what a click does, its shortcut, and the drag. */
+.resize-card {
+  position: fixed;
+  z-index: 60;
+  transform: translateY(-50%);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--menu-border);
+  border-radius: var(--radius-sm);
+  background: var(--menu-bg);
+  box-shadow: var(--shadow-pop);
+  color: var(--tooltip-ink);
+  font-size: var(--text-sm);
+  line-height: 18px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.resize-card-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-6);
+}
+
+.resize-card-key {
+  font: inherit;
+  color: var(--text-muted);
+}
+
+.resize-card-hint {
+  color: var(--text-muted);
 }
 
 @media (max-width: 900px) {
@@ -4070,7 +4231,8 @@ select:disabled {
    * control that hides the only pane on screen is worse than no control.
    */
   .panel-toggle,
-  .sidebar-reopen {
+  .sidebar-rail,
+  .sidebar-resizer {
     display: none;
   }
 }

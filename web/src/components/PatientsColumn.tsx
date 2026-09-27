@@ -67,6 +67,8 @@ export interface PatientsColumnProps {
    * Spanish.
    */
   onUnavailable: (what: string) => void;
+  /** The drag-to-resize edge, drawn on the column's right border. */
+  edge?: React.ReactNode;
 }
 
 /**
@@ -92,6 +94,7 @@ export function PatientsColumn({
   collapsed,
   onOpenSettings,
   onUnavailable,
+  edge,
 }: PatientsColumnProps): React.JSX.Element {
   const { t } = useI18n();
   const [query, setQuery] = useState('');
@@ -137,9 +140,13 @@ export function PatientsColumn({
       </div>
 
       <div className="col-body" data-testid="patient-list">
+        {/* "New patient", with the plus in a filled circle, as Claude's "New"
+            (owner, 2026-09-26). */}
         <Link to="/patients/new" className="list-item project-row new-patient-item" data-testid="new-patient">
-          <PlusIcon className="icon icon-sm new-patient-icon" />
-          <div className="name">{t('patients.newShort')}</div>
+          <span className="new-patient-icon" aria-hidden="true">
+            <PlusIcon className="icon" />
+          </span>
+          <div className="name">{t('patients.new')}</div>
         </Link>
         <PatientList
           patients={patients}
@@ -163,6 +170,7 @@ export function PatientsColumn({
       </div>
 
       <MissionControl t={t} onOpenSettings={onOpenSettings} onUnavailable={onUnavailable} />
+      {edge}
     </div>
   );
 }
@@ -188,15 +196,21 @@ function useDismiss(open: boolean, setOpen: (open: boolean) => void): React.RefO
   return ref;
 }
 
-/** "Mission control", where Settings, Language and Get help live. */
-function MissionControl({
+/**
+ * "Mission control", where Settings, Language and Get help live. `compact` is
+ * the collapsed rail's version: the gear alone, its name on the button rather
+ * than beside it, and the menu opening to the rail's right.
+ */
+export function MissionControl({
   t,
   onOpenSettings,
   onUnavailable,
+  compact = false,
 }: {
   t: Translate;
   onOpenSettings: () => void;
   onUnavailable: (what: string) => void;
+  compact?: boolean;
 }): React.JSX.Element {
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, setOpen);
@@ -209,19 +223,22 @@ function MissionControl({
   }
 
   return (
-    <div className="col-footer mission-control" ref={ref}>
+    <div className={compact ? 'mission-control is-compact' : 'col-footer mission-control'} ref={ref}>
       <button
         type="button"
-        className="mission-control-btn"
+        className={compact ? 'rail-btn' : 'mission-control-btn'}
         aria-haspopup="menu"
         aria-expanded={open}
-        data-testid="mission-control"
+        {...(compact
+          ? { 'aria-label': t('patients.missionControl'), title: t('patients.missionControl') }
+          : {})}
+        data-testid={compact ? 'rail-mission-control' : 'mission-control'}
         onClick={() => {
           setOpen((was) => !was);
         }}
       >
         <GearIcon className="icon icon-sm" />
-        <span>{t('patients.missionControl')}</span>
+        {!compact && <span>{t('patients.missionControl')}</span>}
       </button>
       {open && (
         <div className="patient-menu mission-menu" role="menu">

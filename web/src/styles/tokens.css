@@ -133,6 +133,8 @@
   --sidebar-w: 288px;
   /* The collapsed sidebar's icon rail, as ChatGPT's. */
   --rail-w: 52px;
+  /* The filled circle behind "New patient"'s plus. */
+  --new-circle-bg: #e3e1d9;
   --topbar-h: 44px;
   --logo-h: 20px;
   --field-h: 32px;
@@ -381,6 +383,7 @@
   --menu-danger: #ec7e7e;
   --list-rule: rgb(255 255 255 / 0.05);
   --tab-active-bg: #262626;
+  --new-circle-bg: #3a3a3a;
   --select-bg: #2d2d2d;
   /* Claude's "New session": a white pill with near-black ink. */
   --pill-bg: #ffffff;

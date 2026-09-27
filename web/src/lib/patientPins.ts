@@ -71,3 +71,38 @@ export function writeSidebarSort(sort: SidebarSort): void {
     // Losing the order preference is not worth an error path.
   }
 }
+
+/**
+ * The sidebar's width after she drags its edge, same preview-only bargain.
+ * Clamped to what Claude allows its own sidebar: narrower and the names are
+ * unreadable, wider and the notes lose their room.
+ */
+/** `--sidebar-w`'s value in `styles/tokens.css`: the width before any drag. */
+export const SIDEBAR_DEFAULT_W = 288;
+export const SIDEBAR_MIN_W = 220;
+export const SIDEBAR_MAX_W = 400;
+const WIDTH_KEY = 'apunta-sidebar-width-v1';
+
+export function clampSidebarWidth(width: number): number {
+  return Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, Math.round(width)));
+}
+
+/** `null` means she has never dragged it, so the token's default applies. */
+export function readSidebarWidth(): number | null {
+  try {
+    const raw = window.localStorage.getItem(WIDTH_KEY);
+    if (raw === null) return null;
+    const width = Number(raw);
+    return Number.isFinite(width) ? clampSidebarWidth(width) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeSidebarWidth(width: number): void {
+  try {
+    window.localStorage.setItem(WIDTH_KEY, String(clampSidebarWidth(width)));
+  } catch {
+    // Losing the width only costs the default width back.
+  }
+}
