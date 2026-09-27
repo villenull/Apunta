@@ -1,0 +1,27 @@
+{
+  "card": "S2.6",
+  "planVersion": 2,
+  "contracts": [
+    "C-LANG@1",
+    "C-SETTINGS@1"
+  ],
+  "baseCommit": "cd1936f",
+  "attempt": 1,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Dispatched as attempt 1. The card was HELD until the owner-run UI agent finished its last queued work in web/; that condition now holds. The card was amended BEFORE dispatch, not after: AM-051 adds shared/src/i18n/t.test.ts and shared/src/i18n/es-MX.ts to May edit (the unioning {name} oracle that hid a defect for three attempts, plus the two 'de 1 notas' es-MX values it hid) and AM-053 adds the accent picker's low-contrast warning (key shipped in 199e6c6, behaviour never built). Three rows added, V5-V7; V5 is the load-bearing one and requires the stricter oracle to FAIL against a deliberately wrong per-form value, because a green run of a stricter test proves only that the code did not crash",
+  "nextAllowedAction": "Implementer returns with all four original rows plus V5-V7 re-run. On SUBMITTED, dispatch the final review; a PASS closes the card and releases S2.R",
+  "sideEffectsDone": [],
+  "changedFiles": 0,
+  "criteria": {
+    "V1": "not run",
+    "V2": "not run",
+    "V3": "not run",
+    "V4": "not run",
+    "V5": "not run",
+    "V6": "not run",
+    "V7": "not run"
+  },
+  "sandboxRuns": [],
+  "notes": "Port 7831. AM-051's internal order is a requirement, not a preference: fix the oracle first, then the two strings. Fixed the other way, the still-unioning oracle reports green and the hole ships inside the commit meant to close it. AM-053's threshold is 3:1 against the real surface tokens (#faf9f5 light, #151515/#111111 dark), not against white or black; warn, never refuse",
+  "updatedUtc": "2026-09-27T01:50:00Z"
+}
