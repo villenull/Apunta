@@ -4,18 +4,18 @@
   "contracts": [],
   "baseCommit": "b2c3287",
   "attempt": 4,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt4 implemented and committed b2c3287. Coordinator independently reran V1 (exit0, 13 files/206 tests), lint (exit0), V4 (exit0, 18/18) and the negative control (exit1, 15 pass/3 fail with URIError, file restored to an identical SHA-256). Awaiting an independent implementation review.",
-  "nextAllowedAction": "Independent implementation review re-running V1, V3 and V4 and inspecting V2. Then coordinator ruling on RUN-CONFIG section 4 hostname bar. No fifth attempt.",
+  "status": "APPROVED",
+  "lastCompletedStep": "Attempt4 APPROVED by independent review 05e1a210 (no blocking finding). Coordinator and reviewer each reran V1/V3/V4 and each performed the negative control independently; both got exit 1 with 3/18 failing and identical file digests after restore. Two evidence-text findings (line counts, a typo) were mine and are corrected. V2 never run, by design.",
+  "nextAllowedAction": "Coordinator ruling still open on RUN-CONFIG section 4 (hostname bar in evidence). Carried forward, not blocking: DEF-2 (entry-guard regression detected after the evidence overwrite) and the redactQuery fragment/path/user-info plus raw-name-markdown gaps, which need their own card and owner authorisation. P4.1 has no fifth attempt; any further change is a new card.",
   "sideEffectsDone": [
     "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
   ],
   "changedFiles": 4,
   "criteria": {
-    "V1": "PASS (coordinator rerun: exit 0, 13 files / 206 tests, readiness.test.ts collected)",
-    "V2": "NOT RUN (egress grant spent, forbidden by AM-064; existing redirects.md inspected read-only and unmodified)",
-    "V3": "lint PASS (coordinator rerun exit 0); typecheck reported exit 0 by author, pending independent rerun",
-    "V4": "PASS (coordinator rerun: exit 0, 18/18; negative control exit 1 with 3 failures, restored)"
+    "V1": "PASS (coordinator and independent reviewer, each exit 0, 13 files / 206 tests, readiness.test.ts collected)",
+    "V2": "NOT RUN (AM-064: egress grant spent and forbidden; existing redirects.md inspected read-only by both and unmodified)",
+    "V3": "PASS (independent reviewer exit 0, lint and typecheck, from a self-contained scratch tree)",
+    "V4": "PASS (coordinator and reviewer each exit 0, 18/18; negative control independently reproduced twice, exit 1 with 3 failures, digests identical after restore)"
   },
   "sandboxRuns": [],
   "updatedUtc": "2026-09-28"

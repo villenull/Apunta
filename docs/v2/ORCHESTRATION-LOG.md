@@ -509,3 +509,15 @@ Independent reruns, coordinator's own exit codes: V1 exit 0 (13 files / 206 test
 Two of my own card errors were caught by review before dispatch and are corrected: the refusal array has two entries, not three (the host is the `domainRule` boolean, and there is no `host_not_allowed` verdict), and the "every fixture is derived" claim became false with the new loopback literal, so correcting the test file's header comment is now part of the attempt. Both would have produced a test asserting against code that does not exist.
 
 Committed b2c3287 and pushed. **P4.1 is not approved on this evidence** — an independent implementation review is dispatched against c3433ac..b2c3287 and must re-run V1, V3 and V4 and inspect V2. Open and carried: DEF-2 untouched, the `redactQuery` fragment/path/user-info gap as a named follow-up for its own card, and RUN-CONFIG §4's hostname-bar ruling awaiting a coordinator decision.
+
+### 2026-09-28 — P4.1 attempt 4 independently APPROVED
+
+Reviewer 05e1a210 returned APPROVE with no blocking finding, re-running every row from the committed state via `git archive` into a self-contained scratch tree rather than from the dirty shared tree. V1 exit 0 (13 files / 206 tests), V3 exit 0, V4 exit 0 (18/18), V2 correctly NOT RUN. The negative control was performed independently and **can** fail — exit 1, 3 of 18 failing, `URIError` at the decode — with scratch, `git show` and working-tree digests all equal and `git status --porcelain scripts/` empty afterwards. Three claims were verified by execution rather than by reading the assertion: the two-refusal plus `domainRule: false` shape, that V3 remains a real check (proved by making a vendor literal fail the rule in scratch), and zero crashes across 18 crafted inputs.
+
+**P4.1 is APPROVED.** Attempt budget is 4 of 4 and there is no fifth: any further change is a new card.
+
+Two findings were against evidence text rather than code, and both were mine: the diff line counts were taken from counting a hunk instead of from `git diff --numstat` (`+22/-1` and `+105/-6`, not `+23/-1` and `+112/-7`), and a `defusals` typo. Both corrected.
+
+One method finding is kept deliberately: **V3 cannot be re-run in the shared tree** while another agent's work is uncommitted, because symlinking the repository's `node_modules` makes `@apunta/shared` resolve to the stale dirty `shared/dist` and typecheck then fails on committed files. A self-contained scratch tree is the only trustworthy way to run that row right now, and the next reviewer should not chase a failure that is not the card's.
+
+Carried forward, neither blocking: DEF-2, and the `redactQuery` family of gaps — user-info, fragment, path, and a query name that decodes to a backtick or newline being written raw into the evidence markdown. All need their own card and the owner's authorisation; none is load-bearing for this attempt. The RUN-CONFIG §4 hostname-bar ruling remains open for the coordinator.
