@@ -8,8 +8,8 @@
   "baseCommit": "8cb3ecf",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "AM-063 applied, then corrected after an independent instruction review returned DEFECT: the reconciliation clause had asserted an uncommitted UI removal as fact. Card now states the real state, names all four V1 suppression routes, and gives V16 a command. Awaiting a fresh instruction review.",
-  "nextAllowedAction": "Regenerate the dispatch at the current base, run one fresh instruction review, then continue attempt 2. Implementation is held until the UI owner commits its in-flight work: this amendment touches shared/src/i18n/es-MX.ts and web/src/components/LanguageDialog.test.tsx, both of which the UI owner has uncommitted.",
+  "lastCompletedStep": "AM-063 second instruction review VERDICT: CLEAR (0 blocking, 0 major, 11 minor) against base 8cb3ecf. All post-CLEAR edits were corrective or strengthening: present tense fixed, a fifth named V1 suppression route (use.appLocale on the es-MX Playwright projects) added, the reversed-direction en.ts trap spelled out with V16 named as the only row that catches it, V17 added as the negative control with commands and required exit codes, Read list and Objective corrected. No scope widened and no check weakened.",
+  "nextAllowedAction": "Implementation is HELD: the UI owner has shared/src/i18n/es-MX.ts uncommitted, which is one of the two AM-063 paths. Regenerate the dispatch at the then-current base and continue attempt 2 once the lane is free. V1 is not run and is reported not-run if the UI owner commit has not landed.",
   "sideEffectsDone": [],
   "changedFiles": 9,
   "criteria": {
@@ -28,7 +28,8 @@
     "V13": "PASS (attempt 2; see return and independent review)",
     "V14": "PASS (attempt 2; see return and independent review)",
     "V15": "NOT RUN (added by AM-063)",
-    "V16": "NOT RUN (added by AM-063)"
+    "V16": "NOT RUN (added by AM-063)",
+    "V17": "NOT RUN (added by AM-063 as the negative control for V15)"
   },
   "sandboxRuns": [],
   "notes": "Port7831/7832 verified free before dispatch; V5 scratch failure evidence inherited, do not repeat. Keep existing recorded out-of-scope agreement defects separate.",
