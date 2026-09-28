@@ -11,6 +11,14 @@ one ⇅ control whose sort covers every section plus "Manual" (dragged order sav
 whole-group via `PUT/DELETE /api/patient-group-order`), drops applied locally
 with a quiet refetch, the view menu's options panel accepting real pointer
 presses, and a Claude-layout language dialog. Owner preview: port 7868.
+**Follow-up batch (2026-09-28, backlog #5–#11):** row actions and drops update
+the list in place (no "Loading" redraw); Pinned is a supergroup (drop onto it
+pins; pinned patients show only there); the ⇅ menu follows Claude's layout and
+labels, with no Manual order and no drag-reorder inside groups (the
+`/api/patient-group-order` routes are gone again); the accent is fixed teal;
+Settings has no Language or Color row, and gains a Font dropdown (Inter, System,
+Serif). **Language is chosen only in More → Language.** English strings are
+American spelling.
 
 **Updated 2026-09-24.** Live runs `5573afb` (welcome-search home, patient-name notes header, 17% list columns) with the owner's revised
 progress instructions (hash `23135cae…`, verified by

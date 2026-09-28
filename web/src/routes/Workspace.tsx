@@ -10,8 +10,6 @@ import {
   listPatients,
   NETWORK_ERROR_MESSAGE,
   createPatientGroup,
-  clearPatientGroupOrder,
-  setPatientGroupOrder,
   updatePatientGroup,
   setPatientArchived,
   setPatientGroup,
@@ -136,7 +134,9 @@ export function Workspace(): React.JSX.Element {
     (signal: AbortSignal) => listPatients(signal, includeArchived),
     [includeArchived],
   );
-  const patients = useLoader(loadPatients);
+  // Keeps the list on screen when the Status filter widens the fetch, so the
+  // sidebar re-sorts rather than redrawing from "Loading…" (owner, 2026-09-28).
+  const patients = useLoader(loadPatients, { keepData: true });
 
   const patientList = patients.state.status === 'ready' ? patients.state.data : NO_PATIENTS;
   const recency = usePatientRecency(patientList);
@@ -244,7 +244,13 @@ export function Workspace(): React.JSX.Element {
   );
 
   const updateNotes = notes.update;
-  const reloadPatients = patients.reload;
+  /*
+   * Every row action re-reads the list **quietly** (owner, 2026-09-28): the
+   * change is applied to the list on screen first, and a full reload would put
+   * the sidebar back to "Loading…" and redraw every name to show one of them
+   * change.
+   */
+  const refreshPatients = patients.refresh;
 
   const handleNoteChanged = useCallback(
     (updated: Note) => {
@@ -257,10 +263,11 @@ export function Workspace(): React.JSX.Element {
     (deletedId: string) => {
       updateNotes((current) => current.filter((item) => item.id !== deletedId));
       if (patientId !== null) setParams({ patient: patientId });
-      // The patients column shows a note count, which just changed.
-      reloadPatients();
+      // The patients column shows a note count, which just changed. Re-read it
+      // quietly: the list itself did not change, so it must not redraw.
+      refreshPatients();
     },
-    [updateNotes, reloadPatients, patientId, setParams],
+    [updateNotes, refreshPatients, patientId, setParams],
   );
 
   async function handleDeletePatient(target: PatientListItem): Promise<void> {
@@ -268,7 +275,10 @@ export function Workspace(): React.JSX.Element {
       await deletePatient(target.id);
       setActionError(null);
       setParams({});
-      reloadPatients();
+      // After the server said yes, not before: a delete is the one change that
+      // cannot be put back, so the row stays until it is really gone.
+      patients.update((current) => current.filter((candidate) => candidate.id !== target.id));
+      refreshPatients();
     } catch (thrown) {
       setActionError(errorMessage(thrown));
     }
@@ -281,16 +291,21 @@ export function Workspace(): React.JSX.Element {
    * cannot reach.
    */
   async function handleSetArchived(target: PatientListItem, archived: boolean): Promise<void> {
-    try {
-      await setPatientArchived(target.id, archived);
-      setActionError(null);
-      // Archiving the open patient would leave the middle column showing
-      // someone the working list no longer has.
-      if (archived && target.id === patientId) setParams({});
-      reloadPatients();
-    } catch (thrown) {
-      setActionError(errorMessage(thrown));
-    }
+    // The row leaves (or comes back) now, and only that row.
+    patients.update((current) =>
+      current.map((candidate) =>
+        candidate.id === target.id
+          ? {
+              ...candidate,
+              archived_at: archived ? (candidate.archived_at ?? new Date().toISOString()) : null,
+            }
+          : candidate,
+      ),
+    );
+    // Archiving the open patient would leave the middle column showing
+    // someone the working list no longer has.
+    if (archived && target.id === patientId) setParams({});
+    await saveThenRefresh(() => setPatientArchived(target.id, archived));
   }
 
   /**
@@ -366,32 +381,6 @@ export function Workspace(): React.JSX.Element {
   }
 
   /**
-   * Her dragged order for whole groups (owner, 2026-09-27), written in one
-   * transaction by the server and then read back, like every other move here.
-   */
-  async function handleSetGroupOrder(order: { id: string; patientIds: string[] }[]): Promise<void> {
-    if (order.length === 0) return;
-    placeLocally(
-      new Map(
-        order.flatMap((entry) =>
-          entry.patientIds.map((id, index) => [id, { group_id: entry.id, group_position: index }] as const),
-        ),
-      ),
-    );
-    await saveThenRefresh(() =>
-      setPatientGroupOrder({
-        groups: order.map((entry) => ({ id: entry.id, patient_ids: entry.patientIds })),
-      }),
-    );
-  }
-
-  /** Choosing a sort other than "Manual" forgets every dragged order. */
-  async function handleClearGroupOrder(): Promise<void> {
-    patients.update((current) => current.map((candidate) => ({ ...candidate, group_position: null })));
-    await saveThenRefresh(clearPatientGroupOrder);
-  }
-
-  /**
    * A group and a filing in one go, because that is the only way she reaches
    * this: the submenu's "New group…" row. If the patient cannot be filed after
    * the group exists, the group is still there and the error names the move —
@@ -425,13 +414,12 @@ export function Workspace(): React.JSX.Element {
   }
 
   async function handleRename(target: PatientListItem, name: string): Promise<void> {
-    try {
-      await updatePatient(target.id, { name });
-      setActionError(null);
-      reloadPatients();
-    } catch (thrown) {
-      setActionError(errorMessage(thrown));
-    }
+    patients.update((current) =>
+      current.map((candidate) =>
+        candidate.id === target.id ? { ...candidate, name, name_guessed: false } : candidate,
+      ),
+    );
+    await saveThenRefresh(() => updatePatient(target.id, { name }));
   }
   // Home is the no-patient screen. A patient id whose list is still loading
   // is not home yet — it would flash the welcome screen on every reload. The
@@ -560,6 +548,7 @@ export function Workspace(): React.JSX.Element {
           }}
           onDelete={setPendingDelete}
           onTogglePin={pins.toggle}
+          onPinAt={pins.pinAt}
           onReorderPins={pins.move}
           groups={groups.groups}
           groupsState={groups.state}
@@ -578,12 +567,6 @@ export function Workspace(): React.JSX.Element {
           }}
           onMoveIntoGroup={(target, groupId, position) => {
             void handleMoveIntoGroup(target, groupId, position);
-          }}
-          onSetGroupOrder={(order) => {
-            void handleSetGroupOrder(order);
-          }}
-          onClearGroupOrder={() => {
-            void handleClearGroupOrder();
           }}
           onOpenAll={() => {
             navigate('/patients');

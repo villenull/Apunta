@@ -108,6 +108,11 @@ describe('the sidebar Status filter reaches the patient fetch', () => {
     fireEvent.click(screen.getByTestId('sidebar-view-options'));
     fireEvent.click(screen.getByTestId('view-section-status'));
     fireEvent.click(screen.getByTestId(`view-status-${value}`));
+    // Escape closes one level at a time: the options, then the menu. It used to
+    // take one, because the reload that followed a Status change remounted the
+    // whole list and the menu with it; the list now stays put (owner,
+    // 2026-09-28), so the menu is still open until it is closed.
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.keyDown(document, { key: 'Escape' });
   }
 
@@ -149,6 +154,7 @@ describe('the sidebar Status filter reaches the patient fetch', () => {
     fireEvent.click(screen.getByTestId('sidebar-view-options'));
     fireEvent.click(screen.getByTestId('view-section-activity'));
     fireEvent.click(screen.getByTestId('view-activity-1d'));
+    fireEvent.keyDown(document, { key: 'Escape' });
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => {
       expect(screen.getByTestId('clear-view')).toBeDefined();

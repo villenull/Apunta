@@ -114,34 +114,40 @@
  * Rows cascade in by a hair. Five steps cover what the eye reads as a group;
  * everything past the fifth shares the last delay, so a long list never
  * turns the cascade into a wait.
+ *
+ * The sidebar's patient rows cascade **only while the list is arriving**
+ * (`.patient-sections.is-entering`, owner 2026-09-28). A CSS animation
+ * restarts whenever its element is moved in the document, so left on for good
+ * it replayed on every row a drag or a re-sort moved, and those rows seemed to
+ * vanish and respawn.
  */
 .note-item,
-.patient-entry {
+.patient-sections.is-entering .patient-entry {
   animation: rise-in var(--motion-base) var(--motion-ease) backwards;
 }
 
 .note-item:nth-child(2),
-.patient-entry:nth-child(2) {
+.patient-sections.is-entering .patient-entry:nth-child(2) {
   animation-delay: 36ms;
 }
 
 .note-item:nth-child(3),
-.patient-entry:nth-child(3) {
+.patient-sections.is-entering .patient-entry:nth-child(3) {
   animation-delay: 72ms;
 }
 
 .note-item:nth-child(4),
-.patient-entry:nth-child(4) {
+.patient-sections.is-entering .patient-entry:nth-child(4) {
   animation-delay: 108ms;
 }
 
 .note-item:nth-child(5),
-.patient-entry:nth-child(5) {
+.patient-sections.is-entering .patient-entry:nth-child(5) {
   animation-delay: 144ms;
 }
 
 .note-item:nth-child(n + 6),
-.patient-entry:nth-child(n + 6) {
+.patient-sections.is-entering .patient-entry:nth-child(n + 6) {
   animation-delay: 180ms;
 }
 
@@ -156,7 +162,7 @@
   .modal,
   .modal-backdrop,
   .note-item,
-  .patient-entry {
+  .patient-sections.is-entering .patient-entry {
     animation: none;
   }
 }

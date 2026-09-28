@@ -4205,10 +4205,17 @@ select:disabled {
  * an `auto` axis clips the other one too, so a panel left inside the column is
  * cut off at its edge however high its z-index goes.
  */
+:root {
+  --view-menu-w: 280px;
+}
+
 .sidebar-view-menu {
   position: fixed;
   right: auto;
-  width: 240px;
+  /* Wide enough for "Restablecer valores predeterminados" on one line, which
+     is past the shared menu cap (`--menu-w`), so the cap is lifted here. */
+  width: var(--view-menu-w);
+  max-width: var(--view-menu-w);
   z-index: 61;
 }
 
@@ -4251,6 +4258,31 @@ select:disabled {
 .view-section-chevron {
   flex-shrink: 0;
   color: var(--text-muted);
+}
+
+/* A filter off its default, in the accent (owner, 2026-09-28, after Claude's):
+   Status and Last activity only, because only they hide patients. */
+.view-section-value.is-flagged {
+  color: var(--accent);
+}
+
+/* An option: its name, then the tick at the far end in the accent, as Claude's
+   (owner, 2026-09-28). */
+.view-option {
+  gap: var(--space-6);
+}
+
+.view-option-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.patient-menu-item .icon.view-option-check {
+  /* Past the menu's own icon colours — grey at rest and near-white under the
+     pointer (`.patient-menu-item:hover .icon`), both of which every other row
+     wants. As specific as the hover rule and later, so it wins in both. */
+  flex-shrink: 0;
+  color: var(--accent);
 }
 
 /* Keeps every option the same width whether or not it is ticked, so choosing one
@@ -4372,8 +4404,18 @@ select:disabled {
   display: none;
 }
 
-.patient-entry.is-dragging {
-  opacity: 0.4;
+/*
+ * The row she picked up stays as an empty slot, and a name on its way into
+ * Pinned opens one (owner, 2026-09-28, after Claude's): the place is kept, the
+ * name is only in her hand. The row keeps its height and still takes the drag,
+ * so the list under the pointer does not jump.
+ */
+.patient-entry.is-dragging > * {
+  visibility: hidden;
+}
+
+.patient-entry.is-gap {
+  height: var(--row-h);
 }
 
 /*
@@ -5182,6 +5224,15 @@ body.is-resizing-sidebar {
 .language-modal .settings-row-note,
 .language-modal .form-error {
   margin: 0 var(--space-8) var(--space-8);
+}
+
+/* The Font dropdown in Appearance (owner, 2026-09-28): sized to its options,
+   at the row's right like the other controls, not the form-wide select. */
+.settings-select {
+  width: auto;
+  min-width: 180px;
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-md);
 }
 
 .settings-modal {

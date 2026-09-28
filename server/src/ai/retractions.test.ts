@@ -173,7 +173,7 @@ describe('retractionNotice', () => {
         { withdrawn: 'every other week', replacement: '' },
       ]),
     ).toBe(
-      'Apunta applied the corrections you made as you spoke, before drafting: left out “four hours at night” in favour of “six hours now”; and left out “every other week”.',
+      'Apunta applied the corrections you made as you spoke, before drafting: left out “four hours at night” in favor of “six hours now”; and left out “every other week”.',
     );
     expect(retractionNotice([{ withdrawn: 'the old plan', replacement: '' }])).toBe(
       'Apunta applied the corrections you made as you spoke, before drafting: left out “the old plan”.',

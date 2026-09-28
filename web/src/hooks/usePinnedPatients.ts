@@ -16,6 +16,11 @@ export interface PinnedPatients {
   toggle: (patientId: string) => void;
   /** Move the pinned row at `from` to `to`, both indexes into `ids`. */
   move: (from: number, to: number) => void;
+  /**
+   * Pin at a place in the list, or move there if already pinned: a name dropped
+   * into the gap she opened in Pinned lands in that gap (owner, 2026-09-28).
+   */
+  pinAt: (patientId: string, index: number) => void;
 }
 
 export function usePinnedPatients(): PinnedPatients {
@@ -43,5 +48,14 @@ export function usePinnedPatients(): PinnedPatients {
     });
   }, []);
 
-  return { ids, isPinned: (id) => ids.includes(id), toggle, move };
+  const pinAt = useCallback((patientId: string, index: number) => {
+    setIds((current) => {
+      const next = current.filter((id) => id !== patientId);
+      next.splice(Math.max(0, Math.min(index, next.length)), 0, patientId);
+      writePinnedIds(next);
+      return next;
+    });
+  }, []);
+
+  return { ids, isPinned: (id) => ids.includes(id), toggle, move, pinAt };
 }

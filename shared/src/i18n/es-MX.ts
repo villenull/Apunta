@@ -1164,17 +1164,17 @@ export const esMX = {
   'patients.statusArchived': { text: 'Archivados' },
   'patients.statusAll': { text: 'Todos' },
   'patients.activityLabel': { text: 'Última actividad' },
-  'patients.activityDay': { text: 'Último día' },
-  'patients.activity3d': { text: 'Últimos 3 días' },
-  'patients.activity7d': { text: 'Última semana' },
-  'patients.activity30d': { text: 'Último mes' },
-  'patients.activityAll': { text: 'Cualquier momento' },
+  'patients.activityDay': { text: '1d' },
+  'patients.activity3d': { text: '3d' },
+  'patients.activity7d': { text: '7d' },
+  'patients.activity30d': { text: '30d' },
+  'patients.activityAll': { text: 'Todo' },
   'patients.groupByLabel': { text: 'Agrupar por' },
   'patients.groupByGroups': { text: 'Mis grupos' },
-  'patients.groupByNone': { text: 'Nada' },
+  'patients.groupByNone': { text: 'Ninguno' },
   'patients.sortLabel': { text: 'Ordenar por' },
-  /** Her dragged order inside each group (owner, 2026-09-27). */
-  'patients.sortManual': { text: 'Manual' },
+  /** The view menu's last row, shown only when something is off its default. */
+  'patients.resetView': { text: 'Restablecer valores predeterminados' },
   /** What the lifted row says over a group or Recents it would be moved to. */
   'patients.dragMoveTo': { text: 'Mover a {name}' },
   'patients.sortCreated': { text: 'Fecha de creación' },
@@ -1183,7 +1183,7 @@ export const esMX = {
     text: 'Ordenar pacientes',
   },
   'patients.sortRecent': {
-    text: 'Actividad reciente',
+    text: 'Última actividad',
   },
   'patients.sortName': {
     text: 'Nombre',
@@ -2110,6 +2110,11 @@ export const esMX = {
   'settings.fontSize': {
     text: 'Tamaño de fuente',
   },
+  /** The typeface dropdown (owner, 2026-09-28); the bundled face by its name. */
+  'settings.font': { text: 'Fuente' },
+  'settings.fontInter': { text: 'Inter (predeterminada)' },
+  'settings.fontSystem': { text: 'Sistema' },
+  'settings.fontSerif': { text: 'Serif' },
   'settings.animations': {
     text: 'Animaciones',
   },

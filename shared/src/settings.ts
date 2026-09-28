@@ -123,6 +123,21 @@ export function isFontSize(value: unknown): value is FontSize {
 }
 
 /**
+ * The typeface, app-wide except the Apunta wordmark (owner, 2026-09-28, after
+ * Claude's "Chat font"). `inter` is the bundled face the app has always used and
+ * the default; `system` and `serif` are the operating system's own faces, so
+ * neither adds anything to download or bundle.
+ */
+export const FONT_FAMILY_SETTING = 'font_family';
+export const FONT_FAMILIES = ['inter', 'system', 'serif'] as const;
+export type FontFamily = (typeof FONT_FAMILIES)[number];
+export const DEFAULT_FONT_FAMILY: FontFamily = 'inter';
+
+export function isFontFamily(value: unknown): value is FontFamily {
+  return typeof value === 'string' && (FONT_FAMILIES as readonly string[]).includes(value);
+}
+
+/**
  * Animations on or off, app-wide (owner, 2026-09-21). A boolean once she has
  * chosen; unset means "follow the system", which is off when the OS asks for
  * reduced motion. Not in the prototype.

@@ -1,8 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import { ACCENT_COLOR_SETTING, DEFAULT_ACCENT_COLOR, t, type Settings } from '@apunta/shared';
+import { t, type Settings } from '@apunta/shared';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -411,157 +407,44 @@ describe('the drafting model radio group', () => {
 });
 
 /**
- * AM-053: the accent picker's low-contrast note. Under 3:1 against the page
- * surface in either theme — `#f5f4ed` and `#faf9f5` light, `#111111` and
- * `#151515` dark (AM-054 added the light sidebar) — it
- * appears; it never stops the colour being kept; and it clears once the colour
- * is raised. The token sheet is read off disk the way `BrandMark.test.tsx`
- * reads it, so the four surfaces the check uses cannot drift from the page.
+ * Language / Idioma lives in More → Language only (owner, 2026-09-28). The
+ * Settings row is gone, and these are its cases moved onto the one control that
+ * is left: applied without a reload, disabled with its reason while work is in
+ * flight, and put back when the server refuses the change (C-LANG@1 rules 1
+ * and 6, C-SETTINGS@1).
  */
-describe('the accent low-contrast note', () => {
-  const TOKENS = readFileSync(
-    resolve(dirname(fileURLToPath(import.meta.url)), '../styles/tokens.css'),
-    'utf8',
-  );
-
-  /** Every value `name` is given in the token sheet, in source order: light, then dark. */
-  function tokenValues(name: string): string[] {
-    return [...TOKENS.matchAll(new RegExp(`^[ \\t]*${name}:[ \\t]*([^;]+);`, 'gm'))].map((match) =>
-      (match[1] ?? '').trim(),
-    );
-  }
-
-  /**
-   * Colours chosen to sit either side of the line, with the three that tell the
-   * real surfaces apart from white and black. Ratios from WCAG's formula.
-   *
-   * `CLEAR` is the shipped default rather than a literal, so this cannot drift
-   * away from the value the app actually starts on: the whole point of the note
-   * is that the colour the owner did *not* have to choose must not be the one
-   * the app warns her about. `#2a9d8f` is 3.16 on `#faf9f5` and 3.01 on the
-   * light sidebar `#f5f4ed` — it clears 3:1 on all four surfaces, but on the
-   * sidebar by 0.015, which is a narrow and accepted margin. That number is
-   * written here so the next person to move the teal can see what it costs
-   * before moving it.
-   */
-  const CLEAR = DEFAULT_ACCENT_COLOR; // 3.16 and 3.01 light, 5.49 and 5.68 dark
-  const PALE = '#939393'; // 3.07 on white, 2.92 on #faf9f5
-  const DIM = '#5d5d5d'; // 3.19 on black, 2.77 on #151515, 2.87 on #111111
-  const EDGE = '#606060'; // 2.90 on #151515 but 3.00 on #111111
-  const SIDEBAR = '#8f8f8f'; // 3.07 on #faf9f5 but 2.93 on the light sidebar #f5f4ed
-
-  it('reads the same four surfaces the page is painted with', () => {
-    expect(tokenValues('--sidebar-bg')).toEqual(['#f5f4ed', '#111111']);
-    expect(tokenValues('--app-bg')).toEqual(['#faf9f5', '#151515']);
-  });
-
-  it('names the logo in both languages', () => {
-    expect(t('settings.accentLowContrast', {}, 'en')).toContain('logo');
-    expect(t('settings.accentLowContrast', {}, 'es-MX')).toContain('logotipo');
-  });
-
-  /**
-   * The case the loop below cannot reach: the colour the practice never chose.
-   * `CLEAR` is stored there, which asks whether a deliberate pick is safe; this
-   * asks whether a fresh install is, with nothing in the settings row at all,
-   * where `accentColorOrDefault` supplies the default. If a future teal drops
-   * under 3:1 on any of the four surfaces, the app would greet the owner with
-   * a warning about her own brand colour — and `accentIsHardToSee` checks both
-   * themes whatever is on screen, so both are walked here.
-   */
-  for (const theme of ['light', 'dark'] as const) {
-    it(`shows the shipped default without warning about it (${theme}, nothing stored)`, async () => {
-      installFakeApi({ formats: [format], settings: { ...STORED, theme } });
-      renderApp();
-      const picker = (await screen.findByLabelText(t('settings.colour'))) as HTMLInputElement;
-      await waitFor(() => {
-        expect(picker.value).toBe(DEFAULT_ACCENT_COLOR);
-      });
-      expect(screen.queryByTestId('accent-low-contrast')).toBeNull();
-      expect(picker.getAttribute('aria-describedby')).toBeNull();
-    });
-  }
-
-  for (const theme of ['light', 'dark'] as const) {
-    it(`warns under 3:1 on the real surfaces, keeps the colour, and clears when raised (${theme})`, async () => {
-      const api = installFakeApi({
-        formats: [format],
-        settings: { ...STORED, theme, [ACCENT_COLOR_SETTING]: CLEAR },
-      });
-      renderApp();
-      const picker = (await screen.findByLabelText(t('settings.colour'))) as HTMLInputElement;
-      await waitFor(() => {
-        expect(picker.value).toBe(CLEAR);
-      });
-      expect(paintedTheme()).toBe(theme);
-      expect(screen.queryByTestId('accent-low-contrast')).toBeNull();
-
-      for (const low of [PALE, DIM, EDGE, SIDEBAR]) {
-        fireEvent.change(picker, { target: { value: low } });
-        const note = screen.getByTestId('accent-low-contrast');
-        expect(note.textContent).toBe(t('settings.accentLowContrast'));
-        expect(picker.getAttribute('aria-describedby')).toBe(note.id);
-        // Inside the colour row, so the Theme row is still its next sibling and
-        // `.settings-row + .settings-row` still draws the divider between them.
-        const row = picker.closest('.settings-row');
-        expect(note.parentElement).toBe(row);
-        expect(row?.nextElementSibling?.classList.contains('settings-row')).toBe(true);
-        // Warn, not refuse: the pick is shown, painted and saved.
-        expect(picker.value).toBe(low);
-        expect(document.documentElement.style.getPropertyValue('--accent')).toBe(low);
-        await waitFor(() => {
-          expect(api.state.settings[ACCENT_COLOR_SETTING]).toBe(low);
-        });
-      }
-
-      fireEvent.change(picker, { target: { value: CLEAR } });
-      expect(screen.queryByTestId('accent-low-contrast')).toBeNull();
-      expect(picker.getAttribute('aria-describedby')).toBeNull();
-      await waitFor(() => {
-        expect(api.state.settings[ACCENT_COLOR_SETTING]).toBe(CLEAR);
-      });
-    });
-  }
-});
-
-/**
- * Language / Idioma (C-LANG@1 rules 1 and 6, C-SETTINGS@1): hidden unless the
- * build offers Spanish, applied without a reload, disabled with its reason
- * while work is in flight, and put back when the server refuses the change.
- */
-describe('the Language row', () => {
+describe('the Language dialog, the one place the language is chosen', () => {
   const OFFERED: Settings = { ...STORED, spanish_available: true, language: 'en' };
 
-  it('is not there on a build that does not offer Spanish', async () => {
-    installFakeApi({ formats: [format], settings: { ...STORED, spanish_available: false } });
+  async function openDialog(): Promise<HTMLElement> {
+    renderApp('/');
+    fireEvent.click(await screen.findByTestId('mission-control'));
+    fireEvent.click(screen.getByTestId('mission-language'));
+    return screen.findByTestId('language-dialog');
+  }
+
+  it('is not in Settings any more, on any build', async () => {
+    installFakeApi({ formats: [format], settings: { ...OFFERED } });
     renderApp();
     await screen.findByTestId('appearance-settings');
     expect(screen.queryByTestId('language-settings')).toBeNull();
     expect(screen.queryByText(t('settings.language'))).toBeNull();
   });
 
-  it('sits first, and switches the page and <html lang> at once, without a reload', async () => {
+  it('switches the page and <html lang> at once, without a reload', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...OFFERED } });
     const puts = holdSettingsPuts(api);
-    renderApp();
-    const row = await screen.findByTestId('language-settings');
-    // First in the settings body: nothing is above it for a Spanish speaker to
-    // read past.
-    expect(row.parentElement?.firstElementChild).toBe(row);
-    const group = within(row).getByRole('radiogroup', { name: 'Language / Idioma' });
-    const english = within(group).getByTestId('language-en');
-    const spanish = within(group).getByTestId('language-es-MX');
-    expect(english.textContent).toBe('English');
+    const dialog = await openDialog();
+    const group = within(dialog).getByRole('radiogroup', { name: t('language.choose', {}, 'en') });
+    const english = within(group).getByTestId('language-option-en');
+    const spanish = within(group).getByTestId('language-option-es-MX');
     expect(english.getAttribute('lang')).toBe('en');
-    expect(spanish.textContent).toBe('Español');
     expect(spanish.getAttribute('lang')).toBe('es-MX');
     await waitFor(() => {
       expect(english.getAttribute('aria-checked')).toBe('true');
     });
     expect(document.documentElement.lang).toBe('en');
-    expect(screen.getByTestId('appearance-settings').textContent).toContain(
-      t('settings.appearance', {}, 'en'),
-    );
+    expect(dialog.textContent).toContain(t('language.choose', {}, 'en'));
 
     fireEvent.click(spanish);
 
@@ -570,11 +453,7 @@ describe('the Language row', () => {
     expect(puts.sent).toEqual([{ language: 'es-MX' }]);
     expect(spanish.getAttribute('aria-checked')).toBe('true');
     expect(document.documentElement.lang).toBe('es-MX');
-    expect(screen.getByTestId('appearance-settings').textContent).toContain(
-      t('settings.appearance', {}, 'es-MX'),
-    );
-    // The row's own label does not change: it is the same in both catalogues.
-    expect(within(row).getByRole('radiogroup', { name: 'Language / Idioma' })).toBe(group);
+    expect(dialog.textContent).toContain(t('language.choose', {}, 'es-MX'));
 
     puts.settle(0, { ok: true });
     await flush();
@@ -584,9 +463,9 @@ describe('the Language row', () => {
 
   it('is disabled with its reason while work is in flight, and comes back when it ends', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...OFFERED } });
-    renderApp();
-    const spanish = await screen.findByTestId('language-es-MX');
-    const english = screen.getByTestId('language-en');
+    const dialog = await openDialog();
+    const spanish = within(dialog).getByTestId('language-option-es-MX');
+    const english = within(dialog).getByTestId('language-option-en');
     expect(screen.queryByTestId('language-busy')).toBeNull();
 
     let release = (): void => undefined;
@@ -600,9 +479,7 @@ describe('the Language row', () => {
       expect((english as HTMLButtonElement).disabled).toBe(true);
       const reason = screen.getByTestId('language-busy');
       expect(reason.textContent).toBe(t('settings.languageChangeBlocked', {}, 'en'));
-      expect(
-        screen.getByRole('radiogroup', { name: 'Language / Idioma' }).getAttribute('aria-describedby'),
-      ).toBe(reason.id);
+      expect(within(dialog).getByRole('radiogroup').getAttribute('aria-describedby')).toBe(reason.id);
 
       // A click on a disabled option asks the server nothing.
       const fetchSpy = vi.spyOn(globalThis, 'fetch');
@@ -633,9 +510,9 @@ describe('the Language row', () => {
       }
       return inner(path, init);
     });
-    renderApp();
-    const spanish = await screen.findByTestId('language-es-MX');
-    const english = screen.getByTestId('language-en');
+    const dialog = await openDialog();
+    const spanish = within(dialog).getByTestId('language-option-es-MX');
+    const english = within(dialog).getByTestId('language-option-en');
     await waitFor(() => {
       expect(english.getAttribute('aria-checked')).toBe('true');
     });
@@ -648,9 +525,57 @@ describe('the Language row', () => {
     expect(english.getAttribute('aria-checked')).toBe('true');
     expect(spanish.getAttribute('aria-checked')).toBe('false');
     expect(document.documentElement.lang).toBe('en');
-    expect(screen.getByTestId('appearance-settings').textContent).toContain(
-      t('settings.appearance', {}, 'en'),
-    );
+    expect(dialog.textContent).toContain(t('language.choose', {}, 'en'));
     expect(api.state.settings['language']).toBe('en');
+  });
+});
+
+/**
+ * The typeface (owner, 2026-09-28): a dropdown, saved at once, painted on the
+ * root as the two font tokens; the bundled face is the default and named.
+ */
+describe('the Font dropdown', () => {
+  it('offers Inter as the named default, then System and Serif', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    renderApp();
+    const select = (await screen.findByTestId('font-family')) as HTMLSelectElement;
+    expect([...select.options].map((option) => option.textContent)).toEqual([
+      'Inter (Default)',
+      'System',
+      'Serif',
+    ]);
+    expect(select.value).toBe('inter');
+  });
+
+  it('saves a choice at once and paints it on both font tokens', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...STORED } });
+    renderApp();
+    const select = (await screen.findByTestId('font-family')) as HTMLSelectElement;
+
+    fireEvent.change(select, { target: { value: 'serif' } });
+
+    const root = document.documentElement.style;
+    expect(root.getPropertyValue('--font-sans')).toContain('Georgia');
+    expect(root.getPropertyValue('--font-serif')).toContain('Georgia');
+    await waitFor(() => {
+      expect(api.state.settings['font_family']).toBe('serif');
+    });
+
+    fireEvent.change(select, { target: { value: 'inter' } });
+    // The default is the app as it always was: no overrides at all.
+    expect(root.getPropertyValue('--font-sans')).toBe('');
+    expect(root.getPropertyValue('--font-serif')).toBe('');
+  });
+
+  it('has no colour picker: the accent is the Apunta teal', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED, accent_color: '#8b2f6b' } });
+    renderApp();
+    await screen.findByTestId('appearance-settings');
+    expect(document.querySelector('input[type="color"]')).toBeNull();
+    expect(screen.queryByTestId('reset-accent')).toBeNull();
+    // A colour an older build stored is not painted: it could not be changed back.
+    await waitFor(() => {
+      expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2a9d8f');
+    });
   });
 });

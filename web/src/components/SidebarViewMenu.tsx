@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useI18n } from '../lib/i18n.js';
-import { writeSidebarView, type SidebarView } from '../lib/sidebarView.js';
+import {
+  DEFAULT_SIDEBAR_VIEW,
+  isDefaultSidebarView,
+  writeSidebarView,
+  type SidebarView,
+} from '../lib/sidebarView.js';
 import { CheckIcon, ChevronRightIcon, SortIcon } from './icons.js';
 
 /**
@@ -151,8 +156,9 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
   function openAt(): void {
     const rect = buttonRef.current?.getBoundingClientRect();
     if (rect === undefined) return;
-    // Under the button, flush to its right edge, and never off the window.
-    const width = 240;
+    // Under the button, flush to its right edge, and never off the window. The
+    // width is the stylesheet's `--view-menu-w`.
+    const width = 280;
     const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
     setAt({ left, top: rect.bottom + 4 });
     setOpen(true);
@@ -227,16 +233,10 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
     return (
       <>
         {/*
-         * `role="presentation"`, because this is a direct child of a `menu` and
-         * a menu may only contain `menuitem`, `menuitemradio`,
-         * `menuitemcheckbox`, `group` or `separator`. The heading is still read
-         * out as part of each option's group by the panel's own `aria-label`;
-         * what it must not do is appear in the accessibility tree as an
-         * unnamed item sitting between two radio rows.
+         * No heading over the options, as in Claude's (owner, 2026-09-28): the
+         * row the panel opened from already names it, and the panel's own
+         * `aria-label` says it to a screen reader.
          */}
-        <div className="patient-menu-heading" role="presentation">
-          {spec.heading}
-        </div>
         {spec.options.map((option) => {
           const here = view[spec.field] === option.value;
           return (
@@ -245,21 +245,21 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
               type="button"
               role="menuitemradio"
               aria-checked={here}
-              className="patient-menu-item"
+              className="patient-menu-item view-option"
               data-testid={`view-${String(spec.field)}-${String(option.value)}`}
               onClick={() => {
                 pick({ [spec.field]: option.value } as Partial<SidebarView>);
               }}
             >
+              <span className="view-option-label">{option.label}</span>
+              {/* The tick at the end of the row and in the accent, as Claude's
+                  (owner, 2026-09-28). The slot is kept when unticked so no row
+                  changes width under the pointer. */}
               {here ? (
-                <CheckIcon className="icon icon-sm" />
+                <CheckIcon className="icon icon-sm view-option-check" />
               ) : (
-                /* Keeps every row the same width whether or not it is ticked,
-                   so picking an option does not shuffle the list under the
-                   pointer — the same lesson as the language chooser's cells. */
                 <span className="view-option-gap" aria-hidden="true" />
               )}
-              {option.label}
             </button>
           );
         })}
@@ -291,6 +291,7 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
     {
       field: 'activity',
       heading: t('patients.activityLabel'),
+      // Claude's own short labels (owner, 2026-09-28).
       options: [
         { value: '1d', label: t('patients.activityDay') },
         { value: '3d', label: t('patients.activity3d') },
@@ -321,23 +322,33 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
     {
       field: 'sort',
       heading: t('patients.sortLabel'),
+      // Claude's three, in Claude's order (owner, 2026-09-28). There is no
+      // hand-made order inside a group: every group follows this.
       options: [
         { value: 'name', label: t('patients.sortName') },
         { value: 'created', label: t('patients.sortCreated') },
         { value: 'recent', label: t('patients.sortRecent') },
-        // Her dragged order inside each group (owner, 2026-09-27).
-        { value: 'manual', label: t('patients.sortManual') },
       ] as const,
       current: () =>
         view.sort === 'name'
           ? t('patients.sortName')
           : view.sort === 'created'
             ? t('patients.sortCreated')
-            : view.sort === 'manual'
-              ? t('patients.sortManual')
-              : t('patients.sortRecent'),
+            : t('patients.sortRecent'),
     },
   ];
+
+  /**
+   * Which rows show their value in the accent: the two **filters**, and only
+   * while they are off their default (owner, 2026-09-28, after Claude's). A
+   * filter that is on is something hiding patients, and she should see that at a
+   * glance; how the list is grouped or ordered hides nobody, so it stays grey.
+   */
+  function isFlagged(field: keyof SidebarView): boolean {
+    if (field !== 'status' && field !== 'activity') return false;
+    return view[field] !== DEFAULT_SIDEBAR_VIEW[field];
+  }
+  const atDefaults = isDefaultSidebarView(view);
 
   return (
     <>
@@ -378,7 +389,9 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
              * at, and the current value is written on the row so the panel is
              * only needed when she wants to change it.
              */}
-            {SECTIONS.map((spec, index) => (
+            {SECTIONS.map((spec, index) => [
+              // Claude's grouping: the two filters, then how it is arranged.
+              index === 2 ? <div key="separator" className="patient-menu-sep" role="separator" /> : null,
               <button
                 key={spec.field}
                 ref={(node) => {
@@ -420,10 +433,51 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
                 <span className="view-section-label">{spec.heading}</span>
                 {/* Every row here has one; the field is optional only so the
                     panel can be rendered from a section that has no row. */}
-                <span className="view-section-value">{spec.current?.() ?? ''}</span>
+                <span
+                  className={isFlagged(spec.field) ? 'view-section-value is-flagged' : 'view-section-value'}
+                >
+                  {spec.current?.() ?? ''}
+                </span>
                 <ChevronRightIcon className="icon icon-sm view-section-chevron" />
-              </button>
-            ))}
+              </button>,
+            ])}
+            {/*
+             * "Reset to defaults", only when there is something to reset (owner,
+             * 2026-09-28): with everything at its default the row would be a
+             * button that does nothing.
+             */}
+            {!atDefaults && (
+              <>
+                <div className="patient-menu-sep" role="separator" />
+                <button
+                  ref={(node) => {
+                    // The fifth row for the arrow keys, while it exists.
+                    rowRefs.current[SECTIONS.length] = node;
+                  }}
+                  type="button"
+                  role="menuitem"
+                  className="patient-menu-item"
+                  data-testid="view-reset"
+                  onMouseEnter={closeSectionSoon}
+                  onClick={() => {
+                    pick(DEFAULT_SIDEBAR_VIEW);
+                    close();
+                    buttonRef.current?.focus();
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      focusRow(SECTIONS.length - 1);
+                    } else if (event.key === 'ArrowDown') {
+                      event.preventDefault();
+                      focusRow(SECTIONS.length + 1);
+                    }
+                  }}
+                >
+                  {t('patients.resetView')}
+                </button>
+              </>
+            )}
           </div>,
           document.body,
         )}

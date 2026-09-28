@@ -74,11 +74,22 @@ export function LanguageDialog({ onClose }: LanguageDialogProps): React.JSX.Elem
         </button>
       </div>
 
-      <ul className="language-grid" data-testid="language-grid">
+      {/*
+       * A radio group named for the window, and pointed at the busy reason while
+       * work is in flight — the same wiring the Settings row had, now that this
+       * is the one place the language is chosen (owner, 2026-09-28).
+       */}
+      <ul
+        className="language-grid"
+        data-testid="language-grid"
+        role="radiogroup"
+        aria-label={t('language.choose')}
+        aria-describedby={working ? 'language-busy' : undefined}
+      >
         {offered.map((language) => {
           const here = language === chosen;
           return (
-            <li key={language}>
+            <li key={language} role="none">
               <button
                 type="button"
                 role="radio"
@@ -103,7 +114,7 @@ export function LanguageDialog({ onClose }: LanguageDialogProps): React.JSX.Elem
       </ul>
 
       {working && (
-        <p className="small settings-row-note" role="status" data-testid="language-busy">
+        <p className="small settings-row-note" id="language-busy" role="status" data-testid="language-busy">
           {t('settings.languageChangeBlocked')}
         </p>
       )}

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { PatientGroup, PatientListItem } from '@apunta/shared';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -758,32 +758,35 @@ describe('dragging a name to a place', () => {
   function renderDraggable(
     onMoveIntoGroup: (p: PatientListItem, g: string, at: number | null) => void,
     more: {
-      onSetGroupOrder?: (groups: { id: string; patientIds: string[] }[]) => void;
-      onClearGroupOrder?: () => void;
       onMoveToGroup?: (p: PatientListItem, g: string | null) => void;
+      onTogglePin?: (id: string) => void;
+      onPinAt?: (id: string, index: number) => void;
+      onReorderPins?: (from: number, to: number) => void;
+      pinnedIds?: string[];
+      people?: PatientListItem[];
     } = {},
   ) {
+    const people = more.people ?? [farid, gina, hugo, ines];
     render(
       <MemoryRouter>
         <PatientsColumn
-          patients={{ status: 'ready', data: [farid, gina, hugo, ines] }}
-          ordered={[farid, gina, hugo, ines]}
+          patients={{ status: 'ready', data: people }}
+          ordered={people}
           activePatientId={null}
           recency={new Map()}
-          pinnedIds={[]}
+          pinnedIds={more.pinnedIds ?? []}
           groups={[family, court]}
           onMoveToGroup={more.onMoveToGroup ?? vi.fn()}
           onCreateGroup={vi.fn()}
           onMoveIntoGroup={onMoveIntoGroup}
-          onSetGroupOrder={more.onSetGroupOrder}
-          onClearGroupOrder={more.onClearGroupOrder}
           onSelect={vi.fn()}
           onRetry={vi.fn()}
           onSetArchived={vi.fn()}
           onRename={vi.fn()}
           onDelete={vi.fn()}
-          onTogglePin={vi.fn()}
-          onReorderPins={vi.fn()}
+          onTogglePin={more.onTogglePin ?? vi.fn()}
+          onPinAt={more.onPinAt}
+          onReorderPins={more.onReorderPins ?? vi.fn()}
           onOpenAll={vi.fn()}
           onToggleCollapsed={vi.fn()}
           collapsed={false}
@@ -801,113 +804,30 @@ describe('dragging a name to a place', () => {
     drag('drop', screen.getByTestId(`patient-entry-${targetId}`));
   }
 
-  /** The sort as stored, the way a reload would read it back. */
-  function storedSort(): unknown {
-    const raw = stored.get('apunta-sidebar-view-v1');
-    return raw === undefined ? undefined : (JSON.parse(raw) as { sort?: unknown }).sort;
-  }
-
-  it('orders a group by what she dragged once the sort is "Manual"', () => {
-    stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'manual' }));
-    // Gina is dragged first; the default sort would tie them and go by input.
-    const ginaFirst = { ...gina, group_position: 0 };
-    const faridSecond = { ...farid, group_position: 1 };
-    render(
-      <MemoryRouter>
-        <PatientsColumn
-          patients={{ status: 'ready', data: [faridSecond, ginaFirst, hugo, ines] }}
-          ordered={[faridSecond, ginaFirst, hugo, ines]}
-          activePatientId={null}
-          recency={new Map()}
-          pinnedIds={[]}
-          groups={[family, court]}
-          onSelect={vi.fn()}
-          onRetry={vi.fn()}
-          onSetArchived={vi.fn()}
-          onRename={vi.fn()}
-          onDelete={vi.fn()}
-          onTogglePin={vi.fn()}
-          onReorderPins={vi.fn()}
-          onOpenAll={vi.fn()}
-          onToggleCollapsed={vi.fn()}
-          collapsed={false}
-          onOpenSettings={vi.fn()}
-          onUnavailable={vi.fn()}
-        />
-      </MemoryRouter>,
-    );
-    expect(sidebarOrder().slice(2, 5)).toEqual(['Family therapy', 'Gina Gallardo', 'Farid Fuentes']);
-  });
-
-  it('applies the one sort to every group, not only to Recents', () => {
+  it('orders every group by the one sort, whatever positions are stored', () => {
     stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'name' }));
     // Positions say Gina first; "Name" says Farid first, and "Name" is the sort.
-    const ginaFirst = { ...gina, group_position: 0 };
-    const faridSecond = { ...farid, group_position: 1 };
-    render(
-      <MemoryRouter>
-        <PatientsColumn
-          patients={{ status: 'ready', data: [ginaFirst, faridSecond, hugo, ines] }}
-          ordered={[ginaFirst, faridSecond, hugo, ines]}
-          activePatientId={null}
-          recency={new Map()}
-          pinnedIds={[]}
-          groups={[family, court]}
-          onSelect={vi.fn()}
-          onRetry={vi.fn()}
-          onSetArchived={vi.fn()}
-          onRename={vi.fn()}
-          onDelete={vi.fn()}
-          onTogglePin={vi.fn()}
-          onReorderPins={vi.fn()}
-          onOpenAll={vi.fn()}
-          onToggleCollapsed={vi.fn()}
-          collapsed={false}
-          onOpenSettings={vi.fn()}
-          onUnavailable={vi.fn()}
-        />
-      </MemoryRouter>,
-    );
+    renderDraggable(vi.fn(), {
+      people: [{ ...gina, group_position: 0 }, { ...farid, group_position: 1 }, hugo, ines],
+    });
     expect(sidebarOrder().slice(2, 5)).toEqual(['Family therapy', 'Farid Fuentes', 'Gina Gallardo']);
   });
 
-  it('reorders inside a group by dropping on a row, and switches the sort to "Manual"', () => {
-    const onSetGroupOrder = vi.fn();
+  it('does not reorder inside a group by dragging (owner, 2026-09-28)', () => {
     const onMoveIntoGroup = vi.fn();
-    renderDraggable(onMoveIntoGroup, { onSetGroupOrder });
-
-    dragOver(gina.id, farid.id);
-
-    // The whole of every group, so the ones she did not touch keep the order
-    // they had on screen when the sort became "Manual".
-    expect(onSetGroupOrder).toHaveBeenCalledWith([
-      { id: family.id, patientIds: [gina.id, farid.id] },
-      { id: court.id, patientIds: [hugo.id] },
-    ]);
-    expect(onMoveIntoGroup).not.toHaveBeenCalled();
-    expect(storedSort()).toBe('manual');
-  });
-
-  it('shows the row in its new place while it is dragged, with no insertion line', () => {
-    renderDraggable(vi.fn());
+    const onMoveToGroup = vi.fn();
+    renderDraggable(onMoveIntoGroup, { onMoveToGroup });
 
     drag('dragstart', screen.getByTestId(`patient-entry-${gina.id}`));
     drag('dragover', screen.getByTestId(`patient-entry-${farid.id}`));
+    // No preview, no target: the group follows the sort, not the pointer.
+    expect(sidebarOrder().slice(2, 5)).toEqual(['Family therapy', 'Farid Fuentes', 'Gina Gallardo']);
+    expect(document.querySelector('.sidebar-section.is-drop-target')).toBeNull();
+    drag('drop', screen.getByTestId(`patient-entry-${farid.id}`));
 
-    // The list itself says where it will land.
-    expect(sidebarOrder().slice(2, 5)).toEqual(['Family therapy', 'Gina Gallardo', 'Farid Fuentes']);
-    expect(document.querySelector('.patient-entry.is-drop-target')).toBeNull();
+    expect(onMoveIntoGroup).not.toHaveBeenCalled();
+    expect(onMoveToGroup).not.toHaveBeenCalled();
     expect(APP_CSS).not.toMatch(/\.patient-entry\.is-drop-target/);
-  });
-
-  it('writes only the dragged group once the sort is already "Manual"', () => {
-    stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'manual' }));
-    const onSetGroupOrder = vi.fn();
-    renderDraggable(vi.fn(), { onSetGroupOrder });
-
-    dragOver(gina.id, farid.id);
-
-    expect(onSetGroupOrder).toHaveBeenCalledWith([{ id: family.id, patientIds: [gina.id, farid.id] }]);
   });
 
   it('moves somebody into another group by dropping anywhere on it, at the end', () => {
@@ -969,16 +889,120 @@ describe('dragging a name to a place', () => {
     expect(screen.getByTestId('section-recents-list').className).not.toContain('is-drop-target');
   });
 
-  it('forgets the dragged orders when she picks another sort', () => {
-    stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'manual' }));
-    const onClearGroupOrder = vi.fn();
-    renderDraggable(vi.fn(), { onClearGroupOrder });
+  it('opens a gap in Pinned where a name from elsewhere would land, and pins it there', () => {
+    const onPinAt = vi.fn();
+    const onMoveIntoGroup = vi.fn();
+    renderDraggable(onMoveIntoGroup, { onPinAt, pinnedIds: [farid.id, gina.id] });
 
-    fireEvent.click(screen.getByTestId('sidebar-view-options'));
-    fireEvent.click(screen.getByRole('menuitem', { name: /Sort by/ }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Name' }));
+    drag('dragstart', screen.getByTestId(`patient-entry-${hugo.id}`));
+    // The place comes from the pointer's height under the heading, in 32px
+    // slots (jsdom lays nothing out, so the heading's bottom edge is 0): 60px
+    // is the second slot, which is Gina's.
+    drag('dragover', screen.getByTestId(`patient-entry-${gina.id}`), { clientX: 50, clientY: 60 });
 
-    expect(onClearGroupOrder).toHaveBeenCalledTimes(1);
+    // An empty slot where Gina was, Gina pushed down under it (owner,
+    // 2026-09-28, after Claude's) — no outline, and the lifted row keeps its name.
+    const pinned = screen.getByTestId('section-pinned-list');
+    expect(
+      [...pinned.querySelectorAll('.patient-entry')].map((row) => row.getAttribute('data-testid')),
+    ).toEqual([`patient-entry-${farid.id}`, 'pin-gap', `patient-entry-${gina.id}`]);
+    expect(pinned.className).not.toContain('is-drop-target');
+    expect(screen.getByTestId('drag-cell').textContent).toBe('Hugo Duarte');
+
+    drag('drop', screen.getByTestId('pin-gap'));
+    expect(onPinAt).toHaveBeenCalledWith(hugo.id, 1);
+    // Pinning is not a move: the group is kept.
+    expect(onMoveIntoGroup).not.toHaveBeenCalled();
+  });
+
+  it('opens the gap in an empty Pinned in place of its hint', () => {
+    const onPinAt = vi.fn();
+    renderDraggable(vi.fn(), { onPinAt });
+
+    drag('dragstart', screen.getByTestId(`patient-entry-${hugo.id}`));
+    drag('dragover', screen.getByTestId('pin-hint'));
+
+    expect(screen.queryByTestId('pin-hint')).toBeNull();
+    drag('drop', screen.getByTestId('pin-gap'));
+    expect(onPinAt).toHaveBeenCalledWith(hugo.id, 0);
+  });
+
+  it('pins at the bottom when no place is wired, as before', () => {
+    const onTogglePin = vi.fn();
+    renderDraggable(vi.fn(), { onTogglePin });
+
+    drag('dragstart', screen.getByTestId(`patient-entry-${hugo.id}`));
+    drag('dragover', screen.getByTestId('pin-hint'));
+    drag('drop', screen.getByTestId('pin-gap'));
+
+    expect(onTogglePin).toHaveBeenCalledWith(hugo.id);
+  });
+
+  it('leaves the row she picked up as an empty slot, not a faded name', () => {
+    renderDraggable(vi.fn());
+
+    drag('dragstart', screen.getByTestId(`patient-entry-${gina.id}`));
+
+    expect(screen.getByTestId(`patient-entry-${gina.id}`).className).toContain('is-dragging');
+    expect(APP_CSS).toMatch(/\.patient-entry\.is-dragging > \*\s*\{[^}]*visibility: hidden/);
+    expect(APP_CSS).not.toMatch(/\.patient-entry\.is-dragging\s*\{[^}]*opacity/);
+  });
+
+  it('draws a pinned patient in Pinned only, not in their group too', () => {
+    renderDraggable(vi.fn(), { pinnedIds: [farid.id] });
+
+    expect(sidebarOrder()).toEqual([
+      'Pinned',
+      'Farid Fuentes',
+      'Family therapy',
+      'Gina Gallardo',
+      'Court-mandated',
+      'Hugo Duarte',
+      'Recents',
+      'Ines Ibarra',
+    ]);
+  });
+
+  it('unpins and files somebody dragged out of Pinned onto a group', () => {
+    const onTogglePin = vi.fn();
+    const onMoveIntoGroup = vi.fn();
+    renderDraggable(onMoveIntoGroup, { onTogglePin, pinnedIds: [farid.id] });
+
+    dragOver(farid.id, hugo.id);
+
+    expect(onTogglePin).toHaveBeenCalledWith(farid.id);
+    expect(onMoveIntoGroup).toHaveBeenCalledWith(farid, court.id, null);
+  });
+
+  it('unpins somebody dragged out of Pinned back onto their own group, and nothing else', () => {
+    const onTogglePin = vi.fn();
+    const onMoveIntoGroup = vi.fn();
+    renderDraggable(onMoveIntoGroup, { onTogglePin, pinnedIds: [farid.id] });
+
+    dragOver(farid.id, gina.id);
+
+    expect(onTogglePin).toHaveBeenCalledWith(farid.id);
+    expect(onMoveIntoGroup).not.toHaveBeenCalled();
+  });
+
+  it('unpins and ungroups somebody dragged out of Pinned onto Recents', () => {
+    const onTogglePin = vi.fn();
+    const onMoveToGroup = vi.fn();
+    renderDraggable(vi.fn(), { onTogglePin, onMoveToGroup, pinnedIds: [farid.id] });
+
+    dragOver(farid.id, ines.id);
+
+    expect(onTogglePin).toHaveBeenCalledWith(farid.id);
+    expect(onMoveToGroup).toHaveBeenCalledWith(farid, null);
+  });
+
+  it('still reorders the pins by dragging inside Pinned', () => {
+    const onReorderPins = vi.fn();
+    renderDraggable(vi.fn(), { onReorderPins, pinnedIds: [farid.id, hugo.id] });
+
+    dragOver(hugo.id, farid.id);
+
+    expect(onReorderPins).toHaveBeenCalledWith(1, 0);
   });
 
   it('draws the view control once, on the topmost group and not on Recents', () => {
@@ -988,18 +1012,6 @@ describe('dragging a name to a place', () => {
     expect(
       screen.getByTestId(`section-group-${family.id}`).querySelector('[data-testid="sidebar-view-options"]'),
     ).not.toBeNull();
-  });
-
-  it('reorders a group from the keyboard with Alt and the arrows', () => {
-    const onSetGroupOrder = vi.fn();
-    renderDraggable(vi.fn(), { onSetGroupOrder });
-
-    fireEvent.keyDown(screen.getByTestId(`patient-row-${gina.id}`), { key: 'ArrowUp', altKey: true });
-
-    expect(onSetGroupOrder).toHaveBeenCalledWith([
-      { id: family.id, patientIds: [gina.id, farid.id] },
-      { id: court.id, patientIds: [hugo.id] },
-    ]);
   });
 
   it('lifts the name into a cell that follows the pointer', () => {
@@ -1267,5 +1279,36 @@ describe('Pinned sits above the filters', () => {
     // The same filter, one section down, still does its job: the unpinned
     // archived patient is gone, and Pinned is the only reason she is still here.
     expect(screen.queryByTestId(`patient-entry-${unfiled.id}`)).toBeNull();
+  });
+});
+
+/**
+ * Rows never "respawn" (owner, 2026-09-28). The entrance cascade is a CSS
+ * animation, and a CSS animation restarts whenever its element is moved in the
+ * document — so left on, every row a drag or a re-sort moved faded in again as
+ * if it were new. It now plays only while the list first arrives.
+ */
+describe("the rows' entrance", () => {
+  const MOTION_CSS = readFileSync(resolve(import.meta.dirname, '../styles/motion.css'), 'utf8');
+
+  it('animates patient rows only inside a list that is arriving', () => {
+    expect(MOTION_CSS).toMatch(/\.patient-sections\.is-entering \.patient-entry\s*\{[^}]*animation: rise-in/);
+    // No rule animates a bare `.patient-entry`, which is what made moved rows replay.
+    expect(MOTION_CSS).not.toMatch(/(^|,)\s*\.patient-entry(:nth-child\([^)]*\))?\s*[,{]/m);
+  });
+
+  it('stops being "arriving" shortly after the list is shown', () => {
+    vi.useFakeTimers();
+    try {
+      renderColumn([john, ana, maria], []);
+      const list = document.querySelector('.patient-sections') as HTMLElement;
+      expect(list.className).toContain('is-entering');
+      act(() => {
+        vi.advanceTimersByTime(800);
+      });
+      expect(list.className).not.toContain('is-entering');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

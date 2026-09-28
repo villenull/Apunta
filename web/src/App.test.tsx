@@ -1286,26 +1286,20 @@ describe('settings', () => {
   });
 
   /**
-   * The accent is the one colour the practice chooses. It is stored as a
-   * setting and painted onto the root element, where `tokens.css` mixes the
-   * hover and tint shades out of it. Every move of the picker saves
-   * immediately — there is no separate Save step.
+   * The accent is the Apunta teal, always (owner, 2026-09-28). The picker is
+   * gone, so a colour an older build stored must not be painted: there would
+   * be no way to change it back.
    */
-  it('saves a chosen accent colour immediately and paints it on the document', async () => {
-    const api = installFakeApi({ formats: [progressNote] });
+  it('paints the Apunta teal whatever accent an older build stored', async () => {
+    installFakeApi({ formats: [progressNote], settings: { accent_color: '#8b2f6b' } });
     renderApp('/settings');
 
-    const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
-    expect(picker.value).toBe('#2a9d8f');
-    expect(screen.queryByTestId('appearance-saved')).toBeNull();
-
-    fireEvent.change(picker, { target: { value: '#8b2f6b' } });
-    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#8b2f6b');
-
+    await screen.findByTestId('appearance-settings');
+    expect(screen.queryByLabelText('Colour')).toBeNull();
+    expect(screen.queryByLabelText('Color')).toBeNull();
     await waitFor(() => {
-      expect(api.state.settings['accent_color']).toBe('#8b2f6b');
+      expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2a9d8f');
     });
-    expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
     document.documentElement.style.removeProperty('--accent');
   });
 
@@ -1461,29 +1455,6 @@ describe('settings', () => {
       expect(document.documentElement.classList.contains('no-motion')).toBe(true);
     });
     document.documentElement.classList.remove('no-motion');
-  });
-
-  it('puts the default teal back, and keeps a saved colour on leaving', async () => {
-    const api = installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
-
-    const picker = (await screen.findByLabelText('Colour')) as HTMLInputElement;
-    fireEvent.change(picker, { target: { value: '#123456' } });
-    await waitFor(() => {
-      expect(api.state.settings['accent_color']).toBe('#123456');
-    });
-    fireEvent.click(screen.getByTestId('reset-accent'));
-
-    await waitFor(() => {
-      expect(api.state.settings['accent_color']).toBe('#2a9d8f');
-    });
-    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2a9d8f');
-    expect(screen.getByTestId('appearance-saved').textContent).toBe('Saved');
-
-    // Every change is saved, so leaving the screen keeps the stored colour.
-    cleanup();
-    expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#2a9d8f');
-    document.documentElement.style.removeProperty('--accent');
   });
 });
 

@@ -442,7 +442,7 @@ export const en = {
    * the wire is still `not_found` and only the words come from here.
    */
   'errors.not_found.licenses_file': {
-    text: 'The licence file was not found in this build of Apunta.',
+    text: 'The license file was not found in this build of Apunta.',
   },
 
   /* --- errors.conflict --- */
@@ -867,7 +867,7 @@ export const en = {
     kind: { withdrawn: 'text' },
   },
   'chat.retractionNotice.replaced': {
-    text: 'left out “{withdrawn}” in favour of “{replacement}”',
+    text: 'left out “{withdrawn}” in favor of “{replacement}”',
     kind: { withdrawn: 'text', replacement: 'text' },
   },
   'chat.retractionNotice.list': {
@@ -1279,7 +1279,7 @@ export const en = {
   /** `About.tsx:15`. */
   'doc.about': { text: 'About' },
   /** `Licenses.tsx:53`. */
-  'doc.licences': { text: 'Licences' },
+  'doc.licences': { text: 'Licenses' },
   /** `Workspace.tsx:86`. */
   'doc.patients': { text: 'Patients' },
   /** `AddPatient.tsx:11`. */
@@ -1408,7 +1408,7 @@ export const en = {
   'backup.restoreWaiting': { text: 'A restore is waiting: quit Apunta and open it again to finish.' },
 
   /** `BackupCard.tsx:203`. */
-  'backup.restoreCancelled': { text: 'Restore cancelled. Nothing changed.' },
+  'backup.restoreCancelled': { text: 'Restore canceled. Nothing changed.' },
 
   /**
    * `BackupCard.tsx:106`, with `{pruned}` appended when the server pruned
@@ -1554,7 +1554,7 @@ export const en = {
   'settings.languageSpanish': { text: 'Español' },
   'settings.languageChangeBlocked': { text: 'Language cannot change while a task is running.' },
   'settings.accentLowContrast': {
-    text: 'This colour may be hard to see on the page, and the Apunta logo uses it too.',
+    text: 'This color may be hard to see on the page, and the Apunta logo uses it too.',
   },
   'patients.pin': { text: 'Pin' },
   'patients.unpin': { text: 'Unpin' },
@@ -1612,24 +1612,24 @@ export const en = {
   'patients.statusArchived': { text: 'Archived' },
   'patients.statusAll': { text: 'All' },
   'patients.activityLabel': { text: 'Last activity' },
-  'patients.activityDay': { text: 'Past day' },
-  'patients.activity3d': { text: 'Past 3 days' },
-  'patients.activity7d': { text: 'Past week' },
-  'patients.activity30d': { text: 'Past month' },
-  'patients.activityAll': { text: 'Any time' },
+  'patients.activityDay': { text: '1d' },
+  'patients.activity3d': { text: '3d' },
+  'patients.activity7d': { text: '7d' },
+  'patients.activity30d': { text: '30d' },
+  'patients.activityAll': { text: 'All' },
   'patients.groupByLabel': { text: 'Group by' },
   'patients.groupByGroups': { text: 'My groups' },
-  'patients.groupByNone': { text: 'Nothing' },
+  'patients.groupByNone': { text: 'None' },
   'patients.sortLabel': { text: 'Sort by' },
-  /** Her dragged order inside each group (owner, 2026-09-27). */
-  'patients.sortManual': { text: 'Manual' },
+  /** The view menu's last row, shown only when something is off its default. */
+  'patients.resetView': { text: 'Reset to defaults' },
   /** What the lifted row says over a group or Recents it would be moved to. */
   'patients.dragMoveTo': { text: 'Move to {name}' },
   'patients.sortCreated': { text: 'Date created' },
   'patients.recents': { text: 'Recents' },
   /** The control beside "Recents" and the two orders it offers. */
   'patients.sortList': { text: 'Sort patients' },
-  'patients.sortRecent': { text: 'Recent activity' },
+  'patients.sortRecent': { text: 'Last activity' },
   'patients.sortName': { text: 'Name' },
   /** The row's accessible name; `patients.renameShort` is its visible word. */
   'patients.renameAction': { text: 'Rename {name}' },
@@ -1918,7 +1918,7 @@ export const en = {
     text: 'Not yet attested. Putting this version in force records the date, and copies your name and credential from Settings onto it.',
   },
   /** `PlanView.tsx:490`, with the clinician's own licence number as data. */
-  'plan.licence': { text: 'Licence {licence}', kind: { licence: 'text' } },
+  'plan.licence': { text: 'License {licence}', kind: { licence: 'text' } },
   /** `PlanView.tsx:491`. `NPI` is a keep-as-is identifier. */
   'plan.npi': { text: 'NPI {npi}', kind: { npi: 'text' } },
   /** `PlanView.tsx:499`. */
@@ -2397,13 +2397,18 @@ export const en = {
   /** `Settings.tsx:406`. */
   'settings.loading': { text: 'Loading settings…' },
   /** `Settings.tsx:449`. */
-  'settings.colour': { text: 'Colour' },
+  'settings.colour': { text: 'Color' },
   /** `Settings.tsx:472`. */
   'settings.reset': { text: 'Reset' },
   /** `Settings.tsx:479`. */
   'settings.theme': { text: 'Theme' },
   /** `Settings.tsx:492`. */
   'settings.fontSize': { text: 'Font size' },
+  /** The typeface dropdown (owner, 2026-09-28); the bundled face by its name. */
+  'settings.font': { text: 'Font' },
+  'settings.fontInter': { text: 'Inter (Default)' },
+  'settings.fontSystem': { text: 'System' },
+  'settings.fontSerif': { text: 'Serif' },
   /** `Settings.tsx:533`. */
   'settings.animations': { text: 'Animations' },
   /** `Settings.tsx:560-563`, the four text sizes. */
@@ -2506,10 +2511,10 @@ export const en = {
   'about.builtFromHeading': { text: 'What Apunta is built from' },
   /** `About.tsx:89-91`, before the licences link. */
   'about.builtFromBody': {
-    text: 'The AI that writes and the program that reads your recordings were written by other people and are included inside Apunta. Their licences ask that the notice travels with the app:',
+    text: 'The AI that writes and the program that reads your recordings were written by other people and are included inside Apunta. Their licenses ask that the notice travels with the app:',
   },
   /** `About.tsx:91`, the link's own text. */
-  'about.licensesLink': { text: 'the licences are here' },
+  'about.licensesLink': { text: 'the licenses are here' },
   /** `About.tsx:94-95`. */
   'about.modelsSeparateBody': {
     text: 'The AI models themselves are not part of Apunta. They are installed on this computer under their own terms, and Apunta does not pass them on.',
@@ -2560,20 +2565,20 @@ export const en = {
   'licenses.builtFrom': { text: 'What Apunta is built from' },
   /** `Licenses.tsx:84-85`. */
   'licenses.lede': {
-    text: 'Apunta includes programs written by other people, and their licences ask that this notice travels with the app. Nothing here needs anything from you — it is here because it should be.',
+    text: 'Apunta includes programs written by other people, and their licenses ask that this notice travels with the app. Nothing here needs anything from you — it is here because it should be.',
   },
   /** `Licenses.tsx:98`. */
-  'licenses.panelLabel': { text: 'Third-party licences' },
+  'licenses.panelLabel': { text: 'Third-party licenses' },
   /** `Licenses.tsx:101`. */
-  'licenses.filterLabel': { text: 'Filter licences' },
+  'licenses.filterLabel': { text: 'Filter licenses' },
   /** `Licenses.tsx:111`. */
   'licenses.filterPlaceholder': { text: 'Filter by component or text' },
   /** `Licenses.tsx:114`. */
   'licenses.copyPlain': { text: 'Copy plain text' },
   /** `Licenses.tsx:117`. */
-  'licenses.componentsLabel': { text: 'Licence components' },
+  'licenses.componentsLabel': { text: 'License components' },
   /** `Licenses.tsx:126`. */
-  'licenses.noMatch': { text: 'No licence text matches “{filter}”.', kind: { filter: 'text' } },
+  'licenses.noMatch': { text: 'No license text matches “{filter}”.', kind: { filter: 'text' } },
 
   /*
    * `web/src/routes/Capture.tsx`.

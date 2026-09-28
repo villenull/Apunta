@@ -50,24 +50,26 @@ async function storedLanguage(request: APIRequestContext): Promise<unknown> {
   return ((await (await request.get('/api/settings')).json()) as Settings)['language'];
 }
 
-/** Open Settings from the workspace's "More" menu, as she would mid-session. */
+/**
+ * Open Settings from the workspace's "More" menu, as she would mid-session. It
+ * no longer carries a Language row (owner, 2026-09-28); it is opened here to
+ * read the page's own words in whichever language is in force.
+ */
 async function openSettingsModal(page: Page): Promise<void> {
   await page.getByTestId('mission-control').click();
   await page.getByTestId('mission-settings').click();
-  await expect(page.getByTestId('language-settings')).toBeVisible();
+  await expect(page.getByTestId('appearance-settings')).toBeVisible();
 }
 
 /**
- * The other surface, which the owner added on 2026-09-27: the Language
- * **dialog**, opened from the same "More" menu as Settings
- * (`PatientsColumn.tsx:419` `mission-language`).
- *
- * AM-062 supersedes the card's placement sentence as to placement only. The
- * Settings row is not removed — one setting with two controls is a product
- * decision, not this card's — so both exist and **both** have to be verified.
- * The row is the surface the cases below were written against, and a check that
- * only ever drove the row would leave the window the owner actually opens with
- * only jsdom unit tests behind it.
+ * The Language **dialog**, opened from the same "More" menu as Settings
+ * (`PatientsColumn.tsx` `mission-language`). Since 2026-09-28 it is the **only**
+ * language control: the owner removed the Settings row (backlog #9,
+ * `docs/v2/owner/UI-BACKLOG.md`), and the coordinator authorised moving the
+ * row's cases here. The first V2 and V3 below were written against the row;
+ * they now drive this dialog with every assertion they had, so the row's
+ * coverage — the 409's message in the captured locale, the page's own words
+ * switching — is not lost with the row.
  */
 async function openLanguageDialog(page: Page): Promise<void> {
   await page.getByTestId('mission-control').click();
@@ -125,14 +127,14 @@ test.describe('the Language control on the Spanish server', () => {
     await page.getByTestId('chat-send').click();
     await expect(page.getByTestId('chat-streaming')).toBeVisible();
 
-    await openSettingsModal(page);
-    const english = page.getByTestId('language-en');
-    const spanish = page.getByTestId('language-es-MX');
+    await openLanguageDialog(page);
+    const english = page.getByTestId('language-option-en');
+    const spanish = page.getByTestId('language-option-es-MX');
     await expect(english).toBeDisabled();
     await expect(spanish).toBeDisabled();
     await expect(spanish).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByTestId('language-busy')).toHaveText(tr('settings.languageChangeBlocked'));
-    await checkScreen(page, 'Settings (modal) with a refine in flight');
+    await checkScreen(page, 'the Language dialog (the former Settings-row case) with a refine in flight');
 
     // Defence in depth: a request that never saw the control — a second tab,
     // a stale one, a direct call — is refused by the server while the job runs.
@@ -198,70 +200,70 @@ test.describe('the Language control on the Spanish server', () => {
     expect((await request.put('/api/settings', { data: { language: 'es-MX' } })).status()).toBe(200);
   });
 
-  test('V3: switching applies at once and survives leaving Settings and coming back, no reload', async ({
+  test('V3: switching applies at once and survives leaving the control and coming back, no reload', async ({
     page,
     request,
   }) => {
     await practice(request, 'es-MX');
-    await page.goto('/settings');
+    await page.goto('/');
     const root = page.locator('html');
-    const english = page.getByTestId('language-en');
-    const spanish = page.getByTestId('language-es-MX');
+    await openLanguageDialog(page);
+    const english = page.getByTestId('language-option-en');
+    const spanish = page.getByTestId('language-option-es-MX');
     await expect(spanish).toHaveAttribute('aria-checked', 'true');
     await expect(root).toHaveAttribute('lang', 'es-MX');
-    await expect(page.getByTestId('appearance-settings')).toContainText(
-      t('settings.appearance', {}, 'es-MX'),
-    );
+    await expect(page.getByTestId('language-dialog')).toContainText(t('language.choose', {}, 'es-MX'));
 
     // --- To English -------------------------------------------------------
     await english.click();
     await expect(english).toHaveAttribute('aria-checked', 'true');
     await expect(root).toHaveAttribute('lang', 'en');
-    await expect(page.getByTestId('appearance-settings')).toContainText(t('settings.appearance', {}, 'en'));
+    await expect(page.getByTestId('language-dialog')).toContainText(t('language.choose', {}, 'en'));
     await expect.poll(() => storedLanguage(request)).toBe('en');
 
-    // Home by the screen's own back link, then back by history: no document
-    // is loaded, so the provider that was told survives.
-    await page.getByRole('link', { name: t('common.patients', {}, 'en') }).click();
-    await expect(page.getByTestId('home')).toBeVisible();
+    // Away to Settings and back to the control, with no document loaded: the
+    // page's own words agree, and so does the reopened control.
+    await page.getByTestId('language-close').click();
+    await openSettingsModal(page);
+    await expect(page.getByTestId('appearance-settings')).toContainText(t('settings.appearance', {}, 'en'));
     await expect(root).toHaveAttribute('lang', 'en');
-    await page.goBack();
-    await expect(page).toHaveURL(/\/settings$/);
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('appearance-settings')).toHaveCount(0);
+    await openLanguageDialog(page);
     await expect(english).toHaveAttribute('aria-checked', 'true');
     await expect(spanish).toHaveAttribute('aria-checked', 'false');
     await expect(root).toHaveAttribute('lang', 'en');
-    await expect(page.getByTestId('appearance-settings')).toContainText(t('settings.appearance', {}, 'en'));
     expect(await storedLanguage(request)).toBe('en');
 
     // --- And back to Spanish, the same way ----------------------------------
     await spanish.click();
     await expect(root).toHaveAttribute('lang', 'es-MX');
     await expect.poll(() => storedLanguage(request)).toBe('es-MX');
-    await page.getByRole('link', { name: t('common.patients', {}, 'es-MX') }).click();
-    await expect(page.getByTestId('home')).toBeVisible();
-    await page.goBack();
-    await expect(spanish).toHaveAttribute('aria-checked', 'true');
-    await expect(root).toHaveAttribute('lang', 'es-MX');
+    await page.getByTestId('language-close').click();
+    await openSettingsModal(page);
     await expect(page.getByTestId('appearance-settings')).toContainText(
       t('settings.appearance', {}, 'es-MX'),
     );
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('appearance-settings')).toHaveCount(0);
+    await openLanguageDialog(page);
+    await expect(spanish).toHaveAttribute('aria-checked', 'true');
+    await expect(root).toHaveAttribute('lang', 'es-MX');
 
     // After a reload too: the server was told.
     await page.reload();
-    await expect(spanish).toHaveAttribute('aria-checked', 'true');
     await expect(root).toHaveAttribute('lang', 'es-MX');
+    await openLanguageDialog(page);
+    await expect(spanish).toHaveAttribute('aria-checked', 'true');
   });
 
   /**
-   * The same two rows again, on the dialog.
+   * The dialog's own cases, written when it sat beside the Settings row.
    *
-   * Duplicated rather than shared on purpose. The two surfaces are separate
-   * components with separate disabled logic — the row reads the provider and
-   * the busy context, the dialog does the same through its own render — and a
-   * helper that drove both would be a helper that asserted only whichever one
-   * it happened to reach. What is asserted here is that the *dialog* carries
-   * the same three properties: the same dev-switch gate, the same disabled
-   * state with the same reason, and the same 409 behind it.
+   * They overlap the two above now that both drive the dialog, and are kept
+   * as they were: they carry the no-English check on the dialog itself (the
+   * known S2.6 `language.en.english` finding, recorded below and not hidden),
+   * the round trip through Home, and the dev-switch gate.
    */
   test('V2 on the dialog: disabled with its reason while a refine streams, and the server refuses a direct change', async ({
     page,
@@ -443,11 +445,13 @@ test.describe('the Language control on the Spanish server', () => {
     await openLanguageDialog(page);
     await expect(page.getByTestId('language-option-es-MX')).toHaveAttribute('aria-checked', 'true');
     await expect(root).toHaveAttribute('lang', 'es-MX');
-    // The row and the dialog are one setting: after a round trip through the
-    // dialog, the Settings route agrees without a reload.
+    // After a round trip through the dialog, the Settings screen agrees: its
+    // own words are in Spanish (it no longer has a language control to read).
     await page.getByTestId('language-close').click();
     await page.goto('/settings');
-    await expect(page.getByTestId('language-es-MX')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByTestId('appearance-settings')).toContainText(
+      t('settings.appearance', {}, 'es-MX'),
+    );
     await expect(root).toHaveAttribute('lang', 'es-MX');
     await page.goBack();
     await openLanguageDialog(page);

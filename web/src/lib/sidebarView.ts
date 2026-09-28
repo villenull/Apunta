@@ -34,11 +34,11 @@ export interface SidebarView {
   readonly activity: SidebarActivity;
   readonly groupBy: SidebarGroupBy;
   /**
-   * `manual` is her dragged order inside each group (owner, 2026-09-27). A drag
-   * that reorders a group switches to it; choosing any other sort forgets the
-   * dragged orders. Recents has no dragged order and keeps its default under it.
+   * The one order for every section but Pinned (owner, 2026-09-28): name, date
+   * created or last activity, as Claude's. There is no hand-made order inside a
+   * group; Pinned is the only list she arranges herself.
    */
-  readonly sort: SidebarSort | 'created' | 'manual';
+  readonly sort: SidebarSort | 'created';
 }
 
 export const DEFAULT_SIDEBAR_VIEW: SidebarView = {
@@ -51,11 +51,21 @@ export const DEFAULT_SIDEBAR_VIEW: SidebarView = {
 const STATUSES: readonly SidebarStatus[] = ['active', 'archived', 'all'];
 const ACTIVITIES: readonly SidebarActivity[] = ['all', '1d', '3d', '7d', '30d'];
 const GROUPINGS: readonly SidebarGroupBy[] = ['groups', 'none'];
-const SORTS: readonly SidebarView['sort'][] = ['name', 'created', 'recent', 'manual'];
+const SORTS: readonly SidebarView['sort'][] = ['name', 'created', 'recent'];
 
 /** One `is`/`includes`, because every field is a closed set of known strings. */
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
   return typeof value === 'string' && allowed.includes(value as T);
+}
+
+/** Is every dimension at its default? What "Reset to defaults" is offered on. */
+export function isDefaultSidebarView(view: SidebarView): boolean {
+  return (
+    view.status === DEFAULT_SIDEBAR_VIEW.status &&
+    view.activity === DEFAULT_SIDEBAR_VIEW.activity &&
+    view.groupBy === DEFAULT_SIDEBAR_VIEW.groupBy &&
+    view.sort === DEFAULT_SIDEBAR_VIEW.sort
+  );
 }
 
 export function readSidebarView(): SidebarView {
@@ -96,16 +106,11 @@ export function writeSidebarView(view: SidebarView): void {
    * is for the other direction — a build from before the three-way sort reads
    * that key, and would otherwise come back from a downgrade having forgotten
    * that she had arranged her sidebar at all. A stale-but-plausible value beats
-   * a reset nobody asked for. `manual` mirrors as "recent" for the same reason.
+   * a reset nobody asked for.
    */
-  writeSidebarSort(view.sort === 'created' || view.sort === 'manual' ? 'recent' : view.sort);
+  writeSidebarSort(view.sort === 'created' ? 'recent' : view.sort);
   try {
-    if (
-      view.status === DEFAULT_SIDEBAR_VIEW.status &&
-      view.activity === DEFAULT_SIDEBAR_VIEW.activity &&
-      view.groupBy === DEFAULT_SIDEBAR_VIEW.groupBy &&
-      view.sort === DEFAULT_SIDEBAR_VIEW.sort
-    ) {
+    if (isDefaultSidebarView(view)) {
       window.localStorage.removeItem(VIEW_KEY);
       return;
     }

@@ -59,7 +59,7 @@ describe('GET /api/licenses', () => {
     const { app: server } = await appWithLicenses(null);
     const response = await server.inject({ method: 'GET', url: '/api/licenses' });
     expect(response.statusCode).toBe(404);
-    expect((response.json() as { message: string }).message).toContain('licence file');
+    expect((response.json() as { message: string }).message).toContain('license file');
   });
 
   /**

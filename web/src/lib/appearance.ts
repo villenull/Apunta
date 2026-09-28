@@ -1,13 +1,17 @@
 import {
-  ACCENT_COLOR_SETTING,
   ANIMATIONS_SETTING,
+  DEFAULT_ACCENT_COLOR,
+  DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
   DEFAULT_THEME,
+  FONT_FAMILY_SETTING,
   FONT_SCALE,
   FONT_SIZE_SETTING,
+  isFontFamily,
   isFontSize,
   isTheme,
   THEME_SETTING,
+  type FontFamily,
   type FontSize,
   type ResolvedTheme,
   type Settings,
@@ -17,8 +21,9 @@ import {
 import { applyAccentColor } from './accent.js';
 
 /**
- * Text size, animations and theme (owner, 2026-09-21; theme 2026-09-25; the
- * System choice 2026-09-26), beside the accent colour.
+ * Text size, typeface, animations and theme (owner, 2026-09-21; theme
+ * 2026-09-25; the System choice 2026-09-26; typeface 2026-09-28), beside the
+ * accent colour, which is now fixed.
  *
  * All four are server settings, painted onto the root element at startup
  * the same way the accent always has been. The parts that do not wait for
@@ -41,6 +46,33 @@ export function applyFontSize(value: unknown): void {
   const size = fontSizeOrDefault(value);
   if (size === DEFAULT_FONT_SIZE) root.style.removeProperty('--font-scale');
   else root.style.setProperty('--font-scale', String(FONT_SCALE[size]));
+}
+
+export function fontFamilyOrDefault(value: unknown): FontFamily {
+  return isFontFamily(value) ? value : DEFAULT_FONT_FAMILY;
+}
+
+/**
+ * The face each choice paints (owner, 2026-09-28). Both families are replaced,
+ * so a choice reaches the headings as well as the body — "the entire font". The
+ * wordmark is drawn from outlines, not type, so it keeps its own face whatever
+ * is chosen. `inter` removes the overrides and is exactly the app as it was.
+ */
+const FONT_STACKS: Readonly<Record<Exclude<FontFamily, 'inter'>, string>> = {
+  system: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Ubuntu, Cantarell, sans-serif",
+  serif: "ui-serif, 'New York', Georgia, Cambria, 'Noto Serif', 'Times New Roman', serif",
+};
+
+export function applyFontFamily(value: unknown): void {
+  const root = document.documentElement;
+  const family = fontFamilyOrDefault(value);
+  if (family === 'inter') {
+    root.style.removeProperty('--font-sans');
+    root.style.removeProperty('--font-serif');
+    return;
+  }
+  root.style.setProperty('--font-sans', FONT_STACKS[family]);
+  root.style.setProperty('--font-serif', FONT_STACKS[family]);
 }
 
 /** Does the operating system ask for reduced motion? */
@@ -148,8 +180,14 @@ export function readBootTheme(): ResolvedTheme | undefined {
 
 /** Everything on the Appearance card, from a settings record. */
 export function applyAppearance(settings: Settings): void {
-  applyAccentColor(settings[ACCENT_COLOR_SETTING]);
+  /*
+   * The accent is the Apunta teal, always (owner, 2026-09-28): the picker is
+   * gone from Settings, so a colour stored by an older build is not applied —
+   * it could no longer be changed back.
+   */
+  applyAccentColor(DEFAULT_ACCENT_COLOR);
   applyFontSize(settings[FONT_SIZE_SETTING]);
+  applyFontFamily(settings[FONT_FAMILY_SETTING]);
   applyAnimations(settings[ANIMATIONS_SETTING]);
   applyTheme(settings[THEME_SETTING]);
 }

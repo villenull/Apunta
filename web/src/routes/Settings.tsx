@@ -1,18 +1,14 @@
 import {
-  ACCENT_COLOR_SETTING,
   ANIMATIONS_SETTING,
-  DEFAULT_ACCENT_COLOR,
-  DEFAULT_LANGUAGE,
+  FONT_FAMILIES,
+  FONT_FAMILY_SETTING,
   FONT_SIZE_SETTING,
   FONT_SIZES,
-  isLanguage,
-  LANGUAGE_SETTING,
-  LANGUAGES,
+  isFontFamily,
   LLM_PROFILE_SETTING,
-  SPANISH_AVAILABLE_SETTING,
   THEME_SETTING,
   THEMES,
-  type Language,
+  type FontFamily,
   type LlmProfile,
   type Settings as SettingsRecord,
   type FontSize,
@@ -22,10 +18,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
 import { errorMessage, listFormats } from '../api/index.js';
-import { accentColorOrDefault, accentLuminance, applyAccentColor } from '../lib/accent.js';
 import {
   animationsEnabled,
+  fontFamilyOrDefault,
   applyAnimations,
+  applyFontFamily,
   applyFontSize,
   applyTheme,
   fontSizeOrDefault,
@@ -46,7 +43,7 @@ import {
 import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { useI18n, useWorkInFlight, type Translate } from '../lib/i18n.js';
+import { useI18n, type Translate } from '../lib/i18n.js';
 import type { FormatDraft } from './formatDraft.js';
 
 /**
@@ -212,7 +209,6 @@ function SettingsSections({
     <div className="settings">
       {show.includes('appearance') && (
         <>
-          <LanguageSettings />
           <AppearanceSettings />
           <LlmProfileSettings />
         </>
@@ -304,105 +300,6 @@ function SettingsSections({
     </div>
   );
 }
-/**
- * Language / Idioma, at the top of Settings (C-LANG@1 rules 1 and 6).
- *
- * Shown only on a build that offers Spanish: `spanish_available` is the
- * server's to say, and a build that does not offer it has no control to find.
- * The label is the same in both catalogues on purpose — it is the one row a
- * Spanish speaker has to find before switching — and each option names its
- * language in that language, marked with `lang` so it is read that way.
- *
- * The choice goes through the settings provider like every other control
- * (C-SETTINGS@1), so the page changes language at once, `<html lang>` follows
- * from `I18nProvider`, and a refused save puts the old language back. While a
- * job or a save is in flight anywhere in the app the options are disabled and
- * the reason is shown; the server refuses the same change with a 409
- * `language_change_blocked` for anything that did not see this control.
- */
-function LanguageSettings(): React.JSX.Element | null {
-  const { t } = useI18n();
-  const settings = useSettingsContext();
-  const working = useWorkInFlight();
-  const [error, setError] = useState<string | null>(null);
-
-  if (settings.state.status !== 'ready') return null;
-  const stored = settings.state.data as SettingsRecord;
-  if (stored[SPANISH_AVAILABLE_SETTING] !== true) return null;
-  const storedLanguage = stored[LANGUAGE_SETTING];
-  const chosen: Language = isLanguage(storedLanguage) ? storedLanguage : DEFAULT_LANGUAGE;
-  const labels: Readonly<Record<Language, string>> = {
-    en: t('settings.languageEnglish'),
-    'es-MX': t('settings.languageSpanish'),
-  };
-
-  const choose = (language: Language): void => {
-    if (working || language === chosen) return;
-    setError(null);
-    void settings.update({ [LANGUAGE_SETTING]: language }).catch((thrown: unknown) => {
-      setError(errorMessage(thrown));
-    });
-  };
-
-  return (
-    <section className="card settings-card" data-testid="language-settings">
-      <div className="settings-row">
-        <span className="settings-label" id="language-label">
-          {t('settings.language')}
-        </span>
-        <span
-          className="settings-row-actions size-options"
-          role="radiogroup"
-          aria-labelledby="language-label"
-          aria-describedby={working ? 'language-busy' : undefined}
-        >
-          {LANGUAGES.map((language, index) => (
-            <button
-              key={language}
-              type="button"
-              role="radio"
-              lang={language}
-              aria-checked={chosen === language}
-              tabIndex={chosen === language ? 0 : -1}
-              disabled={working}
-              className={chosen === language ? 'btn small btn-quick is-selected' : 'btn small btn-quick'}
-              data-testid={`language-${language}`}
-              onClick={() => {
-                choose(language);
-              }}
-              onKeyDown={(event) => {
-                const next = rovingTarget(event, index, LANGUAGES.length);
-                if (next === undefined) return;
-                event.preventDefault();
-                const nextLanguage = LANGUAGES[next];
-                if (nextLanguage === undefined) return;
-                choose(nextLanguage);
-                requestAnimationFrame(() => {
-                  document
-                    .querySelector<HTMLButtonElement>(`[data-testid="language-${nextLanguage}"]`)
-                    ?.focus();
-                });
-              }}
-            >
-              {labels[language]}
-            </button>
-          ))}
-        </span>
-        {working && (
-          <p className="small settings-row-note" id="language-busy" role="status" data-testid="language-busy">
-            {t('settings.languageChangeBlocked')}
-          </p>
-        )}
-      </div>
-      {error !== null && (
-        <p className="form-error" role="alert" data-testid="language-error">
-          {error}
-        </p>
-      )}
-    </section>
-  );
-}
-
 function LlmProfileSettings(): React.JSX.Element | null {
   const { t } = useI18n();
   const settings = useSettingsContext();
@@ -535,11 +432,10 @@ function AppearanceSettings(): React.JSX.Element {
   }
 
   const stored = settings.state.data as SettingsRecord;
-  const shownAccent = accentColorOrDefault(stored[ACCENT_COLOR_SETTING]);
   const shownSize = fontSizeOrDefault(stored[FONT_SIZE_SETTING]);
   const shownAnimations = animationsEnabled(stored[ANIMATIONS_SETTING]);
   const shownTheme = themeOrDefault(stored[THEME_SETTING]);
-  const lowContrast = accentIsHardToSee(shownAccent);
+  const shownFamily = fontFamilyOrDefault(stored[FONT_FAMILY_SETTING]);
   const save = (patch: SettingsRecord): void => {
     void settings.update(patch).then(
       () => {
@@ -561,52 +457,6 @@ function AppearanceSettings(): React.JSX.Element {
           <span className="settings-saved" data-testid="appearance-saved">
             {t('note.saveSaved')}
           </span>
-        )}
-      </div>
-
-      <div className="settings-row">
-        <label className="settings-label" htmlFor="accent-color">
-          {t('settings.colour')}
-        </label>
-        <span className="settings-row-actions">
-          <input
-            id="accent-color"
-            name={ACCENT_COLOR_SETTING}
-            type="color"
-            value={shownAccent}
-            aria-describedby={lowContrast ? 'accent-low-contrast' : undefined}
-            onChange={(event) => {
-              const next = event.target.value;
-              applyAccentColor(next);
-              save({ [ACCENT_COLOR_SETTING]: next });
-            }}
-          />
-          <button
-            type="button"
-            className="btn small btn-quick"
-            data-testid="reset-accent"
-            onClick={() => {
-              applyAccentColor(DEFAULT_ACCENT_COLOR);
-              save({ [ACCENT_COLOR_SETTING]: DEFAULT_ACCENT_COLOR });
-            }}
-          >
-            {t('settings.reset')}
-          </button>
-        </span>
-        {/*
-         * A note, never a refusal (AM-053): the colour is already saved. Inside
-         * the row, on a line of its own, so the Theme row below is still the
-         * row's next sibling and keeps the divider between them.
-         */}
-        {lowContrast && (
-          <p
-            className="small settings-row-note"
-            id="accent-low-contrast"
-            role="status"
-            data-testid="accent-low-contrast"
-          >
-            {t('settings.accentLowContrast')}
-          </p>
         )}
       </div>
 
@@ -664,6 +514,35 @@ function AppearanceSettings(): React.JSX.Element {
         </span>
       </div>
 
+      {/*
+       * The typeface, as a dropdown like Claude's "Chat font" (owner,
+       * 2026-09-28). It applies to the whole app; the wordmark is outlines, not
+       * type, and keeps its own face.
+       */}
+      <div className="settings-row">
+        <label className="settings-label" htmlFor="font-family">
+          {t('settings.font')}
+        </label>
+        <select
+          id="font-family"
+          className="settings-select"
+          value={shownFamily}
+          data-testid="font-family"
+          onChange={(event) => {
+            const next = event.target.value;
+            if (!isFontFamily(next)) return;
+            applyFontFamily(next);
+            save({ [FONT_FAMILY_SETTING]: next });
+          }}
+        >
+          {FONT_FAMILIES.map((family) => (
+            <option key={family} value={family}>
+              {fontFamilyLabels(t)[family]}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div className="settings-row">
         <label className="settings-label" htmlFor="animations-toggle">
           {t('settings.animations')}
@@ -693,46 +572,20 @@ function AppearanceSettings(): React.JSX.Element {
 }
 
 /**
- * Every surface the accent — and so the brand mark — is drawn on, read off
- * `tokens.css`: light `--sidebar-bg` and `--app-bg`, then dark `--sidebar-bg`
- * and `--app-bg`. The sidebar is where the wordmark and the rail's A sit, and
- * a screen's top bar sits on `--bg`, which is `--sidebar-bg` in light and
- * `--app-bg` in dark, so these four are all of them (AM-054: the light sidebar
- * was missing, and `#8f8f8f` clears 3:1 on `#faf9f5` but not on `#f5f4ed`).
- * The real tokens and not white or black — `#939393` clears 3:1 on white and
- * not on `#faf9f5`, and `#5d5d5d` clears it on black and on neither dark
- * surface — so a check against the extremes would stay quiet about exactly
- * the colours this exists for. `Settings.test.tsx` reads `tokens.css` to hold
- * these to it.
- */
-const PAGE_SURFACES = ['#f5f4ed', '#faf9f5', '#111111', '#151515'] as const;
-
-/** AM-053's line: under this against any page surface, the note appears. */
-const LOW_CONTRAST_RATIO = 3;
-
-/**
- * Whether the accent is under 3:1 against the page in either theme (AM-053).
- *
- * Both themes, not the one on screen: the accent is one value for both, and a
- * colour that is fine in light and lost in dark is still lost the evening she
- * switches. It matters beyond the buttons because `--brand-mark` resolves to
- * `--accent`, so the logo goes with it — which is why the note says so.
- */
-function accentIsHardToSee(accent: string): boolean {
-  const own = accentLuminance(accent);
-  return PAGE_SURFACES.some((surface) => {
-    const other = accentLuminance(surface);
-    const ratio = (Math.max(own, other) + 0.05) / (Math.min(own, other) + 0.05);
-    return ratio < LOW_CONTRAST_RATIO;
-  });
-}
-
-/**
  * The four text sizes and the three themes, by the stored value.
  *
  * Both were module-level records of English. The stored value is data and is
  * never translated (Fixed decision 4), so each is a key of its own.
  */
+/** The typefaces, by the stored value; the bundled one is named for what it is. */
+function fontFamilyLabels(t: Translate): Readonly<Record<FontFamily, string>> {
+  return {
+    inter: t('settings.fontInter'),
+    system: t('settings.fontSystem'),
+    serif: t('settings.fontSerif'),
+  };
+}
+
 function fontSizeLabels(t: Translate): Readonly<Record<FontSize, string>> {
   return {
     small: t('settings.sizeSmall'),

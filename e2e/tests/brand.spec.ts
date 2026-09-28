@@ -74,7 +74,12 @@ import { expect, test, uniqueName } from '../support/fixtures';
  * same value twice over, and only one of them is allowed to be a literal.
  */
 const DEFAULT_ACCENT = DEFAULT_ACCENT_COLOR;
-/** A purple far enough from the default teal to prove the mark followed. */
+/**
+ * A purple far enough from the default teal to tell them apart. Stored by an
+ * older build that still had the picker; since 2026-09-28 the accent is the
+ * teal always (owner, backlog #9), so this proves the stored colour is **not**
+ * painted — there is no control left to change it back with.
+ */
 const OTHER_ACCENT = '#7c3aed';
 
 type Theme = 'light' | 'dark';
@@ -105,9 +110,6 @@ const LIGHT_DEFAULT: Appearance = {
 const LIGHT_OTHER: Appearance = {
   ...LIGHT_DEFAULT,
   accent: OTHER_ACCENT,
-  accentPainted: 'rgb(124, 58, 237)',
-  mark: 'rgb(124, 58, 237)',
-  wordmark: 'rgb(124, 58, 237)',
 };
 const DARK_DEFAULT: Appearance = {
   theme: 'dark',
@@ -119,9 +121,6 @@ const DARK_DEFAULT: Appearance = {
 const DARK_OTHER: Appearance = {
   ...DARK_DEFAULT,
   accent: OTHER_ACCENT,
-  accentPainted: 'rgb(124, 58, 237)',
-  mark: 'rgb(124, 58, 237)',
-  wordmark: 'rgb(124, 58, 237)',
 };
 
 /**
@@ -255,13 +254,11 @@ async function assertPainted(page: Page, state: Appearance, slug: string): Promi
   expect(observed.mark, `the A mark painted in ${key}`).toBe(state.mark);
   expect(observed.wordmark, `the wordmark painted in ${key}`).toBe(state.wordmark);
   const reference = measured.get(`${state.theme}/${DEFAULT_ACCENT}`);
-  if (reference !== undefined) {
-    expect(observed.mark, `the mark followed the accent in ${key}, not the default's`).not.toBe(
-      reference.mark,
-    );
-    expect(observed.wordmark, `the wordmark followed the accent in ${key}, not the default's`).not.toBe(
-      reference.wordmark,
-    );
+  if (reference !== undefined && state.accent !== DEFAULT_ACCENT) {
+    // A stored accent other than the teal is ignored (owner, 2026-09-28): the
+    // mark and wordmark are exactly what the default painted.
+    expect(observed.mark, `the mark stayed the teal in ${key}`).toBe(reference.mark);
+    expect(observed.wordmark, `the wordmark stayed the teal in ${key}`).toBe(reference.wordmark);
   }
   measured.set(key, observed);
   await page.screenshot({ path: screenshotPath(slug) });
@@ -343,7 +340,7 @@ test.describe('rendered colours and 200% zoom', () => {
     await assertPainted(page, LIGHT_DEFAULT, 'light-default-accent');
   });
 
-  test(`brand: light, accent ${OTHER_ACCENT} — A mark ${LIGHT_OTHER.mark}, wordmark ${LIGHT_OTHER.wordmark}`, async ({
+  test(`brand: light, stored accent ${OTHER_ACCENT} is ignored — A mark ${LIGHT_OTHER.mark}, wordmark ${LIGHT_OTHER.wordmark}`, async ({
     page,
     request,
   }) => {
@@ -359,7 +356,7 @@ test.describe('rendered colours and 200% zoom', () => {
     await assertPainted(page, DARK_DEFAULT, 'dark-default-accent');
   });
 
-  test(`brand: dark, accent ${OTHER_ACCENT} — A mark ${DARK_OTHER.mark}, wordmark ${DARK_OTHER.wordmark}`, async ({
+  test(`brand: dark, stored accent ${OTHER_ACCENT} is ignored — A mark ${DARK_OTHER.mark}, wordmark ${DARK_OTHER.wordmark}`, async ({
     page,
     request,
   }) => {

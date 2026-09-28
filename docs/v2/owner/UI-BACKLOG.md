@@ -1,6 +1,15 @@
 # UI backlog (owner requests, not yet implemented)
 
-**Status 2026-09-27: #1–#4 built, uncommitted, preview on 127.0.0.1:7868.**
+**Status: #1–#4 built and committed (14076b8). #5–#12 built
+(2026-09-28), preview on 127.0.0.1:7868.** Held from #10: Atkinson Hyperlegible,
+which is not in `docs/v2/ACQUISITION.md` (HS-3) and needs an amendment before it
+can be bundled; the Font dropdown ships Inter (Default), System and Serif.
+
+**Language has one entry point: More → Language (the LanguageDialog).** The
+Settings row is gone (#9). `e2e/tests/language-control.spec.ts` V2/V3 were
+retargeted from that row to the dialog with the coordinator's authorisation,
+keeping every assertion; S2.6 steps must not point at `language-settings`,
+`language-en` or `language-es-MX` any more.
 
 Owner feeds requests one at a time with a screenshot; each is read back,
 confirmed, and queued here. Nothing is implemented until the owner says go.
@@ -89,3 +98,124 @@ together from the docs and those issues.
   in both English and Spanish.
 - **Beyond Claude (owner's #2):** Claude has no manual order *inside* a group.
   Apunta adds it via `Manual`, the same way Claude handles its pinned order.
+
+## 5. Dropping a name into another group should not look like a reload
+
+- **Now:** after letting go of a name over another group, the list redraws
+  in a way that looks like a reload, instead of the name just sitting where
+  it was dropped.
+- **Want:** on release, the name appears in the new group and nothing else in
+  the list moves or redraws.
+
+## 6. Archiving a patient redraws every name
+
+- **Now:** archiving any patient reloads the whole list, and every name is
+  redrawn. Same family as the drag-reload fix in 14076b8.
+- **Want:** only the archived name leaves the list; every other row stays put.
+  Check the other row actions (restore, rename, delete, pin, move to group from
+  the menu) for the same full reload and fix them the same way.
+
+## 7. Drag a name into Pinned to pin it
+
+- **Drop:** dragging a name over `Fijados` / `Pinned` behaves exactly like
+  dragging it over a group. The section gets the same outline, the pill reads
+  `Mover a Fijados` / `Move to Pinned`, and dropping pins the patient.
+- **Pinned is a supergroup (owner):** a pinned patient appears **only** in
+  Pinned, never also in their group or in Recientes. Pinned behaves like
+  every other group, except that the ⇅ filters never apply to it.
+- **Membership is kept:** pinning does not drop the patient's group. Unpinning
+  puts them back under that group, or in Recientes if they have none.
+  Change from today: a pinned patient in a group currently shows in both
+  Pinned and the group; they will show in Pinned only.
+- **Dragging out of Pinned:** dropping onto a group unpins the patient and
+  files them there. Dropping onto Recientes unpins them and takes them out of
+  their group (owner: confirmed).
+- **Reorder:** dragging inside Pinned reorders the pins, as today.
+
+## 8. The view menu's tick in the accent teal
+
+Screenshot: preview 7868, ⇅ menu → Status panel, the tick beside `Active`.
+
+- The tick marking the chosen option in the ⇅ view menu's panels is drawn in
+  the accent teal (#2a9d8f), not the grey text colour it has now.
+
+## 9. Settings → Appearance clean-up
+
+- **Accent colour is fixed:** teal (#2a9d8f) stays the one accent. The accent
+  colour picker (`Colour` row) is removed from Settings, so it can no longer be
+  changed.
+- **Language row removed:** `Language / Idioma` goes from Appearance. Language
+  now lives only in More → Language.
+- **American English everywhere (owner):** the `Colour` rename is moot once
+  the picker is gone. Instead, audit every English string the user can see and
+  make it American English: color, behavior, organize, center, canceled and so
+  on. Code comments and identifiers are out of scope. Keys stay as they are
+  unless a visible string changes.
+
+## 10. Font setting (new), as a dropdown
+
+- A new Appearance row, `Font`, with a dropdown, beside `Font size`. It is
+  named after Claude's "Chat font" row but applies app-wide.
+- **Options (recommended):**
+  - `Inter (Default)`: what the app uses today, bundled.
+  - `System`: the operating system's own UI font.
+  - `Serif`: the system serif (Georgia / New York), for reading long notes.
+    Nothing new to bundle.
+  - `Atkinson Hyperlegible`: a font designed for legibility (Braille Institute,
+    SIL OFL). It would be a new bundled dependency (@fontsource), so it needs
+    the dependency and licence steps. Nothing is fetched at runtime.
+- **Scope (owner):** the chosen font applies to the whole app, chat and notes
+  included. The Apunta wordmark / logo is the one exception: it keeps its own
+  font.
+
+## 11. The ⇅ view menu, rebuilt after Claude's
+
+Screenshots: Claude's view menu: (a) Sort by open, (b) Status = All,
+(c) Last activity open, (d) Group by Date + Sort by Date created, with Reset shown.
+
+- **Menu layout, as Claude's:** `Status`, `Last activity` | divider |
+  `Group by`, `Sort by` | divider | `Reset to defaults`. Each row shows its
+  current value at the right, with a chevron.
+- **Value in the accent only when a filter is not the default:** only the
+  two filter rows, Status and Last activity, turn teal (accent) once changed.
+  Example (b): Status `All` in the accent. Group by and Sort by values always
+  stay grey, even when changed; in Claude's screenshot (d), `Date` and
+  `Date created` are grey. Defaults:
+  - Status: `Active`
+  - Last activity: `All`
+  - Group by: `My groups`
+  - Sort by: `Last activity`
+- **Status options:** Active, Archived, All (unchanged).
+- **Group by:** `My groups` (default) and `None`. `Nothing` is renamed `None`
+  (Spanish `Ninguno`).
+- **Sort by options, in this order:** `Name`, `Date created`, `Last activity`.
+  `Recent activity` is renamed `Last activity` and is the default.
+- **Drop Manual:** the `Manual` sort goes away, and so does drag-to-reorder
+  inside a group. Rows inside every group follow the chosen sort, always.
+  Dragging a name onto another group, Recientes or Pinned still moves it
+  (#3, #7).
+- **Pinned is the only hand-ordered list:** dragging inside Pinned still
+  reorders the pins, and the sort does not apply to it (#7).
+- **Reset to defaults:** a new last row that puts all four back to the
+  defaults above (Spanish `Restablecer valores predeterminados`). It appears
+  **only** when at least one of the four is off its default (owner), as in
+  (d). With everything at the defaults the row and its divider are hidden.
+- **Clean-up this implies:** the Alt+arrow group reorder, the dragged-order
+  server routes (`PUT`/`DELETE /api/patient-group-order`) and the `Manual`
+  strings from 14076b8 are removed.
+- **Empty groups (owner):** they always show, with "No patients in this group
+  yet", as today. There is no `Show empty groups` toggle.
+- **Last activity labels, as Claude's (owner):** `1d`, `3d`, `7d`, `30d`,
+  `All`, replacing Past day / Past 3 days / Past week / Past month / Any time.
+  Spanish: `1d`, `3d`, `7d`, `30d`, `Todo`.
+
+## 12. Drag gaps and no respawning rows (owner, 2026-09-28; built)
+
+- The row she picks up stays as an empty slot, as Claude's does, instead of a
+  faded name.
+- Over Pinned, an empty gap opens where the name would land, for a pin being
+  moved and a name being pinned alike. The other pins slide apart to open it,
+  and the drop lands in that gap. The gap follows the pointer's height, not
+  the hovered row, so it does not chase itself.
+- Rows never "respawn": the entrance cascade plays only while the list first
+  arrives, because a CSS animation replays whenever its element is moved.

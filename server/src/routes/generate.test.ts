@@ -326,7 +326,7 @@ describe('POST /api/generate — spoken retractions', () => {
     expect(opening?.role).toBe('assistant');
     expect(opening?.text).toContain(FIRST_PASS_MESSAGE);
     expect(opening?.text).toContain(
-      'left out “He walked to the shop twice this week” in favour of “three times this week”',
+      'left out “He walked to the shop twice this week” in favor of “three times this week”',
     );
     // The transcript row keeps her words as transcribed, retraction and all.
     expect(listTranscriptsForNote(harness.db, note.id)[0]?.raw_text).toContain('scratch that');

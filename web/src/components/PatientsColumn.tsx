@@ -1,15 +1,17 @@
 import type { PatientGroup, PatientListItem } from '@apunta/shared';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 
 import type { RecencyMap } from '../hooks/usePatientRecency.js';
 import type { LoadState } from '../hooks/useLoader.js';
+import { NO_MOTION_CLASS } from '../lib/appearance.js';
 import { formatShortDate } from '../lib/format.js';
 import { useI18n, type Translate } from '../lib/i18n.js';
 import { pinnedIndex } from '../lib/patientOrder.js';
 import {
   DEFAULT_SIDEBAR_VIEW,
+  isDefaultSidebarView,
   readSidebarView,
   writeSidebarView,
   type SidebarActivity,
@@ -46,12 +48,13 @@ const VISIBLE_PATIENTS = 13;
  * What a patient drag would do if she let go now (owner, 2026-09-27, after
  * Claude's sidebar).
  *
- * - `reorder`: the row is over its own section (Pinned, or the group it is in).
- *   The section is drawn with the row already at `index`, so the list itself
- *   shows where it will land and no insertion line is needed.
- * - `move`: the row is over another group, or over Recents when it is in a
- *   group. The whole section is outlined and the lifted row reads "Move to …".
- *   `groupId` null is Recents, which takes the patient out of their group.
+ * - `reorder`: a row over Pinned, the one list she orders by hand — a pinned
+ *   row being moved, or a name from elsewhere being pinned. Pinned is drawn
+ *   with an empty gap at `index`, the rows sliding apart to open it, as
+ *   Claude's does (owner, 2026-09-28); no insertion line, no outline.
+ * - `move`: the row is over another group or Recents. The whole section is
+ *   outlined and the lifted row reads "Move to …"; `groupId` null is Recents,
+ *   which takes the patient out of their group (owner, 2026-09-28).
  */
 type DragOver =
   | { readonly kind: 'reorder'; readonly section: string; readonly index: number }
@@ -154,15 +157,6 @@ export interface PatientsColumnProps {
    */
   onReorderGroup?: ((groupId: string, index: number) => void) | undefined;
   /**
-   * Save the dragged order of whole groups (owner, 2026-09-27): the listed
-   * patients, in that order, for each group. Called with every group when the
-   * sort switches to "Manual", so the groups she did not touch keep the order
-   * they had on screen.
-   */
-  onSetGroupOrder?: ((groups: { id: string; patientIds: string[] }[]) => void) | undefined;
-  /** Forget the dragged orders: choosing any sort but "Manual" (owner, 2026-09-27). */
-  onClearGroupOrder?: (() => void) | undefined;
-  /**
    * Report the `Status` filter to whoever has to widen the patient fetch (F1).
    *
    * The filter is owned and written here, and the workspace is the only thing
@@ -190,6 +184,12 @@ export interface PatientsColumnProps {
   /** Ask to delete the patient; the workspace confirms before anything goes. */
   onDelete: (patient: PatientListItem) => void;
   onTogglePin: (patientId: string) => void;
+  /**
+   * Pin at a place in Pinned, or move there if pinned already: where a name
+   * dropped into the gap she opened lands (owner, 2026-09-28). Omitted, a drop
+   * from outside Pinned pins at the bottom.
+   */
+  onPinAt?: ((patientId: string, index: number) => void) | undefined;
   /** Move a pinned row within the pinned group. */
   onReorderPins: (from: number, to: number) => void;
   /** "View all": the full Active / Archived page. */
@@ -239,8 +239,6 @@ export function PatientsColumn({
   onCreateGroup,
   onMoveIntoGroup,
   onReorderGroup,
-  onSetGroupOrder,
-  onClearGroupOrder,
   onStatusChange,
   groupsState,
   onReloadGroups,
@@ -250,6 +248,7 @@ export function PatientsColumn({
   onRename,
   onDelete,
   onTogglePin,
+  onPinAt,
   onReorderPins,
   onOpenAll,
   onToggleCollapsed,
@@ -325,8 +324,6 @@ export function PatientsColumn({
           onCreateGroup={onCreateGroup}
           onMoveIntoGroup={onMoveIntoGroup}
           onReorderGroup={onReorderGroup}
-          onSetGroupOrder={onSetGroupOrder}
-          onClearGroupOrder={onClearGroupOrder}
           onStatusChange={onStatusChange}
           groupsState={groupsState}
           onReloadGroups={onReloadGroups}
@@ -339,6 +336,7 @@ export function PatientsColumn({
           onRename={onRename}
           onDelete={onDelete}
           onTogglePin={onTogglePin}
+          onPinAt={onPinAt}
           onReorderPins={onReorderPins}
           onOpenAll={onOpenAll}
         />
@@ -505,8 +503,6 @@ type PatientListProps = Pick<
   | 'onCreateGroup'
   | 'onMoveIntoGroup'
   | 'onReorderGroup'
-  | 'onSetGroupOrder'
-  | 'onClearGroupOrder'
   | 'onStatusChange'
   | 'groupsState'
   | 'onReloadGroups'
@@ -516,6 +512,7 @@ type PatientListProps = Pick<
   | 'onRename'
   | 'onDelete'
   | 'onTogglePin'
+  | 'onPinAt'
   | 'onReorderPins'
   | 'onOpenAll'
 > & { query: string; onClearSearch: () => void };
@@ -533,8 +530,6 @@ function PatientList({
   onCreateGroup,
   onMoveIntoGroup,
   onReorderGroup,
-  onSetGroupOrder,
-  onClearGroupOrder,
   onStatusChange,
   groupsState,
   onReloadGroups,
@@ -545,6 +540,7 @@ function PatientList({
   onRename,
   onDelete,
   onTogglePin,
+  onPinAt,
   onReorderPins,
   onOpenAll,
 }: PatientListProps): React.JSX.Element {
@@ -698,6 +694,54 @@ function PatientList({
   // at the column's edge instead of opening over the page beside it.
   const [tip, setTip] = useState<{ id: string; rect: DOMRect } | null>(null);
 
+  /*
+   * The rows' entrance cascade plays **once**, when the list first arrives
+   * (owner, 2026-09-28). A CSS animation restarts whenever its element is moved
+   * in the document, so with it always on, every row a drag or a re-sort moved
+   * faded in again as though it were new — "respawning".
+   */
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    if (patients.status !== 'ready' || entered) return undefined;
+    const timer = setTimeout(() => {
+      setEntered(true);
+    }, 700);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [patients.status, entered]);
+
+  /*
+   * While a drag is in flight, a row that changes place slides there rather
+   * than jumping (owner, 2026-09-28): the names part to open the gap and close
+   * behind it. Measured before and after each render — "first, last, invert,
+   * play" — so only the rows that really moved animate, and never a row that is
+   * new. Off with animations, and wherever the Web Animations API is missing.
+   */
+  const sectionsRef = useRef<HTMLDivElement>(null);
+  const tops = useRef(new Map<Element, number>());
+  useLayoutEffect(() => {
+    const root = sectionsRef.current;
+    if (root === null) return;
+    const animate = dragging !== null && !document.documentElement.classList.contains(NO_MOTION_CLASS);
+    const next = new Map<Element, number>();
+    for (const row of root.querySelectorAll<HTMLElement>('.patient-entry')) {
+      // The layout position, which a running slide's transform does not move —
+      // measuring the painted one would read a row mid-slide as having moved
+      // again, and start another slide from there.
+      const top = row.offsetTop;
+      next.set(row, top);
+      const before = tops.current.get(row);
+      if (!animate || before === undefined || Math.abs(before - top) < 0.5) continue;
+      if (typeof row.animate !== 'function') continue;
+      row.animate([{ transform: `translateY(${String(before - top)}px)` }, { transform: 'none' }], {
+        duration: 160,
+        easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      });
+    }
+    tops.current = next;
+  });
+
   if (patients.status === 'loading') return <p className="small state-note">{t('patients.loading')}</p>;
 
   if (patients.status === 'error') {
@@ -770,17 +814,11 @@ function PatientList({
     .filter(matchesNeedle);
   /** The row being dragged, for the cell that follows the pointer. */
   const draggingPatient = dragging === null ? null : (everyone.find((p) => p.id === dragging) ?? null);
-  const viewIsDefault =
-    view.status === DEFAULT_SIDEBAR_VIEW.status &&
-    view.activity === DEFAULT_SIDEBAR_VIEW.activity &&
-    view.groupBy === DEFAULT_SIDEBAR_VIEW.groupBy &&
-    view.sort === DEFAULT_SIDEBAR_VIEW.sort;
+  const viewIsDefault = isDefaultSidebarView(view);
 
   /** Every dimension back to what it was before she touched the menu. */
   function onResetView(): void {
     setView(DEFAULT_SIDEBAR_VIEW);
-    // Leaving "Manual" forgets the dragged orders, whichever way she leaves it.
-    if (view.sort === 'manual') onClearGroupOrder?.();
     // "Clear filters" is a Status change too, and it is the one that has to
     // take archived patients back off the wire.
     if (view.status !== DEFAULT_SIDEBAR_VIEW.status) onStatusChange?.(DEFAULT_SIDEBAR_VIEW.status);
@@ -848,7 +886,10 @@ function PatientList({
    * patient would move the day the feature arrived.
    *
    * Pinning still wins over a group, because a pin is a decision about this
-   * moment and a group is a decision about the patient.
+   * moment and a group is a decision about the patient. **Pinned is a
+   * supergroup** (owner, 2026-09-28): a pinned patient is drawn in Pinned and
+   * nowhere else — not in their group, not in Recents — but keeps the group, so
+   * unpinning puts them back under it.
    */
   const ungrouped = visible.filter(
     (patient) =>
@@ -875,34 +916,19 @@ function PatientList({
   const byRecent = (a: PatientListItem, b: PatientListItem): number =>
     lastTouched(b).localeCompare(lastTouched(a));
   /**
-   * The one sort, for every section below Pinned (owner, 2026-09-27): the
+   * The one sort, for every section below Pinned (owner, 2026-09-28): the
    * control on the topmost section sets it for all of them, as Claude's does.
-   * "Manual" only means something inside a group; Recents keeps "Recent
-   * activity" under it, because nothing in Recents is ever placed by hand.
+   * There is no hand-made order inside a group; Pinned is the only list she
+   * arranges herself, and the sort never touches it.
    */
-  function compareFor(inGroup: boolean): (a: PatientListItem, b: PatientListItem) => number {
+  const compare = ((): ((a: PatientListItem, b: PatientListItem) => number) => {
     if (view.sort === 'name')
       return (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
     // Newest first: "Date created" reads as the most recent arrivals, and the
     // alternative puts the patients she added years ago above today's.
     if (view.sort === 'created') return (a, b) => b.created_at.localeCompare(a.created_at);
-    if (view.sort === 'manual' && inGroup) {
-      /*
-       * Her dragged order. Every drag writes the whole group, 0..n, so two rows
-       * never share a number; a patient filed since then has none and goes
-       * after the ones she placed, most recent first.
-       */
-      return (a, b) => {
-        const left = a.group_position;
-        const right = b.group_position;
-        if (left === null && right === null) return byRecent(a, b);
-        if (left === null) return 1;
-        if (right === null) return -1;
-        return left - right;
-      };
-    }
     return byRecent;
-  }
+  })();
   /*
    * Groups, **including the empty ones** (owner, 2026-09-27). They used to be
    * filtered to those with somebody in them, on the reasoning that a heading you
@@ -915,34 +941,56 @@ function PatientList({
     view.groupBy === 'groups'
       ? (groups ?? []).map((group) => ({
           group,
-          rows: visible.filter((patient) => patient.group_id === group.id).sort(compareFor(true)),
+          rows: visible
+            .filter((patient) => patient.group_id === group.id && pinnedIndex(patient.id, pinnedIds) < 0)
+            .sort(compare),
         }))
       : [];
-  const recents = [...ungrouped].sort(compareFor(false));
+  const recents = [...ungrouped].sort(compare);
   // Searching is a deliberate act, so it shows everyone it matched; the daily
   // list is the one that gets cut short.
   const recentsShown = searching ? recents : recents.slice(0, VISIBLE_PATIENTS);
 
   const tipPatient = tip === null ? null : (visible.find((patient) => patient.id === tip.id) ?? null);
 
-  /** The ids of a section as they are drawn now, before any drag preview. */
-  function sectionIds(section: string): string[] {
-    if (section === 'pinned') return pinnedRows.map((patient) => patient.id);
-    const entry = groupRows.find(({ group }) => `group:${group.id}` === section);
-    return entry === undefined ? [] : entry.rows.map((patient) => patient.id);
+  /**
+   * Pinned as drawn now, with the gap opened where a drop would land. A pinned
+   * row being moved is its own gap (drawn empty); a name from elsewhere gets a
+   * `'gap'` placeholder, so the pinned rows part around the place it would go.
+   */
+  function previewPinned(rows: readonly PatientListItem[]): readonly (PatientListItem | 'gap')[] {
+    if (dragging === null || dragOver?.kind !== 'reorder') return rows;
+    if (rows.some((patient) => patient.id === dragging)) {
+      return placeAt(
+        rows.map((patient) => patient.id),
+        dragging,
+        dragOver.index,
+      )
+        .map((id) => rows.find((patient) => patient.id === id))
+        .filter((patient): patient is PatientListItem => patient !== undefined);
+    }
+    const withGap: (PatientListItem | 'gap')[] = [...rows];
+    withGap.splice(Math.max(0, Math.min(dragOver.index, rows.length)), 0, 'gap');
+    return withGap;
   }
 
-  /** The rows of a section with a reorder preview applied, if one is over it. */
-  function previewRows(section: string, rows: readonly PatientListItem[]): readonly PatientListItem[] {
-    if (dragging === null || dragOver?.kind !== 'reorder' || dragOver.section !== section) return rows;
-    const order = placeAt(
-      rows.map((patient) => patient.id),
-      dragging,
-      dragOver.index,
-    );
-    return order
-      .map((id) => rows.find((patient) => patient.id === id))
-      .filter((patient): patient is PatientListItem => patient !== undefined);
+  /**
+   * Which place in Pinned the pointer is at, from its height under the heading.
+   *
+   * Not from the row under it: the rows slide apart to open the gap, so the row
+   * under a still pointer changes as the gap moves, and a gap placed by
+   * "whichever row is hovered" chased itself up and down. Slots are one row
+   * tall from the heading's bottom edge, which does not move.
+   */
+  function pinnedPlaceAt(section: Element, clientY: number): number {
+    const heading = section.querySelector('.sidebar-section-head');
+    const top =
+      heading === null ? section.getBoundingClientRect().top : heading.getBoundingClientRect().bottom;
+    const first = section.querySelector<HTMLElement>('.patient-entry');
+    const rowHeight = first !== null && first.offsetHeight > 0 ? first.offsetHeight : 32;
+    const inside = dragging !== null && pinnedRows.some((row) => row.id === dragging);
+    const last = inside ? pinnedRows.length - 1 : pinnedRows.length;
+    return Math.max(0, Math.min(last, Math.floor((clientY - top) / rowHeight)));
   }
 
   function endDrag(): void {
@@ -954,69 +1002,27 @@ function PatientList({
   }
 
   /**
-   * The view menu's own change, plus the one thing it cannot do itself: the
-   * dragged orders live in the database. Leaving "Manual" forgets them (owner,
-   * 2026-09-27); choosing it saves what is on screen now, so nothing jumps.
-   */
-  function changeView(next: SidebarView): void {
-    if (view.sort === 'manual' && next.sort !== 'manual') onClearGroupOrder?.();
-    if (view.sort !== 'manual' && next.sort === 'manual') {
-      onSetGroupOrder?.(
-        groupRows.map(({ group, rows }) => ({ id: group.id, patientIds: rows.map((p) => p.id) })),
-      );
-    }
-    setView(next);
-  }
-
-  /**
-   * Put a patient at `index` in their own group, in her order (owner,
-   * 2026-09-27). The first such drag switches the one sort to "Manual", and the
-   * other groups are saved as they stand so they do not reshuffle under her.
-   */
-  function reorderGroup(groupId: string, patientId: string, index: number): void {
-    const section = `group:${groupId}`;
-    const before = sectionIds(section);
-    const after = placeAt(before, patientId, index);
-    if (after.every((id, at) => id === before[at])) return;
-    if (view.sort === 'manual') {
-      onSetGroupOrder?.([{ id: groupId, patientIds: after }]);
-      return;
-    }
-    onSetGroupOrder?.(
-      groupRows.map(({ group, rows }) => ({
-        id: group.id,
-        patientIds: group.id === groupId ? after : rows.map((p) => p.id),
-      })),
-    );
-    const next: SidebarView = { ...view, sort: 'manual' };
-    setView(next);
-    writeSidebarView(next);
-  }
-
-  /**
    * What the dragged row would do over `section` — see `DragOver`. Null means
    * the section is not a place it can go, and the drop is refused.
+   *
+   * Pinned behaves like any other group (owner, 2026-09-28): dropping a name on
+   * it pins them, and dragging a pinned name onto a group or Recents is leaving
+   * Pinned for there. The one list that reorders by hand is Pinned itself.
    */
   function dragIntent(section: string, groupId: string | null, label: string): DragOver | null {
     const patient = draggingPatient;
     if (patient === null || dragFrom === null) return null;
-    if (section === dragFrom) {
-      if (section === 'recents') return null;
-      const index = dragOver?.kind === 'reorder' && dragOver.section === section ? dragOver.index : -1;
-      return {
-        kind: 'reorder',
-        section,
-        index: index >= 0 ? index : sectionIds(section).indexOf(patient.id),
-      };
-    }
-    // Pinned is her own list: only a pinned row is ever reordered there.
+    const fromPinned = dragFrom === 'pinned';
+    // Pinned is placed by the pointer's height; see `pinnedPlaceAt`.
     if (section === 'pinned') return null;
+    if (section === dragFrom) return null;
     if (section === 'recents') {
-      // Only a grouped patient has anywhere to come out of (owner, 2026-09-27).
-      if (view.groupBy !== 'groups' || patient.group_id === null) return null;
+      // Out of Pinned is always somewhere to go; out of a group only while the
+      // groups are shown, since that is the only way it came from one.
+      if (!fromPinned && (view.groupBy !== 'groups' || patient.group_id === null)) return null;
       return { kind: 'move', section, groupId: null, label };
     }
-    if (patient.group_id === groupId) return null;
+    if (!fromPinned && patient.group_id === groupId) return null;
     return { kind: 'move', section, groupId, label };
   }
 
@@ -1029,6 +1035,15 @@ function PatientList({
     return {
       onDragOver: (event) => {
         if (dragging === null) return;
+        if (section === 'pinned') {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+          const index = pinnedPlaceAt(event.currentTarget, event.clientY);
+          if (dragOver?.kind !== 'reorder' || dragOver.index !== index) {
+            setDragOver({ kind: 'reorder', section, index });
+          }
+          return;
+        }
         const intent = dragIntent(section, groupId, label);
         if (intent === null) return;
         event.preventDefault();
@@ -1057,19 +1072,28 @@ function PatientList({
   function drop(): void {
     const patient = draggingPatient;
     const intent = dragOver;
+    const fromPinned = dragFrom === 'pinned';
     endDrag();
     if (patient === null || intent === null) return;
-    if (intent.kind === 'move') {
-      if (intent.groupId === null) onMoveToGroup?.(patient, null);
-      else onMoveIntoGroup?.(patient, intent.groupId, null);
-      return;
-    }
-    if (intent.section === 'pinned') {
+    if (intent.kind === 'reorder') {
       const from = pinnedIndex(patient.id, pinnedIds);
-      if (from >= 0 && from !== intent.index) onReorderPins(from, intent.index);
+      if (from >= 0) {
+        if (from !== intent.index) onReorderPins(from, intent.index);
+      } else if (onPinAt !== undefined) {
+        // Pinned in the gap she opened, not at the bottom.
+        onPinAt(patient.id, intent.index);
+      } else {
+        onTogglePin(patient.id);
+      }
       return;
     }
-    reorderGroup(intent.section.slice('group:'.length), patient.id, intent.index);
+    // Leaving Pinned for a group or Recents unpins them on the way.
+    if (fromPinned && pinnedIndex(patient.id, pinnedIds) >= 0) onTogglePin(patient.id);
+    if (intent.groupId === null) {
+      if (patient.group_id !== null) onMoveToGroup?.(patient, null);
+    } else if (patient.group_id !== intent.groupId) {
+      onMoveIntoGroup?.(patient, intent.groupId, null);
+    }
   }
 
   /**
@@ -1090,16 +1114,11 @@ function PatientList({
     onReorderGroup?.(moving, index);
   }
 
-  /**
-   * One row. `section` is the section it is drawn in (a pinned patient in a
-   * group is drawn twice) and `index` its place there as drawn now, preview
-   * included, which is what hovering it asks a reorder to become.
-   */
-  function renderRow(patient: PatientListItem, section: string, index: number): React.JSX.Element {
+  /** One row, in `section`: `pinned`, `group:<id>` or `recents`. */
+  function renderRow(patient: PatientListItem, section: string): React.JSX.Element {
     const archived = patient.archived_at !== null;
     const pinned = pinnedIndex(patient.id, pinnedIds) >= 0;
     const editing = renaming === patient.id;
-    const groupId = section.startsWith('group:') ? section.slice('group:'.length) : null;
     return (
       <div
         key={patient.id}
@@ -1131,19 +1150,6 @@ function PatientList({
           event.dataTransfer.effectAllowed = 'move';
           event.dataTransfer.setData('text/plain', patient.id);
           hideNativeDragImage(event);
-        }}
-        onDragOver={(event) => {
-          // Over a row of its own section, the row's place is where it goes:
-          // the section redraws with it there (owner, 2026-09-27). Anywhere else
-          // the section decides, so the event is left to bubble to it.
-          if (dragging === null || dragFrom !== section || section === 'recents') return;
-          event.preventDefault();
-          event.stopPropagation();
-          event.dataTransfer.dropEffect = 'move';
-          setDragAt({ x: event.clientX, y: event.clientY });
-          if (dragOver?.kind !== 'reorder' || dragOver.section !== section || dragOver.index !== index) {
-            setDragOver({ kind: 'reorder', section, index });
-          }
         }}
         onDragEnd={endDrag}
       >
@@ -1180,15 +1186,9 @@ function PatientList({
                 onSelect(patient.id);
               }}
               onKeyDown={(event) => {
-                // The keyboard way to reorder, since dragging is not reachable
-                // without a pointer: Alt with the arrows, in a group as in Pinned.
-                if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
-                if (groupId !== null) {
-                  event.preventDefault();
-                  reorderGroup(groupId, patient.id, index + (event.key === 'ArrowUp' ? -1 : 1));
-                  return;
-                }
-                if (!pinned) return;
+                // The keyboard way to reorder a pinned patient, since dragging
+                // is not reachable without a pointer: Alt with the arrows.
+                if (!pinned || !event.altKey) return;
                 const from = pinnedIndex(patient.id, pinnedIds);
                 if (event.key === 'ArrowUp' && from > 0) {
                   event.preventDefault();
@@ -1241,7 +1241,8 @@ function PatientList({
 
   return (
     <div
-      className="patient-sections"
+      ref={sectionsRef}
+      className={entered ? 'patient-sections' : 'patient-sections is-entering'}
       onDragOver={(event) => {
         // The lifted cell follows the pointer, which means the list has to hear
         // about the pointer moving over it. `dragover` fires continuously while
@@ -1258,6 +1259,7 @@ function PatientList({
       {(!searching || pinnedRows.length > 0) && (
         <section
           className="sidebar-section"
+          data-testid="section-pinned-list"
           aria-labelledby="sidebar-pinned-label"
           {...sectionDragProps('pinned', null, t('patients.pinned'))}
         >
@@ -1267,13 +1269,24 @@ function PatientList({
             labelId: 'sidebar-pinned-label',
             testId: 'section-pinned',
           })}
-          {collapsed.has('pinned') ? null : pinnedRows.length === 0 ? (
+          {collapsed.has('pinned') ? null : pinnedRows.length === 0 && dragOver?.kind !== 'reorder' ? (
             <div className="sidebar-pin-hint" data-testid="pin-hint">
               <PinIcon className="icon icon-sm" />
               <span>{t('patients.pinHint')}</span>
             </div>
           ) : (
-            previewRows('pinned', pinnedRows).map((patient, index) => renderRow(patient, 'pinned', index))
+            previewPinned(pinnedRows).map((entry) =>
+              entry === 'gap' ? (
+                <div
+                  key="pin-gap"
+                  className="patient-entry project-row-wrap is-gap"
+                  data-testid="pin-gap"
+                  aria-hidden="true"
+                />
+              ) : (
+                renderRow(entry, 'pinned')
+              ),
+            )
           )}
         </section>
       )}
@@ -1306,7 +1319,7 @@ function PatientList({
             // group carries it and Recents does not.
             children:
               groupRows[0]?.group.id === group.id ? (
-                <ViewMenuSlot view={view} onStatusChange={onStatusChange} onViewChange={changeView} />
+                <ViewMenuSlot view={view} onStatusChange={onStatusChange} onViewChange={setView} />
               ) : null,
           })}
           {collapsed.has(`group:${group.id}`) ? null : rows.length === 0 ? (
@@ -1314,9 +1327,7 @@ function PatientList({
               {t('patients.groupEmpty')}
             </div>
           ) : (
-            previewRows(`group:${group.id}`, rows).map((patient, index) =>
-              renderRow(patient, `group:${group.id}`, index),
-            )
+            rows.map((patient) => renderRow(patient, `group:${group.id}`))
           )}
         </section>
       ))}
@@ -1346,12 +1357,10 @@ function PatientList({
              */
             children:
               groupRows.length === 0 ? (
-                <ViewMenuSlot view={view} onStatusChange={onStatusChange} onViewChange={changeView} />
+                <ViewMenuSlot view={view} onStatusChange={onStatusChange} onViewChange={setView} />
               ) : null,
           })}
-          {collapsed.has('recents')
-            ? null
-            : recentsShown.map((patient, index) => renderRow(patient, 'recents', index))}
+          {collapsed.has('recents') ? null : recentsShown.map((patient) => renderRow(patient, 'recents'))}
         </section>
       )}
 

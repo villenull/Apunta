@@ -29,22 +29,40 @@ export interface Loader<T> {
   update: (updater: (current: T) => T) => void;
 }
 
-export function useLoader<T>(load: (signal: AbortSignal) => Promise<T>): Loader<T> {
+export interface LoaderOptions {
+  /**
+   * Once there is data, never go back to loading: a new `load` (its inputs
+   * changed) swaps the data when the answer arrives, like a refresh. For a list
+   * whose inputs only widen or narrow it — the sidebar asking for archived
+   * patients too — where blanking to "Loading…" redrew every row (owner,
+   * 2026-09-28).
+   */
+  readonly keepData?: boolean;
+}
+
+export function useLoader<T>(
+  load: (signal: AbortSignal) => Promise<T>,
+  options: LoaderOptions = {},
+): Loader<T> {
   const [state, setState] = useState<LoadState<T>>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const quiet = useRef(false);
+  const hasData = useRef(false);
+  const keepData = options.keepData === true;
 
   useEffect(() => {
     const controller = new AbortController();
     // A refresh keeps what is on screen; anything else (a first load, new
     // inputs, a reload) says it is loading. The flag is spent either way.
-    const keep = quiet.current;
+    const keep = quiet.current || (keepData && hasData.current);
     quiet.current = false;
     if (!keep) setState({ status: 'loading' });
 
     load(controller.signal).then(
       (data) => {
-        if (!controller.signal.aborted) setState({ status: 'ready', data });
+        if (controller.signal.aborted) return;
+        hasData.current = true;
+        setState({ status: 'ready', data });
       },
       (error: unknown) => {
         if (controller.signal.aborted) return;
@@ -59,7 +77,7 @@ export function useLoader<T>(load: (signal: AbortSignal) => Promise<T>): Loader<
     return () => {
       controller.abort();
     };
-  }, [load, attempt]);
+  }, [load, attempt, keepData]);
 
   const reload = useCallback(() => {
     quiet.current = false;
