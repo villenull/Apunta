@@ -4414,6 +4414,15 @@ select:disabled {
   visibility: hidden;
 }
 
+/* Empty means empty: no hover or selected fill on the slot either, which the
+   browser otherwise keeps painting under a row she picked up (owner,
+   2026-09-28). As specific as the selected rule and later, so it wins. */
+.patient-entry.is-dragging,
+.patient-entry.is-dragging:hover,
+.patient-entry.is-dragging:has(.project-row.is-active) {
+  background: transparent;
+}
+
 .patient-entry.is-gap {
   height: var(--row-h);
 }

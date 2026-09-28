@@ -946,6 +946,10 @@ describe('dragging a name to a place', () => {
     expect(screen.getByTestId(`patient-entry-${gina.id}`).className).toContain('is-dragging');
     expect(APP_CSS).toMatch(/\.patient-entry\.is-dragging > \*\s*\{[^}]*visibility: hidden/);
     expect(APP_CSS).not.toMatch(/\.patient-entry\.is-dragging\s*\{[^}]*opacity/);
+    // And no grey box left behind: no hover or selected fill on the slot.
+    expect(APP_CSS).toMatch(
+      /\.patient-entry\.is-dragging,\s*\.patient-entry\.is-dragging:hover,\s*\.patient-entry\.is-dragging:has\(\.project-row\.is-active\)\s*\{[^}]*background: transparent/,
+    );
   });
 
   it('draws a pinned patient in Pinned only, not in their group too', () => {
