@@ -4,11 +4,11 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "eed1211",
+  "baseCommit": "3610cda",
   "attempt": 1,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-066 logged and both dispatches rebuilt at the corrected base: the first pass had applied its corrections to the card alone, leaving three defects live in the instructions. F1 (unpassable fingerprint) and F2 (false tool claim) resolved and re-verified by the coordinator; ownership residual closed with a socket-owner assertion; side-effect harm bounded; evidence directory writable.",
-  "nextAllowedAction": "Second instruction review at this base. If it cycles a third time on the same class of problem, stop and bring the owner a simplification recommendation rather than iterate again.",
+  "lastCompletedStep": "Instruction review pass 3 VERDICT: CLEAR with dispatch integrity confirmed byte-identical to the card, tool checks re-run by the reviewer (cmake 4.4.3, glslc 2026.3 present, hipcc the only absent tool and not needed). Phrasing fix and three stale cites applied per the review.",
+  "nextAllowedAction": "Implementation at this base, then coordinator verification, then a separate independent implementation review re-running V1-V4.",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
