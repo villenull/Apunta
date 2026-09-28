@@ -166,3 +166,47 @@ describe('the view control by keyboard alone', () => {
     expect(left + 240).toBeLessThanOrEqual(window.innerWidth);
   });
 });
+
+/**
+ * A choice made with a real pointer (owner, 2026-09-27): **none of the options
+ * did anything**. A browser sends `pointerdown` before `click`, and the options
+ * panel is a second portal the outside-press check did not count as inside, so
+ * the press closed the menu and the click landed on nothing. Every test here
+ * sends the press first, the way a mouse does.
+ */
+describe('the view control with a pointer', () => {
+  function press(element: Element): void {
+    fireEvent.pointerDown(element);
+    fireEvent.mouseDown(element);
+    fireEvent.pointerUp(element);
+    fireEvent.mouseUp(element);
+    fireEvent.click(element);
+  }
+
+  it.each([
+    ['status', 'archived', { status: 'archived' }],
+    ['activity', '7d', { activity: '7d' }],
+    ['groupBy', 'none', { groupBy: 'none' }],
+    ['sort', 'name', { sort: 'name' }],
+  ] as const)('applies %s = %s when the option is pressed', (field, value, expected) => {
+    const onChange = vi.fn();
+    renderMenu(onChange);
+
+    press(screen.getByTestId('sidebar-view-options'));
+    press(screen.getByTestId(`view-section-${field}`));
+    press(screen.getByTestId(`view-${field}-${value}`));
+
+    expect(onChange).toHaveBeenCalledWith({ ...view, ...expected });
+  });
+
+  it('still closes on a press outside both panels', () => {
+    renderMenu();
+    press(screen.getByTestId('sidebar-view-options'));
+    press(screen.getByTestId('view-section-sort'));
+
+    fireEvent.pointerDown(document.body);
+
+    expect(screen.queryByTestId('sidebar-view-menu')).toBeNull();
+    expect(screen.queryByTestId('sidebar-view-section')).toBeNull();
+  });
+});

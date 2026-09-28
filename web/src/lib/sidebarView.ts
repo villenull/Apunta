@@ -33,7 +33,12 @@ export interface SidebarView {
   readonly status: SidebarStatus;
   readonly activity: SidebarActivity;
   readonly groupBy: SidebarGroupBy;
-  readonly sort: SidebarSort | 'created';
+  /**
+   * `manual` is her dragged order inside each group (owner, 2026-09-27). A drag
+   * that reorders a group switches to it; choosing any other sort forgets the
+   * dragged orders. Recents has no dragged order and keeps its default under it.
+   */
+  readonly sort: SidebarSort | 'created' | 'manual';
 }
 
 export const DEFAULT_SIDEBAR_VIEW: SidebarView = {
@@ -46,7 +51,7 @@ export const DEFAULT_SIDEBAR_VIEW: SidebarView = {
 const STATUSES: readonly SidebarStatus[] = ['active', 'archived', 'all'];
 const ACTIVITIES: readonly SidebarActivity[] = ['all', '1d', '3d', '7d', '30d'];
 const GROUPINGS: readonly SidebarGroupBy[] = ['groups', 'none'];
-const SORTS: readonly (SidebarSort | 'created')[] = ['name', 'created', 'recent'];
+const SORTS: readonly SidebarView['sort'][] = ['name', 'created', 'recent', 'manual'];
 
 /** One `is`/`includes`, because every field is a closed set of known strings. */
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
@@ -91,9 +96,9 @@ export function writeSidebarView(view: SidebarView): void {
    * is for the other direction — a build from before the three-way sort reads
    * that key, and would otherwise come back from a downgrade having forgotten
    * that she had arranged her sidebar at all. A stale-but-plausible value beats
-   * a reset nobody asked for.
+   * a reset nobody asked for. `manual` mirrors as "recent" for the same reason.
    */
-  writeSidebarSort(view.sort === 'created' ? 'recent' : view.sort);
+  writeSidebarSort(view.sort === 'created' || view.sort === 'manual' ? 'recent' : view.sort);
   try {
     if (
       view.status === DEFAULT_SIDEBAR_VIEW.status &&

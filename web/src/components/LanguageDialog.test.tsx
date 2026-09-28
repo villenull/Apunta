@@ -56,18 +56,25 @@ describe('the language chooser', () => {
     // The endonym is the answer, and the language says so to a screen reader.
     expect(english.getAttribute('lang')).toBe('en');
     expect(spanish.getAttribute('lang')).toBe('es-MX');
-    expect(english.textContent).toBe('English (United States)');
+    expect(english.textContent).toBe('English (United States)English (United States)');
     // Spanish reads "Español (México)" and is found by its English name.
     expect(spanish.textContent).toBe('Español (México)Spanish (Mexico)');
   });
 
-  it('drops the English line where it would only repeat the endonym', async () => {
+  it('gives every cell both lines, English included, so every cell is the same height', async () => {
     renderApp({ spanish_available: true });
     fireEvent.click(await screen.findByTestId('mission-control'));
     fireEvent.click(screen.getByTestId('mission-language'));
 
     const dialog = await screen.findByTestId('language-dialog');
-    expect(within(dialog).getByTestId('language-option-en').textContent).toBe('English (United States)');
+    // As Claude's does (owner, 2026-09-27): the repeat is printed rather than
+    // dropped, because dropping it made the English cell a line shorter.
+    expect(within(dialog).getByTestId('language-option-en').textContent).toBe(
+      'English (United States)English (United States)',
+    );
+    for (const option of within(dialog).getAllByRole('radio')) {
+      expect(option.querySelectorAll('.language-option-endonym, .language-option-english')).toHaveLength(2);
+    }
     // And the check sits on the language in force, not on the first one.
     expect(within(dialog).getByTestId('language-option-en').getAttribute('aria-checked')).toBe('true');
   });

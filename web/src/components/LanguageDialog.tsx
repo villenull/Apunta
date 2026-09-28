@@ -15,8 +15,9 @@ import { CheckIcon, CloseIcon } from './icons.js';
  * Each option is the language's **own** name for itself with the region, and
  * under it the name in English — so someone who has landed here in Spanish can
  * still find their language from the English line, which is the whole reason
- * Claude writes it twice. The one place they would be identical is English, and
- * there the second line is dropped rather than printed twice.
+ * Claude writes it twice. **Every cell has both lines**, English included, as
+ * Claude's does: dropping the repeat made the English cell a line shorter than
+ * the Spanish one (owner, 2026-09-27).
  *
  * **Only the languages this build offers.** Spanish is a property of the build,
  * not of the settings row (C-LANG@1, and hard rule: Spanish is never enabled in
@@ -60,8 +61,8 @@ export function LanguageDialog({ onClose }: LanguageDialogProps): React.JSX.Elem
       testId="language-dialog"
       backdropTestId="language-backdrop"
     >
-      <div className="add-patient-head">
-        <h2 className="heading-tight">{t('language.choose')}</h2>
+      <div className="language-head">
+        <h2 className="language-title">{t('language.choose')}</h2>
         <button
           type="button"
           className="icon-btn"
@@ -90,11 +91,11 @@ export function LanguageDialog({ onClose }: LanguageDialogProps): React.JSX.Elem
                   choose(language);
                 }}
               >
-                {here && <CheckIcon className="icon icon-sm language-option-check" />}
-                <span className="language-option-endonym">{t(`language.${language}.endonym`)}</span>
-                {t(`language.${language}.english`) !== t(`language.${language}.endonym`) && (
-                  <span className="language-option-english">{t(`language.${language}.english`)}</span>
-                )}
+                <span className="language-option-endonym">
+                  <span className="language-option-name">{t(`language.${language}.endonym`)}</span>
+                  {here && <CheckIcon className="icon icon-sm language-option-check" />}
+                </span>
+                <span className="language-option-english">{t(`language.${language}.english`)}</span>
               </button>
             </li>
           );

@@ -755,7 +755,14 @@ describe('dragging a name to a place', () => {
   const hugo = makePatient('Hugo Duarte', { group_id: court.id, group_position: 0 });
   const ines = makePatient('Ines Ibarra');
 
-  function renderDraggable(onMoveIntoGroup: (p: PatientListItem, g: string, at: number | null) => void) {
+  function renderDraggable(
+    onMoveIntoGroup: (p: PatientListItem, g: string, at: number | null) => void,
+    more: {
+      onSetGroupOrder?: (groups: { id: string; patientIds: string[] }[]) => void;
+      onClearGroupOrder?: () => void;
+      onMoveToGroup?: (p: PatientListItem, g: string | null) => void;
+    } = {},
+  ) {
     render(
       <MemoryRouter>
         <PatientsColumn
@@ -765,9 +772,11 @@ describe('dragging a name to a place', () => {
           recency={new Map()}
           pinnedIds={[]}
           groups={[family, court]}
-          onMoveToGroup={vi.fn()}
+          onMoveToGroup={more.onMoveToGroup ?? vi.fn()}
           onCreateGroup={vi.fn()}
           onMoveIntoGroup={onMoveIntoGroup}
+          onSetGroupOrder={more.onSetGroupOrder}
+          onClearGroupOrder={more.onClearGroupOrder}
           onSelect={vi.fn()}
           onRetry={vi.fn()}
           onSetArchived={vi.fn()}
@@ -792,72 +801,205 @@ describe('dragging a name to a place', () => {
     drag('drop', screen.getByTestId(`patient-entry-${targetId}`));
   }
 
-  it('orders a group by what she dragged, not by the sidebar default', () => {
-    // Creation order would put Gina first; her dragged order puts Farid first.
-    renderDraggable(vi.fn());
-    expect(sidebarOrder()).toEqual([
-      'Pinned',
-      'Pin patients to keep them here',
-      'Family therapy',
-      'Farid Fuentes',
-      'Gina Gallardo',
-      'Court-mandated',
-      'Hugo Duarte',
-      'Recents',
-      'Ines Ibarra',
-    ]);
+  /** The sort as stored, the way a reload would read it back. */
+  function storedSort(): unknown {
+    const raw = stored.get('apunta-sidebar-view-v1');
+    return raw === undefined ? undefined : (JSON.parse(raw) as { sort?: unknown }).sort;
+  }
+
+  it('orders a group by what she dragged once the sort is "Manual"', () => {
+    stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'manual' }));
+    // Gina is dragged first; the default sort would tie them and go by input.
+    const ginaFirst = { ...gina, group_position: 0 };
+    const faridSecond = { ...farid, group_position: 1 };
+    render(
+      <MemoryRouter>
+        <PatientsColumn
+          patients={{ status: 'ready', data: [faridSecond, ginaFirst, hugo, ines] }}
+          ordered={[faridSecond, ginaFirst, hugo, ines]}
+          activePatientId={null}
+          recency={new Map()}
+          pinnedIds={[]}
+          groups={[family, court]}
+          onSelect={vi.fn()}
+          onRetry={vi.fn()}
+          onSetArchived={vi.fn()}
+          onRename={vi.fn()}
+          onDelete={vi.fn()}
+          onTogglePin={vi.fn()}
+          onReorderPins={vi.fn()}
+          onOpenAll={vi.fn()}
+          onToggleCollapsed={vi.fn()}
+          collapsed={false}
+          onOpenSettings={vi.fn()}
+          onUnavailable={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+    expect(sidebarOrder().slice(2, 5)).toEqual(['Family therapy', 'Gina Gallardo', 'Farid Fuentes']);
   });
 
-  it('reorders inside a group by dropping on a row', () => {
+  it('applies the one sort to every group, not only to Recents', () => {
+    stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'name' }));
+    // Positions say Gina first; "Name" says Farid first, and "Name" is the sort.
+    const ginaFirst = { ...gina, group_position: 0 };
+    const faridSecond = { ...farid, group_position: 1 };
+    render(
+      <MemoryRouter>
+        <PatientsColumn
+          patients={{ status: 'ready', data: [ginaFirst, faridSecond, hugo, ines] }}
+          ordered={[ginaFirst, faridSecond, hugo, ines]}
+          activePatientId={null}
+          recency={new Map()}
+          pinnedIds={[]}
+          groups={[family, court]}
+          onSelect={vi.fn()}
+          onRetry={vi.fn()}
+          onSetArchived={vi.fn()}
+          onRename={vi.fn()}
+          onDelete={vi.fn()}
+          onTogglePin={vi.fn()}
+          onReorderPins={vi.fn()}
+          onOpenAll={vi.fn()}
+          onToggleCollapsed={vi.fn()}
+          collapsed={false}
+          onOpenSettings={vi.fn()}
+          onUnavailable={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+    expect(sidebarOrder().slice(2, 5)).toEqual(['Family therapy', 'Farid Fuentes', 'Gina Gallardo']);
+  });
+
+  it('reorders inside a group by dropping on a row, and switches the sort to "Manual"', () => {
+    const onSetGroupOrder = vi.fn();
     const onMoveIntoGroup = vi.fn();
-    renderDraggable(onMoveIntoGroup);
+    renderDraggable(onMoveIntoGroup, { onSetGroupOrder });
 
     dragOver(gina.id, farid.id);
 
-    // Onto the group's first row means "before it", which is position 0 — the
-    // index of the row she dropped on.
-    expect(onMoveIntoGroup).toHaveBeenCalledWith(gina, family.id, 0);
+    // The whole of every group, so the ones she did not touch keep the order
+    // they had on screen when the sort became "Manual".
+    expect(onSetGroupOrder).toHaveBeenCalledWith([
+      { id: family.id, patientIds: [gina.id, farid.id] },
+      { id: court.id, patientIds: [hugo.id] },
+    ]);
+    expect(onMoveIntoGroup).not.toHaveBeenCalled();
+    expect(storedSort()).toBe('manual');
   });
 
-  it('moves somebody into another group by dropping on one of its rows', () => {
+  it('shows the row in its new place while it is dragged, with no insertion line', () => {
+    renderDraggable(vi.fn());
+
+    drag('dragstart', screen.getByTestId(`patient-entry-${gina.id}`));
+    drag('dragover', screen.getByTestId(`patient-entry-${farid.id}`));
+
+    // The list itself says where it will land.
+    expect(sidebarOrder().slice(2, 5)).toEqual(['Family therapy', 'Gina Gallardo', 'Farid Fuentes']);
+    expect(document.querySelector('.patient-entry.is-drop-target')).toBeNull();
+    expect(APP_CSS).not.toMatch(/\.patient-entry\.is-drop-target/);
+  });
+
+  it('writes only the dragged group once the sort is already "Manual"', () => {
+    stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'manual' }));
+    const onSetGroupOrder = vi.fn();
+    renderDraggable(vi.fn(), { onSetGroupOrder });
+
+    dragOver(gina.id, farid.id);
+
+    expect(onSetGroupOrder).toHaveBeenCalledWith([{ id: family.id, patientIds: [gina.id, farid.id] }]);
+  });
+
+  it('moves somebody into another group by dropping anywhere on it, at the end', () => {
     const onMoveIntoGroup = vi.fn();
     renderDraggable(onMoveIntoGroup);
 
-    dragOver(ines.id, hugo.id);
+    drag('dragstart', screen.getByTestId(`patient-entry-${ines.id}`));
+    drag('dragover', screen.getByTestId(`patient-entry-${hugo.id}`), { clientX: 50, clientY: 60 });
 
-    expect(onMoveIntoGroup).toHaveBeenCalledWith(ines, court.id, 0);
+    // Over another group the section is outlined and the row says what a drop
+    // does, as Claude's "Move to" does (owner, 2026-09-27).
+    expect(screen.getByTestId(`section-group-${court.id}`).className).toContain('is-drop-target');
+    expect(screen.getByTestId('drag-cell').textContent).toBe('Move to Court-mandated');
+
+    drag('drop', screen.getByTestId(`patient-entry-${hugo.id}`));
+    expect(onMoveIntoGroup).toHaveBeenCalledWith(ines, court.id, null);
   });
 
   it('files somebody at the end of a group by dropping on its heading', () => {
     const onMoveIntoGroup = vi.fn();
     renderDraggable(onMoveIntoGroup);
-    // The drop target is the heading's **row**, which is inside the section —
-    // it is what carries the drag handlers, so a drop on the section's padding
-    // would not reach them.
     const heading = screen.getByTestId(`section-group-${court.id}`).querySelector('.sidebar-section-head');
 
     drag('dragstart', screen.getByTestId(`patient-entry-${ines.id}`));
     drag('dragover', heading as Element);
     drag('drop', heading as Element);
 
-    // No position: a heading has no row to aim at, so it means "the end".
     expect(onMoveIntoGroup).toHaveBeenCalledWith(ines, court.id, null);
   });
 
-  it('will not take a row dropped on Recents, whose order is her sort choice', () => {
+  it('takes somebody out of their group when they are dropped on Recents', () => {
+    const onMoveToGroup = vi.fn();
     const onMoveIntoGroup = vi.fn();
-    renderDraggable(onMoveIntoGroup);
-    // `ines` is the one in Recents — the others are filed, and a drop on a
-    // grouped row is exactly the move this is saying is allowed.
+    renderDraggable(onMoveIntoGroup, { onMoveToGroup });
     const recentsRow = screen.getByTestId(`patient-entry-${ines.id}`);
 
     drag('dragstart', screen.getByTestId(`patient-entry-${farid.id}`));
-    // A drop the browser is not even allowed to make: the row refuses to
-    // `preventDefault`, so the drop does not happen.
+    drag('dragover', recentsRow, { clientX: 50, clientY: 60 });
+    expect(screen.getByTestId('section-recents-list').className).toContain('is-drop-target');
+    expect(screen.getByTestId('drag-cell').textContent).toBe('Move to Recents');
+    drag('drop', recentsRow);
+
+    expect(onMoveToGroup).toHaveBeenCalledWith(farid, null);
+    expect(onMoveIntoGroup).not.toHaveBeenCalled();
+  });
+
+  it('refuses a Recents row dropped back on Recents, whose order is the sort', () => {
+    const onMoveToGroup = vi.fn();
+    const onMoveIntoGroup = vi.fn();
+    renderDraggable(onMoveIntoGroup, { onMoveToGroup });
+    const recentsRow = screen.getByTestId(`patient-entry-${ines.id}`);
+
+    drag('dragstart', recentsRow);
     drag('dragover', recentsRow);
     drag('drop', recentsRow);
 
+    expect(onMoveToGroup).not.toHaveBeenCalled();
     expect(onMoveIntoGroup).not.toHaveBeenCalled();
+    expect(screen.getByTestId('section-recents-list').className).not.toContain('is-drop-target');
+  });
+
+  it('forgets the dragged orders when she picks another sort', () => {
+    stored.set('apunta-sidebar-view-v1', JSON.stringify({ sort: 'manual' }));
+    const onClearGroupOrder = vi.fn();
+    renderDraggable(vi.fn(), { onClearGroupOrder });
+
+    fireEvent.click(screen.getByTestId('sidebar-view-options'));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Sort by/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Name' }));
+
+    expect(onClearGroupOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the view control once, on the topmost group and not on Recents', () => {
+    renderDraggable(vi.fn());
+
+    expect(screen.getAllByTestId('sidebar-view-options')).toHaveLength(1);
+    expect(
+      screen.getByTestId(`section-group-${family.id}`).querySelector('[data-testid="sidebar-view-options"]'),
+    ).not.toBeNull();
+  });
+
+  it('reorders a group from the keyboard with Alt and the arrows', () => {
+    const onSetGroupOrder = vi.fn();
+    renderDraggable(vi.fn(), { onSetGroupOrder });
+
+    fireEvent.keyDown(screen.getByTestId(`patient-row-${gina.id}`), { key: 'ArrowUp', altKey: true });
+
+    expect(onSetGroupOrder).toHaveBeenCalledWith([
+      { id: family.id, patientIds: [gina.id, farid.id] },
+      { id: court.id, patientIds: [hugo.id] },
+    ]);
   });
 
   it('lifts the name into a cell that follows the pointer', () => {

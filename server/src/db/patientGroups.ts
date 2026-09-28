@@ -87,3 +87,48 @@ export function setPatientGroupPosition(
   if (changed === 0) return undefined;
   return getPatientGroup(db, id);
 }
+
+/**
+ * Write the dragged order of one or more groups, all or nothing (owner,
+ * 2026-09-27). Each listed patient is filed under that group at its index; any
+ * other member of the group (archived, or hidden by a filter when she dragged)
+ * keeps its relative order after the listed ones, so no two rows share a
+ * position and a reorder can never tie with the order it replaced.
+ *
+ * Returns false, writing nothing, when a group or a patient does not exist.
+ */
+export function setPatientGroupOrder(
+  db: Database,
+  groups: readonly { readonly id: string; readonly patientIds: readonly string[] }[],
+): boolean {
+  const groupExists = db.prepare(`SELECT 1 FROM patient_groups WHERE id = ?`);
+  const patientExists = db.prepare(`SELECT 1 FROM patients WHERE id = ?`);
+  const others = db.prepare(
+    `SELECT id FROM patients WHERE group_id = ?
+      ORDER BY group_position IS NULL, group_position ASC, name COLLATE NOCASE ASC, id ASC`,
+  );
+  const place = db.prepare(`UPDATE patients SET group_id = ?, group_position = ? WHERE id = ?`);
+  const write = db.transaction((): boolean => {
+    for (const group of groups) {
+      if (groupExists.get(group.id) === undefined) return false;
+      if (group.patientIds.some((id) => patientExists.get(id) === undefined)) return false;
+    }
+    for (const group of groups) {
+      const listed = new Set(group.patientIds);
+      const rest = (others.all(group.id) as { id: string }[])
+        .map((row) => row.id)
+        .filter((id) => !listed.has(id));
+      [...listed, ...rest].forEach((id, index) => place.run(group.id, index, id));
+    }
+    return true;
+  });
+  return write();
+}
+
+/**
+ * Forget every dragged order inside groups, which is what choosing a sort other
+ * than "Manual" means (owner, 2026-09-27). Group membership is untouched.
+ */
+export function clearPatientGroupOrder(db: Database): void {
+  db.prepare(`UPDATE patients SET group_position = NULL WHERE group_position IS NOT NULL`).run();
+}

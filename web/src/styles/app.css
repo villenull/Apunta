@@ -3891,7 +3891,8 @@ select:disabled {
   min-height: var(--topbar-h);
   padding: var(--space-0) var(--field-inset);
   gap: var(--space-4);
-  justify-content: flex-start;
+  /* Wordmark left, panel toggle at the right edge (owner, 2026-09-27). */
+  justify-content: space-between;
 }
 
 .col-header-brand .brand-link {
@@ -4016,9 +4017,8 @@ select:disabled {
   margin-top: var(--space-24);
 }
 
-/* A group heading with a row dragged over it. The only heading that lights up:
-   Pinned and Recents are not places a row can be put, so they do not offer the
-   invitation (owner, 2026-09-27). */
+/* A group heading with another group's heading dragged over it: the group
+   would move above this one. */
 .sidebar-section-head.is-drop-target {
   background: var(--row-hover-bg);
   border-radius: var(--radius-sm);
@@ -4026,33 +4026,70 @@ select:disabled {
 }
 
 /*
- * The lifted cell (owner, 2026-09-27, after Claude's drag): a small raised card
- * that follows the pointer, carrying the name and nothing else. The browser's
- * own drag image is a translucent copy of the whole row, which reads as a picture
- * of a row rather than as the thing in her hand.
+ * A section a dragged patient would be moved into — another group, or Recents
+ * to come out of one (owner, 2026-09-27, after Claude's outlined group). The
+ * outline is drawn around the heading and its rows but not the gap above the
+ * heading: that `margin-top` collapses through the section, so it is outside
+ * the section's box.
+ */
+.sidebar-section {
+  position: relative;
+}
+
+.sidebar-section.is-drop-target::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-2));
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+}
+
+/*
+ * The lifted row (owner, 2026-09-27, after Claude's drag): the row itself,
+ * picked up where it was — same width, same place under the pointer — as a
+ * quiet dark pill with a person glyph and the name. The browser's own drag image
+ * is hidden, so this is the only thing that follows the pointer.
  *
  * `position: fixed` and portalled onto the body, because the list scrolls and a
  * cell clipped by its own scroll container would stop following the pointer at
- * the edge. Offset down and right of the pointer so it never sits under it, and
- * `pointer-events: none` so it can never be the drop target.
+ * the edge. `pointer-events: none` so it can never be the drop target.
  */
 .drag-cell {
   position: fixed;
   z-index: 70;
-  transform: translate(14px, 10px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  box-sizing: border-box;
+  height: var(--row-h);
   max-width: 320px;
-  padding: var(--space-5) var(--space-6);
+  padding: 0 var(--space-5);
   background: var(--surface);
-  color: var(--text-primary);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-modal);
+  color: var(--text-secondary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
   font-size: var(--text-md);
   white-space: nowrap;
+  pointer-events: none;
+}
+
+.drag-cell-name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0.92;
-  pointer-events: none;
+}
+
+/* Over somewhere it would be moved to, it says so and nothing else, centred on
+   the pointer like Claude's "Move to" label. */
+.drag-cell.is-move {
+  transform: translate(-50%, -50%);
+  width: auto;
+  height: auto;
+  padding: var(--space-3) var(--space-5);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
 }
 
 .sidebar-section-label {
@@ -4337,10 +4374,6 @@ select:disabled {
 
 .patient-entry.is-dragging {
   opacity: 0.4;
-}
-
-.patient-entry.is-drop-target {
-  box-shadow: inset 0 2px 0 var(--accent);
 }
 
 /*
@@ -5036,44 +5069,67 @@ body.is-resizing-sidebar {
 }
 
 /*
- * The language chooser (owner, 2026-09-27, after Claude's): a window of names,
- * not a settings row. Two lines per option because someone who has landed in
- * the wrong language is reading the English line to find their way out.
+ * The language chooser, laid out as Claude's is (owner, 2026-09-27): a sans
+ * title over a full-width rule, then a three-column grid of borderless cells,
+ * each the language's own name over its name in the reading language. Every
+ * cell is the same two lines, so every cell is the same height. The tick sits
+ * at the end of the first line, out of the way of the name.
  */
-.language-modal {
-  max-width: 520px;
+.modal.language-modal {
+  /* Wide enough that the longest name and its tick share a line in a third. */
+  max-width: 600px;
+  padding: 0;
+}
+
+.language-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-8);
+  border-bottom: 0.5px solid var(--border);
+}
+
+.language-title {
+  margin: 0;
+  font-family: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--text-primary);
+}
+
+/* The close control is a bare glyph, as Claude's is. */
+.language-head .icon-btn {
+  border-color: transparent;
+  background: transparent;
+}
+
+.language-head .icon-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
 }
 
 .language-grid {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: var(--space-8);
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
 .language-option {
-  position: relative;
   display: block;
   width: 100%;
   text-align: left;
   font: inherit;
   color: var(--text-primary);
   background: none;
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius);
-  /*
-   * A fixed height, so **no cell ever changes size**. The tick used to sit in
-   * the flow above the name, which made whichever cell she had chosen a line
-   * taller than the one she had not — the grid looked like it was reacting to
-   * her choice. The minimum is the two-line height (endonym plus the English
-   * name), so the one-line cell is padded to match rather than the two-line one
-   * being cut.
-   */
-  min-height: 58px;
-  /* Room on the right for the tick, so a long name never runs under it. */
-  padding: var(--space-6) 28px var(--space-6) var(--space-7);
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
   cursor: pointer;
 }
 
@@ -5082,11 +5138,9 @@ body.is-resizing-sidebar {
   background: var(--row-hover-bg);
 }
 
-/* The current one is marked by a tick and a quiet fill, not by a bright
-   border: she is choosing, not confirming. */
+/* The current one: a quiet fill and the tick, nothing louder. */
 .language-option.is-current {
-  background: var(--row-selected-bg, var(--row-hover-bg));
-  border-color: var(--border-strong);
+  background: var(--row-hover-bg);
 }
 
 .language-option:disabled {
@@ -5094,32 +5148,40 @@ body.is-resizing-sidebar {
   opacity: 0.7;
 }
 
-/*
- * The tick, in the top-right corner and **out of the flow** (owner,
- * 2026-09-27). In the flow it was a line of its own above the name, so choosing
- * a language made that cell grow — the one thing a picker must not do while you
- * are looking at the other options. Absolute, it marks the choice without
- * changing the thing it marks.
- */
-.language-option-check {
-  position: absolute;
-  top: var(--space-6);
-  right: var(--space-6);
-  color: var(--accent);
+.language-option-endonym {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-md);
+  line-height: 18px;
 }
 
-/* The endonym is the answer; the English name under it is the way to find it. */
-.language-option-endonym {
-  display: block;
-  font-size: var(--text-md);
-  font-weight: 500;
+.language-option-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.language-option-check {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--text-muted);
 }
 
 .language-option-english {
   display: block;
-  margin-top: 2px;
   font-size: var(--text-sm);
+  line-height: 16px;
   color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.language-modal .settings-row-note,
+.language-modal .form-error {
+  margin: 0 var(--space-8) var(--space-8);
 }
 
 .settings-modal {

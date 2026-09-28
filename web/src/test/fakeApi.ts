@@ -777,6 +777,32 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         return json(group, 201);
       }
 
+      // The dragged order, whole groups at once, as the server writes it:
+      // listed patients first at 0..n, then the group's other members.
+      if (path === '/api/patient-group-order' && method === 'PUT') {
+        const entries = Array.isArray(body['groups'])
+          ? (body['groups'] as { id: string; patient_ids: string[] }[])
+          : [];
+        if (entries.some((entry) => !state.groups.some((group) => group.id === entry.id))) {
+          return apiError(404, 'not_found', 'Group not found');
+        }
+        for (const entry of entries) {
+          const rest = state.patients
+            .filter((patient) => patient.group_id === entry.id && !entry.patient_ids.includes(patient.id))
+            .sort((a, b) => (a.group_position ?? Infinity) - (b.group_position ?? Infinity));
+          const order = [...entry.patient_ids, ...rest.map((patient) => patient.id)];
+          state.patients = state.patients.map((patient) => {
+            const index = order.indexOf(patient.id);
+            return index < 0 ? patient : { ...patient, group_id: entry.id, group_position: index };
+          });
+        }
+        return new Response(null, { status: 204 });
+      }
+      if (path === '/api/patient-group-order' && method === 'DELETE') {
+        state.patients = state.patients.map((patient) => ({ ...patient, group_position: null }));
+        return new Response(null, { status: 204 });
+      }
+
       const groupMatch = /^\/api\/patient-groups\/([^/]+)$/.exec(path);
       if (groupMatch && method === 'PATCH') {
         const group = state.groups.find((candidate) => candidate.id === groupMatch[1]);

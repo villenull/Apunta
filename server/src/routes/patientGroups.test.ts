@@ -295,3 +295,125 @@ describe('the order of her groups', () => {
     expect(PatientGroupSchema.parse(moved.json())).toMatchObject({ name: 'Court-mandated', position: 5 });
   });
 });
+
+/**
+ * The dragged order inside groups (owner, 2026-09-27). One call writes whole
+ * groups 0..n in a transaction, because a reorder written row by row could tie
+ * with the order it replaced — the dropped row took the number of the row it
+ * was dropped on, the two tied, and nothing visibly moved.
+ */
+describe('/api/patient-group-order', () => {
+  async function listed(): Promise<
+    { name: string; group_id: string | null; group_position: number | null }[]
+  > {
+    const response = await harness.app.inject({ method: 'GET', url: '/api/patients?include_archived=1' });
+    return (
+      response.json() as {
+        patients: { name: string; group_id: string | null; group_position: number | null }[];
+      }
+    ).patients;
+  }
+
+  async function file(patientId: string, groupId: string, position: number | null): Promise<void> {
+    const response = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/patients/${patientId}`,
+      payload: { group_id: groupId, group_position: position },
+    });
+    expect(response.statusCode).toBe(200);
+  }
+
+  it('writes the listed order 0..n, so the moved row cannot tie with the one it passed', async () => {
+    const group = await makeGroup('Court-mandated');
+    const john = await seedPatient(harness.app, 'John Smith');
+    const ana = await seedPatient(harness.app, 'Ana Torres');
+    await file(john.id, group.id, 0);
+    await file(ana.id, group.id, 1);
+
+    const response = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/patient-group-order',
+      payload: { groups: [{ id: group.id, patient_ids: [ana.id, john.id] }] },
+    });
+
+    expect(response.statusCode).toBe(204);
+    const rows = await listed();
+    expect(rows.find((row) => row.name === 'Ana Torres')?.group_position).toBe(0);
+    expect(rows.find((row) => row.name === 'John Smith')?.group_position).toBe(1);
+  });
+
+  it('keeps members she did not list, after the listed ones', async () => {
+    const group = await makeGroup('Family therapy');
+    const john = await seedPatient(harness.app, 'John Smith');
+    const ana = await seedPatient(harness.app, 'Ana Torres');
+    const maria = await seedPatient(harness.app, 'Maria Ruiz');
+    await file(john.id, group.id, 0);
+    await file(ana.id, group.id, 1);
+    // Maria is in a group too but was hidden (archived, filtered) when she dragged.
+    await file(maria.id, group.id, 2);
+
+    await harness.app.inject({
+      method: 'PUT',
+      url: '/api/patient-group-order',
+      payload: { groups: [{ id: group.id, patient_ids: [ana.id, john.id] }] },
+    });
+
+    const rows = await listed();
+    expect(rows.find((row) => row.name === 'Maria Ruiz')).toMatchObject({
+      group_id: group.id,
+      group_position: 2,
+    });
+  });
+
+  it('files a listed patient under the group, and writes nothing when a group does not exist', async () => {
+    const group = await makeGroup('Family therapy');
+    const john = await seedPatient(harness.app, 'John Smith');
+
+    const missing = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/patient-group-order',
+      payload: {
+        groups: [
+          { id: group.id, patient_ids: [john.id] },
+          { id: '0198c0f0-0000-7000-8000-00000000ffff', patient_ids: [] },
+        ],
+      },
+    });
+    expect(missing.statusCode).toBe(404);
+    expect((await listed()).find((row) => row.name === 'John Smith')?.group_id).toBeNull();
+
+    const ok = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/patient-group-order',
+      payload: { groups: [{ id: group.id, patient_ids: [john.id] }] },
+    });
+    expect(ok.statusCode).toBe(204);
+    expect((await listed()).find((row) => row.name === 'John Smith')).toMatchObject({
+      group_id: group.id,
+      group_position: 0,
+    });
+  });
+
+  it('rejects a body that is not an order', async () => {
+    const response = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/patient-group-order',
+      payload: { groups: [] },
+    });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('forgets every dragged order on DELETE, and leaves everyone in their group', async () => {
+    const group = await makeGroup('Family therapy');
+    const john = await seedPatient(harness.app, 'John Smith');
+    await file(john.id, group.id, 0);
+
+    const response = await harness.app.inject({ method: 'DELETE', url: '/api/patient-group-order' });
+
+    expect(response.statusCode).toBe(204);
+    expect((await listed()).find((row) => row.name === 'John Smith')).toMatchObject({
+      group_id: group.id,
+      group_position: null,
+    });
+  });
+});

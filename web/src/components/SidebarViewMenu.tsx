@@ -183,6 +183,14 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
       const target = event.target as Node;
       if (panelRef.current?.contains(target) === true) return;
       if (buttonRef.current?.contains(target) === true) return;
+      /*
+       * The options panel is a **second** portal, beside the first, so it is
+       * not inside `panelRef`. Without this a press on any option counted as
+       * "outside", closed the menu on pointerdown and unmounted the option
+       * before its click arrived — so no choice in the menu did anything
+       * (owner, 2026-09-27). Tests that fired a bare `click` never saw it.
+       */
+      if (sectionRef.current?.contains(target) === true) return;
       close();
     }
     document.addEventListener('keydown', onKeyDown);
@@ -317,13 +325,17 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
         { value: 'name', label: t('patients.sortName') },
         { value: 'created', label: t('patients.sortCreated') },
         { value: 'recent', label: t('patients.sortRecent') },
+        // Her dragged order inside each group (owner, 2026-09-27).
+        { value: 'manual', label: t('patients.sortManual') },
       ] as const,
       current: () =>
         view.sort === 'name'
           ? t('patients.sortName')
           : view.sort === 'created'
             ? t('patients.sortCreated')
-            : t('patients.sortRecent'),
+            : view.sort === 'manual'
+              ? t('patients.sortManual')
+              : t('patients.sortRecent'),
     },
   ];
 

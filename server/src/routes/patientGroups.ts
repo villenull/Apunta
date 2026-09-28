@@ -1,5 +1,6 @@
 import {
   CreatePatientGroupRequestSchema,
+  PatientGroupOrderRequestSchema,
   UpdatePatientGroupRequestSchema,
   type PatientGroup,
   type PatientGroupListResponse,
@@ -8,11 +9,13 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 
 import {
+  clearPatientGroupOrder,
   createPatientGroup,
   findPatientGroupByName,
   getPatientGroup,
   listPatientGroups,
   renamePatientGroup,
+  setPatientGroupOrder,
   setPatientGroupPosition,
 } from '../db/patientGroups.js';
 import { conflict, notFound } from '../http/errors.js';
@@ -22,7 +25,7 @@ import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
  * Patient groups: the named lists she files patients under from the "Move to
  * group" submenu (owner, 2026-09-27).
  *
- * Three routes, deliberately. There is no DELETE, because there is nowhere in
+ * Three routes for the groups themselves, deliberately. There is no DELETE of a group, because there is nowhere in
  * the UI to ask for one: she creates a group from the submenu and can rename it,
  * and a patient can always be moved out of it. An endpoint nothing can reach is
  * surface without a reason, so the absence is recorded in the handoff as a known
@@ -33,6 +36,27 @@ import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
  * promise real under any interleaving.
  */
 export function registerPatientGroupRoutes(app: FastifyInstance, db: Database): void {
+  /**
+   * The order she dragged patients into, for whole groups at once (owner,
+   * 2026-09-27). One call and one transaction, because a reorder written row by
+   * row can tie with the order it replaced, and then nothing visibly moves.
+   */
+  app.put('/api/patient-group-order', async (request, reply): Promise<void> => {
+    const { groups } = parseBody(PatientGroupOrderRequestSchema, request.body);
+    const written = setPatientGroupOrder(
+      db,
+      groups.map((group) => ({ id: group.id, patientIds: group.patient_ids })),
+    );
+    if (!written) throw notFound('errors.not_found.group');
+    reply.code(204);
+  });
+
+  /** Choosing any sort but "Manual" forgets the dragged orders (owner, 2026-09-27). */
+  app.delete('/api/patient-group-order', async (_request, reply): Promise<void> => {
+    clearPatientGroupOrder(db);
+    reply.code(204);
+  });
+
   app.get('/api/patient-groups', async (): Promise<PatientGroupListResponse> => {
     return { groups: listPatientGroups(db) };
   });

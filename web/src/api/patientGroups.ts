@@ -3,10 +3,11 @@ import {
   PatientGroupSchema,
   type CreatePatientGroupRequest,
   type PatientGroup,
+  type PatientGroupOrderRequest,
   type UpdatePatientGroupRequest,
 } from '@apunta/shared';
 
-import { requestJson } from './client.js';
+import { requestJson, requestVoid } from './client.js';
 
 /**
  * The named lists patients are filed under (owner, 2026-09-27). Created from
@@ -43,4 +44,17 @@ export async function updatePatientGroup(
     method: 'PATCH',
     body: input,
   });
+}
+
+/**
+ * Save the order she dragged patients into, whole groups at a time (owner,
+ * 2026-09-27). The server writes every position in one transaction.
+ */
+export async function setPatientGroupOrder(input: PatientGroupOrderRequest): Promise<void> {
+  return requestVoid('/api/patient-group-order', { method: 'PUT', body: input });
+}
+
+/** Forget every dragged order: what choosing a sort other than "Manual" means. */
+export async function clearPatientGroupOrder(): Promise<void> {
+  return requestVoid('/api/patient-group-order', { method: 'DELETE' });
 }

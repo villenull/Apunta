@@ -4,6 +4,13 @@
 `docs/v2/state/PROGRESS.json` for current status on `feature/v2`. The latest
 owner-reviewed UI batch includes the lighter teal, add-patient modal and sidebar
 motion; synthetic preview is on port 7811. The live-v1 record below is unchanged.
+**Sidebar batch (2026-09-28, owner-directed):** `docs/v2/owner/UI-BACKLOG.md`
+#1–#4 — panel toggle at the column's right edge, Claude-style drag (lifted pill,
+"Move to …", outlined target, live reorder preview, drop on Recents ungroups),
+one ⇅ control whose sort covers every section plus "Manual" (dragged order saved
+whole-group via `PUT/DELETE /api/patient-group-order`), drops applied locally
+with a quiet refetch, the view menu's options panel accepting real pointer
+presses, and a Claude-layout language dialog. Owner preview: port 7868.
 
 **Updated 2026-09-24.** Live runs `5573afb` (welcome-search home, patient-name notes header, 17% list columns) with the owner's revised
 progress instructions (hash `23135cae…`, verified by

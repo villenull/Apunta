@@ -1621,6 +1621,10 @@ export const en = {
   'patients.groupByGroups': { text: 'My groups' },
   'patients.groupByNone': { text: 'Nothing' },
   'patients.sortLabel': { text: 'Sort by' },
+  /** Her dragged order inside each group (owner, 2026-09-27). */
+  'patients.sortManual': { text: 'Manual' },
+  /** What the lifted row says over a group or Recents it would be moved to. */
+  'patients.dragMoveTo': { text: 'Move to {name}' },
   'patients.sortCreated': { text: 'Date created' },
   'patients.recents': { text: 'Recents' },
   /** The control beside "Recents" and the two orders it offers. */

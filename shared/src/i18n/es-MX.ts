@@ -1173,6 +1173,10 @@ export const esMX = {
   'patients.groupByGroups': { text: 'Mis grupos' },
   'patients.groupByNone': { text: 'Nada' },
   'patients.sortLabel': { text: 'Ordenar por' },
+  /** Her dragged order inside each group (owner, 2026-09-27). */
+  'patients.sortManual': { text: 'Manual' },
+  /** What the lifted row says over a group or Recents it would be moved to. */
+  'patients.dragMoveTo': { text: 'Mover a {name}' },
   'patients.sortCreated': { text: 'Fecha de creación' },
   'patients.recents': { text: 'Recientes' },
   'patients.sortList': {

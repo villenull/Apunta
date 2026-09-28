@@ -10,6 +10,8 @@ import {
   listPatients,
   NETWORK_ERROR_MESSAGE,
   createPatientGroup,
+  clearPatientGroupOrder,
+  setPatientGroupOrder,
   updatePatientGroup,
   setPatientArchived,
   setPatientGroup,
@@ -298,12 +300,40 @@ export function Workspace(): React.JSX.Element {
    * nothing moving would look like the app ignoring her.
    */
   async function handleMoveToGroup(target: PatientListItem, groupId: string | null): Promise<void> {
+    placeLocally(new Map([[target.id, { group_id: groupId, group_position: null }]]));
+    await saveThenRefresh(() => setPatientGroup(target.id, groupId));
+  }
+
+  /**
+   * Put patients where she dropped them **now**, in the list already on screen,
+   * before the server has answered (owner, 2026-09-27). Waiting for the answer
+   * and re-reading the list meant the sidebar blanked to "Loading…" and redrew
+   * every name on each drag, with the old order flashing back in between.
+   */
+  function placeLocally(
+    changes: ReadonlyMap<string, { group_id: string | null; group_position: number | null }>,
+  ): void {
+    patients.update((current) =>
+      current.map((candidate) => {
+        const change = changes.get(candidate.id);
+        return change === undefined ? candidate : { ...candidate, ...change };
+      }),
+    );
+  }
+
+  /**
+   * Save, then re-read quietly so the list stays as it is unless the server
+   * disagrees. A failure is said out loud and the list is read back properly,
+   * so the local guess never outlives the error.
+   */
+  async function saveThenRefresh(save: () => Promise<unknown>): Promise<void> {
     try {
-      await setPatientGroup(target.id, groupId);
+      await save();
       setActionError(null);
-      reloadPatients();
+      patients.refresh();
     } catch (thrown) {
       setActionError(errorMessage(thrown));
+      patients.refresh();
     }
   }
 
@@ -330,16 +360,35 @@ export function Workspace(): React.JSX.Element {
     groupId: string,
     position: number | null,
   ): Promise<void> {
-    try {
-      await updatePatient(target.id, {
-        group_id: groupId,
-        group_position: position ?? endOfGroup(groupId),
-      });
-      setActionError(null);
-      reloadPatients();
-    } catch (thrown) {
-      setActionError(errorMessage(thrown));
-    }
+    const group_position = position ?? endOfGroup(groupId);
+    placeLocally(new Map([[target.id, { group_id: groupId, group_position }]]));
+    await saveThenRefresh(() => updatePatient(target.id, { group_id: groupId, group_position }));
+  }
+
+  /**
+   * Her dragged order for whole groups (owner, 2026-09-27), written in one
+   * transaction by the server and then read back, like every other move here.
+   */
+  async function handleSetGroupOrder(order: { id: string; patientIds: string[] }[]): Promise<void> {
+    if (order.length === 0) return;
+    placeLocally(
+      new Map(
+        order.flatMap((entry) =>
+          entry.patientIds.map((id, index) => [id, { group_id: entry.id, group_position: index }] as const),
+        ),
+      ),
+    );
+    await saveThenRefresh(() =>
+      setPatientGroupOrder({
+        groups: order.map((entry) => ({ id: entry.id, patient_ids: entry.patientIds })),
+      }),
+    );
+  }
+
+  /** Choosing a sort other than "Manual" forgets every dragged order. */
+  async function handleClearGroupOrder(): Promise<void> {
+    patients.update((current) => current.map((candidate) => ({ ...candidate, group_position: null })));
+    await saveThenRefresh(clearPatientGroupOrder);
   }
 
   /**
@@ -529,6 +578,12 @@ export function Workspace(): React.JSX.Element {
           }}
           onMoveIntoGroup={(target, groupId, position) => {
             void handleMoveIntoGroup(target, groupId, position);
+          }}
+          onSetGroupOrder={(order) => {
+            void handleSetGroupOrder(order);
+          }}
+          onClearGroupOrder={() => {
+            void handleClearGroupOrder();
           }}
           onOpenAll={() => {
             navigate('/patients');

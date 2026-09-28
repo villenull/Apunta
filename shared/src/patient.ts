@@ -107,3 +107,17 @@ export const UpdatePatientGroupRequestSchema = z
     message: 'Provide at least one field to update',
   });
 export type UpdatePatientGroupRequest = z.infer<typeof UpdatePatientGroupRequestSchema>;
+
+/**
+ * The patients of one or more groups in the order she dragged them (owner,
+ * 2026-09-27). Each listed patient is filed under that group at that index, in
+ * one transaction, so a reorder is never half-written. Members she did not list
+ * (archived, filtered out) follow the listed ones in their existing order.
+ */
+export const PatientGroupOrderRequestSchema = z.object({
+  groups: z
+    .array(z.object({ id: IdSchema, patient_ids: z.array(IdSchema).max(10_000) }))
+    .min(1)
+    .max(1_000),
+});
+export type PatientGroupOrderRequest = z.infer<typeof PatientGroupOrderRequestSchema>;
