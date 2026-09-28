@@ -1,0 +1,13 @@
+{
+  "$comment": "Lane 2's own typecheck. This directory is not a workspace, so `npm run typecheck` does not cover it: run `npx tsc -p scratch/claude-import-structure/tsconfig.json`. It includes the seam test, which imports two functions from `server/src/import/claude.ts` read-only; the server keeps its own configuration for its own sources.",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.ts"],
+  "exclude": []
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Apunta capture</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <h1>Apunta capture</h1>
+    <p class="lede">
+      Exports the signed-in account's own conversations to a file Apunta can read. Nothing leaves this
+      browser.
+    </p>
+
+    <section>
+      <h2>1. Transport</h2>
+      <div class="row">
+        <label for="mode">Mode</label>
+        <select id="mode">
+          <option value="mock">Offline mock (synthetic account, no network)</option>
+          <option value="live">Live (same-origin request from a signed-in page)</option>
+        </select>
+      </div>
+      <p class="note" id="mode-note"></p>
+    </section>
+
+    <section>
+      <h2>2. Capture</h2>
+      <div class="row">
+        <label for="organization">Organization id</label>
+        <input id="organization" type="text" spellcheck="false" placeholder="read from /api/organizations" />
+      </div>
+      <div class="row">
+        <button id="start" type="button">Start capture</button>
+        <button id="run-here" type="button" class="secondary">Run here instead</button>
+      </div>
+      <p class="note" id="status">Not started.</p>
+      <progress id="progress" max="1" value="0" hidden></progress>
+    </section>
+
+    <section>
+      <h2>3. Verdict</h2>
+      <dl>
+        <dt>Status</dt>
+        <dd id="verdict">—</dd>
+        <dt>Conversations</dt>
+        <dd id="counts">—</dd>
+        <dt>Digest</dt>
+        <dd id="digest">—</dd>
+      </dl>
+      <div id="gaps"></div>
+      <div class="row" id="acknowledge-row" hidden>
+        <label for="acknowledge">
+          <input id="acknowledge" type="checkbox" />
+          I have read the gaps above, and I want this file anyway.
+        </label>
+      </div>
+      <div class="row">
+        <button id="save" type="button" disabled>Save conversations.json</button>
+        <button id="save-manifest" type="button" class="secondary" disabled>Save manifest</button>
+      </div>
+      <p class="note">
+        The file is what Apunta's Settings screen opens. The manifest is what says whether it is worth opening
+        — a file cannot report what it lost.
+      </p>
+    </section>
+
+    <section>
+      <h2>Installing this for the therapist</h2>
+      <p class="note">
+        Not this. Loading unpacked is developer mode, and it is authorized for research only. A therapist
+        install needs a Chrome Web Store listing, which is a separate decision and is not made here.
+      </p>
+    </section>
+
+    <script src="capture-core.js"></script>
+    <script src="mock-account.js"></script>
+    <script src="panel.js"></script>
+  </body>
+</html>

@@ -1,0 +1,172 @@
+{
+  "synthetic": true,
+  "reference_date": "2026-09-27",
+  "timezone": "America/Mexico_City",
+  "eligibility_months": 3,
+  "window": {
+    "from": "2026-06-27",
+    "to": "2026-09-27"
+  },
+  "counts": {
+    "conversations": 11,
+    "messages": 40,
+    "live_branch_messages": 39,
+    "abandoned_messages": 1,
+    "identities": 11,
+    "patients": 6,
+    "sessions": 16,
+    "notes": 15,
+    "live_notes": 14,
+    "new_notes": 12,
+    "decisions": 1,
+    "errors": 0,
+    "warnings": 3,
+    "superseded": 1,
+    "out_of_scope": 2
+  },
+  "warnings_by_code": {
+    "injected_source_text": 1,
+    "session_date_far_from_chat": 2
+  },
+  "decisions": [
+    {
+      "kind": "date",
+      "subject": "ivan_petrov",
+      "question_mentions": "date"
+    }
+  ],
+  "patients": [
+    {
+      "identity_key": "ana_ruiz",
+      "name": "Ana Ruiz",
+      "eligible": true,
+      "conversations": ["conv-ana-1", "conv-ana-2"],
+      "session_dates": ["2025-03-11", "2026-07-02", "2026-08-20", "2026-09-10"],
+      "in_window_sessions": 3,
+      "history_sessions": 4,
+      "new_notes": 4
+    },
+    {
+      "identity_key": "maria_lopez",
+      "name": "María López",
+      "eligible": true,
+      "conversations": ["conv-maria-1", "conv-maria-2"],
+      "session_dates": ["2026-06-26", "2026-06-27", "2026-08-01", "2026-08-12"],
+      "in_window_sessions": 3,
+      "history_sessions": 4,
+      "new_notes": 4
+    },
+    {
+      "identity_key": "maria_fernanda",
+      "name": "María Fernanda Solís",
+      "eligible": true,
+      "conversations": ["conv-maria-2"],
+      "session_dates": ["2026-08-12"],
+      "in_window_sessions": 1,
+      "history_sessions": 1,
+      "new_notes": 1
+    },
+    {
+      "identity_key": "diego_ramos",
+      "name": "Diego Ramos",
+      "eligible": true,
+      "conversations": ["conv-diego"],
+      "session_dates": ["2026-09-01"],
+      "in_window_sessions": 1,
+      "history_sessions": 1,
+      "new_notes": 1
+    },
+    {
+      "identity_key": "tomas_ibarra",
+      "name": "Tomás Ibarra",
+      "eligible": true,
+      "conversations": ["conv-tomas"],
+      "session_dates": ["2026-08-28"],
+      "in_window_sessions": 1,
+      "history_sessions": 1,
+      "new_notes": 1
+    },
+    {
+      "identity_key": "malcolm_reyes",
+      "name": "Malcolm Reyes",
+      "eligible": true,
+      "conversations": ["conv-malicious"],
+      "session_dates": ["2026-09-03"],
+      "in_window_sessions": 1,
+      "history_sessions": 1,
+      "new_notes": 1
+    },
+    {
+      "identity_key": "ivan_petrov",
+      "name": "Ivan Petrov",
+      "eligible": false,
+      "conversations": ["conv-ivan"],
+      "session_dates": [null],
+      "in_window_sessions": 0,
+      "history_sessions": 1,
+      "new_notes": 0
+    },
+    {
+      "identity_key": "petra_vogel",
+      "name": "Petra Vogel",
+      "eligible": false,
+      "conversations": ["conv-petra-old"],
+      "session_dates": ["2025-06-18"],
+      "in_window_sessions": 0,
+      "history_sessions": 1,
+      "new_notes": 0
+    }
+  ],
+  "not_patients": [
+    {
+      "identity_key": "rosa_hernandez",
+      "role": "relative_mention",
+      "new_notes": 0
+    },
+    {
+      "identity_key": "arrendamiento",
+      "role": "not_a_patient",
+      "new_notes": 0
+    },
+    {
+      "identity_key": "masa_madre",
+      "role": "not_a_patient",
+      "new_notes": 0
+    }
+  ],
+  "zero_cross_patient_merges": true,
+  "uncovered": [],
+  "untouched_conversations": [],
+  "alternative_reference_dates": [
+    {
+      "reference_date": "2026-08-31",
+      "window": {
+        "from": "2026-05-31",
+        "to": "2026-08-31"
+      },
+      "clamped_from": null,
+      "eligible": ["ana_ruiz", "maria_lopez", "maria_fernanda", "tomas_ibarra"],
+      "note": "The window closes on 31 August, so Diego (1 September) and Malcolm (3 September) have not happened yet and do not qualify. Ana's 10 September session is in the future; her two July and August sessions are not, so she still qualifies on her whole history."
+    },
+    {
+      "reference_date": "2028-02-29",
+      "window": {
+        "from": "2027-11-29",
+        "to": "2028-02-29"
+      },
+      "clamped_from": null,
+      "eligible": [],
+      "note": "Leap day: three months back is 29 November 2027, not 28 February."
+    },
+    {
+      "reference_date": "2026-05-31",
+      "window": {
+        "from": "2026-02-28",
+        "to": "2026-05-31"
+      },
+      "clamped_from": "2026-02-31",
+      "eligible": [],
+      "note": "31 May minus three months wants 31 February; the window opens on 28 February and 2026 is not a leap year."
+    }
+  ]
+}

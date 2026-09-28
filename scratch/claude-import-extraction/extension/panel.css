@@ -1,0 +1,109 @@
+/* panel.css — plain, local, no external font and no CDN, because an extension
+   that fetches anything at render time is an extension that can leak. */
+:root {
+  color-scheme: light dark;
+  --ink: #1b1b1f;
+  --paper: #fbfaf7;
+  --line: #d8d4cc;
+  --accent: #1f5f5b;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  padding: 12px 14px 18px;
+  width: 380px;
+  font:
+    13px/1.45 system-ui,
+    sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+h1 {
+  margin: 0 0 2px;
+  font-size: 15px;
+}
+h2 {
+  margin: 14px 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+.lede,
+.note {
+  margin: 4px 0;
+  opacity: 0.75;
+  font-size: 12px;
+}
+section {
+  border-top: 1px solid var(--line);
+  padding-top: 2px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+label {
+  flex: 0 0 96px;
+  font-size: 12px;
+}
+select,
+input[type='text'] {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  padding: 3px 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+}
+button {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+button.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+button[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+progress {
+  width: 100%;
+  height: 6px;
+}
+dl {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 2px 8px;
+  margin: 4px 0;
+}
+dt {
+  font-size: 12px;
+  opacity: 0.7;
+}
+dd {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+ul {
+  margin: 4px 0;
+  padding-left: 18px;
+  max-height: 140px;
+  overflow: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+}

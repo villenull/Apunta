@@ -470,3 +470,14 @@ Coordinator read safety and transaction diff and reran database suite on Node24:
 ### 2026-09-27 — P5.2 approved
 
 Independent review APPROVE, V1/V2 rerun exit0 (64db/2093fulltests, lint/typecheck). Coordinator previously reran64database tests and read safety/transaction wiring. Exactly five source files in scope. Archived reviewer0b85702b. Nonblocking raw retention error for damaged safety directory and inaccurate rename comment recorded in review, no guard change. Reviewer interpreted b779edbe as a git object; it was the author agent ID, base88ef838 was correct. Hash freeze verification still valid. P5.2 APPROVED; source integration follows.
+
+
+### 2026-09-28 — orchestrator handover, strays cleared, model-study evidence committed
+
+New coordinator session took over after the previous one exhausted its budget. No source lane activity: the Opus UI owner's in-flight batch remains uncommitted in the working tree and was left untouched. Pending permissions at handover: none.
+
+Archived after processing their handoffs: independent protocol/result auditor 81df21f (lane complete, both review files final), blind bilingual quality reviewer de4b8cb9 (wrote `docs/v2/evidence/MODEL-STUDY/blind-quality-review.md` over 24 cases / 72 samples, verdict exploratory and model-only), the pre-v2 UI strays 02edb6b0 and the prior orchestrator 86720f2. Children of the archived orchestrator were verified still active after archiving, so no running writer was interrupted.
+
+Committed the previously untracked model-study and Claude-import evidence (execution, results, fable-execution, blind quality review, both independent audits, the Fable addendum, the import feasibility/prototype reports and the two `scratch/` prototype trees). The blind review's headline numbers: gold coverage 341/498, 26/72 samples complete, 13/72 with a demonstrated critical invention; three instrument defects recorded for any future round. The Fable addendum records the cumulative repair-pass count (15 against a cap of 2) and the arm-G identity defect; no comparative statement about Fable is publishable yet.
+
+Model executor 490ebfe continues the released G Track1 batch (72 case-runs) and the six-arm refine rerun (144 case-runs), each invocation gated on model identity before the next.

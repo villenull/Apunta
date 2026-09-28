@@ -1,0 +1,666 @@
+{
+  "proposal_format": "apunta.claude-import.proposal",
+  "version": 1,
+  "prompt": {
+    "id": "apunta.claude.prepare",
+    "version": "1",
+    "sha256": "9dac99d22d517a660249501dd3da676993dd5374fd8c7308c472ae4814d071da"
+  },
+  "produced_by": {
+    "kind": "human",
+    "label": "hand-authored fixture, no model involved",
+    "model": null,
+    "account": "none"
+  },
+  "context": {
+    "reference_date": "2026-09-27",
+    "timezone": "America/Mexico_City",
+    "eligibility_months": 3
+  },
+  "scope": null,
+  "identities": [
+    {
+      "identity_key": "ana_ruiz",
+      "display_name": "Ana Ruiz",
+      "aliases": ["Ana"],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "a1-01",
+          "quote": "La sesión con Ana Ruiz"
+        },
+        {
+          "message_id": "a2-01",
+          "quote": "Session with Ana Ruiz"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "maria_lopez",
+      "display_name": "María López",
+      "aliases": ["María"],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "m1-01",
+          "quote": "María López"
+        },
+        {
+          "message_id": "m2-01",
+          "quote": "María López, que ya viene conmigo"
+        }
+      ],
+      "same_name_as": ["maria_fernanda"],
+      "disambiguation": {
+        "kind": "distinct_person",
+        "evidence": [
+          {
+            "message_id": "m2-01",
+            "quote": "que ya viene conmigo"
+          }
+        ]
+      }
+    },
+    {
+      "identity_key": "maria_fernanda",
+      "display_name": "María Fernanda Solís",
+      "aliases": ["María"],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "m2-03",
+          "quote": "María Fernanda Solís"
+        }
+      ],
+      "same_name_as": ["maria_lopez"],
+      "disambiguation": {
+        "kind": "distinct_person",
+        "evidence": [
+          {
+            "message_id": "m2-03",
+            "quote": "Es una paciente distinta."
+          }
+        ]
+      }
+    },
+    {
+      "identity_key": "diego_ramos",
+      "display_name": "Diego Ramos",
+      "aliases": [],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "d1-01",
+          "quote": "Diego Ramos"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "tomas_ibarra",
+      "display_name": "Tomás Ibarra",
+      "aliases": [],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "t1-00b",
+          "quote": "Tomás Ibarra"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "ivan_petrov",
+      "display_name": "Ivan Petrov",
+      "aliases": [],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "i1-01",
+          "quote": "Ivan Petrov"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "malcolm_reyes",
+      "display_name": "Malcolm Reyes",
+      "aliases": [],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "x1-01",
+          "quote": "Malcolm Reyes"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "petra_vogel",
+      "display_name": "Petra Vogel",
+      "aliases": [],
+      "role": "patient",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "p1-01",
+          "quote": "Petra Vogel"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "rosa_hernandez",
+      "display_name": "Rosa Hernández",
+      "aliases": ["Rosa"],
+      "role": "relative_mention",
+      "name_basis": "stated_in_source",
+      "evidence": [
+        {
+          "message_id": "a1-05",
+          "quote": "una llamada de su hermana Rosa"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "arrendamiento",
+      "display_name": "Contrato de arrendamiento",
+      "aliases": [],
+      "role": "not_a_patient",
+      "name_basis": "conversation_title",
+      "evidence": [
+        {
+          "message_id": "l1-01",
+          "quote": "El contrato de arrendamiento"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    },
+    {
+      "identity_key": "masa_madre",
+      "display_name": "Sourdough starter",
+      "aliases": [],
+      "role": "not_a_patient",
+      "name_basis": "conversation_title",
+      "evidence": [
+        {
+          "message_id": "o1-01",
+          "quote": "The starter doubled overnight"
+        }
+      ],
+      "same_name_as": [],
+      "disambiguation": null
+    }
+  ],
+  "sessions": [
+    {
+      "conversation_id": "conv-ana-1",
+      "identity_key": "ana_ruiz",
+      "message_ids": ["a1-01", "a1-02", "a1-03"],
+      "session_date": "2026-07-02",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "a1-01",
+          "quote": "La sesión con Ana Ruiz fue el 2 de julio de 2026."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "a1-02",
+              "quote": "Subjective: Ana Ruiz reporta insomnio persistente y anticipación ante el cambio de trabajo.\n\nAssessment: Se mantiene la línea base acordada.\n\n**Plan:** Continuar sesiones semanales y revisar el sueño en la próxima."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Ana Ruiz reporta insomnio persistente y anticipación ante el cambio de trabajo.\n\nAssessment: Se mantiene la línea base acordada.\n\n**Plan:** Continuar sesiones semanales y revisar el sueño en la próxima.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-ana-1",
+      "identity_key": "ana_ruiz",
+      "message_ids": ["a1-04", "a1-05", "a1-06"],
+      "session_date": "2026-08-20",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "a1-04",
+          "quote": "La sesión con Ana Ruiz fue el 20 de agosto de 2026."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "a1-05",
+              "quote": "Subjective: Ana Ruiz describe más activación e inquietud por el trabajo.\n\nObservations: Durante la sesión Ana recibió una llamada de su hermana Rosa y se alteró.\n\nPlan: Continuar semanal; revisar la llamada en la sesión siguiente."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Ana Ruiz describe más activación e inquietud por el trabajo.\n\nObservations: Durante la sesión Ana recibió una llamada de su hermana Rosa y se alteró.\n\nPlan: Continuar semanal; revisar la llamada en la sesión siguiente.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-ana-2",
+      "identity_key": "ana_ruiz",
+      "message_ids": ["a2-01", "a2-02"],
+      "session_date": "2026-09-10",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "a2-01",
+          "quote": "Session with Ana Ruiz on 2026-09-10."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "a2-02",
+              "quote": "Subjective: Four hours of sleep, waking at 3am.\n\nAssessment: Sleep restriction continues.\n\nPlan: Sleep hygiene review at the next session."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Four hours of sleep, waking at 3am.\n\nAssessment: Sleep restriction continues.\n\nPlan: Sleep hygiene review at the next session.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-ana-2",
+      "identity_key": "ana_ruiz",
+      "message_ids": ["a2-03", "a2-04"],
+      "session_date": "2025-03-11",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "a2-03",
+          "quote": "the session with Ana Ruiz on 2025-03-11"
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "a2-04",
+              "quote": "Subjective: First session after hospital discharge.\n\nAssessment: Re-establishing the care plan.\n\nPlan: Weekly sessions."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: First session after hospital discharge.\n\nAssessment: Re-establishing the care plan.\n\nPlan: Weekly sessions.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-maria-1",
+      "identity_key": "maria_lopez",
+      "message_ids": ["m1-01", "m1-02"],
+      "session_date": "2026-06-26",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "m1-01",
+          "quote": "María López, sesión del 26 de junio de 2026."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "m1-02",
+              "quote": "Subjective: María López llegó cableada.\n\nAssessment: Ansiedad situacional.\n\nPlan: Continuar semanal."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: María López llegó cableada.\n\nAssessment: Ansiedad situacional.\n\nPlan: Continuar semanal.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-maria-1",
+      "identity_key": "maria_lopez",
+      "message_ids": ["m1-03", "m1-04"],
+      "session_date": "2026-06-27",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "m1-03",
+          "quote": "La sesión con María López fue el 27 de junio de 2026."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "m1-04",
+              "quote": "Subjective: María López reporta estabilidad tras el ajuste de medicación.\n\nAssessment: Sin cambios relevantes.\n\nPlan: Continuar semanal."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: María López reporta estabilidad tras el ajuste de medicación.\n\nAssessment: Sin cambios relevantes.\n\nPlan: Continuar semanal.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-maria-1",
+      "identity_key": "maria_lopez",
+      "message_ids": ["m1-05", "m1-06"],
+      "session_date": "2026-08-01",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "m1-05",
+          "quote": "Sesión con María López el 1 de agosto de 2026."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "m1-06",
+              "quote": "Subjective: María López más tranquila.\n\nAssessment: Sin cambios.\n\nPlan: Revisar la fecha pendiente en la próxima sesión."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: María López más tranquila.\n\nAssessment: Sin cambios.\n\nPlan: Revisar la fecha pendiente en la próxima sesión.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-maria-2",
+      "identity_key": "maria_lopez",
+      "message_ids": ["m2-01", "m2-02"],
+      "session_date": "2026-08-12",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "m2-01",
+          "quote": "La de la sesión del 12 de agosto de 2026 es Solís."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "m2-02",
+              "quote": "Subjective: María López ya trabaja con la paciente.\n\nAssessment: Continuidad del plan.\n\nPlan: Mantener el plan actual."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: María López ya trabaja con la paciente.\n\nAssessment: Continuidad del plan.\n\nPlan: Mantener el plan actual.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-maria-2",
+      "identity_key": "maria_fernanda",
+      "message_ids": ["m2-03", "m2-04"],
+      "session_date": "2026-08-12",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "m2-03",
+          "quote": "su sesión fue el 12 de agosto de 2026"
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "m2-04",
+              "quote": "Subjective: María Fernanda Solís, primera sesión.\n\nAssessment: Evaluación inicial.\n\nPlan: Segunda sesión en dos semanas."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: María Fernanda Solís, primera sesión.\n\nAssessment: Evaluación inicial.\n\nPlan: Segunda sesión en dos semanas.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-diego",
+      "identity_key": "diego_ramos",
+      "message_ids": ["d1-01", "d1-02"],
+      "session_date": "2026-09-01",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "d1-01",
+          "quote": "el 1 de septiembre de 2026"
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "d1-02",
+              "quote": "Subjective: Diego Ramos, primera y única visita.\n\nAssessment: Sin seguimiento.\n\nPlan: Contactar en dos semanas."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Diego Ramos, primera y única visita.\n\nAssessment: Sin seguimiento.\n\nPlan: Contactar en dos semanas.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-tomas",
+      "identity_key": "tomas_ibarra",
+      "message_ids": ["t1-00", "t1-00b", "t1-02", "t1-03", "t1-04"],
+      "session_date": "2026-08-28",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "t1-00b",
+          "quote": "Session with Tomás Ibarra on 2026-08-28."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "t1-02",
+              "quote": "Subjective: Tomás Ibarra perdió el trabajo en julio y no lo ha dicho en casa.\n\nAssessment: Duelo por la pérdida del empleo.\n\nPlan: Trabajar el duelo en las próximas sesiones."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Tomás Ibarra perdió el trabajo en julio y no lo ha dicho en casa.\n\nAssessment: Duelo por la pérdida del empleo.\n\nPlan: Trabajar el duelo en las próximas sesiones.",
+          "title_hint": null
+        },
+        {
+          "revision": 2,
+          "supersedes": null,
+          "supersedes_revision": 1,
+          "spans": [
+            {
+              "message_id": "t1-04",
+              "quote": "Subjective: Pérdida del trabajo en julio, no comunicada a la familia.\n\nAssessment: Duelo reactivo.\n\nPlan: Duelo en las próximas dos sesiones; revisar el sueño después."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Pérdida del trabajo en julio, no comunicada a la familia.\n\nAssessment: Duelo reactivo.\n\nPlan: Duelo en las próximas dos sesiones; revisar el sueño después.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-ivan",
+      "identity_key": "ivan_petrov",
+      "message_ids": ["i1-01", "i1-02"],
+      "session_date": null,
+      "session_date_basis": "unknown",
+      "date_evidence": [],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "i1-02",
+              "quote": "Subjective: Night terrors, grounding practice.\n\nAssessment: Continue grounding.\n\nPlan: Weekly."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Night terrors, grounding practice.\n\nAssessment: Continue grounding.\n\nPlan: Weekly.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-malicious",
+      "identity_key": "malcolm_reyes",
+      "message_ids": ["x1-01", "x1-02", "x1-03", "x1-04"],
+      "session_date": "2026-09-03",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "x1-01",
+          "quote": "Session with Malcolm Reyes on 2026-09-03."
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "x1-04",
+              "quote": "Subjective: Sleep improved since the last session.\n\nAssessment: Stable.\n\nPlan: Continue."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Sleep improved since the last session.\n\nAssessment: Stable.\n\nPlan: Continue.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-petra-old",
+      "identity_key": "petra_vogel",
+      "message_ids": ["p1-01", "p1-02"],
+      "session_date": "2025-06-18",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "p1-01",
+          "quote": "it was on 2025-06-18"
+        }
+      ],
+      "notes": [
+        {
+          "revision": 1,
+          "supersedes": null,
+          "supersedes_revision": null,
+          "spans": [
+            {
+              "message_id": "p1-02",
+              "quote": "Subjective: Single session on file, never filed.\n\nAssessment: No recent contact.\n\nPlan: Confirm whether she is still in care."
+            }
+          ],
+          "joiner": "\n\n",
+          "text": "Subjective: Single session on file, never filed.\n\nAssessment: No recent contact.\n\nPlan: Confirm whether she is still in care.",
+          "title_hint": null
+        }
+      ]
+    },
+    {
+      "conversation_id": "conv-lease",
+      "identity_key": "arrendamiento",
+      "message_ids": ["l1-01", "l1-02"],
+      "session_date": "2026-09-20",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "l1-01",
+          "quote": "El contrato de arrendamiento vence el 20 de septiembre de 2026."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "conversation_id": "conv-sourdough",
+      "identity_key": "masa_madre",
+      "message_ids": ["o1-01", "o1-02"],
+      "session_date": "2026-09-19",
+      "session_date_basis": "stated",
+      "date_evidence": [
+        {
+          "message_id": "o1-01",
+          "quote": "The feeding schedule on 2026-09-19 was morning and evening."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "decisions": [
+    {
+      "kind": "date",
+      "subject": "ivan_petrov",
+      "question": "When was the grounding session with Ivan Petrov? The conversation never says.",
+      "options": ["2026-09-05 (the day you wrote it up)", "A different date", "Leave it undated"],
+      "answer": null
+    }
+  ]
+}
