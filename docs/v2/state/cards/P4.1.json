@@ -3,10 +3,10 @@
   "planVersion": 2,
   "contracts": [],
   "baseCommit": "d0b8292",
-  "attempt": 3,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Attempt3 reviewed: V1/V3/V4 independently green, V2 evidence inspected; remaining malformed query-name URIError independently reproduced by coordinator. Attempt3 return absent.",
-  "nextAllowedAction": "Owner/plan-editor decision required for additional repair budget; no fourth attempt automatically. Continue P5.2 and model study.",
+  "attempt": 4,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "AM-064 owner-approved (fourth attempt, explicit COORDINATOR section 4 exception). DEF-1 narrowed: shipped readiness guard already fails closed and is tested; the defect is confined to the probe diagnostic and its evidence record. Attempt 3 partial repair verified and pushed at 88ef838 (14/14 offline).",
+  "nextAllowedAction": "Fresh instruction review at the recorded base under AM-064, then a separate implementation sub-session and a separate independent review. Counter is 4 of 4: no fifth attempt; if P4.1 is still short it returns to the owner, not to another implementer.",
   "sideEffectsDone": [
     "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
   ],
@@ -15,8 +15,8 @@
     "V1": "PASS (reviewed)",
     "V2": "PASS (author evidence inspected; no repeated egress)",
     "V3": "PASS (reviewed)",
-    "V4": "PASS (14 cases; missing malformed percent query coverage recorded as DEF-1)"
+    "V4": "PASS (attempt 3; 14 cases; missing malformed percent query coverage recorded as DEF-1 and in scope for attempt 4)"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-27"
+  "updatedUtc": "2026-09-28"
 }

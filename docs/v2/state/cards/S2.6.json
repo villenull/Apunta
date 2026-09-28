@@ -8,8 +8,8 @@
   "baseCommit": "812da7c",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "AM059 independently accepted; evidence corrections verified; V1 remains FAIL on LanguageDialog English-name catalogue inconsistency.",
-  "nextAllowedAction": "Integrate reviewed partial AM059 work; scope endonym repair through plan-editor authorization, then final attempt verification. Continue independent cards.",
+  "lastCompletedStep": "AM-063 owner-approved: the language.en.english catalogue repair, one Spanish-locale LanguageDialog case, V15/V16 added, and the Settings-row line reconciled with UI-BACKLOG #9. Awaiting a fresh instruction review before attempt 2 continues.",
+  "nextAllowedAction": "Regenerate the dispatch at the current base, run one fresh instruction review, then continue attempt 2. Implementation is held until the UI owner commits its in-flight work: this amendment touches shared/src/i18n/es-MX.ts and web/src/components/LanguageDialog.test.tsx, both of which the UI owner has uncommitted.",
   "sideEffectsDone": [],
   "changedFiles": 9,
   "criteria": {
@@ -17,7 +17,7 @@
     "V5": "PASS (verified, attempt 1)",
     "V6": "PASS (verified, attempt 1)",
     "V7": "PASS (verified, attempt 1)",
-    "V1": "FAIL (attempt 2; language-name catalogue defect)",
+    "V1": "FAIL (attempt 2; language-name catalogue defect — AM-063 is the approved repair, not yet implemented)",
     "V2": "PASS (attempt 2; see return and independent review)",
     "V3": "PASS (attempt 2; see return and independent review)",
     "V8": "PASS (attempt 2; see return and independent review)",
@@ -26,9 +26,11 @@
     "V11": "PASS (attempt 2; see return and independent review)",
     "V12": "PASS (attempt 2; see return and independent review)",
     "V13": "PASS (attempt 2; see return and independent review)",
-    "V14": "PASS (attempt 2; see return and independent review)"
+    "V14": "PASS (attempt 2; see return and independent review)",
+    "V15": "NOT RUN (added by AM-063)",
+    "V16": "NOT RUN (added by AM-063)"
   },
   "sandboxRuns": [],
   "notes": "Port7831/7832 verified free before dispatch; V5 scratch failure evidence inherited, do not repeat. Keep existing recorded out-of-scope agreement defects separate.",
-  "updatedUtc": "2026-09-27"
+  "updatedUtc": "2026-09-28"
 }
