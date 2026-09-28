@@ -481,3 +481,13 @@ Archived after processing their handoffs: independent protocol/result auditor 81
 Committed the previously untracked model-study and Claude-import evidence (execution, results, fable-execution, blind quality review, both independent audits, the Fable addendum, the import feasibility/prototype reports and the two `scratch/` prototype trees). The blind review's headline numbers: gold coverage 341/498, 26/72 samples complete, 13/72 with a demonstrated critical invention; three instrument defects recorded for any future round. The Fable addendum records the cumulative repair-pass count (15 against a cap of 2) and the arm-G identity defect; no comparative statement about Fable is publishable yet.
 
 Model executor 490ebfe continues the released G Track1 batch (72 case-runs) and the six-arm refine rerun (144 case-runs), each invocation gated on model identity before the next.
+
+### 2026-09-28 — two owner decisions drafted, two refuted verdicts corrected
+
+Docs lane 08f72a08 drafted `state/S2.6-CATALOGUE-AMENDMENT-PROPOSAL.md` (PROPOSED AM-063) and `state/P4.1-FOURTH-ATTEMPT-PROPOSAL.md` (PROPOSED AM-064); no tests, builds, network or git writes were run in that lane, and it is archived after processing.
+
+Coordinator verification before putting either to the owner: `installer/src/readiness.ts:116-134` already wraps `decodeURIComponent` in try/catch and fails closed, so P4.1's defect is confined to the probe's `queryKeyNames` (`scripts/v2/probe-redirects.mjs:196`) and its evidence record, not to the shipped downloader guard. `LanguageDialog.tsx:105,109` print both lines unconditionally, `es-MX.ts:1231` holds `'Inglés (Estados Unidos)'` against `en.ts:1676`'s `'English (United States)'`, and no test pins the differing value. Both load-bearing claims hold.
+
+Corrected two coordinator-owned verdicts that the V1 failure refutes: `reviews/S2.6-postUI-ir.md:8` ("clean by construction, not by suppression") and `reviews/UI-BATCH2-review.md:519-527` (the dialog suppresses the duplicate line at `LanguageDialog.tsx:95`). Both relied on a drop rule removed by the owner's 2026-09-27 change in `14076b8`. Annotations appended; the reviews' other content stands. `state/BLOCKED.md`'s P4.1 row now records the narrowed consequence.
+
+Added proposal §8: the card's "Do not remove the Settings row" line now contradicts the owner's UI-BACKLOG #9, so the reconciliation is put to the owner in the same decision rather than left as drift. No card, contract, acceptance row, threshold, guard or ALLOWED entry changed; nothing implemented.

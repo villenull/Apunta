@@ -646,3 +646,12 @@ home keys), `i18n/es-MX.ts` (same); `web/src/lib/sidebarView.ts`,
 `e2e/tests/brand.spec.ts:1-40, 140-160, 384-470`, `workspace.spec.ts:150-185`,
 `import.spec.ts`, `halaxy-import.spec.ts`, `language-control.spec.ts:45-60`,
 `e2e/support/no-english.ts` (whole), `/tmp/e2e-final.log` (whole, 6610 lines).
+
+## Coordinator correction, 2026-09-28
+
+The finding above that "the es-MX language dialog will not trip the English guard" is **wrong on both of its grounds**, and S2.6's V1 run is the counter-example (`state/reviews/S2.6-AM059-implementation.md:187-188`):
+
+- `language.en.english` being "the only translated one" is exactly what makes the guard **fire** — the differing value is what attributes the on-screen string to the key — not what makes it "therefore cannot match".
+- `LanguageDialog.tsx:95` no longer suppresses the duplicate line. Both lines print in every cell (`:105`, `:109`) as of the owner's 2026-09-27 change in `14076b8`; the suppression this review cited is gone.
+
+The revised component behaviour is the opposite of a deliberate use of the guard's rule. Proposed repair (not approved): `state/S2.6-CATALOGUE-AMENDMENT-PROPOSAL.md`.
