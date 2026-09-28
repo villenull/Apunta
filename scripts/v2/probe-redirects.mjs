@@ -180,6 +180,27 @@ export function passesDomainRule(host) {
 }
 
 /**
+ * One parameter name, decoded — or left exactly as it arrived.
+ *
+ * `decodeURIComponent` throws a `URIError` on a malformed percent escape, and a
+ * `Location` is whatever the origin sent. One that parses as a URL but carries
+ * `%zz` in a name would take an unguarded decode straight out of `main()`, kill
+ * the run *before* the evidence file is written, and leave the previous run's
+ * `redirects.md` on disk where it reads as this one's — a stale record that
+ * looks like a finding. An unreadable name is not a name that can be on an
+ * allow-list, so leaving it undecoded fails closed downstream, which is exactly
+ * what `queryParameterNames` in `installer/src/readiness.ts` already does for
+ * the shipped guard.
+ */
+function decodeQueryName(name) {
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    return name;
+  }
+}
+
+/**
  * The sorted, de-duplicated **names** of a query string's parameters. A value
  * is never returned, so nothing signed can leak through this function; a
  * parameter with no `=` still contributes its name, because that is exactly
@@ -193,7 +214,7 @@ export function queryKeyNames(search) {
         .replace(/^\?/, '')
         .split('&')
         .filter((pair) => pair !== '')
-        .map((pair) => decodeURIComponent(pair.split('=')[0] ?? pair)),
+        .map((pair) => decodeQueryName(pair.split('=')[0] ?? pair)),
     ),
   ].sort();
 }

@@ -2,7 +2,7 @@
 /**
  * AM-057's offline regression for `scripts/v2/probe-redirects.mjs`.
  *
- * Three properties, all of them offline and all of them about the probe rather
+ * Four properties, all of them offline and all of them about the probe rather
  * than about a vendor:
  *
  *  1. **A malformed `Location` is described without crashing and without
@@ -22,12 +22,22 @@
  *  3. **Importing the probe requests nothing.** The helpers are exported for
  *     this file, so the import itself is under test: `fetch` is replaced with
  *     one that throws, and the module is imported dynamically underneath it.
+ *  4. **A `Location` that parses but whose query *name* carries a malformed
+ *     percent escape is described, not thrown on.** This is the other
+ *     malformed branch and it is a different one: the URL parses, so nothing
+ *     about it looks wrong, and the failure only happens when a parameter name
+ *     is decoded. A `URIError` escaping here would kill the probe mid-run and
+ *     leave the *previous* run's `redirects.md` on disk where it reads as this
+ *     one's. The fixture is a literal for that reason — see below.
  *
- * Every value in this file is fabricated (HS-8) and every URL is derived from
- * the catalogue's own pinned address at run time, so the file holds no URL
- * literal and needs no `eslint.config.js` exemption — which is the same
- * property the probe itself has, and the reason the row that checks it (V3)
- * stays a real check.
+ * Every value in this file is fabricated (HS-8). Most URLs are derived from the
+ * catalogue's own pinned address at run time, and the one URL literal this file
+ * holds is on **loopback** — `http://127.0.0.1/…`, which the outbound-URL rule
+ * names as allowed — so the file still holds no non-loopback URL literal and
+ * needs no `eslint.config.js` exemption. V3 remains a real check on it: the rule
+ * applies to every `ts`, `tsx`, `js` and `mjs` file, and this `.test.mjs` is not
+ * in the test-file exemption, which covers `test.ts` and `test.tsx` only, so a
+ * vendor literal here would fail.
  */
 
 import assert from 'node:assert/strict';
@@ -46,6 +56,36 @@ const FABRICATED_EXPIRES = '1789000000';
 
 /** A parameter name on no manifest row anywhere, so it is never admitted. */
 const UNADMITTED_NAME = 'fabricated-parameter-name';
+
+/**
+ * A `Location` that **parses** as a URL and still carries a malformed escape in
+ * a query parameter's *name* — the branch above does not reach.
+ *
+ * It is a literal on purpose, and three deliberate choices hold it together:
+ *
+ *  - **Literal, not derived.** `withQuery` and `URLSearchParams` percent-encode
+ *    the `%` of a literal `%zz` into `%25zz`, which decodes cleanly and never
+ *    reaches the failing decode — a case built that way passes against the
+ *    unfixed probe, which is worse than no case at all. Nothing here goes
+ *    through a URL helper.
+ *  - **Loopback and non-`https`.** A real vendor host would be a faithful
+ *    fixture and would fail V3: this file is a `.test.mjs`, which the outbound-URL
+ *    rule's test-file exemption does not cover, since it names `test.ts` and
+ *    `test.tsx` only. Loopback is named as allowed, and the non-`https` scheme is
+ *    what the scheme verdict below is *about*, so the scheme refusal is a
+ *    recorded, asserted fact rather than something suppressed to make the array
+ *    shorter.
+ *  - **Fabricated value** (HS-8), so the redaction assertion below is about a
+ *    string nobody has ever held.
+ */
+const MALFORMED_QUERY_NAME_LOCATION =
+  'http://127.0.0.1/ggml/resolve/main/ggml-base.bin?%zz=fabricated-malformed-value';
+
+/** The same name, as it arrived and as it is therefore recorded. */
+const MALFORMED_QUERY_NAME = '%zz';
+
+/** The fabricated value on that parameter, named so a leak is unmistakable. */
+const MALFORMED_QUERY_VALUE = 'fabricated-malformed-value';
 
 /*
  * The import is the first thing this file does, and `fetch` is replaced before
@@ -144,6 +184,65 @@ test('a malformed record never writes a query value', () => {
   // The raw line is still there, redacted — the record is incomplete, not
   // silent about what arrived.
   assert.match(text, /\?<redacted>/);
+});
+
+test('the malformed-name fixture really is parseable, so the case is not vacuous', () => {
+  // The mirror image of the control above: this one must NOT throw, or the case
+  // lands in the unparseable branch and proves nothing about a decoded name.
+  let parsed;
+  assert.doesNotThrow(() => {
+    parsed = new URL(MALFORMED_QUERY_NAME_LOCATION);
+  });
+  assert.equal(parsed.search, `?${MALFORMED_QUERY_NAME}=${MALFORMED_QUERY_VALUE}`);
+  // And the branch is genuinely reachable: decoding that name is what throws.
+  assert.throws(() => decodeURIComponent(MALFORMED_QUERY_NAME), URIError);
+});
+
+test('a malformed query name is recorded undecoded rather than throwing a URIError', () => {
+  const search = new URL(MALFORMED_QUERY_NAME_LOCATION).search;
+  let names;
+  assert.doesNotThrow(() => {
+    names = probe.queryKeyNames(search);
+  });
+  assert.ok(Array.isArray(names));
+  // Undecoded: an unreadable name is not a name that can be on an allow-list,
+  // so it fails closed downstream instead of being turned into a readable one.
+  assert.deepEqual(names, [MALFORMED_QUERY_NAME]);
+  assert.ok(!names.some((name) => name !== MALFORMED_QUERY_NAME));
+});
+
+test('the parseable malformed-name Location is described, with exactly two verdicts', () => {
+  let described;
+  assert.doesNotThrow(() => {
+    described = probe.describeLocation(MALFORMED_QUERY_NAME_LOCATION, speechArtifact.allowedQueryKeys);
+  });
+  assert.equal(described.unparseable, false);
+  assert.deepEqual(described.queryKeys, [MALFORMED_QUERY_NAME]);
+  // Exactly two: the scheme (the literal is not `https`) and the query key (the
+  // malformed name is on no allowance). This codebase has no `host_not_allowed`
+  // verdict — the host is the separate `domainRule` boolean, which is false
+  // here, so three entries would mean the assertion invented a verdict.
+  assert.equal(described.refusals.length, 2);
+  assert.equal(described.refusals[0], '`scheme_not_https`');
+  assert.ok(described.refusals[1].includes('query_key_not_allowed'));
+  assert.ok(described.refusals[1].includes(MALFORMED_QUERY_NAME), 'the offending name must be visible');
+  assert.ok(!JSON.stringify(described.refusals).includes('host_not_allowed'));
+  assert.equal(described.domainRule, false);
+});
+
+test('a malformed query name is written to the record while its value is not', () => {
+  const text = rendered(MALFORMED_QUERY_NAME_LOCATION);
+  // The name is public vocabulary a plan editor has to be able to see, and it is
+  // recorded undecoded.
+  assert.match(text, /`%zz`/);
+  assert.match(text, /query_key_not_allowed/);
+  // The value is not, and neither is the pair that carried it.
+  assert.ok(!text.includes(MALFORMED_QUERY_VALUE), 'a query value reached the rendered record');
+  assert.doesNotMatch(text, /\?%zz=/);
+  assert.match(text, /\?<redacted>/);
+  // This is the diagnostic that replaces the crash, and it says the run is over
+  // rather than silently reporting a clean artifact.
+  assert.match(text, /rule 1 refusals triggered/);
 });
 
 test('a name on the artifact allowance is not a refusal', () => {
