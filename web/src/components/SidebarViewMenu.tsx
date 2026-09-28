@@ -158,7 +158,7 @@ export function SidebarViewMenu({ view, onChange }: SidebarViewMenuProps): React
     if (rect === undefined) return;
     // Under the button, flush to its right edge, and never off the window. The
     // width is the stylesheet's `--view-menu-w`.
-    const width = 280;
+    const width = 208;
     const left = Math.min(Math.max(8, rect.right - width), window.innerWidth - width - 8);
     setAt({ left, top: rect.bottom + 4 });
     setOpen(true);

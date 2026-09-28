@@ -1605,7 +1605,7 @@ export const en = {
   'patients.clearFilters': { text: 'Clear filters' },
   /** The line inside a group nobody is in yet, so an empty heading reads as
    * "empty" rather than as "broken" (owner, 2026-09-27). */
-  'patients.groupEmpty': { text: 'No patients in this group yet' },
+  'patients.groupEmpty': { text: 'Drag or move patients here' },
   'patients.viewOptions': { text: 'View options' },
   'patients.statusLabel': { text: 'Status' },
   'patients.statusActive': { text: 'Active' },

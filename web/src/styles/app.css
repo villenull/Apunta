@@ -4206,14 +4206,14 @@ select:disabled {
  * cut off at its edge however high its z-index goes.
  */
 :root {
-  --view-menu-w: 280px;
+  --view-menu-w: 208px;
 }
 
 .sidebar-view-menu {
   position: fixed;
   right: auto;
-  /* Wide enough for "Restablecer valores predeterminados" on one line, which
-     is past the shared menu cap (`--menu-w`), so the cap is lifted here. */
+  /* Wide enough that no row is cut in either language (owner chose 208px,
+     2026-09-28); past the shared cap (`--menu-w`), so it is lifted here. */
   width: var(--view-menu-w);
   max-width: var(--view-menu-w);
   z-index: 61;

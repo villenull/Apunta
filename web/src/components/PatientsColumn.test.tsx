@@ -719,7 +719,7 @@ describe('an empty group', () => {
     );
 
     expect(screen.getByTestId(`section-group-${family.id}`)).toBeDefined();
-    expect(screen.getByTestId(`group-empty-${family.id}`).textContent).toBe('No patients in this group yet');
+    expect(screen.getByTestId(`group-empty-${family.id}`).textContent).toBe('Drag or move patients here');
     // And the ungrouped patients are untouched by it being empty.
     expect(screen.getByTestId(`patient-entry-${john.id}`)).toBeDefined();
   });

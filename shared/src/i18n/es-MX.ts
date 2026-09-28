@@ -1157,7 +1157,7 @@ export const esMX = {
   /* --- El control junto a "Recientes" (owner, 2026-09-27) --- */
   'patients.filteredOut': { text: 'Ningún paciente coincide con estos filtros.' },
   'patients.clearFilters': { text: 'Quitar filtros' },
-  'patients.groupEmpty': { text: 'Aún no hay pacientes en este grupo' },
+  'patients.groupEmpty': { text: 'Arrastra o mueve pacientes aquí' },
   'patients.viewOptions': { text: 'Opciones de vista' },
   'patients.statusLabel': { text: 'Estado' },
   'patients.statusActive': { text: 'Activos' },
@@ -1174,7 +1174,7 @@ export const esMX = {
   'patients.groupByNone': { text: 'Ninguno' },
   'patients.sortLabel': { text: 'Ordenar por' },
   /** The view menu's last row, shown only when something is off its default. */
-  'patients.resetView': { text: 'Restablecer valores predeterminados' },
+  'patients.resetView': { text: 'Restablecer valores' },
   /** What the lifted row says over a group or Recents it would be moved to. */
   'patients.dragMoveTo': { text: 'Mover a {name}' },
   'patients.sortCreated': { text: 'Fecha de creación' },
