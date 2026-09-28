@@ -5,10 +5,16 @@ import type { Database } from 'better-sqlite3';
 
 /**
  * Migrations are numbered `.sql` files in `server/migrations/`, applied in
- * numeric order at boot. Each one runs inside its own transaction together with
- * the `schema_migrations` row that records it, so a failing migration leaves
- * the database exactly as it was and a restart against an up-to-date database
- * does nothing at all.
+ * numeric order at boot. All the pending ones run inside **one** transaction
+ * together with the `schema_migrations` rows that record them, so a failing
+ * migration leaves the database exactly as it was — including the ones that
+ * already succeeded in the same start — and a restart against an up-to-date
+ * database does nothing at all.
+ *
+ * The all-or-nothing shape is C-UPD@1 step 4, and it is a safety property
+ * rather than a tidiness one: a half-migrated practice is one whose schema
+ * matches no version of the app, which is the state the whole pre-migration
+ * snapshot exists to be able to undo.
  */
 
 const MIGRATION_FILE = /^(\d+)_([A-Za-z0-9_-]+)\.sql$/;
@@ -24,6 +30,29 @@ export interface MigrationResult {
   readonly level: number;
   /** Versions applied by this call; empty when the database was already current. */
   readonly applied: readonly number[];
+}
+
+/**
+ * The three words a start can stop on because of the schema (C-UPD@1 steps 2,
+ * 3 and 4). A test sees the `code`, never a substring of the message, and the
+ * boot-error page is handed the message — so the code is for callers and the
+ * message is for her.
+ *
+ * It is modelled on `BackupError` (`server/src/backup/archive.ts:50-62`) and is
+ * not an HTTP status and not a member of `ApiErrorCodeSchema`: nothing here is
+ * reachable over the API, because a database that cannot be opened never gets
+ * as far as serving one.
+ */
+export type MigrationSafetyCode = 'newer_schema' | 'snapshot_failed' | 'migration_failed';
+
+export class MigrationSafetyError extends Error {
+  constructor(
+    message: string,
+    readonly code: MigrationSafetyCode,
+  ) {
+    super(message);
+    this.name = 'MigrationSafetyError';
+  }
 }
 
 export function loadMigrations(migrationsDir: string): Migration[] {
@@ -79,8 +108,12 @@ export function migrate(db: Database, migrationsDir: string): MigrationResult {
   const versions = appliedVersions(db);
   const current = versions.at(-1) ?? 0;
   if (current > maximum) {
-    throw new Error(
+    // Never a downgrade: a database written by a newer Apunta keeps its
+    // columns, its rows and its meaning, and the refusal says which build to
+    // update to rather than touching a single byte of it.
+    throw new MigrationSafetyError(
       `Database schema version ${String(current)} is newer than this build (highest supported migration ${String(maximum)}). Update Apunta before opening this database.`,
+      'newer_schema',
     );
   }
 
@@ -89,13 +122,35 @@ export function migrate(db: Database, migrationsDir: string): MigrationResult {
 
   const record = db.prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)');
 
-  for (const migration of pending) {
-    const apply = db.transaction(() => {
+  /**
+   * C-UPD@1 step 4. One outer transaction around every pending migration, and
+   * the bookkeeping row inside it — so `schema_migrations` cannot ever claim a
+   * migration that the schema does not have. `better-sqlite3` nests with
+   * SAVEPOINT, but nesting is not wanted here: a failure has to undo the
+   * migrations that ran before it, not just its own.
+   */
+  const applyAll = db.transaction(() => {
+    for (const migration of pending) {
       db.exec(migration.sql);
       record.run(migration.version, migration.name, new Date().toISOString());
-    });
-    apply();
+    }
+  });
+  try {
+    // Nothing pending, nothing opened: a restart against an up-to-date database
+    // does not so much as begin a transaction.
+    if (pending.length > 0) applyAll();
+  } catch (error) {
+    throw new MigrationSafetyError(
+      `the database could not be migrated to level ${String(maximum)} (${pending
+        .map((migration) => String(migration.version))
+        .join(', ')} pending) and was left exactly as it was: ${describe(error)}`,
+      'migration_failed',
+    );
   }
 
   return { level: migrationLevel(db), applied: pending.map((m) => m.version) };
+}
+
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

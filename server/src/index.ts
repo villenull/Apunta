@@ -5,6 +5,7 @@ import { openBrowser } from './boot.js';
 import { appUrl, ensureDataDir, loadConfig } from './config.js';
 import { installEgressGuard } from './egress-guard.js';
 import { openDatabase, type OpenedDatabase } from './db/index.js';
+import { prepareDatabaseForStart } from './db/safety.js';
 import { storageBootFailure } from './http/errors.js';
 import { serveBootError } from './boot-error.js';
 import {
@@ -31,6 +32,18 @@ async function start(): Promise<void> {
     ensureDataDir(config.dataDir);
     lock = acquireDataFolderLock(config.dataDir);
     restored = applyPendingRestore(config.dataDir);
+    // C-UPD@1's migration steps, in the one position C-OWN@1 rule 1 gives
+    // them: the restore is applied, the database is inspected read-only and
+    // snapshotted if anything is pending, and only then is anything migrated —
+    // all of it before the handle below opens the file for writing. A refusal
+    // here is a `MigrationSafetyError` and reaches the boot-error page through
+    // the same catch as every other storage failure.
+    prepareDatabaseForStart({
+      dataDir: config.dataDir,
+      dbFile: config.dbFile,
+      migrationsDir: config.migrationsDir,
+      nativeBinding: config.sqliteBinding,
+    });
     opened = openDatabase({
       file: config.dbFile,
       migrationsDir: config.migrationsDir,

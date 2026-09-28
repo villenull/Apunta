@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadConfig } from '../config.js';
 import { undoImportBatch } from './import-batches.js';
 import { openDatabase } from './index.js';
-import { appliedVersions, loadMigrations, migrate } from './migrate.js';
+import { appliedVersions, loadMigrations, migrate, MigrationSafetyError } from './migrate.js';
 
 const migrationsDir = loadConfig({}).migrationsDir;
 
@@ -129,25 +129,48 @@ describe('migrate', () => {
     db.prepare('INSERT INTO schema_migrations VALUES (?, ?, ?)').run(99, 'future_change', 'test');
     const maximum = loadMigrations(migrationsDir).at(-1)?.version ?? 0;
 
-    expect(() => migrate(db, migrationsDir)).toThrow(
-      `Database schema version 99 is newer than this build (highest supported migration ${String(maximum)})`,
+    let thrown: unknown;
+    try {
+      migrate(db, migrationsDir);
+    } catch (error) {
+      thrown = error;
+    }
+
+    // The code is the contract, and a test reads the code. The message still
+    // says which build to update to, because that is what she reads.
+    expect(thrown).toBeInstanceOf(MigrationSafetyError);
+    expect((thrown as MigrationSafetyError).code).toBe('newer_schema');
+    expect((thrown as Error).message).toBe(
+      `Database schema version 99 is newer than this build (highest supported migration ${String(maximum)}). Update Apunta before opening this database.`,
     );
 
     db.close();
   });
 
-  it('leaves the database untouched when a migration fails', () => {
+  it('rolls back every pending migration when one of them fails', () => {
     const db = new BetterSqlite3(':memory:');
-    writeFileSync(join(dataDir, '001_ok.sql'), 'CREATE TABLE a (id TEXT PRIMARY KEY) STRICT;');
+    db.exec('CREATE TABLE ledger (id TEXT PRIMARY KEY) STRICT;');
+    db.prepare("INSERT INTO ledger VALUES ('before')").run();
     writeFileSync(
-      join(dataDir, '002_broken.sql'),
-      'CREATE TABLE b (id TEXT PRIMARY KEY) STRICT; SELECT nope();',
+      join(dataDir, '001_ok.sql'),
+      "INSERT INTO ledger VALUES ('from-001'); CREATE TABLE a (id TEXT PRIMARY KEY) STRICT;",
     );
+    writeFileSync(join(dataDir, '002_broken.sql'), "INSERT INTO ledger VALUES ('from-002'); SELECT nope();");
 
-    expect(() => migrate(db, dataDir)).toThrow();
-    // 002 rolled back whole: neither its table nor its bookkeeping row survives.
-    expect(appliedVersions(db)).toEqual([1]);
-    expect(db.prepare("SELECT name FROM sqlite_master WHERE name = 'b'").get()).toBeUndefined();
+    let thrown: unknown;
+    try {
+      migrate(db, dataDir);
+    } catch (error) {
+      thrown = error;
+    }
+    expect((thrown as MigrationSafetyError).code).toBe('migration_failed');
+
+    // C-UPD@1 step 4 is all or nothing, so 001 is undone with 002: neither its
+    // write nor its table survives, and `schema_migrations` — which exists,
+    // created outside the transaction — records nothing.
+    expect(db.prepare('SELECT id FROM ledger ORDER BY id').all()).toEqual([{ id: 'before' }]);
+    expect(appliedVersions(db)).toEqual([]);
+    expect(db.prepare("SELECT name FROM sqlite_master WHERE name IN ('a', 'first_table')").all()).toEqual([]);
 
     db.close();
   });

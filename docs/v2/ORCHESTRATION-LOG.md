@@ -455,3 +455,18 @@ Coordinator read probe diff and reran offline V4: 14/14, exit0. Author reports V
 ### 2026-09-27 — P4.1 partial repair preserved, remaining defect blocked
 
 Independent reviewer ffcf4528 reran V1/V3/V4 green and inspected V2; archived after processing. Coordinator reproduced queryKeyNames on fabricated malformed percent name throwing URIError (offline assertion exit0). This violates the intended diagnostic robustness despite green enumerated tests; P4.1 not approved. Attempt3 return is absent; original attempt2 return preserved rather than misattributed. Budget3/3 spent, additional repair requires owner/plan-editor action. Public vendor CDN names are accepted as acquisition evidence under the card explicit narrow privacy interpretation; no local hostname disclosure authorized. Preserving verified partial repair, no installer/guard changes.
+
+
+### 2026-09-27 — P5.2 implementation underway
+
+Partial P4.1 repair pushed88ef838; card remains blocked on exhausted-budget diagnostic defect. Prior P5.2 IR/readiness clear, regenerated attempt1 dispatch at88ef838 with sandbox port7835 and assigned sole source writer. Model evaluation continues independently.
+
+
+### 2026-09-27 — P5.2 returned, independent review underway
+
+Coordinator read safety and transaction diff and reran database suite on Node24: 7files64tests exit0. Author reports full2093tests/lint/typecheck green and synthetic wrapper boot checks; not yet accepted. Archived author b779edbe after processing; independent reviewer assigned report-only lane for snapshot/rollback/retention and guard semantics. No source writer active during review. Model study continues; CPU test intervals remain potential timing contamination.
+
+
+### 2026-09-27 — P5.2 approved
+
+Independent review APPROVE, V1/V2 rerun exit0 (64db/2093fulltests, lint/typecheck). Coordinator previously reran64database tests and read safety/transaction wiring. Exactly five source files in scope. Archived reviewer0b85702b. Nonblocking raw retention error for damaged safety directory and inaccurate rename comment recorded in review, no guard change. Reviewer interpreted b779edbe as a git object; it was the author agent ID, base88ef838 was correct. Hash freeze verification still valid. P5.2 APPROVED; source integration follows.
