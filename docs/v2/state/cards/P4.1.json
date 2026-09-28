@@ -2,10 +2,10 @@
   "card": "P4.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "d0b8292",
+  "baseCommit": "2e001f8",
   "attempt": 4,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-064 owner-approved (fourth attempt, explicit COORDINATOR section 4 exception). DEF-1 narrowed: shipped readiness guard already fails closed and is tested; the defect is confined to the probe diagnostic and its evidence record. Attempt 3 partial repair verified and pushed at 88ef838 (14/14 offline).",
+  "lastCompletedStep": "Attempt4 IR returned DEFECT: dispatch carried no AM-064 substance, V2 was ordered though its grant is spent, and the negative control was vacuous via the file own URLSearchParams helper. All three corrected in the card; awaiting a second instruction review.",
   "nextAllowedAction": "Fresh instruction review at the recorded base under AM-064, then a separate implementation sub-session and a separate independent review. Counter is 4 of 4: no fifth attempt; if P4.1 is still short it returns to the owner, not to another implementer.",
   "sideEffectsDone": [
     "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
