@@ -2,20 +2,20 @@
   "card": "P4.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "e993f85",
+  "baseCommit": "b2c3287",
   "attempt": 4,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt4 IR pass 3 VERDICT: CLEAR (0 major, 0 medium, 7 low). One factual error of mine corrected (refusal array shape), the fixture claim corrected, the test-file header comment made a required part of the edit, and the fragment-token vector added to the redaction follow-up. No scope change and no fourth review: every edit was a factual correction to text, not a change to what the attempt authorises.",
-  "nextAllowedAction": "Dispatch attempt 4 implementation. Then coordinator verification, then a separate independent implementation review that re-runs V1, V3 and V4 and inspects V2. No fifth attempt.",
+  "lastCompletedStep": "Attempt4 implemented and committed b2c3287. Coordinator independently reran V1 (exit0, 13 files/206 tests), lint (exit0), V4 (exit0, 18/18) and the negative control (exit1, 15 pass/3 fail with URIError, file restored to an identical SHA-256). Awaiting an independent implementation review.",
+  "nextAllowedAction": "Independent implementation review re-running V1, V3 and V4 and inspecting V2. Then coordinator ruling on RUN-CONFIG section 4 hostname bar. No fifth attempt.",
   "sideEffectsDone": [
     "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
   ],
-  "changedFiles": [],
+  "changedFiles": 4,
   "criteria": {
-    "V1": "PASS (reviewed)",
-    "V2": "PASS (author evidence inspected; no repeated egress)",
-    "V3": "PASS (reviewed)",
-    "V4": "PASS (attempt 3; 14 cases; missing malformed percent query coverage recorded as DEF-1 and in scope for attempt 4)"
+    "V1": "PASS (coordinator rerun: exit 0, 13 files / 206 tests, readiness.test.ts collected)",
+    "V2": "NOT RUN (egress grant spent, forbidden by AM-064; existing redirects.md inspected read-only and unmodified)",
+    "V3": "lint PASS (coordinator rerun exit 0); typecheck reported exit 0 by author, pending independent rerun",
+    "V4": "PASS (coordinator rerun: exit 0, 18/18; negative control exit 1 with 3 failures, restored)"
   },
   "sandboxRuns": [],
   "updatedUtc": "2026-09-28"
