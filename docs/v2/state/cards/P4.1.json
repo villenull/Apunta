@@ -2,11 +2,11 @@
   "card": "P4.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "8f17b4d",
+  "baseCommit": "e993f85",
   "attempt": 4,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt4 IR pass 2 returned DEFECT: the ordered V4 fixture could not be built without breaching the outbound-URL rule, V4 lacked the builds its dist import needs, and a stale sentence claimed all four rows run. All three corrected in the card; awaiting a third instruction review.",
-  "nextAllowedAction": "Fresh instruction review at the recorded base under AM-064, then a separate implementation sub-session and a separate independent review. Counter is 4 of 4: no fifth attempt; if P4.1 is still short it returns to the owner, not to another implementer.",
+  "lastCompletedStep": "Attempt4 IR pass 3 VERDICT: CLEAR (0 major, 0 medium, 7 low). One factual error of mine corrected (refusal array shape), the fixture claim corrected, the test-file header comment made a required part of the edit, and the fragment-token vector added to the redaction follow-up. No scope change and no fourth review: every edit was a factual correction to text, not a change to what the attempt authorises.",
+  "nextAllowedAction": "Dispatch attempt 4 implementation. Then coordinator verification, then a separate independent implementation review that re-runs V1, V3 and V4 and inspects V2. No fifth attempt.",
   "sideEffectsDone": [
     "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
   ],
