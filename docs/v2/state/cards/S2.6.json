@@ -5,10 +5,10 @@
     "C-LANG@1",
     "C-SETTINGS@1"
   ],
-  "baseCommit": "812da7c",
+  "baseCommit": "8cb3ecf",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "AM-063 owner-approved: the language.en.english catalogue repair, one Spanish-locale LanguageDialog case, V15/V16 added, and the Settings-row line reconciled with UI-BACKLOG #9. Awaiting a fresh instruction review before attempt 2 continues.",
+  "lastCompletedStep": "AM-063 applied, then corrected after an independent instruction review returned DEFECT: the reconciliation clause had asserted an uncommitted UI removal as fact. Card now states the real state, names all four V1 suppression routes, and gives V16 a command. Awaiting a fresh instruction review.",
   "nextAllowedAction": "Regenerate the dispatch at the current base, run one fresh instruction review, then continue attempt 2. Implementation is held until the UI owner commits its in-flight work: this amendment touches shared/src/i18n/es-MX.ts and web/src/components/LanguageDialog.test.tsx, both of which the UI owner has uncommitted.",
   "sideEffectsDone": [],
   "changedFiles": 9,
