@@ -46,3 +46,10 @@ data/
 # Built macOS app and disk image (M8). Large, machine-specific, and
 # rebuilt from source by scripts/package-mac.sh.
 dist-mac/
+
+# The Linux runtime resource folder (P3.1), built by
+# scripts/v2/package-linux-resources.sh. A whole pinned Node tree, a bundled
+# server and a native addon, all of it derived from the source next to it and
+# none of it ever committed. Prettier reads .gitignore, which is what keeps the
+# L1 `prettier --check .` off this generated output.
+build/

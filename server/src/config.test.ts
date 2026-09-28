@@ -1,4 +1,4 @@
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { homedir, platform, tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -59,6 +59,24 @@ describe('loadConfig', () => {
   it('rejects a negative fake stream delay', () => {
     expect(() => loadConfig({ APUNTA_FAKE_STREAM_DELAY_MS: '-1' })).toThrow(/APUNTA_FAKE_STREAM_DELAY_MS/);
     expect(loadConfig({ APUNTA_FAKE_STREAM_DELAY_MS: '0' }).fakeStreamDelayMs).toBe(0);
+  });
+
+  /**
+   * AM-058: the version a bundle reports comes from the packaging pipeline, and
+   * under source execution it still comes from `server/package.json`.
+   *
+   * The value assertion cannot be the whole regression test on its own, because
+   * `server/package.json`'s version is `0.0.0` and the fallback is the same
+   * literal — so the two paths are indistinguishable by value. What is
+   * distinguishable is the *mechanism*, and that is what the packaging
+   * fingerprint (`__APUNTA_VERSION__` and `@apunta/server` absent from the
+   * bundle) checks. Here the fallback is pinned so a change to it is visible.
+   */
+  it('reads the version from server/package.json when no build-time value is defined', () => {
+    const pkg = JSON.parse(readFileSync(join(import.meta.dirname, '..', 'package.json'), 'utf8')) as {
+      version?: string;
+    };
+    expect(loadConfig({}).version).toBe(pkg.version ?? '0.0.0');
   });
 });
 

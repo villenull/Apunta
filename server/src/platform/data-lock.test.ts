@@ -381,4 +381,25 @@ describe('one owner of one data folder (C-OWN@1)', () => {
     put.run('data_lock_backstop_probe', JSON.stringify('synthetic-again'));
     db.close();
   });
+
+  /**
+   * AM-058: the `appVersion` a lock carries.
+   *
+   * Under source execution nothing defines `__APUNTA_VERSION__`, so the reader
+   * falls back to `server/package.json` and the lock must carry that file's
+   * `version`. The packaging side — a build-time injected value reaching a
+   * bundle that has no `package.json` beside it — is what the bundle test
+   * checks end to end; what belongs here is the fallback, because it is the
+   * path every developer run and every existing test takes, and a regression in
+   * it would write a wrong version into the ownership record on every launch.
+   */
+  it('writes the repository version into the lock when no build-time value is defined', () => {
+    const pkg = JSON.parse(readFileSync(join(repoRoot, 'server', 'package.json'), 'utf8')) as {
+      version?: string;
+    };
+    const dir = freshFolder('app-version');
+    const taken = acquireDataFolderLock(dir);
+    expect(readLock(dir).appVersion).toBe(pkg.version ?? '0.0.0');
+    taken.release();
+  });
 });

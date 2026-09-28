@@ -48,12 +48,32 @@ const LOCK_FILENAME = 'apunta.lock';
 const LOCK_PROTOCOL = 1;
 
 const require = createRequire(import.meta.url);
-// Two levels up, like `config.ts`: `server/package.json` from `src/platform/`
-// and from `dist/platform/` alike.
-const pkg = require('../../package.json') as { version?: string };
+
+/**
+ * The app's own version, read the way `config.ts` reads it (AM-058).
+ *
+ * `__APUNTA_VERSION__` is an esbuild `--define` carrying the `version` field of
+ * `server/package.json`, substituted at build time. It is what lets a bundle
+ * with no `package.json` beside it still write a real version into the lock
+ * file, and `typeof … === 'string'` rather than a bare reference is required:
+ * this module also runs under tsx and Node's type stripping, where `declare
+ * const` is erased and a bare reference would throw `ReferenceError`.
+ */
+declare const __APUNTA_VERSION__: string | undefined;
+
+const INJECTED_VERSION: string | undefined =
+  typeof __APUNTA_VERSION__ === 'string' ? __APUNTA_VERSION__ : undefined;
+
+function readAppVersion(): string {
+  if (INJECTED_VERSION !== undefined) return INJECTED_VERSION;
+  // Two levels up, like `config.ts`: `server/package.json` from `src/platform/`
+  // and from `dist/platform/` alike.
+  const pkg = require('../../package.json') as { version?: string };
+  return pkg.version ?? '0.0.0';
+}
 
 /** The app's own version, read the way `config.ts` reads it. */
-const APP_VERSION = pkg.version ?? '0.0.0';
+const APP_VERSION = readAppVersion();
 
 export interface LockContents {
   readonly pid: number;

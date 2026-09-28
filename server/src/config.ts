@@ -9,7 +9,33 @@ import { fileURLToPath } from 'node:url';
 import { assertLoopbackUrl } from './egress-guard.js';
 
 const require = createRequire(import.meta.url);
-const pkg = require('../package.json') as { version?: string };
+
+/**
+ * The app version, from the packaging pipeline when there is one (AM-058).
+ *
+ * `__APUNTA_VERSION__` is an esbuild `--define`, substituted at build time with
+ * the `version` field of `server/package.json`, which is how a bundle with no
+ * `package.json` of its own reports the real version. The guard is
+ * `typeof … === 'string'` and **not** a bare reference on purpose: this module
+ * is also executed directly by tsx and by Node's type stripping, and
+ * `declare const` is erased by type stripping, so a bare reference would throw
+ * `ReferenceError` in exactly those cases.
+ *
+ * The `require` below stays as the lazy fallback for those executions. esbuild
+ * leaves it unresolved (it is a local binding, not an import), so the metadata
+ * is never inlined into a bundle and no `package.json` travels with one — which
+ * is what the packaging fingerprint checks.
+ */
+declare const __APUNTA_VERSION__: string | undefined;
+
+const INJECTED_VERSION: string | undefined =
+  typeof __APUNTA_VERSION__ === 'string' ? __APUNTA_VERSION__ : undefined;
+
+function readPackageVersion(): string | undefined {
+  if (INJECTED_VERSION !== undefined) return INJECTED_VERSION;
+  const pkg = require('../package.json') as { version?: string };
+  return pkg.version;
+}
 
 /** `server/` — the same two levels up whether we run from `src/` (tsx) or `dist/` (built). */
 const serverRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -171,7 +197,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sqliteBinding: nonEmpty(env['APUNTA_SQLITE_BINDING']),
     licensesFile: nonEmpty(env['APUNTA_LICENSES_FILE']) ?? join(repoRoot, 'THIRD-PARTY-LICENSES.md'),
     webDistDir: nonEmpty(env['APUNTA_WEB_DIST']) ?? join(repoRoot, 'web', 'dist'),
-    version: pkg.version ?? '0.0.0',
+    version: readPackageVersion() ?? '0.0.0',
   };
 }
 

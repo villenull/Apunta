@@ -81,6 +81,7 @@ export default tseslint.config(
       // flight. Linting them lints a second copy of the tree, and the second
       // tsconfig root makes typescript-eslint refuse to parse anything at all.
       '.claude/worktrees/**',
+      'build/**',
     ],
   },
   js.configs.recommended,
