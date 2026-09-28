@@ -415,3 +415,160 @@ Frozen-source discipline: the snapshot still matches base commit
 `05d9b1025e0e61be16489e12ba3109d63d48fa76` file-for-file, the corpus still matches
 every hash in `corpus-freeze.json`, and no corpus, prompt, gold, schema,
 threshold, scorer or existing run was modified.
+
+---
+
+# ✅ CORRECTED ARM G — real Fable-Therapy-9B, re-measured (2026-09-28)
+
+**This supersedes nothing above by deletion.** The VOID NOTICE and the voided
+original text remain in this file as the audit trail for the `--model`/`--models`
+defect. What follows is a **separate, identity-verified re-measurement** of the
+same 72 case-runs, written to new directories, with the void originals preserved
+byte-identically.
+
+## R1. Pre-generation gates
+
+| Gate | Result |
+| --- | --- |
+| **C2 — full GGUF sha256 vs the pinned manifest** | **PASS.** published LFS `810a6103…` = local manifest model-layer digest = blob on disk, rehashed; 5 629 108 544 bytes; params layer matches; manifest sha256 = `/api/tags` digest |
+| **`/api/show` raw metadata** | recorded as returned: keys `capabilities, details, model_info, modelfile, modified_at, parameters, template, tensors`; **no `digest` field** — stated as absent, not invented; `format gguf`, `family qwen35`, `parameter_size 9.0B`, `quantization Q4_K_M`; capabilities `tools, thinking, completion`; context 262 144 |
+| **C3 — loopback** | `http://127.0.0.1:11434` only |
+| No model loaded for either gate | `ollama ps` empty at both checks |
+
+## R2. Why this run is trustworthy when the last one was not
+
+The previous attempt was **plausible and wrong**: correct-looking report, wrong
+model, no error. Nothing in its output could have revealed that. Four controls
+now stand between the two, and each was verified on every invocation:
+
+1. **Strict flag parsing, no default.** `--model` is required; `--models`
+   (plural) is not accepted as a synonym; unknown flags throw.
+2. **Fail-closed identity on every model-bearing request**, installed at the
+   single `fetch` choke point, so it covers the drafting call, the
+   retraction-correction call and every retry, with no change to any frozen file.
+   A mismatch throws **before** the request is sent.
+3. **A per-invocation gate** run after each of the 24 invocations and **before
+   the next**, asserting: `scores.json` names the Fable tag; the manifest records
+   the arm-G adapter path; argv carries the singular flag and no plural form;
+   `--fixture` is a two-digit prefix plus dash and selected exactly one fixture;
+   the identity summary and ledger exist and are non-empty; **zero violations**;
+   the ledger covers every model-bearing request; the report exists.
+4. **Honest limits recorded:** response-side identity is **unavailable** on this
+   runtime, not passing. `/api/show` returns no `model` field, `/api/chat` frames
+   carry none, `/api/tags` returns a list. The first invocation's ledger read
+   `responseChecked: 0, responseAbsent: 1` — the guard checked nothing and found
+   no mismatch, because there was nothing to check. **The only enforced identity
+   control is request-side.** The Track2 harness also has **no egress guard**; it
+   is constrained by hardcoded loopback URLs and the model guard, which is weaker
+   than production's and is recorded as such.
+
+**Result: 24 of 24 invocations passed the gate, 0 contract failures.** Fixture
+04's three correction calls were confirmed to carry the Fable tag, as were all
+75 drafting calls.
+
+## R3. Corrected arm G, Track 1 — end-to-end pipeline
+
+20 single-fixture eval invocations + 4 owner invocations, `--runs 3` each =
+**72 case-runs**, in new directories `runs/G-track1-eval-20260928T200000Z` and
+`runs/G-track1-owner-20260928T200000Z`.
+
+| Metric | G (corrected) | A (4B baseline) | C (base 9B Q4) |
+| --- | --- | --- | --- |
+| eval fabrication | **15.0% (9/60)** | 15.0% (9/60) | 25.0% (15/60) |
+| gated runs | **18/60** | 9/60 | 15/60 |
+| failed calls (no note produced) | **9/60** | 0/60 | 0/60 |
+| owner fabrication | **0.0% (0/12)** | 0.0% (0/12) | 0.0% (0/12) |
+
+Runtime and reasoning (eval, all 75 drafting requests):
+
+| | G (corrected) | A |
+| --- | --- | --- |
+| median wall / run | **9.3 s** | 2.1 s |
+| median output tokens | **701** | 189 |
+| median thinking chars | **1 842** | 0 |
+| mean tok/s | 77.8 | 101.0 |
+| `think` on the wire | `true` ×75 | `false` ×60 |
+| `think` dropped | **0** | 0 |
+| final `done_reason` | `stop` ×51, `length` ×24 | `stop` ×60 |
+
+**Fable's reasoning is roughly 18× shorter than the 4B thinking arm's and 1/12th
+of its budget cost**, which is why the corrected run finishes in minutes where the
+void baseline run took hours. 24 of 75 requests still hit the length ceiling, so
+budget sensitivity is real but far milder than the void data suggested.
+
+Retraction preprocessing, fixture 04 (production behaviour, unchanged):
+
+| arm | calls | proposed | applied | correction wall | final writer user message |
+| --- | --- | --- | --- | --- | --- |
+| original input | — | — | — | — | `e70bb29d…` 1 388 chars |
+| A | 3 | 11 | 2 | 8 459 ms | 1 817 chars `924b703d…` |
+| C | 3 | 3 | 1 | 2 870 ms | 1 864 chars `cc1e5430…` |
+| **G (corrected)** | 3 | **3** | **2** | 5 704 ms | **1 749 chars** `c1c66444…` |
+
+The 1 388 → 3 811 expansion previously attributed to G was the **baseline's**.
+Real Fable expands the transcript to 1 749 chars — far less aggressive than the
+4B's, and it proposed 3 corrections where the 4B proposed 11. **This is a Track1
+end-to-end pipeline comparison only**; no writer-message equivalence is claimed
+across arms, because the correction step is itself model-driven.
+
+## R4. Corrected refine — 144 case-runs, six arms
+
+With `JSON.stringify(input.note)` in the assembler, the note reaches the model.
+**8 refine cases × 3 runs × 6 arms = 144**, in new directories
+`runs/refine-fix-{A,B,C,D,E,G}`. Zero identity violations on all six arms.
+
+| arm | case-runs | schema-valid | produced nothing |
+| --- | --- | --- | --- |
+| A | 24 | 24/24 | 0 |
+| **B** | 24 | **9/24** | 15 |
+| C | 24 | 24/24 | 0 |
+| D | 24 | 24/24 | 0 |
+| E | 24 | 24/24 | 0 |
+| **G** | 24 | **24/24** | 0 |
+
+**Zero replies reference `[object Object]`** in any arm. B's 15 no-note runs are
+its established budget-exhaustion signature at 8 192, unchanged by this fix.
+**F remains HELD** — no F code changes and no F rerun.
+
+## R5. Supplementary blind refine packet
+
+`fable/refine-bundle/`. **Ship `JUDGE/`; do not ship `SEALED/`.**
+**48 samples**, 8 refine cases, 6 arms, run 1. Identities sealed separately and
+mechanically derivable. No scoring by the executor.
+
+One leak was found and fixed during the build: the raw failure string
+`"done_reason=length after 8192 tokens (num_predict 8192)"` names the arm's budget
+and appeared on the 5 samples that all belong to one arm. Failure text is now
+redacted of arm-identifying counts — the judge still learns *why* a run produced
+nothing, not which system it was. Final audit: **0 samples** contain a concrete
+budget number or a model/vendor name; all 48 filenames match the opaque pattern.
+
+## R6. Repair passes and stage classification
+
+**Cumulative count: 15. The cap was 2, and it is not reset.** The coordinator
+granted an explicit, separately recorded exception for the independently
+specified mechanical repair (fail-closed identity plus the one-line refine fix).
+
+| # | Pass | Stage |
+| --- | --- | --- |
+| 1 | D1 — tee never piped the response body | Track1 |
+| 2 | D3a — arm-B `b-cli` used `join` without importing it | Track1 |
+| 3 | D3b — `SNAP` referenced where undefined | Track1 |
+| 4 | D3c — `b-cli` imported the frozen runner (would report A as B) | Track1 |
+| 5 | D3d — provider import renamed, not aliased | Track1 |
+| 6 | T3 — `TransformStream` destructured as if iterable | Track2 |
+| 7 | T4 — arm-F pivot built as one contiguous block | Track2 |
+| 8 | G1 — Track2 refine note sent as `[object Object]` (156 runs) | Track2 |
+| 9 | G4a — blind packet leaked the arm via the thinking flag | G packet |
+| 10 | G4b — packager only added files, so withheld samples would re-ship | G packet |
+| 11 | G6 — `--model`/`--models` silent default; 72 runs mislabelled | G Track1 |
+| 12 | G7 — blank model value accepted by the fix | corrective (exception) |
+| 13 | G8 — negative test could not detect a leak | corrective (exception) |
+| 14 | **G9 — my gate read one directory when the tee splits evidence across two** | corrective |
+| 15 | **G10 — failure strings in the refine packet leaked the arm's output budget** | G packet |
+
+G9 and G10 were found by the *new* controls, not by inspection: the gate caught its
+own wrong path, and the packet audit caught the budget leak before the packet was
+handed over. That is the first evidence in this study that a control actually
+fired. Thirteen of the fifteen are mine and unprompted; the shared root cause is
+building against an interface I inferred instead of checking it.

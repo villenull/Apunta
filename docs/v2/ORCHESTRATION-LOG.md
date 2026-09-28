@@ -554,3 +554,26 @@ The blocking work is real and verified, so it is **committed rather than left in
 **One coordinator decision, disclosed:** the implementer added `--banner:js` to the esbuild invocation, which the card does not list, and asked for a decision rather than slipping it in — the right behaviour. Without it the bundle dies at load with a dynamic-`require` error from esbuild's CommonJS shim, so the card's own objective is unreachable without it. That is a build flag inside a script this card creates, not a contract or file-scope change, so it is within the coordinator's authority to add. Recorded as AM-067 with the reasoning, rather than left as an undisclosed deviation.
 
 **Flagged, not actioned:** `scripts/package-mac.sh` builds a bundle of the same shape with the same flags and no banner, so it likely carries the identical latent defect. It is P6.1's file and outside this card; recorded as a follow-up there.
+
+### 2026-09-28 — model study: corrected Fable results land; executor closed; tree cleaned for the UI lane
+
+The serial executor (490ebfe) closed and archived itself, leaving 157 lines of uncommitted results in `docs/v2/evidence/MODEL-STUDY/fable-execution.md`. Those are now committed together with the nine outstanding review files, which clears the working tree of everything but the new UI agent's own work.
+
+**The corrected arm-G measurement, with model identity verified on every model-bearing request and a gate run after each of the 24 invocations before the next: 24 of 24 invocations passed, 0 contract failures.** The headline the owner was given earlier and retracted is now replaced by a real one.
+
+| Metric (eval, 60 case-runs each) | Fable 9B (G) | 4B baseline (A) | 9B Q4 base (C) |
+| --- | --- | --- | --- |
+| fabrication rate | 15.0% (9/60) | 15.0% (9/60) | 25.0% (15/60) |
+| gated runs | 18/60 | 9/60 | 15/60 |
+| **no note produced at all** | **9/60** | **0/60** | 0/60 |
+| owner-format fabrication | 0.0% (0/12) | 0.0% (0/12) | 0.0% (0/12) |
+
+Runtime and output: Fable 9.3 s median per run against the 4B's 2.1 s, 701 output tokens against 189, and 24 of 75 requests ended on the length ceiling rather than `stop`. On the corrected refine set Fable was 24/24 while the 4B-with-thinking arm managed 9/24.
+
+**What this does and does not support.** It removes Fable's earlier disqualification, which was an artefact of the 4B running by mistake. It does **not** make Fable the default: it matches the 4B on the automated fabrication cue, is 4.4× slower, returns nothing at all in one run in six, and truncates a third of its answers. The cue metric is phrase-based rather than adjudicated, and the blind quality review already measured its limits (68.5% gold coverage, demonstrated cue false positives), so "same fabrication rate" is a weak signal in both directions. **Qwen 3.5 4B remains the recommended default**, now on measured rather than assumed grounds.
+
+**The retraction step is a real caveat, recorded not buried:** the 1 388 → 3 811 transcript expansion previously attributed to Fable was the *baseline's*. Real Fable expands to 1 749 characters and proposed 3 corrections where the 4B proposed 11. Writer-message equivalence across arms is therefore not claimed, because that preprocessing step is itself model-driven.
+
+**Cumulative repair count: 15 against a cap of 2, not reset.** Thirteen were the executor's own and unprompted. The root cause it names is building against an interface it inferred instead of checking it — which is the same failure I made twice on P3.1 this session, and the honest read is that this harness punishes inference. The one control that demonstrably fired was a gate catching its own wrong path.
+
+**Also recorded, and a genuine environment problem rather than a card defect:** the repository's Playwright expects `chromium_headless_shell-1234` and this machine has only build 1243, so `npm run e2e` cannot launch as written. The project's own RUN-CONFIG escape hatch (`PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium`) works, which is how the UI agent is driving a browser, and no card row needs changing — but any future e2e evidence that omits that export is not trustworthy.
