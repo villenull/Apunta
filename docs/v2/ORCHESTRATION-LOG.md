@@ -804,3 +804,52 @@ dispatch was built, so the reviewer's licence to fix `goBack()` post-dated its
 instructions. It did not apply it, correctly. And the review flagged one wrong
 line reference in the implementer's evidence: the click is `:422`, not
 `:423-425`; the mechanism and line 426 are right.
+
+### 2026-09-29 — P3.7 filed for P3.1's finding 1; and prettier has never checked a line of this plan
+
+**P3.7 exists**, owner-authorised, for the one thing P3.1's review said not to
+let pass silently: V2 cannot detect a truncated `web/dist`, because all three SPA
+checks inspect only `GET /` and `server/src/app.ts:155-164` answers a missing
+asset with `200 text/html` rather than 404. `check-plan.mjs` exits 0 at 66 cards.
+P3.6 and P3.R now depend on it, so the gap closes before the Linux install path
+and before the milestone review.
+
+The card is one file and one check, and it says why the tempting fix is wrong.
+May edit is `scripts/v2/package-linux-resources.test.sh` alone; `server/src/app.ts`
+is in **Must not edit** with the reason — the fallback is product behaviour, and
+the content-type assertion catches the truncation without touching it. The card
+adds: *an implementer who thinks the fallback "should" change is doing a
+different card.* That is the sentence that will save the attempt.
+
+Two design details worth keeping. The tripwire is self-verifying: V1 expects
+**29** `PASS` where the base file prints 28, so a run printing 28 proves the
+check is missing without anyone reading the diff. And "plausible length" is
+pinned to the bundle's own `manifest.json` `bytes` for that path rather than to
+a constant, so no threshold is invented and the content type remains the
+discriminator. V3 is the negative control — expected exit **1** — and it damages
+the bundle, restores it, and proves it byte-for-byte with `sha256sum -c` before
+exiting.
+
+The author also declined to edit `MILESTONES.md`, correctly: `plan-lib.mjs`
+`parseMilestones` derives a parent review's dependencies from its child list, so
+P3.R picks P3.7 up automatically. Verified in the regenerated file rather than
+asserted.
+
+**Now the part that indicts me.** `.prettierignore` contains `*.md` and
+`docs/v2/state/`, so `npx prettier --file-info docs/v2/cards/P3.7.md` returns
+`{"ignored": true}`. Every "All matched files use Prettier code style!" I
+printed this session on a markdown file was **vacuous — zero files checked.** That
+includes my own `prettier --check` on `AMENDMENTS.md`, `cards/S2.6.md`,
+`ORCHESTRATION-LOG.md`, `NEXT-SESSION.md` and `BLOCKED.md`, where I reported the
+check as evidence. It never was. `npm run lint`'s prettier step has never
+checked a line of this plan, and that is consistent with the repo rather than a
+defect: the markdown here is hand-wrapped at ~80 columns and is not
+prettier-formatted. The plan's *real* gates are `check-plan.mjs` and the table
+field counts, which is why the AM-070 splice mattered and a prettier pass would
+never have caught it. The card author was right to say so rather than let me
+rely on it.
+
+Two line references checked rather than trusted: `build/` is at
+`.gitignore:55`, so P3.1's review's `:50` was wrong and the card is right; and
+AM-074 is 5 fields, consistent with the header and with AM-071..073, though the
+author described it as 3 in its summary.

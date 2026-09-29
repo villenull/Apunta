@@ -44,43 +44,44 @@ there is still only one sub-session writing code at a time.
 | 35 | P3.3 | Tauri project and lifecycle | IMPLEMENTATION | L3 | P3.1, P3.2 |
 | 36 | P3.4 | Bridge security: no IPC, locked navigation, CSP | IMPLEMENTATION | L3 | P3.3 |
 | 37 | P3.5 | Native audio in WebKitGTK, with a spoken English fixture | IMPLEMENTATION | L3 | P3.3, S1.R |
-| 38 | P3.6 | Linux AppImage integration | IMPLEMENTATION | L3 | P3.4, P3.5, P2.R |
-| 39 | P3.R | Linux desktop shell (parent review) | REVIEW | L2+L3 | P3.1, P3.2, P3.3, P3.4, P3.5, P3.6 |
-| 40 | S3.1 | Spanish fixtures with a held-out split | IMPLEMENTATION | L1 | S1.R |
-| 41 | S3.2 | Locale-aware scorer, controls and the pipeline runner | IMPLEMENTATION | L1 | S3.1, S2.R |
-| 42 | S3.3 | Spanish check scripts and the Spanish baseline | MEASUREMENT | L3 | S3.2 |
-| 43 | S3.R | Spanish instrument (parent review) | REVIEW | L2+L3 | S3.1, S3.2, S3.3 |
-| 44 | S4a.1 | Synthetic Spanish audio | IMPLEMENTATION | L1 | S3.1, S1.R |
-| 45 | P4.1 | Acquisition hardening and model readiness | IMPLEMENTATION | L1 | P1.R |
-| 46 | S4a.2 | Spanish speech benchmark and selection | MEASUREMENT | L3 | S4a.1, P4.1 |
-| 47 | S4a.R | Spanish speech selection (parent review) | REVIEW | L3 | S4a.1, S4a.2 |
-| 48 | P4.2 | One platform-path policy | IMPLEMENTATION | L1 | P1.R |
-| 49 | P4.3 | Per-language catalogue and plan | IMPLEMENTATION | L1 | P4.1, P4.2, S4a.R |
-| 50 | P4.4 | Bilingual first-run setup in the app window | IMPLEMENTATION | L3 | P4.3, P3.R, S2.R |
-| 51 | P4.5 | Probe evidence integrity: the write precondition and complete redaction | IMPLEMENTATION | L1 | P4.1 |
-| 52 | S4b.1 | Spanish setup and speech integration | IMPLEMENTATION | L3 | P4.4 |
-| 53 | P4.R | Setup and Spanish acquisition (parent review) | REVIEW | L2+L3 | P4.1, P4.2, P4.3, P4.4, P4.5, S4b.1 |
-| 54 | P5.1 | Consistent backup snapshots | IMPLEMENTATION | L1 | P1.R |
-| 55 | P5.2 | Safe migration at every start | IMPLEMENTATION | L1 | P5.1, P3.2 |
-| 56 | P5.3 | Quiescence and the close policy | IMPLEMENTATION | L1 | P5.2, S2.R |
-| 57 | P5.4 | Updater state machine | IMPLEMENTATION | L3 | P5.3, P3.R |
-| 58 | P5.5 | Update end to end, with fault injection | MEASUREMENT | L3 | P5.4 |
-| 59 | P5.R | Updates and migration (parent review) | REVIEW | L2+L3 | P5.1, P5.2, P5.3, P5.4, P5.5 |
-| 60 | P6.1 | macOS and Windows bundle configuration | IMPLEMENTATION | L1 | P5.R |
-| 61 | P6.2 | Release workflow and manifest checks | IMPLEMENTATION | L1 | P6.1 |
-| 62 | P6.3 | Windows portability review and install docs | IMPLEMENTATION | L1 | P6.2 |
-| 63 | P6.R | Mac and Windows configuration (parent review) | REVIEW | L2 | P6.1, P6.2, P6.3 |
-| 64 | S5.1 | Section roles in guards, and the Spanish standard formats | IMPLEMENTATION | L1 | S3.R, S2.R |
-| 65 | S5.2 | Spanish lexicons: retractions, fact guard, refine guard | IMPLEMENTATION | L1 | S5.1 |
-| 66 | S5.3 | Spanish request intents, prior notes and clinical knowledge | IMPLEMENTATION | L1 | S5.2 |
-| 67 | S5.4 | Spanish prompts for drafting and refine, with job context | IMPLEMENTATION | L1 | S5.3 |
-| 68 | S5.5 | Spanish prompts for brainstorm, plans and briefing; fake provider | IMPLEMENTATION | L1 | S5.4 |
-| 69 | S5.6 | Spanish measurement and held-out acceptance | MEASUREMENT | L3 | S5.5, S3.R |
-| 70 | S5.7 | Owner clinical review pack | OWNER | L0 | S5.6 |
-| 71 | S6.1 | Spanish spell check | IMPLEMENTATION | L1 | S2.R, S1.R |
-| 72 | S5.R | Spanish AI and spell check (parent review) | REVIEW | L2+L3 | S5.1, S5.2, S5.3, S5.4, S5.5, S5.6, S5.7, S6.1 |
-| 73 | P7b.1 | Current-tree cleanup for publication | IMPLEMENTATION | L1 | P7a.1, P6.R |
-| 74 | P7b.2 | Refreshed sanitized audit | RESEARCH | L0 | P7b.1, S5.R, P6.R, P4.R, P3.R |
-| 75 | Q1.1 | Final integration | REVIEW | L3 | P0.R, P1.R, P2.R, S1.R, S2.R, P3.R, S3.R, S4a.R, P4.R, P5.R, P6.R, S5.R, P7b.2 |
-| 76 | Q1.2 | Spanish release gate evaluation | REVIEW | L0 | Q1.1 |
-| 77 | Q1.3 | Docs and final report | IMPLEMENTATION | L0 | Q1.2 |
+| 38 | P3.7 | The SPA check fetches a hashed asset, not only the shell | IMPLEMENTATION | L1 | P3.1 |
+| 39 | P3.6 | Linux AppImage integration | IMPLEMENTATION | L3 | P3.4, P3.5, P3.7, P2.R |
+| 40 | P3.R | Linux desktop shell (parent review) | REVIEW | L2+L3 | P3.1, P3.2, P3.3, P3.4, P3.5, P3.6, P3.7 |
+| 41 | S3.1 | Spanish fixtures with a held-out split | IMPLEMENTATION | L1 | S1.R |
+| 42 | S3.2 | Locale-aware scorer, controls and the pipeline runner | IMPLEMENTATION | L1 | S3.1, S2.R |
+| 43 | S3.3 | Spanish check scripts and the Spanish baseline | MEASUREMENT | L3 | S3.2 |
+| 44 | S3.R | Spanish instrument (parent review) | REVIEW | L2+L3 | S3.1, S3.2, S3.3 |
+| 45 | S4a.1 | Synthetic Spanish audio | IMPLEMENTATION | L1 | S3.1, S1.R |
+| 46 | P4.1 | Acquisition hardening and model readiness | IMPLEMENTATION | L1 | P1.R |
+| 47 | S4a.2 | Spanish speech benchmark and selection | MEASUREMENT | L3 | S4a.1, P4.1 |
+| 48 | S4a.R | Spanish speech selection (parent review) | REVIEW | L3 | S4a.1, S4a.2 |
+| 49 | P4.2 | One platform-path policy | IMPLEMENTATION | L1 | P1.R |
+| 50 | P4.3 | Per-language catalogue and plan | IMPLEMENTATION | L1 | P4.1, P4.2, S4a.R |
+| 51 | P4.4 | Bilingual first-run setup in the app window | IMPLEMENTATION | L3 | P4.3, P3.R, S2.R |
+| 52 | P4.5 | Probe evidence integrity: the write precondition and complete redaction | IMPLEMENTATION | L1 | P4.1 |
+| 53 | S4b.1 | Spanish setup and speech integration | IMPLEMENTATION | L3 | P4.4 |
+| 54 | P4.R | Setup and Spanish acquisition (parent review) | REVIEW | L2+L3 | P4.1, P4.2, P4.3, P4.4, P4.5, S4b.1 |
+| 55 | P5.1 | Consistent backup snapshots | IMPLEMENTATION | L1 | P1.R |
+| 56 | P5.2 | Safe migration at every start | IMPLEMENTATION | L1 | P5.1, P3.2 |
+| 57 | P5.3 | Quiescence and the close policy | IMPLEMENTATION | L1 | P5.2, S2.R |
+| 58 | P5.4 | Updater state machine | IMPLEMENTATION | L3 | P5.3, P3.R |
+| 59 | P5.5 | Update end to end, with fault injection | MEASUREMENT | L3 | P5.4 |
+| 60 | P5.R | Updates and migration (parent review) | REVIEW | L2+L3 | P5.1, P5.2, P5.3, P5.4, P5.5 |
+| 61 | P6.1 | macOS and Windows bundle configuration | IMPLEMENTATION | L1 | P5.R |
+| 62 | P6.2 | Release workflow and manifest checks | IMPLEMENTATION | L1 | P6.1 |
+| 63 | P6.3 | Windows portability review and install docs | IMPLEMENTATION | L1 | P6.2 |
+| 64 | P6.R | Mac and Windows configuration (parent review) | REVIEW | L2 | P6.1, P6.2, P6.3 |
+| 65 | S5.1 | Section roles in guards, and the Spanish standard formats | IMPLEMENTATION | L1 | S3.R, S2.R |
+| 66 | S5.2 | Spanish lexicons: retractions, fact guard, refine guard | IMPLEMENTATION | L1 | S5.1 |
+| 67 | S5.3 | Spanish request intents, prior notes and clinical knowledge | IMPLEMENTATION | L1 | S5.2 |
+| 68 | S5.4 | Spanish prompts for drafting and refine, with job context | IMPLEMENTATION | L1 | S5.3 |
+| 69 | S5.5 | Spanish prompts for brainstorm, plans and briefing; fake provider | IMPLEMENTATION | L1 | S5.4 |
+| 70 | S5.6 | Spanish measurement and held-out acceptance | MEASUREMENT | L3 | S5.5, S3.R |
+| 71 | S5.7 | Owner clinical review pack | OWNER | L0 | S5.6 |
+| 72 | S6.1 | Spanish spell check | IMPLEMENTATION | L1 | S2.R, S1.R |
+| 73 | S5.R | Spanish AI and spell check (parent review) | REVIEW | L2+L3 | S5.1, S5.2, S5.3, S5.4, S5.5, S5.6, S5.7, S6.1 |
+| 74 | P7b.1 | Current-tree cleanup for publication | IMPLEMENTATION | L1 | P7a.1, P6.R |
+| 75 | P7b.2 | Refreshed sanitized audit | RESEARCH | L0 | P7b.1, S5.R, P6.R, P4.R, P3.R |
+| 76 | Q1.1 | Final integration | REVIEW | L3 | P0.R, P1.R, P2.R, S1.R, S2.R, P3.R, S3.R, S4a.R, P4.R, P5.R, P6.R, S5.R, P7b.2 |
+| 77 | Q1.2 | Spanish release gate evaluation | REVIEW | L0 | Q1.1 |
+| 78 | Q1.3 | Docs and final report | IMPLEMENTATION | L0 | Q1.2 |
