@@ -17,8 +17,10 @@ import type { Message, MessageKey } from './t.js';
  * not written here at all: `t()` renders them through `Intl` in the
  * requested locale, which is what produces `8 ago 2026` and `1,234` for
  * `es-MX` (S1.4 §2.1's day–month–year order; §2.3's separator is `Intl`'s
- * to decide, and the difference from the prose recommendation is recorded
- * for S2.7/S2.8).
+ * to decide, and S2.8 answered the difference from the prose recommendation on
+ * 2026-09-29 by leaving both as they are — see
+ * `docs/v2/evidence/S2.8/responses.md` and the note on the `common.*` block
+ * below, where the reason is written out).
  *
  * S2.7 and S2.8 own any later change to this copy, so a translator's
  * objection to a word is not a defect in this file.
@@ -173,7 +175,7 @@ export const esMX = {
     text: 'Apunta leyó el archivo pero no pudo armar un formato utilizable. Describe tú las secciones.',
   },
   'errors.bad_request.format_detect_skill_file': {
-    text: 'Elige un archivo SKILL.md o un .zip de la carpeta de la habilidad.',
+    text: 'Elige un archivo SKILL.md o un .zip de la carpeta de la skill.',
   },
   'errors.bad_request.format_detect_one_file': { text: 'Sube un archivo a la vez.' },
   'errors.bad_request.format_detect_too_many_files': {
@@ -290,7 +292,7 @@ export const esMX = {
     text: 'Envía la grabación como multipart/form-data con un solo archivo de audio.',
   },
   'errors.bad_request.transcribe_too_long': {
-    text: 'Esa grabación es demasiado larga para subirla. Graba en sesiones más cortas.',
+    text: 'Esa grabación es demasiado larga para subirla. Graba en trozos más cortos.',
   },
   'errors.bad_request.transcribe_no_audio': { text: 'No se subió ningún audio.' },
 
@@ -326,7 +328,7 @@ export const esMX = {
     text: 'Este plan ya tiene una versión en borrador. Actívala o edítala primero.',
   },
   'errors.conflict.plan_superseded_activate': {
-    text: 'Una versión de plan que quedó obsoleta no se puede volver a activar.',
+    text: 'Una versión del plan que quedó obsoleta no se puede volver a activar.',
   },
   'errors.conflict.plan_already_active': { text: 'Esta versión ya está en vigencia.' },
   'errors.conflict.plan_superseded_readonly': {
@@ -370,16 +372,16 @@ export const esMX = {
     text: 'El modelo configurado no es una compilación GGUF, y Apunta no puede hacer que siga el formato de nota de forma confiable. Elige un modelo GGUF en Ajustes.',
   },
   'ai.unsupported_model_tag': {
-    text: 'Esa etiqueta de modelo es una compilación MLX/safetensors. Apunta no puede hacer que esas sigan el formato de nota de forma confiable: elige una etiqueta GGUF.',
+    text: 'Esa etiqueta de modelo es una compilación MLX/safetensors. Apunta no puede hacer que siga el formato de nota de forma confiable: elige una etiqueta GGUF.',
   },
   'ai.insufficient_memory': {
-    text: 'A esta computadora le faltó memoria al cargar el modelo de IA. Elige un modelo más pequeño en Ajustes e inténtalo de nuevo.',
+    text: 'A esta computadora se le acabó la memoria al cargar el modelo de IA. Elige un modelo más pequeño en Ajustes e inténtalo de nuevo.',
   },
   'ai.input_too_long': {
     text: 'Este resumen de sesión es demasiado largo para que la IA lo lea de una vez. Acórtalo o divídelo en dos notas.',
   },
   'ai.context_overflow': {
-    text: 'A la IA se le acabó el espacio y tuvo que descartar parte de las instrucciones de Apunta, así que se tiró el borrador. Acorta el resumen e inténtalo de nuevo.',
+    text: 'A la IA se le acabó el espacio y tuvo que descartar parte de las instrucciones de Apunta, así que el borrador se descartó. Acorta el resumen e inténtalo de nuevo.',
   },
   'ai.output_truncated': {
     text: 'A la IA se le acabó el espacio a media nota. Inténtalo de nuevo o acorta el resumen.',
@@ -415,7 +417,7 @@ export const esMX = {
     text: 'Falló la transcripción de la grabación. Inténtalo de nuevo; si sigue pasando, revisa Configuración inicial.',
   },
   'ai.transcription_timeout': {
-    text: 'La transcripción tardó demasiado y se detuvo. Una grabación más corta sí va a pasar; una muy larga puede necesitar una computadora más rápida.',
+    text: 'La transcripción tardó demasiado y se detuvo. Una grabación más corta sí va a funcionar; una muy larga puede necesitar una computadora más rápida.',
   },
   'ai.transcription_empty': {
     text: 'No se detectó voz en esa grabación. Revisa que esté seleccionado el micrófono correcto y graba de nuevo.',
@@ -448,7 +450,7 @@ export const esMX = {
     text: 'Esta nota está publicada, así que no la voy a cambiar. Haz clic en «Publicada (haz clic para editar)» para desbloquearla primero y después pídemelo otra vez.',
   },
   'chat.firstPass': {
-    text: 'Este es un primer borrador basado en tu dictado. Dime qué cambiar —acortar una sección, agregar algo que se me pasó, ajustar el tono— y lo actualizo. Resalta cualquier parte de la nota para señalarme exactamente dónde.',
+    text: 'Este es un primer borrador basado en tu dictado. Dime qué cambiar (acortar una sección, agregar algo que se me pasó, ajustar el tono) y lo actualizo. Resalta cualquier parte de la nota para señalarme exactamente dónde.',
   },
   'chat.moveReply': {
     text: 'Moví el texto citado de {source} a {target}.',
@@ -456,18 +458,18 @@ export const esMX = {
   },
   'chat.guardNotice.opening': { text: 'Apunta bloqueó una parte de esta revisión.' },
   'chat.guardNotice.section': {
-    text: '{section} se dejó como estaba: la revisión habría agregado "{phrase}", que no está en la nota ni en tu dictado.',
+    text: '{section} se dejó como estaba: la revisión habría agregado «{phrase}», que no está en la nota ni en tu dictado.',
     kind: { section: 'text', phrase: 'text' },
   },
   'chat.factNotice.opening': { text: 'Apunta retuvo una parte de esta revisión.' },
   'chat.factNotice.section': {
-    text: '{section} se dejó como estaba: el cambio habría perdido "{phrase}", y nada en tu mensaje pedía quitarla.',
+    text: '{section} se dejó como estaba: el cambio habría perdido «{phrase}», y nada en tu mensaje pedía quitarla.',
     kind: { section: 'text', phrase: 'text' },
   },
   'chat.factNotice.tail': { text: 'Para quitar algo, dilo y nomíbralo.' },
   'chat.priorNoteNotice.opening': { text: 'Apunta dejó fuera tus otras notas de esta revisión.' },
   'chat.priorNoteNotice.section': {
-    text: '{section} se dejó como estaba: la revisión habría traído "{phrase}" de otra de tus notas.',
+    text: '{section} se dejó como estaba: la revisión habría traído «{phrase}» de otra de tus notas.',
     kind: { section: 'text', phrase: 'text' },
   },
   'chat.priorNoteNotice.tail': {
@@ -486,7 +488,7 @@ export const esMX = {
     kind: { section: 'text', scope: 'text' },
   },
   'chat.scopeHold.additionOnly': {
-    text: 'Apunta dejó {section} como estaba: solo pediste agregar, y la revisión también habría quitado "{phrase}".',
+    text: 'Apunta dejó {section} como estaba: solo pediste agregar, y la revisión también habría quitado «{phrase}».',
     kind: { section: 'text', phrase: 'text' },
   },
   'chat.request.shorteningNote': {
@@ -501,7 +503,7 @@ export const esMX = {
     kind: { section: 'text' },
   },
   'chat.request.addition': {
-    text: 'Apunta no pudo agregar "{label}": la revisión volvió sin eso.',
+    text: 'Apunta no pudo agregar «{label}»: la revisión volvió sin eso.',
     kind: { label: 'text' },
   },
 
@@ -523,7 +525,7 @@ export const esMX = {
     kind: { section: 'text' },
   },
   'chat.change.addition': {
-    text: 'agregué "{label}"',
+    text: 'agregué «{label}»',
     kind: { label: 'text' },
   },
   'chat.change.summary': {
@@ -690,7 +692,7 @@ export const esMX = {
   'refine.empty': { text: 'Haz una pregunta sobre esta nota o da comentarios para refinarla.' },
 
   /** `RefineColumn.tsx:282`. */
-  'refine.inputPlaceholder': { text: 'Haz una pregunta o da comentarios...' },
+  'refine.inputPlaceholder': { text: 'Haz una pregunta o da comentarios…' },
 
   /** `RefineColumn.tsx:283`. */
   'refine.inputLabel': { text: 'Haz una pregunta o da comentarios' },
@@ -722,7 +724,7 @@ export const esMX = {
 
   /** `NoteBody.tsx:133`. `{sections}` son los nombres de sección del formato. */
   'notes.emptySections': {
-    text: 'No hay nada registrado en {sections}: agrégalas o déjalas en blanco.',
+    text: 'No hay nada registrado en {sections}: agrega lo que quieras o déjalo en blanco.',
     kind: { sections: 'text' },
   },
 
@@ -767,7 +769,7 @@ export const esMX = {
 
   /** `NoteView.tsx:801`. */
   'note.deleteBodyFirst': {
-    text: 'La nota, su transcripción y la conversación de refinado se van. Aquí no se puede deshacer.',
+    text: 'La nota, su transcripción y la conversación de refinado se eliminan. Aquí no se puede deshacer.',
   },
 
   /**
@@ -824,10 +826,23 @@ export const esMX = {
    * elegir en esta máquina: `one`, `many` y `other`.
    *
    * La copia es de S2.7 y S2.8: una objeción de una traductora a una palabra no
-   * es un defecto en este archivo. Dos decisiones se dejan anotadas para ellas:
-   * `plan.target` usa «objetivo» porque «meta» ya es la meta del plan, y
-   * `patients.namePlaceholder` conserva el nombre de muestra en inglés porque
-   * `e2e/fixtures/eval-es/NAMES.md` todavía no existe (O-3, §3.5).
+   * es un defecto en este archivo. Dos decisiones quedan anotadas aquí, ambas
+   * respondidas el 2026-09-29 (`docs/v2/evidence/S2.8/responses.md`):
+   * `patients.namePlaceholder` ya no usa el nombre de muestra en inglés porque
+   * `e2e/fixtures/eval-es/NAMES.md` existe (O-3, §3.5; HS-8), y
+   * `plan.objectiveTargetLabel` sigue con «objetivo del objetivo {n}» porque
+   * elegir entre «meta» y «objetivo» dentro del bloque de objetivos es una
+   * decisión de terminología clínica que va a la propietaria con S5, no una
+   * traducción. `plan.target` usa «objetivo» porque «meta» ya es la meta del
+   * plan.
+   *
+   * Fechas y números: S2.8 los deja como están, y la razón está escrita. El
+   * nombre corto (`8 ago 2026` en vez de `8 de agosto de 2026`, §2.1) y la coma
+   * de millares (`1,234` en vez del `1 234` de NOM-008-SE-2021, §2.3) no se
+   * pueden arreglar desde este archivo: los decide `t.ts`, que formatea con
+   * `Intl`. Honrar el estándar exigiría formatear el número fuera de `Intl`, y
+   * la coma es además una pregunta para la propietaria. El orden día-mes-año y el
+   * punto decimal con cero inicial (`0.5`) sí se cumplen.
    */
   'common.loading': {
     text: 'Cargando…',
@@ -1007,6 +1022,11 @@ export const esMX = {
   },
   'backup.daysAgo': {
     text: 'hace {count} días',
+    plural: {
+      one: 'hace {count} día',
+      many: 'hace {count} días',
+      other: 'hace {count} días',
+    },
     kind: { count: 'number' },
   },
   'backup.working': {
@@ -1037,7 +1057,7 @@ export const esMX = {
     text: 'Carpeta',
   },
   'backup.sameDisk': {
-    text: 'Estas copias de seguridad están en el mismo disco que tus notas; una memoria USB es más seguro.',
+    text: 'Estas copias de seguridad están en el mismo disco que tus notas; una memoria USB es más segura.',
   },
   'backup.changeFolder': {
     text: 'Cambiar la carpeta',
@@ -1318,11 +1338,11 @@ export const esMX = {
     text: '¿Empezar una conversación nueva?',
   },
   'brainstorm.confirmBody': {
-    text: 'Esto olvida la conversación de arriba. Las notas de {name} quedan tal cual.',
+    text: 'Esto descarta la conversación de arriba. Las notas de {name} quedan tal cual.',
     kind: { name: 'text' },
   },
   'brainstorm.confirmConfirm': {
-    text: 'Olvidarla',
+    text: 'Descartarla',
   },
   'brainstorm.contextNone': {
     text: 'Aún no hay notas',
@@ -1551,7 +1571,7 @@ export const esMX = {
     text: 'Diagnósticos',
   },
   'plan.diagnosesNone': {
-    text: 'Ninguno registrado. Se espera que las metas se rastreen hasta un diagnóstico, y entered por ti.',
+    text: 'Ninguno registrado. Se espera que las metas se rastreen hasta un diagnóstico; te toca ingresarlo.',
   },
   'plan.diagnosisCode': {
     text: 'Código',
@@ -1799,10 +1819,15 @@ export const esMX = {
     text: 'Agregando…',
   },
   'patients.addClose': {
-    text: 'Cerrar agregar paciente',
+    text: 'Cerrar «Agregar paciente»',
   },
+  /*
+   * `AddPatient.tsx:119`. La condición de S1.4 §3.5 (O-3) ya se cumplió: el
+   * registro `e2e/fixtures/eval-es/NAMES.md` existe, así que el ejemplo es un
+   * nombre inventado de ahí (HS-8) y no el de muestra del prototipo en inglés.
+   */
   'patients.namePlaceholder': {
-    text: 'p. ej. John Smith',
+    text: 'p. ej. Anaías Godoy Ruiz',
   },
   'patients.identifierLabel': {
     text: 'Identificador (opcional)',
@@ -1814,7 +1839,7 @@ export const esMX = {
     text: 'Instrucciones',
   },
   'format.instructionsHelp': {
-    text: 'Lo que se le dice al modelo local sobre cómo escribir este formato. Pega aquí instrucciones de skill aplanadas; déjalo en blanco para usar el valor predeterminado integrado. La receta para aplanar una skill de Claude está en',
+    text: 'Lo que se le dice al modelo local sobre cómo escribir este formato. Pega aquí instrucciones de skill en texto plano; déjalo en blanco para usar el valor predeterminado integrado. La receta para convertir una skill de Claude en texto plano está en',
   },
   'format.instructionsHelpTail': {
     text: 'dentro de la carpeta de Apunta.',
@@ -1891,7 +1916,7 @@ export const esMX = {
     text: 'Léelo antes de guardar: estas reglas borran de más en algunas skills.',
   },
   'format.referencedFiles': {
-    text: 'Esta skill se refiere a {files}, que Apunta no puede leer. Si esos archivos traen definiciones de secciones o terminología, pega tú ese texto.',
+    text: 'Esta skill se refiere a {files}, a los que Apunta no puede leer. Si esos archivos traen definiciones de secciones o terminología, pega ese texto.',
     kind: { files: 'text' },
   },
   'format.instructionsWarning': {
@@ -1926,7 +1951,7 @@ export const esMX = {
     text: 'Sube algunas notas de ejemplo',
   },
   'format.examplesSubtitle': {
-    text: 'De 2 a 3 notas terminadas para aprender el patrón',
+    text: 'De 2 a 3 notas terminadas para aprender el patrón que comparten',
   },
   'format.manualTitle': {
     text: 'Describirlo yo misma',
@@ -1991,7 +2016,7 @@ export const esMX = {
     text: '¿Ya tienes una copia de seguridad de Apunta, o alguien te preparó un archivo de ajustes?',
   },
   'format.restoreLink': {
-    text: 'Restáurala en su lugar',
+    text: 'Restaurar en cambio',
   },
   'format.editTitle': {
     text: 'Editar el formato de nota',
@@ -2003,7 +2028,7 @@ export const esMX = {
     text: 'Cambia el nombre o las secciones, y guarda.',
   },
   'format.foundLede': {
-    text: 'Comprueba que coincide con el formato de tu trabajo antes de guardar.',
+    text: 'Comprueba que coincide con el formato que usas en tu trabajo antes de guardar.',
   },
   'format.truncatedNote': {
     text: 'Ese archivo era largo, así que Apunta solo leyó la primera parte. Revisa que no falte nada abajo.',
@@ -2122,7 +2147,7 @@ export const esMX = {
   'settings.font': { text: 'Fuente' },
   'settings.fontInter': { text: 'Inter (predeterminada)' },
   'settings.fontSystem': { text: 'Sistema' },
-  'settings.fontSerif': { text: 'Serif' },
+  'settings.fontSerif': { text: 'Con serifa' },
   'settings.animations': {
     text: 'Animaciones',
   },
@@ -2306,7 +2331,7 @@ export const esMX = {
     kind: { name: 'text' },
   },
   'capture.missingPatient': {
-    text: 'Puede que este paciente se haya eliminado, así que nada de lo que se grabara aquí se podría guardar.',
+    text: 'Puede que este paciente se haya eliminado, así que no se podría guardar nada de lo que se grabó aquí.',
   },
   'capture.backToPatients': {
     text: 'Volver a pacientes',
@@ -2327,7 +2352,7 @@ export const esMX = {
     text: 'Empieza con una grabación',
   },
   'capture.sourceTail': {
-    text: '— o escribe notas en su lugar. Puedes usar una cosa, la otra, o combinarlas antes de crear el borrador.',
+    text: '— o escribe notas sin grabar. Puedes usar una cosa, la otra, o combinarlas antes de crear el borrador.',
   },
   'capture.stopAndDraft': {
     text: 'Detener y crear el borrador',
@@ -2370,10 +2395,10 @@ export const esMX = {
     text: 'Escribir notas',
   },
   'capture.typeNotesHelp': {
-    text: 'Escribe notas antes o durante la grabación, o solo escribir',
+    text: 'Escribe notas antes o durante la grabación, o solo escríbelas sin grabar',
   },
   'capture.summaryPlaceholder': {
-    text: 'Escribe el resumen de tu sesión...',
+    text: 'Escribe el resumen de tu sesión…',
   },
   'capture.summaryLabel': {
     text: 'Resumen de la sesión',
@@ -2599,7 +2624,7 @@ export const esMX = {
     text: 'Crear un paciente nuevo',
   },
   'import.notFound': {
-    text: 'No encontrados desde {cutoff}: {names}.',
+    text: 'No se encontraron desde {cutoff}: {names}.',
     kind: { cutoff: 'text', names: 'text' },
   },
   'import.runLabel': {
@@ -2616,10 +2641,10 @@ export const esMX = {
     text: 'En Claude, abre Ajustes → Privacidad → Exportar datos. La exportación llega por correo como un zip. Elige ese archivo aquí, o el conversations.json que viene dentro. Se lee en esta Mac y no se guarda en ninguna parte.',
   },
   'import.switchToClaude': {
-    text: 'Importar desde Claude en su lugar',
+    text: 'Importar desde Claude en cambio',
   },
   'import.switchToHalaxy': {
-    text: 'Importar desde Halaxy en su lugar',
+    text: 'Importar desde Halaxy en cambio',
   },
   'import.patientsSince': {
     text: 'Pacientes vistos desde',
