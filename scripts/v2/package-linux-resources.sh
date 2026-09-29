@@ -213,14 +213,31 @@ if ! APUNTA_WHISPER_BACKEND="$WHISPER_BACKEND" \
   printf 'Backend: %s. Tail of the build output:\n' "$WHISPER_BACKEND" >&2
   tail -n 40 "$WHISPER_LOG" >&2
   rm -f "$WHISPER_LOG"
-  cat <<'REPORT' >&2
+  # Name the tool from the build's own error rather than from a hard-coded
+  # guess. The first attempt guessed `vulkan.h` and was right; the second named
+  # the same tool again and was wrong, because the owner had installed it. A
+  # report that asserts which tool is missing is a claim that goes stale the
+  # moment the PC changes, so it is read out of the log or not made at all.
+  MISSING_TOOL="$(
+    grep -oE 'Could not find a package configuration file provided by "[^"]+"' "$WHISPER_LOG" 2>/dev/null |
+      head -n 1 | sed -E 's/.*provided by "([^"]+)"/\1/'
+  )"
+  [ -n "$MISSING_TOOL" ] || MISSING_TOOL="(not named in the output above — read the tail)"
+  cat <<REPORT >&2
 
-The `vulkan` backend needs the Vulkan SDK (vulkan.h) in addition to the
-`glslc` shader compiler this box has. Agents never install a tool (HS-3), and
-the card forbids substituting a different toolchain to get a green row, so this
-stops rather than building the `cpu` backend and calling it done.
+The '${WHISPER_BACKEND}' backend cannot be configured on this PC: CMake reported
+it could not find:
 
-`build/linux-resources/` has been removed rather than left half-built, so no
+    ${MISSING_TOOL}
+
+Agents never install a tool (HS-3), and the card forbids substituting a
+different toolchain to get a green row, so this stops rather than building the
+'cpu' backend and calling it done. The fix is an owner action: the package that
+provides the missing piece, installed with pacman. The 'vulkan-devel' group is
+the one that carries the whole Vulkan build toolchain, and a member of it may
+still be absent even after another member has been installed.
+
+'build/linux-resources/' has been removed rather than left half-built, so no
 later step can mistake an incomplete bundle for a finished one.
 REPORT
   die "A06: bin/whisper-cli is missing. Resolve the backend's missing tool, then re-run this script."
@@ -234,26 +251,48 @@ fi
 
 mkdir -p "$OUT/bin"
 cp "$CANDIDATE" "$OUT/bin/whisper-cli"
-# Its shared libraries too. CMAKE_BUILD_RPATH_USE_ORIGIN=ON is already set in the
-# candidate builder, so the binary looks for them next to itself and the copy
-# stays relocatable.
-mkdir -p "$OUT/lib"
-for lib in $(ldd "$CANDIDATE" 2>/dev/null | awk '/=>/ {print $3}' | grep -E '^/' | sort -u); do
-  base="$(basename "$lib")"
-  # The C library and the dynamic loader come from the host, not from us.
-  case "$base" in
-    libc.so.*|ld-linux*|ld-musl*|libpthread.so.*|libdl.so.*|librt.so.*|libm.so.*) continue ;;
-  esac
-  cp -L "$lib" "$OUT/lib/$base" 2>/dev/null || true
+# Its shared libraries go BESIDE the binary, in the same `bin/` folder, because
+# that is where the binary's own RUNPATH points. CMAKE_BUILD_RPATH_USE_ORIGIN=ON
+# is already set in the candidate builder, and what it produces here is
+# `RUNPATH: $ORIGIN:` — no `../lib` component. A copy that put them in a separate
+# `lib/` folder would therefore produce a binary that cannot start, and the only
+# reason it did not look like an obvious mistake is that the build tree happens
+# to keep its libraries in the binary's own folder too.
+#
+# What is copied is exactly what the build produced next to the binary: the
+# whisper.cpp and ggml shared objects, with their SONAME symlink chains intact
+# (`cp -P`), because the binary asks for `libwhisper.so.1` and that name is a
+# symlink, not a file.
+#
+# What is NOT copied is the host runtime the binary links against but does not
+# own — libstdc++, libgcc_s, libgomp, libc, and above all `libvulkan.so.1`. The
+# Vulkan loader is the host's ICD loader: it has to match the host's driver, and
+# bundling a copy of it is how a bundle ends up loading the wrong one. These
+# resolve from the host, which is what "already present" in ACQUISITION.md §2
+# permits, and the bundle then depends on the host having a Vulkan driver, which
+# is a real deployment property and belongs in the install guide rather than
+# hidden here.
+#
+# No RPATH is rewritten, so no `patchelf` is needed: the copy is relocatable
+# because it never hard-codes a build path in the first place.
+CANDIDATE_BIN_DIR="$(dirname "$CANDIDATE")"
+found_libs=0
+for lib in "$CANDIDATE_BIN_DIR"/*.so*; do
+  [ -e "$lib" ] || continue
+  cp -P "$lib" "$OUT/bin/$(basename "$lib")"
+  found_libs=$((found_libs + 1))
 done
-# RPATH entries pointing at absolute build-tree directories would not survive the
-# copy, so they are rewritten to $ORIGIN (the binary's own folder) and $ORIGIN/../lib.
-if command -v patchelf >/dev/null 2>&1; then
-  patchelf --set-rpath '$ORIGIN:$ORIGIN/../lib' "$OUT/bin/whisper-cli"
-else
-  printf 'note: patchelf is not installed; the copy relies on the build'\''s own RPATH\n'
+if [ "$found_libs" -eq 0 ]; then
+  rm -rf "$OUT"
+  die "A06: the whisper build produced no shared libraries beside $CANDIDATE, so the copy could not resolve them"
 fi
+printf 'copied whisper-cli and %s shared librar%s into bin/ (RUNPATH \$ORIGIN:)\n' \
+  "$found_libs" "$([ "$found_libs" -eq 1 ] && printf y || printf ies)"
+# The real gate, not a hope: a relocated binary that cannot start must fail here
+# rather than in a person's session.
 if ! "$OUT/bin/whisper-cli" --help >/dev/null 2>&1; then
+  printf '\nThe copied binary does not run. Its unresolved libraries:\n' >&2
+  ldd "$OUT/bin/whisper-cli" 2>&1 | grep -E 'not found|=>' >&2 || true
   rm -rf "$OUT"
   die "A06: the copied $OUT/bin/whisper-cli cannot run — its shared libraries do not resolve beside it"
 fi
@@ -267,10 +306,21 @@ cp "$REPO_ROOT/THIRD-PARTY-LICENSES.md" "$OUT/THIRD-PARTY-LICENSES.md"
 # cannot hash its own final bytes), each {path, bytes, sha256} with `path`
 # relative to the folder. A manifest shaped {"files": {"…": "…"}} evaluates
 # `undefined > 0` and exits 1, which is the point of fixing the shape.
+#
+# Every entry describes the path AS IT IS at that path, so the bundle is
+# verifiable with `lstat`. The bundle holds 13 symlinks — whisper's and ggml's
+# SONAME chains in `bin/`, and npm/npx/corepack under `node/bin` — and hashing a
+# symlink by following it records the TARGET's size under the LINK's path. A
+# verifier that lstats then sees 13 byte-counts that disagree with the file, and
+# a manifest that cannot be checked is worse than no manifest. So a symlink is
+# recorded as a symlink: its own byte length, and the SHA-256 of its target
+# string. Nothing is lost by this — every link's real target is itself listed
+# with its own content hash, so the bytes a broken or substituted library would
+# change are still covered.
 step "Writing manifest.json"
 (cd "$OUT" && node -e '
   const { createHash } = require("node:crypto");
-  const { readdirSync, readFileSync, statSync, writeFileSync } = require("node:fs");
+  const { lstatSync, readdirSync, readFileSync, readlinkSync, writeFileSync } = require("node:fs");
   const { join, relative, sep } = require("node:path");
 
   const root = process.cwd();
@@ -278,12 +328,19 @@ step "Writing manifest.json"
   (function walk(dir) {
     for (const entry of readdirSync(dir).sort()) {
       const full = join(dir, entry);
-      if (statSync(full).isDirectory()) walk(full);
+      const st = lstatSync(full);
+      if (st.isDirectory()) walk(full);
       else if (entry !== "manifest.json") {
+        const bytes = st.isSymbolicLink()
+          ? Buffer.byteLength(readlinkSync(full), "utf8")
+          : st.size;
+        const content = st.isSymbolicLink()
+          ? Buffer.from(readlinkSync(full), "utf8")
+          : readFileSync(full);
         files.push({
           path: relative(root, full).split(sep).join("/"),
-          bytes: statSync(full).size,
-          sha256: createHash("sha256").update(readFileSync(full)).digest("hex"),
+          bytes,
+          sha256: createHash("sha256").update(content).digest("hex"),
         });
       }
     }

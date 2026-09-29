@@ -20,12 +20,12 @@
 #
 # The wrapper is a Node script inside the checkout, so it is named by absolute
 # path and run with the **bundled** Node. The port comes from this card's
-# dispatch (7836); it is never the live instance's 7717.
+# dispatch (7834); it is never the live instance's 7717.
 
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PORT="${APUNTA_P31_PORT:-7836}"
+PORT="${APUNTA_P31_PORT:-7834}"
 SOURCE_FOLDER="$REPO_ROOT/build/linux-resources"
 BUNDLE_NODE="$SOURCE_FOLDER/node/bin/node"
 EXPECTED_NODE_VERSION="v24.19.0"
