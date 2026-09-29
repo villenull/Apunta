@@ -8,18 +8,20 @@
   "baseCommit": "8cb3ecf",
   "attempt": 2,
   "status": "BLOCKED",
-  "lastCompletedStep": "AM-063 second instruction review VERDICT: CLEAR (0 blocking, 0 major, 11 minor) against base 8cb3ecf. All post-CLEAR edits were corrective or strengthening: present tense fixed, a fifth named V1 suppression route (use.appLocale on the es-MX Playwright projects) added, the reversed-direction en.ts trap spelled out with V16 named as the only row that catches it, V17 added as the negative control with commands and required exit codes, Read list and Objective corrected. No scope widened and no check weakened.",
-  "nextAllowedAction": "Implementation is HELD: the UI owner has shared/src/i18n/es-MX.ts uncommitted, which is one of the two AM-063 paths. Regenerate the dispatch at the then-current base and continue attempt 2 once the lane is free. V1 is not run and is reported not-run if the UI owner commit has not landed.",
-  "sideEffectsDone": [],
-  "changedFiles": 9,
+  "lastCompletedStep": "Attempt 2 implemented and returned. The AM-063 repair landed: the single value `language.en.english` in `shared/src/i18n/es-MX.ts` moved from `Ingles (Estados Unidos)` to `English (United States)`, one case added to `shared/src/i18n/t.test.ts` pinning all four language names byte-identical across the catalogues, one es-MX-provider case added to `web/src/components/LanguageDialog.test.tsx`, and that file's stale header comment corrected (it claimed the repeated English line is dropped; the production file and the case beneath it both print it, per the owner's 2026-09-27 change). Coordinator checked the return: 3 code files, all in May-edit; `shared/src/i18n/en.ts` and the component unchanged; `npm run lint` exit 0, `npm run typecheck` exit 0, `build:shared` exit 0, and both touched test files re-run by the coordinator at 32/32. V15, V16 and V17 - the substance of this attempt - all PASS.",
+  "nextAllowedAction": "Implementation review (`--review --head <commit>`) by a separate sub-session, which re-runs every row and produces the numbered findings that name the V1/V3 defect. That defect is NOT repairable inside this card: `e2e/tests/language-control.spec.ts` is the UI owner's after the AM-063 retarget and is not in May-edit, and COORDINATOR may not widen a May-edit list. The implementer's reproduction (catalogue reverted to `git show HEAD:shared/src/i18n/es-MX.ts`, `shared` rebuilt, same failure at the same line) establishes the repair neither causes nor cures it. It needs a NEW card, and COORDINATOR.md §6 reserves a new card to the owner. Until then this card cannot be APPROVED and S2.7, S2.8, S2.R and the Spanish chain behind them stay released-but-blocked.",
+  "sideEffectsDone": [
+    "Four committed PNGs in `docs/v2/evidence/P2.2/screenshots/` were rewritten by the e2e line and were NOT this card's output. The coordinator reverted them with `git checkout --` (AM-071); their committed byte sizes already disagree with the sizes recorded in `evidence/P2.2/v1-e2e.md:184-187`, which is a pre-existing discrepancy in an approved card's evidence and is logged, not fixed here."
+  ],
+  "changedFiles": 3,
   "criteria": {
     "V4": "PASS (attempt 2; see return and independent review)",
     "V5": "PASS (verified, attempt 1)",
     "V6": "PASS (verified, attempt 1)",
     "V7": "PASS (verified, attempt 1)",
-    "V1": "FAIL (attempt 2; language-name catalogue defect — AM-063 is the approved repair, not yet implemented)",
+    "V1": "FAIL (attempt 2, exit 1; the AM-063 repair is in and all 50 Spanish screens pass, but the run dies on a pre-existing `page.goBack()` navigation defect in the UI owner's `e2e/tests/language-control.spec.ts`, reproduced with the catalogue reverted to base)",
     "V2": "PASS (attempt 2; see return and independent review)",
-    "V3": "PASS (attempt 2; see return and independent review)",
+    "V3": "FAIL (attempt 2, exit 1; the same pre-existing navigation defect, not this card's file)",
     "V8": "PASS (attempt 2; see return and independent review)",
     "V9": "PASS (attempt 2; see return and independent review)",
     "V10": "PASS (attempt 2; see return and independent review)",
@@ -27,11 +29,11 @@
     "V12": "PASS (attempt 2; see return and independent review)",
     "V13": "PASS (attempt 2; see return and independent review)",
     "V14": "PASS (attempt 2; see return and independent review)",
-    "V15": "NOT RUN (added by AM-063)",
-    "V16": "NOT RUN (added by AM-063)",
-    "V17": "NOT RUN (added by AM-063 as the negative control for V15)"
+    "V15": "PASS (attempt 2; all four language names byte-identical, compared per key in the real catalogues)",
+    "V16": "PASS (attempt 2; LanguageDialog.test.tsx 7/7, the English cell reads English (United States) on both lines with the app in Spanish)",
+    "V17": "PASS (attempt 2; both halves, run twice, exit 0 and 1 as required)"
   },
   "sandboxRuns": [],
-  "notes": "Port7831/7832 verified free before dispatch; V5 scratch failure evidence inherited, do not repeat. Keep existing recorded out-of-scope agreement defects separate.",
-  "updatedUtc": "2026-09-28"
+  "notes": "Attempt 2 worked at 85c3fd2. V1 was supplemented with `--project=es-MX --no-deps` because a failed dependency project stops the es-MX project where `checkScreen` runs on every screen; both servers still start from the same `webServer` block and no config was edited. Worth keeping: `web` resolves `@apunta/shared` to `shared/dist`, not `shared/src`, so a web vitest run after a catalogue edit without `npm run build:shared` silently tests the previous build; every recorded run is after a rebuild.",
+  "updatedUtc": "2026-09-29"
 }

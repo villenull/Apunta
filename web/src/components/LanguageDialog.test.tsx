@@ -13,10 +13,10 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
  * Two things here are not a matter of taste and are pinned accordingly. The
  * window **lists only the languages this build offers** — Spanish is a property
  * of the build and must never reach a release, so a build without it shows one
- * option rather than a disabled one, and that is asserted both ways. And the
- * English line is **dropped when it would repeat the endonym**, because
- * "English (United States)" printed twice reads as a rendering fault rather than
- * as a translation.
+ * option rather than a disabled one, and that is asserted both ways. And every
+ * cell prints **both** lines, English included: the repeat is not dropped, so
+ * the English cell is the same height as the Spanish one and every cell reads
+ * the same way.
  */
 
 afterEach(cleanup);
@@ -77,6 +77,37 @@ describe('the language chooser', () => {
     }
     // And the check sits on the language in force, not on the first one.
     expect(within(dialog).getByTestId('language-option-en').getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('names the languages the same way in Spanish, English option included', async () => {
+    // AM-063, and the case the three-part English could not be caught by. The
+    // four `language.<l>.endonym` / `.english` values are proper nouns and are
+    // never translated, so the English cell reads `English (United States)` on
+    // **both** lines with the app itself in Spanish. It once read
+    // `Inglés (Estados Unidos)` underneath its own endonym, so the two
+    // catalogues disagreed and V1 reported the leak — the value was wrong, not
+    // the check. Rendered through the es-MX provider, so the value on screen is
+    // the Spanish catalogue's and not the English one's, which is what makes
+    // this case able to hear the difference at all.
+    renderApp({ spanish_available: true, language: 'es-MX' });
+    fireEvent.click(await screen.findByTestId('mission-control'));
+    fireEvent.click(screen.getByTestId('mission-language'));
+
+    const dialog = await screen.findByTestId('language-dialog');
+    // The app is in Spanish, so this is the Spanish catalogue doing the naming.
+    expect(within(dialog).getByRole('heading', { name: 'Elige tu idioma' })).toBeDefined();
+    expect(within(dialog).getByTestId('language-option-en').textContent).toBe(
+      'English (United States)English (United States)',
+    );
+    expect(within(dialog).getByTestId('language-option-es-MX').textContent).toBe(
+      'Español (México)Spanish (Mexico)',
+    );
+    // Two lines in every cell, in this locale as in the English one.
+    for (const option of within(dialog).getAllByRole('radio')) {
+      expect(option.querySelectorAll('.language-option-endonym, .language-option-english')).toHaveLength(2);
+    }
+    // And the tick is on Spanish, which is the language in force.
+    expect(within(dialog).getByTestId('language-option-es-MX').getAttribute('aria-checked')).toBe('true');
   });
 
   it('shows one language on a build that does not offer Spanish', async () => {

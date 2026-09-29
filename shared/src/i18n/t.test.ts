@@ -205,6 +205,35 @@ describe('the two catalogues', () => {
     expect(placeholders(en['brainstorm.empty'].text)).toEqual(['name']);
   });
 
+  it('leaves the four language names untranslated, byte for byte', () => {
+    // AM-063. An endonym is a proper noun, and the `.english` line exists so
+    // someone who cannot read the UI language can still find their own — so
+    // all four are the same string in both catalogues, and a translation of any
+    // of them is a defect the no-English check is expected to report, never to
+    // be silenced. `es-MX` once held `Inglés (Estados Unidos)` for
+    // `language.en.english`: the two catalogues disagreed, V1 went green, and
+    // the English option was mislabelled in Spanish for three attempts.
+    //
+    // Nothing in the tree failed on that, so this case is what holds the four
+    // keys: it compares per key, byte for byte, and it fails on a single
+    // diverging value. V17 is the negative control that proves it can.
+    const LANGUAGE_NAMES: readonly MessageKey[] = [
+      'language.en.endonym',
+      'language.en.english',
+      'language.es-MX.endonym',
+      'language.es-MX.english',
+    ];
+    for (const key of LANGUAGE_NAMES) {
+      expect(esMX[key]?.text, `${key} differs between en and es-MX`).toBe(en[key]?.text);
+    }
+    // And the two lines each cell prints, so a reviewer can read the names off
+    // the test rather than infer them: English twice, and the Spanish pair.
+    expect(t('language.en.endonym', {}, 'es-MX')).toBe('English (United States)');
+    expect(t('language.en.english', {}, 'es-MX')).toBe('English (United States)');
+    expect(t('language.es-MX.endonym', {}, 'es-MX')).toBe('Español (México)');
+    expect(t('language.es-MX.english', {}, 'es-MX')).toBe('Spanish (Mexico)');
+  });
+
   it('fails on a wrong `{name}` in one form, which the union it replaced let through', () => {
     // The oracle's own proof that it can fail (AM-051, V5). Each case edits
     // one form of `brainstorm.contextSome` in a scratch copy of the Spanish

@@ -1228,7 +1228,7 @@ export const esMX = {
   'language.choose': { text: 'Elige tu idioma' },
   'language.close': { text: 'Cerrar selector de idioma' },
   'language.en.endonym': { text: 'English (United States)' },
-  'language.en.english': { text: 'Inglés (Estados Unidos)' },
+  'language.en.english': { text: 'English (United States)' },
   'language.es-MX.endonym': { text: 'Español (México)' },
   'language.es-MX.english': { text: 'Spanish (Mexico)' },
   'nav.help': {
