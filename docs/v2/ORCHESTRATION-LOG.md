@@ -853,3 +853,57 @@ Two line references checked rather than trusted: `build/` is at
 `.gitignore:55`, so P3.1's review's `:50` was wrong and the card is right; and
 AM-074 is 5 fields, consistent with the header and with AM-071..073, though the
 author described it as 3 in its summary.
+
+### 2026-09-29 — S2.6 attempt 3 implemented; two owner decisions recorded, one deliberately deferred
+
+Attempt 3 fixed both defects. The navigation fix leaves via `new-patient`, a
+route that actually pushes a history entry, so `goBack()` has somewhere real to
+return from and still loads no document. The guard fix is the one that matters:
+`arrivedStrings()` keeps reading while it has read nothing (5s ceiling), and
+`expectNoEnglishUi` asserts a non-zero read **before** the leak assertion, naming
+the screen and the count. So `0` is a failure and it says so — the message states
+the thing that was true before, that "0 English" on a screen which read nothing
+is not a result.
+
+Coordinator verified the invariants rather than the summary, because each one is
+a way this could have been a green meaning nothing. `checkVisibility({ checkOpacity:
+true, checkVisibilityCSS: true })` is **byte-identical to base** — the diff only
+*adds comments* explaining why narrowing it was refused, which is the fix AM-073
+exists to prevent. `ALLOWED` still holds exactly two keys. Case count 12 before
+and after, with both `test.skip` markers pre-existing and byte-identical (they
+are the legitimate project-scoping skips, not a screen dropped). The non-zero
+assertion lands ahead of the leak assertion, not after it.
+
+All 33 es-MX `checkScreen` calls now read non-zero — 13 follow a route change,
+`settings-appearance`'s Home among them, 0 before and 13 now — and 38 of 38 across
+both es-MX projects, smallest read 5, **no screen needing an exemption**.
+
+The implementer also ran a control nobody asked for: with the wait scratch-removed
+and the assertion kept, `settings-appearance.spec.ts:52` reads 0 and **fails**, exit
+1. That reproduces the previous review's measurement from the other end and settles
+its reservation that the cause might not be only the transition opacity. It is the
+strongest evidence in the return.
+
+**AM-075 retires V7** on the owner's decision, satisfied by its already-recorded
+evidence: the UI owner removed the accent picker, so the property V7 guarded is not
+on screen and the code that implemented it went with it. **The card's verification
+table is amended on the review's return, atomically with any approval, and not
+before** — editing an acceptance row while an implementation review is running
+risks contaminating an independent judgement, and the reviewer must stay free to
+confirm for itself that the picker is gone.
+
+**AM-076 accepts the staggered-entrance residual.** The wait stops at the first
+non-zero read, which is right for the wrapper but not for staggered entrances
+(`rise-in` delays to 144ms, `backwards` uses a fill mode), so a screen whose text
+lived entirely inside a staggered subtree could read 0 again. The failure mode is
+safe — it would fail loudly with a named count, not pass quietly — and a proper fix
+needs a stability rule that is a behavioural decision neither AM-073 nor the
+coordinator may make. A possible flake later is a much better thing to have than
+the false green this attempt removed.
+
+While writing those two rows I truncated `AMENDMENTS.md` to two lines: `open(p,'w')`
+was evaluated before the read in the same expression, so the file was emptied before
+it was read. Caught immediately by the field-count check, restored with `git
+checkout --`, and rewritten. Recorded because the amendment log is a governance
+record and a silently truncated one is the same class of defect as AM-070's splice,
+which is why the field count is checked at all.
