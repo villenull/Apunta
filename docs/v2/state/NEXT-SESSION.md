@@ -1,6 +1,104 @@
-# Latest handoff — 2026-09-29, two implementation reviews in flight
+# Latest handoff — 2026-09-29, two agents in flight
 
 Supersedes everything below. Owner is continuing in a new chat instance.
+
+## Where the tree is
+
+`main` is level with `origin/main`. Nothing is uncommitted except the four P2.2
+screenshots if a Playwright run has touched them — **revert, never commit** (see
+"Do not"). All work is on `main`; `feature/v2` was retired under AM-068.
+
+**P3.1 is APPROVED** (36 cards approved). Reviewed independently, all four rows
+re-run cold, `whisper-cli` byte-identical to the implementer's, 8 findings none
+blocking. One MAJOR carried forward as **P3.7**, not closed by P3.1's green.
+
+**S2.6 is CHANGES REQUESTED** (attempt 3 of 3, the last). The review FAILED it
+on V1/V3 and, in finding 3, found the more serious thing: the no-English guard
+has no requirement that it read any strings, so on a screen reached by
+navigation it reads 0, finds 0 English, and passes vacuously. AM-073 pins the
+fix. Both fixes go in attempt 3 together — the owner's decision, because fixing
+only `goBack()` would let V1 go green while the guard still proves nothing.
+
+## Two agents are running right now
+
+Both on `opencode-go/space-bunny-free` at high thinking, in this workspace, with
+disjoint files. Expect notifications; do not re-dispatch and do not poll.
+
+- **S2.6 implementer, attempt 3 (last)** — agent
+  `3b791b39-8997-41ec-8267-931de7f74353`. Dispatch
+  `docs/v2/state/dispatch/S2.6.md`, base `413445c`, port 7847. Fixes the
+  `goBack()` defect (AM-072) and the vacuous guard (AM-073). Must account for all
+  33 es-MX `checkScreen` calls: how many read 0 strings, how many non-zero, which
+  screens are reached by navigation.
+- **P3.7 card author** — agent `007e62cf-0f82-43c1-bb8c-0f52c7a0270b`. Writes
+  the new card for P3.1's finding 1 plus its dependency plumbing, and runs
+  `check-plan.mjs`. Docs only; it may not touch any code.
+
+Both were told about each other, because `npm run lint` runs prettier repo-wide
+and one agent's in-flight files can make the other's check fail spuriously. Both
+were told to report such a failure rather than edit the other agent's files.
+
+## A dispatch error, and the evidence it did no harm
+
+Both reviews were dispatched **in parallel, which was a mistake**: P3.1's V1 runs
+`npm run build:shared` and `npm run build` (card line 135-136), and the S2.6
+reviewer temporarily reverts `shared/src/i18n/es-MX.ts` and rebuilds it. Two
+agents writing the same build outputs breaks the one-writer rule, and P3.1's row
+is a byte-exact, reproducible bundle that must not be built from a moving source
+tree. Checked rather than assumed, and it came out clean: P3.1's bundle holds
+**0** occurrences of the reverted catalogue's accented form and **4** of the
+correct one, so it was built from the fixed tree; all four P2.2 PNGs verified
+chunk by chunk. Neither agent was cancelled, because both were past the
+dangerous phase. **Do not run two build-touching agents in parallel again** — that
+was luck, not design.
+
+## Do not
+
+- Do not commit `docs/v2/evidence/P2.2/screenshots/*.png`. Any Playwright run
+  rewrites them at sizes that contradict `evidence/P2.2/v1-e2e.md:184-187`.
+  `git checkout -- docs/v2/evidence/P2.2/screenshots/` when the agents finish.
+- Do not approve S2.6 on attempt 3's word, or on its review's word, without
+  reading the findings and the evidence paths. Attempt 3 is the last of three: if
+  it fails, the card needs an owner-authorised exception on the AM-049/AM-064
+  precedent, and a fourth attempt is not available otherwise.
+- Do not narrow `checkVisibility({ checkOpacity: true })` in
+  `e2e/support/no-english.ts`. That is the tempting wrong fix and it would
+  re-admit exactly the leak S2.6 exists to catch. Waiting out the transition is
+  the sanctioned one.
+- Do not widen a May-edit list, threshold, guard or acceptance row. §6 reserves
+  new cards and May-edit changes to the owner; AM-072 and AM-073 are already the
+  narrow authorisations she gave.
+- Do not touch port 7717 or the live instance's data.
+- Do not reap the two orphaned sandbox servers on **7861** (2026-09-26) and
+  **7807** (2026-09-27). The owner's decision was to leave them. Reaping another
+  session's state is exactly what caused P3.1's implementer to destroy five live
+  sandboxes' data directories. Port 7717 is not listening, so the live instance
+  is unaffected.
+
+## When the agents return
+
+1. **S2.6 attempt 3:** check the return against the 33-call accounting and the
+   evidence paths. If every row is PASS, send it to an independent implementation
+   review (a NEW sub-session, `--review --head <commit>`) before approving. If any
+   row FAILs, it is blocked pending an owner exception.
+2. **P3.7:** verify `check-plan.mjs` exits 0, read the card against P3.1's
+   structure to confirm it was not quietly widened, then give it an instruction
+   review (`--ir`) before any implementer sees it. Its V-row negative control
+   must expect exit **1**.
+3. Revert the P2.2 screenshots, commit findings/evidence/state with explicit
+   paths, push `main`.
+
+## Still open, and not in the plan
+
+- Adding the Atkinson Hyperlegible font needs an amendment; it is not on the
+  approved downloads list. Deferred by the owner's choice.
+- `PROGRESS.json` has no status for a card awaiting review. Resolved: the plan's
+  own `RUN-CONFIG.md` vocabulary already had `SUBMITTED` for that, so no new
+  value was invented. Do not add a fourth one.
+
+---
+
+# Previous handoff — 2026-09-29, two implementation reviews in flight (superseded)
 
 ## Where the tree is
 
