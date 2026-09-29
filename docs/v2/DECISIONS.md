@@ -12,7 +12,7 @@ blocks the card (COORDINATOR.md §6).
 
 | ID | Decision | Status |
 | --- | --- | --- |
-| D1 | All v2 work on one branch, `feature/v2`, merged into `main` by the owner. CLAUDE.md gets a temporary branch exception. | OWNER |
+| D1 | All v2 work on one branch, `feature/v2`, merged into `main` by the owner. CLAUDE.md gets a temporary branch exception. **Superseded 2026-09-29 (AM-068):** the owner merged `feature/v2` and retired it; v2 work continues on `main`. | OWNER |
 | D2 | Work runs on the Linux PC with real Ollama and whisper.cpp, and may download exactly what `ACQUISITION.md` lists. | OWNER |
 | D3 | The main repository will become public; its GitHub Releases host installers and `latest.json`. The owner flips visibility and decides any history rewrite. | OWNER |
 | D4 | Linux fully working; Mac and Windows configured but unverified. | OWNER |
@@ -51,8 +51,8 @@ blocks the card (COORDINATOR.md §6).
 
 ## Owner-only actions (collected for the final report)
 
-Back up the production update key; create GitHub secrets; review and merge
-`feature/v2`; decide on history cleanup; flip repository visibility; stop the
+Back up the production update key; create GitHub secrets; review v2 on `main`
+(`feature/v2` merged and retired by the owner 2026-09-29, AM-068); decide on history cleanup; flip repository visibility; stop the
 v1 service before the first production v2 launch; write the Spanish clinical
 verdict (`docs/v2/owner/es-clinical-review.md`); enable Spanish in release
 builds after C-ES-GATE passes; enable GitHub private vulnerability reporting

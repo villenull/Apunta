@@ -93,7 +93,7 @@ under the first-pass message in the note's chat.
 
 ## Conventions
 
-Temporary (v2): work for Apunta v2 happens on `feature/v2` until the owner merges it. Every other rule in this file still applies. See `docs/v2/`.
+v2: the owner merged `feature/v2` into `main` on 2026-09-29 and retired the branch (AM-068); v2 work continues on `main` like everything else. See `docs/v2/`.
 
 - TypeScript strict everywhere; zod schemas in `shared/` are the single
   source of truth for API and LLM-output shapes.

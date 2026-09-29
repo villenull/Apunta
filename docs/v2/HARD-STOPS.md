@@ -15,10 +15,11 @@ one, stop the step, write what was needed in your return file with status
 - **HS-3 Downloads.** Only items in `docs/v2/ACQUISITION.md`, by the rules
   there. Never pull an Ollama tag that already exists locally. Never
   remove or replace an Ollama model.
-- **HS-4 Git.** Work only on `feature/v2`, starting from the base commit the
-  coordinator gave you. Never merge into `main`, pull, rebase, reset,
-  force-push, rewrite history, or change repository visibility. Stage
-  explicit paths only.
+- **HS-4 Git.** Work only on `main` (since AM-068 the owner merged and
+  retired `feature/v2`), starting from the base commit the coordinator gave
+  you. Never create another branch, merge, pull, rebase, reset, force-push,
+  rewrite history, or change repository visibility. Stage explicit paths
+  only.
 - **HS-5 Secrets.** Never create, print, copy or commit a production
   signing key or password. Test keys live only inside a sandbox run folder.
 - **HS-6 Network at runtime.** No new network access from `server/`, `web/`

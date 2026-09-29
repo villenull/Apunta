@@ -55,7 +55,7 @@ For the next card in `DEPENDENCIES.md` order whose every dependency is
    and give `state/dispatch/<id>-review.md` to a **separate** new
    sub-session. It re-runs every verification row.
 7. **Decide.**
-   - Every row `PASS` → `APPROVED`; record commits; push `feature/v2`.
+   - Every row `PASS` → `APPROVED`; record commits; push `main` (AM-068).
    - Any `FAIL` → rebuild the dispatch with `--attempt <n+1> --findings
      state/reviews/<id>-impl.md` and start a new implementation sub-session.
    - Any `NOT RUN` for an environment reason → `BLOCKED` with the reason.
@@ -126,4 +126,4 @@ anything in `DECISIONS.md` "Owner-only actions"), write it to
 ## 9. Finishing
 
 When no card can progress, fill `templates/FINAL-REPORT.md` into
-`docs/v2/FINAL-REPORT.md`, commit, push `feature/v2`, and stop. Never merge.
+`docs/v2/FINAL-REPORT.md`, commit, push `main`, and stop. Never create or merge a branch (AM-068).
