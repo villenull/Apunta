@@ -1,3 +1,39 @@
+# Latest handoff — 2026-09-29 evening
+
+Supersedes the block below it. **41 cards APPROVED** (this session: S2.7, P3.7,
+P4.5, S2.8). Subagents now run on free models chosen per task (CLAUDE.md,
+owner decision); opencode agents need `modeId: "build"` passed explicitly.
+
+## In flight / next
+
+1. **S2.9** (new, AM-087) — isolate the e2e specs that race on the shared theme
+   row and a formats count, so the default-worker e2e line passes. Instruction
+   review running or done (`state/reviews/S2.9-ir.md`); then implement, review.
+   **S2.R waits on it** (it borrows S2.8's V3). Then S2.R, which releases S3.2,
+   S5.x, S6.1, P5.3.
+2. **P3.3 is parked by the owner** after three instruction reviews (AM-081,
+   AM-084). One defect left: V4 puts the `fatal-port` dummy and the
+   `fatal-folder` lock holder on one port at once and never waits for the lock
+   (`state/reviews/P3.3-ir3.md`). The two-clause fix is ready to apply when the
+   owner releases it; then one review, then the coordinator runs the A03
+   `pkexec pacman` install (OWNER-ACTIONS 2026-09-29, owner-authorised).
+   **Nothing has been installed.**
+3. **S4a.2 is parked by the owner** ("I'll tell you when"). Its card is
+   amended and approved (AM-082: lead-in `Bueno, notas de la sesión de hoy.`,
+   30 designed negation clips) but has not had an instruction re-review. It
+   must run on a quiet machine, never during live testing.
+
+## New residuals
+
+- `build-dispatch.mjs` does not fill placeholders inside the card body:
+  `{{BASE}}` and `<p>` in verification rows must be filled by hand after every
+  build (AM-080, AM-083, AM-085 record it). A small tool fix is worth a card.
+- S2.8 left `en.ts:2149-2153`'s comment stale ("keeps the English sample");
+  `en.ts` was Must-not-edit there. Also `plan.everyDays` (finding 25) needs a
+  plural map and a call-site change in `PlanDetails.tsx:64`.
+- The e2e line needs `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium` on this
+  box (browser rev mismatch; nothing is downloaded).
+
 # Latest handoff — 2026-09-29, nothing in flight
 
 Supersedes everything below. Owner is continuing in a new chat instance.
