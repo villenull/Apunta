@@ -907,3 +907,51 @@ it was read. Caught immediately by the field-count check, restored with `git
 checkout --`, and rewritten. Recorded because the amendment log is a governance
 record and a silently truncated one is the same class of defect as AM-070's splice,
 which is why the field count is checked at all.
+
+### 2026-09-29 — S2.6 APPROVED; 37 cards, and the Spanish chain is released
+
+The attempt-3 review is a **PASS with no blocking and no major finding**, from a
+sub-session that did not write the change. S2.6 is APPROVED and
+`S2.7 → S2.8 → S2.R` release, with S3.2, S3.R, S5.1–S5.7, S6.1 and P5.3 behind
+them. **AM-075's deferred amendment is now applied**: V7 is retired in the card's
+verification table, its command and expected result preserved as history, having
+waited for exactly the confirmation it was waiting on.
+
+**The three-arm experiment is the thing to keep.** One variable, one screen:
+
+| arm | exit | outcome |
+| --- | --- | --- |
+| base guard | **0** | `Home — 0 strings read, 0 English` — the defect, reproduced |
+| head, wait removed | **1** | fails at `no-english.ts:229`, `Expected: > 0 / Received: 0` |
+| head as committed | **0** | `Home — 13 strings read, 0 English` |
+
+That is the difference between a guard that *is present* and a guard that *bites*.
+Run against a scratch `e2e/` tree outside the repo, which was never edited for
+the experiment. The coordinator had only the implementer's word for this before;
+now the base behaviour is measured too, which is what makes the fix's value
+legible rather than asserted.
+
+The reviewer verified the forbidden fix was **not** taken rather than inheriting
+my check: `checkVisibility` byte-identical to base (only its line number moved,
+131→138), `ALLOWED` the same two keys with the same values, `fixtures.ts` and
+`playwright.config.ts` byte-identical, and the only deletions in the whole `e2e/`
+diff being four lines inside the single case AM-072 licenses.
+
+**All 38 es-MX `checkScreen` calls are non-zero with 0 English**, read off the
+reporter's own annotations rather than a summary: 33 across 11 spec files, min 5,
+max 191, none 0, plus 55/55/62/13/13 in `es-MX-language`. The previous review's
+finding 4 — whose evidence had been weakened by 0-string calls — is fully
+repaired. The reviewer also noted seven counts differing upward from the
+implementer's, all non-zero, which is the signature of a wait settling at
+different moments rather than of disagreement.
+
+One honest overstatement it caught in the card itself: V1's "every screen" is
+really 33 calls over 11 of 17 spec files. Nothing reads 0, so the row's substance
+holds, but its wording claims more coverage than it has. Recorded, not rewritten
+— an acceptance row's wording is the owner's, and this one no longer blocks
+anything.
+
+Two residuals carried, neither fixed: **AM-076**'s staggered-entrance gap, where
+the failure mode is loud rather than quiet, and a pre-existing theme flake at
+`settings-appearance.spec.ts:63-64` seen once in five full runs, which the
+reviewer confirmed this change cannot cause.
