@@ -117,6 +117,24 @@ v2: the owner merged `feature/v2` into `main` on 2026-09-29 and retired the bran
   never `git add -A`; on a rejected push, `git pull --rebase` and retry —
   never force-push.
 
+## How the owner wants to be worked with
+
+Two standing preferences, recorded here so they survive a cleared session.
+
+- **Every question goes through the multiple-choice tool**, never as free text
+  in chat. 2–4 concrete options, **exactly one marked "(Recommended)" and
+  listed first**, with a short reason. Batch related questions into one
+  interview. Do not ask about anything the repository, an existing decision, or
+  this file already answers — resolve that yourself.
+- **Every spawned subagent uses Space Bunny Free via OpenCode Go**, whatever its
+  role: implementer, reviewer, card author, advisor. Create them with provider
+  `opencode/opencode-go/space-bunny-free` (thinking `high`). Two near-misses to
+  avoid: `opencode-go/space-bunny-free` is **rejected** as "Provider
+  opencode-go is not configured" — the provider id is `opencode` and the model
+  id carries the `opencode-go/` prefix. And `opencode/space-bunny-free` is a
+  *different, paid* model on OpenCode Zen; it is not the free one. If the model
+  is ever unavailable or unfunded, say so rather than silently switching.
+
 ## Working alongside background agents
 
 A Stop hook complains whenever the git tree is dirty. While a background agent
