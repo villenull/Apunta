@@ -686,3 +686,62 @@ it was in nobody writing down that the vocabulary already covered it. P3.1 and
 S2.6 are `SUBMITTED`. Dependants correctly stay held: `build-dispatch.mjs`
 refuses on anything that is not `APPROVED`, which is exactly the behaviour
 wanted while a review is in flight.
+
+### 2026-09-29 — P3.1 APPROVED on an independent cold re-run; one finding carried, not closed
+
+An implementation review by a sub-session that did not write the change: V1, V2,
+V4 and V3 all exit 0, and the rows were re-run **cold** — `build-vulkan/` deleted
+first, 2m43s, 139 shader TUs from nothing. The `whisper-cli` it produced is
+byte-identical to the implementer's (`3a9f516d…804de`), so cold reproducibility
+is now independently confirmed instead of self-reported. 8 findings, none
+blocking. **36 cards APPROVED.**
+
+The three claims I told the reviewer to press on all held under measurement, and
+the second one is the strongest part of the implementation: V2's negative case
+genuinely discriminates, because a loadable addon is *still present* in
+`prebuilds/` and `APUNTA_SQLITE_BINDING` is authoritative, so the 503 is caused
+by the rename alone rather than by a bundle that could never have loaded.
+
+**Finding 1 is carried, not closed, and it is the one that matters.** V2 cannot
+detect a truncated `web/dist` — the single thing its SPA check exists to detect.
+All three checks in `test.sh:429-448` inspect only `GET /`, and the truncation is
+invisible at the HTTP layer because `server/src/app.ts:155-164` answers any
+unmatched non-`/api` GET with `index.html`: the missing script returns **200
+text/html, not 404**. A real bundle and a bundle with no JavaScript and no fonts
+at all are indistinguishable to this row. The card fixed this check, so the
+implementer built what was asked; the defect is the return's implication of
+coverage, and the card's green does not close it.
+
+**The reviewer's suggested homes for it do not hold, and I checked rather than
+passing it on.** It proposed carrying finding 1 to P3.5 or P6.1. But only
+P3.1's own card may edit `package-linux-resources.test.sh`, and P3.5 is WebKitGTK
+audio while P6.1 is Mac/Windows bundles — neither can edit that file, nor
+`server/src/app.ts`. So it has no home in the current plan and needs a new card,
+which §6 reserves to the owner.
+
+**And no production change is needed, which the review over-stated.** It wrote
+that the fix "also needs the static handler to stop answering 200 text/html for
+unmatched asset paths". It does not: the reviewer's own positive control returns
+`application/javascript` and 169523 bytes for a real asset against `text/html`
+for a missing one, so a single content-type assertion on the hashed asset that
+`index.html` references catches the truncation by itself. `app.ts` stays
+untouched.
+
+Two more things recorded rather than fixed, both from the review: the A06 fetch
+is **unconditional**, so it repeats every run and the build is not hermetic
+(the A06 record calls it "one request this session"); and `$WHISPER_LOG` is
+removed only in the failure branch, so 38 logs leaked in `/tmp`.
+
+**A dispatch defect that was mine.** The review dispatch was built with
+`--head c4a364f`, then two other cards were committed before the reviewer
+started, so `HEAD` was `e705953` and the dispatch's own
+stop-if-HEAD-is-neither-base-nor-head precondition did not hold. The reviewer
+stopped, confirmed `c4a364f` is an ancestor and that no file it assessed
+differs, said so plainly, and proceeded — which is the correct handling. The
+fault is mine for issuing a head-pinned dispatch and then committing on top of
+it.
+
+Sandbox servers on 7861 and 7807 remain from other sessions. Not touched by
+anyone: reaping another session's state is precisely the error P3.1's own
+implementer recorded in its `/tmp` incident. Port 7717 is not listening, so the
+live instance is unaffected.
