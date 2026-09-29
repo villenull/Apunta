@@ -62,6 +62,17 @@ For the next card in `DEPENDENCIES.md` order whose every dependency is
 8. **Record.** Update `state/PROGRESS.json`, `state/cards/<id>.json` and
    `ORCHESTRATION-LOG.md`; commit them with explicit paths.
 
+   The card status words are the ones `RUN-CONFIG.md` already defines; use them
+   rather than inventing a value. **`SUBMITTED` is the state between steps 5 and
+   7** — implemented, returned, checked, and waiting on the step-6 review — and
+   it is the honest value to record at that moment. It is not `NOT STARTED`,
+   which understates where the card is, and it is not `BLOCKED`, which would
+   halt every dependent card for a review that is simply in flight. `BLOCKED`
+   is for step 7's "environment reason" and for the exhausted-budget case;
+   `CHANGES REQUESTED` is for a returned `FAIL` that a further attempt will
+   repair. Only `APPROVED` releases a dependency: `build-dispatch.mjs` refuses
+   on anything else, which is what keeps `SUBMITTED` from starting dependents.
+
 **Parent reviews.** When every child of a parent milestone is `APPROVED`,
 build its review with `build-dispatch.mjs <parent>.R --review --base <first
 child's base> --head <HEAD> --port <p>` and run it in a separate

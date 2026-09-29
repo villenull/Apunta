@@ -651,3 +651,38 @@ discrepancy inside an already-approved card's evidence.
 **Not done, and deliberately:** I did not mark P3.1 or S2.6 APPROVED. Both need
 a separate implementation review first, and I will not be the reviewer of a card
 whose implementer I am checking in the same context.
+
+### 2026-09-29 — three owner decisions, and one that turned out not to be needed
+
+**AM-072, S2.6 gets a narrow May-edit line.** The owner chose the amendment over
+a separate card, on the AM-063 precedent: that amendment already widened this
+same card for a single key and a single test file, so the route existed. The
+gloss that made it necessary is worth recording — `e2e/tests/language-control.spec.ts`
+was *already* inside the card's `e2e/tests/*.spec.ts` glob, but that permission
+is qualified "language-aware assertions", and a `goBack()` history step is not
+one. So the file was never out of reach; the fix was simply outside what the
+permission described. Licensed: that one case's navigation sequence. Fenced with
+the same emphasis: the other assertion in that file is not licensed, the case
+count must not fall, the assertion may not be weakened to accept `about:blank`,
+and `PatientsColumn.tsx` is not licensed because the link target is right and
+the test's route is what is wrong.
+
+**P2.2's byte-count mismatch: logged, nothing fixed.** The owner chose to leave
+an approved card's evidence alone. `evidence/P2.2/v1-e2e.md:184-187` records
+the four colour-test PNGs at 28038/26342/24781/24743; the committed files are
+27967/26226/24781/24743. Two of four disagree, in illustrative screenshots that
+no gate reads. Recorded here so it is findable, and deliberately not corrected —
+editing the evidence of an approved card is the thing the evidence exists to
+prevent.
+
+**"IN REVIEW" was already in the plan, spelled `SUBMITTED`.** The owner asked for
+a status that tells the truth about a card that is implemented and awaiting its
+independent review, rather than the `NOT STARTED` I had left in place.
+`RUN-CONFIG.md` §Status words has defined `SUBMITTED` for exactly that all along,
+alongside `IN PROGRESS`, `CHANGES REQUESTED` and the rest — so no fourth value
+was invented and no schema changed. `COORDINATOR.md` step 8 now says which state
+each word means and when to use it, because the gap was never in the vocabulary,
+it was in nobody writing down that the vocabulary already covered it. P3.1 and
+S2.6 are `SUBMITTED`. Dependants correctly stay held: `build-dispatch.mjs`
+refuses on anything that is not `APPROVED`, which is exactly the behaviour
+wanted while a review is in flight.
