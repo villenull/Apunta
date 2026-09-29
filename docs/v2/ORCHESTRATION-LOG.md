@@ -583,3 +583,71 @@ Runtime and output: Fable 9.3 s median per run against the 4B's 2.1 s, 701 outpu
 The owner fast-forwarded `feature/v2` into `main`, then directed that the branch be deleted and all work continue on `main` (AM-068: HS-4, D1, COORDINATOR and CLAUDE.md updated; the local and remote branch are deleted). The stale P4.1 BLOCKED entry in PROGRESS.json is corrected to APPROVED. P3.1's V4 row had unescaped pipes that failed check-plan; they are now escaped (AM-069). The idle earlier orchestrator agent, "Astra-Orchestrate", was archived at the owner's request.
 
 Owner-chosen launch: S2.6 (attempt 2, port 7833) and P3.1 (attempt 1 resume, port 7834; the Vulkan headers are now present) are dispatched in parallel. Their file sets are disjoint and both are told to leave work uncommitted. S4a.2 is queued behind P3.1's whisper build so its speech timings stay clean. The owner authorized a follow-up card for P4.1's carried-forward DEF-2 and `redactQuery` gaps. It is being authored as P4.5 by a separate agent and then goes through instruction review, implementation and independent review in turn. The Atkinson font amendment is deferred by the owner.
+
+### 2026-09-29 — S2.6 attempt 2 returned, P4.5 card authored, P3.1 already pushed
+
+A previous orchestrator ran out of session mid-review. This entry records what
+was checked, not what was merely reported.
+
+**P3.1 — committed and pushed by its own implementer as `c4a364f`.** That is
+off-protocol: COORDINATOR §7 has the coordinator stage explicit paths *after* the
+return is checked and reviewed, and the brief has subagents leave work
+uncommitted. The commit is already public, so it cannot be unsent; what remains
+is the implementation review, which now runs against that head. All four rows
+(V1, V2, V4, V3) are PASS against a **real** whisper-cli, closing the earlier
+stubs, and the cold build was re-verified from a deleted tree with a
+byte-identical `whisper-cli` (`3a9f516d…804de`) — reproducible, not merely
+green. I re-ran the cheap gates myself rather than take the return's word:
+`lint` exit 0, `typecheck` exit 0, `check-plan.mjs` exit 0, `bash -n` clean on
+both packaging scripts. I did **not** re-run V1–V4: they need a full cold
+whisper build, which is precisely what the implementation review is for.
+
+Three substantive fixes, each a bundle that looked complete and was not:
+whisper's shared objects now sit beside the binary (the old separate `lib/`
+produced a binary whose `RUNPATH $ORIGIN:` could not resolve them, so it could
+not start — and `patchelf` is no longer needed at all); the manifest records
+each path as it is at that path, killing 13 byte counts a verifier could not
+reproduce; and the stop-condition report reads the missing tool out of the build
+log instead of asserting `vulkan.h`, which had gone stale and then named the
+wrong tool. Host runtime libs stay out on purpose, `libvulkan.so.1` above all,
+so the bundle needs a host Vulkan driver — a real deployment property the install
+guide must state.
+
+**S2.6 attempt 2 — returned, verified, not approvable.** The AM-063 repair is
+correct and minimal: one value in `es-MX.ts`, one test pinning all four language
+names byte-identical across the catalogues, one es-MX-provider dialog case, and a
+stale header comment corrected. That comment claimed the repeated English line
+is dropped; the production file renders both unconditionally and the case
+directly beneath it already asserted the print, per the owner's 2026-09-27
+change — so the comment was the defect, not the code. I re-ran `build:shared`
+and both touched test files: 32/32. V15/V16/V17, this attempt's substance, pass.
+
+V1 and V3 fail on a pre-existing `page.goBack()` defect in the UI owner's
+`language-control.spec.ts`, reproduced with the catalogue reverted to base. That
+file is not in May-edit and §6 forbids the coordinator widening a May-edit list,
+so **no attempt number fixes it** — it needs a new card, which §6 also reserves
+to the owner. Recorded in `BLOCKED.md`; S2.7, S2.8, S2.R and the Spanish chain
+stay held.
+
+**P4.5 — card authored, not yet implemented.** Two files of May-edit, a
+negative-control V3 whose expected result is exit 1, and Findings `none`
+(P4.1's items were internal review findings, not R-numbered external ones, so no
+`TRACEABILITY.md` row moves). `check-plan.mjs` passes at 65 cards.
+
+**Two authoring defects I corrected rather than committed (AM-071).** The P4.5
+author's `AM-070` row had all of `AM-069`'s row spliced onto its tail, giving it
+9 fields where its neighbours use 3 and a final column that read as a
+contradictory second copy of AM-069. Separately, committed `AM-069` itself
+carried two *unescaped* pipe pairs, so it also parsed as 7 fields. Both rows now
+parse as written; no substance changed, and `check-plan.mjs` does not read that
+file, so nothing downstream had been reading the difference.
+
+**Also reverted:** four committed PNGs in `evidence/P2.2/screenshots/` that the
+e2e line had rewritten at sizes contradicting the sizes recorded in
+`evidence/P2.2/v1-e2e.md:184-187`. Noted, not fixed: even the *committed* PNGs
+disagree with that record (27967 vs 28038 recorded) — a pre-existing
+discrepancy inside an already-approved card's evidence.
+
+**Not done, and deliberately:** I did not mark P3.1 or S2.6 APPROVED. Both need
+a separate implementation review first, and I will not be the reviewer of a card
+whose implementer I am checking in the same context.

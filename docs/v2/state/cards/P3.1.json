@@ -6,20 +6,22 @@
   ],
   "baseCommit": "3610cda",
   "attempt": 1,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Attempt1 returned BLOCKED on a genuine missing package: the Vulkan SDK headers are absent, so the vulkan backend cannot be built and the card forbids substituting a toolchain. Bundling and version injection are implemented and verified (coordinator: lint exit 0, the two version test files 15/15). V1/V2 BLOCKED exit 1, V3/V4 NOT RUN. Partial work committed rather than left uncommitted.",
-  "nextAllowedAction": "Owner installs vulkan-headers, then V1 and V2 re-run unchanged. V3 and V4 are unverified against a real bundle and must not be reported as passing on the strength of the diagnostic run, which used a self-identifying stub for whisper-cli.",
+  "status": "NOT STARTED",
+  "lastCompletedStep": "Attempt 1 implemented and returned with all four rows PASS against a REAL whisper-cli build, after the owner installed the second missing Vulkan package (`spirv-headers`; `vulkan-headers` alone does not bring it, and ggml-vulkan's CMakeLists requires find_package(SPIRV-Headers)). The implementer committed and pushed its own work as c4a364f, which is off-protocol - COORDINATOR stages explicit paths after review - so the commit is already public and the implementation review now runs against it. Coordinator re-ran the cheap gates independently: `npm run lint` exit 0, `npm run typecheck` exit 0, `node docs/v2/tools/check-plan.mjs` exit 0, and `bash -n` clean on both packaging scripts. V1-V4 were NOT re-run by the coordinator: they need a full cold whisper build, which is what the implementation review exists to do.",
+  "nextAllowedAction": "Implementation review (`--review --head c4a364f`) by a separate sub-session, which re-runs V1, V2, V4 and V3 unchanged. Only on an all-PASS review is this card APPROVED. `PROGRESS.json` carries no status for 'implemented, awaiting review' - it has only APPROVED / BLOCKED / NOT STARTED - so the truth is recorded here rather than by inventing a fourth value. Setting it BLOCKED would wrongly halt the 15 cards that depend on it, so NOT STARTED is left in place pending the owner's decision on whether to add a status.",
   "sideEffectsDone": [
     "A06 whisper clone at /tmp/apunta-v2/whisper-src, reused by scripts/v2/build-whisper-candidate.sh on a re-run; a re-run is a redundant fetch, not a second acquisition.",
-    "build/linux-resources/ does not exist: the packaging script deletes a half-built folder rather than leave something mistakable for a finished bundle."
+    "build/linux-resources/ is deleted, not left half-built: the packaging script removes a half-built folder rather than leave something mistakable for a finished bundle.",
+    "INCIDENT, recorded in the return rather than smoothed over: reclaiming /tmp space deleted the data directories of five live sandbox servers, because the liveness test read command lines instead of process environments. The live instance and the parallel S2.6 agent were unaffected. Any script that decides liveness by matching argv should be treated as suspect."
   ],
-  "changedFiles": [],
+  "changedFiles": 2,
   "criteria": {
-    "V1": "BLOCKED (exit 1; Vulkan SDK headers absent, whisper-cli cannot be built)",
-    "V2": "BLOCKED (exit 1; depends on V1)",
-    "V3": "NOT RUN",
-    "V4": "NOT RUN (both greps read 0 only in the implementer diagnostic against a stubbed bundle, which is not a card row)"
+    "V1": "PASS (attempt 1, exit 0; node v24.19.0 exact, manifest written, files is the fixed 4804-entry array including node/bin/node, server/server.mjs, migrations/011_patient_group_position.sql, web/dist/index.html, native/better_sqlite3.node, bin/whisper-cli, THIRD-PARTY-LICENSES.md; node/ copied from the A01 install, never downloaded)",
+    "V2": "PASS (attempt 1, exit 0; 28 PASS / 0 FAIL with the bundled Node, a relocated copy, cd /, PATH=/usr/bin:/bin, env -i, the four launch-contract overrides, ownership poll, lock AND listening-socket ownership proofs, and the negative case asserted (503 + storage_error + boot-error page))",
+    "V3": "PASS (attempt 1, exit 0; files is the fixed array, 4804 entries, 0 malformed, compiler and glibc recorded; path set equals the folder, 0 extra / 0 forgotten, and 0 byte-count and 0 SHA-256 mismatches on re-verification)",
+    "V4": "PASS (attempt 1, exit 0; __APUNTA_VERSION__ count 0 and @apunta/server count 0 against the real bundle, plus the source guard checked at config.ts:32 and data-lock.ts:65)"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-26T19:12:00Z"
+  "updatedUtc": "2026-09-29",
+  "notes": "The bundle deliberately does NOT carry host runtime libraries, libvulkan.so.1 above all: the loader is the host's ICD loader and must match the host's driver. The consequence is that the bundle requires a host Vulkan driver, which the install guide must state. Whisper's shared objects now sit BESIDE the binary because CMAKE_BUILD_RPATH_USE_ORIGIN=ON yields RUNPATH $ORIGIN: with no ../lib component, so the old separate lib/ folder produced a binary that could not start; the patchelf dependency is gone as a result. The manifest records each path as it is at that path, so 13 unreproducible symlink byte-counts are gone; no integrity is lost because every link's target is also listed with its own hash. A one-line test-port change 7836 -> 7834 matches this card's dispatch and the 'never the live instance's 7717' invariant, but was not disclosed in the commit message."
 }
