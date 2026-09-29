@@ -19,6 +19,10 @@ labels, with no Manual order and no drag-reorder inside groups (the
 Settings has no Language or Color row, and gains a Font dropdown (Inter, System,
 Serif). **Language is chosen only in More → Language.** English strings are
 American spelling.
+**Patient view (2026-09-28, backlog #13):** a patient with no notes has no notes
+column; a single welcome offers "Write the first note". With notes, column 2 is
+quiet rows (New note, the three tools, then "Notes"), and with none open column 3
+shows four explained cards (`PatientWelcome.tsx`).
 
 **Updated 2026-09-24.** Live runs `5573afb` (welcome-search home, patient-name notes header, 17% list columns) with the owner's revised
 progress instructions (hash `23135cae…`, verified by

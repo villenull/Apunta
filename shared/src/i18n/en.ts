@@ -1731,6 +1731,14 @@ export const en = {
   'workspace.deleteBodyThirdTail': { text: 'does that and deletes nothing.' },
 
   /** `Workspace.tsx:554`, the other half of `notes.emptyFor`. */
+  /** The patient's welcome, before a note is open (owner, 2026-09-28, backlog #13). */
+  'workspace.welcomeFirst': { text: 'Start with the first note for {name}.', kind: { name: 'text' } },
+  'workspace.writeFirst': { text: 'Write the first note' },
+  'workspace.welcomeAsk': { text: 'What would you like to do for {name}?', kind: { name: 'text' } },
+  'workspace.cardNoteHint': { text: "Dictate or type today's session." },
+  'workspace.cardBrainstormHint': { text: 'Think through the case out loud with the assistant.' },
+  'workspace.cardPlanHint': { text: 'Set goals and track progress.' },
+  'workspace.cardPrepHint': { text: 'A short summary before you see them.' },
   'workspace.noNoteSelected': { text: 'No note selected for {name}', kind: { name: 'text' } },
 
   /*

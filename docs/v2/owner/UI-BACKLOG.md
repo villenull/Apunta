@@ -219,3 +219,34 @@ Screenshots: Claude's view menu: (a) Sort by open, (b) Status = All,
   the hovered row, so it does not chase itself.
 - Rows never "respawn": the entrance cascade plays only while the list first
   arrives, because a CSS animation replays whenever its element is moved.
+
+## 13. Columns 2 and 3 for an open patient, calmer and plainer (owner, 2026-09-28; built)
+
+Screenshot: the owner boxed column 2's actions (New note, Brainstorm, Treatment
+plan, Prepare for session, "No notes yet…", Create first note) and column 3's
+empty state (the "No notes yet…" line again and a big Create first note).
+
+- **One of each action, and quiet ones.** No duplicate "Create first note"
+  buttons and no repeated "No notes yet". Actions are plain rows with small
+  icons, like the sidebar's and Claude's "New chat", not outlined teal boxes.
+- **Patient with no notes (owner): the only thing to do is add a note, and
+  columns 2 and 3 merge into one.** There is no notes column at all. The whole
+  area right of the sidebar is a welcome for this patient in the home
+  screen's style: the patient's name in the serif heading, one line such as
+  "Start with the first note for Hugo", and one primary `Write the first
+  note` action. Brainstorm, Treatment plan and Prepare for session are not
+  shown until there is a note.
+- **Patient with notes:**
+  - Column 2: `+ New note` row, then the three tools as quiet rows with icons,
+    then a `Notes` heading with the list.
+  - Column 3, with no note open: the welcome with four cards, each an icon, a
+    name and one plain line:
+    - **Write a note:** dictate or type today's session.
+    - **Brainstorm:** think through the case out loud with the assistant.
+    - **Treatment plan:** set goals and track progress.
+    - **Prepare for session:** a short summary before you see them.
+  - Column 3, with a note open: the note, as today.
+- **Decided when building (owner said "go ahead"):** the card wording as
+  written, and with notes but none open, column 3 shows the four cards rather
+  than opening the latest note. On a narrow screen the merged no-notes view
+  keeps a "Patients" back link, which the notes column used to carry.

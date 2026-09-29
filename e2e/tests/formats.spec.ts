@@ -126,8 +126,10 @@ test.describe('reading a format out of an uploaded file', () => {
     // without it this resolves to two buttons and strict mode refuses.
     await page.getByRole('button', { name: tr('patients.add'), exact: true }).click();
 
-    // The whole point of the upload: the format is usable for a note.
-    await page.getByRole('button', { name: tr('doc.newNote') }).click();
+    // The whole point of the upload: the format is usable for a note. A new
+    // patient has no notes, so the one way in is the welcome's button (owner,
+    // 2026-09-28, backlog #13).
+    await page.getByTestId('write-first-note').click();
     await page.getByLabel(tr('capture.formatLabel')).selectOption({ label: formatName });
     await page.getByTestId('summary-input').fill('First session, new client, anxious about work.');
     await page.getByTestId('process-note').click();

@@ -74,7 +74,12 @@ export function NotesColumn({
               void navigate(`/capture/${patient.id}`);
             }}
           >
-            <PlusIcon className="icon-plus" />
+            {/* The plus in a filled circle, as the sidebar's "New patient" and
+                Claude's "New chat" (owner, 2026-09-28): a quiet row, not a
+                dashed box competing with everything under it. */}
+            <span className="new-note-icon" aria-hidden="true">
+              <PlusIcon className="icon" />
+            </span>
             {t('notes.new')}
           </button>
         )}
@@ -138,7 +143,6 @@ type NoteListProps = Omit<NotesColumnProps, 'patient' | 'onBackToPatients' | 'vi
 
 function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListProps): React.JSX.Element {
   const { t } = useI18n();
-  const navigate = useNavigate();
   if (notes.status === 'loading') return <p className="small state-note">{t('notes.loading')}</p>;
 
   if (notes.status === 'error') {
@@ -152,26 +156,21 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
     );
   }
 
+  /*
+   * One muted line and no second button (owner, 2026-09-28): "New note" is at
+   * the top of the column already. This is only reached with the plan, the
+   * briefing or the brainstorm open — with none of them, a patient with no notes
+   * has no notes column at all, and the welcome says the rest.
+   */
   if (notes.data.length === 0) {
-    return (
-      <div className="empty-column-state notes-empty">
-        <p className="small col-hint notes">{t('notes.emptyFor', { name: patient.name })}</p>
-        <button
-          type="button"
-          className="btn btn-primary btn-compact"
-          onClick={() => {
-            void navigate(`/capture/${patient.id}`);
-          }}
-        >
-          <PlusIcon className="icon icon-sm" />
-          {t('notes.createFirst')}
-        </button>
-      </div>
-    );
+    return <p className="small col-hint notes-empty">{t('notes.emptyFor', { name: patient.name })}</p>;
   }
 
   return (
     <>
+      <div className="notes-list-heading" role="presentation">
+        {t('notes.title')}
+      </div>
       {notes.data.map((note) => (
         <button
           key={note.id}

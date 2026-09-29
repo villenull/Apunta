@@ -1290,6 +1290,14 @@ export const esMX = {
   'workspace.deleteBodyThirdTail': {
     text: 'eso lo hace y no elimina nada.',
   },
+  /** The patient's welcome, before a note is open (owner, 2026-09-28, backlog #13). */
+  'workspace.welcomeFirst': { text: 'Empieza con la primera nota de {name}.', kind: { name: 'text' } },
+  'workspace.writeFirst': { text: 'Escribir la primera nota' },
+  'workspace.welcomeAsk': { text: '¿Qué quieres hacer con {name}?', kind: { name: 'text' } },
+  'workspace.cardNoteHint': { text: 'Dicta o escribe la sesión de hoy.' },
+  'workspace.cardBrainstormHint': { text: 'Piensa el caso en voz alta con el asistente.' },
+  'workspace.cardPlanHint': { text: 'Define objetivos y sigue el avance.' },
+  'workspace.cardPrepHint': { text: 'Un resumen breve antes de la sesión.' },
   'workspace.noNoteSelected': {
     text: 'No hay ninguna nota seleccionada de {name}',
     kind: { name: 'text' },

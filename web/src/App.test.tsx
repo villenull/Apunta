@@ -160,13 +160,44 @@ describe('workspace', () => {
     expect(await screen.findByRole('heading', { name: 'Add patient' })).toBeDefined();
   });
 
-  it("shows a patient with no notes the prototype's empty hint", async () => {
+  /*
+   * A patient with no notes has one thing to do (owner, 2026-09-28, backlog
+   * #13): the notes column is left out, and the welcome offers only the first
+   * note — not Brainstorm, the plan or the briefing, which all read notes.
+   */
+  it('gives a patient with no notes one welcome and one button, with no notes column', async () => {
     renderApp();
 
     fireEvent.click((await screen.findAllByText('Maria Ruiz'))[0] as HTMLElement);
 
-    expect((await screen.findAllByText('No notes yet for Maria Ruiz.')).length).toBeGreaterThan(0);
-    expect(screen.getByTestId('notes-header').textContent).toBe('Maria');
+    const welcome = await screen.findByTestId('patient-welcome-first');
+    expect(welcome.textContent).toContain('Maria Ruiz');
+    expect(welcome.textContent).toContain('Start with the first note for Maria.');
+    expect(within(welcome).getByTestId('write-first-note').getAttribute('href')).toMatch(/^\/capture\//);
+    expect(screen.queryByTestId('note-list')).toBeNull();
+    expect(screen.queryByTestId('open-brainstorm')).toBeNull();
+    expect(screen.queryByTestId('open-plan')).toBeNull();
+    expect(screen.queryByTestId('open-prep')).toBeNull();
+    // Only one way to start the first note on screen.
+    expect(screen.queryByText('Create first note')).toBeNull();
+  });
+
+  it('offers four explained cards for a patient with notes and none open', async () => {
+    renderApp();
+
+    fireEvent.click((await screen.findAllByText('John Smith'))[0] as HTMLElement);
+
+    const welcome = await screen.findByTestId('empty-no-note');
+    const cards = within(welcome).getAllByRole('listitem');
+    expect(cards.map((card) => card.querySelector('.home-action-label')?.textContent)).toEqual([
+      'Write a note',
+      'Brainstorm',
+      'Treatment plan',
+      'Prepare for session',
+    ]);
+    for (const card of cards) expect(card.querySelector('.patient-welcome-hint')?.textContent).not.toBe('');
+    expect(screen.getByTestId('notes-header').textContent).toBe('John');
+    expect(screen.getByTestId('note-list').textContent).toContain('Notes');
   });
 
   it('opens a note, and marks drafts with a date and a Draft label', async () => {
@@ -457,7 +488,10 @@ describe('note editing', () => {
     fireEvent.click(screen.getByLabelText('Delete note'));
     fireEvent.click(screen.getByTestId('confirm-accept'));
 
-    expect(await screen.findByTestId('empty-no-note')).toBeDefined();
+    // It was the patient's only note, so the selection clears to the no-notes
+    // welcome (owner, 2026-09-28): one button, and no notes column.
+    expect(await screen.findByTestId('patient-welcome-first')).toBeDefined();
+    expect(screen.queryByTestId('note-title')).toBeNull();
   });
 });
 

@@ -1,6 +1,6 @@
 import type { Note, PatientListItem } from '@apunta/shared';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import {
   deletePatient,
@@ -21,8 +21,9 @@ import { ConfirmDialog } from '../components/ConfirmDialog.js';
 import { Dialog } from '../components/Dialog.js';
 import { LanguageDialog } from '../components/LanguageDialog.js';
 import { HomeLauncher } from '../components/HomeLauncher.js';
-import { BackIcon, DocumentIcon, PlusIcon } from '../components/icons.js';
+import { BackIcon } from '../components/icons.js';
 import { NotesColumn } from '../components/NotesColumn.js';
+import { PatientWelcome } from '../components/PatientWelcome.js';
 import { NoteView } from '../components/NoteView.js';
 import { PatientDirectory } from '../components/PatientDirectory.js';
 import { SidebarRail } from '../components/SidebarRail.js';
@@ -424,6 +425,15 @@ export function Workspace(): React.JSX.Element {
   // Home is the no-patient screen. A patient id whose list is still loading
   // is not home yet — it would flash the welcome screen on every reload. The
   // full patient list is its own page, not home.
+  /*
+   * A patient with no notes has one thing to do, write the first one, so the
+   * notes column is left out and the welcome takes the whole width (owner,
+   * 2026-09-28, backlog #13). Only once the notes have loaded and there are
+   * none: while they load the column stays, so nothing jumps for a patient who
+   * does have notes. The plan, briefing and brainstorm keep the column.
+   */
+  const patientHasNoNotes = notes.state.status === 'ready' && notes.state.data.length === 0;
+  const firstNoteOnly = patient !== null && patientHasNoNotes && view === 'notes';
   const atHome =
     !atDirectory && patient === null && (patientId === null || patients.state.status !== 'loading');
   const narrowPane = atDirectory
@@ -612,7 +622,7 @@ export function Workspace(): React.JSX.Element {
           />
         )}
 
-        {!atHome && !atDirectory && (
+        {!atHome && !atDirectory && !firstNoteOnly && (
           <NotesColumn
             patient={patient}
             notes={notesForColumn}
@@ -628,7 +638,21 @@ export function Workspace(): React.JSX.Element {
         )}
 
         <div className="col col-main" data-testid="main-pane">
-          {patient !== null && !atDirectory && (
+          {/* With no notes column, the way back to the patients (the column's own
+              narrow-screen back link) has to live here instead. */}
+          {firstNoteOnly && (
+            <button
+              type="button"
+              className="narrow-back main-back"
+              onClick={() => {
+                setParams({});
+              }}
+            >
+              <BackIcon className="icon icon-xs" />
+              <span>{t('common.patients')}</span>
+            </button>
+          )}
+          {patient !== null && !atDirectory && !firstNoteOnly && (
             <button
               type="button"
               className="narrow-back main-back"
@@ -686,10 +710,7 @@ export function Workspace(): React.JSX.Element {
           ) : view === 'brainstorm' ? (
             <BrainstormView key={`brainstorm-${patient.id}`} patient={patient} />
           ) : note === null ? (
-            <NoNoteSelected
-              patient={patient}
-              emptyNotes={notes.state.status === 'ready' && notes.state.data.length === 0}
-            />
+            <PatientWelcome patient={patient} hasNotes={!patientHasNoNotes} onOpenView={openView} />
           ) : (
             <NoteView
               key={note.id}
@@ -789,29 +810,5 @@ function SettingsModal({ onClose }: { onClose: () => void }): React.JSX.Element 
     >
       <SettingsModalPanel onClose={onClose} />
     </Dialog>
-  );
-}
-
-function NoNoteSelected({
-  patient,
-  emptyNotes,
-}: {
-  patient: PatientListItem;
-  emptyNotes: boolean;
-}): React.JSX.Element {
-  const { t } = useI18n();
-  return (
-    <div className="empty-state" data-testid="empty-no-note">
-      <DocumentIcon />
-      <p className="empty-message">
-        {emptyNotes
-          ? t('notes.emptyFor', { name: patient.name })
-          : t('workspace.noNoteSelected', { name: patient.name })}
-      </p>
-      <Link to={`/capture/${patient.id}`} className="btn btn-primary">
-        <PlusIcon className="icon icon-sm" />
-        {emptyNotes ? t('notes.createFirst') : t('notes.createNew')}
-      </Link>
-    </div>
   );
 }

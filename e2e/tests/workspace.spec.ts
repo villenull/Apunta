@@ -61,14 +61,15 @@ test.describe('the workspace', () => {
     // `name` matches on a substring, so without it this is two buttons.
     await page.getByRole('button', { name: tr('patients.add'), exact: true }).click();
 
-    // --- Empty states: no notes yet, nothing selected -----------------------
-    await expect(page.getByTestId('note-list')).toContainText(tr('notes.emptyFor', { name: patientName }));
-    await expect(page.getByTestId('empty-no-note')).toContainText(
-      tr('notes.emptyFor', { name: patientName }).replace(/\.$/, ''),
-    );
+    // --- No notes yet: one welcome, one button, no notes column --------------
+    // (owner, 2026-09-28, backlog #13)
+    const welcome = page.getByTestId('patient-welcome-first');
+    await expect(welcome).toContainText(patientName);
+    await expect(welcome.getByTestId('write-first-note')).toHaveText(tr('workspace.writeFirst'));
+    await expect(page.getByTestId('note-list')).toHaveCount(0);
 
     // --- Capture: type a summary, watch it drafted, land on the note --------
-    await page.getByRole('button', { name: tr('doc.newNote') }).click();
+    await welcome.getByTestId('write-first-note').click();
     await expect(page.getByTestId('capture-heading')).toHaveText(
       tr('capture.newNoteFor', { name: patientName }),
     );
@@ -134,8 +135,9 @@ test.describe('the workspace', () => {
     await page.getByLabel(tr('note.deleteLabel')).click();
     await expect(page.getByRole('dialog')).toContainText(tr('note.deleteBodySecond'));
     await page.getByTestId('confirm-accept').click();
-    await expect(page.getByTestId('empty-no-note')).toBeVisible();
-    await expect(page.getByTestId('note-list')).toContainText(tr('notes.emptyFor', { name: patientName }));
+    // Her only note is gone, so she is back at the no-notes welcome.
+    await expect(page.getByTestId('patient-welcome-first')).toBeVisible();
+    await expect(page.getByTestId('note-list')).toHaveCount(0);
 
     // --- Archive the patient, then delete it from View all -> Archived ------
     // AM-028: an active patient's row menu offers Archive, not Delete; Delete is
@@ -204,7 +206,9 @@ test.describe('the workspace', () => {
     await expect(page.getByTestId('home-search')).toBeVisible();
     await page.getByTestId('home-search').fill(patientName);
     await page.getByRole('option', { name: patientName, exact: true }).click();
-    await expect(page.getByTestId('notes-header')).toHaveText(patientName.split(' ')[0] ?? '');
+    // She has no notes yet, so the patient opens on the no-notes welcome, which
+    // names her in full (owner, 2026-09-28, backlog #13).
+    await expect(page.getByTestId('patient-welcome-first')).toContainText(patientName);
 
     // The wordmark in the sidebar is still the way home.
     await page.getByTestId('home-link').click();

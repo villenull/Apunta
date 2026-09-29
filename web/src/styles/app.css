@@ -263,26 +263,61 @@
   color: var(--text-muted);
 }
 
+/*
+ * "New note", as the sidebar's "New patient" and Claude's "New chat" (owner,
+ * 2026-09-28): a quiet row with the plus in a filled circle, not a dashed box
+ * in the accent competing with every other action in the column.
+ */
 .new-note-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: var(--space-5);
-  margin: 4px 4px 10px;
+  gap: var(--space-5);
+  height: var(--row-h);
+  padding: 0 var(--space-4);
+  margin: 0 0 var(--space-2);
   border-radius: var(--radius-sm);
-  border: 1px dashed var(--border-strong);
-  color: var(--accent);
+  border: none;
+  color: var(--text-primary);
   font-size: var(--text-md);
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
   background: none;
   font-family: inherit;
-  width: calc(100% - 8px);
+  width: 100%;
+  text-align: left;
 }
 
 .new-note-btn:hover {
-  background: var(--accent-tint);
-  border-color: var(--accent);
+  background: var(--row-hover-bg);
+}
+
+.new-note-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--row-selected-bg);
+  color: var(--text-primary);
+}
+
+.new-note-icon .icon {
+  width: 12px;
+  height: 12px;
+}
+
+/* The heading over the notes, the sidebar's section-heading type. */
+.notes-list-heading {
+  margin: var(--space-20) 0 var(--space-2);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.notes-empty {
+  margin: var(--space-8) var(--space-4) 0;
 }
 
 .note-item {
@@ -1733,26 +1768,33 @@ select:disabled {
  * like a goal she had set would be this feature failing quietly.
  */
 
+/*
+ * Brainstorm, the plan and the briefing, as quiet rows with a glyph (owner,
+ * 2026-09-28): the same shape as "New note" above them and the sidebar's rows,
+ * instead of three outlined buttons in the accent that all looked like the
+ * main thing to press.
+ */
 .col-actions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 0 4px 10px;
+  gap: 0;
+  margin: 0;
 }
 
 .col-action-btn {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-5);
   text-align: left;
-  padding: var(--space-4) var(--space-5);
+  height: var(--row-h);
+  padding: 0 var(--space-4) 0 calc(var(--space-4) + 2px);
   border-radius: var(--radius-sm);
-  border: 0.5px solid var(--border);
+  border: none;
   background: none;
-  color: var(--accent);
+  color: var(--text-secondary);
   font-family: inherit;
   font-size: var(--text-md);
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -1769,14 +1811,13 @@ select:disabled {
 }
 
 .col-action-btn:hover {
-  background: var(--surface);
-  border-color: var(--border-strong);
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
 }
 
 .col-action-btn.active {
-  background: var(--accent-tint);
-  color: var(--tint-ink);
-  border-color: var(--accent);
+  background: var(--row-selected-bg);
+  color: var(--text-primary);
 }
 
 .plan-view,
@@ -3053,6 +3094,40 @@ select:disabled {
 .home-action-label {
   font-size: var(--text-base);
   line-height: 1.35;
+}
+
+/*
+ * The patient's welcome (owner, 2026-09-28, backlog #13): the home screen's
+ * heading and cards, with one plain line under the name and, on each card, a
+ * line that says what it is for.
+ */
+.patient-welcome-lede {
+  margin: calc(-1 * var(--space-8)) 0 var(--space-24);
+  text-align: center;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+}
+
+.patient-welcome-cta-row {
+  display: flex;
+  justify-content: center;
+}
+
+.patient-welcome-cards {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.patient-welcome-cards .home-action {
+  height: auto;
+  min-height: 132px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.patient-welcome-hint {
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--text-muted);
 }
 
 /* The heading over the second step. It is the same size and weight as the
