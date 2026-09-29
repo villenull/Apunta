@@ -1,4 +1,113 @@
-# Latest handoff — S2.6 partial integration
+# Latest handoff — 2026-09-29, two implementation reviews in flight
+
+Supersedes everything below. Owner is continuing in a new chat instance.
+
+## Where the tree is
+
+`main` is level with `origin/main` at `4703b3c`. Nothing is uncommitted except
+the four P2.2 screenshots, which are **dirty on purpose and must be reverted,
+never committed** — see "Do not" below. Branch: all work is on `main`
+(`feature/v2` was retired under AM-068; do not recreate it).
+
+Five commits landed this session, in this order:
+
+| Commit | What it is |
+| --- | --- |
+| `c4a364f` | P3.1's Linux runtime bundle. Committed and pushed **by its own implementer**, which is off-protocol; already public, so the review runs against that head. |
+| `9107639` | S2.6's language-name repair (AM-063) plus why the card cannot close. |
+| `e96d6c0` | The P4.5 card. |
+| `63b20fc` | What the coordinator actually verified, and what it did not. |
+| `bdbbced` | AM-072, the narrow May-edit line for S2.6's navigation defect. |
+| `4703b3c` | `SUBMITTED` status adopted; P2.2 mismatch logged. |
+
+## Two agents are running right now
+
+Both are **implementation reviews**, both on `opencode-go/space-bunny-free` at
+high thinking, both in this workspace. Neither wrote the code it is reviewing.
+Expect their completion notifications; do not re-dispatch and do not poll.
+
+- **P3.1 implementation review** — agent `2eae2b70-4844-4d00-8626-c1b6429c3a81`.
+  Dispatch `docs/v2/state/dispatch/P3.1-review.md`, base `85c3fd2`, head
+  `c4a364f`, port 7845. Writes `state/reviews/P3.1-impl.md` and
+  `evidence/P3.1/`. **V1, V2, V3 and V4 have already been re-run and all four
+  exit 0**; it is in the write-up phase. Its outstanding job is to check three
+  claims it was told to press on: that every symlink target really is listed
+  with its own hash, that V2's negative case genuinely discriminates, and that
+  the bundle's need for a **host Vulkan driver** is stated as a deployment
+  consequence rather than buried.
+- **S2.6 implementation review** — agent `6cf55a4a-de85-4775-92ab-b3d1b3da6bbf`.
+  Dispatch `docs/v2/state/dispatch/S2.6-review.md`, base `c4a364f`, head
+  `9107639`, port 7841 (+7842 for es-MX). Writes `state/reviews/S2.6-impl.md`
+  and `evidence/S2.6/`. **It has already independently reproduced V1's single
+  failure** — `about:blank` at `language-control.spec.ts:426`, exit 1 — which
+  confirms the implementer's attribution rather than taking it on trust. It is
+  now running the es-MX project with `--no-deps` and then the control.
+
+## A dispatch error, and the evidence it did no harm
+
+Both reviews were dispatched **in parallel, which was a mistake**: P3.1's V1
+runs `npm run build:shared` and `npm run build` (card line 135-136), and the
+S2.6 reviewer temporarily reverts `shared/src/i18n/es-MX.ts` and rebuilds it.
+Two agents writing the same build outputs breaks the one-writer rule, and
+P3.1's row is a byte-exact, reproducible bundle that must not be built from a
+moving source tree.
+
+Checked rather than assumed, and it came out clean:
+
+- P3.1's bundle contains **0** occurrences of the reverted catalogue's accented
+  `Inglés (Estados Unidos)` and **4** of the correct `English (United States)`,
+  so it was built from the fixed tree. No contamination.
+- All four P2.2 PNGs verify: correct signature, every chunk CRC valid, zero
+  trailing bytes. Two concurrent Playwright runs did not corrupt them.
+
+Neither agent was cancelled, because both are past the dangerous phase and
+cancelling would have destroyed real work for a risk that had already
+evaporated. **Do not run two build-touching agents in parallel again** — this
+was luck, not design.
+
+## Do not
+
+- Do not commit `docs/v2/evidence/P2.2/screenshots/*.png`. Any Playwright run
+  rewrites them at sizes that contradict `evidence/P2.2/v1-e2e.md:184-187`.
+  `git checkout -- docs/v2/evidence/P2.2/screenshots/` when the reviews finish.
+- Do not approve P3.1 or S2.6 on the implementer's word, or on the reviews' word
+  without reading the findings and the evidence paths yourself.
+- Do not widen a May-edit list, threshold, guard or acceptance row. §6 reserves
+  new cards and May-edit changes to the owner, and AM-072 is already the narrow
+  amendment she authorised for S2.6.
+- Do not touch port 7717 or the live instance's data.
+
+## What to do when the reviews return
+
+1. **P3.1:** if the review is all-PASS with no blocking finding, set
+   `PROGRESS.json` `P3.1` to `APPROVED` and commit with explicit paths. Its
+   install-guide consequence — the bundle needs a host Vulkan driver — belongs
+   in the docs before release, so check whether P6.1's card already carries it.
+2. **S2.6:** the review is expected to confirm the V1/V3 defect. When it does,
+   rebuild the implementation dispatch at **attempt 3** so AM-072's line is in
+   force, and dispatch a fresh implementer. The fix is one test case's
+   navigation sequence; the other assertion in that file is fenced off and the
+   case count must not fall. Attempt 3 of 3 — there is no fourth without an
+   owner-authorised exception on the AM-049/AM-064 precedent.
+3. Revert the P2.2 screenshots, then commit the state files, the findings and
+   the evidence, and push `main`.
+4. **P4.5** is the next card needing work: the card is authored and committed
+   but has had no instruction review yet. It needs `--ir` dispatch, a separate
+   reviewer, then an implementer. Its May-edit is two files and its V3 is a
+   negative control whose expected result is exit **1**.
+
+## Still open, and not in the plan
+
+- Adding the Atkinson Hyperlegible font needs an amendment; it is not on the
+  approved downloads list. Deferred by the owner's choice.
+- `PROGRESS.json` has no status for a card that is implemented and awaiting
+  review. Resolved: the plan's own `RUN-CONFIG.md` vocabulary already had
+  `SUBMITTED` for exactly that, so no new value was invented. Do not add a
+  fourth one.
+
+---
+
+# Previous handoff — S2.6 partial integration (superseded)
 
 Supersedes S2.6 and UI-review status below. UI rereview accepted and archived.
 AM059 implementation independently accepted; coordinator 55 tests passed.
