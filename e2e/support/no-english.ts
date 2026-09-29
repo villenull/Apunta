@@ -26,6 +26,13 @@ import { expect, test, type Page } from '@playwright/test';
  * the catalogue at all (a literal the UI-string check missed, a server
  * sentence forwarded unchanged), two keys run together into one text node, and
  * text inside an editable field's value.
+ *
+ * What it cannot be: **a check that read nothing** (AM-073). A screen reached
+ * by navigation is still arriving when the assertion immediately before a
+ * `checkScreen` call has already passed, and a screen it read nothing on is a
+ * screen it cannot report a leak for. So it waits for the screen to arrive,
+ * and a call that still reads nothing **fails**, naming the screen and the
+ * count. Zero English from zero strings is not a result.
  */
 
 /** A catalogue entry, as the two objects hold it. */
@@ -149,16 +156,57 @@ async function visibleStrings(page: Page): Promise<string[]> {
 }
 
 /**
+ * How long a screen is given to arrive, and how often it is looked at while it
+ * does (AM-073). The transition it is waiting out is `--motion-base`, 240ms; the
+ * budget is a ceiling, not a delay — a screen that has arrived is read on the
+ * first look.
+ */
+const ARRIVAL_TIMEOUT_MS = 5_000;
+const ARRIVAL_POLL_MS = 100;
+
+/**
+ * The page's visible text, read once the screen has arrived.
+ *
+ * The reason this waits at all: `.route-transition` is re-keyed per path
+ * (`web/src/App.tsx`) and animated by `rise-in`, whose `from` is `opacity: 0`
+ * (`web/src/styles/motion.css`). For the length of one motion base the whole
+ * workspace subtree computes to `opacity: 0`, and `checkVisibility({
+ * checkOpacity: true })` above counts a subtree at `opacity: 0` as hidden — so
+ * a walker running mid-transition drops the entire screen and reads **nothing
+ * from it**. Playwright's own `toBeVisible()`, which the spec runs immediately
+ * before every call, does not consider opacity, so the two disagree for exactly
+ * as long as the transition runs and the check reports a clean screen it never
+ * looked at.
+ *
+ * What is deliberately **not** done: narrowing `checkOpacity` so opacity stops
+ * counting, or dropping a screen from the project. Both make a mid-arrival
+ * screen look empty rather than make the guard see it, which re-admits the very
+ * leak the check exists to catch. The screen is waited out instead, and a
+ * screen that never arrives fails below with the count it managed to read.
+ */
+async function arrivedStrings(page: Page): Promise<string[]> {
+  const deadline = Date.now() + ARRIVAL_TIMEOUT_MS;
+  for (;;) {
+    const strings = await visibleStrings(page);
+    if (new Set(strings).size > 0) return strings;
+    if (Date.now() >= deadline) return strings;
+    await page.waitForTimeout(ARRIVAL_POLL_MS);
+  }
+}
+
+/**
  * Fail if the page, which must be in Spanish, shows English the catalogue
  * translates. `screen` names the screen in the failure and in the test's
- * annotations, which is the record that the check ran there.
+ * annotations, which is the record that the check ran there — and the record of
+ * how many strings it read, which is the record of whether it ran at all.
  */
 export async function expectNoEnglishUi(page: Page, screen: string): Promise<void> {
   await expect(page.locator('html'), `the ${screen} screen is marked Spanish`).toHaveAttribute(
     'lang',
     'es-MX',
   );
-  const strings = await visibleStrings(page);
+  const strings = await arrivedStrings(page);
+  const read = new Set(strings).size;
   const leaks: string[] = [];
   for (const text of new Set(strings)) {
     for (const form of englishMatches(text)) {
@@ -168,7 +216,16 @@ export async function expectNoEnglishUi(page: Page, screen: string): Promise<voi
   }
   test.info().annotations.push({
     type: 'no-english-ui',
-    description: `${screen} — ${String(new Set(strings).size)} strings read, ${String(leaks.length)} English`,
+    description: `${screen} — ${String(read)} strings read, ${String(leaks.length)} English`,
   });
+  // A result is only a result if something was read (AM-073). 0 strings and 0
+  // English is the shape a skipped check and a clean screen share, and V1's
+  // claim — that the Spanish project is free of English catalogue text — rests
+  // on this call having actually looked. So 0 is a failure, and it names the
+  // screen and the count rather than passing quietly.
+  expect(
+    read,
+    `the Spanish ${screen} screen gave the English check nothing to read: 0 visible strings after waiting ${String(ARRIVAL_TIMEOUT_MS)}ms for it to arrive, so "0 English" here is not a result`,
+  ).toBeGreaterThan(0);
   expect(leaks, `English catalogue text on the Spanish ${screen} screen`).toEqual([]);
 }

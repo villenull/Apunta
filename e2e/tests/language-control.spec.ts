@@ -418,12 +418,21 @@ test.describe('the Language control on the Spanish server', () => {
     // Away and back, with no document loaded: the dialog is transient, so
     // "it kept the language" is the reopened window agreeing with the page and
     // the server, not a component that never unmounted.
+    //
+    // Away means a route that actually pushes a history entry (AM-072).
+    // `home-link` is `<Link to="/">` and the page is **already** at `/`, so
+    // clicking it wrote nothing and `goBack()` fell off the front of the stack
+    // onto `about:blank` — which is what the `toHaveURL` below then failed on.
+    // "New patient" is a real route, so the browser's Back returns here
+    // through the entry the click really made, still in-app and still without
+    // loading a document.
     await page.getByTestId('language-close').click();
-    await page.getByTestId('home-link').click();
-    await expect(page.getByTestId('home')).toBeVisible();
+    await page.getByTestId('new-patient').click();
+    await expect(page.getByTestId('add-patient-form')).toBeVisible();
     await expect(root).toHaveAttribute('lang', 'en');
     await page.goBack();
     await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByTestId('home')).toBeVisible();
     await expect(root).toHaveAttribute('lang', 'en');
     expect(await storedLanguage(request)).toBe('en');
 
@@ -436,10 +445,14 @@ test.describe('the Language control on the Spanish server', () => {
     await expect(root).toHaveAttribute('lang', 'es-MX');
     await expect.poll(() => storedLanguage(request)).toBe('es-MX');
     await page.getByTestId('language-close').click();
-    await page.getByTestId('home-link').click();
+    // The same away-and-back as above, for the same reason (AM-072): a route
+    // that pushes, so `goBack()` has somewhere real to return from.
+    await page.getByTestId('new-patient').click();
+    await expect(page.getByTestId('add-patient-form')).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.getByTestId('home')).toBeVisible();
     await checkScreen(page, 'Home, Spanish again after a switch from the dialog');
-    await page.goBack();
     await expect(root).toHaveAttribute('lang', 'es-MX');
     await checkScreen(page, 'the workspace, Spanish again after a switch from the dialog');
     await openLanguageDialog(page);
