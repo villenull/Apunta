@@ -268,7 +268,7 @@ export function describeLocation(raw, allowedQueryKeys = []) {
     } else {
       for (const name of queryKeyNames(parsed.search)) {
         if (allowedQueryKeys.includes(name)) continue;
-        refusals.push(`\`query_key_not_allowed\` — \`${name}\``);
+        refusals.push(`\`query_key_not_allowed\` — \`${escapeMarkdownInline(name)}\``);
       }
     }
   }
@@ -292,10 +292,101 @@ export function describeLocation(raw, allowedQueryKeys = []) {
   };
 }
 
-/** The `Location` as observed, with any query string replaced, never pasted. */
+/**
+ * A value as it is about to be written into a code span, with every character
+ * markdown acts on replaced by a visible escape.
+ *
+ * A query parameter's *name* is a header value: the origin chose it, and this
+ * script has read it, percent-decoded it, and is about to write it into a
+ * record a human reads as prose. A name carrying a backtick opens a code span
+ * the record's own quoting never closes; a name carrying CR LF ends the line and
+ * can make the record read as though a line finished there; a name carrying a
+ * backslash or a vertical bar survives a table or an escape. A name is **not**
+ * dropped and **not** truncated: it is escaped, so a plan editor still reads
+ * every character of a name an allow-list might have to gain.
+ *
+ * This is a display concern only. The membership test in `describeLocation` and
+ * the array it returns are untouched by it — a name is escaped when it is shown,
+ * never when it is decided on — so no verdict and no allowance can move.
+ *
+ * The set is walked rather than written as a character class: a regular
+ * expression naming C0 is `no-control-regex`, and the alternative to disabling
+ * that rule for this file is a set that says the same thing without a pattern.
+ * Every code point below 0x20 is a C0 control, so the two spellings of "C0"
+ * cannot drift apart.
+ */
+const MARKDOWN_ESCAPED_CODE_POINTS = new Set([
+  0x60, // U+0060 backtick: opens a code span the record's own quoting never closes
+  0x5c, // U+005C backslash: escapes whatever follows it
+  0x7c, // U+007C vertical bar: escapes into a table cell
+]);
+
+export function escapeMarkdownInline(value) {
+  let escaped = '';
+  for (const character of value) {
+    const code = character.codePointAt(0);
+    const markdownActive = code < 0x20 || code === 0x7f || MARKDOWN_ESCAPED_CODE_POINTS.has(code);
+    escaped += markdownActive ? `\\u${code.toString(16).padStart(4, '0')}` : character;
+  }
+  return escaped;
+}
+
+/**
+ * The `Location` as observed, with any query string replaced, never pasted.
+ *
+ * **Position, not precedence.** The string is truncated at whichever of `?` and
+ * `#` occurs **first**, and that delimiter is kept, so `…?a=1#f=2` and
+ * `…#f=2?a=1` both lose everything from the earlier of the two onward. The rule
+ * is not "prefer the fragment": truncating at the first `#` whenever one exists
+ * is the *opposite* of stricter, because on a query-then-fragment `Location` it
+ * keeps the whole query — values included — and pastes it directly beneath a
+ * `query:` field whose own text says the value was never pasted.
+ *
+ * The first of the two is where the unverifiable tail of the value begins, so
+ * everything from it onward goes, whichever one it is. A string with neither
+ * delimiter comes back unchanged. The record does not depend on the raw line for
+ * the rest of what it knows: `query:`, `fragment:` and the `fragment_present`
+ * refusal are separate fields, so the raw line is the convenience copy and not
+ * the only copy.
+ */
 export function redactQuery(raw) {
-  const mark = raw.indexOf('?');
-  return mark === -1 ? raw : `${raw.slice(0, mark)}?<redacted>`;
+  const query = raw.indexOf('?');
+  const fragment = raw.indexOf('#');
+  let mark = -1;
+  if (query !== -1) mark = query;
+  if (fragment !== -1 && (mark === -1 || fragment < mark)) mark = fragment;
+  return redactUserInfo(mark === -1 ? raw : `${raw.slice(0, mark)}${raw[mark]}<redacted>`);
+}
+
+/**
+ * The authority's user-info, gone, and the host still readable.
+ *
+ * An authority of `user:pass@host` is a credential by definition, and this
+ * function has no way to tell a real one from a redacted one, so it writes
+ * `<redacted>@host` — everything before the last `@` of the authority
+ * replaced, the `@` kept, the host and path untouched. Removing it costs
+ * nothing: the record already carries `user-info: present — refused` and the
+ * `user_info_present` refusal as their own fields, so a reviewer can tell a
+ * refused `Location` from one that was never checked.
+ *
+ * Only a string that actually has an authority is touched: an absolute URL
+ * (`scheme://…`) or a protocol-relative one (`//…`). A relative reference has
+ * no authority, and an `@` in its first path segment is a path character, not a
+ * credential.
+ */
+function redactUserInfo(raw) {
+  const scheme = raw.indexOf('://');
+  const protocolRelative = scheme === -1 && raw.startsWith('//');
+  if (scheme === -1 && !protocolRelative) return raw;
+  const authorityStart = scheme === -1 ? 2 : scheme + 3;
+  let authorityEnd = raw.length;
+  for (const delimiter of ['/', '?', '#']) {
+    const at = raw.indexOf(delimiter, authorityStart);
+    if (at !== -1 && at < authorityEnd) authorityEnd = at;
+  }
+  const at = raw.lastIndexOf('@', authorityEnd);
+  if (at < authorityStart) return raw;
+  return `${raw.slice(0, authorityStart)}<redacted>@${raw.slice(at + 1)}`;
 }
 
 export function renderArtifact(artifact, observation, when) {
@@ -330,7 +421,7 @@ export function renderArtifact(artifact, observation, when) {
       lines.push(
         '  - **record incomplete:** the `Location` did not parse as a URL. Every field below is `not determined`, rule 1 was not applied, and no host here is a candidate for any allowance. This is not a finding.',
       );
-      lines.push(`  - raw, query redacted: \`${redactQuery(location.raw)}\``);
+      lines.push(`  - raw, query redacted: \`${escapeMarkdownInline(redactQuery(location.raw))}\``);
     }
     lines.push(`  - host: \`${location.host}\``);
     lines.push(`  - scheme: \`${location.scheme}\``);
@@ -344,7 +435,7 @@ export function renderArtifact(artifact, observation, when) {
             ? location.query === 'absent'
               ? 'none — the query is absent'
               : 'none — the query has no parameter name'
-            : location.queryKeys.map((name) => `\`${name}\``).join(', ')
+            : location.queryKeys.map((name) => `\`${escapeMarkdownInline(name)}\``).join(', ')
       }`,
     );
     lines.push(`  - user-info: ${location.userInfo}`);
@@ -364,7 +455,9 @@ export function renderArtifact(artifact, observation, when) {
           ? '  - rule 1 refusals triggered: none'
           : `  - rule 1 refusals triggered: ${location.refusals.join(', ')}`,
     );
-    lines.push(`  - exact \`Location\`, query redacted: \`${redactQuery(location.raw)}\``);
+    lines.push(
+      `  - exact \`Location\`, query redacted: \`${escapeMarkdownInline(redactQuery(location.raw))}\``,
+    );
   }
 
   lines.push('- **Acquisition (`docs/v2/ACQUISITION.md` §1 fields):**', '');
@@ -466,6 +559,12 @@ export function render(observations, when, nodeVersion) {
 }
 
 async function main() {
+  // The first statement, before the loop and therefore before every `fetch` and
+  // before the single `writeFile` at the bottom of this function. See
+  // `assertMayWriteEvidence` for why the check lives here and not only in the
+  // offline suite.
+  assertMayWriteEvidence();
+
   const when = new Date().toISOString();
   const observations = [];
   let transportFailures = 0;
@@ -526,6 +625,37 @@ export function isEntryPoint() {
   } catch {
     return false;
   }
+}
+
+/**
+ * May this process write `docs/v2/evidence/P4.1/redirects.md` at all?
+ *
+ * The entry-point guard on the last line of this file is the only thing between
+ * an *import* and seven `HEAD`s plus an overwrite of the record of record, and
+ * a guard that lives only there cannot be regressed without the regression being
+ * noticed *after* the write it was supposed to prevent: the offline suite would
+ * go red on a file that has already been replaced, and the replacement is
+ * invisible in a diff of the evidence because the file it was diffed against is
+ * gone. So the same question is asked again, here, as `main()`'s first
+ * statement — before the loop, before the first `fetch`, before the `mkdir` and
+ * the `writeFile`. A regressed guard now makes an import *refuse* on its first
+ * statement, so the regression is harmless first and detected second, in that
+ * order.
+ *
+ * The throw is deliberate and must stay one: a silent `return` would make the
+ * regression invisible again, which is the exact failure this exists to close.
+ * Nothing is written and nothing is requested on the way out.
+ *
+ * @returns `undefined` when the probe was run.
+ * @throws `Error` when the module was imported rather than run.
+ */
+export function assertMayWriteEvidence() {
+  if (isEntryPoint()) return undefined;
+  throw new Error(
+    'the probe was imported rather than run, so it refused to write ' +
+      'docs/v2/evidence/P4.1/redirects.md: run `node scripts/v2/probe-redirects.mjs` ' +
+      'to record a run, and never import it from anything that expects it to have run',
+  );
 }
 
 if (isEntryPoint()) await main();
