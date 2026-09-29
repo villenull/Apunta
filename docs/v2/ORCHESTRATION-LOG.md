@@ -745,3 +745,62 @@ Sandbox servers on 7861 and 7807 remain from other sessions. Not touched by
 anyone: reaping another session's state is precisely the error P3.1's own
 implementer recorded in its `/tmp` incident. Port 7717 is not listening, so the
 live instance is unaffected.
+
+### 2026-09-29 — S2.6 review FAILs V1/V3, and finds the guard that passes by asserting nothing
+
+Review verdict **FAIL**: V1 and V3 exit 1. The review re-ran the implementer's
+control itself (exit 1, identical message, identical line) and then *measured*
+the mechanism instead of inferring it — `history.length` stays 2 across the
+`<Link to="/">` click and lands on `about:blank`, while the sibling route goes
+2→3→`/settings`. Not a flake, not a race. It also found the whole-project run
+cannot even exhibit the defect, because `mode: 'serial'` means
+`language-control.spec.ts:385` is *skipped* rather than run at base.
+
+V15, V16 and V17 — this attempt's substance — all PASS, V17 on both halves.
+
+**Finding 3 is the most consequential thing in either review, and I verified it
+from source rather than only from its measurements.** `expectNoEnglishUi`
+(`e2e/support/no-english.ts:156-174`) has **no requirement that it read any
+strings at all**: it reads 0, finds 0 leaks, and `expect(leaks).toEqual([])`
+passes vacuously. It even *annotates* the count — "N strings read" — and nobody
+ever asserted on it. Measured: `settings-appearance.spec.ts:52` reads 0 strings
+in 3 runs of 3, while the other 32 calls read 5–99.
+
+The chain, confirmed in code:
+
+- `web/src/App.tsx:100` puts `.route-transition` on the per-path re-keyed
+  wrapper; `web/src/styles/motion.css:52` animates it with `rise-in`, which
+  starts at `opacity: 0`.
+- `no-english.ts:127-129` uses `checkVisibility({ checkOpacity: true })`, so an
+  element at opacity 0 counts as **hidden** and the whole subtree is skipped.
+- Playwright's `toBeVisible()` — the assertion immediately before every
+  `checkScreen` call — does **not** consider opacity.
+
+So the preceding assertion passes while the guard reads nothing. This is a
+different class of defect from P3.1's finding 1: that one is a test that cannot
+pass; this is a guard that **can** pass and proves nothing, on the exact
+property this card exists to establish. `language-control.spec.ts:441,444`
+share the exposure, and those are es-MX calls.
+
+**A tension inside the review that I am recording rather than smoothing over.**
+Finding 4 counts 33 `checkScreen` calls across 14 es-MX tests, all reporting 0
+English, and calls that proof the guard "demonstrably fired". Some of those
+calls are the 0-**string** ones, where 0 English is vacuously true. The evidence
+for the substantive part of V1 is weaker than the review states.
+
+**Good news on scope: no new amendment is needed.** Both `e2e/support/
+no-english.ts` and `e2e/support/fixtures.ts` are **already** in this card's May
+edit, so requiring a non-zero read — and waiting out the transition — is in
+scope for attempt 3 alongside AM-072's `goBack()` licence.
+
+That sets up the owner's decision, asked separately: attempt 3 is the **last of
+three**. Fixing only `goBack()` would let V1 go green while `checkScreen` still
+asserts nothing on every screen reached by navigation — a green that proves
+nothing, which is more dangerous than a red row because it retires the question.
+
+Also recorded: the dispatch told the implementer the UI owner's retarget had not
+landed, and it has — my error, and AM-072 landed mid-review, after that
+dispatch was built, so the reviewer's licence to fix `goBack()` post-dated its
+instructions. It did not apply it, correctly. And the review flagged one wrong
+line reference in the implementer's evidence: the click is `:422`, not
+`:423-425`; the mechanism and line 426 are right.
