@@ -1,6 +1,99 @@
-# Latest handoff — 2026-09-29, two agents in flight
+# Latest handoff — 2026-09-29, nothing in flight
 
 Supersedes everything below. Owner is continuing in a new chat instance.
+**Zero agents running, zero pending permissions, working tree clean.** Both of
+the reviews below have been processed, committed, pushed and archived.
+
+## Where the tree is
+
+`main` is level with `origin/main`, working tree clean. All work is on `main`;
+`feature/v2` was retired under AM-068. **37 cards APPROVED.**
+
+**P3.1 APPROVED** — reviewed independently, all four rows re-run cold,
+`whisper-cli` byte-identical to the implementer's, 8 findings none blocking. One
+MAJOR carried forward as **P3.7** (card authored, not yet implemented).
+
+**S2.6 APPROVED** — attempt 3, the last, reviewed with no blocking or major
+finding. `S2.7 → S2.8 → S2.R` are released, and with them S3.2, S3.R, S5.1–S5.7,
+S6.1 and P5.3. V7 was **retired by AM-075**, not run: the UI owner removed the
+accent picker in `5b67e21`, so the property it guarded is gone.
+
+## What is next, and what it waits on
+
+Nothing is blocked on the owner. The next cards, in the order the plan allows:
+
+1. **S2.7** — released by S2.6. Its instruction review and implementation.
+2. **P3.7** — card exists, May edit is one file
+   (`scripts/v2/package-linux-resources.test.sh`), V3 is a negative control
+   expecting exit **1**. It needs `--ir` instruction review, then an implementer.
+   Note it **never runs the packaging script**: if `build/linux-resources/` is
+   absent its rows are NOT RUN and P3.1's V1 must be re-run by the coordinator.
+3. **S4a.2** — Spanish speech benchmark, waiting on P4.1, which is APPROVED. It
+   measures speed and accuracy, so it needs a quiet machine and must never run
+   while the owner is testing live. It is the long pole behind the Spanish
+   measurement work.
+
+## Carried residuals — do not "fix" these silently
+
+- **AM-076**, the staggered-entrance gap: the no-English guard's wait stops at the
+  first non-zero read, and `rise-in` carries delays to 144ms, so a screen whose
+  text lives entirely inside a staggered subtree would read 0 again. It fails
+  **loudly** with a named count, not quietly. A future flake here is this, not a
+  leak in the guard. A proper fix needs a stability rule, which is a behavioural
+  decision no amendment has authorised.
+- A pre-existing theme flake at `e2e/tests/settings-appearance.spec.ts:63-64`,
+  seen once in five full runs; confirmed not caused by S2.6.
+- V1's "every screen" is really 33 `checkScreen` calls over 11 of 17 spec files.
+  Nothing reads 0, so the row's substance holds, but its wording overstates its
+  coverage. Rewriting an acceptance row is the owner's, not the coordinator's.
+- P2.2's committed colour-test PNGs disagree with the byte sizes recorded in
+  `evidence/P2.2/v1-e2e.md:184-187`. The owner chose to log and leave it.
+
+## Do not
+
+- Do not commit `docs/v2/evidence/P2.2/screenshots/*.png`. **Any** Playwright or
+  `npm run e2e` run rewrites them at sizes that contradict their own evidence
+  record. `git checkout -- docs/v2/evidence/P2.2/screenshots/` afterwards. This
+  has now happened several times; treat it as routine.
+- Do not narrow `checkVisibility({ checkOpacity: true })` in
+  `e2e/support/no-english.ts`. It is the tempting wrong fix and it would re-admit
+  exactly the leak S2.6 exists to catch. Waiting out the transition is the
+  sanctioned one.
+- Do not widen a May-edit list, threshold, guard or acceptance row. §6 reserves
+  those to the owner; AM-072, AM-073, AM-075 and AM-076 are already the narrow
+  authorisations given.
+- Do not touch port 7717 or the live instance's data. Two orphaned sandbox servers
+  remain on **7861** (2026-09-26) and **7807** (2026-09-27); the owner chose to
+  leave them, and reaping another session's state is what destroyed five live
+  sandboxes earlier today.
+- Do not run two build-touching agents in parallel. It happened once today
+  (`check-plan` at the time: P3.1's V1 runs `build:shared` and `npm run build`
+  while the S2.6 reviewer rebuilt `shared/src`). It came out clean — verified, not
+  assumed — but it was luck.
+- **Do not trust a prettier result on markdown.** `.prettierignore` contains
+  `*.md` and `docs/v2/state/`, so `prettier --check` on any of them checks ZERO
+  files while printing "All matched files use Prettier code style!". Use
+  `node docs/v2/tools/check-plan.mjs` and count the amendment log's table fields
+  instead — that is what caught the AM-070 splice.
+
+## Hard-won knowledge worth not rediscovering
+
+- `web` resolves `@apunta/shared` to `shared/dist`, not `shared/src`. Any web
+  vitest run after a `shared/src` edit without `npm run build:shared` first
+  silently tests the **previous** build. It has bitten this card twice.
+- Playwright's `toBeVisible()` does **not** consider opacity, but
+  `checkVisibility({ checkOpacity: true })` does. That mismatch is what let a guard
+  pass while reading nothing.
+- In `open(p,'w').write(open(p).read())`, Python evaluates the write-open FIRST,
+  so the file is truncated before it is read. It emptied `AMENDMENTS.md` once
+  today. Read into a variable first.
+- Reclaimable `/tmp` is dangerous: a liveness test that matched command lines
+  instead of process environments deleted five live sandboxes' data directories
+  during P3.1. Treat any liveness check by argv as suspect.
+
+---
+
+# Previous handoff — 2026-09-29, two agents in flight (superseded)
 
 ## Where the tree is
 
