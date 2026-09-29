@@ -1,0 +1,19 @@
+{
+  "card": "P3.3",
+  "planVersion": 2,
+  "contracts": [
+    "C-BRIDGE@1",
+    "C-OWN@1",
+    "C-ISO@1"
+  ],
+  "baseCommit": null,
+  "attempt": 1,
+  "status": "BLOCKED",
+  "lastCompletedStep": "instruction re-review 2 (AM-081) found D1-D7; second owner-authorised card repair applied (AM-084); third instruction review pending",
+  "nextAllowedAction": "instruction review of the AM-084 card; if CLEAR, coordinator runs the A03 pkexec install (OWNER-ACTIONS 2026-09-29), then dispatch attempt 1 from Step S1",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {},
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-29T22:00:00Z"
+}
