@@ -126,14 +126,20 @@ Two standing preferences, recorded here so they survive a cleared session.
   listed first**, with a short reason. Batch related questions into one
   interview. Do not ask about anything the repository, an existing decision, or
   this file already answers — resolve that yourself.
-- **Every spawned subagent uses Space Bunny Free via OpenCode Go**, whatever its
-  role: implementer, reviewer, card author, advisor. Create them with provider
-  `opencode/opencode-go/space-bunny-free` (thinking `high`). Two near-misses to
-  avoid: `opencode-go/space-bunny-free` is **rejected** as "Provider
-  opencode-go is not configured" — the provider id is `opencode` and the model
-  id carries the `opencode-go/` prefix. And `opencode/space-bunny-free` is a
-  *different, paid* model on OpenCode Zen; it is not the free one. If the model
-  is ever unavailable or unfunded, say so rather than silently switching.
+- **Every spawned subagent runs on a free model, chosen per task** (owner
+  decision 2026-09-29, replacing the earlier Space-Bunny-only rule). Allowed:
+  every `opencode-go/` model with "free" in its id, confirmed $0 on
+  opencode.ai/docs/go and models.dev, plus `opencode/big-pickle`. The lineup
+  changes weekly, so re-check it each session. Never Claude, GPT or Codex, and
+  no other `opencode/` (OpenCode Zen) model, even one marked free. The
+  coordinator picks the strongest allowed model at higher effort for hard work,
+  and a lighter one for mechanical or review work; if a Go model hits a usage
+  limit, it falls back to Big Pickle and tells the owner. Creation details: the
+  provider id is `opencode` and the model id keeps its prefix, e.g.
+  `opencode/opencode-go/space-bunny-free` (`opencode-go/...` alone is
+  **rejected** as "Provider opencode-go is not configured"). `opencode/space-bunny-free`
+  is a *different* Zen model, not the Go one. Pass `modeId: "build"`
+  explicitly, because an opencode agent cannot inherit a Claude mode.
 
 ## Working alongside background agents
 
