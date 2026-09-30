@@ -4,14 +4,14 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": null,
+  "baseCommit": "87218a6",
   "attempt": 1,
-  "status": "NOT STARTED",
-  "lastCompletedStep": "AM-103 repair applied and committed (806f889): D1 and D2 closed in the card text; instruction-review dispatch rebuilt at 87218a6",
-  "nextAllowedAction": "final instruction review (reviews/S2.11-ir3.md) running; if all-CLEAR, dispatch implementation attempt 1",
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "final instruction review reviews/S2.11-ir3.md: all ten rows CLEAR, no DEFECT, no UNKNOWN",
+  "nextAllowedAction": "dispatch implementation attempt 1 (state/dispatch/S2.11.md), filling {{BASE}}=87218a6 and the sandbox ports under COORDINATOR \u00a76",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-30T20:35:00Z"
+  "updatedUtc": "2026-09-30T20:45:00Z"
 }
