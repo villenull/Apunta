@@ -258,9 +258,9 @@ describe('the server’s own sentences in Spanish', () => {
       'es-MX',
     );
     expect(result.held[0]?.reason).toContain('solo pediste agregar');
-    // The lost stretch is quoted as it reads in the note, in straight quotes
-    // like every other `{phrase}` in this catalogue.
-    expect(result.held[0]?.reason).toContain('"talked about work her manager"');
+    // The lost stretch is quoted as it reads in the note, in guillemets
+    // like every other `{phrase}` in this catalogue (AM-097).
+    expect(result.held[0]?.reason).toContain('«talked about work her manager»');
   });
 
   it('names the subject of an unmet shortening in Spanish, whole note and section', () => {
@@ -305,7 +305,7 @@ describe('the server’s own sentences in Spanish', () => {
       'es-MX',
     );
     expect(addition.map((check) => check.reason)).toContain(
-      'Apunta no pudo agregar "Zoloft": la revisión volvió sin eso.',
+      'Apunta no pudo agregar «Zoloft»: la revisión volvió sin eso.',
     );
   });
 
@@ -373,7 +373,7 @@ describe('the server’s own sentences in Spanish', () => {
     const spanish = assessRefine(input, 'es-MX');
     expect(spanish.outcome).toBe('applied');
     expect(spanish.reply).toBe(
-      'Cambié lo siguiente: amplié la sección de Client presentation y agregué "sertraline".',
+      'Cambié lo siguiente: amplié la sección de Client presentation y agregué «sertraline».',
     );
     // The same input, the same two parts, the bytes the wire has always
     // carried (FD6).

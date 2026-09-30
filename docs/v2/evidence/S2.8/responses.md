@@ -289,3 +289,33 @@ Nothing in either assertion is a string, and both are green with
 `--workers=1`. It is recorded here because the next card that runs V3 will
 hit it and should not spend the same hour proving it is not its own.
 
+
+---
+
+## Attempt 2 (AM-097) — the test expectations, not the copy
+
+The S2.R parent review's finding 1 is a red `npm test` in all four timezones on
+three cases, and it is caused by **finding 14 above being right**: commit
+`393935e` changed six `chat.*` values from `"…"` to `«…»`, and the three
+expectations in `server/src/ai/refine-request.test.ts` that asserted the straight
+form were left behind. That file was Must-not-edit for attempt 1, so attempt 1
+could not have updated it, and attempt 1's V1 ran `shared/src/i18n` only, so it
+never saw the red.
+
+**Every row above still stands, and nothing in this attempt changes any of them.**
+The guillemets stay; AM-097 confirms finding 14 as applied. What changed in
+attempt 2 is three lines in one test file plus the comment beside the first that
+names the quote style:
+
+- `:263` — `'"talked about work her manager"'` → `'«talked about work her manager»'`
+- `:307-308` — `'Apunta no pudo agregar "Zoloft": …'` → `'Apunta no pudo agregar «Zoloft»: …'`
+- `:375-376` — `'… y agregué "sertraline".'` → `'… y agregué «sertraline».'`
+
+and the comment at `:261-262`, which read *"in straight quotes like every other
+`{phrase}` in this catalogue"* and now reads *"in guillemets …"*.
+
+The English expectation immediately below the third one
+(`'I expanded the Client presentation section and added "sertraline".'`, FD6) is
+**deliberately untouched** — English keeps straight quotes, `en.ts` was not
+opened, and no other line in `server/` moved. `shared/src/i18n/es-MX.ts` was not
+edited in this attempt either; the six rows it carries were already correct.
