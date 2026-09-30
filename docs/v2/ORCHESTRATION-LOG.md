@@ -978,3 +978,30 @@ re-review at this point, so S2.11 is `BLOCKED` and the decision is the owner's
 **only** card in `DEPENDENCIES.md` whose dependencies are all `APPROVED`, so
 until it moves the plan has nothing else to dispatch. Its implementation attempt
 budget is untouched — 0 of 3 — because no implementer has ever seen this card.
+
+### 2026-09-30 — S2.11's instruction review is finally clean; the coder is one command away
+
+AM-103's two repairs went in exactly as authorised (`806f889`, 13 insertions and
+8 deletions in one file, two hunks): case (c) gained the frame-drain discipline
+that case (b) already had, and V7 gained the screenshot restore that V5 and V6
+already had, with V8's expectation reworded to name three commands instead of
+promising three restores. The repair agent chose the longer of the two forms the
+review offered for D1 and said why, which is the right call — the shorter form
+would have meant rewriting case (b). I re-indented the eleven lines it re-wrapped
+to the card's own five-space continuation, since the content was right and only
+the wrapping was not.
+
+The final review (`state/reviews/S2.11-ir3.md`) is **ten `CLEAR`, no `DEFECT`,
+no `UNKNOWN`**, and it says an implementer could execute the card as written
+without guessing on any of the ten questions. It also checked the thing that
+mattered most: narrowing the block to a genuinely second window does not weaken
+the single-window guarantee, because the two assertions that carry it are gated
+on the takeover and decline buttons, neither of which renders during
+`'acquiring'` — so they read a settled `'secondary'` by construction, not by
+timing margin. Thirteen notes are carried, none blocking; the one worth a future
+card is its first, where decision 2's `phase === 'secondary'` should read
+`needsRefresh`, because read literally at the guard it is always false and that
+mistake is D1's shape in a new place.
+
+S2.11 is `IN PROGRESS` with attempt 1 unspent. It remains the plan's only
+dispatchable card.
