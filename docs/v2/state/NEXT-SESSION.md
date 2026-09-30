@@ -1,4 +1,4 @@
-# Latest handoff — 2026-09-30 20:15Z
+# Latest handoff — 2026-09-30 20:50Z
 
 Supersedes the block below it. **43 cards APPROVED** (this session: S2.7, P3.7,
 P4.5, S2.8, S2.9, S2.10, and S2.8 attempt 2). **Zero agents running, zero
@@ -8,30 +8,27 @@ opencode agents need `modeId: "build"` passed explicitly.
 
 ## In flight / next
 
-1. **S2.11 is BLOCKED and needs the owner's decision — it is the only card that
-   can move.** S2.11 is the Add-patient name-reset fix: Apunta locks the whole
-   page while it confirms it is the only window, so a name typed in that window
-   is silently dropped, and the app also moves the typing cursor away from the
-   field. The fix is in `web/src/App.tsx` plus one new colocated test. Its
-   instruction review (`state/reviews/S2.11-ir.md`) found two defects and six
-   notes; AM-102 repaired all seven; the one permitted re-review
-   (`state/reviews/S2.11-ir2.md`) **confirmed all seven closed** and returned
-   `DEFECT` on two new rows, both tiny and coordinator-verified against the
-   code:
-   - **D1 (IR-04):** decision 3's case (c) asserts the caret moving into the
-     app without draining a frame; that move *is* a frame
-     (`web/src/App.tsx:269-274`), so the case would be red on a correct
-     implementation. Fix: one sentence in the card, the discipline case (b)
-     already states.
-   - **D2 (IR-10):** V7 runs `brand.spec.ts`, which rewrites the four tracked
-     PNGs in `docs/v2/evidence/P2.2/screenshots/`, and V7 has no restore while
-     V5 and V6 do — so V8 asserts something untrue. Fix: append
-     `; git checkout -- docs/v2/evidence/P2.2/screenshots/` to V7 and reword
-     V8's expected cell.
-   Both need an amendment to the card, which is the owner's call under
-   COORDINATOR §6. **Implementation attempt budget untouched (0 of 3)** — no
-   implementer has seen this card. Nothing else in `DEPENDENCIES.md` is
-   dispatchable while S2.11 is blocked, so a park stops the plan.
+1. **S2.11 is `IN PROGRESS` and ready to code — start here.** S2.11 is the
+   Add-patient name-reset fix: Apunta locks the whole page while it confirms it
+   is the only window, so a name typed in that window is silently dropped, and
+   the app also moves the typing cursor away from the field. The fix is two
+   edits in `web/src/App.tsx` plus one new colocated test. Its instruction
+   history is closed out: `S2.11-ir.md` found two defects and six notes, AM-102
+   repaired all seven, `S2.11-ir2.md` confirmed all seven closed and found two
+   more, AM-103 authorised repairing exactly those two, and
+   **`state/reviews/S2.11-ir3.md` is ten `CLEAR`, no `DEFECT`, no `UNKNOWN`** —
+   it states an implementer could execute the card as written without guessing,
+   and separately verified that narrowing the block does not weaken the
+   single-window guarantee (`save-integrity.spec.ts:80/:87` are gated on buttons
+   that do not render during `'acquiring'`, so they read a settled `'secondary'`
+   by construction). Next: `node docs/v2/tools/build-dispatch.mjs S2.11 --base
+   <head> --port <p> --attempt 1`, fill `{{BASE}}` and `<p1>`/`<p2>` in the card
+   body by hand (AM-104), dispatch, then review. Attempt budget is unspent.
+   Thirteen notes are carried in that review, none blocking; note 1 is the one
+   worth a future card — decision 2's `phase === 'secondary'` should read
+   `needsRefresh`, because read literally at the guard it is always false.
+   **S2.R waits on S2.11**, and nothing else in `DEPENDENCIES.md` is
+   dispatchable until it lands.
 2. **P3.3 is parked by the owner** after three instruction reviews (AM-081,
    AM-084). One defect left: V4 puts the `fatal-port` dummy and the
    `fatal-folder` lock holder on one port at once and never waits for the lock
