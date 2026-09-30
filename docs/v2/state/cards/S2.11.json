@@ -1,0 +1,17 @@
+{
+  "card": "S2.11",
+  "planVersion": 2,
+  "contracts": [
+    "C-ISO@1"
+  ],
+  "baseCommit": null,
+  "attempt": 1,
+  "status": "NOT STARTED",
+  "lastCompletedStep": "card repaired after instruction review (AM-102)",
+  "nextAllowedAction": "instruction re-review, then dispatch",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {},
+  "sandboxRuns": [],
+  "updatedUtc": "2026-09-30T19:00:00Z"
+}
