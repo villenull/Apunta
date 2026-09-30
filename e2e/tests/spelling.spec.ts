@@ -84,6 +84,12 @@ test('marks a typo in the note body and corrects it from the menu', async ({
   await page.goto('/patients/new');
   const patientName = page.getByLabel(tr('common.name'));
   await patientName.fill('Teh');
+  // The name is React state initialised once from `?name=` (AddPatient.tsx:31)
+  // and this page is a dialog over the workspace, so the storm behind it can
+  // re-render it. Asserting the value separately from the mark under it says
+  // which of the two a failure was: the field is there and unmarked, or the
+  // field has gone. It is not a timeout and it weakens nothing below.
+  await expect(patientName).toHaveValue('Teh');
   await expect(page.locator('.spell-input-wrap .misspelt')).toHaveText(['Teh']);
   await expect(patientName).toHaveAttribute('spellcheck', 'false');
   await patientName.evaluate((element: HTMLInputElement) => {

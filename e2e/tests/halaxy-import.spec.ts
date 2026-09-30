@@ -45,7 +45,17 @@ test.describe('importing from Halaxy', () => {
     await page.getByTestId('halaxy-patient-name').fill(patientName);
     await page.getByTestId('halaxy-note').nth(0).uncheck();
     await expect(page.getByTestId('halaxy-run')).toHaveText(tr('import.runLabel', { notes: noteCount(2) }));
+    // This run's own batch id, taken from the answer the server just gave. The
+    // list below is every batch in the shared database, from both sources and
+    // from every other spec, and the rows carry no id in the DOM
+    // (ImportBatchList.tsx:44-62), so the row this test undoes is located
+    // through the API and proved before it is clicked rather than taken as
+    // "the first one", which is the newest and is whoever imported last.
+    const runAnswer = page.waitForResponse(
+      (response) => response.url().endsWith('/api/import/halaxy') && response.request().method() === 'POST',
+    );
     await page.getByTestId('halaxy-run').click();
+    const { batch_id: batchId } = (await (await runAnswer).json()) as { batch_id: string };
 
     await expect(page.getByTestId('halaxy-done')).toContainText(
       tr('halaxy.doneLine', { notes: noteCount(2), patients: patientCount(1) }),
@@ -73,11 +83,20 @@ test.describe('importing from Halaxy', () => {
     await page.goto('/import/halaxy');
     await expect(page.getByTestId('halaxy-batches')).toBeVisible();
     await checkScreen(page, 'Import from Halaxy, with an earlier import');
-    await page
-      .getByTestId('halaxy-batches')
-      .getByRole('button', { name: tr('common.undo') })
-      .first()
-      .click();
+    // The same call the page's own list is loaded from, read after the page has
+    // shown its rows, so the two agree unless a batch was created in between —
+    // and the count assertion is what makes that a check rather than a hope.
+    const undoButtons = page.getByTestId('halaxy-batches').getByRole('button', { name: tr('common.undo') });
+    const batchesResponse = await request.get('/api/import/batches');
+    expect(batchesResponse.ok()).toBeTruthy();
+    const { batches } = (await batchesResponse.json()) as { batches: { id: string }[] };
+    const ownRow = batches.findIndex((batch) => batch.id === batchId);
+    expect(
+      batches[ownRow]?.id,
+      `the batch this run created (${batchId}) is in the list, so the row at its index is the one to undo`,
+    ).toBe(batchId);
+    await expect(undoButtons, 'one undo button per row the API returned').toHaveCount(batches.length);
+    await undoButtons.nth(ownRow).click();
     await expect(page.getByTestId('halaxy-undone')).toContainText(
       tr('import.undoneLine', { notes: noteCount(2), patients: patientCount(1) }),
     );

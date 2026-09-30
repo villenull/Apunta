@@ -71,7 +71,9 @@ export const test = base.extend<Fixtures & AppOptions>({
     async ({ page }, use) => {
       const errors: string[] = [];
       page.on('console', (message) => {
-        if (message.type() === 'error') errors.push(message.text());
+        if (message.type() !== 'error') return;
+        if (isAdmittedRecencyNotes404(message.text(), message.location().url, APP_ORIGINS)) return;
+        errors.push(message.text());
       });
       page.on('pageerror', (error) => {
         errors.push(`uncaught: ${error.message}`);
@@ -86,6 +88,87 @@ export const test = base.extend<Fixtures & AppOptions>({
 });
 
 export { expect };
+
+/**
+ * The two origins this run serves the app from, read from the same environment
+ * values `e2e/playwright.config.ts:16-17, :32-33` reads: the English project on
+ * `APUNTA_E2E_PORT` and the es-MX project on `APUNTA_E2E_PORT + 1`, which that
+ * config's `es-MX` project serves every spec but the language control from
+ * (`:112`). Two exact origins, never a wildcard host or port, and no third: a
+ * message from anywhere else is not this class.
+ */
+const e2ePort = Number(process.env['APUNTA_E2E_PORT'] ?? 7788);
+const e2eEsPort = Number(process.env['APUNTA_E2E_ES_PORT'] ?? e2ePort + 1);
+export const APP_ORIGINS: readonly string[] = [
+  `http://127.0.0.1:${String(e2ePort)}`,
+  `http://127.0.0.1:${String(e2eEsPort)}`,
+];
+
+/**
+ * Chromium's own resource-load text for a 404, and nothing else. The reason
+ * phrase Chromium appends (` (Not Found)`) is part of the same message, not a
+ * second shape, so it is admitted with or without it; the pattern is anchored at
+ * both ends, so a message that merely mentions a 404 — a fetch error string, an
+ * app log line — and any other status are both refused.
+ */
+const RESOURCE_LOAD_404 =
+  /^Failed to load resource: the server responded with a status of 404( \(Not Found\))?$/;
+
+/**
+ * `GET /api/patients/:id/notes` and nothing else: the exact path, the patient's
+ * id a UUID (`server/src/routes/notes.ts:36` registers that one route), and no
+ * query string and no further segment.
+ */
+const RECENCY_NOTES_PATH =
+  /^\/api\/patients\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/notes$/i;
+
+/**
+ * The one console message the suite admits (owner decision AM-094, 2026-09-29,
+ * `docs/v2/state/AMENDMENTS.md:117`): the browser's own resource-load **404**
+ * for `GET /api/patients/<uuid>/notes`, on one of this run's app origins.
+ *
+ * **Why it needs admitting.** An import undo deletes the patients its batch
+ * created (`server/src/db/import-batches.ts:78-97`), and every workspace page
+ * lists all patients and asks for each one's notes six at a time
+ * (`web/src/hooks/usePatientRecency.ts:45, :69`). A bystander spec's page has
+ * one of those reads in flight when the delete lands, and the read 404s. The
+ * app already survives that: the hook catches the failure and sorts the patient
+ * by its created date instead of dropping it (`usePatientRecency.ts:57-61`).
+ * Only the browser's console line was left, and the guard turned it into a
+ * failure of whichever test happened to be holding that page.
+ *
+ * **What it is not.** Not a substring match on anything mentioning a 404, not
+ * another status, not another route or patient sub-resource, not a message from
+ * another origin, and never a `pageerror` — that branch above pushes
+ * `uncaught: …` without consulting this function. `import.spec.ts` asserts the
+ * table of both sides of that line, and it is the whole proof that the guard is
+ * still a guard.
+ *
+ * **The method is not checked** (AM-095): a `ConsoleMessage` carries no method
+ * and the one call site pushes `message.text()`, so there is nothing to read it
+ * from. The path is the constraint instead — the server registers only `GET` on
+ * it (`server/src/routes/notes.ts:36`) and `web/src` never sends another method
+ * there — and the status is read from the message, never inferred from the URL
+ * or from `page.on('response')` state, which could admit or refuse the same
+ * message by event ordering.
+ */
+export function isAdmittedRecencyNotes404(
+  text: string,
+  url: string | undefined,
+  origins: readonly string[],
+): boolean {
+  if (!RESOURCE_LOAD_404.test(text)) return false;
+  if (url === undefined) return false;
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.search !== '') return false;
+  if (!origins.includes(parsed.origin)) return false;
+  return RECENCY_NOTES_PATH.test(parsed.pathname);
+}
 
 /**
  * The **appearance row** lock: one cross-process lock file, taken by name, for
