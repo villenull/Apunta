@@ -1,4 +1,5 @@
 import { closeSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { en, esMX, t, type Locale, type MessageKey } from '@apunta/shared';
@@ -198,18 +199,20 @@ export function isAdmittedRecencyNotes404(
  * **The shape, and what it costs.** One key, one path, under `APUNTA_DATA_DIR`
  * — this run's sandbox data folder, so the blast radius is this Playwright run
  * and never anything else, exactly as `brand.spec.ts:61-63` claims for the data
- * directory. Taken by **every** writer and asserter of the row, in a test or in
- * a hook, and by nothing else in the suite; never as an `{ auto: true }`
- * fixture, which every test in the suite would then take. Held for the
- * write-to-last-read-back window and released in a `finally`, so a test that
- * throws cannot deadlock the rest of the run. The wait is bounded at 20 s on a
- * short poll, deliberately below Playwright's 30 s default test timeout, so a
- * queue longer than the budget ends with **this** message — naming the elapsed
- * wait, the deadline and the worker holding the file — instead of an
- * indistinguishable `Test timeout of 30000ms exceeded`. The queue is bounded by
- * the worker count and not by the repeat count: Playwright runs at most `W`
- * tests at once, so at most `W − 1` wait and the worst wait is `(W − 1) × H`
- * for the longest hold `H`.
+ * directory; where the wrapper did not provide one (CI), the same single path
+ * under `os.tmpdir()` keyed by this run's English server port, which
+ * `appearanceLockPath()` below names. Taken by **every** writer and asserter of
+ * the row, in a test or in a hook, and by nothing else in the suite; never as
+ * an `{ auto: true }` fixture, which every test in the suite would then take.
+ * Held for the write-to-last-read-back window and released in a `finally`, so
+ * a test that throws cannot deadlock the rest of the run. The wait is bounded
+ * at 20 s on a short poll, deliberately below Playwright's 30 s default test
+ * timeout, so a queue longer than the budget ends with **this** message —
+ * naming the elapsed wait, the deadline and the worker holding the file —
+ * instead of an indistinguishable `Test timeout of 30000ms exceeded`. The
+ * queue is bounded by the worker count and not by the repeat count: Playwright
+ * runs at most `W` tests at once, so at most `W − 1` wait and the worst wait
+ * is `(W − 1) × H` for the longest hold `H`.
  */
 const APPEARANCE_LOCK = 'appearance.lock';
 const APPEARANCE_LOCK_DEADLINE_MS = 20_000;
@@ -218,15 +221,27 @@ const APPEARANCE_LOCK_POLL_MS = 50;
 /** This process's own hold, so a nested acquire fails at once and not in 20 s. */
 let heldSince: number | undefined;
 
-/** `APUNTA_DATA_DIR` is the sandbox run's data folder, never a default. */
+/**
+ * Where the lock file is: this run's `APUNTA_DATA_DIR` under the sandbox
+ * wrapper, so the blast radius is the run folder and nothing else.
+ *
+ * **CI has no `APUNTA_DATA_DIR`** — it runs `npm run e2e` without
+ * `scripts/v2/sandbox.mjs`, which is what sets it — and there was nothing to
+ * fall back to, so `appearanceLockPath()` threw before the first lock-taking
+ * test in each worker ran (owner decision, 2026-09-30, run 36746655691:
+ * `brand.spec.ts:367`, `settings-appearance.spec.ts:21` and `:86`,
+ * `workspace.spec.ts:553`, in both projects). The fallback is **one** path
+ * under `os.tmpdir()`, keyed by this run's **English server port** — the same
+ * `APUNTA_E2E_PORT` `e2e/playwright.config.ts:16` reads, default `7788`, the
+ * same value `e2ePort` above is built from — so every worker process of one
+ * run takes the same file and two runs on two ports never meet. The port is
+ * what makes it per-run; nothing else about the lock changes, and the
+ * `APUNTA_DATA_DIR` path still wins when the wrapper provided one.
+ */
 function appearanceLockPath(): string {
   const dataDir = process.env['APUNTA_DATA_DIR'];
-  if (dataDir === undefined || dataDir === '') {
-    throw new Error(
-      `the appearance lock is ${APPEARANCE_LOCK} under APUNTA_DATA_DIR, and APUNTA_DATA_DIR is unset: run the suite through scripts/v2/sandbox.mjs, which points it at this run's sandbox folder`,
-    );
-  }
-  return join(dataDir, APPEARANCE_LOCK);
+  if (dataDir !== undefined && dataDir !== '') return join(dataDir, APPEARANCE_LOCK);
+  return join(tmpdir(), `apunta-e2e-appearance-${String(e2ePort)}.lock`);
 }
 
 /** Who holds the file, for the message a waiter leaves behind. */

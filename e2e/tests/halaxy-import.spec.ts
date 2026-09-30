@@ -48,9 +48,9 @@ test.describe('importing from Halaxy', () => {
     // This run's own batch id, taken from the answer the server just gave. The
     // list below is every batch in the shared database, from both sources and
     // from every other spec, and the rows carry no id in the DOM
-    // (ImportBatchList.tsx:44-62), so the row this test undoes is located
-    // through the API and proved before it is clicked rather than taken as
-    // "the first one", which is the newest and is whoever imported last.
+    // (ImportBatchList.tsx:44-62), so the row this test undoes is located in
+    // that list and proved before it is clicked rather than taken as "the first
+    // one", which is the newest and is whoever imported last.
     const runAnswer = page.waitForResponse(
       (response) => response.url().endsWith('/api/import/halaxy') && response.request().method() === 'POST',
     );
@@ -80,22 +80,37 @@ test.describe('importing from Halaxy', () => {
       note_count: 2,
     });
 
+    // **One** snapshot of the list, and it is the page's own. The rows come from
+    // the GET the route fires when it mounts and are only reloaded after an undo
+    // (`web/src/hooks/useImportBatch.ts:20-28`), so the answer to *this* call is
+    // what the rows on screen were rendered from. Reading the list a second time
+    // through `request`, after the render, is a separately timed read: a sibling
+    // spec's own undo lands between the two often enough to be pinned (S2.R
+    // finding 2; reproduced and measured in
+    // `docs/v2/evidence/S2.10/attempt2.md`), the API then answers a row short,
+    // and the count cross-check below used to fail with Expected 1, Received 2 —
+    // which is the check working: with the sibling's row gone from the API and
+    // still on screen, the index would have clicked somebody else's batch.
+    const listAnswer = page.waitForResponse((response) => {
+      if (response.request().method() !== 'GET') return false;
+      const url = new URL(response.url());
+      return url.pathname === '/api/import/batches' && url.search === '';
+    });
     await page.goto('/import/halaxy');
+    const { batches } = (await (await listAnswer).json()) as { batches: { id: string }[] };
     await expect(page.getByTestId('halaxy-batches')).toBeVisible();
     await checkScreen(page, 'Import from Halaxy, with an earlier import');
-    // The same call the page's own list is loaded from, read after the page has
-    // shown its rows, so the two agree unless a batch was created in between —
-    // and the count assertion is what makes that a check rather than a hope.
     const undoButtons = page.getByTestId('halaxy-batches').getByRole('button', { name: tr('common.undo') });
-    const batchesResponse = await request.get('/api/import/batches');
-    expect(batchesResponse.ok()).toBeTruthy();
-    const { batches } = (await batchesResponse.json()) as { batches: { id: string }[] };
     const ownRow = batches.findIndex((batch) => batch.id === batchId);
     expect(
       batches[ownRow]?.id,
       `the batch this run created (${batchId}) is in the list, so the row at its index is the one to undo`,
     ).toBe(batchId);
-    await expect(undoButtons, 'one undo button per row the API returned').toHaveCount(batches.length);
+    // One button per row of the list these rows were rendered from — an index
+    // into the DOM and an index into `batches` mean the same row, or this fails.
+    await expect(undoButtons, 'one undo button per row the list was rendered from').toHaveCount(
+      batches.length,
+    );
     await undoButtons.nth(ownRow).click();
     await expect(page.getByTestId('halaxy-undone')).toContainText(
       tr('import.undoneLine', { notes: noteCount(2), patients: patientCount(1) }),
