@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { expect, test, uniqueName } from '../support/fixtures';
+import { acquireAppearanceLock, expect, releaseAppearanceLock, test, uniqueName } from '../support/fixtures';
 
 /** Committed next to the specs, so a reviewer can eyeball the layout. */
 const SCREENSHOT = join(import.meta.dirname, '..', 'screenshots', 'workspace-1280x800.png');
@@ -544,17 +544,27 @@ test.describe('settings', () => {
    * Geometry, because no other kind of test sees this: the Appearance card
    * autosaves, so a change must both persist and raise its "Saved" line
    * without shifting the card under it.
+   *
+   * The click is a write of the one global `theme` row, from a third file, while
+   * `settings-appearance.spec.ts` and `brand.spec.ts` write and read it back on
+   * this same server — so it takes the same lock, from the click to the last
+   * assertion that reads what the click wrote.
    */
   test('autosaves an appearance change and shows Saved in the card header', async ({ page, tr }) => {
     await page.goto('/settings');
     const card = page.getByTestId('appearance-settings');
     await expect(card.getByTestId('appearance-saved')).toHaveCount(0);
 
-    await card.getByTestId('theme-light').click();
-    await expect(card.getByTestId('appearance-saved')).toHaveText(tr('note.saveSaved'));
+    await acquireAppearanceLock();
+    try {
+      await card.getByTestId('theme-light').click();
+      await expect(card.getByTestId('appearance-saved')).toHaveText(tr('note.saveSaved'));
 
-    const box = await card.getByTestId('appearance-saved').boundingBox();
-    const titleBox = await card.locator('.settings-card-header').boundingBox();
-    expect(box?.y ?? 0).toBeGreaterThanOrEqual(titleBox?.y ?? 0);
+      const box = await card.getByTestId('appearance-saved').boundingBox();
+      const titleBox = await card.locator('.settings-card-header').boundingBox();
+      expect(box?.y ?? 0).toBeGreaterThanOrEqual(titleBox?.y ?? 0);
+    } finally {
+      releaseAppearanceLock();
+    }
   });
 });

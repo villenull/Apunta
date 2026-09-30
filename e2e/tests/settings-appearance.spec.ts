@@ -1,4 +1,4 @@
-import { expect, test, uniqueName } from '../support/fixtures';
+import { acquireAppearanceLock, expect, releaseAppearanceLock, test, uniqueName } from '../support/fixtures';
 
 /**
  * C-SETTINGS@1, the Normal example, in the real app against the real server.
@@ -24,45 +24,54 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
   tr,
   checkScreen,
 }) => {
-  // Deterministic starting point: Dark, whatever a sibling spec left behind.
-  await request.put('/api/settings', { data: { theme: 'dark' } });
-  // A first run with no note format redirects `/` to onboarding, and "navigate
-  // to Home" has to be Home.
-  await request.post('/api/formats', {
-    data: { name: uniqueName('E2E settings appearance format'), sections: ['Subjective', 'Plan'] },
-  });
+  // `theme` is one global row on this one server, and `workspace.spec.ts` and
+  // `brand.spec.ts` write it too while this runs. The hold runs from the write
+  // to the last assertion that reads it back — the reload included, which is
+  // exactly the window a sibling's `PUT` used to land in.
+  await acquireAppearanceLock();
+  try {
+    // Deterministic starting point: Dark, whatever a sibling spec left behind.
+    await request.put('/api/settings', { data: { theme: 'dark' } });
+    // A first run with no note format redirects `/` to onboarding, and "navigate
+    // to Home" has to be Home.
+    await request.post('/api/formats', {
+      data: { name: uniqueName('E2E settings appearance format'), sections: ['Subjective', 'Plan'] },
+    });
 
-  await page.goto('/settings');
-  const light = page.getByTestId('theme-light');
-  const dark = page.getByTestId('theme-dark');
-  const root = page.locator('html');
-  await expect(dark).toHaveAttribute('aria-checked', 'true');
-  await expect(root).toHaveAttribute('data-theme', 'dark');
-  await checkScreen(page, 'Settings');
+    await page.goto('/settings');
+    const light = page.getByTestId('theme-light');
+    const dark = page.getByTestId('theme-dark');
+    const root = page.locator('html');
+    await expect(dark).toHaveAttribute('aria-checked', 'true');
+    await expect(root).toHaveAttribute('data-theme', 'dark');
+    await checkScreen(page, 'Settings');
 
-  await light.click();
-  await expect(light).toHaveAttribute('aria-checked', 'true');
-  await expect(root).toHaveAttribute('data-theme', 'light');
+    await light.click();
+    await expect(light).toHaveAttribute('aria-checked', 'true');
+    await expect(root).toHaveAttribute('data-theme', 'light');
 
-  // Home, then back to Settings. Both are in-app: the first is the card's own
-  // back link, the second is the browser's history, so no document is loaded
-  // and the provider survives it.
-  await page.getByRole('link', { name: tr('common.patients') }).click();
-  await expect(page.getByTestId('home')).toBeVisible();
-  await checkScreen(page, 'Home');
-  await page.goBack();
-  await expect(page).toHaveURL(/\/settings$/);
-  await expect(page.getByTestId('appearance-settings')).toBeVisible();
+    // Home, then back to Settings. Both are in-app: the first is the card's own
+    // back link, the second is the browser's history, so no document is loaded
+    // and the provider survives it.
+    await page.getByRole('link', { name: tr('common.patients') }).click();
+    await expect(page.getByTestId('home')).toBeVisible();
+    await checkScreen(page, 'Home');
+    await page.goBack();
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page.getByTestId('appearance-settings')).toBeVisible();
 
-  // The selected segment is derived from the provider, so this pair *is*
-  // "provider value light" with the page painted from it.
-  await expect(light).toHaveAttribute('aria-checked', 'true');
-  await expect(root).toHaveAttribute('data-theme', 'light');
+    // The selected segment is derived from the provider, so this pair *is*
+    // "provider value light" with the page painted from it.
+    await expect(light).toHaveAttribute('aria-checked', 'true');
+    await expect(root).toHaveAttribute('data-theme', 'light');
 
-  // And after a reload it is still light: the server was told, and told once.
-  await page.reload();
-  await expect(light).toHaveAttribute('aria-checked', 'true');
-  await expect(root).toHaveAttribute('data-theme', 'light');
+    // And after a reload it is still light: the server was told, and told once.
+    await page.reload();
+    await expect(light).toHaveAttribute('aria-checked', 'true');
+    await expect(root).toHaveAttribute('data-theme', 'light');
+  } finally {
+    releaseAppearanceLock();
+  }
 });
 
 /**
@@ -79,48 +88,55 @@ test('settings appearance: moves and selects the theme with the arrow keys', asy
   request,
   tr,
 }) => {
-  // Deterministic starting point: Dark, whatever a sibling spec left behind.
-  await request.put('/api/settings', { data: { theme: 'dark' } });
-  // Order-independent: a run that reaches this test first still has a note
-  // format, so `/settings` is a real screen.
-  await request.post('/api/formats', {
-    data: { name: uniqueName('E2E settings appearance keyboard format'), sections: ['Subjective', 'Plan'] },
-  });
+  // The same global row as the test above, and the same hold: from the write to
+  // the last assertion that reads it back.
+  await acquireAppearanceLock();
+  try {
+    // Deterministic starting point: Dark, whatever a sibling spec left behind.
+    await request.put('/api/settings', { data: { theme: 'dark' } });
+    // Order-independent: a run that reaches this test first still has a note
+    // format, so `/settings` is a real screen.
+    await request.post('/api/formats', {
+      data: { name: uniqueName('E2E settings appearance keyboard format'), sections: ['Subjective', 'Plan'] },
+    });
 
-  await page.goto('/settings');
-  const system = page.getByTestId('theme-system');
-  const light = page.getByTestId('theme-light');
-  const dark = page.getByTestId('theme-dark');
-  const root = page.locator('html');
-  await expect(dark).toHaveAttribute('aria-checked', 'true');
-  await expect(root).toHaveAttribute('data-theme', 'dark');
+    await page.goto('/settings');
+    const system = page.getByTestId('theme-system');
+    const light = page.getByTestId('theme-light');
+    const dark = page.getByTestId('theme-dark');
+    const root = page.locator('html');
+    await expect(dark).toHaveAttribute('aria-checked', 'true');
+    await expect(root).toHaveAttribute('data-theme', 'dark');
 
-  // One tab stop, on the choice already made: the other two segments are
-  // unreachable by Tab alone, so the arrows have to work.
-  await expect(dark).toHaveAttribute('tabindex', '0');
-  await expect(light).toHaveAttribute('tabindex', '-1');
-  await expect(system).toHaveAttribute('tabindex', '-1');
+    // One tab stop, on the choice already made: the other two segments are
+    // unreachable by Tab alone, so the arrows have to work.
+    await expect(dark).toHaveAttribute('tabindex', '0');
+    await expect(light).toHaveAttribute('tabindex', '-1');
+    await expect(system).toHaveAttribute('tabindex', '-1');
 
-  await dark.focus();
-  await page.keyboard.press('ArrowLeft');
+    await dark.focus();
+    await page.keyboard.press('ArrowLeft');
 
-  // Moving is selecting: no Enter, no Space, and the save is already through
-  // (the same `Saved` note a click leaves).
-  await expect(light).toHaveAttribute('aria-checked', 'true');
-  await expect(dark).toHaveAttribute('aria-checked', 'false');
-  await expect(light).toHaveAttribute('tabindex', '0');
-  await expect(light).toBeFocused();
-  await expect(root).toHaveAttribute('data-theme', 'light');
-  await expect(page.getByTestId('appearance-saved')).toHaveText(tr('note.saveSaved'));
+    // Moving is selecting: no Enter, no Space, and the save is already through
+    // (the same `Saved` note a click leaves).
+    await expect(light).toHaveAttribute('aria-checked', 'true');
+    await expect(dark).toHaveAttribute('aria-checked', 'false');
+    await expect(light).toHaveAttribute('tabindex', '0');
+    await expect(light).toBeFocused();
+    await expect(root).toHaveAttribute('data-theme', 'light');
+    await expect(page.getByTestId('appearance-saved')).toHaveText(tr('note.saveSaved'));
 
-  // `THEMES` is `system, light, dark`, so Home is System. What persists is the
-  // choice `system`; what the page is painted is the resolved theme, and
-  // Playwright emulates a light OS — so `light`, never the literal `system`.
-  await page.keyboard.press('Home');
-  await expect(system).toHaveAttribute('aria-checked', 'true');
-  await expect(light).toHaveAttribute('aria-checked', 'false');
-  await expect(system).toHaveAttribute('tabindex', '0');
-  await expect(system).toBeFocused();
-  await expect(root).toHaveAttribute('data-theme', 'light');
-  await expect(root).not.toHaveAttribute('data-theme', 'system');
+    // `THEMES` is `system, light, dark`, so Home is System. What persists is the
+    // choice `system`; what the page is painted is the resolved theme, and
+    // Playwright emulates a light OS — so `light`, never the literal `system`.
+    await page.keyboard.press('Home');
+    await expect(system).toHaveAttribute('aria-checked', 'true');
+    await expect(light).toHaveAttribute('aria-checked', 'false');
+    await expect(system).toHaveAttribute('tabindex', '0');
+    await expect(system).toBeFocused();
+    await expect(root).toHaveAttribute('data-theme', 'light');
+    await expect(root).not.toHaveAttribute('data-theme', 'system');
+  } finally {
+    releaseAppearanceLock();
+  }
 });

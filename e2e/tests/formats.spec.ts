@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import type { Page } from '@playwright/test';
+import type { APIRequestContext, Page } from '@playwright/test';
 
 import { expect, test, uniqueName } from '../support/fixtures';
 
@@ -24,6 +24,21 @@ const SCAN = join(FIXTURES, 'scan.pdf');
 
 const chipsOf = (page: Page) => page.getByTestId('section-chips');
 
+/** One row as `GET /api/formats` returns it. */
+interface FormatRow {
+  id: string;
+  name: string;
+  sections: string[];
+  instructions: string;
+}
+
+/** Every stored format, in the server's own order, which nothing here relies on. */
+async function listFormats(request: APIRequestContext): Promise<FormatRow[]> {
+  const response = await request.get('/api/formats');
+  expect(response.ok(), 'GET /api/formats').toBe(true);
+  return ((await response.json()) as { formats: FormatRow[] }).formats;
+}
+
 /** Remove one expected line from the collected console errors, in place. */
 function drop(collected: string[], line: string): void {
   const remaining = collected.filter((entry) => entry !== line);
@@ -31,13 +46,54 @@ function drop(collected: string[], line: string): void {
 }
 
 test.describe('her standard progress note', () => {
+  /**
+   * The seven section names the server stores for her standard format, as the
+   * shared constant's own — the same list the three assertions below pin, held
+   * here so the scoped count and those assertions cannot drift apart.
+   */
+  const STANDARD_SECTIONS = [
+    'Location',
+    'Client presentation',
+    'Risk review',
+    'Discussion',
+    'Intervention',
+    'Out of session actions',
+    'Note for next session',
+  ];
+
+  /**
+   * The rows this test can be responsible for, and **two** conditions name them.
+   *
+   * The count it feeds used to be a global `formats.length`, which no worker can
+   * answer while a sibling POSTs a format into the same database — 22 call
+   * sites across `e2e/tests/` do exactly that — so `before + 1` was a race, not
+   * an assertion. The name alone is not a scope either: `workspace.spec.ts`
+   * POSTs a format named `Progress note` too, with four SOAP sections, and it is
+   * a sibling in a default-worker run. So the seven section names are the second
+   * condition, and that row is then in neither operand.
+   *
+   * Compared as a set, because the order the sections are stored in is not what
+   * makes a row this test's; the created row's own ordered assertion is
+   * unchanged and still pins the order.
+   */
+  function inScope(formats: FormatRow[]): FormatRow[] {
+    return formats.filter(
+      (format) =>
+        format.name === 'Progress note' &&
+        format.sections.length === STANDARD_SECTIONS.length &&
+        STANDARD_SECTIONS.every((section) => format.sections.includes(section)),
+    );
+  }
+
   test('is one click from first run, with her sections and her instructions', async ({
     page,
     request,
     tr,
   }) => {
-    const before = ((await (await request.get('/api/formats')).json()) as { formats: { id: string }[] })
-      .formats.length;
+    // The scoped count, and the ids behind it: both operands are arithmetic on
+    // the rows this test can be responsible for.
+    const before = inScope(await listFormats(request));
+    const beforeIds = new Set(before.map((format) => format.id));
 
     await page.goto('/onboarding/format');
     // The seven section names are the shared constant's own, joined as data, so
@@ -50,11 +106,12 @@ test.describe('her standard progress note', () => {
 
     await expect(page.getByRole('heading', { name: tr('patients.add') })).toBeVisible();
 
-    const { formats } = (await (await request.get('/api/formats')).json()) as {
-      formats: { name: string; sections: string[]; instructions: string }[];
-    };
-    expect(formats).toHaveLength(before + 1);
-    const created = formats.at(-1);
+    const formats = inScope(await listFormats(request));
+    // Strictly stronger than the global count it replaces: one row more in
+    // scope, identified by what it is rather than by a position a sibling's row
+    // can move, and no sibling outside this file is in either operand.
+    expect(formats).toHaveLength(before.length + 1);
+    const created = formats.find((format) => !beforeIds.has(format.id));
     // C-LANG@1 rule 8 asks for a *separate* Spanish standard format alongside
     // this one, and only the English one is created from this option in either
     // project. That is a server-side gap in `routes/formats.ts`, which is

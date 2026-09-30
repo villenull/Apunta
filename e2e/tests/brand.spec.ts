@@ -4,7 +4,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
 import { DEFAULT_ACCENT_COLOR } from '@apunta/shared';
 
-import { expect, test, uniqueName } from '../support/fixtures';
+import { acquireAppearanceLock, expect, releaseAppearanceLock, test, uniqueName } from '../support/fixtures';
 
 /**
  * The brand as it is actually **painted**, in a real browser.
@@ -61,6 +61,13 @@ import { expect, test, uniqueName } from '../support/fixtures';
  * every other spec in the run (`fullyParallel`, one server, one database).
  * `beforeAll` reads the row and `afterAll` puts it back. The data directory is
  * per-run, so the blast radius is this Playwright run and never anything else.
+ *
+ * Serial mode alone does not close that row, because the other writers of it
+ * are in **other files** (`settings-appearance.spec.ts`, `workspace.spec.ts`)
+ * and `serial` orders tests only inside one file or block. So each of the five
+ * tests, and each of the two hooks, also takes the cross-process appearance
+ * lock from `support/fixtures.ts` around its own window — five short holds and
+ * two more, never one across this describe, and never nested (AM-090).
  *
  * No patient, no note, no transcript: one fabricated note format so `/` is the
  * home screen rather than a redirect to onboarding.
@@ -297,31 +304,56 @@ test.describe('rendered colours and 200% zoom', () => {
   let original: { theme?: unknown; accent_color?: unknown } = {};
   /** The keys of that record that were not in the row at all. */
   let absent: string[] = [];
+  /** The row as the restore in `afterAll` left it, for the `record` below it. */
+  let settings: Record<string, unknown> = {};
 
   test.beforeAll(async ({ request }) => {
-    const response = await request.get('/api/settings');
-    expect(response.ok(), 'GET /api/settings').toBe(true);
-    const settings = (await response.json()) as Record<string, unknown>;
-    original = { theme: settings['theme'], accent_color: settings['accent_color'] };
-    absent = (['theme', 'accent_color'] as const).filter((key) => settings[key] === undefined);
-    record(
-      `settings read before the run: ${JSON.stringify(restorable(original))}` +
-        (absent.length === 0 ? '' : ` (absent: ${absent.join(', ')})`),
-    );
+    // Two short holds, never one across this describe (AM-090): this read and
+    // the restore in `afterAll` are each a touch of the one global appearance
+    // row, and a single hold spanning the five tests between them would be five
+    // navigations and five screenshots wide. The lock is not re-entrant and
+    // never nested, so each of the five takes its own around its own window and
+    // none of them overlaps these two.
+    await acquireAppearanceLock();
+    try {
+      const response = await request.get('/api/settings');
+      expect(response.ok(), 'GET /api/settings').toBe(true);
+      const settings = (await response.json()) as Record<string, unknown>;
+      original = { theme: settings['theme'], accent_color: settings['accent_color'] };
+      absent = (['theme', 'accent_color'] as const).filter((key) => settings[key] === undefined);
+      record(
+        `settings read before the run: ${JSON.stringify(restorable(original))}` +
+          (absent.length === 0 ? '' : ` (absent: ${absent.join(', ')})`),
+      );
+    } finally {
+      releaseAppearanceLock();
+    }
   });
 
   test.afterAll(async ({ request }) => {
     const data = restorable(original);
-    const put = await request.put('/api/settings', { data });
-    expect(put.ok(), 'PUT /api/settings to restore').toBe(true);
-    const read = await request.get('/api/settings');
-    expect(read.ok(), 'GET /api/settings after the restore').toBe(true);
-    const settings = (await read.json()) as Record<string, unknown>;
-    // Every key that was there before the run is asserted to be back; one that
-    // was absent is only recorded, because `PUT /api/settings` is a merge
-    // (`server/src/db/settings.ts`) and no route unsets a key.
-    for (const [key, value] of Object.entries(data)) {
-      expect(settings[key], `settings after the restore: ${key}`).toEqual(value);
+    // The same short hold as the read above, around this restore and the
+    // assertions that read it back — and it is released only after them, never
+    // before. In an amplified run this PUT lands a *different* value from the
+    // one a sibling is asserting, which is why a restore is a writer like any
+    // other.
+    await acquireAppearanceLock();
+    try {
+      const put = await request.put('/api/settings', { data });
+      expect(put.ok(), 'PUT /api/settings to restore').toBe(true);
+      const read = await request.get('/api/settings');
+      expect(read.ok(), 'GET /api/settings after the restore').toBe(true);
+      // Declared on the describe, so the `record` below reads the row the
+      // restore left without taking it out of the hold that verifies it.
+      settings = (await read.json()) as Record<string, unknown>;
+      // Every key that was there before the run is asserted to be back; one that
+      // was absent is only recorded, because `PUT /api/settings` is a merge
+      // (`server/src/db/settings.ts`) and no route unsets a key.
+      for (const [key, value] of Object.entries(data)) {
+        expect(settings[key], `settings after the restore: ${key}`).toEqual(value);
+      }
+    } finally {
+      releaseAppearanceLock();
     }
     const leftBehind = absent.map((key) => `${key}=${JSON.stringify(settings[key])}`);
     record(
@@ -336,32 +368,55 @@ test.describe('rendered colours and 200% zoom', () => {
     page,
     request,
   }) => {
-    await openHome(page, request, LIGHT_DEFAULT);
-    await assertPainted(page, LIGHT_DEFAULT, 'light-default-accent');
+    // The window that touches the theme row: `openHome` writes it, and
+    // `assertPainted` reads back what it wrote. Each of the five takes its own
+    // short hold; the lock is not re-entrant, so it is released before the next.
+    await acquireAppearanceLock();
+    try {
+      await openHome(page, request, LIGHT_DEFAULT);
+      await assertPainted(page, LIGHT_DEFAULT, 'light-default-accent');
+    } finally {
+      releaseAppearanceLock();
+    }
   });
 
   test(`brand: light, stored accent ${OTHER_ACCENT} is ignored — A mark ${LIGHT_OTHER.mark}, wordmark ${LIGHT_OTHER.wordmark}`, async ({
     page,
     request,
   }) => {
-    await openHome(page, request, LIGHT_OTHER);
-    await assertPainted(page, LIGHT_OTHER, 'light-accent-7c3aed');
+    await acquireAppearanceLock();
+    try {
+      await openHome(page, request, LIGHT_OTHER);
+      await assertPainted(page, LIGHT_OTHER, 'light-accent-7c3aed');
+    } finally {
+      releaseAppearanceLock();
+    }
   });
 
   test(`brand: dark, default accent ${DEFAULT_ACCENT} — A mark ${DARK_DEFAULT.mark}, wordmark ${DARK_DEFAULT.wordmark}`, async ({
     page,
     request,
   }) => {
-    await openHome(page, request, DARK_DEFAULT);
-    await assertPainted(page, DARK_DEFAULT, 'dark-default-accent');
+    await acquireAppearanceLock();
+    try {
+      await openHome(page, request, DARK_DEFAULT);
+      await assertPainted(page, DARK_DEFAULT, 'dark-default-accent');
+    } finally {
+      releaseAppearanceLock();
+    }
   });
 
   test(`brand: dark, stored accent ${OTHER_ACCENT} is ignored — A mark ${DARK_OTHER.mark}, wordmark ${DARK_OTHER.wordmark}`, async ({
     page,
     request,
   }) => {
-    await openHome(page, request, DARK_OTHER);
-    await assertPainted(page, DARK_OTHER, 'dark-accent-7c3aed');
+    await acquireAppearanceLock();
+    try {
+      await openHome(page, request, DARK_OTHER);
+      await assertPainted(page, DARK_OTHER, 'dark-accent-7c3aed');
+    } finally {
+      releaseAppearanceLock();
+    }
   });
 
   /**
@@ -399,70 +454,77 @@ test.describe('rendered colours and 200% zoom', () => {
     page,
     request,
   }) => {
+    // The inline `PUT` below is this test's own write of the same global row,
+    // and the geometry after it is painted from it, so it holds the lock too.
     await request.post('/api/formats', {
       data: { name: uniqueName('E2E brand format'), sections: ['Subjective', 'Plan'] },
     });
-    await request.put('/api/settings', { data: { theme: 'light', accent_color: DEFAULT_ACCENT } });
-    await page.setViewportSize(ZOOM_WINDOW);
-    await page.goto('/');
-    await expect(page.getByTestId('home')).toBeVisible();
+    await acquireAppearanceLock();
+    try {
+      await request.put('/api/settings', { data: { theme: 'light', accent_color: DEFAULT_ACCENT } });
+      await page.setViewportSize(ZOOM_WINDOW);
+      await page.goto('/');
+      await expect(page.getByTestId('home')).toBeVisible();
 
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send('Emulation.setDeviceMetricsOverride', {
-      width: ZOOM_WINDOW.width / ZOOM,
-      height: ZOOM_WINDOW.height / ZOOM,
-      deviceScaleFactor: ZOOM,
-      mobile: false,
-    });
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Emulation.setDeviceMetricsOverride', {
+        width: ZOOM_WINDOW.width / ZOOM,
+        height: ZOOM_WINDOW.height / ZOOM,
+        deviceScaleFactor: ZOOM,
+        mobile: false,
+      });
 
-    await expect(page.getByTestId('home'), 'the home screen after the zoom').toBeVisible();
-    const layout = await page.evaluate(() => ({
-      innerWidth: window.innerWidth,
-      innerHeight: window.innerHeight,
-      devicePixelRatio: window.devicePixelRatio,
-    }));
+      await expect(page.getByTestId('home'), 'the home screen after the zoom').toBeVisible();
+      const layout = await page.evaluate(() => ({
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio,
+      }));
 
-    const mark = await boxOf(page.getByTestId('home').locator(HOME_WORDMARK), "the home screen's wordmark");
-    const wordmark = await boxOf(page.getByRole('img', { name: WORDMARK_NAME }), 'the wordmark');
-    const toggle = await boxOf(page.getByTestId('sidebar-toggle'), 'the sidebar toggle');
-    const bar = await boxOf(page.locator('.col-header-brand'), 'the sidebar top bar');
-    const inner = await boxOf(page.locator('.home-inner'), 'the home column');
-    const firstCard = await boxOf(
-      page.getByTestId('home').locator('.home-actions > li').first(),
-      "the workbench's first action card",
-    );
-    record(
-      `zoom: window ${ZOOM_WINDOW.width}×${ZOOM_WINDOW.height} at ${String(ZOOM)}× → layout ${layout.innerWidth}×${layout.innerHeight} CSS px, dpr ${layout.devicePixelRatio}; ${JSON.stringify({ mark, wordmark, toggle, bar, inner, firstCard })}`,
-    );
+      const mark = await boxOf(page.getByTestId('home').locator(HOME_WORDMARK), "the home screen's wordmark");
+      const wordmark = await boxOf(page.getByRole('img', { name: WORDMARK_NAME }), 'the wordmark');
+      const toggle = await boxOf(page.getByTestId('sidebar-toggle'), 'the sidebar toggle');
+      const bar = await boxOf(page.locator('.col-header-brand'), 'the sidebar top bar');
+      const inner = await boxOf(page.locator('.home-inner'), 'the home column');
+      const firstCard = await boxOf(
+        page.getByTestId('home').locator('.home-actions > li').first(),
+        "the workbench's first action card",
+      );
+      record(
+        `zoom: window ${ZOOM_WINDOW.width}×${ZOOM_WINDOW.height} at ${String(ZOOM)}× → layout ${layout.innerWidth}×${layout.innerHeight} CSS px, dpr ${layout.devicePixelRatio}; ${JSON.stringify({ mark, wordmark, toggle, bar, inner, firstCard })}`,
+      );
 
-    expect(
-      intersects(wordmark, toggle),
-      `wordmark ${JSON.stringify(wordmark)} vs toggle ${JSON.stringify(toggle)}`,
-    ).toBe(false);
-    expect(wordmark.x, 'the wordmark starts inside its bar').toBeGreaterThanOrEqual(bar.x - TOLERANCE);
-    expect(wordmark.x + wordmark.width, 'the wordmark ends inside its bar').toBeLessThanOrEqual(
-      bar.x + bar.width + TOLERANCE,
-    );
-    expect(wordmark.y, 'the wordmark starts inside its bar').toBeGreaterThanOrEqual(bar.y - TOLERANCE);
-    expect(wordmark.y + wordmark.height, 'the wordmark ends inside its bar vertically').toBeLessThanOrEqual(
-      bar.y + bar.height + TOLERANCE,
-    );
-    expect(
-      Math.abs(mark.height - 48),
-      `the A mark's measured height (${String(mark.height)})`,
-    ).toBeLessThanOrEqual(0.5);
-    const centreOffset = Math.abs(mark.x + mark.width / 2 - (inner.x + inner.width / 2));
-    expect(
-      centreOffset,
-      `the A mark's offset from the column's centre (${String(centreOffset)}px)`,
-    ).toBeLessThanOrEqual(TOLERANCE);
-    expect(
-      intersects(mark, firstCard),
-      `the A mark ${JSON.stringify(mark)} vs the first action card ${JSON.stringify(firstCard)}`,
-    ).toBe(false);
-    expect(
-      mark.y + mark.height,
-      'the A mark is above the action cards, not overlapping them',
-    ).toBeLessThanOrEqual(firstCard.y + TOLERANCE);
+      expect(
+        intersects(wordmark, toggle),
+        `wordmark ${JSON.stringify(wordmark)} vs toggle ${JSON.stringify(toggle)}`,
+      ).toBe(false);
+      expect(wordmark.x, 'the wordmark starts inside its bar').toBeGreaterThanOrEqual(bar.x - TOLERANCE);
+      expect(wordmark.x + wordmark.width, 'the wordmark ends inside its bar').toBeLessThanOrEqual(
+        bar.x + bar.width + TOLERANCE,
+      );
+      expect(wordmark.y, 'the wordmark starts inside its bar').toBeGreaterThanOrEqual(bar.y - TOLERANCE);
+      expect(wordmark.y + wordmark.height, 'the wordmark ends inside its bar vertically').toBeLessThanOrEqual(
+        bar.y + bar.height + TOLERANCE,
+      );
+      expect(
+        Math.abs(mark.height - 48),
+        `the A mark's measured height (${String(mark.height)})`,
+      ).toBeLessThanOrEqual(0.5);
+      const centreOffset = Math.abs(mark.x + mark.width / 2 - (inner.x + inner.width / 2));
+      expect(
+        centreOffset,
+        `the A mark's offset from the column's centre (${String(centreOffset)}px)`,
+      ).toBeLessThanOrEqual(TOLERANCE);
+      expect(
+        intersects(mark, firstCard),
+        `the A mark ${JSON.stringify(mark)} vs the first action card ${JSON.stringify(firstCard)}`,
+      ).toBe(false);
+      expect(
+        mark.y + mark.height,
+        'the A mark is above the action cards, not overlapping them',
+      ).toBeLessThanOrEqual(firstCard.y + TOLERANCE);
+    } finally {
+      releaseAppearanceLock();
+    }
   });
 });
