@@ -955,3 +955,26 @@ Two residuals carried, neither fixed: **AM-076**'s staggered-entrance gap, where
 the failure mode is loud rather than quiet, and a pre-existing theme flake at
 `settings-appearance.spec.ts:63-64` seen once in five full runs, which the
 reviewer confirmed this change cannot cause.
+
+### 2026-09-30 — S2.11's instruction re-review: seven findings closed, two new ones, and nothing else in the plan can move
+
+The re-review of S2.11's repaired card (`state/reviews/S2.11-ir2.md`, base
+`2c59659`, after AM-102) came back with every first-round finding confirmed
+closed — D1's third focus move, D2's blind scope check, and notes N1 and N3
+through N6 — and `DEFECT` on two rows it had not been asked about. Case (c) is
+the same class of mistake as the D1 it repaired, in the neighbouring case the
+repair did not touch: it asserts on `document.activeElement` without draining a
+frame, and the focus move it is asserting happens *inside* one
+(`App.tsx:269-274`), so it would be red on a correct implementation. D2 is the
+older, quieter one: V7 runs the screenshot spec and, unlike V5 and V6, never
+restores the PNGs, so the very next row asserts something untrue. I checked
+both against the code before recording them.
+
+Neither is a judgement call about scope, behaviour or thresholds; each is one
+sentence and one command clause. But COORDINATOR §3 step 3 spends its one
+re-review at this point, so S2.11 is `BLOCKED` and the decision is the owner's
+— the same shape as P3.3's parking (AM-084) and S2.9's second repair
+(AM-089/AM-090). Worth stating plainly for whoever picks this up: S2.11 is the
+**only** card in `DEPENDENCIES.md` whose dependencies are all `APPROVED`, so
+until it moves the plan has nothing else to dispatch. Its implementation attempt
+budget is untouched — 0 of 3 — because no implementer has ever seen this card.

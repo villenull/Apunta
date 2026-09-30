@@ -1,3 +1,55 @@
+# Latest handoff — 2026-09-30 20:15Z
+
+Supersedes the block below it. **43 cards APPROVED** (this session: S2.7, P3.7,
+P4.5, S2.8, S2.9, S2.10, and S2.8 attempt 2). **Zero agents running, zero
+pending permissions, working tree clean, `main` pushed and CI green.**
+Subagents run on free models chosen per task (CLAUDE.md, owner decision);
+opencode agents need `modeId: "build"` passed explicitly.
+
+## In flight / next
+
+1. **S2.11 is BLOCKED and needs the owner's decision — it is the only card that
+   can move.** S2.11 is the Add-patient name-reset fix: Apunta locks the whole
+   page while it confirms it is the only window, so a name typed in that window
+   is silently dropped, and the app also moves the typing cursor away from the
+   field. The fix is in `web/src/App.tsx` plus one new colocated test. Its
+   instruction review (`state/reviews/S2.11-ir.md`) found two defects and six
+   notes; AM-102 repaired all seven; the one permitted re-review
+   (`state/reviews/S2.11-ir2.md`) **confirmed all seven closed** and returned
+   `DEFECT` on two new rows, both tiny and coordinator-verified against the
+   code:
+   - **D1 (IR-04):** decision 3's case (c) asserts the caret moving into the
+     app without draining a frame; that move *is* a frame
+     (`web/src/App.tsx:269-274`), so the case would be red on a correct
+     implementation. Fix: one sentence in the card, the discipline case (b)
+     already states.
+   - **D2 (IR-10):** V7 runs `brand.spec.ts`, which rewrites the four tracked
+     PNGs in `docs/v2/evidence/P2.2/screenshots/`, and V7 has no restore while
+     V5 and V6 do — so V8 asserts something untrue. Fix: append
+     `; git checkout -- docs/v2/evidence/P2.2/screenshots/` to V7 and reword
+     V8's expected cell.
+   Both need an amendment to the card, which is the owner's call under
+   COORDINATOR §6. **Implementation attempt budget untouched (0 of 3)** — no
+   implementer has seen this card. Nothing else in `DEPENDENCIES.md` is
+   dispatchable while S2.11 is blocked, so a park stops the plan.
+2. **P3.3 is parked by the owner** after three instruction reviews (AM-081,
+   AM-084). One defect left: V4 puts the `fatal-port` dummy and the
+   `fatal-folder` lock holder on one port at once and never waits for the lock
+   (`state/reviews/P3.3-ir3.md`). The two-clause fix is ready to apply when the
+   owner releases it; then one review, then the coordinator runs the A03
+   `pkexec pacman` install (OWNER-ACTIONS 2026-09-29, owner-authorised).
+   **Nothing has been installed.**
+3. **S4a.2 is parked by the owner** ("I'll tell you when"). Its card is
+   amended and approved (AM-082: lead-in `Bueno, notas de la sesion de hoy.`,
+   30 designed negation clips) but has not had an instruction re-review. It
+   must run on a quiet machine, never during live testing. Rough estimate 4-8
+   hours of an idle PC; remake the lost recordings and download the models
+   (~2.3 GB) first, while the machine is busy.
+4. **S2.R re-runs** once S2.11 is approved. Its previous run
+   (`state/reviews/S2.R-review.md`) returned `CHANGES REQUESTED` on the « »
+   quotes and the import race; both were fixed by S2.8 attempt 2 and S2.10
+   attempt 2, which are APPROVED, so the only new input is S2.11.
+
 # Latest handoff — 2026-09-29 evening
 
 Supersedes the block below it. **41 cards APPROVED** (this session: S2.7, P3.7,

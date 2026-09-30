@@ -6,12 +6,12 @@
   ],
   "baseCommit": null,
   "attempt": 1,
-  "status": "NOT STARTED",
-  "lastCompletedStep": "card repaired after instruction review (AM-102)",
-  "nextAllowedAction": "instruction re-review, then dispatch",
+  "status": "BLOCKED",
+  "lastCompletedStep": "instruction re-review after AM-102 returned DEFECT on IR-04 and IR-10 (state/reviews/S2.11-ir2.md); all seven first-round findings confirmed closed",
+  "nextAllowedAction": "owner decision: authorise a third narrow repair of D1 and D2 plus one final instruction review, or park the card; implementation attempt budget untouched (0 of 3)",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-30T19:00:00Z"
+  "updatedUtc": "2026-09-30T20:10:00Z"
 }
