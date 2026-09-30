@@ -7,11 +7,11 @@
   "baseCommit": null,
   "attempt": 1,
   "status": "NOT STARTED",
-  "lastCompletedStep": "card repair authorised by the owner (AM-103): exactly D1 and D2 of reviews/S2.11-ir2.md",
-  "nextAllowedAction": "apply the two authorised repairs to docs/v2/cards/S2.11.md, then one final instruction review",
+  "lastCompletedStep": "AM-103 repair applied and committed (806f889): D1 and D2 closed in the card text; instruction-review dispatch rebuilt at 87218a6",
+  "nextAllowedAction": "final instruction review (reviews/S2.11-ir3.md) running; if all-CLEAR, dispatch implementation attempt 1",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-30T20:22:00Z"
+  "updatedUtc": "2026-09-30T20:35:00Z"
 }
