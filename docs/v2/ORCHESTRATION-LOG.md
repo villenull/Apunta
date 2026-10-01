@@ -1083,3 +1083,7 @@ ctx_b15b3dc11363 supplied S6.1-AMENDMENT-PROPOSAL-v2.md only and was released. C
 ## P5.3 corrected draft returned; owner design decision required
 
 ctx_d1697682db6e supplied P5.3-AMENDMENT-PROPOSAL-v2.md only, released. Coordinator read closure map and recommended protocol: draft still proposes browser-accessible maintenance trigger and immediate busy refusal. These ARE explicit authority/behaviour changes, not gate-preserving mechanical fixes, and are not adopted. Archive unapproved, ask owner between original shell-only drain with proper shell-sandbox verification and changed browser/entry semantics. No thresholds/contracts/cards/code changed. All workers settled, no active writer; S3.2/S6.1 grouped decisions and desktop authentication retry question pending.
+
+## Owner requests continued parallel preparation
+
+Continue/spawn-more instruction acted on with three default opencode workers: S3.2-v2 independent instruction review ctx_9b836286aae5 -> reviews/S3.2-v2-ir.md; P5.3 preserved shell-only/drain proposal ctx_1c79f02f4d53 -> P5.3-PRESERVED-RULES-PROPOSAL.md; dictionary upstream notice read-only provenance ctx_cf3de8292aef -> S6.1-NOTICE-PROVENANCE.md. Three disjoint outputs, no source/build writer. Continue is authorization for preparation and parallel work, not a selected answer to pending licence/protocol changes; no amendment applied. Read-only upstream research allowed to resolve provenance without inventing owner identity; no package acquisition.
