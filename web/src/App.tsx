@@ -59,7 +59,12 @@ function AppRoutes(): React.JSX.Element {
   const location = useLocation();
   const { state } = useSettingsContext();
   const primary = usePrimaryWindow();
-  const blocked = primary.phase !== 'primary';
+  // `inert` is for a window known to be blocked, not for one still finding
+  // out: a window in 'acquiring' has not been found to be a second one, and
+  // the handling of the grant already tells the two apart. The blocker's own
+  // fullscreen cover — and its Tab trap — hold pointer and keyboard
+  // throughout that one interval either way.
+  const blocked = primary.phase === 'secondary' || primary.phase === 'unsupported';
   const contentRef = useRef<HTMLDivElement>(null);
 
   /*
@@ -245,7 +250,6 @@ function usePrimaryWindow(): PrimaryWindow {
 
     /** The window can be edited from here on. Never called before the grant. */
     const becomePrimary = (release: () => void): void => {
-      const wasBlocked = phase !== 'primary';
       // Only a handoff from blocked needs a refresh: the first window to win
       // on initial load already renders from a fresh loader mount.
       const needsRefresh = phase === 'secondary';
@@ -265,8 +269,11 @@ function usePrimaryWindow(): PrimaryWindow {
       if (needsRefresh && !cancelled) {
         window.dispatchEvent(new Event('apunta:became-primary'));
       }
-      // A takeover lands the keyboard back in the app it just unlocked.
-      if (wasBlocked) {
+      // A takeover lands the keyboard back in the app it just unlocked. Not
+      // on the first grant, though: that one arrives while she may already be
+      // typing into a field, and moving the caret there would take the rest of
+      // the word away from her.
+      if (needsRefresh) {
         window.requestAnimationFrame(() => {
           if (cancelled) return;
           document.getElementById('apunta-content')?.focus({ preventScroll: true });
