@@ -1017,3 +1017,7 @@ Owner released P3.3 preparation alongside the active S2.11 implementation review
 ## S2.11 approved — independent review accepted
 
 Review dispatch ctx_c4be5bb8affb returned PASS for all V1–V8, including independent negative control and five full default-worker e2e runs (108 passed / 6 structural skips each). Read report, confirmed scope and screenshot restore; coordinator already reran 83 focused tests. Accepted S2.11 as APPROVED. Review worker settled; release reported user_takeover, so its finished tab was closed explicitly. Non-blocking findings preserved in S2.11-impl.md: search-driven storm description, stale comments and cosmetic evidence timestamps. S2.R now IN PROGRESS; separate P3.3 instruction reviewer remains active.
+
+## P3.3 preparation complete — ir4 accepted
+
+Dispatch ctx_c137b17d12fd returned all ten instruction rows CLEAR; D8 closed. Read report and checked lock-before-listen ordering directly in server/src/index.ts. Only P3.3-ir4.md changed; no implementation commands or build outputs touched. Accepted and released instruction reviewer. Remaining execution gates: A03 prerequisites absent (prior AM-081 authorises coordinator pkexec after review), plus build outputs leased to S2.R. No installation or implementation performed in this preparation lane. Thirteen advisory notes retained in ir4, including possible patchelf bundler need and CI prerequisites; no scope widened.
