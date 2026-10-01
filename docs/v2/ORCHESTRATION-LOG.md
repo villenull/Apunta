@@ -1075,3 +1075,7 @@ ctx_a1ea7fd499d6 returned S6.1-proposal-review.md and was released. A1-A10 cover
 ## P5.3 proposal review DEFECT; corrected draft dispatched
 
 ctx_5ad0f76ceb0b returned P5.3-proposal-review.md and was released. Coordinator confirmed fake stream cap200 words at12ms (2.4s) invalidates timeout control. Review F1-F9 also identifies missing unsaved-text protection, report correlation/ownership, concurrent deadline phases, disconnect/cleanup/write scope and protected trigger; native P5.4 verifier amendment absent. Fresh draft-only v2 must preserve production drain and protected-route semantics by default, not ungate or alter behaviour for a green test. Owner approval pending for S3.2-v2; S6.1-v2 active; no implementation or amendments applied.
+
+## S6.1 corrected draft ready; provenance remains blocking
+
+ctx_b15b3dc11363 supplied S6.1-AMENDMENT-PROPOSAL-v2.md only and was released. Coordinator read closure map and owner package; corrected asset/project/exit/install/index scope and bilingual copy drafted. Draft still contains unfilled Exhibit A shipment wording; that route is NOT adopted: unresolved provenance must remain unshipped and BLOCKED, not guessed or shifted to owner identity. Grouped licence election/scope approval request includes source provenance verification before implementation; no legal conclusion or licence election made. P5.3 corrected draft active. S3.2 amendment decision remains pending.
