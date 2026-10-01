@@ -1047,3 +1047,7 @@ ctx_c0215b3ba4bf returned five DEFECT rows. Read report: Spanish negation lexico
 ## S6.1 instruction review blocked
 
 ctx_8c5c1c715d8c returned eight DEFECT rows; report accepted and worker released. Missing tokenizer, storage migration, error surface, lockfile/browser/licence notice scope and exact verification commands prevent implementation. MPL election and Exhibit A identity require concrete owner decision; no legal conclusion adopted from reviewer. Draft-only proposal ctx_ab1b765501e3 dispatched on default opencode settings, output S6.1-AMENDMENT-PROPOSAL.md. Three disjoint amendment proposals active (S3.2, S6.1, P5.3), no source writer/build.
+
+## S3.2 proposal returned — independent review required
+
+ctx_90d3e093837b supplied draft S3.2-AMENDMENT-PROPOSAL.md only, then released. Coordinator checked C-EVAL rule8 and BASELINE section5: draft A1/FD9 reclassifies explicit pipeline failure gate as divergence reporting, despite claiming no baseline redefinition. A5 also accepts exit1 based on provider evidence without pipeline measurements. Proposal archived as unapproved draft; independent proposal review dispatched to verify commands and preserve fail semantics before any owner request. No card/contract/threshold changes applied.
