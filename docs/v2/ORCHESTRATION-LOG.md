@@ -1059,3 +1059,7 @@ ctx_ab1b765501e3 wrote S6.1-AMENDMENT-PROPOSAL.md only and was released. Coordin
 ## P5.3 proposal returned — independent review required
 
 ctx_82a018d4a253 supplied P5.3-AMENDMENT-PROPOSAL.md only and was released. Draft proposes HTTP long-poll/report, expanded client blockers, native close acceptance assigned to P5.4, and P3.3 dependency. Scope/design expansions remain owner amendments even where draft labels them mechanical. Independent review checks full30s budget, report ownership/correlation, recording/close/save guarantees, deterministic browser controls and downstream card closure. Nothing applied. All three lanes now have independent proposal reviews active.
+
+## S3.2 proposal independent review — DEFECT confirmed
+
+ctx_ceba08ef0eb3 returned S3.2-proposal-review.md, accepted and released. Coordinator verified BASELINE5 pipeline fail semantics, corpus loader sidecar-driven nested reads, generate locale from stored language, and sandbox built-server prerequisite. Existing draft rejected for approval: baseline reinterpretation, exit1 inference, unused negation scoring consumer and undefined bad control output. Fresh worker drafts S3.2-AMENDMENT-PROPOSAL-v2.md only, preserving existing numeric failure gates as default and closing D1-D17; no amendments applied. S6.1/P5.3 reviews remain active.
