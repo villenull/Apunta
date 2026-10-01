@@ -1,3 +1,7 @@
+# Current handoff — all preparation workers settled
+
+S3.2-v2 and S6.1-v2 bounded draft corrections pushed; remain UNAPPROVED proposals. No application/card/contract implementation applied. P5.3 preserved-rules review remains DEFECT with four protocol blockers. All dispatched workers released; two stale retained metadata records already closed. Pending asynchronous owner answers: S3.2 grouped recommended amendment, S6.1 licence/scope with unresolved notice unshipped, P5.3 shell/drain design direction, P3.3 graphical authentication retry. Continue authorization covers preparation, not silent selection of pending options. S4a.2 explicit owner park persists. No active worker or build writer.
+
 # Current owner blockers — 2026-10-01
 
 All workers finished and released. Three revised proposals archived UNAPPROVED. Pending async decisions: S3.2 recommended gate-preserving amendment; S6.1 licence/scope with provenance verified before implementation and incomplete notice unshipped; P5.3 protected-trigger/drain design choice (draft browser-accessible trigger and immediate refusal NOT adopted). P3.3 graphical authentication retry/defer also pending. No answer inferred. S4a.2 stays owner-parked. Two stale retained metadata records already closed; do not repeatedly close. Main pushed; application unchanged. Read ORCHESTRATION-LOG latest entries before dispatch.

@@ -1111,3 +1111,7 @@ ctx_e2e05df866e8 changed only S6.1-v2 draft and provenance labels, released. Coo
 ## S3.2-v2 instruction review returned DEFECT
 
 ctx_9b836286aae5 returned S3.2-v2-ir.md and was released. Numeric gate arithmetic CLEAR; nine defects remain in scorer independence scope, negation direction/phrases, control predicates/source, sensitivity separation, multiword glossary loading/stemming, writable literal8 report commands and port claims. Fresh worker authorized surgical corrections to existing draft only. No owner choice inferred/no card or code amendments applied. S6.1 draft corrections pushed; P5.3 protocol remains BLOCKED.
+
+## S3.2 bounded draft corrections integrated
+
+ctx_799b08abb062 changed only S3.2-v2 proposal and was released. Coordinator inspected scope/diff and whitespace check; corrected contradictory stop-at-any-nonzero wording to collect measurement exits0/1 while stopping usage/control/execution errors, preserving numerical acceptance, and corpus-only provider parity. Nine findings corrected in draft, no all-CLEAR/code validation claim. All workers settled; pending owner gate/scope/control decisions, dictionary licence/notice provenance, P5.3 protocol and P3.3 authentication. No application/card/contract changes.
