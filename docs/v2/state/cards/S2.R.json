@@ -2,8 +2,15 @@
   "card": "S2.R",
   "planVersion": 2,
   "baseCommit": "34ef391",
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Parent review2 returned PASS; one non-retired row NOT RUN as printed due to renamed copy source; AM-107 corrects command",
-  "nextAllowedAction": "Accept focused corrected S2.4-V5 verification supplement from ctx_97e6b6b7892c before approval",
-  "updatedUtc": "2026-10-01T04:49:44.531431+00:00"
+  "status": "APPROVED",
+  "lastCompletedStep": "Review2 all active rows PASS, AM-107 corrected S2.4-V5 independently PASS in supplement; S2.6-V7 satisfied by owner retirement AM-075",
+  "nextAllowedAction": "done; dependencies released",
+  "updatedUtc": "2026-10-01T04:51:46.028781+00:00",
+  "criteria": {
+    "activeRows": "PASS",
+    "S2.4-V5": "PASS (AM-107 supplement)",
+    "S2.6-V7": "owner-retired and satisfied under AM-075",
+    "SUITE": "PASS",
+    "EXTRA": "PASS"
+  }
 }

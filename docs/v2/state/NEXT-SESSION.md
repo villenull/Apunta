@@ -1,3 +1,13 @@
+# Latest handoff — 2026-10-01 04:52Z (Orca)
+
+Supersedes older blocks below. **45 cards/reviews APPROVED.** S2.11 implementation `1488c2a` passed independent review; **S2.R is APPROVED** on `state/reviews/S2.R-review2.md` plus `S2.R-review2-supplement.md`. Full L2 suite passed (four zones, 2127 tests each; build, bilingual e2e, fake eval), plus fifteen consecutive full default-worker e2e runs (108 passed / 6 structural skips each). AM-107 corrected the renamed S2.4-V5 copy source in the current parent dispatch; supplement proves checker exit 1, one finding, TOTAL 1. S2.6-V7 remains owner-retired under AM-075. Coordinator guard TOTAL 0 and 30 focused tests passed.
+
+Owner-approved sequence (S2.11 implementation, independent review, S2.R) is complete; no new implementation authorised or dispatched. S2.R releases S3.2, S6.1 and P5.3. S5.1 still waits on S3.R. Prepare a new bounded plan before starting those.
+
+P3.3 owner released **preparation**: AM-105 repaired the two V4 instruction defects, `state/reviews/P3.3-ir4.md` is all ten CLEAR. Preparation complete; no packages installed. A03 prerequisites still absent. Prior AM-081 authorises coordinator pkexec after instruction review, but current approval covered preparation; implementation remains undispatched. Build lease is now free. Thirteen advisory notes remain in ir4. S4a.2 remains owner-parked.
+
+Orca Run `run_268ce685a92c`; all settled workers closed/released. Two user-takeover dispatches remain tagged retained in Orca metadata although their tabs were explicitly closed and terminal show confirms operator_close/orphaned; do not relaunch or repeat close on those stale records. No active worker expected after the final supplement release. Workers ran opencode-go/space-bunny-free, default effort/variant. Never live port 7717 or patient data; one writer for shared build outputs, explicit git paths only.
+
 # Latest handoff — 2026-09-30 20:50Z
 
 Supersedes the block below it. **43 cards APPROVED** (this session: S2.7, P3.7,
