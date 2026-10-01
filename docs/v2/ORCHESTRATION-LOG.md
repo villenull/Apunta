@@ -1107,3 +1107,7 @@ ctx_32cf575d8437 returned S6.1-v2-ir.md and was released. Review9 bounded fixes:
 ## S6.1 bounded draft fixes integrated
 
 ctx_e2e05df866e8 changed only S6.1-v2 draft and provenance labels, released. Coordinator inspected diff/scope and git diff --check (exit0); corrected remaining V1(a) contradictory once-per-word stub assertion directly in draft. Nine fixes recorded but no all-CLEAR claim: application tests were not run, owner licence/scope and notice evidence remain BLOCKED. No card/code changes. S3.2-v2 independent review remains active.
+
+## S3.2-v2 instruction review returned DEFECT
+
+ctx_9b836286aae5 returned S3.2-v2-ir.md and was released. Numeric gate arithmetic CLEAR; nine defects remain in scorer independence scope, negation direction/phrases, control predicates/source, sensitivity separation, multiword glossary loading/stemming, writable literal8 report commands and port claims. Fresh worker authorized surgical corrections to existing draft only. No owner choice inferred/no card or code amendments applied. S6.1 draft corrections pushed; P5.3 protocol remains BLOCKED.
