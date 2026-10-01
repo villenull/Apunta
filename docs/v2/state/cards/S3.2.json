@@ -7,8 +7,8 @@
   "criteria": {},
   "sandboxRuns": [],
   "baseCommit": "53f224e",
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Independent instruction review dispatched",
-  "nextAllowedAction": "Process instruction review ctx_c0215b3ba4bf; implement only after all instruction rows CLEAR",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Instruction review S3.2-ir: IR-02/03/05/06/07 DEFECT; report accepted",
+  "nextAllowedAction": "Concrete owner amendment proposal for lexicon source, pipeline data flow, baseline gate and commands before implementation",
   "updatedUtc": "2026-10-01T13:14:11.467591+00:00"
 }

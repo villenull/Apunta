@@ -1039,3 +1039,7 @@ P3.3 prerequisite attempt outcome: both timeout 60s pkexec pacman commands exite
 ## P5.3 instruction review blocked — amendment proposal required
 
 ctx_4c48ec727d4c returned successful review with eight DEFECT rows and fifteen defects. Read findings; missing shell-bridge creator P3.3, insufficient May-edit for maintenance code/API/e2e and undefined browser recording/flush transport require owner decisions beyond section 6. Accepted review and released worker; implementation BLOCKED. Prepare exact amendment proposal, no applied design/scope changes. S3.2 and S6.1 reviews remain active.
+
+## S3.2 instruction review blocked
+
+ctx_c0215b3ba4bf returned five DEFECT rows. Read report: Spanish negation lexicon absent from named glossary, pipeline API/setup/error/control shape unspecified, provider/pipeline baseline gate ambiguous, V3 flag/command missing, real-model V4 mislabeled L1. Owner amendment needed for source/design/level; runtime port fill alone cannot resolve these. Accepted and released reviewer; concrete draft amendment dispatched next. S6.1 instruction review and P5.3 proposal remain active.
