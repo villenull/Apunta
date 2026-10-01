@@ -1,0 +1,21 @@
+{
+  "run": "run_268ce685a92c",
+  "task": "task_3c3d6956b053",
+  "dispatch": "ctx_14a81d9909e6",
+  "terminal": "term_4dbd05e1-df24-4357-8270-7ea720f7b3d2",
+  "base": "87b08466794301295dda2c907852b88d15777b73",
+  "attempt": 1,
+  "ports": [
+    7820,
+    7821,
+    7822,
+    7823
+  ],
+  "launch": "opencode default effort and variant; effective model pending worker report",
+  "approvedPlan": [
+    "S2.11 implementation",
+    "independent S2.11 review after implementation checks",
+    "S2.R after S2.11 approval"
+  ],
+  "next": "Verify worker return, release worker, commit accepted implementation, launch fresh independent review"
+}

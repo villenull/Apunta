@@ -4,14 +4,50 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "87218a6",
+  "baseCommit": "87b08466794301295dda2c907852b88d15777b73",
   "attempt": 1,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "final instruction review reviews/S2.11-ir3.md: all ten rows CLEAR, no DEFECT, no UNKNOWN",
-  "nextAllowedAction": "dispatch implementation attempt 1 (state/dispatch/S2.11.md), filling {{BASE}}=87218a6 and the sandbox ports under COORDINATOR \u00a76",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Implementation return verified; coordinator focused tests 83/83 passed; implementation committed as 1488c2a",
+  "nextAllowedAction": "Independent implementation review of 87b0846..1488c2a using state/dispatch/S2.11-review.md",
   "sideEffectsDone": [],
-  "changedFiles": [],
-  "criteria": {},
+  "changedFiles": [
+    "web/src/App.tsx",
+    "web/src/App.primaryWindow.test.tsx"
+  ],
+  "criteria": {
+    "V1": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    },
+    "V2": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    },
+    "V3": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    },
+    "V4": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    },
+    "V5": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    },
+    "V6": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    },
+    "V7": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    },
+    "V8": {
+      "status": "PASS",
+      "source": "implementer evidence; independent review pending"
+    }
+  },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-30T20:45:00Z"
+  "updatedUtc": "2026-10-01T04:04:54.583035+00:00"
 }

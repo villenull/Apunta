@@ -1005,3 +1005,7 @@ mistake is D1's shape in a new place.
 
 S2.11 is `IN PROGRESS` with attempt 1 unspent. It remains the plan's only
 dispatchable card.
+
+## Orca continuation — S2.11 submitted, 2026-10-01
+
+Owner approved implementation, independent review and subsequent S2.R using default effort/variant. Run `run_268ce685a92c`; implementation dispatch `ctx_14a81d9909e6` returned succeeded and was released. Confirmed model opencode-go/space-bunny-free. Scope diff checked; coordinator build:shared and App.primaryWindow/App tests exit 0, 83 passed. Implementation commit `1488c2a` records all eight author-reported PASS rows, including five full e2e runs. Independent review pending; S2.11 is SUBMITTED, not APPROVED. Review ports 7824/7825 and CI 7826/7827. Stale comments in App.test.tsx and AddPatient.tsx remain recorded findings outside May-edit. S2.R waits for approval.
