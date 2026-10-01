@@ -7,8 +7,8 @@
   "criteria": {},
   "sandboxRuns": [],
   "baseCommit": "53f224e",
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Independent instruction review dispatched",
-  "nextAllowedAction": "Process instruction review ctx_8c5c1c715d8c; implement only after all instruction rows CLEAR",
-  "updatedUtc": "2026-10-01T13:14:11.467591+00:00"
+  "status": "BLOCKED",
+  "lastCompletedStep": "Independent instruction review accepted: eight DEFECT rows",
+  "nextAllowedAction": "Review S6.1-AMENDMENT-PROPOSAL.md from ctx_ab1b765501e3; obtain required owner decisions before applying scope/design amendments and fresh instruction review",
+  "updatedUtc": "2026-10-01T13:25:29.902090+00:00"
 }

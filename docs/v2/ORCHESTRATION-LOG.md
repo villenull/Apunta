@@ -1043,3 +1043,7 @@ ctx_4c48ec727d4c returned successful review with eight DEFECT rows and fifteen d
 ## S3.2 instruction review blocked
 
 ctx_c0215b3ba4bf returned five DEFECT rows. Read report: Spanish negation lexicon absent from named glossary, pipeline API/setup/error/control shape unspecified, provider/pipeline baseline gate ambiguous, V3 flag/command missing, real-model V4 mislabeled L1. Owner amendment needed for source/design/level; runtime port fill alone cannot resolve these. Accepted and released reviewer; concrete draft amendment dispatched next. S6.1 instruction review and P5.3 proposal remain active.
+
+## S6.1 instruction review blocked
+
+ctx_8c5c1c715d8c returned eight DEFECT rows; report accepted and worker released. Missing tokenizer, storage migration, error surface, lockfile/browser/licence notice scope and exact verification commands prevent implementation. MPL election and Exhibit A identity require concrete owner decision; no legal conclusion adopted from reviewer. Draft-only proposal ctx_ab1b765501e3 dispatched on default opencode settings, output S6.1-AMENDMENT-PROPOSAL.md. Three disjoint amendment proposals active (S3.2, S6.1, P5.3), no source writer/build.
