@@ -1067,3 +1067,7 @@ ctx_ceba08ef0eb3 returned S3.2-proposal-review.md, accepted and released. Coordi
 ## S3.2 corrected proposal ready for owner decision
 
 ctx_649f87dfd60d returned S3.2-AMENDMENT-PROPOSAL-v2.md only, released. Coordinator read closure map, owner choices, numeric FD9/FD10 and V4: recommendation retains BASELINE5/C-EVAL8 failure semantics, sidecar-referenced negation vocabulary and injected bad control outputs, English-only eight real runs with Spanish pipeline API rules defined for later measurement. Draft unapproved; owner may authorize grouped recommended amendments then fresh instruction review before implementation. No thresholds/contracts/cards changed. P5.3/S6.1 independent reviews remain active (S6.1 report appears in-flight; do not commit until delivery).
+
+## S6.1 proposal review DEFECT; corrected draft dispatched
+
+ctx_a1ea7fd499d6 returned S6.1-proposal-review.md and was released. A1-A10 cover built asset URL shape, vacuous fresh English control, wrong project selection, required output/index export omissions, absent install step, lockfile scope, non-proving election rg, undefined V3 and masked exit/destructive cleanup. Fresh draft-only revision dispatched; owner questions reduced to licence election/provenance and grouped scope/design. S3.2-v2 recommended amendment approval requested asynchronously; no answer inferred. P5.3 review remains active.
