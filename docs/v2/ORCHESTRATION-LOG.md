@@ -1103,3 +1103,7 @@ ctx_621e553b47b7 returned P5.3-preserved-ir.md and was released. Four load-beari
 ## S6.1 technical review returned; bounded draft fixes
 
 ctx_32cf575d8437 returned S6.1-v2-ir.md and was released. Review9 bounded fixes: regex gate, asset spec project selection, executable confinement proof, token projection parity, per-input offsets, stale word-list snapshot race, coverage/caret statement and notice/provenance labels. Fresh worker authorized ONLY surgical edits to existing S6.1-v2 draft and provenance report, no new full draft/card/code/design changes. Review suggested regex itself needs checking for literal escaped pipes; worker warned. Licence/scope/notice decisions remain unresolved, no incomplete shipment. S3.2-v2 IR still active.
+
+## S6.1 bounded draft fixes integrated
+
+ctx_e2e05df866e8 changed only S6.1-v2 draft and provenance labels, released. Coordinator inspected diff/scope and git diff --check (exit0); corrected remaining V1(a) contradictory once-per-word stub assertion directly in draft. Nine fixes recorded but no all-CLEAR claim: application tests were not run, owner licence/scope and notice evidence remain BLOCKED. No card/code changes. S3.2-v2 independent review remains active.
