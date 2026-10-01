@@ -1021,3 +1021,7 @@ Review dispatch ctx_c4be5bb8affb returned PASS for all V1–V8, including indepe
 ## P3.3 preparation complete — ir4 accepted
 
 Dispatch ctx_c137b17d12fd returned all ten instruction rows CLEAR; D8 closed. Read report and checked lock-before-listen ordering directly in server/src/index.ts. Only P3.3-ir4.md changed; no implementation commands or build outputs touched. Accepted and released instruction reviewer. Remaining execution gates: A03 prerequisites absent (prior AM-081 authorises coordinator pkexec after review), plus build outputs leased to S2.R. No installation or implementation performed in this preparation lane. Thirteen advisory notes retained in ir4, including possible patchelf bundler need and CI prerequisites; no scope widened.
+
+## S2.R review2 returned — focused supplement pending
+
+Dispatch ctx_bd38d85762cf independently ran every borrowed row, L2 four-zone suites and fifteen full default-worker e2e runs; returned PASS. S2.6-V7 is owner-retired. S2.4-V5 remains NOT RUN as printed because its copy source was renamed, though reviewer ran the intended control successfully. Parent not yet approved: AM-107 corrects only current dispatch source path under section 6, fresh supplement dispatch ctx_97e6b6b7892c verifies that exact row and checks unresolved criteria. Settled parent reviewer released; user_takeover required explicit finished-tab close. Coordinator UI-string guard TOTAL 0 and focused catalogue/primary-window test rerun logged in terminal. No new implementation started.
