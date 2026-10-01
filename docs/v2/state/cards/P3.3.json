@@ -8,12 +8,12 @@
   ],
   "baseCommit": null,
   "attempt": 1,
-  "status": "BLOCKED",
-  "lastCompletedStep": "final instruction review (ir3) after AM-084: one IR-04 defect in V4; parked by owner decision",
-  "nextAllowedAction": "owner releases: apply the two-clause V4 fix from reviews/P3.3-ir3.md, one instruction review, then the A03 pkexec install",
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Owner released preparation; AM-105 repairs V4 sequencing and holder ownership wait",
+  "nextAllowedAction": "Fresh instruction review state/dispatch/P3.3-ir.md; report state/reviews/P3.3-ir4.md; implementation waits for shared build lease",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-29T22:00:00Z"
+  "updatedUtc": "2026-10-01T04:15:36.977268+00:00"
 }

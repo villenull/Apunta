@@ -1009,3 +1009,11 @@ dispatchable card.
 ## Orca continuation — S2.11 submitted, 2026-10-01
 
 Owner approved implementation, independent review and subsequent S2.R using default effort/variant. Run `run_268ce685a92c`; implementation dispatch `ctx_14a81d9909e6` returned succeeded and was released. Confirmed model opencode-go/space-bunny-free. Scope diff checked; coordinator build:shared and App.primaryWindow/App tests exit 0, 83 passed. Implementation commit `1488c2a` records all eight author-reported PASS rows, including five full e2e runs. Independent review pending; S2.11 is SUBMITTED, not APPROVED. Review ports 7824/7825 and CI 7826/7827. Stale comments in App.test.tsx and AddPatient.tsx remain recorded findings outside May-edit. S2.R waits for approval.
+
+## Parallel P3.3 preparation — AM-105
+
+Owner released P3.3 preparation alongside the active S2.11 implementation review. Applied only the two V4 repairs documented in P3.3-ir3 D8, retaining containment per case. Fresh instruction review writes P3.3-ir4.md; no application edits, builds or installations in this lane. S2.11 reviewer notified of coordinator-owned documentation changes. Shared build outputs remain leased to S2.11 review; coordinator docs are left uncommitted until that review settles to keep its HEAD stable.
+
+## S2.11 approved — independent review accepted
+
+Review dispatch ctx_c4be5bb8affb returned PASS for all V1–V8, including independent negative control and five full default-worker e2e runs (108 passed / 6 structural skips each). Read report, confirmed scope and screenshot restore; coordinator already reran 83 focused tests. Accepted S2.11 as APPROVED. Review worker settled; release reported user_takeover, so its finished tab was closed explicitly. Non-blocking findings preserved in S2.11-impl.md: search-driven storm description, stale comments and cosmetic evidence timestamps. S2.R now IN PROGRESS; separate P3.3 instruction reviewer remains active.
