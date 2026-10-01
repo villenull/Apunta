@@ -1,3 +1,7 @@
+# Current lanes — 2026-10-01
+
+S3.2-v2 corrected draft archived; recommended grouped amendment approval pending (async question). Original numeric failure gates retained. Active draft repairs: S6.1 ctx_b15b3dc11363 -> S6.1-AMENDMENT-PROPOSAL-v2.md; P5.3 independent review returned DEFECT and fresh corrected draft now dispatched -> P5.3-AMENDMENT-PROPOSAL-v2.md. No card/contract/code changes applied. Reviewer-recommended ungated maintenance route/immediate refusal are not adopted; revised draft must preserve protected trigger/drain semantics or label owner changes explicitly.
+
 # Worker update — P5.3 proposal review
 
 P5.3 draft returned and archived UNAPPROVED; independent review now active -> state/reviews/P5.3-proposal-review.md. All three lanes are in independent proposal review. Original card/contract acceptance remains unchanged.

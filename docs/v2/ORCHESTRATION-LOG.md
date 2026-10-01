@@ -1071,3 +1071,7 @@ ctx_649f87dfd60d returned S3.2-AMENDMENT-PROPOSAL-v2.md only, released. Coordina
 ## S6.1 proposal review DEFECT; corrected draft dispatched
 
 ctx_a1ea7fd499d6 returned S6.1-proposal-review.md and was released. A1-A10 cover built asset URL shape, vacuous fresh English control, wrong project selection, required output/index export omissions, absent install step, lockfile scope, non-proving election rg, undefined V3 and masked exit/destructive cleanup. Fresh draft-only revision dispatched; owner questions reduced to licence election/provenance and grouped scope/design. S3.2-v2 recommended amendment approval requested asynchronously; no answer inferred. P5.3 review remains active.
+
+## P5.3 proposal review DEFECT; corrected draft dispatched
+
+ctx_5ad0f76ceb0b returned P5.3-proposal-review.md and was released. Coordinator confirmed fake stream cap200 words at12ms (2.4s) invalidates timeout control. Review F1-F9 also identifies missing unsaved-text protection, report correlation/ownership, concurrent deadline phases, disconnect/cleanup/write scope and protected trigger; native P5.4 verifier amendment absent. Fresh draft-only v2 must preserve production drain and protected-route semantics by default, not ungate or alter behaviour for a green test. Owner approval pending for S3.2-v2; S6.1-v2 active; no implementation or amendments applied.
