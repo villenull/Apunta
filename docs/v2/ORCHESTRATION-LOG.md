@@ -1063,3 +1063,7 @@ ctx_82a018d4a253 supplied P5.3-AMENDMENT-PROPOSAL.md only and was released. Draf
 ## S3.2 proposal independent review — DEFECT confirmed
 
 ctx_ceba08ef0eb3 returned S3.2-proposal-review.md, accepted and released. Coordinator verified BASELINE5 pipeline fail semantics, corpus loader sidecar-driven nested reads, generate locale from stored language, and sandbox built-server prerequisite. Existing draft rejected for approval: baseline reinterpretation, exit1 inference, unused negation scoring consumer and undefined bad control output. Fresh worker drafts S3.2-AMENDMENT-PROPOSAL-v2.md only, preserving existing numeric failure gates as default and closing D1-D17; no amendments applied. S6.1/P5.3 reviews remain active.
+
+## S3.2 corrected proposal ready for owner decision
+
+ctx_649f87dfd60d returned S3.2-AMENDMENT-PROPOSAL-v2.md only, released. Coordinator read closure map, owner choices, numeric FD9/FD10 and V4: recommendation retains BASELINE5/C-EVAL8 failure semantics, sidecar-referenced negation vocabulary and injected bad control outputs, English-only eight real runs with Spanish pipeline API rules defined for later measurement. Draft unapproved; owner may authorize grouped recommended amendments then fresh instruction review before implementation. No thresholds/contracts/cards changed. P5.3/S6.1 independent reviews remain active (S6.1 report appears in-flight; do not commit until delivery).
