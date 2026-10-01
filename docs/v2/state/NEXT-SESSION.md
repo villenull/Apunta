@@ -1,3 +1,7 @@
+# Current owner blockers — 2026-10-01
+
+All workers finished and released. Three revised proposals archived UNAPPROVED. Pending async decisions: S3.2 recommended gate-preserving amendment; S6.1 licence/scope with provenance verified before implementation and incomplete notice unshipped; P5.3 protected-trigger/drain design choice (draft browser-accessible trigger and immediate refusal NOT adopted). P3.3 graphical authentication retry/defer also pending. No answer inferred. S4a.2 stays owner-parked. Two stale retained metadata records already closed; do not repeatedly close. Main pushed; application unchanged. Read ORCHESTRATION-LOG latest entries before dispatch.
+
 # Current lanes — 2026-10-01
 
 S3.2-v2 corrected draft archived; recommended grouped amendment approval pending (async question). Original numeric failure gates retained. Active draft repairs: S6.1 ctx_b15b3dc11363 -> S6.1-AMENDMENT-PROPOSAL-v2.md; P5.3 independent review returned DEFECT and fresh corrected draft now dispatched -> P5.3-AMENDMENT-PROPOSAL-v2.md. No card/contract/code changes applied. Reviewer-recommended ungated maintenance route/immediate refusal are not adopted; revised draft must preserve protected trigger/drain semantics or label owner changes explicitly.

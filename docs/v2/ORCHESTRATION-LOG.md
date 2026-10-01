@@ -1079,3 +1079,7 @@ ctx_5ad0f76ceb0b returned P5.3-proposal-review.md and was released. Coordinator 
 ## S6.1 corrected draft ready; provenance remains blocking
 
 ctx_b15b3dc11363 supplied S6.1-AMENDMENT-PROPOSAL-v2.md only and was released. Coordinator read closure map and owner package; corrected asset/project/exit/install/index scope and bilingual copy drafted. Draft still contains unfilled Exhibit A shipment wording; that route is NOT adopted: unresolved provenance must remain unshipped and BLOCKED, not guessed or shifted to owner identity. Grouped licence election/scope approval request includes source provenance verification before implementation; no legal conclusion or licence election made. P5.3 corrected draft active. S3.2 amendment decision remains pending.
+
+## P5.3 corrected draft returned; owner design decision required
+
+ctx_d1697682db6e supplied P5.3-AMENDMENT-PROPOSAL-v2.md only, released. Coordinator read closure map and recommended protocol: draft still proposes browser-accessible maintenance trigger and immediate busy refusal. These ARE explicit authority/behaviour changes, not gate-preserving mechanical fixes, and are not adopted. Archive unapproved, ask owner between original shell-only drain with proper shell-sandbox verification and changed browser/entry semantics. No thresholds/contracts/cards/code changed. All workers settled, no active writer; S3.2/S6.1 grouped decisions and desktop authentication retry question pending.
