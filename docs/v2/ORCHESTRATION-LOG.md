@@ -1051,3 +1051,7 @@ ctx_8c5c1c715d8c returned eight DEFECT rows; report accepted and worker released
 ## S3.2 proposal returned — independent review required
 
 ctx_90d3e093837b supplied draft S3.2-AMENDMENT-PROPOSAL.md only, then released. Coordinator checked C-EVAL rule8 and BASELINE section5: draft A1/FD9 reclassifies explicit pipeline failure gate as divergence reporting, despite claiming no baseline redefinition. A5 also accepts exit1 based on provider evidence without pipeline measurements. Proposal archived as unapproved draft; independent proposal review dispatched to verify commands and preserve fail semantics before any owner request. No card/contract/threshold changes applied.
+
+## S6.1 proposal returned — independent review dispatched
+
+ctx_ab1b765501e3 wrote S6.1-AMENDMENT-PROPOSAL.md only and was released. Coordinator read scope, verification and owner choices. Draft stays unapproved; independent review ctx_a1ea7fd499d6 examines testIgnore coverage, exact selection/exit handling, licence provenance and reduction of routine questions. No dictionary election, notice fields, card or code changes applied. Active: S3.2 proposal review ctx_ceba08ef0eb3, S6.1 proposal review ctx_a1ea7fd499d6, P5.3 proposal ctx_82a018d4a253.

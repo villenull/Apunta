@@ -1,3 +1,7 @@
+# Worker update — 2026-10-01
+
+S3.2 and S6.1 draft proposals returned and archived as UNAPPROVED. Active independent proposal reviews: S3.2 ctx_ceba08ef0eb3 -> state/reviews/S3.2-proposal-review.md; S6.1 ctx_a1ea7fd499d6 -> state/reviews/S6.1-proposal-review.md. P5.3 draft ctx_82a018d4a253 still active. Resolve reviewer findings before owner amendment package. S3.2 baseline gate reclassification explicitly flagged by coordinator; existing fail semantics remain in effect.
+
 # Autonomous continuation — 2026-10-01T13:25:29.902090+00:00
 
 Supersedes older blocks. Owner authorized continued work until an owner-required hard blocker. S2.R is APPROVED; application unchanged since its acceptance. S3.2, S6.1 and P5.3 independent instruction reviews returned DEFECT and are BLOCKED for implementation. Three draft-only proposals active: S3.2 ctx_90d3e093837b, S6.1 ctx_ab1b765501e3, P5.3 ctx_82a018d4a253. Outputs are respective state/*-AMENDMENT-PROPOSAL.md files; review before proposing owner decisions, do not commit in-flight drafts. No design/scope/licence amendments applied.
