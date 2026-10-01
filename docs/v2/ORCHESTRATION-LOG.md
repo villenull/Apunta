@@ -1055,3 +1055,7 @@ ctx_90d3e093837b supplied draft S3.2-AMENDMENT-PROPOSAL.md only, then released. 
 ## S6.1 proposal returned — independent review dispatched
 
 ctx_ab1b765501e3 wrote S6.1-AMENDMENT-PROPOSAL.md only and was released. Coordinator read scope, verification and owner choices. Draft stays unapproved; independent review ctx_a1ea7fd499d6 examines testIgnore coverage, exact selection/exit handling, licence provenance and reduction of routine questions. No dictionary election, notice fields, card or code changes applied. Active: S3.2 proposal review ctx_ceba08ef0eb3, S6.1 proposal review ctx_a1ea7fd499d6, P5.3 proposal ctx_82a018d4a253.
+
+## P5.3 proposal returned — independent review required
+
+ctx_82a018d4a253 supplied P5.3-AMENDMENT-PROPOSAL.md only and was released. Draft proposes HTTP long-poll/report, expanded client blockers, native close acceptance assigned to P5.4, and P3.3 dependency. Scope/design expansions remain owner amendments even where draft labels them mechanical. Independent review checks full30s budget, report ownership/correlation, recording/close/save guarantees, deterministic browser controls and downstream card closure. Nothing applied. All three lanes now have independent proposal reviews active.

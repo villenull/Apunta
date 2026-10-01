@@ -1,3 +1,7 @@
+# Worker update — P5.3 proposal review
+
+P5.3 draft returned and archived UNAPPROVED; independent review now active -> state/reviews/P5.3-proposal-review.md. All three lanes are in independent proposal review. Original card/contract acceptance remains unchanged.
+
 # Worker update — 2026-10-01
 
 S3.2 and S6.1 draft proposals returned and archived as UNAPPROVED. Active independent proposal reviews: S3.2 ctx_ceba08ef0eb3 -> state/reviews/S3.2-proposal-review.md; S6.1 ctx_a1ea7fd499d6 -> state/reviews/S6.1-proposal-review.md. P5.3 draft ctx_82a018d4a253 still active. Resolve reviewer findings before owner amendment package. S3.2 baseline gate reclassification explicitly flagged by coordinator; existing fail semantics remain in effect.
