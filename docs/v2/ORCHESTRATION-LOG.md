@@ -1087,3 +1087,7 @@ ctx_d1697682db6e supplied P5.3-AMENDMENT-PROPOSAL-v2.md only, released. Coordina
 ## Owner requests continued parallel preparation
 
 Continue/spawn-more instruction acted on with three default opencode workers: S3.2-v2 independent instruction review ctx_9b836286aae5 -> reviews/S3.2-v2-ir.md; P5.3 preserved shell-only/drain proposal ctx_1c79f02f4d53 -> P5.3-PRESERVED-RULES-PROPOSAL.md; dictionary upstream notice read-only provenance ctx_cf3de8292aef -> S6.1-NOTICE-PROVENANCE.md. Three disjoint outputs, no source/build writer. Continue is authorization for preparation and parallel work, not a selected answer to pending licence/protocol changes; no amendment applied. Read-only upstream research allowed to resolve provenance without inventing owner identity; no package acquisition.
+
+## Dictionary provenance returned
+
+ctx_cf3de8292aef wrote S6.1-NOTICE-PROVENANCE.md and was released. Coordinator independently browsed upstream es_MX notice and Mozilla MPL text: upstream initially-developed attribution names Santiago Bosio; owner identity substitution removed. Other notice provenance/interpretation and actual tarball contents remain unresolved. Research contains overstatements (3.1 consequences labelled verified despite inference;4 table says tarball absent while4.3 admits unknown); archive as research, not legal conclusion. No election or incomplete shipment adopted. Freed slot used for S6.1-v2 technical IR, legal blockers kept separate. S3.2-v2 IR and P5.3 preserved-rules draft remain active.
