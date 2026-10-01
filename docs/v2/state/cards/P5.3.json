@@ -8,7 +8,7 @@
   "sandboxRuns": [],
   "baseCommit": "53f224e",
   "status": "BLOCKED",
-  "lastCompletedStep": "Instruction review P5.3-ir: eight DEFECT rows, fifteen numbered defects; report accepted",
-  "nextAllowedAction": "Prepare concrete owner amendment proposal; no implementation until owner resolves scope/dependency/protocol gaps",
-  "updatedUtc": "2026-10-01T13:14:11.467591+00:00"
+  "lastCompletedStep": "Preserved-rules independent review accepted: protocol defects remain",
+  "nextAllowedAction": "Resolve flush/write boundary, durable window registration/correlation, observer exclusion, native close status in a bounded protocol amendment before implementation; owner design decisions and P3.3 prerequisite approval remain pending",
+  "updatedUtc": "2026-10-01T15:16:47.751202+00:00"
 }

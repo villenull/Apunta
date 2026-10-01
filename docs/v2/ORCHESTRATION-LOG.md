@@ -1095,3 +1095,7 @@ ctx_cf3de8292aef wrote S6.1-NOTICE-PROVENANCE.md and was released. Coordinator i
 ## P5.3 preserved-rules proposal returned
 
 ctx_1c79f02f4d53 wrote P5.3-PRESERVED-RULES-PROPOSAL.md only, released. Draft retains shell-only trigger/30s busy drain, unit injected clock, isolated shell harness, counter for in-flight short writes, close guard and P5.4 verifier. No adoption; command ellipses, FIFO/control file handling, flush writes under maintenance and request counter balance require independent check. Fresh instruction reviewer dispatched; eight labelled amendments should become one coherent approval package, not eight routine questions. S3.2-v2 IR and S6.1-v2 technical IR remain active.
+
+## P5.3 preserved draft remains DEFECT — protocol blockers
+
+ctx_621e553b47b7 returned P5.3-preserved-ir.md and was released. Four load-bearing blockers: maintenance rejects flush PATCH; registration keyed to answered wait rejects legitimate reports; onRequest counter includes own held poll; native close status lacks recording/unsaved. Twenty-one bounded findings include harness ownership/nonce/group cleanup, commands/build/CI. Reviewer recommended flush ordering contains contradictory wording (all writes refused vs delay admitting unrelated writes) and says guard unchanged despite exceptions; NOT adopted as ready approval package. P5.3 remains BLOCKED; no further whole-card draft dispatched now. Pending owner protocol choice and P3.3 prerequisite unblock remain; S3.2-v2 and S6.1-v2 reviewers active. No application changes.
