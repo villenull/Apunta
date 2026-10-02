@@ -1,4 +1,7 @@
+import type { ControlScore } from './controls.js';
 import type { Denominators, Fixture } from './corpus.js';
+import type { ReportIdentity } from './identity.js';
+import type { EvalLocale, NamedLexicon } from './lexicon.js';
 import type { NoteScore } from './score.js';
 
 /**
@@ -26,10 +29,22 @@ export interface ReportInput {
   readonly denominators: Denominators;
   readonly models: readonly ModelReport[];
   readonly fake: boolean;
+  /** `provider` (diagnostic) or `pipeline` (acceptance), C-EVAL@1 §1. */
+  readonly mode: 'provider' | 'pipeline';
+  /** The run's locale. Determines which lexicon every `scoreNote` call saw. */
+  readonly locale: EvalLocale;
+  /** The controls table (FD6). Absent only when `--controls none`. */
+  readonly controls?: readonly ControlScore[] | undefined;
+  /** The `--blind-lexicon` name, printed so no report from it can pass for a measurement. */
+  readonly blindLexicon?: NamedLexicon | 'all' | undefined;
+  /** C-EVAL@1 §7 identity (FD7). */
+  readonly identity?: ReportIdentity | undefined;
   /** Set when owner-supplied instructions replaced the defaults. */
   readonly instructionsNote?: string | undefined;
   /** Retrieval arm description, including zero when disabled. */
   readonly priorNotesNote?: string | undefined;
+  /** Pipeline mode records the format each fixture was drafted through. */
+  readonly formatNames?: ReadonlyMap<string, string> | undefined;
   readonly startedAt: Date;
   readonly elapsedMs: number;
 }
@@ -42,7 +57,21 @@ export function renderReport(input: ReportInput): string {
       `${input.models.map((model) => `${model.model} x${String(model.runs)}`).join(', ')} · ` +
       `${(input.elapsedMs / 1000).toFixed(1)}s`,
     '',
+    `**Measurement:** ${input.mode} · **locale:** ${input.locale}`,
+    '',
   ];
+
+  if (input.blindLexicon !== undefined) {
+    // FD8: the negative control's own header line. A report produced with the
+    // lexicon blinded is a *test* of the instrument, never a measurement of
+    // anything, and it says so where a reader will see it first.
+    lines.push(
+      `> **${input.blindLexicon} lexicon blinded (negative control).** Every \`{{lexicon}}\` token ` +
+        `in this run expanded to \`(?!)\` instead of the vocabulary. The lexicon file was read and ` +
+        `validated exactly as authored and was never emptied. Numbers below are **not** a measurement.`,
+      '',
+    );
+  }
 
   if (input.instructionsNote !== undefined) {
     lines.push(
@@ -69,11 +98,115 @@ export function renderReport(input: ReportInput): string {
   lines.push(...restraintSection(input));
   lines.push(...completenessSection(input));
   lines.push(...structureAndToneSection(input));
+  // Before the cost block: the controls table is an admissibility statement, and
+  // the corpus block a reviewer compares is everything above the timings.
+  lines.push(...controlsSection(input));
   lines.push(...costSection(input));
   lines.push(...perFixtureSection(input));
   lines.push(...humanSection(input));
+  lines.push(...identitySection(input));
 
   return lines.join('\n');
+}
+
+/**
+ * The controls table (FD6): four lines with **their own denominators beside
+ * them**, separately from the corpus denominators.
+ *
+ * A control contributes to none of the corpus aggregates — not fabrication, not
+ * safety facts, not salient facts, not restraint, not the section-denominator
+ * block — and a control's `NoteScore` is never placed in `ModelReport.scores`, so
+ * `sensitivity()` at the base commit cannot see it either. That is why this
+ * table reads from its own array alone.
+ */
+function controlsSection(input: ReportInput): string[] {
+  if (input.controls === undefined) return [];
+  const byClass = (name: 'positive' | 'clean' | 'empty' | 'degenerate') =>
+    input.controls?.filter((control) => control.control === name) ?? [];
+  const count = (controls: readonly ControlScore[], ok: (control: ControlScore) => boolean): number =>
+    controls.filter(ok).length;
+
+  const positive = byClass('positive');
+  const clean = byClass('clean');
+  const empty = byClass('empty');
+  const degenerate = byClass('degenerate');
+
+  const lines = [
+    '## Controls',
+    '',
+    'The instrument checking itself. Each control is scored on text the fixture',
+    'injects, never on model output, and enters **no** denominator above: these are',
+    'four separate counts with their own n.',
+    '',
+    `- positive: ${String(count(positive, (control) => control.verdict === 'flagged'))} flagged of ${String(positive.length)}`,
+    `- clean: ${String(count(clean, (control) => control.verdict === 'pass'))} passed of ${String(clean.length)}`,
+    `- empty: ${String(count(empty, (control) => control.verdict === 'fail'))} failed of ${String(empty.length)}`,
+    `- degenerate: ${String(count(degenerate, (control) => control.verdict === 'fail'))} failed of ${String(degenerate.length)}`,
+    '',
+    '| Control | Class | Expect | Observed | Mechanism |',
+    '| --- | --- | --- | --- | --- |',
+  ];
+  for (const control of input.controls) {
+    lines.push(
+      `| \`${control.key}\` | ${control.control} | ${control.expect} | ${control.verdict} | ` +
+        `${control.mechanism ?? '—'}${control.missed ? ' **(missed)**' : ''} |`,
+    );
+  }
+  lines.push('');
+  const missed = input.controls.filter((control) => control.missed);
+  if (missed.length > 0) {
+    lines.push(
+      '**Missed controls.** An instrument that misses a control is broken; nothing it',
+      'scores counts. This run is inadmissible.',
+      '',
+    );
+    for (const control of missed) lines.push(`- \`${control.key}\`: ${control.missedReason ?? ''}`);
+    lines.push('');
+  }
+  return lines;
+}
+
+/** C-EVAL@1 §7, computed at run time rather than asserted (FD7). */
+function identitySection(input: ReportInput): string[] {
+  const identity = input.identity;
+  if (identity === undefined) return [];
+  const lines = [
+    '## Run identity (C-EVAL@1 §7)',
+    '',
+    '| Field | Value |',
+    '| --- | --- |',
+    `| Measurement | ${identity.mode} |`,
+    `| Locale | ${identity.locale} |`,
+    `| Git commit | \`${identity.gitCommit}\` |`,
+    `| Working tree | ${identity.gitDirty} |`,
+    `| Model tag | \`${identity.modelTag}\` |`,
+    `| Model digest | \`${identity.modelDigest}\` |`,
+    `| Inference options | ${identity.inferenceOptions} |`,
+    `| Scorer \`score.ts\` | \`${identity.scorerSha256}\` |`,
+  ];
+  for (const [name, sha] of Object.entries(identity.promptSetHashes)) {
+    lines.push(`| Prompt set · ${name} | \`${sha}\` |`);
+  }
+  if (identity.corpus !== undefined) {
+    lines.push(
+      `| Corpus · ${identity.corpus.directory} | expectations \`${identity.corpus.expectationsSha256}\`` +
+        `, transcripts \`${identity.corpus.transcriptsSha256}\` (${String(identity.corpus.transcriptCount)} files) |`,
+    );
+  }
+  if (identity.controls !== undefined) {
+    lines.push(
+      `| Controls · ${identity.controls.directory} | expectations \`${identity.controls.expectationsSha256}\`` +
+        `, transcripts \`${identity.controls.transcriptsSha256}\` (${String(identity.controls.transcriptCount)} files) |`,
+    );
+  }
+  lines.push(
+    `| CPU / RAM | ${identity.hardware} |`,
+    `| GPU | ${identity.gpu} |`,
+    `| Ollama | ${identity.ollamaVersion} |`,
+    `| Node | ${identity.node} |`,
+    '',
+  );
+  return lines;
 }
 
 /** The headline. Everything else in the report is context for this number. */

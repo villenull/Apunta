@@ -1,0 +1,228 @@
+{
+  "_readme": [
+    "Control sidecars for the es-MX locale. One entry per control; the key is",
+    "<class>/<name>.txt relative to this directory, and the file at that path is",
+    "the control's controlSource — the transcript. The note the control is scored",
+    "on lives in controlNote, never on disk.",
+    "",
+    "The sidecar type is a strict subset of FixtureExpectations: words,",
+    "difficulty, markerFreeSource, requiresHedge, requiresMarker and",
+    "novelTermAllow are omitted and supplied deterministically by the loader.",
+    "",
+    "Exactly two sidecars here carry a `lexicon` key and `{{lexicon}}` tokens:",
+    "positive/01-negacion-perdida.txt (the token in its mustCapture, in the",
+    "negator's own slot) and positive/02-negacion-inventada.txt (the token in",
+    "every mustNotContain entry, in the negator's own slot). Every other entry is",
+    "on the legacy path, byte for byte.",
+    "",
+    "The {{lexicon}} token is fixed and does not carry the lexicon's name; the",
+    "sidecar's `lexicon` key says which vocabulary it means. It REPLACES the",
+    "negator the authored phrase already carries and is never prefixed to a",
+    "phrase that already has one — which is why no phrase whose word is itself",
+    "the negator (`niega`, `jam[aá]s`) appears in any mustNotContain here: those",
+    "are the two shapes B-1 removes, and putting one in would compile to a bare",
+    "negator that matches every faithful Spanish note."
+  ],
+  "fixtures": {
+    "positive/01-negacion-perdida.txt": {
+      "control": "positive",
+      "controlSource": "see positive/01-negacion-perdida.txt",
+      "controlNote": "Subjetivo: Ya duerme bien y ya no se despierta a las tres. Dice que descansa bien y que las dos últimas semanas fueron mucho mejores. Camina toda la noche.\nObjetivo: Sentado y alerta todo el tiempo. Habla con soltura cuando se le pregunta y responde de forma directa.\nAnálisis: El sueño mejoró de forma clara desde la sesión anterior.\nPlan: Mantener la cadencia semanal. Revisar la ventana del sueño en dos semanas y traer la hoja de registro.",
+      "expect": "flagged",
+      "mechanism": "missed mustCapture",
+      "lexicon": "negation",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": ["ya no (?:se )?despierta a las tres", "camina toda la noche"],
+      "mustCapture": [
+        {
+          "id": "sueno-no-restaurado",
+          "any": [
+            "{{lexicon}} ha vuelto a dormir(?: bien)?",
+            "{{lexicon}} duerme bien",
+            "sigue sin dormir(?: bien)?",
+            "{{lexicon}} descansa bien"
+          ]
+        }
+      ]
+    },
+
+    "positive/02-negacion-inventada.txt": {
+      "control": "positive",
+      "controlSource": "see positive/02-negacion-inventada.txt",
+      "controlNote": "Subjetivo: No refiere ejercicio de ningún tipo y no reporta ninguno desde la última visita. Nunca ha tomado la medicación y dice que dejó todo.\nObjetivo: Sentado, alerta y cooperativo. El habla es normal en ritmo y volumen.\nAnálisis: Sin factores de riesgo cardiovascular descritos.\nPlan: Aconsejar sobre la importancia de caminar todos los días. Repetir la receta como antes.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "lexicon": "negation",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": ["{{lexicon}} refiere", "{{lexicon}} reporta", "{{lexicon}} ha tomado"],
+      "mustCapture": []
+    },
+
+    "positive/03-dosis-incorrecta.txt": {
+      "control": "positive",
+      "controlSource": "see positive/03-dosis-incorrecta.txt",
+      "controlNote": "Subjetivo: Tolera bien la medicación y dice que los pensamientos intrusivos bajaron de tres por semana a uno cada dos semanas.\nObjetivo: Sentado y alerta. El afecto es apropiado para lo que se está tratando.\nAnálisis: Buena respuesta a la dosis actual con una reducción clara de los pensamientos intrusivos.\nPlan: Subir el alprazolam a cuatro tabletas al día y revisar en tres meses. Se le dijo que por la mañana es buena hora.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": ["cuatro tabletas", "4 tabletas", "subir el alprazolam"],
+      "mustCapture": [
+        { "id": "intrusivos", "any": ["pensamientos intrusivos", "tres por semana", "cada dos semanas"] }
+      ]
+    },
+
+    "positive/04-experiencer-equivocado.txt": {
+      "control": "positive",
+      "controlSource": "see positive/04-experiencer-equivocado.txt",
+      "controlNote": "Subjetivo: Dice que es él quien no duerme y que ya son tres semanas de noches rotas con un bebé recién nacido en casa. Su ánimo está bajo y no come bien.\nObjetivo: Sentado y alerta. Habla con libertad y no está distraído.\nAnálisis: El insomnio es suyo y se mantiene en el nivel que reporta la familia.\nPlan: Volver en quince días y pedirle que traiga una lista de lo que observa en su propio sueño.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "es él quien no duerme",
+        "su propio insomnio",
+        "no come bien",
+        "tres semanas de noches rotas con un bebé recién nacido en casa"
+      ],
+      "mustCapture": [{ "id": "hermana", "any": ["su hermana", "la hermana"] }]
+    },
+
+    "positive/05-riesgo-pasado-como-actual.txt": {
+      "control": "positive",
+      "controlSource": "see positive/05-riesgo-pasado-como-actual.txt",
+      "controlNote": "Subjetivo: Refiere un intento la semana pasada y dice que tuvo un pensamiento de terminar con su vida esta semana. Dice que ha tomado más desde el viernes.\nObjetivo: Sentado y alerta. El habla es clara y contesta todas las preguntas.\nAnálisis: Hay un intento reciente y riesgo actual que necesita revisión esta misma semana.\nPlan: Agendar una cita más pronto y pedirle a su hermana que se quede con él el fin de semana.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "intento la semana pasada",
+        "un intento reciente",
+        "tomado más desde el viernes",
+        "riesgo actual que necesita"
+      ],
+      "mustCapture": [{ "id": "intento-2019", "any": ["2019"] }]
+    },
+
+    "positive/06-contenido-retirado-conservado.txt": {
+      "control": "positive",
+      "controlSource": "see positive/06-contenido-retirado-conservado.txt",
+      "controlNote": "Subjetivo: Durmió cuatro horas anoche. Está animado y bromea con eso.\nObjetivo: Sentado y alerta. Habla con libertad sobre la semana.\nAnálisis: El sueño sigue siendo malo y él lo minimiza.\nPlan: Mantener la revisión en cuatro semanas y continuar como antes.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": ["cuatro horas", "4 horas", "durmió cuatro"],
+      "mustCapture": [{ "id": "seis-horas", "any": ["seis horas", "6 horas"] }]
+    },
+
+    "positive/07-contenido-inventado-seccion-no-cubierta.txt": {
+      "control": "positive",
+      "controlSource": "see positive/07-contenido-inventado-seccion-no-cubierta.txt",
+      "controlNote": "Subjetivo: Llamó porque se le acabó la receta y quería que se la repusieran. No dio ningún otro motivo para la repetición.\nObjetivo: Orientado x 3. Afecto congruente. Sin psicomotricidad. Juicio y discernimiento conservados.\nAnálisis: Presentó por teléfono y está en contacto por el canal habitual.\nPlan: Repetir la receta y agendarlo para fin de mes.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "orientado x ?3",
+        "afecto congruente",
+        "sin psicomotricidad",
+        "juicio y discernimiento conservados"
+      ],
+      "mustCapture": [{ "id": "receta", "any": ["receta"] }]
+    },
+
+    "clean/01-sesion-limpia.txt": {
+      "control": "clean",
+      "controlSource": "see clean/01-sesion-limpia.txt",
+      "controlNote": "Subjetivo: Dice que el sueño no ha cambiado y que sigue despierto casi todas las noches alrededor de las tres. Sigue costándole volver a dormirse después. El apetito no ha cambiado y come casi todos los días. Ha caminado a la hora de la comida cuatro días esta semana. Trajo la hoja de registro como quedamos. Describe la semana como ocupada pero manejable.\nObjetivo: Llegó a tiempo. Habla de la semana sin que lo tengan que preguntar. Contesta todo de forma directa.\nAnálisis: Sexta sesión semanal con el mismo cuadro que la vez pasada, sin material nuevo y sin nada nuevo hoy.\nPlan: Mantener la misma hora la próxima semana. Seguir caminando a la comida. Revisar la hoja juntos en la siguiente cita.",
+      "expect": "pass",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": ["el sueño mejoró", "mucho mejor", "resuelto", "ya no se despierta"],
+      "mustCapture": [
+        { "id": "hoja", "any": ["hoja de registro"] },
+        { "id": "caminar-comida", "any": ["caminando a la comida"] }
+      ]
+    },
+
+    "empty/01-nota-vacia.txt": {
+      "control": "empty",
+      "controlSource": "see empty/01-nota-vacia.txt",
+      "controlNote": "",
+      "expect": "fail",
+      "mechanism": "S4 every section blank",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [],
+      "mustCapture": []
+    },
+
+    "degenerate/01-plantilla-repetida.txt": {
+      "control": "degenerate",
+      "controlSource": "see degenerate/01-plantilla-repetida.txt",
+      "controlNote": "Subjetivo: Asistió a tiempo. Habló de la semana. No hubo nada nuevo que reportar. Estuvo de acuerdo con el plan. No hubo nada más que tratar.\nObjetivo: Sentado en la sala de siempre. Visto a tiempo como siempre. Asistió a tiempo como siempre. No se observó nada nuevo como siempre.\nAnálisis: the presentation is consistent with a severe chronic condition requiring escalation. the presentation is consistent with a severe chronic condition requiring escalation. the presentation is consistent with a severe chronic condition requiring escalation.\nPlan: Continuar. Volver a revisar cuando corresponda. No hizo falta cambiar nada. Continuar. Volver a revisar cuando corresponda. No hizo falta cambiar nada.",
+      "expect": "fail",
+      "mechanism": "F6 unsupported conclusion",
+      "format": "progress",
+      "sections": ["Subjetivo", "Objetivo", "Análisis", "Plan"],
+      "modality": "es-MX eval control",
+      "f6": "gating",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Análisis"],
+      "mustNotContain": [],
+      "mustCapture": []
+    }
+  }
+}

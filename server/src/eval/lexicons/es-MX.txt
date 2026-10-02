@@ -1,0 +1,463 @@
+# Apunta eval lexicon — es-MX
+#
+# Built ONCE, at authoring time, from two named sources and no others (FD2, FD11):
+#
+#   1. number / unit / medication  — every entry of
+#      docs/research/es-mx-clinical-glossary.json whose `category` is one of
+#      number, unit, medication. 152 entries (87 single-token, 65 multi-word
+#      surface forms), split into 217 atomic alternatives on `/`, on `(`/`)`
+#      and on the ellipsis. Nothing is dropped for being more than one word:
+#      the alternatives of `mcg / µg (microgramo)` are `mcg`, `µg` and
+#      `microgramo`; `ácido valproico` and `seis y medio` are whole phrases
+#      matched as such.
+#      Totals: 152 = 87 + 65 entries, 217 alternatives.
+#   2. negation  — the closed-class negator inventory the owner approved in
+#      card S4a.2 (docs/v2/cards/S4a.2.md:452, AM-082), copied verbatim, plus
+#      multi-word cues quoted from the S3.1 tuning gold. `sin` is excluded on
+#      S4a.2's own reason, written in the file below.
+#
+# Nothing is read from a production guard module, and nothing is read from the
+# glossary at scoring time: this file IS the vocabulary. No entry was added to
+# the glossary by this card.
+#
+# Format: one `term<TAB>category` per line, `#` comments. Loaded under FD2c,
+# which scopes the loader by locale, admits exactly these eight categories and
+# treats any other category — and any term outside the Latin script — as a
+# load-time error naming this file and the line rather than a silent skip.
+#
+# Boundaries: whole tokens and whole phrases under FD2c's explicit Latin-script
+# class, never JavaScript's \b (which cannot match a term ending in an accented
+# character at all — `mié` and `dejó` are the two that prove it). Normalisation
+# is defined over NFC; this file and every note the eval authors are NFC.
+#
+# Stemming, stated on both sides and different for each kind of term: negation
+# entries are matched whole, unstemmed, against the normalised note text
+# (stem('jamás') is 'jamá', and stem turns 'nos' into 'no'). Number, unit and
+# medication entries keep F7's stemming on both sides, and a multi-word
+# alternative is stemmed per word and matched as a whole phrase.
+#
+# Generated for the S3.2 eval instrument. One `term` per line; the glossary
+# entry each line came from is recorded in the comment above it.
+# glossary entry: "sertralina" (category medication)
+sertralina	medication
+# glossary entry: "fluoxetina" (category medication)
+fluoxetina	medication
+# glossary entry: "escitalopram" (category medication)
+escitalopram	medication
+# glossary entry: "citalopram" (category medication)
+citalopram	medication
+# glossary entry: "paroxetina" (category medication)
+paroxetina	medication
+# glossary entry: "fluvoxamina" (category medication)
+fluvoxamina	medication
+# glossary entry: "venlafaxina" (category medication)
+venlafaxina	medication
+# glossary entry: "duloxetina" (category medication)
+duloxetina	medication
+# glossary entry: "desvenlafaxina" (category medication)
+desvenlafaxina	medication
+# glossary entry: "bupropión" (category medication)
+bupropión	medication
+# glossary entry: "mirtazapina" (category medication)
+mirtazapina	medication
+# glossary entry: "trazodona" (category medication)
+trazodona	medication
+# glossary entry: "litio" (category medication)
+litio	medication
+# glossary entry: "lamotrigina" (category medication)
+lamotrigina	medication
+# glossary entry: "valproato" (category medication)
+valproato	medication
+# glossary entry: "ácido valproico" (category medication)
+ácido valproico	medication
+# glossary entry: "carbamazepina" (category medication)
+carbamazepina	medication
+# glossary entry: "quetiapina" (category medication)
+quetiapina	medication
+# glossary entry: "aripiprazol" (category medication)
+aripiprazol	medication
+# glossary entry: "risperidona" (category medication)
+risperidona	medication
+# glossary entry: "olanzapina" (category medication)
+olanzapina	medication
+# glossary entry: "lorazepam" (category medication)
+lorazepam	medication
+# glossary entry: "clonazepam" (category medication)
+clonazepam	medication
+# glossary entry: "alprazolam" (category medication)
+alprazolam	medication
+# glossary entry: "diazepam" (category medication)
+diazepam	medication
+# glossary entry: "buspirona" (category medication)
+buspirona	medication
+# glossary entry: "hidroxizina" (category medication)
+hidroxizina	medication
+# glossary entry: "zolpidem" (category medication)
+zolpidem	medication
+# glossary entry: "metilfenidato" (category medication)
+metilfenidato	medication
+# glossary entry: "lisdexanfetamina" (category medication)
+lisdexanfetamina	medication
+# glossary entry: "atomoxetina" (category medication)
+atomoxetina	medication
+# glossary entry: "anfetamina" (category medication)
+anfetamina	medication
+# glossary entry: "naltrexona" (category medication)
+naltrexona	medication
+# glossary entry: "prazosina" (category medication)
+prazosina	medication
+# glossary entry: "propranolol" (category medication)
+propranolol	medication
+# glossary entry: "gabapentina" (category medication)
+gabapentina	medication
+# glossary entry: "pregabalina" (category medication)
+pregabalina	medication
+# glossary entry: "clonidina" (category medication)
+clonidina	medication
+# glossary entry: "guanfacina" (category medication)
+guanfacina	medication
+# glossary entry: "amitriptilina" (category medication)
+amitriptilina	medication
+# glossary entry: "nortriptilina" (category medication)
+nortriptilina	medication
+# glossary entry: "doxepina" (category medication)
+doxepina	medication
+# glossary entry: "vortioxetina" (category medication)
+vortioxetina	medication
+# glossary entry: "vilazodona" (category medication)
+vilazodona	medication
+# glossary entry: "brexpiprazol" (category medication)
+brexpiprazol	medication
+# glossary entry: "cariprazina" (category medication)
+cariprazina	medication
+# glossary entry: "lurasidona" (category medication)
+lurasidona	medication
+# glossary entry: "ziprasidona" (category medication)
+ziprasidona	medication
+# glossary entry: "asenapina" (category medication)
+asenapina	medication
+# glossary entry: "topiramato" (category medication)
+topiramato	medication
+# glossary entry: "oxcarbazepina" (category medication)
+oxcarbazepina	medication
+# glossary entry: "levetiracetam" (category medication)
+levetiracetam	medication
+# glossary entry: "metformina" (category medication)
+metformina	medication
+# glossary entry: "levotiroxina" (category medication)
+levotiroxina	medication
+# glossary entry: "amlodipino" (category medication)
+amlodipino	medication
+# glossary entry: "losartán" (category medication)
+losartán	medication
+# glossary entry: "atorvastatina" (category medication)
+atorvastatina	medication
+# glossary entry: "omeprazol" (category medication)
+omeprazol	medication
+# glossary entry: "pantoprazol" (category medication)
+pantoprazol	medication
+# glossary entry: "ibuprofeno" (category medication)
+ibuprofeno	medication
+# glossary entry: "paracetamol" (category medication)
+paracetamol	medication
+# glossary entry: "aspirina (ácido acetilsalicílico)" (category medication)
+aspirina	medication
+ácido acetilsalicílico	medication
+# glossary entry: "Zoloft (sertralina)" (category medication)
+Zoloft	medication
+sertralina	medication
+# glossary entry: "Prozac (fluoxetina)" (category medication)
+Prozac	medication
+fluoxetina	medication
+# glossary entry: "Lexapro (escitalopram)" (category medication)
+Lexapro	medication
+escitalopram	medication
+# glossary entry: "Celexa (citalopram)" (category medication)
+Celexa	medication
+citalopram	medication
+# glossary entry: "Paxil (paroxetina)" (category medication)
+Paxil	medication
+paroxetina	medication
+# glossary entry: "Luvox (fluvoxamina)" (category medication)
+Luvox	medication
+fluvoxamina	medication
+# glossary entry: "Effexor (venlafaxina)" (category medication)
+Effexor	medication
+venlafaxina	medication
+# glossary entry: "Cymbalta (duloxetina)" (category medication)
+Cymbalta	medication
+duloxetina	medication
+# glossary entry: "Pristiq (desvenlafaxina)" (category medication)
+Pristiq	medication
+desvenlafaxina	medication
+# glossary entry: "Wellbutrin (bupropión)" (category medication)
+Wellbutrin	medication
+bupropión	medication
+# glossary entry: "Remeron (mirtazapina)" (category medication)
+Remeron	medication
+mirtazapina	medication
+# glossary entry: "Lamictal (lamotrigina)" (category medication)
+Lamictal	medication
+lamotrigina	medication
+# glossary entry: "Depakote (valproato)" (category medication)
+Depakote	medication
+valproato	medication
+# glossary entry: "Tegretol (carbamazepina)" (category medication)
+Tegretol	medication
+carbamazepina	medication
+# glossary entry: "Seroquel (quetiapina)" (category medication)
+Seroquel	medication
+quetiapina	medication
+# glossary entry: "Abilify (aripiprazol)" (category medication)
+Abilify	medication
+aripiprazol	medication
+# glossary entry: "Risperdal (risperidona)" (category medication)
+Risperdal	medication
+risperidona	medication
+# glossary entry: "Zyprexa (olanzapina)" (category medication)
+Zyprexa	medication
+olanzapina	medication
+# glossary entry: "Ativan (lorazepam)" (category medication)
+Ativan	medication
+lorazepam	medication
+# glossary entry: "Klonopin (clonazepam)" (category medication)
+Klonopin	medication
+clonazepam	medication
+# glossary entry: "Xanax (alprazolam)" (category medication)
+Xanax	medication
+alprazolam	medication
+# glossary entry: "Tafil (alprazolam)" (category medication)
+Tafil	medication
+alprazolam	medication
+# glossary entry: "Rivotril (clonazepam)" (category medication)
+Rivotril	medication
+clonazepam	medication
+# glossary entry: "Valium (diazepam)" (category medication)
+Valium	medication
+diazepam	medication
+# glossary entry: "Buspar (buspirona)" (category medication)
+Buspar	medication
+buspirona	medication
+# glossary entry: "Vistaril (hidroxizina)" (category medication)
+Vistaril	medication
+hidroxizina	medication
+# glossary entry: "Ambien (zolpidem)" (category medication)
+Ambien	medication
+zolpidem	medication
+# glossary entry: "Ritalin / Concerta (metilfenidato)" (category medication)
+Ritalin	medication
+Concerta	medication
+metilfenidato	medication
+# glossary entry: "Vyvanse (lisdexanfetamina)" (category medication)
+Vyvanse	medication
+lisdexanfetamina	medication
+# glossary entry: "Strattera (atomoxetina)" (category medication)
+Strattera	medication
+atomoxetina	medication
+# glossary entry: "Adderall (anfetamina)" (category medication)
+Adderall	medication
+anfetamina	medication
+# glossary entry: "mg (miligramo)" (category unit)
+mg	unit
+miligramo	unit
+# glossary entry: "mcg / µg (microgramo)" (category unit)
+mcg	unit
+µg	unit
+microgramo	unit
+# glossary entry: "g (gramo)" (category unit)
+g	unit
+gramo	unit
+# glossary entry: "mL (mililitro)" (category unit)
+mL	unit
+mililitro	unit
+# glossary entry: "unidades (U)" (category unit)
+unidades	unit
+U	unit
+# glossary entry: "UI (unidades internacionales)" (category unit)
+UI	unit
+unidades internacionales	unit
+# glossary entry: "punto o coma decimal (0.5 mg / 0,5 mg)" (category unit)
+punto o coma decimal	unit
+0.5 mg	unit
+0,5 mg	unit
+# glossary entry: "sertralina 50 mg, vía oral, cada 24 horas" (category unit)
+sertralina 50 mg, vía oral, cada 24 horas	unit
+# glossary entry: "dos" (category number)
+dos	number
+# glossary entry: "tres" (category number)
+tres	number
+# glossary entry: "cuatro" (category number)
+cuatro	number
+# glossary entry: "cinco" (category number)
+cinco	number
+# glossary entry: "seis" (category number)
+seis	number
+# glossary entry: "siete" (category number)
+siete	number
+# glossary entry: "ocho" (category number)
+ocho	number
+# glossary entry: "nueve" (category number)
+nueve	number
+# glossary entry: "diez" (category number)
+diez	number
+# glossary entry: "once" (category number)
+once	number
+# glossary entry: "doce" (category number)
+doce	number
+# glossary entry: "trece" (category number)
+trece	number
+# glossary entry: "catorce" (category number)
+catorce	number
+# glossary entry: "quince" (category number)
+quince	number
+# glossary entry: "dieciséis" (category number)
+dieciséis	number
+# glossary entry: "diecisiete" (category number)
+diecisiete	number
+# glossary entry: "dieciocho" (category number)
+dieciocho	number
+# glossary entry: "diecinueve" (category number)
+diecinueve	number
+# glossary entry: "veinte" (category number)
+veinte	number
+# glossary entry: "veintiuno ... veintinueve" (category number)
+veintiuno	number
+veintinueve	number
+# glossary entry: "treinta" (category number)
+treinta	number
+# glossary entry: "cuarenta" (category number)
+cuarenta	number
+# glossary entry: "cincuenta" (category number)
+cincuenta	number
+# glossary entry: "sesenta" (category number)
+sesenta	number
+# glossary entry: "setenta" (category number)
+setenta	number
+# glossary entry: "ochenta" (category number)
+ochenta	number
+# glossary entry: "noventa" (category number)
+noventa	number
+# glossary entry: "cien / ciento" (category number)
+cien	number
+ciento	number
+# glossary entry: "uno / una" (category number)
+uno	number
+una	number
+# glossary entry: "dos veces" (category number)
+dos veces	number
+# glossary entry: "tres veces" (category number)
+tres veces	number
+# glossary entry: "medio / media (seis y medio)" (category number)
+medio	number
+media	number
+seis y medio	number
+# glossary entry: "enero / ene" (category number)
+enero	number
+ene	number
+# glossary entry: "febrero / feb" (category number)
+febrero	number
+feb	number
+# glossary entry: "marzo / mar" (category number)
+marzo	number
+mar	number
+# glossary entry: "abril / abr" (category number)
+abril	number
+abr	number
+# glossary entry: "mayo" (category number)
+mayo	number
+# glossary entry: "junio / jun" (category number)
+junio	number
+jun	number
+# glossary entry: "julio / jul" (category number)
+julio	number
+jul	number
+# glossary entry: "agosto / ago" (category number)
+agosto	number
+ago	number
+# glossary entry: "septiembre / sep" (category number)
+septiembre	number
+sep	number
+# glossary entry: "octubre / oct" (category number)
+octubre	number
+oct	number
+# glossary entry: "noviembre / nov" (category number)
+noviembre	number
+nov	number
+# glossary entry: "diciembre / dic" (category number)
+diciembre	number
+dic	number
+# glossary entry: "lunes / lun" (category number)
+lunes	number
+lun	number
+# glossary entry: "martes / mar" (category number)
+martes	number
+mar	number
+# glossary entry: "miércoles / mié" (category number)
+miércoles	number
+mié	number
+# glossary entry: "jueves / jue" (category number)
+jueves	number
+jue	number
+# glossary entry: "viernes / vie" (category number)
+viernes	number
+vie	number
+# glossary entry: "sábado / sáb" (category number)
+sábado	number
+sáb	number
+# glossary entry: "domingo / dom" (category number)
+domingo	number
+dom	number
+# --- negation: the closed-class inventory the owner approved in S4a.2 (AM-082) ---
+# C-STT@1 measure 1’s STT population, reused here so the eval instrument’s
+# vocabulary is an approved one rather than a new one. The coupling is intentional.
+no	negation
+nunca	negation
+jamás	negation
+ningún	negation
+ninguna	negation
+ninguno	negation
+nadie	negation
+nada	negation
+tampoco	negation
+# `sin` is EXCLUDED on S4a.2’s own reason, written here so it is not read as an oversight:
+# it is a preposition, and "sin falta", "sin metformina" and "sin drama" are not negations,
+# so a single-token `sin` entry would count ordinary Spanish as negation. Multi-word `sin …`
+# cues quoted from the approved gold below are still admissible.
+# Attestation, measured on the 66 tuning transcripts under FD2c’s whole-token boundary:
+# no 65 · nada 50 · sin 29 (excluded) · nunca 19 · nadie 10 · dejó 10 · tampoco 5 ·
+# ningún 1 · ninguna 1 · ninguno 0 · jamás 0. `dejó` is reachable only under FD2c’s boundary:
+# JavaScript’s \b is defined over [A-Za-z0-9_], so \bdejó\b matches 0 of the 66.
+# `ninguno` and `jamás` carry no tuning attestation and say so rather than implying corpus
+# support: they are here because the owner approved that inventory.
+# --- negation: multi-word cues quoted verbatim from the S3.1 tuning gold ---
+# Each line below is admissible ONLY as a whole phrase, and ONLY from these
+# expectations.json lost-negation/ and invented-negation/ entries. No other source is.
+# quoted from eval-es/tuning/lost-negation/03-nunca-tableta.txt — mustNotContain "dej[óo] de tomar (?:la|el|las|los) (?:pastilla|medicamento|tratamiento) …"
+dejó de tomar	negation
+# quoted from eval-es/tuning/lost-negation/03-nunca-tableta.txt — mustNotContain "luego (?:s[ií] )?dej[óo]"; "dej[óo] de tomar …"
+dejó de	negation
+# quoted from eval-es/tuning/lost-negation/03-nunca-tableta.txt — mustNotContain "dejó las (?:pastillas|medicinas)"
+dejó las	negation
+# quoted from eval-owner-es/tuning/invented-negation/03-medicamento-diario.txt — mustNotContain "nunca ha tomado"
+nunca ha tomado	negation
+# quoted from eval-owner-es/tuning/lost-negation/03-nunca-tableta.txt — mustCapture nunca-dejo-la-pastilla "nunca ha dejado (?:la pastilla|el medicamento|tomar)"
+nunca ha dejado	negation
+# quoted from eval-es/tuning/invented-negation/01-todos-los-dias.txt — mustNotContain "no refiere"; also eval-owner-es lost-negation revision-de-riesgo
+no refiere	negation
+# quoted from eval-es/tuning/invented-negation/01-todos-los-dias.txt — mustNotContain "no reporta"
+no reporta	negation
+# quoted from eval-es/tuning/lost-negation/05-no-se-atreve.txt — mustCapture no-se-atreve "no se atreve a pedir"; "no se atreve"
+no se atreve	negation
+# quoted from eval-es/tuning/invented-negation/01-todos-los-dias.txt — mustNotContain "sin antecedentes de"
+sin antecedentes de	negation
+# quoted from eval-es/tuning/invented-negation/03-medicamento-diario.txt — mustNotContain "sin medicamentos"
+sin medicamentos	negation
+# quoted from eval-es/tuning/invented-negation/03-medicamento-diario.txt — mustNotContain "sin medicaci[óo]n"
+sin medicación	negation
+# Not admissible, and named so the absence is deliberate rather than a gap:
+# `niega(?:ndo)?` and `jam[aá]s` are phrases whose word IS the negator (B-1), so no es-MX control
+# may carry them in mustNotContain; `no es que no quiera` and `no se atreve a decir que no`
+# are doubled negations from the gold and would compile to two adjacent negators; and any cue
+# whose remainder a sidecar supplies after {{lexicon}} (ha vuelto a dormir, duerme bien,
+# descansa bien, se atreve) is excluded, because the token replaces the negator and a cue
+# that already spells the whole phrase would double it.

@@ -3,7 +3,10 @@ import { FakeLlmProvider } from '../ai/fake.js';
 import { NUM_CTX, OllamaProvider } from '../ai/ollama.js';
 import type { LlmProvider, LlmStats } from '../ai/types.js';
 import { DEFAULT_OLLAMA_URL } from '../config.js';
+import { loadControls, type ControlScore } from './controls.js';
+import type { ReportIdentity } from './identity.js';
 import { denominators, draftSourceFor, loadCorpus, type Fixture } from './corpus.js';
+import { loadLocaleLexicon, type EvalLocale, type LexiconTerm } from './lexicon.js';
 import { renderReport, type ModelReport } from './report.js';
 import { failedNote, scoreNote, type NoteScore, type RunStats } from './score.js';
 
@@ -31,6 +34,20 @@ export interface RunOptions {
   readonly models: readonly string[];
   readonly runs: number;
   readonly fake: boolean;
+  /**
+   * The run's locale (FD1, default `en`). It selects the lexicon every
+   * `scoreNote` call site in this run receives, and nothing else changes: a
+   * `--locale en` run and a run with no `--locale` at all are the same run.
+   */
+  readonly locale?: EvalLocale | undefined;
+  /** `--controls`: a directory, or `none` to load none and print no table. */
+  readonly controlsDirectory?: string | undefined;
+  /** `--controls none`. */
+  readonly controlsSuppressed?: boolean | undefined;
+  /** Test-only negative control (FD8). Never an acceptance run. */
+  readonly blindLexicon?: 'negation' | 'clinical' | 'number' | 'unit' | 'medication' | 'all' | undefined;
+  /** C-EVAL@1 §7 identity (FD7), computed by the caller so the CLI stays the only I/O. */
+  readonly identity?: ReportIdentity | undefined;
   readonly fixtureFilter?: string | undefined;
   /** Owner-supplied drafting instructions to measure in place of the defaults. */
   readonly instructions?: InstructionsOverride | undefined;
@@ -47,6 +64,14 @@ export interface RunResult {
   readonly markdown: string;
   readonly models: readonly ModelReport[];
   readonly fixtures: readonly Fixture[];
+  /**
+   * The controls table's own array (FD6). It is **not** inside `models`, which is
+   * what keeps a control's `NoteScore` out of `sensitivity()` and out of every
+   * corpus denominator.
+   */
+  readonly controls: readonly ControlScore[];
+  /** The locale-scoped terms this run scored against, shared by every call site. */
+  readonly lexicon: readonly LexiconTerm[];
 }
 
 /**
@@ -82,6 +107,13 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
   const startedAt = new Date();
   const started = Date.now();
 
+  // **One** array, resolved once, handed to every `scoreNote` call site in this
+  // run. Without it an `es-MX` run silently scores against the *English* clinical
+  // lexicon and still exits 0, because `scoreNote`'s no-argument fallback
+  // resolves to `en` and no row says so (FD2c, FD6).
+  const locale: EvalLocale = options.locale ?? 'en';
+  const lexicon = loadLocaleLexicon(locale);
+
   const all = loadCorpus(options.directory);
   const fixtures =
     options.fixtureFilter === undefined
@@ -104,12 +136,31 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
       for (let run = 1; run <= options.runs; run += 1) {
         options.onProgress?.(`${model} · ${fixture.filename} · run ${String(run)}`);
         scores.push(
-          await scoreOneRun(provider, fixture, model, run, options.instructions, options.priorNoteCount ?? 0),
+          await scoreOneRun(
+            provider,
+            fixture,
+            model,
+            run,
+            options.instructions,
+            options.priorNoteCount ?? 0,
+            lexicon,
+          ),
         );
       }
     }
     models.push({ model, runs: options.runs, scores });
   }
+
+  // The controls table's own array (FD6). It never enters `models`, so a
+  // control's `NoteScore` reaches neither `sensitivity()` nor any denominator.
+  const controls =
+    options.controlsSuppressed === true || options.controlsDirectory === undefined
+      ? []
+      : loadControls({
+          directory: options.controlsDirectory,
+          locale,
+          ...(options.blindLexicon === undefined ? {} : { blindLexicon: options.blindLexicon }),
+        }).controls;
 
   return {
     markdown: renderReport({
@@ -117,6 +168,14 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
       denominators: denominators(fixtures),
       models,
       fake: options.fake,
+      mode: 'provider',
+      locale,
+      // `--controls none` suppresses the table entirely rather than printing an
+      // empty one, so a report that loaded no controls cannot be mistaken for one
+      // whose controls all held.
+      ...(controls.length === 0 ? {} : { controls }),
+      blindLexicon: options.blindLexicon,
+      identity: options.identity,
       instructionsNote: options.instructionsNote,
       priorNotesNote:
         (options.priorNoteCount ?? 0) > 0
@@ -127,6 +186,8 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
     }),
     models,
     fixtures,
+    controls,
+    lexicon,
   };
 }
 
@@ -137,11 +198,17 @@ async function scoreOneRun(
   run: number,
   override: InstructionsOverride | undefined,
   priorNoteCount: number,
+  lexicon: readonly LexiconTerm[],
 ): Promise<NoteScore> {
   const began = Date.now();
   try {
     const { sections, stats } = await generateOnce(provider, fixture, override, priorNoteCount);
     return scoreNote(fixture, sections, {
+      // Call site 1 of 3. The locale-scoped terms are supplied here; without
+      // this field an `es-MX` provider run would fall through to the English
+      // clinical lexicon and every Spanish number would be measured against the
+      // wrong vocabulary.
+      lexicon,
       model,
       run,
       stats: toRunStats(stats, Date.now() - began),

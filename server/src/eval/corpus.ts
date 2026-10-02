@@ -76,10 +76,78 @@ interface ExpectationsFile {
   fixtures: Record<string, FixtureExpectations>;
 }
 
+/**
+ * The transcript inventory, **one level deep** (FD3).
+ *
+ * `loadCorpus` already resolved each sidecar key relative to the split root, so
+ * a nested corpus (`e2e/fixtures/eval-es/tuning`) loads as it stands. The defect
+ * was here: a non-recursive `readdirSync` meant a transcript present on disk but
+ * absent from the sidecar was **never seen and never reported**, which silently
+ * disabled the `CorpusError` below — the only reason the loader check exists.
+ *
+ * So the split root plus each immediate subdirectory, matched by the same
+ * `\d{2}-*.txt` rule. English flat corpora are untouched: a root with no
+ * subdirectories yields exactly the same inventory as before.
+ */
+export function transcriptInventory(directory: string): string[] {
+  const isTranscript = (name: string): boolean => /^\d{2}-.*\.txt$/.test(name);
+  const here = readdirSync(directory).filter(isTranscript).sort();
+  const nested: string[] = [];
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    for (const name of readdirSync(join(directory, entry.name)).filter(isTranscript).sort()) {
+      nested.push(`${entry.name}/${name}`);
+    }
+  }
+  return [...here, ...nested.sort()];
+}
+
+/**
+ * FD2b validation rule (3): a `lexicon` key or a `{{lexicon}}` token on a
+ * **corpus** sidecar is an error, not a feature.
+ *
+ * The mechanism exists to give a *control* its vocabulary, and corpus sidecars
+ * are Must-not-edit: corpus scoring stays exactly as it is today. Measured: all
+ * four `expectations.json` files carry no `lexicon` key and no `{{` at all, so
+ * neither the S3.1 gold nor the English corpora can reach this even by
+ * accident — and this check is what says so rather than assuming it.
+ */
+export const LEXICON_TOKEN = '{{lexicon}}';
+
+export function assertNoLexiconKey(directory: string, fixtures: Record<string, unknown>): void {
+  for (const [key, value] of Object.entries(fixtures)) {
+    if (value === null || typeof value !== 'object') continue;
+    const entry = value as Record<string, unknown>;
+    if ('lexicon' in entry) {
+      throw new CorpusError(
+        `${directory}/${key}: a corpus sidecar may not carry a "lexicon" key; the mechanism is ` +
+          `for controls only and corpus scoring must not change`,
+      );
+    }
+    if (containsLexiconToken(entry)) {
+      throw new CorpusError(
+        `${directory}/${key}: a corpus sidecar may not carry a ${LEXICON_TOKEN} token; the ` +
+          `mechanism is for controls only and corpus scoring must not change`,
+      );
+    }
+  }
+}
+
+function containsLexiconToken(value: unknown): boolean {
+  if (typeof value === 'string') return value.includes(LEXICON_TOKEN);
+  if (Array.isArray(value)) return value.some((item) => containsLexiconToken(item));
+  if (value !== null && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some((item) => containsLexiconToken(item));
+  }
+  return false;
+}
+
 export function loadCorpus(directory: string = evalDir): Fixture[] {
   const raw = JSON.parse(readFileSync(join(directory, 'expectations.json'), 'utf8')) as ExpectationsFile;
 
-  const transcripts = readdirSync(directory).filter((name) => /^\d{2}-.*\.txt$/.test(name));
+  assertNoLexiconKey(directory, raw.fixtures);
+
+  const transcripts = transcriptInventory(directory);
   const missing = transcripts.filter((name) => !(name in raw.fixtures));
   if (missing.length > 0) {
     // A fixture without stated expectations cannot be scored and would quietly

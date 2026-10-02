@@ -1,0 +1,239 @@
+{
+  "_readme": [
+    "Control sidecars for the English locale. One entry per control; the key is",
+    "<class>/<name>.txt relative to this directory, and the file at that path is the",
+    "control's controlSource — the transcript. The note the control is scored on",
+    "lives in controlNote, never on disk.",
+    "",
+    "The sidecar type is a strict subset of FixtureExpectations: words,",
+    "difficulty, markerFreeSource, requiresHedge, requiresMarker and",
+    "novelTermAllow are omitted and supplied deterministically by the loader.",
+    "",
+    "There is no `lexicon` key and no {{lexicon}} token anywhere in this file, and",
+    "that is deliberate: `negation` is an es-MX lexicon, and validation rule (2)",
+    "would otherwise kill the mandated default `--locale en` self-check at load.",
+    "The two English negation controls are therefore matched by authored English",
+    "phrases on the legacy path, exactly as every en control is."
+  ],
+  "fixtures": {
+    "positive/01-lost-negation.txt": {
+      "control": "positive",
+      "controlSource": "see positive/01-lost-negation.txt",
+      "controlNote": "Subjective: Reports that sleep has returned and that he is sleeping well now. He no longer wakes at three and describes the last two weeks as much better than before.\nObjective: Seated and alert throughout. Talks at length when asked and answers directly.\nAssessment: Sleep has improved substantially since the previous session.\nPlan: Continue the weekly cadence. Review the sleep window in two weeks and bring the diary.",
+      "expect": "flagged",
+      "mechanism": "missed mustCapture",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control dictation",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "sleeping well now",
+        "sleep has (?:returned|improved)",
+        "no longer wakes at three",
+        "much better than before"
+      ],
+      "mustCapture": [
+        {
+          "id": "sleep-unrestored",
+          "any": [
+            "(?:still |continues to )?not sleeping",
+            "not been sleeping",
+            "sleeping poorly",
+            "awake most nights"
+          ]
+        }
+      ]
+    },
+
+    "positive/02-invented-negation.txt": {
+      "control": "positive",
+      "controlSource": "see positive/02-invented-negation.txt",
+      "controlNote": "Subjective: Denies exercise of any kind and reports that he has done none since the last visit. Reports no medications taken and says he has stopped all of them.\nObjective: Seated, alert and cooperative. Speech is normal in rate and volume.\nAssessment: No cardiovascular risk factors reported and no exertional limitation described.\nPlan: Advise on the importance of daily walking. Repeat the prescription as before.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control intake",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "denies exercise",
+        "denies any exercise",
+        "reports no exercise",
+        "reports no medications",
+        "no medications taken",
+        "stopped all of them"
+      ],
+      "mustCapture": [
+        { "id": "daily-walking", "any": ["daily walking", "walks every", "forty-five minutes", "45 minutes"] }
+      ]
+    },
+
+    "positive/03-wrong-dose.txt": {
+      "control": "positive",
+      "controlSource": "see positive/03-wrong-dose.txt",
+      "controlNote": "Subjective: Tolerating the medication well and reports the intrusive thoughts have thinned from three a week to one every fortnight.\nObjective: Seated and alert. Affect is appropriate to what is being discussed.\nAssessment: Responds to the current dose with a clear reduction in intrusive thoughts.\nPlan: Increase sertraline to 150 mg once daily and review again in three months. Told morning is a good time for the dose.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control typed notes",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "150 mg",
+        "one hundred and fifty",
+        "increase sertraline",
+        "1\\.5 ?(?:tablets?|tabletas?)"
+      ],
+      "mustCapture": [
+        { "id": "intrusive-thoughts", "any": ["intrusive thoughts", "three a week", "fortnight"] }
+      ]
+    },
+
+    "positive/04-wrong-experiencer.txt": {
+      "control": "positive",
+      "controlSource": "see positive/04-wrong-experiencer.txt",
+      "controlNote": "Subjective: Reports that he is not sleeping and that it has been three weeks of broken nights with a new baby at home. Mood is low and he is not eating well.\nObjective: Seated and alert. Talks freely and is not distracted.\nAssessment: The insomnia is his own and is maintaining at the level the family reports.\nPlan: Review in a fortnight and ask him to bring a list of what he notices about his own sleep.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control dictation",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "he is not sleeping",
+        "his own insomnia",
+        "not eating well",
+        "three weeks of broken nights with a new baby at home"
+      ],
+      "mustCapture": [{ "id": "sister-named", "any": ["his sister", "the sister"] }]
+    },
+
+    "positive/05-past-risk-as-current.txt": {
+      "control": "positive",
+      "controlSource": "see positive/05-past-risk-as-current.txt",
+      "controlNote": "Subjective: Reports a recent attempt last week and says he has had a thought of ending his life this week. Says he has been drinking more since Friday.\nObjective: Seated and alert. Speech is clear and he answers every question.\nAssessment: There is a recent attempt and current risk that needs a same-week review.\nPlan: Arrange an earlier appointment and ask his sister to stay with him over the weekend.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control dictation",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "attempt last week",
+        "a recent attempt",
+        "this week\\.?\\s*$",
+        "drinking more since friday",
+        "current risk that needs"
+      ],
+      "mustCapture": [{ "id": "attempt-in-2019", "any": ["2019"] }]
+    },
+
+    "positive/06-retracted-content-kept.txt": {
+      "control": "positive",
+      "controlSource": "see positive/06-retracted-content-kept.txt",
+      "controlNote": "Subjective: Slept four hours again last night. Bright in himself and joking about it.\nObjective: Seated and alert. Talks freely about the week.\nAssessment: Sleep remains poor and he is dismissive about the change.\nPlan: Keep the review in four weeks and continue as before.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control dictation",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": ["four hours", "4 hours", "slept four"],
+      "mustCapture": [{ "id": "six-hours", "any": ["six hours", "6 hours"] }]
+    },
+
+    "positive/07-invented-for-uncovered-section.txt": {
+      "control": "positive",
+      "controlSource": "see positive/07-invented-for-uncovered-section.txt",
+      "controlNote": "Subjective: Rang because the prescription had run out and wanted it repeated. Gave no further reason for the repeat.\nObjective: Oriented x 3. Affect congruent. No psychomotor abnormality. Insight and judgement intact and rapport established.\nAssessment: Presented by telephone and in contact by the usual written channel.\nPlan: Repeat the prescription and book him in for the end of the month.",
+      "expect": "flagged",
+      "mechanism": "F1 banned string",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control telephone dictation",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [
+        "oriented x ?3",
+        "affect congruent",
+        "no psychomotor",
+        "insight and judg",
+        "rapport established"
+      ],
+      "mustCapture": [{ "id": "repeat-requested", "any": ["prescription", "repeat"] }]
+    },
+
+    "clean/01-faithful-session.txt": {
+      "control": "clean",
+      "controlSource": "see clean/01-faithful-session.txt",
+      "controlNote": "Subjective: Reports that sleep has not changed and that he is still awake most nights around three. Still finding it hard to get back down afterwards. Appetite unchanged and eating most days. Has been walking at lunch four days this week. Brought the diary with him as agreed. Describes the week as busy but manageable.\nObjective: Seated on time. Talks through the week without being prompted. Answers every question directly and to the point.\nAssessment: Sixth weekly session with the same picture as last time, no new material and nothing started today.\nPlan: Keep the same time next week. Keep walking at lunch. Review the diary together at the next appointment.",
+      "expect": "pass",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control dictation",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": ["sleep has improved", "much better", "resolved", "no longer awake"],
+      "mustCapture": [
+        { "id": "diary", "any": ["diary"] },
+        { "id": "walking-lunch", "any": ["walking at lunch"] }
+      ]
+    },
+
+    "empty/01-empty-note.txt": {
+      "control": "empty",
+      "controlSource": "see empty/01-empty-note.txt",
+      "controlNote": "",
+      "expect": "fail",
+      "mechanism": "S4 every section blank",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control dictation",
+      "f6": "flag",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": [],
+      "mustNotContain": [],
+      "mustCapture": []
+    },
+
+    "degenerate/01-repeated-boilerplate.txt": {
+      "control": "degenerate",
+      "controlSource": "see degenerate/01-repeated-boilerplate.txt",
+      "controlNote": "Subjective: He attended on time. He spoke about the week. There was nothing new to report. He agreed with the plan. There was nothing further to discuss.\nObjective: Seated in the usual room. Seen on time as usual. Attended on time as usual. Nothing new was observed as usual.\nAssessment: The presentation is consistent with a severe chronic condition requiring escalation. The presentation is consistent with a severe chronic condition requiring escalation. The presentation is consistent with a severe chronic condition requiring escalation.\nPlan: Continue. Review again in due course. Nothing needed changing. Continue. Review again in due course. Nothing needed changing.",
+      "expect": "fail",
+      "mechanism": "F6 unsupported conclusion",
+      "format": "progress",
+      "sections": ["Subjective", "Objective", "Assessment", "Plan"],
+      "modality": "control dictation",
+      "f6": "gating",
+      "blank": [],
+      "statedAbsence": [],
+      "noConclusion": ["Assessment"],
+      "mustNotContain": [],
+      "mustCapture": []
+    }
+  }
+}
