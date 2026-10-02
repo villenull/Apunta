@@ -1,3 +1,9 @@
+> **Superseded by attempt 3.** This file records attempt 2's outcome and is
+> kept as history. Step S0 has since acquired A06 and **V0 passed**; see
+> [`V0-rebundle.md`](V0-rebundle.md) and
+> [`acquisition-A06.md`](acquisition-A06.md). The record below is attempt
+> 2's and describes a condition that no longer holds.
+
 # V0 — the re-bundle: `BLOCKED`
 
 **Status: BLOCKED** (A06, the missing whisper source tree). The row was run

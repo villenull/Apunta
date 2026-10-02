@@ -89,3 +89,32 @@ reports `Tests  12 passed (12)`.
 The source was restored from the copy taken immediately before the edit and
 `csp.ts` is byte-identical to the version V4 then linted and typechecked; the
 `git diff` for the file after the restore was empty.
+
+---
+
+## Attempt 3 (this attempt)
+
+The row was re-run in full, unchanged, and reproduces both earlier attempts
+exactly: **12 collected, 12 passed, 0 skipped**, exit **0**, in 604 ms.
+`server/src/http/csp.ts` and `csp.test.ts` are inherited from attempt 1
+(`d56af1d`) and were **not** touched here.
+
+- Working directory: the repository root.
+- Exact command: `export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && npm run build:shared && npx vitest run server/src/http/csp.test.ts`
+- `node --version` printed exactly `v24.19.0`.
+- Exit code: **0**.
+- Start / end time: 2026-10-02T19:14:24Z / 2026-10-02T19:14:25Z.
+- Sandbox: none (no server, no database — `buildApp` is driven with
+  `app.inject()` and the row's own temporary `APUNTA_WEB_DIST`).
+
+```
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Duration  604ms (transform 290ms, setup 0ms, import 457ms, tests 82ms, environment 0ms)
+```
+
+The one thing in the tree this attempt did change is `web/src/main.tsx` — the
+`.invalid` literal and its single `// eslint-disable-next-line
+no-restricted-syntax`, which the card's Fixed decisions required in place of
+attempt 2's decomposed form. That file is not part of this row, and V4 confirms
+the tree still lints and typechecks green with the literal in place.

@@ -1,39 +1,41 @@
-# V3 — the config greps
+# P3.4 — V3, the config-level greps
 
-**Status: PASS.** Each of the row's three commands recorded separately, because
-the row's own exit code is the last one's.
+Status: **PASS** (exit 0). Each command's result is recorded separately, because
+the row's own exit code is only the last one's.
 
-- Working directory: the repository root.
-- Command: `grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs; test ! -e src-tauri/capabilities; ! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs`
-- Exit code: **0** (the third command's).
-- Start / end time: 2026-10-02T18:18:28Z / 2026-10-02T18:18:28Z.
-- Sandbox: none.
+- Working directory: `/home/villenull/Projects/Apunta` (repository root)
+- Start: 2026-10-02T19:14:37Z
+- End: 2026-10-02T19:14:37Z
+- Exit code of the row: 0 (the third command)
 
-| # | Command | Exit | Meaning |
+## Exact command
+
+```sh
+grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs
+test ! -e src-tauri/capabilities
+! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs
+```
+
+## Results
+
+| # | Command | Exit | Reading |
 | --- | --- | --- | --- |
-| 1 | `grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs` | **1** | no matches — **exit 1 is the pass**. No custom `invoke_handler` command and no `withGlobalTauri: true`, in either config. `tauri.test.conf.json` is in the list because `tauri:build:test` merges it into the config the AppImage V2 launches is built from, so a `true` there would reach the binary while a grep that never looked would still be green. |
-| 2 | `test ! -e src-tauri/capabilities` | **0** | the directory is absent. This is the row that fails if a capability is ever added: the pattern list above would still pass on a capability file and only this command sees it. |
-| 3 | `! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs` | **0** | the `!` inverts, so exit 0 means **grep found nothing**. |
+| 1 | `grep -rn "invoke_handler\|withGlobalTauri\": true" …` | **1** | **exit 1 from this grep is the pass** — no matches, so no custom `invoke_handler` and no `withGlobalTauri: true` in either config or in `build.rs` |
+| 2 | `test ! -e src-tauri/capabilities` | **0** | the directory is absent, which is the pass |
+| 3 | `! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" …` | **0** | the `!` grep found nothing: **neither the gate string nor the marker path appears anywhere in the files the AppImage is built from** |
 
-## What command 3 is asserting, and why it is on this row
+Each command wrote nothing to the log, which is why this file is three exit
+codes and no output.
 
-This command is new in this card's repair and it **replaces** the bound the row
-used to carry for the in-page channel it has now dropped. It asserts the same
-thing the inspector variable was asserted against, for the mechanism that
-replaced it:
+**What command 3 is worth saying again:** the hook's bound is asserted in the
+repository and not only at run time. A gate string under `src-tauri/` would be
+baked into every build of the shell and a marker path there would name a
+channel in a shipped binary; both must match nothing. The gate is resolved by
+Vite at **web build** time and the hook exists only in a flagged bundle, and V0
+asserts that bundle never reaches `web/dist` — this grep is the other half, on
+the shell side.
 
-> neither the gate string nor the marker path may appear anywhere in the files
-> the AppImage is built from.
-
-A gate string under `src-tauri/` would be baked into every build of the shell, and
-a marker path there would name a channel in a shipped binary. The gate is resolved
-by Vite at **web build** time and the hook exists only in a flagged bundle; V0's
-release invariant asserts that bundle never reaches `web/dist`, and this grep is
-the other half, on the shell side. Together they are what makes
-"impossible in a release build" a property of the repository rather than a claim
-about one row.
-
-`test ! -e` is used rather than `ls` so that a missing directory is the pass.
-
-Nothing in this row was relaxed to make it pass (HS-7). The greps were run over
-the file list the card names, and no pattern was narrowed.
+These are the config-level readings the card calls a **report** and never a
+substitute for (a), (b), (c), (d)'s handler half and (e). They are recorded
+here as what they are, and V2's five `NOT RUN`s are not downgraded because of
+them.

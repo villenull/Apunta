@@ -45,12 +45,15 @@ function installObservationHook(): void {
   /**
    * RFC 2606 reserves `.invalid`, so this origin can never resolve: an attempt
    * to navigate or open it is provably a refusal attempt and never a request
-   * (HS-6, and the card's own reason for choosing it). It is assembled from
-   * two parts because `eslint.config.js` bans every non-loopback URL literal as
-   * a privacy tripwire, that file is outside this card's May edit, and
-   * weakening the rule to accommodate a test hook would be HS-7.
+   * (HS-6, and the card's own reason for choosing it). It is written plainly:
+   * P3.4 permits exactly this one non-loopback literal, for this one
+   * navigation-refusal assertion, on the line below, under one line-scoped
+   * suppression of the privacy rule `eslint.config.js` installs for the tree.
+   * The rule itself is untouched, and the origin is not assembled from parts —
+   * a decomposition would route around the rule rather than satisfy it.
    */
-  const externalUrl = `${['https', 'example.invalid'].join('://')}/`;
+  // eslint-disable-next-line no-restricted-syntax
+  const externalUrl = 'https://example.invalid/';
 
   let attempt = '';
   let scriptTruePolls = 0;

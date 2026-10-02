@@ -7,9 +7,9 @@
   ],
   "baseCommit": "7e69838",
   "attempt": 3,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "Attempt 3 ran step S0 (A06 acquired into ~/.cache/apunta-v2/whisper-src at the pinned revision 371b5a7561823ab2bb32142d2751e35e7534727b, vulkan backend, whisper-cli sha256 3a9f516d…604de), then V0 completed end to end with exit 0 — the re-bundle happened, the AppImage is 19:05:45Z and newer than every Rule B input, the shipping web/dist carries zero marker bundles and the shipped AppDir bundle carries the hook. V1, V3 and V4 passed. V2 still fails with 16 assertions PASS and 5 NOT RUN, but the cause is no longer the publisher: the hook runs and publishes under this CSP (proved by a sandboxed browser run against the same bundled server), and the broken leg is that src-tauri/src/main.rs:319-325 stops re-emitting the child's stdout to stderr at Ready, which is before the page can exist. That remedy is a src-tauri edit, one of the three the card forbids, so the card's stop condition stands and the decision is the coordinator's.",
-  "nextAllowedAction": "coordinator-decision-on-p3.4-v2-channel",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Attempt 3 cleared the blocker that stopped both prior attempts. S0 acquired A06 into ~/.cache/apunta-v2/whisper-src (revision 371b5a75..., vulkan, whisper-cli 1,064,648 B, MIT, exactly two network requests, both github.com). V0 rebuilt the bundle and proved it three ways (AppImage newer than every Rule B input, both release-invariant counts held - 1 flagged / 0 in shipping web/dist / 16 in the producer's copy - and the hook present in 1 of 16 shipped bundles). V1 PASS 12/12, V3 PASS, V4 PASS (2,160 tests, clippy -D warnings, 55 cargo tests). **V2 still FAILs: 16 PASS, 5 NOT RUN**, and (d)'s header half now passes. The five NOT RUN have a different cause from any prior attempt: the hook runs and publishes (6 marker lines, full fact set) and the bundled server logs the URL to stdout, but src-tauri/src/main.rs:291-305 breaks out of its read loop at Ready, which is also when the main window is shown - so nothing logged after Ready reaches stderr, and the page cannot exist before Ready. **The fix is a src-tauri change, one of the three the card forbids, so the implementer stopped rather than making it.** Attempt budget is exhausted 3/3.",
+  "nextAllowedAction": "owner-decision - the budget is exhausted and V2 cannot pass without a change to src-tauri/src/main.rs",
   "sideEffectsDone": [
     "step S0: A06 acquired and built once into ~/.cache/apunta-v2/whisper-src (outside reclaimable /tmp); two network requests, both to github.com, no query, no redirect; no other item acquired",
     "V0: the re-bundle — flagged web bundle built in build/p3.4-web (removed on exit), producer run once with no fetch, flagged copy put into build/linux-resources/web/dist after the producer (removed on exit), tauri:build:test run twice, AppImage built at src-tauri/target/release/bundle/appimage/",
@@ -43,15 +43,13 @@
   "criteria": {
     "S0": {
       "status": "PASS",
-      "exit": 0,
       "evidence": "docs/v2/evidence/P3.4/acquisition-A06.md",
-      "verification": "Precondition test exited 1 (candidate absent), so the step ran: one git clone --filter=blob:none --no-checkout of https://github.com/ggml-org/whisper.cpp.git and one git fetch --depth 1 of the pinned revision 371b5a7561823ab2bb32142d2751e35e7534727b, then the CMake vulkan build of whisper-cli. git rev-parse HEAD equals the pin. Candidate 1,064,648 bytes, sha256 3a9f516ded6dc6f619e96570ac326922c5718e5e6bca03a735e5d07bd60804de. LICENSE at the pinned revision is MIT, Copyright (c) 2023-2026 The ggml authors. Two network requests, both github.com, no query string, no redirect followed, nothing else acquired. 18:57:49Z to 19:00:13Z."
+      "verification": "Attempt 3: exit 0. A06 acquired under the manifest's fixed rule into ~/.cache/apunta-v2/whisper-src; revision 371b5a7561823ab2bb32142d2751e35e7534727b verified by rev-parse, vulkan backend, whisper-cli 1,064,648 B, sha256 3a9f516d...604de, LICENSE MIT. Exactly two network requests, both to github.com, no query string, no redirect, and nothing else acquired."
     },
     "V0": {
       "status": "PASS",
-      "exit": 0,
       "evidence": "docs/v2/evidence/P3.4/V0-rebundle.md",
-      "verification": "Run verbatim, twice, second run's exit code recorded: 0. node --version printed v24.19.0. whisper-cli precondition exit 0, so the producer reused S0's candidate and fetched nothing (log: '== Building whisper-cli (A06) / copied whisper-cli and 15 shared libraries into bin/'). Marker bundles: flagged 1, shipping web/dist 0, build/linux-resources/web/dist 16. AppImage built at 19:05:45Z. Freshness asserted from both sides (V2: AppImage newer than every Rule B input; no Rule B path named by git is newer). The shipped AppDir's web bundle contains p3.4-observe in 1 of 16 js bundles and VITE_APUNTA_TEST_IDENTITY in 0."
+      "verification": "Attempt 3: exit 0. The re-bundle happened and was proved three ways: the AppImage is newer than every Rule B input and V2 re-derived both freshness assertions independently; the marker appears in 1 flagged bundle, 0 times in shipping web/dist and 16 times in the producer's copy; and the shipped AppDir carries the hook."
     },
     "V1": {
       "status": "PASS",
@@ -61,9 +59,8 @@
     },
     "V2": {
       "status": "FAIL",
-      "exit": 1,
       "evidence": "docs/v2/evidence/P3.4/V2-appimage-security.md",
-      "verification": "Attempt 1: exit 1. FAIL is (d)'s header half against a stale bundle; the NOT RUN share one cause, the inspector answering nothing. Both are card defects fixed by AM-124. **Corrected tally:** the row is 8 PASS, 1 FAIL and 5 NOT RUN (14 assertions). The evidence file's own opening line says \"11 PASS, 3 FAIL, 5 NOT RUN\", which sums to 19 and contradicts its own verbatim block; the 8 is the figure the block supports. The harness ALSO prints \"N/M assertions passed\" while counting `NOT RUN` items in that total (`tauri-security.test.mjs:181` pushes NOT RUN with `ok: true`, and :1217 subtracts only `!ok`), so its tally overstates passes by the number of NOT RUN items. The row's exit code was 1 throughout and no NOT RUN was ever recorded as PASS, so no criterion was wrongly approved - but the printed tally and the evidence sentence are both wrong and are carried here so the implementation review does not inherit them."
+      "verification": "Attempt 3: exit 1. **16 PASS, 5 NOT RUN**; (d)'s header half now PASSES, and all five containment assertions PASS. The five NOT RUN are (a), (b), (c), (d)'s handler half and (e). Cause, confirmed against source by the coordinator: `src-tauri/src/main.rs:291-305` handles `Ready` by showing the main window and then `break`ing out of the read loop, so no line the bundled server writes after that point reaches stderr; the hook publishes only after the page exists, which is after `Ready`. Fixing it means editing main.rs, which the card's May edit forbids."
     },
     "V3": {
       "status": "PASS",
@@ -87,11 +84,10 @@
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/. S4 was not entered: no guard was shown not to hold — V2's five assertions were unreadable, not false — and the one change that would make them readable is an src-tauri edit the card forbids by name. src-tauri/ui/ was not touched either.",
   "reBundle": {
-    "required": true,
-    "why": "web/src/main.tsx is in Rule B's set and changed in this attempt (the .invalid literal), so a re-bundle was required before V2.",
+    "required": false,
     "done": true,
-    "attempted": true,
-    "verifiedBy": "V0 exit 0 at 19:04:28Z-19:07:38Z; AppImage mtime 19:05:45Z; V2's two freshness assertions both PASS"
+    "why": "Attempt 3 performed it; S0 and V0 both PASS.",
+    "note": "A future attempt reuses ~/.cache/apunta-v2/whisper-src, so S0 is now a skip, not a download."
   },
   "hookBoundary": {
     "gate": "import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'",
