@@ -1,0 +1,18 @@
+{
+  "card": "P3.4",
+  "planVersion": 2,
+  "contracts": [
+    "C-BRIDGE@1",
+    "C-REQ@1"
+  ],
+  "baseCommit": "586606a",
+  "attempt": 0,
+  "status": "NOT STARTED",
+  "lastCompletedStep": null,
+  "nextAllowedAction": "instruction-review",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {},
+  "sandboxRuns": [],
+  "updatedUtc": null
+}
