@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { t } from '@apunta/shared';
 
 import type { AppConfig } from './config.js';
+import { registerCsp } from './http/csp.js';
 import { registerRequestGuard } from './http/request-guard.js';
 import type { MessageKey, MessageParams } from './http/locale.js';
 
@@ -62,6 +63,13 @@ export function bootErrorHtml(options: BootErrorOptions): string {
 export function buildBootErrorApp(options: BootErrorOptions, port: number): FastifyInstance {
   const app = Fastify({ logger: true });
   registerRequestGuard(app, { port });
+  /**
+   * C-BRIDGE@1 rule 6 names the boot-error page explicitly, so the same `onSend`
+   * hook is registered here beside the guard. It is the hook, and only the hook,
+   * that gives the inline `<style>` above its per-response nonce — which is why
+   * `bootErrorHtml` needs no parameter and the HTML below is still built once.
+   */
+  registerCsp(app);
   const html = bootErrorHtml(options);
   const json = { error: 'storage_error', message: t(options.key, options.params, 'en') };
   app.get('/', (_request, reply) => reply.type('text/html').code(503).send(html));

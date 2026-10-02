@@ -10,6 +10,7 @@ import { createProviders } from './ai/index.js';
 import type { AiProviders } from './ai/types.js';
 import { loadConfig, type AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
+import { registerCsp } from './http/csp.js';
 import { registerErrorHandler } from './http/errors.js';
 import { msg, storedLanguage } from './http/locale.js';
 import { registerRequestGuard } from './http/request-guard.js';
@@ -73,6 +74,13 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
    * below can run ahead of it. The boot-error server registers the same guard.
    */
   registerRequestGuard(app, { port: config.port });
+
+  /**
+   * C-BRIDGE@1 rule 6, beside the guard above and after it: the CSP is an
+   * `onSend` hook, so it only ever decorates a reply that has already passed
+   * the guard, and no route body has to change.
+   */
+  registerCsp(app);
 
   const ownsDb = options.db === undefined;
   const db = options.db ?? openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir }).db;
