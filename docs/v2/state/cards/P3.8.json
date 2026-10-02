@@ -6,7 +6,7 @@
     "C-ISO@1"
   ],
   "baseCommit": null,
-  "attempt": 2,
+  "attempt": 3,
   "status": "IN PROGRESS",
   "lastCompletedStep": "Attempt 2 changed no source and proved the card's core mechanism: V3 PASS, with the marker reaching stderr AFTER `ready` on the AppImage's real launch, forwarded verbatim by the change itself. One `ready`, one `show_main`. V4 - the negative control - remains NOT RUN at exit 3, and the reviewer's diagnosis is that the CARD cannot currently run it: the pre-ready race is lost at a 1s poll against a ~580ms `ready`, and with no window manager the card cannot positively identify a window, making its absence-witnesses vacuous. **That is a card defect, not an implementation defect**, so the next step is a V4 repair round, then a fresh instruction review, then attempt 3 - the last.",
   "nextAllowedAction": "repair",
