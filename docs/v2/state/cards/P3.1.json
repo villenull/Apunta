@@ -4,7 +4,7 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "3610cda",
+  "baseCommit": "7ee692e",
   "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "Attempt 1 implemented AND independently reviewed. Implementation review `state/reviews/P3.1-impl.md` by a separate sub-session (it did not write the change): V1, V2, V4 and V3 all re-ran with exit 0 against a real COLD bundle - `build-vulkan/` deleted first, 2m43s, 139 shader TUs from nothing - and the `whisper-cli` it produced is byte-identical to the implementer's (`3a9f516d...804de`, 1064648 bytes), so cold reproducibility is now independently confirmed rather than self-reported. The three claims the coordinator flagged as worth suspicion all held under measurement: the 13 symlinks resolve to listed targets whose ultimate realpath is a listed regular file with a content hash (0 dangling, 0 escaping); V2's negative case genuinely discriminates because a loadable addon is still present in `prebuilds/` and `APUNTA_SQLITE_BINDING` is authoritative at `server/src/db/index.ts:44-46`, so the 503 is caused by the rename alone; and the Vulkan consequence is stated rather than buried. 8 findings, NONE blocking.",
@@ -18,7 +18,10 @@
     "Two sandbox servers from other sessions remain listening (7861 from 2026-09-26, 7807 from 2026-09-27). Untouched by the coordinator, the implementer and the reviewer alike: reaping another session's state is the exact error the implementer recorded in its own /tmp incident. Port 7717 is not listening, so the live instance is unaffected.",
     "DISPATCH DEFECT, the coordinator's: the review dispatch was built with --head c4a364f, but two other cards were committed before the reviewer started, so HEAD was e705953 and the dispatch's own stop-if-HEAD-is-neither-base-nor-head precondition did not hold. The reviewer stopped, checked that c4a364f is an ancestor and that no file it assessed differs, said so in its return, and proceeded. The fault is the coordinator's for issuing a head-pinned dispatch and then committing on top of it."
   ],
-  "changedFiles": 2,
+  "changedFiles": [
+    "scripts/v2/package-linux-resources.sh",
+    "scripts/v2/package-linux-resources.test.sh"
+  ],
   "criteria": {
     "V1": "PASS (attempt 1, exit 0, independently re-run COLD by the review: build-vulkan/ deleted first, 18:28:36Z-18:31:19Z, 2m43s, 139 shader TUs; node v24.19.0 exact; manifest nodeVersion 24.19.0 with a 4804-entry files array holding all seven required paths; node/ is the A01 tree copied, never downloaded; whisper-cli byte-identical to the implementer's)",
     "V2": "PASS (attempt 1, exit 0, 28 PASS / 0 FAIL re-run by the review on 7845 with the same 28 names and order; bundled Node, env mode, relocated copy, cd /, env -i, PATH=/usr/bin:/bin independently confirmed to contain no `node`, the four launch-contract overrides, ownership poll first, and BOTH ownership halves (lock and listening socket); nothing left listening)",
@@ -26,6 +29,6 @@
     "V4": "PASS (attempt 1, exit 0, both counts 0 re-run by the review on its bundle and the implementer's; the review also folded the check forward - esbuild emitted `INJECTED_VERSION = true ? \"0.0.0\" : void 0` so the defined path provably executes, and the fallback would throw because there is no package.json at the bundle root; all 5 package.json occurrences inspected individually; AM-058 source shape confirmed at config.ts:32 and data-lock.ts:65)"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-29",
+  "updatedUtc": "2026-09-29T18:42:22Z",
   "notes": "The bundle deliberately does NOT carry host runtime libraries, libvulkan.so.1 above all: the loader is the host's ICD loader and must match the host's driver. The consequence is that the bundle requires a host Vulkan driver, which the install guide must state. Whisper's shared objects now sit BESIDE the binary because CMAKE_BUILD_RPATH_USE_ORIGIN=ON yields RUNPATH $ORIGIN: with no ../lib component, so the old separate lib/ folder produced a binary that could not start; the patchelf dependency is gone as a result. The manifest records each path as it is at that path, so 13 unreproducible symlink byte-counts are gone; no integrity is lost because every link's target is also listed with its own hash. A one-line test-port change 7836 -> 7834 matches this card's dispatch and the 'never the live instance's 7717' invariant, but was not disclosed in the commit message."
 }

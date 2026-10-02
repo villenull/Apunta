@@ -2,6 +2,7 @@
   "card": "S2.R",
   "planVersion": 2,
   "baseCommit": "34ef391",
+  "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "Review2 all active rows PASS, AM-107 corrected S2.4-V5 independently PASS in supplement; S2.6-V7 satisfied by owner retirement AM-075",
   "nextAllowedAction": "done; dependencies released",

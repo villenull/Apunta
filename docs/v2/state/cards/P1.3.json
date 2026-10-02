@@ -2,7 +2,7 @@
   "card": "P1.3",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "2465353",
+  "baseCommit": "9bb587b",
   "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "impl review all PASS (V1 32/32, V2 1635 tests, V3 green; 6 non-blocking findings; evidence host sanitised)",

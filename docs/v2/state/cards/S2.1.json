@@ -4,7 +4,7 @@
   "contracts": [
     "C-LANG@1"
   ],
-  "baseCommit": "34ef391",
+  "baseCommit": "8b5479c",
   "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "impl review all PASS (b008a51; V1-V6 green; 2 advisory findings)",

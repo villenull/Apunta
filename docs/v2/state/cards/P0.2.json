@@ -2,15 +2,14 @@
   "card": "P0.2",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "8be98cb",
+  "baseCommit": "e8dbf44",
   "attempt": 3,
   "status": "APPROVED",
   "lastCompletedStep": "APPROVED under owner-authorised waiver (AM-022): in-scope deliverable complete (patch, planImport zone pin, zone.test.ts; files 39/39 in all four zones); V2's Sydney clause deferred to new card P0.5",
   "nextAllowedAction": "done",
   "sideEffectsDone": [
-    "attempt 1 committed 6e59c60",
-    "attempt 2 evidence 650821b",
-    "attempt 3 evidence 6515b66"
+    "NONE to the host. P0.2 is a test patch plus a zone pin: it acquired nothing, installed nothing and changed no host state. The evidence it produced is committed under docs/v2/evidence/P0.2/ (V1-apply-check, V2-before/after/attempt2/attempt3, V3-zone-output, lint-typecheck-build, finding-sydney-out-of-scope, finding-sydney-attempt2).",
+    "For the record, and NOT side effects: the three attempt commits were 6e59c60 (attempt 1), 650821b (attempt 2) and 6515b66 (attempt 3 evidence). These were wrongly stored in this field before 2026-10-02; a commit is not a side effect, so a presence check here could not answer 'did this card touch the host'."
   ],
   "changedFiles": [
     "server/src/import/claude.test.ts",

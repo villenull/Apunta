@@ -2,14 +2,13 @@
   "card": "C0.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "4b7826759325b0c80c3a1171e56b21efdfbd4501",
+  "baseCommit": "69f8cda",
   "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "coordinator-run setup: harness recorded, feature/v2 created, plan committed, all verifications PASS",
   "nextAllowedAction": "done",
   "sideEffectsDone": [
-    "created branch feature/v2 from main HEAD 4b78267",
-    "pushed feature/v2 to origin"
+    "branch feature/v2 was created from main HEAD 4b78267 and pushed to origin; it was later fast-forwarded into main and DELETED under AM-068 (2026-09-29), and HS-4 now forbids creating any branch, so neither action stands"
   ],
   "changedFiles": [
     "CLAUDE.md",

@@ -10,7 +10,7 @@
   "sideEffectsDone": [
     "Attempt 2 V2 recorded in evidence/P4.1/v2.md: 2026-09-26 seven HEAD requests, zero redirect follows/body downloads, generated redirects.md; prior egress already spent, not an unperformed step."
   ],
-  "changedFiles": 4,
+  "changedFiles": [],
   "criteria": {
     "V1": "PASS (coordinator and independent reviewer, each exit 0, 13 files / 206 tests, readiness.test.ts collected)",
     "V2": "NOT RUN (AM-064: egress grant spent and forbidden; existing redirects.md inspected read-only by both and unmodified)",
@@ -18,5 +18,5 @@
     "V4": "PASS (coordinator and reviewer each exit 0, 18/18; negative control independently reproduced twice, exit 1 with 3 failures, digests identical after restore)"
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-09-28"
+  "updatedUtc": "2026-09-28T22:06:06Z"
 }

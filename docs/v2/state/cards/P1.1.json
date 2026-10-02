@@ -2,7 +2,7 @@
   "card": "P1.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "2465353",
+  "baseCommit": "285283c",
   "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "impl review PASS (V2/V3/V4; V1 base-failure not re-runnable, corroborated by source trace)",

@@ -2,7 +2,7 @@
   "card": "P2.1",
   "planVersion": 2,
   "contracts": [],
-  "baseCommit": "6110813",
+  "baseCommit": "ce24912",
   "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "impl review all PASS (c92e887)",

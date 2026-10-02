@@ -5,7 +5,7 @@
     "C-SETTINGS@1"
   ],
   "baseCommit": "4e12e9e",
-  "attempt": 1,
+  "attempt": 2,
   "status": "APPROVED",
   "lastCompletedStep": "attempt-2 review all PASS (e7b824d; 8 non-blocking observations)",
   "nextAllowedAction": "done",

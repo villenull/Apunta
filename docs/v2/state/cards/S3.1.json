@@ -8,7 +8,7 @@
   "lastCompletedStep": "implementation review all PASS (d6506ff; 6 non-blocking documentation findings); card APPROVED",
   "nextAllowedAction": "done",
   "sideEffectsDone": [
-    "committed as d6506ff"
+    "NONE to the host. S3.1 wrote fixtures and an offline checker only. Its commit was d6506ff, which is a commit and not a side effect."
   ],
   "changedFiles": [
     "e2e/fixtures/eval-es/**",

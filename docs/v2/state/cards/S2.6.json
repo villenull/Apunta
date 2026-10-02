@@ -5,7 +5,7 @@
     "C-LANG@1",
     "C-SETTINGS@1"
   ],
-  "baseCommit": "8cb3ecf",
+  "baseCommit": "f48cbdb",
   "attempt": 3,
   "status": "APPROVED",
   "lastCompletedStep": "Attempt 3 implemented AND independently reviewed. Review `state/reviews/S2.6-impl.md` by a separate sub-session that did not write the change: **PASS, no blocking and no major finding.** It reproduced the defect from the base and proved the fix bites, in three arms with one variable and one screen: the BASE guard exits 0 annotating `Home — 0 strings read, 0 English` (the defect, reproduced); the HEAD with the wait removed (`ARRIVAL_TIMEOUT_MS = 0`) exits 1 at `no-english.ts:229` with `Expected: > 0 / Received: 0`, naming the screen; the HEAD as committed exits 0 annotating `Home — 13 strings read, 0 English`. Run against a scratch `e2e/` tree outside the repo, which was never edited for the experiment. It also verified independently, not inherited, that the forbidden fix was NOT taken: `checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })` byte-identical to base (only its line number moved, 131->138), `ALLOWED` the same two keys with the same values, `fixtures.ts` and `playwright.config.ts` byte-identical (es-MX routes 2 and 3 were never available), the only deletions in the whole `e2e/` diff being four lines inside the one case AM-072 licenses, ten test declarations with identical names before and after, both `test.skip` markers byte-identical, no `.only`, no `fixme`. **All 38 es-MX `checkScreen` calls are non-zero with 0 English**, read off the reporter's own annotations: 33 across 11 spec files (min 5, max 191, none 0) plus 55/55/62/13/13 in `es-MX-language`. The previous review's finding 4 is fully repaired.",
@@ -19,7 +19,7 @@
     "The implementer's evidence has one wrong line reference - the click is `:422`, not `:423-425`. Cosmetic; the mechanism and line 426 are right.",
     "Two extra controls the reviewer ran, both exit 1: `en.ts` set to the Spanish value fails `t.test.ts:227`, and BOTH catalogues set to it fails `t.test.ts:232`. The trap is caught from either direction."
   ],
-  "changedFiles": 3,
+  "changedFiles": [],
   "criteria": {
     "V4": "PASS (attempt 2; see return and independent review)",
     "V5": "PASS (verified, attempt 1)",
@@ -41,5 +41,5 @@
   },
   "sandboxRuns": [],
   "notes": "Attempt 2 worked at 85c3fd2. V1 was supplemented with `--project=es-MX --no-deps` because a failed dependency project stops the es-MX project where `checkScreen` runs on every screen; both servers still start from the same `webServer` block and no config was edited. Worth keeping: `web` resolves `@apunta/shared` to `shared/dist`, not `shared/src`, so a web vitest run after a catalogue edit without `npm run build:shared` silently tests the previous build; every recorded run is after a rebuild.",
-  "updatedUtc": "2026-09-29"
+  "updatedUtc": "2026-10-02T19:16:21Z"
 }
