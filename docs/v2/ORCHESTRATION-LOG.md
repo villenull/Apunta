@@ -1829,3 +1829,11 @@ acquisition. P3.4/P3.5 remain NOT STARTED and un-blocked only by their reviews;
 P5.3 and S6.1 stay parked; S4a.2 stays owner-parked. Next: verify each return
 against the diff and check-plan.mjs, commit explicit paths, regenerate both
 implementation dispatches, then two fresh independent instruction reviews.
+
+Workers dispatched (all `opencode-go/space-bunny-free`, medium effort, mode
+build, uncommitted, disjoint files): P3.4 card repair
+`87c8aee5-8592-4ac5-a7c1-0ec17e3b64f8`; P3.5 card repair
+`bfab3d03-f2cb-4b52-9e10-b286df79bd1e`; dispatch generator D9
+`b42338f7-36c6-4f5f-b255-f999c63d964a`; S3.2 v3 proposal
+`a6bbebf9-dce7-4935-9f83-1262f1d9fdc3`. Coordinator owns every status, log,
+dispatch and checkpoint file; each worker owns only its named deliverable.
