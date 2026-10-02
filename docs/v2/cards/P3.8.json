@@ -1,7 +1,7 @@
 {
   "card": "P3.8",
   "planVersion": 2,
-  "contracts": ["C-BRIDGE@1"],
+  "contracts": ["C-BRIDGE@1", "C-ISO@1"],
   "baseCommit": null,
   "attempt": 0,
   "status": "NOT STARTED",
