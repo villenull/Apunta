@@ -4,6 +4,7 @@
 //   node docs/v2/tools/check-plan.mjs            # check, rewrite DEPENDENCIES.md
 //   node docs/v2/tools/check-plan.mjs --no-write # check only
 //   node docs/v2/tools/check-plan.mjs --final    # also check FINAL-REPORT.md
+//   node docs/v2/tools/check-plan.mjs --plan-dir <dir>  # another plan directory
 //
 // Exit 0 when consistent, 1 when not. No dependencies; Node 22 or later.
 
@@ -11,10 +12,14 @@ import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { parseCells } from './build-dispatch.mjs';
 import { loadPlan } from './plan-lib.mjs';
 
-const planDir = join(dirname(fileURLToPath(import.meta.url)), '..');
-const args = new Set(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const planDirOption = argv.indexOf('--plan-dir') === -1 ? undefined : argv[argv.indexOf('--plan-dir') + 1];
+const planDir =
+  planDirOption ?? process.env.APUNTA_V2_PLAN_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '..');
+const args = new Set(argv);
 const errors = [];
 const warn = [];
 
@@ -43,6 +48,21 @@ for (const [id, card] of cards) {
   for (const row of card.verification) {
     if (seen.has(row.id)) errors.push(`${id}: duplicate verification id ${row.id}`);
     seen.add(row.id);
+    /*
+     * A row must split into exactly three cells. An unescaped pipe inside a
+     * command or an expected cell makes it split into more, and the parser then
+     * keeps the first three and drops the rest — which is how a parent's
+     * inherited command once ended mid-word, unbalanced, with the negative
+     * control's `exit $rc` silently discarded. That failure was quiet: the card
+     * rendered correctly for a human, `parseCard` destructured the first three
+     * cells without complaint, and every other assertion here still passed. So it
+     * is asserted here rather than left to the copy.
+     */
+    const cells = parseCells(row.raw);
+    if (cells.length !== 3)
+      errors.push(
+        `${id} ${row.id}: the row parses as ${cells.length} cells, not 3 — every pipe inside a command or expected cell must be written \\|`,
+      );
     if (/\b7717\b/.test(row.command)) errors.push(`${id} ${row.id}: command mentions port 7717`);
     if (row.command.trim() === '') errors.push(`${id} ${row.id}: empty command`);
     if (row.expected.trim() === '') errors.push(`${id} ${row.id}: empty expected result`);
