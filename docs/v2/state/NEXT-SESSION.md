@@ -1,5 +1,16 @@
 # Standing continuation instruction — 2026-10-02
 
+**Read this block first; it supersedes every older block below.** As of `9ada83d`:
+
+- **P3.4 is at IMPLEMENTATION ATTEMPT 3 OF 3, running.** `state/PROGRESS.json` says `IN PROGRESS`. Do **not** dispatch it again, do **not** re-run the A06 acquisition (attempt 2 spent and correctly refused it under HS-3), and do **not** start a build — it holds the build lease. Its checkpoint is `state/cards/P3.4.json`.
+- **S3.2 is CLEAR (10/10, round 7) and its implementation dispatch is prepared but HELD for the build lease.** Its one open owner item is **U-1** (the NFC normalisation guarantee's scope), recorded in the card's open items.
+- **P3.5's card changed at `d9c38aa`** (it now reuses P3.4's shared hook) and is under review. Not dispatchable before P3.4's hook exists.
+- **Owner gates outstanding:** S3.2 U-1 scope; S6.1 licence election; P5.3 protocol direction; S4a.2 remains owner-parked even though it is dependency-clear.
+- **Do not trust `BLOCKED.md`**: an audit found all 14 of its rows name APPROVED cards while all three genuinely BLOCKED cards are absent. Trust `PROGRESS.json` and the checkpoints. See `state/reviews/state-reconciliation-audit.md` and `state/reviews/checkpoint-anchor-audit.md`.
+- **Verify an anchor with `git diff <baseCommit> HEAD -- docs/v2/cards/<id>.md`, never by comparing hashes.**
+
+# Standing continuation instruction — 2026-10-02
+
 Owner decision 2026-10-02: **P3.4 "All repairs"**; **P3.5 test-only hook in `web/` gated on `test-identity`**; **P3.5 virtual-source default + restore + containment assertions**; **P3.5 narrowed to capture-only** (transcription stays with S4a.2, no acquisition); **S3.2 lane revived for a bounded v3 proposal repair only**; P5.3 and S6.1 stay parked. Standing operating instruction: **every spawned subagent runs at medium effort.**
 
 Recorded as AM-108 (P3.4 card), AM-109 (P3.5 card), AM-110 (dispatch generator, finding D9), AM-111 (S3.2 lane). Four docs-only workers dispatched in parallel on disjoint files: P3.4 card repair, P3.5 card repair, `build-dispatch.mjs` D9 fix, S3.2 v3 proposal. No worker owns `PROGRESS.json`, `AMENDMENTS.md`, `BLOCKED.md`, `ORCHESTRATION-LOG.md` or any dispatch file. When they return: check each finding against the diff and `node docs/v2/tools/check-plan.mjs` (exit 0), commit with explicit paths, regenerate both implementation dispatches from the amended cards, then two fresh independent instruction reviews before any implementer. P3.4's and P3.5's V2 rows both build and launch AppImages, so implementation stays serialized. Never port 7717, never live data, never real audio, never an acquisition.
