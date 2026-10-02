@@ -28,10 +28,10 @@
       "resumeInstruction": "Record the acquisition in sideEffectsDone with its SHA-256, licence text and licence URL, in the shape of docs/v2/evidence/S4a.1/acquisitions.md. Never re-download a voice already on disk, and never fall back to another voice without recording the substitution and its licence."
     },
     {
-      "what": "the flagged web bundle, built into build/p3.5-web/ by row V2",
+      "what": "the flagged web bundle, built into build/p3.5-web/ by row V2 and copied over build/linux-resources/web/dist for the duration of that row",
       "scope": "git-ignored build output only; web/dist is left unflagged on every path",
-      "cleanup": "V2 removes build/p3.5-web through a trap on EXIT INT TERM HUP; if it survives, remove it before the next build",
-      "resumeInstruction": "Check `web/dist/assets/*.js` for the marker string p3.5-marker before and after V2; a non-zero count outside V2's own flagged bundle is a FAIL and an owner escalation, remedied by an unflagged `npm run build`."
+      "cleanup": "V2 removes BOTH build/p3.5-web and build/linux-resources/web/dist through one trap on EXIT INT TERM HUP; the removal runs after `npm run tauri:build:test`, by which point the AppImage already carries its own copy, so deleting the shipping directory is safe. If either survives, remove both before the next build.",
+      "resumeInstruction": "Check `web/dist/assets/*.js` for the marker string p3.5-marker before and after V2; a non-zero count outside V2's own flagged bundle is a FAIL and an owner escalation, remedied by an unflagged `npm run build`. After V2, `build/linux-resources/web/dist` does not exist: any later release build must re-run `npm run package:linux` (scripts/v2/package-linux-resources.sh) before `npm run tauri:build`, or it has no web bundle to ship."
     }
   ],
   "instructionReviews": [
