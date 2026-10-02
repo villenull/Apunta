@@ -610,6 +610,19 @@ async function createFixtureNote() {
 // ------------------------------------------------ the observation channel ----
 
 /**
+ * The stderr a reader works from: the child's captured buffer, either as the
+ * string itself or as a thunk that yields the buffer **as it stands now**.
+ *
+ * Every poll below reads through this, and the thunks are the point. A snapshot
+ * taken once is a string that never grows, so a poll loop over one can only ever
+ * re-find what was already in the buffer at the moment it was taken — which is
+ * why every fact the page publishes *after* the first read was invisible, and
+ * why a run whose channel worked reported "no marker line ever appeared" while
+ * counting the marker lines it had just read.
+ */
+const stderrAt = (stderrSource) => (typeof stderrSource === 'function' ? stderrSource() : stderrSource);
+
+/**
  * Everything the hook has published so far, read out of the AppImage child's
  * **captured stderr**.
  *
@@ -618,7 +631,8 @@ async function createFixtureNote() {
  * marker URL is a URL-encoded scalar, so nothing is parsed out of prose and a
  * label can never be mistaken for a fact.
  */
-function readObservations(stderrText) {
+function readObservations(stderrSource) {
+  const stderrText = stderrAt(stderrSource);
   const facts = [];
   const rects = new Map();
   let markerLines = 0;
@@ -648,8 +662,8 @@ function readObservations(stderrText) {
 }
 
 /** The most recent fact line satisfying a predicate, or `null`. */
-function lastFactWhere(stderrText, predicate) {
-  const { facts } = readObservations(stderrText);
+function lastFactWhere(stderrSource, predicate) {
+  const { facts } = readObservations(stderrSource);
   for (let index = facts.length - 1; index >= 0; index -= 1) {
     if (predicate(facts[index])) return facts[index];
   }
@@ -657,10 +671,10 @@ function lastFactWhere(stderrText, predicate) {
 }
 
 /** Waits for a fact line satisfying a predicate, or `null` on timeout. */
-async function waitForFact(stderrText, predicate, timeoutMs) {
+async function waitForFact(stderrSource, predicate, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const found = lastFactWhere(stderrText, predicate);
+    const found = lastFactWhere(stderrSource, predicate);
     if (found !== null) return found;
     if (Date.now() >= deadline) return null;
     await sleep(250);
@@ -668,8 +682,8 @@ async function waitForFact(stderrText, predicate, timeoutMs) {
 }
 
 /** The rectangle the hook published for a visible label, or `null`. */
-function rectForLabel(stderrText, label) {
-  const { rects } = readObservations(stderrText);
+function rectForLabel(stderrSource, label) {
+  const { rects } = readObservations(stderrSource);
   for (const rect of rects.values()) {
     if (rect['l'] === label) return rect;
   }
@@ -677,8 +691,8 @@ function rectForLabel(stderrText, label) {
 }
 
 /** Everything the hook has published about click targets, as one string. */
-function rectSignature(stderrText) {
-  const { rects } = readObservations(stderrText);
+function rectSignature(stderrSource) {
+  const { rects } = readObservations(stderrSource);
   return JSON.stringify(
     [...rects.entries()].sort((a, b) => Number(a[0]) - Number(b[0])).map(([, rect]) => rect),
   );
@@ -713,17 +727,17 @@ async function clickAt(windowId, rect) {
  * which is the only proof that a click landed. The assertion the click enables is
  * never that proof.
  */
-async function clickAndWaitForChange(windowId, stderrText, label, predicate, timeoutMs) {
-  const before = rectSignature(stderrText);
-  const rect = rectForLabel(stderrText, label);
+async function clickAndWaitForChange(windowId, stderrSource, label, predicate, timeoutMs) {
+  const before = rectSignature(stderrSource);
+  const rect = rectForLabel(stderrSource, label);
   if (rect === undefined || rect === null) {
     return { ok: false, detail: `the hook published no rectangle for the label ${JSON.stringify(label)}` };
   }
   const clicked = await clickAt(windowId, rect);
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    const after = rectSignature(stderrText);
-    const fact = predicate === undefined ? null : lastFactWhere(stderrText, predicate);
+    const after = rectSignature(stderrSource);
+    const fact = predicate === undefined ? null : lastFactWhere(stderrSource, predicate);
     const changed = after !== before || fact !== null;
     if (changed)
       return {
@@ -796,6 +810,13 @@ async function modeSecurity() {
       signal: AbortSignal.timeout(10_000),
     });
     const policy = spa.headers.get('content-security-policy') ?? '';
+    // The header **as it is really sent** is printed whether the check passes or
+    // fails. `check()` only surfaces its detail on a failure, so a PASS would
+    // otherwise record that a policy was found without recording which one —
+    // and this row's whole claim is about the directives that are really there.
+    process.stdout.write(
+      `  observed GET /patients: status ${String(spa.status)}, content-type ${JSON.stringify(spa.headers.get('content-type'))}, content-security-policy ${JSON.stringify(policy)}\n`,
+    );
     check(
       "(d) header: the SPA fallback HTML carries rule 6's six directives",
       spa.ok &&
@@ -804,9 +825,28 @@ async function modeSecurity() {
       `GET /patients answered ${String(spa.status)} with content-type ${JSON.stringify(spa.headers.get('content-type'))} and a CSP of ${JSON.stringify(policy)}`,
     );
 
+    // ---- The fixture note, created **before** the observation gate and before
+    // the reload below. A fresh sandbox data folder has no note format and no
+    // patient, so the app's first paint lands on its onboarding screen — and a
+    // patient row to click simply does not exist there, which made (d)'s
+    // handler half, and (b) and (c) behind it, undecidable for a reason that has
+    // nothing to do with the page's contents. The three calls are the card's own
+    // order and its own working precedent (`e2e/tests/api.spec.ts:10-23`); only
+    // when they are made is changed.
+    note = await createFixtureNote();
+    check('(d) handler: the fixture note is created over HTTP', note.ok, note.detail);
+    if (note.ok) {
+      await spawnAsync('xdotool', ['key', '--window', String(home.found.id), 'ctrl+r']);
+      await sleep(3000);
+    }
+
     // ---- The observation channel. The first fact line is the assertion that it
     // works at all: without one, everything below is NOT RUN together.
-    const first = await waitForFact(run.output.stderr, (fact) => fact['href'] !== undefined, 45_000);
+    const first = await waitForFact(
+      () => run.output.stderr,
+      (fact) => fact['href'] !== undefined,
+      45_000,
+    );
     if (first === null) {
       const count = readObservations(run.output.stderr).markerLines;
       const cause =
@@ -843,7 +883,7 @@ async function modeSecurity() {
 
     // ---- (d)'s handler half, with the note opened by clicking its labels, and
     // (e), which needs the same rendered page.
-    await assertInjectedNoteInert(run, home.found.id);
+    await assertInjectedNoteInert(run, home.found.id, note);
     await assertInlineStyleApplied(run);
 
     // ---- (b) and (c), which the hook makes in that fixed order once the note
@@ -919,7 +959,7 @@ async function modeSecurity() {
  */
 async function assertNoIpc(run) {
   const fact = await waitForFact(
-    run.output.stderr,
+    () => run.output.stderr,
     (line) => line['tauri'] !== undefined && line['tauriInternals'] !== undefined,
     30_000,
   );
@@ -945,7 +985,7 @@ async function assertNoIpc(run) {
  */
 async function assertNavigationRefused(run, baselineWindows) {
   const fact = await waitForFact(
-    run.output.stderr,
+    () => run.output.stderr,
     (line) => (line['attempt'] ?? '').startsWith('b:'),
     30_000,
   );
@@ -970,7 +1010,7 @@ async function assertNavigationRefused(run, baselineWindows) {
 /** (c): `on_new_window … Deny` as shipped, for a loopback URL and for `.invalid`. */
 async function assertWindowOpenRefused(run, baselineWindows) {
   const fact = await waitForFact(
-    run.output.stderr,
+    () => run.output.stderr,
     (line) => (line['attempt'] ?? '').startsWith('c:'),
     30_000,
   );
@@ -996,13 +1036,16 @@ async function assertWindowOpenRefused(run, baselineWindows) {
  * visible labels, and a click that landed is proved by the published set changing
  * — a click that missed times out and **fails** the row.
  */
-async function assertInjectedNoteInert(run, windowId) {
-  const created = await createFixtureNote();
-  if (!check('(d) handler: the fixture note is created over HTTP', created.ok, created.detail)) return;
+async function assertInjectedNoteInert(run, windowId, created) {
+  // The three calls were already made, and already asserted, before the
+  // observation gate so that the app's first paint could show a patient row.
+  // Creating them again here would only add a duplicate patient and a duplicate
+  // format, and would leave two rows carrying the same visible label.
+  if (!created.ok) return;
 
   const patientClick = await clickAndWaitForChange(
     windowId,
-    run.output.stderr,
+    () => run.output.stderr,
     PATIENT_LABEL,
     undefined,
     30_000,
@@ -1018,7 +1061,7 @@ async function assertInjectedNoteInert(run, windowId) {
 
   const noteClick = await clickAndWaitForChange(
     windowId,
-    run.output.stderr,
+    () => run.output.stderr,
     NOTE_LABEL,
     (line) => line['scriptText'] === 'true',
     30_000,
@@ -1033,7 +1076,7 @@ async function assertInjectedNoteInert(run, windowId) {
     return;
 
   const fact = await waitForFact(
-    run.output.stderr,
+    () => run.output.stderr,
     (line) => line['probe'] !== undefined && line['scriptText'] !== undefined,
     30_000,
   );
@@ -1058,7 +1101,11 @@ async function assertInjectedNoteInert(run, windowId) {
  * string nobody checked.
  */
 async function assertInlineStyleApplied(run) {
-  const fact = await waitForFact(run.output.stderr, (line) => (line['styleAttr'] ?? '') !== '', 20_000);
+  const fact = await waitForFact(
+    () => run.output.stderr,
+    (line) => (line['styleAttr'] ?? '') !== '',
+    20_000,
+  );
   if (fact === null) {
     notRun(
       '(e) an inline style attribute is applied in the shipped binary',

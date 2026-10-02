@@ -1,41 +1,51 @@
 # P3.4 — V3, the config-level greps
 
-Status: **PASS** (exit 0). Each command's result is recorded separately, because
-the row's own exit code is only the last one's.
-
-- Working directory: `/home/villenull/Projects/Apunta` (repository root)
-- Start: 2026-10-02T19:14:37Z
-- End: 2026-10-02T19:14:37Z
-- Exit code of the row: 0 (the third command)
+- Working directory: repository root
+- Start: 2026-10-02T23:09:20Z
+- End: 2026-10-02T23:09:20Z
+- Exit code: **0**
+- Status: **PASS**
 
 ## Exact command
 
-```sh
-grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs
-test ! -e src-tauri/capabilities
-! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs
+The card's V3 cell, run verbatim — one loop over the four forbidden words with
+`bad`/`hits` accumulators ending in `test "$bad" = 0`:
+
+```
+b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0
 ```
 
-## Results
+## Excerpt
 
-| # | Command | Exit | Reading |
-| --- | --- | --- | --- |
-| 1 | `grep -rn "invoke_handler\|withGlobalTauri\": true" …` | **1** | **exit 1 from this grep is the pass** — no matches, so no custom `invoke_handler` and no `withGlobalTauri: true` in either config or in `build.rs` |
-| 2 | `test ! -e src-tauri/capabilities` | **0** | the directory is absent, which is the pass |
-| 3 | `! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" …` | **0** | the `!` grep found nothing: **neither the gate string nor the marker path appears anywhere in the files the AppImage is built from** |
+```
+P3.4-V3: 4 forbidden words over 4 paths, matches: 0
+```
 
-Each command wrote nothing to the log, which is why this file is three exit
-codes and no output.
+## What each guard contributed to the single exit code
 
-**What command 3 is worth saying again:** the hook's bound is asserted in the
-repository and not only at run time. A gate string under `src-tauri/` would be
-baked into every build of the shell and a marker path there would name a
-channel in a shipped binary; both must match nothing. The gate is resolved by
-Vite at **web build** time and the hook exists only in a flagged bundle, and V0
-asserts that bundle never reaches `web/dist` — this grep is the other half, on
-the shell side.
+| Guard | Contribution |
+| --- | --- |
+| `invoke_handler` over `src-tauri/src`, `tauri.conf.json`, `tauri.test.conf.json`, `build.rs` | no match (a `grep` that finds nothing exits 1, which is the pass) |
+| `withGlobalTauri": true` over the same four paths | no match |
+| `VITE_APUNTA_TEST_IDENTITY` over the same four paths | no match |
+| `p3.4-observe` over the same four paths | no match |
+| `test ! -e src-tauri/capabilities` | passes — no capability directory exists, so no capability was added |
+| `test "$bad" = 0` | the row's exit code, fed by the loop **and** by the capabilities test |
 
-These are the config-level readings the card calls a **report** and never a
-substitute for (a), (b), (c), (d)'s handler half and (e). They are recorded
-here as what they are, and V2's five `NOT RUN`s are not downgraded because of
-them.
+The loop was **not** simplified back into an alternation, and neither of the two
+defects the card records was reintroduced: there is one `grep -rnF` call per
+word (fixed-string, no dialect ambiguity), and every guard feeds the row's own
+exit code rather than only the last command's.
+
+This row's greps are a **report**, never a substitute for reading the page. It
+did not stand in for V2's (a) — which failed on its own observed value above —
+and it is not offered as a weaker reading of rule 4.
+
+## Related measurement, outside the row
+
+The shell side of the hook's bound also holds in the built binary, which V3
+cannot see and the containment assertions on V2 do: the shipped AppDir's 16 web
+JS bundles contain `p3.4-observe` in **1** and `VITE_APUNTA_TEST_IDENTITY` in
+**0**. The gate is resolved by Vite at web build time, so it cannot reach the
+binary; the marker can, because that bundle is a test bundle and V0 proves it
+never lands in `web/dist`.
