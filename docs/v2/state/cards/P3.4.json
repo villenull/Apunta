@@ -5,19 +5,68 @@
     "C-BRIDGE@1",
     "C-REQ@1"
   ],
-  "baseCommit": "52b9ce0",
-  "attempt": 1,
+  "baseCommit": "d56af1d",
+  "attempt": 2,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Round-3 repair applied (AM-118: the freshness walk excludes src-tauri/gen/ and is stated once). Round-4 instruction review returned 10 CLEAR / 0 DEFECT / 0 UNKNOWN and states the card is fit for implementation dispatch; the reviewer also enumerated what is gitignored under src-tauri/ (only target/ and gen/schemas/**), confirming the exclusions are a superset. Coordinator applied the reviewer's three pointer/text notes as AM-120 and verified each against source.",
-  "nextAllowedAction": "implement-attempt-1",
-  "sideEffectsDone": [],
-  "changedFiles": [],
-  "criteria": {},
-  "sandboxRuns": [],
-  "updatedUtc": null,
+  "lastCompletedStep": "Attempt 1 implemented the CSP and passed V1 (12/12, 0 skipped), V3 and V4 (2,160 tests, clippy, 55 cargo tests) with all five containment assertions green; V2 FAILED because the card's rebuild trigger watched only src-tauri/ while the bundle carries server/dist, so it launched an AppImage built before this code existed, and because the in-page channel answered nothing. AM-124 widened the trigger to every input that reaches the bundle and replaced the channel with one test-only hook shared with P3.5; attempt 1's work is committed at d56af1d and inherited, not redone.",
+  "nextAllowedAction": "implement-attempt-2",
+  "sideEffectsDone": [
+    "server/src/http/csp.ts (new) and server/src/http/csp.test.ts (new)",
+    "server/src/app.ts and server/src/boot-error.ts: registerCsp(app) only, no route body touched",
+    "scripts/v2/tauri-security.test.mjs (new)",
+    "e2e/fixtures/csp/injection-probe.md (new)",
+    "four sandbox launches of the real AppImage to read the inspector framing off the bundled libwebkit2gtk-4.1.so.0 (runs 2026-10-02T16-46-12-867Z and 2026-10-02T17-04-50-478Z, both port 7835, both stopped by pid)",
+    "one temporary edit to server/src/http/csp.ts for V1's negative control, restored from the copy taken immediately before it"
+  ],
+  "changedFiles": [
+    "server/src/http/csp.ts",
+    "server/src/http/csp.test.ts",
+    "server/src/app.ts",
+    "server/src/boot-error.ts",
+    "scripts/v2/tauri-security.test.mjs",
+    "e2e/fixtures/csp/injection-probe.md",
+    "docs/v2/evidence/P3.4/"
+  ],
+  "criteria": {
+    "V0": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.4/V0-not-run.md",
+      "verification": "Attempt 1: both predicates empty, which is correct only under the old src-tauri/-only trigger AM-124 replaced."
+    },
+    "V1": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.4/V1-csp-unit.md",
+      "verification": "Attempt 1: 12/12, 0 skipped. Negative control included: substituting style-src 'unsafe-inline' fails 5 of 12."
+    },
+    "V2": {
+      "status": "FAIL",
+      "evidence": "docs/v2/evidence/P3.4/V2-appimage-security.md",
+      "verification": "Attempt 1: exit 1. 10 PASS, 1 FAIL, 5 NOT RUN, all five containment PASS. FAIL is (d)'s header half against a stale bundle; the five NOT RUN share one cause, the inspector answering nothing. Both causes are card defects fixed by AM-124."
+    },
+    "V3": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.4/V3-config-greps.md",
+      "verification": "Attempt 1: exit 0."
+    },
+    "V4": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.4/V4-lint-typecheck-tests.md",
+      "verification": "Attempt 1: exit 0 after one fix (an unused request parameter renamed), behaviour unchanged. 2,160 tests, clippy -D warnings, 55 cargo tests."
+    }
+  },
+  "sandboxRuns": [
+    "2026-10-02T16-46-12-867Z-cb13d02b (framing probes, port 7835)",
+    "2026-10-02T17-04-50-478Z-b3da639b (V2, port 7835)"
+  ],
+  "updatedUtc": "2026-10-02T17:10:00Z",
   "srcTauriTouched": false,
-  "srcTauriTouchedNote": "No attempt has run yet, so no `src-tauri/` file has been edited by this card. This is the single fact that decides V0 against `NOT RUN`: an attempt records V0 NOT RUN only while this stays false AND `git diff --name-only <baseCommit>...HEAD -- src-tauri/` is empty; every attempt sets it true the moment it edits any path under `src-tauri/`, and never resets it, because V2's binary must then be rebuilt by V0. V0's rule is the card's, at V0 in docs/v2/cards/P3.4.md.",
-  "dispatchBaseCommit": "3496bca",
-  "baseCommitNote": "`baseCommit` is the dispatch head that generated docs/v2/state/dispatch/P3.4-ir.md (attempt 1 of 3), which is also the review base in docs/v2/state/reviews/P3.4-ir2.md. It replaces the pre-repair 586606a, so the card's `git diff --name-only <baseCommit>...HEAD -- src-tauri/` in V0 names this dispatch, not a documentation commit from before the round-2 repair.",
-  "notes": "Implementation attempt 1 authorised by the CLEAR at reviews/P3.4-ir4.md. The attempt budget is 3 and one is now spent by dispatch, not by outcome. Implementation is serialized with any other card that builds: P3.4's V0 runs `npm run tauri:build:test` and V2 launches the AppImage, so no second build-touching agent may run at the same time."
+  "srcTauriTouchedNote": "Still false and it stays false: this attempt edited no path under `src-tauri/`. V2 never reached the question S4 exists for, because (a)–(c) and (e) were NOT RUN rather than failed, so no guard was shown not to hold. If a later attempt edits any `src-tauri/` path this becomes true and V0 must run before V2, with no further judgement.",
+  "dispatchBaseCommit": "5685678",
+  "baseCommitNote": "The dispatch names 52b9ce0 as the base and was generated at 3e47ce3; HEAD was 5685678, a dispatch-generation commit. `git diff --name-only 3e47ce3..HEAD` names four documentation paths only (`docs/v2/cards/P3.4.md`, `docs/v2/state/AMENDMENTS.md`, `docs/v2/state/cards/P3.4.json`, `docs/v2/state/dispatch/P3.4.md`), so no source path this card reviews, writes or tests had moved, and the dispatch's own stop condition for that was not triggered. HEAD moved once during the attempt, from 5685678 to d1fd842 (\"Regenerate P3.5's review dispatch at the re-anchored card\"), another agent's documentation commit. It is not a stop condition: `git diff --name-only 3e47ce3..d1fd842` names thirteen documentation paths and no source path, verified individually for src-tauri/tauri.conf.json, src-tauri/tauri.test.conf.json, src-tauri/src/main.rs, server/src/app.ts, server/src/boot-error.ts, server/src/config.ts and server/src/http/request-guard.ts (each 0). `git diff --name-only 52b9ce0...HEAD -- src-tauri/` is still empty, so V0's predicate is unchanged and V0 remains NOT RUN. docs/v2/state/cards/P3.4.json is byte-identical between 5685678 and d1fd842, so this attempt's checkpoint write did not overwrite another agent's work.",
+  "notes": "Two decisions are recorded in docs/v2/evidence/P3.4/V2-appimage-security.md because both belong to the coordinator rather than to this implementer. First, V0 was NOT run uninvited even though running it would very likely make V2(d)'s header half pass: its condition says NOT RUN, and re-bundling rewrites build/linux-resources/** and server/dist/**, neither of which is in May edit (HS-9). Second, the harness reports NOT RUN rather than guessing: sixteen framings and thirteen method names were measured against the shipped AppImage and none produced a reply, so nothing about the in-page channel is asserted. The protocol was read off the bundled libwebkit2gtk-4.1.so.0 — WTF::SocketConnection::sendMessage(CString, GVariant*), g_variant_new_bytestring, and the `method`/`params`/`targets` keys — and the on-wire measurement confirmed a GVariant-framed message is buffered where unframed JSON is discarded at 0ms. AM-127: attempt 1 is spent and counts as a FAIL; this is attempt 2 of 3. Attempt 1's implementation is committed at d56af1d and is inherited. Its CSP work is sound — the failing row failed for card reasons — so attempt 2 must not rewrite it, only add the re-bundle and the shared web hook. The implementer is the only build-touching agent while this runs.",
+  "reBundle": {
+    "required": true,
+    "why": "Attempt 2 edits web/src/main.tsx, which reaches the bundle through web/dist, so the AppImage must be rebuilt even though no src-tauri/ file changes. The card's Rule B covers server/src, src-tauri and the web bundle.",
+    "done": false
+  }
 }
