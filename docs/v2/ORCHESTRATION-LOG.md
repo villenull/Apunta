@@ -1809,3 +1809,23 @@ coordinator-runtime placeholders/command fixes are authorized; acceptance/stop/s
 changes require owner-authorized amendment. No owner runtime gate. MC request will ask
 whether to authorize narrow card repair or park. Both proof reports are committed next;
 no source work started. Other ready cards continue only if dependencies permit.
+
+## Owner decisions taken; four docs-only repairs dispatched — 2026-10-02
+
+Tree clean at 9cdfd7a, level with origin/main. Zero agents, zero pending
+permissions, build lease free, P3.3 checkpoint already APPROVED (the IR's
+SUBMITTED/APPROVED split was resolved by 07dce9c). Reconciled owners actions
+for this round: AM-108 P3.4 card repair (all ten IR findings, owner's "All
+repairs"), AM-109 P3.5 card repair plus the owner's three decisions (test-only
+web/ hook under test-identity; virtual PipeWire source as default with restore
+and containment assertions; capture-only, no whisper acquisition), AM-110 the
+dispatch generator's D9 corrections, AM-111 the S3.2 lane revived for a v3
+proposal repair only. Standing instruction recorded: subagents run at medium
+effort. Four workers dispatched in parallel, all docs-only, disjoint files:
+P3.4 card, P3.5 card, build-dispatch.mjs, S3.2 v3 proposal. No worker may touch
+PROGRESS.json, AMENDMENTS.md, BLOCKED.md, this log, any dispatch file, any
+application source, a build output, port 7717, live data, real audio or any
+acquisition. P3.4/P3.5 remain NOT STARTED and un-blocked only by their reviews;
+P5.3 and S6.1 stay parked; S4a.2 stays owner-parked. Next: verify each return
+against the diff and check-plan.mjs, commit explicit paths, regenerate both
+implementation dispatches, then two fresh independent instruction reviews.

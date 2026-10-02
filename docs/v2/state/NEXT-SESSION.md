@@ -1,5 +1,11 @@
 # Standing continuation instruction — 2026-10-02
 
+Owner decision 2026-10-02: **P3.4 "All repairs"**; **P3.5 test-only hook in `web/` gated on `test-identity`**; **P3.5 virtual-source default + restore + containment assertions**; **P3.5 narrowed to capture-only** (transcription stays with S4a.2, no acquisition); **S3.2 lane revived for a bounded v3 proposal repair only**; P5.3 and S6.1 stay parked. Standing operating instruction: **every spawned subagent runs at medium effort.**
+
+Recorded as AM-108 (P3.4 card), AM-109 (P3.5 card), AM-110 (dispatch generator, finding D9), AM-111 (S3.2 lane). Four docs-only workers dispatched in parallel on disjoint files: P3.4 card repair, P3.5 card repair, `build-dispatch.mjs` D9 fix, S3.2 v3 proposal. No worker owns `PROGRESS.json`, `AMENDMENTS.md`, `BLOCKED.md`, `ORCHESTRATION-LOG.md` or any dispatch file. When they return: check each finding against the diff and `node docs/v2/tools/check-plan.mjs` (exit 0), commit with explicit paths, regenerate both implementation dispatches from the amended cards, then two fresh independent instruction reviews before any implementer. P3.4's and P3.5's V2 rows both build and launch AppImages, so implementation stays serialized. Never port 7717, never live data, never real audio, never an acquisition.
+
+# Standing continuation instruction — 2026-10-02
+
 Owner requires continued review, correction and forward progress without routine prompts. Preserve owner decisions and hard stops; owner-only audio and card-scope choices remain pending.
 
 # Current state — after P3.3 approval
