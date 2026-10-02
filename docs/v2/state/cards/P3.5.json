@@ -4,10 +4,10 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "d9c38aa",
+  "baseCommit": "5fb42a9",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "AM-125 closed round 6's single finding (a dangling checkpoint cross-reference). AM-134 applied the owner's AM-124 decision to P3.5's own text: it now reuses P3.4's shared test-only hook, adding only its own facts and its own /p3.5-marker path inside the block P3.4 writes, with the gate, poll and delivery channel tagged as inherited. No threshold, assertion or stop condition changed. Not dispatched for implementation: one further independent review is required, and it must not precede P3.4's hook landing.",
+  "lastCompletedStep": "AM-134 made this card reuse P3.4's shared hook. Round 7 then found (D-1) that P3.5 still needs three rectangles the shared text-leaf rule cannot publish; the owner decided P3.5 grows by exactly that clause and P3.4's rule is left alone. Applied under AM-138 with every threshold byte-identical. Not dispatchable for implementation until one further review is CLEAR, and never before P3.4's hook lands.",
   "nextAllowedAction": "instruction-review",
   "sideEffectsDone": [],
   "changedFiles": [],
@@ -56,5 +56,5 @@
       "attemptConsumed": false
     }
   ],
-  "notes": "AM-123: round 5's single finding. The anchor moved 283c222 -> 4ba1630 -> 935911e; AM-121's own instruction to anchor at 4ba1630 was one commit short, because two of that repair's edits were in the card and landed in 935911e. Round 5 also carried a note, not a defect: V1 does not set LD_LIBRARY_PATH for the Piper venv, which both reference scripts do as a fallback. Recorded so a future attempt knows it was seen. AM-134: baseCommit moves to d9c38aa. The card is NOT dispatchable before P3.4's hook exists; that ordering is stated in card text rather than as a DEPENDENCIES.md edge, because a hard edge would make the dispatcher refuse this card until P3.4 is fully APPROVED and the hook need only exist. The owner has not ruled on the edge."
+  "notes": "AM-123: round 5's single finding. The anchor moved 283c222 -> 4ba1630 -> 935911e; AM-121's own instruction to anchor at 4ba1630 was one commit short, because two of that repair's edits were in the card and landed in 935911e. Round 5 also carried a note, not a defect: V1 does not set LD_LIBRARY_PATH for the Piper venv, which both reference scripts do as a fallback. Recorded so a future attempt knows it was seen. AM-134: baseCommit moves to d9c38aa. The card is NOT dispatchable before P3.4's hook exists; that ordering is stated in card text rather than as a DEPENDENCIES.md edge, because a hard edge would make the dispatcher refuse this card until P3.4 is fully APPROVED and the hook need only exist. The owner has not ruled on the edge. AM-138: baseCommit moves to 5fb42a9. Two items were considered and deliberately left: the /p3.5-marker path lacks P3.4 /api prefix (not load-bearing - the harness reads the URL as logged, identical either way) and the two cards invert who owns the gate (attribution prose, character-identical form, only one gate ever written)."
 }
