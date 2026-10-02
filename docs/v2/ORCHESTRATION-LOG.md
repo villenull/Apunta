@@ -1837,3 +1837,42 @@ build, uncommitted, disjoint files): P3.4 card repair
 `b42338f7-36c6-4f5f-b255-f999c63d964a`; S3.2 v3 proposal
 `a6bbebf9-dce7-4935-9f83-1262f1d9fdc3`. Coordinator owns every status, log,
 dispatch and checkpoint file; each worker owns only its named deliverable.
+
+## Round-2 instruction reviews returned DEFECT; two more bounded repairs authorised — 2026-10-02
+
+Both fresh reviewers ran on `opencode-go/space-bunny-free` at medium effort,
+read-only, each writing only its own round-2 report. P3.4 ctx/reviewer
+`f6461094-e645-42fe-b197-2554184f23df` returned 4 CLEAR / 6 DEFECT (IR-01, 03,
+04, 08, 09, 10) with R1-R8; P3.5 reviewer `6323ae4c-3232-4f77-a2a1-d0e0ef87644a`
+returned 2 CLEAR / 8 DEFECT (IR-01, 03, 04, 05, 07, 08, 09, 10) with D1-D10.
+Round 1's findings are closed or superseded in both, except P3.5's D9.
+Port collision avoided: P3.4 7835/7836, P3.5 7837, P3.7 7834 — verified
+distinct by both reviewers independently.
+
+Coordinator verified two claims itself rather than relaying them. **R7** (P3.4):
+`style-src 'self' 'nonce-<n>'` blocks React inline style attributes —
+`grep -rlE "style=\{\{" web/src --include=*.tsx` returns 8 files and 11 sites,
+including `LiveRecording.tsx`, the recording meter's own component. That
+defect had a product consequence nobody had checked, and it changed the card's
+CSP decision. **S3.2 gates**: FD9 and FD10 blocks extracted from v2 and v3 are
+byte-identical (4413 B, 3301 B), which is what made adoption safe.
+
+Owner decisions recorded as AM-113 (adopt the S3.2 v3 proposal, one card
+repair, one fresh review, three open items carried forward not closed),
+AM-114 (P3.4: nonce **plus** `style-src-attr 'unsafe-inline'`, rule 6's "at
+least" wording satisfied rather than relaxed; plus R1-R8), AM-115 (P3.5: keep
+the microphone permission and create the module, stopping if a capability
+would be needed; plus D1-D10, with the flagged-build leak into a shipped
+bundle treated as the blocking item).
+
+Durable hazard, recorded because it is not obvious from any single file: a
+`VITE_`-flagged `web/dist` can reach a shipped bundle, because
+`scripts/v2/package-linux-resources.sh` runs its own unflagged build while
+`scripts/package-mac.sh` ships `web/dist` without rebuilding. Any test that
+builds the web app with a flag must build outside `web/dist` and assert the
+marker's absence there.
+
+Round 1's reports are preserved: the new reviews were told to write
+`reviews/P3.4-ir2.md` and `reviews/P3.5-ir2.md`, because the dispatch template
+names the unsuffixed path and a reviewer obeying it literally would have
+overwritten round 1's evidence.
