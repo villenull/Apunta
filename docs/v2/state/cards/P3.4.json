@@ -1,7 +1,10 @@
 {
   "card": "P3.4",
   "planVersion": 2,
-  "contracts": ["C-BRIDGE@1", "C-REQ@1"],
+  "contracts": [
+    "C-BRIDGE@1",
+    "C-REQ@1"
+  ],
   "baseCommit": "e46bad4",
   "attempt": 4,
   "status": "BLOCKED",

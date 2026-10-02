@@ -9,7 +9,7 @@
   "attempt": 0,
   "status": "NOT STARTED",
   "lastCompletedStep": null,
-  "nextAllowedAction": "instruction-review",
+  "nextAllowedAction": "implement-attempt-1",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
