@@ -45,3 +45,20 @@ V0 OK
   so the binary that V3 and V4 launched contains the committed change at
   `799597d`. This is the assertion that stops a stale-binary false pass
   (AM-131), and it held.
+
+---
+
+## Coordinator correction (recorded, not rewritten)
+
+The paragraph above states that "the cell's literal command omits" the
+`$HOME/.cargo/bin` export. **That is false, and it is corrected here rather
+than in place so the original record stays visible.**
+
+`parseCells` on `docs/v2/cards/P3.8.md`'s V0 returns a command beginning
+`export PATH="$HOME/.cargo/bin:$PATH" && export PATH="...node-v24.19.0..."`, and
+the dispatch's V0 at `docs/v2/state/dispatch/P3.8.md:556` carries the same
+export. **So V0 ran its literal command exactly as written; the export was
+never missing and there is no card defect to fix.** The attempt disclosed a
+suspected deviation that did not exist — the right instinct, and a far cheaper
+outcome than a silent one. Verified by the implementation review independently
+(AM-180).
