@@ -1,0 +1,17 @@
+{
+  "card": "P3.5",
+  "planVersion": 2,
+  "contracts": [
+    "C-ISO@1"
+  ],
+  "baseCommit": "586606a",
+  "attempt": 0,
+  "status": "NOT STARTED",
+  "lastCompletedStep": null,
+  "nextAllowedAction": "instruction-review",
+  "sideEffectsDone": [],
+  "changedFiles": [],
+  "criteria": {},
+  "sandboxRuns": [],
+  "updatedUtc": null
+}
