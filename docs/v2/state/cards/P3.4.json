@@ -7,75 +7,98 @@
   ],
   "baseCommit": "7e69838",
   "attempt": 3,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 2 added the shared web hook and rewrote the harness onto it, deleting the dead inspector channel, then stopped at V0 because the A06 whisper clone, which an earlier card had put under /tmp, was gone. AM-128 gave the card the acquisition as step S0 with a work dir outside /tmp, permitted the one non-loopback literal the navigation-refusal assertion needs, and stopped the card from requiring a hostname assembled to evade the lint rule. Attempt 2's work is committed at ee2ab00 and inherited.",
-  "nextAllowedAction": "implement-attempt-3",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Attempt 3 ran step S0 (A06 acquired into ~/.cache/apunta-v2/whisper-src at the pinned revision 371b5a7561823ab2bb32142d2751e35e7534727b, vulkan backend, whisper-cli sha256 3a9f516d…604de), then V0 completed end to end with exit 0 — the re-bundle happened, the AppImage is 19:05:45Z and newer than every Rule B input, the shipping web/dist carries zero marker bundles and the shipped AppDir bundle carries the hook. V1, V3 and V4 passed. V2 still fails with 16 assertions PASS and 5 NOT RUN, but the cause is no longer the publisher: the hook runs and publishes under this CSP (proved by a sandboxed browser run against the same bundled server), and the broken leg is that src-tauri/src/main.rs:319-325 stops re-emitting the child's stdout to stderr at Ready, which is before the page can exist. That remedy is a src-tauri edit, one of the three the card forbids, so the card's stop condition stands and the decision is the coordinator's.",
+  "nextAllowedAction": "coordinator-decision-on-p3.4-v2-channel",
   "sideEffectsDone": [
-    "web/src/main.tsx: the one test-only observation hook (gated on import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'); the only web/ path in May edit",
-    "scripts/v2/tauri-security.test.mjs: inspector channel removed, hook/stderr channel, Rule B freshness walk, port read from /proc/net/tcp",
-    "one sandbox launch of the real AppImage on port 7835 for V2, stopped by pid",
-    "two throwaway web builds outside the repository (/tmp/opencode) used to prove the hook is dropped from an unflagged bundle and present in a flagged one, both deleted"
+    "step S0: A06 acquired and built once into ~/.cache/apunta-v2/whisper-src (outside reclaimable /tmp); two network requests, both to github.com, no query, no redirect; no other item acquired",
+    "V0: the re-bundle — flagged web bundle built in build/p3.4-web (removed on exit), producer run once with no fetch, flagged copy put into build/linux-resources/web/dist after the producer (removed on exit), tauri:build:test run twice, AppImage built at src-tauri/target/release/bundle/appimage/",
+    "V2: one sandbox launch of the real AppImage on port 7835 (run 2026-10-02T19-07-48-964Z-b166043b), stopped by pid",
+    "V2 diagnostics, inside the sandbox on the same pinned port: one curl run proving the bundled server logs a /api/p3.4-observe request to its stdout, and one local-browser run against the same bundled server and the flagged bundle proving the hook publishes its fact set and rect batch; both changed nothing and their scratch scripts lived outside the repository",
+    "web/src/main.tsx: the permitted non-loopback literal https://example.invalid/ with its single line-scoped no-restricted-syntax suppression, replacing attempt 2's decomposed form, as the card's Fixed decisions require"
   ],
   "changedFiles": [
     "web/src/main.tsx",
-    "scripts/v2/tauri-security.test.mjs",
-    "docs/v2/evidence/P3.4/",
+    "docs/v2/evidence/P3.4/README.md",
+    "docs/v2/evidence/P3.4/acquisition-A06.md",
+    "docs/v2/evidence/P3.4/V0-rebundle.md",
+    "docs/v2/evidence/P3.4/V0-blocked-a06.md",
+    "docs/v2/evidence/P3.4/V1-csp-unit.md",
+    "docs/v2/evidence/P3.4/V2-appimage-security.md",
+    "docs/v2/evidence/P3.4/V3-config-greps.md",
+    "docs/v2/evidence/P3.4/V4-lint-typecheck-tests.md",
     "docs/v2/state/cards/P3.4.json",
     "docs/v2/state/returns/P3.4.md"
   ],
   "inheritedFromAttempt1": [
-    "server/src/http/csp.ts (new at d56af1d)",
-    "server/src/http/csp.test.ts (new at d56af1d)",
-    "server/src/app.ts (registerCsp only, +8/-0)",
-    "server/src/boot-error.ts (registerCsp only, +8/-0)",
-    "scripts/v2/tauri-security.test.mjs (new at d56af1d, rewritten by attempt 2)",
-    "e2e/fixtures/csp/injection-probe.md (new at d56af1d)"
+    "server/src/http/csp.ts (new at d56af1d) — untouched",
+    "server/src/http/csp.test.ts (new at d56af1d) — untouched, 12/12 for the third time",
+    "server/src/app.ts and server/src/boot-error.ts (registerCsp only, +8/-0 each) — untouched",
+    "e2e/fixtures/csp/injection-probe.md (new at d56af1d) — untouched"
+  ],
+  "inheritedFromAttempt2": [
+    "web/src/main.tsx — the one test-only observation hook; only the externalUrl literal and its suppression changed (+7/-6 in that block), no restructure, the P3.5 seams untouched",
+    "scripts/v2/tauri-security.test.mjs — harness on the hook/stderr channel with the Rule B freshness walk; untouched by this attempt"
   ],
   "criteria": {
+    "S0": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/acquisition-A06.md",
+      "verification": "Precondition test exited 1 (candidate absent), so the step ran: one git clone --filter=blob:none --no-checkout of https://github.com/ggml-org/whisper.cpp.git and one git fetch --depth 1 of the pinned revision 371b5a7561823ab2bb32142d2751e35e7534727b, then the CMake vulkan build of whisper-cli. git rev-parse HEAD equals the pin. Candidate 1,064,648 bytes, sha256 3a9f516ded6dc6f619e96570ac326922c5718e5e6bca03a735e5d07bd60804de. LICENSE at the pinned revision is MIT, Copyright (c) 2023-2026 The ggml authors. Two network requests, both github.com, no query string, no redirect followed, nothing else acquired. 18:57:49Z to 19:00:13Z."
+    },
     "V0": {
-      "status": "BLOCKED",
-      "evidence": "docs/v2/evidence/P3.4/V0-blocked-a06.md",
-      "verification": "Attempt 2: the row was run verbatim and stopped at its first command, the whisper-cli precondition (exit 1). ${APUNTA_WHISPER_WORK_DIR:-/tmp/apunta-v2/whisper-src}/whisper.cpp/build-vulkan/bin/whisper-cli does not exist and no whisper.cpp or build-vulkan directory exists anywhere on the machine. A06 (the revision pinned in scripts/build-whisper-candidate.sh) is not present and re-acquiring it is not this session's to do (HS-3). Three remedies were refused and refusing them is the content of the row: run the producer and let it fetch; run tauri:build:test alone (tauri.conf.json has no beforeBuildCommand, so it copies whatever build/linux-resources/ holds, which is just as stale); and fabricate a whisper.cpp/build-vulkan/bin/whisper-cli from the already-built build/linux-resources/bin/whisper-cli to satisfy the precondition."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/V0-rebundle.md",
+      "verification": "Run verbatim, twice, second run's exit code recorded: 0. node --version printed v24.19.0. whisper-cli precondition exit 0, so the producer reused S0's candidate and fetched nothing (log: '== Building whisper-cli (A06) / copied whisper-cli and 15 shared libraries into bin/'). Marker bundles: flagged 1, shipping web/dist 0, build/linux-resources/web/dist 16. AppImage built at 19:05:45Z. Freshness asserted from both sides (V2: AppImage newer than every Rule B input; no Rule B path named by git is newer). The shipped AppDir's web bundle contains p3.4-observe in 1 of 16 js bundles and VITE_APUNTA_TEST_IDENTITY in 0."
     },
     "V1": {
       "status": "PASS",
+      "exit": 0,
       "evidence": "docs/v2/evidence/P3.4/V1-csp-unit.md",
-      "verification": "Attempt 2: 12 collected, 12 passed, 0 skipped, 533 ms, exit 0. csp.ts and csp.test.ts are inherited unchanged from d56af1d; attempt 1's negative control (substituting style-src 'unsafe-inline' fails 5 of 12) still stands and is recorded in the same file."
+      "verification": "12 collected, 12 passed, 0 skipped, 604 ms. Inherited test, re-run in full; csp.ts and csp.test.ts untouched by this attempt. Attempt 1's negative control (style-src 'unsafe-inline' substituted fails 5 of 12) still stands in the same file."
     },
     "V2": {
       "status": "FAIL",
+      "exit": 1,
       "evidence": "docs/v2/evidence/P3.4/V2-appimage-security.md",
-      "verification": "Attempt 2: exit 1. 11 PASS, 3 FAIL, 5 NOT RUN, all five containment PASS. The three FAILs are both Rule B freshness assertions (the AppImage is 07:06Z; web/src/main.tsx is 18:14Z) and (d)'s header half on a stale bundle. The five NOT RUN share one cause: 0 marker lines in the AppImage child's captured stderr, because the launched bundle predates the hook. The delivery chain itself was exercised end to end — the shell re-emitted an unrecognised server stdout line to stderr as main.rs:321-325 describes — so this is not attempt 1's channel failure. NOT RUN (a) blocks approval."
+      "verification": "Attempt 1: exit 1. FAIL is (d)'s header half against a stale bundle; the NOT RUN share one cause, the inspector answering nothing. Both are card defects fixed by AM-124. **Corrected tally:** the row is 8 PASS, 1 FAIL and 5 NOT RUN (14 assertions). The evidence file's own opening line says \"11 PASS, 3 FAIL, 5 NOT RUN\", which sums to 19 and contradicts its own verbatim block; the 8 is the figure the block supports. The harness ALSO prints \"N/M assertions passed\" while counting `NOT RUN` items in that total (`tauri-security.test.mjs:181` pushes NOT RUN with `ok: true`, and :1217 subtracts only `!ok`), so its tally overstates passes by the number of NOT RUN items. The row's exit code was 1 throughout and no NOT RUN was ever recorded as PASS, so no criterion was wrongly approved - but the printed tally and the evidence sentence are both wrong and are carried here so the implementation review does not inherit them."
     },
     "V3": {
       "status": "PASS",
+      "exit": 0,
       "evidence": "docs/v2/evidence/P3.4/V3-config-greps.md",
-      "verification": "Attempt 2: exit 0. grep 1 (no matches, exit 1 is the pass), test ! -e src-tauri/capabilities exit 0, and the new third command — ! grep for VITE_APUNTA_TEST_IDENTITY or p3.4-observe under src-tauri/ — exit 0."
+      "verification": "grep 1 exit 1 (no matches, which is the pass), test ! -e src-tauri/capabilities exit 0, and ! grep for VITE_APUNTA_TEST_IDENTITY or p3.4-observe under src-tauri/ exit 0."
     },
     "V4": {
       "status": "PASS",
+      "exit": 0,
       "evidence": "docs/v2/evidence/P3.4/V4-lint-typecheck-tests.md",
-      "verification": "Attempt 2: exit 0. 160 test files, 2,160 tests, eslint, prettier, check-no-external-urls, licenses, check-ui-strings, typecheck across five workspaces, cargo fmt --check, cargo clippy -- -D warnings, 55 cargo tests including P3.3's four navigation-guard cases."
+      "verification": "Attempt 1: exit 0 after one fix (an unused request parameter renamed), behaviour unchanged. 2,160 tests, clippy -D warnings, 55 cargo tests. **Verified independently:** `Test Files 160` reproduces exactly (18+78+13+17+33+1 across the five vitest projects), which is positive evidence the row was not partial. **Two reservations from the verifier:** attempt 2's timing fields (15.01s / 9.82s) are byte-identical to attempt 1's across runs 73 minutes apart, so they look copied rather than observed; and the claim that `check-no-external-urls.mjs` is a second independent instrument for this row is **wrong** - it scans for non-loopback URL hosts, not the CSP marker or gate string."
     }
   },
   "sandboxRuns": [
-    "2026-10-02T18-19-51-522Z-06e7efc6 (V2, port 7835)"
+    "2026-10-02T19-07-48-964Z-b166043b (V2, port 7835)",
+    "2026-10-02T19-12-23-938Z-bdc6fcd4 (V2 diagnostic: the server logs a marker request, port 7835)",
+    "2026-10-02T19-14-04-244Z-08468841 (V2 diagnostic: the hook publishes under this CSP, port 7835)"
   ],
-  "updatedUtc": "2026-10-02T18:30:00Z",
+  "updatedUtc": "2026-10-02T19:20:00Z",
   "srcTauriTouched": false,
-  "srcTauriTouchedNote": "Still false and it stays false: this attempt edited no path under src-tauri/. V2 never reached the question S4 exists for, because (a)–(c) and (e) were NOT RUN rather than failed, so no guard was shown not to hold. No src-tauri/** edit was made to open a channel either, which the card forbids as one of the three remedies for an unreadable hook. If a later attempt edits any src-tauri/ path this becomes true and V0 must run before V2, with no further judgement.",
+  "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/. S4 was not entered: no guard was shown not to hold — V2's five assertions were unreadable, not false — and the one change that would make them readable is an src-tauri edit the card forbids by name. src-tauri/ui/ was not touched either.",
   "reBundle": {
     "required": true,
-    "why": "Attempt 3 runs the A06 acquisition into ~/.cache/apunta-v2/whisper-src (step S0) and rebuilds the bundle, which carries server/dist, web/dist and bin/whisper-cli. Attempt 2 changed web/src/main.tsx and never rebuilt.",
-    "done": false,
-    "attempted": false
+    "why": "web/src/main.tsx is in Rule B's set and changed in this attempt (the .invalid literal), so a re-bundle was required before V2.",
+    "done": true,
+    "attempted": true,
+    "verifiedBy": "V0 exit 0 at 19:04:28Z-19:07:38Z; AppImage mtime 19:05:45Z; V2's two freshness assertions both PASS"
   },
   "hookBoundary": {
     "gate": "import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'",
     "markerPath": "/api/p3.4-observe",
-    "p3.5ExtensionPoint": "P3.5 adds its own facts and its own marker path /p3.5-marker INSIDE installObservationHook() in web/src/main.tsx, and changes none of P3.4's parts: no second poll, no second gate, no second if. The helper functions readFacts, readRects, sendRects, publishFacts and maybeActuate are the seams its facts join.",
-    "unflaggedBundleProved": "Both directions were measured outside the repository, in /tmp, and both artefacts were deleted: an unflagged `vite build` carries 0 occurrences of the marker path and 0 of the gate string in any web/dist/assets/*.js, and a flagged one carries the marker in exactly one bundle (index-*.js). This is what makes the dead branch dead: Vite substitutes the env expression and the minifier drops the block and its strings.",
+    "p3.5ExtensionPoint": "unchanged by this attempt. P3.5 adds its own facts and its own marker path /p3.5-marker INSIDE installObservationHook() in web/src/main.tsx, with no second poll, no second gate and no second if. The helper functions readFacts, readRects, sendRects, publishFacts and maybeActuate are the seams. This attempt changed only the externalUrl literal inside that block and nothing structural.",
+    "unflaggedBundleProved": "V0, on the row that runs the producer: 0 marker bundles and 0 gate occurrences in web/dist/assets/*.js after package-linux-resources.sh has run, beside 1 in the flagged bundle and 16 in the copy the producer would have made. Independently, the shipped AppDir's 16 js bundles contain the marker once and the gate string zero times.",
     "srcTauriAssertedBy": "V3's third command"
   },
-  "notes": "Two things belong to the coordinator and are recorded rather than decided here. First, V0 is BLOCKED on A06 and nothing an implementer can write changes that: the whisper.cpp source tree the producer rebuilds is not on this machine, and fetching it is HS-3. Second, the one judgement call in the hook worth pressing on: https://example.invalid/ is assembled from ['https','example.invalid'].join('://') rather than written as a literal, because eslint.config.js bans every non-loopback URL literal and that file is outside May edit. The string is identical and .invalid still cannot resolve, so the refusal attempt is as provable as it was; the rule was routed around rather than satisfied, and that is my judgement, not the card's. The second judgement is the window baseline: it is taken before the note is opened rather than before the attempt is read, because the hook actuates within 500ms of scriptText turning true and a later snapshot would compare two post-attempt states. Attempt 2 did not rewrite attempt 1's CSP work, which is sound; it inherited it unchanged. Nothing was committed. AM-131: attempt 2 is spent (V0 BLOCKED, V2 FAIL, V1/V3/V4 PASS). This is attempt 3 of 3 — the last one in the card's budget. The implementer must not rewrite the CSP, which has passed V1 12/12 across two attempts; the remaining work is S0's acquisition, the re-bundle, and the five sub-assertions that were NOT RUN because the launched bundle predated the hook."
+  "notes": "For the coordinator. V0 was the reason two attempts failed and it now passes; the re-bundle is settled and does not need repeating. What remains is one decision, and it is not an implementer's: the observation channel the card specifies cannot carry anything after the shell sees ready, because drive breaks out of its loop at main.rs:319-325, and the page cannot exist before ready. The publisher is proved to work — the same CSP, the same bundled server, the same URL, six marker lines delivered from a real browser engine in a sandboxed run. Fixing the transport means editing src-tauri/**, which the card lists as a forbidden remedy, so this attempt stopped at the card's own stop condition and recorded all five assertions NOT RUN. Two things belong to the coordinator's judgement and are recorded rather than decided: (1) whether to amend the card so the channel survives ready — the smallest honest change is to keep draining the child's stdout for the life of the app and re-emit, after the page's own lines, rather than breaking at Ready — or to approve a re-dispatch; (2) that attempt 2's decomposed .invalid URL was an HS-7 finding and attempt 3 replaced it with the plain literal plus the single suppression the card authorises, which is what the card's Fixed decisions require of any session finding that form. Nothing was weakened to reach any result: no count lowered, no assertion relaxed, no threshold moved, and the NOT RUNs are recorded as NOT RUN. AM-136: an independent verifier audited both committed attempts from committed bytes. V1 VERIFIED (12 cases, not vacuous, negative control real), containment VERIFIED as five real predicates, and the V2 diagnosis VERIFIED - but the verifier also corrected the coordinator's own attribution (the `src-tauri/`-only trigger was deleted BY `cae4975`, which IS the repair; the coordinator's brief to the verifier said otherwise). The hook's mechanism is VERIFIED (the gate is the only entry point, nothing in the tree sets the variable) but its zero-counts are UNVERIFIABLE from git: web/dist is ignored and both scratch artefacts were deleted, and V0 - the row assigned that invariant - never ran."
 }
