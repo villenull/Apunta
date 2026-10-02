@@ -5,7 +5,7 @@
     "C-BRIDGE@1",
     "C-REQ@1"
   ],
-  "baseCommit": "586606a",
+  "baseCommit": "3496bca",
   "attempt": 0,
   "status": "NOT STARTED",
   "lastCompletedStep": null,
@@ -14,5 +14,9 @@
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": null
+  "updatedUtc": null,
+  "srcTauriTouched": false,
+  "srcTauriTouchedNote": "No attempt has run yet, so no `src-tauri/` file has been edited by this card. This is the single fact that decides V0 against `NOT RUN`: an attempt records V0 NOT RUN only while this stays false AND `git diff --name-only <baseCommit>...HEAD -- src-tauri/` is empty; every attempt sets it true the moment it edits any path under `src-tauri/`, and never resets it, because V2's binary must then be rebuilt by V0. V0's rule is the card's, at V0 in docs/v2/cards/P3.4.md.",
+  "dispatchBaseCommit": "3496bca",
+  "baseCommitNote": "`baseCommit` is the dispatch head that generated docs/v2/state/dispatch/P3.4-ir.md (attempt 1 of 3), which is also the review base in docs/v2/state/reviews/P3.4-ir2.md. It replaces the pre-repair 586606a, so the card's `git diff --name-only <baseCommit>...HEAD -- src-tauri/` in V0 names this dispatch, not a documentation commit from before the round-2 repair."
 }
