@@ -295,14 +295,14 @@ fn drive(handle: tauri::AppHandle, rx: Receiver<Event>) {
                 if show_main(&handle, port) {
                     close_window(&handle, "splash");
                     settled = true;
+                } else {
+                    // The window would not open. C-BRIDGE@1 rule 7's shape applies:
+                    // an error screen, not a splash that never resolves.
+                    show_error(&handle, "the_window_would_not_open");
+                    close_window(&handle, "splash");
+                    settled = true;
                     break;
                 }
-                // The window would not open. C-BRIDGE@1 rule 7's shape applies:
-                // an error screen, not a splash that never resolves.
-                show_error(&handle, "the_window_would_not_open");
-                close_window(&handle, "splash");
-                settled = true;
-                break;
             }
             Event::Bridge(Ok(Message::Fatal { code }), line) => {
                 // The code travels only as this line: never parsed out of the
@@ -329,10 +329,12 @@ fn drive(handle: tauri::AppHandle, rx: Receiver<Event>) {
                 // because no code arrived — an exit status is not a bridge line.
                 let code = early_exit_code(status);
                 eprintln!("apunta: the server exited before it was ready ({code})");
-                show_error(&handle, &code);
-                close_window(&handle, "splash");
-                settled = true;
-                break;
+                if !settled {
+                    show_error(&handle, &code);
+                    close_window(&handle, "splash");
+                    settled = true;
+                    break;
+                }
             }
         }
     }

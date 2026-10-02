@@ -8,11 +8,39 @@
   "baseCommit": null,
   "attempt": 1,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Three instruction reviews, three repairs, and round 3 returned 10 CLEAR / 0 DEFECT / 0 UNKNOWN. The reviewer closed round 2's open item by reading rather than running: Fastify's request exposes originalUrl = raw.url, which pino-std-serializers prefers, so the query string IS written to fd 1 - the marker mechanism works. It re-derived all five rows' exit statuses itself, traced that V3 can now actually fail, and ruled the git-status residual an acceptable one rather than a fourth-round blocker.",
-  "nextAllowedAction": "implement-attempt-1",
+  "lastCompletedStep": "Attempt 1 implemented the change in src-tauri/src/main.rs (+12/-10) inside fn drive, and V0, V1 and V2 all PASS. V3 and V4 could not run: no launch happened, because build/linux-resources/web was empty while the AppImage's own manifest lists 28 files under web/, so its setup hook refused. The coordinator re-ran P3.1's producer (exit 0, 4804 files) and the path is present. The coordinator also ruled on the one question the implementer escalated: the `} else {` it added IS in scope - see AM-148.",
+  "nextAllowedAction": "implement-attempt-2",
   "sideEffectsDone": [],
-  "changedFiles": [],
-  "criteria": {},
+  "changedFiles": [
+    "src-tauri/src/main.rs"
+  ],
+  "criteria": {
+    "V0": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.8/V0.md",
+      "verification": "Attempt 1: exit 0."
+    },
+    "V1": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.8/V1-baseline.md, V1-rust.md",
+      "verification": "Attempt 1: exit 0 both before and after the change. cargo test reports 55 passed / 0 failed; the 13 are main.rs's mod tests."
+    },
+    "V2": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.8/V2-baseline.md, V2-scope.md",
+      "verification": "Attempt 1: exit 0 both. NOTE: the unscoped `git diff --name-only c834159` lists 84 paths at this HEAD because two other lanes committed since that base; `git status --porcelain -- src-tauri web server shared` names only main.rs. Reported, not relaxed. A dispatch at a current base makes the unscoped form correct."
+    },
+    "V3": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.8/V3-forwarding.md",
+      "verification": "Attempt 1: exit 3. No launch happened: the AppImage refused in its setup hook because build/linux-resources/web was EMPTY while its own manifest lists 28 files under web/, so ChildPaths::resolve (launch.rs:57-70) refused on web/dist/index.html. The directory had been removed by an earlier card's cleanup trap. Coordinator re-ran P3.1's producer (exit 0) and the path is present."
+    },
+    "V4": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.8/V4-lifecycle-negative.md",
+      "verification": "Attempt 1: exit 3, same cause as V3 - no launch, so no witness was reached, none passed and none failed. No window snapshot was taken; this is NOT the card's zero-windows NOT RUN case."
+    }
+  },
   "sandboxRuns": [],
   "updatedUtc": null
 }
