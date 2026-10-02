@@ -5,11 +5,11 @@
     "C-BRIDGE@1",
     "C-REQ@1"
   ],
-  "baseCommit": "7e69838",
-  "attempt": 3,
+  "baseCommit": "e46bad4",
+  "attempt": 4,
   "status": "BLOCKED",
   "lastCompletedStep": "Attempt 3 cleared the blocker that stopped both prior attempts. S0 acquired A06 into ~/.cache/apunta-v2/whisper-src (revision 371b5a75..., vulkan, whisper-cli 1,064,648 B, MIT, exactly two network requests, both github.com). V0 rebuilt the bundle and proved it three ways (AppImage newer than every Rule B input, both release-invariant counts held - 1 flagged / 0 in shipping web/dist / 16 in the producer's copy - and the hook present in 1 of 16 shipped bundles). V1 PASS 12/12, V3 PASS, V4 PASS (2,160 tests, clippy -D warnings, 55 cargo tests). **V2 still FAILs: 16 PASS, 5 NOT RUN**, and (d)'s header half now passes. The five NOT RUN have a different cause from any prior attempt: the hook runs and publishes (6 marker lines, full fact set) and the bundled server logs the URL to stdout, but src-tauri/src/main.rs:291-305 breaks out of its read loop at Ready, which is also when the main window is shown - so nothing logged after Ready reaches stderr, and the page cannot exist before Ready. **The fix is a src-tauri change, one of the three the card forbids, so the implementer stopped rather than making it.** Attempt budget is exhausted 3/3.",
-  "nextAllowedAction": "owner-decision - the budget is exhausted and V2 cannot pass without a change to src-tauri/src/main.rs",
+  "nextAllowedAction": "implement-attempt-4",
   "sideEffectsDone": [
     "step S0: A06 acquired and built once into ~/.cache/apunta-v2/whisper-src (outside reclaimable /tmp); two network requests, both to github.com, no query, no redirect; no other item acquired",
     "V0: the re-bundle — flagged web bundle built in build/p3.4-web (removed on exit), producer run once with no fetch, flagged copy put into build/linux-resources/web/dist after the producer (removed on exit), tauri:build:test run twice, AppImage built at src-tauri/target/release/bundle/appimage/",
