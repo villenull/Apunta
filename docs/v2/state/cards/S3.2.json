@@ -1,14 +1,30 @@
 {
   "card": "S3.2",
   "planVersion": 2,
+  "contracts": [
+    "C-EVAL@1",
+    "C-LANG@1",
+    "C-ISO@1"
+  ],
+  "baseCommit": "283c222",
   "attempt": 1,
+  "status": "BLOCKED",
+  "lastCompletedStep": "Card text repaired once to carry the adopted amendment AM-113 (docs/v2/state/S3.2-AMENDMENT-PROPOSAL-v3.md): Read, May edit, Must not edit, FD1-FD11, FD11 negation lexicon and attestation, dispatch-time placeholders, V1-V6 with V4's eight literal commands and expected result, Stop conditions, and the three open items U-1/U-2/U-3. FD9 and FD10 were copied byte-identically from v3 (4448 B region, verified by extraction-and-diff, not by eye); no threshold, gate, predicate or exit code moved. Level deliberately held at L1 per the coordinator's bounded-repair directive, with the amendment's L3 recorded in the card as an unresolved discrepancy. Depends, Contracts and Findings unchanged. Nothing committed by this repair; the coordinator commits.",
+  "nextAllowedAction": "instruction-review",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "baseCommit": "53f224e",
-  "status": "BLOCKED",
-  "lastCompletedStep": "Bounded synthetic controls proof accepted after independent ir3 CLEAR and coordinator 27/27 rerun; documentation comments resolved",
-  "nextAllowedAction": "Production remains BLOCKED. Accepted proof and ir3 support the existing amendment proposal; unadopted owner options and scope/schema changes require election before applying amendments and fresh instruction review.",
-  "updatedUtc": "2026-10-02T06:12:31.637871+00:00"
+  "updatedUtc": "2026-10-02T00:00:00.000000+00:00",
+  "flags": [
+    "U-1 OPEN: the NFC normalisation guarantee (FD2c, Normalisation) is stated for normalised note text - es-MX.txt and every note this card authors - and NOT for model output, which this card does not control; normalising the note body happens in scoreNote, which May edit does not license. The card must not widen it. Two options remain the owner's: (a) documented limitation, or (b) widen May edit to normalise in score.ts, which needs its own owner-approved AM row. An implementer who finds the reading ambiguous stops and reports rather than choosing. FD2c states the guarantee as the amendment states it.",
+    "U-2 OPEN: the repaired examples are verified at pattern level only. loadCorpus, the controls loader and scoreNote do not exist until implementation, so nothing has run through the real path. The card does not claim the examples are proven; V1 and V2 executing, plus a fresh independent review of the implementation, is what closes U-2.",
+    "U-3 OPEN: {{S32_ATTEMPT}} and the three-attempt budget are enforced by the COORDINATOR when the implementation dispatch is built, not by the card or the implementer. The evidence-directory index and the card's attempt counter are independent; the dispatch must record both side by side. Closes on the first S3.2 implementation dispatch that does so.",
+    "ACQUISITION: none. No item in docs/v2/ACQUISITION.md names S3.2, and V4 needs no download - qwen3.5:4b-q4_K_M (digest 2a654d98e6fba55d452b7043684e9b57a947e393bbffa62485a7aac05ee4eefd, AM-020, BASELINE.md:30) is already present locally, and HS-3/A08 forbid pulling a tag that is present. If the tag is absent from `ollama list`, the row is BLOCKED, owner; never pull it here.",
+    "EVIDENCE: eight V4 reports per corpus set, one attempt directory per attempt, under docs/v2/evidence/S3.2/attempt-<n>/ (created by V4's `mkdir -p`; the directory does not exist at the base commit). {{S32_ATTEMPT}} is an integer n>=1 supplied at dispatch and never reused; pipeline mode refuses an existing --out with exit 2 pre-flight, so a re-attempt is additive and a partially completed attempt is kept. FD10 requires a corpus's four samples to come from ONE attempt directory; a set drawn from two is BLOCKED, owner, never pooled. Evidence per RUN-CONFIG.md section 4, sanitized. criteria stays {} until the coordinator fills the per-row map at dispatch.",
+    "PORT: {{S32_PORT}} is a coordinator reservation, resolved and recorded at dispatch inside C-ISO@1 rule 2's 7800-7889, never the live instance's port, checked against state/cards/*.json, state/dispatch/ and every state/*AMENDMENT-PROPOSAL*.md at dispatch time. No port is claimed free.",
+    "DISCREPANCY, recorded not resolved: the adopted amendment's section C1 proposes Level L3; this repair was instructed to leave Level unchanged, so the card is L1 with the discrepancy stated in the card's Level note. V4 is the only row that touches a server, a port, a database or a real model and every one of its invocations runs through scripts/v2/sandbox.mjs run regardless (HS-2, C-ISO@1).",
+    "STATUS: BLOCKED until the repaired card clears ONE fresh independent instruction review. The final audit (docs/v2/state/reviews/S3.2-v2-ir3.md) answered IR-01, IR-03, IR-04 and IR-09 as DEFECT, all four downstream of B-1, B-2, B-3 and m-3; v3 repairs those four, and re-answering them is a fresh review's job."
+  ],
+  "notes": "Attempt number preserved at 1 across the repair; never reset. baseCommit moved to the dispatch head 283c222. Implementation has not run: sideEffectsDone, changedFiles, criteria and sandboxRuns are all still empty, and the eight V4 reports on disk are the only record of V4's progress. The card text is the amendment's own text - a dispatch embeds the card, not the proposal - so the card carries FD1-FD11, the row-by-row verification, the evidence requirements and the stop conditions rather than cross-referencing docs/v2/state/S3.2-AMENDMENT-PROPOSAL-v3.md. The numeric failure gates FD9 and FD10 are carried verbatim: same numbers, same IN RANGE / FAIL / NOT MEASURED rule, same row-status paragraph. No threshold change is this card's to make, the implementer's, or the coordinator's (HS-7). Nothing in this repair ran a build, lint, typecheck, test, e2e, scorer, model call, sandbox or download; port 7717 and every live data directory were untouched."
 }

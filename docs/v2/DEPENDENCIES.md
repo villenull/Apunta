@@ -51,7 +51,7 @@ there is still only one sub-session writing code at a time.
 | 42 | P3.6 | Linux AppImage integration | IMPLEMENTATION | L3 | P3.4, P3.5, P3.7, P2.R |
 | 43 | P3.R | Linux desktop shell (parent review) | REVIEW | L2+L3 | P3.1, P3.2, P3.3, P3.4, P3.5, P3.6, P3.7 |
 | 44 | S3.1 | Spanish fixtures with a held-out split | IMPLEMENTATION | L1 | S1.R |
-| 45 | S3.2 | Locale-aware scorer, controls and the pipeline runner | IMPLEMENTATION | L1 | S3.1, S2.R |
+| 45 | S3.2 | Locale-aware scorer, controls and the pipeline runner | IMPLEMENTATION | L3 | S3.1, S2.R |
 | 46 | S3.3 | Spanish check scripts and the Spanish baseline | MEASUREMENT | L3 | S3.2 |
 | 47 | S3.R | Spanish instrument (parent review) | REVIEW | L2+L3 | S3.1, S3.2, S3.3 |
 | 48 | S4a.1 | Synthetic Spanish audio | IMPLEMENTATION | L1 | S3.1, S1.R |
