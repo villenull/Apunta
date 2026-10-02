@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      The bilingual error screen (C-BRIDGE@1 rule 7). It shows a message, never a
+      spinner, and it carries **whichever code arrived** verbatim: the two codes
+      this card fixes mean different conditions and are never interchanged, and
+      an unrecognised code is displayed as itself rather than mapped onto one of
+      them.
+
+      The code arrives as a query parameter on this shell-owned asset URL, not
+      over a bridge and not through a capability. The page also carries the code
+      in `data-fatal-code` and in the document title, so a reader — a screen
+      reader, a screenshot, the window title the shell set — always sees the same
+      word the bridge line carried.
+    -->
+    <title>Apunta</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1a1a17;
+        --muted: #55554e;
+        --tile: #f6f4ef;
+        --hairline: #e3e0d6;
+        --teal: #1f6f63;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--tile);
+        color: var(--ink);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--hairline);
+        border-radius: 10px;
+        box-sizing: border-box;
+        padding: 32px;
+      }
+      main {
+        max-width: 30rem;
+        text-align: center;
+      }
+      img {
+        width: 56px;
+        height: auto;
+        display: block;
+        margin: 0 auto 20px;
+      }
+      h1 {
+        font-size: 1.15rem;
+        margin: 0 0 4px;
+      }
+      p {
+        margin: 0 0 6px;
+        line-height: 1.5;
+      }
+      .es {
+        color: var(--muted);
+      }
+      code {
+        display: inline-block;
+        margin-top: 18px;
+        padding: 6px 10px;
+        border: 1px solid var(--hairline);
+        border-radius: 6px;
+        background: #fffefb;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.85rem;
+        color: var(--teal);
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body data-fatal-code="">
+    <main>
+      <img src="apunta-a.svg" alt="" />
+      <h1>Apunta could not start.</h1>
+      <p class="en" id="en"></p>
+      <p class="es" id="es"></p>
+      <code id="code"></code>
+    </main>
+    <script>
+      // One map, two sentences per code, and no default that guesses. The
+      // bilingual pair is written out rather than assembled so a translator can
+      // read both halves side by side.
+      const MESSAGES = {
+        data_folder_in_use: {
+          en: 'Apunta is already open. Close the other window, or the other copy of Apunta, and try again.',
+          es: 'Apunta ya está abierto. Cierra la otra ventana, u otra copia de Apunta, e inténtalo de nuevo.',
+        },
+        port_in_use: {
+          en: 'Something else is using Apunta’s port. Close it, or restart your computer, and try again.',
+          es: 'Algo más está usando el puerto de Apunta. Ciérralo, o reinicia el equipo, e inténtalo de nuevo.',
+        },
+        exited_75_without_a_bridge_line: {
+          en: 'Apunta’s data folder belongs to another copy of Apunta, which stopped without saying so.',
+          es: 'La carpeta de datos de Apunta pertenece a otra copia de Apunta, que se detuvo sin avisar.',
+        },
+        exited_before_ready: {
+          en: 'Apunta’s server stopped before it was ready.',
+          es: 'El servidor de Apunta se detuvo antes de estar listo.',
+        },
+        terminated_before_ready: {
+          en: 'Apunta’s server was stopped before it was ready.',
+          es: 'El servidor de Apunta fue detenido antes de estar listo.',
+        },
+      };
+      const FALLBACK = {
+        en: 'Apunta’s server stopped before it was ready.',
+        es: 'El servidor de Apunta se detuvo antes de estar listo.',
+      };
+
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code') ?? '';
+      const pair = MESSAGES[code] ?? FALLBACK;
+      document.getElementById('en').textContent = pair.en;
+      document.getElementById('es').textContent = pair.es;
+      document.getElementById('code').textContent = code;
+      document.body.dataset.fatalCode = code;
+      document.title = code === '' ? 'Apunta' : `Apunta — ${code}`;
+    </script>
+  </body>
+</html>

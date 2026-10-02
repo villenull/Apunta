@@ -87,7 +87,26 @@ function allowsDownloadHosts(file) {
   );
 }
 
+/**
+ * `src-tauri/target` is skipped for the same reason `node_modules` is: it is
+ * machine-local build output holding other people's Rust sources and their own
+ * documentation URLs, none of which Apunta fetches. Belt and braces beside the
+ * `.gitignore` line — nothing in `SOURCE_ROOTS` walks `src-tauri/` today, so this
+ * exclusion guards against that changing rather than fixing a live finding.
+ */
 const SKIP_DIRECTORIES = new Set(['node_modules', '.git']);
+
+/**
+ * `src-tauri/target`, by repository-relative path.
+ *
+ * Cargo's build output is machine-local and holds other people's Rust sources
+ * and their own documentation URLs, none of which Apunta fetches. It is belt
+ * and braces beside the `.gitignore` line: nothing in `SOURCE_ROOTS` walks
+ * `src-tauri/` today, so this guards against that changing rather than fixing a
+ * live finding. A bare `target` is deliberately **not** in `SKIP_DIRECTORIES`,
+ * which would hide a `target/` anywhere in the tree.
+ */
+const SKIP_PATHS = new Set([join('src-tauri', 'target')]);
 
 /**
  * Strings that are identifiers, not addresses: nothing ever fetches them.
@@ -97,6 +116,11 @@ const SKIP_DIRECTORIES = new Set(['node_modules', '.git']);
  */
 const ALLOWED = [
   /^https?:\/\/www\.w3\.org\//, // XML namespaces on inline SVG
+  // The Tauri configuration schema, named by `src-tauri/tauri.conf.json`'s
+  // `$schema` so an editor can offer completion. It is an identifier a JSON
+  // schema loader reads, never a request, and it is admitted by exact string
+  // rather than by pattern so no other `schema.tauri.app` path rides along.
+  /^https:\/\/schema\.tauri\.app\/config\/2$/,
   /^https?:\/\/json-schema\.org\//, // $schema identifiers
   /^https?:\/\/react\.dev\/errors\//, // React's minified-error text
   /^https?:\/\/reactrouter\.com\//, // react-router's warning text
@@ -142,7 +166,9 @@ function* walk(path) {
   }
   for (const entry of readdirSync(path, { withFileTypes: true })) {
     if (SKIP_DIRECTORIES.has(entry.name)) continue;
-    yield* walk(join(path, entry.name));
+    const child = join(path, entry.name);
+    if (SKIP_PATHS.has(relative(repoRoot, child))) continue;
+    yield* walk(child);
   }
 }
 

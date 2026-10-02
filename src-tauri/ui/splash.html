@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      The splash (C-BRIDGE@1 rule 7): the A mark and nothing else, while the
+      shell waits for the server's `ready` line. No script runs here, so there
+      is nothing for a script injection to reach, and no bridge is involved: the
+      shell owns this window outright.
+
+      Brand rules (docs/v2/assets/README.md): the A mark is the fixed-colour
+      teal export, on the #f6f4ef tile with the #e3e0d6 hairline. It is the
+      in-app A mark's geometry, not the 1024 px app icon.
+    -->
+    <title>Apunta</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #f6f4ef;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        border: 1px solid #e3e0d6;
+        border-radius: 10px;
+        box-sizing: border-box;
+      }
+      img {
+        width: 132px;
+        height: auto;
+        display: block;
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        img {
+          animation: breathes 2.4s ease-in-out infinite;
+        }
+      }
+      @keyframes breathes {
+        0%,
+        100% {
+          opacity: 0.55;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <img src="apunta-a.svg" alt="" />
+  </body>
+</html>

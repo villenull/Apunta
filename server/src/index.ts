@@ -9,6 +9,13 @@ import { prepareDatabaseForStart } from './db/safety.js';
 import { storageBootFailure } from './http/errors.js';
 import { serveBootError } from './boot-error.js';
 import {
+  DATA_FOLDER_IN_USE_CODE,
+  PORT_IN_USE_CODE,
+  startStdinBridge,
+  writeFatal,
+  writeReady,
+} from './shell-bridge.js';
+import {
   DATA_FOLDER_IN_USE,
   DataFolderInUseError,
   acquireDataFolderLock,
@@ -57,7 +64,11 @@ async function start(): Promise<void> {
     // would never learn why. Exit 75 and the message code is the whole of the
     // contract (P3.3 carries the code to the shell).
     if (error instanceof DataFolderInUseError) {
+      // The log line stays: it is how P3.2's own evidence proves the refusal.
+      // The bridge line is additional, and it is written synchronously because
+      // `process.exit` below does not wait for a queued write on a pipe.
       console.error(`${DATA_FOLDER_IN_USE}: ${error.message}`);
+      writeFatal(DATA_FOLDER_IN_USE_CODE, { env: process.env });
       process.exit(75);
     }
     if (restored.applied && restored.safetyCopy !== undefined) {
@@ -135,6 +146,35 @@ async function start(): Promise<void> {
     const url = appUrl(config);
     app.log.info({ dataDir: config.dataDir, db: config.dbFile, fakeAi: config.fakeAi }, `Apunta on ${url}`);
 
+    // C-BRIDGE@1 rule 1: exactly one JSON line when listening, and only when a
+    // shell is listening. The shell navigates after reading this line with its
+    // own nonce; there is no health-poll trust anywhere in the lifecycle.
+    writeReady({ env: process.env, port: config.port, version: config.version });
+
+    // C-BRIDGE@1 rule 2's inbound half. The quit ladder's first rung: the
+    // shell asks, the server closes cleanly, and only if that fails does the
+    // shell signal the process group.
+    //
+    // End-of-file on this pipe means the shell died without a `shutdown` — which
+    // is what a forced X window destruction does, because GDK's error handler
+    // aborts the shell process before its own quit handling can run. Closing here
+    // is what keeps that from orphaning a server that still holds the port and
+    // the data folder. Same callback as `shutdown`, one shot either way.
+    startStdinBridge({
+      env: process.env,
+      onShutdown: () => {
+        void app.close().then(() => process.exit(0));
+      },
+      onParentGone: () => {
+        app.log.warn(
+          { shellBridge: true },
+          'the shell closed its end of the bridge; shutting down rather than being orphaned',
+        );
+        void app.close().then(() => process.exit(0));
+      },
+      log: (message) => app.log.warn({ shellBridge: true }, message),
+    });
+
     void maybeRunDailyBackupAsync(db, config)
       .then((backup) => {
         if (backup !== null) {
@@ -153,6 +193,15 @@ async function start(): Promise<void> {
       app.log.debug({ reason: openedBrowser.reason }, 'not opening a browser');
     }
   } catch (error) {
+    // `port_in_use` is the code for one condition only: the server could not
+    // listen because the port was already taken. This catch also covers the
+    // daily-backup and open-browser calls, and a failure in either of those is
+    // not a port clash — so it is not the EADDRINUSE branch, and it keeps
+    // today's log-and-exit exactly as it is.
+    const code = (error as NodeJS.ErrnoException | undefined)?.code;
+    if (code === 'EADDRINUSE') {
+      writeFatal(PORT_IN_USE_CODE, { env: process.env });
+    }
     app.log.error(error);
     process.exit(1);
   }

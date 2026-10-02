@@ -1,0 +1,37 @@
+[package]
+name = "apunta"
+version = "0.0.0"
+description = "Apunta — the desktop shell"
+authors = ["Apunta"]
+edition = "2021"
+rust-version = "1.82"
+publish = false
+
+# A05, resolved once on the acquisition day (2026-10-02) at the newest 2.x the
+# manifest's selection rule names. `src-tauri/Cargo.lock` pins them; re-resolving
+# on a later day would make this card's recorded versions unverifiable.
+[dependencies]
+tauri = { version = "=2.12.1", features = [] }
+tauri-plugin-single-instance = "=2.5.2"
+# Wired by P5.4, which owns the update code. The crate is A05's and the shell
+# registers nothing here: no endpoint, no public key, no capability.
+tauri-plugin-updater = "=2.13.1"
+
+[build-dependencies]
+tauri-build = { version = "=2.7.1", features = [] }
+
+[features]
+# E10's test identity. A test build reads APUNTA_DATA_DIR and APUNTA_PORT from
+# the environment and refuses to start without both, so it can never reach the
+# live instance. Identity itself is `tauri.test.conf.json`, passed by the two
+# `tauri:*` test scripts; `check_identity()` fails the launch if the two ever
+# disagree, so a forgotten `--config` is a refusal and not a silent overlap.
+default = []
+test-identity = []
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

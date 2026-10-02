@@ -82,6 +82,11 @@ export default tseslint.config(
       // tsconfig root makes typescript-eslint refuse to parse anything at all.
       '.claude/worktrees/**',
       'build/**',
+      // ESLint does not read .gitignore, so the Cargo output the repository's
+      // one .gitignore line covers needs its own entry here. `gen/schemas` is
+      // covered by that same .gitignore line and needs nothing from ESLint,
+      // which only walks JavaScript and TypeScript.
+      'src-tauri/target/**',
     ],
   },
   js.configs.recommended,
