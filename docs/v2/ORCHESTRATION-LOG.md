@@ -1747,3 +1747,44 @@ unsupported causality without editing old reports. No new implementation attempt
 no source changes, no all-suite rerun. Card remains SUBMITTED pending coordinator
 acceptance. Low row-coverage/content observations can be disposed by supplemental
 native evidence and inspected screenshots without silently changing card rows.
+
+## P3.3 attempt2 APPROVED — 2026-10-02
+
+Review2 ctx_8b430c484069 independently reran V0-V6 PASS: Rust55, AppImage fresh,
+V3 signal12/12, V4 11/11 with inspected bilingual pages, V5 single-instance11/11
+(focus NOT RUN as permitted), V6 lint/typecheck/bridge21/full2148. D1-D9/D11/D12
+closed; D10 explicitly remains open by decision; hosted CI NOT RUN and never claimed.
+Focused verifier ctx_2e17739b2bda ran native WM_DELETE_WINDOW directly to actual
+advertising Apunta window on private Xvfb three times: all closes reached real
+CloseRequested, exited unassisted202ms, full sandbox/port/server/lock/dummy/Ollama
+containment. Coordinator resolved prior review2 evidence counts from raw files:
+prior total sentence unsupported; final report enumerates7 sends+5 no-send launches,
+marks XSync cause unproven. Historical Wayland isolation failure disclosed; one
+owner-display launch evidence, second count unknown, no live-data evidence, focus
+consequence unknown; focused pass preflighted isolated env for each launch. Native
+close is supplemental evidence for existing V3; no card row changed. Card criteria
+all PASS; approved at attempt2. Commits: implementation d35c4b6; proofs eba2925;
+coordinator state/dispatch 4e64d05; review 13e74fa; reconciled final evidence and
+APPROVED state committed next. Preserve honest hosted-CI and historical incident
+limitations. Next card P3.4 depends on approval; generate fresh dispatch+instruction
+review before implementation. P3.5 is independently ready with S1.R, but must follow
+its own owner choice gates. No unsafe owner-focus test was run; no live data touched.
+
+## Final native-close evidence accepted; instruction reviews started — 2026-10-02
+
+ctx_2e17739b2bda final evidence: 3/3 private-Xvfb close delivery, sender verifies
+advertisement, own display and environment; exits202ms, all containment. Coordinator
+read files and historical correction: prior review has seven sends plus five no-send
+launches; XSync causal claim remains unproven. One owner-display launch is evidenced,
+second count unknown, no live data access evidence, focus consequence unknown. Final
+pass repeats none of this and uses strict preflight. Accepted supplemental evidence
+for existing V3 row; no card amendment. Worker released before ack
+delivery_a4fe57fb5854; inbox empty. P3.3 approved, Attempt2, source d35c4b6.
+
+Built generated IR dispatches at base d35c4b6 for P3.4 and P3.5 after dependency
+approval, in parallel. Two read-only instruction reviewers dispatched:
+P3.4 ctx_c73783e7dbdf/task_1b384c85de5b, terminal term_6d8c0ec3-4c38-426a-85d2-63e1ed9b1612;
+P3.5 ctx_245b3ca41754/task_2249e5f45067, terminal term_f5e30e68-72b3-4953-805f-96e38fabb3be.
+Each owns only its own IR report. No implementation begins until own review passes and
+all real owner gates are honored; P3.5 microphone/model/audio acquisition is not
+performed in instruction review.

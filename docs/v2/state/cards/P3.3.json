@@ -8,9 +8,9 @@
   ],
   "baseCommit": "2235fee",
   "attempt": 2,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "Independent review2 returned every V0-V6 PASS and direct native-close evidence; coordinator found inconsistent trial counts and historical scratch Wayland-isolation incident",
-  "nextAllowedAction": "Focused final evidence verifier ctx_2e17739b2bda repeats native close twice with strict isolated-display preflight and reconciles claims. Attempt2 unchanged, source d35c4b6; no application repair authorized or requested.",
+  "status": "APPROVED",
+  "lastCompletedStep": "Attempt2 source d35c4b6 independently reviewed; V0-V6 PASS, supplemental native-close reproduced3/3 under isolated Xvfb; coordinator reconciled counts and historical isolation incident",
+  "nextAllowedAction": "Approved at attempt 2. Final supplemental evidence and approval state being recorded. Next dispatches are instruction reviews P3.4 and P3.5; implementation awaits clear reviews and owner gates.",
   "sideEffectsDone": [
     {
       "step": "A03 system prerequisites and display tools",
@@ -30,41 +30,45 @@
   "criteria": {
     "V0": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.3/review2-rows.md",
-      "verification": "Independent review2 reports PASS; coordinator final native-close evidence reconciliation pending"
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V0-preflight.md",
+      "verification": "Independent review2 re-ran row PASS; native cooperative close additionally reproduced 3/3 under isolated Xvfb."
     },
     "V1": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.3/review2-rows.md",
-      "verification": "Independent review2 reports PASS; coordinator final native-close evidence reconciliation pending"
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V1-rust-toolchain.md",
+      "verification": "Independent review2 re-ran row PASS; native cooperative close additionally reproduced 3/3 under isolated Xvfb."
     },
     "V2": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.3/review2-rows.md",
-      "verification": "Independent review2 reports PASS; coordinator final native-close evidence reconciliation pending"
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V2-appimage.md",
+      "verification": "Independent review2 re-ran row PASS; native cooperative close additionally reproduced 3/3 under isolated Xvfb."
     },
     "V4": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.3/review2-rows.md",
-      "verification": "Independent review2 reports PASS; coordinator final native-close evidence reconciliation pending"
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V4-fatal.md",
+      "verification": "Independent review2 re-ran row PASS; native cooperative close additionally reproduced 3/3 under isolated Xvfb."
     },
     "V5": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.3/review2-rows.md",
-      "verification": "Independent review2 reports PASS; coordinator final native-close evidence reconciliation pending"
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V5-single-instance.md",
+      "verification": "Independent review2 re-ran row PASS; native cooperative close additionally reproduced 3/3 under isolated Xvfb.",
+      "note": "focus read NOT RUN as explicitly allowed by the row; single-instance assertions PASS."
     },
     "V6": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.3/review2-rows.md",
-      "verification": "Independent review2 reports PASS; coordinator final native-close evidence reconciliation pending"
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V6-lint-typecheck-tests.md",
+      "verification": "Independent review2 re-ran row PASS; native cooperative close additionally reproduced 3/3 under isolated Xvfb.",
+      "note": "hosted CI itself NOT RUN; local row and Rust equivalent PASS; no hosted CI pass claimed."
     },
     "V3": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.3/review2-rows.md",
-      "verification": "Independent review2 reports PASS; coordinator final native-close evidence reconciliation pending"
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V3-launch.md",
+      "verification": "Independent review2 re-ran row PASS; native cooperative close additionally reproduced 3/3 under isolated Xvfb.",
+      "supplementalEvidence": "docs/v2/evidence/P3.3/final-native-close-evidence.md"
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-02T07:43:12.593482+00:00",
-  "implementationCommit": "d35c4b6"
+  "updatedUtc": "2026-10-02T07:56:53.702762+00:00",
+  "implementationCommit": "d35c4b6",
+  "reviewCommit": "13e74fa"
 }
