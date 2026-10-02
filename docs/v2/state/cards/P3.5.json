@@ -19,7 +19,7 @@
       "what": "PipeWire null sink appointa_p35 and remap source appointa_p35_mic, made the default capture source for the duration of a capture row",
       "scope": "host-global, the single mutation AM-109 permits outside the run folder",
       "cleanup": "restore the remembered default source, then `pactl unload-module` the source and the sink, in that order, on every exit path including signals; verified from outside by row V5",
-      "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see nextAllowedAction. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
+      "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see the card's stop condition, 'The current default source is a physical device', which names the leftover case — not nextAllowedAction, which covers review dispatch and does not restate the PipeWire preflight. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
     },
     {
       "what": "the en_US-ljspeech-medium voice, only if it is not already on disk",
