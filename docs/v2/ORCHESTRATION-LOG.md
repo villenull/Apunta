@@ -1788,3 +1788,24 @@ P3.5 ctx_245b3ca41754/task_2249e5f45067, terminal term_f5e30e68-72b3-4953-805f-9
 Each owns only its own IR report. No implementation begins until own review passes and
 all real owner gates are honored; P3.5 microphone/model/audio acquisition is not
 performed in instruction review.
+
+## P3.4/P3.5 instruction reviews returned — 2026-10-02
+
+P3.5 ctx_245b3ca41754 returned DEFECT 0/10; review archived/released before ack
+delivery_1249db86429f. Blocking unsafe gaps: no WebKit record-button automation,
+physical microphone may be default, Whisper model dependency parked S4a.2, A10 en_US
+voice absent, sandbox command missing, fixture/expected errors incomplete, checkpoint
+and evidence paths absent, generator reference omitted. Owner MC interview sent for
+trigger, microphone isolation and Whisper prerequisite. No implementation, audio,
+model or acquisition performed.
+
+P3.4 ctx_c73783e7dbdf returned DEFECT 7/10, with exact D1-D10 evidence; reviewer
+archived/released before ack delivery_b629eb0d07d1. Main issues: d35c4b6 prereq state
+was BLOCKED at base (now approval is at07dce9c), missing checkpoint, inline boot-page
+style conflicts with minimum CSP, harness pass condition is undecidable, no sandboxed
+launch/build freshness/containment, V4 Rust command absent, capability stop absent,
+no resume steps/evidence scope, generator emits nonexistent dispatch return path. Only
+coordinator-runtime placeholders/command fixes are authorized; acceptance/stop/scope
+changes require owner-authorized amendment. No owner runtime gate. MC request will ask
+whether to authorize narrow card repair or park. Both proof reports are committed next;
+no source work started. Other ready cards continue only if dependencies permit.

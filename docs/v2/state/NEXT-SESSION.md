@@ -1,5 +1,22 @@
 # Standing continuation instruction — 2026-10-02
 
+Owner requires continued review, correction and forward progress without routine prompts. Preserve owner decisions and hard stops; owner-only audio and card-scope choices remain pending.
+
+# Current state — after P3.3 approval
+
+Run `run_6bec7fe88a92`; main pushed through `07dce9c`, worktree otherwise clean before these review files. P3.3 attempt 2 APPROVED (`d35c4b6`); accepted synthetic proof commits `eba2925`; final evidence/state `07dce9c`. P3.3 historical Wayland isolation incident remains disclosed; no live-data evidence, focus impact unknown. S3.2/S6.1/P5.3 synthetic proofs accepted within bounded scope; P5.3 dirty-disconnect data-loss limitation remains a production adoption gap.
+
+P3.4 instruction review `ctx_c73783e7dbdf` returned DEFECT 7/10; report `docs/v2/state/reviews/P3.4-ir.md`. Need owner authorization for a card amendment covering: CSP inline boot-page styling decision; unambiguous web/Tauri security assertions and fabricated fixture; exact sandbox launch, containment, source-fresh build and Rust commands; capability stop; evidence/checkpoint paths and resume steps. Multiple-choice authorization question pending. No implementation started.
+
+P3.5 instruction review `ctx_245b3ca41754` returned DEFECT 0/10; report `docs/v2/state/reviews/P3.5-ir.md`. Multiple-choice owner decisions pending on test trigger, virtual-only microphone safety/restoration, and whether to wait for S4a.2 Whisper selection or narrow the card to capture-only. No audio, acquisition or implementation started. Preserve HS-1/2/3/8 and no live mic.
+
+Instruction reviews for P3.4 and P3.5 are archived. User answers unblock only the chosen card amendment; keep independent work moving. After authorization, update card/checkpoint/evidence scope and dispatch generator only as authorized, regenerate dispatch, obtain fresh independent IR; no implementation until CLEAR and prerequisites exist. P3.5 acquisition under A10 still needs evidence, while A07 Whisper selection remains parked at S4a.2.
+
+All previous session narrative below is historical; verify against git before acting.
+
+---
+# Standing continuation instruction — 2026-10-02
+
 Owner explicitly requires continued review, verification, concrete corrections until
 accepted, then advancing the plan without waiting for another user request. This
 supersedes coordinator-imposed proof-wave parking. Preserve true owner decision gates,
