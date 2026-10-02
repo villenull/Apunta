@@ -5,11 +5,11 @@
     "C-BRIDGE@1",
     "C-REQ@1"
   ],
-  "baseCommit": "3496bca",
-  "attempt": 0,
-  "status": "NOT STARTED",
-  "lastCompletedStep": null,
-  "nextAllowedAction": "instruction-review",
+  "baseCommit": "52b9ce0",
+  "attempt": 1,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Round-3 repair applied (AM-118: the freshness walk excludes src-tauri/gen/ and is stated once). Round-4 instruction review returned 10 CLEAR / 0 DEFECT / 0 UNKNOWN and states the card is fit for implementation dispatch; the reviewer also enumerated what is gitignored under src-tauri/ (only target/ and gen/schemas/**), confirming the exclusions are a superset. Coordinator applied the reviewer's three pointer/text notes as AM-120 and verified each against source.",
+  "nextAllowedAction": "implement-attempt-1",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
@@ -18,5 +18,6 @@
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "No attempt has run yet, so no `src-tauri/` file has been edited by this card. This is the single fact that decides V0 against `NOT RUN`: an attempt records V0 NOT RUN only while this stays false AND `git diff --name-only <baseCommit>...HEAD -- src-tauri/` is empty; every attempt sets it true the moment it edits any path under `src-tauri/`, and never resets it, because V2's binary must then be rebuilt by V0. V0's rule is the card's, at V0 in docs/v2/cards/P3.4.md.",
   "dispatchBaseCommit": "3496bca",
-  "baseCommitNote": "`baseCommit` is the dispatch head that generated docs/v2/state/dispatch/P3.4-ir.md (attempt 1 of 3), which is also the review base in docs/v2/state/reviews/P3.4-ir2.md. It replaces the pre-repair 586606a, so the card's `git diff --name-only <baseCommit>...HEAD -- src-tauri/` in V0 names this dispatch, not a documentation commit from before the round-2 repair."
+  "baseCommitNote": "`baseCommit` is the dispatch head that generated docs/v2/state/dispatch/P3.4-ir.md (attempt 1 of 3), which is also the review base in docs/v2/state/reviews/P3.4-ir2.md. It replaces the pre-repair 586606a, so the card's `git diff --name-only <baseCommit>...HEAD -- src-tauri/` in V0 names this dispatch, not a documentation commit from before the round-2 repair.",
+  "notes": "Implementation attempt 1 authorised by the CLEAR at reviews/P3.4-ir4.md. The attempt budget is 3 and one is now spent by dispatch, not by outcome. Implementation is serialized with any other card that builds: P3.4's V0 runs `npm run tauri:build:test` and V2 launches the AppImage, so no second build-touching agent may run at the same time."
 }
