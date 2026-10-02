@@ -5,11 +5,11 @@
     "C-BRIDGE@1",
     "C-REQ@1"
   ],
-  "baseCommit": "d56af1d",
-  "attempt": 2,
+  "baseCommit": "7e69838",
+  "attempt": 3,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 2 wrote the one test-only observation hook in web/src/main.tsx (gated on import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1', with room inside the block for P3.5's own facts and marker path) and rewrote scripts/v2/tauri-security.test.mjs to read that hook off the AppImage child's captured stderr instead of WebKitGTK's inspector, deleting the inspector channel, its second port and its GVariant framing. V1 (12/12, 0 skipped), V3 and V4 (2,160 tests, clippy -D warnings, 55 cargo tests) PASS, and all five containment assertions PASS. V0 is BLOCKED: the A06 whisper.cpp source tree is absent from this machine, so the row's whisper-cli precondition fails and the row stops before building; running the producer anyway would fetch the pinned revision from github.com, which HS-3 forbids. With no re-bundle, V2 launched the 07:06Z AppImage, so (d)'s header half FAILED on a stale bundle and (a), (b), (c), (d)'s handler half and (e) are NOT RUN together — which the card says blocks approval.",
-  "nextAllowedAction": "coordinator-decision: V0 needs the A06 whisper.cpp candidate re-acquired (HS-3) or the producer given a documented reuse path for an already-built candidate. Until then V2 cannot pass and no further implementation attempt can change that.",
+  "lastCompletedStep": "Attempt 2 added the shared web hook and rewrote the harness onto it, deleting the dead inspector channel, then stopped at V0 because the A06 whisper clone, which an earlier card had put under /tmp, was gone. AM-128 gave the card the acquisition as step S0 with a work dir outside /tmp, permitted the one non-loopback literal the navigation-refusal assertion needs, and stopped the card from requiring a hostname assembled to evade the lint rule. Attempt 2's work is committed at ee2ab00 and inherited.",
+  "nextAllowedAction": "implement-attempt-3",
   "sideEffectsDone": [
     "web/src/main.tsx: the one test-only observation hook (gated on import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'); the only web/ path in May edit",
     "scripts/v2/tauri-security.test.mjs: inspector channel removed, hook/stderr channel, Rule B freshness walk, port read from /proc/net/tcp",
@@ -66,14 +66,9 @@
   "srcTauriTouchedNote": "Still false and it stays false: this attempt edited no path under src-tauri/. V2 never reached the question S4 exists for, because (a)–(c) and (e) were NOT RUN rather than failed, so no guard was shown not to hold. No src-tauri/** edit was made to open a channel either, which the card forbids as one of the three remedies for an unreadable hook. If a later attempt edits any src-tauri/ path this becomes true and V0 must run before V2, with no further judgement.",
   "reBundle": {
     "required": true,
-    "why": "Attempt 2 edits web/src/main.tsx, which reaches the bundle through web/dist, so the AppImage must be rebuilt even though no src-tauri/ file changes. The card's Rule B covers server/src, shared/src, src-tauri and the web bundle inputs.",
+    "why": "Attempt 3 runs the A06 acquisition into ~/.cache/apunta-v2/whisper-src (step S0) and rebuilds the bundle, which carries server/dist, web/dist and bin/whisper-cli. Attempt 2 changed web/src/main.tsx and never rebuilt.",
     "done": false,
-    "attempted": true,
-    "outcome": "BLOCKED",
-    "detail": "V0 was run verbatim and stopped at its whisper-cli precondition (A06 absent). No re-bundle happened: build/linux-resources/**, server/dist/** and web/dist/** were not rewritten by this attempt, and build/linux-resources/web/dist does not exist (that is the state P3.3 left, not a consequence of this row — the row aborted before mkdir -p build/p3.4-web). V2's two freshness assertions both fired, which is the proof that the AppImage it launched was not rebuilt.",
-    "lastRunUtc": "2026-10-02T18:18:17Z",
-    "newestRuleBChangeUtc": "2026-10-02T18:14:24Z",
-    "appImageUtc": "2026-10-02T07:06:07Z"
+    "attempted": false
   },
   "hookBoundary": {
     "gate": "import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'",
@@ -82,5 +77,5 @@
     "unflaggedBundleProved": "Both directions were measured outside the repository, in /tmp, and both artefacts were deleted: an unflagged `vite build` carries 0 occurrences of the marker path and 0 of the gate string in any web/dist/assets/*.js, and a flagged one carries the marker in exactly one bundle (index-*.js). This is what makes the dead branch dead: Vite substitutes the env expression and the minifier drops the block and its strings.",
     "srcTauriAssertedBy": "V3's third command"
   },
-  "notes": "Two things belong to the coordinator and are recorded rather than decided here. First, V0 is BLOCKED on A06 and nothing an implementer can write changes that: the whisper.cpp source tree the producer rebuilds is not on this machine, and fetching it is HS-3. Second, the one judgement call in the hook worth pressing on: https://example.invalid/ is assembled from ['https','example.invalid'].join('://') rather than written as a literal, because eslint.config.js bans every non-loopback URL literal and that file is outside May edit. The string is identical and .invalid still cannot resolve, so the refusal attempt is as provable as it was; the rule was routed around rather than satisfied, and that is my judgement, not the card's. The second judgement is the window baseline: it is taken before the note is opened rather than before the attempt is read, because the hook actuates within 500ms of scriptText turning true and a later snapshot would compare two post-attempt states. Attempt 2 did not rewrite attempt 1's CSP work, which is sound; it inherited it unchanged. Nothing was committed."
+  "notes": "Two things belong to the coordinator and are recorded rather than decided here. First, V0 is BLOCKED on A06 and nothing an implementer can write changes that: the whisper.cpp source tree the producer rebuilds is not on this machine, and fetching it is HS-3. Second, the one judgement call in the hook worth pressing on: https://example.invalid/ is assembled from ['https','example.invalid'].join('://') rather than written as a literal, because eslint.config.js bans every non-loopback URL literal and that file is outside May edit. The string is identical and .invalid still cannot resolve, so the refusal attempt is as provable as it was; the rule was routed around rather than satisfied, and that is my judgement, not the card's. The second judgement is the window baseline: it is taken before the note is opened rather than before the attempt is read, because the hook actuates within 500ms of scriptText turning true and a later snapshot would compare two post-attempt states. Attempt 2 did not rewrite attempt 1's CSP work, which is sound; it inherited it unchanged. Nothing was committed. AM-131: attempt 2 is spent (V0 BLOCKED, V2 FAIL, V1/V3/V4 PASS). This is attempt 3 of 3 — the last one in the card's budget. The implementer must not rewrite the CSP, which has passed V1 12/12 across two attempts; the remaining work is S0's acquisition, the re-bundle, and the five sub-assertions that were NOT RUN because the launched bundle predated the hook."
 }
