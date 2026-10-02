@@ -3,7 +3,7 @@
 **Read this block first; it supersedes every older block below.** As of `9ada83d`:
 
 - **P3.4 is at IMPLEMENTATION ATTEMPT 3 OF 3, running.** `state/PROGRESS.json` says `IN PROGRESS`. Do **not** dispatch it again, do **not** re-run the A06 acquisition (attempt 2 spent and correctly refused it under HS-3), and do **not** start a build — it holds the build lease. Its checkpoint is `state/cards/P3.4.json`.
-- **S3.2 is CLEAR (10/10, round 7) and its implementation dispatch is prepared but HELD for the build lease.** Its one open owner item is **U-1** (the NFC normalisation guarantee's scope), recorded in the card's open items.
+- **S3.2 is CLEAR (10/10, round 7) and its implementation dispatch is prepared but HELD for the build lease.** **U-1 is RESOLVED** (AM-137, option (a)) and its stop condition withdrawn, so the card has **no open owner item**; it is running.
 - **P3.5's card changed at `d9c38aa`** (it now reuses P3.4's shared hook) and is under review. Not dispatchable before P3.4's hook exists.
 - **Owner gates outstanding:** S3.2 U-1 scope; S6.1 licence election; P5.3 protocol direction; S4a.2 remains owner-parked even though it is dependency-clear.
 - **Do not trust `BLOCKED.md`**: an audit found all 14 of its rows name APPROVED cards while all three genuinely BLOCKED cards are absent. Trust `PROGRESS.json` and the checkpoints. See `state/reviews/state-reconciliation-audit.md` and `state/reviews/checkpoint-anchor-audit.md`.
