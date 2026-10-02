@@ -6,7 +6,7 @@
   "attempt": 1,
   "status": "APPROVED",
   "lastCompletedStep": "implementation review all PASS (67e4866); card APPROVED",
-  "nextAllowedAction": "check instruction review return",
+  "nextAllowedAction": "none - card is APPROVED with every row PASS; nothing is dispatched and nothing is pending",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
