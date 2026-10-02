@@ -9,6 +9,7 @@
 //
 // Refuses (exit 3) if a dependency is not APPROVED in state/PROGRESS.json.
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -131,7 +132,26 @@ const contractText = [...contractIds].map((c) => plan.contracts.get(c)).join('\n
 const needsAcquisition = /\bA\d{2}\b|ACQUISITION/.test(body);
 
 const criteriaRows = rows.map((r) => `| ${r.id} | NOT RUN | | | |`).join('\n');
-const template = fill(
+
+const suffix = mode === 'ir' ? '-ir' : mode === 'review' ? '-review' : '';
+const outPath = join(planDir, 'state', 'dispatch', `${id}${suffix}.md`);
+const dispatchPath = `docs/v2/state/dispatch/${id}${suffix}.md`;
+
+/*
+ * The commit this file is generated at, which is not the base: the base is the
+ * source the implementer branches from and HEAD moves on as documentation-only
+ * commits land. The stop rule below names this, so a reviewer is stopped by a
+ * reviewed source path moving, not by the clock.
+ */
+const generatedAt = (() => {
+  const r = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
+    cwd: join(planDir, '..', '..'),
+    encoding: 'utf8',
+  });
+  return r.status === 0 ? r.stdout.trim() : null;
+})();
+
+let template = fill(
   read(
     mode === 'ir'
       ? 'templates/INSTRUCTION-REVIEW.md'
@@ -140,6 +160,11 @@ const template = fill(
         : 'templates/IMPLEMENTATION-RETURN.md',
   ),
 ).replaceAll('{{CRITERIA_ROWS}}', criteriaRows);
+// The return-file section names this file's own name: for an instruction review
+// or an implementation review there is no unsuffixed dispatch to point at.
+template = template.replaceAll(`docs/v2/state/dispatch/${id}.md`, dispatchPath);
+// "Known facts" is offered only where the embedded card actually has it.
+if (!/^#{1,6} +.*known facts/im.test(body)) template = template.replace(' and match the "Known facts".', '.');
 
 const findingsFile = opt('--findings');
 const parts = [
@@ -151,7 +176,19 @@ const parts = [
   `- Base commit: \`${base}\`${head ? `; head \`${head}\`` : ''}`,
   port ? `- Sandbox port for this card: ${port}` : '- No sandbox port assigned',
   `- Attempt ${attempt} of ${attempt === 4 ? '3, plus one corrective attempt the owner authorised by ' + exception + ' — there is no attempt 5' : '3'}. Checkpoint: \`docs/v2/state/cards/${id}.json\`.`,
-  '- Do not pull, merge, rebase or reset. If HEAD is not the base commit (implementation) or the head commit (review), stop and report.',
+  '- Do not pull, merge, rebase or reset. This file was generated at ' +
+    (generatedAt ? `\`${generatedAt}\`` : 'an unrecorded commit') +
+    ', which is not the base commit, and HEAD may have moved past it on ' +
+    'documentation-only commits: that alone is not a stop. Stop and report if ' +
+    (generatedAt
+      ? 'a source path this card reviews — any path it lists under "Read", ' +
+        'writes, or tests — differs between `' +
+        generatedAt +
+        '` and current HEAD.'
+      : 'HEAD is not recorded in this file, so you cannot tell whether a reviewed source path moved.') +
+    (mode === 'review' && head
+      ? ` Your role is implementation review: HEAD must be \`${head}\`, and anything else is a stop.`
+      : ''),
   '',
   read('HARD-STOPS.md'),
   '',
@@ -183,8 +220,6 @@ const parts = [
 const out = parts.join('\n');
 const outDir = join(planDir, 'state', 'dispatch');
 mkdirSync(outDir, { recursive: true });
-const suffix = mode === 'ir' ? '-ir' : mode === 'review' ? '-review' : '';
-const outPath = join(outDir, `${id}${suffix}.md`);
 writeFileSync(outPath, out);
 const words = out.split(/\s+/).filter(Boolean).length;
 process.stdout.write(`${outPath} (${words} words)\n`);
