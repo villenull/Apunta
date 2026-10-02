@@ -4,14 +4,46 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "586606a",
+  "baseCommit": "283c222",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": null,
-  "nextAllowedAction": "instruction-review",
+  "lastCompletedStep": "Two instruction reviews completed without consuming an attempt: P3.5-ir (DEFECT, D1-D10) and P3.5-ir2 (DEFECT, D1-D10). Owner decisions AM-109 and AM-115 (2026-10-02) authorised the capture-only narrowing and the round-2 card repair; no implementation row has run.",
+  "nextAllowedAction": "First, before any row and before anything else: run `pactl get-default-source` and `pactl list short sinks | grep -c appointa_p35` and `pactl list short sources | grep -c appointa_p35`. If any of them shows this run's names (apunta_p35, appointa_p35_mic), a previous attempt was killed between PipeWire step 2 and its teardown: restore the previous default source, `pactl unload-module` every leftover from `pactl list short modules`, verify `pactl get-default-source` is a physical device again, record the incident in sideEffectsDone, and only then continue to V0. Then read docs/v2/cards/P3.5.md at baseCommit 283c222 (it supersedes the text reviewed at 510a6e2) and run V0. Attempt stays 0 until a row runs.",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": null
+  "updatedUtc": null,
+  "plannedSideEffects": [
+    {
+      "what": "PipeWire null sink appointa_p35 and remap source appointa_p35_mic, made the default capture source for the duration of a capture row",
+      "scope": "host-global, the single mutation AM-109 permits outside the run folder",
+      "cleanup": "restore the remembered default source, then `pactl unload-module` the source and the sink, in that order, on every exit path including signals; verified from outside by row V5",
+      "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see nextAllowedAction. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
+    },
+    {
+      "what": "the en_US-ljspeech-medium voice, only if it is not already on disk",
+      "scope": "A10, huggingface.co and its CDN redirects, no query keys",
+      "cleanup": "none required; the voice stays under ~/.local/share/apunta-piper/voices",
+      "resumeInstruction": "Record the acquisition in sideEffectsDone with its SHA-256, licence text and licence URL, in the shape of docs/v2/evidence/S4a.1/acquisitions.md. Never re-download a voice already on disk, and never fall back to another voice without recording the substitution and its licence."
+    },
+    {
+      "what": "the flagged web bundle, built into build/p3.5-web/ by row V2",
+      "scope": "git-ignored build output only; web/dist is left unflagged on every path",
+      "cleanup": "V2 removes build/p3.5-web through a trap on EXIT INT TERM HUP; if it survives, remove it before the next build",
+      "resumeInstruction": "Check `web/dist/assets/*.js` for the marker string p3.5-marker before and after V2; a non-zero count outside V2's own flagged bundle is a FAIL and an owner escalation, remedied by an unflagged `npm run build`."
+    }
+  ],
+  "instructionReviews": [
+    {
+      "report": "docs/v2/state/reviews/P3.5-ir.md",
+      "verdict": "DEFECT",
+      "attemptConsumed": false
+    },
+    {
+      "report": "docs/v2/state/reviews/P3.5-ir2.md",
+      "verdict": "DEFECT",
+      "attemptConsumed": false
+    }
+  ]
 }
