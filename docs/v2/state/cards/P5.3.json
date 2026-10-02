@@ -8,7 +8,7 @@
   "sandboxRuns": [],
   "baseCommit": "53f224e",
   "status": "BLOCKED",
-  "lastCompletedStep": "Preserved-rules independent review accepted: protocol defects remain",
-  "nextAllowedAction": "Resolve flush/write boundary, durable window registration/correlation, observer exclusion, native close status in a bounded protocol amendment before implementation; owner design decisions and P3.3 prerequisite approval remain pending",
-  "updatedUtc": "2026-10-01T15:16:47.751202+00:00"
+  "lastCompletedStep": "Bounded synthetic v3 proof/report accepted after independent ir2 and required disclosures; coordinator AST equivalence and unchanged 41-check output verified",
+  "nextAllowedAction": "Integrate completed proof evidence after active source work settles; actual production card remains BLOCKED by P3.3 dependency and unadopted contracts/ownership. Dirty pre-quiesce disconnect preservation/recovery gap must be addressed before production safety acceptance.",
+  "updatedUtc": "2026-10-02T06:47:20.996909+00:00"
 }

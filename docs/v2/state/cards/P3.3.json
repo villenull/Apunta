@@ -6,14 +6,65 @@
     "C-OWN@1",
     "C-ISO@1"
   ],
-  "baseCommit": "c70c5c1",
-  "attempt": 1,
-  "status": "BLOCKED",
-  "lastCompletedStep": "All instruction rows CLEAR; both authorised pkexec prerequisite commands timed out exit 124, packages still absent",
-  "nextAllowedAction": "Owner graphical authentication required; retry choice pending. Continue independent cards.",
-  "sideEffectsDone": [],
+  "baseCommit": "2235fee",
+  "attempt": 2,
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Attempt2 return checked, source committed d35c4b6, coordinator 21 bridge tests pass; independent review2 dispatched",
+  "nextAllowedAction": "Independent ctx_8b430c484069 re-runs V0-V6 including isolated direct WM_DELETE_WINDOW feasibility; no approval until evidence passes. Attempt remains2 of3.",
+  "sideEffectsDone": [
+    {
+      "step": "A03 system prerequisites and display tools",
+      "dateUtc": "2026-10-02T03:44:23.417932+00:00",
+      "exitCode": 0,
+      "evidence": "docs/v2/state/OWNER-ACTIONS.md",
+      "packages": {
+        "webkit2gtk-4.1": "2.52.6-1",
+        "xdo": "0.5.7-3",
+        "libayatana-appindicator": "0.6.0-2",
+        "xorg-server-xvfb": "21.1.24-1",
+        "xdotool": "4.20260303.1-1"
+      }
+    }
+  ],
   "changedFiles": [],
-  "criteria": {},
+  "criteria": {
+    "V0": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V0-preflight.md",
+      "verification": "implementer-reported; independent review pending"
+    },
+    "V1": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V1-rust-toolchain.md",
+      "verification": "implementer-reported; independent review pending"
+    },
+    "V2": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V2-appimage.md",
+      "verification": "implementer-reported; independent review pending"
+    },
+    "V4": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V4-fatal.md",
+      "verification": "implementer-reported; independent review pending"
+    },
+    "V5": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V5-single-instance.md",
+      "verification": "implementer-reported; independent review pending"
+    },
+    "V6": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V6-lint-typecheck-tests.md",
+      "verification": "implementer-reported; independent review pending"
+    },
+    "V3": {
+      "status": "NOT RUN",
+      "reason": "Signal/forced destroy pass reported; cooperative native close unverified under no-WM Xvfb; independent reviewer investigating direct protocol send",
+      "evidence": "docs/v2/evidence/P3.3/attempt2-V3-launch.md"
+    }
+  },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-01T04:19:40.554592+00:00"
+  "updatedUtc": "2026-10-02T07:04:01.662714+00:00",
+  "implementationCommit": "d35c4b6"
 }

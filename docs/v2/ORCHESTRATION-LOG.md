@@ -1300,3 +1300,431 @@ no cycles. Diff whitespace check passed. No application tests run for this
 proposal-only round. Next useful effort should be bounded, executable synthetic
 proofs of the specific failing examples/commands before further draft expansion.
 Owner choices from earlier session remain unanswered; no consent inferred.
+
+
+## Owner authorizes parallel acceleration through executable proofs — 2026-10-02
+
+Owner explicitly requested parallel acceleration and multiple-choice questions
+only. Three fresh Space Bunny Free / medium configured workers launched at base
+2235fee, scoped to Node-builtins synthetic proofs and short reports, no further
+long proposal rewrites or production edits. Exact files are disjoint:
+- ctx_144055b68408: proofs/S3.2-controls-proof.mjs + reviews/S3.2-controls-proof.md.
+- ctx_fe31d45f575b: proofs/S6.1-assets-proof.mjs + reviews/S6.1-assets-proof.md.
+- ctx_41260705ef44: proofs/P5.3-protocol-proof.mjs + reviews/P5.3-protocol-proof.md.
+All paths under docs/v2/state/. Each must reproduce original defects, demonstrate
+proposed corrected behavior and adversarial rejection, report actual exits, leave
+uncommitted. Separate independent review follows each; no app/card/contract or
+owner choices adopted. Proofs are design evidence, not runtime acceptance.
+
+Async multiple choice pending: owner available now for graphical authentication
+retry vs defer. Existing approved package commands unchanged. Read-only pacman -Q
+confirmed all five prerequisites still absent; pkg-config webkit2gtk-4.1 absent;
+cargo/Xvfb/xvfb-run/xdotool not on current PATH. No installation attempted without
+answer to presence question. S4a.2 remains owner-parked. No licence decision asked
+before evidence/notice can support it; routine technical fixes owned by agents.
+
+
+## Desktop prerequisite blocker cleared — 2026-10-02
+
+Owner answered retry-now. Both scoped pkexec pacman commands completed exit 0;
+all five exact versions and WebKitGTK/Xvfb/xvfb-run/xdotool verified, recorded in
+OWNER-ACTIONS and P3.3 sideEffectsDone. No passwords read/written. P3.3 returns
+IN PROGRESS, queued for next worker slot with sole build lease; existing ir4 all
+CLEAR, implementation attempt1 unspent. Rust absent, A02 remains implementation
+preflight. Ports7831/7832 observed free now; must recheck at actual dispatch.
+Three synthetic proof workers continue, no app/build writer yet. No further owner
+answer needed for this package unblock. Earlier presence question is resolved.
+
+## Proof return and desktop dispatch — 2026-10-02
+
+S6.1 proof ctx_fe31d45f575b settled worker_done; coordinator reran its script:
+25 synthetic checks, exit0. Report read; only owned proof/report claimed. Released
+worker before ack delivery_d05223a9a393; inbox then empty. Result remains unapproved
+pending independent review (asset/module/build linkage, exact extension pair,
+manifest completeness and pre-read path guards deserve adversarial checks).
+
+Generated P3.3 dispatch at2235fee, attempt1. Card/index/sandbox have no diff from
+ir4 reviewed head5dbd138; resource manifest exists; all three reserved ports free.
+Launched ctx_ea07be897a70 / task_f189b135f320, terminal
+term_28a9df06-73a1-47b4-8387-4ee9a4981268, Implement: desktop lifecycle. Owns sole
+source/build lease, approved May edit paths plus evidence/return. No commits or
+checkpoint edits by worker. Installed system prerequisites must not be repeated;
+A02/A04/A05 follow approved card acquisition. S3.2/P5.3 proof workers continue
+on disjoint files. Fresh independent proof reviews queued for next free slots.
+
+## S3.2 proof return and independent proof audit — 2026-10-02
+
+ctx_144055b68408 returned owned script/report; coordinator read both and reran:
+15/15 checks, exit0. Released before ack delivery_ce80853463eb; inbox then empty.
+Claims of B1 closure are not accepted: source says no hypertension history while
+claimed faithful pair asserts history; English pair repeats this issue. Token+niega
+and literal jamas also merit checks against no-double/no-bare claims.
+
+Launched fresh independent reviewer ctx_075c53c07296 / task_5eeb54ddad72, terminal
+term_50e217d5-73cf-471f-af60-c056f69658f5, Review: controls and assets proofs.
+Owns only S3.2-controls-proof-ir1.md and S6.1-assets-proof-ir1.md plus unique ignored
+synthetic scratch; no build/server/app/source writes. Must verify adversarial
+counterexamples and actual closure rather than accept green self-tests. P3.3 and
+P5.3 workers continue. No owner question needed for these technical findings.
+
+## P5.3 proof return and independent audit — 2026-10-02
+
+ctx_41260705ef44 settled worker_done; coordinator read script/report and reran14/14,
+exit0. Released before ack delivery_d9ffe796aa07; inbox empty. Internal consistency
+not accepted from authored schedules: investigate overlapping initiation, old timer
+settling new generation, gone-window false success, save-error ordering, release
+writeability, rollback jobs, stale completion and reusable/malformed close probes.
+
+Fresh reviewer ctx_4c2eee625cf6 / task_0059c9850ca2, terminal
+term_aa682c12-bea6-4415-b6a2-f607ba723600, Review: shutdown protocol proof. Owns only
+reviews/P5.3-protocol-proof-ir1.md and unique ignored synthetic counterexamples;
+no app/build/server/source edits. P3.3 implementation and S3.2/S6.1 audit continue.
+Report's P3.3 BLOCKED statement is stale (now IN PROGRESS). Its six proposed choices
+are not automatically owner blockers; technical design repairs remain agent work.
+No contract/card amendment adopted, no new owner question.
+
+## Proof audit defects verified; bounded repair round2 — 2026-10-02
+
+ctx_075c53c07296 returned both ir1 reports DEFECT. Coordinator read reports and
+counterexample code; reran S3 ce2 (source/faithful inversion) and S6 ce2 (swapped
+module rows, resealed build, raw/sorted mismatch, wrong extensions and pre-read path
+failure), exits0 confirming defects. Released before ack delivery_57cf382d9c8f.
+
+Scope/evidence caveat: reviewer scratch uses os.tmpdir(), contradicting project-only
+scratch instructions/report; coordinator rerun set TMPDIR to project test-results/
+proof-review-coordinator-tmp so no external writes. Historical worker TMPDIR unknown;
+do not claim confirmed external writes. S3 ce1 has wrong relative repo read; no
+successful coordinator rerun claimed. Findings need not inherit suggested fixes:
+module URL-prefix assumptions may fail with hashed Vite assets, and a combined
+negation note adds unrelated pain denial so isolate truthful semantic clauses.
+
+Repair round2 ctx_62ff0214be2e / task_d536e5f50070, terminal
+term_2c759e0b-dd32-4e83-bdf5-567632b24a59, Implement: proof repairs. Only two proof
+scripts + original reports; fresh independent review afterwards. Require real
+synthetic byte digests/module mapping, exclusive publication/path checks and truthful
+control pairs; no owner question for technical repair. P3.3 and P5.3 review continue.
+
+## Shutdown audit verified; bounded repair round2 — 2026-10-02
+
+ctx_4c2eee625cf6 returned ir1 DEFECT. Read report and scratch, reran adversarial.mjs:
+exit1, 1 held/16 violated; original14 still green. Released before ack
+ delivery_7d8a2ad3ca81 (inbox empty). Concrete false success on save failure and gone
+window, overlapping initiation, stale timers, poll/note/close omissions confirmed.
+
+Reviewer caveats: these uncommitted proof files cannot be byte-identical to2235fee;
+read review provenance accordingly. Do not blindly adopt D5 clearing/ignoring live
+jobs or D6 hiding late windows; that would weaken drain safety. D3 guard must also
+protect successful maintenance awaiting release. D7 intact held poll is not inherently
+dead at2s. Cookie suggestion was already withdrawn; U2 claim is stale. No owner
+question needed for these technical defects/overclaims.
+
+Dispatched repair2 ctx_7d721ae7c5b9 / task_3459955b9e46, terminal
+term_66d9aa42-9fca-48b7-81f4-201dbf56acfe, Implement: shutdown proof repair. Owns
+original protocol script/report only; retain real operation lifetimes, generation-safe
+callbacks, permanent ordering regressions, honest model limitations. Fresh review
+follows; no card/contract adoption. P3.3 + S3/S6 repair continue, three active workers.
+
+## P5.3 repair2 returned; final independent audit — 2026-10-02
+
+ctx_7d721ae7c5b9 returned revision2 (809-line model,38 schedules; report180 lines).
+Coordinator read report/model and reran38/38 exit0; no production acceptance.
+Released before ack delivery_7cbf1c2e9490; inbox empty. Report's replay of ir1 probes
+(8held/5violated/4error) is dispositioned but is not itself a passing review.
+
+Final audit ctx_f03cb06de74a / task_06a19b0d0ae9, terminal
+term_d5f6983a-e790-40c6-82db-67ca1e20882c, Review: final shutdown proof. Owns ir2
+report and unique project scratch only. Check missing close booleans, mutable note
+identity versus actual admitted save, absent content-version subsumption proof,
+shared sweep timer starvation, post-success registration and overclaimed internal
+consistency. Keep correct preserved live-job semantics; do not fabricate completion.
+This is final audit of bounded proof wave; residual defects parked with evidence,
+not another automatic rewrite. P3.3 and S3/S6 repair remain active.
+
+## P5.3 final audit: parked DEFECT — 2026-10-02
+
+ctx_f03cb06de74a returned final ir2. Coordinator read153-line report and inspected
+harness, reran verbatim-core counterexamples: exit1,4 held/9 violated; original38
+remain green. Released before ack delivery_c3ddd8d98693; inbox empty. Protocol
+remains unapproved; bounded wave parked, no further automatic rewrite.
+
+Confirmed counterexamples: partial/empty close answers close with recording/unsaved
+state; mutable admitted-save note identity credits or clears wrong-note work;
+shared sweep timer starvation; clean reports erase unflushed state; duplicate window
+id simulation drops incumbent; malformed report inputs throw. Reviewer browser
+sessionStorage duplication premise was not tested in a browser by coordinator; the
+same-id model collision is reproduced. F3 scratch text uses seconds labels on ms
+values; approved30s total remains intact, claim concerns proposed2s detection.
+Finite schedules do not establish universal internal consistency. Preserve actual
+revision2 fixes and live-job safety semantics; no card/contract adoption.
+
+P3.3 desktop implementation and S3/S6 proof repair remain active. No owner question.
+P5.3 checkpoint updated BLOCKED with final report pointer. Completed evidence remains
+uncommitted while P3.3 works against2235fee; commit coherent finished outputs explicitly
+when source writer settles, never sweep in live work.
+
+## Desktop implementation return; independent review; observed worker error — 2026-10-02
+
+ctx_ea07be897a70 submitted P3.3 source/evidence/return. Coordinator read return,
+V3/V6 evidence and tracked diff, reran shell-bridge16 tests PASS. All-PASS claim is
+rejected: V6 lint exits1; package.json lacks claimed CLI devDependency. CI job may
+need native WebKit prerequisites even for clippy/test; title alone may not establish
+rendered home screen. qwen3.5 in return is app runtime model, not worker identity.
+Released before ack delivery_d3825c064b09; inbox empty.
+
+Fresh reviewer ctx_61f0dd6459ac / task_44f60461fbc7, terminal
+term_d5a89e15-dece-491d-8ea0-b268dd473910, Review: desktop implementation. Owns
+reviews/P3.3-review1.md only + project scratch; sole build/test lease. No source fixes
+or new acquisition, no production launch, exact sandbox ports and identity. Review
+uncommitted bytes at2235fee; no acceptance or commit yet.
+
+Owner reported Failed to execute statement. Read active proof worker screen: error
+exists after planned S3 proof write; subsequent new response acknowledges coordinator
+lint request, so active/recovered turn, no positive exit. Sent msg_d100e79de671 to
+verify disk/partial operation and escalate recurrence, not restart. Earlier msg_bf899c164757
+asks exact owned proof lint checks. Added only lint-unused-variable hygiene for parked
+P5.3 proof with38-test rerun if touched, no protocol edits/disable directives. Screen
+confirms Space Bunny Free OpenCode Go medium. Root cause of statement error not yet
+known. No completed workers left open; two workers active.
+
+## Owner continuation mandate; P5.3 repair resumed — 2026-10-02
+
+Owner: review, verify, provide comments until accepted; then continue plan without
+awaiting next request. Supersedes coordinator's proof-wave parking, not substantive
+owner licence/contract decisions or hard stops. Inbox empty; both existing workers
+confirmed live/working. No duplicate launch or restart of prior statement-error worker.
+
+P5.3 proof repair3 ctx_19d438ce02c9 / task_d8914c3cdbaf, terminal
+term_38028ba6-68f5-4d11-901d-ca97da640e01, Implement: shutdown invariants. NEW
+proofs/P5.3-protocol-proof-v3.mjs and reviews/P5.3-protocol-proof-v3.md only, avoids
+old proof lint writer conflict. Explicit immutable admitted save target + revision,
+separate persisted/unsaved state, all-field close validation, no self-attested clean
+state erasure, renderer identity collision handling, per-binding liveness deadlines,
+generation safety and snapshot freeze invariant. Enumerated checks honest, no
+universal proof claim. Fresh independent review next; three active disjoint workers.
+
+## S3/S6 repair return and independent ir2 — 2026-10-02
+
+ctx_62ff0214be2e returned owned two proofs/two reports. Coordinator read reports,
+inspected scratch operations, reran S3=25/25 and S6=40 checks exit0, exact two-file
+ESLint0. Released before ack delivery_90053854545c; inbox empty. No source/card
+acceptance from passing authored assertions.
+
+Fresh review ctx_376d8b0fdaff / task_5595dd32bda1, terminal
+term_5ecf3249-9b26-496e-8991-59b2712b4a02, Review: repaired proof gates. Owns ir2
+reports only+project scratch. Verify truthful controls/proposed G1-G3, actual fixture
+byte mapping, schema/path/read safety, scope of Unicode property change, exclusive
+scratch ownership. Record real SHA256 provenance and before/after hashes.
+
+Worker alleges S3 overwritten externally at22:29; cause and attribution UNVERIFIED.
+Extra scratch dirs may be authorized reruns, not proof of interference. Desktop
+reviewer notified with no-source-edit reminder and full-lint retry now repairs pass.
+No remaining failure reported from Failed to execute statement; proof worker ultimately
+returned verified executable outputs. P5-v3 author and desktop reviewer remain active.
+
+## Desktop review1 returned; correction attempt2 — 2026-10-02
+
+ctx_61f0dd6459ac CHANGES REQUESTED. Read full report; coordinator confirmed
+ExitRequested pgid never cleared/prevent_exit repetition, GDK BadDrawable logs,
+manifest CLI undefined vs lock^2.12.1; all reserved ports free. Reviewer re-ran
+39Rust/2143node tests but lint red. Released before ack delivery_c16dfe02a635.
+
+Correction2 ctx_788bd6bd78bd / task_cea658d8d8ee, terminal
+term_b4a833c2-2e82-40fd-9f0d-044633a46ffe, Implement: desktop corrections. Sole
+source/build lease; approved card May edit+evidence/return. Fix shared one-shot
+shutdown, actual exit/reap assertions, CI deps, CLI manifest, exact origin, sound UI
+and honest V6 evidence. Important caveat: xdotool windowclose may XDestroyWindow,
+not cooperative native WM_DELETE; verify semantics and don't blindly adopt review
+D1 conclusion that CloseRequested cures GDK fatal. Preserve failure evidence and
+strong containment. No new acquisition, no user focus, no production launch.
+
+P5-v3 author received msg_3b0819e7e834: exact old P5 logging-only lint ownership
+plus own v3 lint fixes and38-test rerun; no disabled rules or protocol edits to old
+proof. S3/S6 ir2 continues. Three active workers, all disjoint.
+
+## S3/S6 ir2 defects reproduced; targeted repair3 — 2026-10-02
+
+ctx_376d8b0fdaff returned both ir2 DEFECT. Coordinator read reports and extracted
+core harnesses, reran counterexamples.mjs/probes.mjs exit0 reproducing specific
+failures: English stored sidecar exit3 from ES section keys; optional precondition
+bypasses claimed G3; null manifests/records throw; remint overwrites tampered bytes.
+Released before ack delivery_8845da1a3f7e; inbox empty. Hash checks across six targets
+found zero drift during review: previous external-writer allegation unsubstantiated.
+
+Targeted repair3 ctx_b872bbfd0a1a / task_a258e31399f6, terminal
+term_18d509c8-7ca1-442f-bc6f-322203505a8c, Implement: targeted proof fixes. Owns
+original S3/S6 scripts+reports only. Small fixes, actual raw-sidecar tests, schema
+shape matrix, genuinely immutable fixture reuse, exclusive foreign scratch cleanup,
+honest regex/scanner/slot/attempt-counter limits; no general regex parser or whole
+rewrite. Reviewer lint claim tested string not literal, so cause claims require real
+reproduction. Other probes hit earlier gates; new cases must reach intended gate.
+Fresh review follows. Desktop correction2 and P5-v3 author continue,3 active workers.
+
+## P5-v3 return and independent audit — 2026-10-02
+
+ctx_19d438ce02c9 returned new1097-line model/180-line report + approved old-v2
+logging-only hygiene. Coordinator read report/core, reran34/34 and exact old+v3
+ESLint0. Released before ack delivery_17c3ba8cfd43; inbox empty. Claims narrowed to
+enumerated schedules, but exact-revision report versus persisted numeric max needs
+independent oracle; don't accept authored invariants merely repeating same predicate.
+
+Review ctx_a576e2460994 / task_4b4fc8178d3e, terminal
+term_70dafd7e-0424-4068-87e9-3f2a98c33733, Review: shutdown revision identity.
+Owns v3-ir1 only+exclusive project scratch; no source/build writes. Audit content
+identity and collisions, completion identification after reissue, client-buffer versus
+server fence, malformed boundaries and actual invariant coverage. Source choice
+U3/U4/U6 engineering/owner prose inconsistent; no unnecessary questions. Desktop
+corrector informed lint blockers cleared via msg_b913591787a3; full V6 still required.
+S3/S6 repair3 and desktop correction2 continue; three workers active.
+
+## S3/S6 correction3 verified; acceptance review3 — 2026-10-02
+
+ctx_b872bbfd0a1a returned4 owned files. Coordinator read reports, independently ran
+each proof separately exit0 (27/67), exact proof ESLint0. Released before ack
+ delivery_a5cf14bef1ff; inbox empty. Author notes in-place mutations restored hashes;
+future reviewers explicitly limited to scratch-copy mutation to avoid transient drift.
+
+Review ctx_eb7b906f0731 / task_bfc0023cb406, terminal
+term_a02933d9-fe1f-403d-9304-7bf7b73a209a, Review: proof acceptance. Owns only
+S3.2-controls-proof-ir3.md and S6.1-assets-proof-ir3.md + exclusive scratch. Verify
+raw English data, relevant G3 classification, malformed shape contracts, verify-only
+build reuse, scratch exclusivity, preserved mechanisms. No expanding acceptance to
+universal regex/NL/production guarantees; separate nits from material false claims.
+Factual notice provenance remains researchable agent work, only election is owner.
+Desktop correction2 and P5v3 review continue, three active workers.
+
+## P5-v3 independent defects reproduced; targeted correction — 2026-10-02
+
+ctx_a576e2460994 returned DEFECT in P5.3-protocol-proof-v3-ir1.md. Coordinator
+read the report and reran its verbatim-core counterexamples: exit1, ten reproduced
+violations/five agreeing probes. Authored34/34 was insufficient: close launders
+recording answer, numeric max conflates instances, duplicate A completion settles B,
+fence misses publish/note declaration, note switch loses unsaved content. Also
+outcome validation, release vocabulary and overstated service/owner prose.
+Released reviewer before ack delivery_cbc9ed647196; inbox empty.
+
+Fresh bounded correction ctx_8b3b34c7da3e / task_0e591f2238c5, terminal
+term_24f77a54-a3c9-4e01-9b29-44f1be80c334, Implement: shutdown safety fixes.
+Owns v3 script/report only; preserve review and old revision. Requires independent
+actual stored-content oracle (historical instance acknowledgements alone insufficient
+when one stored note can be overwritten), immutable completion IDs, every-event
+invariants, permanent reverse-interleaving regressions and honest client assumptions.
+No new adoption or card attempt; fresh independent review follows. Desktop correction2
+and S3/S6 acceptance review3 continue in parallel with disjoint ownership.
+
+## S3/S6 bounded proofs accepted; documentation follow-through — 2026-10-02
+
+Independent ir3 ctx_eb7b906f0731 returned both CLEAR. Read both reports;
+coordinator reran S3 27/27 and S6 67 checks, each exit0. Accepted within bounded
+synthetic scope only; cards/options/production/licence election remain unadopted.
+Released reviewer before ack delivery_2fa9cef71eae; inbox empty.
+
+Docs-only worker ctx_fb0e59bb3c5b / task_5dd759e16d2c, terminal
+term_ac7c51bb-1149-4dd9-afba-d738604ef135 owns original two proof reports only.
+Close nonblocking G3 must/extension prose, S6 notice/provenance research ownership,
+decorative project field and nonexhaustive shape whitelist. Neutral heading required:
+reviewer's suggested not-closeable-by-owner heading would itself be inaccurate.
+No new script tests needed; coordinator verifies exact docs changes on return.
+Desktop correction2 and shutdown-v3 repair remain active. Next after docs: assemble
+accepted proof evidence coherently and progress research/preparation within existing
+scope, preserving genuine adoption gates. No owner question required for these fixes.
+
+## Documentation return checked; one precise correction — 2026-10-02
+
+ctx_fb0e59bb3c5b settled and released before ack delivery_afac3d4867d5.
+Coordinator checked changed paragraphs and both proof SHA256s against ir3: unchanged.
+S3 wording accepted. S6 correction introduced 'each absence is still refused' for
+three fields despite ir3 explicitly measuring optional spanishAvailable absent=>ok.
+Existing S6.1-NOTICE-PROVENANCE.md already contains sourced research; do not launch
+redundant research based on synthetic report saying none done. Need distinguish
+research not performed by proof from existing evidence and remaining unknowns.
+
+Fresh docs-only ctx_806820ddd9cb / task_0392c09c2a4b, terminal
+term_aea99532-0cd3-4e4e-b2c8-449c34dba0a6 owns only original S6 proof report.
+Correct exact optional-field claim, reconcile existing evidence, remove stale pending
+independent-proof-review prose; no new research/adoption/runtime changes. Source
+proof acceptance unchanged. Desktop/P5 corrections continue; three active workers.
+
+## Accepted proof documentation complete — 2026-10-02
+
+ctx_806820ddd9cb returned S6 report correction. Coordinator compared section3
+against independent ir3 (optional spanishAvailable accepted, required fields refused)
+and section6 against existing notice-provenance sections4/5. Accurate distinction
+between synthetic proof doing no research and existing sourced findings; remaining
+unknowns/elections remain unresolved, no new legal claim or adoption. Accepted.
+Released before ack delivery_cb982646a713; inbox empty. S3/S6 bounded proofs and
+report comments now complete, still no production card acceptance. Updated S3/S6/P5
+checkpoint continuation text without moving statuses/attempt counters. Desktop
+correction2 and P5-v3 repair remain the two active workers; independent review follows
+each return. Completed proof artifacts await coherent explicit-path integration when
+active source work settles; no in-flight source is staged or committed.
+
+## P5-v3 corrections returned; fresh independent review2 — 2026-10-02
+
+ctx_8b3b34c7da3e returned1579-line proof/41 schedules and revised report claiming
+all ten findings addressed. Coordinator read report/key state paths, independently
+ran41/41 exit0 and exact ESLint0. Released before ack delivery_1422390299a1;
+inbox empty. No acceptance merely on counts. Report says first-writer-wins while
+store overwrites; dirty disconnect deletes buffers, and independent oracle/battery
+coverage require fresh audit. Same-buffer supersession may be legitimate narrowing
+but cannot silently erase another note/instance. Old reviewer adaptation evidence
+must be independently inspected, not inherited.
+
+ctx_8270f31cf7bc / task_47968c29549c, terminal
+term_6d60375c-5199-479c-b30e-ec5adddd7250, Review: shutdown content safety.
+Owns v3-ir2 only+exclusive scratch; concrete counterexamples and bounded claims,
+no speculative production expansion. Desktop correction2 remains active sole source
+writer. P5 checkpoint updated, no status/attempt adoption.
+
+## P5-v3 ir2 conditional CLEAR; disclose production gap — 2026-10-02
+
+ctx_8270f31cf7bc returned bounded CLEAR conditional on dirty-disconnect disclosure,
+plus four wording defects. Coordinator read report, reran independent runA10/10 and
+runB8/8 exit0. Important: dirty drop BEFORE quiesce removes window/obligations and
+allows ok despite unwritten text; new instance cannot recover old content. Reviewer
+scope counts only current live windows. Accepting that bounded model must NEVER
+be framed as production shutdown safety. No code change is required for truthful
+bounded report, but preservation/recovery/client lifecycle remains adoption gap.
+Released reviewer before ack delivery_1c2fffeb57f2; inbox empty.
+
+ctx_13ecd5dc5c2c / task_51d961c311aa, terminal
+term_4f333391-b69e-473c-a966-31f4b69ecb91, Docs: shutdown limits. Owns v3 report
+and comments-only proof changes; correct all five prose issues, distinguish old
+reviewed hashes from comment-updated bytes, compare own pre-edit snapshot (untracked
+files), rerun41 and lint. No behavior/schedule edits. Coordinator verification next,
+then bounded report acceptance. Desktop correction2 continues separately.
+
+## All bounded synthetic proof tracks complete — 2026-10-02
+
+ctx_13ecd5dc5c2c returned P5 final prose/comment changes. Coordinator read exact
+proof diff and key disclosure paragraphs, parsed pre-edit snapshot and current
+source with Acorn: ASTs identical after removing source positions. Before SHA256
+9001b47f79837152fd56fd158a19062cbd6a7e3b54a156e4943d10043f95b86e matches ir2;
+after d5d5cbd620468b795faa38984dbacfbba0a519e765a6f0c895d32b2d589e8ef5.
+Coordinator rerun exit0/output md5 63bcd0fdf758832f8df2b305d46cda9d, unchanged41.
+Required dirty-disconnect disclosure and four wording issues resolved. Bounded
+proof/report ACCEPTED, no production guarantee, no card/contract/option adoption.
+Dirty pre-quiesce disconnect remains unresolved data-loss/adoption gap.
+Released before ack delivery_9f728cea0080; inbox empty. S3/S6/P5 synthetic tracks
+complete, all proof workers archived. Only P3.3 correction2 remains active. Next:
+verify its return, independent implementation review, resolve findings within card
+budget, integrate finished evidence explicitly. Do not stage in-flight source.
+
+## P3.3 attempt2 return; stable commits and independent review2 — 2026-10-02
+
+ctx_788bd6bd78bd returned correction2: signal12/12, forced destroy12/12,
+native cooperative close NOT RUN(no WM), Rust55, bridge21, full2148 reported.
+Coordinator read return/disposition, scope and key diffs, git diff --check0,
+independently21 bridge tests pass. Released before ack delivery_6a1a1cb5528a.
+All workers settled, so integrated explicit source/evidence paths at d35c4b6
+(not card approval) and18 accepted/historical synthetic proof/review artifacts at
+eba2925. No binaries/generated target/scratch staged. No push before approval.
+
+Built review dispatch with base2235fee/head d35c4b6/attempt2/port7831.
+ctx_8b430c484069 / task_77ba606588ae, terminal
+term_06a68491-a2c1-4d66-835b-4c3710bdd61b owns review2/evidence only, sole
+build/test/runtime lease. Re-run all rows; investigate direct Xlib WM_DELETE_WINDOW
+under isolated Xvfb without WM/install/user focus rather than declaring physical
+impossibility from xdotool windowquit alone. Inspect actual rendered home screenshot;
+colour count and served root HTML alone insufficient. Verify quit/EOF/CI/scope
+independently. P3.3 SUBMITTED, attempt2 unchanged; native close gap honest pending
+review. All synthetic tracks complete and integrated; production adoption unchanged.

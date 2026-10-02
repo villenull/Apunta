@@ -8,7 +8,7 @@
   "sandboxRuns": [],
   "baseCommit": "53f224e",
   "status": "BLOCKED",
-  "lastCompletedStep": "Independent instruction review accepted: eight DEFECT rows",
-  "nextAllowedAction": "Review S6.1-AMENDMENT-PROPOSAL.md from ctx_ab1b765501e3; obtain required owner decisions before applying scope/design amendments and fresh instruction review",
-  "updatedUtc": "2026-10-01T13:25:29.902090+00:00"
+  "lastCompletedStep": "Bounded synthetic assets proof accepted after independent ir3 CLEAR and coordinator 67-check rerun; documentation reconciled with existing provenance evidence",
+  "nextAllowedAction": "Production remains BLOCKED. Use accepted proof plus S6.1-AMENDMENT-PROPOSAL-v2.md and S6.1-NOTICE-PROVENANCE.md for remaining licence/attribution/scope decisions. No acquisition, notice publication or option adoption authorized by proof acceptance.",
+  "updatedUtc": "2026-10-02T06:12:31.638045+00:00"
 }

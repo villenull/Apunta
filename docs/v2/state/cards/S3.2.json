@@ -8,7 +8,7 @@
   "sandboxRuns": [],
   "baseCommit": "53f224e",
   "status": "BLOCKED",
-  "lastCompletedStep": "Instruction review S3.2-ir: IR-02/03/05/06/07 DEFECT; report accepted",
-  "nextAllowedAction": "Concrete owner amendment proposal for lexicon source, pipeline data flow, baseline gate and commands before implementation",
-  "updatedUtc": "2026-10-01T13:14:11.467591+00:00"
+  "lastCompletedStep": "Bounded synthetic controls proof accepted after independent ir3 CLEAR and coordinator 27/27 rerun; documentation comments resolved",
+  "nextAllowedAction": "Production remains BLOCKED. Accepted proof and ir3 support the existing amendment proposal; unadopted owner options and scope/schema changes require election before applying amendments and fresh instruction review.",
+  "updatedUtc": "2026-10-02T06:12:31.637871+00:00"
 }

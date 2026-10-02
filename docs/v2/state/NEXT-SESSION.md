@@ -1,3 +1,75 @@
+# Standing continuation instruction — 2026-10-02
+
+Owner explicitly requires continued review, verification, concrete corrections until
+accepted, then advancing the plan without waiting for another user request. This
+supersedes coordinator-imposed proof-wave parking. Preserve true owner decision gates,
+card budgets and hard stops; do not infer licence/contract adoption. Orca wakeups drive
+continuation while workers run; do not ask owner to resume routine work.
+
+# Active round — proofs and desktop implementation, 2026-10-02
+
+Run `run_6bec7fe88a92`, source base `2235fee`, implementation `d35c4b6`, proofs `eba2925`. One active reviewer (P3.3):
+- S3.2/S6.1 bounded synthetic proofs ACCEPTED after independent ir3 CLEAR and
+  coordinator reruns27/67 exit0. Reviewer ctx_eb7b906f0731 released. Production
+  cards/options remain unadopted. Documentation accepted after coordinator paragraph
+  comparison against ir3 and existing S6.1-NOTICE-PROVENANCE.md; both docs workers
+  released, latest ctx_806820ddd9cb. Optional spanishAvailable correctly distinguished
+  from required keys. Existing sourced fields and remaining U1-U3 reconciled; do not
+  repeat completed research. No script changes. Card checkpoints updated without
+  changing BLOCKED statuses/attempts. Completed proof artifacts integrated at eba2925 with explicit paths; historical
+  defective revisions retained as evidence, not accepted runtime code.
+- P5.3 v3 bounded proof/report ACCEPTED after ir2 and final disclosure corrections.
+  All proof workers released, latest ctx_13ecd5dc5c2c. Coordinator compared parsed
+  Acorn ASTs (excluding source positions): IDENTICAL to reviewed pre-edit bytes;
+  comments only. Rerun exit0,41 schedules/output md5 63bcd0fdf758832f8df2b305d46cda9d.
+  Final proof SHA256 d5d5cbd620468b795faa38984dbacfbba0a519e765a6f0c895d32b2d589e8ef5.
+  Dirty pre-quiesce disconnect still forgets typed content; reconnect does not recover
+  it. Explicit unresolved production safety/adoption gap. Production/card remain
+  BLOCKED. Three synthetic proof tracks complete; no further proof repair queued.
+- P3.3 independent implementation review2 ctx_8b430c484069 / task_77ba606588ae,
+  terminal term_06a68491-a2c1-4d66-835b-4c3710bdd61b, sole build/test/runtime lease.
+  Owns review2 report and review2-* evidence plus exclusive project scratch only.
+  Source d35c4b6 against2235fee; current eba2925 adds accepted proof artifacts.
+  Corrector ctx_788bd6bd78bd released. Coordinator21 bridge tests pass and scope
+  checked. State SUBMITTED, attempt2 unchanged. Native cooperative close NOT RUN
+  in return (xdotool windowquit requires WM); reviewer investigates direct Xlib
+  WM_PROTOCOLS/WM_DELETE_WINDOW under isolated Xvfb, no installs/desktop focus.
+  Re-runs V0-V6, verifies real home screenshot, quit cleanup/EOF containment,
+  scope and CI limits. No implementation changes by reviewer. Fresh review dispatch
+  docs/v2/state/dispatch/P3.3-review.md names exact source commit.
+
+
+Owner observed proof worker 'Failed to execute statement'; screen confirms earlier
+error followed by active response to lint message. Do not restart live worker.
+ctx_62ff0214be2e instructed to verify partial writes/retry safely/escalate recurrence.
+Narrow added ownership: lint-only unused-variable hygiene of parked P5.3 proof,
+no semantics; re-run38 if touched. No ignores/disable directives allowed.
+
+P5.3 revision2 remains DEFECT after ir2; owner explicitly resumed repair in v3. Reviewer ctx_f03cb06de74a
+released; coordinator reran verbatim-core counterexamples: exit1,4 held/9 violated.
+See reviews/P5.3-protocol-proof-ir2.md and test-results/p53-final-review/harness.mjs.
+Open: partial close answers, mutable save-note identity/content-version gap,
+shared liveness-timer starvation, unverified clean reports, duplicate-window identity,
+malformed report throws. Fresh independent review follows v3; no production acceptance.
+
+S6.1 proof worker `ctx_fe31d45f575b` returned and was released before delivery
+ack. Coordinator reran proof: 25 checks pass, exit0. Proof/report remain uncommitted
+and UNAPPROVED pending fresh independent review. Review especially whether claimed
+module/build metadata actually binds the observed asset bytes, exact aff/dic pair,
+raw-to-sorted correspondence, manifest completeness and path validation before reads.
+Independent ir1 returned DEFECT for both proofs; repair underway, no acceptance.
+S3.2 ctx_144055b68408 also returned and was released: coordinator rerun15/15,
+but source/faithful examples appear contradictory and negator assertions incomplete.
+Both proof reports remain UNAPPROVED until independent adversarial review.
+
+Owner-approved graphical install succeeded for all five desktop prerequisites.
+P3.3 uses existing all-CLEAR ir4 (card/index/sandbox unchanged since reviewed head),
+ports7831/7832/7833 checked free, A02 Rust remains authorized implementer preflight.
+All workers leave changes uncommitted. Coordinator owns status/log/dispatch files.
+S4a.2 parked; prior proposal findings/owner choices remain unapproved.
+
+---
+
 # Latest handoff — parallel preparation complete, 2026-10-02
 
 This block supersedes the older entries below. Run `run_6bec7fe88a92` settled:
