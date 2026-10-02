@@ -4,11 +4,11 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "4ba1630",
+  "baseCommit": "935911e",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "Four instruction reviews completed without consuming an attempt: P3.5-ir (DEFECT, D1-D10), P3.5-ir2 (DEFECT, D1-D10), P3.5-ir3 (DEFECT, D1-D6) and P3.5-ir4 (DEFECT, D1-D3; 6 CLEAR / 4 DEFECT: IR-05, IR-09, IR-10), which confirms every round-3 finding closed with no regression. Owner decisions AM-109, AM-115 and AM-119 (2026-10-02) authorised the capture-only narrowing and the round-2 and round-3 repairs; AM-121 (2026-10-02) authorises this round-4 repair (checkpoint re-anchored at 4ba1630, the nonexistent `npm run package:linux` corrected to the producer's literal invocation, and V0's unperformed sink count added to its own chain). No implementation row has run.",
-  "nextAllowedAction": "First, before any row and before anything else: run `pactl get-default-source` and `pactl list short sinks | grep -c appointa_p35` and `pactl list short sources | grep -c appointa_p35`. If any of them shows this run's names (apunta_p35, appointa_p35_mic), a previous attempt was killed between PipeWire step 2 and its teardown: restore the previous default source, `pactl unload-module` every leftover from `pactl list short modules`, verify `pactl get-default-source` is a physical device again, record the incident in sideEffectsDone, and only then continue to V0. Then read docs/v2/cards/P3.5.md at baseCommit 4ba1630 — the text carrying AM-115's and AM-119's repairs, which is what P3.5-ir3 and P3.5-ir4 reviewed and what this checkpoint's AM-121 repair edits; it supersedes the text reviewed at 510a6e2 and the still older text at 283c222, which predates every repair and must not be read. Then run V0. Attempt stays 0 until a row runs.",
+  "lastCompletedStep": "Round-4 repair applied (AM-121: the nonexistent npm run package:linux replaced by the real script, V0 given the pactl sinks probe it asserts, and the checkpoint re-anchored). Round-5 instruction review returned 9 CLEAR / 1 DEFECT (IR-09 only) and confirmed no regression; its one finding is this anchor, corrected here. The review independently re-derived the card's whole command inventory and found it complete. Not dispatched for implementation: one further independent review is required.",
+  "nextAllowedAction": "instruction-review. Anchor: the card text as it stands is the text at 935911e, which is where AM-121's two card edits (V0's command and V2's Expected cell) landed; 4ba1630 carries the round-3 repair only and must NOT be read as the current card. Repairs applied to this card, in order: AM-109, AM-115, AM-119, AM-121. A future repair that edits the card must move this anchor to its own commit.",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
@@ -55,5 +55,6 @@
       "verdict": "DEFECT",
       "attemptConsumed": false
     }
-  ]
+  ],
+  "notes": "AM-123: round 5's single finding. The anchor moved 283c222 -> 4ba1630 -> 935911e; AM-121's own instruction to anchor at 4ba1630 was one commit short, because two of that repair's edits were in the card and landed in 935911e. Round 5 also carried a note, not a defect: V1 does not set LD_LIBRARY_PATH for the Piper venv, which both reference scripts do as a fallback. Recorded so a future attempt knows it was seen."
 }
