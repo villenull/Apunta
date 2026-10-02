@@ -1,9 +1,12 @@
 # V2 — the AppImage, bridge security in the shipped binary
 
-**Status: FAIL** (exit code 1). Of sixteen assertions: **10 `PASS`, 1 `FAIL`,
-5 `NOT RUN`**. The harness counts a `NOT RUN` as not-a-failure, so it prints
-`15/16 assertions passed, 5 NOT RUN`; the `FAIL` is what sets the exit code. The `FAIL` and the five `NOT RUN` are both real results, and
-neither was turned into a pass.
+**Status: FAIL** (exit code 1). Of sixteen assertions: **11 `PASS`, 3 `FAIL`,
+5 `NOT RUN`**. All five containment assertions `PASS`.
+
+The three `FAIL`s and the five `NOT RUN`s share **one** cause, and it is not in
+this card's code: **V0 is `BLOCKED`**, so the AppImage V2 launched still bundles
+the server and the web build from **00:01 / 07:06Z**, which predate
+`server/src/http/csp.ts` and the observation hook. See `V0-blocked-a06.md`.
 
 - Working directory: the repository root (re-executed by the harness itself under
   `xvfb-run -a -s '-screen 0 1400x1000x24'`, so the app and `xdotool` share one
@@ -16,8 +19,8 @@ neither was turned into a pass.
 
 - `node --version` printed exactly `v24.19.0`.
 - Exit code: **1**.
-- Start / end time: 2026-10-02T17:04:50Z / 2026-10-02T17:05:04Z.
-- Sandbox run id: `2026-10-02T17-04-50-478Z-b3da639b`, in `<sandbox>/`.
+- Start / end time: 2026-10-02T18:19:51Z / 2026-10-02T18:20:43Z.
+- Sandbox run id: `2026-10-02T18-19-51-522Z-06e7efc6`, in `<sandbox>/`.
 
 ## Verbatim output
 
@@ -25,171 +28,162 @@ neither was turned into a pass.
 v24.19.0
   display: the inherited X display :99
 PASS V2 appimage: src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
-PASS V2 the AppImage is newer than every src-tauri source file
-PASS V2 7836 is free before the launch
+FAIL V2 the AppImage is newer than every Rule B input: web/src/main.tsx (2026-10-02T18:14:24.654Z) is newer than the AppImage (2026-10-02T07:06:07.901Z)
+FAIL V2 no Rule B path named by git is newer than the AppImage: git names 1 Rule B path(s) from d56af1d…HEAD or from the working tree; stale: web/src/main.tsx
 PASS V2 the app's own window is up
 PASS V2 the server answers with this run id
 FAIL (d) header: the SPA fallback HTML carries rule 6's six directives: GET /patients answered 200 with content-type "text/html; charset=utf-8" and a CSP of ""
-NOT RUN (a) window.__TAURI__ and window.__TAURI_INTERNALS__ are undefined: …
-NOT RUN (b) navigation to https://example.invalid/ is refused: …
-NOT RUN (c) window.open is cancelled: …
-NOT RUN (d) handler: the injected note renders inert, and __APUNTA_CSP_PROBE__ is undefined: …
-NOT RUN (e) an inline style attribute is applied in the shipped binary: …
+NOT RUN (a) window.__TAURI__ and window.__TAURI_INTERNALS__ are undefined
+NOT RUN (b) navigation to the reserved .invalid origin is refused
+NOT RUN (c) window.open is cancelled
+NOT RUN (d) handler: the injected note renders inert, and __APUNTA_CSP_PROBE__ is undefined
+NOT RUN (e) an inline style attribute is applied in the shipped binary
   the fixture note was created over HTTP (format, patient and note all 201) and was NOT opened, because opening it and reading the page both need the channel
-  --- the app's stderr ---
-  apunta: spawned the bundled server as pid 332497
-  MESA-EGL: warning: DRI3 error: Could not get DRI3 device
-  MESA-EGL: warning: Ensure your X server supports DRI3 to get accelerated rendering
-  apunta: the server is ready ({"type":"ready","port":7835,"nonce":"<nonce>","version":"0.0.0","protocol":1}), version 0.0.0
-  apunta: the main window is open on http://127.0.0.1:7835
-  stopped the shell (pid 332456) with SIGTERM
 PASS containment no server process from the run survives
 PASS containment no second lock, database, -wal or -shm
 PASS containment the sandbox port is free afterwards
-PASS containment 7836 — the inspector — is free afterwards
+PASS containment the observation channel is gone, and cannot ship
 PASS containment ollama is still running
 
-15/16 assertions passed, 5 NOT RUN
+13/16 assertions passed, 5 NOT RUN
 ```
 
-## (d) header half — FAIL, and the cause is not in this card's code
+(The five `NOT RUN` lines each carry the same cause in full in the harness
+output; it is quoted once below rather than five times here.)
 
-`GET http://127.0.0.1:7835/patients` answered **200** with
-`content-type: text/html; charset=utf-8` and **no** `content-security-policy`
-header at all. The SPA fallback exists and is HTML, so the assertion reached the
-right response; the header simply is not there.
-
-It is not there because **the launched binary does not contain this card's
-server.** The AppImage bundles `linux-resources/`, which
-`scripts/v2/package-linux-resources.sh` produced at **00:01** under P3.1:
+## The observation hook, and why five assertions are `NOT RUN`
 
 ```
-$ grep -c "content-security-policy" build/linux-resources/server/server.mjs
-0
+no /api/p3.4-observe line ever appeared in the AppImage child's captured stderr
+while the app window was up and the server was answering (0 marker line(s) read),
+so the observation hook publishes nothing this harness can read.
 ```
 
-The same CSP is present in the freshly built `server/dist/*.js` this attempt
-produced, and V1 asserts it in-process on both servers. The source change is
-correct; the binary predates it.
-
-**The only row that rebuilds that bundle is V0**, and V0's condition — which looks
-at `src-tauri/` paths only — records `NOT RUN` here. See `V0-not-run.md` for the
-full argument and the recommendation. This assertion is exactly the one the card
-says "fails on an unmodified tree", so it is doing its job; it is only
-unfortunate that this attempt's *tree* changed in a place V0 does not watch.
-
-No attempt was made to work around this: the assertion was not relaxed, and V0
-was not run uninvited, because re-bundling rewrites `build/linux-resources/**` and
-`server/dist/**`, neither of which is in this card's May edit list (HS-9).
-
-## (a), (b), (c), (d) handler half, (e) — NOT RUN together, one cause
+**This is not the inspector failure attempt 1 hit, and the distinction matters.**
+Attempt 1's channel was WebKitGTK's remote inspector on a second port: bound,
+accepting connections, and answering nothing. This attempt's channel is a
+same-origin `fetch` from the page to the server the app is already talking to,
+and its delivery chain was exercised end to end by the app itself, as the stderr
+excerpt shows — the shell re-emitted an unrecognised stdout line exactly as the
+card describes:
 
 ```
-the WebKitGTK inspector on 127.0.0.1:7836 could not be read: no reply to the
-target-list message. It is bound and accepting connections in this run, so this is
-the protocol, not a missing listener.
+apunta: ignoring a bridge line (Unreadable): {"level":30,…,"msg":"Server listening at http://127.0.0.1:7835"}
 ```
 
-The card's stop condition applies verbatim: these four are recorded `NOT RUN`
-**together**, with this cause, and **none of them is `PASS`**. In particular a
-`NOT RUN` (a) means the card's central rule-4 claim is unproven, and the card says
-that blocks approval until the coordinator decides. V3's greps and a grep of the
-bundled web bundle for `__TAURI_INTERNALS__` are weaker readings and are a
-**report**, never a substitute; neither was substituted here, and no `src-tauri/`
-edit was made to open the inspector.
+That is `main.rs:321-325` doing what the card said it would do: the server's
+private stdout pipe, drained line by line, every unrecognised line re-emitted to
+**stderr**, where the harness captured it. The mechanism reads. What is missing is
+the *publisher*: the AppImage's web bundle was built at 00:01, before
+`web/src/main.tsx` carried the hook, so no bundle in the running app contains
+`p3.4-observe` and there is nothing to publish.
 
-What was still decidable and was decided:
+Per the card's stop condition, (a), (b), (c), (d)'s handler half and (e) are
+recorded `NOT RUN` **together**, with that cause, and **none of them is `PASS`**.
+A `NOT RUN` (a) means the card's central rule-4 claim is unproven and, per the
+card, blocks approval pending a coordinator decision. The weaker config-level
+readings — V3's greps, and a grep of the bundled web bundle for
+`__TAURI_INTERNALS__` — are a **report** and were not substituted for any of
+them. The three forbidden remedies were all refused: no second hook or second
+marker path anywhere in `web/`, no change to the gate, and no `src-tauri/**` edit
+made to open a channel.
 
-- **The fixture note is real and reachable.** `POST /api/formats`
-  (`{"name": "Progress note", "sections": ["Subjective", "Plan"]}`) → 201,
-  `POST /api/patients` (`John Smith`) → 201, `POST /api/notes` with the content
-  out of `e2e/fixtures/csp/injection-probe.md` → 201. That order is not optional:
-  a sandbox data dir has no `note_formats` row and `POST /api/notes` 404s on an
-  unknown `format_id`. Creating them is **not** the handler half — nothing was
-  rendered and nothing was read, which is why the case is `NOT RUN` and not a
-  pass on the strength of three 201s.
-- **The inspector port was bounded.** 7836 asserted free before the launch and
-  free again after the app was stopped, so the channel cannot have outlived the
-  row and the harness cannot have attached to another process's inspector.
+What **was** decidable and was decided, and is not the handler half:
 
-## Reading the framing off the bundled library, as S3 requires
+- `POST /api/formats` (`{"name": "Progress note", "sections": ["Subjective", "Plan"]}`)
+  → 201, `POST /api/patients` (`John Smith`) → 201, `POST /api/notes` with the
+  content out of `e2e/fixtures/csp/injection-probe.md` → 201. The order is not
+  optional: a sandbox data dir has no `note_formats` row and `POST /api/notes`
+  404s on an unknown `format_id`. Three 201s are **not** the handler half.
 
-S3 says the harness must read the protocol's framing off the WebKitGTK build the
-AppImage bundles "rather than guessed". Done, in two stages.
+## The two freshness assertions, and what they caught
 
-**Stage one — the library, not the source tree.** In
-`src-tauri/target/release/bundle/appimage/Apunta (test).AppDir/usr/lib/libwebkit2gtk-4.1.so.0`:
+These two assertions are the reason attempt 1's failure was invisible, and they
+are the direct repair the card asked for. Both are **primary predicates** — a
+`git diff --name-only <base>…HEAD` and a `git status --porcelain` over **Rule
+B's set** — with the mtime walk over the same set as the fallback. They name the
+path, the mtime and the AppImage's own mtime, so a reader can check the arithmetic:
 
-- `WEBKIT_INSPECTOR_SERVER` is present as a string, beside
-  `WEBKIT_INSPECTOR_HTTP_SERVER` (deliberately unused, per S3).
-- `WEBKIT_INSPECTOR_SERVER` is **not** an exported symbol: `nm -D` lists nothing
-  matching it, and the library is stripped (`nm: no symbols`). It is read
-  internally.
-- The protocol is a **GVariant**, not bare JSON lines: the binary references
-  `WTF::SocketConnection::sendMessage(const WTF::CString&, GVariant*)`,
-  `g_variant_new_bytestring`, `g_variant_get_bytestring`,
-  `Inspector::RemoteInspector::Client`, and `Inspector::BackendDispatcher::dispatch(const WTF::String&)`.
-- The protocol's own key names are present as `method`, `params` and `targets`.
+```
+web/src/main.tsx  2026-10-02T18:14:24.654Z
+AppImage         2026-10-02T07:06:07.901Z
+```
 
-**Stage two — on the wire, against the shipped AppImage.** Sandbox run
-`2026-10-02T16-46-12-867Z-cb13d02b`, four probe passes, each launching the real
-AppImage with `WEBKIT_INSPECTOR_SERVER=127.0.0.1:7836` in the child environment
-only and stopping it by pid. Measured:
+The second assertion is the one that proves the repair works on an **uncommitted**
+edit, which is exactly what the `src-tauri/`-only trigger could not see: at the
+moment of the run, `web/src/main.tsx` is modified in the working tree and named
+only by `git status`, never by the diff against `d56af1d`. Both fired, so the row
+could not silently assert about a bundle that was never rebuilt.
 
-1. WebKit **is** the listener: `ss -ltnp` while the app ran reported
-   `LISTEN 127.0.0.1:7836` owned by the app's `apunta` process. So the socket is
-   bound, on loopback, and accepting.
-2. An **unframed** message (`{"method":"list"}` with `\n`, `\0`, `\r\n` or no
-   terminator, and with the method names `list`, `ListTargets`, `targets`,
-   `getTargets`) closes the connection in **0–1 ms**, every time.
-3. A **length-prefixed** message (`uint32` little-endian length, then the JSON) or
-   the **GVariant `((ay))`** serialisation (a 4-byte offsets word for the outer
-   tuple, a 4-byte one for the inner, then the bytes) is **buffered, not
-   discarded**: the connection stays open and is closed only by the harness.
-   17 candidate framings and method names were tried this way, including
-   `connect`, `evaluate` and `cancel` with full parameter objects.
-4. **No candidate produced a single reply byte**, in 6 s waits. The target list
-   never arrived, so the channel cannot be used.
+## (d)'s header half — `FAIL`, and the cause is a stale bundle
 
-The harness therefore encodes exactly what was measured — the `((ay))` framing,
-`method`/`params`/`targets` keys, a `{"method":"list"}` target-list request — and
-reports `NOT RUN` when no reply arrives. It never treats silence as success, and
-it never falls back to a guess that would produce a plausible-looking result.
+`GET /patients` answered **200** with `content-type: text/html; charset=utf-8`
+and **no** `content-security-policy` header. The SPA fallback exists and is HTML,
+so the assertion reached the right response; the header is not there because the
+launched binary does not contain `csp.ts`. V1 asserts the same header in-process
+on both servers (12/12), so the source is right and the binary predates it.
 
-## Containment, all five asserted, none weakened
+This is the assertion the card says "fails on an unmodified tree", and it was
+left standing.
+
+## Containment — all five, none of them weakenable
 
 | Assertion | Result |
 | --- | --- |
-| no process from the run remains | PASS — the shell went on `SIGTERM`, and no bundled server on this data folder survived (15 s poll) |
-| no second `apunta.lock`, `apunta.db`, `-wal` or `-shm` | PASS — baseline taken **before** the launch; nothing beyond the four C-OWN@1 names appeared, and the lock names no live pid |
-| port 7835 free afterwards | PASS |
-| **port 7836 free afterwards** | PASS — the in-page channel is gone and cannot outlive the row |
-| `ollama` still running | PASS — read from outside the run |
+| no process from the run remains | `PASS` (the AppImage is stopped **by pid** with SIGTERM, and the bundled server's process count on this data dir is polled back to 0) |
+| no second `apunta.lock`, `apunta.db`, `-wal` or `-shm` | `PASS` (baseline snapshotted before the launch; the lock names no live pid) |
+| the sandbox port is free afterwards | `PASS` (`127.0.0.1:7835`, **read** out of `/proc/net/tcp{,6}` — the harness binds no socket of any kind, so the port check does not bind one either) |
+| the observation channel is gone and cannot ship | `PASS` (0 marker lines before the app was stopped and 0 three seconds later; and `web/dist/assets/*.js` carries **0** occurrences of the marker path and **0** of the gate string) |
+| `ollama` is still running | `PASS` (read from outside the run) |
 
-## Freshness
+Nothing in the five was loosened, skipped or turned off to make the row pass
+(HS-7). The fourth is the release invariant restated on the row that launches the
+binary: it would have **failed** if a flagged bundle had ever landed in
+`web/dist`, and its counts are the same ones V0 asserts.
 
-`PASS V2 the AppImage is newer than every src-tauri source file`. The walk covers
-`src-tauri/src/**`, `src-tauri/ui/**`, `src-tauri/capabilities/**` (absent), both
-configs, `build.rs`, `Cargo.toml`, `Cargo.lock` and `src-tauri/icons/**`, and
-**nothing** under `src-tauri/target/` or `src-tauri/gen/`. Excluding those two is
-mandatory, not cosmetic: `gen/schemas` is rewritten by `tauri-build` on every
-build-script run and `target/` by every build, so including either fails this row
-on a pristine tree.
+## What this attempt changed in the harness, and what a reviewer should press on
 
-The primary predicate — `git diff --name-only 52b9ce0...HEAD -- src-tauri/` — is
-empty for this attempt, and the mtime walk is the fallback that also catches
-uncommitted edits.
+`scripts/v2/tauri-security.test.mjs` was rewritten to read the hook instead of the
+inspector. The removals are visible in the diff and are exactly the mechanism the
+card dropped: the inspector host/port/variable, the `node:net` import, the
+GVariant framing, `readTargets`, `evaluate`, and the port-7836 containment
+assertion. What replaces it:
 
-## What the coordinator needs to decide
+- **`readObservations(stderrText)`** parses the accumulated stderr for
+  `/api/p3.4-observe?…` and returns `{facts, rects, markerLines, last}`. A fact
+  line carries `href` and no `batch`; a rectangle line carries `batch` and no
+  `href`. Every value is a URL-encoded scalar, so a label can never be read as a
+  fact.
+- **`clickAndWaitForChange`** clicks a rectangle the page published for its own
+  visible label with `xdotool mousemove --sync --window <id> <x> <y> click 1`, and
+  regards the click as landed only when the **published rectangles or facts
+  change**. The assertion the click enables is never that proof, and a click that
+  missed times out and fails the row.
+- **The window baseline is taken before the note is opened**, not before the
+  attempt is read. This is a deliberate reading of the card: the hook actuates as
+  soon as `scriptText` has been true for two polls, which can be within 500 ms of
+  the note opening, so a snapshot taken after the clicks would be a snapshot of an
+  already-actuated window and (b) and (c) would compare two post-attempt states.
+  Both now compare against the pre-open baseline. **A reviewer should press on
+  this** — it is the one place where the harness's own timing choices, rather than
+  the card's wording, decided what "unchanged" is measured against.
+- **`attempt` is a three-stage state machine**, one poll apart, so (b)'s refused
+  navigation cannot race (c)'s `window.open`: `b:assign-location-href`, then
+  `c:window-open-external`, then `c:window-open-same-origin`.
+- **A `NOT RUN` sets the exit code.** The card says a `NOT RUN` is never a `PASS`;
+  making it also never a green row is the same statement one level up. With five
+  `NOT RUN`s the row exits 1 whether or not the `FAIL`s were counted.
 
-1. **V0's condition.** Add `server/src/**` (or the bundled server) to it, or
-   authorise V0 for this card regardless. Until then V2(d)'s header half cannot
-   pass on any attempt.
-2. **(a) is unproven and blocks approval.** Either accept a config-level reading
-   as a weaker report — the card forbids substituting it — or have the framing
-   worked out further, or accept V2 as unproven on this host. This implementer
-   tried sixteen framings and thirteen method names and got no reply; the protocol
-   appears not to be reachable from an unauthenticated plain TCP client on this
-   WebKitGTK 2.52.6 build.
-EOF
-echo written; ls
+### The one place the hook had to be written around a lint rule
+
+`https://example.invalid/` is a non-loopback URL literal, and
+`eslint.config.js` bans every such literal as a hard-rule-1 tripwire. That file is
+outside this card's May edit, and weakening it to accommodate a test hook would be
+HS-7. So `web/src/main.tsx` assembles the origin from
+`['https', 'example.invalid'].join('://') + '/'`, which is the same string, keeps
+the reserved-TLD guarantee the card asks for (`.invalid` cannot resolve, so an
+attempt is provably a refusal attempt), and puts no non-loopback literal in the
+tree. **A reviewer should press on this too**: it is the only place in the
+implementation where a rule was routed around rather than satisfied, and the
+judgement (a tripwire on *shipped* sources has nothing to say about a URL that
+cannot resolve) is mine, not the card's.

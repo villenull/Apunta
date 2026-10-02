@@ -13,11 +13,11 @@
  * - **(a)** `window.__TAURI__` and `window.__TAURI_INTERNALS__` are undefined in
  *   the rendered app page. One assertion with one pass condition — "absent or
  *   unusable" is not a pass.
- * - **(b)** a navigation to `https://example.invalid/` is **refused**. The row
+ * - **(b)** a navigation to a reserved `.invalid` origin is **refused**. The row
  *   asserts a refusal and never a successful external load: `.invalid` is
  *   reserved and cannot resolve (HS-6), so a load that succeeded would be a
  *   failure rather than a result.
- * - **(c)** `window.open` to a loopback URL and to `https://example.invalid/` are
+ * - **(c)** `window.open` to a loopback URL and to the same `.invalid` origin are
  *   both cancelled, and no second window appears.
  * - **(d), header half:** `GET http://127.0.0.1:<port>/patients` — the SPA-fallback
  *   HTML the webview actually renders the note in — carries a
@@ -26,39 +26,50 @@
  *   vacuously.
  * - **(d), handler half:** the fixture note is created over HTTP in the order
  *   `POST /api/formats` → `POST /api/patients` → `POST /api/notes`, then opened
- *   in the workspace, and the page is required to show the payload's characters
- *   without the payload having run. Both halves are asserted because either alone
- *   is decidable-but-weak, and neither may stand for the other.
+ *   in the workspace by clicking the patient row and the note row **located by
+ *   their visible text**, and the page is required to show the payload's
+ *   characters without the payload having run. Both halves are asserted because
+ *   either alone is decidable-but-weak, and neither may stand for the other.
  * - **(e), the runtime half of V1(vi):** an element carrying a `style` attribute
  *   has that style **applied**, read back as a computed value. This is what
  *   proves `style-src-attr 'unsafe-inline'` is a deliberate relaxation rather
  *   than a header string nobody checked.
  * - **Containment, all five:** nothing from the run remains; no second
- *   `apunta.lock`, `apunta.db`, `-wal` or `-shm`; port 7835 free afterwards; port
- *   **7836** free afterwards, so the in-page channel is gone and cannot outlive
- *   the row; and `ollama` still running, read from outside the run.
+ *   `apunta.lock`, `apunta.db`, `-wal` or `-shm`; the sandbox port is free
+ *   afterwards; the observation channel is gone when the row ends **and** cannot
+ *   exist in a shipped bundle; and `ollama` still running, read from outside the
+ *   run.
  *
  * **The in-page channel** — the only way to make the page do (a), (b), (c), (d)
- * and (e) — is WebKitGTK's remote inspector on `127.0.0.1:7836`, set **in the
- * environment of the AppImage child process this file spawns** and never exported
- * into the operator's shell and never written into `src-tauri/**` (V3 greps for
- * it). It is loopback-only and bound to 7836, which is asserted free before the
- * launch and free again after the app is stopped, so the harness can never attach
- * to another process's inspector.
+ * and (e) — is **the observation hook** the card defines once, in `Fixed
+ * decisions`: one block in `web/src/main.tsx` gated on
+ * `import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'`, which publishes its facts
+ * as same-origin `fetch` requests to `/api/p3.4-observe`. The bundled server's
+ * request logger writes each of those URLs to its **private stdout pipe**
+ * (`app.ts:70`), the shell's reader thread re-emits every unrecognised line to
+ * **stderr** (`main.rs:321-325`), and this harness reads the AppImage child's
+ * captured stderr for the life of the child. The accumulated buffer — not any
+ * tail printed at the end — is the assertion's source.
  *
- * If the channel cannot be reached, **(a), (b), (c) and (d)'s handler half are
- * recorded `NOT RUN` together, with that cause, and none of them is ever `PASS`.**
- * (a) is the card's central rule-4 claim, so a `NOT RUN` there is a report to the
- * coordinator and never a substitute: a config-level grep of the bundle is weaker
- * and is recorded as such.
+ * **No port, no listener, no variable.** This file binds no socket of any kind
+ * and sets no variable in the child's environment beyond the sandbox
+ * environment V2's command already exports, so there is nothing to be free of
+ * afterwards. Port freedom is *read* out of `/proc/net/tcp{,6}` rather than
+ * proved by binding.
+ *
+ * If the channel cannot be read, **(a), (b), (c) and (d)'s handler half and (e)
+ * are recorded `NOT RUN` together, with that cause, and none of them is ever
+ * `PASS`.** (a) is the card's central rule-4 claim, so a `NOT RUN` there is a
+ * report to the coordinator and never a substitute: a config-level grep of the
+ * bundle is weaker and is recorded as such. A `NOT RUN` also sets the exit code,
+ * so a row that could not prove the contract can never come back green.
  *
  * No `pkill`, ever (C-ISO@1 rule 7): every process this file stops is one it
  * started, by pid.
  */
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { createServer, connect as netConnect } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -70,19 +81,57 @@ const dataDir = process.env['APUNTA_DATA_DIR'];
 const runId = process.env['APUNTA_TEST_RUN_ID'];
 
 /**
- * WebKitGTK's inspector, on loopback.
+ * The observation hook's marker path and gate, named once so the containment
+ * assertions, the freshness check and the parser cannot drift apart.
  *
- * Never `0.0.0.0`: a wildcard bind would be reachable from off the machine, which
- * is the opposite of what a channel this card opens for four assertions needs.
- * Sibling `WEBKIT_INSPECTOR_HTTP_SERVER` is deliberately unused — it would need an
- * HTTP discovery endpoint the harness would also have to speak, and this socket
- * needs none.
+ * Neither string may appear in `web/dist/assets/*.js` (V0's release invariant,
+ * restated by containment below) nor anywhere under `src-tauri/` (V3).
  */
-const INSPECTOR_HOST = '127.0.0.1';
-const INSPECTOR_PORT = 7836;
+const MARKER_PATH = '/api/p3.4-observe';
+const GATE_STRING = 'VITE_APUNTA_TEST_IDENTITY';
 
-/** The variable name, kept in one place so V3's grep and this spawn agree. */
-const INSPECTOR_VARIABLE = 'WEBKIT_INSPECTOR_SERVER';
+/**
+ * The commit the freshness walk diffs from: the base this attempt was
+ * dispatched at, and the commit before the coordinator commits the work in
+ * flight. A Rule B path that is uncommitted is caught by the `git status`
+ * predicate instead, so between the two nothing can hide.
+ */
+const RULE_B_BASE_COMMIT = 'd56af1d';
+
+/**
+ * Rule B's set, verbatim: every input that reaches `bundle.resources`, so
+ * `npm run tauri:build:test` alone can never be stale. `tauri.conf.json`
+ * declares no `beforeBuildCommand`, so `tauri build` copies whatever
+ * `build/linux-resources/` already holds — which is why attempt 1 launched a
+ * binary whose bundled server predated the card's own source.
+ *
+ * **Never inputs, only outputs**, and therefore excluded from every walk here:
+ * `build/linux-resources/**`, `server/dist/**` and `web/dist/**`. A stale one of
+ * those is the symptom Rule B detects, never a trigger.
+ */
+const RULE_B_PATHS = [
+  'server/src',
+  'shared/src',
+  'server/package.json',
+  'server/migrations',
+  'src-tauri',
+  'web/src',
+  'web/public',
+  'web/index.html',
+  'web/vite.config.ts',
+  'web/package.json',
+  'package.json',
+  'package-lock.json',
+];
+
+/**
+ * Under `src-tauri/`, the two directories that are rewritten by a build and so
+ * can never be inputs: `target/` by every build, `gen/schemas` by `tauri-build`
+ * on every build-script run — which is exactly what V4's `cargo clippy` and
+ * `cargo test` do. `gen/` is gitignored and untracked, so no `git diff`
+ * predicate can ever name it (AM-118).
+ */
+const RULE_B_SKIPPED_DIRS = ['target', 'gen'];
 
 /** C-BRIDGE@1 rule 6's six directives, which (d)'s header half must find. */
 const RULE_6_DIRECTIVES = [
@@ -100,11 +149,9 @@ const PROBE_SENTINEL = '__APUNTA_CSP_PROBE__';
 /** The literal characters that must be visible in the rendered note. */
 const PROBE_LITERAL = '<script>';
 
-/** The paths under `src-tauri/` that are build output, and are excluded from the
- * freshness walk: `target/` by every build, and `gen/schemas` by `tauri-build` on
- * every build-script run — which is exactly what `cargo clippy` and `cargo test`
- * do, so including either makes this row fail on a pristine tree. */
-const FRESHNESS_EXCLUDED = ['target', 'gen'];
+/** The two labels V2(d)'s handler half clicks, located by visible text. */
+const PATIENT_LABEL = 'John Smith';
+const NOTE_LABEL = 'Progress note';
 
 /** V3–V5 style reporting: one line per assertion, and a non-zero exit on failure. */
 const results = [];
@@ -145,12 +192,34 @@ function sleep(ms) {
   return new Promise((done) => setTimeout(done, ms));
 }
 
-async function isPortFree(portNumber) {
-  return new Promise((done) => {
-    const probe = createServer();
-    probe.once('error', () => done(false));
-    probe.listen(portNumber, INSPECTOR_HOST, () => probe.close(() => done(true)));
-  });
+/**
+ * Whether a TCP port has a LISTEN socket, **read** out of `/proc/net/tcp` and
+ * `/proc/net/tcp6` rather than proved by binding one.
+ *
+ * This harness binds no socket of any kind: the observation channel is a
+ * same-origin `fetch` over the app's own origin, so there is nothing to be free
+ * of afterwards, and a port check that had to bind to answer the question would
+ * itself be a listener.
+ */
+function isPortFree(portNumber) {
+  for (const file of ['/proc/net/tcp', '/proc/net/tcp6']) {
+    let text;
+    try {
+      text = readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    for (const line of text.split('\n').slice(1)) {
+      const fields = line.trim().split(/\s+/);
+      if (fields.length < 4) continue;
+      const local = fields[1] ?? '';
+      const state = fields[3] ?? '';
+      if (state !== '0A') continue; // 0A is TCP_LISTEN
+      const localPort = Number.parseInt(local.split(':')[1] ?? '', 16);
+      if (localPort === portNumber) return false;
+    }
+  }
+  return true;
 }
 
 function pidAlive(pid) {
@@ -202,20 +271,25 @@ function resolveAppImage() {
 }
 
 /**
- * The newest mtime under `src-tauri/`, excluding the two build-output directories.
+ * The newest mtime under **Rule B's set**, and which path carries it.
  *
- * This is the card's single normative statement of the walk: `src-tauri/src/**`,
- * `src-tauri/ui/**`, `src-tauri/capabilities/**`, the two configs, `build.rs`,
- * `Cargo.toml`, `Cargo.lock` and `src-tauri/icons/**`, and **nothing** under
- * `src-tauri/target/` or `src-tauri/gen/`.
+ * This walk is the single normative statement in code of the card's Rule B: it
+ * names no path of its own, and it skips `src-tauri/target/` and
+ * `src-tauri/gen/` for AM-118's reason.
  */
-function newestSourceMtime() {
+function newestBundleInputMtime() {
   let newest = { mtimeMs: 0, path: null };
   const walk = (dir) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
       const full = join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (dir === join(repoRoot, 'src-tauri') && FRESHNESS_EXCLUDED.includes(entry.name)) continue;
+        if (dir === join(repoRoot, 'src-tauri') && RULE_B_SKIPPED_DIRS.includes(entry.name)) continue;
         walk(full);
         continue;
       }
@@ -223,8 +297,58 @@ function newestSourceMtime() {
       if (mtimeMs > newest.mtimeMs) newest = { mtimeMs, path: full };
     }
   };
-  walk(join(repoRoot, 'src-tauri'));
+  for (const relative of RULE_B_PATHS) {
+    const full = join(repoRoot, relative);
+    let stats;
+    try {
+      stats = statSync(full);
+    } catch {
+      continue;
+    }
+    if (stats.isDirectory()) walk(full);
+    else if (stats.mtimeMs > newest.mtimeMs) newest = { mtimeMs: stats.mtimeMs, path: full };
+  }
   return newest;
+}
+
+/**
+ * The **primary** freshness predicates, which between them catch a committed
+ * Rule B path and an uncommitted one: `git diff --name-only <base>…HEAD` sees
+ * the former and `git status --porcelain` the latter. The mtime walk above is
+ * the fallback for a path that is neither — an ignored file under a Rule B
+ * directory, for instance.
+ *
+ * A path either names is a `FAIL` when it is newer than the AppImage, because
+ * that is precisely the case attempt 1 walked past.
+ */
+function gitNamedRuleBPaths() {
+  const named = [];
+  const run = (args) => {
+    const result = spawnSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+    if (result.status !== 0) return [];
+    // `git diff --name-only` prints a bare path per line; `git status
+    // --porcelain` prefixes each with a two-character status and a space. The
+    // prefix is stripped by pattern rather than by index, because trimming the
+    // line first would eat the very space that marks the boundary.
+    return result.stdout
+      .split('\n')
+      .filter((line) => line !== '')
+      .map((line) => (/^[ MADRCU?!]{2} /.test(line) ? line.slice(3) : line))
+      .filter((path) => path !== '');
+  };
+  const diffed = run(['diff', '--name-only', `${RULE_B_BASE_COMMIT}...HEAD`, '--', ...RULE_B_PATHS]);
+  const statused = run(['status', '--porcelain', '--', ...RULE_B_PATHS]);
+  for (const path of new Set([...diffed, ...statused])) {
+    const full = join(repoRoot, path);
+    let mtimeMs;
+    try {
+      mtimeMs = statSync(full).mtimeMs;
+    } catch {
+      mtimeMs = undefined;
+    }
+    named.push({ path, mtimeMs });
+  }
+  return named;
 }
 
 /**
@@ -269,17 +393,16 @@ function ensureDisplay() {
  * test-identity build refuses to start without the first two, which is what makes
  * this the only way the app can be launched here (HS-1, HS-2).
  *
- * **`INSPECTOR_VARIABLE` is set here and nowhere else.** It is in the child's
- * environment, which is read when the webview is constructed, so it must be here
- * and not in the operator's shell. Nothing in the repository sets it, which is
- * what makes it impossible in a release build — V3 greps `src-tauri/` for it.
+ * **Nothing else is set in the child's environment.** The observation channel
+ * needs no variable and no port: it is the hook's build-time gate that puts it in
+ * the bundle at all, and V0's release invariant is what proves a bundle without
+ * that gate cannot carry it.
  */
 function launchApp(appImage) {
   const child = spawn(appImage, [], {
     cwd: '/',
     env: {
       ...process.env,
-      [INSPECTOR_VARIABLE]: `${INSPECTOR_HOST}:${String(INSPECTOR_PORT)}`,
       // The desktop's Wayland session must not leak into a headless run: unset
       // rather than overridden, so no child can find a compositor socket.
       WAYLAND_DISPLAY: '',
@@ -371,6 +494,21 @@ async function windowListDetailed() {
   return detailed;
 }
 
+/** The app window in a list, or `null`. One shape for every window comparison. */
+function appWindowOf(windows) {
+  return (windows ?? []).find((w) => w.name === 'Apunta' && w.width >= 400 && w.height >= 300) ?? null;
+}
+
+/** The two window facts (b) and (c) must leave alone, in one comparable string. */
+function windowSignature(windows) {
+  const app = appWindowOf(windows);
+  return JSON.stringify({
+    count: (windows ?? []).length,
+    app:
+      app === null ? null : `${app.name} ${String(app.width)}x${String(app.height)} pid=${String(app.pid)}`,
+  });
+}
+
 /** Is Ollama still answering? C-ISO@1 rule 7, read from outside the run. */
 async function ollamaAlive() {
   try {
@@ -450,11 +588,11 @@ async function createFixtureNote() {
     return { status: response.status, body: await response.json() };
   };
 
-  const format = await call('/api/formats', { name: 'Progress note', sections: ['Subjective', 'Plan'] });
+  const format = await call('/api/formats', { name: NOTE_LABEL, sections: ['Subjective', 'Plan'] });
   if (format.status !== 201)
     return { ok: false, detail: `POST /api/formats answered ${String(format.status)}` };
 
-  const patient = await call('/api/patients', { name: 'John Smith' });
+  const patient = await call('/api/patients', { name: PATIENT_LABEL });
   if (patient.status !== 201)
     return { ok: false, detail: `POST /api/patients answered ${String(patient.status)}` };
 
@@ -469,156 +607,137 @@ async function createFixtureNote() {
   return { ok: true, patientId: patient.body.id, formatId: format.body.id, noteId: note.body.id };
 }
 
-// --------------------------------------------------- the in-page channel ----
+// ------------------------------------------------ the observation channel ----
 
 /**
- * WebKitGTK's remote inspector, spoken over `node:net`.
+ * Everything the hook has published so far, read out of the AppImage child's
+ * **captured stderr**.
  *
- * **The framing.** It is read off the library the AppImage bundles —
- * `usr/lib/libwebkit2gtk-4.1.so.0` — rather than assumed, and two facts from that
- * library are what shape it: `WTF::SocketConnection::sendMessage(const CString&,
- * GVariant*)` together with `g_variant_new_bytestring`, so a message is a
- * serialised GVariant of type `((ay))` (a 4-byte little-endian offsets word for
- * the outer tuple, a 4-byte one for the inner, then the JSON bytes), and the keys
- * the protocol itself uses are the `method` / `params` / `targets` strings in that
- * same binary. Both parts were confirmed on the wire against the shipped AppImage:
- * an unframed message closes the connection immediately, while a framed one is
- * buffered rather than discarded.
- *
- * **What this class never does.** It never guesses. `listTargets` returns either a
- * target list or a reason it could not read one, and every caller records a
- * `NOT RUN` for a reason rather than a `PASS` when it is the latter.
+ * The shape mirrors what the hook sends: a fact line carries `href` and no
+ * `batch`, a rectangle line carries `batch` and no `href`. Every value in a
+ * marker URL is a URL-encoded scalar, so nothing is parsed out of prose and a
+ * label can never be mistaken for a fact.
  */
-class InspectorChannel {
-  constructor() {
-    this.socket = null;
-    this.buffer = Buffer.alloc(0);
-  }
-
-  /** One framed message: the GVariant `((ay))` serialisation of the JSON body. */
-  static frame(body) {
-    const bytes = Buffer.from(body, 'utf8');
-    const offsets = Buffer.alloc(8);
-    offsets.writeUInt32LE(4, 0);
-    offsets.writeUInt32LE(4, 4);
-    return Buffer.concat([offsets, bytes]);
-  }
-
-  async connect(timeoutMs = 10_000) {
-    return new Promise((done) => {
-      const socket = netConnect(INSPECTOR_PORT, INSPECTOR_HOST);
-      const settle = (result) => {
-        clearTimeout(timer);
-        try {
-          socket.destroy();
-        } catch {
-          /* the socket is already gone */
+function readObservations(stderrText) {
+  const facts = [];
+  const rects = new Map();
+  let markerLines = 0;
+  const pattern = new RegExp(`${MARKER_PATH.replaceAll('/', '\\/')}\\?([^\\s"\\\\]*)`, 'g');
+  for (const line of String(stderrText).split('\n')) {
+    pattern.lastIndex = 0;
+    let match = pattern.exec(line);
+    while (match !== null) {
+      markerLines += 1;
+      const params = new URLSearchParams(match[1]);
+      if (params.has('href')) {
+        facts.push(Object.fromEntries(params.entries()));
+      } else if (params.has('batch')) {
+        for (const [key, value] of params.entries()) {
+          const rect = /^i(\d+)_(x|y|w|h|l)$/.exec(key);
+          if (rect === null) continue;
+          const at = rect[1];
+          const current = rects.get(at) ?? {};
+          current[rect[2]] = value;
+          rects.set(at, current);
         }
-        done(result);
-      };
-      const timer = setTimeout(
-        () => settle({ ok: false, detail: `no answer within ${String(timeoutMs)}ms` }),
-        timeoutMs,
-      );
-      socket.on('error', (error) => settle({ ok: false, detail: `socket error ${String(error)}` }));
-      socket.on('close', () => settle({ ok: false, detail: 'the inspector closed the connection' }));
-      socket.on('connect', () => {
-        this.socket = socket;
-        socket.on('data', (chunk) => {
-          this.buffer = Buffer.concat([this.buffer, chunk]);
-        });
-        done({ ok: true, socket });
-      });
-    });
-  }
-
-  /** Writes a framed message. */
-  send(body) {
-    if (this.socket === null) throw new Error('the channel is not open');
-    this.socket.write(InspectorChannel.frame(body));
-  }
-
-  /**
-   * Waits for a frame and returns it parsed, or `null`.
-   *
-   * The reply is read with the same framing the request used: a 4-byte
-   * little-endian offsets word for the outer tuple, a 4-byte one for the inner,
-   * then the JSON bytes.
-   */
-  async receive(timeoutMs) {
-    const deadline = Date.now() + timeoutMs;
-    for (;;) {
-      const frame = InspectorChannel.decode(this.buffer);
-      if (frame !== null) return frame;
-      if (Date.now() >= deadline) return null;
-      await sleep(100);
+      }
+      match = pattern.exec(line);
     }
   }
+  return { facts, rects, markerLines, last: facts.length === 0 ? null : facts[facts.length - 1] };
+}
 
-  /** The first frame in `buffer`, or `null` when it is not complete yet. */
-  static decode(buffer) {
-    if (buffer.length < 8) return null;
-    const innerOffset = buffer.readUInt32LE(0);
-    const innerLength = buffer.readUInt32LE(innerOffset);
-    const start = innerOffset + 4;
-    if (buffer.length < start + innerLength) return null;
-    const body = buffer.subarray(start, start + innerLength).toString('utf8');
-    try {
-      return JSON.parse(body);
-    } catch {
-      return { unparsed: body };
-    }
+/** The most recent fact line satisfying a predicate, or `null`. */
+function lastFactWhere(stderrText, predicate) {
+  const { facts } = readObservations(stderrText);
+  for (let index = facts.length - 1; index >= 0; index -= 1) {
+    if (predicate(facts[index])) return facts[index];
   }
+  return null;
+}
 
-  close() {
-    if (this.socket === null) return;
-    try {
-      this.socket.destroy();
-    } catch {
-      /* already gone */
-    }
-    this.socket = null;
+/** Waits for a fact line satisfying a predicate, or `null` on timeout. */
+async function waitForFact(stderrText, predicate, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const found = lastFactWhere(stderrText, predicate);
+    if (found !== null) return found;
+    if (Date.now() >= deadline) return null;
+    await sleep(250);
   }
+}
+
+/** The rectangle the hook published for a visible label, or `null`. */
+function rectForLabel(stderrText, label) {
+  const { rects } = readObservations(stderrText);
+  for (const rect of rects.values()) {
+    if (rect['l'] === label) return rect;
+  }
+  return null;
+}
+
+/** Everything the hook has published about click targets, as one string. */
+function rectSignature(stderrText) {
+  const { rects } = readObservations(stderrText);
+  return JSON.stringify(
+    [...rects.entries()].sort((a, b) => Number(a[0]) - Number(b[0])).map(([, rect]) => rect),
+  );
 }
 
 /**
- * The target list, or the reason there is not one.
+ * Clicks a rectangle the hook published, at a label.
  *
- * The first assertion about the channel is that a target list arrives at all: no
- * target list means the channel is unusable and the caller's `NOT RUN` follows
- * from here.
+ * `xdotool mousemove --sync --window <id> <x> <y> click 1` is the mechanism the
+ * sibling card fixed, and the click lands at the **centre** of the rectangle the
+ * page itself reported, so the target is a real label and never a class name, a
+ * test id or a selector of this harness's own choosing.
  */
-async function readTargets(channel) {
-  channel.send(JSON.stringify({ method: 'list' }));
-  const reply = await channel.receive(10_000);
-  if (reply === null) {
-    return { ok: false, detail: 'no reply to the target-list message' };
-  }
-  const targets = reply?.params?.targets ?? reply?.targets;
-  if (!Array.isArray(targets) || targets.length === 0) {
-    return { ok: false, detail: `the reply carried no target list (${JSON.stringify(reply).slice(0, 200)})` };
-  }
-  return { ok: true, targets };
+async function clickAt(windowId, rect) {
+  const x = Number(rect['x']) + Math.floor(Number(rect['w']) / 2);
+  const y = Number(rect['y']) + Math.floor(Number(rect['h']) / 2);
+  const result = await spawnAsync('xdotool', [
+    'mousemove',
+    '--sync',
+    '--window',
+    String(windowId),
+    String(x),
+    String(y),
+    'click',
+    '1',
+  ]);
+  return { x, y, ok: !result.stdout.includes('XError') };
 }
 
-/** `Runtime.evaluate`-shaped, over the framing above. */
-async function evaluate(channel, callId, expression) {
-  channel.send(
-    JSON.stringify({
-      method: 'evaluate',
-      params: {
-        callId,
-        expression,
-        objectGroup: '',
-        includeCommandLineAPI: false,
-        silenceExceptions: true,
-        returnByValue: true,
-        generatePreview: false,
-        contextId: 1,
-      },
-    }),
-  );
-  return await channel.receive(10_000);
+/**
+ * Clicks a label and waits for the hook to publish something **different** —
+ * which is the only proof that a click landed. The assertion the click enables is
+ * never that proof.
+ */
+async function clickAndWaitForChange(windowId, stderrText, label, predicate, timeoutMs) {
+  const before = rectSignature(stderrText);
+  const rect = rectForLabel(stderrText, label);
+  if (rect === undefined || rect === null) {
+    return { ok: false, detail: `the hook published no rectangle for the label ${JSON.stringify(label)}` };
+  }
+  const clicked = await clickAt(windowId, rect);
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const after = rectSignature(stderrText);
+    const fact = predicate === undefined ? null : lastFactWhere(stderrText, predicate);
+    const changed = after !== before || fact !== null;
+    if (changed)
+      return {
+        ok: true,
+        detail: `clicked ${JSON.stringify(label)} at ${String(clicked.x)},${String(clicked.y)}`,
+      };
+    if (Date.now() >= deadline) {
+      return {
+        ok: false,
+        detail: `the click on ${JSON.stringify(label)} at ${String(clicked.x)},${String(clicked.y)} changed neither the published rectangles nor the published facts within ${String(timeoutMs)}ms, so it did not land`,
+      };
+    }
+    await sleep(250);
+  }
 }
 
 // ------------------------------------------------------------------ mode ----
@@ -631,30 +750,29 @@ async function modeSecurity() {
   }
   pass('V2 appimage', sanitise(appImage.path));
 
-  // Freshness: the binary must not predate a source file this card changed, or
-  // V2 would be asserting about code that was never compiled.
-  const newest = newestSourceMtime();
+  // Freshness, on Rule B's set. The binary must not predate any input that
+  // reaches `bundle.resources`, or V2 would be asserting about code that was
+  // never compiled — which is exactly how attempt 1's (d) header half failed.
+  const newest = newestBundleInputMtime();
   check(
-    'V2 the AppImage is newer than every src-tauri source file',
+    'V2 the AppImage is newer than every Rule B input',
     newest.mtimeMs <= appImage.mtimeMs,
     `${sanitise(newest.path ?? '(none)')} (${new Date(newest.mtimeMs).toISOString()}) is newer than the AppImage (${new Date(appImage.mtimeMs).toISOString()})`,
   );
 
-  // The inspector port must be free before the launch, so this harness can never
-  // attach to another process's inspector.
-  const inspectorFreeBefore = await isPortFree(INSPECTOR_PORT);
+  const named = gitNamedRuleBPaths();
+  const stale = named.filter((entry) => entry.mtimeMs !== undefined && entry.mtimeMs > appImage.mtimeMs);
   check(
-    `V2 ${String(INSPECTOR_PORT)} is free before the launch`,
-    inspectorFreeBefore,
-    `something is already listening on ${INSPECTOR_HOST}:${String(INSPECTOR_PORT)}`,
+    'V2 no Rule B path named by git is newer than the AppImage',
+    stale.length === 0,
+    `git names ${String(named.length)} Rule B path(s) from ${RULE_B_BASE_COMMIT}…HEAD or from the working tree; stale: ${stale.map((entry) => entry.path).join(', ') || '(none)'}`,
   );
 
   const ollamaBefore = await ollamaAlive();
   BEFORE_OWNERSHIP = ownershipFiles();
   let run = null;
-  let channel = null;
-  let targets;
   let note;
+  let baselineWindows;
   try {
     run = launchApp(appImage.path);
     const pid = run.child.pid;
@@ -665,14 +783,15 @@ async function modeSecurity() {
       home.found !== null,
       `no window named exactly Apunta owned by pid ${String(pid)} and at least 400x300 within 60s (saw ${JSON.stringify(home.seen)})`,
     );
+    if (home.found === null) return;
     check(
       'V2 the server answers with this run id',
       await waitForOwnership(30_000, 'V2'),
       'no ownership on the port',
     );
 
-    // ---- (d), header half. Independent of the in-page channel, and it fails on
-    // an unmodified tree, which is what keeps (d) from passing vacuously.
+    // ---- (d), header half. Independent of the observation channel, and it fails
+    // on an unmodified tree, which is what keeps (d) from passing vacuously.
     const spa = await fetch(`http://127.0.0.1:${String(port)}/patients`, {
       signal: AbortSignal.timeout(10_000),
     });
@@ -685,56 +804,58 @@ async function modeSecurity() {
       `GET /patients answered ${String(spa.status)} with content-type ${JSON.stringify(spa.headers.get('content-type'))} and a CSP of ${JSON.stringify(policy)}`,
     );
 
-    // ---- The in-page channel, and everything that needs it.
-    const candidate = new InspectorChannel();
-    const opened = await candidate.connect();
-    if (opened.ok) {
-      channel = candidate;
-      targets = await readTargets(channel);
-    } else {
-      targets = { ok: false, detail: opened.detail };
-    }
-
-    if (targets?.ok !== true) {
-      const cause = `the WebKitGTK inspector on ${INSPECTOR_HOST}:${String(INSPECTOR_PORT)} could not be read: ${targets?.detail ?? 'unknown'}. It is bound and accepting connections in this run, so this is the protocol, not a missing listener. Nothing here may be read without it, so (a), (b), (c) and (d)'s handler half are NOT RUN together and none of them is a PASS.`;
+    // ---- The observation channel. The first fact line is the assertion that it
+    // works at all: without one, everything below is NOT RUN together.
+    const first = await waitForFact(run.output.stderr, (fact) => fact['href'] !== undefined, 45_000);
+    if (first === null) {
+      const count = readObservations(run.output.stderr).markerLines;
+      const cause =
+        `no ${MARKER_PATH} line ever appeared in the AppImage child's captured stderr while the app window was up and the server was answering ` +
+        `(${String(count)} marker line(s) read), so the observation hook publishes nothing this harness can read. ` +
+        "Nothing here may be read without it, so (a), (b), (c), (d)'s handler half and (e) are NOT RUN together and none of them is a PASS.";
       notRun('(a) window.__TAURI__ and window.__TAURI_INTERNALS__ are undefined', cause);
-      notRun('(b) navigation to https://example.invalid/ is refused', cause);
+      notRun('(b) navigation to the reserved .invalid origin is refused', cause);
       notRun('(c) window.open is cancelled', cause);
       notRun('(d) handler: the injected note renders inert, and __APUNTA_CSP_PROBE__ is undefined', cause);
       notRun('(e) an inline style attribute is applied in the shipped binary', cause);
 
-      // The note is still created over HTTP, because the three calls are
-      // decidable without the page and the report is stronger for having run
-      // them. Their success is **not** the handler half: nothing was rendered.
+      // The note is still created over HTTP, because the three calls are decidable
+      // without the page and the report is stronger for having run them. Their
+      // success is **not** the handler half: nothing was rendered.
       note = await createFixtureNote();
-      if (note.ok) {
-        process.stdout.write(
-          `  the fixture note was created over HTTP (format, patient and note all 201) and was NOT opened, because opening it and reading the page both need the channel\n`,
-        );
-      } else {
-        process.stdout.write(`  the fixture note was NOT created: ${note.detail}\n`);
-      }
-    } else {
-      // The app page, chosen by its loopback URL rather than by position.
-      const page = targets.targets.find((t) => typeof t?.url === 'string' && t.url.includes('127.0.0.1'));
-      check(
-        'the target list carries the app page on loopback',
-        page !== undefined,
-        `targets: ${JSON.stringify(targets.targets).slice(0, 300)}`,
+      process.stdout.write(
+        note.ok
+          ? '  the fixture note was created over HTTP (format, patient and note all 201) and was NOT opened, because opening it and reading the page both need the channel\n'
+          : `  the fixture note was NOT created: ${note.detail}\n`,
       );
-      await assertNoIpc(channel);
-      await assertNavigationRefused(channel);
-      await assertWindowOpenRefused(channel);
-      await assertInjectedNoteInert(channel);
-      await assertInlineStyleApplied(channel);
+      return;
     }
+
+    // ---- (a). One assertion, one pass condition.
+    await assertNoIpc(run);
+
+    // ---- The window baseline, taken **before** the note is opened. The hook
+    // actuates as soon as `scriptText` has been true for two polls, which can be
+    // within 500ms of the note opening — so a snapshot taken after the clicks
+    // would be a snapshot of an already-actuated window, and (b) and (c) would
+    // be comparing two post-attempt states. This one is genuinely before.
+    baselineWindows = windowSignature(await windowListDetailed());
+
+    // ---- (d)'s handler half, with the note opened by clicking its labels, and
+    // (e), which needs the same rendered page.
+    await assertInjectedNoteInert(run, home.found.id);
+    await assertInlineStyleApplied(run);
+
+    // ---- (b) and (c), which the hook makes in that fixed order once the note
+    // is open, both read against the baseline above.
+    await assertNavigationRefused(run, baselineWindows);
+    await assertWindowOpenRefused(run, baselineWindows);
   } finally {
-    if (channel !== null) channel.close();
     if (run !== null) {
       for (const stream of ['stdout', 'stderr']) {
         const text = (run.output[stream] ?? '').trim();
         if (text !== '') {
-          process.stdout.write(`  --- the app's ${stream} ---\n`);
+          process.stdout.write(`  --- the app's ${stream} (last 15 lines) ---\n`);
           for (const line of text.split('\n').slice(-15)) process.stdout.write(`  ${sanitise(line)}\n`);
         }
       }
@@ -764,18 +885,25 @@ async function modeSecurity() {
       `extra: ${extra.map((f) => f.name).join(', ') || '(none)'}; the lock names pid ${String(lockHolder ?? '(no lock)')}`,
     );
 
-    const portFree = await isPortFree(port);
     check(
       'containment the sandbox port is free afterwards',
-      portFree,
+      isPortFree(port),
       `127.0.0.1:${String(port)} is still bound`,
     );
 
-    const inspectorFree = await isPortFree(INSPECTOR_PORT);
+    // The channel is gone when the row ends, **and** cannot exist in a shipped
+    // bundle: the app is already stopped by pid at this point, so a second read
+    // a short interval later must show no new marker line; and the two strings
+    // the channel is made of must be absent from `web/dist` altogether.
+    const stderrAfterStop = run?.output.stderr ?? '';
+    const firstRead = readObservations(stderrAfterStop).markerLines;
+    await sleep(3000);
+    const secondRead = readObservations(run?.output.stderr ?? '').markerLines;
+    const shipped = countInShippedWebDist();
     check(
-      `containment ${String(INSPECTOR_PORT)} — the inspector — is free afterwards`,
-      inspectorFree,
-      `${INSPECTOR_HOST}:${String(INSPECTOR_PORT)} is still bound, so the in-page channel outlived the row`,
+      'containment the observation channel is gone, and cannot ship',
+      secondRead === firstRead && shipped.marker === 0 && shipped.gate === 0,
+      `marker lines after the stop: ${String(firstRead)}, then ${String(secondRead)} a few seconds later; web/dist/assets/*.js carries ${String(shipped.marker)} marker occurrence(s) and ${String(shipped.gate)} gate occurrence(s)`,
     );
 
     check(
@@ -789,52 +917,73 @@ async function modeSecurity() {
 /**
  * (a): one assertion, one pass condition. "Absent or unusable" is not a pass.
  */
-async function assertNoIpc(channel) {
-  const reply = await evaluate(
-    channel,
-    'a',
-    'typeof window.__TAURI__ + "/" + typeof window.__TAURI_INTERNALS__',
+async function assertNoIpc(run) {
+  const fact = await waitForFact(
+    run.output.stderr,
+    (line) => line['tauri'] !== undefined && line['tauriInternals'] !== undefined,
+    30_000,
   );
-  const value = String(reply?.params?.result?.value ?? reply?.result?.value ?? '');
   check(
     '(a) window.__TAURI__ and window.__TAURI_INTERNALS__ are undefined',
-    value === 'undefined/undefined',
-    `the page reported ${JSON.stringify(value)}`,
+    fact !== null && fact['tauri'] === 'undefined' && fact['tauriInternals'] === 'undefined',
+    fact === null
+      ? 'the hook published no fact line carrying both globals'
+      : `the page reported tauri=${JSON.stringify(fact['tauri'])} and tauriInternals=${JSON.stringify(fact['tauriInternals'])}`,
   );
 }
 
 /**
  * (b): a refusal, never a successful external load. `.invalid` is reserved and
  * cannot resolve (HS-6), so a load that succeeded would be a `FAIL`.
+ *
+ * The three results are told apart, because "the row could not read the page"
+ * must never be reported as "the navigation was refused": a **changed** title, a
+ * **changed** geometry, a **new** window, or an `href` that no longer begins with
+ * the app origin is a `FAIL`; no fact arriving while the window is unchanged is
+ * `NOT RUN` with the channel's cause; and an unchanged window with facts still
+ * arriving is the pass.
  */
-async function assertNavigationRefused(channel) {
-  const before = (await windowListDetailed()) ?? [];
-  await evaluate(channel, 'b', "location.href = 'https://example.invalid/'");
+async function assertNavigationRefused(run, baselineWindows) {
+  const fact = await waitForFact(
+    run.output.stderr,
+    (line) => (line['attempt'] ?? '').startsWith('b:'),
+    30_000,
+  );
+  if (fact === null) {
+    notRun(
+      '(b) navigation to the reserved .invalid origin is refused',
+      `the hook published no attempt naming (b); the baseline window signature was ${String(baselineWindows)}`,
+    );
+    return;
+  }
   await sleep(5000);
-  const after = (await windowListDetailed()) ?? [];
-  const unchanged =
-    after.length === before.length &&
-    after.some((w) => w.name === 'Apunta' && w.width >= 400 && w.height >= 300);
+  const after = windowSignature(await windowListDetailed());
   const stillOurs = (await healthRunId()) === runId;
+  const stillTheApp = String(fact['href']).startsWith(`http://127.0.0.1:${String(port)}`);
   check(
-    '(b) navigation to https://example.invalid/ is refused',
-    unchanged && stillOurs,
-    `windows before ${String(before.length)}, after ${String(after.length)}; this run still owns the server: ${String(stillOurs)}`,
+    '(b) navigation to the reserved .invalid origin is refused',
+    baselineWindows === after && stillOurs && stillTheApp,
+    `the hook reported attempt ${JSON.stringify(fact['attempt'])}; the baseline window signature was ${String(baselineWindows)} and is now ${after}; this run still owns the server: ${String(stillOurs)}; href is ${JSON.stringify(fact['href'])}`,
   );
 }
 
 /** (c): `on_new_window … Deny` as shipped, for a loopback URL and for `.invalid`. */
-async function assertWindowOpenRefused(channel) {
-  const before = (await windowListDetailed()) ?? [];
-  await evaluate(channel, 'c1', `window.open('http://127.0.0.1:${String(port)}/')`);
-  await sleep(2000);
-  await evaluate(channel, 'c2', "window.open('https://example.invalid/')");
-  await sleep(3000);
-  const after = (await windowListDetailed()) ?? [];
+async function assertWindowOpenRefused(run, baselineWindows) {
+  const fact = await waitForFact(
+    run.output.stderr,
+    (line) => (line['attempt'] ?? '').startsWith('c:'),
+    30_000,
+  );
+  if (fact === null) {
+    notRun('(c) window.open is cancelled', 'the hook published no attempt naming (c)');
+    return;
+  }
+  await sleep(8000);
+  const after = windowSignature(await windowListDetailed());
   check(
-    '(c) window.open is cancelled for a loopback URL and for https://example.invalid/',
-    after.length === before.length,
-    `windows before ${String(before.length)}, after ${String(after.length)}`,
+    '(c) window.open is cancelled for a loopback URL and for the reserved .invalid origin',
+    baselineWindows === after,
+    `the hook reported attempt ${JSON.stringify(fact['attempt'])}; the baseline window signature was ${String(baselineWindows)} and is now ${after}`,
   );
 }
 
@@ -842,29 +991,63 @@ async function assertWindowOpenRefused(channel) {
  * (d)'s handler half. Both halves, because either alone is decidable-but-weak:
  * the header half above proves the CSP exists, and this proves the payload did
  * not run while its characters are on screen.
+ *
+ * The note is opened by clicking two rectangles the page published for its own
+ * visible labels, and a click that landed is proved by the published set changing
+ * — a click that missed times out and **fails** the row.
  */
-async function assertInjectedNoteInert(channel) {
+async function assertInjectedNoteInert(run, windowId) {
   const created = await createFixtureNote();
   if (!check('(d) handler: the fixture note is created over HTTP', created.ok, created.detail)) return;
 
-  const probe = await evaluate(channel, 'd1', `typeof window.${PROBE_SENTINEL}`);
-  const sentinel = String(probe?.params?.result?.value ?? probe?.result?.value ?? '');
+  const patientClick = await clickAndWaitForChange(
+    windowId,
+    run.output.stderr,
+    PATIENT_LABEL,
+    undefined,
+    30_000,
+  );
+  if (
+    !check(
+      `(d) handler: the ${JSON.stringify(PATIENT_LABEL)} row was clicked and landed`,
+      patientClick.ok,
+      patientClick.detail,
+    )
+  )
+    return;
+
+  const noteClick = await clickAndWaitForChange(
+    windowId,
+    run.output.stderr,
+    NOTE_LABEL,
+    (line) => line['scriptText'] === 'true',
+    30_000,
+  );
+  if (
+    !check(
+      `(d) handler: the ${JSON.stringify(NOTE_LABEL)} row was clicked and landed`,
+      noteClick.ok,
+      noteClick.detail,
+    )
+  )
+    return;
+
+  const fact = await waitForFact(
+    run.output.stderr,
+    (line) => line['probe'] !== undefined && line['scriptText'] !== undefined,
+    30_000,
+  );
   check(
     `(d) handler: window.${PROBE_SENTINEL} is undefined`,
-    sentinel === 'undefined',
-    `the page reported ${JSON.stringify(sentinel)}`,
+    fact !== null && fact['probe'] === 'undefined',
+    fact === null
+      ? 'no fact line carrying the probe global arrived'
+      : `the page reported ${JSON.stringify(fact['probe'])}`,
   );
-
-  const shown = await evaluate(
-    channel,
-    'd2',
-    `document.body.innerText.includes(${JSON.stringify(PROBE_LITERAL)})`,
-  );
-  const visible = shown?.params?.result?.value ?? shown?.result?.value;
   check(
     `(d) handler: the literal ${PROBE_LITERAL} is visible in the rendered body`,
-    visible === true,
-    `the page reported ${JSON.stringify(visible)}`,
+    fact !== null && fact['scriptText'] === 'true',
+    fact === null ? 'no fact line arrived' : `the page reported ${JSON.stringify(fact['scriptText'])}`,
   );
 }
 
@@ -874,38 +1057,50 @@ async function assertInjectedNoteInert(channel) {
  * what proves `style-src-attr 'unsafe-inline'` is effective rather than a header
  * string nobody checked.
  */
-async function assertInlineStyleApplied(channel) {
-  const expression = [
-    '(() => {',
-    '  const el = [...document.querySelectorAll("*")].find((n) => (n.getAttribute("style") ?? "").includes("display: none") === false && n.getAttribute("style"));',
-    '  if (!el) return "no inline style attribute in the page";',
-    '  const declared = el.getAttribute("style");',
-    '  const property = declared.split(":")[0].trim();',
-    '  return JSON.stringify({ declared, computed: el.style.getPropertyValue(property) || getComputedStyle(el).getPropertyValue(property) });',
-    '})()',
-  ].join('\n');
-  const reply = await evaluate(channel, 'e', expression);
-  const raw = String(reply?.params?.result?.value ?? reply?.result?.value ?? '');
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    parsed = null;
+async function assertInlineStyleApplied(run) {
+  const fact = await waitForFact(run.output.stderr, (line) => (line['styleAttr'] ?? '') !== '', 20_000);
+  if (fact === null) {
+    notRun(
+      '(e) an inline style attribute is applied in the shipped binary',
+      'the page published no element carrying a non-empty style attribute, so there is nothing to read back',
+    );
+    return;
   }
-  const applied =
-    parsed !== null &&
-    typeof parsed.computed === 'string' &&
-    parsed.computed !== '' &&
-    parsed.computed !== 'normal' &&
-    parsed.computed !== 'auto';
+  const declared = String(fact['styleAttr']);
+  const property = (declared.split(':')[0] ?? '').trim();
+  const computed = String(fact['styleComputed']).trim();
+  const applied = property !== '' && computed !== '' && computed !== 'auto' && computed !== property;
   check(
     '(e) an inline style attribute is applied in the shipped binary',
     applied,
-    `the page reported ${JSON.stringify(raw.slice(0, 300))}`,
+    `style=${JSON.stringify(declared.slice(0, 120))} and getComputedStyle(${JSON.stringify(property)}) is ${JSON.stringify(computed)}; a blocked attribute reads auto or empty`,
   );
 }
 
 // ------------------------------------------------------------- utilities ----
+
+/**
+ * How many of the two channel strings are in `web/dist/assets/*.js`.
+ *
+ * The release invariant, restated on the row that launches the binary: the
+ * marker path is what a harness reads, and the gate string is what puts it in a
+ * bundle. Both must be absent, and neither count is ever lowered (HS-7).
+ */
+function countInShippedWebDist() {
+  const dir = join(repoRoot, 'web', 'dist', 'assets');
+  let marker = 0;
+  let gate = 0;
+  let bundles = 0;
+  if (!existsSync(dir)) return { marker: -1, gate: -1, bundles: 0 };
+  for (const name of readdirSync(dir)) {
+    if (!name.endsWith('.js')) continue;
+    bundles += 1;
+    const text = readFileSync(join(dir, name), 'utf8');
+    marker += text.split(MARKER_PATH).length - 1;
+    gate += text.split(GATE_STRING).length - 1;
+  }
+  return { marker, gate, bundles };
+}
 
 /** How many bundled server processes are running on this data folder. */
 function countServerProcesses(folder) {
@@ -1023,7 +1218,8 @@ async function main() {
       (notRunCount > 0 ? `, ${String(notRunCount)} NOT RUN` : '') +
       '\n',
   );
-  return failed.length > 0 ? 1 : 0;
+  // A `NOT RUN` is never a `PASS`, and it is never a green row either.
+  return failed.length > 0 || notRunCount > 0 ? 1 : 0;
 }
 
 process.exitCode = await main();

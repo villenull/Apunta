@@ -1,5 +1,28 @@
 # V1 — `server/src/http/csp.test.ts`
 
+> **Attempt 2 (this attempt).** The row was re-run in full and reproduces attempt
+> 1's result exactly: **12 collected, 12 passed, 0 skipped**, exit 0, in 533 ms.
+> `server/src/http/csp.ts` and `server/src/http/csp.test.ts` are **inherited
+> unchanged from attempt 1** (committed at `d56af1d`) — this attempt edited
+> neither. The record below is attempt 1's, kept because its case-by-case and
+> negative-control detail is what V1 means; attempt 2's own run fields follow.
+
+- Working directory: the repository root.
+- Command: `npm run build:shared && npx vitest run server/src/http/csp.test.ts`
+- Exit code: **0**.
+- Start / end time: 2026-10-02T18:18:24Z / 2026-10-02T18:18:25Z.
+- Sandbox: none.
+
+```
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Duration  533ms
+```
+
+---
+
+## Attempt 1 (the run record this attempt reproduces, `d56af1d`)
+
 **Status: PASS.** 12 collected, 12 passed, **0 skipped**. A `No test files found`
 for this path would have been a `FAIL`.
 
