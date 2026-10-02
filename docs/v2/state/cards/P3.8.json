@@ -8,8 +8,8 @@
   "baseCommit": null,
   "attempt": 2,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 1 implemented the change in src-tauri/src/main.rs (+12/-10) inside fn drive, and V0, V1 and V2 all PASS. V3 and V4 could not run: no launch happened, because build/linux-resources/web was empty while the AppImage's own manifest lists 28 files under web/, so its setup hook refused. The coordinator re-ran P3.1's producer (exit 0, 4804 files) and the path is present. The coordinator also ruled on the one question the implementer escalated: the `} else {` it added IS in scope - see AM-148.",
-  "nextAllowedAction": "implement-attempt-2",
+  "lastCompletedStep": "Attempt 2 changed no source and proved the card's core mechanism: V3 PASS, with the marker reaching stderr AFTER `ready` on the AppImage's real launch, forwarded verbatim by the change itself. One `ready`, one `show_main`. V4 - the negative control - remains NOT RUN at exit 3, and the reviewer's diagnosis is that the CARD cannot currently run it: the pre-ready race is lost at a 1s poll against a ~580ms `ready`, and with no window manager the card cannot positively identify a window, making its absence-witnesses vacuous. **That is a card defect, not an implementation defect**, so the next step is a V4 repair round, then a fresh instruction review, then attempt 3 - the last.",
+  "nextAllowedAction": "repair",
   "sideEffectsDone": [],
   "changedFiles": [
     "src-tauri/src/main.rs"
@@ -17,28 +17,28 @@
   "criteria": {
     "V0": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.8/V0.md",
-      "verification": "Attempt 1: exit 0."
+      "evidence": "docs/v2/evidence/P3.8/V0-build-a2.md",
+      "verification": "Attempt 2: exit 0."
     },
     "V1": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.8/V1-baseline.md, V1-rust.md",
-      "verification": "Attempt 1: exit 0 both before and after the change. cargo test reports 55 passed / 0 failed; the 13 are main.rs's mod tests."
+      "evidence": "docs/v2/evidence/P3.8/V1-rust-a2.md",
+      "verification": "Attempt 2: exit 0. cargo test 55 passed / 0 failed, 13 of them main.rs's own mod tests."
     },
     "V2": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.8/V2-baseline.md, V2-scope.md",
-      "verification": "Attempt 1: exit 0 both. NOTE: the unscoped `git diff --name-only c834159` lists 84 paths at this HEAD because two other lanes committed since that base; `git status --porcelain -- src-tauri web server shared` names only main.rs. Reported, not relaxed. A dispatch at a current base makes the unscoped form correct."
+      "evidence": "docs/v2/evidence/P3.8/V2-scope-a2.md",
+      "verification": "Attempt 2: exit 0. `git diff --name-only 799597d` over src-tauri web server shared scripts e2e is EMPTY - no source changed in attempt 2, as intended."
     },
     "V3": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.8/V3-forwarding.md",
-      "verification": "Attempt 1: exit 3. No launch happened: the AppImage refused in its setup hook because build/linux-resources/web was EMPTY while its own manifest lists 28 files under web/, so ChildPaths::resolve (launch.rs:57-70) refused on web/dist/index.html. The directory had been removed by an earlier card's cleanup trap. Coordinator re-ran P3.1's producer (exit 0) and the path is present."
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.8/V3-forwarding-a2.md",
+      "verification": "Attempt 2: exit 0. **THE CARD'S MECHANISM IS NOW PROVEN ON THIS HOST.** The AppImage launched (no refusal); /api/health answered in ~2s of the 120s budget on 7860 via sandbox.mjs env + one xvfb-run -a (display :99). `ready` at capture line 6; the `?p38marker=<runId>` line at line 12 - i.e. AFTER ready, forwarded verbatim from the server's own pino request logger through the Rejection arm. Exactly one `ready` line and exactly one show_main execution; no second ready. Nothing was added to make the marker appear."
     },
     "V4": {
       "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.8/V4-lifecycle-negative.md",
-      "verification": "Attempt 1: exit 3, same cause as V3 - no launch, so no witness was reached, none passed and none failed. No window snapshot was taken; this is NOT the card's zero-windows NOT RUN case."
+      "evidence": "docs/v2/evidence/P3.8/V4-lifecycle-negative-a2.md",
+      "verification": "Attempt 2: exit 3, for the card's own recorded reason and one reason it does NOT yet cover. Launch 2's pre-ready race was LOST - the server writes `ready` ~580ms after the pid line and the row's poll is 1s. Separately, under bare xvfb-run with no window manager the reader saw ONE UNNAMED window at X's default 640x480, so witnesses (b) and (e) 'no error window present' are VACUOUS - the card cannot observe the absence of a window it cannot positively identify. (d) never ran. The log halves of (a)(c)(f) read correct (1 ready, 1 show_main, ready 6 < marker 41, one exited_before_ready, no 'error window could not be opened') but that is the change judging itself and is not a substitute. Two CARD EDITS are required: a finer poll or a re-expressed (d), and a WM or a shell-state assertion."
     }
   },
   "sandboxRuns": [],
