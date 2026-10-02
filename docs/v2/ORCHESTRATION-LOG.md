@@ -1728,3 +1728,22 @@ impossibility from xdotool windowquit alone. Inspect actual rendered home screen
 colour count and served root HTML alone insufficient. Verify quit/EOF/CI/scope
 independently. P3.3 SUBMITTED, attempt2 unchanged; native close gap honest pending
 review. All synthetic tracks complete and integrated; production adoption unchanged.
+
+## Desktop review2 PASS; final evidence reconciliation — 2026-10-02
+
+ctx_8b430c484069 returned all V0-V6 PASS: Rust55, Node2148, bridge21, rebuilt
+AppImage, actual home/error screenshot inspection, direct native CloseRequested
+verified under Xvfb/libX11. Coordinator read full review/rows/native evidence and
+found inconsistent counts: table8 vs prose6 deliveries, XSync3/3 not enumerated.
+Also reviewer acknowledges two scratch Wayland launches appeared on owner screen
+while claiming all isolation clean. No live-data access reported; don't infer no
+focus consequence. Released before ack delivery_c6be84fc0e36; inbox empty.
+
+Fresh focused evidence verifier ctx_2e17739b2bda / task_87d0aa82e118, terminal
+term_0a1d5ec6-796d-4211-bb65-8b9226b024c6. Owns NEW final evidence/report only,
+sole runtime lease. Two native-close runs with explicit private-display/Wayland
+absence preflight, reproducible helper and full containment, reconcile history and
+unsupported causality without editing old reports. No new implementation attempt,
+no source changes, no all-suite rerun. Card remains SUBMITTED pending coordinator
+acceptance. Low row-coverage/content observations can be disposed by supplemental
+native evidence and inspected screenshots without silently changing card rows.

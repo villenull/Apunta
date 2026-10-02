@@ -26,17 +26,20 @@ Run `run_6bec7fe88a92`, source base `2235fee`, implementation `d35c4b6`, proofs 
   Dirty pre-quiesce disconnect still forgets typed content; reconnect does not recover
   it. Explicit unresolved production safety/adoption gap. Production/card remain
   BLOCKED. Three synthetic proof tracks complete; no further proof repair queued.
-- P3.3 independent implementation review2 ctx_8b430c484069 / task_77ba606588ae,
-  terminal term_06a68491-a2c1-4d66-835b-4c3710bdd61b, sole build/test/runtime lease.
-  Owns review2 report and review2-* evidence plus exclusive project scratch only.
-  Source d35c4b6 against2235fee; current eba2925 adds accepted proof artifacts.
-  Corrector ctx_788bd6bd78bd released. Coordinator21 bridge tests pass and scope
-  checked. State SUBMITTED, attempt2 unchanged. Native cooperative close NOT RUN
-  in return (xdotool windowquit requires WM); reviewer investigates direct Xlib
-  WM_PROTOCOLS/WM_DELETE_WINDOW under isolated Xvfb, no installs/desktop focus.
-  Re-runs V0-V6, verifies real home screenshot, quit cleanup/EOF containment,
-  scope and CI limits. No implementation changes by reviewer. Fresh review dispatch
-  docs/v2/state/dispatch/P3.3-review.md names exact source commit.
+- P3.3 review2 returned V0-V6 PASS, native close via direct WM_DELETE_WINDOW
+  achieved; reviewer ctx_8b430c484069 released. Do not approve yet: native trial
+  table8 vs prose6 and XSync3/3 vs table1 inconsistent; reviewer admits two scratch
+  launches inherited Wayland and appeared on owner screen despite clean-isolation
+  claim. No live-data access reported; focus consequence unknown. Preserve history.
+  Focused verifier ctx_2e17739b2bda / task_87d0aa82e118, terminal
+  term_0a1d5ec6-796d-4211-bb65-8b9226b024c6, sole runtime lease, owns NEW
+  P3.3-evidence-final.md + final-native-close-* evidence/helpers only. Repeat twice
+  on private Xvfb with WAYLAND_DISPLAY absent, GDK_BACKEND=x11, own DISPLAY,
+  no owner focus/fallback. Verify protocol advertisement, true CloseRequested,
+  unassisted exit and full containment. No build/source change, attempt2 unchanged.
+  Reconcile historical unsupported counts/causes honestly, no universal guarantees.
+  Source d35c4b6, docs thereafter only. Approve only once evidence sound; then
+  commit/push per AM-068 and continue next ready card through instruction review.
 
 
 Owner observed proof worker 'Failed to execute statement'; screen confirms earlier
