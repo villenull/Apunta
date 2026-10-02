@@ -1,3 +1,40 @@
+# Latest handoff — parallel preparation complete, 2026-10-02
+
+This block supersedes the older entries below. Run `run_6bec7fe88a92` settled:
+all eight workers released, no active writer or pending worker question. All work
+is on `main`; this round changes proposals, review reports and handoff/log only.
+No application implementation, card/contract amendment or owner choice adopted.
+
+All three proposals remain **DEFECT / UNAPPROVED** after bounded repairs and
+independent final audits:
+
+- **S3.2:** `reviews/S3.2-v2-ir3.md` — worked negation examples, English locale
+  scoping and blinding/zero-term validation conflict. Read the coordinator caveats
+  in `../ORCHESTRATION-LOG.md`: the review overstates lost-negation impossibility,
+  and its suggested repair is not ready to copy. Numeric gates remain intact.
+- **S6.1:** `reviews/S6.1-v2-ir3.md` — stale/shared asset evidence, missing active
+  language/build identity, postprocessing exit propagation and residual NFC wording.
+  Licence election and upstream notice provenance remain separately BLOCKED; no
+  incomplete notice may ship. Use numbered findings, not inconsistent review counts.
+- **P5.3:** `reviews/P5.3-preserved-ir2.md` — save identity cannot reach the server,
+  report/registration/liveness/close rules conflict, registry ids can collide, and
+  V7 masks a failed test exit. Reviewer cookie recommendation was withdrawn in its
+  completion receipt: same-origin cookies cannot identify a window. No protocol
+  amendment adopted. Shell-only trigger and 30-second drain remain required.
+
+Next work should prove the concrete failing examples/commands using isolated
+synthetic checks before expanding the proposals again. This round's repair/audit
+budget is spent; no automatic follow-up drafting worker is queued. Pending owner
+choices remain unanswered. P3.3 authentication/prerequisites remain blocked;
+S4a.2 remains owner-parked. Never live data/port 7717, never heldout fixtures.
+
+Plan consistency and whitespace checks passed; no application test/build/measurement
+run was needed or claimed. Orca's shutdown-reviewer completion credential issue
+was recovered; valid completion accepted and worker released. The older run's two
+already-closed retained metadata records remain untouched.
+
+---
+
 # Current handoff — all preparation workers settled
 
 S3.2-v2 and S6.1-v2 bounded draft corrections pushed; remain UNAPPROVED proposals. No application/card/contract implementation applied. P5.3 preserved-rules review remains DEFECT with four protocol blockers. All dispatched workers released; two stale retained metadata records already closed. Pending asynchronous owner answers: S3.2 grouped recommended amendment, S6.1 licence/scope with unresolved notice unshipped, P5.3 shell/drain design direction, P3.3 graphical authentication retry. Continue authorization covers preparation, not silent selection of pending options. S4a.2 explicit owner park persists. No active worker or build writer.

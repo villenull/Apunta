@@ -1115,3 +1115,188 @@ ctx_9b836286aae5 returned S3.2-v2-ir.md and was released. Numeric gate arithmeti
 ## S3.2 bounded draft corrections integrated
 
 ctx_799b08abb062 changed only S3.2-v2 proposal and was released. Coordinator inspected scope/diff and whitespace check; corrected contradictory stop-at-any-nonzero wording to collect measurement exits0/1 while stopping usage/control/execution errors, preserving numerical acceptance, and corpus-only provider parity. Nine findings corrected in draft, no all-CLEAR/code validation claim. All workers settled; pending owner gate/scope/control decisions, dictionary licence/notice provenance, P5.3 protocol and P3.3 authentication. No application/card/contract changes.
+
+
+## Parallel preparation authorized — 2026-10-02 (UTC)
+
+Owner explicitly requested all three proposed tasks in parallel and said proceed.
+Run run_6bec7fe88a92, clean main base a4b989d. Three OpenCode launches accepted;
+configured Space Bunny Free, medium effort; effective model absent from launch
+receipts, requested confirmation in worker reports. No adoption/implementation
+or licence election authorized by this preparation round.
+
+- ctx_74f58488241c: independent S3.2 corrected-proposal review; sole output
+  state/reviews/S3.2-v2-ir2.md.
+- ctx_54fcee6a7fcc: independent S6.1 corrected-proposal technical review; sole
+  output state/reviews/S6.1-v2-ir2.md; unresolved notice remains unshipped.
+- ctx_cf3ae97c7b5f: bounded P5.3 proposal repairs; sole editable file
+  state/P5.3-PRESERVED-RULES-PROPOSAL.md. Shell-only trigger and full 30-second
+  drain preserved; any necessary contract/save-admission change remains an
+  explicit UNAPPROVED owner amendment. Fresh independent review follows return.
+
+All file ownership disjoint; no app/build writer, no heldout or patient access,
+no downloads or server/model runs. Workers leave outputs uncommitted. Coordinator
+will verify scope and evidence, release each settled worker, then integrate.
+Previous run's two already-closed retained metadata records stay untouched.
+
+
+## S6.1 residual review and P5.3 draft returned — 2026-10-02
+
+S6.1 ctx_54fcee6a7fcc returned reviews/S6.1-v2-ir2.md, verdict DEFECT;
+released before delivery acknowledgement. Coordinator confirmed allow-list names
+cannot appear in misspellings, raw/NFC offset distinction with a synthetic Node
+assertion (exit 0), source webServer citation and contradictory draft V4 notice
+wording. Whitespace check exit 0. Nine residual draft corrections are technical;
+licence/provenance remains separately BLOCKED and unresolved notices unshipped.
+Fresh bounded repair ctx_1a80973c58ab owns only S6.1-AMENDMENT-PROPOSAL-v2.md
+and S6.1-NOTICE-PROVENANCE.md. No further whole-card rewrite authorized.
+
+P5.3 ctx_cf3ae97c7b5f returned its proposal-only repair and was released before
+acknowledgement. Diff confined to P5.3-PRESERVED-RULES-PROPOSAL.md; whitespace
+exit 0, 868 insertions/268 deletions (larger than hoped). Not accepted as CLEAR:
+coordinator found V7 masks the test exit via trailing git checkout and restores
+tracked evidence unconditionally; opening invariant claim conflicts with OA-1.
+Fresh independent reviewer ctx_caaf9f78523f owns only reviews/P5.3-preserved-ir2.md;
+asked to examine those and protocol authorization, correlation, client freshness,
+request counters and exact harness commands. OA-1/OA-2 remain UNAPPROVED.
+
+S3.2 ctx_74f58488241c review remains active. Three active tasks have disjoint
+outputs. Both returned workers confused model-ID request with app inference;
+actual provider model remains unconfirmed by their reports; follow-up specs clarify.
+No app/card/contract/state-checkpoint change, no build/server/model execution.
+
+
+## S3.2 residual review returned — 2026-10-02
+
+ctx_74f58488241c returned reviews/S3.2-v2-ir2.md, DEFECT (five new bounded
+findings plus read-scope mismatch), released before acknowledgement. Coordinator
+confirmed accented-ending word-boundary failure with Node assertions (exit 0),
+reviewed missing sidecar host/substitution and narrow-control/full-Fixture
+contradiction, and verified cli.ts uses truncating writeFileSync. Whitespace
+check exit 0. Fresh bounded draft-only repair ctx_2a9d806490c1 owns only
+S3.2-AMENDMENT-PROPOSAL-v2.md, with explicit caution that the review's proposed
+per-entry field on a string list is itself ambiguous. Numeric gates preserved;
+owner choices remain UNAPPROVED. Three active tasks: S3.2 repair, S6.1 repair,
+P5.3 independent review. All previous three workers released; application unchanged.
+
+
+## S3.2 bounded repair returned; final audit dispatched — 2026-10-02
+
+ctx_2a9d806490c1 returned only S3.2-AMENDMENT-PROPOSAL-v2.md, +470/-89;
+released before acknowledgement. Author explicitly confirmed own model
+opencode-go/space-bunny-free. Coordinator checked scope/whitespace (exit 0),
+read sidecar conversion, substitution and immutable-report rules, and verified
+current compile flags plus accented-positive/substring-negative regex assertions
+(exit 0). Literal token is 11 characters, not the draft's claimed 12; concrete
+invented-negation examples may require unintended double negators. No CLEAR claim.
+Final focused independent reviewer ctx_446f236974f0 owns only
+reviews/S3.2-v2-ir3.md, tests those examples and evidence preservation/resumption
+as well as N-1..N-5/read-scope closure. Remaining material blockers after this audit
+will be parked for a concrete decision rather than another open-ended rewrite.
+S6.1 repair and P5.3 review remain active. No application/card/contract adoption.
+
+
+## S6.1 bounded repair returned; final audit dispatched — 2026-10-02
+
+ctx_1a80973c58ab returned only S6.1-AMENDMENT-PROPOSAL-v2.md and
+S6.1-NOTICE-PROVENANCE.md (+118/-42 combined), then released before ack.
+Coordinator whitespace/scope and simple synthetic offset/set discrimination checks
+passed (exit 0). No independent closure accepted: new V9 uses fixed shared
+/tmp/apunta-v2/s6.1-observed paths; stale/cross-run provenance and ignored
+postprocessing exits require review. Author listed synthetic checks but omitted
+per-command exit receipts. Final independent reviewer ctx_18b0863af64d owns only
+reviews/S6.1-v2-ir3.md; checks exact command failure propagation, run/build/language
+identity, all nine residual closures, and keeps legal/provenance blockers separate.
+No actual external scratch commands were run by coordinator; proposals remain
+UNAPPROVED. Remaining material defects after this audit will be parked/summarized.
+Three current tasks are independent reviews: S3.2 final, S6.1 final, P5.3 protocol.
+
+
+## P5.3 review DEFECT; lifecycle receipt rejected — 2026-10-02
+
+P5.3 reviewer ctx_caaf9f78523f wrote reviews/P5.3-preserved-ir2.md, reporting ten
+blocking protocol findings and other command/scope defects. Coordinator verified
+missing header/window-id carrier in client.ts/updateNote, registry Map keyed by
+id and collision sequence (synthetic Node exit 0), plus masked V7 exit semantics.
+Report whitespace exit 0. Draft remains UNAPPROVED/BLOCKED; no further repair
+loop dispatched. Reviewer cookie alternative is unsafe for per-window identity
+because same-origin tabs share cookies; it is not an adopted recommendation.
+
+Orca rejected worker_done with dispatch_capability_invalid. worker-show confirms
+Dispatch still dispatched, capability not revoked, agent live; terminal preview
+identifies Space Bunny Free, medium. This is NOT an accepted lifecycle settlement.
+Sent dispatch-addressed request to resubmit using the exact live preamble's
+credentials without exposing/reconstructing them. No release/stop/abandon while
+active. Rejected delivery delivery_e820f1a48161 processed and acknowledged after recovery guidance; worker remains active pending a valid completion, with no release attempted.
+S3.2/S6.1 final audits continue. No app, contract or acceptance change adopted.
+
+
+## P5.3 lifecycle retry still rejected — 2026-10-02
+
+Third completion receipt rejected, now capability missing. Worker acknowledged
+cookie identity recommendation is wrong and must not be used. Report remains
+preserved. Bounded worker-read shows only live/working terminal fallback, not
+positive exit/final-turn proof; no stop/release/abandon authorized by that evidence.
+Sent one instruction to cease lifecycle retries, report recovery blocker through
+ordinary escalation, and end turn without further edits or credential guessing.
+No report content re-review or replacement worker needed. Other audits continue.
+
+
+## P5.3 lifecycle recovered and reviewer released — 2026-10-02
+
+Valid worker_done msg_3e9ab273b6e6 settled ctx_caaf9f78523f. Prior findings already
+verified; reviewer explicitly withdrew cookie identity recommendation in receipt.
+worker-release succeeded and archived/closed terminal before acknowledging delivery
+f1ba35b818ba. No close-out blocker remains. P5.3 proposal still DEFECT/BLOCKED,
+not approved or applied. Final S3.2 and S6.1 audits are the only active workers.
+
+
+## S6.1 final audit DEFECT; reviewer released — 2026-10-02
+
+ctx_18b0863af64d returned reviews/S6.1-v2-ir3.md, released before ack. Model
+confirmed Space Bunny Free. Coordinator confirmed availability vs stored-language
+split in settings.ts, separate builds per Playwright invocation, and reproduced
+stale synthetic files satisfying V9 numeric checks without a current browser run
+(exit 0; temporary project scratch removed). Whitespace exit 0. D-01..D-05 are
+language/run/build identity and command/evidence propagation defects; D-06 is
+residual raw-vs-normalized flagged-set wording. Review headline counts are
+inconsistent; numbered findings are authoritative, not the claimed 7/9 tally.
+S6.1 remains UNAPPROVED with technical defects parked after bounded repair/audit;
+licence/notice provenance separately BLOCKED, no incomplete notice shipped.
+Only active worker: ctx_446f236974f0 (S3.2 final audit). P5.3 remains blocked.
+No more rewrite workers dispatched; final decision package awaits last audit.
+
+
+## Parallel preparation round complete — 2026-10-02
+
+S3.2 final reviewer ctx_446f236974f0 returned reviews/S3.2-v2-ir3.md and was
+released before acknowledgement. Confirmed own model Space Bunny Free. Coordinator
+verified invented-negation examples require an extra negator and miss ordinary
+single-negation text (Node assertion exit 0), plus English locale/lexicon and
+zero-term/blinding contradictions in the draft. REVIEW CAVEAT: the review's claim
+that lost-negation patterns can match no faithful note is too strong: the proposed
+pattern DOES match 'no puede dormir' (coordinator synthetic assertion exit 0).
+It fails the reviewed alternatives, not every possible alternative. Its suggested
+repair also retains a double-negator branch and a bare-negator branch contrary to
+the proposal; do not copy it as an accepted fix. Three core executability issues
+remain; no approved measurement instrument or card amendment exists.
+
+Final dispositions of this bounded round:
+- S3.2: DEFECT/UNAPPROVED. Repair scope/control host clarified, immutable evidence
+  proposed, but worked examples, locale scoping and blinding validation conflict.
+- S6.1: DEFECT/UNAPPROVED. Word/offset/notice corrections made; asset evidence
+  remains vulnerable to stale files and missing language/build provenance, with
+  postprocessing exit failures. Licence and notice provenance separately blocked.
+- P5.3: DEFECT/UNAPPROVED. Shell-only/30s retained in draft; save identity carrier,
+  report admission, client lifetime/state and overlapping job registry remain
+  unresolved. Cookie alternative explicitly rejected; header/protocol scope must
+  be concrete before owner adoption. P3.3 still blocked, S4a.2 remains parked.
+
+All eight dispatched workers released; no source/build writer remains, no pending
+worker questions, lifecycle recovery completed. Application/card/contract/threshold
+files unchanged. Drafts and reports archived as failed proposals, not acceptance.
+Coordinator check-plan exit 0: 69 cards, 12 parent reviews, 14 contracts, R01-R20,
+no cycles. Diff whitespace check passed. No application tests run for this
+proposal-only round. Next useful effort should be bounded, executable synthetic
+proofs of the specific failing examples/commands before further draft expansion.
+Owner choices from earlier session remain unanswered; no consent inferred.
