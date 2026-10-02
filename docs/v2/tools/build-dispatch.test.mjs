@@ -167,6 +167,64 @@ test('a BRE alternation is still an alternation after the round trip', () => {
   assert.equal(run('invoke_handler|withGlobalTauri": true').status, 1, 'a bare pipe is a literal in BRE');
 });
 
+test('the refusal advice names only spellings that survive the pipeline', () => {
+  // A message that recommends a spelling the codec cannot carry is worse than no
+  // message: it sends the author to the defect. So the advice is not asserted as
+  // text — every backslash-pipe spelling it contains is extracted and run through
+  // the codec, and each must parse to three cells and re-emit itself byte for
+  // byte. This is the assertion that stops the message rotting back into the trap.
+  const planDir = makePlan(card('grep -rn "a\\\\|b" f', 'exit 0'));
+  const run = generate(planDir, ['T1', '--base', 'abc1234', '--port', '7841', '--print']);
+  assert.equal(run.status, 4, run.stderr);
+  const advice = [...run.stderr.matchAll(/\\+\|/g)].map((m) => m[0]);
+  assert.deepEqual(advice, ['\\|', '\\\\\\|'], `the message advises ${JSON.stringify(advice)}`);
+  for (const spelling of advice) {
+    const cells = parseCells(`| V1 | ${spelling} | ok |`);
+    assert.equal(cells.length, 3, `${JSON.stringify(spelling)} is advised but not representable`);
+    assert.equal(escapeCell(cells[1]), spelling, `${JSON.stringify(spelling)} does not survive`);
+  }
+  // Not merely well-formed: the one-backslash form is the pipe a shell pipe is,
+  // and the three-backslash form is the one that reaches grep as an alternation.
+  assert.equal(parseCells(`| V1 | ${advice[0]} | ok |`)[1], '|');
+  assert.equal(parseCells(`| V1 | ${advice[1]} | ok |`)[1], '\\|');
+});
+
+test('a card may write a BRE alternation, and the guard still fires after the copy', () => {
+  // The trap, closed end to end. A card that needs grep to read `a\|b` as an
+  // alternation writes `a\\\|b`; the parsed command is `a\|b`; the parent row is
+  // byte-identical to the card's own row; and the guard fires against a fixture
+  // holding the forbidden text. The bare form still does not fire — in a BRE a
+  // bare `|` is an ordinary character, so the same guard written that way matches
+  // nothing and passes always.
+  const planDir = makePlan(card('grep -rn "invoke_handler\\\\\\|withGlobalTauri" conf.json', 'exit 1'));
+  const run = generate(planDir, [
+    'T0.R',
+    '--review',
+    '--base',
+    'abc1234',
+    '--head',
+    'def5678',
+    '--port',
+    '7841',
+    '--print',
+  ]);
+  assert.equal(run.status, 0, run.stderr);
+  const cells = borrowedRow(run.stdout);
+  const pattern = /grep -rn "([^"]*)"/.exec(cells[1])[1];
+  assert.equal(pattern, 'invoke_handler\\|withGlobalTauri', `the alternation did not survive: ${pattern}`);
+
+  const dir = mkdtempSync(join(tmpdir(), 'apunta-guard-'));
+  // The forbidden text is a JSON string carrying an escaped pipe, so the two
+  // patterns differ: an alternation reads `\|` in the file as the pipe it stands
+  // for, while a bare `|` pattern asks for a literal pipe the file does not have.
+  const file = join(dir, 'conf.json');
+  writeFileSync(file, 'capabilities: { invoke_handler\\|withGlobalTauri: true }\n');
+  const grep = (p) => spawnSync('grep', ['-rn', p, file], { encoding: 'utf8' });
+  if (grep(pattern).error) return; // no grep on this machine: the string shape is asserted above
+  assert.equal(grep(pattern).status, 0, 'the guard fires against the forbidden text');
+  assert.equal(grep('invoke_handler|withGlobalTauri').status, 1, 'a bare pipe is a literal in BRE');
+});
+
 test('fill() reaches a borrowed body: no {{…}} survives a generated dispatch', () => {
   // D5: fill() used to be applied to the return template only, so {{BASE}} in a
   // child's Expected cell reached the parent literally and `git diff` against it

@@ -22,6 +22,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { parseCells } from './build-dispatch.mjs';
+
 const toolDir = dirname(fileURLToPath(import.meta.url));
 const realPlan = join(toolDir, '..');
 const NODE = process.execPath;
@@ -125,12 +127,28 @@ test('an unescaped pipe in an expected cell is caught as well as one in a comman
   assert.match(run.stderr, /error: T1 V1: the row parses as 4 cells, not 3/);
 });
 
-test('a BRE alternation written \\| in a card is a well-formed row', () => {
-  // The escaping the check demands is also the escaping that keeps an alternation
-  // an alternation: neither an unescaped pipe nor a doubled backslash.
-  const planDir = makePlan(
+test('a BRE alternation in a card needs three backslashes, and both spellings are well-formed rows', () => {
+  // This test used to claim that the escaping the check demands (`\|`) is also
+  // the escaping that keeps an alternation an alternation. It is not: `\|` is a
+  // bare pipe to the shell after the cell is read, and in a BRE a bare `|` is an
+  // ordinary character, so a guard written that way matches nothing and passes
+  // always. The spelling that survives is `\\\|` — one pipe, still escaped, after
+  // the cell is read. `check-plan`'s own message can only name `\\|`, because
+  // check-plan.mjs is not this packet's to edit; the row is checked as well-formed
+  // here, and what it means is checked in build-dispatch.test.mjs, where the
+  // refusal names both spellings.
+  const alternation = makePlan(
+    '| V1 | `grep -rn "invoke_handler\\\\\\|withGlobalTauri\\": true" src-tauri` | no matches; exit 1 from the grep is the pass |',
+  );
+  const run = check(alternation);
+  assert.equal(run.status, 0, run.stderr);
+
+  const bare = makePlan(
     '| V1 | `grep -rn "invoke_handler\\|withGlobalTauri\\": true" src-tauri` | no matches; exit 1 from the grep is the pass |',
   );
-  const run = check(planDir);
-  assert.equal(run.status, 0, run.stderr);
+  assert.equal(check(bare).status, 0, 'the one-backslash form is a well-formed row too');
+
+  // What differs is not the row but the command the cell yields.
+  assert.equal(parseCells('| V1 | `a\\\\\\|b` | ok |')[1], '`a\\|b`');
+  assert.equal(parseCells('| V1 | `a\\|b` | ok |')[1], '`a|b`');
 });

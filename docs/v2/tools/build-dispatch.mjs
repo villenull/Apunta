@@ -19,82 +19,40 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadPlan } from './plan-lib.mjs';
+import { escapeCell, loadPlan, parseCells } from './plan-lib.mjs';
+
+// Re-exported so check-plan.mjs, and anything else that reads a table cell, gets
+// the same function this file emits with.
+export { escapeCell, parseCells };
 
 /*
- * The table codec, below, is the fix for the class of defect a parent review
- * used to inherit silently: a child's verification command is *machine-copied*
- * into the parent's table (`parseCard` -> `verification[].command` -> GFM), so
- * anything the copy loses is invisible to the child's own implementer and fatal
- * to the parent, whose reviewer has nothing but the generated table.
+ * The table codec lives in plan-lib.mjs, next to the parser that reads a card,
+ * and that is the fix for the class of defect a parent review used to inherit
+ * silently: a child's verification command is *machine-copied* into the parent's
+ * table (`parseCard` -> `verification[].command` -> GFM), so anything the copy
+ * loses is invisible to the child's own implementer and fatal to the parent,
+ * whose reviewer has nothing but the generated table.
  *
  * Two rules make that copy exact, and both are asserted by the colocated tests:
  *
- *   1. emit and parse are exact inverses. `escapeCell` escapes a backslash and a
- *      pipe; `parseCells` unescapes them in one left-to-right pass. So a pipe
- *      that is already escaped in the source gains no backslash and loses none,
- *      and `parseCells(emit(x)) === x` byte for byte — including for a BRE
- *      alternation, which must still be an alternation after the round trip.
+ *   1. emit and parse are inverses. `escapeCell` escapes a backslash and a pipe;
+ *      `parseCells` unescapes them in one left-to-right pass. So a pipe that is
+ *      already escaped in the source gains no backslash and loses none, and a
+ *      cell comes back byte for byte — including for a BRE alternation, which
+ *      must still be an alternation after the round trip. There is now *one*
+ *      parser, used to read a card as well as to check an emitted row: before,
+ *      the two disagreed about `\\`, so a card writing an alternation as `\\|`
+ *      was told it must be `\|`, and `\|` is read by the parser as a bare pipe —
+ *      in BRE a bare `|` is an ordinary character, so a guard written that way
+ *      matched nothing and passed always. The spelling that survives is `\\\|`,
+ *      and the refusal a card author actually hits now names it.
  *   2. generation refuses rather than emitting something lossy. Every emitted
  *      row is parsed back and compared; a cell that does not come back
  *      identical, or a row that does not come back as three cells, is exit 4.
  *
  * The alternative — leaving `replaceAll('|', '\\|')` unguarded — is what turned
- * `invoke_handler\|withGlobalTauri` into a bare `|` in an executed command, and
- * in a BRE a bare `|` is an ordinary character, so a negative guard silently
- * matches nothing and passes always.
+ * `invoke_handler\|withGlobalTauri` into a bare `|` in an executed command.
  */
-
-/*
- * Escapes one table cell, and only what the table gives meaning to: a backslash
- * that would otherwise pair with the character after it, and a pipe, which is the
- * delimiter. A backslash before anything else — `printf "a\nb"`, `\"`, `\(` — is
- * ordinary text in GFM and is left exactly as it is, because a cell that gained a
- * backslash it did not need would change the command a reviewer copies out of it.
- * `parseCells` below is the total inverse.
- */
-export function escapeCell(text) {
-  const s = String(text);
-  let out = '';
-  for (let i = 0; i < s.length; i += 1) {
-    const ch = s[i];
-    const next = s[i + 1];
-    if (ch === '\\' && next === '|') {
-      out += '\\\\\\|';
-      i += 1;
-    } else if (ch === '\\' && next === '\\') {
-      out += '\\\\\\\\';
-      i += 1;
-    } else if (ch === '|') out += '\\|';
-    else out += ch;
-  }
-  return out;
-}
-
-/*
- * Splits a Markdown table row into its cells, undoing escapeCell. A pipe that
- * is preceded by a backslash is content, never a delimiter; everything else,
- * including a backslash that precedes anything other than a backslash or a
- * pipe, is carried through unchanged. Returns the inner cells (the leading and
- * trailing delimiters are dropped).
- */
-export function parseCells(line) {
-  const raw = [];
-  let current = '';
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === '\\' && (line[i + 1] === '\\' || line[i + 1] === '|')) {
-      current += ch + line[i + 1];
-      i += 1;
-    } else if (ch === '|') {
-      raw.push(current.trim());
-      current = '';
-    } else current += ch;
-  }
-  raw.push(current.trim());
-  const inner = raw.slice(1, -1);
-  return inner.map((cell) => cell.replace(/\\([\\|])/g, '$1'));
-}
 
 // The `{{…}}` tokens this tool claims to substitute. Nothing else is a token.
 const TOKEN_TOKENS = ['{{CARD_ID}}', '{{CARD_TITLE}}', '{{BASE}}', '{{HEAD}}', '{{ATTEMPT}}'];
@@ -273,7 +231,7 @@ function main() {
       const r = prepared[i];
       if (cells.length !== 3)
         refuse(
-          `${r.id}: the emitted row parses as ${cells.length} cells, not 3 — a pipe in this command or expected cell is not escaped as \\|`,
+          `${r.id}: the emitted row parses as ${cells.length} cells, not 3 — a pipe in this command or expected cell reached the row unescaped, so escapeCell did not carry it (this is a bug in escapeCell, not in the card)`,
         );
       if (cells[0] !== r.id || cells[1] !== r.command || cells[2] !== r.expected)
         refuse(
@@ -312,13 +270,21 @@ function main() {
    * control's `exit $rc` discarded. That loss happens before this file can see
    * the row, so it is asserted on the row's own source text rather than on the
    * command that survived parsing.
+   *
+   * The advice in the message names the two spellings that survive the pipeline,
+   * and only those: a shell pipe is `\|` (the parser gives the shell a bare `|`,
+   * which is what a pipe is), and a cell the shell must receive as a backslash-pipe
+   * — a BRE alternation — is `\\\|`, because `\|` in a cell is a bare pipe to the
+   * parser too, and two backslashes leave a real delimiter behind. Both are
+   * asserted to round-trip by the colocated test, so the advice cannot rot into
+   * the defect it is warning about.
    */
   for (const r of rows) {
     if (!r.raw) continue;
     const cells = parseCells(r.raw);
     if (cells.length !== 3)
       refuse(
-        `${r.id}: its source row parses as ${cells.length} cells, not 3 — every pipe inside a command or expected cell must be written \\| or the parser keeps the first three cells and silently discards the rest (check-plan.mjs asserts this too)`,
+        `${r.id}: its source row parses as ${cells.length} cells, not 3 — every pipe inside a command or expected cell must be written \\| so it is content and not a delimiter, and a cell the shell must receive as a backslash-pipe (a BRE alternation) must be written \\\\\\|: one backslash is read as a bare pipe and two leave a delimiter behind (check-plan.mjs asserts this too)`,
       );
   }
 
