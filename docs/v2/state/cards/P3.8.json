@@ -8,8 +8,8 @@
   "baseCommit": null,
   "attempt": 3,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 2 changed no source and proved the card's core mechanism: V3 PASS, with the marker reaching stderr AFTER `ready` on the AppImage's real launch, forwarded verbatim by the change itself. One `ready`, one `show_main`. V4 - the negative control - remains NOT RUN at exit 3, and the reviewer's diagnosis is that the CARD cannot currently run it: the pre-ready race is lost at a 1s poll against a ~580ms `ready`, and with no window manager the card cannot positively identify a window, making its absence-witnesses vacuous. **That is a card defect, not an implementation defect**, so the next step is a V4 repair round, then a fresh instruction review, then attempt 3 - the last.",
-  "nextAllowedAction": "repair",
+  "lastCompletedStep": "ATTEMPT 3: ALL FIVE ROWS PASS, exit 0, no source changed. V4 - the negative control - held on all seven witnesses with the AppImage confirmed to have inherited GDK_BACKEND=x11 from outside the process (a named window 2097190:1490387:Apunta at 1330x950). Marker after ready in both V3 (lines 6 vs 34) and V4 launch 1 (lines 5 vs 11), one ready, one show_main. No margin near its limit and none widened; the 50ms poll won the race attempt 2 called unwinnable, and the verdict does not rest on it. Three limits disclosed and correct: (a)/(c) remain supporting because they read a stream the change influences; (e) was witnessed for SIGTERM on the server pid, not for a server dying on its own after ready; clause 6(c) post-ready fatal/Other stays unobserved by the card own design. NOTE: the return file discloses a suspected V0 defect that does not exist - the cell does export cargo/bin - so the evidence file needs correcting.",
+  "nextAllowedAction": "implementation-review",
   "sideEffectsDone": [],
   "changedFiles": [
     "src-tauri/src/main.rs"
@@ -17,28 +17,28 @@
   "criteria": {
     "V0": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.8/V0-build-a2.md",
-      "verification": "Attempt 2: exit 0."
+      "evidence": "docs/v2/evidence/P3.8/V0-*-a3.md",
+      "verification": "Attempt 3: exit 0."
     },
     "V1": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.8/V1-rust-a2.md",
-      "verification": "Attempt 2: exit 0. cargo test 55 passed / 0 failed, 13 of them main.rs's own mod tests."
+      "evidence": "docs/v2/evidence/P3.8/V1-*-a3.md",
+      "verification": "Attempt 3: exit 0."
     },
     "V2": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.8/V2-scope-a2.md",
-      "verification": "Attempt 2: exit 0. `git diff --name-only 799597d` over src-tauri web server shared scripts e2e is EMPTY - no source changed in attempt 2, as intended."
+      "evidence": "docs/v2/evidence/P3.8/V2-*-a3.md",
+      "verification": "Attempt 3: exit 0."
     },
     "V3": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.8/V3-forwarding-a2.md",
-      "verification": "Attempt 2: exit 0. **THE CARD'S MECHANISM IS NOW PROVEN ON THIS HOST.** The AppImage launched (no refusal); /api/health answered in ~2s of the 120s budget on 7860 via sandbox.mjs env + one xvfb-run -a (display :99). `ready` at capture line 6; the `?p38marker=<runId>` line at line 12 - i.e. AFTER ready, forwarded verbatim from the server's own pino request logger through the Rejection arm. Exactly one `ready` line and exactly one show_main execution; no second ready. Nothing was added to make the marker appear."
+      "evidence": "docs/v2/evidence/P3.8/V3-*-a3.md",
+      "verification": "Attempt 3: exit 0."
     },
     "V4": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.8/V4-lifecycle-negative-a2.md",
-      "verification": "Attempt 2: exit 3, for the card's own recorded reason and one reason it does NOT yet cover. Launch 2's pre-ready race was LOST - the server writes `ready` ~580ms after the pid line and the row's poll is 1s. Separately, under bare xvfb-run with no window manager the reader saw ONE UNNAMED window at X's default 640x480, so witnesses (b) and (e) 'no error window present' are VACUOUS - the card cannot observe the absence of a window it cannot positively identify. (d) never ran. The log halves of (a)(c)(f) read correct (1 ready, 1 show_main, ready 6 < marker 41, one exited_before_ready, no 'error window could not be opened') but that is the change judging itself and is not a substitute. Two CARD EDITS are required: a finer poll or a re-expressed (d), and a WM or a shell-state assertion."
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.8/V4-*-a3.md",
+      "verification": "Attempt 3: exit 0."
     }
   },
   "sandboxRuns": [],

@@ -1,8 +1,33 @@
 # P3.8 — evidence index
 
-Attempt 1's files are kept as they were written. Attempt 2 adds files suffixed
-`-a2` rather than overwriting, so no record is lost and neither attempt's status
-is ambiguous.
+Attempts 1 and 2's files are kept as they were written. Attempt 3 adds files
+suffixed `-a3` rather than overwriting, so no record is lost and no attempt's
+status is ambiguous.
+
+Base for attempt 3: `5f0b730` (dispatch base) · HEAD `ff62552` · card port
+**7860**. Every launching row ran through `scripts/v2/sandbox.mjs env` (never
+`run`); every run-folder path is written `<sandbox>`, the home folder `~`,
+hostnames and nonces redacted. Nothing was staged or committed.
+
+## Attempt 3
+
+| Row | Status | Exit | Evidence |
+| --- | --- | --- | --- |
+| V0 build the AppImage + freshness | PASS | 0 | [V0-build-a3.md](V0-build-a3.md) |
+| V1 Rust | PASS | 0 | [V1-rust-a3.md](V1-rust-a3.md) |
+| V2 scope/lint/typecheck | PASS, one reported predicate mismatch | 0 | [V2-scope-a3.md](V2-scope-a3.md) |
+| V3 forwarding, end to end | PASS | 0 | [V3-forwarding-a3.md](V3-forwarding-a3.md) |
+| V4 lifecycle negative control | **PASS** | 0 | [V4-lifecycle-negative-a3.md](V4-lifecycle-negative-a3.md) |
+
+**Card status: SUBMITTED. All five rows green, none relaxed.** V4 — the negative
+control — passed for the first time, with all seven witnesses positive: the app
+window was identified by **owner pid and exact title** (`Apunta`, 1330x950) on
+the pinned 1400x1000 X display, and the two absence claims that attempt 2 had to
+record as *vacuous* are now statements about a window the row had named. The
+`GDK_BACKEND=x11` / `XDG_BACKEND=x11` / unset `WAYLAND_DISPLAY` settings were
+confirmed inherited, which is what makes the identification possible at all.
+
+## Attempt 2 (inherited, superseded by the above)
 
 Base for attempt 2: `799597d` (attempt 1's change, committed by the
 coordinator) · HEAD `f9daac9` · card port **7860**. Every launching row ran
