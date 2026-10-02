@@ -6,7 +6,7 @@
     "C-ISO@1"
   ],
   "baseCommit": null,
-  "attempt": 1,
+  "attempt": 2,
   "status": "IN PROGRESS",
   "lastCompletedStep": "Attempt 1 implemented the change in src-tauri/src/main.rs (+12/-10) inside fn drive, and V0, V1 and V2 all PASS. V3 and V4 could not run: no launch happened, because build/linux-resources/web was empty while the AppImage's own manifest lists 28 files under web/, so its setup hook refused. The coordinator re-ran P3.1's producer (exit 0, 4804 files) and the path is present. The coordinator also ruled on the one question the implementer escalated: the `} else {` it added IS in scope - see AM-148.",
   "nextAllowedAction": "implement-attempt-2",
