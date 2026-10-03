@@ -2642,3 +2642,10 @@ still RUNNING at event boundary. Root extended its bounded artifact scope to
 six output-only console calls in committed IR adversarial proof, with original
 snapshot, exact replay and no assertion change, fresh independent review next.
 No source/runtime/budget amendment. Remote push authorization remains pending.
+
+## 2026-10-03 — owner approved repository push
+
+Owner answered Allow repository push for github.com/villenull/Apunta. Explicit
+push origin main passed automatic review and completed 8735566..889f19b. Active
+parser artifact changes remain unstaged, not exported. Push authorization persists
+for this origin; no need to re-ask. No source/runtime/budget authority changed.

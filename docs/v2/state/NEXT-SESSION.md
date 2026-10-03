@@ -1,3 +1,11 @@
+## Origin push approved and completed
+
+Owner explicitly approved pushing completed reviews and orchestration state to
+configured origin github.com/villenull/Apunta. Push origin main succeeded through
+889f19b; this authorization persists for completed reviewed work at that origin.
+In-progress parser repair artifacts remain unstaged; worker 18d2bbc1 still owns
+those paths. No runtime or additional attempt-budget authorization was granted.
+
 ## Audit qualification integrated; parser artifact repair continues
 
 Qualifier c274a1c9 completed and archival succeeded. New additive qualification
