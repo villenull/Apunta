@@ -2249,3 +2249,15 @@ BLOCKED and original V3/V4/V5/provenance retained; no attempt4 exists.
 P3.4 two owner choices remain PENDING. Output replay repair49f37328 still
 running on separate scope, callback; no build lease or ports reserved.
 
+
+## Evidence replay checker repaired; final independent review running
+
+Candidateb457db4 fixes rule ordering and raw/normalized labels, adds span audit
+and durable forced-DEBUG controls. Root control exit0, semantic negativecontrols
+unequal; author49f37328 archived. Fresh independent reviewer
+801e72d8-34ac-4544-825f-b4af39c1ca25 (LongCat free high, callback) owns only
+evidence-output-lint-replay-ir.md and output-lint-replay-review evidence.
+No runtime/source/card/config authority. P3.4 two owner choices and P3.5 two
+owner choices remain PENDING; no answers inferred. P3.5 source/environment
+package CLEAR, runtime BLOCKED; no attempt4; no buildlease or portsreserved.
+
