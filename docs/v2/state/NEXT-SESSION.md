@@ -1,3 +1,9 @@
+## Committee reconciliation partial — 2026-10-03T02:54:17.730982+00:00
+
+LongCat finalreconciliation saved P3.4-committee-longcat-reconciliation.md: withdrawssinglepointaftercounterexample; agrees2pointaffine and rootIPC/frame/batch/deadline/no-new-file invariants. Await SpaceBunny491d8dd0 finalfollowup notification; comparethenresolve anyremainingdisagreement, archivebothafterconvergence, dispatch smallspec+ignoredsyntheticmodel author. Do nottreat initialsignatureor settledgate recommendations asapproved. Noowneramendment or attempt5 granted.
+
+P3.5worker2028c17e feature/build/ports reservations unchanged.
+
 ## Committee reconciliation running — 2026-10-03T02:52:43.756147+00:00
 
 Bothinitialresponses saved: P3.4-committee-longcat.md and P3.4-committee-space-bunny.md. Agree smallcontractspec+executablefakeclock/parsermodel ratherthan9prosefixes. Followups tobothareRUNNING: readotherargument andresolve calibration1pointvs2point, boundeduniquepublicationidentity, freshbatchreplacement/counts, singledeadline, andpendingIPCFAILsemantics. Do nottreatinitialagreementasconsensus onalgorithm. LongCat314a0b4b andBunny491d8dd0 remainavailable/read-only, callbacks. No source/newfilegrant/runtimeattempt authorized.
