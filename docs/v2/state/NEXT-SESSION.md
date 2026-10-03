@@ -1,3 +1,17 @@
+## Integration preparation returned; coordinator Stop8 re-pin in progress
+
+e0b93d29 completed and was archived successfully. P3.6 still dependency-blocked
+on P3.4/P3.5 and serial lease. New stop: old V3 command quote no longer matches
+P3.4 after AM179's mechanical fixed-string loop repair. Stop8 expressly assigns
+re-pinning to coordinator. Fresh plan-reference author owns only P3.6 pin prose/
+copies plus new security-repin evidence/report; every command/Expected/dependency/
+May-edit/invariant remains unchanged. Independent review follows.
+
+1ca9d0e6 runtime4 and 4b9525c7 security-instrument proposal were confirmedRUNNING
+at event boundary. Root still MUST NOT write/stage P3.5 checkpoint or active
+runtime outputs. No other resourceholder. Pending English/fullscope and broader
+origin-push questions have not been answered; silence is not authority.
+
 ## EOD rolling pipeline: runtime4 active, static preparation parallel
 
 1ca9d0e6-25ed-47ea-a781-5fe2c85cb8e6 (Space Bunny free medium) confirmed

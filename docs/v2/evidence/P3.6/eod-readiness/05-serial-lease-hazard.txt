@@ -1,0 +1,28 @@
+# 05 LIVE BUILD IN PROGRESS at read time -- the serial-lease hazard for P3.6 V0/V3
+# 2026-10-03T22:40:20Z
+
+Two ls -l of the same directory, minutes apart, from this same read-only session:
+  16:38 CST -> total 0, only 'Apunta (test).AppDir'
+  16:39 CST -> Apunta (test)_0.0.0_amd64.AppImage, 194202104 bytes, mtime Oct 3 16:39
+
+$ ls -l --time-style=full-iso src-tauri/target/release/bundle/appimage/
+total 189652
+-rwxr-xr-x 1 villenull villenull 194202104 2026-10-03 16:39:34.366149323 -0600 Apunta (test)_0.0.0_amd64.AppImage
+drwxr-xr-x 1 villenull villenull       182 2026-10-03 16:39:28.029317248 -0600 Apunta (test).AppDir
+
+$ ls -ld --time-style=full-iso build/linux-resources build/linux-resources/web/dist 2>&1
+ls: cannot access 'build/linux-resources/web/dist': No such file or directory
+drwxr-xr-x 1 villenull villenull 160 2026-10-03 16:37:27.587989357 -0600 build/linux-resources
+
+$ pgrep -af 'tauri|cargo|package-linux-resources|Xvfb|node .*tauri-' | head -20   (read-only process list)
+2701883 node scripts/v2/tauri-audio.test.mjs tone
+2701890 /bin/sh /usr/bin/xvfb-run -a -s -screen 0 1400x1000x24 /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node /home/villenull/Projects/Apunta/scripts/v2/tauri-audio.test.mjs tone
+2701900 Xvfb :99 -screen 0 1400x1000x24 -nolisten tcp
+2701930 /usr/bin/bash -c cd /home/villenull/Projects/Apunta E=docs/v2/evidence/P3.6/eod-readiness { echo "# 05 LIVE BUILD IN PROGRESS at read time -- the serial-lease hazard for P3.6 V0/V3" echo "# $(date -u +%FT%TZ)" echo echo "Two ls -l of the same directory, minutes apart, from this same read-only session:" echo "  16:38 CST -> total 0, only 'Apunta (test).AppDir'" echo "  16:39 CST -> Apunta (test)_0.0.0_amd64.AppImage, 194202104 bytes, mtime Oct 3 16:39" echo echo "\$ ls -l --time-style=full-iso src-tauri/target/release/bundle/appimage/" ls -l --time-style=full-iso src-tauri/target/release/bundle/appimage/ echo echo "\$ ls -ld --time-style=full-iso build/linux-resources build/linux-resources/web/dist 2>&1" ls -ld --time-style=full-iso build/linux-resources build/linux-resources/web/dist 2>&1 echo echo "\$ pgrep -af 'tauri|cargo|package-linux-resources|Xvfb|node .*tauri-' | head -20   (read-only process list)" pgrep -af 'tauri|cargo|package-linux-resources|Xvfb|node .*tauri-' 2>/dev/null | head -20 || echo "(no match)" echo echo "CONSEQUENCE recorded in the review, not acted on: P3.6 V0's closing assertion" echo "  C=0 && for f in \"\$B\"/'Apunta (test)_'*.AppImage; do if [ -e \"\$f\" ]; then C=\$((C+1)); fi; done && test \"\$C\" -eq 1" echo "cannot distinguish 'the test image MY run just built' from 'the test image another" echo "card's run left behind'. The identity count is an ambiguity guard, not a provenance" echo "guard. Only Rule B's freshness predicate (AppImage mtime vs newest mtime under" echo "Rule B's set) proves provenance, and it is the predicate V0's skip rule can skip." } > "$E/05-serial-lease-hazard.txt" 2>&1 cat "$E/05-serial-lease-hazard.txt"
+
+CONSEQUENCE recorded in the review, not acted on: P3.6 V0's closing assertion
+  C=0 && for f in "$B"/'Apunta (test)_'*.AppImage; do if [ -e "$f" ]; then C=$((C+1)); fi; done && test "$C" -eq 1
+cannot distinguish 'the test image MY run just built' from 'the test image another
+card's run left behind'. The identity count is an ambiguity guard, not a provenance
+guard. Only Rule B's freshness predicate (AppImage mtime vs newest mtime under
+Rule B's set) proves provenance, and it is the predicate V0's skip rule can skip.

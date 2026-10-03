@@ -1,0 +1,19 @@
+# 02 pin verification (Stop 8 inputs), 2026-10-03T22:39:55Z
+
+P3.4.md at pin 5dcabae vs working tree:
+DIFFERS (37 diff lines)
+commits touching docs/v2/cards/P3.4.md since 5dcabae:
+6974943 Escape approved IPC command pipe in P3.4 card cell
+b077d1a Adopt owner-approved P3.4 final attempt and P3.5 capture package
+10ef277 P3.4's guard now actually fires; S3.3a's determinism check was upside down
+
+csp.ts / app.ts vs d56af1d:
+(no output above = unchanged)
+
+commits touching docs/v2/cards/P3.3.md since 321b4fa:
+(no output above = 0 commits)
+
+P3.6 Rule B bullet vs P3.4 Rule B bullet (backtick path spans):
+old bullet bytes 2154 new bullet bytes 2154
+spans only in old: []
+spans only in new: []

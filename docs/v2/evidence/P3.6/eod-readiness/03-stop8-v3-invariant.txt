@@ -1,0 +1,17 @@
+# 03 STOP CONDITION 8 -- P3.4 V3 invariant: P3.6 pinned copy vs P3.4 today
+# generated 2026-10-03T22:40:00.428Z
+
+P3.6 quote (docs/v2/cards/P3.6.md:103, first backtick span) -- 318 bytes:
+grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs; test ! -e src-tauri/capabilities; ! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs
+
+present verbatim in docs/v2/cards/P3.4.md AT 5dcabae : YES
+present verbatim in docs/v2/cards/P3.4.md TODAY     : NO  <-- Stop 8 fires
+
+OLD P3.4 V3 command cell, first backtick span (318 bytes), from 5dcabae:
+grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs; test ! -e src-tauri/capabilities; ! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs
+
+NEW P3.4 V3 command cell, first backtick span (628 bytes), from the working tree:
+b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 \|\| bad=1; test ! -e src-tauri/capabilities \|\| { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0
+
+verdict: P3.6 Must-not-edit greps would match NOTHING in the current tree for the
+first two conjuncts -- the pinned spelling is the 5dcabae one, not the current one.

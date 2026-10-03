@@ -1,0 +1,28 @@
+# 01 dependency status, read at 04d071e (main), 2026-10-03T22:39:55Z
+
+$ node -e 'PROGRESS.json cards'
+P2.R APPROVED
+P3.3 APPROVED
+P3.4 BLOCKED
+P3.5 IN PROGRESS
+P3.6 NOT STARTED
+P3.7 APPROVED
+P3.R NOT STARTED
+
+$ docs/v2/state/cards/*.json status/attempt/nextAllowedAction
+-- P3.4
+status BLOCKED attempt 5 baseCommit 6974943
+next read-only-runtime-failure-review-and-coordinator-decision-no-rerun-no-sixth
+last Final once-only runtime attempt5 complete: V0/V1/V3 PASS, V2 FAIL (click window read-back WINDOW=0), V4 FAIL (outside-source proof lint). Worker stopped, cleanup verified, build lease released.
+-- P3.5
+status IN PROGRESS attempt 4 baseCommit 8783181
+next launch-serial-once-only-runtime4-after-host-preflight
+last Source review CLEAR and runtime readiness READY; attempt4 dispatch regenerated under AM194, rows NOT RUN.
+-- P3.6
+status NOT STARTED attempt 0 baseCommit null
+next repair
+last null
+
+$ git status --porcelain (whole tree)
+ M docs/v2/evidence/P3.5/V0-host-and-build.md
+?? docs/v2/evidence/P3.6/

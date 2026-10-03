@@ -2735,3 +2735,11 @@ e0b93d29 launched RUNNING P36 instruction prep only, no dependency bypass.
 Callbacks arranged all three, exact new-file scopes recorded NEXT-SESSION.
 Async owner questions EODscope and reviewed-source/checkpointoriginpush pending;
 sourceexport withheld after automatic review rejection, local commits retained.
+
+## 2026-10-03 — integration readiness exposes mechanical pin drift
+
+e0b93d29 complete/archived. P36 C1deps/P35lease hold plus Stop8 V3quote318bytes
+old5dcabae nowfixedstringloop628bytes (AM179), sameassertedinvariant. Stop8exact
+coordinatorrepin authority used for fresh plan-reference repairauthor, command/
+Expected/scopes/depsunchanged, independentreviewnext. Sourcecard remainsnotstart.
+Runtime1ca9d0e6 +P34proposal4b9525c7 RUNNING atboundary, no extra hostwork.

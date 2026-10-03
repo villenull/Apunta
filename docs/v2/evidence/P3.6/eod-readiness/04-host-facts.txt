@@ -1,0 +1,67 @@
+# 04 host facts (read-only stats and greps; nothing launched, built, bound or probed), 2026-10-03T22:40:10Z
+
+S0 precondition -- A06 whisper candidate:
+-rwxr-xr-x 1 villenull villenull 1064648 Oct  2 13:00 /home/villenull/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli
+  (P3.6 S0 anchor is test -x on exactly this path with APUNTA_WHISPER_WORK_DIR=$HOME/.cache/apunta-v2/whisper-src and APUNTA_WHISPER_BACKEND=vulkan)
+
+bundle output dir -- src-tauri/target/release/bundle/appimage/:
+total 189652
+-rwxr-xr-x 1 villenull villenull 194202104 Oct  3 16:39 Apunta (test)_0.0.0_amd64.AppImage
+drwxr-xr-x 1 villenull villenull       182 Oct  3 16:39 Apunta (test).AppDir
+  -> NO .AppImage present; only an AppDir. V0 is therefore mandatory, nothing reusable.
+
+build/linux-resources present:
+build/linux-resources
+
+icons -- docs/v2/assets/tauri-icons vs src-tauri/icons (counts only; V2 not run):
+  asset set: 17 files
+  src-tauri/icons: 17 files
+  tracked in git: 17 files
+
+tools named by Stop 2 / V3 (command -v only, nothing executed):
+  xvfb-run     /usr/bin/xvfb-run
+  xdotool      /usr/bin/xdotool
+  unsquashfs   ABSENT
+
+port 7879 (P3.6 pinned) -- matches for hex 1EBB in /proc/net/tcp{,6}:
+/proc/net/tcp:0
+/proc/net/tcp6:0
+
+harness scripts:
+-rw-r--r-- 1 villenull villenull 18200 Sep 29 11:50 scripts/v2/package-linux-resources.sh
+-rw-r--r-- 1 villenull villenull 19330 Sep 29 09:29 scripts/v2/sandbox.mjs
+-rw-r--r-- 1 villenull villenull 50757 Oct  2 00:50 scripts/v2/tauri-lifecycle.test.mjs
+-rw-r--r-- 1 villenull villenull 96910 Oct  3 07:59 scripts/v2/tauri-security.test.mjs
+scripts/v2/tauri-e2e-smoke.test.mjs (P3.6 S2, declared NEW in May edit): ls: cannot access 'scripts/v2/tauri-e2e-smoke.test.mjs': No such file or directory
+
+src-tauri/tauri.conf.json (bundle identity + resources):
+{
+ "productName": "Apunta",
+ "version": "0.0.0",
+ "targets": [
+  "appimage"
+ ],
+ "resources": {
+  "../build/linux-resources/": "linux-resources/"
+ },
+ "withGlobalTauri": false,
+ "capabilities": [],
+ "icon": [
+  "icons/32x32.png",
+  "icons/128x128.png",
+  "icons/128x128@2x.png",
+  "icons/icon.icns",
+  "icons/icon.ico"
+ ]
+}
+src-tauri/tauri.test.conf.json:
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "app.apunta.desktop.test",
+  "productName": "Apunta (test)"
+}
+
+P3.5 V5 attribution target -- docs/v2/evidence/P3.3/V4-fatal.md:
+3:Status: **PASS**
+occurrences of 'the code is port_in_use and not data_folder_in_use': 1
+occurrences of 'the code is data_folder_in_use and not port_in_use': 1
