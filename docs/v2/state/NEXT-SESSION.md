@@ -1,3 +1,19 @@
+## Exact attempt4 source review and runtime preparation running
+
+Source candidate 5857079 (hash85fbb13d) is the exact owner AM-194 patch.
+adc88147-0a51-450b-b152-abcdee1b3434 (LongCat free high) confirmed RUNNING
+with callback; owns only new P3.5-impl4 review and attempt4/source-review evidence.
+a4e666c4-db1f-49fe-b5c5-0d984350338b (Space Bunny free medium) confirmed RUNNING
+with callback; owns new runtime4-readiness report/evidence only. Both are static
+or synthetic; no runtime/build/audio/device/port lease. Root owns checkpoint.
+
+After both returns: archive, integrate, require source CLEAR, regenerate dispatch
+attempt4 --attempt-exception AM-194 at stable HEAD with port7837; verify once-only
+runtime readiness. Then fresh serial runtime worker, sole checkpoint writer only
+if explicitly delegated. Preserve original histories; exact three attempt4 anchors
+before read-only V5. No fifth/rowretry/reset/Expected change. No source or capture
+repair beyond granted patch. Hold new source export until review completes.
+
 ## Owner AM-194 approved exact P3.5 repair and one attempt 4
 
 Explicitly changes AM-190 no-fourth boundary only for this exact patch and one

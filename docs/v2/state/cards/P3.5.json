@@ -245,7 +245,7 @@
   "statusNote": "Attempt 1 of 3 finished and BLOCKED, not submitted. Four feature paths written (web/src/main.tsx, src-tauri/src/permissions.rs, src-tauri/src/main.rs three changes, scripts/v2/tauri-audio.test.mjs); nothing committed and nothing staged. A10 voice acquired with licence and SHA-256 evidence. Microphone containment held on every path: the virtual source was the default only inside a capture row, the USB microphone was never the capture device, and the host default and modules are restored now.",
   "continuationNotes": "SandboxRuns chosen as durable attempt/step/runId/dateUtc anchor for three capture records; trusted coordinator provenance, original restoration/leak assertions unchanged. Earlier-attempt history retained. IR09.1 old grep-c wording in Expected remains disclosed; no Expected cell changed. Expected still quotes old grep-c commands; protected cell unchanged. Record those literal count witnesses as well as running V5; any nonzero Expected count remains FAIL/stop, not waived. Same-attempt capture rerun would duplicate provenance and must stop; a new implementation attempt requires coordinator dispatch within3budget.",
   "codeRepairWorkerId": null,
-  "codeReviewWorkerId": null,
+  "codeReviewWorkerId": "adc88147-0a51-450b-b152-abcdee1b3434",
   "environmentReviewWorkerId": null,
   "sourceReviewVerdict": "PENDING attempt4 exact patch",
   "sourceReviewReport": "docs/v2/state/reviews/P3.5-impl3.md",
@@ -329,5 +329,6 @@
       "evidence": "docs/v2/evidence/P3.5/attempt-3/runtime/07-am187-witnesses-and-V5.txt",
       "verification": "Run once 2026-10-03T21:08:52Z, exit 1. The live half passed in full: the default source is the owner USB microphone and all four residue counts are 0. The provenance half failed closed with its reason printed: no sandboxRuns entry names step V4-silence at attempt 3, so attempt 3 holds two capture records where the card requires three, because the silence mode never ran. The AM-187 literal witnesses were recorded alongside with their commands: pactl list short sources | grep -c apunta_p35 = 0 and pactl list short sinks | grep -c apunta_p35 = 0, each with the grep exit 1 on a zero count recorded rather than suppressed; no Expected cell was edited. The five attempt-1 records and their anchors were excluded by the attempt === 3 selection and are untouched, and nothing was deleted, sorted, deduplicated or restamped."
     }
-  }
+  },
+  "runtimePreparationWorkerId": "a4e666c4-db1f-49fe-b5c5-0d984350338b"
 }

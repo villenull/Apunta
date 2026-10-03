@@ -2695,3 +2695,11 @@ one attempt4 after source review. Root applied shipping patch unchanged, expecte
 hash85fbb13d. Counter3→4, priorAttempt3Criteria retained, oldrecords/anchors unchanged.
 Currentcriteria NOTRUN, source review pending. No fifth/reset/retry/Expectedrelax.
 Next independent corrected-source review, then V0–V5once with threecaptureanchors.
+
+## 2026-10-03 — attempt4 review and preparation launched
+
+adc88147 sourceIR LongCatfreehigh + a4e666c4 runtimeinstructionprep SpaceBunnyfree
+medium launched RUNNING withcallbacks on disjoint newreport/evidence paths.
+Rootchecksyntax/eslint/prettier exit0; oldrecords/anchors/criteria equality PASS.
+No acceptance rowrun, no leases. Newsourcecommit5857079 remains local untilIR.
+Root checkpoint ownership remains; no worker may write it beforeruntimegrant.
