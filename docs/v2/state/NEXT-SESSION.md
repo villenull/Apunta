@@ -1,3 +1,9 @@
+## Committee partial return — 2026-10-03T02:48:48.463213+00:00
+
+LongCat314a0b4b response recorded in state/reviews/P3.4-committee-longcat.md (analysisonly, notconsensus). Othermember491d8dd0 awaited viafinishnotification. Do notspawnproposalrepair yet: compareboth and reconcile singlepointoffset/calibrationscale/freshframe assumptions, minimaltests/scope and deadlinecontract. Neitherowneramendment adopted nor fifthattemptauthorized. Keepmembersavailable forconvergence, archiveafterfinalexchange.
+
+P3.5worker2028c17e stillowns featurefiles/buildlease/ports7837+7839. Dirtysource remainsinflight; notstaged.
+
 ## Latest P3.4 committee reset — 2026-10-03T02:46:00.150465+00:00
 
 Revision4 review DEFECT N1-N3/M1-M6; priorclosedfindings/tooling14tests notrerequested. Reviewerd9a2c4db archived, report/evidence saved. Coordinator reproducedN2mixedframe falsepass. Noattempt5authorized/noownerquestionyet: concreteproposal notreviewready.
