@@ -2056,3 +2056,5 @@ root pinned model 60/60 and tooling 14/14 PASS. Original ignored model preserved
 repair lives in build/p3.4-spec-v5-repair. Independent review to follow before
 owner choices; no assertion amendment or fifth attempt authorized.
 
+
+Independent repaired P3.4 reviewer eccb294a-ef73-4e87-a5d2-f101dcc05d24 launched RUNNING on stable fe89a69, LongCat free high, IR6 report/evidence only, callback. P3.5 reviewer bcdc1dbf continues on stable 46419f5. No build lease held; no source writer or runtime rerun authorized.

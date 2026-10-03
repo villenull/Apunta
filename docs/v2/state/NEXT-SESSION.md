@@ -1,3 +1,5 @@
+Independent repaired P3.4 reviewer eccb294a-ef73-4e87-a5d2-f101dcc05d24 is RUNNING, LongCat free high, callback; stable repair fe89a69. Owns IR6 report/evidence only. P3.5 reviewer bcdc1dbf also RUNNING. No build lease held. Await notifications; all source candidates stable.
+
 ## Stable candidates under review — 2026-10-03T03:34:50.392903+00:00
 
 P3.5 candidate 46419f5 committed, source implementation unapproved. Reviewer
