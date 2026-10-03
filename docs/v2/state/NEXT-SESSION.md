@@ -1,3 +1,18 @@
+## Correction proposal preparation continues; source unchanged
+
+Correction author d78ad179 and child reviewer 8b831309 are stopped and archived.
+The child confirmed O3/O2 and requested one formatting correction; the prepared
+patch now includes that wrap, but fresh final independent review is still due.
+The author's owner-question request was denied by root: no source-repair grant
+exists yet. No acceptance row has run and no sixth attempt is authorized.
+
+Worker 30622fa3-727f-4701-bff6-3ecd571d74dd is confirmed RUNNING with completion
+notification. It owns only bounded proposal prose, the durable review probe's
+output lint cleanup, and new final-preparation evidence. Its task preserves the
+prepared patch, fixtures and source; root will assign fresh independent review
+on completion before presenting the one exception. A separate authentication
+route question remains pending. No lease, port reservation or runtime process.
+
 ## P3.4 code review recorded; coordinator holds approved deadline mismatch
 
 Reviewer66459613 archived; overallcodeCLEAR and80+20purechecksPASS retained in

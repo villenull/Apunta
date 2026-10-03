@@ -2420,3 +2420,18 @@ independentreview thenexplicitownerpreparationexception ifneeded, no timewiden,
 noacceptancerowretry/counterreset/attempt6. AuthenticationroutechoicePENDING;
 no builds/app/runtime/privatev1 touched, nolease orportreserved.
 
+
+### 2026-10-03 — correction proposal evidence preparation
+
+Archived completed correction author d78ad179 and child reviewer 8b831309 after
+recording the bounded formatting finding. Root denied the author's premature
+owner-question request; this did not grant a source repair. Final prepared patch
+has the requested wrap; fresh independent review remains due. Source unchanged,
+V0–V4 NOT RUN, attempt 5 BLOCKED, no sixth attempt or hidden retry.
+
+Dispatched 30622fa3-727f-4701-bff6-3ecd571d74dd (Space Bunny free, medium),
+confirmed running with callback: bounded prose accuracy and output-only evidence
+lint cleanup, preserved patch/fixtures/source. Exclusive paths are the correction
+proposal, review/probe.mjs and new final-preparation evidence; ignored scratch.
+No other useful independent work is ready while source authority and local
+installation authentication remain outstanding. No lease or port reserved.
