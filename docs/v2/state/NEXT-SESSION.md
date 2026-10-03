@@ -1,3 +1,27 @@
+## Mechanical owner-package application CLEAR; config evidence repair review running
+
+Applicationreview f9b2c666 independently CLEAR tooling/card/config/manifest;
+39tooltests+113matrix+14IRprobes PASS. Review recordedE-1 evidence-only defect:
+workingtree scope requires uncommittedconfig and failscleanHEAD. Reviewerarchived.
+Rootb900fe4 changes onlyscope row toimmutablec8abfc5..507c026 diff under SAME6roots,
+exactCONFIGpathstillrequired; root41checksPASSnow. Originalconfigschema/delta
+assertions and historicaloutputsretained. Fresh independent reviewer
+aab74775-f850-43b6-9b8d-6e7066ad6dad (SpaceBunnymedium, callback) owns only
+P3.5-config-evidence-ir.md andconfig-evidence-review evidence. ActualA10domain
+isus.aws.cdn.hf.co asAM191; reviewerreturntypo'.ca' isn'tauthority/adopted.
+
+P34finaldispatchgeneratedonce withbase6974943/port7835/attempt5/AM189 plus
+reviewedproposalfindings. Portnotreserved; no runtimeacceptancerowrun. Source
+writer9b1b88ff continuesfinalcodeunitpreparation; root ownscheckpoint.
+
+Authenticationmethod question nowPENDING: openalreadyinstalledGhosttylocalwindow
+runningexactapprovedpkexec3packagecommand vsleaveinstallheld. Preparedignored
+build/p3.5-auth/install-in-terminal.sh bash-nPASS; script neverreads/logspassword,
+records onlyinstallerexitstatus, no terminalcapture. Notlaunchedwithoutanswer.
+ExistingAM190grantpersists; newquestion ONLYauthenticationroute becausevill
+specifiedgraphicalpolkitprompt andcommonagentsabsent. Noextraauthpackageproposed.
+No buildlease, no app/server/DB/model/audio/input/7717 touched.
+
 ## Graphical authentication diagnosis recorded
 
 Commonpolkitagents absent: pgrepnone, hyprpolkitagent/polkit-gnome/polkit-kde-agent
