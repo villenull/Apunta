@@ -1,0 +1,38 @@
+node 24.19.0
+PASS option A (shipping config) validates
+PASS option B (test overlay) validates
+PASS negative control: string value rejected
+PASS negative control: extra key rejected
+PASS option A delta is exactly the one key
+PASS option B delta is exactly the one key
+PASS base bundle has no linux key today
+PASS test overlay has no bundle key today
+PASS installed tauri-utils config.rs found — /home/villenull/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-utils-2.10.1/src/config.rs
+--- installed AppImageConfig ---
+pub struct AppImageConfig {
+  /// Include additional gstreamer dependencies needed for audio and video playback.
+  /// This increases the bundle size by ~15-35MB depending on your build system.
+  #[serde(default, alias = "bundle-media-framework")]
+  pub bundle_media_framework: bool,
+  /// The files to include in the Appimage Binary.
+  #[serde(default)]
+  pub files: HashMap<PathBuf, PathBuf>,
+}
+PASS files field is HashMap<PathBuf, PathBuf>
+PASS files doc says "files to include"
+PASS installed primary states no target/source direction for appimage.files — no direction in the installed primary
+PASS cached linuxdeploy-plugin-gstreamer.sh present — /home/villenull/.cache/tauri/linuxdeploy-plugin-gstreamer.sh
+PASS help line 23 documents GSTREAMER_HELPERS_DIR
+PASS selection branch reads GSTREAMER_HELPERS_DIR — line 85
+PASS helpers_target_dir line found — line 75
+PASS hook scanner line found — line 149
+PASS hook scanner path sits under helpers_target_dir — /usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner under /usr/lib/gstreamer1.0/gstreamer-1.0
+scanner target: $APPDIR/usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
+PASS host scanner exists — /usr/lib/gstreamer-1.0/gst-plugin-scanner
+PASS host scanner is executable — mode 755
+PASS shell syntax: step 0 prereq read — bash -n exit 0
+PASS shell syntax: step 1 scanner prep + rebuild env — bash -n exit 0
+PASS shell syntax: step 2 four separate dry inspections — bash -n exit 0
+PASS shell syntax: V0 default-source fail-closed read — bash -n exit 0
+PASS shell syntax: V1 30s fixture loop + ffprobe — bash -n exit 0
+ALL CHECKS PASS
