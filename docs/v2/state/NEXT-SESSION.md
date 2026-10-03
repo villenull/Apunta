@@ -1,3 +1,27 @@
+# Latest event checkpoint — S3.3a changes requested, 2026-10-03
+
+- S3.3a independent reviewer `cbcf3dd0-9f51-4147-8ab5-8b4b88da58f2`
+  returned CHANGES REQUESTED and archived (confirmed). No build was run;
+  review build lease released. Source remains unaccepted candidate 56d1847.
+  Attempt 1 consumed; repair attempt 2 not yet dispatched.
+- Defects: multi-ID parser refuses second ID; seeder POST Response not JSON;
+  copied PINNED rule dump plus whole-file presence tests can pass despite
+  effective rules changing. Preserve original rule functions/constants/summary;
+  investigate own-source AST extraction using existing TypeScript dependency.
+- Coordinator corrected only V7 summary grep and V8 descendant membership
+  matching already-granted evidence folder. Synthetic good/bad branches passed;
+  no scope widening or filtering away foreign drift. Independent command IR4
+  `889600c3-99b3-442b-beef-2546a78252d5` RUNNING, only its review report.
+  After CLEAR: fresh repair implementer attempt2, same5 source paths, no model.
+- P3.5 repair author `857ce7d5-fe0b-4b2d-b412-e1bd3c81ab0c` RUNNING,
+  only card V5 command/minimal PREV_DEFAULT format and repair2 report.
+- P3.4 owner proposal reviewer `c3ab4f09-ca1d-4e9e-9a15-9d7719261445`
+  RUNNING, only its review report. Proposal remains unadopted; no fifth attempt.
+- All three active workers Space Bunny medium, same workspace, callbacks.
+  No build/GPU/audio/port reservation currently held. All real-model lanes
+  owner-held. Owner-requested archival of old orchestrator confirmed.
+  Older RUNNING clauses below superseded by this block.
+
 # Latest event checkpoint — 2026-10-03
 
 - Old orchestrator `dea3b0d2-60b4-4284-8fa2-f110100ee76b` archived at owner
