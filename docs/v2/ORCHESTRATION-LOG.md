@@ -2876,3 +2876,12 @@ released/cleanupverified/prior4/5criteriaunchanged. RootparksP34BLOCKED.
 71cb8245 repairs evidence-output lint only, b07cc8b3 audits frozenrun/prepares
 minimal staticrowscompletionownerexception; e74efcc6 continuesP36approachIR.
 No V2relaunch/sourcepatch/seventh. Modelacquisitionownerquestionpending.
+
+## 2026-10-03 23:59 UTC — acquisition running; static completion gated
+
+AM-198/A17 recorded dcf4967. 04340fea runs existing-installer pinned English
+acquisition with no pull/inference. 71cb8245 archived; 844ad23 saves bounded
+proof cleanup; a873c5d8 independent review running. 97eb905e static proposal
+CLEAR archived; owner question waits lint CLEAR. e74efcc6 integration brief
+validation archived, corrections retained in completed review. P34 BLOCKED,
+P35 APPROVED, P36 dependency-held. Native lease free; no acceptance rerun.

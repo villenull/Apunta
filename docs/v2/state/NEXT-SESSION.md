@@ -1,3 +1,37 @@
+## Current execution — approved English acquisition and final static gates
+
+AM-198/A17 authorizes pinned tiny.en acquisition; worker
+04340fea-1599-4f36-97d8-e28cf165a2ed is confirmed running with callback.
+Exclusive cache build/eod-model-cache plus ignored invocation scratch and new
+english-eod-model-acquisition evidence. Existing installer only, metadata-only
+Ollama adapter refuses pulls/inference, signed query values never logged.
+No native/build/model-inference lease; qwen already present.
+
+71cb8245 completed and archival confirmed. Packet 844ad23 preserves the raw
+CJS witness as byte-identical .mjs.txt, output-only verifier cleanup, retained
+bash syntax assertion and zero-normalization replay. Fresh independent worker
+a873c5d8-9bea-4133-9af2-8c3c9160169d confirmed running with callback; new
+state/reviews/eod-proof-lint-repair-ir.md and eod-proof-lint-repair-ir evidence
+only. No actual acceptance row run. Static completion question waits on CLEAR.
+
+97eb905e completed CLEAR and archival confirmed: correctly decoded V3 plus
+full verbatim V4 once inside attempt6 only, explicit owner override required.
+No V0/V1/V2/app/build/source repeat, no seventh, prior BLOCKED/FAIL preserved.
+Root has not asked or exercised that missing authority yet.
+
+e74efcc6 completed and archival confirmed. Integration preparation corrections
+are mandatory: all eleven named flows; real capture UI with virtual fixture;
+no API action that self-proves a UI outcome; visible Copied confirmation;
+screenshot-grounded targets with measured coordinate-frame evidence rather
+than guessed titlebar translation; GDK_SCALE/GDK_DPI_SCALE=1; no inaccessible
+page calibration facts in an unflagged bundle. Existing two-marker acceptance
+unchanged; third marker may be an observation only. Earlier seven instruction
+DEFECT findings repaired in card, not rewritten as historical CLEAR verdicts.
+P3.6 remains dependency-blocked on P3.4; no premature implementation dispatch.
+Root owns checkpoint/state; active worker edits never committed. Two useful
+workers run; remaining slot intentionally free until receipt review or lint
+CLEAR unblocks static owner question. No idle worker retained.
+
 ## Real native security PASS; static verification completion preparation
 
 c88d6043 finished and archived successfully; e00b63c preserves actual V2
