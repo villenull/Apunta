@@ -1,3 +1,11 @@
+## Latest P3.4 committee reset — 2026-10-03T02:46:00.150465+00:00
+
+Revision4 review DEFECT N1-N3/M1-M6; priorclosedfindings/tooling14tests notrerequested. Reviewerd9a2c4db archived, report/evidence saved. Coordinator reproducedN2mixedframe falsepass. Noattempt5authorized/noownerquestionyet: concreteproposal notreviewready.
+
+Two read-only committee members RUNNING, nofiles/code: SpaceBunnymedium491d8dd0-6cc8-4ec5-8762-dbb4bf89507a and LongCathigh314a0b4b-66d2-4cc0-97a5-415b8698565c (profilesempty, freeproviderfallback). Waitfinishnotifications, compareboth, resolve disagreement via messages percommittee skill, thensmallcoherentrepairplan; avoid another growingprosepatch loop.
+
+P3.5implementation2028c17e continues solefeaturewriter/buildlease/ports7837+7839. Leavepartialsource/checkpoint/evidence uncommitted. Existingquietmachineholds unchanged.
+
 ## Latest P3.4 proposal checkpoint — 2026-10-03T02:25:00.646936+00:00
 
 Revision4 candidate812d93b proposal+AUTHOR repair4 report committed. Authorb9ad8e45 archived. Fresh independent reviewerd9a2c4db-f7da-4b5c-ad97-87a0dfe1f8e2 running, proposal-ir4/evidence-only. Source BEFORE anchor8783181; concurrentP3.5 offsetsnon-normative. Coordinator B1 pureevaluation confirmsattempt4identity. Ownerpackage notadopted/noattempt5authorized. WaitCLEAR thenconcretebatchedownerquestion.
