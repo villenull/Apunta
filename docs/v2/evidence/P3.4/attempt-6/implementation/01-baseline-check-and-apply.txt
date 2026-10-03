@@ -1,0 +1,115 @@
+# AM-195 — baseline, patch identity, pre-flight check, apply
+
+Workspace: `main`. HEAD before and after this work: `4060909`. Working tree
+only — **nothing staged, nothing committed**.
+
+Sections 1, 2, 4 and the §5 line list are reproduced from the commands as they
+were run, before and at the moment of the apply. Section 3 is stated from that
+run. Section 6 is the *live* post-apply verification, re-runnable.
+
+## 1. Baseline shipping hashes at 4060909 — before any mutation
+
+    865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  scripts/v2/tauri-security.test.mjs
+    f6f22ab0063be475eb6532455cd707fe3d7048929b4c911924ce69503736c2e3  docs/v2/tools/build-dispatch.mjs
+    d4dcf3c29b1b77c3b4f325d0a68fe76a5a6efbe4b5b8c6415064f31925df7aec  docs/v2/tools/build-dispatch.test.mjs
+    195e30f5c2285c5572c6a037dfe2a299c99e2dd6fa0735b9883d63ece74c4c60  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+    325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+
+These five are byte-identical to the repair's `01-identity-replay.txt` §1 and to
+IR2 §2. `adapters.test.mjs` is untouched by all four patches.
+
+## 2. The four AM-195 patches — same bytes as the evidence directories
+
+    22d4a40e46553ffccc1738dd3afa235f5c9112efcbd8af4c3d36c3ccd6068458  docs/v2/evidence/P3.4/eod-instrument-proposal/candidate.patch
+    1f405b87ebc686f805b4700685ba77cd6a57dc87c14e1a05a526c32ea6d54529  docs/v2/evidence/P3.4/eod-instrument-proposal/tooling.patch
+    ba3cc084aaf2b78ba8764962aa6da9960031c97d5692a69219af3a1d8d5a3fe0  docs/v2/evidence/P3.4/eod-instrument-proposal-repair/fixture.patch
+    7308f8561934471527b0f533085f53087c8e2ae3c02c4921f9bf2406fc546644  docs/v2/evidence/P3.4/eod-instrument-proposal-repair/tooling-fixture.patch
+
+The patch files themselves were not touched, copied over, regenerated or
+re-derived; the four shipped artefacts were applied as committed.
+
+## 3. Read-only pre-flight — `git apply --check`, all four, real paths
+
+Run against the unpatched tree, immediately before the apply. Every one clean,
+exit 0:
+
+    candidate.patch        CLEAN
+    tooling.patch          CLEAN
+    fixture.patch          CLEAN
+    tooling-fixture.patch  CLEAN
+
+Had any patch failed, the work would have stopped here, before any mutation.
+
+## 4. `git apply --stat` — scope, per patch
+
+    -- candidate.patch
+     scripts/v2/tauri-security.test.mjs |   76 ++++++++++++++++++++++++++++++------
+     1 file changed, 63 insertions(+), 13 deletions(-)
+    -- tooling.patch
+     docs/v2/tools/build-dispatch.mjs      |   46 +++++++++++++++++++++---------
+     docs/v2/tools/build-dispatch.test.mjs |   50 +++++++++++++++++++++++++++++++--
+     2 files changed, 79 insertions(+), 17 deletions(-)
+    -- fixture.patch
+     .../attempt-5/implementation/ported-model.test.mjs |   23 +++++++++++++-------
+     1 file changed, 15 insertions(+), 8 deletions(-)
+    -- tooling-fixture.patch
+     docs/v2/tools/build-dispatch.test.mjs |    9 +++++++--
+     1 file changed, 7 insertions(+), 2 deletions(-)
+
+Four patches, **four** files, no other path touched.
+
+## 5. The apply — one `git apply`, all four, AM-195 order
+
+    Checking patch scripts/v2/tauri-security.test.mjs...
+    Applied patch scripts/v2/tauri-security.test.mjs cleanly.
+    Checking patch docs/v2/tools/build-dispatch.mjs...
+    Checking patch docs/v2/tools/build-dispatch.test.mjs...
+    Applied patch docs/v2/tools/build-dispatch.mjs cleanly.
+    Applied patch docs/v2/tools/build-dispatch.test.mjs cleanly.
+    Checking patch docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs...
+    Applied patch docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs cleanly.
+    Checking patch docs/v2/tools/build-dispatch.test.mjs...
+    Applied patch docs/v2/tools/build-dispatch.test.mjs cleanly.
+
+exit 0. Order: `candidate`, `tooling`, `fixture`, `tooling-fixture`.
+
+## 6. Live post-apply verification
+
+Resulting hashes — every one equal to the expected value from IR2 §2 and the
+repair's `01` §3:
+
+| file | resulting sha256 | expected |
+| --- | --- | --- |
+| `scripts/v2/tauri-security.test.mjs` | `cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16` | `cc733cd0…` ✅ |
+| `docs/v2/tools/build-dispatch.mjs` | `3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4` | `3f77b55b…` ✅ |
+| `docs/v2/tools/build-dispatch.test.mjs` | `ee8e051cc467ef62c55d00a128d496da94eeaaee6364789c694a85d5d6de8b8f` | `ee8e051c…` ✅ |
+| `…/attempt-5/implementation/ported-model.test.mjs` | `e4790fe909e0352fdba94b0f54db48397deac436a35d3c267937f468796d607b` | `e4790fe9…` ✅ |
+| `…/attempt-5/implementation/adapters.test.mjs` | `325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8` | unchanged ✅ |
+
+**Consequence worth stating plainly:** the instrument is at `cc733cd0…`, the same
+bytes IR2 carried the previous review's **32 adversarial controls** on. Those
+controls therefore carry forward on hash identity — they were not re-run here and
+did not need to be.
+
+Working-tree scope of the apply, `git status --porcelain`:
+
+     M docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+     M docs/v2/tools/build-dispatch.mjs
+     M docs/v2/tools/build-dispatch.test.mjs
+     M scripts/v2/tauri-security.test.mjs
+
+`docs/v2/state/cards/P3.5.json` also appears as modified. **It is not this
+work's.** It is a concurrent background agent's in-flight P3.5 checkpoint write
+(mtime 2026-10-03 17:22 local, arriving after this session's clean-tree
+baseline); it was left untouched, unstaged and uncommitted, per CLAUDE.md
+"Working alongside background agents".
+
+## 7. HEAD moved under us — noted, immaterial
+
+While this apply was in flight the coordinator committed `16f1b11`
+("Dispatch approved silence completion and security instrument application").
+It touches **only** `docs/v2/ORCHESTRATION-LOG.md` and
+`docs/v2/state/NEXT-SESSION.md` — no source, tool, fixture, card or checkpoint —
+so every baseline hash in §1, every applied byte in §5 and every resulting hash in
+§6 stand unchanged. This work's four files remain **unstaged and uncommitted**;
+nothing was committed by it, and it did not follow the moving HEAD.

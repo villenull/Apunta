@@ -238,8 +238,14 @@ test('D7 native read-back needs 1 px, the app window or the app pid', () => {
   assert.equal(checkReadback({ x: 700, y: 500 }, { X: '701', Y: '500', WINDOW: '4711' }, WINDOW, APP_PID).ok, true);
   assert.match(checkReadback({ x: 700, y: 500 }, { X: '702', Y: '500', WINDOW: '4711' }, WINDOW, APP_PID).reason, /2,0 px/);
   assert.equal(checkReadback({ x: 700, y: 500 }, { X: '700', Y: '500', PID: String(APP_PID) }, WINDOW, APP_PID).ok, true);
-  assert.match(checkReadback({ x: 700, y: 500 }, { X: '700', Y: '500', PID: '-1' }, WINDOW, APP_PID).reason, /not over the app/);
-  assert.match(checkReadback({ x: 700, y: 500 }, { X: '700', Y: '500', WINDOW: '999' }, WINDOW, APP_PID).reason, /not over the app/);
+  // Under the corrected instrument the getmouselocation WINDOW/PID fields are
+  // diagnostic text only, so a foreign or absent one no longer decides the
+  // result. What must still fail closed is the MEASURED point leaving the
+  // rectangle read once from getwindowgeometry, whose owner runFlow has already
+  // confirmed with getwindowpid. Both directions are asserted here.
+  assert.equal(checkReadback({ x: 700, y: 500 }, { X: '700', Y: '500', PID: '-1' }, WINDOW, APP_PID).ok, true);
+  assert.equal(checkReadback({ x: 700, y: 500 }, { X: '700', Y: '500', WINDOW: '999' }, WINDOW, APP_PID).ok, true);
+  assert.match(checkReadback({ x: 50, y: 500 }, { X: '50', Y: '500', WINDOW: '999' }, WINDOW, APP_PID).reason, /outside the owned app window/);
   assert.match(checkReadback({ x: 700, y: 500 }, { WINDOW: '4711' }, WINDOW, APP_PID).reason, /no usable X\/Y/);
 });
 
@@ -1000,6 +1006,7 @@ function flowOps({
         code: 0, signal: null, stdout: '', stderr: '',
         id: window.id, x: window.x, y: window.y, w: window.w, h: window.h, pid: appPid,
       },
+      windowPid: () => ({ code: 0, signal: null, stdout: `${String(appPid)}\n`, stderr: '' }),
       move: (point) => {
         state.moves += 1;
         state.last = point;
@@ -1125,7 +1132,7 @@ test('F2 the exported flow calibrates, then warps to the target, then clicks onc
   const result = await runFlow(h.args);
   assert.equal(result.ok, true, result.reason);
   assert.deepEqual(result.dispatched, [
-    'getwindowgeometry', 'mousemove', 'getmouselocation', // bootstrap 1
+    'getwindowgeometry', 'getwindowpid', 'mousemove', 'getmouselocation', // bootstrap 1
     'mousemove', 'getmouselocation',                     // bootstrap 2
     'mousemove', 'getmouselocation',                     // target
     'click',
@@ -1165,7 +1172,7 @@ test('F2-d a viewport or a pointer baseline that never appears ends at the deadl
   const a = await runFlow(noViewport.args);
   assert.equal(a.ok, false);
   assert.match(a.reason, /deadline expired/);
-  assert.deepEqual(a.dispatched, ['getwindowgeometry']);
+  assert.deepEqual(a.dispatched, ['getwindowgeometry', 'getwindowpid']);
   assert.equal(noViewport.fixture.state.moves, 0);
 
   const noBaseline = flowHarness({ baselineMissing: true });
@@ -1245,14 +1252,14 @@ test('F3 both bootstrap points are containment-checked BEFORE their warp, with n
   const refusedFirst = await runFlow(first.args);
   assert.equal(refusedFirst.ok, false);
   assert.match(refusedFirst.reason, /bootstrap 1: .*lies outside the window rectangle/);
-  assert.deepEqual(refusedFirst.dispatched, ['getwindowgeometry']);
+  assert.deepEqual(refusedFirst.dispatched, ['getwindowgeometry', 'getwindowpid']);
   assert.equal(first.fixture.state.moves, 0, 'no warp was issued for the point that failed');
 
   const second = flowHarness({ window: { id: WINDOW.id, x: 60, y: 70, w: 800, h: 860 } });
   const refusedSecond = await runFlow(second.args);
   assert.equal(refusedSecond.ok, false);
   assert.match(refusedSecond.reason, /bootstrap 2: .*lies outside the window rectangle/);
-  assert.deepEqual(refusedSecond.dispatched, ['getwindowgeometry', 'mousemove', 'getmouselocation']);
+  assert.deepEqual(refusedSecond.dispatched, ['getwindowgeometry', 'getwindowpid', 'mousemove', 'getmouselocation']);
   assert.equal(second.fixture.state.moves, 1, 'bootstrap 1 moved; bootstrap 2 did not');
   assert.equal(refusedSecond.dispatched.includes('click'), false);
 });
@@ -1308,7 +1315,7 @@ test('F6 a degenerate calibration ends the row with no target warp and no click'
   assert.match(result.reason, /the calibration did not solve/);
   assert.equal(h.fixture.state.moves, 2, 'exactly the two bootstrap moves');
   assert.equal(result.dispatched.includes('click'), false);
-  assert.deepEqual(result.dispatched, ['getwindowgeometry', 'mousemove', 'getmouselocation', 'mousemove', 'getmouselocation']);
+  assert.deepEqual(result.dispatched, ['getwindowgeometry', 'getwindowpid', 'mousemove', 'getmouselocation', 'mousemove', 'getmouselocation']);
 });
 
 test('F7 a hung bootstrap move ends at the deadline with no click (ir5 B2)', async () => {
@@ -1320,7 +1327,7 @@ test('F7 a hung bootstrap move ends at the deadline with no click (ir5 B2)', asy
   const result = await pending;
   assert.equal(result.ok, false);
   assert.match(result.reason, /deadline expired/);
-  assert.deepEqual(result.dispatched, ['getwindowgeometry', 'mousemove']);
+  assert.deepEqual(result.dispatched, ['getwindowgeometry', 'getwindowpid', 'mousemove']);
   assert.equal(h.deadline.at, 30_000);
 });
 

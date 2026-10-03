@@ -1,0 +1,23 @@
+# AM-195 apply — syntax, lint, format on the four patched paths
+
+## 1. node --check, every patched file
+OK  scripts/v2/tauri-security.test.mjs
+OK  docs/v2/tools/build-dispatch.mjs
+OK  docs/v2/tools/build-dispatch.test.mjs
+OK  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+all exit 0
+
+## 2. eslint --no-ignore on the four patched paths (real, non-ignored)
+$ npx eslint --no-ignore <the four paths>
+EXIT 0
+
+## 3. prettier --check on the four patched paths
+$ npx prettier --check <the four paths>
+Checking formatting...
+All matched files use Prettier code style!
+EXIT 0
+
+Note carried from the repair 04 and not re-litigated: the two fixture files
+under attempt-5/implementation are .prettierignore'd, and neither the
+repair nor this apply introduces a new deviation class. The passes above
+are on the real paths, not on a mirror.

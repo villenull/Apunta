@@ -1,0 +1,98 @@
+# AM-195 apply — writes, non-writes, and the authority this work did and did not exercise
+
+## 1. Written (shipping paths — the AM-195 grant, exactly four)
+
+| file | Δ | note |
+| --- | --- | --- |
+| `scripts/v2/tauri-security.test.mjs` | +63/−13, 6 hunks | `candidate.patch` |
+| `docs/v2/tools/build-dispatch.mjs` | +46/−17 | `tooling.patch` |
+| `docs/v2/tools/build-dispatch.test.mjs` | +49/−15 then +7/−2 | `tooling.patch` then `tooling-fixture.patch` |
+| `docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs` | +15/−8 | `fixture.patch` |
+
+## 2. Written (evidence — new, this directory only)
+
+`docs/v2/evidence/P3.4/attempt-6/implementation/` — new, created by this work:
+`README.md`, `01-baseline-check-and-apply.txt`, `02-test-suites.txt`,
+`03-syntax-lint-format.txt`, `04-tool-attempt6-print-only.txt`,
+`05-writes-and-authority.txt`.
+
+Append-only in the sense that matters: nothing pre-existing was edited, renamed
+or removed, and the four shipped patches and all prior evidence are byte-unchanged.
+
+## 3. Explicitly NOT written
+
+No `docs/v2/state/cards/*.json`; no `docs/v2/state/checkpoints/**`; no
+`docs/v2/state/dispatch/**`; no `docs/v2/state/AMENDMENTS.md`; no
+`docs/v2/state/PROGRESS.json`; no `docs/v2/CONTRACTS.md`; no `docs/v2/HARD-STOPS.md`;
+no card, checkpoint, dispatch or state edit of any kind; no proposal or review
+document; no prior evidence directory; no card "May edit" boundary crossed.
+
+`docs/v2/state/cards/P3.5.json` shows as modified in `git status` and
+`docs/v2/evidence/P3.5/attempt-4/silence-completion/` appeared untracked. **Both
+belong to a concurrent background agent** (AM-196, P3.5 runtime), arrived
+mid-session after this work's clean-tree baseline. Left exactly as found —
+unstaged, uncommitted, unexamined. Nothing of another agent's was read into this
+change.
+
+Also not done, because they were not in the grant and nobody asked for them here:
+no git staging, no commit, no push; no `git add -A`; no branch, merge, rebase,
+reset or history rewrite (HS-4).
+
+## 4. Runtime authority NOT exercised
+
+| | |
+| --- | --- |
+| dispatch generated | **no** — every generator run used `--print`, which writes nothing |
+| V0 / V1 / V2 / V3 / V4 | **not run** — no verification row executed |
+| app, Tauri shell, AppImage | **not built, not launched** |
+| server | **not started** |
+| database | **not opened** |
+| display / Xvfb / pointer / input | **not touched** |
+| audio, microphone, pactl | **not touched** |
+| model, download, network | **not touched** |
+| port 7717 | **never contacted**; nothing bound at all |
+| live data dir, Claude export, Halaxy PDFs | **never opened** (HS-1) |
+| `prototype/` | **never edited** (HS-9) |
+| attempt 7 / reset / retry / partial re-run / waiver | **none** |
+| global `npm test`, `npm run e2e`, build, typecheck | **not run** — out of lease, and unchanged by these four patches beyond the suites recorded in `02` |
+| shared `build/` parent | **not deleted, not modified, not written** |
+| child agent / question spawned | **none** |
+
+## 5. What is now true, and what is still not
+
+True: the four AM-195 patches are applied in the working tree at `main` `4060909`,
+byte-for-byte the reviewed and CLEAR'd bytes (hashes in `01` §6); the committed
+proofs are green — ported-model/adapters **80/80**, build-dispatch **29/29**,
+plan-lib/check-plan **13/13**; syntax, ESLint (`--no-ignore`) and Prettier are
+clean on all four paths; the keyed grant renders the one correct attempt-6 line
+for P3.4 and refuses attempt 6 for another card, attempt 7 for every card, and
+attempt 6 without a named amendment.
+
+Still not true, and not claimed: nothing is committed; **no attempt 6 exists**;
+the independent **shipping-source review has not happened**; no runtime has run;
+the card is not approved and no acceptance row has moved. The instrument's
+`cc733cd0…` bytes are the ones the previous review's 32 adversarial controls were
+carried on, so those controls carry forward on hash identity — they were not
+re-run and did not need to be.
+
+**Next step belongs to root, not to this work:** a fresh independent SOURCE
+review of the applied tree, before any serial runtime lease is granted.
+
+## 6. Concurrent-activity disclosure (both left untouched)
+
+Two things changed in the workspace that are **not** this work's and were not
+acted on:
+
+1. A background agent (AM-196, P3.5 runtime) wrote
+   `docs/v2/state/cards/P3.5.json`, `docs/v2/state/returns/P3.5.md`,
+   `docs/v2/DEPENDENCIES.md` and
+   `docs/v2/evidence/P3.5/attempt-4/silence-completion/`, and the coordinator
+   committed `16f1b11` (ORCHESTRATION-LOG.md + NEXT-SESSION.md only).
+2. HEAD therefore advanced `4060909` → `16f1b11` **after** this work's baseline
+   was taken. `16f1b11` touches no source, tool, fixture, card or checkpoint
+   path, so nothing in this directory's hashes is stale.
+
+Per CLAUDE.md "Working alongside background agents": nothing of another agent's
+in-flight work was committed, staged, reverted, inspected for content or
+otherwise disturbed. This work's own four shipping files remain unstaged, as the
+grant requires.

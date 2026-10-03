@@ -408,10 +408,26 @@ test('T3: --attempt 5 with AM-nnn for card P3.4 succeeds with exactly status 0',
   assert.match(r.stdout, /# P3\.4 Test card/);
 });
 
-test('T4: --attempt 6 is refused for P3.4 itself', () => {
+test('T4: --attempt 6 with AM-nnn for card P3.4 succeeds with exactly status 0', () => {
   const r = runAttempt('P3.4', 6, ['--attempt-exception', 'AM-999']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /AM-999/);
+  assert.match(r.stdout, /there is no attempt 7/);
+  assert.match(r.stdout, /# P3\.4 Test card/);
+});
+
+test('T4b: --attempt 6 with a well-formed AM-nnn for another card is refused, naming no attempt 7', () => {
+  const r = runAttempt('T1', 6, ['--attempt-exception', 'AM-999']);
   assert.equal(r.status, 2, r.stdout);
-  assert.match(r.stderr, /beyond any authorised budget/);
+  assert.match(r.stderr, /refused/);
+  assert.match(r.stderr, /no attempt 7/);
+  assert.match(r.stderr, /only P3\.4 may carry it/);
+});
+
+test('T4c: --attempt 6 with no exception is refused', () => {
+  const r = runAttempt('P3.4', 6);
+  assert.equal(r.status, 2, r.stdout);
+  assert.match(r.stderr, /--attempt-exception/);
 });
 
 test('T5: attempt 4 line is byte-identical to the shipped literal', () => {
@@ -438,6 +454,16 @@ test('extra: attempt 5 line reads as the AM-049 parallel sentence', () => {
       '- Attempt 5 of 3, plus two corrective attempts the owner authorised by AM-190 — there is no attempt 6. Checkpoint: `docs/v2/state/cards/P3.4.json`.',
     ),
     r.stdout.split('\n').find((l) => l.includes('Attempt 5')),
+  );
+});
+
+test('extra: attempt 6 line reads as the AM-049 parallel sentence', () => {
+  const r = runAttempt('P3.4', 6, ['--attempt-exception', 'AM-195']);
+  assert.ok(
+    r.stdout.includes(
+      '- Attempt 6 of 3, plus three corrective attempts the owner authorised by AM-195 — there is no attempt 7. Checkpoint: `docs/v2/state/cards/P3.4.json`.',
+    ),
+    r.stdout.split('\n').find((l) => l.includes('Attempt 6')),
   );
 });
 
@@ -518,7 +544,25 @@ test('extra: --attempt 5 in --review mode: same keyed refusal, same single permi
     '--head',
     'deadbeef',
   ]);
-  assert.equal(c.status, 2, b.stdout + b.stderr);
+  assert.equal(c.status, 0, c.stdout + c.stderr);
+  assert.match(c.stdout, /there is no attempt 7/);
+  const d = generate(dirA, [
+    'T0.R',
+    '--base',
+    'deadbeef',
+    '--port',
+    '7841',
+    '--attempt',
+    '6',
+    '--attempt-exception',
+    'AM-999',
+    '--print',
+    '--review',
+    '--head',
+    'deadbeef',
+  ]);
+  assert.equal(d.status, 2, d.stdout + d.stderr);
+  assert.match(d.stderr, /only P3\.4 may carry it/);
 });
 
 test('extra: --attempt 5 in --ir mode is refused for another card and permitted for P3.4', () => {
@@ -591,12 +635,17 @@ test('extra: dependency gate still exits 3 after the grant (no PASS on exit 3)',
 });
 
 test('extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte', () => {
-  // The four dispatched attempt-4 sentences, read from the committed dispatches
+  // The three dispatched attempt-4 sentences, read from the committed dispatches
   // themselves rather than from a constant in this file: the amendment id and the
   // card id are extracted from the shipped line and fed back through the
   // generator, so the test fails if the generator's wording drifts by one
   // character from a dispatch a reviewer already accepted.
-  for (const f of ['S2.5.md', 'P3.4.md', 'P4.1.md', 'P4.1-ir.md']) {
+  //
+  // P3.4.md is deliberately NOT in this set: the owner-authorised attempt-5
+  // dispatch (AM-189) regenerated it, so it no longer carries an attempt-4 line
+  // and the assertion below would fail on a file that was never wrong. The set is
+  // exactly the shipped dispatches that still carry the line.
+  for (const f of ['S2.5.md', 'P4.1.md', 'P4.1-ir.md']) {
     const line = readFileSync(join(realPlan, 'state', 'dispatch', f), 'utf8')
       .split('\n')
       .find((l) => l.startsWith('- Attempt 4 of '));

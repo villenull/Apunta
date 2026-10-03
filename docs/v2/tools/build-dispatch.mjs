@@ -156,14 +156,23 @@ function main() {
    * owner authorised exactly one further attempt for P3.4 (AM-189), so reaching it
    * needs both `--attempt 5` and an `--attempt-exception` that passes the
    * `AM-nnn` shape, and the card must be the one the amendment named. Every
-   * other card is refused at attempt 5 even with a well-formed amendment, and
-   * attempt 6 is refused for every card including that one — a keyed exception,
-   * not a raised ceiling. The dispatch says which amendment carried it, so the
-   * authority for the attempt is in the file the implementer is held to.
+   * other card is refused at attempt 5 even with a well-formed amendment.
+   *
+   * Attempt 6 is the same keyed exception a third time, for the same single card:
+   * the owner authorised exactly one further, final attempt for P3.4 (AM-nnn),
+   * after the attempt-5 measurement-instrument defect was corrected and
+   * independently reviewed, so reaching it needs both `--attempt 6` and an
+   * `--attempt-exception` that passes the `AM-nnn` shape, and the card must be the
+   * one the amendment named. Every other card is refused at attempt 6 even with a
+   * well-formed amendment, and attempt 7 is refused for every card including that
+   * one — a keyed exception, not a raised ceiling. The dispatch says which
+   * amendment carried it, so the authority for the attempt is in the file the
+   * implementer is held to.
    */
   const exception = opt('--attempt-exception');
   const FIFTH_ATTEMPT_CARD = 'P3.4'; // AM-189; changes only with another owner amendment
-  if (attempt === 4 || attempt === 5) {
+  const SIXTH_ATTEMPT_CARD = 'P3.4'; // AM-nnn (proposed); the only card with a sixth-attempt exception
+  if (attempt === 4 || attempt === 5 || attempt === 6) {
     if (exception === undefined || !/^AM-\d{3}$/.test(exception))
       fail(
         2,
@@ -174,10 +183,15 @@ function main() {
         2,
         `--attempt 5 is refused: only ${FIFTH_ATTEMPT_CARD} may carry it, by naming the owner amendment in --attempt-exception; ${id} is not that card, and there is no attempt 6 for any card`,
       );
-  } else if (attempt >= 6) {
+    if (attempt === 6 && id !== SIXTH_ATTEMPT_CARD)
+      fail(
+        2,
+        `--attempt 6 is refused: only ${SIXTH_ATTEMPT_CARD} may carry it, by naming the owner amendment in --attempt-exception; ${id} is not that card, and there is no attempt 7 for any card`,
+      );
+  } else if (attempt >= 7) {
     fail(
       2,
-      `--attempt must be 1, 2, 3, 4 or 5 with --attempt-exception; ${attempt} is beyond any authorised budget`,
+      `--attempt must be 1, 2, 3, 4, 5 or 6 with --attempt-exception; ${attempt} is beyond any authorised budget`,
     );
   } else if (!(attempt >= 1 && attempt <= 3)) {
     fail(2, '--attempt must be 1, 2 or 3');
@@ -356,12 +370,12 @@ function main() {
     port ? `- Sandbox port for this card: ${port}` : '- No sandbox port assigned',
     /*
      * One branch per attempt rather than an arithmetic form (`attempt - 3`):
-     * attempt 4's sentence is one corrective attempt and attempt 5's is two, so
-     * the number has to be spelled out. Arithmetic also renders `one` as `1`,
-     * which would change attempt 4's line by a byte — and that line is in the
-     * three dispatches already shipped, so a byte of drift here is a
-     * discrepancy between a reviewed dispatch and the generator that claims to
-     * have produced it.
+     * attempt 4's sentence is one corrective attempt, attempt 5's is two and
+     * attempt 6's is three, so the number has to be spelled out. Arithmetic also
+     * renders `one` as `1`, which would change attempt 4's line by a byte — and
+     * that line is in the three dispatches already shipped, so a byte of drift
+     * here is a discrepancy between a reviewed dispatch and the generator that
+     * claims to have produced it.
      */
     `- Attempt ${attempt} of ${
       attempt === 4
@@ -370,7 +384,11 @@ function main() {
           ? '3, plus two corrective attempts the owner authorised by ' +
             exception +
             ' — there is no attempt 6'
-          : '3'
+          : attempt === 6
+            ? '3, plus three corrective attempts the owner authorised by ' +
+              exception +
+              ' — there is no attempt 7'
+            : '3'
     }. Checkpoint: \`docs/v2/state/cards/${id}.json\`.`,
     '- Do not pull, merge, rebase or reset. This file was generated at ' +
       (generatedAt ? `\`${generatedAt}\`` : 'an unrecorded commit') +
