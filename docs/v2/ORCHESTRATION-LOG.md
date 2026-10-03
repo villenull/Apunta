@@ -2763,3 +2763,9 @@ and failed because the runtime appended two cleanup strings as well as two captu
 objects. Follow-up object-aware check confirms original prefixes/priorcriteria
 unchanged, +2 capture objects/+2 anchors plus two cleanup strings; attempt4fixed.
 No history or provenance defect. Root read finalV3/V4 and outsidecleanup logs.
+
+## 2026-10-03 — integration reference re-pin complete
+
+17f00ebf complete/archived, artifact0d0c556 onlyreferenceprose+newproofs, all
+commands/Expected/fieldsbyteidentical. Fresh independentreview launched callback;
+P36 stillnotdispatchable. Other2workersRUNNINGatboundary, resourcesfree.

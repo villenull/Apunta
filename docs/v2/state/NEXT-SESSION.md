@@ -1,3 +1,13 @@
+## Integration command reference re-pin awaiting independent review
+
+17f00ebf completed, archived; 0d0c556 integrated exact coordinator reference
+re-pin under Stop8. All V0–V5 commands/Expected and seven fields byte-identical;
+V3 reference now04d071e, other pins unchanged, four words/four paths/capdir
+absence unchanged. Fresh independent verifier owns new security-repin-ir only.
+No P3.6 implementation/dependency bypass. Source3 and audio resources unheld;
+P3.4 safety proposal review4a2bfc67 and P3.5 completion authorf3125615 were RUNNING
+at latest event boundary. No extra acceptance rows authorized.
+
 ## EOD completion packages and independent security review running
 
 4a2bfc67-8032-40ed-9fca-1e0176599368 (LongCat free high) confirmed RUNNING
