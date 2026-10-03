@@ -9,7 +9,7 @@
   "attempt": 5,
   "status": "BLOCKED",
   "lastCompletedStep": "Final once-only runtime attempt5 complete: V0/V1/V3 PASS, V2 FAIL (click window read-back WINDOW=0), V4 FAIL (outside-source proof lint). Worker stopped, cleanup verified, build lease released.",
-  "nextAllowedAction": "read-only-runtime-failure-review-and-coordinator-decision-no-rerun-no-sixth",
+  "nextAllowedAction": "apply-AM-195-exact-four-patches-then-independent-source-review-before-attempt6-runtime",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -126,7 +126,7 @@
   "implementationReviewVerdict": "Corrected shipping source CLEAR under AM-192; runtime rows NOT RUN pending authenticated prerequisites/preflight",
   "coordinatorBlockingFinding": "V2 handler click FAIL: pointer read-back WINDOW=0 PID=undefined, clickN=0; navigation b/c NOT RUN. V4 npm tests2235 PASS then evidence-artifact lint FAIL. Final budget exhausted, no row rerun/sixth.",
   "implementationCandidate": "291372f",
-  "updatedUtc": "2026-10-03T20:49:14.829682+00:00",
+  "updatedUtc": "2026-10-03T23:19:24.183816+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
   "reBundle": {
@@ -162,9 +162,47 @@
     "assertionPackage": "APPROVED AM-188",
     "attempt5WithKeyedTooling": "APPROVED AM-189",
     "optionalA06": "PARKED",
-    "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5"
+    "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5",
+    "nativeIdentityAttempt6": "APPROVED AM-195 exact four patches, independent source review then V0\u2013V4 once/no7"
   },
   "runtimeWorkerId": null,
   "finalDiagnosisReport": "docs/v2/state/reviews/P3.4-final-runtime-diagnosis.md",
-  "finalDiagnosis": "getmouselocation emits no PID, so approved PID disjunct is unsatisfiable; WINDOW0 native-client false negative mechanism not proven. 14 actual PASS +2 NOT RUN +1 FAIL, printed16/17 counts non-failed rows. No source/contract repair, rerun or attempt6 authorized."
+  "finalDiagnosis": "getmouselocation emits no PID, so approved PID disjunct is unsatisfiable; WINDOW0 native-client false negative mechanism not proven. 14 actual PASS +2 NOT RUN +1 FAIL, printed16/17 counts non-failed rows. No source/contract repair, rerun or attempt6 authorized.",
+  "priorAttempt5Criteria": {
+    "S0": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.4/acquisition-A06.md",
+      "verification": "Inherited from attempt 3 and re-confirmed by V0's first assertion this attempt: the candidate at ~/.cache/apunta-v2/whisper-src is executable, so S0 was SKIPPED and nothing was acquired as a new item."
+    },
+    "V0": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/02-V0.txt",
+      "verification": "Once-only flagged producer/build: marker counts1/0/16, AppImage built; AM190 bundled scanner/four dryplugins PASS separately."
+    },
+    "V1": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/04-V1.txt",
+      "verification": "Once-only CSP unit12PASS,0skipped."
+    },
+    "V2": {
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/05-V2.txt",
+      "verification": "Once-only app launch, exact IPC ACL denial/CSP/style and5containment PASS; click window read-back FAIL WINDOW0, b/c NOT RUN, no click/retry. Actual14PASS+2NOTRUN+1FAIL; printed16/17 counts non-failed, NOT RUN not PASS."
+    },
+    "V3": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/06-V3.txt",
+      "verification": "Rendered command decoded before shell execution; once-only guards0matches/no capabilities PASS."
+    },
+    "V4": {
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/07-V4.txt",
+      "verification": "Once-only npmtest2235PASS then lint13evidenceerrors FAIL; typecheck/cargo downstream notexecuted; no rerun/waiver."
+    }
+  }
 }

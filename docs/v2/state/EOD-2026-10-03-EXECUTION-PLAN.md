@@ -46,3 +46,14 @@ no downloads or system edits beyond existing grants. Omarchy configuration work
 uses the loaded skill, reads packaged defaults, and never edits packaged Omarchy.
 No heartbeat requested or created. Runtime callbacks remain the continuation
 mechanism; reconcile at each event and archive completed workers.
+
+## Confirmed owner scope and exceptions
+
+Owner chose complete English desktop workflow tonight: real speech, notes,
+persistence, export and recovery. Bilingual/Spanish clinical acceptance and
+setup/update milestones remain outside tonight's delivery target.
+Owner authorized push of completed independently reviewed source and current
+checkpoints to github.com/villenull/Apunta; unfinished worker edits excluded.
+AM-195 grants exact four P3.4 patches then independent source review and one
+attempt6. AM-196 grants only never-started silence plus one V5 recheck within4.
+Runtime remains serialized; all earlier failure evidence is retained.
