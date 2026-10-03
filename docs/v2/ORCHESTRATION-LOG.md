@@ -2043,3 +2043,16 @@ No installation/download/retry authorization inferred; attempt remains 1 of 3.
 P3.4 repair 342834e0 remains sole proposal-v5 writer, ignored copied model only.
 No fifth attempt authorized. Quiet-machine holds remain.
 
+
+## Stable candidates under review — 2026-10-03T03:34:50.392903+00:00
+
+P3.5 candidate 46419f5 committed, source implementation unapproved. Reviewer
+bcdc1dbf-6ff6-4b3a-aeac-12ace21464cc RUNNING, LongCat free high, review/evidence
+only with pure synthetic checks and offline permission tests. No app rerun,
+install or acquisition permitted. Build lease and ports are released.
+
+P3.4 repair author 342834e0 finished and archived. Revised spec 399 lines,
+root pinned model 60/60 and tooling 14/14 PASS. Original ignored model preserved;
+repair lives in build/p3.4-spec-v5-repair. Independent review to follow before
+owner choices; no assertion amendment or fifth attempt authorized.
+

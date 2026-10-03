@@ -8,8 +8,8 @@
   "baseCommit": "e46bad4",
   "attempt": 4,
   "status": "BLOCKED",
-  "lastCompletedStep": "Independent v5 review DEFECT: pre-warp witness, unbounded hung dispatch, truncated newer-header fallback, vacuous truncation fixture, bootstrap/model-flow mismatch. Coordinator reproduced older-frame fallback; IR5 preserved, reviewer archived. No runtime amendment adopted.",
-  "nextAllowedAction": "await-bounded-v5-spec-and-model-repair-then-independent-review",
+  "lastCompletedStep": "Bounded repair returned: spec 399 lines; coordinator pinned model 60/60 and tooling14/14 PASS. Original model/evidence preserved, author archived. Await independent full-flow contract review.",
+  "nextAllowedAction": "independent-review-repaired-v5-spec-and-full-flow-model",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -113,5 +113,5 @@
     "next": "Concrete owner assertion/hook/budget proposal, independent review, then owner decision."
   },
   "proposalReviewWorkerId": null,
-  "proposalRepairWorkerId": "342834e0-2e85-4069-927c-74222af1412f"
+  "proposalRepairWorkerId": null
 }
