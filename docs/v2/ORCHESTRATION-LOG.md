@@ -2340,3 +2340,14 @@ integrationreviewf9b2c666 confirmedRUNNING at eventboundary withcallbacks;
 preparation remainsuseful and withinAM188–191. Smallerpipeline justified:
 one source writer, one disjoint stableintegrationreview; builds waitauth/codeIR.
 
+
+## Graphical authentication diagnosis recorded
+
+Commonpolkitagents absent: pgrepnone, hyprpolkitagent/polkit-gnome/polkit-kde-agent
+notinstalled, no userpolkitunits, pacmanQs onlypolkit127-3. Graphicalsessionvars
+present. Two authorizedinstallcommands completed124. No new desktoppackage or
+service granted/installed; avoid another identicalpromptretry until authresolved.
+AM190authorizationpersists. P34source9b1b88ff and stableintegrationreviewf9b2c666
+remainconfirmedrunningcallback tasks. No externalrootcommand active, no buildlease.
+Evidence INSTALLATION-STATUS.md records exactreads and limitations.
+

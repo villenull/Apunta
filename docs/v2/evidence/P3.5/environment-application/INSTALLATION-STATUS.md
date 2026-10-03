@@ -16,3 +16,19 @@ Build/capture remain held until this installation authenticates and the
 reviewed fail-closed step0 read passes. Owner authorization persists; no new
 permission interview is required to retry when graphical authentication is
 available. No card attempt was spent by this package-install command.
+
+## Authentication diagnosis
+
+Read-only host checks after the timeouts:
+
+- pgrep for hyprpolkit/polkit agent processes: exit1, no match.
+- pacman -Q hyprpolkitagent polkit-gnome polkit-kde-agent: exit1, none installed.
+- systemctl --user list-unit-files '*polkit*': zero units.
+- pacman -Qs polkit: only polkit127-3 toolkit listed.
+- inherited session variables present: Wayland session, DISPLAY and runtime dir.
+
+The common graphical authentication agents are absent, so repeated identical
+pkexec invocations are unlikely to display a prompt. No fourth package or
+unapproved desktop service has been installed/launched. Existing AM-190 grant
+is retained; authentication infrastructure is an external prerequisite still
+unresolved. Preparation and independent review continue on disjoint paths.

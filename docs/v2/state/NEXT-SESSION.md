@@ -1,3 +1,13 @@
+## Graphical authentication diagnosis recorded
+
+Commonpolkitagents absent: pgrepnone, hyprpolkitagent/polkit-gnome/polkit-kde-agent
+notinstalled, no userpolkitunits, pacmanQs onlypolkit127-3. Graphicalsessionvars
+present. Two authorizedinstallcommands completed124. No new desktoppackage or
+service granted/installed; avoid another identicalpromptretry until authresolved.
+AM190authorizationpersists. P34source9b1b88ff and stableintegrationreviewf9b2c666
+remainconfirmedrunningcallback tasks. No externalrootcommand active, no buildlease.
+Evidence INSTALLATION-STATUS.md records exactreads and limitations.
+
 ## Installer authentication blocked; authorized preparation continues
 
 Both exactAM190pkexec invocations ended124 after180seconds, emptystreams;
