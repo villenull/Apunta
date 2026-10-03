@@ -1,3 +1,19 @@
+## Bounded artifact repairs running; no additional attempt authorized
+
+18d2bbc1-e241-4976-a7c1-dce5be5bc6bb (Space Bunny free, medium) is confirmed
+running with completion notification. It owns the client-sentinel proposal and
+its author evidence plus new repair evidence. Fixes: shipping-path patch replay,
+faithful lint cleanup, exactly three capture anchors at a proposed attempt 4,
+and source-format offsets. Shipping source and all acceptance rows stay held.
+Fresh independent review is next; no owner question until the package is ready.
+
+c274a1c9-99e3-49ce-a4bb-23b5eee389e3 (LongCat free, high) is confirmed running
+with completion notification, owning only new audit-qualification report/evidence.
+It qualifies column four as driver and actual device attachment as unproven;
+original audit stays intact. No runtime or resource leases. Capacity is limited
+by owner-only attempt budgets and serial author-to-review dependencies, not by
+an unattended queue. Both original reviewers were archived successfully.
+
 ## Final audits returned; bounded proposal repairs are next
 
 Both completed reviewers were archived successfully: f2445f07 (runtime audit)

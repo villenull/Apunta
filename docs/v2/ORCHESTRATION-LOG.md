@@ -2614,3 +2614,15 @@ qualification. Parser package IR confirms the minimal change is safe but finds
 wrong patch headers, 13 artifact lint errors and an invented fourth anchor;
 package is not owner-ready. Original artifacts/reviews retained for repair diff.
 No source patch, additional capture or attempt-budget amendment authorized.
+
+## 2026-10-03 — bounded artifact repair dispatch
+
+Original completed artifacts/reviews integrated at 29d36ac, including attributed
+13-error lint failure pending repair. Two create_agent calls with a separate
+model field were rejected before launch; corrected provider/model syntax launched
+18d2bbc1 (Space Bunny medium) and c274a1c9 (LongCat high), both RUNNING with
+callbacks. Exclusive scopes and no-runtime restrictions recorded in NEXT-SESSION.
+First repairs client-sentinel package IR1–3/IR4; second adds audit qualifications
+without rewriting original evidence. No attempt 4, attempt 6 or source grant.
+Next: verify and archive returns, integrate coherent artifacts, fresh independent
+package review, then one concrete owner decision if CLEAR.
