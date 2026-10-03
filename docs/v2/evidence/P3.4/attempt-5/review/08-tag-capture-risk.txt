@@ -1,0 +1,3 @@
+tagForLabel(row+tooltip) = null
+selectTarget(frame, {label,tag:SPAN}) ok = true | index 0
+tagForLabel(row only) = "SPAN"

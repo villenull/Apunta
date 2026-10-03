@@ -1,0 +1,32 @@
+# Hook delta boundaries, P3.5 seam and scope
+
+## P3.5 audio block sha256: base vs candidate
+6974943: f75065158f44556115b34439d8f7a655d1c84ffeeea319bcf70cd4661727654e  -
+b19e59f: f75065158f44556115b34439d8f7a655d1c84ffeeea319bcf70cd4661727654e  -
+
+## the hook installs only inside the build-time gate
+27: * It is reached only from the `import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'`
+39:function installObservationHook(): void {
+401:if (import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1') {
+402:  installObservationHook();
+
+## one gate, one interval, one poll function
+1
+398:  window.setInterval(poll, pollMs);
+
+## nine retained facts (href title tauri tauriInternals probe scriptText styleAttr styleComputed attempt)
+246:    query.set('href', location.href);
+247:    query.set('title', document.title);
+248:    query.set('tauri', typeof Reflect.get(window, '__TAURI__'));
+249:    query.set('tauriInternals', typeof Reflect.get(window, '__TAURI_INTERNALS__'));
+255:    query.set('probe', typeof Reflect.get(window, '__APUNTA_CSP_PROBE__'));
+258:    query.set('scriptText', scriptText ? 'true' : 'false');
+264:    query.set('styleAttr', declared);
+282:    query.set('attempt', attempt);
+
+## no import of the ignored model / no new shipping module
+scripts/v2/tauri-security.test.mjs:149:// the reviewed pure model `build/p3.4-spec-v5-repair2/model.mjs` (IR7 CLEAR,
+scripts/v2/tauri-security.test.mjs:743:// the reviewed pure model `build/p3.4-spec-v5-repair2/model.mjs` (IR7 CLEAR,
+
+## candidate changed no file under server/ web/ (except main.tsx) shared/ installer/ package.json
+(none)

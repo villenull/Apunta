@@ -13,3 +13,16 @@ Prior attempt4 criteria retained verbatim as priorAttempt4Criteria in checkpoint
 old evidence/provenance retained, not erased or reclassified. No sixth attempt.
 Independent reviewer66459613 runs code/unit only, no acceptance-row reruns.
 Build/capture remain serial and held. No build lease or port reservation held.
+
+## Root finding after independent review
+
+P3.4-impl5.md overall CLEAR is retained verbatim. Root re-derived its O3 against
+the approved proposal§E: label discovery has a separate30s wait before the one
+30s target deadline is created. This violates the covered selection/every-await/
+no-second-budget boundary. No runtime rows will start on that interpretation.
+Root marks currentattempt5 BLOCKED. A bounded correction proposal in an ignored
+copy is preparation only; source remainsb19e59f. No sixth attempt authorized.
+O2 cleanup checks an exact reason that runFlow prefixes; final own-pid cleanup
+still holds but the early branch is inert. Both are included in proposedpatch.
+P3.5 independent capture work remains eligible once its authentication/preflight
+is ready; its source/permissions/media config are separately independently clear.

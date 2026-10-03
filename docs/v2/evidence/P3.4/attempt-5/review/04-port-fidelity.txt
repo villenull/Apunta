@@ -1,0 +1,30 @@
+# Port-fidelity: the 73 model case names are identical, and the test bodies differ only by the rename
+
+## case names: model.test.mjs vs ported-model.test.mjs
+model cases: 73
+port cases:  73
+(case-name sets identical)
+
+## normalized body diff (comments/imports/blank stripped, whitespace collapsed)
+model body lines: 1271  port: 1271
+11d10
+<  assertNoIpc,
+15a15
+>  checkNoIpc,
+32c32
+< } from './model.mjs';
+---
+> } from '../../../../../../scripts/v2/tauri-security.test.mjs';
+516c516
+<  assert.equal(assertNoIpc(good).ok, true);
+---
+>  assert.equal(checkNoIpc(good).ok, true);
+526c526
+<  const result = assertNoIpc(fact, { expired: fact.ipcProbe === 'pending' });
+---
+>  const result = checkNoIpc(fact, { expired: fact.ipcProbe === 'pending' });
+530c530
+<  assert.equal(assertNoIpc(null).ok, false);
+---
+>  assert.equal(checkNoIpc(null).ok, false);
+(only differences above: assertNoIpc -> checkNoIpc and the import path)

@@ -1,3 +1,19 @@
+## P3.4 code review recorded; coordinator holds approved deadline mismatch
+
+Reviewer66459613 archived; overallcodeCLEAR and80+20purechecksPASS retained in
+P3.4-impl5.md. Rootre-derivedO3 againstapprovedproposal§E: actualwaitForLabel30s
+BEFOREcreateTargetDeadline allows30+30 pertarget, contraryselection/everyawait/
+nosecondbudget contract. Rootdoesnotadoptreviewer'snonblockinginterpretation.
+O2earlycleanup exactreasonmatchinert, finalpidcleanupstillholds; O1falseFAILrisk
+notnewfixscope. Currentattempt5BLOCKED, V0–V4NOTRUN, no sixthperAM189. No real
+sourcepatch authorized under exhaustedimplementationbudget; planonlynext.
+Fresh correctionproposal author d78ad179-5fa9-4f24-986a-60a174ddaaf9 (SpaceBunnymedium, callback) owns
+P3.4-PRE-RUNTIME-CORRECTION.md <=140lines plusattempt5/correction-proposal
+syntheticproofs, ignoredcopyonly. Exactminimaldeadline/timeoutcleanup patch,
+independentreview thenexplicitownerpreparationexception ifneeded, no timewiden,
+noacceptancerowretry/counterreset/attempt6. AuthenticationroutechoicePENDING;
+no builds/app/runtime/privatev1 touched, nolease orportreserved.
+
 ## P3.4 final implementation submitted; independent code review running
 
 Candidateb19e59f two featurefiles+ownimplementationevidence integrated. Source

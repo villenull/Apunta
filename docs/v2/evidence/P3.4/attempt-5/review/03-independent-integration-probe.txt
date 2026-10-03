@@ -1,0 +1,21 @@
+PASS gate requires href AND ipcProbe
+PASS gate passes when both present
+PASS assert pending FAILs
+PASS assert resolved FAILs
+PASS assert exact ACL denial PASSes
+PASS assert a wrong rejection msg FAILs
+PASS cascade zero-lines arm
+PASS cascade lines arm
+PASS cascade has five rows
+PASS markerLinesOf reads only marker lines
+PASS tagForLabel unique -> tag
+PASS synthetic frame complete
+PASS success run ok :: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: moved, read back within 1 px, ptrN 2 -> 3; the clicked element matched clickTag, clickTestId and trimmed clickText; href transitioned to "http://127.0.0.1/patients/1"
+PASS success run dispatched exactly one click :: move:600,450,move:850,530,move:220,68,click
+PASS success run warps bootstrap1, bootstrap2 and the target (3 moves) :: move:600,450,move:850,530,move:220,68,click
+PASS hung target warp fails :: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: the target deadline expired
+PASS hung target warp issues no click :: move:600,450,move:850,530
+PASS runFlow reason carries the deadline but is NOT exactly DEADLINE_EXPIRED :: "bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: the target deadline expired"
+PASS spawnAsync returns the four-field shape :: {"code":0,"signal":null,"stdout":"o","stderr":"e"}
+
+ALL PASS

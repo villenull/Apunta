@@ -1,0 +1,18 @@
+# Scoped lint, format, typecheck and syntax
+
+## npx eslint web/src/main.tsx scripts/v2/tauri-security.test.mjs <two impl tests>
+exit 0: clean
+
+## npx prettier --check (same four)
+Checking formatting...
+All matched files use Prettier code style!
+exit 0: clean
+
+## npx tsc -p web/tsconfig.json (scoped, no build:shared)
+exit 0
+
+## node --check scripts/v2/tauri-security.test.mjs
+exit 0
+
+## import runs no main(): export count
+exports: 39

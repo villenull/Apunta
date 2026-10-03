@@ -1,0 +1,32 @@
+# P3.4 attempt-5 code/unit review — baseline, candidate and hashes
+
+Reviewed source candidate: b19e59f (card implementationCandidate)
+Current HEAD at review time: 8269e7ad0eec2fb267c72f7bff8a43194d9bcb78 (docs/state-only tracking commit; source files unchanged)
+
+## `git diff --stat b19e59f HEAD -- web/src/main.tsx scripts/v2/tauri-security.test.mjs`
+(empty: 8269e7a touched no source)
+
+## `git diff --stat 6974943 b19e59f^ -- (two source files)`
+(empty: both files byte-identical from base to the commit before the candidate)
+
+## `git diff --stat 6974943 b19e59f -- (two source files)` (the candidate change)
+ scripts/v2/tauri-security.test.mjs | 1376 +++++++++++++++++++++++++++++++++---
+ web/src/main.tsx                   |  145 +++-
+ 2 files changed, 1413 insertions(+), 108 deletions(-)
+
+## sha256 at b19e59f / working tree
+web/src/main.tsx              45f4e588104b442e8dc2105c95f8dfc1059d089ab957f1abb06c91b7352e985a
+scripts/v2/tauri-security.test.mjs fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672
+dbca7da9ece908729431dbf8e83c8e66d014cbb7b87e7abc2f11480cb33ed9f4  build/p3.4-spec-v5-repair2/model.mjs
+9c2c58621bf1e435b7577831fc692b6db5d2ecd16af691715ebe0eeccf1346c0  build/p3.4-spec-v5-repair2/model.test.mjs
+195e30f5c2285c5572c6a037dfe2a299c99e2dd6fa0735b9883d63ece74c4c60  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+
+## candidate commit b19e59f files
+b19e59f Implement approved P3.4 ACL probe and measured click observations
+ .../P3.4/attempt-5/implementation/README.md        |  147 ++
+ .../attempt-5/implementation/adapters.test.mjs     |  152 +++
+ .../attempt-5/implementation/ported-model.test.mjs | 1399 ++++++++++++++++++++
+ scripts/v2/tauri-security.test.mjs                 | 1376 +++++++++++++++++--
+ web/src/main.tsx                                   |  145 +-
+ 5 files changed, 3111 insertions(+), 108 deletions(-)
