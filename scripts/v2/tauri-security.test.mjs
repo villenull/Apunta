@@ -71,7 +71,7 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -141,6 +141,52 @@ const RULE_6_DIRECTIVES = [
   "object-src 'none'",
   "base-uri 'none'",
   "frame-ancestors 'none'",
+];
+
+// ------------------------------------------------------- AM-188 constants --
+//
+// The owner-approved assertion and measurement package (AM-188), ported from
+// the reviewed pure model `build/p3.4-spec-v5-repair2/model.mjs` (IR7 CLEAR,
+// 73/73). Every constant and every pure function below is the model's, so the
+// synthetic port-fidelity tests in `docs/v2/evidence/P3.4/attempt-5/
+// implementation/` can prove the shipped harness behaves identically.
+const BATCH_SIZE = 40;
+const RECT_FIELDS = ['x', 'y', 'w', 'h', 'l', 't', 'd'];
+const RECT_KEY = /^i(\d+)_(x|y|w|h|l|t|d)$/;
+const MAX_K = 4;
+const TARGET_BUDGET_MS = 30_000;
+const READBACK_TOLERANCE_PX = 1;
+const WITNESS_TOLERANCE_PX = 2;
+const CLICK_N_TOLERANCE_PX = 2;
+const IPC_PROBE_COMMAND = 'plugin:event|listen';
+const ACL_DENIAL = `Command ${IPC_PROBE_COMMAND} not allowed by ACL`;
+const MIN_VIEWPORT_W = 400;
+const MIN_VIEWPORT_H = 300;
+/** The hook's own change-only poll cadence: the gap between observation reads. */
+const OBSERVATION_POLL_MS = 250;
+const DEADLINE_EXPIRED = 'the target deadline expired';
+
+/** Every pointer field the hook must publish (delta on the nine existing facts). */
+const POINTER = { counter: 'ptrN', clientX: 'ptrCX', clientY: 'ptrCY' };
+/** The click fields the hook must publish; the descriptor is three of them. */
+const CLICK = {
+  counter: 'clickN',
+  clientX: 'clickCX',
+  clientY: 'clickCY',
+  tag: 'clickTag',
+  testId: 'clickTestId',
+  text: 'clickText',
+};
+/** The viewport fields the hook must publish. */
+const VIEWPORT = { w: 'vpW', h: 'vpH' };
+
+/** The five-row NOT RUN cascade, with the (a) title AM-188 gives it. */
+const CASCADE_ROWS = [
+  '(a) __TAURI__ is absent and the built-in IPC command is ACL-denied',
+  '(b) navigation to the reserved .invalid origin is refused',
+  '(c) window.open is cancelled',
+  '(d) handler: the injected note renders inert, and __APUNTA_CSP_PROBE__ is undefined',
+  '(e) an inline style attribute is applied in the shipped binary',
 ];
 
 /** The global both payloads in the fixture try to write. */
@@ -412,9 +458,19 @@ function launchApp(appImage) {
       HOME: join(dataDir, '..', 'home'),
       XDG_BACKEND: 'x11',
       GDK_BACKEND: 'x11',
+      // GDK_SCALE=1 in the private headless shell environment: the P3.5
+      // exposure measured a GDK_SCALE=2 leak on this desktop, and this is the
+      // one place the harness may normalise it. It never masks a measurement or
+      // an assertion — the AM-188 calibration still solves the real per-axis
+      // scale from two measured points (k may be 1, 1.5 or 2), and a point that
+      // fails to land still fails. Reported explicitly below.
+      GDK_SCALE: '1',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  process.stdout.write(
+    '  display: GDK_SCALE forced to 1 in the private headless shell environment; the two-point calibration still measures the real scale\n',
+  );
   const output = { stdout: '', stderr: '' };
   child.stdout.on('data', (chunk) => {
     output.stdout += chunk.toString('utf8');
@@ -681,77 +737,1073 @@ async function waitForFact(stderrSource, predicate, timeoutMs) {
   }
 }
 
-/** The rectangle the hook published for a visible label, or `null`. */
-function rectForLabel(stderrSource, label) {
-  const { rects } = readObservations(stderrSource);
-  for (const rect of rects.values()) {
-    if (rect['l'] === label) return rect;
-  }
-  return null;
+// ------------------------------------------------- AM-188 ported model --
+//
+// The owner-approved assertion and measurement package (AM-188), ported from
+// the reviewed pure model `build/p3.4-spec-v5-repair2/model.mjs` (IR7 CLEAR,
+// 73/73). Every function below is the model's, so the synthetic port-fidelity
+// tests in `docs/v2/evidence/P3.4/attempt-5/implementation/` can prove the
+// shipped harness behaves identically. The real run injects the real clock, the
+// real command seam and the child's captured stderr; the tests inject fakes.
+
+/**
+ * A fake clock: `advance` moves time forward and fires every timer whose moment
+ * has passed, in time order, including timers registered while firing.
+ */
+function createClock(startMs = 0) {
+  let t = startMs;
+  let seq = 0;
+  const timers = new Map();
+  const due = () =>
+    [...timers.entries()].filter(([, timer]) => timer.at <= t).sort((a, b) => a[1].at - b[1].at);
+  const fire = () => {
+    for (const [id] of due()) {
+      const timer = timers.get(id);
+      timers.delete(id);
+      timer.cb?.();
+    }
+  };
+  return {
+    now: () => t,
+    at: (ms, cb) => {
+      seq += 1;
+      timers.set(seq, { at: ms, cb });
+      return seq;
+    },
+    clear: (id) => timers.delete(id),
+    pending: () => timers.size,
+    advance(ms) {
+      t += ms;
+      fire();
+    },
+    /** Let queued microtasks run without moving time. */
+    settle: async () => {
+      for (let i = 0; i < 8; i += 1) await Promise.resolve();
+    },
+  };
 }
 
-/** Everything the hook has published about click targets, as one string. */
-function rectSignature(stderrSource) {
-  const { rects } = readObservations(stderrSource);
-  return JSON.stringify(
-    [...rects.entries()].sort((a, b) => Number(a[0]) - Number(b[0])).map(([, rect]) => rect),
+/** The real clock: `Date.now` for `now`, `setTimeout` for `at`. `advance` throws. */
+function createRealClock() {
+  let seq = 0;
+  const timers = new Map();
+  return {
+    now: () => Date.now(),
+    // `at` takes an ABSOLUTE time (the fake clock's contract); setTimeout takes
+    // a delay, so the two are converted here. Getting this wrong makes the
+    // deadline fire immediately or never.
+    at: (ms, cb) => {
+      seq += 1;
+      const id = seq;
+      const timer = setTimeout(
+        () => {
+          timers.delete(id);
+          cb();
+        },
+        Math.max(0, ms - Date.now()),
+      );
+      timers.set(id, timer);
+      return id;
+    },
+    clear: (id) => {
+      const timer = timers.get(id);
+      if (timer !== undefined) clearTimeout(timer);
+      timers.delete(id);
+    },
+    pending: () => timers.size,
+    advance() {
+      throw new Error('the real clock cannot be advanced manually');
+    },
+    settle: async () => {
+      await new Promise((done) => setImmediate(done));
+    },
+  };
+}
+
+/** The real observation schedule: a real wait of `ms`. */
+const realSchedule = (ms) => sleep(ms);
+
+/**
+ * One immutable target deadline. `reset` does not exist: there is no cap to
+ * renew and no extension. A late completion can never re-arm it.
+ */
+function createTargetDeadline(startMs, budgetMs = TARGET_BUDGET_MS) {
+  const at = startMs + budgetMs;
+  return {
+    at,
+    start: startMs,
+    budgetMs,
+    remaining: (nowMs) => Math.max(0, at - nowMs),
+    expired: (nowMs) => nowMs >= at,
+  };
+}
+
+/**
+ * Race one promise against the deadline's own remaining time. There is no
+ * per-step cap that could renew it, and a hung operation resolves to a terminal
+ * "expired" rather than hanging the row.
+ */
+function raceDeadline(deadline, clock, promise) {
+  const remaining = deadline.remaining(clock.now());
+  if (remaining <= 0) return Promise.resolve({ ok: false, reason: DEADLINE_EXPIRED });
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      clock.clear(timer);
+      resolve(value);
+    };
+    const timer = clock.at(clock.now() + remaining, () => finish({ ok: false, reason: DEADLINE_EXPIRED }));
+    Promise.resolve(promise).then(
+      (value) => finish({ ok: true, value }),
+      (error) => finish({ ok: false, reason: `io rejected: ${String(error)}` }),
+    );
+  });
+}
+
+/** Guard one awaited operation. The only bound is the deadline's own remainder. */
+function awaitGuarded(deadline, clock, io) {
+  return raceDeadline(deadline, clock, Promise.resolve().then(io));
+}
+
+/**
+ * Guard one dispatch. A dispatch after the deadline never happens, and a
+ * dispatched promise that hangs is raced against the same immutable deadline
+ * (B2): a hung mousemove or click ends at the deadline instead of extending
+ * the row. There is no phase timer and no second budget.
+ */
+function dispatchGuarded(deadline, clock, name, run) {
+  if (deadline.expired(clock.now())) return Promise.resolve({ ok: false, reason: DEADLINE_EXPIRED, name });
+  let out;
+  try {
+    out = run();
+  } catch (error) {
+    return Promise.resolve({ ok: false, reason: `dispatch threw: ${String(error)}`, name });
+  }
+  return raceDeadline(deadline, clock, out).then((settled) =>
+    settled.ok ? { ok: true, name, value: settled.value } : { ok: false, name, reason: settled.reason },
   );
 }
 
 /**
- * Clicks a rectangle the hook published, at a label.
+ * The ONE shared, pure observation poll. Every "require a fact line" step is a
+ * deadline-bounded wait, not a single read: the hook publishes on its own 250 ms
+ * change-only poll, so a fact read may be stale, null or partial until the next
+ * tick. The poll reads the injected `currentFact` repeatedly and waits between
+ * reads through the injected `schedule`; every read and every wait is raced
+ * against the SAME immutable deadline. There is no phase timer, no reset and no
+ * extension.
  *
- * `xdotool mousemove --sync --window <id> <x> <y> click 1` is the mechanism the
- * sibling card fixed, and the click lands at the **centre** of the rectangle the
- * page itself reported, so the target is a real label and never a class name, a
- * test id or a selector of this harness's own choosing.
+ * `classify(fact)` decides the loop:
+ *   { ok: true, reason }                  the predicate holds
+ *   { ok: false, terminal: true, reason } a FRESH but wrong/malformed fact: fail closed now
+ *   { ok: false, terminal: false }        not yet: wait for the next hook tick
+ * A predicate that throws is fail-closed. A late publication never resurrects an
+ * expired row: the deadline ends the poll and the caller issues nothing after it.
  */
-async function clickAt(windowId, rect) {
-  const x = Number(rect['x']) + Math.floor(Number(rect['w']) / 2);
-  const y = Number(rect['y']) + Math.floor(Number(rect['h']) / 2);
-  const result = await spawnAsync('xdotool', [
-    'mousemove',
-    '--sync',
-    '--window',
-    String(windowId),
-    String(x),
-    String(y),
-    'click',
-    '1',
-  ]);
-  return { x, y, ok: !result.stdout.includes('XError') };
+async function pollObservation({
+  deadline,
+  clock,
+  currentFact,
+  classify,
+  schedule,
+  waitMs = OBSERVATION_POLL_MS,
+}) {
+  const wait =
+    schedule ??
+    ((ms) =>
+      new Promise((resolve) => {
+        clock.at(clock.now() + ms, resolve);
+      }));
+  for (;;) {
+    if (deadline.expired(clock.now())) return { ok: false, reason: DEADLINE_EXPIRED };
+    const read = await awaitGuarded(deadline, clock, currentFact);
+    if (!read.ok) return { ok: false, reason: read.reason };
+    let verdict;
+    try {
+      verdict = classify(read.value);
+    } catch (error) {
+      return { ok: false, reason: `the observation predicate threw: ${String(error)}` };
+    }
+    if (verdict?.ok === true) return { ok: true, fact: read.value, reason: verdict.reason ?? 'observed' };
+    if (verdict?.ok === false && verdict.terminal === true) return { ok: false, reason: verdict.reason };
+    const waited = await raceDeadline(
+      deadline,
+      clock,
+      Promise.resolve().then(() => wait(waitMs)),
+    );
+    if (!waited.ok) return { ok: false, reason: DEADLINE_EXPIRED };
+  }
 }
 
 /**
- * Clicks a label and waits for the hook to publish something **different** —
- * which is the only proof that a click landed. The assertion the click enables is
- * never that proof.
+ * A dispatched command's exit status, signal and captured output. Fail closed:
+ * only status 0, no signal and no XError in either stream may proceed.
  */
-async function clickAndWaitForChange(windowId, stderrSource, label, predicate, timeoutMs) {
-  const before = rectSignature(stderrSource);
-  const rect = rectForLabel(stderrSource, label);
-  if (rect === undefined || rect === null) {
-    return { ok: false, detail: `the hook published no rectangle for the label ${JSON.stringify(label)}` };
+function checkCommand(name, result) {
+  const code = result?.code;
+  const signal = result?.signal ?? null;
+  const stdout = String(result?.stdout ?? '');
+  const stderr = String(result?.stderr ?? '');
+  if (signal !== null && signal !== undefined)
+    return { ok: false, name, reason: `${name} was killed by signal ${String(signal)}` };
+  if (code !== 0)
+    return {
+      ok: false,
+      name,
+      reason: `${name} exited ${String(code)}: ${(stderr || stdout).trim().slice(0, 200)}`,
+    };
+  if (/XError/.test(stdout) || /XError/.test(stderr))
+    return { ok: false, name, reason: `${name} reported XError: ${(stderr || stdout).trim().slice(0, 200)}` };
+  return { ok: true, name, reason: `${name} exited 0 with no signal and no XError` };
+}
+
+/**
+ * Solve the per-axis affine map from exactly two measured native/client pairs.
+ * Order matters: identifiability and the finiteness/bound checks all run BEFORE
+ * any conversion, so a degenerate solve can never produce a coordinate.
+ */
+function solveTransform(points, { maxK = MAX_K } = {}) {
+  if (!Array.isArray(points) || points.length !== 2)
+    return { ok: false, reason: `two measured points are required, ${String(points?.length ?? 0)} given` };
+  const [a, b] = points;
+  for (const p of [a, b]) {
+    for (const axis of ['cx', 'cy', 'sx', 'sy']) {
+      if (typeof p?.[axis] !== 'number' || !Number.isFinite(p[axis]))
+        return { ok: false, reason: `measured point carries a non-finite ${axis}`, click: false };
+    }
   }
-  const clicked = await clickAt(windowId, rect);
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    const after = rectSignature(stderrSource);
-    const fact = predicate === undefined ? null : lastFactWhere(stderrSource, predicate);
-    const changed = after !== before || fact !== null;
-    if (changed)
-      return {
-        ok: true,
-        detail: `clicked ${JSON.stringify(label)} at ${String(clicked.x)},${String(clicked.y)}`,
-      };
-    if (Date.now() >= deadline) {
+  const dcx = b.cx - a.cx;
+  const dcy = b.cy - a.cy;
+  if (dcx === 0)
+    return {
+      ok: false,
+      reason: 'the two measured points do not differ in client x (axis unidentifiable)',
+      click: false,
+    };
+  if (dcy === 0)
+    return {
+      ok: false,
+      reason: 'the two measured points do not differ in client y (axis unidentifiable)',
+      click: false,
+    };
+  const kx = (b.sx - a.sx) / dcx;
+  const ky = (b.sy - a.sy) / dcy;
+  for (const [name, k] of [
+    ['k_x', kx],
+    ['k_y', ky],
+  ]) {
+    if (!Number.isFinite(k)) return { ok: false, reason: `${name} solved non-finite`, click: false };
+    if (!(k > 0)) return { ok: false, reason: `${name} solved ${String(k)}, outside 0 < k`, click: false };
+    if (!(k <= maxK))
       return {
         ok: false,
-        detail: `the click on ${JSON.stringify(label)} at ${String(clicked.x)},${String(clicked.y)} changed neither the published rectangles nor the published facts within ${String(timeoutMs)}ms, so it did not land`,
+        reason: `${name} solved ${String(k)}, above the bound ${String(maxK)}`,
+        click: false,
       };
-    }
+  }
+  const ox = a.sx - kx * a.cx;
+  const oy = a.sy - ky * a.cy;
+  if (!Number.isFinite(ox) || !Number.isFinite(oy))
+    return { ok: false, reason: 'offset solved non-finite', click: false };
+  return { ok: true, kx, ky, ox, oy, toNative: (t) => ({ x: kx * t.x + ox, y: ky * t.y + oy }) };
+}
+
+/** Convert a client target to a rounded native point. Only ever called on a solved transform. */
+function toNativePoint(transform, target) {
+  const p = transform.toNative(target);
+  return { x: Math.round(p.x), y: Math.round(p.y) };
+}
+
+/** Native containment: the point must lie inside the window rectangle read once, up front. */
+function containedInWindow(point, window) {
+  return (
+    point.x >= window.x &&
+    point.x < window.x + window.w &&
+    point.y >= window.y &&
+    point.y < window.y + window.h
+  );
+}
+
+/** Native read-back: where the pointer actually is, and which window is under it. */
+function checkReadback(point, read, window, appPid) {
+  const dx = Math.abs(Number(read?.X) - point.x);
+  const dy = Math.abs(Number(read?.Y) - point.y);
+  if (!Number.isFinite(dx) || !Number.isFinite(dy))
+    return { ok: false, reason: `native read-back carried no usable X/Y: ${JSON.stringify(read)}` };
+  if (dx > READBACK_TOLERANCE_PX || dy > READBACK_TOLERANCE_PX)
+    return {
+      ok: false,
+      reason: `native read-back is ${String(dx)},${String(dy)} px from the point asked for`,
+    };
+  const sameWindow = String(read?.WINDOW ?? '') === String(window.id);
+  const pid = Number(read?.PID);
+  const samePid = Number.isInteger(pid) && pid > 0 && pid === appPid;
+  if (!sameWindow && !samePid)
+    return {
+      ok: false,
+      reason: `pointer is not over the app window: WINDOW=${String(read?.WINDOW)} PID=${String(read?.PID)}`,
+    };
+  return {
+    ok: true,
+    reason: sameWindow
+      ? 'read-back within 1 px over the app window'
+      : 'read-back within 1 px over the app pid',
+  };
+}
+
+/** Parse one stderr line into a marker sighting, or null if it is not a marker. */
+function parseMarkerLine(line) {
+  const pattern = new RegExp(`${MARKER_PATH.replaceAll('/', '\\/')}\\?([^\\s"\\\\]*)`);
+  const match = pattern.exec(String(line));
+  if (match === null) return null;
+  return { query: match[1], params: new URLSearchParams(match[1]) };
+}
+
+function strictInteger(value) {
+  if (typeof value !== 'string' || value.trim() === '') return null;
+  if (!/^(0|[1-9][0-9]*)$/.test(value)) return null;
+  const n = Number(value);
+  return Number.isSafeInteger(n) ? n : null;
+}
+
+/**
+ * Two rectangles are equal when every NAMED field is equal. The comparison is
+ * over the seven field values, never over a serialized object: query-parameter
+ * order and index order are irrelevant, so a permuted identical duplicate is
+ * idempotent while a changed value is still a conflict.
+ */
+function sameRect(a, b) {
+  if (a === undefined || b === undefined) return false;
+  for (const field of RECT_FIELDS) if (a[field] !== b[field]) return false;
+  return true;
+}
+
+/**
+ * The batch reader. One instance per row.
+ *
+ * The two things root separates:
+ *   - the VALID HEADER — a safe-integer epoch >= 1, a declared `rects` count and
+ *     an in-range `batch` index. It raises the highest seen epoch IMMEDIATELY,
+ *     even when the body turns out to be truncated, so a newer publication
+ *     forbids falling back to an older complete one while it is incomplete. An
+ *     invalid header raises nothing.
+ *   - the COMPLETE BATCH — every index of that batch's own slice present with
+ *     all seven fields. Only a complete batch is installed, whole. A truncated
+ *     or malformed body is never installed, never merged over a good batch, and
+ *     never a conflict — a conflict needs two COMPLETE sightings of the same
+ *     (epoch, batch).
+ */
+function createBatchReader({ batchSize = BATCH_SIZE } = {}) {
+  return {
+    batchSize,
+    highestSeenEpoch: 0,
+    markerLines: 0,
+    factLines: 0,
+    headers: 0,
+    installed: new Map(),
+    discarded: 0,
+    conflict: null,
+    observe(line) {
+      const sighting = parseMarkerLine(line);
+      if (sighting === null) return { kind: 'not-a-marker' };
+      this.markerLines += 1;
+      const { params } = sighting;
+      if (params.has('href')) {
+        this.factLines += 1;
+        return { kind: 'fact' };
+      }
+      if (!params.has('batch')) return { kind: 'malformed', reason: 'no batch header', header: false };
+
+      const batch = strictInteger(params.get('batch'));
+      const total = strictInteger(params.get('rects'));
+      const epoch = strictInteger(params.get('epoch'));
+      const discard = (reason, header = false) => {
+        this.discarded += 1;
+        return { kind: 'malformed', reason, header };
+      };
+      if (batch === null) return discard('batch is not a strict non-negative integer');
+      if (total === null) return discard('rects is not a strict safe integer');
+      if (epoch === null) return discard('epoch is not a strict safe integer');
+      if (epoch < 1) return discard('epoch is not positive');
+      const batchCount = total === 0 ? 0 : Math.ceil(total / this.batchSize);
+      if (batch >= batchCount)
+        return discard(`batch ${String(batch)} is outside 0..${String(batchCount - 1)}`);
+
+      this.headers += 1;
+      if (epoch > this.highestSeenEpoch) this.highestSeenEpoch = epoch;
+
+      const rects = new Map();
+      for (const [key, value] of params.entries()) {
+        const field = RECT_KEY.exec(key);
+        if (field === null) continue;
+        const index = strictInteger(field[1]);
+        if (index === null || index >= total)
+          return discard(`index ${field[1]} is not a strict integer below rects=${String(total)}`, true);
+        const entry = rects.get(index);
+        if (entry === undefined) rects.set(index, { [field[2]]: value });
+        else entry[field[2]] = value;
+      }
+      const lo = batch * this.batchSize;
+      const hi = total === 0 ? 0 : Math.min(total, lo + this.batchSize);
+      const expected = new Set();
+      for (let i = lo; i < hi; i += 1) expected.add(i);
+      const got = new Set(rects.keys());
+      for (const i of expected) {
+        const entry = rects.get(i);
+        if (entry === undefined)
+          return discard(`index ${String(i)} is absent from batch ${String(batch)}`, true);
+        for (const f of RECT_FIELDS) {
+          if (entry[f] === undefined) return discard(`index ${String(i)} is missing field ${f}`, true);
+        }
+      }
+      for (const i of got)
+        if (!expected.has(i))
+          return discard(`index ${String(i)} is not in batch ${String(batch)}'s slice`, true);
+
+      const key = `${String(epoch)}:${String(batch)}`;
+      const previous = this.installed.get(key);
+      if (previous !== undefined) {
+        const same =
+          previous.total === total &&
+          previous.rects.size === rects.size &&
+          [...rects.keys()].every((i) => sameRect(previous.rects.get(i), rects.get(i)));
+        if (!same) {
+          this.conflict = {
+            epoch,
+            batch,
+            reason: `two complete sightings of epoch ${String(epoch)} batch ${String(batch)} differ`,
+          };
+          return { kind: 'conflict', detail: this.conflict };
+        }
+        return { kind: 'idempotent-duplicate' };
+      }
+      this.installed.set(key, { epoch, batch, total, rects });
+      return { kind: 'installed' };
+    },
+    /** The selectable frame: the highest seen epoch, complete or not. There is no fallback. */
+    frame() {
+      if (this.conflict !== null) return { ok: false, reason: this.conflict.reason, click: false };
+      const epoch = this.highestSeenEpoch;
+      if (epoch === 0) return { ok: false, reason: 'no batch header has been seen', click: false };
+      const mine = [...this.installed.values()].filter((entry) => entry.epoch === epoch);
+      if (mine.length === 0)
+        return {
+          ok: false,
+          reason: `epoch ${String(epoch)} has a valid header but no complete batch`,
+          click: false,
+        };
+      const totals = new Set(mine.map((entry) => entry.total));
+      if (totals.size !== 1)
+        return {
+          ok: false,
+          reason: `epoch ${String(epoch)} mixes declared totals ${[...totals].join(', ')}`,
+          click: false,
+        };
+      const total = [...totals][0];
+      const batchCount = total === 0 ? 0 : Math.ceil(total / this.batchSize);
+      const present = new Set(mine.map((entry) => entry.batch));
+      const missing = [];
+      for (let b = 0; b < batchCount; b += 1) if (!present.has(b)) missing.push(b);
+      if (missing.length > 0)
+        return {
+          ok: false,
+          reason: `incomplete epoch ${String(epoch)}: ${String(present.size)} of ${String(batchCount)} batches (missing ${missing.join(', ')})`,
+          click: false,
+        };
+      const rects = new Map();
+      for (const entry of mine) for (const [i, fields] of entry.rects) rects.set(i, { ...fields });
+      const indices = [...rects.keys()].sort((a, b) => a - b);
+      const expected = Array.from({ length: total }, (_, i) => i);
+      if (indices.length !== expected.length || indices.some((i, at) => i !== expected[at]))
+        return {
+          ok: false,
+          reason: `epoch ${String(epoch)} does not carry the global index set 0..${String(total - 1)}`,
+          click: false,
+        };
+      return { ok: true, epoch, total, rects };
+    },
+  };
+}
+
+/** A frame's rectangle centre in client coordinates. */
+function targetCentre(rect) {
+  return {
+    x: Number(rect.x) + Math.floor(Number(rect.w) / 2),
+    y: Number(rect.y) + Math.floor(Number(rect.h) / 2),
+  };
+}
+
+/**
+ * Select by a unique (label, tag) PAIR — root's key. The appended tooltip
+ * carries the same label with a different tag, and it is told apart by that
+ * comparison, not by a wait and not by testId. More than one live rectangle
+ * matching the pair is `ambiguous` and FAILs; `testId` is never a tie-breaker
+ * (root: the test id is compared, after the click, against the descriptor).
+ */
+function selectTarget(frame, wanted) {
+  if (frame?.ok !== true) return { ok: false, reason: frame?.reason ?? 'no frame', click: false };
+  const all = [...frame.rects.entries()].filter(([, r]) => r.l === wanted.label);
+  const matches = all.filter(([, r]) => r.t === wanted.tag);
+  if (matches.length === 0)
+    return {
+      ok: false,
+      reason: `no rectangle carries the label/tag pair ${JSON.stringify(wanted.label)}/${JSON.stringify(wanted.tag)}; ${String(all.length)} carry the label`,
+      click: false,
+    };
+  if (matches.length > 1)
+    return {
+      ok: false,
+      reason: `label ${JSON.stringify(wanted.label)} with tag ${JSON.stringify(wanted.tag)} is ambiguous: ${String(matches.length)} rectangles at global indices ${matches.map(([i]) => String(i)).join(', ')}`,
+      click: false,
+    };
+  const [index, rect] = matches[0];
+  return { ok: true, index, rect, centre: targetCentre(rect) };
+}
+
+/** The gate: presence of href and ipcProbe, nothing else. Presence only; settling is the assertion's job. */
+function firstFactGate(facts) {
+  return facts.find((fact) => fact.href !== undefined && fact.ipcProbe !== undefined) ?? null;
+}
+
+/**
+ * The two-arm NOT RUN cause, with the same five rows in both arms. Presence of
+ * marker lines does not make the silent-hook explanation true.
+ */
+function cascadeCause(markerLines) {
+  const arm =
+    markerLines === 0
+      ? "no /api/p3.4-observe line ever appeared in the child's captured stderr"
+      : `${String(markerLines)} marker line(s) appeared and none carried href and ipcProbe together`;
+  return {
+    rows: [...CASCADE_ROWS],
+    outcome: 'NOT RUN',
+    cause: arm,
+    arm: markerLines === 0 ? 'zero-lines' : 'incomplete-fact-set',
+  };
+}
+
+/** (a): one assertion, one pass condition, all conjuncts together. pending at the deadline is a FAIL. */
+function checkNoIpc(fact, { expired = false } = {}) {
+  const report = (ok, detail) => ({ ok, detail, title: CASCADE_ROWS[0] });
+  if (fact === null || fact === undefined)
+    return report(
+      false,
+      expired
+        ? 'ipcProbe was still pending at the deadline; no timeout can produce a pass'
+        : 'no fact line carrying href and ipcProbe reached this assertion',
+    );
+  if (fact.ipcProbe === 'pending')
+    return report(
+      false,
+      expired
+        ? 'ipcProbe was still pending at the deadline; no timeout can produce a pass'
+        : 'ipcProbe is pending',
+    );
+  if (fact.ipcProbe === 'resolved')
+    return report(false, `the command ${IPC_PROBE_COMMAND} was reached, which is a FAIL`);
+  if (fact.ipcProbe !== 'rejected')
+    return report(
+      false,
+      `ipcProbe read ${JSON.stringify(fact.ipcProbe)}, which is neither rejected nor resolved`,
+    );
+  const seen = `tauri=${JSON.stringify(fact.tauri)}, ipc=${JSON.stringify(fact.ipc)}, ipcInvoke=${JSON.stringify(fact.ipcInvoke)}, ipcProbeMsg=${JSON.stringify(fact.ipcProbeMsg)}`;
+  if (fact.tauri !== 'undefined')
+    return report(false, `tauri read ${JSON.stringify(fact.tauri)}, not undefined (${seen})`);
+  if (fact.ipc !== 'object' || fact.ipcInvoke !== 'function')
+    return report(false, `the internals door is not live: ${seen}`);
+  if (fact.ipcProbeMsg !== ACL_DENIAL) return report(false, `the rejection was not the ACL denial: ${seen}`);
+  return report(true, `ACL denial observed on a live door for ${IPC_PROBE_COMMAND} (${seen})`);
+}
+
+/**
+ * One move, guarded end to end and with NO exemption anywhere:
+ *   1. native containment of the point, BEFORE any dispatch;
+ *   2. the pointer counter BASELINE, a bounded wait for its presence;
+ *   3. the dispatch, raced against the immutable deadline;
+ *   4. status / signal / XError fail closed;
+ *   5. the native read-back, <= 1 px, over the app window id or a positive pid,
+ *      returned as the MEASURED native point;
+ *   6. a bounded wait for a fact whose pointer counter is STRICTLY GREATER than
+ *      step 2's.
+ */
+async function guardedMove({
+  deadline,
+  clock,
+  ops,
+  window,
+  appPid,
+  point,
+  wanted,
+  tolerance,
+  dispatched,
+  schedule,
+}) {
+  const label = `${String(point.x)},${String(point.y)}`;
+  if (!containedInWindow(point, window))
+    return {
+      ok: false,
+      reason: `${wanted}: ${label} lies outside the window rectangle; no move and no click issued`,
+    };
+
+  const baseline = await pollObservation({
+    deadline,
+    clock,
+    schedule,
+    currentFact: () => ops.nextFact(),
+    classify: (fact) => {
+      const counter = strictInteger(String(fact?.[POINTER.counter] ?? ''));
+      if (counter === null) return { ok: false, terminal: false };
+      return { ok: true, reason: `${POINTER.counter} baseline ${String(counter)}` };
+    },
+  });
+  if (!baseline.ok)
+    return { ok: false, reason: `${wanted}: no usable ${POINTER.counter} baseline (${baseline.reason})` };
+  const counterBefore = strictInteger(String(baseline.fact[POINTER.counter]));
+
+  const moved = await dispatchGuarded(deadline, clock, 'xdotool mousemove --sync', () => {
+    dispatched.push('mousemove');
+    return ops.move(point);
+  });
+  if (!moved.ok) return { ok: false, reason: `${wanted}: ${moved.reason}` };
+  const moveCheck = checkCommand('mousemove', moved.value);
+  if (!moveCheck.ok) return { ok: false, reason: `${wanted}: ${moveCheck.reason}` };
+
+  const read = await awaitGuarded(deadline, clock, () => {
+    dispatched.push('getmouselocation');
+    return ops.read();
+  });
+  if (!read.ok) return { ok: false, reason: `${wanted}: ${read.reason}` };
+  const readCheck = checkCommand('getmouselocation', read.value);
+  if (!readCheck.ok) return { ok: false, reason: `${wanted}: ${readCheck.reason}` };
+  const back = checkReadback(point, read.value, window, appPid);
+  if (!back.ok) return { ok: false, reason: `${wanted}: ${back.reason}` };
+  const native = { x: Number(read.value.X), y: Number(read.value.Y) };
+
+  const witness = await pollObservation({
+    deadline,
+    clock,
+    schedule,
+    currentFact: () => ops.nextFact(),
+    classify: (fact) => {
+      const counter = strictInteger(String(fact?.[POINTER.counter] ?? ''));
+      if (counter === null || !(counter > counterBefore)) return { ok: false, terminal: false };
+      const seen = { x: Number(fact[POINTER.clientX]), y: Number(fact[POINTER.clientY]) };
+      if (!Number.isFinite(seen.x) || !Number.isFinite(seen.y))
+        return {
+          ok: false,
+          terminal: true,
+          reason: `${wanted}: the fresh observation carried no client position`,
+        };
+      if (tolerance !== null) {
+        const dx = Math.abs(seen.x - tolerance.at.x);
+        const dy = Math.abs(seen.y - tolerance.at.y);
+        if (dx > WITNESS_TOLERANCE_PX || dy > WITNESS_TOLERANCE_PX)
+          return {
+            ok: false,
+            terminal: true,
+            reason: `${wanted}: after the warp the pointer is ${String(dx)},${String(dy)} px from the centre; no click issued`,
+          };
+      }
+      return {
+        ok: true,
+        reason: `${wanted}: moved, read back within 1 px, ${POINTER.counter} ${String(counterBefore)} -> ${String(counter)}`,
+      };
+    },
+  });
+  if (!witness.ok) return { ok: false, reason: witness.reason };
+  const seen = { x: Number(witness.fact[POINTER.clientX]), y: Number(witness.fact[POINTER.clientY]) };
+  return { ok: true, reason: witness.reason, seen, native };
+}
+
+/**
+ * The click stage: target warp, the single fresh client witness, one click, a
+ * bounded wait for the click counter advanced by exactly one with the three
+ * descriptor fields matching, then a bounded wait for the landing fact. Every IO
+ * is injected and every step guarded against the one immutable deadline.
+ */
+async function runClick({
+  deadline,
+  clock,
+  transform,
+  window,
+  appPid,
+  target,
+  rect,
+  expected,
+  ops,
+  dispatched = [],
+  schedule,
+}) {
+  const finish = (result) => ({ ...result, dispatched });
+
+  const point = toNativePoint(transform, target);
+  const moved = await guardedMove({
+    deadline,
+    clock,
+    ops,
+    window,
+    appPid,
+    point,
+    dispatched,
+    schedule,
+    wanted: 'the target warp',
+    tolerance: { at: target },
+  });
+  if (!moved.ok) return finish({ ok: false, reason: moved.reason });
+
+  const baseline = await pollObservation({
+    deadline,
+    clock,
+    schedule,
+    currentFact: () => ops.nextFact(),
+    classify: (fact) => {
+      const counter = strictInteger(String(fact?.[CLICK.counter] ?? ''));
+      if (counter === null) return { ok: false, terminal: false };
+      return { ok: true, reason: `${CLICK.counter} baseline ${String(counter)}` };
+    },
+  });
+  if (!baseline.ok)
+    return finish({ ok: false, reason: `no usable ${CLICK.counter} baseline (${baseline.reason})` });
+  const counterBefore = strictInteger(String(baseline.fact[CLICK.counter]));
+  const before = baseline.fact;
+
+  const clicked = await dispatchGuarded(deadline, clock, 'xdotool click 1', () => {
+    dispatched.push('click');
+    return ops.click();
+  });
+  if (!clicked.ok) return finish({ ok: false, reason: clicked.reason });
+  const clickCheck = checkCommand('click', clicked.value);
+  if (!clickCheck.ok) return finish({ ok: false, reason: clickCheck.reason });
+
+  const fresh = await pollObservation({
+    deadline,
+    clock,
+    schedule,
+    currentFact: () => ops.nextFact(),
+    classify: (fact) => {
+      const advanced = strictInteger(String(fact?.[CLICK.counter] ?? ''));
+      if (advanced === null || advanced <= counterBefore) return { ok: false, terminal: false };
+      if (advanced !== counterBefore + 1)
+        return {
+          ok: false,
+          terminal: true,
+          reason: `${CLICK.counter} advanced by ${String(advanced - counterBefore)}, not exactly 1`,
+        };
+      const cdx = Math.abs(Number(fact[CLICK.clientX]) - target.x);
+      const cdy = Math.abs(Number(fact[CLICK.clientY]) - target.y);
+      if (
+        !Number.isFinite(cdx) ||
+        !Number.isFinite(cdy) ||
+        cdx > CLICK_N_TOLERANCE_PX ||
+        cdy > CLICK_N_TOLERANCE_PX
+      )
+        return {
+          ok: false,
+          terminal: true,
+          reason: `the click was observed at ${String(cdx)},${String(cdy)} px from the target centre`,
+        };
+      const descriptor = compareDescriptor(fact, rect);
+      if (!descriptor.ok) return { ok: false, terminal: true, reason: descriptor.reason };
+      return { ok: true, reason: descriptor.reason };
+    },
+  });
+  if (!fresh.ok) return finish({ ok: false, reason: fresh.reason });
+
+  const landing = await pollObservation({
+    deadline,
+    clock,
+    schedule,
+    currentFact: () => ops.nextFact(),
+    classify: (after) => {
+      const verdict = landingFact(before, after, expected);
+      if (verdict.ok) return verdict;
+      if (verdict.pending) return { ok: false, terminal: false };
+      return { ok: false, terminal: true, reason: verdict.reason };
+    },
+  });
+  if (!landing.ok) return finish({ ok: false, reason: landing.reason });
+  return finish({ ok: true, reason: `${moved.reason}; ${fresh.reason}; ${landing.reason}` });
+}
+
+/** The three named descriptor fields, compared one by one, never as one string. */
+function compareDescriptor(fact, rect) {
+  if (rect === undefined || rect === null)
+    return { ok: false, reason: 'no rectangle was selected, so there is no descriptor to compare' };
+  for (const [name, got, want] of [
+    [CLICK.tag, fact?.[CLICK.tag], rect.t],
+    [CLICK.testId, fact?.[CLICK.testId], rect.d],
+    [CLICK.text, fact?.[CLICK.text], String(rect.l).trim()],
+  ]) {
+    if (String(got ?? '') !== String(want ?? ''))
+      return {
+        ok: false,
+        reason: `the clicked element's ${name} read ${JSON.stringify(got ?? null)}, not ${JSON.stringify(want ?? '')}`,
+      };
+  }
+  return {
+    ok: true,
+    reason: `the clicked element matched ${CLICK.tag}, ${CLICK.testId} and trimmed ${CLICK.text}`,
+  };
+}
+
+/**
+ * The landing fact: the actual patient href transition, or the final scriptText
+ * fact. A rectangle signature change is diagnostic text and never a pass.
+ */
+function landingFact(before, after, expected) {
+  if (after === null || after === undefined)
+    return { ok: false, pending: true, reason: 'no fact line has been published yet' };
+  if (expected.kind === 'patient-href') {
+    if (after.href === undefined) return { ok: false, pending: true, reason: 'the fact carried no href yet' };
+    if (after.href === before?.href)
+      return { ok: false, pending: true, reason: `href did not change (${JSON.stringify(after.href)})` };
+    return { ok: true, reason: `href transitioned to ${JSON.stringify(after.href)}` };
+  }
+  if (expected.kind === 'script-text') {
+    if (after.scriptText === undefined)
+      return { ok: false, pending: true, reason: 'the fact carried no scriptText yet' };
+    if (after.scriptText !== 'true')
+      return { ok: false, pending: true, reason: `scriptText read ${JSON.stringify(after.scriptText)}` };
+    return { ok: true, reason: 'scriptText became true after the click' };
+  }
+  return { ok: false, reason: `unknown landing kind ${JSON.stringify(expected.kind)}` };
+}
+
+/** Diagnostic only: the rectangle signature, kept as text and never as a pass. */
+function rectSignature(frame) {
+  if (frame?.ok !== true) return '';
+  return JSON.stringify([...frame.rects.entries()].sort((a, b) => a[0] - b[0]).map(([, r]) => r));
+}
+
+/** The two fixed calibration targets, derived from the viewport, never hard-coded. */
+function calibrationTargets(vpW, vpH) {
+  return [
+    { name: 'bootstrap 1', cx: Math.round(vpW * 0.5), cy: Math.round(vpH * 0.5) },
+    { name: 'bootstrap 2', cx: Math.round(vpW * 0.75), cy: Math.round(vpH * 0.6) },
+  ];
+}
+
+/**
+ * The whole exported orchestration: read the window command once, wait for the
+ * viewport fact, take both bootstrap measurements (containment before, read-back
+ * after, a bounded wait for a fresh pointer counter for each), solve the affine
+ * map from the two MEASURED native/client points with every check before the
+ * first conversion, select the target by its unique label/tag pair, then run the
+ * click stage through the landing fact.
+ *
+ * There is no bootstrap exemption, no retry and no phase timer: one deadline,
+ * taken once by the caller, governs every command, read and wait.
+ */
+async function runFlow({ deadline, clock, frame, wanted, expected, ops, schedule }) {
+  const dispatched = [];
+  const finish = (result) => ({ ...result, dispatched });
+
+  const geometry = await awaitGuarded(deadline, clock, () => {
+    dispatched.push('getwindowgeometry');
+    return ops.windowGeometry();
+  });
+  if (!geometry.ok) return finish({ ok: false, reason: geometry.reason });
+  const geometryCheck = checkCommand('getwindowgeometry', geometry.value);
+  if (!geometryCheck.ok) return finish({ ok: false, reason: geometryCheck.reason });
+  const raw = geometry.value ?? {};
+  const window = { id: raw.id, x: Number(raw.x), y: Number(raw.y), w: Number(raw.w), h: Number(raw.h) };
+  if (!Number.isInteger(window.w) || !Number.isInteger(window.h) || window.w <= 0 || window.h <= 0)
+    return finish({
+      ok: false,
+      reason: `the window geometry read non-integer WIDTH/HEIGHT: ${JSON.stringify(raw)}`,
+    });
+  if (!Number.isFinite(window.x) || !Number.isFinite(window.y))
+    return finish({ ok: false, reason: `the window geometry read non-finite X/Y: ${JSON.stringify(raw)}` });
+  const appPid = Number(raw.pid);
+  if (!Number.isInteger(appPid) || appPid <= 0)
+    return finish({
+      ok: false,
+      reason: `the application pid read ${JSON.stringify(raw.pid)}, not a positive integer`,
+    });
+
+  const viewport = await pollObservation({
+    deadline,
+    clock,
+    schedule,
+    currentFact: () => ops.nextFact(),
+    classify: (fact) => {
+      if (fact?.[VIEWPORT.w] === undefined || fact?.[VIEWPORT.h] === undefined)
+        return { ok: false, terminal: false };
+      const vpW = strictInteger(String(fact[VIEWPORT.w]));
+      const vpH = strictInteger(String(fact[VIEWPORT.h]));
+      if (vpW === null || vpH === null)
+        return {
+          ok: false,
+          terminal: true,
+          reason: `the page published a non-integer ${VIEWPORT.w}/${VIEWPORT.h} viewport: ${JSON.stringify(fact[VIEWPORT.w])},${JSON.stringify(fact[VIEWPORT.h])}`,
+        };
+      if (vpW < MIN_VIEWPORT_W || vpH < MIN_VIEWPORT_H)
+        return {
+          ok: false,
+          terminal: true,
+          reason: `the viewport ${String(vpW)}x${String(vpH)} is below ${String(MIN_VIEWPORT_W)}x${String(MIN_VIEWPORT_H)}`,
+        };
+      return { ok: true, reason: `viewport ${String(vpW)}x${String(vpH)}` };
+    },
+  });
+  if (!viewport.ok) return finish({ ok: false, reason: viewport.reason });
+  const vpW = strictInteger(String(viewport.fact[VIEWPORT.w]));
+  const vpH = strictInteger(String(viewport.fact[VIEWPORT.h]));
+
+  const [first, second] = calibrationTargets(vpW, vpH);
+  const naive = { x: window.x + first.cx, y: window.y + first.cy };
+  const one = await guardedMove({
+    deadline,
+    clock,
+    ops,
+    window,
+    appPid,
+    point: naive,
+    dispatched,
+    schedule,
+    wanted: first.name,
+    tolerance: null,
+  });
+  if (!one.ok) return finish({ ok: false, reason: one.reason });
+
+  const displacement = { x: naive.x + (second.cx - first.cx), y: naive.y + (second.cy - first.cy) };
+  const two = await guardedMove({
+    deadline,
+    clock,
+    ops,
+    window,
+    appPid,
+    point: displacement,
+    dispatched,
+    schedule,
+    wanted: second.name,
+    tolerance: null,
+  });
+  if (!two.ok) return finish({ ok: false, reason: two.reason });
+
+  const transform = solveTransform([
+    { cx: one.seen.x, cy: one.seen.y, sx: one.native.x, sy: one.native.y },
+    { cx: two.seen.x, cy: two.seen.y, sx: two.native.x, sy: two.native.y },
+  ]);
+  if (!transform.ok)
+    return finish({
+      ok: false,
+      reason: `the calibration did not solve: ${transform.reason}; no target warp and no click`,
+    });
+
+  const chosen = selectTarget(frame, wanted);
+  if (!chosen.ok) return finish({ ok: false, reason: chosen.reason });
+
+  const clicked = await runClick({
+    deadline,
+    clock,
+    transform,
+    window,
+    appPid,
+    target: chosen.centre,
+    rect: chosen.rect,
+    expected,
+    ops,
+    dispatched,
+    schedule,
+  });
+  return finish({ ...clicked, reason: `${two.reason}; ${clicked.reason}` });
+}
+
+// ------------------------------------------------------ the real IO seam ----
+
+/**
+ * The raw marker lines the child's stderr carries, in order. The batch reader
+ * observes these; one line is one request the server logged.
+ */
+function markerLinesOf(stderrSource) {
+  const text = stderrAt(stderrSource);
+  const lines = [];
+  const pattern = new RegExp(`${MARKER_PATH.replaceAll('/', '\\/')}\\?`);
+  for (const line of String(text).split('\n')) {
+    if (pattern.test(line)) lines.push(line);
+  }
+  return lines;
+}
+
+/** The selectable frame, rebuilt from every marker line observed so far. */
+function frameFrom(stderrSource) {
+  const reader = createBatchReader();
+  for (const line of markerLinesOf(stderrSource)) reader.observe(line);
+  return reader.frame();
+}
+
+/** The tag of the one rectangle carrying `label`, or null if absent or not unique. */
+function tagForLabel(stderrSource, label) {
+  const frame = frameFrom(stderrSource);
+  if (frame.ok !== true) return null;
+  const matches = [...frame.rects.values()].filter((r) => r.l === label);
+  if (matches.length !== 1) return null;
+  return matches[0].t;
+}
+
+/** Waits for the frame to carry exactly one rectangle for `label`, or null on timeout. */
+async function waitForLabel(stderrSource, label, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const tag = tagForLabel(stderrSource, label);
+    if (tag !== null) return tag;
+    if (Date.now() >= deadline) return null;
     await sleep(250);
   }
+}
+
+/**
+ * The real command seam for the (d) handler half: every command the flow
+ * dispatches, wrapped in the one result shape. `windowGeometry` reads the app
+ * window once; `move`/`read`/`click` are the flow's dispatches; `nextFact` is
+ * the newest published fact line.
+ */
+function makeOps(windowId, appPid, stderrSource) {
+  const parseShell = (result) => {
+    const fields = {};
+    for (const line of String(result.stdout).split('\n')) {
+      const match = /^([A-Z_]+)=(.*)$/.exec(line.trim());
+      if (match !== null) fields[match[1]] = match[2].trim();
+    }
+    return fields;
+  };
+  return {
+    windowGeometry: async () => {
+      const result = await spawnAsync('xdotool', ['getwindowgeometry', '--shell', String(windowId)]);
+      const fields = parseShell(result);
+      return {
+        ...result,
+        id: windowId,
+        x: fields['X'],
+        y: fields['Y'],
+        w: fields['WIDTH'],
+        h: fields['HEIGHT'],
+        pid: String(appPid),
+      };
+    },
+    move: (point) => spawnAsync('xdotool', ['mousemove', '--sync', String(point.x), String(point.y)]),
+    read: async () => {
+      const result = await spawnAsync('xdotool', ['getmouselocation', '--shell']);
+      const fields = parseShell(result);
+      return { ...result, X: fields['X'], Y: fields['Y'], WINDOW: fields['WINDOW'], PID: fields['PID'] };
+    },
+    click: () => spawnAsync('xdotool', ['click', '1']),
+    nextFact: () => lastFactWhere(stderrSource, (fact) => fact['href'] !== undefined),
+  };
+}
+
+/**
+ * Runs the flow and, when the deadline expired a dispatch, stops the command
+ * this harness still has running by its own pid — never `pkill`, never a
+ * process this harness did not start, and never a stranded process.
+ */
+async function runFlowGuarded(args) {
+  const result = await runFlow(args);
+  if (!result.ok && result.reason === DEADLINE_EXPIRED) await killActiveCommands();
+  return result;
 }
 
 // ------------------------------------------------------------------ mode ----
@@ -840,24 +1892,22 @@ async function modeSecurity() {
       await sleep(3000);
     }
 
-    // ---- The observation channel. The first fact line is the assertion that it
-    // works at all: without one, everything below is NOT RUN together.
+    // ---- The observation channel. The first fact line carrying `href` **and**
+    // `ipcProbe` together is the assertion that it works at all: without one,
+    // everything below is NOT RUN together. Presence only — settling the probe
+    // is (a)'s job, not the gate's.
     const first = await waitForFact(
       () => run.output.stderr,
-      (fact) => fact['href'] !== undefined,
+      (fact) => fact['href'] !== undefined && fact['ipcProbe'] !== undefined,
       45_000,
     );
     if (first === null) {
       const count = readObservations(run.output.stderr).markerLines;
+      const cascade = cascadeCause(count);
       const cause =
-        `no ${MARKER_PATH} line ever appeared in the AppImage child's captured stderr while the app window was up and the server was answering ` +
-        `(${String(count)} marker line(s) read), so the observation hook publishes nothing this harness can read. ` +
+        `${cascade.cause}, so the observation hook publishes nothing this harness can read. ` +
         "Nothing here may be read without it, so (a), (b), (c), (d)'s handler half and (e) are NOT RUN together and none of them is a PASS.";
-      notRun('(a) window.__TAURI__ and window.__TAURI_INTERNALS__ are undefined', cause);
-      notRun('(b) navigation to the reserved .invalid origin is refused', cause);
-      notRun('(c) window.open is cancelled', cause);
-      notRun('(d) handler: the injected note renders inert, and __APUNTA_CSP_PROBE__ is undefined', cause);
-      notRun('(e) an inline style attribute is applied in the shipped binary', cause);
+      for (const row of cascade.rows) notRun(row, cause);
 
       // The note is still created over HTTP, because the three calls are decidable
       // without the page and the report is stronger for having run them. Their
@@ -883,7 +1933,7 @@ async function modeSecurity() {
 
     // ---- (d)'s handler half, with the note opened by clicking its labels, and
     // (e), which needs the same rendered page.
-    await assertInjectedNoteInert(run, home.found.id, note);
+    await assertInjectedNoteInert(run, home.found.id, pid, note);
     await assertInlineStyleApplied(run);
 
     // ---- (b) and (c), which the hook makes in that fixed order once the note
@@ -891,6 +1941,9 @@ async function modeSecurity() {
     await assertNavigationRefused(run, baselineWindows);
     await assertWindowOpenRefused(run, baselineWindows);
   } finally {
+    // Any command this harness still has running is stopped by its own pid
+    // before the app is, so a hung dispatch can never strand a process.
+    await killActiveCommands();
     if (run !== null) {
       for (const stream of ['stdout', 'stderr']) {
         const text = (run.output[stream] ?? '').trim();
@@ -955,21 +2008,22 @@ async function modeSecurity() {
 }
 
 /**
- * (a): one assertion, one pass condition. "Absent or unusable" is not a pass.
+ * (a): one assertion, one pass condition, all conjuncts together (AM-188).
+ * `tauri === 'undefined'` is the `withGlobalTauri: false` proof; `ipc`/`ipcInvoke`
+ * are the proof the internals door is live; `ipcProbe === 'rejected'` with
+ * `ipcProbeMsg` exactly the ACL denial is the proof the known-existing built-in
+ * command was denied. `resolved` is a failure — the command was reached — and
+ * `pending` at the 30-second deadline is a failure; no timeout can produce a
+ * pass. `tauriInternals` stays diagnostic.
  */
 async function assertNoIpc(run) {
   const fact = await waitForFact(
     () => run.output.stderr,
-    (line) => line['tauri'] !== undefined && line['tauriInternals'] !== undefined,
+    (line) => line['href'] !== undefined && line['ipcProbe'] !== undefined && line['ipcProbe'] !== 'pending',
     30_000,
   );
-  check(
-    '(a) window.__TAURI__ and window.__TAURI_INTERNALS__ are undefined',
-    fact !== null && fact['tauri'] === 'undefined' && fact['tauriInternals'] === 'undefined',
-    fact === null
-      ? 'the hook published no fact line carrying both globals'
-      : `the page reported tauri=${JSON.stringify(fact['tauri'])} and tauriInternals=${JSON.stringify(fact['tauriInternals'])}`,
-  );
+  const result = checkNoIpc(fact, { expired: fact === null });
+  check(result.title, result.ok, result.detail);
 }
 
 /**
@@ -1032,51 +2086,87 @@ async function assertWindowOpenRefused(run, baselineWindows) {
  * the header half above proves the CSP exists, and this proves the payload did
  * not run while its characters are on screen.
  *
- * The note is opened by clicking two rectangles the page published for its own
- * visible labels, and a click that landed is proved by the published set changing
- * — a click that missed times out and **fails** the row.
+ * The note is opened by the AM-188 measured calibration path: read the window
+ * once, wait for the viewport, take two MEASURED bootstrap points, solve the
+ * per-axis affine map (all checks before use), select the row by its unique
+ * (label, tag) pair, warp to its centre, take the one fresh client witness, and
+ * dispatch exactly one click. The patient click lands on `href` changing; the
+ * note click lands on `scriptText` turning true. A click that missed ends at the
+ * immutable 30-second deadline and **fails** the row.
+ *
+ * The tag is captured from the frame as it stands **before** the pointer moves,
+ * so a tooltip carrying the same label with a different tag cannot be mistaken
+ * for the row.
  */
-async function assertInjectedNoteInert(run, windowId, created) {
+async function assertInjectedNoteInert(run, windowId, appPid, created) {
   // The three calls were already made, and already asserted, before the
   // observation gate so that the app's first paint could show a patient row.
   // Creating them again here would only add a duplicate patient and a duplicate
   // format, and would leave two rows carrying the same visible label.
   if (!created.ok) return;
 
-  const patientClick = await clickAndWaitForChange(
-    windowId,
-    () => run.output.stderr,
-    PATIENT_LABEL,
-    undefined,
-    30_000,
-  );
+  const stderrSource = () => run.output.stderr;
+  const ops = makeOps(windowId, appPid, stderrSource);
+  const clock = createRealClock();
+
+  const patientTag = await waitForLabel(stderrSource, PATIENT_LABEL, 30_000);
+  if (patientTag === null) {
+    check(
+      `(d) handler: the ${JSON.stringify(PATIENT_LABEL)} row was clicked and landed`,
+      false,
+      `the hook published no unique rectangle carrying the label ${JSON.stringify(PATIENT_LABEL)}; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}`,
+    );
+    return;
+  }
+
+  const patient = await runFlowGuarded({
+    deadline: createTargetDeadline(clock.now()),
+    clock,
+    schedule: realSchedule,
+    frame: frameFrom(stderrSource),
+    wanted: { label: PATIENT_LABEL, tag: patientTag },
+    expected: { kind: 'patient-href' },
+    ops,
+  });
   if (
     !check(
       `(d) handler: the ${JSON.stringify(PATIENT_LABEL)} row was clicked and landed`,
-      patientClick.ok,
-      patientClick.detail,
+      patient.ok && patient.dispatched.filter((name) => name === 'click').length === 1,
+      `${patient.reason} (dispatched ${patient.dispatched.join(', ')})`,
     )
   )
     return;
 
-  const noteClick = await clickAndWaitForChange(
-    windowId,
-    () => run.output.stderr,
-    NOTE_LABEL,
-    (line) => line['scriptText'] === 'true',
-    30_000,
-  );
+  const noteTag = await waitForLabel(stderrSource, NOTE_LABEL, 30_000);
+  if (noteTag === null) {
+    check(
+      `(d) handler: the ${JSON.stringify(NOTE_LABEL)} row was clicked and landed`,
+      false,
+      `the hook published no unique rectangle carrying the label ${JSON.stringify(NOTE_LABEL)} after the patient opened; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}`,
+    );
+    return;
+  }
+
+  const note = await runFlowGuarded({
+    deadline: createTargetDeadline(clock.now()),
+    clock,
+    schedule: realSchedule,
+    frame: frameFrom(stderrSource),
+    wanted: { label: NOTE_LABEL, tag: noteTag },
+    expected: { kind: 'script-text' },
+    ops,
+  });
   if (
     !check(
       `(d) handler: the ${JSON.stringify(NOTE_LABEL)} row was clicked and landed`,
-      noteClick.ok,
-      noteClick.detail,
+      note.ok && note.dispatched.filter((name) => name === 'click').length === 1,
+      `${note.reason} (dispatched ${note.dispatched.join(', ')})`,
     )
   )
     return;
 
   const fact = await waitForFact(
-    () => run.output.stderr,
+    stderrSource,
     (line) => line['probe'] !== undefined && line['scriptText'] !== undefined,
     30_000,
   );
@@ -1212,9 +2302,40 @@ function firstOnPath(names) {
   return undefined;
 }
 
+/**
+ * Every command this harness spawns, tracked so a dispatch that outlives the
+ * deadline can be stopped by its own pid — never `pkill` (C-ISO@1 rule 7), and
+ * never a process this harness did not start. A child leaves the set on close,
+ * so the set holds only commands that are still running.
+ */
+const activeCommands = new Set();
+
+function trackCommand(child) {
+  activeCommands.add(child);
+  child.on('close', () => activeCommands.delete(child));
+  return child;
+}
+
+/** Stops every command this harness still has running, by pid, and clears the set. */
+async function killActiveCommands() {
+  for (const child of [...activeCommands]) {
+    try {
+      if (child.exitCode === null && child.signalCode === null) process.kill(child.pid, 'SIGKILL');
+    } catch {
+      // already gone
+    }
+  }
+  activeCommands.clear();
+}
+
+/**
+ * One result shape for every command: `{ code, signal, stdout, stderr }`.
+ * Backward compatible — every existing caller reads `.stdout`/`.stderr`, which
+ * are still there — and the AM-188 command protocol reads `.code`/`.signal`.
+ */
 function spawnAsync(command, args) {
   return new Promise((done) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = trackCommand(spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] }));
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk) => {
@@ -1223,8 +2344,8 @@ function spawnAsync(command, args) {
     child.stderr.on('data', (chunk) => {
       stderr += chunk.toString('utf8');
     });
-    child.on('error', (error) => done({ stdout: '', stderr: String(error) }));
-    child.on('close', () => done({ stdout, stderr }));
+    child.on('error', (error) => done({ code: null, signal: null, stdout: '', stderr: String(error) }));
+    child.on('close', (code, signal) => done({ code, signal, stdout, stderr }));
   });
 }
 
@@ -1269,4 +2390,57 @@ async function main() {
   return failed.length > 0 || notRunCount > 0 ? 1 : 0;
 }
 
-process.exitCode = await main();
+// ------------------------------------------------------------ exports ----
+//
+// The AM-188 ported functions and their constants, exported so the synthetic
+// port-fidelity tests in `docs/v2/evidence/P3.4/attempt-5/implementation/` can
+// exercise the ACTUAL shipped functions with injected fakes (fake clock, fake
+// command seam, fake stderr). Nothing here changes the row: the harness still
+// runs only in `security` mode, and only when it is the entry point.
+export {
+  ACL_DENIAL,
+  BATCH_SIZE,
+  CASCADE_ROWS,
+  CLICK,
+  DEADLINE_EXPIRED,
+  IPC_PROBE_COMMAND,
+  MARKER_PATH,
+  OBSERVATION_POLL_MS,
+  POINTER,
+  RECT_FIELDS,
+  VIEWPORT,
+  awaitGuarded,
+  calibrationTargets,
+  cascadeCause,
+  checkCommand,
+  checkNoIpc,
+  checkReadback,
+  compareDescriptor,
+  containedInWindow,
+  createBatchReader,
+  createClock,
+  createRealClock,
+  createTargetDeadline,
+  dispatchGuarded,
+  firstFactGate,
+  frameFrom,
+  guardedMove,
+  landingFact,
+  markerLinesOf,
+  pollObservation,
+  rectSignature,
+  runClick,
+  runFlow,
+  selectTarget,
+  solveTransform,
+  spawnAsync,
+  tagForLabel,
+  targetCentre,
+  toNativePoint,
+};
+
+const isEntryPoint =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+if (isEntryPoint) {
+  process.exitCode = await main();
+}

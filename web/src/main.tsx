@@ -61,6 +61,98 @@ function installObservationHook(): void {
   let lastFacts = '';
   let lastRects = '';
 
+  // ---------------------------------------------------------------- AM-188 --
+  //
+  // The owner-approved assertion and measurement package (AM-188): the fact
+  // line gains the IPC probe, the viewport, the pointer and the click
+  // descriptor, and the rectangle publication gains a run-local epoch, global
+  // indices and the tag/test-id descriptor fields. All of it is read by the
+  // existing 250 ms change-only poll — there is no second hook, no second gate
+  // and no second interval, and none of P3.5's parts below move.
+  let epoch = 0;
+  let ipcProbe = 'pending';
+  let ipcProbeMsg = '';
+  let ptrN = 0;
+  let ptrCX = 0;
+  let ptrCY = 0;
+  let clickN = 0;
+  let clickCX = 0;
+  let clickCY = 0;
+  let clickTag = '';
+  let clickTestId = '';
+  let clickText = '';
+
+  /** The exact rejection message, whether the rejection is an Error, a string or a plain object. */
+  const ipcErrorMessage = (error: unknown): string => {
+    if (typeof error === 'string') return error;
+    if (error !== null && typeof error === 'object' && 'message' in error) {
+      return String((error as { message: unknown }).message ?? '');
+    }
+    return String(error ?? '');
+  };
+
+  /**
+   * The one-shot IPC probe (AM-188): a known-existing built-in command that the
+   * ACL must deny. `invoke('plugin:event|listen')` reaches the live internals
+   * door and must come back rejected with the exact ACL string; a resolution
+   * means the command was reached, which is a failure. The outcome is published
+   * on the fact line as `ipcProbe`/`ipcProbeMsg` — presence only, settling is
+   * the assertion's job.
+   */
+  const runIpcProbe = (): void => {
+    try {
+      const internals = Reflect.get(window, '__TAURI_INTERNALS__');
+      const invoke = internals?.invoke;
+      if (typeof invoke !== 'function') {
+        ipcProbe = 'rejected';
+        ipcProbeMsg = 'the internals object carries no invoke function';
+        return;
+      }
+      Promise.resolve()
+        .then(() => invoke('plugin:event|listen', { event: 'apunta-ipc-probe' }))
+        .then(
+          () => {
+            ipcProbe = 'resolved';
+            ipcProbeMsg = '';
+          },
+          (error) => {
+            ipcProbe = 'rejected';
+            ipcProbeMsg = ipcErrorMessage(error);
+          },
+        );
+    } catch (error) {
+      ipcProbe = 'rejected';
+      ipcProbeMsg = ipcErrorMessage(error);
+    }
+  };
+
+  /**
+   * The pointer and click listeners (AM-188): one `pointermove` listener and one
+   * capture-phase `click` listener, both inside the existing hook and both read
+   * by the existing poll. They only record what the page did; the harness reads
+   * the published facts and never the DOM.
+   */
+  window.addEventListener('pointermove', (event) => {
+    ptrN += 1;
+    ptrCX = event.clientX;
+    ptrCY = event.clientY;
+  });
+  document.addEventListener(
+    'click',
+    (event) => {
+      const target = event.target;
+      clickN += 1;
+      clickCX = event.clientX;
+      clickCY = event.clientY;
+      clickTag = target instanceof HTMLElement ? target.tagName : '';
+      clickTestId = target instanceof HTMLElement ? (target.getAttribute('data-testid') ?? '') : '';
+      clickText = (target instanceof HTMLElement ? (target.innerText ?? '') : '').trim();
+    },
+    true,
+  );
+
+  runIpcProbe();
+
   // ---------------------------------------------------------------- P3.5 --
   //
   // P3.5's own half of this one hook: its own marker path, its own capture
@@ -155,6 +247,11 @@ function installObservationHook(): void {
     query.set('title', document.title);
     query.set('tauri', typeof Reflect.get(window, '__TAURI__'));
     query.set('tauriInternals', typeof Reflect.get(window, '__TAURI_INTERNALS__'));
+    const internals = Reflect.get(window, '__TAURI_INTERNALS__');
+    query.set('ipc', typeof internals);
+    query.set('ipcInvoke', typeof internals?.invoke);
+    query.set('ipcProbe', ipcProbe);
+    query.set('ipcProbeMsg', ipcProbeMsg);
     query.set('probe', typeof Reflect.get(window, '__APUNTA_CSP_PROBE__'));
     const body = document.body;
     const scriptText = body !== null && body.innerText.includes('<script>');
@@ -171,14 +268,41 @@ function installObservationHook(): void {
         ? ''
         : getComputedStyle(styled).getPropertyValue(property.trim()).trim(),
     );
+    query.set('vpW', String(window.innerWidth));
+    query.set('vpH', String(window.innerHeight));
+    query.set('ptrN', String(ptrN));
+    query.set('ptrCX', String(ptrCX));
+    query.set('ptrCY', String(ptrCY));
+    query.set('clickN', String(clickN));
+    query.set('clickCX', String(clickCX));
+    query.set('clickCY', String(clickCY));
+    query.set('clickTag', clickTag);
+    query.set('clickTestId', clickTestId);
+    query.set('clickText', clickText);
     query.set('attempt', attempt);
     return query;
   };
 
   /** Text leaves — what "located by their visible text" means, so a harness
    * clicks a real label and never a class name or a selector of its own. */
-  const readRects = (): { label: string; x: number; y: number; w: number; h: number }[] => {
-    const found: { label: string; x: number; y: number; w: number; h: number }[] = [];
+  const readRects = (): {
+    label: string;
+    tag: string;
+    testId: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  }[] => {
+    const found: {
+      label: string;
+      tag: string;
+      testId: string;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    }[] = [];
     for (const element of Array.from(document.querySelectorAll<HTMLElement>('*'))) {
       if (element.children.length > 0) continue;
       const label = (element.innerText ?? '').trim();
@@ -186,6 +310,8 @@ function installObservationHook(): void {
       const rect = element.getBoundingClientRect();
       found.push({
         label,
+        tag: element.tagName,
+        testId: element.getAttribute('data-testid') ?? '',
         x: Math.round(rect.x),
         y: Math.round(rect.y),
         w: Math.round(rect.width),
@@ -198,16 +324,21 @@ function installObservationHook(): void {
 
   /** Batched, so no single request approaches Node's 16 KB header limit. */
   const sendRects = (rects: ReturnType<typeof readRects>): void => {
+    epoch += 1;
     for (let index = 0; index * batchSize < rects.length; index += 1) {
       const query = new URLSearchParams();
       query.set('rects', String(rects.length));
       query.set('batch', String(index));
+      query.set('epoch', String(epoch));
       rects.slice(index * batchSize, (index + 1) * batchSize).forEach((rect, at) => {
-        query.set(`i${String(at)}_x`, String(rect.x));
-        query.set(`i${String(at)}_y`, String(rect.y));
-        query.set(`i${String(at)}_w`, String(rect.w));
-        query.set(`i${String(at)}_h`, String(rect.h));
-        query.set(`i${String(at)}_l`, rect.label);
+        const global = index * batchSize + at;
+        query.set(`i${String(global)}_x`, String(rect.x));
+        query.set(`i${String(global)}_y`, String(rect.y));
+        query.set(`i${String(global)}_w`, String(rect.w));
+        query.set(`i${String(global)}_h`, String(rect.h));
+        query.set(`i${String(global)}_l`, rect.label);
+        query.set(`i${String(global)}_t`, rect.tag);
+        query.set(`i${String(global)}_d`, rect.testId);
       });
       send(query);
     }
