@@ -2010,3 +2010,21 @@ Authorbad31d56-4d72-4c5a-8e16-780ea17f70fc Space Bunny medium running, callback.
 ## Small v5 submitted for independent spec/model review — 2026-10-03T03:11:45.304262+00:00
 
 Authorbad31d56 archived success; only398line proposal and MODEL report written, committedbf6e7f0. Coordinator pinnedNode24.19.0 reruns41model+14tooling PASS. Default sandbox runs gave one outerfile pass/fail rather than individualcases; notused asproof, authorized pinnedreruns emitted allcases. Candidate notaccepted: rootflagged newer valid truncatedheader highwater mismatch, bootstrap exemptions, selectiontriple, removedfixtures, roworder and citations. Fresh independent reviewer963b4642-4472-49f2-9d83-1cb97dcbcdd5 LongCat free high RUNNING, report/proposal-ir5 evidenceonly, callback. Owncopies for adversarialtests; authormodel bytes remain stable. No shippedmodule/sourcegrant, no fifthauthorized. P3.5worker2028c17e continues solefeature/buildlease holder.
+
+## Latest bounded v5 repair — 2026-10-03T03:18:55.521532+00:00
+
+IR5 is DEFECT with five bounded findings and field/freshness coverage gaps.
+Report: reviews/P3.4-owner-proposal-ir5.md; three probes in evidence/P3.4/proposal-ir5.
+Coordinator reproduced valid newer-header truncation falling back to epoch 5.
+Reviewer 963b4642 archived successfully. Fresh repair author
+342834e0-2e85-4069-927c-74222af1412f is RUNNING, Space Bunny free medium, callback.
+Owns only P3.4-REPAIR-PROPOSAL-v5.md (<=400 lines), new proposal-v5-repair evidence,
+and ignored build/p3.4-spec-v5-repair copies. Original model/test/proof files preserved.
+Must model calibration through landing, fresh counters and named descriptors;
+all dispatches bounded by one deadline, no older fallback after a valid newer header.
+No source/card/tool edit or attempt 5 authorized. Independent review follows repair.
+
+P3.5 worker 2028c17e remains RUNNING, sole feature writer and exclusive build lease
+holder with ports 7837/7839. Leave its in-flight files and outputs unstaged.
+Quiet-machine holds and existing owner-only decisions remain unchanged.
+
