@@ -1,3 +1,19 @@
+## Client-sentinel proposal under independent review; no runtime authority
+
+Authore49bbba8 completed and archival succeeded. Preparedonefunction '-'client
+nullpatch+75syntheticcases+localprimaryformat proof, source unchanged. Current
+candidate.patch targets ignoredextraction filenames; rootflaggedneedshipping-
+pathreplay beforeownerdecision. Newcandidate/proof.mjs artifactslint13errors;
+notintegrateduntilfaithfulcleanup. No runtime orsource repair authorized.
+
+Reviewer0dfdfdf1-0f81-4673-9194-5f5b323638ee (LongCat free high) confirmed
+RUNNINGwithcallback, exclusiveproposal-ir report/evidence. It reviewsminimum
+safety-preservingsentinelhandling, validprimarysourceformat, actualsourcepatch
+fidelity, meaningfulproof+ownerCHANGEto-no4boundary. Rootsentexactlint/header
+concerns; noauthorfilesedited byreviewer. Auditorf2445f07 remains finalruntime
+read-onlyaudit withcallback/differentwrites. No lease/port/audio/build/process
+work; P34final5/P35final3 bothBLOCKED and budgetsnotexpanded.
+
 ## Final P3.5 runtime recorded BLOCKED; resources released
 
 Workere64d5224 completed and archival succeeded. V0/V1/V2 and ownbundledplugin
