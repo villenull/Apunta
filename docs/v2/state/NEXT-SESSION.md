@@ -1,3 +1,15 @@
+## Installer authentication blocked; authorized preparation continues
+
+Both exactAM190pkexec invocations ended124 after180seconds, emptystreams;
+no packageinstaller began and no installationPASS claimed. Sessions3410/35285
+completed; no externalcommand left withoutcallback. Installationauthorization
+persists but graphicalauthentication must succeed before failclosedpreflight,
+rebuild or capture. See environment-application/INSTALLATION-STATUS.md.
+No buildleaseheld; no app/runtime launched. P34implementation9b1b88ff and
+integrationreviewf9b2c666 confirmedRUNNING at eventboundary withcallbacks;
+preparation remainsuseful and withinAM188–191. Smallerpipeline justified:
+one source writer, one disjoint stableintegrationreview; builds waitauth/codeIR.
+
 ## Approved tooling and media config integrated; application review running
 
 Toolauthorfc8797fd andconfigauthorfe02cc00 archived afterreturns. Toolcandidate
