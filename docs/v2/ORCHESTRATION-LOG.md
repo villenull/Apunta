@@ -2866,3 +2866,13 @@ tiny.en row, so explicit question submitted: installer to ignoredmodelcache,
 77,704,715B/SHA256921e4cf8…20b1f, HF/observedCDN/querynames pinned, no live data,
 Ollamapull or Spanish unpark. Coordinator executesaftergrant, not ownerterminal.
 Securityruntime/nativelease and independentP36approach validation remain active.
+
+## 2026-10-03 — first clean native security proof; static runner issues retained
+
+c88d6043 complete/archived, e00b63c preserves V2actual20/20 and V1PASS, normative
+V0NOTRUN/freshflaggedimage. V3wrapper retainedbackticks lostbodyexit127outer;
+V4npm2235PASS then13committedP35prooflintFAIL. No rowretry/repair, nativelease
+released/cleanupverified/prior4/5criteriaunchanged. RootparksP34BLOCKED.
+71cb8245 repairs evidence-output lint only, b07cc8b3 audits frozenrun/prepares
+minimal staticrowscompletionownerexception; e74efcc6 continuesP36approachIR.
+No V2relaunch/sourcepatch/seventh. Modelacquisitionownerquestionpending.

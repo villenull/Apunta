@@ -1,3 +1,27 @@
+## Real native security PASS; static verification completion preparation
+
+c88d6043 finished and archived successfully; e00b63c preserves actual V2
+20PASS/0FAIL/0NOTRUN (first full native proof), V1 12PASS and outside cleanup.
+V0 conditionally NOTRUN on empty RuleB predicates plus directly measured fresh
+flagged AppImage. V3 body ran under mistaken code-span backticks; outer127,
+body exit unobserved → BLOCKED, no retry. V4 npm2235PASS then13P35artifactlint
+FAIL; downstream typecheck/cargo NOTRUN. Prior4/5 history retained; P34BLOCKED.
+No seventh or static-row retry currently authorized. Native lease released;
+no ownprocess/listener,7835free,releasebundle0markers/gate,Ollama unchanged.
+
+Confirmed RUNNING callbacks:
+- 71cb8245-1772-48c2-a4d9-364d16e9a88e: saved P35 proof output-only lint
+  repair, three ir artifact paths (raw CJS witness byte-exact .txt rename),
+  new eod-proof-lint-repair evidence. No acceptance/source/guard changes.
+- b07cc8b3-cb21-4e1e-9668-dee0ec800da3: frozen security runtime audit and
+  new STATIC-COMPLETION-PROPOSAL/evidence only. Prepare explicit within6 V3
+  attributable-exit and full V4 once exception; no V2/app/build/source repeat,
+  prior BLOCKED/FAIL retained; independent review then owner question required.
+- e74efcc6 integration approach validation remains running, no native resource.
+
+English tiny.en acquisition question pending, no download authorized yet.
+Root owns both checkpoints again. Remaining prep disjoint; no native/model lease.
+
 ## English model identified; acquisition decision pending
 
 4e7416af corrective readiness finished and archived successfully. Existing
