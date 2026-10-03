@@ -1,3 +1,22 @@
+## Approved tooling and media config integrated; application review running
+
+Toolauthorfc8797fd andconfigauthorfe02cc00 archived afterreturns. Toolcandidate
+c8abfc5: root113/113guardmatrixPASS, original25tests+14new retained, attempt4
+lines byteexact. Configcandidate507c026 one booleanleaf; root41schema/delta
+checksPASS. Root pinned mutableHEADbefore-configchecker reads to c8abfc5 for
+replayaftercommit, documented environment-application/COORDINATOR.md.
+Fresh independent integration reviewerf9b2c666-6610-4aa0-9408-aeb7f52a02e8
+(LongCathigh, callback) owns owner-packages-application-ir.md and ownreview
+family; stablecards/manifest/tool/configonly, ignoresP34writerworkingtree.
+P34implementation9b1b88ff continues codeunitonly, no runtime rows yet.
+
+Rootall11cardcommandcells threecells/bash-n PASS (sandboxnestedspawnhung and
+wasinterrupted130; boundedescalatedsyntaxrerun0). Installerfirstsession3410
+exited124 beforeauthentication. Secondsession35285 exactsameapprovedpkexec
+command awaitinggraphicalauthentication, timeout180s; no additionalpackages,
+no passwordwritten, no buildlease. Root must finish/check external command
+beforeyield (no commandcallback). Ownerauthority remainsadopted AM188–191.
+
 ## Owner approvals adopted; P3.4 final code preparation and P3.5 config running
 
 Owner explicitly approved all four outstanding choices. AM-188 adopts P3.4
