@@ -2184,3 +2184,6 @@ P3.4 owner assertionpackage+attempt5 questions PENDING; silence notapproval.
 No source/runtime/build/installlease active. Next: freshsource/envreviews and finish
 mechanical evidence lint on independent paths, allcallbacks.
 
+
+Confirmed RUNNING with callbacks: final P3.5 source reviewer e62f23a2-2446-461a-ae58-aa9bde77a861 (LongCat high) on7e16513, envproposal reviewer b706a530-dcf5-471f-89b4-14afc79e3a36 (LongCat high) one88a13a, lint completion author bea1841b-54ab-4d8a-98c7-86689028ba0b (Space Bunny medium) on39c6723. Exact disjoint report/proposal review scopes; lint writer only two oldP35review1proofs and one dead P34constant plus newcompletionevidence. No source writer/no buildlease/no runtime. P3.4 two ownerchoices remainPENDING. Save finalsource/envcandidate and outputrepair commitsthrough39c6723; reviewcombinedlint aftercompletion.
+
