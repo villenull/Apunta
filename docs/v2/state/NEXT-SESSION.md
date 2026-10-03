@@ -1,3 +1,21 @@
+## Bounded P3.4 correction ready for owner exception
+
+Final reviewer 4d5f0ebb completed and archival succeeded. Patch and all technical
+proofs independently PASS; historical verdict CHANGES REQUESTED for four prose
+errors remains preserved. Root applied the four exact documentation remedies,
+recorded in correction-final-review/COORDINATOR.md. Patch and actual source are
+unchanged; scoped eslint passes. No additional technical rerun was required by
+review. The review family contains text only, so it has no applicable ESLint files.
+
+Owner decision pending: exactly one pre-runtime code repair within attempt 5,
+only correction-proposal/02-patch.diff (+44/-20, four hunks), overriding the
+exhausted repair count for that patch. No sixth attempt, reset, retry or runtime
+row executed. Once approved, apply exact patch, review corrected source, then
+V0–V4 once in card order after prerequisites. If refused, P3.4 stays BLOCKED.
+Separate local authentication route question remains pending; P3.5 independent.
+No workers active, runtime process, build lease or port reservation. All remaining
+useful execution needs owner repair authority or local installation authentication.
+
 ## Final bounded correction package under independent review
 
 Worker 30622fa3 completed and archival succeeded. Evidence output cleanup passed

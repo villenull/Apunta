@@ -1,0 +1,44 @@
+# 03 — format/lint at the REAL path, proven non-vacuous
+
+pinned node v24.19.0. repo config: .prettierrc.json { singleQuote:true,
+printWidth:110, trailingComma:all, semi:true }; prettier 3.9.6; eslint 10.9.0.
+`npm run lint` = `eslint . && prettier --check . && …`.
+
+## 1. the checks are real, and one trap is real (PASS)
+
+  scripts/v2/tauri-security.test.mjs is NOT in .prettierignore (which excludes
+  docs/v2/evidence/, docs/v2/state/, *.md, prototype, …), so `prettier --check .`
+  really checks it. build/ is gitignored, so prettier SILENTLY SKIPS it.
+
+  $ npx prettier --check --stdin-filepath scripts/v2/tauri-security.test.mjs < patched.mjs
+  exit: 0
+  $ npx prettier --check --stdin-filepath scripts/v2/tauri-security.test.mjs < shipped.mjs
+  exit: 0
+  control (deliberately mis-formatted), same real path:      exit 1  (real)
+  same control as a build/ path:                             exit 0  (skipped => vacuous)
+  $ npx prettier --check scripts/v2/tauri-security.test.mjs  exit 0  (baseline clean)
+
+  $ npx eslint --stdin --stdin-filename scripts/v2/tauri-security.test.mjs < patched.mjs
+  exit: 0
+  $ npx eslint --stdin --stdin-filename scripts/v2/tauri-security.test.mjs < shipped.mjs
+  exit: 0
+
+## 2. the wrap is load-bearing, but the stated char count is wrong (F3)
+
+  Reconstruct the pre-wrap patch (rejoin the split `classify:` line, the only
+  difference from patched.mjs) and check prettier at the real path:
+
+  $ npx prettier --check --stdin-filepath scripts/v2/tauri-security.test.mjs < prewrap.mjs
+  exit: 1
+  $ npx prettier --stdin-filepath scripts/v2/tauri-security.test.mjs < prewrap.mjs | diff prewrap.mjs -
+  1762c1762,1763
+  <     classify: () => tagForLabel(stderrSource, label) === null ? { ok: false, terminal: false } : { ok: true },
+  ---
+  >     classify: () =>
+  >       tagForLabel(stderrSource, label) === null ? { ok: false, terminal: false } : { ok: true },
+
+  So the wrap is genuinely required (pre-wrap exit 1, patched exit 0). But the
+  pre-wrap line is **110 chars**, not the "112 chars" stated in the state
+  document §4 and 07-review-response.txt, and it is not literally "over
+  printWidth 110" — prettier breaks this arrow-with-conditional-body at exactly
+  the limit. The fix is right; the explanation is off. Finding F3.

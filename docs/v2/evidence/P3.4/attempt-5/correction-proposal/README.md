@@ -36,7 +36,7 @@ If the owner declines, the card is `BLOCKED`. Nothing here assumes otherwise.
 | --- | --- |
 | `00-baseline.txt` | commits, candidate stability, hashes, nothing staged |
 | `01-source-extraction.txt` | §E's text and the shipped lines, printed from the real file |
-| `02-patch.diff` | **the exact before/after patch**, 4 hunks, `+43/−20`, one file |
+| `02-patch.diff` | **the exact before/after patch**, 4 hunks, `+44/−20`, one file |
 | `03-patch-replay.txt` | the diff applies to the shipped file byte-identically; lint/format clean |
 | `04-probe-output.txt` | non-vacuous proof: the same checks FAIL on the shipped copy, PASS on the corrected copy |
 | `05-port-adapter-cases.txt` | the repo's own 80 port/adapter cases still pass against the corrected copy |

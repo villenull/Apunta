@@ -1,0 +1,31 @@
+# 05 — the synthetic before/after proof, independently re-run
+
+pinned node v24.19.0. I ran the reviewer's own probe against the reviewer's own
+scratch proof modules (build/p34-correction-ir/{shipped,patched}-proof.mjs,
+5a5272c5… / 145484f1…), copied next to the probe, cwd = that dir. Synthetic IO
+only: local `node -e` sleepers; no app/server/db/model/audio/input/display/network;
+port 7717 never contacted.
+
+  before (probe-before.mjs, == reviewer original 2c0f0f85…): exit 0, ALL PASS, 50 lines, 0 stderr
+  after  (probe-after.mjs,  == durable review/probe.mjs df08c80b…): exit 0, ALL PASS, 50 lines, 0 stderr
+  raw diff before/after: two lines, both observed elapsed ms (953 -> 954); nothing else
+  normalised (s/[0-9]+ms/<ms>/) diff: IDENTICAL
+
+## what it shows (matches 04-probe-output.txt / review/07-probe-output.txt)
+
+  O3  shipped: label "TR", ok=true, clicks=1, wall 954ms > 800ms budget  (second budget let it click)
+      patched: tag="TR", ok=false, clicks=0, wall 800ms of 800ms         (ends at the one deadline)
+      positive control: label at 100ms -> patched still returns the tag and clicks (wall 701ms)
+  O2  shipped: prefixed reason, tracked child killed=false, foreign survived=true (branch inert)
+      patched: same reason, tracked child killed=true, foreign survived=true
+      control B2: hung geometry -> EXACT reason -> kill fires even on shipped (branch reachable)
+  static §E checker on the actual text: 13 problems shipped -> 0 patched
+
+## kill scope (own pid only) — independently inspected
+
+  cleanupScenario spawns `tracked` through the harness's OWN spawnAsync (registered
+  via trackCommand) and `foreign` via a bare `spawn` (never registered). The probe
+  measures foreignSurvived BEFORE it cleans up its own foreign child. Result:
+  foreign survives the harness cleanup in both copies; only the tracked pid is
+  killed, and only after the patch. killActiveCommands itself is byte-identical
+  (see 02) and SIGKILLs only activeCommands pids.

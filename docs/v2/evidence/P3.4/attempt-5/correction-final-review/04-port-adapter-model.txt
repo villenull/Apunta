@@ -1,0 +1,36 @@
+# 04 — 80 port/adapter cases and the 73-case model, against my own patched copy
+
+pinned node v24.19.0. Fixtures are the committed repo fixtures
+(docs/v2/evidence/P3.4/attempt-5/implementation/{ported-model,adapters}.test.mjs,
+tracked in git). Copied to scratch and ONLY the import line re-pointed.
+
+## 1. the fixtures differ from the committed originals by one import line (PASS)
+
+  diff against each committed fixture = exactly:
+  49c49 / 25c25
+  < } from '../../../../../../scripts/v2/tauri-security.test.mjs';
+  ---
+  > } from './patched.mjs';
+
+## 2. results (PASS)
+
+  $ node --test ported-model.test.mjs adapters.test.mjs        (vs MY patched copy)
+  tests 80 | pass 80 | fail 0 | exit 0
+
+  $ node --test build/p3.4-spec-v5-repair2/model.test.mjs
+  tests 73 | pass 73 | fail 0 | exit 0
+
+  model hashes unchanged:
+  dbca7da9ece908729431dbf8e83c8e66d014cbb7b87e7abc2f11480cb33ed9f4  model.mjs
+  9c2c58621bf1e435b7577831fc692b6db5d2ecd16af691715ebe0eeccf1346c0  model.test.mjs
+  waitForLabel / runFlowGuarded occurrences in model.mjs: 0 / 0
+
+## 3. what the 80 cases actually prove — a port-regression check, not the fix
+
+  The SAME 80 cases also pass against the UNPATCHED shipped copy (exit 0). The
+  changed functions (waitForLabel, runFlowGuarded) are not among the ported
+  functions and the corrected (d) call site is not exercised by these fixtures.
+  So 80/80 proves the patch did not drift the reviewed pure model or the
+  adapters; it does NOT by itself prove O3/O2 are fixed. The package's wording
+  ("still pass against the corrected copy") is accurate; the behavioural proof
+  is the separate synthetic probe (05).

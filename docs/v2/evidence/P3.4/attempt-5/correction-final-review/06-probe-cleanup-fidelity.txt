@@ -1,0 +1,65 @@
+# 06 — the durable review/probe.mjs cleanup is output-only (independently verified)
+
+pinned node v24.19.0.
+
+## 1. the exact files (hashes match the final-preparation 00-baseline)
+
+  durable: docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+           df08c80b022e4a1b92c60646dd64b5ffbcf8cd3af6bc9a9ef78e0dbd71650308
+  BEFORE:  build/p34-correction-final-prep/probe-before.mjs
+           2c0f0f85d337d8f79f757b0af97ebc9737479b2ea6a4d3f66805b483f8bd1fe6
+           (== the reviewer's original build/p34-correction-ir/probe.mjs)
+  AFTER:   build/p34-correction-final-prep/probe-after.mjs
+           df08c80b…  (== the durable file)
+
+  proof modules: build/p34-correction-ir/{shipped,patched}-proof.mjs
+                 5a5272c5… / 145484f1…  (== the final-prep copies)
+
+## 2. the diff is only the print mechanism (PASS)
+
+  diff before -> after contains exactly:
+    + import { format } from 'node:util';
+    - tagForLabel removed from the destructure (proved unused: 1 occurrence, own line)
+    + const emit = (...args) => { process.stdout.write(`${format(...args)}\n`); };
+    + const say = (s) => { emit(s); };   (block body keeps say's undefined return)
+    10 x console.log(X) -> emit(X), same single argument, no reorder
+    + one explanatory comment
+  No verdict(), BUDGET, MOVE_MS, scenario call, fixture or static-checker line changed.
+
+  Static proof independent of any ms normalisation:
+    string literals 144 -> 146; the only two new ones are 'node:util' and
+      `${format(...args)}\n` (the mechanism). All 144 pre-existing strings preserved.
+    numeric literals 83 -> 83, identical multiset.
+    verdict( 16 -> 16.   BUDGET 14 -> 14.   MOVE_MS 2 -> 2.
+    console.log 10 -> 0.  console.warn 0 -> 1 (only in the comment text).
+
+## 3. output fidelity (PASS)
+
+  before/after runs: exit 0, 50 stdout lines, 0 stderr bytes, `ALL PASS`.
+  raw diff: 2 lines, both observed elapsed ms (953 -> 954). normalised: IDENTICAL.
+  durable probe reproduces the retained historical review/07-probe-output.txt
+  normalised: IDENTICAL (raw diff only observed ms).
+
+## 4. the lint this cleanup fixed is real (PASS)
+
+  docs/ is NOT in eslint.config.js ignores, so `eslint .` lints this file.
+    $ npx eslint <durable real path>                     exit 0
+    $ npx eslint --stdin --stdin-filename <real path> < probe-before.mjs
+      -> 11 problems (10 no-console, 1 unused tagForLabel), exit 1
+    $ node --check <durable>                             exit 0
+  By contrast .prettierignore EXCLUDES docs/v2/evidence/, so `prettier --check .`
+  skips this file; its success is vacuous here. The final-preparation evidence
+  distinguishes these two correctly.
+
+## 5. the util.format reasoning in 01-probe-fidelity.txt §2 is wrong (F4)
+
+  Claim: `format('%s and %d')` returns `"-> and NaN"`.
+  Actual (pinned node): format('%s and %d') -> '%s and %d' UNCHANGED (no args => no
+  substitution). It never mangles.
+  Claim: the file contains no `%` at all (`grep -c '%'` -> 0).
+  Actual: grep -c '%' on the durable/after file = 1 — the `%` is in this pass's own
+  added comment ("no `%` appears anywhere in this file"). The BEFORE file has 0.
+
+  The conclusion still holds: no PRINTED string contains `%`, so format(s) === s
+  for every emitted string, and the replay (section 3) confirms it. The error is
+  in the supporting static argument, not in the result. Finding F4.

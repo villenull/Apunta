@@ -1,0 +1,42 @@
+# 00 — scope, authority and limits of this final review
+
+role: independent final reviewer (LongCat free, high effort), spawned by the root
+for this one pass. I wrote neither the patch, the state document, the correction
+proposal, the reviewer probe nor any attempt-5 evidence. I ran no acceptance row.
+
+pinned node: /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node
+             v24.19.0
+
+HEAD at review start: 8d4fa54
+HEAD after a root commit landed mid-review: 768cc15 "Prepare bounded P3.4
+deadline correction decision". That commit only staged the already-existing
+untracked package (28 files, +2415). It changed none of the reviewed bytes:
+  scripts/v2/tauri-security.test.mjs  = fac8225f…  (unchanged, == b19e59f blob)
+  02-patch.diff sha256                = fc53136c6506d6e08029d0c0d154639d64e77d22227fcb2c755ea3811eee7f4e (unchanged)
+  P3.4-PRE-RUNTIME-CORRECTION.md      = 140 newlines (unchanged)
+working tree clean at 768cc15; nothing staged/committed/pushed by this review.
+
+## writes made by this review — the complete list
+
+  new       docs/v2/state/reviews/P3.4-correction-final.md
+  new       docs/v2/evidence/P3.4/attempt-5/correction-final-review/**
+  scratch   build/p34-correction-final-ir/**   (gitignored, .gitignore:55 build/)
+
+Nothing else was written. No source file, card, dispatch, checkpoint, contract,
+threshold, tool or author artifact was edited. No historical verdict was
+rewritten. The patch was applied only to ignored scratch copies.
+
+## hard constraints honoured
+
+No app, build, server, database, model runtime, audio, microphone, input,
+display, pactl, download, install or network. Port 7717 was never contacted and
+the live data folder was never opened. The only processes spawned were local
+node/prettier/eslint runs and the reviewer probe's own two local `node -e`
+sleepers. Commands were bounded.
+
+## what this review gates
+
+The root will not put the §5 owner decision until the package is CLEAR. This is
+the fresh independent review `NEXT-SESSION.md` / the ORCHESTRATION-LOG record as
+still due over the corrected state document and the preparation pass. It does
+not itself grant any authority; it only judges.

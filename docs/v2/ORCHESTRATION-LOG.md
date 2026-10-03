@@ -2446,3 +2446,15 @@ Fresh reviewer 4d5f0ebb-6c7d-4fae-9791-4da56160677c (LongCat free, high) confirm
 running with callback, isolated report/evidence writes only. Final patch/proofs,
 80-case port and output fidelity await independent verdict before owner decision.
 No acceptance rows or runtime actions; authentication route choice remains pending.
+
+### 2026-10-03 — bounded correction package technically confirmed
+
+Final reviewer 4d5f0ebb archived successfully. Independently confirmed patch,
+real-path format, 80 port/adapter +73 model cases, non-vacuous deadline/own-pid
+proof and output cleanup. Historical CHANGES REQUESTED verdict remains intact;
+root applied its four documentation-only remedies and wrote coordinator addendum.
+Prepared patch +44/-20 unchanged, real source identical to b19e59f. Scoped eslint
+passes; text-only review directory has no applicable ESLint targets (combined
+invocation exit 2, not a test failure). Owner-only pre-runtime exception ready.
+No acceptance row run; no sixth attempt. Authentication route question pending.
+No active workers or leases; independent P3.5 awaits installation authentication.

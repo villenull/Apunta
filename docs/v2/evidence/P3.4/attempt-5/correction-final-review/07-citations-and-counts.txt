@@ -1,0 +1,70 @@
+# 07 — bounded findings: counts, citations and one evidence reasoning error
+
+These are documentation-accuracy findings. None touches the patch bytes, the
+model port, the pid scope, the proofs or the acceptance status. The technical
+package is independently confirmed sound.
+
+## F1 (owner-facing) — the diffstat is +44/−20, not +43/−20
+
+  P3.4-PRE-RUNTIME-CORRECTION.md:41  "(`02-patch.diff`, 4 hunks, +43/−20, one file)"
+  correction-proposal/README.md:39   "4 hunks, `+43/−20`, one file"
+  package evidence 06-scope-and-lint.txt: "+44 / -20 lines, 4 hunks, one file"
+
+  Independent: `git apply --stat 02-patch.diff` -> 44 insertions(+), 20 deletions(-);
+  `diff -u`/patch arithmetic: shipped 2446 -> patched 2470 (net +24 = 44-20); each
+  hunk's old/new counts sum to 44 added / 20 removed. Cause: the format-only wrap
+  (folded in after the reviewer counted) split one added line into two, so the
+  reviewer's historical +43/−20 is now one low. Do NOT edit the historical review.
+  Remedy: change "+43/−20" to "+44/−20" in the state document §2 and in
+  correction-proposal/README.md.
+
+## F2 (owner-facing) — 141 logical lines against a stated <=140 line cap
+
+  NEXT-SESSION.md:41 / ORCHESTRATION-LOG:2417: "P3.4-PRE-RUNTIME-CORRECTION.md
+  <=140lines".
+  Independent: wc -l = 140 newlines, but the file does NOT end with a newline, so
+  splitlines = 141, `awk END{print NR}` = 141, the Read tool shows 141 lines, and
+  `git show --stat 768cc15` reports 141 insertions for the file.
+  final-preparation/03 and 04 claim "140 lines". Basis-dependent: 140 by `wc -l`,
+  141 by content lines. Remedy: make the file unambiguously <=140 content lines
+  (trim one line and/or terminate the last line), or state the basis. Low severity,
+  but it is the owner-facing document and the cap is explicit.
+
+## F3 (evidence) — "112 chars" is actually 110, and the mechanism is misstated
+
+  P3.4-PRE-RUNTIME-CORRECTION.md:87  "the patched line was 112 chars"
+  07-review-response.txt:16          "was 112 chars, over the repo's printWidth 110"
+  (reviewer's historical report repeats 112 — leave it.)
+  Independent: the pre-wrap single-line `classify:` is 110 chars, not 112. It is
+  exactly at printWidth 110, not over it; prettier still breaks this
+  arrow-with-conditional-body at the limit (pre-wrap prettier exit 1, patched
+  exit 0). The wrap is genuinely required — only the number/mechanism is wrong.
+  Remedy: say "110 chars (at the limit; prettier still requires the wrap)".
+
+## F4 (evidence) — the util.format supporting argument is false
+
+  final-preparation/01-probe-fidelity.txt:36-37 claims format('%s and %d') returns
+  "-> and NaN" and that the file has no `%` (grep -c '%' -> 0).
+  Independent: with no extra args format returns the string unchanged; and the
+  after file has exactly one `%`, in the pass's own added comment. The conclusion
+  (format(s)===s for every printed string, output unchanged) is TRUE and confirmed
+  by the replay. Remedy: correct or drop the two sentences; keep the replay proof.
+
+## F5 (already disclosed, note) — counting bases differ
+
+  state document §3 "31 other harness functions byte-identical" vs the reviewer's
+  "76 of 79 identical, 3 changed"; and the package's "24 uppercase constants" vs
+  my 28 `^const [A-Z]`. Substantive claims (only the three seam functions change;
+  no constant changes) hold on every basis. The reviewer already called this
+  immaterial; the root left it deliberately. No action required.
+
+## F6 (minor, note) — one line citation is off
+
+  state document §1 attaches `await sleep(250)` to `:1748`; the function starts at
+  :1748, the sleep is at :1754, and the Date.now() deadline at :1749. Cosmetic.
+
+## confirmed-good citations (spot-checked on the b19e59f blob)
+
+  :1803 runFlowGuarded; :1807 its close; :1712 the `${two.reason}; ${clicked.reason}`
+  prefix; :2112 the 30_000 label wait; :2123 / :2151 the createTargetDeadline calls;
+  :2194 the post-landing waitForFact. All accurate.

@@ -25,7 +25,7 @@ const { MARKER_PATH, createBatchReader, frameFrom, DEADLINE_EXPIRED } = patched;
 let failures = 0;
 // The repo's eslint allows console.warn/error only, and this durable file lives
 // in docs/, so every line below is printed with util.format + stdout.write.
-// Exactness: no `%` appears anywhere in this file, so format(s) === s for every
+// Exactness: no printed string contains a format placeholder, so format(s) === s for every
 // string printed here and the emitted bytes are unchanged. `say` keeps its
 // undefined return (a block body, not emit's boolean).
 const emit = (...args) => {

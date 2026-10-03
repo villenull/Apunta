@@ -32,11 +32,10 @@ newline.
   `const say = (s) => { emit(s); };`, so it still returns `undefined`; it does not return
   `emit`'s boolean, which `process.stdout.write` would otherwise hand back. Nothing reads
   `say`'s value, so getting this right cost nothing.
-- **`format` cannot mangle these strings.** `util.format` interprets `%s` / `%d` / `%j` even
-  with no extra arguments — checked directly: `format('%s and %d')` returns `"-> and NaN"`.
-  This file contains **no `%` character at all** (`grep -c '%'` → 0), so `format(s) === s`
-  for every string printed. That is the static half of the proof; the replay is the
-  empirical half.
+- **Formatting equivalence.** With no additional arguments, `format('%s and %d')`
+  returns the unchanged string. The file contains one `%` in a comment, so the
+  earlier zero-character claim was wrong. No printed string contains a format
+  placeholder; unchanged print arguments and the replay establish fidelity.
 - **Control flow** is untouched: no statement added, removed, reordered or re-scoped.
   Only the callee of each print changed.
 

@@ -1,0 +1,51 @@
+# 01 — the shipped source is untouched; the patch applies and is exactly as claimed
+
+pinned node v24.19.0
+
+## 1. the real source is still b19e59f (PASS)
+
+  $ git show b19e59f:scripts/v2/tauri-security.test.mjs | sha256sum
+  fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672  -
+  $ sha256sum scripts/v2/tauri-security.test.mjs
+  fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672  scripts/v2/tauri-security.test.mjs
+  $ git diff --stat b19e59f HEAD -- scripts/v2/tauri-security.test.mjs   -> empty
+  $ git diff --stat -- scripts/v2/tauri-security.test.mjs                -> empty
+  $ git status --porcelain                                               -> empty (clean at 768cc15)
+
+## 2. apply the committed patch to a FRESH copy of the b19e59f blob (PASS)
+
+  $ git show b19e59f:scripts/v2/tauri-security.test.mjs > build/p34-correction-final-ir/shipped.mjs
+  $ cp shipped.mjs patched.mjs
+  $ patch -p1 build/p34-correction-final-ir/patched.mjs < 02-patch.diff
+  patching file build/p34-correction-final-ir/patched.mjs
+  patch exit: 0
+  $ sha256sum patched.mjs
+  865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e
+  $ node --check patched.mjs
+  node --check exit: 0
+
+  865ccab3… is the hash 03-patch-replay.txt / 07-review-response.txt / README claim.
+
+## 3. the diff shape (PASS on hunks; the stated count is one line low — see 07)
+
+  $ git apply --stat 02-patch.diff
+   scripts/v2/tauri-security.test.mjs |   64 +++++++++++++++++++++++++-----------
+   1 file changed, 44 insertions(+), 20 deletions(-)
+  $ grep -c '^@@' 02-patch.diff
+  4
+  line counts:  shipped.mjs 2446  ->  patched.mjs 2470   (net +24 = 44-20)
+
+  hunks:
+    @@ -1744,15 +1744,29 @@   waitForLabel rewrite + shared-deadline call sites
+    @@ -1802,7  +1816,12 @@   runFlowGuarded deadline-state kill
+    @@ -2109,22 +2128,26 @@   patient deadline before discovery
+    @@ -2137,22 +2160,23 @@   note deadline before discovery
+
+  A `diff -u shipped patched` reproduces exactly the same four hunks and no
+  others; the applied result hash matches the package's claimed 865ccab3…. It is
+  exactly the four hunks the owner is asked to approve.
+
+  NOTE: the state document §2 and correction-proposal/README.md say "+43/−20";
+  git diffstat and the package's own 06-scope-and-lint.txt say "+44/−20". The
+  reviewer's historical report retains the pre-wrap "+43/−20". Finding F1 in
+  state/reviews/P3.4-correction-final.md.

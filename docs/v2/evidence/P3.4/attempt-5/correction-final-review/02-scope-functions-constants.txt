@@ -1,0 +1,54 @@
+# 02 — scope: exactly three seam functions change; nothing else does
+
+pinned node v24.19.0. Independent brace-matching extraction, not the author's
+counting basis.
+
+## 1. function-level diff (PASS)
+
+  top-level functions: shipped 79, patched 79
+  changed:  ['waitForLabel', 'runFlowGuarded', 'assertInjectedNoteInert']
+  added:    none
+  lost:     none
+  byte-identical: 76
+  tagForLabel (O1, the label-uniqueness function): BYTE-IDENTICAL
+
+  (A naive parser that slices to the next `function` line wrongly flags
+  tagForLabel because waitForLabel's JSDoc follows it; brace-matching shows the
+  body is unchanged. This is why the package's "31 other harness functions" is a
+  different basis from the reviewer's "76 of 79" — see 07 F5.)
+
+## 2. constants, exports, kill scope (PASS)
+
+  uppercase `^const [A-Z]` constants: 28 | changed: none | added/lost: none
+    MARKER_PATH GATE_STRING RULE_B_BASE_COMMIT RULE_B_PATHS RULE_B_SKIPPED_DIRS
+    RULE_6_DIRECTIVES BATCH_SIZE RECT_FIELDS RECT_KEY MAX_K TARGET_BUDGET_MS
+    READBACK_TOLERANCE_PX WITNESS_TOLERANCE_PX CLICK_N_TOLERANCE_PX
+    IPC_PROBE_COMMAND ACL_DENIAL MIN_VIEWPORT_W MIN_VIEWPORT_H OBSERVATION_POLL_MS
+    DEADLINE_EXPIRED POINTER CLICK VIEWPORT CASCADE_ROWS PROBE_SENTINEL
+    PROBE_LITERAL PATIENT_LABEL NOTE_LABEL
+  export block content: IDENTICAL (line number shifts only)
+  killActiveCommands: BYTE-IDENTICAL
+    async function killActiveCommands() {
+      for (const child of [...activeCommands]) {
+        try {
+          if (child.exitCode === null && child.signalCode === null) process.kill(child.pid, 'SIGKILL');
+        } catch { /* already gone */ }
+      }
+      activeCommands.clear();
+    }
+  -> own tracked pids only, by pid; never a foreign process.
+
+## 3. budgets, timers, retries (PASS — none widened, none added)
+
+  TARGET_BUDGET_MS = 30_000 unchanged (no timeout widened).
+  createTargetDeadline: no reset, no extend (at/start/budgetMs/remaining/expired only).
+  waitForLabel now takes (deadline, clock, schedule) and reuses the existing
+  pollObservation at the real 250 ms OBSERVATION_POLL_MS step; no Date.now()
+  budget, no private timer, no new helper.
+  The two private `30_000` label budgets are gone from the (d) handler; the
+  remaining `30_000` literals are pre-existing unrelated waits:
+    :1874 waitForOwnership(30_000,'V2')
+    :2042/:2063/:2088 gate first-fact waits
+    :2218 post-landing waitForFact (shipped :2194) — disclosed, unchanged, out of scope
+  `pkill` appears 5 times, all in comments; zero code uses.
+  no attempt 6, no counter reset, no retry, no runtime reference in the patch.
