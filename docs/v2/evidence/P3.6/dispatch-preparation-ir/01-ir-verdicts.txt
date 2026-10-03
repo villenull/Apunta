@@ -1,0 +1,38 @@
+# The seven P3.6 instruction reviews — verdicts re-derived, 2026-10-03
+# Source: docs/v2/state/reviews/P3.6-ir.md … P3.6-ir7.md, verdict lines read.
+# The dispatch-preparation brief (P3.6-dispatch-preparation.md:4) claims
+# "all CLEAR". That is false. Every round returned DEFECT; the card was
+# repaired after each round and the current card text reflects the repairs.
+#
+# | review | verdict (first verdict line) |
+# |---|---|
+# | P3.6-ir.md   | DEFECT (dispatch absent) / UNKNOWN (IR-01..IR-10) |
+# | P3.6-ir2.md  | DEFECT (4 new findings, all settleable now) |
+# | P3.6-ir3.md  | DEFECT — 7 findings, all settleable now |
+# | P3.6-ir4.md  | DEFECT — 2 findings, both settleable now |
+# | P3.6-ir5.md  | DEFECT — 1 finding, narrow and settleable now |
+# | P3.6-ir6.md  | DEFECT — 1 finding, D11 |
+# | P3.6-ir7.md  | DEFECT — 8 CLEAR / 2 DEFECT (D12, D13) / 1 UNKNOWN |
+#
+# The two findings open at IR7 are settled IN THE CURRENT CARD TEXT:
+# - D11 (identity counts): the current V0/V1/V3/V4 cells all use the
+#   `for f in …; do if [ -e "$f" ]; then C=$((C+1)); fi; done && test "$C" -eq 1`
+#   loop form, not the broken `$(ls … \| wc -l)` pipeline. Verified by reading
+#   docs/v2/cards/P3.6.md:400-404.
+# - D12 (V0 five-state exit list): the current V0 cell now reads
+#   "**1** on zero with the count at **0** rather than 1 — which includes the case
+#   where only the production identity is present … so the count stays **0** and
+#   the row exits **1**" (P3.6.md:400). The false "**0**" is gone.
+# - D13 ({{BASE}} substitution claim): the current V3 cell now reads
+#   "where `<base>` is the literal hash on this dispatch's `- Base commit:`
+#   header line, read and written down by hand in S1 and **never the token
+#   `{{BASE}}`**" and "**This row does not rely on the dispatch generator
+#   substituting the token.**" (P3.6.md:403). The false sentence is gone.
+#
+# Also re-derived: P3.6-security-repin-ir.md verdict is **CLEAR** (the brief's
+# claim of CLEAR for the re-pin is accurate). P3.6-EOD-readiness.md verdict is
+# **BLOCKED — three named conditions** (accurate as cited).
+#
+# Correct premise for the brief: seven IRs exist; every one returned DEFECT at
+# the time; every finding was settled by card repair; the card as it stands is
+# the post-repair text. "All CLEAR" must not propagate into any dispatch prose.

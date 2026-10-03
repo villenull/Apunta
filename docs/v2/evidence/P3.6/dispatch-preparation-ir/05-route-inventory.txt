@@ -1,0 +1,28 @@
+# The brief's §4 fact routes — re-derived from server/src/routes/*.ts, 2026-10-03
+# Every route the brief's flow table names is real. Paths and methods verified
+# by grep over the route files; none is invented.
+#
+# | brief row | route | source |
+# |---|---|---|
+# | 1 | GET /api/formats | formats.ts:30 |
+# | 1 | GET /api/formats/:id | formats.ts:68 |
+# | 2 | POST /api/transcribe (multipart) | transcribe.ts:232 (receiveUpload; fields resolved by resolveTarget: patient_id, format_id, title?, typed_notes?) |
+# | 2 | GET /api/patients/:id/notes | notes.ts:36 |
+# | 3 | GET /api/notes/:id | notes.ts:67 |
+# | 4 | GET /api/notes/:id/chat | chat.ts:89 (POST at chat.ts:95) |
+# | 5 | POST /api/notes/:id/publish | notes.ts:106 |
+# | 6 | GET /api/patients | patients.ts:32 (POST at :37) |
+# | 7 | GET /api/patients/:id/plan | plans.ts:83 |
+# | 7 | GET /api/plans/:id/export | plans.ts:246 |
+# | 7 | POST /api/plans/:id/goals | plans.ts:263 |
+# | 7 | POST /api/plans/:id/activate | plans.ts:206 |
+# | 8 | GET /api/patients/:id/prep | prep.ts:48 (POST /save at prep.ts:133) |
+# | 9 | GET /api/patients/:id/brainstorm | brainstorm.ts:127 (POST at :134) |
+# | 10 | GET /api/settings | settings.ts:60 (PUT at :75) |
+# | 11 | GET /api/backup | backup.ts:49 |
+# | 11 | POST /api/backup | backup.ts:60 |
+# | 11 | POST /api/backup/restore | backup.ts:103 |
+# | 11 | POST /api/backup/verified | backup.ts:144 (POST, not GET — the brief does not name a method here, so nothing to correct) |
+#
+# The brief's 05-api-surface.txt matches this inventory. No route in the brief
+# is invented; no GET :id endpoint is missing.

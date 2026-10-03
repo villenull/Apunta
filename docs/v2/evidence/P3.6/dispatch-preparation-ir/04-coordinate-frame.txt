@@ -1,0 +1,65 @@
+# Coordinates without the observation hook — the brief's §3c/§7-item-2 treatment
+# is inadequate. Re-derived from the sibling harnesses and the host.
+#
+## 1. The hook is genuinely absent (the brief's premise here is correct)
+# web/src/main.tsx:401 — `if (import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1')
+# { installObservationHook(); }` — a Vite build-time substitution. The producer
+# (scripts/v2/package-linux-resources.sh:104) sets no VITE_*, so V0's bundle is
+# unflagged and the minifier drops the hook block and its marker strings
+# (/api/p3.4-observe at :40, /p3.5-marker at :163, both inside the same gated
+# block per the comment at :24-27). Confirmed: the brief's 04-observation-
+# channel-absent.txt is accurate.
+#
+## 2. The hole the brief does not name: where click coordinates come from
+# The brief's §4 table says "Actuation (xdotool, in the app window)" for every
+# flow but never says where the coordinates come from. P3.4's and P3.5's
+# harnesses read element rectangles from the hook's poll. Without the hook the
+# harness has no machine-readable rectangles and no page pointer facts
+# (ptrCX/ptrY). Supported sources, both consistent with the card:
+#  (a) Screenshot manual target grounding — the card requires a screenshot per
+#      flow anyway; the implementer grounds each flow's targets on those
+#      screenshots once and records them in evidence. This is the primary
+#      channel.
+#  (b) Native UI measurement asserting the frame→client property — xprop is
+#      installed (/usr/bin/xprop; _NET_FRAME_EXTENTS is readable). xwininfo,
+#      xwd, scrot, gnome-screenshot are absent.
+# The harness must not guess coordinates and assert green.
+#
+## 3. "GDK_SCALE=1 … so the calibration is not needed" is wrong twice over
+# (a) Scale ≠ translation. GDK_SCALE=1 normalises the CSS/physical scale; it
+#     does nothing to the window-frame → client-area (decoration) offset,
+#     which exists whenever a window manager is present — including the card's
+#     own fallback branch, which launches the app in the inherited desktop
+#     session (V3 cell: "the inherited desktop session when it is absent"),
+#     and this desktop exports GDK_SCALE=2 (P3.5's measured leak,
+#     V3-capture-spoken.md:168,209).
+# (b) The sibling design does not treat GDK_SCALE=1 as removing measurement.
+#     tauri-security.test.mjs:465-468, verbatim: "It never masks a
+#     measurement or an assertion — the AM-188 calibration still solves the
+#     real per-axis scale from two measured points (k may be 1, 1.5 or 2)".
+#     P3.5's harness (tauri-audio.test.mjs:803-818) states the correct shape:
+#     "With no window manager under `xvfb-run` there is nothing to draw a
+#     titlebar, so a client rectangle and a window-relative coordinate are the
+#     same frame — and this check is what makes that an asserted property
+#     rather than an assumption … no titlebar height is invented here".
+#     rectInsideWindow() asserts the property on every click.
+#
+## 4. The brief's child-env table omits GDK_DPI_SCALE
+# tauri-audio.test.mjs:681-682 sets both GDK_SCALE: '1' and GDK_DPI_SCALE: '1'
+# (P3.5's measured fix). The brief's §3 table lists only GDK_SCALE. Copy the
+# pair.
+#
+## Corrected treatment
+# 1. Child env sets GDK_SCALE=1 and GDK_DPI_SCALE=1 (both), XDG_BACKEND/
+#    GDK_BACKEND x11, WAYLAND_DISPLAY unset, XDG_* and HOME under the run
+#    folder, cwd '/' — the sibling block, complete.
+# 2. The no-decoration property is ASSERTED by a window-geometry check in the
+#    same rectInsideWindow shape, never assumed; a geometry fault stops the
+#    row with both numbers printed.
+# 3. Click coordinates come from per-flow screenshot grounding, recorded in
+#    evidence per flow.
+# 4. AM-188's two-point calibration may be copied in as a coordinate-mapping
+#    helper only — never an assertion, never a threshold, never a substitute
+#    for the page/API fact — and only after (2) is in place. The brief's
+#    reactive "if the implementer finds a two-axis mismatch" framing is replaced
+#    by this up-front design.

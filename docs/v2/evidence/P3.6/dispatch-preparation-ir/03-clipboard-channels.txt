@@ -1,0 +1,43 @@
+# The "clipboard write is not assertable without injection" assumption is TOO STRONG
+# Stop 5 forbids injecting into the app; it does not forbid host-side reads or
+# reading the app's own UI. Two supported channels exist.
+#
+## (a) Native clipboard UI — assertable today
+# web/src/lib/clipboard.ts — copyText() calls navigator.clipboard.writeText
+# and swallows errors (the brief's description of the mechanism is accurate).
+# web/src/components/NoteView.tsx:
+#   :105  const [copied, setCopied] = useState(false);
+#   :503  async function handleCopy() … await copyText(text);
+#   :674-678  {copied ? <CheckIcon …/> : <CopyIcon …/>}
+#             {copied ? t('note.copied') : t('note.copy')}
+# The Copy button enters a visible "Copied" state after the click. That state
+# is the app's own native clipboard-UI feedback and is assertable through the
+# per-flow screenshot the card already requires (V3 cell: "Screenshots for all
+# ten are written under docs/v2/evidence/P3.6/"), with manual target grounding
+# — the same grounding the coordinate correction (04-coordinate-frame.txt)
+# requires for click targets. The screenshot is the evidence; the grounded
+# "Copied" state is the recorded fact.
+#
+## (b) Host clipboard CLI read — permitted in principle, metadata-only today
+# The card forbids injection into the app, not the harness reading the host
+# clipboard. But no X11 clipboard CLI exists on this box:
+#   xclip      absent
+#   xsel       absent
+#   wl-copy    /usr/bin/wl-copy   (Wayland only)
+#   wl-paste   /usr/bin/wl-paste  (Wayland only)
+# The app is pinned to X11 (GDK_BACKEND 'x11', WAYLAND_DISPLAY unset — the
+# child-env block the brief copies from tauri-security.test.mjs:443-470), so
+# the Wayland tools cannot reach the clipboard the app writes. A content read
+# is therefore not currently possible; at most a metadata-level statement could
+# be attempted, and even that has no tool today.
+#
+## Corrected treatment for §4 row 5 / §7 item 3
+# 1. Actuate the copy click (xdotool, grounded target).
+# 2. Assert the app's "Copied" UI state via the per-flow screenshot, grounded
+#    and recorded in evidence.
+# 3. Record the host-clipboard CONTENT as not-read, with the reason (no X11
+#    clipboard CLI installed; wl-copy/wl-paste are Wayland-only against an
+#    X11-pinned app).
+# The brief's "recorded as not asserted" becomes the documented fallback for
+# the content half, not the plan — and §7 item 3's dispatch sentence should
+# state the assertable channel rather than pre-concluding "not asserted".

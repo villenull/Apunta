@@ -1,0 +1,61 @@
+# The card's own cells on the four contested points — read verbatim, 2026-10-03
+# Source: docs/v2/cards/P3.6.md (577 lines).
+#
+## 1. The V0 skip rule is already in the card (brief §7 item 1 is redundant)
+# P3.6.md:400, V0 expected cell, verbatim: "It is this card's re-bundle, and
+# its trigger is Rule B and nothing else — the producer runs when the AppImage
+# is stale by that rule and not because a previous attempt left one behind; a
+# re-run that finds every path in Rule B's set unchanged since the recorded
+# anchor may skip this row and say so in the resume anchor, and skipping it
+# wrongly is how a stale binary gets launched."
+# On attempt 1 no anchor exists, so V0/V1 run unconditionally by construction.
+# The brief's own §5 states the same anchor condition. No dispatch sentence is
+# needed; and per COORDINATOR.md §6 a dispatch sentence cannot override the
+# card's row anyway.
+#
+## 2. The V3 containment assertion names exactly TWO literals (brief §7's
+#    three-literal ask exceeds the card)
+# P3.6.md:403, V3 expected cell, verbatim: "the observation channel is gone
+# when the row ends — after the child is stopped by pid, a second read of the
+# accumulated stderr shows no new marker line, and exactly zero occurrences of
+# P3.4's marker path and gate string are in `web/dist/assets/*.js`".
+# The two literals are /api/p3.4-observe and VITE_APUNTA_TEST_IDENTITY. The
+# brief asks for a dispatch sentence "requiring zero occurrences of all three
+# literals" (adding /p3.5-marker). That is a new acceptance criterion:
+# COORDINATOR.md §6 — "You may not: change any … acceptance row". A dispatch
+# sentence cannot override the card. The brief's own argument (main.tsx:24-27
+# — /p3.5-marker sits inside the same gated block) means the two-literal pass
+# already implies the block is gone; the third literal adds no protection.
+# Corrected: the card's two-literal assertion stands unchanged as the
+# acceptance; the harness (in May edit) may record the third literal's absence
+# as an observation in evidence, whatever the result.
+#
+## 3. The P3.4 V3 invariant is a separate, existing whole-gate protection
+# P3.6.md:103 (May edit) and :129-141 (Must not edit): the four-word for-loop
+# (invoke_handler, withGlobalTauri": true, VITE_APUNTA_TEST_IDENTITY,
+# p3.4-observe) over four paths (src-tauri/src among them) plus
+# `test ! -e src-tauri/capabilities`, pinned to P3.4 at 04d071e, a difference
+# at dispatch time being Stop condition 8. S1's anchor verifies it before any
+# row runs. It is a Must-not-edit invariant — not a new acceptance — and the
+# brief correctly carries it (§2). The distinction the brief must keep: the
+# invariant protects P3.4's row from P3.6's edits; the V3 containment
+# assertion is this card's own acceptance for the run. Neither is extended by
+# dispatch text.
+#
+## 4. The card says "ten flows" and lists eleven names — keep all eleven
+# P3.6.md:403, verbatim: "All ten flows complete, by name, in order:
+# onboarding, capture (fixture), draft, refine, publish and copy, patient
+# list, plan, briefing, brainstorm, settings, backup."
+# Count the names: 11. The card's own count word ("ten", also at :248-249 and
+# in Fixed decisions) is an off-by-one inside the card. The brief's §4 table
+# keeps all eleven rows — correct, no reducing — and its note "rows 6–11 are
+# the states the first five screens hand off to" is the right reading. The
+# brief should name the discrepancy explicitly (the card says ten, lists
+# eleven; the implementer drives and records all eleven by name) rather than
+# silently propagating "ten" into the resume anchor's flow list.
+#
+## 5. Row order — the brief matches the card
+# P3.6.md:311 (S3): "V0, then V3, then V1, then V4, in that order and never
+# concurrently … V5 is outside this ordering entirely … V2 is free" (V2's
+# freedom is argued in the V2 cell, P3.6.md:402). The brief's §5 states the
+# same order. No deviation, no root grant needed.

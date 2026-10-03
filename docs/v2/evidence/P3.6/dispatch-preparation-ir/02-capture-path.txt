@@ -1,0 +1,56 @@
+# The "cannot use the mic on a headless Xvfb display" assumption is DISPROVEN
+# Re-derived from P3.5's approved evidence (AM-197) and the committed tree.
+#
+## 1. P3.5 attempt-4 V3 captured real audio through a virtual source on Xvfb
+# docs/v2/evidence/P3.5/attempt-4/runtime/07-V3.txt:
+#   :46  PASS V3 a capture stream is present on apunta_p35_mic
+#   :47  PASS V3 no capture stream on the owner's real microphone
+#   :51  PASS V3 the app POSTed the WAV to /api/transcribe
+#   :52  stderr line: {"method":"POST","url":"/api/transcribe", …}
+# The app's own recorder (getUserMedia/MediaRecorder, web/src/lib/recorder.ts)
+# captured the fixture played into virtual sink `apunta_p35` (paplay) from
+# virtual source `apunta_p35_mic` (pactl default-source, read back before
+# launch), and the app itself POSTed the recording — the real UI path
+# (record-start → record-stop → create draft), driven by xdotool clicks.
+# AM-197 (docs/v2/state/AMENDMENTS.md:433): P3.5 APPROVED. The earlier
+# V3-capture-spoken.md BLOCKED result (missing autoaudiosrc) was attempt 1;
+# AM-190's repair (bundleMediaFramework + host gst-plugins-base/good) closed it.
+#
+## 2. The repair is already in the committed tree — P3.6 needs no edit for it
+# - src-tauri/tauri.conf.json already carries
+#   "bundle": { "linux": { "appimage": { "bundleMediaFramework": true } } }
+#   (AM-190's owner-approved change, committed). P3.6's V0 producer run
+#   (bash scripts/v2/package-linux-resources.sh, Must-not-edit, run verbatim)
+#   therefore bundles the GStreamer media framework into the AppImage.
+# - Host GStreamer is repaired: `gst-inspect-1.0 autoaudiosrc` → "Auto audio
+#   source" present; `gst-inspect-1.0 appsink` → "AppSink" present (read
+#   2026-10-03). P3.5 attempt-1's "GStreamer element appsink not found /
+#   no device was found amongst 0 devices" cannot recur.
+#
+## 3. Under APUNTA_FAKE_AI=1 any non-empty recording produces a note
+# server/src/ai/fake.ts:519-560 — FakeSttProvider.transcribe yields a fixed
+# canned transcript regardless of audio content ("record → transcribe → draft
+# produces a real note end to end on a machine with no AI tooling at all").
+# So the brief's row-2 fact (GET /api/patients/:id/notes gains exactly one
+# note with non-empty content) is reachable through the real UI capture path.
+#
+## 4. Consequence for the brief's §4 row 2
+# The card's completion definition (Fixed decisions): "A flow completes when
+# the app reached the next screen and the harness read the fact proving it."
+# The brief's POST /api/transcribe bypass never reaches a screen through the
+# UI — it is an API action that self-proves the outcome, which the card does
+# not permit as a substitute for the flow. The card names the flow "capture
+# (fixture)": the fixture is the audio source, not a licence to bypass the
+# capture screen. Correct actuation: set up the virtual source/sink (P3.5's
+# mechanism — the new harness file is in May edit and free to adopt it),
+# click record-start/record-stop via xdotool, let the app POST the WAV itself,
+# read the fact from the API. The brief's own §7 ("the implementer reads P3.5's
+# final recorded shape and drives capture the way §4 row 2 says") contradicts
+# §4 row 2 as written; the correction aligns them.
+#
+## 5. Fixture
+# e2e/fixtures/audio/dictation-10s.wav exists (a tone burst train, not speech —
+# fine under fake STT). P3.5's proven fixture was audio-en/dictation-30s.wav
+# (Piper-generated speech, created by P3.5's V1 row). Either works; the
+# chosen file is copied into the run folder, never edited (e2e/** is
+# Must-not-edit). Playback is into the virtual sink only.
