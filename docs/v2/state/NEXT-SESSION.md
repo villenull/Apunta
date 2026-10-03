@@ -1,3 +1,9 @@
+## Latest P3.4 proposal checkpoint — 2026-10-03T02:25:00.646936+00:00
+
+Revision4 candidate812d93b proposal+AUTHOR repair4 report committed. Authorb9ad8e45 archived. Fresh independent reviewerd9a2c4db-f7da-4b5c-ad97-87a0dfe1f8e2 running, proposal-ir4/evidence-only. Source BEFORE anchor8783181; concurrentP3.5 offsetsnon-normative. Coordinator B1 pureevaluation confirmsattempt4identity. Ownerpackage notadopted/noattempt5authorized. WaitCLEAR thenconcretebatchedownerquestion.
+
+P3.5implementation2028c17e INPROGRESSattempt1, sole4featurewriter and owncheckpoint, exclusivebuildlease/ports7837+7839 untilreturn/cleanupverified. Do notstageinflightwork. S3.3a ownerquietmachinehold remains.
+
 ## Latest implementation dispatch — 2026-10-03T02:15:57.231162+00:00
 
 P3.5 IN PROGRESS attempt1 of3, base8783181, dispatch state/dispatch/P3.5.md.

@@ -8,8 +8,8 @@
   "baseCommit": "e46bad4",
   "attempt": 4,
   "status": "BLOCKED",
-  "lastCompletedStep": "Attempt 4 cleared the forwarding blocker (P3.8, AM-180) and cleared a second blocker nobody had found: the harness polled a FROZEN SNAPSHOT of the AppImage child's stderr, so every fact the page published after the first read was invisible. With both fixed, the channel works end to end and the card's substantive CSP claims are PROVEN in the shipped binary: (d)'s header half PASSES with all eight directives observed as really sent on a real text/html response over the app's own origin, and (e) PASSES with styleAttr/styleComputed agreeing, so style-src-attr 'unsafe-inline' is effective rather than a header string nobody checked. The per-response nonce is real - three runs, three different nonces. V1 PASS 12/12, V3 PASS, V4 PASS (2235 tests, clippy -D warnings, 55 cargo tests), V0 PASS. **V2 still FAILs: 13 PASS, 2 FAIL, 2 NOT RUN**, and both FAILs need a coordinator decision rather than an implementer's fix. (a) FAILS with the observed value tauri=undefined, tauriInternals=object - Tauri v2 injects __TAURI_INTERNALS__ into every webview and withGlobalTauri:false governs __TAURI__ alone, so (a) as written demands something the stack does not provide. (d)'s handler half FAILS because the synthetic click on the John Smith row does not land, and (b) and (c) are NOT RUN behind it. Attempt budget remains exhausted.",
-  "nextAllowedAction": "coordinator-decision",
+  "lastCompletedStep": "Revision4 owner proposal committed812d93b after B1-B3/D1-D6 repairs; author report self-check only. Coordinator branch reproduction confirms attempt4 output identity. Fresh independent proposal review running; no amendment adopted.",
+  "nextAllowedAction": "await-proposal-revision4-independent-review-before-owner-decision",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -82,7 +82,7 @@
     "<sandbox>/2026-10-02T23-11-43-686Z-078bd8cc (V2, port 7835)",
     "<sandbox>/2026-10-02T23-09-25-372Z-7099e32b (V2, port 7835 - where the frozen-snapshot defect was found)"
   ],
-  "updatedUtc": "2026-10-03T01:01:55.648409+00:00",
+  "updatedUtc": "2026-10-03T02:25:00.646936+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
   "reBundle": {
@@ -111,5 +111,6 @@
     "verified": "Both globals absent is actual V2(a) assertion; fixture insertion succeeded. __TAURI_INTERNALS__ exists by pinned stack construction. Native/window versus CSS viewport geometry mismatch remains hypothesis. No source/card/assertion amended, no rerun authorised.",
     "proposalWorker": "29ca4968-a273-45ca-8f7d-a0e59a37128d",
     "next": "Concrete owner assertion/hook/budget proposal, independent review, then owner decision."
-  }
+  },
+  "proposalReviewWorkerId": "d9a2c4db-f7da-4b5c-ad97-87a0dfe1f8e2"
 }
