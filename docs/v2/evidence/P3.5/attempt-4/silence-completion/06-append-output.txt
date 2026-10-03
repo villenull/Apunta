@@ -1,0 +1,6 @@
+== re-appended with ensure_ascii=True so the six pre-existing \u2014 escapes in untouched text stay byte-identical ==
+(the previous write was discarded from the untouched snapshot; the append itself is the same one, once)
+sha256 before: 2f61252cdfcbc5f5458f8cc401dcfc59b0f77dd71a225cbbdb32fc53d39f387b
+sideEffectsDone 14 -> 15 ; capture objects 9 -> 10
+sandboxRuns    9 -> 10
+attempt-4 capture records before: ['V3', 'V4-tone'] after: ['V3', 'V4-tone', 'V4-silence']

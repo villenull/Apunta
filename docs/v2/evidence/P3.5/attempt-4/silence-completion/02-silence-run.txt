@@ -1,0 +1,95 @@
+== AM-196 P3.5 silence completion, the single execution of proposal section 4 ==
+shell pid: 2877621  (own-pid cleanup reference)
+start utc: 2026-10-03T23:21:30Z
+cwd: /home/villenull/Projects/Apunta
+node: v24.19.0
+----- command -----
+( env -u APUNTA_DATA_DIR -u APUNTA_PORT -u APUNTA_NO_OPEN -u APUNTA_TEST_RUN_ID -u APUNTA_V2 -u APUNTA_CHECK_URL -u APUNTA_E2E_PORT node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-silence.env && . /tmp/apunta-v2-p3.5-v4-silence.env && export APUNTA_ALLOW_AUDIO_TEST=1 && node scripts/v2/tauri-audio.test.mjs silence )
+----- output -----
+  display: the inherited X display :99
+PASS V4-silence appimage: <repo>/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+  V4-silence audio: <sandbox>/audio-en/silence-10s.wav
+  V4-silence sha256: eeae5c4c90de536fe309bd6b1062c1493a80703d6e5ac97a3c51c98980220f78
+PASS V4-silence the virtual source is the default, read back: apunta_p35_mic
+  V4-silence previously default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+RECORD {"step":"V4-silence","attempt":4,"runId":"2026-10-03T23-21-30-917Z-a17f4bbf","dateUtc":"2026-10-03T23:21:34.001Z","prevDefault":"alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo","sinkId":"536870916","srcId":"536870917"}
+PASS V4-silence the app's own window is up
+  V4-silence window 1280x860 at 60,70
+  V4-silence the app reports 1280x860 physical on a 1400x1000 display at scale 1
+PASS V4-silence the app window is at scale 1
+PASS V4-silence the server answers with this run's id
+PASS V4-silence the patient was created through the API
+PASS click the onboarding Continue button (rectangle inside the window)
+PASS click the onboarding Continue button
+PASS V4-silence a note format exists for the capture screen
+PASS click home-action-note (rectangle inside the window)
+PASS click home-action-note
+PASS click home-search (rectangle inside the window)
+PASS click home-search
+PASS V4-silence the search text was typed
+PASS click the first result option (rectangle inside the window)
+PASS click the first result option
+PASS click record-start (rectangle inside the window)
+PASS click record-start
+PASS V4-silence the phase reached recording
+PASS V4-silence the phase marker moved through the starting state
+PASS V4-silence the record-timer advanced past 10s
+  V4-silence pactl list short source-outputs:
+    8929	8921	-	PipeWire	float32le 2ch 48000Hz
+    8949	8928	8947	PipeWire	float32le 1ch 48000Hz
+  V4-silence pactl list short sources:
+    60	alsa_output.pci-0000_03_00.1.hdmi-stereo-extra3.monitor	PipeWire	s32le 2ch 48000Hz	RUNNING
+    61	alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo	PipeWire	s16le 2ch 48000Hz	SUSPENDED
+    62	alsa_output.pci-0000_75_00.6.iec958-stereo.monitor	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+    63	alsa_input.pci-0000_75_00.6.analog-stereo	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+    8921	apunta_p35.monitor	PipeWire	float32le 2ch 48000Hz	IDLE
+    8928	apunta_p35_mic	PipeWire	float32le 2ch 48000Hz	RUNNING
+PASS V4-silence a capture stream is present on apunta_p35_mic
+PASS V4-silence no capture stream on the owner's real microphone
+  V4-silence capture streams on other sources, named and not the real microphone: ["8929\t8921\t-\tPipeWire\tfloat32le 2ch 48000Hz"]
+PASS click record-stop (rectangle inside the window)
+PASS click record-stop
+PASS V4-silence the app POSTed the WAV to /api/transcribe
+  V4-silence stderr line: Unreadable): {"level":30,"time":1791069710326,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3j","req":{"method":"POST","url":"/api/transcribe","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35390},"msg":"incoming request"}
+PASS V4-silence the app surfaced an error
+PASS V4-silence the error code is whisper_model_missing
+PASS V4-silence levelPeak stayed 0 for the whole recording
+  V4-silence precondition: GET /api/notes was -1 before and -1 after; with no model on disk no input can produce a note, so this is vacuous here and is not evidence
+  --- the app's stderr (last 25 lines) ---
+  apunta: ignoring an unknown outbound bridge type "_AiError"
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069709924,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3e","res":{"statusCode":500},"responseTime":1.2861370000009629,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710018,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3f","req":{"method":"GET","url":"/p3.5-marker?phase=record-stop&timer=00%3A11&level=0&levelPeak=0","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35356},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710018,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3g","req":{"method":"GET","url":"/api/p3.4-observe?rects=11&batch=0&epoch=21&i0_x=0&i0_y=0&i0_w=0&i0_h=0&i0_l=New+note+%C2%B7+Apunta&i0_t=TITLE&i0_d=&i1_x=412&i1_y=72&i1_w=456&i1_h=33&i1_l=New+note+for+John+Smith&i1_t=H2&i1_d=capture-heading&i2_x=412&i2_y=111&i2_w=260&i2_h=19&i2_l=Note+format&i2_t=LABEL&i2_d=&i3_x=0&i3_y=0&i3_w=0&i3_h=0&i3_l=Progress+note&i3_t=OPTION&i3_d=&i4_x=412&i4_y=207&i4_w=172&i4_h=20&i4_l=Start+with+a+recording&i4_t=STRONG&i4_d=&i5_x=425&i5_y=274&i5_w=430&i5_h=24&i5_l=Recording+session&i5_t=P&i5_d=record-stage-status&i6_x=425&i6_y=426&i6_w=430&i6_h=33&i6_l=00%3A11&i6_t=P&i6_d=record-timer&i7_x=425&i7_y=467&i7_w=131&i7_h=19&i7_l=Listening+for+words%E2%80%A6&i7_t=SPAN&i7_d=&i8_x=548&i8_y=511&i8_w=183&i8_h=39&i8_l=Stop+and+create+draft&i8_t=BUTTON&i8_d=record-stop&i9_x=459&i9_y=592&i9_w=363&i9_h=21&i9_l=Type+notes&i9_t=DIV&i9_d=&i10_x=459&i10_y=615&i10_w=363&i10_h=19&i10_l=Type+notes+before+or+while+recording%2C+or+use+typing+alone&i10_t=DIV&i10_d=","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35370},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710019,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3g","res":{"statusCode":404},"responseTime":0.4399059999996098,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710019,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3f","res":{"statusCode":200},"responseTime":1.2088780000012775,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710176,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3h","req":{"method":"POST","url":"/api/transcribe/preview","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35374},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710176,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3h","bytes":240044,"seconds":8,"msg":"preview transcription"}
+  apunta: ignoring an unknown outbound bridge type "_AiError"
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710177,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3h","res":{"statusCode":500},"responseTime":1.2644079999990936,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710326,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3i","req":{"method":"GET","url":"/api/p3.4-observe?href=http%3A%2F%2F127.0.0.1%3A7839%2Fcapture%2F01a10412-ace9-702d-962f-be634a7df068&title=New+note+%C2%B7+Apunta&tauri=undefined&tauriInternals=object&ipc=object&ipcInvoke=function&ipcProbe=rejected&ipcProbeMsg=Command+plugin%3Aevent%7Clisten+not+allowed+by+ACL&probe=undefined&scriptText=false&styleAttr=color-scheme%3A+dark%3B+--accent%3A+%232a9d8f%3B+--on-accent%3A+%23ffffff%3B+--accent-ink%3A+%23217e73%3B&styleComputed=dark&vpW=1280&vpH=860&ptrN=6&ptrCX=640&ptrCY=531&clickN=6&clickCX=640&clickCY=531&clickTag=BUTTON&clickTestId=record-stop&clickText=Stop+and+create+draft&attempt=","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35374},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710326,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3j","req":{"method":"POST","url":"/api/transcribe","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35390},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710328,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3i","res":{"statusCode":404},"responseTime":1.3712060000016209,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710330,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3j","bytes":360748,"seconds":11,"sampleRate":16000,"msg":"recording received"}
+  apunta: ignoring a bridge line (Unreadable): {"level":50,"time":1791069710330,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3j","code":"whisper_model_missing","detail":"no model file at the configured path (77 chars)","msg":"transcription failed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710331,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3j","res":{"statusCode":200},"responseTime":4.510505000000194,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710580,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3k","req":{"method":"GET","url":"/p3.5-marker?phase=record-done%2Bcapture-error&timer=&level=0&levelPeak=0","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35390},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710581,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3l","req":{"method":"GET","url":"/api/p3.4-observe?rects=12&batch=0&epoch=22&i0_x=0&i0_y=0&i0_w=0&i0_h=0&i0_l=New+note+%C2%B7+Apunta&i0_t=TITLE&i0_d=&i1_x=412&i1_y=72&i1_w=456&i1_h=33&i1_l=New+note+for+John+Smith&i1_t=H2&i1_d=capture-heading&i2_x=412&i2_y=111&i2_w=260&i2_h=19&i2_l=Note+format&i2_t=LABEL&i2_d=&i3_x=0&i3_y=0&i3_w=0&i3_h=0&i3_l=Progress+note&i3_t=OPTION&i3_d=&i4_x=412&i4_y=207&i4_w=172&i4_h=20&i4_l=Start+with+a+recording&i4_t=STRONG&i4_d=&i5_x=425&i5_y=274&i5_w=430&i5_h=24&i5_l=Recording+ready&i5_t=P&i5_d=&i6_x=425&i6_y=306&i6_w=430&i6_h=21&i6_l=00%3A11+recorded.+Nothing+has+left+this+Mac.&i6_t=P&i6_d=&i7_x=443&i7_y=347&i7_w=224&i7_h=39&i7_l=Create+draft+from+recording&i7_t=BUTTON&i7_d=record-retry&i8_x=680&i8_y=347&i8_w=157&i8_h=39&i8_l=Discard+recording&i8_t=BUTTON&i8_d=record-discard&i9_x=459&i9_y=428&i9_w=363&i9_h=21&i9_l=Type+notes&i9_t=DIV&i9_d=&i10_x=459&i10_y=451&i10_w=363&i10_h=19&i10_l=Type+notes+before+or+while+recording%2C+or+use+typing+alone&i10_t=DIV&i10_d=&i11_x=412&i11_y=699&i11_w=456&i11_h=39&i11_l=Create+draft&i11_t=BUTTON&i11_d=process-note","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":35374},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710582,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3l","res":{"statusCode":404},"responseTime":1.0403200000000652,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710583,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3k","res":{"statusCode":200},"responseTime":2.907560999999987,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710617,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3m","req":{"method":"POST","url":"/api/transcribe","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":51828},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710622,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3m","bytes":320078,"seconds":10,"sampleRate":16000,"msg":"recording received"}
+  apunta: ignoring a bridge line (Unreadable): {"level":50,"time":1791069710622,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3m","code":"whisper_model_missing","detail":"no model file at the configured path (77 chars)","msg":"transcription failed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710622,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3m","res":{"statusCode":200},"responseTime":4.9772699999994074,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791069710624,"pid":2878118,"hostname":"FBI-PC","reqId":"req-3n","req":{"method":"GET","url":"/api/notes","host":"127.0.0.1:7839","remoteAddress":"127.0.0.1","remotePort":51832},"msg":"incoming request"}
+  stopped the shell (pid 2878078) with SIGTERM
+PASS V4-silence nothing of this run is still listening on the port
+PASS V4-silence no server process from the run survives
+PASS V4-silence the original default source is restored
+PASS V4-silence both of this run's modules are unloaded
+PASS V4-silence the unrelated dummy is still alive
+PASS V4-silence ollama is still running
+  stopped the dummy (pid 2878074) with SIGTERM
+
+35/35 assertions passed
+exit_code: 0
+end utc: 2026-10-03T23:21:51Z

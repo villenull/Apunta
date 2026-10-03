@@ -1,0 +1,1 @@
+( env -u APUNTA_DATA_DIR -u APUNTA_PORT -u APUNTA_NO_OPEN -u APUNTA_TEST_RUN_ID -u APUNTA_V2 -u APUNTA_CHECK_URL -u APUNTA_E2E_PORT node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-silence.env && . /tmp/apunta-v2-p3.5-v4-silence.env && export APUNTA_ALLOW_AUDIO_TEST=1 && node scripts/v2/tauri-audio.test.mjs silence )

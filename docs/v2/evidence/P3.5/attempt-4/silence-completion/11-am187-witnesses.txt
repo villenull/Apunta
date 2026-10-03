@@ -1,0 +1,10 @@
+== AM-187 literal witnesses, run alongside V5 as the card requires; grep's exit recorded, not suppressed ==
+utc: 2026-10-03T23:23:06Z
+--- pactl list short sources | grep -c apunta_p35 ---
+0
+grep exit=1 (1 on a zero count, which is the pass)
+--- pactl list short sinks | grep -c apunta_p35 ---
+0
+grep exit=1 (1 on a zero count, which is the pass)
+--- the Expected cell's two literal commands, exactly as the cell words them ---
+--- the cell's own awk-based residue counts were printed by V5 above: sources 0, sinks 0, module-null-sink 0, module-remap-source 0 ---

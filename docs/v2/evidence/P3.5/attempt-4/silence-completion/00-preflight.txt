@@ -1,0 +1,66 @@
+== P3.5 AM-196 silence completion, PREFLIGHT ==
+utc: 2026-10-03T23:21:09Z
+== git ==
+HEAD: 4060909c4bbb1e1f48a587fad4463c58476388d4  short=4060909
+branch: main
+porcelain (empty = clean): []
+== pinned node ==
+v24.19.0
+/home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node
+== harness shipping bytes (must be 85fbb13d...) ==
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  scripts/v2/tauri-audio.test.mjs
+== approved AppImage from attempt-4 V2 ==
+ls: cannot access 'src-tauri/target/release/bundle/*.AppImage': No such file or directory
+== fixtures ==
+eeae5c4c90de536fe309bd6b1062c1493a80703d6e5ac97a3c51c98980220f78  /tmp/apunta-v2/2026-10-03T22-37-12-589Z-2b44c153/audio-en/silence-10s.wav
+79719c56b2ca0477cd0bde9647324efa4a60119d955e53b985ac599fdb5d0a5f  /tmp/apunta-v2/2026-10-03T22-37-12-589Z-2b44c153/audio-en/dictation-30s.wav
+== ports 7839 / 7837 ==
+port grep rc=1 (1 = none listening)
+== other native workload (AppImage / harness / Xvfb / paplay / sandbox server) ==
+ps grep rc=1 (1 = none)
+== default source ==
+alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+== residue: exact task names in sources/sinks ==
+sources residue: 0
+sinks residue: 0
+0
+== flagged scratch gone / web unflagged ==
+ls: cannot access 'build/p3.5-web': No such file or directory
+ls: cannot access 'build/linux-resources/web/dist': No such file or directory
+web/dist/assets/About-4nE69ox7.js:0
+web/dist/assets/api-CpirRXqe.js:0
+web/dist/assets/app-shared-DoDFBWmc.js:0
+web/dist/assets/formatDraft-mqUN-SEL.js:0
+web/dist/assets/HalaxyImport-CMTgZcRw.js:0
+web/dist/assets/Import-0Hhp3evQ.js:0
+web/dist/assets/index-C0E3SpVH.js:0
+web/dist/assets/Licenses-DeUESLEg.js:0
+web/dist/assets/OnboardingFormat-D0tjLzDt.js:0
+web/dist/assets/OnboardingPreview-Dm4texon.js:0
+web/dist/assets/rolldown-runtime-CbXtAM7H.js:0
+web/dist/assets/Settings-BupQfEev.js:0
+web/dist/assets/Setup-DbRYcas1.js:0
+web/dist/assets/speller-Dpgpt73Y.js:0
+web/dist/assets/useImportBatch-D561vSfj.js:0
+web/dist/assets/vendor-react-PeHSF_v7.js:0
+== silence env file currently (0 bytes expected, attempt-4 never started) ==
+-rw-r--r-- 1 villenull villenull 0 Oct  3 16:40 /tmp/apunta-v2-p3.5-v4-silence.env
+== no run folder newer than the V4-tone run ==
+2026-10-03T22-36-41-474Z-8a652f68
+2026-10-03T22-37-12-589Z-2b44c153
+2026-10-03T22-39-52-770Z-69fe0aa7
+2026-10-03T22-40-18-947Z-72d61c98
+whisper-src
+== ollama untouched ==
+1123 /usr/bin/ollama serve
+
+== CORRECTION to the AppImage line above: my glob was one directory short ==
+the harness resolves src-tauri/target/release/bundle/appimage (tauri-audio.test.mjs:618-624), not .../bundle/
+total 189652
+drwxr-xr-x 1 villenull villenull       108 Oct  3 16:39 .
+drwxr-xr-x 1 villenull villenull        16 Oct  3 16:39 ..
+-rwxr-xr-x 1 villenull villenull 194202104 Oct  3 16:39 Apunta (test)_0.0.0_amd64.AppImage
+drwxr-xr-x 1 villenull villenull       182 Oct  3 16:39 Apunta (test).AppDir
+AppImage count (must be exactly 1, the harness refuses otherwise): 1
+src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage  194202104 bytes  mtime=2026-10-03 16:39:34.366149323 -0600
+185.21 MiB expected from attempt-4 V2 (22:37:56Z to 22:39:47Z); bytes: 185 MiB

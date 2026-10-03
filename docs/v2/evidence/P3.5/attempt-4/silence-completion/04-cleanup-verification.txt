@@ -1,0 +1,26 @@
+== P3.5 AM-196 silence completion, cleanup verification from outside the rows ==
+utc: 2026-10-03T23:22:09Z
+== own processes: AppImage / harness / Xvfb / paplay / sandbox server (pid 2877621 was the arm's shell) ==
+(nothing above = none)  ps grep rc=1
+== ports 7839 and 7837 ==
+(nothing above = free)  grep rc=1
+== default source (must be the owner's real microphone) ==
+alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+== streams on the real microphone / on the virtual source ==
+real-mic streams: 0
+virtual-source streams: 0
+== exact-token residue ==
+sources: 0
+sinks: 0
+modules naming the run: 0
+== flagged scratch gone / web unflagged ==
+ls: cannot access 'build/p3.5-web': No such file or directory
+ls: cannot access 'build/linux-resources/web/dist': No such file or directory
+(no line above = marker 0 in every file)
+== source untouched by this completion ==
+ M scripts/v2/tauri-security.test.mjs
+(empty = untouched)
+== ollama untouched (pid 1123 before and after) ==
+1123 /usr/bin/ollama serve
+== live data dir never opened; 7717 never contacted (no command in this pass names either) ==
+7717 listeners: 0

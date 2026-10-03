@@ -1,0 +1,32 @@
+== the command, exactly as the proposal section 4 prints it ==
+( env -u APUNTA_DATA_DIR -u APUNTA_PORT -u APUNTA_NO_OPEN -u APUNTA_TEST_RUN_ID -u APUNTA_V2 -u APUNTA_CHECK_URL -u APUNTA_E2E_PORT node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-silence.env && . /tmp/apunta-v2-p3.5-v4-silence.env && export APUNTA_ALLOW_AUDIO_TEST=1 && node scripts/v2/tauri-audio.test.mjs silence )
+== bash -n (syntax only, nothing executed) ==
+bash -n exit=0
+== byte-equality against the proposal's section 4 fenced block ==
+proposal block bytes: 339 sha256 b3ac182c22948e2672764570375225ff3366c1ee7fb9f70a974a83cb7fa28c25
+scratch     bytes: 339 sha256 b3ac182c22948e2672764570375225ff3366c1ee7fb9f70a974a83cb7fa28c25
+BYTE-EQUAL
+== the seven unsets, in order, named from printEnv in the source (not from prose) ==
+function shellQuote(value) {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function printEnv(port, runId, dataDir) {
+  const lines = [
+    `export APUNTA_DATA_DIR=${shellQuote(dataDir)}`,
+    `export APUNTA_PORT=${shellQuote(String(port))}`,
+    `export APUNTA_NO_OPEN='1'`,
+    `export APUNTA_TEST_RUN_ID=${shellQuote(runId)}`,
+    `export APUNTA_V2='1'`,
+    `export APUNTA_CHECK_URL=${shellQuote(`http://127.0.0.1:${String(port)}`)}`,
+    `export APUNTA_E2E_PORT=${shellQuote(String(port))}`,
+  ];
+  process.stdout.write(`${lines.join('\n')}\n`);
+}
+
+async function cmdRun(portRaw, childArgs) {
+  const port = validatePort(portRaw);
+  const sepIndex = childArgs.indexOf('--');
+  const command = sepIndex === -1 ? childArgs : childArgs.slice(sepIndex + 1);
+== the shell's own APUNTA_* values before the run (must be the clean host's) ==
+(none: the shell carries no APUNTA_* value at all)

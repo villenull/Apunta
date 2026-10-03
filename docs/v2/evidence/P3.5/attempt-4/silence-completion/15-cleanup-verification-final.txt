@@ -1,0 +1,53 @@
+== P3.5 AM-196 silence completion, FINAL cleanup verification from outside every row ==
+utc: 2026-10-03T23:23:34Z
+== own processes: AppImage / harness / Xvfb / paplay / sandbox server / the two arm shells (2877621, 2883211) ==
+2885304       0 /home/villenull/.local/share/mise/installs/node/26.8.2/bin/node /home/villenull/Projects/Apunta/docs/v2/tools/build-dispatch.mjs P3.4 --base deadbeef --port 7841 --attempt 5 --print --attempt-exception AM-9999
+(nothing above = none survive)  ps grep rc=0
+== ports 7839 and 7837 ==
+(nothing above = free)  grep rc=1
+== default source restored ==
+alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+== streams ==
+real-mic streams: 0
+virtual-source streams: 0
+== exact-token residue, the four V5 counts ==
+sources: 0
+sinks: 0
+modules naming the run: 0
+0
+  (the two lines above: 0 loaded modules of either kind)
+== flagged scratch gone / web unflagged ==
+ls: cannot access 'build/p3.5-web': No such file or directory
+ls: cannot access 'build/linux-resources/web/dist': No such file or directory
+(no line above = marker 0 in every file)
+== the approved AppImage untouched by this completion (same bytes, same mtime) ==
+src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage  194202104 bytes  mtime=2026-10-03 16:39:34.366149323 -0600
+== harness untouched (shipping bytes still the approved replay hash) ==
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  scripts/v2/tauri-audio.test.mjs
+== app/audio/Pulse lease released: nothing of this run holds a sink, a module, a stream, a port or a process ==
+== ollama untouched (pid 1123) ==
+1123 /usr/bin/ollama serve
+== live data dir never opened; 7717 never contacted ==
+7717 listeners: 0
+== tree: only the two owned paths changed by me ==
+ M docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+ M docs/v2/state/cards/P3.5.json
+ M docs/v2/tools/build-dispatch.mjs
+ M docs/v2/tools/build-dispatch.test.mjs
+ M scripts/v2/tauri-security.test.mjs
+?? docs/v2/evidence/P3.4/attempt-6/
+
+== CORRECTION to the process line above: my grep matched the repo path /home/villenull/Projects/Apunta, a false positive ==
+-- exact process classes, matched on the executable and the script name only --
+AppImage children:
+  (none)
+harness processes:
+  (none)
+Xvfb:
+  (none)
+paplay:
+  (none)
+sandbox server (node on an APUNTA_DATA_DIR under /tmp/apunta-v2):
+  (none)
+-- the one line the loose grep did surface --
+pid 2885304 is another agent's docs/v2/tools/build-dispatch.mjs P3.4 --print probe (etimes 0, no port bound, no app, no audio); not mine and not a native workload. Left alone.

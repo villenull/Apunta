@@ -1,0 +1,3 @@
+criteria.V4 -> PASS   criteria.V5 -> PASS
+status -> SUBMITTED   nextAllowedAction -> root-decision-after-evidence-review
+priorAttempt4IncompleteCriteria.V4 = BLOCKED  priorAttempt4IncompleteCriteria.V5 = FAIL  (unchanged, verified in-process)
