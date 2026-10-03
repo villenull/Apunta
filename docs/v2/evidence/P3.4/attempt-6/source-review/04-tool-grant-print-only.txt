@@ -1,0 +1,40 @@
+# P3.4 attempt-6 source review — the keyed grant, print-only
+
+Every invocation uses `--print`, which writes nothing (build-dispatch.mjs:9,133).
+No dispatch, card, checkpoint, plan or manifest was written; `--port` is a
+printed placeholder, nothing bound; `--base` is text only, no git write.
+
+## 1. Permitted — P3.4, attempt 6, keyed by AM-195
+
+    $ node docs/v2/tools/build-dispatch.mjs P3.4 --base 4060909 --attempt 6 \
+          --attempt-exception AM-195 --port 7800 --print
+    - Attempt 6 of 3, plus three corrective attempts the owner authorised by AM-195 — there is no attempt 7. Checkpoint: `docs/v2/state/cards/P3.4.json`.
+    exit 0
+
+The sentence matches proposal §4 exactly.
+
+## 2. Another card at attempt 6 — REFUSED
+
+    $ node docs/v2/tools/build-dispatch.mjs P3.5 --base 4060909 --attempt 6 \
+          --attempt-exception AM-195 --port 7800 --print
+    --attempt 6 is refused: only P3.4 may carry it, by naming the owner amendment in --attempt-exception; P3.5 is not that card, and there is no attempt 7 for any card
+    exit 2
+
+## 3. Attempt 7 for P3.4 — REFUSED for every card
+
+    $ node docs/v2/tools/build-dispatch.mjs P3.4 --base 4060909 --attempt 7 \
+          --attempt-exception AM-195 --port 7800 --print
+    --attempt must be 1, 2, 3, 4, 5 or 6 with --attempt-exception; 7 is beyond any authorised budget
+    exit 2
+
+## 4. P3.4 at attempt 6 with no amendment — REFUSED (key mandatory)
+
+    $ node docs/v2/tools/build-dispatch.mjs P3.4 --base 4060909 --attempt 6 \
+          --port 7800 --print
+    --attempt 6 requires --attempt-exception <AM-nnn> naming the owner amendment that authorised it
+    exit 2
+
+## 5. Repository untouched
+
+`git status --porcelain` before and after these runs: empty. No dispatch file,
+card, checkpoint or plan appeared. Nothing staged or committed.

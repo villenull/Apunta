@@ -1,0 +1,67 @@
+# P3.4 attempt-6 source review — instrument and tool logic, by reading
+
+Read against `scripts/v2/tauri-security.test.mjs` at HEAD `5f57347`
+(sha256 `cc733cd0…`) and `docs/v2/tools/build-dispatch.mjs` (`3f77b55b…`).
+
+## 1. getwindowpid ownership is checked, fail-closed, before any move
+
+`runFlow` reads `getwindowgeometry`, validates the rectangle and the app pid,
+then — before the viewport poll and before any `guardedMove`:
+
+- `scripts/v2/tauri-security.test.mjs:1660-1663` dispatches
+  `getwindowpid <appWindowId>` through `awaitGuarded(deadline, clock, …)`, so it
+  is raced against the one immutable deadline like every other dispatch;
+- `:1664-1666` fail closed on a non-ok result and on `checkCommand('getwindowpid', …)`
+  (status/signal/XError);
+- `:1667-1672` parse stdout as an integer and fail closed unless
+  `Number.isInteger(ownerPid) && ownerPid > 0 && ownerPid === appPid`, with
+  `no move and no click issued`.
+
+The viewport poll begins at `:1674` and the first `guardedMove` at `:1705`, both
+strictly after the ownership gate. The C2 anchor is real and before the move.
+
+## 2. Measured containment (C1) — unchanged identity conjunction
+
+`checkReadback` (`:1050-1079`) requires usable finite X/Y, ≤1 px deviation
+(`READBACK_TOLERANCE_PX`), then `containedInWindow(native, window)` where
+`native = {x: read.X, y: read.Y}` (`:1060-1065`). The `getmouselocation`
+`WINDOW`/`PID` fields are diagnostic text only; they never decide the result
+(`:1066-1077`). A point outside the owned rectangle fails closed.
+
+## 3. Fresh app-page witness (C3) — unchanged
+
+`guardedMove` (`:1357-1444`) takes a pointer-counter baseline, issues the warp,
+does the native read-back, then requires a fact whose pointer counter is strictly
+greater than the baseline (`:1417`) and — at the target — client coords within
+`WITNESS_TOLERANCE_PX` (`:1425-1434`). A fake other window cannot publish the
+app's own `ptrN`.
+
+## 4. Deadline, single click, landing, IPC — untouched by the patch
+
+`candidate.patch` touches only the identity regions: `checkReadback` (C1), its
+comment, the `runFlow` ownership block (C2), the `guardedMove` doc comment (C5)
+and `makeOps.windowPid` (C4). It does not touch:
+
+- the immutable 30 s deadline / `awaitGuarded` / `dispatchGuarded`;
+- exactly-one-click: `runClick` (`:1452-1519+`) dispatches one `xdotool click 1`
+  and requires the click counter to advance by exactly 1 (`:1513-1518`);
+- the landing `href`/`scriptText` logic;
+- the (a) IPC assertion: `IPC_PROBE_COMMAND = 'plugin:event|listen'` and
+  `ACL_DENIAL = 'Command … not allowed by ACL'` (`:161-162`), the gate
+  (`:1290-1327`), unchanged.
+
+Because the harness sha256 is `cc733cd0…` — the exact bytes IR2 reviewed and on
+which it carried the prior **32 adversarial controls** (`eod-instrument-ir2/04`,
+`eod-instrument-ir/03`) — those controls carry forward on hash identity. Not
+re-run here; the task instructs carrying them, not redoing the model.
+
+## 5. Tool grant (build-dispatch.mjs) — keyed, bounded
+
+`tooling.patch` makes attempt 6 reachable only by
+`--attempt 6 --attempt-exception AM-nnn` and only for `P3.4`
+(`SIXTH_ATTEMPT_CARD`); every other card is refused at 6, and `attempt >= 7` is
+refused for every card including P3.4. Attempt 4's sentence stays byte-identical;
+attempt 5's is unchanged; attempt 6 renders
+`3, plus three corrective attempts the owner authorised by <AM> — there is no
+attempt 7`. The dependency gate (exit 3) is untouched. Verified by the print-only
+runs in `04`.

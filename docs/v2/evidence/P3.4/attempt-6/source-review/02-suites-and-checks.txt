@@ -1,0 +1,68 @@
+# P3.4 attempt-6 source review — suites, syntax, lint, format
+
+Node test runner only, on the real applied paths at HEAD `5f57347`. No app,
+server, build, DB, model, display, pointer, input, audio, mic, pactl, network,
+install or port 7717 was started or contacted. The tool test writes only into
+mkdtemp dirs.
+
+## 1. Committed 80-test synthetic suite
+
+    $ node --test docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs \
+                 docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+    ℹ tests 80
+    ℹ pass 80
+    ℹ fail 0
+    ℹ cancelled 0
+    ℹ skipped 0
+    ℹ todo 0
+    EXIT 0
+
+## 2. Tool guard (build-dispatch)
+
+    $ node --test docs/v2/tools/build-dispatch.test.mjs
+    ℹ tests 29
+    ℹ pass 29
+    ℹ fail 0
+    ℹ cancelled 0
+    ℹ skipped 0
+    ℹ todo 0
+    EXIT 0
+
+Includes the repaired case `the three shipped attempt-4 dispatch lines are
+reproduced byte for byte` and the new T4/T4b/T4c attempt-6 cases.
+
+## 3. Neighbouring committed tool suites
+
+    $ node --test docs/v2/tools/plan-lib.test.mjs docs/v2/tools/check-plan.test.mjs
+    ℹ tests 13
+    ℹ pass 13
+    ℹ fail 0
+    EXIT 0
+
+## 4. Syntax — node --check, all four patched paths
+
+    OK  scripts/v2/tauri-security.test.mjs
+    OK  docs/v2/tools/build-dispatch.mjs
+    OK  docs/v2/tools/build-dispatch.test.mjs
+    OK  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+    node-check EXIT 0
+
+## 5. ESLint --no-ignore (real, non-ignored paths)
+
+    $ npx eslint --no-ignore <the four paths>
+    EXIT 0
+
+## 6. Prettier --check
+
+    $ npx prettier --check <the four paths>
+    Checking formatting...
+    All matched files use Prettier code style!
+    EXIT 0
+
+The two attempt-5 implementation fixtures remain `.prettierignore`'d as before;
+no new deviation class is introduced.
+
+## 7. No skip/only/todo
+
+The committed suites carry 0 `skip`/`only`/`todo` occurrences; the 80 test names
+are retained (IR2 §3). The all-four run reports `skipped 0`, `todo 0`.

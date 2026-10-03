@@ -1,0 +1,54 @@
+# P3.4 attempt-6 source review — writes, authority, concurrent activity, observations
+
+## 1. Written (only these, as the review lease allows)
+
+- `docs/v2/state/reviews/P3.4-impl6.md` (new)
+- `docs/v2/evidence/P3.4/attempt-6/source-review/**` (new, this directory)
+- scratch in the ignored `build/p34-impl6-ir/` and `/tmp/opencode/p34replay/`
+
+## 2. Explicitly NOT written / NOT done
+
+No source, tool, fixture, card, checkpoint, contract, manifest, proposal or old
+evidence was edited. Nothing staged or committed. No app, build, server, DB,
+model, display, pointer, input, audio, mic, pactl, network, install or port 7717
+was touched. No build/launch. No V0-V4 row executed. No attempt 6 dispatch
+written, no attempt 7, no reset, no retry, no partial re-run, no waiver. No
+repair. No child agent or question spawned. `prototype/` never edited.
+
+## 3. Concurrent activity observed, left untouched
+
+- HEAD moved `88811af` → `5f57347` mid-review (`Track independent final capture
+  and shipping security reviews`). It touches only `docs/v2/ORCHESTRATION-LOG.md`,
+  `docs/v2/state/NEXT-SESSION.md` and `docs/v2/state/cards/P3.4.json` — no
+  source, tool, fixture or the four shipping paths. Every hash in `01` stands.
+- The P3.5 silence-completion runtime is ended and recorded: its evidence
+  (`docs/v2/evidence/P3.5/attempt-4/silence-completion/**`) is tracked, and
+  `git status --porcelain` is empty. No stray Xvfb/apunta/vite/tsx/whisper
+  process is running (only the local `ollama serve`, unrelated to this card).
+- `docs/v2/DEPENDENCIES.md` is clean at HEAD (no diff, no untracked copy).
+
+## 4. Observations — non-blocking, do not touch the shipping source
+
+**O1 — the prior review's numeric annotations are wrong; the bytes are right.**
+IR2 §2/§3 annotate `fixture.patch` as `+15/-8, 3 hunks` and `tooling.patch`'s
+per-file deltas as `46+/17-` / `49+/15-`. Independently re-derived here:
+`fixture.patch` is **7 hunks** (D7, `flowOps` `windowPid`, and the five hunks
+carrying the six `dispatched` arrays: F2, F2-d, F3, F6, F7); `tooling.patch` is
+`build-dispatch.mjs` **32/14** and `build-dispatch.test.mjs` **47/3** (IR2 read
+the `--stat` bar totals, 46 and 50 changed lines, as insertions/deletions). The
+totals the proposal states (`+15/-8`, `+79/-17`) are correct, the four shipping
+hashes are exact, and the commit diff carries exactly the patches' 21 hunks. This
+is a documentation error in the prior review, not a defect in the source.
+
+**O2 — stale refusal prose on a non-P3.4 attempt-5 path.** The message when
+another card asks for attempt 5 still ends `there is no attempt 6 for any card`,
+which is now technically stale (attempt 6 exists for P3.4). It is the preserved
+AM-189 sentence and T2 pins it (`naming no attempt 6`); it is emitted only for a
+non-P3.4 card, whose attempt 6 genuinely does not exist, and it does not affect
+the P3.4 attempt-6 path. Cosmetic; the refusal behaviour is correct.
+
+**O3 — D7's test name** still reads `…or the app pid`, already disclosed in
+proposal §6; assertions were correctly re-derived. Cosmetic, disclosed.
+
+None of O1-O3 is a prerequisite; none touches a shipping byte, a threshold, a
+gate or an acceptance row.

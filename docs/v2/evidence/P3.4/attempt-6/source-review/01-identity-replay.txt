@@ -1,0 +1,83 @@
+# P3.4 attempt-6 source review — identity, patch bytes, replay (independent)
+
+Reviewer lease: read-only on the repository. Scratch: ignored
+`build/p34-impl6-ir/` and `/tmp/opencode/p34replay/`. No source, tool, fixture,
+card, checkpoint, contract, proposal or old evidence was edited; nothing staged
+or committed; no app, build, server, DB, model, display, input, audio, mic,
+pactl, network, install or port 7717 was touched. Only this review report and
+this evidence directory were written.
+
+## 1. Baseline shipping hashes at 4060909 (git archive)
+
+    865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  scripts/v2/tauri-security.test.mjs
+    f6f22ab0063be475eb6532455cd707fe3d7048929b4c911924ce69503736c2e3  docs/v2/tools/build-dispatch.mjs
+    d4dcf3c29b1b77c3b4f325d0a68fe76a5a6efbe4b5b8c6415064f31925df7aec  docs/v2/tools/build-dispatch.test.mjs
+    195e30f5c2285c5572c6a037dfe2a299c99e2dd6fa0735b9883d63ece74c4c60  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+    325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+
+Byte-identical to repair `01-identity-replay.txt` §1 and IR2 §1.
+
+## 2. The four AM-195 patch bytes (as committed)
+
+    22d4a40e46553ffccc1738dd3afa235f5c9112efcbd8af4c3d36c3ccd6068458  docs/v2/evidence/P3.4/eod-instrument-proposal/candidate.patch
+    1f405b87ebc686f805b4700685ba77cd6a57dc87c14e1a05a526c32ea6d54529  docs/v2/evidence/P3.4/eod-instrument-proposal/tooling.patch
+    ba3cc084aaf2b78ba8764962aa6da9960031c97d5692a69219af3a1d8d5a3fe0  docs/v2/evidence/P3.4/eod-instrument-proposal-repair/fixture.patch
+    7308f8561934471527b0f533085f53087c8e2ae3c02c4921f9bf2406fc546644  docs/v2/evidence/P3.4/eod-instrument-proposal-repair/tooling-fixture.patch
+
+## 3. Independent replay — 4060909 + the four patches, isolated tree
+
+`git archive 4060909 <five files> | tar -x` into `/tmp/opencode/p34replay/base`,
+copied to `cand`, then each patch applied with `patch -p1` (order:
+candidate, tooling, fixture, tooling-fixture). Note: `git apply` run from a
+subdirectory of the Apunta worktree mis-resolves paths, so `patch -p1` in an
+isolated tree outside the repo is the unambiguous method (same note as IR2 §4).
+
+    cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16  scripts/v2/tauri-security.test.mjs
+    3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4  docs/v2/tools/build-dispatch.mjs
+    ee8e051cc467ef62c55d00a128d496da94eeaaee6364789c694a85d5d6de8b8f  docs/v2/tools/build-dispatch.test.mjs
+    e4790fe909e0352fdba94b0f54db48397deac436a35d3c267937f468796d607b  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+    325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+
+Every one matches IR2 §2/§4 and the repair `01` §3. `adapters.test.mjs` is
+untouched by all four patches (same hash before and after).
+
+## 4. Applied tree at HEAD equals the replay, byte for byte
+
+HEAD at review time: `5f57347` (source commit `88811af`). All four shipping
+paths at HEAD were hashed against the replay copies:
+
+    MATCH scripts/v2/tauri-security.test.mjs
+    MATCH docs/v2/tools/build-dispatch.mjs
+    MATCH docs/v2/tools/build-dispatch.test.mjs
+    MATCH docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+
+## 5. Scope and no source widening
+
+`git apply --numstat` per patch (from the isolated patch set):
+
+    candidate        63  13  scripts/v2/tauri-security.test.mjs
+    tooling          32  14  docs/v2/tools/build-dispatch.mjs
+                     47   3  docs/v2/tools/build-dispatch.test.mjs
+    fixture          15   8  .../attempt-5/implementation/ported-model.test.mjs
+    tooling-fixture   7   2  docs/v2/tools/build-dispatch.test.mjs
+
+Totals: candidate +63/-13, tooling +79/-17, fixture +15/-8,
+tooling-fixture +7/-2 — exactly the proposal §2/§4/§4.1 and repair README
+deltas. Hunk counts: candidate 6, tooling 7, fixture 7, tooling-fixture 1 = 21.
+`git diff 4060909 88811af -- <the four paths>` reports 21 hunks and no other
+source path; the commit touches exactly the four shipping paths plus the six
+new `attempt-6/implementation/**` evidence files. No extra hunks, no source
+widening, no fifth file.
+
+## 6. Fixture patch is load-bearing
+
+Replay of candidate+tooling only (no fixture patches), run against the committed
+suite:
+
+    ℹ tests 80
+    ℹ pass 59
+    ℹ fail 21
+
+With all four: 80/80 (02). So the fixture patch carries the mandatory `windowPid`
+seam, the D7 re-derivation and the six `dispatched` arrays, and the all-four
+candidate is the only green one.

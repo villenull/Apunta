@@ -6,10 +6,10 @@
     "C-REQ@1"
   ],
   "baseCommit": "6974943",
-  "attempt": 5,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Final once-only runtime attempt5 complete: V0/V1/V3 PASS, V2 FAIL (click window read-back WINDOW=0), V4 FAIL (outside-source proof lint). Worker stopped, cleanup verified, build lease released.",
-  "nextAllowedAction": "independent-AM-195-shipping-source-review-before-once-only-attempt6",
+  "attempt": 6,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "AM-195 exact source and fixtures applied at88811af, independent shipping source CLEAR; attempt6 runtime dispatch authorized once",
+  "nextAllowedAction": "AM-195-V0-through-V4-once-card-order-no-seventh-no-retry",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -46,34 +46,24 @@
       "verification": "Inherited from attempt 3 and re-confirmed by V0's first assertion this attempt: the candidate at ~/.cache/apunta-v2/whisper-src is executable, so S0 was SKIPPED and nothing was acquired as a new item."
     },
     "V0": {
-      "status": "PASS",
-      "exit": 0,
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/02-V0.txt",
-      "verification": "Once-only flagged producer/build: marker counts1/0/16, AppImage built; AM190 bundled scanner/four dryplugins PASS separately."
+      "status": "NOT RUN",
+      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
     },
     "V1": {
-      "status": "PASS",
-      "exit": 0,
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/04-V1.txt",
-      "verification": "Once-only CSP unit12PASS,0skipped."
+      "status": "NOT RUN",
+      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
     },
     "V2": {
-      "status": "FAIL",
-      "exit": 1,
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/05-V2.txt",
-      "verification": "Once-only app launch, exact IPC ACL denial/CSP/style and5containment PASS; click window read-back FAIL WINDOW0, b/c NOT RUN, no click/retry. Actual14PASS+2NOTRUN+1FAIL; printed16/17 counts non-failed, NOT RUN not PASS."
+      "status": "NOT RUN",
+      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
     },
     "V3": {
-      "status": "PASS",
-      "exit": 0,
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/06-V3.txt",
-      "verification": "Rendered command decoded before shell execution; once-only guards0matches/no capabilities PASS."
+      "status": "NOT RUN",
+      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
     },
     "V4": {
-      "status": "FAIL",
-      "exit": 1,
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/07-V4.txt",
-      "verification": "Once-only npmtest2235PASS then lint13evidenceerrors FAIL; typecheck/cargo downstream notexecuted; no rerun/waiver."
+      "status": "NOT RUN",
+      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
     }
   },
   "sandboxRuns": [
@@ -121,12 +111,12 @@
       "verification": "Attempt 4: exit 0, 42 s, run in full after one earlier attempt of this same row exited 1 at lint on a prettier warning against this attempt's own edit to the harness. 163 test files / 2235 tests, lint, typecheck, cargo fmt, clippy -D warnings, 55 cargo tests. Counts are higher than attempt 3's 160/2160 because other cards' suites landed in the tree; no expectation was changed and no test was touched."
     }
   },
-  "implementationReviewWorkerId": "3cb741f0-11e5-4d9d-967f-20e6c3f3eb26",
-  "implementationReviewReport": "docs/v2/state/reviews/P3.4-correction-applied.md",
-  "implementationReviewVerdict": "SUBMITTED exact four AM-195 patches; independent shipping review running, no attempt6 acceptance row executed",
+  "implementationReviewWorkerId": null,
+  "implementationReviewReport": "docs/v2/state/reviews/P3.4-impl6.md",
+  "implementationReviewVerdict": "CLEAR AM-195 exact four shipping patches; 80/80+29/29+13/13, no extra source path",
   "coordinatorBlockingFinding": "V2 handler click FAIL: pointer read-back WINDOW=0 PID=undefined, clickN=0; navigation b/c NOT RUN. V4 npm tests2235 PASS then evidence-artifact lint FAIL. Final budget exhausted, no row rerun/sixth.",
   "implementationCandidate": "88811af",
-  "updatedUtc": "2026-10-03T23:27:09.919583+00:00",
+  "updatedUtc": "2026-10-03T23:31:31.085089+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
   "reBundle": {
