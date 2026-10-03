@@ -1,3 +1,14 @@
+## Audit qualification integrated; parser artifact repair continues
+
+Qualifier c274a1c9 completed and archival succeeded. New additive qualification
+corrects driver-column labeling and preserves actual attachment as unknown;
+original audit remains unchanged. Parser author 18d2bbc1 continues its bounded
+package repair with callback. Root additionally granted faithful output-only
+cleanup of client-sentinel-proposal-ir/adversarial-checks.mjs (six no-console
+errors), preserving assertions and byte-exact replay. Reviewer report stays intact.
+Fresh independent package review follows. Push approval pending; local commits
+only after automatic-review rejection. No additional runtime attempt authorized.
+
 ## Bounded artifact repairs running; no additional attempt authorized
 
 18d2bbc1-e241-4976-a7c1-dce5be5bc6bb (Space Bunny free, medium) is confirmed

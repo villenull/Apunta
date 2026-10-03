@@ -2632,3 +2632,13 @@ because remote trust/ownership was not established. Local commit b3e5cfd then
 succeeded separately. Origin reads https://github.com/villenull/Apunta; no push
 workaround attempted. Root requested explicit owner push authorization through
 an asynchronous question. Artifact repairs continue; no runtime authority change.
+
+## 2026-10-03 — additive audit qualification accepted
+
+c274a1c9 completed within new-file scope and archival succeeded. Qualification
+independently re-derived driver/client columns from local binary, corrected
+virtual-default versus attachment overclaim; original audit retained. 18d2bbc1
+still RUNNING at event boundary. Root extended its bounded artifact scope to
+six output-only console calls in committed IR adversarial proof, with original
+snapshot, exact replay and no assertion change, fresh independent review next.
+No source/runtime/budget amendment. Remote push authorization remains pending.

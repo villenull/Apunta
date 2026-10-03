@@ -1,0 +1,36 @@
+# Independent static re-inspection of local /usr/bin/pactl (read-only; no pactl run)
+
+$ pacman -Qo /usr/bin/pactl
+/usr/bin/pactl is owned by libpulse 17.0+r98+gb096704c0-1
+$ readelf -n /usr/bin/pactl | grep -i 'build id'
+    Build ID: 390bb5197f783b5b84f491a26f0f8ff01de64573
+$ strings -t x /usr/bin/pactl | grep -E ' (driver|client|source|index)$'
+  1105d client
+  1157b driver
+$ strings -t x /usr/bin/pactl | grep -F '%u	%u	%s	%s	%s'
+  11763 %u	%u	%s	%s	%s
+
+# source-outputs short printf, objdump -d --no-show-raw-insn /usr/bin/pactl (0xb9bc-0xb9f2)
+    b9bc:	mov    0x18(%r12),%ecx          # arg2 -> %u : source index
+    b9c1:	mov    0xc8(%r12),%r9          # arg4 -> %s : driver
+    b9c9:	mov    (%r12),%edx            # arg1 -> %u : stream index
+    b9cd:	lea    0x5d8f(%rip),%rsi     # format 0x11763
+    b9e0:	cmpl   $0xffffffff,0x14(%r12) # client == UINT32_MAX ?
+    b9e6:	cmovne %rbx,%r8              # arg3 -> %s : client number, else '-'
+
+# JSON member table, same callback (0xbd22-0xbd9f) — offsets named by pactl itself
+    bd22:	mov    (%r12),%edx            # 0x00 -> 'index'   (str 0x11bdc)
+    bd36:	mov    0xc8(%r12),%rdx        # 0xc8 -> 'driver'  (str 0x1157b)
+    bd71:	cmpl   $0xffffffff,0x14(%r12) # 0x14 -> 'client'  (str 0x1105d)
+    bd90:	mov    0x18(%r12),%edx        # 0x18 -> 'source'  (str 0x11af1)
+
+# Derived zero-based columns for `pactl list short source-outputs`:
+#   0 stream index
+#   1 source index
+#   2 client index, or '-' when UINT32_MAX (no client)
+#   3 driver            <- the audit calls this a 'sink name'; it is the driver
+#   4 sample spec
+#
+# Frozen row from 05-V3.txt:64 and 06-V4.txt:62:
+#   8043	8035	-	PipeWire	float32le 2ch 48000Hz
+#   column 3 = PipeWire = driver. There is no sink column in this format.

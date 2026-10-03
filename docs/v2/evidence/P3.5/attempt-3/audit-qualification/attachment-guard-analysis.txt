@@ -1,0 +1,33 @@
+# Why the virtual-default guard does not prove device attachment
+
+Verified only against frozen logs and shipped code. No runtime.
+
+1. What the guard asserts (frozen 05-V3.txt:39-40, 06-V4.txt:37-38):
+   - "PASS ... the virtual source is the default, read back: apunta_p35_mic"
+   - The harness reads `pactl get-default-source` and refuses to launch unless
+     it returns apunta_p35_mic.
+   This proves the *default source* is the virtual pair. A default is what a
+   default-following client would choose; it is not an observation of the node
+   a specific stream attaches to.
+
+2. What the permission/recording signal asserts (05-V3.txt:60):
+   - "PASS V3 the phase reached recording"
+   This proves the app entered the recording phase, not which device it opened.
+
+3. What is NOT observed anywhere in the repository:
+   - No artifact maps the app's stream to the node it attached to.
+   - `classifySourceOutputs` (scripts/v2/tauri-audio.test.mjs:300-312) is the
+     only code that reads source-outputs, and it is invoked as containment; on
+     both capture rows it stopped before asserting anything.
+
+4. The one live snapshot (05-V3.txt:63-65, 06-V4.txt:61-63):
+   - No source-output row names the physical-mic index (61); one row names
+     source 8042 = apunta_p35_mic. But the harness had already stopped, and the
+     audit labels this eye-read, not asserted. It narrows the window and does
+     not close it.
+
+Conclusion:
+   - "the physical microphone was never the capture device" is NOT proven.
+   - "the physical microphone WAS the capture device" is also NOT proven.
+   - Actual device attachment is UNKNOWN. The audit's own line 53 already says
+     "not proven"; line 50's "proven by the preflight guard" overstates it.
