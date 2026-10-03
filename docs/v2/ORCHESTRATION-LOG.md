@@ -2743,3 +2743,7 @@ old5dcabae nowfixedstringloop628bytes (AM179), sameassertedinvariant. Stop8exact
 coordinatorrepin authority used for fresh plan-reference repairauthor, command/
 Expected/scopes/depsunchanged, independentreviewnext. Sourcecard remainsnotstart.
 Runtime1ca9d0e6 +P34proposal4b9525c7 RUNNING atboundary, no extra hostwork.
+
+Active re-pin author: 17f00ebf-e30c-4d00-a404-1c8863233161, LongCat Go free high,
+confirmed RUNNING with callback; exclusive P3.6 reference prose and new
+security-repin report/evidence, no host runtime or checkpoint ownership.
