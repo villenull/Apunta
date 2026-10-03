@@ -1,3 +1,43 @@
+# Active continuation — 2026-10-03
+
+This block supersedes older running/lease claims below. Coordinator
+`6e0f9d30-d523-4669-8729-5c2b6f731e5b` has taken over after the owner invoked
+/vill then /villnext. Prior orchestrator confirmed all its workers archived,
+no running sandbox/app/build commands, and no build or GPU lease. Source base
+`9d92d7b`; tree initially clean, all prior work pushed.
+
+- **S3.3a attempt 1 of 3 RUNNING:** worker
+  `19c116db-8726-421f-ad5b-ef3c02ab9ad6`, exclusive five script paths named in
+  card plus own evidence/return. Build lease and port **7841** held until
+  worker returns and commands are confirmed stopped. Card independently CLEAR
+  10/0/0 under AM-182. Dispatch generation **succeeded** with --port 7841;
+  older claim that this card cannot dispatch is false for a correctly supplied
+  port. Implement/test hermetic rows now; **V6/V7 held** for the existing
+  owner quiet-machine decision, no real-model call authorised by this run.
+- **P3.4 diagnosis RUNNING:** worker
+  `5e75e3cf-db70-4d84-8eaa-9b19fd6e51fb`, only
+  `state/reviews/P3.4-diagnosis-2026-10-03.md`. Read-only source/evidence
+  investigation: handoff conflicts with checkpoint and code about both global
+  assertions and fixture insertion. No fifth attempt, launch, build or change
+  to protected acceptance is authorised. P3.4 remains BLOCKED.
+- **State/queue audit RUNNING:** worker
+  `f2e5abe1-b39e-4a9c-a653-1829a43810a8`, only
+  `state/reviews/continuation-state-audit-2026-10-03.md`. Verify status provenance
+  and real placeholder refusals; recommend minimal reconciliation.
+- All three workers use `opencode-go/space-bunny-free`, **medium** effort,
+  same workspace, leave uncommitted, completion notifications enabled.
+- Coordinator owns all shared state/card/dispatch/log files. Accept reports by
+  inspecting evidence, archive finished owned workers and confirm. S3.3a needs
+  independent implementation review after stable source commit; no approval
+  with pending real-model rows. P3.5 waits for P3.4; S4a.2 remains owner-parked;
+  S6.1/P5.3 owner choices remain outstanding. S3.2 attempt2 waits for quiet
+  machine. No heartbeat requested or created.
+- Three useful parallel workers, below five because only one build task is
+  ready, P3 chain depends on blocked P3.4, real-model lanes are owner-held,
+  and retained harness capacity is four including coordinator. Next: process
+  diagnoses/audit into a concrete owner amendment only where protected scope
+  or exhausted budget requires one; continue independent S3.3a work.
+
 # Standing continuation instruction — 2026-10-02
 
 **Read this block first; it supersedes every older block below.** As of `9ada83d`:
