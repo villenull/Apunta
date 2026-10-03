@@ -1,0 +1,45 @@
+# Ollama tag metadata — read-only (2026-10-03)
+
+Command run by this review (routine read-only, explicitly permitted):
+
+```
+$ ollama list
+exit=0
+NAME                                       ID              SIZE      MODIFIED
+apunta-study-fable-therapy-9b-q4:latest    61c80fd0c58e    5.6 GB    5 days ago
+translategemma:4b                          c49d986b0764    3.3 GB    6 days ago
+gemma4:12b                                 4eb23ef187e2    7.6 GB    6 days ago
+apunta-study-qwen35-9b-q3:latest           f1c58a78df15    4.7 GB    6 days ago
+apunta-study-qwen35-9b-q4:latest           b5bed9c2bf10    5.7 GB    6 days ago
+qwen3.5:4b-q4_K_M                          2a654d98e6fb    3.4 GB    7 days ago
+```
+
+Tags, ids, sizes and mtimes only. No prompt was sent, no model was loaded, no
+inference ran, nothing was pulled, removed or reloaded. This was a metadata
+read and did not touch the exclusive native build/audio lease held by
+`c88d6043`.
+
+## Finding
+
+`qwen3.5:4b-q4_K_M` **is present**. That tag is exactly the promoted default:
+
+- `shared/src/models.ts:43` — `PROMOTED_DEFAULT_MODEL = 'qwen3.5:4b-q4_K_M'`
+- `shared/src/effective-model.ts:68` — no `llm_model` override resolves to it
+- `installer/src/catalog.ts:311-327` — `WRITING_MODELS[SMALL_MODEL]`, the entry
+  the installer's `--model` default names
+
+So **no Ollama acquisition is needed**. A08's "never pulled if present" holds
+and the optional A13 small sibling is not required. `gemma4:12b` is also on
+disk but A08 names `gemma4:12b-it-qat`, a different tag; it is not needed for
+the English path either.
+
+This clears the previous report's G2 ("`qwen3.5:4b-q4_K_M` presence
+unverified"). The owner does not need to run `ollama list`; it was run here.
+
+## Correction to the previous report's citation
+
+`ENGLISH-EOD-runtime-readiness.md` §2 said "The promoted default model is
+`qwen3.5:4b-q4_K_M`" citing `DEFAULT_MODEL in shared/src/models.ts`. The value
+is right but the constant is wrong: `DEFAULT_MODEL = 'gemma4:12b-it-qat'`
+(`models.ts:29`); the promoted default is `PROMOTED_DEFAULT_MODEL`
+(`models.ts:43`).

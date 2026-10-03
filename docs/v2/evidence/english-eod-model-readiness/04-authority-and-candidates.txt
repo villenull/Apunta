@@ -1,0 +1,40 @@
+# Authority: the English model vs A07's six C-STT candidates
+
+## A07 names six candidates, not the English model
+
+- `docs/v2/ACQUISITION.md:19` — A07: "Whisper models, **exactly the six C-STT
+  candidates**" ... "selected one only" ... card S4a.2 (NOT STARTED).
+- `docs/v2/CONTRACTS.md:455-461` — C-STT@1 fixes those six:
+  `ggml-base.bin`, `ggml-base-q5_1.bin`, `ggml-small.bin`,
+  `ggml-small-q5_1.bin`, `ggml-large-v3-turbo-q5_0.bin`,
+  `ggml-large-v3-turbo-q8_0.bin`.
+
+`ggml-tiny.en.bin` is **not** one of the six. Confirmed against the catalog
+authority too: `C_STT_CANDIDATES` does not exist in `installer/src/catalog.ts`
+(grep: NOT PRESENT) — S4a.2 is not started and no six-candidate catalogue has
+been committed. So the English model is outside A07, not "A07's selected one".
+
+## Where the English model is actually authorised
+
+| Source | Text |
+| --- | --- |
+| D7 (`docs/v2/DECISIONS.md:21`) | "Spanish speech model chosen by benchmark (contract C-STT). English keeps `ggml-tiny.en.bin`." |
+| C-LANG@1 locale table (`docs/v2/CONTRACTS.md:297`) | `en` → `ggml-tiny.en.bin` |
+| `docs/decisions.md:209` | The 2026-09-20 single-file decision; SHA-256 `921e4cf868…` verified against a real 77,704,715-byte download on Linux |
+| `installer/src/catalog.ts:220-234` | `SPEECH_MODEL`, the pinned installer entry |
+| CLAUDE.md hard rule 1 | The installer / first-run component — never the server, never the browser tab — may download model weights under the pinned allow-list, and **runs only when the user explicitly starts it** |
+
+## Missing authority, exact
+
+No `ACQUISITION.md` row names `ggml-tiny.en.bin`. A07 covers the six Spanish
+C-STT candidates only; S4a.2 is parked and does not cover this file. HS-3 says
+only items in `ACQUISITION.md` may be downloaded, so **no agent may download
+it**. The one carve-out is hard rule 1's installer path, and hard rule 1(a)
+makes starting it an owner action. This is the same shape as the existing
+owner-only rows in `docs/v2/state/OWNER-ACTIONS.md:39,43` ("no ACQUISITION row
+covers it (HS-3), so only you may install it").
+
+**Therefore an owner action is required**: the owner explicitly starts the
+existing installer's first run for exactly one English pinned `tiny.en`, to a
+non-live path. No Spanish benchmark is unparked, no S4a.2 work is authorised,
+and no A07 candidate is touched.

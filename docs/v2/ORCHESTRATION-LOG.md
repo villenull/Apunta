@@ -2856,3 +2856,13 @@ requiring validation, not adopted as dispatch authority. Fresh e74efcc6 running
 independent practical validation with exactcardcriteria preserved, separate new
 report/evidence. Securityruntimec88d6043/nativelease and modelreadiness4e7416af
 continue; no P36implementation/dependency bypass or new ownergate invented.
+
+## 2026-10-03 — pinned English model acquisition question prepared
+
+4e7416af complete/archived, corrective report verifies qwenpresent(no pull),
+tiny.en absent onlydeclaredpaths, exactEnglishcatalogpin and installer controls.
+Root read installer CLI/run/download/catalog before asking. HS3 allowlist has no
+tiny.en row, so explicit question submitted: installer to ignoredmodelcache,
+77,704,715B/SHA256921e4cf8…20b1f, HF/observedCDN/querynames pinned, no live data,
+Ollamapull or Spanish unpark. Coordinator executesaftergrant, not ownerterminal.
+Securityruntime/nativelease and independentP36approach validation remain active.

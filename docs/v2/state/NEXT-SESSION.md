@@ -1,3 +1,21 @@
+## English model identified; acquisition decision pending
+
+4e7416af corrective readiness finished and archived successfully. Existing
+qwen3.5:4b-q4_K_M present by read-only tag check: no Ollama pull needed. Tiny.en
+absent at declared paths checked only, not claimed absent everywhere. Exact
+catalog pin77,704,715 bytes/SHA256921e4cf8…20b1f and installer controls re-read
+by root. A07 names six Spanish candidates, not this English model: HS-3 requires
+owner acquisition admission. Question submitted for existing installer into
+ignored build/eod-model-cache only, no live data/Ollama pull/Spanish unpark.
+Owner approval authorizes coordinator to run prepared installer command; do not
+hand the terminal task back to owner. Confirm writing step already satisfied
+before running; stop if any Ollama pull would be needed. Root reviews exact
+pin, host/redirect/query restrictions and checksum before integration.
+
+e74efcc6 static native integration validation and c88d6043 security runtime
+remain RUNNING at latest event boundary; c88d6043 owns build/app/7835/P34state.
+No other native/model lease. No extra worker justified while acquisition waits.
+
 ## Native integration preparation under independent validation
 
 a2c4bab2 finished/archived; author analysis committed50c0854, not adopted as

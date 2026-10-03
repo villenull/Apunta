@@ -1,0 +1,48 @@
+# English speech model presence — bounded declared-path checks (2026-10-03)
+
+Only declared, known model paths were read. No live patient folder was opened
+or listed (the live data dir is absent on this box), no broad home scan, no
+credentials, no env dump.
+
+## Declared paths (derived from source, exact)
+
+| Path | How it is derived |
+| --- | --- |
+| Live default | `platformDataDir(linux)` = `$XDG_DATA_HOME/apunta` = `/home/villenull/.local/share/apunta`, then `<dataDir>/models/ggml-tiny.en.bin` (`shared/src/platform-paths.ts:38-40`, `server/src/config.ts:187`, `server/src/ai/stt-settings.ts:48-53`). `XDG_DATA_HOME` is set to `/home/villenull/.local/share` on this host. |
+| Sandbox | `$APUNTA_DATA_DIR = /tmp/apunta-v2/<runId>/data` (`scripts/v2/sandbox.mjs:120-155` `ensureRunDir` returns `join(runReal, 'data')`; `:177-201` `resolveSandboxDataDir` proposes `join(SANDBOX_ROOT, runId, 'data')`; `:299-310` `printEnv` exports it), then `<dataDir>/models/ggml-tiny.en.bin`. |
+
+## Checks
+
+```
+$ stat -c '%n %s' /home/villenull/.local/share/apunta/models/ggml-tiny.en.bin
+stat: cannot statx '.../ggml-tiny.en.bin': No such file or directory
+$ ls -la /home/villenull/.local/share/apunta
+ls: cannot access '/home/villenull/.local/share/apunta': No such file or directory
+
+$ find /tmp/apunta-v2 -maxdepth 4 -path '*/data/models/ggml-tiny.en.bin'
+(no output)
+$ find /tmp/apunta-v2 -maxdepth 3 -path '*/models/ggml-tiny.en.bin'
+(no output)
+$ find /tmp/apunta-v2 -maxdepth 5 -name 'ggml-tiny.en.bin'
+(no output)
+```
+
+## Bound on the claim
+
+The model is absent **at the declared paths checked** — the live default and
+the sandbox root. This is **not** a claim that no copy exists anywhere on the
+machine: no broad home-filesystem scan was performed and none is claimed. The
+previous report's "not on disk anywhere on this machine" was stronger than its
+two checks could support and is withdrawn.
+
+## Correction to the previous report's sandbox path
+
+`ENGLISH-EOD-runtime-readiness.md` §1.1 and §5.2 gave the sandbox model path as
+`/tmp/apunta-v2/<runId>/models/ggml-tiny.en.bin`. That omits the `data/`
+component. The exact path is:
+
+```
+/tmp/apunta-v2/<runId>/data/models/ggml-tiny.en.bin
+```
+
+(`<runId>/data` is `APUNTA_DATA_DIR`; `models/` is `join(dataDir, 'models')`.)

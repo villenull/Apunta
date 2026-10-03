@@ -1,0 +1,84 @@
+# Existing installer first-run: CLI, cache paths, controls (read from source)
+
+## Invocation
+
+- Entry point: `installer/src/main.ts` calls `main(process.argv.slice(2))`.
+- Argument parser: `installer/src/cli.ts:41-86` — commands `plan` and `run`;
+  flags `--data-dir PATH`, `--ollama-url URL`, `--model TAG`,
+  `--runtime-wait-ms N`. Unknown flags and non-loopback `--ollama-url` are
+  refused (`assertLoopback`, `cli.ts:93-104`).
+- Package script: `installer/package.json` `"setup": "tsx src/main.ts"`.
+- Canonical invocation:
+
+```
+npm run setup --workspace @apunta/installer -- run \
+  --data-dir <path> \
+  --ollama-url http://127.0.0.1:11434 \
+  --model qwen3.5:4b-q4_K_M
+```
+
+`plan` prints one NDJSON `plan` event and changes nothing; `run` performs the
+download and prints NDJSON progress. The shell spawns this process; it is not
+the server and not the browser.
+
+## Cache / destination paths
+
+- `dataDir` defaults to `platformDataDir(platform, env, homedir())` =
+  `/home/villenull/.local/share/apunta` on this host (`cli.ts:37-39`,
+  `shared/src/platform-paths.ts:25-41`). **The live path must be overridden.**
+- `modelsDir = join(dataDir, 'models')` (`cli.ts:106-116`).
+- Speech destination: `<dataDir>/models/ggml-tiny.en.bin` (`run.ts:59-61`,
+  `:233`).
+- Receipt written beside it after verification: `<file>.receipt.json`
+  (`readiness.ts:292-297`, `:353-357`).
+- The installer writes only the models directory and its receipt. It opens no
+  database and starts no server.
+
+## Catalog pin (`installer/src/catalog.ts:220-234`, `SPEECH_MODEL`)
+
+| Field | Value |
+| --- | --- |
+| filename | `ggml-tiny.en.bin` |
+| URL | `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin` |
+| SHA-1 | `c78c86eb1a8faa21b369bcd33207cc90d64ae9df` |
+| SHA-256 | `921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f` |
+| sizeBytes | `77,704,715` (`catalog.ts:209`) |
+| allowance | `huggingface.co`; redirect `us.aws.cdn.hf.co` (`catalog.ts:61-64`) |
+| allowedQueryKeys | the ten A07 names (`catalog.ts:121-132`) |
+| licence | MIT (OpenAI Whisper), verified (`catalog.ts:229-233`) |
+
+## Controls enforced (C-ACQ@1; `readiness.ts`, `download.ts`, `run.ts`)
+
+1. `https:` only; port absent or 443; no user-info; no fragment
+   (`readiness.ts:204-227`).
+2. Host must be the artifact's `allowedHosts` (initial) or
+   `allowedRedirectHosts` (redirect) (`readiness.ts:229-236`).
+3. `redirect: 'manual'`; each `Location` resolved and validated before it is
+   requested; at most 5 hops; a repeated URL is a loop and fails; no custom
+   headers to a redirect hop (`download.ts:124-176`).
+4. Query: only the artifact's enumerated parameter **names** are tested; a name
+   outside the list is refused before the request, and **no value is ever read,
+   logged or recorded** (`readiness.ts:116-134`, `:238-253`; `download.ts:94-99`).
+5. Checksum verification is separate and mandatory: `verifyFile` (SHA-256
+   preferred) before `commitDownload`; the file is renamed into place only
+   after it passes (`run.ts:282-296`).
+6. Size must equal `77,704,715`; a hash match with a size mismatch is a
+   `ModelRefusedError`, not a re-download (`run.ts:303-311`).
+7. Readiness probes never write; a receipt is written only after verification
+   (`readiness.ts:460-465`; `run.ts:313-318`).
+8. Explicit user start only (CLAUDE.md hard rule 1(a)); once the file is ready,
+   `plan.ready` short-circuits and nothing is downloaded (`run.ts:171-175`).
+9. Never the server, never the browser (hard rule 1); a test asserts nothing in
+   `server/`, `web/` or `shared/` imports the installer.
+
+## Model count and the no-pull-if-present constraint
+
+- **Exactly one file is downloaded for the English path.** `PREVIEW_SPEECH_MODEL`
+  names the same filename as `SPEECH_MODEL`, so
+  `PREVIEW_SHARES_SPEECH_FILE` is true, the `preview_model` step is marked not
+  needed, and `requiredBytes` counts the file once (`plan.ts:56-68`).
+- **No Ollama pull occurs** while `qwen3.5:4b-q4_K_M` is present: `probeState`
+  sets `writingModelPresent` via `hasModel(tag)` over `/api/tags`
+  (`run.ts:90-92`, `ollama.ts:76-94`), and `runSetup` skips the `writing_model`
+  step (`run.ts:184-205`). `pullModel` is never called for a present tag
+  (`ollama.ts:140`). A08 ("never pull an Ollama tag that already exists") holds.

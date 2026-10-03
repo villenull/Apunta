@@ -1,0 +1,61 @@
+# Gate-status corrections vs ENGLISH-EOD-runtime-readiness.md
+
+Read from `docs/v2/state/cards/{P3.4,P3.5,P3.6}.json`, `PROGRESS.json`, and
+`docs/v2/state/AMENDMENTS.md` at `c6ae03d`.
+
+## P3.4 — previous report's D1 is stale
+
+- `P3.4.json`: `status: "IN PROGRESS"`, `attempt: 6`,
+  `nextAllowedAction: "AM-195-V0-through-V4-once-card-order-no-seventh-no-retry"`.
+- `priorAttempt5Criteria.V2`: "exact IPC ACL denial/CSP/style and5containment
+  PASS; click window read-back FAIL WINDOW0". The V2(a) ACL-denial assertion
+  **passed** in attempt 5.
+- AM-188 (AMENDMENTS.md:415): owner approved the assertion/measurement package
+  — retain `__TAURI__` undefined and replace the impossible internals-absence
+  conjunct with a live in-page known-command **exact ACL denial**.
+- AM-195 (AMENDMENTS.md:429): owner approved the exact native-identity package
+  and **one attempt 6**, no attempt 7.
+
+The previous report's §3/§9 claim that P3.4 needs "owner decision D1 (amend +
+accept-with-disclosure)" is **stale**. Attempt 6 is active under AM-195 and the
+disclosure question was already resolved by AM-188.
+
+## P3.5 — APPROVED
+
+- `P3.5.json`: `status: "APPROVED"`; `finalReviewVerdict: "CLEAR independent
+  41/41, all six criteria real in-grant PASS"`.
+- AM-197 (AMENDMENTS.md:433): "P3.5 APPROVED after final independent completion
+  review."
+
+The previous report's "SUBMITTED, not yet APPROVED" is stale.
+
+## Stop 8 (P3.6's P3.4 V3-invariant pin) — CLEAR
+
+`docs/v2/cards/P3.6.md`'s May-edit quote of P3.4's V3 command is byte-identical
+(modulo GFM `\|` table escaping) to `docs/v2/cards/P3.4.md`'s current V3
+command cell. Run verbatim, it prints `P3.4-V3: 4 forbidden words over 4 paths,
+matches: 0` and exits 0
+(`docs/v2/evidence/P3.6/dispatch-preparation/03-s1-metadata-icons-invariants.txt`).
+The pin drift recorded as C2 in `P3.6-EOD-readiness.md` is **CLEAR**.
+
+## P3.6 — the harness does not exist; V3 is fake AI
+
+- `P3.6.json`: `status: "NOT STARTED"`, `attempt: 0`.
+- `scripts/v2/tauri-e2e-smoke.test.mjs` does **not** exist (`ls` → no such
+  file). It is a **new** file in P3.6's May edit (`P3.6.md:125`, `:301`).
+- P3.6 V3's command runs `env APUNTA_FAKE_AI=1 node
+  scripts/v2/tauri-e2e-smoke.test.mjs smoke` (`P3.6.md:403`) — fake AI,
+  reproducible with zero AI tooling.
+
+The previous report's §6/§7 statement that the P3.6 V3 harness "already
+encodes" the ten flows and needs only a "real-AI mode" is wrong on its premise:
+the harness is unimplemented, so no existing artifact encodes the real workflow.
+A real whisper + real Ollama demonstration is **not** in any card today; it
+would be new work (a P3.6 implementer decision inside the card's May edit, or a
+separate harness) and is not claimed here.
+
+## Dependency gate
+
+`build-dispatch.mjs` refuses while P3.4/P3.5 are unapproved. P3.5 is now
+APPROVED; P3.4 is still IN PROGRESS (attempt 6). No P3.6 dispatch exists
+(`docs/v2/state/dispatch/` has no P3.6.md).
