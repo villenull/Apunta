@@ -1,0 +1,49 @@
+P3.4 static-completion IR — identity and boundary checks
+========================================================
+
+HEAD AT REVIEW TIME: dcf4967
+  The reviewed proposal names stable base HEAD 84965d0. A background session
+  landed commit dcf4967 ("Admit pinned English speech model and preserve
+  static completion proposal") DURING this review: it added AM-198, one
+  ACQUISITION.md line, and committed the proposal/audit/evidence verbatim.
+  It is documentation/acquisition-only:
+    git diff --stat 84965d0..HEAD -- src-tauri server shared web package.json \
+      package-lock.json scripts docs/v2/cards/P3.4.md docs/v2/state/cards/P3.4.json
+  is EMPTY, so no Rule B path, the card's V3/V4 cells, or the harness moved.
+  The proposal's premise therefore still holds at dcf4967.
+
+COMMAND: sha256sum build/p34-runtime6/V3.command.corrected.txt
+94dd69952e08bc153165fa6503901a02f9760777e89c5f52bbc744b197de4168  build/p34-runtime6/V3.command.corrected.txt
+  -> 624 bytes, sha256 94dd69952e08bc153165fa6503901a02f9760777e89c5f52bbc744b197de4168
+     byte-identical to the independently decoded V3 body in 01.
+
+COMMAND: sha256sum scripts/v2/tauri-security.test.mjs
+cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16  scripts/v2/tauri-security.test.mjs
+  -> cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16, matching the
+     harness hash the proposal and audit cite.
+
+COMMAND: sha256sum docs/v2/cards/P3.4.md
+4cc4856190eff2f7af44174670af7fa7c2340300c2cf83a2b917226435228965  docs/v2/cards/P3.4.md
+  -> 4cc4856190eff2f7af44174670af7fa7c2340300c2cf83a2b917226435228965; the two
+     command cells decode to the bodies in 01 (card untouched by dcf4967).
+
+COMMAND: git status --porcelain  (working tree at review time)
+ M docs/v2/evidence/P3.5/attempt-4/final-completion-ir/verify.mjs
+R  docs/v2/evidence/P3.5/silence-completion-ir/v5-program-own-extraction.mjs -> docs/v2/evidence/P3.5/silence-completion-ir/v5-program-own-extraction.mjs.txt
+ M docs/v2/evidence/P3.5/silence-completion-ir/verify.mjs
+?? docs/v2/evidence/P3.4/attempt-6/static-completion-ir/
+?? docs/v2/evidence/eod-proof-lint-repair/
+
+  The only changes are: this review's two new paths (state/reviews/
+  P3.4-static-completion-ir.md and evidence/P3.4/attempt-6/static-completion-ir/),
+  and worker 71cb8245's ACTIVE in-flight artifact-lint repair under
+  docs/v2/evidence/P3.5/** and docs/v2/evidence/eod-proof-lint-repair/. This
+  review read none of 71cb8245's mutable files and touched none of them.
+
+COMMAND: git check-ignore -v build/p34-static-ir
+.gitignore:55:build/	build/p34-static-ir
+
+BOUNDARY: no source, card, checkpoint, contract, manifest, config, tool,
+  fixture, proposal, audit or history file was edited, staged or committed by
+  this review. No V0/V1/V2/V3/V4 row, app, build, model, audio, display, input,
+  network, database or port 7717 was touched.

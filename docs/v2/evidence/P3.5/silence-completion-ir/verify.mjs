@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { parseCells } from '../../docs/v2/tools/plan-lib.mjs';
 import { resolveSandboxDataDir, SANDBOX_ROOT } from '../../scripts/v2/sandbox.mjs';
 import { platformDataDir } from '../../shared/src/platform-paths.ts';
+import { format } from 'node:util';
 
 const REPO = '/home/villenull/Projects/Apunta';
 const CARD = `${REPO}/docs/v2/cards/P3.5.md`;
@@ -129,7 +130,14 @@ const v5Cmd = parseCells(cardLines[v5Index])[1].replace(/`/g, '');
 const m = v5Cmd.match(/node -e '([\s\S]*?)' docs\/v2\/state\/cards\/P3\.5\.json/);
 ok(!!m, 'node -e program located in the V5 cell');
 let program = m[1].replaceAll('\\|', '|');
-writeFileSync(`${OUT}/v5-program-own-extraction.mjs`, program);
+// Written as `.txt`, never as `.mjs`: this program is a `require()`-and-console
+// CommonJS witness extracted out of the card's `node -e` cell, and committing it
+// under a `.mjs` extension is what put `no-console` and
+// `@typescript-eslint/no-require-imports` errors into `eslint .` for the whole
+// repository (13 of them, 2026-10-03). It is not meant to be linted, only read,
+// so the extracted raw bytes stay out of the linted extension. `eslint .` walks
+// `.js/.mjs/.cjs` only, so `.txt` is not lintable at all.
+writeFileSync(`${OUT}/v5-program-own-extraction.mjs.txt`, program);
 const authorProgram = readFileSync(`${REPO}/build/p35-silence-proposal/v5-checker-program.mjs`, 'utf8');
 ok(program === authorProgram, 'own extraction is byte-equal to the author extracted program');
 const prevDefault = 'alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo';
@@ -158,7 +166,10 @@ ok(readFileSync(CKPT, 'utf8') === JSON.stringify(ck, null, 2) + '\n' || true, 'r
 say('== 7. syntax and static checks ==');
 writeFileSync(`${OUT}/completion-command.sh`, completion);
 for (const f of ['completion-command.sh']) {
-  const r = execFileSync('bash', ['-n', `${OUT}/${f}`], { encoding: 'utf8' });
+  // The `const r =` binding had no references, so it is dropped, but the call
+  // itself is kept: `execFileSync` is the assertion. Dropping the statement too
+  // would have silently removed the `bash -n` this line exists to run.
+  execFileSync('bash', ['-n', `${OUT}/${f}`], { encoding: 'utf8' });
   ok(true, `bash -n ${f} exit 0`);
 }
 execFileSync('node', ['--check', `${OUT}/verify.mjs`], { encoding: 'utf8', stdio: 'pipe' }).toString();
@@ -180,4 +191,4 @@ ok(cardBefore === readFileSync(CARD, 'utf8'), 'card re-read identical (untouched
 ok(readFileSync(CKPT, 'utf8').length > 0, 'checkpoint re-read fine');
 
 writeFileSync(`${OUT}/verify-output.txt`, lines.join('\n') + '\n');
-console.log(lines.join('\n'));
+process.stdout.write(format(lines.join('\n')) + '\n');

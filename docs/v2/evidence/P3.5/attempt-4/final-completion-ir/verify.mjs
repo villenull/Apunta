@@ -1,11 +1,12 @@
 import fs from 'node:fs';
+import { format } from 'node:util';
 
 const root = '/home/villenull/Projects/Apunta';
 const read = (p) => fs.readFileSync(`${root}/${p}`, 'utf8');
 const results = [];
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail });
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`);
+  process.stdout.write(format(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`) + '\n');
 };
 
 const ck = JSON.parse(read('docs/v2/state/cards/P3.5.json'));
@@ -75,5 +76,5 @@ check('cleanup: harness hash unchanged', /85fbb13d5af891d3778eab1c1a167b2bdcb349
 check('cleanup: 7717 never contacted', /7717 never contacted/.test(cleanup));
 
 const failed = results.filter((r) => !r.ok);
-console.log(`\n${results.length - failed.length} passed, ${failed.length} failed`);
+process.stdout.write(format(`\n${results.length - failed.length} passed, ${failed.length} failed`) + '\n');
 process.exit(failed.length > 0 ? 1 : 0);

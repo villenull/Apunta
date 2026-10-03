@@ -1,0 +1,31 @@
+P3.4 static-completion IR — structural guard and negative control, reproduced
+=============================================================================
+
+Synthetic fixtures only. No V3 shipping guard was run. Scratch:
+build/p34-static-ir/.
+
+WRAPPER (the attempt-6 failure mode: a whole body between two backticks):
+  bytes: `printf 'P3.4-V3: synthetic body ran\n'`
+
+COMMAND: bash -n wrapper.raw.txt
+  exit=0
+
+COMMAND: bash wrapper.raw.txt   (runs the command substitution)
+build/p34-static-ir/wrapper.raw.txt: line 1: P3.4-V3:: command not found
+  exit=127
+
+COMMAND: bash -n body.txt   (the same body, no wrapper)
+  exit=0
+
+COMMAND: bash body.txt
+P3.4-V3: synthetic body ran
+  exit=0
+
+STRUCTURAL GUARD (residual outer backtick) on the wrapper:
+  fired: true
+
+RESULT: bash -n exits 0 on the wrapper (blind); running it exits 127 with
+  "P3.4-V3:: command not found" — the attempt-6 symptom, reproduced on a
+  harmless synthetic body; the structural guard fires on the wrapper and is
+  therefore non-vacuous. This matches static-completion-proposal/01 and the
+  frozen runtime/06-V3.txt outer-127.
