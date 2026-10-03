@@ -151,20 +151,33 @@ function main() {
    * because S2.5's third attempt failed and the owner resolved the block by
    * authorising one corrective attempt (AM-049), so it is reachable *only* by
    * naming the amendment that authorised it, and the generated dispatch says so.
-   * The ceiling stays 3 without that flag: the guard has not been relaxed, it has
-   * been given a keyed exception, and there is no attempt 5 for any card.
+   *
+   * Attempt 5 is the same keyed exception, once more and for one named card: the
+   * owner authorised exactly one further attempt for P3.4 (AM-189), so reaching it
+   * needs both `--attempt 5` and an `--attempt-exception` that passes the
+   * `AM-nnn` shape, and the card must be the one the amendment named. Every
+   * other card is refused at attempt 5 even with a well-formed amendment, and
+   * attempt 6 is refused for every card including that one — a keyed exception,
+   * not a raised ceiling. The dispatch says which amendment carried it, so the
+   * authority for the attempt is in the file the implementer is held to.
    */
   const exception = opt('--attempt-exception');
-  if (attempt === 4) {
+  const FIFTH_ATTEMPT_CARD = 'P3.4'; // AM-189; changes only with another owner amendment
+  if (attempt === 4 || attempt === 5) {
     if (exception === undefined || !/^AM-\d{3}$/.test(exception))
       fail(
         2,
-        '--attempt 4 requires --attempt-exception <AM-nnn> naming the owner amendment that authorised it',
+        `--attempt ${String(attempt)} requires --attempt-exception <AM-nnn> naming the owner amendment that authorised it`,
       );
-  } else if (attempt >= 5) {
+    if (attempt === 5 && id !== FIFTH_ATTEMPT_CARD)
+      fail(
+        2,
+        `--attempt 5 is refused: only ${FIFTH_ATTEMPT_CARD} may carry it, by naming the owner amendment in --attempt-exception; ${id} is not that card, and there is no attempt 6 for any card`,
+      );
+  } else if (attempt >= 6) {
     fail(
       2,
-      `--attempt must be 1, 2, 3, or 4 with --attempt-exception; ${attempt} is beyond any authorised budget`,
+      `--attempt must be 1, 2, 3, 4 or 5 with --attempt-exception; ${attempt} is beyond any authorised budget`,
     );
   } else if (!(attempt >= 1 && attempt <= 3)) {
     fail(2, '--attempt must be 1, 2 or 3');
@@ -341,7 +354,24 @@ function main() {
     `- Mode: **${mode === 'ir' ? 'INSTRUCTION REVIEW' : mode === 'review' ? 'IMPLEMENTATION REVIEW' : card.role}**`,
     `- Base commit: \`${base}\`${head ? `; head \`${head}\`` : ''}`,
     port ? `- Sandbox port for this card: ${port}` : '- No sandbox port assigned',
-    `- Attempt ${attempt} of ${attempt === 4 ? '3, plus one corrective attempt the owner authorised by ' + exception + ' — there is no attempt 5' : '3'}. Checkpoint: \`docs/v2/state/cards/${id}.json\`.`,
+    /*
+     * One branch per attempt rather than an arithmetic form (`attempt - 3`):
+     * attempt 4's sentence is one corrective attempt and attempt 5's is two, so
+     * the number has to be spelled out. Arithmetic also renders `one` as `1`,
+     * which would change attempt 4's line by a byte — and that line is in the
+     * three dispatches already shipped, so a byte of drift here is a
+     * discrepancy between a reviewed dispatch and the generator that claims to
+     * have produced it.
+     */
+    `- Attempt ${attempt} of ${
+      attempt === 4
+        ? '3, plus one corrective attempt the owner authorised by ' + exception + ' — there is no attempt 5'
+        : attempt === 5
+          ? '3, plus two corrective attempts the owner authorised by ' +
+            exception +
+            ' — there is no attempt 6'
+          : '3'
+    }. Checkpoint: \`docs/v2/state/cards/${id}.json\`.`,
     '- Do not pull, merge, rebase or reset. This file was generated at ' +
       (generatedAt ? `\`${generatedAt}\`` : 'an unrecorded commit') +
       ', which is not the base commit, and HEAD may have moved past it on ' +

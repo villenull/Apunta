@@ -48,8 +48,17 @@ const REPRESENTATIVE = [
   "git diff --name-only HEAD -- 'src/**'",
 ];
 
-/** Runs the generator against a temp plan directory and returns its result. */
-function makePlan(cardText, reviewRow = '| T0.R | T0 | Test review | L2 | extra checks |') {
+/**
+ * Runs the generator against a temp plan directory and returns its result.
+ *
+ * The card id is a defaulted third parameter, and the card's own H1 follows it
+ * (`card()` below): `plan-lib.mjs` keys a card by file name and throws
+ * `file name must be <id>.md` when the two disagree, so a fixture written as
+ * `P3.4.md` whose H1 still reads `# T1 Test card` never reaches the guard being
+ * tested — it exits non-zero for a reason that has nothing to do with the guard.
+ * Every call that does not pass an id is unchanged.
+ */
+function makePlan(cardText, reviewRow = '| T0.R | T0 | Test review | L2 | extra checks |', id = 'T1') {
   const dir = mkdtempSync(join(tmpdir(), 'apunta-dispatch-'));
   for (const f of ['CONTRACTS.md', 'HARD-STOPS.md', 'RUN-CONFIG.md']) cpSync(join(realPlan, f), join(dir, f));
   cpSync(join(realPlan, 'templates'), join(dir, 'templates'), { recursive: true });
@@ -59,12 +68,12 @@ function makePlan(cardText, reviewRow = '| T0.R | T0 | Test review | L2 | extra 
   writeFileSync(join(dir, 'RUN-CONFIG.md'), '# Run config\n\n## 2 L1 checks\n');
   writeFileSync(join(dir, 'MILESTONES.md'), `# Milestones\n\n${reviewRow}\n`);
   mkdirSync(join(dir, 'state'), { recursive: true });
-  writeFileSync(join(dir, 'state', 'PROGRESS.json'), JSON.stringify({ cards: { T1: 'APPROVED' } }));
-  writeFileSync(join(dir, 'cards', 'T1.md'), cardText);
+  writeFileSync(join(dir, 'state', 'PROGRESS.json'), JSON.stringify({ cards: { [id]: 'APPROVED' } }));
+  writeFileSync(join(dir, 'cards', `${id}.md`), cardText);
   return dir;
 }
 
-const card = (command, expected) => `# T1 Test card
+const card = (command, expected, id = 'T1') => `# ${id} Test card
 
 | Field | Value |
 | --- | --- |
@@ -332,4 +341,273 @@ test('substituteTokens fills every token it claims and leaves the rest alone', (
   // Text that is *about* tokens, and another packet's tokens, are not this
   // tool's claim and must not stop a dispatch.
   assert.deepEqual(findUnsubstitutedTokens('write {{…}} and {{S32_PORT}} here'), []);
+});
+
+/*
+ * The attempt-budget guard, keyed by the owner amendment that authorised each
+ * exception.
+ *
+ * The budget is three attempts (COORDINATOR.md §4). Attempts 4 and 5 are not a
+ * raised ceiling: each is reachable only by naming the amendment that authorised
+ * it, and attempt 5 additionally only for the one card the owner named. What
+ * these cases exist to prevent is the failure mode of an exception guard: a
+ * guard that passes whenever any exception is supplied, or that grows the ceiling
+ * for every card because one card needed it. So each refusal is asserted with its
+ * exact exit status *and* the message that says why, the permitted case is
+ * asserted with the amendment name appearing in the generated dispatch, and the
+ * three attempt-4 dispatches already shipped are regenerated and compared byte
+ * for byte — that last one is what would catch an "arithmetic" rewrite of the
+ * attempt line, which spells `one` as `1` and changes a reviewed dispatch by one
+ * character.
+ *
+ * Ported from the independently reviewed probe
+ * `docs/v2/evidence/P3.4/proposal-ir4/tooling-guard.test.mjs` (14 cases), which
+ * ran against an ignored patched copy of this tool because the grant did not yet
+ * exist; the cases and their names are that file's, so the two suites stay
+ * comparable, and they run here against the shipped tool. Only the fixture
+ * plumbing differs: the probe took its tool directory from APUNTA_TOOL_DIR and
+ * resolved the real plan directory by walking up, both of which were only needed
+ * while the tool lived in a scratch copy.
+ */
+
+/** Generates `id` at `attempt`, optionally with an exception, and returns the run. */
+const runAttempt = (id, attempt, extra = []) => {
+  const dir = makePlan(card('npm run lint', 'ok', id), undefined, id);
+  return generate(dir, [
+    id,
+    '--base',
+    'deadbeef',
+    '--port',
+    '7841',
+    '--attempt',
+    String(attempt),
+    '--print',
+    ...extra,
+  ]);
+};
+
+test('T1: --attempt 5 with no exception is refused', () => {
+  const r = runAttempt('T1', 5);
+  assert.equal(r.status, 2, r.stdout);
+  assert.match(r.stderr, /--attempt-exception/);
+});
+
+test('T2: --attempt 5 with a well-formed AM-nnn for another card is refused, naming no attempt 6', () => {
+  const r = runAttempt('T1', 5, ['--attempt-exception', 'AM-999']);
+  assert.equal(r.status, 2, r.stdout);
+  assert.match(r.stderr, /refused/);
+  assert.match(r.stderr, /no attempt 6/);
+  assert.match(r.stderr, /only P3\.4 may carry it/);
+});
+
+test('T3: --attempt 5 with AM-nnn for card P3.4 succeeds with exactly status 0', () => {
+  const r = runAttempt('P3.4', 5, ['--attempt-exception', 'AM-999']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /AM-999/);
+  assert.match(r.stdout, /there is no attempt 6/);
+  assert.match(r.stdout, /# P3\.4 Test card/);
+});
+
+test('T4: --attempt 6 is refused for P3.4 itself', () => {
+  const r = runAttempt('P3.4', 6, ['--attempt-exception', 'AM-999']);
+  assert.equal(r.status, 2, r.stdout);
+  assert.match(r.stderr, /beyond any authorised budget/);
+});
+
+test('T5: attempt 4 line is byte-identical to the shipped literal', () => {
+  const r = runAttempt('T1', 4, ['--attempt-exception', 'AM-049']);
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  const want =
+    '- Attempt 4 of 3, plus one corrective attempt the owner authorised by AM-049 — there is no attempt 5. Checkpoint: `docs/v2/state/cards/T1.json`.';
+  assert.ok(r.stdout.includes(want), 'attempt-4 literal drifted');
+});
+
+test('T5b: attempt 4 failure message is byte-identical to the shipped one', () => {
+  const r = runAttempt('T1', 4);
+  assert.equal(r.status, 2);
+  assert.equal(
+    r.stderr.trim(),
+    '--attempt 4 requires --attempt-exception <AM-nnn> naming the owner amendment that authorised it',
+  );
+});
+
+test('extra: attempt 5 line reads as the AM-049 parallel sentence', () => {
+  const r = runAttempt('P3.4', 5, ['--attempt-exception', 'AM-190']);
+  assert.ok(
+    r.stdout.includes(
+      '- Attempt 5 of 3, plus two corrective attempts the owner authorised by AM-190 — there is no attempt 6. Checkpoint: `docs/v2/state/cards/P3.4.json`.',
+    ),
+    r.stdout.split('\n').find((l) => l.includes('Attempt 5')),
+  );
+});
+
+test('extra: attempts 1-3 unchanged', () => {
+  for (const a of [1, 2, 3]) {
+    const r = runAttempt('T1', a);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.ok(r.stdout.includes(`- Attempt ${a} of 3. Checkpoint: \`docs/v2/state/cards/T1.json\`.`));
+  }
+});
+
+test('extra: --attempt 7+ refused; --attempt 0 / nan refused', () => {
+  for (const a of [7, 12]) {
+    const r = runAttempt('P3.4', a, ['--attempt-exception', 'AM-999']);
+    assert.equal(r.status, 2, `attempt ${a} reached generation`);
+  }
+  for (const a of ['0', 'x', '-1', '4.5']) {
+    const r = runAttempt('P3.4', a, ['--attempt-exception', 'AM-999']);
+    assert.equal(r.status, 2, `attempt ${a} reached generation`);
+  }
+});
+
+test('extra: --attempt 5 in --review mode: same keyed refusal, same single permitted id', () => {
+  // --review is a mode of the same generator and its dispatch carries the same
+  // attempt line, so an exception honoured in one mode and not the other would be
+  // an attempt the implementer reads about in a brief it was never given.
+  const dirA = makePlan(card('npm run lint', 'ok', 'T1'), '| T0.R | T1 | Impl review | L2 | extra |', 'T1');
+  const a = generate(dirA, [
+    'T0.R',
+    '--base',
+    'deadbeef',
+    '--port',
+    '7841',
+    '--attempt',
+    '5',
+    '--attempt-exception',
+    'AM-999',
+    '--print',
+    '--review',
+    '--head',
+    'deadbeef',
+  ]);
+  assert.equal(a.status, 2, a.stdout + a.stderr);
+  assert.match(a.stderr, /only P3\.4 may carry it/);
+  const dirB = makePlan(
+    card('npm run lint', 'ok', 'P3.4'),
+    '| T0.R | P3.4 | Impl review | L2 | extra |',
+    'P3.4',
+  );
+  const b = generate(dirB, [
+    'P3.4',
+    '--base',
+    'deadbeef',
+    '--port',
+    '7841',
+    '--attempt',
+    '5',
+    '--attempt-exception',
+    'AM-999',
+    '--print',
+    '--review',
+    '--head',
+    'deadbeef',
+  ]);
+  assert.equal(b.status, 0, b.stdout + b.stderr);
+  const c = generate(dirB, [
+    'P3.4',
+    '--base',
+    'deadbeef',
+    '--port',
+    '7841',
+    '--attempt',
+    '6',
+    '--attempt-exception',
+    'AM-999',
+    '--print',
+    '--review',
+    '--head',
+    'deadbeef',
+  ]);
+  assert.equal(c.status, 2, b.stdout + b.stderr);
+});
+
+test('extra: --attempt 5 in --ir mode is refused for another card and permitted for P3.4', () => {
+  const dirA = makePlan(card('npm run lint', 'ok', 'T1'), undefined, 'T1');
+  const a = generate(dirA, [
+    'T1',
+    '--base',
+    'deadbeef',
+    '--attempt',
+    '5',
+    '--attempt-exception',
+    'AM-999',
+    '--print',
+    '--ir',
+  ]);
+  assert.equal(a.status, 2);
+  const dirB = makePlan(card('npm run lint', 'ok', 'P3.4'), undefined, 'P3.4');
+  const b = generate(dirB, [
+    'P3.4',
+    '--base',
+    'deadbeef',
+    '--attempt',
+    '5',
+    '--attempt-exception',
+    'AM-999',
+    '--print',
+    '--ir',
+  ]);
+  assert.equal(b.status, 0, b.stdout + b.stderr);
+});
+
+test('extra: attempt 5 is refused for P3.4 when the exception is malformed', () => {
+  for (const e of ['AM-99', 'am-999', 'AM-9999', 'X-999']) {
+    const r = runAttempt('P3.4', 5, ['--attempt-exception', e]);
+    assert.equal(r.status, 2, `${e} was accepted`);
+  }
+});
+
+test('extra: dependency gate still exits 3 after the grant (no PASS on exit 3)', () => {
+  // The grant is about the attempt counter only. A P3.4 whose dependency S2.5 is
+  // not APPROVED must still stop at exit 3 — a keyed attempt exception that also
+  // opened the dependency gate would let an unreviewed card start work.
+  const dir = mkdtempSync(join(tmpdir(), 'apunta-dep-'));
+  for (const f of ['CONTRACTS.md', 'HARD-STOPS.md', 'RUN-CONFIG.md']) cpSync(join(realPlan, f), join(dir, f));
+  cpSync(join(realPlan, 'templates'), join(dir, 'templates'), { recursive: true });
+  mkdirSync(join(dir, 'cards'), { recursive: true });
+  writeFileSync(join(dir, 'CONTRACTS.md'), '# Contracts\n');
+  writeFileSync(join(dir, 'HARD-STOPS.md'), '# Hard stops\n');
+  writeFileSync(join(dir, 'RUN-CONFIG.md'), '# Run config\n');
+  writeFileSync(join(dir, 'MILESTONES.md'), '# Milestones\n');
+  mkdirSync(join(dir, 'state'), { recursive: true });
+  writeFileSync(join(dir, 'state', 'PROGRESS.json'), JSON.stringify({ cards: {} }));
+  writeFileSync(
+    join(dir, 'cards', 'P3.4.md'),
+    card('npm run lint', 'ok', 'P3.4').replace('| Depends | none |', '| Depends | S2.5 |'),
+  );
+  const r = generate(dir, [
+    'P3.4',
+    '--base',
+    'deadbeef',
+    '--port',
+    '7841',
+    '--attempt',
+    '5',
+    '--attempt-exception',
+    'AM-999',
+    '--print',
+  ]);
+  assert.equal(r.status, 3, r.stdout + r.stderr);
+});
+
+test('extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte', () => {
+  // The four dispatched attempt-4 sentences, read from the committed dispatches
+  // themselves rather than from a constant in this file: the amendment id and the
+  // card id are extracted from the shipped line and fed back through the
+  // generator, so the test fails if the generator's wording drifts by one
+  // character from a dispatch a reviewer already accepted.
+  for (const f of ['S2.5.md', 'P3.4.md', 'P4.1.md', 'P4.1-ir.md']) {
+    const line = readFileSync(join(realPlan, 'state', 'dispatch', f), 'utf8')
+      .split('\n')
+      .find((l) => l.startsWith('- Attempt 4 of '));
+    assert.ok(line, `no attempt-4 line in ${f}`);
+    const m =
+      /^- Attempt 4 of 3, plus one corrective attempt the owner authorised by (AM-\d{3}) — there is no attempt 5\. Checkpoint: `docs\/v2\/state\/cards\/(.*?)\.json`\.$/.exec(
+        line,
+      );
+    assert.ok(m, `shipped line in ${f} has an unexpected shape: ${line}`);
+    const r = runAttempt(m[2], 4, ['--attempt-exception', m[1]]);
+    assert.equal(r.status, 0, `${f}: ` + r.stdout + r.stderr);
+    assert.ok(r.stdout.includes(m[0]), `regenerated line differs for ${f}: ${m[0]}`);
+  }
 });
