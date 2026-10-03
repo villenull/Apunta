@@ -2114,3 +2114,6 @@ Fresh independent source review next. Environment reviewer3ba19428 continues.
 No build/resource leases. Global evidence-output lint still needs mechanical
 repair and independent review; older model/proof inputs remain stable meanwhile.
 
+
+Confirmed reviews now RUNNING, all with finish callbacks: P3.4 IR7 a3fe9bac-67cc-41a1-9cc0-f541c1c7a455 (LongCat free high) on stable11a8d38 plus ignored repair2 model; P3.5 source IR2 ab52a4b7-f0df-43ae-ac03-fdd7e52ee905 (Space Bunny free medium) on stable9e6094b; environment proposal IR3ba19428 continues on6ee7611. Each owns only its report/evidence home. No source writer, no build lease, no runtime permission. Old proof scripts remain stable for these reviews; output-only lint repair follows their input snapshot checks rather than mutating evidence underneath them. Await callbacks, then integrate actual verdicts, archive finished workers, and refill useful authorized work.
+
