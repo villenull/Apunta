@@ -1,3 +1,9 @@
+## Committee final contract check — 2026-10-03T02:57:05.455970+00:00
+
+Both reconciliation responses saved, but calibration positions crossed. Coordinator fixed contracts in reviews/P3.4-committee-resolution.md: two-point affine and pre-click target-pointer verification; highest publication epoch and complete replacement/index validation; immutable deadline; presence gate, assertion pending FAIL, two-arm cascade. Both members received the same final contract and are checking only actual counterexamples (read-only, callbacks). Await both, resolve concrete flaws, then archive and dispatch small spec plus ignored synthetic model. No fifth attempt or source grant authorized.
+
+P3.5 worker2028c17e remains sole feature writer/build lease holder, ports7837/7839. Leave its in-flight changes alone.
+
 ## Committee reconciliation partial — 2026-10-03T02:54:17.730982+00:00
 
 LongCat finalreconciliation saved P3.4-committee-longcat-reconciliation.md: withdrawssinglepointaftercounterexample; agrees2pointaffine and rootIPC/frame/batch/deadline/no-new-file invariants. Await SpaceBunny491d8dd0 finalfollowup notification; comparethenresolve anyremainingdisagreement, archivebothafterconvergence, dispatch smallspec+ignoredsyntheticmodel author. Do nottreat initialsignatureor settledgate recommendations asapproved. Noowneramendment or attempt5 granted.
