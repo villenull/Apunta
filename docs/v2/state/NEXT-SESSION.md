@@ -1,3 +1,24 @@
+## EOD checkpoint: instrument fixture repair and silence review running
+
+P3.6 reference re-pin independently CLEAR; b5291447 archived successfully.
+All seven fields and six commands/Expected cells remain byte-identical;
+dependencies still block implementation. P3.4 instrument safety CLEAR but
+owner package DEFECT: mandatory windowPid needs companion 80-suite fixtures,
+and the tool's attempt-4 fixture is stale. Reviewer 4a2bfc67 archived successfully.
+
+Confirmed running with completion callbacks:
+- 3f3ce4a1-8faf-4a3b-9870-2ad4f52d467f: P3.4 proposal R1–R4 author repair,
+  proposal and proposal/proposal-repair evidence only. No shipping source/tool
+  edits. Prepare fixture patch; require 80/80 and 29/29 before fresh review.
+- 2ff14a21-f41a-414b-88f2-5954a6a1eb2b: independent P3.5 silence-completion
+  review, new silence-completion-ir report/evidence only. Author archived,
+  proposal committed 1c76506. Check seven unsets and one real record/anchor;
+  V5 reevaluation needs explicit exception. Option2 must park BLOCKED.
+
+No build/audio/app/port holder; root owns checkpoints. P3.4 remains attempt5
+BLOCKED/no6; P3.5 attempt4 BLOCKED/no5/no retry. Scope and broader push questions
+pending. Third worker slot awaits stable work for independent review.
+
 ## Integration command reference re-pin awaiting independent review
 
 17f00ebf completed, archived; 0d0c556 integrated exact coordinator reference

@@ -1,0 +1,27 @@
+# 05 read-only checks and untouched-file proof (independent)
+# generated 2026-10-03T22:54:27Z
+
+$ node docs/v2/tools/check-plan.mjs --no-write
+Plan consistent: 71 cards, 12 parent reviews, 14 contracts, R01-R20 covered, no cycles.
+exit=0
+
+$ npx prettier --check docs/v2/cards/P3.6.md
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+
+$ git diff --stat e7e6287 0d0c556 -- <author/source paths> (expect empty everywhere)
+docs/v2/cards/P3.4.md                         EMPTY
+docs/v2/cards/P3.3.md                         EMPTY
+server/src/http/csp.ts                        EMPTY
+docs/v2/tools/plan-lib.mjs                    EMPTY
+docs/v2/tools/check-plan.mjs                  EMPTY
+docs/v2/tools/build-dispatch.mjs              EMPTY
+docs/v2/state/cards/P3.6.json                 EMPTY
+docs/v2/state/checkpoints                     EMPTY
+package.json                                  EMPTY
+
+$ git status --porcelain (this review writes only its own two paths)
+?? docs/v2/evidence/P3.5/silence-completion-proposal/
+?? docs/v2/evidence/P3.6/security-repin-ir/
+?? docs/v2/state/P3.5-SILENCE-COMPLETION-PROPOSAL.md

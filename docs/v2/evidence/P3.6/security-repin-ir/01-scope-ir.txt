@@ -1,0 +1,39 @@
+# 01 scope -- commit 0d0c556 vs parent e7e6287 (independent review)
+# generated 2026-10-03T22:53:28Z
+
+$ git show --stat 0d0c556
+0d0c556 Re-pin integration security command without changing acceptance
+
+ docs/v2/cards/P3.6.md                              |  86 ++++++------
+ docs/v2/evidence/P3.6/security-repin/01-scope.txt  | 151 +++++++++++++++++++++
+ .../evidence/P3.6/security-repin/02-invariants.txt |  30 ++++
+ .../security-repin/03-v3-command-derivation.txt    |  12 ++
+ .../P3.6/security-repin/04-negative-fixtures.txt   |  34 +++++
+ docs/v2/evidence/P3.6/security-repin/05-checks.txt |  11 ++
+ .../evidence/P3.6/security-repin/06-untouched.txt  |  14 ++
+ .../v2/state/reviews/P3.6-security-repin-author.md | 126 +++++++++++++++++
+ 8 files changed, 421 insertions(+), 43 deletions(-)
+
+$ git diff -U0 e7e6287 0d0c556 -- docs/v2/cards/P3.6.md   (hunk ranges only)
+@@ -101,19 +101,15 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+@@ -136,5 +132,7 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+@@ -142 +140 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+@@ -202 +200 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+@@ -205,2 +203,3 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+@@ -288,7 +287,7 @@ not a licence to touch it.
+@@ -465 +464 @@ reason a row is relaxed. Every attempt also updates
+@@ -489,6 +488,7 @@ reason a row is relaxed. Every attempt also updates
+@@ -503 +503 @@ reason a row is relaxed. Every attempt also updates
+
+changed-line ranges: 101-119,132-140,200,203-205,287-293,464,488-494,503
+Verification rows live at 401-406 (both sides); field table 3-10 (both sides) -- untouched
+
+$ files changed outside docs/v2/cards/P3.6.md
+docs/v2/cards/P3.6.md
+docs/v2/evidence/P3.6/security-repin/01-scope.txt
+docs/v2/evidence/P3.6/security-repin/02-invariants.txt
+docs/v2/evidence/P3.6/security-repin/03-v3-command-derivation.txt
+docs/v2/evidence/P3.6/security-repin/04-negative-fixtures.txt
+docs/v2/evidence/P3.6/security-repin/05-checks.txt
+docs/v2/evidence/P3.6/security-repin/06-untouched.txt
+docs/v2/state/reviews/P3.6-security-repin-author.md

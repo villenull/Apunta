@@ -1,0 +1,40 @@
+# Independent adversarial controls against the ACTUAL candidate export
+# (build/p34-eod-ir/candidate/tauri-security.test.mjs), synthetic numbers only.
+# $ node build/p34-eod-ir/adversarial.mjs
+# 32/32 adversarial checks passed, EXIT=0
+
+PASS edge: left/top corner (x=window.x, y=window.y) is inside
+PASS edge: last column (x=window.x+w-1) is inside
+PASS edge: x=window.x+w is outside
+PASS edge: y=window.y+h is outside
+PASS edge: x=window.x-1 is outside
+PASS outside fails closed
+PASS no X/Y fails closed
+PASS 2 px fails closed
+PASS foreign WINDOW/PID inside is diagnostic-only pass
+PASS WINDOW=0 inside passes (real attempt-5 shape)
+PASS owner foreign pid: fails closed with zero moves and zero clicks
+PASS owner foreign pid: ownership is read before any move
+PASS owner non-integer stdout: fails closed with zero moves and zero clicks
+PASS owner non-integer stdout: ownership is read before any move
+PASS owner negative pid: fails closed with zero moves and zero clicks
+PASS owner negative pid: ownership is read before any move
+PASS owner zero pid: fails closed with zero moves and zero clicks
+PASS owner zero pid: ownership is read before any move
+PASS owner empty stdout: fails closed with zero moves and zero clicks
+PASS owner empty stdout: ownership is read before any move
+PASS owner non-zero exit: fails closed with zero moves and zero clicks
+PASS owner non-zero exit: ownership is read before any move
+PASS owner killed by signal: fails closed with zero moves and zero clicks
+PASS owner killed by signal: ownership is read before any move
+PASS owner XError: fails closed with zero moves and zero clicks
+PASS owner XError: ownership is read before any move
+PASS owner hung: deadline ends the row with zero moves and zero clicks
+PASS owned window: the flow lands with exactly one click
+PASS owned window: getwindowpid precedes the first move
+PASS stale pointer: no fresh page witness means zero clicks
+PASS target witness 3 px off: zero clicks
+PASS BASELINE control: foreign owner is not read at all (no getwindowpid)
+
+# The author's own before-after.mjs was also replayed against the copied exports:
+# $ node build/p34-eod-ir/before-after.mjs  ->  22/22, EXIT=0

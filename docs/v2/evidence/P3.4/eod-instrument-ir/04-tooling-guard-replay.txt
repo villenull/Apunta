@@ -1,0 +1,36 @@
+# Tool guard replay against the ACTUAL copied tool files (mirrored docs/v2,
+# so build-dispatch.test.mjs resolves CONTRACTS.md/templates/state/dispatch).
+
+$ node --test build/p34-eod-ir/tool-base/docs/v2/tools/build-dispatch.test.mjs
+i tests 26
+i pass 25
+i fail 1
+  - extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte
+
+$ node --test build/p34-eod-ir/tool-cand/docs/v2/tools/build-dispatch.test.mjs
+i tests 29
+i pass 28
+i fail 1
+  - extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte
+
+# After the MINIMUM stale-fixture correction (see 05):
+$ node --test build/p34-eod-ir/tool-cand/docs/v2/tools/build-dispatch.test.mjs
+i tests 29
+i pass 29
+i fail 0
+
+# Why it is red on BOTH: the test at build-dispatch.test.mjs:593 iterates
+# ['S2.5.md','P3.4.md','P4.1.md','P4.1-ir.md'] and requires each to carry an
+# "- Attempt 4 of " line. AM-189 regenerated state/dispatch/P3.4.md to
+# "Attempt 5 of 3 ... AM-189 ... there is no attempt 6", so P3.4.md no longer
+# carries an attempt-4 line. S2.5/P4.1/P4.1-ir still do.
+#   grep -c "^- Attempt 4 of " docs/v2/state/dispatch/{S2.5,P3.4,P4.1,P4.1-ir}.md
+#   -> 1 / 0 / 1 / 1
+
+# Keyed-grant behaviour confirmed by the candidate test (T4/T4b/T4c/T5/T5b and
+# "extra: attempt 6 line", "extra: --attempt 7+ refused"):
+#   attempt 6 + AM-nnn for P3.4  -> status 0, sentence "... there is no attempt 7"
+#   attempt 6 + AM-nnn for T1    -> status 2, "only P3.4 may carry it", "no attempt 7"
+#   attempt 6 with no exception  -> status 2, "--attempt-exception"
+#   attempt >=7 any card         -> status 2, "beyond any authorised budget"
+#   attempt 4 line / failure msg -> byte-identical (T5/T5b)

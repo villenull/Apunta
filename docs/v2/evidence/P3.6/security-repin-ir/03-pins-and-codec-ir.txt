@@ -1,0 +1,33 @@
+# 03 pins and table codec -- independent re-derivation (no edit to any plan file)
+# generated 2026-10-03T22:54:15Z
+# instrument: build/p36-repin-ir/pins-clean.mjs -- reads git objects and plan-lib only
+
+## P3.4 V3 cell, table codec (parseCells/escapeCell)
+raw row reserialises to the raw row exactly: true
+raw cell text, backticks off : 628 (carries 4 GFM table-escape backslashes)
+raw span incl. both backticks : 630
+parsed command cell bytes    : 626 (incl. the two backticks)
+parsed command, backticks off: 624
+raw span contains \|\|       : true
+parsed contains bare || (shell OR): true
+parsed contains backslash-pipe: false
+
+## the copy P3.6 carries
+parsed cell present verbatim in P3.6.md      : true
+occurrences of it in P3.6.md                  : 1
+present in the parent (e7e6287) P3.6.md      : false
+its line is a bullet continuation, not a table row: true
+no \| survives inside the copied command       : true
+
+## pins, each re-derived at HEAD
+P3.4 Rule B bullet: 5dcabae == 04d071e == HEAD  : true (2164 B)
+P3.4 V3 cell: 5dcabae != 04d071e (so its pin must move): true
+P3.4.md identical 04d071e..HEAD                 : true
+P3.4.md touched by 0d0c556                      : no
+csp.ts identical d56af1d..HEAD                  : true
+P3.3.md identical 321b4fa..HEAD                 : true
+
+pin 04d071e in P3.6.md: 7 occurrence(s)
+pin 5dcabae in P3.6.md: 3 occurrence(s)
+pin d56af1d in P3.6.md: 5 occurrence(s)
+pin 321b4fa in P3.6.md: 5 occurrence(s)

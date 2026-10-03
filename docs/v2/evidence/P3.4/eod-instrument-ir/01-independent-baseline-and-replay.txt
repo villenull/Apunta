@@ -1,0 +1,26 @@
+# P3.4 EOD instrument — independent baseline + patch replay (fresh IR)
+# HEAD c85c699. Repo paths read-only; scratch is the ignored build/p34-eod-ir/.
+
+## 0. shipping identity at HEAD (re-derived independently)
+865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  scripts/v2/tauri-security.test.mjs
+f6f22ab0063be475eb6532455cd707fe3d7048929b4c911924ce69503736c2e3  docs/v2/tools/build-dispatch.mjs
+d4dcf3c29b1b77c3b4f325d0a68fe76a5a6efbe4b5b8c6415064f31925df7aec  docs/v2/tools/build-dispatch.test.mjs
+# harness hash == the proposal's stated baseline (865ccab3, attempt 5).
+
+## 1. both patches apply to the real shipping paths (git apply --check, read-only)
+candidate.patch: APPLIES CLEANLY
+tooling.patch:   APPLIES CLEANLY
+
+## 2. replay hashes (applied in scratch; identical to proposal 01)
+cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16  candidate/scripts/v2/tauri-security.test.mjs
+3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4  candidate/build-dispatch.mjs
+5cefe88f30f4c2df978ce3553e12d287e696a77f8f535f8287ddb717a678f4b9  candidate/build-dispatch.test.mjs
+
+## 3. scope (git apply --stat)
+ candidate.patch: scripts/v2/tauri-security.test.mjs | 1 file changed, 63 insertions(+), 13 deletions(-), 6 hunks
+ tooling.patch:   docs/v2/tools/build-dispatch.mjs + .test.mjs | 2 files changed, 79 insertions(+), 17 deletions(-), 7 hunks
+
+## 4. syntax (node --check)
+candidate harness: OK
+candidate tool: OK
+candidate tool test: OK

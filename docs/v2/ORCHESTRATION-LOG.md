@@ -2769,3 +2769,13 @@ No history or provenance defect. Root read finalV3/V4 and outsidecleanup logs.
 17f00ebf complete/archived, artifact0d0c556 onlyreferenceprose+newproofs, all
 commands/Expected/fieldsbyteidentical. Fresh independentreview launched callback;
 P36 stillnotdispatchable. Other2workersRUNNINGatboundary, resourcesfree.
+
+## 2026-10-03 — independent reviews integrated, bounded follow-ups running
+
+P3.6 reference re-pin CLEAR; reviewer b5291447 archived successfully. P3.4
+instrument safety CLEAR, owner package DEFECT on missing compatible fixtures
+and stale tool fixture; reviewer 4a2bfc67 archived successfully. Results preserved.
+3f3ce4a1 is running proposal-only R1–R4 repair; 2ff14a21 is running independent
+silence-completion review, both with callbacks and disjoint writes. No runtime
+or protected patch authorized. Resources free; P3.4/P3.5 remain BLOCKED.
+Pending scope/push questions retain their boundaries; no worker duplication.

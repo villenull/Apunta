@@ -1,0 +1,52 @@
+# 06 observations, static reads only — none is a new criterion for this re-pin
+# generated 2026-10-03T22:55:00Z
+
+## A. Out of grant, pre-existing, reported and not touched by the re-pin
+
+1. Dispatch status is stale in two places, in the same family, and neither is
+   about the V3 pin:
+   - `docs/v2/cards/P3.6.md:19` says P3.5 is `NOT STARTED`;
+     `docs/v2/state/cards/P3.5.json` reads `BLOCKED`, attempt 4.
+   - `cards/P3.6.md:17`, `:196` and Stop 8 `:499` say P3.4 is `BLOCKED` at 3 of 3
+     with a fourth authorised; `docs/v2/state/cards/P3.4.json` reads `BLOCKED`,
+     attempt 5.
+   Editing either would exceed a pin re-pin. The V3 pin at `04d071e` stays valid
+   regardless: `docs/v2/cards/P3.4.md` is byte-identical from `04d071e` to HEAD
+   (`03-pins-and-codec-ir.txt`), so a card whose text moves does not move the
+   reference the re-pin points at.
+
+2. H4 (V3's command chooses `xvfb-run -a` or the inherited session and sets no
+   `GDK_SCALE` / `GDK_BACKEND` / `WAYLAND_DISPLAY`, which the sibling harnesses
+   normalise) and H3 (`test "$C" -eq 1` over `'Apunta (test)_'*.AppImage` is an
+   ambiguity guard, not a provenance guard): both are harness/implementer work
+   inside `scripts/v2/`, not a card row, and neither was in this grant.
+
+3. V0's Expected cell still carries a historical explanation of the superseded
+   `\|`-in-a-pipeline spelling. Expected cells are byte-identical across the
+   re-pin (`02-fields-and-rows-ir.txt`), so this is report-only by construction.
+
+## B. Two citation details in the author review, checked, no finding
+
+- `02-pins.txt` is `docs/v2/evidence/P3.6/eod-readiness/02-pins.txt`, not a file
+  of the `security-repin/` set. It exists and says what the review attributes to
+  it (P3.4 Rule B path spans 2154 B on both sides; I re-derived whole-bullet
+  identity instead: `5dcabae == 04d071e == HEAD`, 2164 B — the 10-byte difference
+  is a different span boundary, not a different bullet).
+- The review's stated baseline is `HEAD f343650`; the commit's parent is
+  `e7e6287`. `git diff f343650 e7e6287 -- docs/v2/cards/P3.6.md` is empty, so the
+  diff the author captured is the diff the commit carries.
+
+## C. Byte-count reconciliation
+
+Author: "628-byte (raw) / 624-byte (parsed)". Mine, measured through the same
+codec: raw cell text excluding its two backticks 628 B (4 GFM table-escape
+backslashes), parsed command excluding its two backticks 624 B (0 backslashes,
+bare `||`). 628/624 confirmed exactly.
+
+## D. Not done, deliberately
+
+No acceptance row was run; no runtime, app, model, server, DB, audio, mic,
+`pactl`, display, input, network, install or port 7717 was touched; no source,
+author, card, checkpoint, contract, tool, config, manifest, row or Expected cell
+was edited; no child agent and no question; P3.6 is not approved and no
+dependency status was changed.

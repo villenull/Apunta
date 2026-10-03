@@ -1,0 +1,36 @@
+# Minimum stable fixture corrections for an OWNER-READY candidate.
+# These are the exact edits that take the two committed suites to green against
+# the candidate patch. None relaxes an assertion: each re-derives a fixture for
+# the new instrument or removes a fixture line that AM-189 made stale.
+
+## A. docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+##    (the committed synthetic suite; 80/80 required)
+## A1. flowOps() must supply the new mandatory ownership seam. After the
+##     windowGeometry entry (line ~1002), add:
+      windowPid: () => ({ code: 0, signal: null, stdout: `${String(appPid)}\n`, stderr: '' }),
+## A2. D7's two identity assertions are obsolete: under the corrected instrument
+##     a foreign WINDOW/PID is diagnostic, and the pass/fail turns on containment.
+##     Replace lines 241-242 and add the containment negative that preserves the
+##     strength the old lines claimed:
+      assert.equal(checkReadback({ x: 700, y: 500 }, { X: '700', Y: '500', PID: '-1' }, WINDOW, APP_PID).ok, true);
+      assert.equal(checkReadback({ x: 700, y: 500 }, { X: '700', Y: '500', WINDOW: '999' }, WINDOW, APP_PID).ok, true);
+      assert.match(checkReadback({ x: 50, y: 500 }, { X: '50', Y: '500', WINDOW: '999' }, WINDOW, APP_PID).reason, /outside the owned app window/);
+## A3. Six `dispatched` deep-equal arrays now see getwindowpid immediately after
+##     getwindowgeometry. Insert 'getwindowpid' after 'getwindowgeometry' in:
+##     F2 (line 1129), F2-d (1170), F3 refusedFirst (1250), F3 refusedSecond
+##     (1257), F6 (1313), F7 (1325). Example:
+      assert.deepEqual(a.dispatched, ['getwindowgeometry', 'getwindowpid']);
+
+## B. docs/v2/tools/build-dispatch.test.mjs  (tool guard; 29/29 required)
+## B1. The stale shipped-line fixture: AM-189 regenerated P3.4.md to attempt 5,
+##     so it no longer carries an attempt-4 line. The test's own name says
+##     "three shipped". Change the loop set (line ~643) from four files to three
+##     and fix the comment "four" -> "three":
+      for (const f of ['S2.5.md', 'P4.1.md', 'P4.1-ir.md']) {
+##     This does not waive the check: the generator's attempt-4 sentence remains
+##     verified against the three dispatches that actually carry it, and T5/T5b
+##     already pin the literal and the failure message byte-for-byte.
+
+## Verified after applying A1-A3 and B1:
+##   ported-model.test.mjs (candidate): tests 80, pass 80, fail 0
+##   build-dispatch.test.mjs (candidate): tests 29, pass 29, fail 0

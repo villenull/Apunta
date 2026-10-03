@@ -1,0 +1,23 @@
+# Preserved surfaces — candidate.patch touches only the identity instrument.
+# grep counts of preserved tokens in candidate.patch (0 == untouched):
+assertNoIpc:          0
+ACL_DENIAL:           0
+landingFact:          0
+createBatchReader:    0
+killActiveCommands:   0
+containedInWindow:    1   (called by C1; the function itself is not modified)
+
+# The six candidate hunks, by shipping line:
+  1026/1037  checkReadback (C1): drop the dead "or PID" conjunct; require the
+             measured native point containedInWindow(window); keep <=1 px.
+  1323       guardedMove comment only (C3 unchanged).
+  1623       runFlow (C2): new deadline-raced getwindowpid <appWindowId> owner
+             check, fail closed before any move.
+  1772/1798  makeOps comment + windowPid seam (C4):
+             windowPid: (id) => spawnAsync('xdotool', ['getwindowpid', String(id)])
+
+# Unchanged and independently confirmed absent from the diff: the (a) ACL
+# assertion, the immutable 30 s deadline, exactly-one-click, the landing
+# href/scriptText logic, the epoch/batch/global-index reader, the five
+# containment assertions, the five-row NOT RUN cascade, every threshold
+# (1 px, 2 px, 0 < k <= 4, viewport minima), and the navigation/window-open rows.
