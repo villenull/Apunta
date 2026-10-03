@@ -1,0 +1,31 @@
+PASS D1 client index that names another source cannot mask a real-microphone stream: ["alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo"]
+PASS D1 the leak row keeps its resolved name, not the client number: sourceId=61 clientId=63
+PASS D1 a microphone-shaped client index on a harmless stream is not a leak: realMic=0 virtual=1
+PASS D1 virtual only: v=1 r=0 u=0
+PASS D1 virtual plus a physical leak: v=1 r=1
+PASS D1 an unrelated source and a real leak are both reported, separately: u=1 r=1
+PASS D1 an empty source-outputs read yields no virtual stream (fail-closed at the assertion): all=0
+PASS D1 a source-output naming a source index the table does not have throws: source-output 7 names source index 99, which is not in the pactl sources table; the mapping is unknown and the row must not assume it is safe
+PASS D1 a source-output naming source index 0, absent from the table, throws: source-output 7 names source index 0, which is not in the pactl sources table; the mapping is unknown and the row must not assume it is safe
+PASS D1 a duplicated source index in the source table throws: duplicate source index 61 in pactl sources: "61 second"
+PASS D1 a source table row with one column throws: malformed pactl sources row: "64"
+PASS D1 a source-outputs row with two columns throws: malformed pactl source-outputs row: "7\t61"
+PASS D1 a non-numeric source-outputs column throws: non-numeric source-outputs column: "7\t61\tclient\t(null)\ts16le"
+PASS D1 a non-numeric source index in the table throws: non-numeric source index in pactl sources: "alsa_input.usb-nosuch analog stereo"
+PASS D1 a fractional source index throws: non-numeric source index in pactl sources: "61.5 apunta_p35_mic module"
+PASS D1 a hex-looking index is read as 16 (unreachable from `%u`, recorded not invented): 16
+PASS D1 a negative index is accepted as a key (unreachable from `%u`, recorded not invented): -1
+PASS D1 a whitespace-only source column still stops the row (columns shift, resolution fails): non-numeric source-outputs column: "7\t  \t30\t(null)\ts16le"
+PASS D1 a spaced microphone name still trips the leak test (over-match, safe direction): r=1
+PASS D1 a spaced virtual name whose first token is the owned name is treated as the owned source: v=1
+PASS D1 a failed source-outputs command throws: pactl list short source-outputs exited 1: 
+PASS D1 the failure names the failing command and its exit code: pactl list short source-outputs exited 1: 
+PASS D1 a failed sources command throws even when the outputs read succeeded: pactl list short sources exited 1: 
+PASS D1 a killed pactl (null status) throws, never "no leak": pactl list short source-outputs exited null: 
+PASS D1 a stream with an empty source table throws rather than reading as safe: source-output 7 names source index 64, which is not in the pactl sources table; the mapping is unknown and the row must not assume it is safe
+PASS D1 two streams on the virtual source are both kept: v=2
+PASS D1 the live block reads both source-outputs and sources before classifying
+PASS D1 the live block classifies through classifyPactlReads, not a raw column
+PASS D1 an unresolvable read is BLOCKED, not a pass
+PASS D1 the fail-closed path returns into the finally that stops the shell and tears down
+D1 numeric-mapping probes: 30/30 passed

@@ -2154,3 +2154,18 @@ no lintdisabled. Historical proofhashes describepriorcommits, notrewritten.
 P3.5 sourceIR2 ab52a4b7 and envproposalrepair2c2ab067 continue.
 No buildlease/ports reserved. No runtime or installpermission.
 
+
+## P3.5 final normal code repair dispatch — 2026-10-03T04:19:23.300415+00:00
+
+SourceIR2 ab52a4b7 returned CHANGES REQUESTED and is archived. Safety source-ID
+mapping and markerhistory repairs verified; remaining latent missing/emptycoordinate
+Number(null)=0 defect plus historical evidence bookkeeping. Fresh codewriter
+4438f0dc-4457-4792-bb0c-397eb11afbca confirmed RUNNING on Space Bunny free medium,
+callback, is authorized attempt3of3 CODE/UNIT ONLY, owncheckpoint
+minimalcounteredit, no capture/build/install. Noattempt4 exists. Original five
+capture records and V3BLOCKED/V4NOTRUN/V5FAIL remain. Runtimebudget inenvironment
+proposal must refer to currentfinalattempt3, not obsoleteattempt2.
+
+P3.4 two ownerquestions remainPENDING; nofifthgrant inferred. Environmentrepair
+2c2ab andoutputlint27cac continue; no buildlease.
+

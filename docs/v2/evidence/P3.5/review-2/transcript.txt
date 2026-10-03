@@ -1,0 +1,63 @@
+$ ~/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node --version
+v24.19.0
+exit=0
+
+$ node --check scripts/v2/tauri-audio.test.mjs   (pinned node)
+exit=0
+
+$ node docs/v2/evidence/P3.5/attempt-2/repair-verify.mjs   (root re-run of the candidate's own suite)
+
+30/30 pure checks passed
+exit=0
+
+$ node build/p3.5-review2/d1-numeric-mapping.mjs
+D1 numeric-mapping probes: 30/30 passed
+exit=0
+
+$ node build/p3.5-review2/d2-current-rectangles.mjs
+PASS D2 a complete newest marker installs the rectangle: {"x":10,"y":20,"w":30,"h":40}
+PASS D2 no markers installs nothing: size=0
+PASS D2 a newer marker that omits the element removes its rectangle (no union of history): home-search
+PASS D2 a truncated newer marker installs no partial rectangle and does not merge: []
+PASS D2 ADVERSARIAL: a newest marker missing only `_x` installs a rectangle at x=0 (Number(null)===0): {"x":0,"y":222,"w":80,"h":40}
+PASS D2 ADVERSARIAL: empty coordinate values read as 0 and install a rectangle at the origin: {"x":0,"y":0,"w":80,"h":40}
+PASS D2 a NaN coordinate installs nothing: []
+PASS D2 a Infinity coordinate installs nothing: []
+PASS D2 a zero width coordinate installs nothing: []
+PASS D2 a negative width coordinate installs nothing: []
+PASS D2 a zero height coordinate installs nothing: []
+PASS D2 a dashed test id with all four fields installs: home-action-note
+PASS D2 a test id containing an underscore resolves too (field = last segment, id = the rest): ["a_b"]
+PASS D2 readReported: the newest marker is the last one, and it dropped record-start: markers=3 tids=home-search
+PASS D2 readReported: a truncated newer marker is present as a marker and wins: markers=2 tids=[]
+PASS D2 readReported: the truncated marker does not resurrect the older rectangle
+PASS D2 readReported: P3.4 text leaves are still read from the observe marker: [["Stop and create draft",{"x":10,"y":20,"w":30,"h":40}]]
+PASS D2 readReported: the own rectangles and the inherited leaves coexist
+PASS D2 the snapshot reader answers the first read of the click path: {"cx":560,"cy":320,"rect":{"x":500,"y":300,"w":120,"h":40},"label":"home-search"}
+PASS D2 the click target stops resolving the moment the element leaves the screen: before=140 after=null
+PASS D2 waitForPublished resolves a rectangle published after it started polling: {"cx":560,"cy":320,"rect":{"x":500,"y":300,"w":120,"h":40},"label":"home-search"}
+PASS D2 waitForPublished times out rather than reusing an older rectangle: null
+D2 current-rectangle probes: 22/22 passed
+exit=0
+
+$ npx eslint scripts/v2/tauri-audio.test.mjs docs/v2/evidence/P3.5/attempt-2/repair-verify.mjs
+exit=0
+
+$ npx eslint .   (repo-wide)
+✖ 60 problems (60 errors, 0 warnings)
+
+exit=1
+
+$ pactl --version
+pactl 17.0-98-gb096
+exit=0
+
+$ pactl list short sources   (read-only; column shape only)
+cols=7 idx=60
+cols=7 idx=61
+cols=7 idx=62
+cols=7 idx=63
+exit=0
+
+$ pactl list short source-outputs   (read-only)
+exit=0
