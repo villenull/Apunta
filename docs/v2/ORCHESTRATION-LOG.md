@@ -2525,3 +2525,12 @@ callback and isolated report/evidencewrites. Read-only finalP35attempt3 sequence
 and provenance/scanner gates, no resources/runtime. P34d353b075 solebuildholder.
 ExistingP35attempt1dispatch stale; no execution fromit. Readycontinuation awaits
 readiness return and buildlease release, no extraattempt or capture retry.
+
+### 2026-10-03 — P3.5 runtime readiness accepted, prepared writer handoff
+
+Archived readinessrevieweraa834596 afterCLEAR. Root regenerated currentattempt3
+dispatch at888bcc4 and prepared runtimebrief. Originalsourcehistoryretained.
+Checkpointexclusivewrite will be delegated tofinalruntimeworker insideMayedit,
+root suspended untilreturn, exactcaptureobjects/anchors appendedperrowbeforeV5;
+acceptance/provenance unchanged. P34d353b075 confirmedRUNNING ateventboundary,
+solebuildleaseholder. No P35runtime/port/buildlease reserved untilrelease.

@@ -1,3 +1,18 @@
+## P3.5 readiness CLEAR, prepared behind P3.4 build lease
+
+Revieweraa834596 completed CLEAR and archival succeeded. Root read and accepted
+once-only finalattempt3 sequence, scanner/dryplugin gate, cachedvoice and preserved
+provenance. New dispatch/runtimebrief prepared at continuationanchor888bcc4;
+originalbase8783181/source7e16513 retained. No P3.5row executed orportreserved.
+
+Coordinator writerdecision: next runtimeworker gets exclusivecheckpointownership
+inside Mayedit, root suspends writes untilreturn. Exactcapture RECORD+run-folder
+object/anchors appended perrow, no historydeletion/duplicates/inventedmetadata;
+V5unchanged failclosed. This replaces rootappendhandoff in initialreadinessbrief,
+notacceptance. P3.4 d353b075 confirmedRUNNING atcompletionboundary and holdssole
+buildlease; await runtimeevidence/cleanup beforelaunch P3.5. No otherreadyresource
+work meanwhile; allfutureverification once-only/no6/no4 budgets persist.
+
 ## P3.5 final runtime readiness review runs without resource use
 
 Readiness revieweraa834596-509d-4895-99fc-53cbd63f6c5d (LongCat free high)

@@ -1,0 +1,13 @@
+HEAD: 888bcc4ad01d15ec60cd7808b3ec335e2fd5510b
+branch: main
+status: 0 dirty path(s)
+config bundleMediaFramework: 1
+helpers scanner: present-executable
+host scanner: present-executable
+voice onnx: /home/villenull/.local/share/apunta-piper/voices/en_US-ljspeech-medium.onnx
+present
+checkpoint attempt/status: 3 BLOCKED
+attempt1 V3 records: 5
+sandboxRuns: 5
+ports 7837/7839: 0 listener(s)
+P3.4 build pids: 3

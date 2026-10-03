@@ -1,0 +1,33 @@
+# P3.5 runtime-readiness — synthetic/source checks (read-only, no execution)
+
+Date: 2026-10-03T20:31:13Z
+HEAD: 888bcc4ad01d15ec60cd7808b3ec335e2fd5510b
+
+## 1. Harness parse (node --check; no execution)
+PASS scripts/v2/tauri-audio.test.mjs parses
+PASS scripts/v2/sandbox.mjs parses
+
+## 2. V5 provenance program extracted from the card, unescaped, parsed
+awk exact-token lists: ["apunta_p35,apunta_p35_mic","sink_name=apunta_p35,sink_name=apunta_p35_mic,source_name=apunta_p35,source_name=apunta_p35_mic,master=apunta_p35,master=apunta_p35.monitor"]
+legacy grep -c inside the V5 command portion: false
+PASS V5 provenance program (unescaped) parses
+
+## 3. Stale dispatch vs current card (source of truth)
+dispatch P3.5.md: base 8783181, attempt 1; GSTREAMER_HELPERS_DIR=0, stream_loop=0, bundleMediaFramework=0
+card P3.5.md: GSTREAMER_HELPERS_DIR=1, stream_loop=1, appointa_p35 typo=0, apunta_p35=16
+
+## 4. Checkpoint provenance shape at HEAD
+attempt 3 status BLOCKED
+sandboxRuns 5 sideEffectsDone 8
+PREV_DEFAULT objects 5 prose entries 3
+prose entries naming PREV_DEFAULT 0
+attempt-1 V3 records 5
+records at attempt 3 0
+
+## 5. AM-190 artifacts
+config key bundleMediaFramework in src-tauri/tauri.conf.json: 1
+test overlay unchanged (no bundleMediaFramework): 0
+prepared scanner helper: present-executable
+host scanner: present-executable
+A03 row Arch admission: 1
+A10 nine-name admission: 2
