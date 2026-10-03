@@ -2477,3 +2477,13 @@ surviving, real-path lint/format/syntax all PASS. Root syntax0. No source edits
 or acceptance rows by review. At event boundary authentication worker5d98dc33
 confirmed RUNNING with callback. P3.4 held only for installer/preflight, no lease
 or port. Next after PASS: serial build and final once-only V0–V4, no attempt6.
+
+### 2026-10-03 — local auth timeout; diagnosis separated from observation
+
+Worker5d98dc33 returned timeout124 and noinstallation; archived successfully.
+Its missinggraphicalagent explanation is not established: local pkexec man page
+says internal textualagent fallback exists. Root preserved report and added
+qualification, asked owner which window/prompt appeared. Diagnostician3dc11fa9
+(LongCat free high) confirmed running with callback, read-only evidence scope,
+no authretry/credentials or screen capture. Source CLEAR; runtime prerequisite
+hold retained. No lease or port, no card attempt spent by authentication.

@@ -1,3 +1,20 @@
+## Local authentication timed out; read-only diagnosis running
+
+Worker5d98dc33 completed and archival succeeded. Ghostty route launched once,
+script exit124; pacman not reached and none of three prerequisites installed.
+No STEP0/build/capture executed. Historical README retained with coordinator
+qualification: absent graphical agent does not prove no prompt because installed
+pkexec(1) documents an internal text fallback. Actual prompt presence is unknown.
+Root asked owner whether terminal/password prompt appeared; answer pending.
+
+Fresh diagnostician3dc11fa9-3011-4fb5-a47b-caecbf018af6 (LongCat free high)
+confirmed RUNNING with callback; read-only localdocs/process-context diagnosis,
+only authentication-diagnosis evidence writes. No privileged retry, input/screen
+capture or extra package/config edit. Corrected P3.4 source CLEAR, runtime held
+on unmet prerequisites. AM190/193 grants persist; no attempt consumed by timeout,
+no sixth P3.4/fourth P3.5 authorization. No lease/port or active installer known;
+worker left local script awaiting Enter, do not close unrelated terminal.
+
 ## Corrected source CLEAR; authenticated prerequisites remain the runtime gate
 
 Reviewer8084112d completed CLEAR and archival succeeded. Actual harness865ccab3
