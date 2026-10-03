@@ -1,0 +1,47 @@
+PASS proposal is within the requested 250 lines — 249 lines
+PASS A03 proposed cell found in the proposal — Ubuntu archive via `apt`; on this Arch host only, the offici
+PASS A03 keeps Ubuntu archive via apt
+PASS A03 adds Arch repositories via pacman
+PASS A03 names gst-plugins-base
+PASS A03 names gst-plugins-good
+PASS A03 names patchelf explicitly
+PASS A03 has no general "Tauri Linux prerequisites" clause
+PASS A03 cites no INSTALL.md / archlinux.org
+PASS A03 stays "this Arch host only"
+PASS proposal lists exactly nine A10 names — user_id, response-content-disposition, xip, X-Xet-Cas-Uid, Expires, Policy, Signature, Key-Pair-Id, Hash-Algorithm
+PASS A10 names match the acquisition record exactly
+PASS A10 does not include response-content-type (A07-only tenth name)
+PASS A10 redirect host names us.aws.cdn.hf.co
+PASS A10 amendment writes no key values
+PASS A10 claims no retroactive grant
+PASS A10 proposes no redownload
+PASS base bundle has no linux key today
+PASS test overlay has no bundle key today
+PASS option A delta is exactly the one key
+PASS option B delta is exactly the one key
+PASS cached linuxdeploy-plugin-gstreamer.sh present — /home/villenull/.cache/tauri/linuxdeploy-plugin-gstreamer.sh
+PASS script documents GSTREAMER_HELPERS_DIR
+PASS script copies helpers from $helpers_dir
+PASS script patchelf-sets the helpers rpath
+PASS hook scanner path is the prepared Arch target
+PASS host scanner exists — /usr/lib/gstreamer-1.0/gst-plugin-scanner
+PASS host scanner is executable
+PASS proposal points GSTREAMER_HELPERS_DIR at a scratch dir
+PASS proposal says the scratch dir holds only the scanner
+PASS proposal marks the helpers-env inheritance as unproven
+PASS prepared step-0 snippet found in verify.mjs
+--- prepared step-0 snippet output (verbatim) ---
+v24.19.0
+FAIL: patchelf absent
+OK appsink
+MISSING autoaudiosrc
+MISSING alsasrc
+MISSING pulsesrc
+scanner present
+prepared step-0 exit=0 (printed a prerequisite failure: true)
+PASS DEFECT confirmed: prepared step-0 exits 0 while prerequisites are absent
+--- fail-closed form the acceptance requires ---
+FAIL: patchelf absent
+fail-closed exit=1
+PASS fail-closed form exits non-zero on this host, as the acceptance demands
+ALL CHECKS PASS

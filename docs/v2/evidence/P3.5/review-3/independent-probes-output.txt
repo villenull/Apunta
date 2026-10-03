@@ -1,0 +1,91 @@
+extracted from <repo>/scripts/v2/tauri-audio.test.mjs
+MARKER_PATH=/p3.5-marker OBSERVE_PATH=/api/p3.4-observe SOURCE_NAME=apunta_p35_mic
+
+PASS A missing _x installs nothing
+PASS A missing _y installs nothing
+PASS A missing _w installs nothing
+PASS A missing _h installs nothing
+PASS B empty _x installs nothing
+PASS B empty _y installs nothing
+PASS B empty _w installs nothing
+PASS B empty _h installs nothing
+PASS B space _x installs nothing
+PASS B space _y installs nothing
+PASS B space _w installs nothing
+PASS B space _h installs nothing
+PASS B tab _x installs nothing
+PASS B tab _y installs nothing
+PASS B tab _w installs nothing
+PASS B tab _h installs nothing
+PASS B newline _x installs nothing
+PASS B newline _y installs nothing
+PASS B newline _w installs nothing
+PASS B newline _h installs nothing
+PASS B carriage-return _x installs nothing
+PASS B carriage-return _y installs nothing
+PASS B carriage-return _w installs nothing
+PASS B carriage-return _h installs nothing
+PASS B mixed _x installs nothing
+PASS B mixed _y installs nothing
+PASS B mixed _w installs nothing
+PASS B mixed _h installs nothing
+PASS C null _x installs nothing
+PASS C undefined _x installs nothing
+PASS C numeric (non-string) _x installs nothing
+PASS C null _y installs nothing
+PASS C undefined _y installs nothing
+PASS C numeric (non-string) _y installs nothing
+PASS C null _w installs nothing
+PASS C undefined _w installs nothing
+PASS C numeric (non-string) _w installs nothing
+PASS C null _h installs nothing
+PASS C undefined _h installs nothing
+PASS C numeric (non-string) _h installs nothing
+PASS D zero x/y is a real coordinate and installs
+PASS D negative x/y installs unchanged in the reader
+PASS D NaN _x installs nothing
+PASS D Infinity _x installs nothing
+PASS D -Infinity _x installs nothing
+PASS D NaN _y installs nothing
+PASS D Infinity _y installs nothing
+PASS D -Infinity _y installs nothing
+PASS D NaN _w installs nothing
+PASS D Infinity _w installs nothing
+PASS D -Infinity _w installs nothing
+PASS D NaN _h installs nothing
+PASS D Infinity _h installs nothing
+PASS D -Infinity _h installs nothing
+PASS D zero width installs nothing
+PASS D negative width installs nothing
+PASS D zero height installs nothing
+PASS D negative height installs nothing
+PASS D padded numeric value installs, trimmed
+PASS E newest partial does not fall back to the older complete snapshot
+PASS E one incomplete id does not suppress a complete sibling
+PASS E a newest marker that omits an id removes it (no history union)
+PASS E no markers installs nothing
+PASS E the three own data-testid rectangles all resolve
+PASS E an id containing an underscore resolves
+PASS F rectOf passes the negative rectangle through (finite, positive size)
+PASS F rectInsideWindow rejects the negative x/y at click time
+PASS F rectInsideWindow accepts a positive in-window rectangle
+PASS G readReported keeps only the newest marker snapshot
+PASS G latestMarker is the last snapshot
+PASS G a truncated newest marker is present and wins
+PASS G the truncated marker does not resurrect the older rectangle
+PASS G P3.4 text leaves still read from the observe marker
+PASS G own rectangles and inherited leaves coexist
+PASS G waitForPublished resolves a rectangle published late
+PASS G waitForPublished times out rather than reusing an older rectangle
+PASS H a stream whose client index is a different harmless source is still caught by resolved name
+PASS H the virtual stream is classified virtual
+PASS H unknown/stale source index fails closed: threw "source-output 15 names source index 999, which is not in the pactl sources table; the mapping is unknown and the row must not assume it is safe"
+PASS H duplicate source index fails closed: threw "duplicate source index 70 in pactl sources: \"70\\tapunta_p35_mic\\ta\\tb\\tc\""
+PASS H malformed source-outputs row fails closed: threw "malformed pactl source-outputs row: \"12\\t70\""
+PASS H non-numeric source-outputs column fails closed: threw "non-numeric source-outputs column: \"x\\t70\\t167\\ta\\tb\""
+PASS H failed source-outputs command fails closed: threw "pactl list short source-outputs exited 1: x"
+PASS H failed sources command fails closed: threw "pactl list short sources exited 1: x"
+PASS H killed pactl (code null) fails closed: threw "pactl list short source-outputs exited null: "
+PASS H both reads succeed and resolve
+
+86/86 independent probes passed
