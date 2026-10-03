@@ -1,0 +1,77 @@
+# IR2 — R1: the committed 80-test synthetic suite (independent replay)
+
+Mirror-only, exactly as the repair did it: the fixtures' relative import
+(`../../../../../../scripts/v2/tauri-security.test.mjs`) resolves inside the
+mirrored tree, so the ACTUAL patched export is exercised and no real path is
+written. No app, server, display, pointer, audio, network or port 7717.
+
+## 1. Counts, three trees
+
+$ node --test .../ported-model.test.mjs .../adapters.test.mjs
+
+base (shipping bytes, no patch)                tests 80  pass 80  fail 0  skipped 0  todo 0
+candidate+tooling, WITHOUT fixture.patch        tests 80  pass 59  fail 21 skipped 0  todo 0
+ALL FOUR patches                                tests 80  pass 80  fail 0  skipped 0  todo 0
+
+Non-vacuity: the 59 -> 80 repair is caused by fixture.patch alone. This
+independently reproduces the review's D1 (59/80) and the repair's claim (80/80).
+
+## 2. The 21 failures are exactly the review's D1
+
+$ node --test <nofix> | grep -E 'windowPid is not a function|not over the app'
+  12  actual: 'io rejected: TypeError: ops.windowPid is not a function'
+   1  AssertionError: 1: io rejected: TypeError: ops.windowPid is not a function
+   7  AssertionError: io rejected: TypeError: ops.windowPid is not a function
+   1  AssertionError: The input did not match the regular expression /not over the app/
+   1  expected: /not over the app/,
+
+i.e. 20 runFlow cases missing the mandatory windowPid seam, plus D7's two
+obsolete identity assertions.
+
+## 3. Nothing dropped, renamed or suppressed (HS-7)
+
+test names in ported-model.test.mjs + adapters.test.mjs:
+  base 80 names, full 80 names, diff IDENTICAL
+$ grep -nE '\.skip\(|\.only\(|test\.todo|t\.skip|\btodo:' <repaired fixtures>
+  none
+node reports skipped 0, todo 0.
+
+## 4. What fixture.patch actually changed (+15/-8, one file, three hunks)
+
+(a) A1 — flowOps() gains the mandatory ownership seam, directly after
+    windowGeometry:
+      windowPid: () => ({ code: 0, signal: null, stdout: `${String(appPid)}\n`, stderr: '' }),
+    It is exercised by every runFlow case (all 20 pass). The fail-closed
+    getwindowpid cases (foreign / non-integer / zero / negative / empty /
+    non-zero exit / signal / XError / hung) are NOT in the committed suite; they
+    are the prior review's 32 adversarial controls, carried on hash identity
+    (04 below), not weakened by this happy-path fake.
+
+(b) A2 — D7's two obsolete assertions re-derived + one containment NEGATIVE:
+      -  assert.match(... PID: '-1' ..., /not over the app/);
+      -  assert.match(... WINDOW:'999'..., /not over the app/);
+      +  assert.equal(... PID: '-1' ..., ok, true);   // diagnostic text only
+      +  assert.equal(... WINDOW:'999'..., ok, true); // diagnostic text only
+      +  assert.match(checkReadback({x:50,y:500},{X:'50',Y:'500',WINDOW:'999'},...).reason,
+      +               /outside the owned app window/);
+    WINDOW = {id:4711,x:60,y:70,w:1280,h:860}. x=50 is outside (50<60) while the
+    X read-back is exact (0 px), so ONLY the containment clause can refuse it:
+    the new negative is strictly load-bearing, and D7 grew 7 -> 8 assertions.
+    D7's other four assertions (1 px in, 2 px out, app-pid named, no usable X/Y)
+    are untouched. D7's test NAME is preserved verbatim (see 05 §1).
+
+(c) A3 — exactly six `dispatched` deep-equal arrays gained 'getwindowpid'
+    immediately after 'getwindowgeometry', full array still compared:
+      F2 :1135, F2-d :1175, F3 refusedFirst :1255, F3 refusedSecond :1262,
+      F6 :1318, F7 :1330
+    The two arrays that must NOT grow are untouched:
+      :1125 (F1-g getwindowgeometry classification: non-zero/XError/signal) and
+      :1382 (F11 bad geometry/pid) — both stop before the ownership dispatch.
+    Verified: 8 occurrences of 'getwindowgeometry' in deep-equal arrays; only the
+    six listed grew. Confirms the change is scoped to flows that actually reach
+    the windowPid dispatch.
+
+## 5. This suite is not in `npm test`
+
+vitest.config.ts runs only the workspace projects, so V4 would not catch this
+class of regression. It is the card's own synthetic proof; re-run here by hand.

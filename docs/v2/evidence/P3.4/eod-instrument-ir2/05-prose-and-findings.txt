@@ -1,0 +1,87 @@
+# IR2 — residuals, prose findings and the §7 intent assessment
+
+None of these change the patches, the instrument, or the owner-ready verdict.
+They are documentation observations; the sha256 one is the only new one and it
+is cosmetic, in the proposal header.
+
+## 1. D7 test name — disclosed, harmless (no action required)
+
+`ported-model.test.mjs:236` is still named
+`'D7 native read-back needs 1 px, the app window or the app pid'`, but under the
+corrected instrument the "or the app pid" arm is gone (getmouselocation's PID is
+diagnostic text only; ownership is a separate getwindowpid check). The repair
+was told to preserve all 80 test names, so it preserved the name and re-derived
+only the assertions. The residual is disclosed in the proposal §6 ("One
+residual, recorded not hidden") and in the repair 06 §4, and offered as a
+one-line follow-up. Disclosed, changes no assertion and no count, harmless.
+
+## 2. P3.5 as a fourth attempt-4 dispatch — valid, no churn (no action required)
+
+At HEAD 591dad4 four dispatches carry an attempt-4 line (S2.5, P4.1, P4.1-ir,
+P3.5). The tooling fixture retains the three originals and drops only P3.4.md
+(AM-189 regenerated it at attempt 5). Adding P3.5 would change the case's own
+name ("three shipped") and is non-minimal. Three representative byte-identity
+fixtures remain and the generator sentence is still verified against real
+shipped dispatches; the set is valid and needs no name cap or churn.
+
+## 3. Proposal header sha256 — one hex digit missing (cosmetic; prose remedy)
+
+`docs/v2/state/P3.4-EOD-INSTRUMENT-PROPOSAL.md:18` prints the shipping harness
+checksum as:
+
+    865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f37693e      (60 chars)
+
+The actual hash is 64 chars; the header omits one character — a `2` before the
+final `6`:
+
+    865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  (64 chars)
+
+First difference at index 54 (proposal `3`, actual `2`). Every other place that
+prints the hash is correct (repair README:18, repair 01:10, proposal §2 uses the
+abbreviated `865ccab3`). This is an owner-facing typo in a checksum the proposal
+uses to anchor its baseline.
+
+**Simple prose remedy (one character, documentation only):** in
+`P3.4-EOD-INSTRUMENT-PROPOSAL.md:18`, replace
+`…b1df34f37693e` with `…b1df34f236f37693e` so the header shows the full
+64-character digest. It does not touch a patch, a fixture, a tool, the
+instrument, or any decision; it only makes the header match the file it claims
+to pin. (Not edited by this review — proposals are outside the review lease.)
+
+## 4. §7 "not requested" vs §5 — intent is coherent; no new gate
+
+`P3.4-EOD-INSTRUMENT-PROPOSAL.md` §7 says:
+
+  > **Requested:** the approvals in §5 Option A — now four patches …
+  > **Not requested, not assumed:** any source, tool, card, checkpoint, contract,
+  > manifest or old-evidence edit; … any runtime run; …
+
+Read literally, "any source, tool … edit" sits next to §5's request to approve
+`candidate.patch`/`tooling.patch`, which ARE source/tool edits, and "any runtime
+run" sits next to Option A's one final V0–V4 measurement. The apparent tension is
+wording, not scope:
+
+  - §7's "Requested" is the *authority* to approve the four enumerated patches;
+    it is not a request that the preparer make the edits now, and the header
+    states nothing is adopted or in force.
+  - §7's "Not requested, not assumed" is the standard preparation disclaimer:
+    no *further* authority beyond §5, and none of it silently assumed. "any
+    runtime run" means this document does not self-authorise a runtime — the run
+    is Option A's consequence, after the separate independent source review §5
+    already requires.
+
+The intent is therefore coherent with §5 and with COORDINATOR §6 (the coordinator
+may not approve a row with a FAIL/NOT RUN; only the owner may authorise the
+attempt-6 exception). No new gate should be invented here. If the owner wants
+zero ambiguity, the minimal prose option is to scope the disclaimer: "**Not
+requested or assumed beyond the four patches in §5:** any *other* source, tool, …
+edit; … any runtime run beyond the single Option-A measurement; …". That is
+optional wording, not a condition of owner-readiness.
+
+## 5. What was NOT re-reviewed
+
+Per the task: the instrument safety is carried on hash identity (04 §3), not
+redesigned. The grant logic was confirmed CLEAR by the prior IR and its tests are
+byte-preserved (03 §4). This review re-derived patch identity, scope, order
+compatibility, the two committed suites, the six-array and D7 fixture changes,
+and the carry-forward — nothing else.

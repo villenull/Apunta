@@ -1,0 +1,62 @@
+# IR2 — R2: the tool guard (independent replay)
+
+Mirror-only. The tool test reads its "real plan" as `dirname(import.meta.url)/..`,
+so the mirrored docs/v2/state/dispatch/*.md and the shipped plan files are
+exercised; the repository's own dispatch files were never written. plan-lib.mjs
+and the plan scaffolding were copied into the mirror; nothing in the repo moved.
+
+## 1. Counts, three trees
+
+$ node --test docs/v2/tools/build-dispatch.test.mjs
+
+base (shipping bytes)                          tests 26  pass 25  fail 1
+tooling.patch only, WITHOUT tooling-fixture    tests 29  pass 28  fail 1
+tooling.patch + tooling-fixture.patch          tests 29  pass 29  fail 0
+
+Non-vacuity: the 28 -> 29 repair is caused by tooling-fixture.patch alone. This
+independently reproduces the review's D2 (28/29) and the repair's claim (29/29).
+
+## 2. tooling-fixture.patch is one hunk, +7/-2, fixture set + comment only
+
+  -  for (const f of ['S2.5.md', 'P3.4.md', 'P4.1.md', 'P4.1-ir.md']) {
+  +  for (const f of ['S2.5.md', 'P4.1.md', 'P4.1-ir.md']) {
+  -  // The four dispatched attempt-4 sentences, ...
+  +  // The three dispatched attempt-4 sentences, ...
+  +  // P3.4.md is deliberately NOT in this set: AM-189 regenerated it at attempt 5
+
+It changes NO test name (nofix vs full name lists are identical) and NO
+assertion. The attempt-4 case still:
+  - reads the amendment id and card id OUT of the shipped line (not a constant);
+  - pins the full sentence with the unchanged regex
+    /^- Attempt 4 of 3, plus one corrective attempt the owner authorised by (AM-\d{3}) — there is no attempt 5\. Checkpoint: `docs\/v2\/state\/cards\/(.*?)\.json`\.$/;
+  - regenerates and asserts `r.stdout.includes(m[0])` (byte-for-byte);
+  - keeps the three failure messages and T5/T5b (attempt-4 literal + failure
+    message byte-identical to the shipped ones).
+Nothing is waived; the check is re-pointed at the dispatches that still carry
+the line.
+
+## 3. The three retained fixtures are the three originals
+
+At HEAD 591dad4 the shipped dispatches carrying `- Attempt 4 of ` are:
+  S2.5.md (AM-049), P4.1.md (AM-064), P4.1-ir.md (AM-064), P3.5.md (AM-194).
+The loop retains S2.5/P4.1/P4.1-ir (the three original) and drops only P3.4.md
+(AM-189 regenerated it at attempt 5, so it has no attempt-4 line). P3.5.md is a
+fourth that appeared after the review; adding it would change the test's own
+name ("three shipped") and is non-minimal. Three representative byte-identity
+fixtures remain and the generator's sentence is still verified against real
+shipped dispatches; the retained set is valid and needs no churn or name cap.
+
+## 4. tooling.patch touched no attempt-4/5 case
+
+$ diff base build-dispatch.test.mjs  tooled build-dispatch.test.mjs \
+    | grep -E '^[<>].*(attempt 4|attempt 5|Attempt 4 of 3|Attempt 5)'
+  (no output)
+tooling.patch only splits the old "attempt 6 refused" case into T4/T4b/T4c and
+adds the parallel attempt-6 sentence case — the grant the prior IR confirmed
+CLEAR.
+
+## 5. Generator behaviour unchanged by R2
+
+No generator byte is touched by tooling-fixture.patch. `--attempt >= 7` is still
+refused for every card; attempt 6 is still refused for every card other than
+P3.4 without the keyed exception; the dependency gate still exits 3.

@@ -1,0 +1,69 @@
+# IR2 — identity, scope, replay (independent; HEAD 591dad4)
+
+Reviewer lease: read-only on the repository. Scratch: ignored build/p34-eod-ir2/.
+No source, tool, card, checkpoint, contract, manifest, proposal or old evidence
+was edited; nothing staged or committed; no runtime/app/build/model/audio/input/
+network/7717 was touched. Only the new ir2 report and this evidence directory
+were written.
+
+## 1. Shipping identity re-derived at HEAD 591dad4 (not 99baec7)
+
+Two background commits landed after the repair was authored (568cd27, 591dad4).
+Neither touches a source, tool, fixture or P3.4 file. All five shipping hashes
+are unchanged from the review's and the repair's stated baseline:
+
+865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  scripts/v2/tauri-security.test.mjs
+f6f22ab0063be475eb6532455cd707fe3d7048929b4c911924ce69503736c2e3  docs/v2/tools/build-dispatch.mjs
+d4dcf3c29b1b77c3b4f325d0a68fe76a5a6efbe4b5b8c6415064f31925df7aec  docs/v2/tools/build-dispatch.test.mjs
+195e30f5c2285c5572c6a037dfe2a299c99e2dd6fa0735b9883d63ece74c4c60  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+
+## 2. All four patches apply to the real shipping paths (read-only --check)
+
+$ git apply --check <patch>            # run from the repo root, no writes
+CLEAN  eod-instrument-proposal/candidate.patch
+CLEAN  eod-instrument-proposal-repair/fixture.patch
+CLEAN  eod-instrument-proposal/tooling.patch
+CLEAN  eod-instrument-proposal-repair/tooling-fixture.patch
+
+## 3. Scope re-derived (git apply --stat) — exactly the claimed deltas
+
+candidate.patch        scripts/v2/tauri-security.test.mjs                63+/13-   (1 file, 6 hunks)
+fixture.patch          .../attempt-5/implementation/ported-model.test.mjs 15+/8-   (1 file, 3 hunks)
+tooling.patch          docs/v2/tools/build-dispatch.mjs                  46+/17-  (2 files)
+                       docs/v2/tools/build-dispatch.test.mjs             49+/15-
+tooling-fixture.patch  docs/v2/tools/build-dispatch.test.mjs              7+/2-    (1 hunk)
+adapters.test.mjs      untouched by every patch
+
+These match the proposal §2/§4/§4.1 and the repair README exactly.
+
+## 4. Replay hashes — all four applied (mirror, patch -p1)
+
+Mirror = shipping bytes copied to the true repo-relative paths under
+build/p34-eod-ir2/full/, then all four patches applied with `patch -p1`
+(git apply from a subdirectory of the worktree mis-prefixes paths; `patch -p1`
+is unambiguous). The real paths were never written.
+
+cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16  scripts/v2/tauri-security.test.mjs
+3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4  docs/v2/tools/build-dispatch.mjs
+ee8e051cc467ef62c55d00a128d496da94eeaaee6364789c694a85d5d6de8b8f  docs/v2/tools/build-dispatch.test.mjs
+e4790fe909e0352fdba94b0f54db48397deac436a35d3c267937f468796d607b  .../ported-model.test.mjs
+325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  .../adapters.test.mjs
+
+Identical to repair 01 §3 on every file.
+
+## 5. Order independence (candidate+tooling present, fixture order swapped)
+
+Applied in the reverse order (tooling-fixture BEFORE tooling; fixture before
+candidate). Final hashes are byte-identical to §4. The two build-dispatch.test
+patches compose either way; the two fixture patches touch disjoint files.
+
+## 6. Syntax
+
+$ node --check <each patched file>   -> OK on all five (mirror copies).
+
+## 7. Repository untouched
+
+$ git status --porcelain   -> empty at HEAD 591dad4 (before the ir2 writes).
+No shared build/ subdirectory was deleted or modified; scratch stayed inside the
+ignored build/p34-eod-ir2/.

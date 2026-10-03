@@ -1,0 +1,48 @@
+# IR2 — carry-forward of the instrument proofs (hash identity)
+
+The repair edits committed FIXTURES only. The instrument and the generator's
+grant logic are byte-identical before and after R1/R2, so the prior review's
+instrument proofs remain valid on a hash, not a reading.
+
+## 1. Byte-identity of the shipped instrument
+
+candidate + tooling only : scripts/v2/tauri-security.test.mjs  cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16
+all four patches applied : scripts/v2/tauri-security.test.mjs  cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16
+candidate + tooling only : docs/v2/tools/build-dispatch.mjs     3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4
+all four patches applied : docs/v2/tools/build-dispatch.mjs     3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4
+
+Re-derived independently (01 §4 and a candidate-only mirror). No instrument or
+generator byte was redesigned, rewritten or relaxed.
+
+## 2. The author's 22 synthetic before/after checks — RE-RUN, 22/22
+
+Replayed `eod-instrument-proposal/before-after.mjs` against the repaired export
+(baseline = shipping 865ccab3, candidate = the all-four export cc733cd0):
+  $ node before-after.mjs  ->  22/22 synthetic before/after checks passed, exit 0
+Includes the real attempt-5 shape accepted AFTER, the containment negative, the
+foreign-owner stop before any move, and exactly one click on the happy path.
+
+## 3. The prior review's 32 independent adversarial controls — CARRIED
+
+eod-instrument-ir/03 records 32/32 PASS against the candidate export whose
+sha256 is cc733cd0. The repaired tree's export has the same sha256 (§1), so it
+evaluates identically on all 32; re-running would reproduce the same numbers and
+add nothing. This covers the fail-closed getwindowpid cases the committed
+happy-path fake does not: foreign owner, non-integer/zero/negative/empty stdout,
+non-zero exit, signal, XError, hung, ownership-before-move, one click on the
+happy path, zero on a stale pointer and a 3 px target witness. The prior review
+returned the instrument CLEAR on this basis; the task instructs carrying it on
+hash identity, with no re-review redesign.
+
+## 4. The instrument safety verdict is unchanged
+
+The C1 (measured point inside the owned rectangle) / C2 (getwindowpid ownership
+before any move) / C3 (fresh app-page ptrN witness) conjunction, and the "a fake
+other window cannot publish the app's own ptrN" argument, rest entirely on the
+harness bytes, which are identical. R1/R2 are fixture corrections only.
+
+## 5. Attempt 4 / attempt 5 history
+
+Unchanged. No evidence, message, dispatch, card, checkpoint, contract or count
+was touched by the repair or by this review. The prior V2 FAIL (WINDOW=0) and V4
+FAIL (outside-source lint) remain on the record; nothing is re-run or waived.
