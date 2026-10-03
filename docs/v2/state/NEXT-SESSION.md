@@ -1,3 +1,29 @@
+# Latest event checkpoint — 2026-10-03
+
+- Old orchestrator `dea3b0d2-60b4-4284-8fa2-f110100ee76b` archived at owner
+  request after complete handoff; archival confirmed. No retained old coordinator.
+- S3.3a independent implementation reviewer
+  `cbcf3dd0-9f51-4147-8ab5-8b4b88da58f2` RUNNING on stable candidate 56d1847,
+  only its review/evidence. Limited build lease until return if missing-dist
+  precondition requires build; V6/V7 owner-held, no model calls.
+- P3.5 first command IR DEFECT, reviewer
+  `d046abb1-5f79-45d5-b179-adbd441b1daa` archived, report recorded.
+  Command-repair author attempt 2 RUNNING:
+  `857ce7d5-fe0b-4b2d-b412-e1bd3c81ab0c`, only V5 command/minimal existing
+  PREV_DEFAULT-shape clarification in card and own repair2 report. Exact original
+  default comparison required; missing/ambiguous baseline fails closed. Empty
+  legitimate list outputs must NOT be rejected indiscriminately. No audio/app.
+  Coordinator corrected typo in plannedSideEffects; implementation attempt 0.
+- P3.4 proposal author complete, archived; proposal is UNADOPTED at
+  `state/P3.4-REPAIR-PROPOSAL-2026-10-03.md`. Independent reviewer
+  `c3ab4f09-ca1d-4e9e-9a15-9d7719261445` RUNNING, only its owner-proposal IR.
+  No fifth attempt or protected assertion/hook amendment authorised.
+- All three owned active workers: Space Bunny medium, same workspace, disjoint
+  write scopes, completion callbacks. No model/audio/acquisition work. Next:
+  process S3.3a review into attempt2 repairs; P3.5 repair then fresh review;
+  P3.4 independently reviewed concrete owner question. Prior blocks historical
+  where their RUNNING assertions conflict with this checkpoint.
+
 # Active continuation — 2026-10-03
 
 This block supersedes older running/lease claims below. Coordinator

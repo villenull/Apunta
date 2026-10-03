@@ -7,16 +7,16 @@
   "baseCommit": "ea6597011e41fb7b4766918d5fb1d6198257ef0b",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "V5 command-only author completed and archived. Coordinator corrected remaining virtual-source typo references. Repair committed for review, not acceptance; coordinator fake-pactl replay exposes empty/wrong default passing. Independent instruction reviewer d046abb1-5f79-45d5-b179-adbd441b1daa running; attempt remains 0.",
-  "nextAllowedAction": "await-independent-V5-command-review; no implementation before restoration defect resolved",
+  "lastCompletedStep": "Independent V5 IR DEFECT: exact PREV_DEFAULT restoration missing and empty default passes. Author attempt2 running 857ce7d5-fe0b-4b2d-b412-e1bd3c81ab0c; no implementation consumed (attempt0). Coordinator corrected plannedSideEffects intended-source typo. Legitimate empty source/sink/module listings are not automatically failures; mandatory original-default evidence missing/malformed must FAIL.",
+  "nextAllowedAction": "await-V5-command-repair2-then-fresh-independent-review",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T01:08:21.297676+00:00",
+  "updatedUtc": "2026-10-03T01:15:20.758728+00:00",
   "plannedSideEffects": [
     {
-      "what": "PipeWire null sink appointa_p35 and remap source appointa_p35_mic, made the default capture source for the duration of a capture row",
+      "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",
       "scope": "host-global, the single mutation AM-109 permits outside the run folder",
       "cleanup": "restore the remembered default source, then `pactl unload-module` the source and the sink, in that order, on every exit path including signals; verified from outside by row V5",
       "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see the card's stop condition, 'The current default source is a physical device', which names the leftover case \u2014 not nextAllowedAction, which covers review dispatch and does not restate the PipeWire preflight. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
