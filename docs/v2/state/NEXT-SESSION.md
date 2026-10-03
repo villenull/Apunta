@@ -1,3 +1,23 @@
+## P3.5 independent defects and attempt-two repair — 2026-10-03T03:47:38.181360+00:00
+
+Reviewer bcdc1dbf returned CHANGES REQUESTED and is archived successfully.
+Coordinator reproduced numeric source/client ID mapping missing a real-mic leak,
+and stale own rectangles surviving a newer marker. Four card clicks landed,
+not the claimed five; record-stop was never dispatched. Single stream sample
+is within card wording and cannot establish continuous containment.
+Fresh repair writer 4e98e12b-e413-4d5e-a9b9-004cd2e6fe3c confirmed RUNNING,
+LongCat free high. Attempt 2 of 3 authorized for CODE/UNIT repair ONLY; worker
+owns scripts/v2/tauri-audio.test.mjs, own checkpoint and granted correction/evidence
+paths. All five attempt-one provenance records retained. No runtime row, build,
+installation or acquisition allowed. A brief followup bookkeeping correction
+produced an old-turn finish event; event check confirms worker still RUNNING.
+
+Environment: host appsink exists, but AppRun replaces default plugin path with
+missing bundled plugin directory; host capture plugins also absent. Installation
+alone is insufficient. A03 pacman/apt and A10 query-rule decisions must be prepared
+with exact bounded packaging grant. Existing five V3 records not deleted/waived.
+P3.4 author 9ebcf35f continues model/spec only. No build lease held.
+
 ## IR6 bounded repair dispatch — 2026-10-03T03:43:21.165939+00:00
 
 IR6 closes every IR5 finding but reports four remaining model defects: geometry
