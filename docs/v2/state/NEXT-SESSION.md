@@ -1,3 +1,13 @@
+## Security fixture repair complete; fresh independent review running
+
+3f3ce4a1 completed and archived successfully; proposal-only repair committed
+568cd27. Instrument bytes unchanged, proposed compatible fixtures yield 80/80,
+tool guard 29/29. Fresh reviewer 20158e9c-036b-401a-9072-1e7afbf93292 confirmed
+RUNNING with callback, owns new P3.4-eod-instrument-ir2 report/evidence only.
+P3.5 silence reviewer 2ff14a21 remained RUNNING at this completion boundary.
+No source/tool patch, attempt6, silence completion or V5 reevaluation authorized.
+Resources free. Await independent returns before batching owner exceptions.
+
 ## EOD checkpoint: instrument fixture repair and silence review running
 
 P3.6 reference re-pin independently CLEAR; b5291447 archived successfully.

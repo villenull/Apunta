@@ -2779,3 +2779,11 @@ and stale tool fixture; reviewer 4a2bfc67 archived successfully. Results preserv
 silence-completion review, both with callbacks and disjoint writes. No runtime
 or protected patch authorized. Resources free; P3.4/P3.5 remain BLOCKED.
 Pending scope/push questions retain their boundaries; no worker duplication.
+
+## 2026-10-03 — security fixture proposal repair complete
+
+3f3ce4a1 completed and archived successfully. 568cd27 saves proposal-only R1–R4
+repair: instrument bytes unchanged, compatible committed fixtures 80/80 and
+tool guard 29/29. Fresh independent reviewer 20158e9c confirmed running with
+callback and exclusive new ir2 outputs. Silence reviewer 2ff14a21 remains
+running at this event boundary. No protected changes or runtime authorized.
