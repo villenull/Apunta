@@ -1,3 +1,17 @@
+## Owner saw password prompt; corrected local authentication retry running
+
+Owner confirmed previous Ghostty window displayed a password prompt. AM190/193
+local authentication authority persists. Root told owner a new local prompt will
+open and to authenticate there; no password capture/logging. Worker retry uses
+prepared timeout --foreground wrapper, same pkexec/180s/exact3packages once.
+
+Worker ff7186b2-8df6-435b-b918-e5a9b2be9d8c, Space Bunny free medium,
+confirmed RUNNING with callback. It owns only local-authentication-retry evidence
+and ignored auth scratch. Remove stale status beforelaunch, verify ownchild
+termination on timeout, no automatic additionalretry. Afterexit0 execute exact
+fail-closed STEP0 and packagequery; no build or capture in this task. Corrected
+P3.4 source CLEAR, V0–V4 NOT RUN untilpreflightPASS; no lease/port reserved.
+
 ## Authentication diagnosis complete; owner window observation pending
 
 Diagnostician3dc11fa9 completed and archival succeeded. Host script had realtty;

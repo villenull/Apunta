@@ -2496,3 +2496,14 @@ observation. Root prepared documented timeout --foreground correction in ignored
 script, unchanged packages/pkexec/180s bound; no retry or terminal launch.
 Foreground-mode descendant timeout limitation recorded. No activeworkers, lease
 or port; corrected sourceCLEAR and runtime prerequisite hold remains explicit.
+
+### 2026-10-03 — visible prompt confirmed, corrected local run dispatched
+
+Owner confirmed priorterminal showed passwordprompt. Existing AM190/193 authority
+persists; root announced newlocalprompt and requested authentication there. Fresh
+workerff7186b2 (Space Bunny free medium) confirmed RUNNING with callback: one
+corrected foregroundtimeout launch and exactpreflight only, disjoint retry evidence.
+No credentialcapture or furtherautomaticretry. Prepared P3.4 runtime continuation
+and regenerated dispatch on current source with AM189, sameattempt5/base6974943/
+port7835, appliedreview findings. No row consumed or build/port lease reserved.
+Runtime dispatch waits installer/preflightPASS, then serial V0–V4 once in order.
