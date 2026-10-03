@@ -1,3 +1,14 @@
+## Both bounded repairs submitted — 2026-10-03T04:04:30.461836+00:00
+
+P3.4 author9ebcf and P3.5 author4e98e finished and archived successfully.
+P3.4 proposal399lines, root pinned73model/14tooling PASS; repair2 ignored artifacts
+and new evidence only, no assertion/budget adopted. Fresh independent review next.
+P3.5 attempt2 code-only repair root30/30 extracted-function checks PASS, runtime
+still BLOCKED. Five attempt-one records preserved; no new capture records created.
+Fresh independent source review next. Environment reviewer3ba19428 continues.
+No build/resource leases. Global evidence-output lint still needs mechanical
+repair and independent review; older model/proof inputs remain stable meanwhile.
+
 P3.5 environment proposal candidate 6ee7611 committed; author 9dc53 archived. Independent reviewer 3ba19428-341f-48bc-b8a5-fed096da631e RUNNING, LongCat free high, report/environment-proposal-ir evidence only. Review checks immediate patchelf/scanner prerequisites, per-element dry probes, exact A03/A10 scope, default-source assertion fidelity and unnecessary sampling question. No owner question yet; no config/manifest/install/runtime authorization. P3.4 model author9ebcf and P3.5 code writer4e98e continue disjoint assignments; all build/ports free. Root will prepare mechanical evidence-output lint repair on stable old P3.4 scripts without disabling rules, then independent review.
 
 P3.5 environment decision author 9dc53af6-a180-4bd3-896b-5b6849599216 is RUNNING (Space Bunny free medium, callback), owns only new P3.5-ENVIRONMENT-PROPOSAL.md and environment-proposal evidence. Prepares exact bounded config/media-bundling and manifest/install package, no source/config/install/runtime authority. Local Tauri schema exposes bundleMediaFramework; semantics and plugin/scanner inclusion must be evidenced, not assumed. Independent review precedes owner questions. Root definition-of-done repair backlog: committed P3.4 evidence console output triggers global lint; repair output without disabling lint, then independently review. No file assigned for that yet.

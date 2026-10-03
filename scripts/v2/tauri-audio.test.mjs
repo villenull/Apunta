@@ -257,6 +257,95 @@ function pactlSync(args) {
   }
 }
 
+/**
+ * `pactl list short sources` → a numeric source-index → source-name table.
+ *
+ * The short source-outputs format prints a numeric **source index**, not a
+ * source name (pactl 17.0: `%u\t%u\t%s\t%s\t%s`, where the second `%u` is the
+ * source index and the `%s` is a numeric client index). A source-output can
+ * therefore only be classified after it is resolved through this table. A row
+ * that is malformed, carries a non-numeric or duplicated index, or an empty
+ * name is an error — never silently skipped, because skipping is how an unknown
+ * stream becomes "not the microphone".
+ */
+function parseSourceTable(text) {
+  const table = new Map();
+  for (const raw of text.split('\n')) {
+    if (raw.trim() === '') continue;
+    const columns = raw.trim().split(/\s+/);
+    if (columns.length < 2) throw new Error(`malformed pactl sources row: ${JSON.stringify(raw)}`);
+    const index = Number(columns[0]);
+    if (!Number.isInteger(index)) {
+      throw new Error(`non-numeric source index in pactl sources: ${JSON.stringify(raw)}`);
+    }
+    if (table.has(index)) {
+      throw new Error(`duplicate source index ${String(index)} in pactl sources: ${JSON.stringify(raw)}`);
+    }
+    const name = columns[1];
+    if (name === '') throw new Error(`empty source name in pactl sources: ${JSON.stringify(raw)}`);
+    table.set(index, name);
+  }
+  return table;
+}
+
+/**
+ * Resolve `pactl list short source-outputs` through the source table.
+ *
+ * Every row must resolve to a known source index; a source index that is not in
+ * the table (a stream whose source appeared between the two reads, or a stale
+ * index) is an error, not an "unrelated, so safe" row. The result groups the
+ * resolved streams so the caller can assert the virtual capture is present, no
+ * stream is on the owner's real microphone, and every other stream is named.
+ */
+function classifySourceOutputs(outputsText, sourcesText) {
+  const sources = parseSourceTable(sourcesText);
+  const all = [];
+  for (const raw of outputsText.split('\n')) {
+    if (raw.trim() === '') continue;
+    const columns = raw.trim().split(/\s+/);
+    if (columns.length < 3) throw new Error(`malformed pactl source-outputs row: ${JSON.stringify(raw)}`);
+    const streamId = Number(columns[0]);
+    const sourceId = Number(columns[1]);
+    const clientId = Number(columns[2]);
+    if (![streamId, sourceId, clientId].every((value) => Number.isInteger(value))) {
+      throw new Error(`non-numeric source-outputs column: ${JSON.stringify(raw)}`);
+    }
+    if (!sources.has(sourceId)) {
+      throw new Error(
+        `source-output ${String(streamId)} names source index ${String(sourceId)}, which is not in the ` +
+          'pactl sources table; the mapping is unknown and the row must not assume it is safe',
+      );
+    }
+    all.push({ streamId, sourceId, clientId, sourceName: sources.get(sourceId), raw: raw.trim() });
+  }
+  return {
+    all,
+    virtual: all.filter((output) => output.sourceName === SOURCE_NAME),
+    realMic: all.filter((output) => output.sourceName.startsWith(REAL_MIC_PREFIX)),
+    unrelated: all.filter(
+      (output) => output.sourceName !== SOURCE_NAME && !output.sourceName.startsWith(REAL_MIC_PREFIX),
+    ),
+  };
+}
+
+/**
+ * Both live `pactl` reads, resolved together. A failed command is a stop: the
+ * containment state is unknown, and an unknown state is never "safe".
+ */
+function classifyPactlReads(outputsRead, sourcesRead) {
+  if (outputsRead.code !== 0) {
+    throw new Error(
+      `pactl list short source-outputs exited ${String(outputsRead.code)}: ${outputsRead.stderr.trim()}`,
+    );
+  }
+  if (sourcesRead.code !== 0) {
+    throw new Error(
+      `pactl list short sources exited ${String(sourcesRead.code)}: ${sourcesRead.stderr.trim()}`,
+    );
+  }
+  return classifySourceOutputs(outputsRead.stdout, sourcesRead.stdout);
+}
+
 // ------------------------------------------------------------ containment ----
 
 /**
@@ -927,6 +1016,44 @@ async function noteCount() {
 // -------------------------------------------------------------- the marker --
 
 /**
+ * This card's own three `data-testid` rectangles, read from the **newest** audio
+ * marker snapshot and nothing else.
+ *
+ * A whole snapshot, never a union of history: a test id the newest marker omits
+ * is absent (its element left the screen), and a partial or truncated newer
+ * marker installs no rectangle at all rather than merging fields with an older
+ * one or resurrecting a target that has gone. A test id is installed only when
+ * that one marker carries all four of `x`, `y`, `w`, `h` as finite numbers with
+ * a positive width and height, so a half-written line can neither publish a
+ * partial rectangle nor keep an older, stale one alive.
+ */
+function tidsFromNewestMarker(markers) {
+  const tids = new Map();
+  const newest = markers.length === 0 ? null : markers[markers.length - 1];
+  if (newest === null) return tids;
+  const ids = new Set();
+  for (const key of newest.keys()) {
+    if (!key.startsWith('tid_')) continue;
+    const rest = key.slice('tid_'.length);
+    const field = rest.slice(rest.lastIndexOf('_') + 1);
+    if (!['x', 'y', 'w', 'h'].includes(field)) continue;
+    ids.add(rest.slice(0, rest.lastIndexOf('_')));
+  }
+  for (const testId of ids) {
+    const rect = {
+      x: Number(newest.get(`tid_${testId}_x`)),
+      y: Number(newest.get(`tid_${testId}_y`)),
+      w: Number(newest.get(`tid_${testId}_w`)),
+      h: Number(newest.get(`tid_${testId}_h`)),
+    };
+    if (![rect.x, rect.y, rect.w, rect.h].every((value) => Number.isFinite(value))) continue;
+    if (rect.w <= 0 || rect.h <= 0) continue;
+    tids.set(testId, rect);
+  }
+  return tids;
+}
+
+/**
  * Everything the app has said, read out of the **stderr** the AppImage child was
  * spawned with.
  *
@@ -974,19 +1101,9 @@ function readReported(output) {
       }
     }
   }
-  // The three rectangles this card's own facts publish, keyed by data-testid.
-  for (const marker of state.markers) {
-    for (const [key, value] of marker.entries()) {
-      if (!key.startsWith('tid_')) continue;
-      // `tid_<data-testid>_<field>`: the test id itself may contain dashes, and
-      // never underscores, so the field is the last segment and the id the
-      // middle one.
-      const [, testId, field] = key.split('_');
-      const rect = state.tids.get(testId) ?? {};
-      rect[field] = Number(value);
-      state.tids.set(testId, rect);
-    }
-  }
+  // This card's own three rectangles, from the newest audio marker alone. See
+  // `tidsFromNewestMarker` for why a snapshot and never a union of history.
+  state.tids = tidsFromNewestMarker(state.markers);
   return state;
 }
 
@@ -1269,7 +1386,6 @@ async function runCapture(mode, step, expectations) {
     // publishes over the whole recording.
     let timerReached = 0;
     const recordDeadline = Date.now() + 90_000;
-    let sourceOutputs = '';
     for (;;) {
       const marker = latestMarker(readReported(run.output));
       if (marker !== null) {
@@ -1277,10 +1393,7 @@ async function runCapture(mode, step, expectations) {
         if (seconds !== null && seconds > timerReached) timerReached = seconds;
         const peak = Number(marker.get('levelPeak'));
         if (Number.isFinite(peak)) peakSeen.push(peak);
-        if (timerReached > 10) {
-          sourceOutputs = (await pactl(['list', 'short', 'source-outputs'])).stdout;
-          break;
-        }
+        if (timerReached > 10) break;
       }
       if (Date.now() >= recordDeadline) {
         fail(`${step} the record-timer advanced past 10s`, `it reached ${String(timerReached)}s`);
@@ -1294,23 +1407,55 @@ async function runCapture(mode, step, expectations) {
       `it reached ${String(timerReached)}s`,
     );
 
-    // The containment read, while the recording is live.
-    const streamLines = sourceOutputs.split('\n').filter((line) => line.trim() !== '');
-    const onVirtual = streamLines.filter((line) => line.split(/\s+/)[2] === SOURCE_NAME);
-    const onRealMic = streamLines.filter((line) => (line.split(/\s+/)[2] ?? '').startsWith(REAL_MIC_PREFIX));
+    // The containment read, while the recording is live. Two commands, resolved
+    // together: a source-output carries a numeric **source index**, so it means
+    // nothing until it is resolved through the source table — comparing a raw
+    // column to a source name is exactly the vacuous check this replaced. A
+    // failed read, a malformed row, a duplicate index or an index that does not
+    // resolve is a stop, with the teardown already installed: never "unknown, so
+    // assume safe", because the owner's microphone is the unknown that must not
+    // slip through. This is one sample; the card says it narrows the window
+    // rather than closing it, and this row does not claim more.
+    const outputsRead = await pactl(['list', 'short', 'source-outputs']);
+    const sourcesRead = await pactl(['list', 'short', 'sources']);
     process.stdout.write(`  ${step} pactl list short source-outputs:\n`);
-    for (const line of streamLines) process.stdout.write(`    ${line}\n`);
+    for (const line of outputsRead.stdout.split('\n').filter((line) => line.trim() !== '')) {
+      process.stdout.write(`    ${line}\n`);
+    }
+    process.stdout.write(`  ${step} pactl list short sources:\n`);
+    for (const line of sourcesRead.stdout.split('\n').filter((line) => line.trim() !== '')) {
+      process.stdout.write(`    ${line}\n`);
+    }
+    let streams;
+    try {
+      streams = classifyPactlReads(outputsRead, sourcesRead);
+    } catch (error) {
+      blocked(
+        `${step} microphone containment`,
+        'the live source-outputs read could not be resolved, so containment is unknown and the row ' +
+          `stops: ${String(error?.message ?? error)}`,
+      );
+      return;
+    }
     check(
       `${step} a capture stream is present on ${SOURCE_NAME}`,
-      onVirtual.length > 0,
-      `no source-outputs line names ${SOURCE_NAME} (saw ${JSON.stringify(streamLines)})`,
+      streams.virtual.length > 0,
+      `no source-output resolved to ${SOURCE_NAME} (resolved: ${JSON.stringify(streams.all.map((output) => output.raw))})`,
     );
-    const leaked = onRealMic.length > 0;
+    const leaked = streams.realMic.length > 0;
     check(
       `${step} no capture stream on the owner's real microphone`,
       !leaked,
-      leaked ? `these source-outputs lines name ${REAL_MIC_PREFIX}: ${JSON.stringify(onRealMic)}` : '',
+      leaked
+        ? `these source-outputs resolved to ${REAL_MIC_PREFIX}: ${JSON.stringify(streams.realMic.map((output) => output.raw))}`
+        : '',
     );
+    if (streams.unrelated.length > 0) {
+      process.stdout.write(
+        `  ${step} capture streams on other sources, named and not the real microphone: ` +
+          `${JSON.stringify(streams.unrelated.map((output) => output.raw))}\n`,
+      );
+    }
     if (leaked) {
       // Kill the app by pid, let the teardown restore and unload, then report.
       await stopPid(pid, 'the shell');

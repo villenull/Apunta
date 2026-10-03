@@ -79,17 +79,22 @@ evidence's marker, rectangle and request lines are read from.)
    assertion.
 5. **A real patient through the API** — John Smith, created in the run folder,
    never read from the live instance (HS-8).
-6. **Five real pointer clicks**, each at a rectangle the hook published, each
-   verified to lie inside the window before the click, each preceded by an
-   explicit `xdotool windowfocus` (an XTEST click is delivered to the focused
-   window and `xvfb-run` has no window manager):
-   - `home-action-note` — **this card's own `data-testid` rectangle**;
-   - `home-search` — this card's own rectangle, then the typed text;
-   - the first `li[role='option']` — **P3.4's inherited text-leaf rectangle**;
-   - `record-start` — this card's own rectangle;
-   - `record-stop` — P3.4's inherited text-leaf rectangle.
-   All five landed. Every one of them is a real `onClick` running the app's own
-   code path; nothing in `web/`, `server/` or `src-tauri/` was asked for a new
+6. **The five-click set**, each at a rectangle the hook published, each verified
+   to lie inside the window before the click, each preceded by an explicit
+   `xdotool windowfocus` (an XTEST click is delivered to the focused window and
+   `xvfb-run` has no window manager):
+   - `home-action-note` — **this card's own `data-testid` rectangle** — clicked;
+   - `home-search` — this card's own rectangle, then the typed text — clicked;
+   - the first `li[role='option']` — **P3.4's inherited text-leaf rectangle** —
+     clicked;
+   - `record-start` — this card's own rectangle — clicked;
+   - `record-stop` — P3.4's inherited text-leaf rectangle — **never reached**.
+   **Four** of the five card clicks landed; the fifth, `record-stop`, did not,
+   because the row failed `the phase reached recording`
+   (`phases seen: ["record-start+capture-error"]`) and returned before it. The
+   onboarding `Continue` click is a separate app click and is not one of the
+   five. Every click that landed is a real `onClick` running the app's
+   own code path; nothing in `web/`, `server/` or `src-tauri/` was asked for a new
    capability, route or IPC command.
 7. **The recorder really started**: the phase marker moved off `record-start`
    into `capture-error` — that is, the click landed, the app asked for the
