@@ -1960,3 +1960,9 @@ S3.3a writer8bf39df4 archived; stable candidate eac3291, coordinator48 tests PAS
 P3.5 reviewer541465b5 archived after DEFECT: cumulative awk counter resets, stale COMPLETE baseline accepted. Documentation author62e08cac-9356-4a10-97de-bbfa708d2e03 owns V5 command/trap paragraph and repair3 report only. Coordinator chooses structured sandboxRuns attempt/step/runId/dateUtc identity matching, retains earlier history. No implementation attempt consumed, no audio.
 
 P3.4 author8e2d3856 archived. Revised proposal plus repair2 report returned; report labels itself independent despite author role, so treated as self-check. Coordinator corrected nonexistent windowancestry command, diagnostic cause and success-fixture text. Fresh independent reviewer9fec0d3f-2928-4d7d-a64f-06629cc72b5b owns ir3 only. No assertion adopted, no attempt5 authorized. Prior orchestrator remains archived.
+
+## Independent attempt2 return and proposal repair — 2026-10-03T02:03:42.400869+00:00
+
+S3.3a reviewer a72396be archived success. No candidate defects; V1-V5 PASS,48 tests,26 adversarial AST cases, original effective rules21/21 equal. V6/V7 owner-held NOT RUN, V8 original FAIL preserved. Coordinator immutable candidate interval85dc7ce..eac3291 scope proof9 allowed paths, supplemental only. Status BLOCKED awaiting quiet-machine and verification bookkeeping; no APPROVED or further source attempt. Limited build lease released.
+
+P3.4 independent reviewer9fec0d3f archived after DEFECT, three blockers/six additional findings. Fresh authorb9ad8e45-58e4-4b6a-a263-3b7a461d82bb owns proposal+repair4 report only, all findings specified, no extra owner question or runtime authorization. P3.5 author62e08cac continues scoped instruction repair3.

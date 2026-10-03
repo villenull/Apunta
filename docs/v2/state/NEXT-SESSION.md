@@ -1,3 +1,9 @@
+## Latest independent-review checkpoint — 2026-10-03T02:03:42.400869+00:00
+
+Supersedes prior S3.3a SUBMITTED entry: now BLOCKED on existing quiet-machine hold and scope-row reconciliation, not source defects. Candidate eac3291 independent review V1-V5 PASS/48 tests, AST adversarial26 cases, no source change needed. V6/V7 NOT RUN, original V8 FAIL retained; immutable candidate interval9 allowed paths proved in review-2/COORDINATOR-SCOPE.md. Reviewer a72396be archived, build lease free. Do not dispatch S3.3 before approval.
+
+P3.4 proposal ir3 DEFECT: authorb9ad8e45-58e4-4b6a-a263-3b7a461d82bb repairs all B1-B3/D1-D6, proposal+own report only. Fresh independent review after return required; no fifth attempt authorized, owner package not ready. Reviewer9fec0d3f archived. P3.5 command author62e08cac-9356-4a10-97de-bbfa708d2e03 still running; no audio implementation.
+
 ## Latest continuation checkpoint — 2026-10-03T01:54:55.367700+00:00
 
 This block supersedes earlier state. S3.3a SUBMITTED attempt2 candidate eac3291: coordinator48 hermetic tests PASS; independent reviewer a72396be-3b29-4d52-9a01-b105aa5e3300 running (report/review-2 evidence only). Build lease limited to missing-dist review precondition. Owner quiet-machine V6/V7 NOT RUN; V8 foreign-docs FAIL preserved.

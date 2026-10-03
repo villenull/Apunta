@@ -7,9 +7,9 @@
   ],
   "baseCommit": "dbafbc1",
   "attempt": 2,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "Attempt2 submitted at eac3291; coordinator independently passed all 48 hermetic tests. Independent review dispatched.",
-  "nextAllowedAction": "await-independent-attempt-2-review",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Independent attempt2 review complete: no candidate defects; V1-V5 PASS, 48 tests, 26 adversarial AST cases; owner-held V6/V7 NOT RUN, V8 shared-tree FAIL attributed.",
+  "nextAllowedAction": "await-owner-quiet-machine-for-V6-V7-and-scope-row-reconciliation",
   "sideEffectsDone": [],
   "changedFiles": [
     "scripts/check-refine.mjs",
@@ -53,8 +53,8 @@
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T01:54:55.367700+00:00",
+  "updatedUtc": "2026-10-03T02:03:42.400869+00:00",
   "level": "L3",
-  "notes": "Attempt2 of3, stable candidate eac3291, repair base dbafbc1. D1-D3 repaired; original rule bodies and summary unchanged. V6/V7 owner quiet-machine hold; V8 FAIL foreign coordinator docs preserved. Writer archived. Limited build lease transferred to independent reviewer only if dist missing; no real-model run.",
-  "workerId": "a72396be-3b29-4d52-9a01-b105aa5e3300"
+  "notes": "Attempt2 of3, candidate eac3291, dispatch base dbafbc1 preserved. Independent review S3.3a-impl2.md found no candidate defects. Reviewer archived and build lease released. Candidate parent interval 85dc7ce..eac3291 has9 allowed paths; supplemental proof does not waive original V8 FAIL. V6/V7 require existing owner quiet-machine hold lifted, port7841, real model with fake off; no pull or real data. Forward notes fixtureFilter single source, future Spanish tree hardcoded refine and expect-fixtures file count carry to S3.3; no source change presently required.",
+  "implementationReview": "docs/v2/state/reviews/S3.3a-impl2.md"
 }
