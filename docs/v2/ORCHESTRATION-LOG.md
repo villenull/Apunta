@@ -2657,3 +2657,16 @@ get_agent_activity limit1 recovered full final report not delivered by callback.
 No unfinished work remained; archival succeeded. Root reran 75-case proof exit0,
 verified shipping source b886f8bb and bounded patch/output diffs. Fresh independent
 review follows stable local integration; no runtime/new attempt authority.
+
+## 2026-10-03 — fresh package review launched
+
+Root global eslint exit0. Artifact repair committed ce293ed; fresh independent
+b11f5c6d (LongCat free high) launched RUNNING with callback, own new ir2report/
+evidence only. No author reviewing ownwork; shipping source remains b886f8bb.
+No acceptance rows/sourcepatch/attempt4 authorized. Owner-approvedorigin push
+continues for completed state and artifact commits; no in-flight file staged.
+
+Push held until independent review completes: automatic review rejected the
+combined commit/push because parser artifacts were promised to remain local
+until review completion. Origin authorization itself stands. No workaround or
+new permission request; commit locally, then push only after the review finishes.

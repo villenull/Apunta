@@ -1,3 +1,13 @@
+## Fresh parser package review running
+
+b11f5c6d-9767-49ce-a92b-f098262b05a6 (LongCat free, high) confirmed RUNNING
+with callback. Stable candidate ce293ed; exclusive new ir2 report/evidence scope,
+no author/source edits or runtime. It checks actual-shipping patch replay, literal
+client sentinel safety, 75-case proof and exact output-repair fidelity, three
+anchors only, explicit ungranted change to AM-190's no-fourth boundary. Root
+re-ran global eslint: exit 0. No leases. All other useful capture work waits on
+this review then owner budget decision; P3.4 remains exhausted final-five.
+
 ## Artifact repair recovered and completed; fresh review next
 
 Owner observed idle worker. Event check confirmed 18d2bbc1 IDLE with complete
