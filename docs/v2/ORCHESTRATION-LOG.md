@@ -2136,3 +2136,21 @@ No config/manifest/card/source edits or install/runtime permission granted.
 P3.4 IR7 a3fe9bac and P3.5 sourceIR2 ab52a4b7 continue. No build lease.
 Global evidence-output lint repair deferred until stable proof-input checks finish.
 
+
+## P3.4 owner package independently CLEAR — 2026-10-03T04:17:41.275105+00:00
+
+IR7 report P3.4-owner-proposal-ir7.md is CLEAR. Reviewer a3fe9bac archived.
+Root73model/14tooling passed; independent73+41+14 passed; contractsconformant,
+nofailopen found. Candidate11a8d38, current399-line proposal. Two asyncowner
+questions nowPENDING: protected assertion+measurement package and EXACTONE
+attempt5 keyedtooling grant. Silence notapproval, no source/card/toolpatch or
+runtime authorized. OptionalA06producer cleanup remainsparked, notasked.
+
+Whilepending, evidence-outputlint author27cac3b8-6437-4c01-8719-59c0ea1ccc63
+RUNNING (Space Bunny medium, callback), writes oldP34proofscriptsoutputONLY
+plusnewoutput-lint-repair evidence. Originalcopies/hashes inignoredbuild;
+model/proposal/card/tools untouched. Must byte-preserve outputs/checklogic,
+no lintdisabled. Historical proofhashes describepriorcommits, notrewritten.
+P3.5 sourceIR2 ab52a4b7 and envproposalrepair2c2ab067 continue.
+No buildlease/ports reserved. No runtime or installpermission.
+
