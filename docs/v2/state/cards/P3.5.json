@@ -4,16 +4,16 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "ea6597011e41fb7b4766918d5fb1d6198257ef0b",
+  "baseCommit": "8fd82fe",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "Independent V5 IR DEFECT: exact PREV_DEFAULT restoration missing and empty default passes. Author attempt2 running 857ce7d5-fe0b-4b2d-b412-e1bd3c81ab0c; no implementation consumed (attempt0). Coordinator corrected plannedSideEffects intended-source typo. Legitimate empty source/sink/module listings are not automatically failures; mandatory original-default evidence missing/malformed must FAIL.",
-  "nextAllowedAction": "await-V5-command-repair2-then-fresh-independent-review",
+  "lastCompletedStep": "Docs repair2 submitted UNACCEPTED. Coordinator synthetic ordering replay finds source/module leaks BEFORE unrelated final row PASS because awk c resets eachrow; stale complete baseline passes. Independent reviewer541465b5-2a09-4771-acb9-8480600fb80b running. No implementation (attempt0). Planned intended-source name already corrected.",
+  "nextAllowedAction": "await-independent-V5-command-IR2",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T01:15:20.758728+00:00",
+  "updatedUtc": "2026-10-03T01:27:48.690998+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",

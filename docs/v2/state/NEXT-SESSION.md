@@ -1,3 +1,23 @@
+# Latest event checkpoint — repair and review pipeline, 2026-10-03
+
+- S3.3a command IR4 complete/archived; commands CLEAR, prose P1 corrected at
+  dbafbc1. Source implementation repair **attempt2 of3 RUNNING**, worker
+  8bf39df4-9e62-49e3-90e6-28ca784e09ee, base dbafbc1; exclusive5source paths, build lease/port7841.
+  D3 AST in tests only (existing TypeScript), original effective rule bodies and
+  constants unchanged; mutation guards both directions. V6/V7 owner-held.
+- P3.5 repair2 submitted at8fd82fe, UNACCEPTED. Independent reviewer
+  541465b5-2a09-4771-acb9-8480600fb80b RUNNING, report only. Coordinator proves
+  leaked source/module before unrelated final row passes; awk resets count per
+  row. Stale complete baseline also passes. No implementation (attempt0).
+- P3.4 proposal IR1 DEFECT, reviewer c3ab4f09 archived. Proposal-only repair
+  author8e2d3856-d8b3-446f-905a-816b6058981c RUNNING, only proposal/report.
+  Include all21review findings as applicable and concrete keyed attempt5
+  generator/tooltest grant: current builder rejects ALL attempts>=5.
+  No card/source/tool adoption, no fifth attempt, no acquisition/input.
+- All three workers Space Bunny medium, sameworkspace, callbacks. Coordinator
+  commits explicit paths only; foreign docs drift never silently waived.
+  Prior RUNNING/lease statements superseded here.
+
 # Latest event checkpoint — S3.3a changes requested, 2026-10-03
 
 - S3.3a independent reviewer `cbcf3dd0-9f51-4147-8ab5-8b4b88da58f2`
