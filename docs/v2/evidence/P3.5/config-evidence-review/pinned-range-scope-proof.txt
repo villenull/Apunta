@@ -1,0 +1,21 @@
+$ git log --oneline c8abfc5..507c026
+507c026 Enable approved media bundling in base Tauri config
+
+$ git diff --name-only c8abfc5 507c026 -- src-tauri scripts web server shared installer
+src-tauri/tauri.conf.json
+
+$ git diff --name-only c8abfc5 507c026   (whole tree)
+docs/v2/evidence/P3.5/environment-application/COORDINATOR.md
+docs/v2/evidence/P3.5/environment-application/README.md
+docs/v2/evidence/P3.5/environment-application/apply-checks.mjs
+docs/v2/evidence/P3.5/environment-application/commands.md
+docs/v2/evidence/P3.5/environment-application/config-parse-check-output.txt
+docs/v2/evidence/P3.5/environment-application/config.diff
+docs/v2/evidence/P3.5/environment-application/delta.md
+docs/v2/evidence/P3.5/environment-application/output.txt
+src-tauri/tauri.conf.json
+
+$ git show --stat --oneline 507c026 -- src-tauri
+507c026 Enable approved media bundling in base Tauri config
+ src-tauri/tauri.conf.json | 5 +++++
+ 1 file changed, 5 insertions(+)

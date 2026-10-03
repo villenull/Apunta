@@ -1,0 +1,7 @@
+$ npx eslint docs/v2/evidence/P3.5/environment-application/apply-checks.mjs
+exit=0
+
+$ npx prettier --check <same file>
+Checking formatting...
+All matched files use Prettier code style!
+exit=0

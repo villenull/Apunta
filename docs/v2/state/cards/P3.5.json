@@ -220,6 +220,9 @@
   "sourceReviewVerdict": "CLEAR",
   "sourceReviewReport": "docs/v2/state/reviews/P3.5-impl3.md",
   "environmentRepairWorkerId": null,
+  "applicationReviewVerdict": "CLEAR",
+  "applicationReviewReport": "docs/v2/state/reviews/owner-packages-application-ir.md",
+  "configEvidenceReviewReport": "docs/v2/state/reviews/P3.5-config-evidence-ir.md",
   "environmentReviewVerdict": "CLEAR",
   "environmentReviewReport": "docs/v2/state/reviews/P3.5-environment-proposal-ir3.md",
   "ownerDecisions": {

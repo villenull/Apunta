@@ -1,0 +1,49 @@
+node v26.8.2
+baseline src-tauri/tauri.conf.json@c8abfc5 sha256 3ff6aa5a78cd782e92a3694e9d85b84f519d0ea06beadd7f635d93f6b57cd563
+current  src-tauri/tauri.conf.json      sha256 e91c7e5760da2d2dee460cfe70b579312201dda78255ee26388bcdc36e7de923
+--- semantic delta, baseline -> current ---
+added bundle.linux.appimage.bundleMediaFramework = true
+PASS exactly one added key — count=1
+PASS the added key is bundle.linux.appimage.bundleMediaFramework — bundle.linux.appimage.bundleMediaFramework
+PASS the added value is boolean true — boolean true
+PASS no key removed or value replaced anywhere in the file — 0 other change(s)
+PASS baseline + that one key reproduces the current document exactly
+PASS the file on disk is still well-formed JSON ending in one newline
+PASS the added key sits under bundle.linux.appimage, as the schema and the proposal spell it
+PASS bundle.resources mapping unchanged — {"../build/linux-resources/":"linux-resources/"}
+PASS app.security (csp and capabilities) unchanged — {"csp":null,"capabilities":[]}
+PASS app.withGlobalTauri unchanged — false
+PASS app.windows unchanged — []
+PASS build.frontendDist unchanged — "ui"
+PASS identifier unchanged — "app.apunta.desktop"
+PASS productName unchanged — "Apunta"
+PASS version unchanged — "0.0.0"
+PASS bundle.active unchanged — true
+PASS bundle.targets unchanged — ["appimage"]
+PASS bundle.category unchanged — "Utility"
+PASS bundle.icon unchanged — ["icons/32x32.png","icons/128x128.png","icons/128x128@2x.png","icons/icon.icns","icons/icon.ico"]
+PASS bundle.longDescription unchanged — "Local-first clinical note drafting."
+PASS no appimage.files mapping was introduced
+PASS app.security.csp is still null
+PASS app.security.capabilities is still an empty list
+PASS src-tauri/tauri.test.conf.json is byte-identical to c8abfc5 (no overlay edit)
+PASS the application commit changed only the shipping config under the feature roots — src-tauri/tauri.conf.json
+PASS nothing is staged
+PASS the modified config file has no untracked sibling
+--- installed schema: @tauri-apps/cli 2.12.1, ajv 6.15.0 ---
+PASS VALID: src-tauri/tauri.conf.json as it now stands on disk — no errors
+PASS INVALID: control: string "true" must be rejected — / should be boolean
+PASS INVALID: control: extra key in appimage must be rejected — / should NOT have additional properties
+PASS VALID: control: boolean false is accepted by the schema — no errors
+PASS VALID: src-tauri/tauri.test.conf.json as shipped — no errors
+PASS VALID: src-tauri/tauri.conf.json@c8abfc5 (before the key) — no errors
+PASS the installed schema declares bundleMediaFramework
+info schema text mentions a default of false for the key: true
+PASS the proposal Option A "After" block was found
+PASS the file tail is the approved Option A "After" block, verbatim
+PASS delta check: an added second key is reported as a second change — added bundle.linux.appimage.bundleMediaFramework | added bundle.extraSetting
+PASS delta check: a changed existing value is reported as a replacement — replaced productName
+PASS delta check: a deleted key is reported as removed — removed version
+PASS delta check: a wrong-typed value is still a replacement, not an addition — replaced x
+PASS delta check: an identical document yields no changes at all — none
+ALL CHECKS PASS

@@ -1,0 +1,12 @@
+27c27
+< PASS src-tauri/tauri.test.conf.json is byte-identical to HEAD (no overlay edit)
+---
+> PASS src-tauri/tauri.test.conf.json is byte-identical to c8abfc5 (no overlay edit)
+30a31
+> PASS the application commit changed only the shipping config under the feature roots
+35d35
+< PASS the only changed file under src-tauri, scripts, web, server, shared, installer is the shipping config
+39c39
+< PASS VALID: src-tauri/tauri.conf.json@HEAD (before the key)
+---
+> PASS VALID: src-tauri/tauri.conf.json@c8abfc5 (before the key)
