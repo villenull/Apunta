@@ -1,0 +1,75 @@
+# Repair — identity, replay, scope. Author side, independent of the review.
+
+Reviewed: docs/v2/state/P3.4-eod-instrument-ir.md (R1-R4) at commit 99baec7.
+Base: main 99baec7. Scratch: the ignored build/p34-eod-repair/ (never deleted,
+never shared). No source, tool, card, checkpoint, contract or reviewer artifact
+was edited; nothing staged or committed; no runtime of any kind was run.
+
+## 1. Shipping identity re-derived at HEAD 99baec7
+
+865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  scripts/v2/tauri-security.test.mjs
+f6f22ab0063be475eb6532455cd707fe3d7048929b4c911924ce69503736c2e3  docs/v2/tools/build-dispatch.mjs
+d4dcf3c29b1b77c3b4f325d0a68fe76a5a6efbe4b5b8c6415064f31925df7aec  docs/v2/tools/build-dispatch.test.mjs
+195e30f5c2285c5572c6a037dfe2a299c99e2dd6fa0735b9883d63ece74c4c60  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+
+# identical to the review's 01 baseline (865ccab3 / f6f22ab0 / d4dcf3c2) and to
+# the proposal's stated baseline: HEAD moved 1c76506 -> 99baec7 under a
+# background agent while this repair ran, and that commit touches no source, no
+# tool, no fixture and no P3.4 file. All five hashes are unchanged across it.
+
+## 2. All four patches apply to the real shipping paths (read-only --check)
+
+candidate.patch      (eod-instrument-proposal/)  CLEAN
+fixture.patch        (this directory)             CLEAN
+tooling-fixture.patch(this directory)             CLEAN
+tooling.patch        (eod-instrument-proposal/)  CLEAN
+
+# Order-independent: in the composed replay below tooling-fixture.patch was
+# applied BEFORE tooling.patch, and in an earlier replay AFTER it. Both compose.
+
+## 3. Replay hashes — repaired tree (all four patches applied)
+
+cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16  scripts/v2/tauri-security.test.mjs
+3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4  docs/v2/tools/build-dispatch.mjs
+ee8e051cc467ef62c55d00a128d496da94eeaaee6364789c694a85d5d6de8b8f  docs/v2/tools/build-dispatch.test.mjs
+e4790fe909e0352fdba94b0f54db48397deac436a35d3c267937f468796d607b  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+325b2884f31dc1c8f3cf0767d279cfacde1e40b07e09437e904e87b815d9a4c8  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+
+# THE INSTRUMENT IS BYTE-IDENTICAL TO THE CANDIDATE-ONLY REPLAY:
+#   candidate+tooling only : tauri-security.test.mjs cc733cd0…   build-dispatch.mjs 3f77b55b…
+#   all four patches       : tauri-security.test.mjs cc733cd0…   build-dispatch.mjs 3f77b55b…
+# R1 and R2 touch committed FIXTURES only. No logic byte was redesigned,
+# rewritten or relaxed by this repair.
+
+## 4. Scope (git apply --stat) — four patches, four files, no overlap
+
+ scripts/v2/tauri-security.test.mjs                |  1 file changed,  63 insertions(+),  13 deletions(-)   candidate.patch
+ docs/v2/evidence/P3.4/attempt-5/implementation/
+   ported-model.test.mjs                          |  1 file changed,  15 insertions(+),   8 deletions(-)   fixture.patch
+ docs/v2/tools/build-dispatch.mjs                 |  1 file changed,  46 insertions(+),  17 deletions(-)   tooling.patch
+ docs/v2/tools/build-dispatch.test.mjs             |  1 file changed,  49 insertions(+),  15 deletions(-)   tooling.patch
+ docs/v2/tools/build-dispatch.test.mjs             |  1 file changed,   7 insertions(+),   2 deletions(-)   tooling-fixture.patch
+ docs/v2/evidence/P3.4/attempt-5/implementation/
+   adapters.test.mjs                              |  0 files changed (UNTOUCHED by every patch)
+
+The two patches to build-dispatch.test.mjs compose: 25 -> 29 -> 29 tests.
+
+## 5. Syntax (node --check), every patched file
+
+scripts/v2/tauri-security.test.mjs                                        OK
+docs/v2/tools/build-dispatch.mjs                                           OK
+docs/v2/tools/build-dispatch.test.mjs                                       OK
+docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs        OK
+docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs            OK
+
+## 6. Repository untouched
+
+$ git status --porcelain      (empty at HEAD 99baec7; the only writes in this
+                               session are the three permitted paths)
+$ git diff --stat             (empty)
+No file outside docs/v2/state/P3.4-EOD-INSTRUMENT-PROPOSAL.md,
+docs/v2/evidence/P3.4/eod-instrument-proposal/** and
+docs/v2/evidence/P3.4/eod-instrument-proposal-repair/** was written. The
+reviewer's own artifacts (eod-instrument-ir/**, reviews/P3.4-eod-instrument-ir.md,
+now committed at 99baec7) were read and not modified.

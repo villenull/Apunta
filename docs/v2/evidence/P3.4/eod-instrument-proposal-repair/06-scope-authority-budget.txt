@@ -1,0 +1,97 @@
+# Scope, authority, budget — and the two things the repair could not close
+
+## 1. Files written by this repair (exactly three paths, all exclusive)
+
+  docs/v2/state/P3.4-EOD-INSTRUMENT-PROPOSAL.md          (updated: R1-R4 folded in)
+  docs/v2/evidence/P3.4/eod-instrument-proposal/README.md (R3: "four hunks" -> "six hunks")
+  docs/v2/evidence/P3.4/eod-instrument-proposal/05-patch-scope.txt (R4: stale dirty-tree note)
+  docs/v2/evidence/P3.4/eod-instrument-proposal-repair/** (NEW: the two fixture
+      patches and this evidence set)
+
+Scratch: the ignored build/p34-eod-repair/ (base, cand, tooled, full, nofix, after,
+and a lint mirror under /tmp). No shared or existing build/ subdirectory was
+deleted or modified.
+
+## 2. Files NOT written
+
+No source, tool, card, checkpoint, contract, manifest, dispatch, config, ORCHESTRATION-LOG,
+OWNER-ACTIONS, BLOCKED, NEXT-SESSION, AMENDMENTS or reviewer artifact. Nothing
+staged, nothing committed. The reviewer's artifacts
+(docs/v2/state/reviews/P3.4-eod-instrument-ir.md and
+docs/v2/evidence/P3.4/eod-instrument-ir/**, committed at 99baec7 by the
+coordinator) were read only. `git status --porcelain` and `git diff --stat` are
+both empty of tracked changes.
+
+## 3. R1-R4 disposition
+
+  R1  fixture.patch         APPLIED AND VERIFIED — 80/80, non-vacuous (59 -> 80)
+  R2  tooling-fixture.patch APPLIED AND VERIFIED — 29/29, non-vacuous (28 -> 29)
+  R3  README.md:14          "four hunks" -> "six hunks" (matches `git apply --stat`)
+  R4  05-patch-scope.txt:11 the "only dirty tracked file is the P3.5 card" claim is
+                            dropped; the file now states the assertion that is
+                            actually made — no P3.4-owned real path was edited.
+
+R1 and R2 follow independent review §05A/§B1 exactly. No remedy was widened, no
+extra file was touched, no test was added, removed, renamed, skipped or weakened.
+
+## 4. Residual, stated not hidden — D7's test NAME
+
+D7 is still named `'D7 native read-back needs 1 px, the app window or the app pid'`.
+Under the corrected instrument the "or the app pid" arm is gone: `PID` is
+diagnostic text. The repair was instructed to preserve all 80 test names, so the
+name was preserved verbatim and only its two obsolete ASSERTIONS were re-derived.
+This is a documentation inaccuracy in a test name, of the same kind as R3, and it
+is recorded here rather than silently fixed or silently dropped. If the owner
+prefers, renaming that one string is a one-line follow-up that changes no
+assertion and no count.
+
+## 5. One protected grant still needs the owner
+
+Nothing in this repair grants anything. The decision remains the owner's, and it
+is still ONE decision with FOUR patches:
+
+  1. candidate.patch          scripts/v2/tauri-security.test.mjs                 (instrument)
+  2. fixture.patch            docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+  3. tooling.patch            docs/v2/tools/build-dispatch.mjs + .test.mjs       (keyed exception)
+  4. tooling-fixture.patch    docs/v2/tools/build-dispatch.test.mjs              (guard fixture)
+
+Owner-only, still outstanding: the `AM-nnn` number (the owner assigns it); whether
+to run the final measurement at all (Option A) or park the card (Option B); and
+whether to also rename D7's stale test name (§4 above). No authority, no attempt
+6, no AM number is assumed by this document.
+
+## 6. Protected measurement and budget — unchanged by this repair
+
+V0 -> V1 -> V2 -> V3 -> V4, ONCE each, in card order, after an INDEPENDENT source
+review of the corrected harness first (the AM-192 / AM-194 precedent). V0 is
+required (web/src/main.tsx is a Rule B path; the harness is not).
+
+  no attempt 7          the generator refuses --attempt >= 7 for every card,
+                        including P3.4, and that refusal is untouched here
+  no counter reset      the P3.4 attempt counter is not reset by this repair
+  no retry              V0-V4 are not re-run on failure; a FAIL is a FAIL
+  no partial re-run     a row is not repeated; the whole sequence runs once
+  no row repetition     no acceptance row is recorded twice
+  no waiver             no NOT RUN is recorded as a disclosure and no FAIL is waived
+  no widening           no threshold or timeout is widened; 1 px, 2 px, 0<k<=4, the
+                        viewport minima and the immutable 30 s deadline are untouched
+
+Attempt 4 and attempt 5 histories, messages, dispatches and evidence are carried
+forward unchanged. The prior V2 FAIL (WINDOW=0, an instrument defect) and the prior
+V4 FAIL (outside-source lint artefact) stay on the record.
+
+## 7. If attempt 6's V2 still FAILs
+
+It FAILs and P3.4 closes BLOCKED with a new card owning what remains. This repair
+does not raise the probability of that outcome by weakening anything, and it does
+not lower it by claiming a measurement it did not take.
+
+## 8. Known unknowns, unchanged from the proposal §6
+
+  - not proven here, and not claimed: that a warp-driven pointermove reaches the
+    WebKitGTK page under xvfb-run with no window manager, that the target click
+    lands, or the real getwindowpid value. Those are exactly what V2 measures.
+  - the reason getmouselocation returns WINDOW=0 on this host stays
+    medium-confidence/unproven; the correction does not depend on knowing it.
+  - docs/v2/state/dispatch/P3.5.md now carries an attempt-4 line too (03 §6). Left
+    alone as non-minimal; flagged for the coordinator.

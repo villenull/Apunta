@@ -1,0 +1,73 @@
+# Lint and format on the repaired files — real-path equivalent, non-vacuous
+
+## 0. Why a mirror, and why it is still the real path
+
+`build/**` is in eslint.config.js's global `ignores`, so linting a copy inside
+`build/` would report "File ignored" and exit 0 — a vacuous pass. `.prettierignore`
+also drops `docs/v2/evidence/` and `docs/v2/state/`, so the repository's formatter
+never formats the fixture files at all. To get a real, non-vacuous result the
+five patched files were laid out at their true repository-relative paths under
+/tmp/opencode/p34lint, with the repository's own `eslint.config.js`,
+`.prettierrc.json` and `node_modules` beside them, so config resolution, plugin
+resolution and ignore rules are the shipped ones.
+
+## 1. ESLint
+
+$ cd /tmp/opencode/p34lint
+$ npx eslint --no-ignore \
+    scripts/v2/tauri-security.test.mjs \
+    docs/v2/tools/build-dispatch.mjs \
+    docs/v2/tools/build-dispatch.test.mjs \
+    docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs
+  ESLINT_EXIT=0        (0 errors, 0 warnings — and no "File ignored" line, which
+                        is the vacuous-pass signature and is absent here)
+
+  NEGATIVE CONTROL (proves the run is not a no-op): appending
+  `const deliberateUnused = 1` to the patched ported-model.test.mjs and re-running
+  the same command gives
+
+    1407:7  error  'deliberateUnused' is assigned a value but never used  @typescript-eslint/no-unused-vars
+    NEGATIVE_ESLINT_EXIT=1
+
+## 2. Prettier — the three files the repository actually formats
+
+$ npx prettier --check scripts/v2/tauri-security.test.mjs \
+      docs/v2/tools/build-dispatch.mjs docs/v2/tools/build-dispatch.test.mjs
+  Checking formatting...
+  All matched files use Prettier code style!
+  PRETTIER_EXIT=0
+
+  NEGATIVE CONTROL: appending `const  x   =    1;` to the patched build-dispatch.mjs
+  gives "[warn] docs/v2/tools/build-dispatch.mjs" and NEGATIVE_PRETTIER_EXIT=1.
+
+## 3. Prettier — the two fixture files the repository deliberately does not format
+
+`.prettierignore` line `docs/v2/evidence/` excludes both
+ported-model.test.mjs and adapters.test.mjs, so `npm run lint` never looks at
+them and this repair does not make it look at them. What was checked instead is
+that the patch introduces NO NEW deviation from the file's own established style:
+
+  prettier(raw) vs raw, deviation line count
+    adapters.test.mjs    baseline 58  ->  repaired 58   (file untouched by every patch)
+    ported-model.test.mjs baseline 521 ->  repaired 539
+
+  The 18 added deviation lines are exactly prettier wanting to WRAP the four long
+  single-line `assert.equal(...)` / `assert.match(...)` statements this patch
+  adds — the same wrap prettier already wants for the four pre-existing
+  `assert.match(checkReadback…` lines and for `assert.deepEqual(refusedSecond.…`
+  in the committed file. In other words the patch follows the file's existing
+  style and introduces no new class of formatting problem. Formatting the file
+  would be a 500-line reformat of committed evidence and is out of scope for a
+  bounded repair.
+
+## 4. Syntax
+
+$ node --check  <each of the five patched files>
+  OK, OK, OK, OK, OK  (see 01 §5)
+
+## 5. What this does and does not cover
+
+It covers the five files the patches touch. It is not `npm run lint` on the
+whole repository, which is the attempt-6 V4 row and is neither run nor claimed
+here: V4's prior FAIL (an outside-source lint artefact committed under evidence)
+is carried forward as a FAIL, and no lint is waived.

@@ -1,0 +1,66 @@
+# Carry-forward of the existing proofs — and what this repair did NOT redo
+
+The instrument logic is unchanged. This repair edits committed FIXTURES only, so
+every proof that was run against the candidate instrument remains valid, and the
+claim is anchored on a hash rather than on a reading.
+
+## 1. Byte-identity of the instrument (the whole basis for carrying proofs)
+
+    candidate + tooling only : scripts/v2/tauri-security.test.mjs  cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16
+    all four patches applied : scripts/v2/tauri-security.test.mjs  cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16
+    candidate + tooling only : docs/v2/tools/build-dispatch.mjs    3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4
+    all four patches applied : docs/v2/tools/build-dispatch.mjs    3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4
+
+Identical. `fixture.patch` touches
+docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs and
+`tooling-fixture.patch` touches docs/v2/tools/build-dispatch.test.mjs. Neither
+touches a shipped instrument byte. No redesign, no rewrite, no relaxation.
+
+## 2. The author's 22 synthetic before/after checks — RE-RUN, not carried
+
+The author's own before-after.mjs was replayed against the repaired tree's
+actual export (baseline/ = shipping 865ccab3, candidate/ = repaired export):
+
+    PASS AFTER a foreign owner dispatches only the geometry and pid commands
+    PASS AFTER the app-owned window lets runFlow reach the landing and click exactly once
+    PASS AFTER the owned window path dispatches getwindowpid then exactly one click
+    PASS BEFORE a foreign window owner is not even read (no getwindowpid dispatch)
+    ...
+    22/22 synthetic before/after checks passed
+
+Re-run rather than carried because it was cheap and because it is the proof that
+the repair did not disturb the identity logic.
+
+## 3. The review's 32 independent adversarial controls — CARRIED, on hash identity
+
+The controls in eod-instrument-ir/03 were executed against the actual candidate
+export, whose sha256 is cc733cd0…. The repaired tree's export has the same
+sha256 (01 §3). The repaired tree therefore evaluates identically on all 32
+cases; re-running them would produce the same numbers and would add nothing.
+This includes the fail-closed cases R1's happy-path `windowPid` fake does not
+cover: a foreign owner, a non-integer / zero / negative / empty `getwindowpid`, a
+non-zero exit, a signal, an `XError`, a hung `getwindowpid`, ownership always read
+before the first move, exactly one click on the happy path, zero clicks on a stale
+pointer and on a 3 px target witness.
+
+## 4. The review's CLEAR verdict on the instrument — unchanged
+
+R1 and R2 are fixture corrections. The identity safety analysis (review §2, the
+C1/C2/C3 conjunction, the "can a fake other window trigger the app's own hook"
+question) rests on the harness bytes, which are identical. The review's own
+owner-ready condition was "R1 and R2 in the same change as the two patches and
+both committed suites green" — that condition is now met and demonstrated
+(02 §3, 03 §3).
+
+## 5. Attempt 4 / attempt 5 histories
+
+Unchanged. No evidence, message, dispatch, card, checkpoint, contract or count was
+touched. The prior V2 FAIL (WINDOW=0) and the prior V4 FAIL (outside-source lint)
+remain on the record; nothing is re-run, repeated or waived.
+
+## 6. Not run here, deliberately
+
+No app, build, server, database, model, display, input, audio, microphone, pactl,
+network, install or port 7717. No attempt 6 exists, is dispatched, or is granted.
+No `npm test`, no `npm run lint` on the whole tree, no `npm run e2e`, no V0-V4.
+No owner question was asked.

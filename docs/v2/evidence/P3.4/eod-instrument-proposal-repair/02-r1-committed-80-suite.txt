@@ -1,0 +1,92 @@
+# R1 — the committed 80-test synthetic suite against the repaired candidate
+
+Reached by mirrored import resolution only: the fixtures' relative import
+(`../../../../../../scripts/v2/tauri-security.test.mjs`) resolves inside the
+mirrored scratch tree, so the ACTUAL patched export is exercised and the repo is
+never touched. No app, server, display, pointer, audio, network or port 7717.
+
+    build/p34-eod-repair/full/scripts/v2/tauri-security.test.mjs            = candidate.patch
+    build/p34-eod-repair/full/docs/v2/evidence/.../ported-model.test.mjs    = committed bytes + fixture.patch
+    build/p34-eod-repair/full/docs/v2/evidence/.../adapters.test.mjs        = committed bytes, unpatched
+
+## 1. Baseline (shipping bytes, no patch at all)
+
+i tests 80
+i pass 80
+i fail 0
+
+## 2. candidate + tooling, WITHOUT fixture.patch — the regression the review found
+
+i tests 80
+i pass 59
+i fail 21
+
+# author's own re-derivation of the review's 02: 20 runFlow cases
+# "io rejected: TypeError: ops.windowPid is not a function" plus D7's two
+# obsolete identity assertions.
+
+## 3. ALL FOUR PATCHES APPLIED — owner-ready state
+
+i tests 80
+i pass 80
+i fail 0
+i skipped 0
+i todo 0
+
+i non-vacuity: 59 -> 80 is caused by fixture.patch alone.
+
+## 4. Nothing dropped, suppressed or renamed (HS-7)
+
+test names in ported-model.test.mjs + adapters.test.mjs:
+
+  base     80 names
+  repaired 80 names
+  diff     IDENTICAL (no test added, removed or renamed)
+
+  grep for skip / only( / todo: over the repaired fixtures: none
+  node reports skipped 0, todo 0
+
+## 5. What fixture.patch actually does (three edits, one file, +15/-8)
+
+(a) A1 — flowOps() now supplies the new MANDATORY ownership seam. runFlow calls
+    ops.windowPid(window.id) unconditionally, so the seam must exist:
+
+      windowPid: () => ({ code: 0, signal: null, stdout: `${String(appPid)}\n`, stderr: '' }),
+
+    placed directly after the windowGeometry entry. Nothing else about the fake
+    changes: same shape, same signal field, no hang, no error path. (The
+    fail-closed behaviour of a foreign / non-integer / non-zero / XError
+    getwindowpid is proven by the review's 32 adversarial controls against the
+    real export, not by this happy-path fake.)
+
+(b) A2 — D7's two identity assertions are re-derived for the corrected
+    semantics, and the containment NEGATIVE that replaces their strength is
+    added. Under the candidate, the getmouselocation WINDOW/PID fields are
+    diagnostic text only, so "PID: -1 rejects" and "WINDOW: 999 rejects" are no
+    longer true statements about the instrument. In their place:
+
+      assert.equal(... PID: '-1'  ..., ok, true);      // foreign pid is diagnostic
+      assert.equal(... WINDOW:'999'..., ok, true);      // foreign window is diagnostic
+      assert.match(checkReadback({x:50,y:500}, {X:'50',Y:'500',WINDOW:'999'}, ...).reason,
+                   /outside the owned app window/);    // leaving the owned rectangle fails closed
+
+    The new negative is strictly load-bearing: x=50 is outside WINDOW.x=60 while
+    the 1 px read-back is exact, so the containment clause is what refuses it.
+    D7's other four assertions (1 px in, 2 px out, app-pid named, no usable X/Y)
+    are untouched, and D7's test NAME is preserved verbatim — see the noted
+    residual in 06.
+
+(c) A3 — six `dispatched` deep-equal arrays now include the new command, in
+    dispatch order, immediately after getwindowgeometry (line numbers in the
+    REPAIRED file): F2 (:1135), F2-d (:1175), F3 refusedFirst (:1255), F3
+    refusedSecond (:1262), F6 (:1318), F7 (:1330). Each still asserts the FULL
+    array, so the new dispatch is pinned in both directions; the two arrays that
+    must NOT grow — :1125 (the F1-g getwindowgeometry classification case) and
+    :1382 — are left exactly as they are, which is itself evidence the
+    correction is scoped.
+
+## 6. This suite is not in `npm test`
+
+vitest.config.ts runs only the workspace projects (shared/server/installer/web/
+tools/model-lab). V4 lint/typecheck would not catch this class of regression;
+it is the card's own synthetic proof and is re-run here by hand.

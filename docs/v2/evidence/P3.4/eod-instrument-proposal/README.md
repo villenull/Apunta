@@ -11,7 +11,7 @@ Prepared at `main` `04d071e`. Shipping harness
 
 | File | What it is |
 | --- | --- |
-| `candidate.patch` | The corrected identity instrument, shipping path `scripts/v2/tauri-security.test.mjs` only (`+63/-13`, four hunks). |
+| `candidate.patch` | The corrected identity instrument, shipping path `scripts/v2/tauri-security.test.mjs` only (`+63/-13`, six hunks). |
 | `tooling.patch` | The keyed attempt-6 exception, `docs/v2/tools/build-dispatch.mjs` and `.test.mjs` only. |
 | `before-after.mjs` | The synthetic proof; imports the actual shipped exports from the baseline and candidate copies. |
 | `01-identity-and-apply.txt` | Baseline==shipping hashes; candidate hashes; `git apply --check` and `node --check` for both patches. |

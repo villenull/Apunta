@@ -1,0 +1,94 @@
+# R2 — the tool guard against the repaired tooling change
+
+Scratch: build/p34-eod-repair/full (tooling.patch + tooling-fixture.patch).
+The tool test reads its "real plan" as `dirname(import.meta.url)/..`, so the
+mirrored `docs/v2/state/dispatch/*.md` and `docs/v2/state/cards/*.json` copies
+are the shipped bytes; the repository's own dispatch files were never written.
+
+## 1. Baseline (shipping bytes)
+
+i tests 26
+i pass 25
+i fail 1
+
+    extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte
+
+## 2. tooling.patch only, WITHOUT tooling-fixture.patch — still red, same case
+
+i tests 29
+i pass 28
+i fail 1
+
+    extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte
+
+# author's own re-derivation of the review's D2 and of proposal 03.
+
+## 3. tooling.patch + tooling-fixture.patch — owner-ready state
+
+i tests 29
+i pass 29
+i fail 0
+
+i non-vacuity: 28 -> 29 is caused by tooling-fixture.patch alone.
+
+## 4. The guard behaviour is preserved, not weakened (HS-7)
+
+tooling-fixture.patch is ONE hunk, +7/-2, and changes nothing but the fixture
+set and the comment that describes it:
+
+  -  for (const f of ['S2.5.md', 'P3.4.md', 'P4.1.md', 'P4.1-ir.md']) {
+  +  for (const f of ['S2.5.md', 'P4.1.md', 'P4.1-ir.md']) {
+  -  // The four dispatched attempt-4 sentences, ...
+  +  // The three dispatched attempt-4 sentences, ...
+  +  // P3.4.md is deliberately NOT in this set: ... (five lines of reason)
+
+The set is exactly the shipped dispatches that still carry a `- Attempt 4 of `
+line at HEAD 99baec7:
+
+    docs/v2/state/dispatch/S2.5.md:8      AM-049
+    docs/v2/state/dispatch/P4.1.md:8      AM-064
+    docs/v2/state/dispatch/P4.1-ir.md:8   AM-064
+    (P3.4.md: no attempt-4 line — AM-189 regenerated it at attempt 5)
+
+Everything the case actually proves is untouched:
+
+  - the amendment id and the card id are still read OUT of the shipped line, not
+    from a constant, and fed back through the generator;
+  - the byte-for-byte comparison `r.stdout.includes(m[0])` is unchanged;
+  - the attempt-4 sentence regex (which pins "Attempt 4 of 3, plus one corrective
+    attempt the owner authorised by AM-nnn — there is no attempt 5") is unchanged;
+  - the failure messages (`no attempt-4 line in ${f}`, `shipped line in ${f} has
+    an unexpected shape`, `regenerated line differs for ${f}`) are unchanged;
+  - the test NAME already said "three" before this repair and still does; tooling-
+    fixture.patch changes no test name at all (29 names before, 29 after).
+
+So the check is not waived: it is re-pointed at the three dispatches that still
+carry the sentence, and T5/T5b continue to pin the literal and the refusal text.
+
+## 5. The attempt-4 and attempt-5 tool cases are byte-preserved by tooling.patch
+
+$ git diff --no-index base/docs/v2/tools/build-dispatch.test.mjs \
+      tooled/docs/v2/tools/build-dispatch.test.mjs \
+  | grep -E '^[-+].*(attempt 4|attempt 5|Attempt 4 of 3|Attempt 5)'
+
+  (no output)
+
+Zero lines of tooling.patch's test diff touch an attempt-4 or attempt-5 case.
+tooling.patch only splits the old "attempt 6 refused" case into T4 / T4b / T4c
+and adds the parallel attempt-6 sentence case — the review confirmed that grant
+CLEAR.
+
+## 6. Noted, not acted on (recorded, not a defect)
+
+docs/v2/state/dispatch/P3.5.md:8 also carries an `- Attempt 4 of 3, ... AM-194 —`
+line today (added after the review was written). Adding it to the set would
+change the case's own name ("three shipped") and is therefore NOT a minimal
+correction; it is recorded here and left to the coordinator/owner. The generator
+wording it would be checked against is identical to the other three.
+
+## 7. Fixture staleness is a fixture, not a product defect
+
+No generator behaviour, threshold, refusal, dependency gate or message changes
+in R2. The generator still refuses `--attempt >= 7` for every card, still
+refuses attempt 6 for every card other than P3.4 without the keyed exception,
+and still exits 3 on a missing dependency.

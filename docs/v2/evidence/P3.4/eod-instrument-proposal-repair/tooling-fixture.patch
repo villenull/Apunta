@@ -1,0 +1,24 @@
+diff --git a/docs/v2/tools/build-dispatch.test.mjs b/docs/v2/tools/build-dispatch.test.mjs
+index d9b62ce..346e28b 100644
+--- a/docs/v2/tools/build-dispatch.test.mjs
++++ b/docs/v2/tools/build-dispatch.test.mjs
+@@ -635,12 +635,17 @@ test('extra: dependency gate still exits 3 after the grant (no PASS on exit 3)',
+ });
+ 
+ test('extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte', () => {
+-  // The four dispatched attempt-4 sentences, read from the committed dispatches
++  // The three dispatched attempt-4 sentences, read from the committed dispatches
+   // themselves rather than from a constant in this file: the amendment id and the
+   // card id are extracted from the shipped line and fed back through the
+   // generator, so the test fails if the generator's wording drifts by one
+   // character from a dispatch a reviewer already accepted.
+-  for (const f of ['S2.5.md', 'P3.4.md', 'P4.1.md', 'P4.1-ir.md']) {
++  //
++  // P3.4.md is deliberately NOT in this set: the owner-authorised attempt-5
++  // dispatch (AM-189) regenerated it, so it no longer carries an attempt-4 line
++  // and the assertion below would fail on a file that was never wrong. The set is
++  // exactly the shipped dispatches that still carry the line.
++  for (const f of ['S2.5.md', 'P4.1.md', 'P4.1-ir.md']) {
+     const line = readFileSync(join(realPlan, 'state', 'dispatch', f), 'utf8')
+       .split('\n')
+       .find((l) => l.startsWith('- Attempt 4 of '));

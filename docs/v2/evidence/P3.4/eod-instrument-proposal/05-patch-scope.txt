@@ -8,4 +8,7 @@
  2 files changed, 79 insertions(+), 17 deletions(-)
 
 # Nothing under these P3.4-owned real paths was edited by this preparation:
-(empty above = untouched; the only dirty tracked file in the tree is the P3.5 background agent's own docs/v2/state/cards/P3.5.json)
+# (empty above = untouched. No claim is made about the rest of the working tree:
+# other packets' agents may have uncommitted work in it at any moment. This file
+# states only what was actually checked here — that the P3.4-owned real paths are
+# unmodified — and the "only dirty file" claim has been dropped as stale.)
