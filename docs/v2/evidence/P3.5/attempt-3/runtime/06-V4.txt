@@ -1,0 +1,101 @@
+# P3.5 attempt 3, row V4 — tone (7837) then silence (7839)
+
+- Working directory: repository root (the home folder is written `~`; no absolute home path appears in this evidence)
+- Started: 2026-10-03T21:07:53Z · Ended: 2026-10-03T21:08:13Z
+- Exit code: 1
+- Command source: `docs/v2/cards/P3.5.md` row V4, read through `docs/v2/tools/plan-lib.mjs`'s `parseCells`; the dispatch copy at `docs/v2/state/dispatch/P3.5.md:748` is byte-equal to it (command and Expected)
+- Parsed with `bash -n` first: exit 0, syntax only, nothing executed
+
+## Exact command
+
+```sh
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && node scripts/v2/sandbox.mjs env --port 7837 > /tmp/apunta-v2-p3.5-v4-tone.env && . /tmp/apunta-v2-p3.5-v4-tone.env && export APUNTA_ALLOW_AUDIO_TEST=1 && node scripts/v2/tauri-audio.test.mjs tone && node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-silence.env && . /tmp/apunta-v2-p3.5-v4-silence.env && node scripts/v2/tauri-audio.test.mjs silence
+```
+
+## Note
+
+**Verdict: the `tone` case BLOCKED, the `silence` case is NOT RUN. Nothing was re-run.**
+
+The cell is one `&&` chain: `sandbox.mjs env --port 7837`, `tone`, then `sandbox.mjs env --port 7839`, `silence`. `tone` exited 1, so the chain stopped and the `silence` case never ran. The silence case was **not** started separately: that would be a second invocation of the row outside the card's cell, and the card names one cell for V4. Cause recorded, no adaptation.
+
+`tone` reached the same point V3 did, 21 of 22 assertions passing, and stopped at the same assertion with the same cause: `non-numeric source-outputs column: "8122\t8114\t-\tPipeWire\tfloat32le 2ch 48000Hz"`. Its `levelPeak` reached 1 (`/p3.5-marker?phase=record-stop&timer=00%3A11&level=1&levelPeak=1` on stderr), which is the tone arm's direction, but the arm's own assertion is downstream of the stop and is therefore **not claimed**.
+
+The tone arm played `e2e/fixtures/audio/dictation-10s.wav` (sha256 `d487a3930b2baac09c1f3206106e852caec8ed3a2a4f5f3d92d6f8f092d5820f`, a tone burst train, not speech) into `apunta_p35` only. The silence arm, which would have played `silence-10s.wav` and asserted `levelPeak == 0`, never ran, so **this attempt proves no tone/silence discrimination in either direction.**
+
+Containment for the tone case was created, recorded and torn down inside the row: its own `PREV_DEFAULT` / `SINK_ID` / `SRC_ID` are in `sideEffectsDone` and its anchor is in `sandboxRuns`. Port 7839 was never bound, so no listener or residue exists for the silence case.
+
+## Output
+
+# V4 — sanitised stdout, verbatim
+  
+```
+  v24.19.0
+    display: the inherited X display :99
+  PASS V4-tone appimage: <repo>/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+    V4-tone audio: <repo>/e2e/fixtures/audio/dictation-10s.wav
+    V4-tone sha256: d487a3930b2baac09c1f3206106e852caec8ed3a2a4f5f3d92d6f8f092d5820f
+  PASS V4-tone the virtual source is the default, read back: apunta_p35_mic
+    V4-tone previously default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+  RECORD {"step":"V4-tone","attempt":3,"runId":"2026-10-03T21-07-53-220Z-a229eb22","dateUtc":"2026-10-03T21:07:56.585Z","prevDefault":"alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo","sinkId":"536870916","srcId":"536870917"}
+  PASS V4-tone the app's own window is up
+    V4-tone window 1280x860 at 60,70
+    V4-tone the app reports 1280x860 physical on a 1400x1000 display at scale 1
+  PASS V4-tone the app window is at scale 1
+  PASS V4-tone the server answers with this run's id
+  PASS V4-tone the patient was created through the API
+  PASS click the onboarding Continue button (rectangle inside the window)
+  PASS click the onboarding Continue button
+  PASS V4-tone a note format exists for the capture screen
+  PASS click home-action-note (rectangle inside the window)
+  PASS click home-action-note
+  PASS click home-search (rectangle inside the window)
+  PASS click home-search
+  PASS V4-tone the search text was typed
+  PASS click the first result option (rectangle inside the window)
+  PASS click the first result option
+  PASS click record-start (rectangle inside the window)
+  PASS click record-start
+  PASS V4-tone the phase reached recording
+  PASS V4-tone the phase marker moved through the starting state
+  PASS V4-tone the record-timer advanced past 10s
+    V4-tone pactl list short source-outputs:
+      8122	8114	-	PipeWire	float32le 2ch 48000Hz
+      8142	8121	8140	PipeWire	float32le 1ch 48000Hz
+    V4-tone pactl list short sources:
+      60	alsa_output.pci-0000_03_00.1.hdmi-stereo-extra3.monitor	PipeWire	s32le 2ch 48000Hz	RUNNING
+      61	alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo	PipeWire	s16le 2ch 48000Hz	SUSPENDED
+      62	alsa_output.pci-0000_75_00.6.iec958-stereo.monitor	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+      63	alsa_input.pci-0000_75_00.6.analog-stereo	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+      8114	apunta_p35.monitor	PipeWire	float32le 2ch 48000Hz	IDLE
+      8121	apunta_p35_mic	PipeWire	float32le 2ch 48000Hz	RUNNING
+  BLOCKED V4-tone microphone containment: the live source-outputs read could not be resolved, so containment is unknown and the row stops: non-numeric source-outputs column: "8122\t8114\t-\tPipeWire\tfloat32le 2ch 48000Hz"
+    --- the app's stderr (last 25 lines) ---
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691720,"pid":2554795,"hostname":"<redacted>","reqId":"req-3b","res":{"statusCode":500},"responseTime":1.3484050000006391,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691841,"pid":2554795,"hostname":"<redacted>","reqId":"req-3c","req":{"method":"GET","url":"/p3.5-marker?phase=record-stop&timer=00%3A10&level=1&levelPeak=1","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":50988},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691841,"pid":2554795,"hostname":"<redacted>","reqId":"req-3d","req":{"method":"GET","url":"/api/p3.4-observe?rects=11&batch=0&epoch=20&i0_x=0&i0_y=0&i0_w=0&i0_h=0&i0_l=New+note+%C2%B7+Apunta&i0_t=TITLE&i0_d=&i1_x=412&i1_y=72&i1_w=456&i1_h=33&i1_l=New+note+for+John+Smith&i1_t=H2&i1_d=capture-heading&i2_x=412&i2_y=111&i2_w=260&i2_h=19&i2_l=Note+format&i2_t=LABEL&i2_d=&i3_x=0&i3_y=0&i3_w=0&i3_h=0&i3_l=Progress+note&i3_t=OPTION&i3_d=&i4_x=412&i4_y=207&i4_w=172&i4_h=20&i4_l=Start+with+a+recording&i4_t=STRONG&i4_d=&i5_x=425&i5_y=274&i5_w=430&i5_h=24&i5_l=Recording+session&i5_t=P&i5_d=record-stage-status&i6_x=425&i6_y=426&i6_w=430&i6_h=33&i6_l=00%3A10&i6_t=P&i6_d=record-timer&i7_x=425&i7_y=467&i7_w=131&i7_h=19&i7_l=Listening+for+words%E2%80%A6&i7_t=SPAN&i7_d=&i8_x=548&i8_y=511&i8_w=183&i8_h=39&i8_l=Stop+and+create+draft&i8_t=BUTTON&i8_d=record-stop&i9_x=459&i9_y=592&i9_w=363&i9_h=21&i9_l=Type+notes&i9_t=DIV&i9_d=&i10_x=459&i10_y=615&i10_w=363&i10_h=19&i10_l=Type+notes+before+or+while+recording%2C+or+use+typing+alone&i10_t=DIV&i10_d=","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":50986},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691841,"pid":2554795,"hostname":"<redacted>","reqId":"req-3d","res":{"statusCode":404},"responseTime":0.2522770000014134,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691841,"pid":2554795,"hostname":"<redacted>","reqId":"req-3c","res":{"statusCode":200},"responseTime":0.7229830000014772,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691971,"pid":2554795,"hostname":"<redacted>","reqId":"req-3e","req":{"method":"POST","url":"/api/transcribe/preview","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":50990},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691972,"pid":2554795,"hostname":"<redacted>","reqId":"req-3e","bytes":232044,"seconds":7,"msg":"preview transcription"}
+    apunta: ignoring an unknown outbound bridge type "_AiError"
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061691972,"pid":2554795,"hostname":"<redacted>","reqId":"req-3e","res":{"statusCode":500},"responseTime":1.0719690000005357,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692224,"pid":2554795,"hostname":"<redacted>","reqId":"req-3f","req":{"method":"POST","url":"/api/transcribe/preview","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":51000},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692225,"pid":2554795,"hostname":"<redacted>","reqId":"req-3f","bytes":235244,"seconds":7,"msg":"preview transcription"}
+    apunta: ignoring an unknown outbound bridge type "_AiError"
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692225,"pid":2554795,"hostname":"<redacted>","reqId":"req-3f","res":{"statusCode":500},"responseTime":1.308255999998437,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692476,"pid":2554795,"hostname":"<redacted>","reqId":"req-3g","req":{"method":"POST","url":"/api/transcribe/preview","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":51006},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692477,"pid":2554795,"hostname":"<redacted>","reqId":"req-3g","bytes":240044,"seconds":8,"msg":"preview transcription"}
+    apunta: ignoring an unknown outbound bridge type "_AiError"
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692478,"pid":2554795,"hostname":"<redacted>","reqId":"req-3g","res":{"statusCode":500},"responseTime":1.1764770000008866,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692596,"pid":2554795,"hostname":"<redacted>","reqId":"req-3h","req":{"method":"GET","url":"/p3.5-marker?phase=record-stop&timer=00%3A11&level=1&levelPeak=1","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":51006},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692597,"pid":2554795,"hostname":"<redacted>","reqId":"req-3i","req":{"method":"GET","url":"/api/p3.4-observe?rects=11&batch=0&epoch=21&i0_x=0&i0_y=0&i0_w=0&i0_h=0&i0_l=New+note+%C2%B7+Apunta&i0_t=TITLE&i0_d=&i1_x=412&i1_y=72&i1_w=456&i1_h=33&i1_l=New+note+for+John+Smith&i1_t=H2&i1_d=capture-heading&i2_x=412&i2_y=111&i2_w=260&i2_h=19&i2_l=Note+format&i2_t=LABEL&i2_d=&i3_x=0&i3_y=0&i3_w=0&i3_h=0&i3_l=Progress+note&i3_t=OPTION&i3_d=&i4_x=412&i4_y=207&i4_w=172&i4_h=20&i4_l=Start+with+a+recording&i4_t=STRONG&i4_d=&i5_x=425&i5_y=274&i5_w=430&i5_h=24&i5_l=Recording+session&i5_t=P&i5_d=record-stage-status&i6_x=425&i6_y=426&i6_w=430&i6_h=33&i6_l=00%3A11&i6_t=P&i6_d=record-timer&i7_x=425&i7_y=467&i7_w=131&i7_h=19&i7_l=Listening+for+words%E2%80%A6&i7_t=SPAN&i7_d=&i8_x=548&i8_y=511&i8_w=183&i8_h=39&i8_l=Stop+and+create+draft&i8_t=BUTTON&i8_d=record-stop&i9_x=459&i9_y=592&i9_w=363&i9_h=21&i9_l=Type+notes&i9_t=DIV&i9_d=&i10_x=459&i10_y=615&i10_w=363&i10_h=19&i10_l=Type+notes+before+or+while+recording%2C+or+use+typing+alone&i10_t=DIV&i10_d=","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":51008},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692597,"pid":2554795,"hostname":"<redacted>","reqId":"req-3i","res":{"statusCode":404},"responseTime":0.29578700000092795,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692597,"pid":2554795,"hostname":"<redacted>","reqId":"req-3h","res":{"statusCode":200},"responseTime":0.7709820000000036,"msg":"request completed"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692729,"pid":2554795,"hostname":"<redacted>","reqId":"req-3j","req":{"method":"POST","url":"/api/transcribe/preview","host":"127.0.0.1:7837","remoteAddress":"127.0.0.1","remotePort":51014},"msg":"incoming request"}
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692730,"pid":2554795,"hostname":"<redacted>","reqId":"req-3j","bytes":244844,"seconds":8,"msg":"preview transcription"}
+    apunta: ignoring an unknown outbound bridge type "_AiError"
+    apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791061692730,"pid":2554795,"hostname":"<redacted>","reqId":"req-3j","res":{"statusCode":500},"responseTime":1.1356880000003002,"msg":"request completed"}
+    stopped the shell (pid 2554754) with SIGTERM
+  
+  21/22 assertions passed, 1 BLOCKED
+```

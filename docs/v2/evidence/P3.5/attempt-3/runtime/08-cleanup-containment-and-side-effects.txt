@@ -1,0 +1,47 @@
+# P3.5 attempt 3 — containment teardown, cleanup verification and host state after the last row
+
+- Working directory: repository root
+- When: after row V5, read from outside the harness. C-ISO@1 rule 7 was honoured throughout: only this session
+  own pids were stopped, never `pkill`, never the Ollama daemon.
+- Asserted here: the original default capture source is back, both owned modules are unloaded, no
+  `apunta_p35` sink or `apunta_p35_mic` source survives, no stream of any kind is left on the Pulse server,
+  nothing of this session listens on 7837 or 7839, no AppImage, playback, Xvfb or sandbox-server process of this
+  session survives, the unrelated Ollama daemon is still running, and the working tree carries only this
+  session own writes (the checkpoint append, this evidence folder and the return file; scratch lives in
+  git-ignored `build/`).
+
+  $ pactl get-default-source
+  alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+  exit=0
+  $ pactl list short modules | grep -c "sink_name=apunta_p35"
+  0
+  exit=1
+  $ pactl list short modules | grep -c "source_name=apunta_p35_mic"
+  0
+  exit=1
+  $ pactl list short sinks | grep -c apunta_p35
+  0
+  $ pactl list short sources | grep -c apunta_p35
+  0
+  $ pactl list short source-outputs
+  exit=0 (no stream at all)
+  $ ss -ltn | grep -E ":(7837|7839)\b"
+  listeners-exit=1 (1 = no listener on either port)
+  $ pgrep -af "[A]punta \\(test\\)|[p]aplay|[x]vfb-run"
+  pgrep-exit=1 (1 = none)
+  $ pgrep -af "[s]erver/server.mjs"
+  pgrep-exit=1 (1 = none)
+  $ pgrep -x ollama && echo ollama-alive
+  1123
+  ollama-alive
+  $ pactl list short sinks
+  60	alsa_output.pci-0000_03_00.1.hdmi-stereo-extra3	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  62	alsa_output.pci-0000_75_00.6.iec958-stereo	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  $ pactl list short sources
+  60	alsa_output.pci-0000_03_00.1.hdmi-stereo-extra3.monitor	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  61	alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo	PipeWire	s16le 2ch 48000Hz	SUSPENDED
+  62	alsa_output.pci-0000_75_00.6.iec958-stereo.monitor	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  63	alsa_input.pci-0000_75_00.6.analog-stereo	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  $ git status --porcelain
+   M docs/v2/state/cards/P3.5.json
+  ?? docs/v2/evidence/P3.5/attempt-3/runtime/

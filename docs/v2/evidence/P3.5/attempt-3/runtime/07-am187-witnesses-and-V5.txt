@@ -1,0 +1,61 @@
+# P3.5 attempt 3 — AM-187 literal witnesses, then row V5 (once)
+
+- Working directory: repository root (the home folder is written `~`; no absolute home path appears in this evidence)
+- Started: 2026-10-03T21:08:52Z · Ended: 2026-10-03T21:08:52Z
+- Exit code: 1
+- Command source: `docs/v2/cards/P3.5.md` row V5, read through `docs/v2/tools/plan-lib.mjs`'s `parseCells`; the dispatch copy at `docs/v2/state/dispatch/P3.5.md:749` is byte-equal to it (command and Expected)
+- Parsed with `bash -n` first: exit 0, syntax only, nothing executed
+
+## Exact command
+
+```sh
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && test "$(node --version)" = v24.19.0 && { b=/tmp/apunta-v2-p3.5-v5; rm -rf $b; mkdir -p $b; bad=0; pactl get-default-source >"$b/default-source" || { echo "FAIL: pactl get-default-source exited nonzero"; bad=1; }; test -s "$b/default-source" || { echo "FAIL: pactl get-default-source printed nothing"; bad=1; }; pactl list short sources >"$b/sources" || { echo "FAIL: pactl list short sources exited nonzero"; bad=1; }; pactl list short sinks >"$b/sinks" || { echo "FAIL: pactl list short sinks exited nonzero"; bad=1; }; pactl list short modules >"$b/modules" || { echo "FAIL: pactl list short modules exited nonzero"; bad=1; }; echo "V5 default source: $(cat "$b/default-source")"; grep -qF -e apunta_p35 "$b/default-source" && { echo "FAIL: the default source is still this run's apunta_p35_mic"; bad=1; }; node -e 'const fs=require("fs");const p=process.argv[1];const f=process.argv[2];const die=m=>{console.log(m);process.exit(1)};let j;try{j=JSON.parse(fs.readFileSync(p,"utf8"))}catch(e){die("FAIL: cannot read or parse "+p+": "+e.message)}if(!j||typeof j!=="object")die("FAIL: "+p+" does not hold a checkpoint object");if(!Number.isInteger(j.attempt)||j.attempt<1)die("FAIL: "+p+" carries attempt "+JSON.stringify(j.attempt)+", which is not a positive integer, so a baseline from an earlier attempt cannot be told from this one");const N=j.attempt;const want=["V3","V4-tone","V4-silence"];if(!Array.isArray(j.sideEffectsDone))die("FAIL: "+p+" carries no sideEffectsDone array, so the original default source is unknown");if(!Array.isArray(j.sandboxRuns))die("FAIL: "+p+" carries no sandboxRuns array, so the three capture runs this baseline belongs to cannot be named");const ok=v=>typeof v==="string"&&v.length>0;const has=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);const anchor=new Map();const aid=new Set();for(const e of j.sandboxRuns){if(e===null||typeof e!=="object"||Array.isArray(e))continue;if(!has(e,"step")&&!has(e,"runId"))continue;if(!has(e,"attempt"))die("FAIL: a sandboxRuns entry naming a run carries no attempt, so it cannot be told from the attempt of this dispatch "+N);if(e.attempt!==N)continue;const s=String(e.step);if(want.indexOf(s)<0)die("FAIL: a sandboxRuns entry at attempt "+N+" has step "+JSON.stringify(s)+", which is not one of V3, V4-tone, V4-silence");if(!ok(e.runId))die("FAIL: the sandboxRuns entry for step "+s+" at attempt "+N+" has no runId");if(!ok(e.dateUtc))die("FAIL: the sandboxRuns entry for step "+s+" at attempt "+N+" has no dateUtc");if(anchor.has(s))die("FAIL: two sandboxRuns entries at attempt "+N+" carry step "+s+"; which of them ran the capture is ambiguous");if(aid.has(e.runId))die("FAIL: two sandboxRuns entries at attempt "+N+" share runId "+e.runId+"; the three captures must be three distinct runs");anchor.set(s,{runId:e.runId,dateUtc:e.dateUtc});aid.add(e.runId)}for(const s of want)if(!anchor.has(s))die("FAIL: no sandboxRuns entry names step "+s+" at attempt "+N+"; a PREV_DEFAULT record with no matching capture run cannot be identified, so the baseline is unverifiable");const all=[];let prose=0;for(const e of j.sideEffectsDone){if(e!==null&&typeof e==="object"&&!Array.isArray(e)){if(has(e,"prevDefault"))all.push(e)}else if(String(e).includes("PREV_DEFAULT"))prose++}if(prose>0)die("FAIL: "+prose+" sideEffectsDone entries are free-form text naming PREV_DEFAULT; the recorded shape is one object per capture run, so the baseline is ambiguous");for(const r of all)if(!Number.isInteger(r.attempt)||r.attempt<1)die("FAIL: a PREV_DEFAULT record carries attempt "+JSON.stringify(r.attempt)+", which is not a positive integer, so it cannot be told which implementation attempt wrote it");const old=all.filter(r=>r.attempt!==N);if(old.length>0)console.log("V5 ignoring "+old.length+" PREV_DEFAULT record(s) from earlier attempts; earlier history is kept, not deleted, and is excluded by the attempt "+N+" selection");const recs=all.filter(r=>r.attempt===N);if(recs.length===0)die("FAIL: no PREV_DEFAULT record in sideEffectsDone for attempt "+N+"; the original default source is unknown, so the restore is undecidable");if(recs.length!==want.length)die("FAIL: "+recs.length+" PREV_DEFAULT records at attempt "+N+" where V3, V4-tone and V4-silence each record one; extra or missing records make the baseline stale or ambiguous");const steps=new Set();const ids=new Set();let base=null;for(let i=0;i<recs.length;i++){const r=recs[i];const s=String(r.step);const v=r.prevDefault;if(want.indexOf(s)<0)die("FAIL: a PREV_DEFAULT record at attempt "+N+" has step "+JSON.stringify(s)+", which is not one of V3, V4-tone, V4-silence");if(s!==want[i])die("FAIL: the PREV_DEFAULT record at index "+i+" is step "+s+" where creation order is V3, V4-tone, V4-silence; the value V5 compares against is the one the final teardown was required to re-apply, so ordering is part of the claim");if(steps.has(s))die("FAIL: two PREV_DEFAULT records at attempt "+N+" carry step "+s+"; the baseline is ambiguous");steps.add(s);if(!ok(r.runId))die("FAIL: the PREV_DEFAULT record for step "+s+" has no runId");if(ids.has(r.runId))die("FAIL: two PREV_DEFAULT records at attempt "+N+" share runId "+r.runId+"; the baseline is ambiguous");ids.add(r.runId);const a=anchor.get(s);if(r.runId!==a.runId)die("FAIL: the PREV_DEFAULT record for step "+s+" claims runId "+r.runId+" but the sandboxRuns entry for step "+s+" at attempt "+N+" names "+a.runId+"; a baseline from a different run is not the pre-state of this attempt");if(!ok(r.dateUtc))die("FAIL: the PREV_DEFAULT record for step "+s+" has no dateUtc");if(r.dateUtc!==a.dateUtc)die("FAIL: the PREV_DEFAULT record for step "+s+" carries dateUtc "+r.dateUtc+" while the sandboxRuns entry for the same run carries "+a.dateUtc+"; the two records of one run disagree");if(typeof v!=="string"||v.length===0||v.indexOf("\n")>=0||v.indexOf("\r")>=0||v!==v.trim())die("FAIL: the PREV_DEFAULT record for step "+s+" holds a malformed prevDefault: "+JSON.stringify(v));if(v.indexOf("apunta_p35")>=0)die("FAIL: the PREV_DEFAULT record for step "+s+" holds a contaminated prevDefault: "+v);if(!ok(r.sinkId)||!ok(r.srcId))die("FAIL: the PREV_DEFAULT record for step "+s+" holds no sinkId or srcId");if(base===null)base=v;else if(base!==v)die("FAIL: the PREV_DEFAULT records disagree: "+base+" against "+v+"; the original default source is ambiguous")}let raw;try{raw=fs.readFileSync(f,"utf8")}catch(e){die("FAIL: cannot read "+f+": "+e.message)}let cur=raw;if(cur.endsWith("\n"))cur=cur.slice(0,cur.length-1);if(cur.length===0)die("FAIL: pactl get-default-source printed nothing, so the current default source is unknown");if(cur.indexOf("\n")>=0||cur.indexOf("\r")>=0)die("FAIL: pactl get-default-source printed more than one line: "+JSON.stringify(raw));if(cur!==cur.trim())die("FAIL: pactl get-default-source printed a padded value: "+JSON.stringify(cur));if(cur.indexOf("apunta_p35")>=0)die("FAIL: the current default source carries a task name of this run: "+cur);if(cur!==base){console.log("FAIL: the current default source is not the recorded PREV_DEFAULT");console.log("  recorded: "+base);console.log("  current:  "+cur);process.exit(1)}console.log("V5 attempt "+N+": baseline records tied to the sandboxRuns entries for V3, V4-tone and V4-silence");console.log("V5 recorded PREV_DEFAULT: "+base);console.log("V5 current default source: "+cur)' docs/v2/state/cards/P3.5.json "$b/default-source" || bad=1; for l in sources sinks; do n=$(awk -v toks=apunta_p35,apunta_p35_mic 'BEGIN {t=split(toks,A,","); c=0} {for (i=1;i<=NF;i++) for (k=1;k<=t;k++) if ($i==A[k]) c=1} END {print c+0}' "$b/$l"); echo "V5 lines in pactl list short $l holding an exact task name: $n"; test "$n" = 0 || { echo "FAIL: pactl list short $l still names this run's sink or source"; head -n 5 "$b/$l"; bad=1; }; done; for m in module-null-sink module-remap-source; do grep -F -e "$m" "$b/modules" >"$b/$m"; n=$(awk -v toks=sink_name=apunta_p35,sink_name=apunta_p35_mic,source_name=apunta_p35,source_name=apunta_p35_mic,master=apunta_p35,master=apunta_p35.monitor 'BEGIN {t=split(toks,A,","); c=0} {for (i=1;i<=NF;i++) for (k=1;k<=t;k++) if ($i==A[k]) c=1} END {print c+0}' "$b/$m"); echo "V5 loaded $m modules holding an exact task name: $n"; test "$n" = 0 || { echo "FAIL: a $m module with this run's arguments is still loaded:"; head -n 5 "$b/$m"; bad=1; }; done; echo "V5 bad=$bad"; test "$bad" = 0; }
+```
+
+## Note
+
+**AM-187, the two literal `grep -c` witnesses, run alongside V5 and recorded with their commands.** They are read-only and were run after the last capture row's teardown:
+
+```
+$ pactl list short sources | grep -c apunta_p35
+0
+exit=1
+$ pactl list short sinks | grep -c apunta_p35
+0
+exit=1
+```
+
+Both counts are **0**, which is the passing value; the `exit=1` is `grep -c`'s own exit on a zero count and is recorded rather than suppressed. A non-zero count here would have been a FAIL and a stop; it did not occur. The Expected cell that still quotes these old `grep -c` commands was **not edited** — no Expected cell was changed in this session.
+
+**Verdict: V5 FAIL (exit 1), preserved, run once.** Its live-residue half passed in full: the default source is the owner's USB microphone, and all four residue counts are 0 —
+
+```
+V5 default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+V5 lines in pactl list short sources holding an exact task name: 0
+V5 lines in pactl list short sinks holding an exact task name: 0
+V5 loaded module-null-sink modules holding an exact task name: 0
+V5 loaded module-remap-source modules holding an exact task name: 0
+V5 bad=1
+```
+
+Its provenance half failed closed, with the reason printed:
+
+```
+FAIL: no sandboxRuns entry names step V4-silence at attempt 3; a PREV_DEFAULT record with no matching capture run cannot be identified, so the baseline is unverifiable
+```
+
+That is the card's own design, not a defect in the run: attempt 3 has exactly two capture records where the card requires three, because the `silence` mode never ran. The five attempt-1 records and their anchors are untouched, and V5's `attempt === 3` selection ignored them; nothing was deleted, sorted, deduplicated or restamped to make this pass.
+
+## Output
+
+# V5 — sanitised stdout, verbatim
+  
+```
+  V5 default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+  FAIL: no sandboxRuns entry names step V4-silence at attempt 3; a PREV_DEFAULT record with no matching capture run cannot be identified, so the baseline is unverifiable
+  V5 lines in pactl list short sources holding an exact task name: 0
+  V5 lines in pactl list short sinks holding an exact task name: 0
+  V5 loaded module-<host>-sink modules holding an exact task name: 0
+  V5 loaded module-remap-source modules holding an exact task name: 0
+  V5 bad=1
+```

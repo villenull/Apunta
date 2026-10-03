@@ -6,9 +6,9 @@
   ],
   "baseCommit": "8783181",
   "attempt": 3,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Final source CLEAR and installed host STEP0 PASS; evidence lint independently repaired, globaleslint0. Runtime attempt3 continuation released with exclusive checkpoint writer handoff.",
-  "nextAllowedAction": "final-attempt3-runtime-v0-v5-once-bundled-plugin-gate-no-fourth",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Final runtime attempt3 complete: V0/V1/V2 and bundledplugin gate PASS, V3/tone BLOCKED on legitimate client-column dash, silence NOT RUN, V5 FAIL missing third current record. Exact two records+anchors appended, prior history retained, own cleanup verified.",
+  "nextAllowedAction": "read-only-final-runtime-audit-and-bounded-owner-decision-no-fourth-authorized",
   "sideEffectsDone": [
     "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
     {
@@ -57,7 +57,25 @@
       "srcId": "536870917"
     },
     "HOST STATE RESTORED: pactl get-default-source is back to alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo, and no sink_name=apunta_p35 / source_name=apunta_p35 module is loaded. Verified from outside after the row.",
-    "BUILD SCRATCH REMOVED: build/p3.5-web and build/linux-resources/web/dist were removed by V2's trap; web/dist is unflagged (marker count 0)."
+    "BUILD SCRATCH REMOVED: build/p3.5-web and build/linux-resources/web/dist were removed by V2's trap; web/dist is unflagged (marker count 0).",
+    {
+      "step": "V3",
+      "attempt": 3,
+      "runId": "2026-10-03T21-05-01-190Z-fce5ae2d",
+      "dateUtc": "2026-10-03T21:05:04.288Z",
+      "prevDefault": "alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo",
+      "sinkId": "536870916",
+      "srcId": "536870917"
+    },
+    {
+      "step": "V4-tone",
+      "attempt": 3,
+      "runId": "2026-10-03T21-07-53-220Z-a229eb22",
+      "dateUtc": "2026-10-03T21:07:56.585Z",
+      "prevDefault": "alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo",
+      "sinkId": "536870916",
+      "srcId": "536870917"
+    }
   ],
   "changedFiles": [
     "web/src/main.tsx",
@@ -67,34 +85,34 @@
   ],
   "criteria": {
     "V0": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
-      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.5/attempt-3/runtime/01-V0.txt",
+      "verification": "Run once 2026-10-03T21:01:05Z, exit 0. Pinned Node printed exactly v24.19.0; pactl, paplay, ffmpeg and xdotool all resolved (xvfb-run present, informational only); the literal witness pactl list short sinks | grep -c apunta_p35 printed 0; pulseaudio and pacmd both absent; Server Name: PulseAudio (on PipeWire 1.6.8); the default source is non-empty and is not apunta_p35_mic; en_US-ljspeech-medium is on disk; ggml-tiny.en.bin is absent; cargo test permissions ran 5 tests, 5 passed 0 failed, covering the three decision arms plus the webview.url() Err arm and the userinfo form; an AppImage exists. The Expected cell also asks for the pre-change src-tauri/src listing and grep, which are reads of 8783181 and are cited from the attempt-1 evidence rather than restated."
     },
     "V1": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
-      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.5/attempt-3/runtime/02-V1.txt",
+      "verification": "Run once 2026-10-03T21:01:22Z, exit 0. Two artefacts under the sandbox run folder: audio-en/dictation-30s.wav, 16 kHz mono pcm_s16le, exactly 30.000000 s, Piper at --noise_scale 0 --noise_w 0 with OMP_NUM_THREADS=1, looped and resampled by ffmpeg with bitexact; and audio-en/silence-10s.wav, 16 kHz mono, exactly 10.000000 s, written directly by anullsrc. The raw 22050 Hz file was deleted by the same cell. No download: the A10 voice was already on disk, so nothing was fetched and no acquisition record was added. Both SHA-256 values are in the evidence."
     },
     "V2": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
-      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.5/attempt-3/runtime/03-V2.txt",
+      "verification": "Run once 2026-10-03T21:01:36Z to 21:03:47Z, exit 0. One flagged build, same base configuration, AM-190 scanner-only GSTREAMER_HELPERS_DIR, no convenience rebuild. Marker counts: build/p3.5-web/dist = 1, web/dist = exactly 0 after the producer ran, build/linux-resources/web/dist = 1; npm run tauri:build:test ran last and produced Apunta (test)_0.0.0_amd64.AppImage (185.21 MiB). The trap removed both build/p3.5-web and build/linux-resources/web/dist, both confirmed absent afterwards, and web/dist/assets/*.js reads 0 for the marker on every file."
     },
     "V3": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
-      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+      "status": "BLOCKED",
+      "evidence": "docs/v2/evidence/P3.5/attempt-3/runtime/05-V3.txt",
+      "verification": "Run once 2026-10-03T21:05:01Z, exit 1, 21 of 22 assertions passed and then the row stopped. It reached: the virtual source read back as the default before the launch; the durable p3.5-capture-record.json and its matching RECORD line; the window at scale 1; the server answering with this run id; a fabricated John Smith created through the API in the run folder; all five real pointer clicks; phase recording, and the marker moving through starting; the record-timer past 10 s; the marker delivered on the child stderr inside the apunta: ignoring a bridge line wrapper with levelPeak 1; and POST /api/transcribe/preview with real WAV payloads answering 500, which is whisper_model_missing as a capture-only card with no model predicts. Stop: BLOCKED microphone containment, the live source-outputs read could not be resolved, non-numeric source-outputs column 8043\\t8035\\t-\\tPipeWire\\tfloat32le 2ch 48000Hz, because pactl prints a dash in the sink column for the sinkless stream paplay creates and classifySourceOutputs (scripts/v2/tauri-audio.test.mjs:300-312) requires three integers. Fail-closed, not a safety breach: the capture stream was on apunta_p35_mic and no stream was on alsa_input.usb-UGREEN. Not repaired and not re-run; every word-level claim stays deferred to S4a.2."
     },
     "V4": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
-      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+      "status": "BLOCKED",
+      "evidence": "docs/v2/evidence/P3.5/attempt-3/runtime/06-V4.txt",
+      "verification": "Run once 2026-10-03T21:07:53Z, exit 1. The tone case on 7837 reached 21 of 22 assertions and stopped at the same containment assertion with the same cause, non-numeric source-outputs column 8122\\t8114\\t-\\tPipeWire\\tfloat32le 2ch 48000Hz; its levelPeak read 1, but that arm own assertion is downstream of the stop and is therefore not claimed. The cell is a single && chain, so the silence case on 7839 is NOT RUN with that exact cause; it was deliberately not started separately, because that would be a second invocation outside the card own cell, and port 7839 was never bound. This attempt therefore proves no tone/silence discrimination in either direction. The tone arm played e2e/fixtures/audio/dictation-10s.wav into apunta_p35 only, and the case own containment was created, recorded and torn down inside the row."
     },
     "V5": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
-      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+      "status": "FAIL",
+      "evidence": "docs/v2/evidence/P3.5/attempt-3/runtime/07-am187-witnesses-and-V5.txt",
+      "verification": "Run once 2026-10-03T21:08:52Z, exit 1. The live half passed in full: the default source is the owner USB microphone and all four residue counts are 0. The provenance half failed closed with its reason printed: no sandboxRuns entry names step V4-silence at attempt 3, so attempt 3 holds two capture records where the card requires three, because the silence mode never ran. The AM-187 literal witnesses were recorded alongside with their commands: pactl list short sources | grep -c apunta_p35 = 0 and pactl list short sinks | grep -c apunta_p35 = 0, each with the grep exit 1 on a zero count recorded rather than suppressed; no Expected cell was edited. The five attempt-1 records and their anchors were excluded by the attempt === 3 selection and are untouched, and nothing was deleted, sorted, deduplicated or restamped."
     }
   },
   "sandboxRuns": [
@@ -127,9 +145,21 @@
       "step": "V3",
       "runId": "2026-10-03T03-21-44-908Z-5da93850",
       "dateUtc": "2026-10-03T03:21:47.971Z"
+    },
+    {
+      "attempt": 3,
+      "step": "V3",
+      "runId": "2026-10-03T21-05-01-190Z-fce5ae2d",
+      "dateUtc": "2026-10-03T21:05:04.288Z"
+    },
+    {
+      "attempt": 3,
+      "step": "V4-tone",
+      "runId": "2026-10-03T21-07-53-220Z-a229eb22",
+      "dateUtc": "2026-10-03T21:07:56.585Z"
     }
   ],
-  "updatedUtc": "2026-10-03T20:57:50.102526+00:00",
+  "updatedUtc": "2026-10-03T21:19:28.989909+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",
@@ -263,5 +293,8 @@
   },
   "runtimeBaseCommit": "7158635",
   "originalImplementationBase": "8783181",
-  "clearImplementationCandidate": "7e16513"
+  "clearImplementationCandidate": "7e16513",
+  "runtimeWorkerId": null,
+  "runtimeFinalReport": "docs/v2/state/returns/P3.5.md",
+  "runtimeLeaseReleased": true
 }

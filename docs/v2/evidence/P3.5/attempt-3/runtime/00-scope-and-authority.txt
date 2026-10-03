@@ -1,0 +1,47 @@
+# P3.5 attempt 3, runtime continuation — scope, authority and ground rules
+
+- Dispatch read: `docs/v2/state/dispatch/P3.5-runtime.md` (the once-only sequence, the
+  one-writer checkpoint handoff and the exclusive-write list) and
+  `docs/v2/state/dispatch/P3.5.md` (the regenerated card, base `7158635`, attempt 3 of 3, port 7837).
+- Card rows are the source of truth: `docs/v2/cards/P3.5.md:692-697`. Every command cell
+  was read with `docs/v2/tools/plan-lib.mjs`'s `parseCells`, so `\|` is a pipe and `\\` is
+  one backslash to the shell, and each parsed cell was compared against the dispatch copy:
+  **V0–V5 commands and Expected cells are byte-equal** in both files.
+- Each cell was checked with `bash -n` (syntax only, nothing executed) before it ran. All
+  six exited 0.
+- Original implementation base `8783181` and the cleared source candidate `7e16513` are
+  history and stay classified as they are; this session's runtime base is `7158635`.
+- Attempt stayed **3**. No fourth attempt, no reset, no retry of any mode, no corrective
+  click, no repeated harness invocation, no widened timeout, no waived count. Every
+  non-zero count stayed a FAIL.
+
+## What this session held, and what it did not touch
+
+- **Exclusive serial build/capture/audio lease**, ports 7837 and 7839, taken only after free
+  bind/release checks (`ss -ltn` showed no listener on either, and no `tauri build`/`cargo`/
+  `rustc` process was running, so P3.4's lease was genuinely released).
+- **Exclusive write ownership of `docs/v2/state/cards/P3.5.json`**, delegated by root for the
+  duration of the run. Root did not append in parallel; ownership returns now, at the end of
+  this session.
+- **Writes**: the checkpoint (the two capture records and their two anchors, plus the current
+  row criteria), this evidence folder, and one appended section in
+  `docs/v2/state/returns/P3.5.md`.
+- **Scratch**: git-ignored `build/p35-final-runtime/` only (`git check-ignore -v` confirms
+  `build/`), plus the `/tmp/apunta-v2-p3.5-*.env` files the card's own cells name and the
+  sandbox run folders `/tmp/apunta-v2/<runId>/`. Nothing was written outside those.
+- **Not touched**: any source file, any config, the card text, any Expected cell, any
+  contract, any other card's checkpoint, any fixture, any tool. No `git add`, no commit, no
+  branch, no worktree, no child agent, no question to the owner.
+
+## Host state discipline
+
+- The physical microphone (`alsa_input.usb-UGREEN_…`) was **never** the capture device. Each
+  capture row refuses to launch the app until `pactl get-default-source` reads back
+  `apunta_p35_mic`, and both rows that created containment did read it back before the click.
+- Only the virtual PipeWire pair this card permits was created, and it was restored and
+  unloaded on every exit path (see `08-cleanup-containment-and-side-effects.txt`).
+- No whisper model was acquired, downloaded, selected or run; no `apt`, no `pacman`, no
+  install, no network acquisition, no distribution of the test AppImage. Port 7717 was never
+  contacted; the live data folder was never opened; all app, server and database work ran in
+  sandbox run folders with fabricated data (the one name, John Smith, is the prototype's
+  sample person, created through the API inside the run folder).

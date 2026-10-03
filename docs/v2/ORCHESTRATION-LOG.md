@@ -2575,3 +2575,14 @@ free medium), confirmedRUNNINGcallback. Exclusive serialbuild/capture/audiolease
 ports7837/7839afterfreebind, checkpointwritehandoffinsideMayedit; rootnottouches
 activecheckpoint. V0–V5once includingfreshbundledgate+exactcaptureprovenance,
 no4/retry/physicalmic orsourceedits. Awaitreturncleanupbeforelease release.
+
+### 2026-10-03 — final capture attempt blocked, provenance preserved
+
+Archivede64d5224 success after finalreturn. V0/1/2+bundledpluginsPASS; V3/tone
+BLOCKED thirdclientcolumn '-' rejected, silenceNOTRUN, V5FAILexacttwo newrecords
+missingthird. Rootverified priorcriteria+historyprefix unchanged, twoexactanchors,
+attempt3 intact/sourceclean. Cleanup/default/devices/streams/ports/ownpids verified
+inrecord and leaseRELEASED. Notacceptance; no4 or furthercaptureauthorized.
+Read-onlyauditorf2445f07 and prepared-onlyauthore49bbba8 confirmedRUNNINGcallbacks,
+separateevidence scopes, noresources. Exactminimum client-sentinelproposal requires
+explicitownerbudgetchange afterindependentreview; no silentlyfixedparser/provenance.

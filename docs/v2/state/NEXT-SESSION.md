@@ -1,3 +1,22 @@
+## Final P3.5 runtime recorded BLOCKED; resources released
+
+Workere64d5224 completed and archival succeeded. V0/V1/V2 and ownbundledplugin
+ gatePASS, V3BLOCKED/toneBLOCKED on classifySourceOutputs thirdCLIENTcolumn '-',
+silenceNOTRUN, V5FAILmissingthirdcurrentrecord. Ownerdefaultrestored/devices0/
+streams0/ports7837+7839free/ownprocessesgone verified. Roothistorycomparison:
+priorAttempt1Criteriaunchanged, original5record/anchorsprefixbyteidentical,+2new
+exactrecords/+2anchors, attempt3 unchanged, no sourcechange. Checkpoint ownership
+returnedtoroot. No fourthattempt or capture/source repair authorized, no lease.
+
+Independent auditorf2445f07-9114-4e53-92af-de071e26a870 (LongCat free high)
+confirmedRUNNINGcallback, ownfinal-runtime-audit report/evidencewrites only.
+Proposal authore49bbba8-63c9-47d9-bc45-d6f163a1a87a (Space Bunny free medium)
+confirmedRUNNINGcallback, CLIENT-SENTINEL-PROPOSAL<=160lines+ownproofs only,
+ignoredsourcecopy onefunctionpatch/fixtures, noactualsource or newattempt.
+It prepares explicit change-to-no4boundary vspark, freshindependentreview next;
+rootwon'taskbeforeconcretepackage. No runtime/build/audio/model/resource use by
+these workers. P34 final5alsoBLOCKED no6/protectedmeasurementchange ungranted.
+
 ## P3.5 final runtime running; exclusive checkpoint ownership delegated
 
 Root integrated cleanupCLEAR61d6815 and read-onlydiagnosis7158635, globaleslint0.

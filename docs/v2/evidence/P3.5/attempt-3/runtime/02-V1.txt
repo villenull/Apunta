@@ -1,0 +1,32 @@
+# P3.5 attempt 3, row V1 — spoken English fixture and digital silence
+
+- Working directory: repository root (the home folder is written `~`; no absolute home path appears in this evidence)
+- Started: 2026-10-03T21:01:22Z · Ended: 2026-10-03T21:01:23Z
+- Exit code: 0
+- Command source: `docs/v2/cards/P3.5.md` row V1, read through `docs/v2/tools/plan-lib.mjs`'s `parseCells`; the dispatch copy at `docs/v2/state/dispatch/P3.5.md:745` is byte-equal to it (command and Expected)
+- Parsed with `bash -n` first: exit 0, syntax only, nothing executed
+
+## Exact command
+
+```sh
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && node scripts/v2/sandbox.mjs env --port 7837 > /tmp/apunta-v2-p3.5-v1.env && . /tmp/apunta-v2-p3.5-v1.env && export PIPER_BIN="$HOME/.local/share/apunta-piper/venv/bin/piper" PIPER_MODEL="$HOME/.local/share/apunta-piper/voices/en_US-ljspeech-medium.onnx" && A="$(dirname "$APUNTA_DATA_DIR")/audio-en" && mkdir -p "$A" && printf '%s\n' "Progress note for John Smith. He reports no self-harm thoughts this month and denies any intent to harm anyone. He continues the sertraline fifty milligrams daily and slept better this week. We reviewed sleep hygiene and set a follow-up in four weeks." | env OMP_NUM_THREADS=1 "$PIPER_BIN" --model "$PIPER_MODEL" --output_file "$A/raw-22050.wav" --noise_scale 0 --noise_w 0 && ffmpeg -hide_banner -nostdin -loglevel error -y -stream_loop -1 -i "$A/raw-22050.wav" -t 30 -ar 16000 -ac 1 -c:a pcm_s16le -map_metadata -1 -fflags +bitexact -flags:a +bitexact "$A/dictation-30s.wav" && ffmpeg -hide_banner -nostdin -loglevel error -y -f lavfi -i anullsrc=r=16000:cl=mono -t 10 -c:a pcm_s16le "$A/silence-10s.wav" && rm -f "$A/raw-22050.wav" && ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$A/dictation-30s.wav" && sha256sum "$A/dictation-30s.wav" "$A/silence-10s.wav"
+```
+
+## Note
+
+Two artefacts under the sandbox run folder: `audio-en/dictation-30s.wav`, 16 kHz mono 16-bit PCM, Piper output at `--noise_scale 0 --noise_w 0` with `OMP_NUM_THREADS=1` looped by ffmpeg to exactly **30.000000 s** and resampled with `bitexact`, and `audio-en/silence-10s.wav`, **10.000000 s**, written directly by `anullsrc`. The raw 22,050 Hz file was deleted by the same cell, so only those two survive.
+
+**No download happened.** The voice was already on disk from the A10 acquisition recorded in `sideEffectsDone`, so the cell used it and nothing else was fetched; no acquisition record was added and no host was contacted. The two SHA-256 values above are the run's own, computed by the cell.
+
+Independent read of the two files after the row (shape only, no re-run): `ffprobe` reports `pcm_s16le / 16000 Hz / 1 ch` for both, with durations 30.000000 s and 10.000000 s.
+
+## Output
+
+# V1 — sanitised stdout, verbatim
+  
+```
+  v24.19.0
+  30.000000
+  79719c56b2ca0477cd0bde9647324efa4a60119d955e53b985ac599fdb5d0a5f  <sandbox>/audio-en/dictation-30s.wav
+  eeae5c4c90de536fe309bd6b1062c1493a80703d6e5ac97a3c51c98980220f78  <sandbox>/audio-en/silence-10s.wav
+```

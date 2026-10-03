@@ -1,0 +1,30 @@
+# P3.5 attempt 3 — AM-190 gate: four fresh-registry dry inspections of the bundled plugins
+
+- Working directory: repository root
+- Started: 2026-10-03T21:04:04Z · Ended: 2026-10-03T21:04:06Z
+- Exit code: 0
+- Command: the `step 2 four separate dry inspections` snippet of
+  `docs/v2/evidence/P3.5/environment-proposal-repair2/verify.mjs` (:179-193), run verbatim; its shell text is
+  byte-equal to the snippet after the JS template literal's `\\` is read as the one backslash a shell line
+  continuation needs (checked programmatically before it ran)
+- Parsed with `bash -n` first: exit 0
+- Purpose: the gate V2's own build cannot substitute for, and the one that must pass before V3 or V4 mean anything
+
+## Output
+
+```
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+```
+
+- stderr: empty
+- The cell's own precondition, `test -x "$S"` on
+  `Apunta (test).AppDir/usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner`, passed: the bundled scanner
+  **is** executable in the AppImage V2 built.
+- Each of the four elements was inspected through the **bundled** scanner
+  (`GST_PLUGIN_SCANNER_1_0`), inside the AppDir's own `usr/lib`, with a **fresh registry per element**
+  (`GST_REGISTRY` written to a new file, `GST_REGISTRY_REUSE_PLUGIN_SCANNER=no`), so no cached registry and no
+  host plugin can make an element visible.
+- **Verdict: PASS.** The host STEP-0 read and P3.4's bundled-plugin pass were not treated as substitutes for this.

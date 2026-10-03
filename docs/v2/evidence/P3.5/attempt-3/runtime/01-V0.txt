@@ -1,0 +1,63 @@
+# P3.5 attempt 3, row V0 — host and build probe
+
+- Working directory: repository root (the home folder is written `~`; no absolute home path appears in this evidence)
+- Started: 2026-10-03T21:01:05Z · Ended: 2026-10-03T21:01:07Z
+- Exit code: 0
+- Command source: `docs/v2/cards/P3.5.md` row V0, read through `docs/v2/tools/plan-lib.mjs`'s `parseCells`; the dispatch copy at `docs/v2/state/dispatch/P3.5.md:744` is byte-equal to it (command and Expected)
+- Parsed with `bash -n` first: exit 0, syntax only, nothing executed
+
+## Exact command
+
+```sh
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && node scripts/v2/sandbox.mjs env --port 7837 > /tmp/apunta-v2-p3.5-v0.env && . /tmp/apunta-v2-p3.5-v0.env && command -v pactl paplay ffmpeg xdotool; command -v xvfb-run || echo 'xvfb-run absent: optional, V3/V4 re-execution only'; pactl list short sinks | grep -c apunta_p35; test -z "$(command -v pulseaudio)" && test -z "$(command -v pacmd)" && pactl info | grep -i '^Server Name' && DEF=$(pactl get-default-source) && test -n "$DEF" && test "$DEF" != apunta_p35_mic && printf 'Default source: %s\n' "$DEF" && pactl list short sources && ls "$HOME/.local/share/apunta-piper/voices" && test ! -e "$APUNTA_DATA_DIR/models/ggml-tiny.en.bin" && (cd src-tauri && export PATH="$HOME/.cargo/bin:$PATH" && cargo test permissions) && ls src-tauri/target/release/bundle/appimage/
+```
+
+## Note
+
+`node --version` printed exactly `v24.19.0`; `pactl`, `paplay`, `ffmpeg` and `xdotool` all resolved (the four tools the later rows use); `xvfb-run` is present at `/usr/bin/xvfb-run`, which is informational only; the literal witness `pactl list short sinks | grep -c apunta_p35` printed **0** (its `grep -c` exits 1 on a zero count, which is the passing value and is recorded as the count, not as a waived exit); `pulseaudio` and `pacmd` are both absent; the server line is `PulseAudio (on PipeWire 1.6.8)`; the default source is the owner's USB microphone, non-empty and **not** `apunta_p35_mic`; the voices directory holds `en_US-ljspeech-medium` and `es_MX-ald-medium`; `ggml-tiny.en.bin` is **absent** under the sandbox `$APUNTA_DATA_DIR/models`, which is the expected state for a capture-only card; `cargo test permissions` ran **5 tests, 5 passed** — the three arms plus the `Err` arm of `webview.url()` failing closed and the userinfo-smuggling form; and an AppImage exists.
+
+V0's Expected also asks for the `ls src-tauri/src/` and permission/`getUserMedia` grep **before this card's Rust change**, to show that `permissions.rs` is created rather than found. That is a read of the tree at the pre-change commit, so it cannot be re-read now without editing history; the attempt-1 evidence already carries it verbatim against `8783181` (`git ls-tree --name-only 8783181 src-tauri/src/` = the six files with no `permissions.rs`, `git grep -n -E 'permission|getUserMedia|media' 8783181 -- src-tauri/src/` = two unrelated `signals.rs` comments, no `src-tauri/capabilities`, `"capabilities": []` at `tauri.conf.json:14`) and is cited, not restated, here.
+
+## Output
+
+# V0 — sanitised stdout, verbatim
+  
+```
+  v24.19.0
+  /usr/bin/pactl
+  /usr/bin/paplay
+  /usr/bin/ffmpeg
+  /usr/bin/xdotool
+  /usr/bin/xvfb-run
+  0
+  Server Name: PulseAudio (on PipeWire 1.6.8)
+  Default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+  60	alsa_output.pci-0000_03_00.1.hdmi-stereo-extra3.monitor	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  61	alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo	PipeWire	s16le 2ch 48000Hz	SUSPENDED
+  62	alsa_output.pci-0000_75_00.6.iec958-stereo.monitor	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  63	alsa_input.pci-0000_75_00.6.analog-stereo	PipeWire	s32le 2ch 48000Hz	SUSPENDED
+  en_US-ljspeech-medium.onnx
+  en_US-ljspeech-medium.onnx.json
+  es_MX-ald-medium.onnx
+  es_MX-ald-medium.onnx.json
+  
+  running 5 tests
+  test permissions::tests::the_microphone_from_any_other_origin_is_refused ... ok
+  test permissions::tests::an_allowed_origin_that_does_not_parse_refuses_rather_than_allows ... ok
+  test permissions::tests::an_origin_the_shell_cannot_read_fails_closed ... ok
+  test permissions::tests::the_apps_own_origin_is_granted_the_microphone ... ok
+  test permissions::tests::every_other_permission_kind_is_refused ... ok
+  
+  test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 55 filtered out; finished in 0.00s
+  
+  Apunta (test)_0.0.0_amd64.AppImage
+  Apunta (test).AppDir
+```
+  
+# V0 — sanitised stderr, verbatim
+  
+```
+     Compiling apunta v0.0.0 (~/Projects/Apunta/src-tauri)
+      Finished `test` profile [unoptimized + debuginfo] target(s) in 1.33s
+       Running unittests src/main.rs (target/debug/deps/apunta-3be0144fe377c2d8)
+```
