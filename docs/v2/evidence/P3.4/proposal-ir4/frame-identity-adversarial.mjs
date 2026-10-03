@@ -1,3 +1,4 @@
+import { format } from 'node:util';
 // Adversarial check of §E's readObservations frame-identity rule.
 // Scenario A: hover that inserts and removes a text leaf (total unchanged) --
 //   the mixture D1 names. Scenario B: the count crosses a batch boundary.
@@ -44,31 +45,31 @@ const pub = (frame, n, batchStart = 0, count = 5) => {
 // Scenario A: publication f1 (5 batches, total 200), then a hover publication f2
 // that is read mid-arrival (batch 3 of f2 has not landed yet).
 const linesA = [...pub('f1', 200), ...pub('f2', 200).slice(0, 4)];
-console.log('A) mixed publication read mid-arrival, total unchanged');
+process.stdout.write(format('A) mixed publication read mid-arrival, total unchanged') + '\n');
 for (const asWritten of [true, false]) {
   const b = read(linesA, asWritten);
   const frames = [...b.values()].map((e) => `${e.batch}:${e.frame}`);
-  console.log(`   ${asWritten ? 'as written (?? create-once)' : 'refresh on sight   '} ->`,
+  process.stdout.write(format(`   ${asWritten ? 'as written (?? create-once)' : 'refresh on sight   '} ->`,
     complete(b, 200, 'f2').ok ? 'f2 selected (mixture NOT detected)' : `refused: ${complete(b,200,'f2').why}`,
-    '| labels:', frames.join(' '));
+    '| labels:', frames.join(' ')) + '\n');
 }
 
 // Scenario B: the count grows so a sixth batch appears.
 const linesB = [...pub('f1', 200), ...pub('f2', 220, 0, 6)];
-console.log('B) count crosses a batch boundary (200 -> 220, six batches)');
+process.stdout.write(format('B) count crosses a batch boundary (200 -> 220, six batches)') + '\n');
 for (const asWritten of [true, false]) {
   const b = read(linesB, asWritten);
-  console.log(`   ${asWritten ? 'as written (?? create-once)' : 'refresh on sight   '} ->`,
-    complete(b, 220, 'f2').why, '| labels:', [...b.values()].map((e) => `${e.batch}:${e.frame}`).join(' '));
+  process.stdout.write(format(`   ${asWritten ? 'as written (?? create-once)' : 'refresh on sight   '} ->`,
+    complete(b, 220, 'f2').why, '| labels:', [...b.values()].map((e) => `${e.batch}:${e.frame}`).join(' ')) + '\n');
 }
 
 // Scenario C: the very first publication, as a control.
-console.log('C) control: one complete publication f1');
+process.stdout.write(format('C) control: one complete publication f1') + '\n');
 const b = read(pub('f1', 200), true);
-console.log('   as written ->', complete(b, 200, 'f1').why);
+process.stdout.write(format('   as written ->', complete(b, 200, 'f1').why) + '\n');
 
-console.log('D) the same mixture, judged against the only frame label that exists');
+process.stdout.write(format('D) the same mixture, judged against the only frame label that exists') + '\n');
 const b2 = read(linesA, true);
-console.log('   as written, ask for frame f1 ->', complete(b2, 200, 'f1').why, '(batches 0-3 actually hold f2 values)');
+process.stdout.write(format('   as written, ask for frame f1 ->', complete(b2, 200, 'f1').why, '(batches 0-3 actually hold f2 values)') + '\n');
 const b3 = read(linesA, false);
-console.log('   refresh,   ask for frame f2 ->', complete(b3, 200, 'f2').why);
+process.stdout.write(format('   refresh,   ask for frame f2 ->', complete(b3, 200, 'f2').why) + '\n');

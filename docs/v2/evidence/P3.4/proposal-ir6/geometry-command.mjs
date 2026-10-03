@@ -10,6 +10,7 @@
 // Every execution here is synthetic: no application, display, input, network,
 // server or data folder is touched. Imports the repaired model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -64,7 +65,7 @@ const run = async (geometry, label) => {
     deadline: createTargetDeadline(0, 30_000), clock: createClock(0),
     frame: frame(), wanted: WANTED, expected: { kind: 'patient-href' }, ops: f.ops,
   });
-  console.log(`${label}: ok=${result.ok} clicked=${f.state.clicked} reason=${result.reason}`);
+  process.stdout.write(format(`${label}: ok=${result.ok} clicked=${f.state.clicked} reason=${result.reason}`) + '\n');
 };
 
 await run({ id: WINDOW.id, x: 60, y: 70, w: 1280, h: 860, pid: APP_PID }, 'healthy geometry (code 0)');

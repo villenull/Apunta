@@ -11,6 +11,7 @@
 //
 // Pure synthetic strings/numbers only. Imports the author's model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -47,7 +48,7 @@ const SCALED = solveTransform([
     deadline, clock, transform: SCALED, window: WINDOW, appPid: APP_PID,
     target: CLIENT_TARGET, expected: { el: 'span.name', kind: 'patient-href' }, ops,
   });
-  console.log(`P3 ok=${result.ok} dispatched=${JSON.stringify(dispatched)} reason=${result.reason}`);
+  process.stdout.write(format(`P3 ok=${result.ok} dispatched=${JSON.stringify(dispatched)} reason=${result.reason}`) + '\n');
 }
 
 // ---- P4 -------------------------------------------------------------------
@@ -72,7 +73,7 @@ const SCALED = solveTransform([
     deadline, clock, transform: SCALED, window: WINDOW, appPid: APP_PID,
     target: CLIENT_TARGET, expected: { el: 'span.name', kind: 'patient-href' }, ops,
   });
-  console.log(`P4 (ptrN never advances) ok=${result.ok} dispatched=${JSON.stringify(dispatched)} reason=${result.reason}`);
+  process.stdout.write(format(`P4 (ptrN never advances) ok=${result.ok} dispatched=${JSON.stringify(dispatched)} reason=${result.reason}`) + '\n');
 }
 
 // ---- P5 -------------------------------------------------------------------
@@ -92,9 +93,9 @@ const SCALED = solveTransform([
   reader.observe(`${MARKER_PATH}?${q.toString()}`);
   const pair = selectTarget(reader.frame(), { label: 'Open', tag: 'button', testId: '' });
   const triple = selectTarget(reader.frame(), { label: 'Open', tag: 'button', testId: 'script-open' });
-  console.log(`P5 same label+tag, distinct testId: pair-key ok=${pair.ok} reason=${pair.reason}`);
-  console.log(`P5                                  triple ok=${triple.ok} index=${triple.index}`);
+  process.stdout.write(format(`P5 same label+tag, distinct testId: pair-key ok=${pair.ok} reason=${pair.reason}`) + '\n');
+  process.stdout.write(format(`P5                                  triple ok=${triple.ok} index=${triple.index}`) + '\n');
 }
 
 // ---- P6 -------------------------------------------------------------------
-console.log(`P6 model exports calibrate()? ${String(typeof (await import(modelPath)).calibrate)}`);
+process.stdout.write(format(`P6 model exports calibrate()? ${String(typeof (await import(modelPath)).calibrate)}`) + '\n');

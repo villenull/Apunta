@@ -11,6 +11,7 @@
 // Pure synthetic strings and numbers; no application, display, input, network,
 // server or data folder is touched. Imports the repaired model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -98,14 +99,14 @@ const run = (fixture, extra = {}) =>
     return out;
   };
   const result = await run(fixture);
-  console.log(`P3 ok=${result.ok} dispatched=${JSON.stringify(result.dispatched)} reason=${result.reason}`);
+  process.stdout.write(format(`P3 ok=${result.ok} dispatched=${JSON.stringify(result.dispatched)} reason=${result.reason}`) + '\n');
 }
 
 // ---- P4 (D1): ptrN must advance, or there is no click ----------------------
 {
   const fixture = opsFor();
   const result = await run(fixture); // noteDelivery is never wired: ptrN stays 9
-  console.log(`P4 (ptrN never advances) ok=${result.ok} dispatched=${JSON.stringify(result.dispatched)} reason=${result.reason}`);
+  process.stdout.write(format(`P4 (ptrN never advances) ok=${result.ok} dispatched=${JSON.stringify(result.dispatched)} reason=${result.reason}`) + '\n');
 }
 
 // ---- B2: a hung dispatch ends at the deadline -----------------------------
@@ -120,7 +121,7 @@ const run = (fixture, extra = {}) =>
     pending,
     new Promise((resolve) => setTimeout(() => resolve({ ok: 'DID NOT RESOLVE' }), 300)),
   ]);
-  console.log(`B2 hung-move ok=${result.ok} reason=${result.reason} deadlineAt=${String(deadline.at)}`);
+  process.stdout.write(format(`B2 hung-move ok=${result.ok} reason=${result.reason} deadlineAt=${String(deadline.at)}`) + '\n');
 }
 
 // ---- P5 (D7): the pair key, not the triple --------------------------------
@@ -140,8 +141,8 @@ const run = (fixture, extra = {}) =>
   reader.observe(`${MARKER_PATH}?${q.toString()}`);
   const { selectTarget } = await import(modelPath);
   const pair = selectTarget(reader.frame(), { label: 'Open', tag: 'button' });
-  console.log(`P5 same label+tag, distinct testId: pair-key ok=${pair.ok} reason=${pair.reason}`);
-  console.log(`P5 exported orchestration present? runFlow=${String(typeof (await import(modelPath)).runFlow)}`);
+  process.stdout.write(format(`P5 same label+tag, distinct testId: pair-key ok=${pair.ok} reason=${pair.reason}`) + '\n');
+  process.stdout.write(format(`P5 exported orchestration present? runFlow=${String(typeof (await import(modelPath)).runFlow)}`) + '\n');
 }
 
 // ---- P2 (B3): a valid newer header forbids the older complete frame -------
@@ -154,7 +155,7 @@ const run = (fixture, extra = {}) =>
   reader.observe(`${MARKER_PATH}?${good.toString()}`);
   const outcome = reader.observe(`${MARKER_PATH}?rects=1&batch=0&epoch=6&i0_x=1&i0_y=2`);
   const after = reader.frame();
-  console.log(`P2 newer header (epoch=6) truncated -> kind=${outcome.kind} header=${String(outcome.header)} highestSeenAfter=${reader.highestSeenEpoch}`);
-  console.log(`P2 after: frame.ok=${after.ok} reason=${after.reason}`);
+  process.stdout.write(format(`P2 newer header (epoch=6) truncated -> kind=${outcome.kind} header=${String(outcome.header)} highestSeenAfter=${reader.highestSeenEpoch}`) + '\n');
+  process.stdout.write(format(`P2 after: frame.ok=${after.ok} reason=${after.reason}`) + '\n');
 }
 process.exit(0);

@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 const toolDir = process.env['APUNTA_TOOL_DIR'] ?? dirname(fileURLToPath(import.meta.url));
 // Locates docs/v2 by walking up from this file, so the reproduction runs from
 // either the committed evidence path or the ignored build/ scratch copy.
@@ -57,14 +58,14 @@ const gen = (dir,args)=>spawnSync(process.execPath,[join(toolDir,'build-dispatch
 // Case A: §T.2 as written -- file name P3.4.md, H1 still "# T1 Test card"
 const a = makePlan(cardText('T1'), 'P3.4');
 const ra = gen(a,['P3.4','--base','deadbeef','--port','7841','--attempt','5','--attempt-exception','AM-999','--print']);
-console.log('A) file=P3.4.md H1="# T1 Test card" ->', ra.status, JSON.stringify((ra.stderr||'').split('\n').filter(l=>l.includes('Error')||l.includes('must be')).slice(0,2)));
+process.stdout.write(format('A) file=P3.4.md H1="# T1 Test card" ->', ra.status, JSON.stringify((ra.stderr||'').split('\n').filter(l=>l.includes('Error')||l.includes('must be')).slice(0,2))) + '\n');
 
 // Case B: H1 matched to the id
 const b = makePlan(cardText('P3.4'), 'P3.4');
 const rb = gen(b,['P3.4','--base','deadbeef','--port','7841','--attempt','5','--attempt-exception','AM-999','--print']);
-console.log('B) file=P3.4.md H1="# P3.4 Test card" ->', rb.status, (rb.stdout||'').split('\n').find(l=>l.includes('Attempt 5')));
+process.stdout.write(format('B) file=P3.4.md H1="# P3.4 Test card" ->', rb.status, (rb.stdout||'').split('\n').find(l=>l.includes('Attempt 5'))) + '\n');
 
 // Case C: the same shape with the default id T1 (existing tests)
 const c = makePlan(cardText('T1'), 'T1');
 const rc = gen(c,['T1','--base','deadbeef','--port','7841','--attempt','4','--attempt-exception','AM-049','--print']);
-console.log('C) file=T1.md H1="# T1 Test card" ->', rc.status, (rc.stdout||'').split('\n').find(l=>l.includes('Attempt 4')));
+process.stdout.write(format('C) file=T1.md H1="# T1 Test card" ->', rc.status, (rc.stdout||'').split('\n').find(l=>l.includes('Attempt 4'))) + '\n');

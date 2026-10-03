@@ -12,6 +12,7 @@
 //
 // Every execution here is synthetic. Imports the repaired model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -24,5 +25,5 @@ const reordered = `${MARKER_PATH}?rects=1&batch=0&epoch=2&i0_l=A&i0_t=span&i0_d=
 const r = createBatchReader();
 r.observe(first);
 const outcome = r.observe(reordered);
-console.log(`reordered identical duplicate: kind=${outcome.kind} conflict=${r.conflict === null ? 'null' : 'SET'} frame.ok=${r.frame().ok} reason=${r.frame().reason}`);
+process.stdout.write(format(`reordered identical duplicate: kind=${outcome.kind} conflict=${r.conflict === null ? 'null' : 'SET'} frame.ok=${r.frame().ok} reason=${r.frame().reason}`) + '\n');
 process.exit(0);

@@ -12,6 +12,7 @@
 //
 // Every execution here is synthetic. Imports the repaired model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -100,11 +101,11 @@ const run = async (ops) =>
 {
   const f = delayedPointerOps();
   const result = await run(f.ops);
-  console.log(`(a) delayed pointer observation: ok=${result.ok} nextFactCalls=${f.state.reads} reason=${result.reason}`);
+  process.stdout.write(format(`(a) delayed pointer observation: ok=${result.ok} nextFactCalls=${f.state.reads} reason=${result.reason}`) + '\n');
 }
 {
   const f = delayedLandingOps();
   const result = await run(f.ops);
-  console.log(`(b) delayed landing observation: ok=${result.ok} readsAfterClick=${f.state.readsAfterClick} reason=${result.reason}`);
+  process.stdout.write(format(`(b) delayed landing observation: ok=${result.ok} readsAfterClick=${f.state.readsAfterClick} reason=${result.reason}`) + '\n');
 }
 process.exit(0);

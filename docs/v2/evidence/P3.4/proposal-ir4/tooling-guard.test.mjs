@@ -20,6 +20,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { format } from 'node:util';
 
 const toolDir = process.env['APUNTA_TOOL_DIR'] ?? dirname(fileURLToPath(import.meta.url));
 // Locates docs/v2 by walking up from this file, so the reproduction runs from
@@ -223,7 +224,7 @@ test('extra: the three shipped attempt-4 dispatch lines are reproduced byte for 
     const m = /^- Attempt 4 of 3, plus one corrective attempt the owner authorised by (AM-\d{3}) — there is no attempt 5\. Checkpoint: `docs\/v2\/state\/cards\/(.*?)\.json`\.$/.exec(line);
     assert.ok(m, `shipped line in ${f} has an unexpected shape: ${line}`);
     const r = run(m[2], 4, ['--attempt-exception', m[1]]);
-    if (r.status !== 0) { console.log('DEBUG', f, m[0], r.status, r.stderr.slice(0,300)); }
+    if (r.status !== 0) { process.stdout.write(format('DEBUG', f, m[0], r.status, r.stderr.slice(0,300)) + '\n'); }
     assert.equal(r.status, 0, `${f}: ` + r.stdout + r.stderr);
     assert.ok(r.stdout.includes(m[0]), `regenerated line differs for ${f}: ${m[0]}`);
   }

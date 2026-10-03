@@ -8,6 +8,7 @@
 //
 // Pure synthetic strings/numbers only. Imports the author's model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -40,5 +41,5 @@ const verdict = await Promise.race([
   run.then((r) => `resolved ok=${r.ok} reason=${r.reason}`),
   new Promise((res) => setTimeout(() => res('DID NOT RESOLVE after the deadline advanced'), 300)),
 ]);
-console.log(`hung-move: ${verdict}; dispatched=${JSON.stringify(dispatched)}`);
+process.stdout.write(format(`hung-move: ${verdict}; dispatched=${JSON.stringify(dispatched)}`) + '\n');
 process.exit(0);

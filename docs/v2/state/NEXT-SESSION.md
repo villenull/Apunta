@@ -1,3 +1,17 @@
+## Three completed repairs ready for review — 2026-10-03T04:29:38.471015+00:00
+
+Final P3.5 source author4438f0dc archived; root67checks PASS, candidate attempt3
+CODEONLY runtimeheld. Minimal checkpoint status correction beforecommit documented
+attempt-3/COORDINATOR.md; nohistory altered. Noattempt4 exists.
+Environmentproposal author2c2ab067 archived;249lines and root bounded verification
+PASS. Original sandbox verification interrupted130; escalatedboundedpurechecks0.
+Outputlintauthor27cac archived;44outputsites/12P34files repaired, identicalreplays;
+remaining16global lint errors (P35review1 output/unused andoneP34unused) need
+separate boundedrepair, no disable/waiver. Completedscopeonlystaging.
+P3.4 owner assertionpackage+attempt5 questions PENDING; silence notapproval.
+No source/runtime/build/installlease active. Next: freshsource/envreviews and finish
+mechanical evidence lint on independent paths, allcallbacks.
+
 ## P3.5 final normal code repair dispatch — 2026-10-03T04:19:23.300415+00:00
 
 SourceIR2 ab52a4b7 returned CHANGES REQUESTED and is archived. Safety source-ID

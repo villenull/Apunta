@@ -8,6 +8,7 @@
 //
 // Pure synthetic strings only. Imports the author's model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -37,19 +38,19 @@ function batchLine({ epoch, batch, total, entries }) {
   const truncated = full.slice(0, 120);
   const untruncated = createBatchReader().observe(full);
   const cut = createBatchReader().observe(truncated);
-  console.log(`P1 full length=${full.length} truncated length=${truncated.length}`);
-  console.log(`P1 untruncated line -> kind=${untruncated.kind} reason=${untruncated.reason}`);
-  console.log(`P1 truncated line   -> kind=${cut.kind} reason=${cut.reason}`);
+  process.stdout.write(format(`P1 full length=${full.length} truncated length=${truncated.length}`) + '\n');
+  process.stdout.write(format(`P1 untruncated line -> kind=${untruncated.kind} reason=${untruncated.reason}`) + '\n');
+  process.stdout.write(format(`P1 truncated line   -> kind=${cut.kind} reason=${cut.reason}`) + '\n');
 }
 
 // ---- P2 -------------------------------------------------------------------
 {
   const reader = createBatchReader();
   reader.observe(batchLine({ epoch: 5, batch: 0, total: 1, entries: [leaf(0, 'A')] }));
-  console.log(`P2 before: frame.ok=${reader.frame().ok} epoch=${reader.frame().epoch} highestSeen=${reader.highestSeenEpoch}`);
+  process.stdout.write(format(`P2 before: frame.ok=${reader.frame().ok} epoch=${reader.frame().epoch} highestSeen=${reader.highestSeenEpoch}`) + '\n');
   const newerMalformed = `${MARKER_PATH}?rects=1&batch=0&epoch=6&i0_x=1&i0_y=2`;
   const outcome = reader.observe(newerMalformed);
   const after = reader.frame();
-  console.log(`P2 newer header (epoch=6) truncated -> kind=${outcome.kind} highestSeenAfter=${reader.highestSeenEpoch}`);
-  console.log(`P2 after: frame.ok=${after.ok} epoch=${after.epoch} reason=${after.reason}`);
+  process.stdout.write(format(`P2 newer header (epoch=6) truncated -> kind=${outcome.kind} highestSeenAfter=${reader.highestSeenEpoch}`) + '\n');
+  process.stdout.write(format(`P2 after: frame.ok=${after.ok} epoch=${after.epoch} reason=${after.reason}`) + '\n');
 }

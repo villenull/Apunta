@@ -11,6 +11,7 @@
 //
 // Every execution here is synthetic. Imports the repaired model read-only.
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 const modelPath =
   process.env.APUNTA_P34_MODEL ??
@@ -71,7 +72,7 @@ const measured = solveTransform([
   { cx: 449, cy: 293, sx: 701, sy: 470 },
   { cx: 663, cy: 346, sx: 1021, sy: 550 },
 ]);
-console.log(`commanded solve: read-back delta 0 -> target asked ${JSON.stringify(a.asked)} (ok=${a.ok})`);
-console.log(`commanded solve: read-back delta 1 -> target asked ${JSON.stringify(b.asked)} (ok=${b.ok})`);
-console.log(`measured solve (sx = commanded + 1) would ask x=${String(Math.round(measured.toNative({ x: 400, y: 414 }).x))}`);
+process.stdout.write(format(`commanded solve: read-back delta 0 -> target asked ${JSON.stringify(a.asked)} (ok=${a.ok})`) + '\n');
+process.stdout.write(format(`commanded solve: read-back delta 1 -> target asked ${JSON.stringify(b.asked)} (ok=${b.ok})`) + '\n');
+process.stdout.write(format(`measured solve (sx = commanded + 1) would ask x=${String(Math.round(measured.toNative({ x: 400, y: 414 }).x))}`) + '\n');
 process.exit(0);
