@@ -2595,3 +2595,11 @@ evidenceonly. Rootscopedartifacteslint13errors andpatchheaderspointatignored
 extract—notactualsource; reportedboundedremediesbeforeownercard. Rawproposalnot
 committedyet, no runtimeworker orresourceuse. Finalruntimeauditf2445f07 continues
 independent. Newauthoritydecisionawaitsconcretepatchandcleanverifiedproof.
+
+### 2026-10-03 — narrative-only completion recovered
+
+Auditorf2445f07 completionevent showedIDLEandnoreportfiles, lastnarrationnotreturn.
+Resumedsameunfinishedboundedassignment towriteexistingauditnow, no runtimeor
+newinvestigation. ProposalIR0dfdfdf1confirmedRUNNING, source/budgetunchanged.
+RootflaggedinventedfourthV5anchor asdefect: mustretainexactthreecaptureanchors.
+Noacceptedownerpackagebeforeartifact/header/provenanceclaritycorrections.
