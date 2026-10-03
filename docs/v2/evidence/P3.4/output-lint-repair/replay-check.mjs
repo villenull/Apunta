@@ -8,9 +8,11 @@
 //     node docs/v2/evidence/P3.4/output-lint-repair/replay-check.mjs
 //
 // Prints one line per case and exits non-zero if any case differs beyond the
-// three normalisations named in NORMALISED below. Reads nothing but git, the
-// ignored model copies under build/, and stdout/stderr of the scripts; writes
-// only under build/evidence-output-lint/.
+// three tolerated shapes named in NORMALISED below. Each success line says
+// whether the streams were byte-identical raw or only equal after the stated
+// normalisation — the two are not the same claim, and only the first is the
+// strong one. Reads nothing but git, the ignored model copies under build/,
+// and stdout/stderr of the scripts; writes only under build/evidence-output-lint/.
 
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -48,21 +50,61 @@ const MODELS = {
 };
 
 /**
- * The only three differences this check tolerates, each for a stated reason:
- *  1. `(12.345ms)` / `ℹ duration_ms N` — the node test reporter's own timings.
- *  2. The test file's own path — the original runs from a scratch copy, so its
- *     path necessarily differs from the repaired file's.
- *  3. `tooling-guard.test.mjs:<line>` — the repaired file carries exactly one
- *     added line (the `node:util` import), so stack-trace line numbers below it
- *     are shifted by exactly 1. Line *content* is still compared.
+ * The only three differences this check tolerates, each for a stated reason,
+ * as four rules. ORDER MATTERS: the line-number rule must run before the path
+ * rule, because the path rule's `[^ \n]*` prefix is greedy and consumes the
+ * `.mjs` literal, leaving the line-number rule nothing to match. With the two
+ * the other way round the `+1` import shift reached the comparison (defect D1
+ * in docs/v2/state/reviews/evidence-output-lint-ir.md; see README.md §7):
+ *
+ *  1. `(12.345ms)` and `ℹ duration_ms N` — the node test reporter's own
+ *     timings. Wall-clock values; they cannot match by construction.
+ *  2. `tooling-guard.test.mjs:<line>` — the repaired file carries exactly one
+ *     added line (the `node:util` import at line 23), so every stack frame
+ *     below it shifts by exactly 1. Only the number is touched; the line's
+ *     content is still compared byte for byte.
+ *  3. `…/tooling-guard.test.mjs` — the original runs from a scratch copy under
+ *     build/, so its path necessarily differs from the repaired file's.
+ *
+ * Nothing else is normalised. Any other byte — an argument, a counter, a
+ * counterexample verdict, an exit status — fails the case, and `outsidePermitted`
+ * below re-checks afterwards that normalisation only ever changed text inside a
+ * permitted span, so a rule cannot quietly absorb substantive output.
  */
 const NORMALISED = [
-  [/\(\d+(\.\d+)?ms\)/g, '(TIME)'],
-  [/^ℹ duration_ms .*$/gm, 'ℹ duration_ms TIME'],
-  [/[^ \n]*tooling-guard\.test\.mjs/g, '<TESTFILE>'],
-  [/tooling-guard\.test\.mjs:\d+/g, 'tooling-guard.test.mjs:N'],
+  [/\(\d+(\.\d+)?ms\)/g, '(TIME)', 'reporter timings'],
+  [/^ℹ duration_ms .*$/gm, 'ℹ duration_ms TIME', 'reporter duration line'],
+  [/tooling-guard\.test\.mjs:\d+/g, 'tooling-guard.test.mjs:N', 'import+1 line shift'],
+  [/[^ \n]*tooling-guard\.test\.mjs/g, '<TESTFILE>', "the test file's own path"],
 ];
 const normalise = (text) => NORMALISED.reduce((acc, [re, to]) => acc.replace(re, to), text);
+
+/** Which of the rules above actually fired on this text. */
+const rulesFired = (text) =>
+  NORMALISED.filter(([re]) => new RegExp(re.source, re.flags).test(text)).map(([, , name]) => name);
+
+/**
+ * Every span the four rules above may rewrite, and the spelling each replaces it
+ * with. Not "any line containing a permitted shape", but the exact text a rule
+ * touches, so a line can be tested for confinement.
+ */
+const PERMITTED_SPANS =
+  /\(\d+(?:\.\d+)?ms\)|\(TIME\)|^ℹ duration_ms .*$|<TESTFILE>(?::N)?|[^ \n]*tooling-guard\.test\.mjs(?::\d+|:N)?/g;
+
+/**
+ * Lines this check's normalisation changed by something outside a permitted
+ * span — i.e. substantive output it would have absorbed. Deleting the permitted
+ * spans from the line and from its normalised form and comparing the remainders
+ * is strictly stronger than asking whether the line merely carries a permitted
+ * shape. Every rule above is intra-line or line-anchored, so deciding this one
+ * line at a time is equivalent to deciding it over the whole stream.
+ */
+const outsidePermitted = (text) => {
+  const strip = (line) => line.replace(PERMITTED_SPANS, '');
+  return text
+    .split('\n')
+    .filter((line) => normalise(line) !== line && strip(line) !== strip(normalise(line)));
+};
 
 const say = (...args) => process.stdout.write(format(...args) + '\n');
 
@@ -111,9 +153,32 @@ for (const [name, rel, modelKey, asTest] of CASES) {
   if (before.status !== after.status) problems.push(`exit ${before.status} -> ${after.status}`);
   if (normalise(before.out) !== normalise(after.out)) problems.push('stdout');
   if (normalise(before.err) !== normalise(after.err)) problems.push('stderr');
+  const leaked = [
+    ...outsidePermitted(before.out),
+    ...outsidePermitted(after.out),
+    ...outsidePermitted(before.err),
+    ...outsidePermitted(after.err),
+  ];
+  if (leaked.length > 0)
+    problems.push(
+      `${leaked.length} line(s) normalised outside a permitted span, first: ${JSON.stringify(leaked[0])}`,
+    );
 
   if (problems.length === 0) {
-    say(`  ok    ${name.padEnd(26)} exit ${after.status}  stdout/stderr byte-identical`);
+    // Raw identity and post-normalisation equality are different claims; say
+    // which one this case earned, and name the rules that did any work.
+    const verdict =
+      before.out === after.out && before.err === after.err
+        ? 'stdout/stderr byte-identical (zero normalisation)'
+        : `stdout/stderr equal after permitted normalisation: ${[
+            ...new Set([
+              ...rulesFired(before.out),
+              ...rulesFired(after.out),
+              ...rulesFired(before.err),
+              ...rulesFired(after.err),
+            ]),
+          ].join(' + ')}`;
+    say(`  ok    ${name.padEnd(26)} exit ${after.status}  ${verdict}`);
   } else {
     failures += 1;
     say(`  FAIL  ${name.padEnd(26)} ${problems.join(', ')}`);

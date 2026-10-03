@@ -201,3 +201,54 @@ sites is unchanged.
 - No `docs/v2/evidence/P3.5/**` path was edited, pending those reviews.
 - All scratch output stayed inside the ignored `build/`.
 - Left unstaged and uncommitted for independent review.
+
+## 8. Addendum 2026-10-02 — D1 and D2 from the independent review
+
+`docs/v2/state/reviews/evidence-output-lint-ir.md` recorded two bounded
+tooling/reporting defects in `replay-check.mjs` and left both unfixed, because
+fixing them was outside its write scope. Both are repaired here. **Only
+`replay-check.mjs` changed.** No proof, model, tool, card, checkpoint, config or
+threshold was touched; §1–§7 above, including the §3 transcript and the §5 hash
+table, are historical records of the original repair and are deliberately left
+exactly as written.
+
+**D1 — the line-number rule was inert.** §3.1 and the completion README both
+claimed the `+1` import shift was normalised. It was not: the path rule
+`[/[^ \n]*tooling-guard\.test\.mjs/g, '<TESTFILE>']` ran first, its greedy
+`[^ \n]*` prefix consumed the `.mjs` literal, and the line-number rule that
+followed could never match. The two rules are now in the order the comment
+always described — line number first, then path — so `tooling-guard.test.mjs:130`
+becomes `tooling-guard.test.mjs:N` *before* the path rule erases the directory.
+
+This changed nothing about the 12-case result, and that is the point: in a 14/14
+run the test file's path never appears in the output at all, so only the timing
+rules fire. The order was wrong in a case the replay does not exercise.
+`docs/v2/evidence/output-lint-replay-repair/` now exercises it for real, by
+forcing the DEBUG branch against an intentionally failing copy of the ignored
+tool and showing the pair unequal under the old order and equal under this one.
+
+**D2 — the success line overstated every case.** It printed
+`stdout/stderr byte-identical` for all twelve cases, including
+`ir4-tooling-guard`, whose raw streams differ in the reporter's own timings. The
+comparison itself was always the normalised one; only the label was wrong. The
+label now distinguishes the two claims:
+
+```
+  ok    ir6-reordered-duplicate    exit 0  stdout/stderr byte-identical (zero normalisation)
+  ok    ir4-tooling-guard          exit 0  stdout/stderr equal after permitted normalisation: reporter timings + reporter duration line
+```
+
+Eleven cases still earn the strong claim, which is the one worth having.
+
+**One check added, none removed.** Exit statuses, stdout equality and stderr
+equality are all still compared exactly as before, and all twelve cases still
+run. A fourth condition was added: every line normalisation changes must differ
+*only inside* a permitted span — the permitted spans are deleted from both the
+line and its normalised form and the remainders compared. A rule that rewrote
+anything else would now fail the case instead of silently absorbing it. The
+`forced-debug-control.mjs` negative control `N5` shows that guard is not vacuous:
+the same output reports 0 out-of-span lines under these four rules and 60 under
+the four rules plus one that rewrites digits.
+
+The three tolerated shapes are unchanged and remain the whole tolerance list:
+node test reporter timings, the test file's own path, and its line numbers.
