@@ -8,8 +8,8 @@
   "baseCommit": "6974943",
   "attempt": 5,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Owner approved assertion/measurement package AM-188 and exactly one attempt5/keyed tooling AM-189; prepare code and independently review before once-only runtime rows.",
-  "nextAllowedAction": "attempt-five-code-unit-only-then-independent-review-before-once-only-runtime",
+  "lastCompletedStep": "Final attempt5 code/unit candidate b19e59f SUBMITTED; root80/80 synthetic model/adapters PASS, P3.5 audio seam byte-identical; source author archived. Independent reviewer66459613 running, no acceptance row executed.",
+  "nextAllowedAction": "independent-attempt-five-code-review-and-authenticated-prerequisites-before-once-only-runtime",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -39,6 +39,45 @@
     "scripts/v2/tauri-security.test.mjs - inherited whole, then repaired in three places by attempt 4; see changedFiles and the harnessBoundary note below."
   ],
   "criteria": {
+    "S0": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.4/acquisition-A06.md",
+      "verification": "Inherited from attempt 3 and re-confirmed by V0's first assertion this attempt: the candidate at ~/.cache/apunta-v2/whisper-src is executable, so S0 was SKIPPED and nothing was acquired as a new item."
+    },
+    "V0": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
+      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+    },
+    "V1": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
+      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+    },
+    "V2": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
+      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+    },
+    "V3": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
+      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+    },
+    "V4": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
+      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+    }
+  },
+  "sandboxRuns": [
+    "<sandbox>/2026-10-02T23-38-00-485Z-b72ab858 (V2, recorded run, port 7835)",
+    "<sandbox>/2026-10-02T23-18-12-989Z-74194898 (V2, port 7835)",
+    "<sandbox>/2026-10-02T23-14-44-140Z-b6a7bbc6 (V2, port 7835)",
+    "<sandbox>/2026-10-02T23-11-43-686Z-078bd8cc (V2, port 7835)",
+    "<sandbox>/2026-10-02T23-09-25-372Z-7099e32b (V2, port 7835 - where the frozen-snapshot defect was found)"
+  ],
+  "priorAttempt4Criteria": {
     "S0": {
       "status": "PASS",
       "evidence": "docs/v2/evidence/P3.4/acquisition-A06.md",
@@ -75,13 +114,8 @@
       "verification": "Attempt 4: exit 0, 42 s, run in full after one earlier attempt of this same row exited 1 at lint on a prettier warning against this attempt's own edit to the harness. 163 test files / 2235 tests, lint, typecheck, cargo fmt, clippy -D warnings, 55 cargo tests. Counts are higher than attempt 3's 160/2160 because other cards' suites landed in the tree; no expectation was changed and no test was touched."
     }
   },
-  "sandboxRuns": [
-    "<sandbox>/2026-10-02T23-38-00-485Z-b72ab858 (V2, recorded run, port 7835)",
-    "<sandbox>/2026-10-02T23-18-12-989Z-74194898 (V2, port 7835)",
-    "<sandbox>/2026-10-02T23-14-44-140Z-b6a7bbc6 (V2, port 7835)",
-    "<sandbox>/2026-10-02T23-11-43-686Z-078bd8cc (V2, port 7835)",
-    "<sandbox>/2026-10-02T23-09-25-372Z-7099e32b (V2, port 7835 - where the frozen-snapshot defect was found)"
-  ],
+  "implementationReviewWorkerId": "66459613-65d5-404e-9031-618fc8342e47",
+  "implementationCandidate": "b19e59f",
   "updatedUtc": "2026-10-03T03:11:45.304262+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",

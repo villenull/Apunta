@@ -2390,3 +2390,16 @@ work while source incomplete and prerequisitesawaitauthenticationrouteanswer.
 PendinglocalGhosttyauthentication question remainsunanswered; do notlaunch.
 InstallapprovalAM190 persists; no buildlease, portreservation or runtime rows.
 
+
+## P3.4 final implementation submitted; independent code review running
+
+Candidateb19e59f two featurefiles+ownimplementationevidence integrated. Source
+writer9b1b88ff archived. Root80/80synthetictestsPASS, P35audio seam byteidentical.
+Fresh reviewer66459613-65d5-404e-9031-618fc8342e47 (LongCathigh, callback) owns
+P3.4-impl5.md plusattempt5/review evidence, actualadapter/hookseams checked
+alongsidepuremodelport. No runtime rows allowed duringreview. Checkpoint now
+records V0–V4 NOTRUN for current5; oldattempt4criteria retained verbatimin
+priorAttempt4Criteria. No6. RootauthroutequestionPENDING, AM190approvalpersists.
+No otherreadywork before sourceCLEAR +authentication/preflight; no lease or
+portreserved, no app/build/server/audio/model/privatev1 action performed.
+
