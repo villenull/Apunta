@@ -1,3 +1,19 @@
+## Exact correction approved/applied; review and local installation running
+
+Owner approved exact P3.4 correction (AM-192) and local Ghostty authentication
+route (AM-193). Candidate 291372f, shipping harness sha256865ccab3 matches the
+reviewed prepared patch; four hunks only. Attempt remains5, no reset/retry/sixth;
+V0–V4 still NOT RUN. Progress/checkpoint SUBMITTED for corrected-source review.
+
+Reviewer 8084112d-da90-4a56-8239-74f0b40e8912 (LongCat free high) confirmed
+RUNNING with completion callback, only applied-review report/evidence writes.
+Worker 5d98dc33-7555-4661-b362-625501061612 (Space Bunny free medium) confirmed
+RUNNING with callback: open installed Ghostty for the exact approved three-package
+pkexec command, no input/password capture; record exit only, then fail-closed
+read-only prerequisite check. Exclusive writes local-authentication evidence;
+no build/capture or runtime row. Owner authenticates locally. No resource lease
+or port reservation; next build requires both source CLEAR and preflight PASS.
+
 ## Bounded P3.4 correction ready for owner exception
 
 Final reviewer 4d5f0ebb completed and archival succeeded. Patch and all technical

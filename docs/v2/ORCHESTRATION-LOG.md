@@ -2458,3 +2458,13 @@ passes; text-only review directory has no applicable ESLint targets (combined
 invocation exit 2, not a test failure). Owner-only pre-runtime exception ready.
 No acceptance row run; no sixth attempt. Authentication route question pending.
 No active workers or leases; independent P3.5 awaits installation authentication.
+
+### 2026-10-03 — owner approvals AM-192 and AM-193 acted on
+
+Applied exact approved correction patch, harness hash865ccab3, candidate291372f.
+No wider source change; attempt5 retained and acceptance rows NOT RUN. Owner also
+approved local installed Ghostty route for the unchanged pkexec three-package
+command, no credential capture. Fresh reviewer8084112d (LongCat free high) and
+local authentication/preflight worker5d98dc33 (Space Bunny free medium) confirmed
+running with callbacks and disjoint evidence scopes. No build or runtime task
+launched, no lease/port reserved. Root owns state and integration.
