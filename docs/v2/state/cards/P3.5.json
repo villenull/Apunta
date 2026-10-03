@@ -6,9 +6,9 @@
   ],
   "baseCommit": "8783181",
   "attempt": 3,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Attempt 3 code/unit repair only, runtime held: D2-1 presence-and-non-empty check added inside tidsFromNewestMarker (attempt-2 review-2 D2-1), plus factual corrections to the attempt-2 report and return (D3-1 timeline, D3-2 lint counts qualified by commit, D3-3 semantic preservation). Attempt-2 rows, five PREV_DEFAULT records and every anchor untouched; runtime verdicts unchanged (V3 BLOCKED, V4 NOT RUN, V5 FAIL).",
-  "nextAllowedAction": "approved-config-await-local-authentication-route-and-preflight-final-runtime",
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Final source CLEAR and installed host STEP0 PASS; evidence lint independently repaired, globaleslint0. Runtime attempt3 continuation released with exclusive checkpoint writer handoff.",
+  "nextAllowedAction": "final-attempt3-runtime-v0-v5-once-bundled-plugin-gate-no-fourth",
   "sideEffectsDone": [
     "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
     {
@@ -67,34 +67,34 @@
   ],
   "criteria": {
     "V0": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.5/V0-host-and-build.md",
-      "note": "Every probe passed. Two literal readings disclosed, neither an adaptation: pactl info prints 'Server Name: PulseAudio (on PipeWire 1.6.8)' (pipewire-pulse answering the Pulse protocol; pulseaudio and pacmd are both absent, which is the substantive assertion), and pactl list short sources carries no '*' marker for the default source; pactl get-default-source was recorded separately and is not apunta_p35_mic."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
     },
     "V1": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.5/V1-fixture.md",
-      "note": "dictation-30s.wav (16 kHz mono s16le, 15.78 s) and silence-10s.wav (exactly 10.00 s) under <sandbox>/audio-en; raw 22,050 Hz deleted in the same row; nothing committed."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
     },
     "V2": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.5/V2-test-build.md",
-      "note": "Marker counts: build/p3.5-web/dist 1, web/dist 0 after the producer, build/linux-resources/web/dist 1; AppImage rebuilt. The literal command's first run failed at 'npm run tauri:build:test' because cargo is not on the desktop PATH; re-run with ~/.cargo/bin on PATH, exit 0."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
     },
     "V3": {
-      "status": "BLOCKED",
-      "evidence": "docs/v2/evidence/P3.5/V3-capture-spoken.md",
-      "note": "All five real clicks landed and the app's recorder started, then WebKitGTK refused to capture: 'GStreamer element appsink not found. Please install it.' and 'Audio capture was requested but no device was found amongst 0 devices'. The host has only gst-plugin-pipewire: autoaudiosrc, alsasrc and pulsesrc are all absent. That is the card's A03 stop condition; the owner line is in docs/v2/state/OWNER-ACTIONS.md. Five V3 records exist at attempt 1 because the harness needed five invocations to reach the record click; V5 therefore fails closed on duplicate provenance by design."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
     },
     "V4": {
       "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.5/V4-non-speech.md",
-      "note": "Not run: V3 is blocked by the same missing GStreamer elements, so a tone and silence case could not produce frames either. Run after the owner installs the plugins."
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
     },
     "V5": {
-      "status": "FAIL",
-      "evidence": "docs/v2/evidence/P3.5/V5-containment.md",
-      "note": "Containment residue checks pass from outside (default source restored, no apunta_p35 sink, source or module). The provenance half fails closed: five PREV_DEFAULT records at attempt 1 for step V3 where the row names three runs in the order V3, V4-tone, V4-silence. That is the duplicate-provenance case the card defines, and it is the coordinator's call, not this session's."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
     }
   },
   "sandboxRuns": [
@@ -129,7 +129,7 @@
       "dateUtc": "2026-10-03T03:21:47.971Z"
     }
   ],
-  "updatedUtc": "2026-10-03T04:20:41.351440+00:00",
+  "updatedUtc": "2026-10-03T20:57:50.102526+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",
@@ -228,5 +228,40 @@
   "ownerDecisions": {
     "captureEnvironmentPackage": "APPROVED base config AM-190",
     "A10ExactQueryAdmission": "APPROVED AM-191"
-  }
+  },
+  "priorAttempt1Criteria": {
+    "V0": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+    },
+    "V1": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+    },
+    "V2": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+    },
+    "V3": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+    },
+    "V4": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+    },
+    "V5": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/dispatch/P3.5-runtime.md",
+      "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
+    }
+  },
+  "runtimeBaseCommit": "7158635",
+  "originalImplementationBase": "8783181",
+  "clearImplementationCandidate": "7e16513"
 }
