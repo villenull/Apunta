@@ -20,11 +20,19 @@ no running sandbox/app/build commands, and no build or GPU lease. Source base
   investigation: handoff conflicts with checkpoint and code about both global
   assertions and fixture insertion. No fifth attempt, launch, build or change
   to protected acceptance is authorised. P3.4 remains BLOCKED.
-- **State/queue audit RUNNING:** worker
+- **State/queue audit COMPLETE, worker archived:** worker
   `f2e5abe1-b39e-4a9c-a653-1829a43810a8`, only
-  `state/reviews/continuation-state-audit-2026-10-03.md`. Verify status provenance
-  and real placeholder refusals; recommend minimal reconciliation.
-- All three workers use `opencode-go/space-bunny-free`, **medium** effort,
+  `state/reviews/continuation-state-audit-2026-10-03.md`. Status provenance and real placeholder refusals verified. P3.8 APPROVED
+  reconciled under AM-180; S3.2 CHANGES REQUESTED, attempt 1 consumed and
+  repair 2 not dispatched. P3.5 forwarding hold resolved; V5 repair/review
+  pending. Historical nine-card port claim withdrawn: no ready task blocked.
+- **P3.5 V5 command repair RUNNING:** worker
+  `8ea4b967-25b8-4855-bf55-b8a439a96a37`, exclusive V5 command cell in
+  `cards/P3.5.md` plus `state/reviews/P3.5-V5-command-repair.md`. Preserve
+  Expected and every other row byte-identical; synthetic clean/bad branch
+  execution only, no audio/build/app/runtime changes. One repair attempt then
+  fresh independent review. Scratch only ignored project folder.
+- All current workers use `opencode-go/space-bunny-free`, **medium** effort,
   same workspace, leave uncommitted, completion notifications enabled.
 - Coordinator owns all shared state/card/dispatch/log files. Accept reports by
   inspecting evidence, archive finished owned workers and confirm. S3.3a needs

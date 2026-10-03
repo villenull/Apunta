@@ -1916,3 +1916,9 @@ no running sandbox/app/build commands, and no build or GPU lease. Source base
   and retained harness capacity is four including coordinator. Next: process
   diagnoses/audit into a concrete owner amendment only where protected scope
   or exhausted budget requires one; continue independent S3.3a work.
+
+## Audit accepted and archival confirmed — 2026-10-03T00:57:49.864176+00:00
+
+Worker f2e5abe1-b39e-4a9c-a653-1829a43810a8 returned only its scoped report; completion confirmed no writing, archive_agent returned success. Coordinator read report and original P3.8 independent review / S3.2 return, corrected shared state under AM-184. S3.2 counter remains 1 until real dispatch despite audit queue shorthand suggesting 2. P3.4 remains 4-of-3 under AM-138, no fifth. Audit used unapproved /tmp scratch instead of project scratch; no source/state mutation resulted, and future briefs must require ignored project scratch. P3.5 V5 needs command repair and fresh independent review; no repair adopted yet. S3.3a implementer still owns build/port7841 and five source files. Diagnosis worker still owns its report. No duplicate build or real-model work.
+
+P3.5 V5 command-only author 8ea4b967-25b8-4855-bf55-b8a439a96a37 launched on Space Bunny medium, completion callback enabled; only card V5 command cell and own repair report. Expected assertion and all other rows protected byte-identical. One repair attempt; synthetic branch probes, no build/audio/app; fresh independent instruction review next. This replaces archived audit worker in useful parallel capacity. Existing source/sink spelling appointa_p35 disagrees with run name apunta_p35 in prose: author must report any protected wording contradiction, not silently choose a new assertion.

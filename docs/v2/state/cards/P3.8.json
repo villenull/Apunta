@@ -7,9 +7,9 @@
   ],
   "baseCommit": null,
   "attempt": 3,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "ATTEMPT 3: ALL FIVE ROWS PASS, exit 0, no source changed. V4 - the negative control - held on all seven witnesses with the AppImage confirmed to have inherited GDK_BACKEND=x11 from outside the process (a named window 2097190:1490387:Apunta at 1330x950). Marker after ready in both V3 (lines 6 vs 34) and V4 launch 1 (lines 5 vs 11), one ready, one show_main. No margin near its limit and none widened; the 50ms poll won the race attempt 2 called unwinnable, and the verdict does not rest on it. Three limits disclosed and correct: (a)/(c) remain supporting because they read a stream the change influences; (e) was witnessed for SIGTERM on the server pid, not for a server dying on its own after ready; clause 6(c) post-ready fatal/Other stays unobserved by the card own design. NOTE: the return file discloses a suspected V0 defect that does not exist - the cell does export cargo/bin - so the evidence file needs correcting.",
-  "nextAllowedAction": "implementation-review",
+  "status": "APPROVED",
+  "lastCompletedStep": "AM-180 recorded acceptance after independent implementation review APPROVE WITH NOTES, no blocking fixes. All five attempt-3 rows PASS. Prior coordinator acceptance is preserved; this is a stale-state correction, not a new review or rerun. Implementation 799597d; independent review at 7ec98c5. Evidence command omissions remain disclosed.",
+  "nextAllowedAction": "none-complete",
   "sideEffectsDone": [],
   "changedFiles": [
     "src-tauri/src/main.rs"
@@ -42,5 +42,5 @@
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": null
+  "updatedUtc": "2026-10-03T00:57:49.864176+00:00"
 }

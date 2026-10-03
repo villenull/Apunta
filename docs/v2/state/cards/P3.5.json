@@ -7,19 +7,19 @@
   "baseCommit": "5fb42a9",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "Round 8 returned 10 CLEAR / 0 DEFECT / 0 UNKNOWN with D-1 closed, after verifying all five required rectangles are obtainable and that the 3/2 split between P3.5's own client rectangles and P3.4's inherited text leaves is disjoint and stated in three agreeing places. No implementation attempt has ever run: attempt stays 0, sideEffectsDone, changedFiles, criteria and sandboxRuns stay empty. HELD, not blocked on a decision - held on P3.8's forwarding fix, because P3.5's hook-reading rows read the same stderr channel P3.4 is blocked on.",
-  "nextAllowedAction": "held - not dispatchable until P3.8 forwards the bundled server stdout after `ready`. The hook itself already landed in commit ee2ab00 and attempt 3 proved it publishes; what is missing is P3.3's forwarding loop, which P3.8 owns. P3.5's hook-reading rows read the SAME stderr channel, so the same defect blocks both cards.",
+  "lastCompletedStep": "Round 8 was CLEAR 10/0/0 under AM-141; no implementation has run (attempt 0). P3.8 forwarding hold resolved by AM-180. Continuation audit found V5 command polarity/aggregation defect needing correction and fresh review before dispatch. No new dependency on P3.4 is invented.",
+  "nextAllowedAction": "prepare-V5-command-correction-and-independent-instruction-review; implementation waits for exclusive build lease",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": null,
+  "updatedUtc": "2026-10-03T00:57:49.864176+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink appointa_p35 and remap source appointa_p35_mic, made the default capture source for the duration of a capture row",
       "scope": "host-global, the single mutation AM-109 permits outside the run folder",
       "cleanup": "restore the remembered default source, then `pactl unload-module` the source and the sink, in that order, on every exit path including signals; verified from outside by row V5",
-      "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see the card's stop condition, 'The current default source is a physical device', which names the leftover case — not nextAllowedAction, which covers review dispatch and does not restate the PipeWire preflight. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
+      "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see the card's stop condition, 'The current default source is a physical device', which names the leftover case \u2014 not nextAllowedAction, which covers review dispatch and does not restate the PipeWire preflight. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
     },
     {
       "what": "the en_US-ljspeech-medium voice, only if it is not already on disk",
@@ -31,7 +31,7 @@
       "what": "the flagged web bundle, built into build/p3.5-web/ by row V2 and copied over build/linux-resources/web/dist for the duration of that row",
       "scope": "git-ignored build output only; web/dist is left unflagged on every path",
       "cleanup": "V2 removes BOTH build/p3.5-web and build/linux-resources/web/dist through one trap on EXIT INT TERM HUP; the removal runs after `npm run tauri:build:test`, by which point the AppImage already carries its own copy, so deleting the shipping directory is safe. If either survives, remove both before the next build.",
-      "resumeInstruction": "Check `web/dist/assets/*.js` for the marker string p3.5-marker before and after V2; a non-zero count outside V2's own flagged bundle is a FAIL and an owner escalation, remedied by an unflagged `npm run build`. After V2, `build/linux-resources/web/dist` does not exist: any later release build must re-run the producer directly, `bash scripts/v2/package-linux-resources.sh`, before `npm run tauri:build`, or it has no web bundle to ship. There is no `npm run package:linux` — the root package.json defines no such script and package.json is Must-not-edit for this card — so the literal `bash` invocation is the only correct one."
+      "resumeInstruction": "Check `web/dist/assets/*.js` for the marker string p3.5-marker before and after V2; a non-zero count outside V2's own flagged bundle is a FAIL and an owner escalation, remedied by an unflagged `npm run build`. After V2, `build/linux-resources/web/dist` does not exist: any later release build must re-run the producer directly, `bash scripts/v2/package-linux-resources.sh`, before `npm run tauri:build`, or it has no web bundle to ship. There is no `npm run package:linux` \u2014 the root package.json defines no such script and package.json is Must-not-edit for this card \u2014 so the literal `bash` invocation is the only correct one."
     }
   ],
   "instructionReviews": [
