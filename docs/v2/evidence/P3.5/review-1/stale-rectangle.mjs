@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { format } from 'node:util';
 /**
  * P3.5 attempt-1 independent review — synthetic proof that the harness keeps a
  * stale rectangle for a `data-testid` after a newer marker no longer carries it.
@@ -47,12 +48,12 @@ const stale = tids.get('record-start');
 
 let failures = 0;
 function check(name, ok, detail) {
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail === undefined ? '' : `: ${detail}`}`);
+  process.stdout.write(format(`${ok ? 'PASS' : 'FAIL'} ${name}${detail === undefined ? '' : `: ${detail}`}`) + '\n');
   if (!ok) failures += 1;
 }
 
-console.log('tids map after both markers:', JSON.stringify([...tids.entries()]));
-console.log('');
+process.stdout.write(format('tids map after both markers:', JSON.stringify([...tids.entries()])) + '\n');
+process.stdout.write(format('') + '\n');
 check(
   'the newest marker no longer carries record-start',
   ![...m2.keys()].some((k) => k.startsWith('tid_record-start')),
@@ -68,8 +69,8 @@ check(
   JSON.stringify(stale),
 );
 
-console.log('');
-console.log(
+process.stdout.write(format('') + '\n');
+process.stdout.write(format(
   `Verdict: ${failures === 0 ? 'stale rectangle reproduced (defect)' : 'unexpected: some expectation did not hold'}`,
-);
+) + '\n');
 process.exit(failures === 0 ? 0 : 1);

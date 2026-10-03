@@ -23,6 +23,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { format } from 'node:util';
 
 // Locate the repository by walking up until scripts/v2/tauri-audio.test.mjs is
 // found, so this script runs identically from build/p3.5-review1/ and from
@@ -53,7 +54,6 @@ const predicate = harness.slice(start, end);
 
 const SOURCE_NAME = 'apunta_p35_mic';
 const REAL_MIC_PREFIX = 'alsa_input.usb-UGREEN';
-const SINK_NAME = 'apunta_p35';
 
 // Fabricated `pactl list short sources`: index, name, driver, sample spec, state.
 const shortSources = [
@@ -102,16 +102,16 @@ const correctReal = sourceOutputs
 
 let failures = 0;
 function check(name, ok, detail) {
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail === undefined ? '' : `: ${detail}`}`);
+  process.stdout.write(format(`${ok ? 'PASS' : 'FAIL'} ${name}${detail === undefined ? '' : `: ${detail}`}`) + '\n');
   if (!ok) failures += 1;
 }
 
-console.log(`harness predicate extracted (${predicate.length} chars):`);
-console.log(predicate);
-console.log('');
-console.log('fabricated source-outputs line 0 columns:');
-console.log(JSON.stringify(sourceOutputs.split('\n')[0].split(/\s+/)));
-console.log('');
+process.stdout.write(format(`harness predicate extracted (${predicate.length} chars):`) + '\n');
+process.stdout.write(format(predicate) + '\n');
+process.stdout.write(format('') + '\n');
+process.stdout.write(format('fabricated source-outputs line 0 columns:') + '\n');
+process.stdout.write(format(JSON.stringify(sourceOutputs.split('\n')[0].split(/\s+/))) + '\n');
+process.stdout.write(format('') + '\n');
 
 check(
   'the correct mapping sees the virtual capture stream',
@@ -144,6 +144,6 @@ check(
   `onVirtual=${got2.onVirtual.length}`,
 );
 
-console.log('');
-console.log(`Verdict: ${failures === 0 ? 'containment predicate is DEFECTIVE (defect reproduced)' : 'unexpected: some expectation did not hold'}`);
+process.stdout.write(format('') + '\n');
+process.stdout.write(format(`Verdict: ${failures === 0 ? 'containment predicate is DEFECTIVE (defect reproduced)' : 'unexpected: some expectation did not hold'}`) + '\n');
 process.exit(failures === 0 ? 0 : 1);

@@ -26,7 +26,6 @@ const SCALED = solveTransform([
   { cx: 500, cy: 400, sx: 776, sy: 631 },
   { cx: 600, cy: 430, sx: 926, sy: 676 },
 ]);
-const SCALED_NATIVE = { x: Math.round(1.5 * CLIENT_TARGET.x + 26), y: Math.round(1.5 * CLIENT_TARGET.y + 31) };
 const RECT = { l: 'John Smith', t: 'span', d: 'patient-open' };
 
 /** ir5 P3's shape: the pointer is left at the last calibration point. */
