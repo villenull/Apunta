@@ -1,0 +1,44 @@
+# Authoritative local docs / binaries (quotes only)
+
+## pkexec(1) — AUTHENTICATION AGENT (/usr/share/man/man1/pkexec.1.gz)
+"pkexec, like any other polkit application, will use the authentication agent
+registered for the calling process or session. However, if no authentication
+agent is available, then pkexec will register its own textual authentication
+agent. This behavior can be turned off by passing the --disable-internal-agent
+option."
+
+## timeout(1) — GNU coreutils 9.11 (/usr/bin/timeout)
+"-f, --foreground
+    when not running timeout directly from a shell prompt, allow COMMAND to read
+    from the TTY and get TTY signals; in this mode, children of COMMAND will not
+    be timed out"
+
+The approved script runs `timeout 180s pkexec ...` (no --foreground) from inside
+a script, not directly from a shell prompt.
+
+## ldd /usr/bin/pkexec
+libpolkit-agent-1.so.0 => /usr/lib/libpolkit-agent-1.so.0   (internal text agent)
+
+## strings /usr/lib/libpolkit-agent-1.so.0 (controlling-terminal paths)
+"Cannot determine pathname for current controlling terminal for the process: %s"
+"Error opening current controlling terminal for the process (`%s'): %s"
+"Got unexpected EOF while reading from controlling terminal."
+
+## strings /usr/bin/pkexec
+"polkit_agent_text_listener_new"
+"--disable-internal-agent"
+"Error creating textual authentication agent: %s"
+"Error registering local authentication agent: %s"
+"Error executing command as another user: No authentication agent found."
+
+## Installed polkit surface (no graphical agent)
+/usr/lib/polkit-1/            -> polkit-agent-helper-1, polkitd   (only these)
+/usr/lib/polkit-agent-1.so*   -> library
+/etc/xdg/autostart/           -> no polkit agent .desktop
+/usr/share/applications/      -> no polkit agent .desktop
+running polkit processes      -> polkitd (1050) only
+polkit package                -> 127-3
+
+## polkitd strings (source of the journal line)
+"Operator of %s FAILED to authenticate to gain authorization for action %s for
+%s [%s] (owned by %s)"

@@ -1,0 +1,15 @@
+# Targeted journal excerpt (non-sensitive; no credential material)
+# journalctl --since "2026-10-03 07:55:00" --until "2026-10-03 08:12:00"
+# filtered to polkit / pkexec / authentication / session lines
+
+2026-10-03T08:02:12-06:00 FBI-PC systemd[1]: Starting Authorization Manager Agent Helper (PID 1406/UID 1000)...
+2026-10-03T08:05:12-06:00 FBI-PC polkit-agent-helper-1[2419135]: pam_unix(polkit-1:auth): conversation failed
+2026-10-03T08:05:12-06:00 FBI-PC polkit-agent-helper-1[2419135]: pam_unix(polkit-1:auth): auth could not identify password for [villenull]
+2026-10-03T08:05:12-06:00 FBI-PC polkitd[1050]: Operator of unix-session:2 FAILED to authenticate to gain authorization for action org.freedesktop.policykit.exec for unix-process:unknown [<unknown>] (owned by unix-user:villenull)
+2026-10-03T08:05:14-06:00 FBI-PC polkit-agent-helper-1[2419135]: polkit-agent-helper-1: pam_authenticate failed: Authentication token manipulation error
+2026-10-03T08:05:14-06:00 FBI-PC systemd[1]: polkit-agent-helper@15-33-1406_28770-1000.service: Deactivated successfully.
+2026-10-03T08:05:14-06:00 FBI-PC systemd[1]: Finished Authorization Manager Agent Helper (PID 1406/UID 1000).
+
+# No pkexec- or ghostty-tagged journal entries exist (both write to the window,
+# not to the journal). The helper waited exactly 180 s (08:02:12 -> 08:05:12),
+# matching the script's `timeout 180s` and exit.status=124.

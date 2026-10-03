@@ -1,3 +1,19 @@
+## Authentication diagnosis complete; owner window observation pending
+
+Diagnostician3dc11fa9 completed and archival succeeded. Host script had realtty;
+polkit internaltextagent/helper started, timed out after180s without successful
+authentication. Prompt visibility/answerability remains UNKNOWN. No missing-
+graphical-agent causal claim adopted. No privileged invocation in diagnosis.
+
+Root prepared timeout --foreground in ignored local script, bash-n PASS; same
+180s pkexec/pacman and three packages under AM190/193. No retry launched.
+Foreground timeout doesn't time out descendants; later launcher must verify its
+own child cleanup without unrelated kills. User's pending answer about whether
+terminal/password prompt appeared is required to coordinate the next local run.
+No workers active or resource reservations. Corrected P3.4 source CLEAR, V0–V4
+NOT RUN, final attempt5/no6. P3.5 finalattempt3 runtime also waits on install and
+fail-closed preflight. No other useful execution until local authentication.
+
 ## Local authentication timed out; read-only diagnosis running
 
 Worker5d98dc33 completed and archival succeeded. Ghostty route launched once,

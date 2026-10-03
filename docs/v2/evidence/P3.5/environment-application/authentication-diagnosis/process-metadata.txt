@@ -1,0 +1,24 @@
+# Process metadata only: pid ppid sid pgid tty stat comm
+# (no args, no env, no prompt reads)
+
+# The launched Ghostty (outer setsid detached it: no controlling tty)
+2419085    1128 2419085 2419085 ?        Ssl  ghostty
+
+# The approved script: its OWN session leader, foreground, on a real PTY
+2419118 2419085 2419118 2419118 pts/0    Ss+  bash
+
+# Parent of Ghostty is PID 1 systemd (via logind/agent); no new logind session.
+# polkitd is the only polkit process; no authentication agent process exists.
+   1050       1    1050 ?        polkitd
+
+# loginctl list-sessions
+# SESSION 1: class=manager, type=unspecified, leader 1128, no TTY
+# SESSION 2: class=user, type=wayland, leader 1176, TTY=tty1, active=yes
+#   -> the setsid session SID 2419085 is NOT a logind session; polkitd mapped
+#      the pkexec call to unix-session:2 (session 2).
+
+# Process start times
+# 2419085 ghostty  Sat Oct  3 08:02:11 2026
+# 2419118 bash     Sat Oct  3 08:02:11 2026
+# now             2026-10-03T08:10:29-06:00
+# exit.status      2026-10-03 08:05:12.357310945 -0600  value: 124\n

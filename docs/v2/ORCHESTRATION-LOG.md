@@ -2487,3 +2487,12 @@ qualification, asked owner which window/prompt appeared. Diagnostician3dc11fa9
 (LongCat free high) confirmed running with callback, read-only evidence scope,
 no authretry/credentials or screen capture. Source CLEAR; runtime prerequisite
 hold retained. No lease or port, no card attempt spent by authentication.
+
+### 2026-10-03 — authentication diagnosis complete, no privileged retry
+
+Archived diagnostician3dc11fa9 successfully. Realtty/internaltextagent/helper
+activity verified; visible/answerable prompt remains unknown pending owner
+observation. Root prepared documented timeout --foreground correction in ignored
+script, unchanged packages/pkexec/180s bound; no retry or terminal launch.
+Foreground-mode descendant timeout limitation recorded. No activeworkers, lease
+or port; corrected sourceCLEAR and runtime prerequisite hold remains explicit.
