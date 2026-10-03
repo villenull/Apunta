@@ -1,0 +1,72 @@
+extracted from <repo>/scripts/v2/tauri-audio.test.mjs
+SOURCE_NAME="apunta_p35_mic" REAL_MIC_PREFIX="alsa_input.usb-UGREEN"
+
+PASS D1 the shipped source no longer compares a raw column to a source name
+PASS D1 virtual-only: virtual stream found
+PASS D1 virtual-only: no real-microphone stream
+PASS D1 virtual-only: no unrelated stream
+PASS D1 virtual+physical leak: virtual stream found
+PASS D1 virtual+physical leak: real-microphone stream caught
+PASS D1 virtual+physical leak: the resolved real source name is the microphone
+PASS D1 real-only: no virtual stream
+PASS D1 real-only: real-microphone stream caught
+PASS D1 unrelated source: no virtual stream
+PASS D1 unrelated source: no real-microphone stream
+PASS D1 unrelated source: named as unrelated
+PASS D1 stale/unknown source ID fails closed: threw "source-output 15 names source index 999, which is not in the pactl sources table; the mapping is unknown and the row must not assume it is safe"
+PASS D1 missing source in the table fails closed: threw "source-output 15 names source index 70, which is not in the pactl sources table; the mapping is unknown and the row must not assume it is safe"
+PASS D1 duplicate source index in the table fails closed: threw "duplicate source index 70 in pactl sources: \"70\\tapunta_p35_mic\\tPipeWire\\ts16le 2ch 48000Hz\\tSUSPENDED\""
+PASS D1 malformed source table row fails closed: threw "non-numeric source index in pactl sources: \"notanumber\\tapunta_p35_mic\\tPipeWire\\ts16le 2ch 48000Hz\\tSUSPENDED\""
+PASS D1 malformed source-outputs row (too few columns) fails closed: threw "malformed pactl source-outputs row: \"12\\t70\""
+PASS D1 non-numeric source-output column fails closed: threw "non-numeric source-outputs column: \"x\\t70\\t167\\tPipeWire\\ts16le 2ch 48000Hz\""
+PASS D1 failed source-outputs command fails closed: threw "pactl list short source-outputs exited 1: connection refused"
+PASS D1 failed sources command fails closed: threw "pactl list short sources exited 1: connection refused"
+PASS D1 both reads succeed and resolve
+PASS D2 single complete marker installs both rectangles
+PASS D2 a test id the newest marker omits disappears (no history union)
+PASS D2 a newly published rectangle appears
+PASS D2 an older removed rectangle is not resurrected
+PASS D2 a partial newer marker installs no partial rectangle and does not merge with the older one
+PASS D2 a NaN dimension installs nothing
+PASS D2 a zero dimension installs nothing
+PASS D2 a dashed test id with all four fields installs
+PASS D2 no markers installs nothing
+PASS D2-1 a newest marker missing only _x installs nothing
+PASS D2-1 a newest marker missing only _y installs nothing
+PASS D2-1 a newest marker missing only _w installs nothing
+PASS D2-1 a newest marker missing only _h installs nothing
+PASS D2-1 an empty _x installs nothing
+PASS D2-1 an empty _y installs nothing
+PASS D2-1 an empty _w installs nothing
+PASS D2-1 an empty _h installs nothing
+PASS D2-1 a whitespace-only _x installs nothing
+PASS D2-1 a whitespace-only _y installs nothing
+PASS D2-1 a whitespace-only _w installs nothing
+PASS D2-1 a whitespace-only _h installs nothing
+PASS D2-1 a null _x installs nothing
+PASS D2-1 a null _y installs nothing
+PASS D2-1 a null _w installs nothing
+PASS D2-1 a null _h installs nothing
+PASS D2-1 an undefined _x installs nothing
+PASS D2-1 an undefined _y installs nothing
+PASS D2-1 an undefined _w installs nothing
+PASS D2-1 an undefined _h installs nothing
+PASS D2-1 a padded but non-empty value still installs, trimmed
+PASS D2-1 healthy zero coordinates install (0 is a real coordinate)
+PASS D2-1 negative coordinates are not this reader's business: they install unchanged
+PASS D2-1 a NaN _x installs nothing
+PASS D2-1 a NaN _y installs nothing
+PASS D2-1 a NaN _w installs nothing
+PASS D2-1 a NaN _h installs nothing
+PASS D2-1 an Infinity _x installs nothing
+PASS D2-1 an Infinity _y installs nothing
+PASS D2-1 an Infinity _w installs nothing
+PASS D2-1 an Infinity _h installs nothing
+PASS D2-1 a zero width installs nothing
+PASS D2-1 a negative width installs nothing
+PASS D2-1 a zero height installs nothing
+PASS D2-1 a negative height installs nothing
+PASS D2-1 the whole-snapshot rule still holds: a newest marker missing only _x installs nothing and does not fall back
+PASS D2-1 one incomplete id does not suppress a complete sibling in the same snapshot
+
+67/67 pure checks passed

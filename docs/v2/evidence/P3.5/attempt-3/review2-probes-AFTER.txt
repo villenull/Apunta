@@ -1,0 +1,24 @@
+PASS D2 a complete newest marker installs the rectangle: {"x":10,"y":20,"w":30,"h":40}
+PASS D2 no markers installs nothing: size=0
+PASS D2 a newer marker that omits the element removes its rectangle (no union of history): home-search
+PASS D2 a truncated newer marker installs no partial rectangle and does not merge: []
+FAIL D2 ADVERSARIAL: a newest marker missing only `_x` installs a rectangle at x=0 (Number(null)===0)
+FAIL D2 ADVERSARIAL: empty coordinate values read as 0 and install a rectangle at the origin
+PASS D2 a NaN coordinate installs nothing: []
+PASS D2 a Infinity coordinate installs nothing: []
+PASS D2 a zero width coordinate installs nothing: []
+PASS D2 a negative width coordinate installs nothing: []
+PASS D2 a zero height coordinate installs nothing: []
+PASS D2 a dashed test id with all four fields installs: home-action-note
+PASS D2 a test id containing an underscore resolves too (field = last segment, id = the rest): ["a_b"]
+PASS D2 readReported: the newest marker is the last one, and it dropped record-start: markers=3 tids=home-search
+PASS D2 readReported: a truncated newer marker is present as a marker and wins: markers=2 tids=[]
+PASS D2 readReported: the truncated marker does not resurrect the older rectangle
+PASS D2 readReported: P3.4 text leaves are still read from the observe marker: [["Stop and create draft",{"x":10,"y":20,"w":30,"h":40}]]
+PASS D2 readReported: the own rectangles and the inherited leaves coexist
+PASS D2 the snapshot reader answers the first read of the click path: {"cx":560,"cy":320,"rect":{"x":500,"y":300,"w":120,"h":40},"label":"home-search"}
+PASS D2 the click target stops resolving the moment the element leaves the screen: before=140 after=null
+PASS D2 waitForPublished resolves a rectangle published after it started polling: {"cx":560,"cy":320,"rect":{"x":500,"y":300,"w":120,"h":40},"label":"home-search"}
+FAIL wait for the record-start rectangle: nothing published one within 600ms
+PASS D2 waitForPublished times out rather than reusing an older rectangle: null
+D2 current-rectangle probes: 20/22 passed

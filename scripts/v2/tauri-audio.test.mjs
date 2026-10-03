@@ -1023,11 +1023,16 @@ async function noteCount() {
  * is absent (its element left the screen), and a partial or truncated newer
  * marker installs no rectangle at all rather than merging fields with an older
  * one or resurrecting a target that has gone. A test id is installed only when
- * that one marker carries all four of `x`, `y`, `w`, `h` as finite numbers with
- * a positive width and height, so a half-written line can neither publish a
- * partial rectangle nor keep an older, stale one alive.
+ * that one marker carries all four of `x`, `y`, `w`, `h`, each **present and
+ * non-empty** before it is read as a number, and all four finite with a positive
+ * width and height, so a half-written line can neither publish a partial
+ * rectangle nor keep an older, stale one alive. Presence is checked separately
+ * from the numeric checks because `Number(null)` is `0` and `Number('')` is `0`,
+ * both finite: a marker missing only `_x`, or carrying an empty value, would
+ * otherwise install a rectangle at the origin.
  */
 function tidsFromNewestMarker(markers) {
+  const fields = ['x', 'y', 'w', 'h'];
   const tids = new Map();
   const newest = markers.length === 0 ? null : markers[markers.length - 1];
   if (newest === null) return tids;
@@ -1036,19 +1041,24 @@ function tidsFromNewestMarker(markers) {
     if (!key.startsWith('tid_')) continue;
     const rest = key.slice('tid_'.length);
     const field = rest.slice(rest.lastIndexOf('_') + 1);
-    if (!['x', 'y', 'w', 'h'].includes(field)) continue;
+    if (!fields.includes(field)) continue;
     ids.add(rest.slice(0, rest.lastIndexOf('_')));
   }
   for (const testId of ids) {
-    const rect = {
-      x: Number(newest.get(`tid_${testId}_x`)),
-      y: Number(newest.get(`tid_${testId}_y`)),
-      w: Number(newest.get(`tid_${testId}_w`)),
-      h: Number(newest.get(`tid_${testId}_h`)),
-    };
+    const rect = {};
+    let present = true;
+    for (const field of fields) {
+      const raw = newest.get(`tid_${testId}_${field}`);
+      if (typeof raw !== 'string' || raw.trim() === '') {
+        present = false;
+        break;
+      }
+      rect[field] = Number(raw.trim());
+    }
+    if (!present) continue;
     if (![rect.x, rect.y, rect.w, rect.h].every((value) => Number.isFinite(value))) continue;
     if (rect.w <= 0 || rect.h <= 0) continue;
-    tids.set(testId, rect);
+    tids.set(testId, { x: rect.x, y: rect.y, w: rect.w, h: rect.h });
   }
   return tids;
 }

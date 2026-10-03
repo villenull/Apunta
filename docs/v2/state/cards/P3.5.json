@@ -5,10 +5,10 @@
     "C-ISO@1"
   ],
   "baseCommit": "8783181",
-  "attempt": 2,
+  "attempt": 3,
   "status": "BLOCKED",
-  "lastCompletedStep": "Attempt 2 code-only repair submitted: stream source IDs resolved through source table, newest own marker rectangles, evidence corrected. Root30/30 pure checks PASS; author archived. Runtime remains held, attempt-one criteria/provenance retained.",
-  "nextAllowedAction": "independent-code-repair-review-and-environment-owner-decision-before-runtime",
+  "lastCompletedStep": "Attempt 3 code/unit repair only, runtime held: D2-1 presence-and-non-empty check added inside tidsFromNewestMarker (attempt-2 review-2 D2-1), plus factual corrections to the attempt-2 report and return (D3-1 timeline, D3-2 lint counts qualified by commit, D3-3 semantic preservation). Attempt-2 rows, five PREV_DEFAULT records and every anchor untouched; runtime verdicts unchanged (V3 BLOCKED, V4 NOT RUN, V5 FAIL).",
+  "nextAllowedAction": "independent-final-source-review-and-environment-owner-decision-before-runtime",
   "sideEffectsDone": [
     "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
     {
@@ -129,7 +129,7 @@
       "dateUtc": "2026-10-03T03:21:47.971Z"
     }
   ],
-  "updatedUtc": "2026-10-03T03:30:00.000000+00:00",
+  "updatedUtc": "2026-10-03T04:20:41.351440+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",

@@ -159,3 +159,54 @@ runtime.
 Code repair **SUBMITTED** pending independent review. Runtime **BLOCKED, not
 PASS**: V3 cannot run until the environment is fixed and the coordinator
 authorises a fresh attempt. One bounded repair pass, as dispatched.
+
+---
+
+# Factual notes added by attempt 3 (no earlier line above was changed)
+
+These three corrections come from the independent review of this attempt
+(`docs/v2/state/reviews/P3.5-impl2.md`, D3-1 … D3-3). They are appended, not
+substituted: every claim, table, log and exit code recorded above is left exactly
+as it was written at the time, so this file still reads as the attempt-2 record.
+Attempt 3's own report is `docs/v2/evidence/P3.5/attempt-3/repair-report.md`.
+
+**D3-1 — the `IN PROGRESS` cell at the top of this report is the authoring-time
+state, not the committed one.** The timeline, in order: the attempt-2 author
+wrote `attempt: 2`, `status: "IN PROGRESS"`,
+`nextAllowedAction: "code-unit-repair-only-runtime-held"` into
+`docs/v2/state/cards/P3.5.json` while the work was in progress, which is what the
+first bullet above quotes; the **root then changed `status` to `BLOCKED` before
+this candidate was committed**, so at `9e6094b` the card reads `BLOCKED` with
+`nextAllowedAction:
+"independent-code-repair-review-and-environment-owner-decision-before-runtime"`;
+the two documents above were written against the authoring-time cell and not
+re-read afterwards, so the quoted state never existed in the tree. `IN PROGRESS`
+was genuinely written — this is not a fabricated intermediate state — and it was
+superseded by root before commit. The substance of the bullet (attempt 2, runtime
+held, attempt-1 provenance intact) is correct; only the quoted cell values were
+stale. The current candidate is **BLOCKED**, pending an environment grant and an
+independent source review.
+
+**D3-2 — the repo-wide lint counts in the command table are a measurement of
+commit `9e6094b`, and the split was wrong.** At that commit `npx eslint . -f json`
+exits 1 with 60 errors: **58 `no-console`** — **44** under
+`docs/v2/evidence/P3.4/**` and **14** under `docs/v2/evidence/P3.5/review-1/` —
+plus **2 `@typescript-eslint/no-unused-vars`**, one in each tree. The table above
+attributes all 60 to `no-console` and splits 58/2 between the two trees; neither
+number is right. The conclusion it draws still holds and is not withdrawn: none of
+the 60 errors is in a file this attempt changed, scoped lint on the changed files
+is clean, and the repo-wide definition of done is not green. This is **root
+repair, attributed, not waived**. Attempt 3 deliberately did not re-run
+`npx eslint .`, because another agent is concurrently rewriting the P3.4 evidence
+output and a fresh run would describe a different tree than the one measured
+above; the counts above are therefore labelled by commit rather than re-measured.
+
+**D3-3 — "preserved verbatim" in the changed-paths section is true semantically,
+not byte-wise.** The card was re-serialised as a whole after attempt 1; two
+em-dashes inside attempt-1 `sideEffectsDone[].resumeInstruction` strings are now
+stored as `—` escapes. They decode identically, and the structured diff shows no
+other difference anywhere in the card: no criterion, `Expected` cell, side effect,
+`SandboxRuns` entry or anchor value object moved, and all five attempt-1
+`PREV_DEFAULT` records are unchanged. History was **not** restored or re-encoded;
+the escapes stay and only the overstated word is corrected.
+
