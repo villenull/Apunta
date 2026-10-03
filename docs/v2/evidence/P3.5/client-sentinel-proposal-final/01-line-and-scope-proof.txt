@@ -1,0 +1,81 @@
+P3.5 client-sentinel proposal — final verification proof (doc/scope only)
+Base commit: d46b5545038f3c02fdd10d89d47fda1187778bf4
+Proposal:   docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+Runtime/build/live pactl/audio/mic/model/DB/network/install/7717: NOT used.
+
+--- 1. Logical line count (P3.4 F2 convention: content lines) ---
+$ awk 'END{print NR}' docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+160
+$ wc -l < docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+160
+$ python3 -c "print(len(open(...).read().splitlines()))"
+160
+All three measurements agree at 160.
+
+--- 2. Final newline restored (IR2-1 / N-2) ---
+$ tail -c1 docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md | od -An -c
+  \n
+At c1ecf7f the same command printed `  .` with git's "\ No newline at end of file"
+marker in the diff. Bytes 9211.
+
+--- 3. Correction scope: one file, 2 insertions / 3 deletions ---
+$ git show --stat d46b554
+ docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+No source, card, checkpoint, contract, tool, config, manifest or Expected cell.
+
+--- 4. Typo fix is prose-only (IR2 N-1) ---
+-**B. Spark — park the card as `BLOCKED` with no change.** No boundary is
++**B. Park — park the card as `BLOCKED` with no change.** No boundary is
+$ grep -ic spark docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+0
+Option B remains "park" in body and heading; identical trailing sentence.
+
+--- 5. Joined final two authority lines are equivalent ---
+-before: "this document changes no boundary on its own, and the coordinator owns the
+          decision after a fresh independent review."   (2 lines, unterminated)
++after:  "this document changes no boundary on its own; the coordinator decides after
+          independent review."                          (1 line, terminated)
+Same two propositions: the document changes no boundary by itself; the coordinator
+decides, and an independent review precedes that decision. No grant, no boundary
+change, no owner authority created or removed.
+
+--- 6. Unaltered boundaries (verbatim, d46b554) ---
+:14  **AM-190 grants no P3.5 attempt 4**
+:17  the owner has not been asked and has granted nothing.
+:139 **A. Change AM-190's no-attempt-4 boundary for this card only (Recommended).**
+:143 fresh anchors for the new attempt = exactly three capture records, one per
+     capture run, for `V3`, `V4-tone` and `V4-silence`
+:147 **V5 is a read-only verification** ... adds **no** capture record,
+     provenance record or `sandboxRuns` anchor
+:148-149 **No fifth attempt, no counter reset, no retry of any row, no threshold,
+     schema or Expected-cell change.**
+:159 **The owner has not been asked and has granted nothing**
+The diff touches none of lines 1-150 or 152-159: the patch body, the three-anchor
+statement, V5 read-only, the no-5 / reset / retry / Expected sentence and both
+owner-decision sentences are byte-identical to c1ecf7f.
+
+--- 7. Source and artefact bytes unchanged by the correction ---
+$ sha256sum scripts/v2/tauri-audio.test.mjs
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb   (as IR2 recorded)
+$ git diff --name-only c1ecf7f d46b554 -- docs/v2/evidence/ scripts/ docs/v2/cards/
+(empty)
+$ sha256sum .../client-sentinel-proposal/candidate.patch
+4350f5eca8764d7fc0f26eedf9fc6a814f19a05fea3a9813bf067203503ac198
+$ sha256sum .../client-sentinel-proposal-ir/actual-source.patch
+4350f5eca8764d7fc0f26eedf9fc6a814f19a05fea3a9813bf067203503ac198   (cmp exit 0)
+$ sha256sum .../client-sentinel-proposal/sentinel-proof-output.txt
+d7473bc93483d50fe42cb4dcea8cef1ea42c6e2019f500d005f5b23d1fca0df8
+$ sha256sum .../client-sentinel-proposal/candidate-after.mjs.txt
+e0a01c008ea784afc3ea03609cd4e07f24c69b90615f78da0d422b558d9224e1
+$ git show d46b554:.../P3.5-CLIENT-SENTINEL-PROPOSAL.md | sha256sum
+cd92a676944041e87dade4d6e8729f316b1ff4e3f2c55e9d77c4724a9c302cae
+$ sha256sum docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+cd92a676944041e87dade4d6e8729f316b1ff4e3f2c55e9d77c4724a9c302cae
+(worktree == commit; the only tracked modifications in the repo are the two
+pre-existing background files ORCHESTRATION-LOG.md and NEXT-SESSION.md)
+
+--- 8. Formatting is not machine-enforced here ---
+.prettierignore lists `*.md`, `docs/v2/state/` and `docs/v2/evidence/`; markdown
+formatting is therefore not gated (npx prettier --check reports the file as
+already styled because it is ignored). No width or wrap rule exists to violate.

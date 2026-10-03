@@ -1,3 +1,18 @@
+## Client-sentinel package CLEAR; owner attempt decision pending
+
+Final verifier f4bad20a-0fa3-4d06-84a0-0a6ab559f4d0 completed and was archived.
+Final report closes the sole line-cap finding and typo, carrying substantive
+IR2 checks forward. Proposal 160 logical lines; patch 4350f5ec, replay 85fbb13d,
+shipping source still b886f8bb. All owned workers are archived; no leases.
+
+Root will ask one explicit CHANGE to AM-190's no-attempt-4 boundary: exact
+one-function client sentinel patch, independent source review, V0–V5 once at
+attempt 4, exactly three current capture records/anchors, old histories retained,
+no fifth/reset/retry/Expected relaxation; alternative park BLOCKED. No grant
+exists until owner answers. P3.4 exhausted final5, quiet-machine and other owner
+holds persist; no unauthorized work manufactured. Origin push authorized; final
+independent review complete, so completed package may now be pushed.
+
 ## Technical parser package review passed; final line-cap check running
 
 b11f5c6d completed and was archived successfully. IR2 independently confirms
