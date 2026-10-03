@@ -1,0 +1,43 @@
+PASS total capture objects == 10 — got 10
+PASS total anchors == 10 — got 10
+PASS attempt-4 objects == 3 (V3,V4-tone,V4-silence) — V3,V4-tone,V4-silence
+PASS attempt-4 anchors == 3 — V3,V4-tone,V4-silence
+PASS attempt-1 objects == 5
+PASS attempt-3 objects == 2
+PASS priorAttempt4Incomplete.V4 == BLOCKED
+PASS priorAttempt4Incomplete.V5 == FAIL
+PASS current V4 == PASS
+PASS current V5 == PASS
+PASS status == SUBMITTED
+PASS attempt == 4
+PASS V4-silence record exists at attempt 4 — 2026-10-03T23-21-30-917Z-a17f4bbf
+PASS V4-silence runId matches RECORD
+PASS V4-silence dateUtc matches
+PASS V4-silence prevDefault is real mic
+PASS V4-silence sinkId/srcId present
+PASS V5 command byte-equal to card cell (unescaped) — card 8489 raw, ev 8452 bytes
+PASS completion command 339 bytes — got 339
+PASS silence run exit 0
+PASS silence 35/35
+PASS levelPeak stayed 0
+PASS phase reached recording
+PASS timer past 10s
+PASS capture stream on apunta_p35_mic
+PASS no capture stream on real mic
+PASS whisper_model_missing surfaced
+PASS GET notes vacuous -1
+PASS V5 exit 0
+PASS V5 bad=0
+PASS V5 checkpoint hash unchanged
+PASS V5 ignoring 7 earlier records
+PASS V5 live residue all 0
+PASS durable record byte-equal to RECORD
+PASS env file 292 bytes
+PASS cleanup: no surviving processes
+PASS cleanup: ports free
+PASS cleanup: default source restored
+PASS cleanup: 0 residue
+PASS cleanup: harness hash unchanged
+PASS cleanup: 7717 never contacted
+
+41 passed, 0 failed

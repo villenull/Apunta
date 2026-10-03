@@ -6,9 +6,9 @@
   ],
   "baseCommit": "8783181",
   "attempt": 4,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "AM-196 silence completion: the never-started V4-silence arm run once at 23:21:30Z, exit 0, 35 of 35, and its one genuine capture record and anchor appended (attempt 4 now holds V3, V4-tone and V4-silence); V5 then run once read-only at 23:22:51Z, exit 0, bad=0. Capture, tone, V0-V3 and the build were not repeated. All history retained: the five attempt-1 and two attempt-3 records and their seven anchors, every cleanup string, priorAttempt1Criteria, priorAttempt3Criteria and the priorAttempt4IncompleteCriteria snapshot holding V4 BLOCKED and V5 FAIL as recorded. Cleanup verified from outside the rows. Lease released.",
-  "nextAllowedAction": "root-decision-after-evidence-review",
+  "status": "APPROVED",
+  "lastCompletedStep": "APPROVED after independent final completion CLEAR: V0\u2013V5 PASS with AM-194/196 exact authorities; historical failures retained; real transcription not claimed by this card",
+  "nextAllowedAction": "P3.6-after-P3.4-approved; no-further-capture-rows-authorized",
   "sideEffectsDone": [
     "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
     {
@@ -206,7 +206,7 @@
       "dateUtc": "2026-10-03T23:21:34.001Z"
     }
   ],
-  "updatedUtc": "2026-10-03T23:23:06.000000+00:00",
+  "updatedUtc": "2026-10-03T23:32:55.885935+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",
@@ -410,5 +410,7 @@
       "evidence": "docs/v2/evidence/P3.5/attempt-4/runtime/09-am187-witnesses-and-V5.txt",
       "verification": "Run once 2026-10-03T22:42:57Z, exit 1. The live half passed in full: the default source is the owner USB microphone, all four residue counts are 0, and V5 bad=1 comes only from the provenance half. That half failed closed with its reason printed: no sandboxRuns entry names step V4-silence at attempt 4, because the silence mode never created a record. Provenance was not repaired, invented or back-filled; attempt 4 holds exactly the two records its two capture modes actually created, V3 then V4-tone, with matching anchors and distinct runIds. The AM-187 literal witnesses were recorded alongside with their commands: pactl list short sources | grep -c apunta_p35 = 0 and pactl list short sinks | grep -c apunta_p35 = 0, each with the grep exit 1 on a zero count recorded rather than suppressed; no Expected cell was edited. The five attempt-1 and two attempt-3 records and their seven anchors are untouched and were excluded by the attempt === 4 selection; nothing was deleted, sorted, deduplicated or restamped."
     }
-  }
+  },
+  "finalReviewReport": "docs/v2/state/reviews/P3.5-final-completion-ir.md",
+  "finalReviewVerdict": "CLEAR independent41/41, all six criteria real in-grant PASS"
 }

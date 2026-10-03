@@ -1,0 +1,54 @@
+# English EOD readiness — whisper model presence (metadata only)
+
+Read-only checks run 2026-10-03 against declared paths. No patient data,
+no credentials, no env dump, no broad home-filesystem scan.
+
+## stat on the live path
+
+```
+$ stat -c '%n %s %Y' ~/.local/share/apunta/models/ggml-tiny.en.bin
+stat: cannot statx '/home/villenull/.local/share/apunta/models/ggml-tiny.en.bin': No such file or directory
+```
+
+The live v1 data dir `~/.local/share/apunta/` is absent on this box
+(`docs/v2/evidence/eod-2026-10-03/artifacts-readiness.txt:24`).
+
+## find under the sandbox root
+
+```
+$ find /tmp/apunta-v2 -maxdepth 2 -name "ggml-tiny.en.bin" 2>/dev/null
+(no output)
+
+$ find /tmp/apunta-v2 -maxdepth 2 -type d -name "models" 2>/dev/null
+(no output)
+```
+
+No whisper model in any sandbox run folder.
+
+## P3.5 attempt-4 V0 assertion (the card's own check)
+
+`docs/v2/evidence/P3.5/V0-host-and-build.md:79`:
+
+> `ggml-tiny.en.bin` absent under `$APUNTA_DATA_DIR/models` | pass —
+> `test ! -e` held; the expected state, and the reason this card is
+> capture-only
+
+## P3.5 attempt-4 frozen logs (the app surfacing the error)
+
+`docs/v2/evidence/P3.5/attempt-4/runtime/07-V3.txt:70`:
+
+```
+apunta: ignoring a bridge line (Unreadable): {"level":50,...,"code":"whisper_model_missing","detail":"no model file at the configured path (77 chars)","msg":"transcription failed"}
+```
+
+`07-V3.txt:80` (second POST /api/transcribe, 30 s recording, same code).
+
+`08-V4.txt:66,80` (V4-tone, same code).
+
+## Conclusion
+
+The whisper model `ggml-tiny.en.bin` is not on disk anywhere on this
+machine. Real whisper transcription cannot be demonstrated without
+acquiring it. The only authorized download path is the installer's
+first-run component (CLAUDE.md hard rule 1 exception; ACQUISITION.md A07
+covers the six C-STT candidates, not this file; S4a.2 is parked).

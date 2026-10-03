@@ -1,3 +1,21 @@
+## P3.5 APPROVED; security attempt6 running; integration preparation parallel
+
+f761585c final capture review CLEAR41/41 and archived successfully. Root verified
+all six PASS, ten genuine records/anchors/three at4 and old failure snapshots.
+AM-197 approves P3.5; real transcription remains unproven by this capture card.
+3cb741f0 shipping security review CLEAR and archived successfully; 0e08142 saves
+review, prior criteria and attempt6 state. 0285e4f fresh dispatch base88811af.
+
+c88d6043-3d94-417d-a9da-64866581fb06 confirmed RUNNING with callback; owns
+exclusive native build/app/display/7835 lease and SOLE P3.4 checkpoint writer,
+append return and new attempt6/runtime evidence. V0–V4 once in card order,
+derive normative RuleB V0 predicate, no7/reset/retry/waiver. Release after outside
+cleanup and final return. Root must NOT stage/write active checkpoint/runtime.
+6307e8a2 English AI/recovery readiness still RUNNING. Fresh P3.6 static dispatch
+preparation worker owns separate new report/evidence only; no native workload or
+dependency bypass. P3.6 still waits P3.4 approval. Completed shipping review now
+permits source export; only completed explicit-path commits may be pushed.
+
 ## Silence completed and security patches applied; independent final reviews
 
 0f30fdda finished and archived successfully. 92df606 saves AM-196 silence

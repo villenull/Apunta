@@ -1,0 +1,43 @@
+# English EOD readiness — P3.4 / P3.5 / P3.6 gate status
+
+Read from `docs/v2/state/cards/P3.4.json` and `P3.5.json` at `5f57347`.
+
+## P3.4
+
+- Status: `BLOCKED` (attempt 5 of 5, exhausted; `nextAllowedAction:
+  independent-AM-195-shipping-source-review-before-once-only-attempt6`).
+- V0 PASS, V1 PASS (CSP unit 12/12), V3 PASS (four-word invariant loop).
+- V2 FAIL (click window read-back `WINDOW=0`; V2(a) `typeof` invariant
+  FAIL; V2(b)/(c) NOT RUN).
+- V4 FAIL (outside-source proof lint).
+- The coordinator's EOD critical-path analysis (§1) calls V2(a) a likely
+  card defect, not a tree defect.
+- Needs owner decision D1: (a) amend + accept-with-disclosure [recommended],
+  (b) one bounded harness-only amendment, (c) park.
+
+## P3.5
+
+- Status: `SUBMITTED` (all six criteria PASS after AM-196 silence
+  completion; `nextAllowedAction: root-decision-after-evidence-review`).
+- V0 PASS, V1 PASS, V2 PASS, V3 PASS (35/35), V4 PASS (tone 35/35 +
+  silence 35/35 under AM-196), V5 PASS (read-only, bad=0).
+- Three attempt-4 capture records (V3, V4-tone, V4-silence) with matching
+  anchors; all prior history retained.
+- Runtime lease released.
+- Not yet APPROVED — root decision pending.
+
+## P3.6
+
+- Status: `NOT STARTED` (`P3.6.json` skeleton: `attempt: 0`).
+- Dependencies: P3.4, P3.5, P3.7 (APPROVED), P2.R (APPROVED).
+- `build-dispatch.mjs:186-188` refuses while P3.4/P3.5 are unapproved.
+- V3 runs `env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs
+  smoke` — fake AI, not real whisper/Ollama.
+- The P3.6 EOD readiness review (`docs/v2/state/reviews/P3.6-EOD-readiness.md`)
+  records three conditions: C1 (P3.4+P3.5 APPROVED), C2 (Stop 8 V3 pin
+  drift — live), C3 (serial build lease — now free).
+
+## Dispatch gate
+
+No partial dispatch exists. P3.6 cannot be generated until P3.4 and P3.5
+are both APPROVED in `PROGRESS.json`.

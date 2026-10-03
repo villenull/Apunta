@@ -1,0 +1,46 @@
+# English EOD readiness — Ollama readiness from frozen logs
+
+No live inference run was performed. All evidence is from P3.5 attempt-4
+frozen runtime logs.
+
+## Daemon liveness
+
+`docs/v2/evidence/P3.5/attempt-4/runtime/10-cleanup-verification.txt:23-24`:
+
+```
+=== ollama untouched ===
+1123 /usr/bin/ollama serve
+```
+
+## Harness assertions
+
+`docs/v2/evidence/P3.5/attempt-4/runtime/07-V3.txt:90`:
+
+```
+PASS V3 ollama is still running
+```
+
+`docs/v2/evidence/P3.5/attempt-4/runtime/08-V4.txt:89`:
+
+```
+PASS V4-tone ollama is still running
+```
+
+## What is proved
+
+- The Ollama daemon is installed and was alive during P3.5's runs.
+- The harness's own "ollama is still running" assertion passed.
+
+## What is NOT proved
+
+- That `qwen3.5:4b-q4_K_M` is currently loaded or served.
+- That a live draft/refine/save cycle works end-to-end.
+- Any word-level output quality.
+
+The promoted default model is `qwen3.5:4b-q4_K_M`
+(`shared/src/models.ts` DEFAULT_MODEL; `installer/src/catalog.ts:311-327`).
+A08 (`docs/v2/ACQUISITION.md:20`) covers `gemma4:12b-it-qat` (only if
+absent) and states `qwen3.5:4b-q4_K_M` is never pulled if present.
+
+The minimum read-only check is `ollama list` (tags only, no pull). That is
+a runtime action this review did not run.

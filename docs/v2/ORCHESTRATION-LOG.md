@@ -2829,3 +2829,12 @@ object/anchor, prior failure snapshots intact, outside cleanup lease released.
 3cb741f0 running; no security V-row run yet. Static English readiness6307e8a2
 remains active. Root restored stray generated DEPENDENCIES baseline, no gate
 change. Source application not pushed before independent shipping CLEAR.
+
+## 2026-10-03 — native capture approved and security runtime launched
+
+f761585c final evidenceCLEAR41/41, archived; rootverifiedsixPASS/historicalFAILs
+retained/10records3at4, P3.5APPROVEDAM197. 3cb741f0 sourceCLEAR archived; fresh
+P3.4 dispatch0285e4f, c88d6043 confirmedrunning with own build/app/7835 lease and
+SOLEP34checkpointwriter. No runtime retry/no7. English readiness6307e8a2 active,
+separate staticP36implementationbrief dispatched; P36waitsP34approval. All active
+scopewriters disjoint; onlycompletedsource/reviews/state eligiblepush.
