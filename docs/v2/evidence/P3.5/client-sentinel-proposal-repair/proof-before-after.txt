@@ -1,0 +1,38 @@
+# BEFORE vs AFTER, exact - the author's sentinel proof
+
+BEFORE = `sentinel-proof.mjs` exactly as committed at 29d36ac. AFTER = the repaired
+file in the working tree. Nothing else differs between the two runs: both execute
+inside the ignored scratch `build/p35-client-package-repair/`, each at the same
+mirrored depth so `join(here, '../../../../..')` resolves identically, and each
+against a byte-identical copy of the shipping harness.
+
+The 29d36ac bytes used for the BEFORE side:
+  sentinel-proof.mjs      b63604ded18e3825a243907c2630f5d5295e853941867f651d8cae029a78bda9
+  candidate-after.mjs     e0a01c008ea784afc3ea03609cd4e07f24c69b90615f78da0d422b558d9224e1
+  tauri-audio.test.mjs    b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+
+Comparison is on raw stdout and raw stderr, byte for byte. No verdict was
+normalised, reformatted, filtered, sorted or suppressed, and no exit code was
+translated.
+
+--- BEFORE -----------------------------------------------------------------
+exit=0
+--- AFTER ------------------------------------------------------------------
+exit=0
+
+$ diff before-stdout.txt after-stdout.txt
+diff exit=0    # 0 = byte-identical stdout
+$ diff before-stderr.txt after-stderr.txt
+diff exit=0    # 0 = byte-identical stderr
+
+stderr bytes: before=0  after=0
+
+$ sha256sum before-stdout.txt after-stdout.txt
+d7473bc93483d50fe42cb4dcea8cef1ea42c6e2019f500d005f5b23d1fca0df8  build/p35-client-package-repair/before-stdout.txt
+d7473bc93483d50fe42cb4dcea8cef1ea42c6e2019f500d005f5b23d1fca0df8  build/p35-client-package-repair/after-stdout.txt
+
+counts: BEFORE PASS=75 FAIL=0  |  AFTER PASS=75 FAIL=0
+last line, both sides: 75 passed, 0 failed
+
+So the repair changed the lint posture and the read path and nothing about what
+the proof concludes: 75 passed, 0 failed, identically, before and after.

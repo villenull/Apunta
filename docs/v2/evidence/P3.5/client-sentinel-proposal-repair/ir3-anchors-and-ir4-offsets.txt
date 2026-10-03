@@ -1,0 +1,65 @@
+# IR-3 (contract) and IR-4 (minor offsets)
+
+## IR-3 - the attempt-4 anchors are now exactly three
+
+The card (docs/v2/cards/P3.5.md:504-556) fixes one capture record per capture run,
+for exactly the three runs V3, V4-tone and V4-silence, and V5 requires exactly three
+records at the attempt. V5 is a read-only verification and records nothing.
+
+The proposal said four ("three capture records ... plus V5's provenance record").
+That would have written a fourth record and a fourth sandboxRuns anchor where the
+contract allows three. Corrected in the proposal, section 6 option A:
+
+$ sed -n '139,150p' docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+**A. Change AM-190's no-attempt-4 boundary for this card only (Recommended).**
+A single additional attempt, authorised by you and nobody else: exactly the patch
+in §2 applied to the one file `scripts/v2/tauri-audio.test.mjs`; an independent
+review of that patch before anything runs; then V0–V5 once each, in card order,
+with **fresh anchors for the new attempt = exactly three capture records, one per
+capture run, for `V3`, `V4-tone` and `V4-silence`** — the same three the card
+fixes. **V5 is a read-only verification** of those three records plus the live
+residue: it adds **no** capture record, provenance record or `sandboxRuns` anchor.
+The three failed attempt histories stay verbatim, as do all five attempt-1
+records and anchors and both attempt-3 records. **No fifth attempt, no counter
+reset, no retry of any row, no threshold, schema or Expected-cell change.**
+
+
+Counts in the whole proposal - the strings that name a run are V3, V4-tone,
+V4-silence and V5, and no fourth anchor name exists:
+  occurrences of 'V3'         5   (attempt-3 evidence refs and the V3 fixture/anchor)
+  occurrences of 'V4-tone'   2
+  occurrences of 'V4-silence' 1
+  literal 'four' as an anchor count: 0  (removed)
+
+Preserved unchanged, as the card requires: the three failed attempt histories, all
+five attempt-1 records and anchors, and both attempt-3 records. Nothing proposes a
+fifth attempt, a counter reset, a row retry, or a threshold, schema or Expected-cell
+change.
+
+## IR-4 (minor) - the 'Sources, short format' offsets
+
+$ git diff -- docs/v2/evidence/P3.5/client-sentinel-proposal/format-primary-evidence.md
+diff --git i/docs/v2/evidence/P3.5/client-sentinel-proposal/format-primary-evidence.md w/docs/v2/evidence/P3.5/client-sentinel-proposal/format-primary-evidence.md
+index 61218a7..5ed3e54 100644
+--- i/docs/v2/evidence/P3.5/client-sentinel-proposal/format-primary-evidence.md
++++ w/docs/v2/evidence/P3.5/client-sentinel-proposal/format-primary-evidence.md
+@@ -68,9 +68,11 @@ The legacy long `printf` path agrees a third time (excerpt C): the value from
+ ## Sources, short format
+ 
+ `get_source_info_callback` at `0xa07b-0xa0bd` prints `%u\t%s\t%s\t%s\t%s`
+-with `[0] = *(u32*)(info+0x00)` (source index) and `[1] = *(char**)(info+0x08)`
+-(source name). `parseSourceTable`'s index-to-name reading is therefore correct
+-as shipped, and `sources.has(sourceId)` is a lookup in the right table.
++with `[0] = *(u32*)(info+0x08)` (source index) and `[1] = *(char**)(info+0x00)`
++(source name). The printed column order the harness relies on is unchanged
++(column 0 = index, column 1 = name). `parseSourceTable`'s index-to-name reading
++is therefore correct as shipped, and `sources.has(sourceId)` is a lookup in the
++right table.
+ 
+ ## Two corrections to the record
+ 
+The source index and source name offsets were transposed in that one sentence;
+they are swapped. The printed column order the harness relies on (column 0 =
+index, column 1 = name) is unchanged, and parseSourceTable is unaffected - which is
+why the review called it non-blocking. The table's other rows and the
+source-output offsets in section 1 of the proposal are untouched.

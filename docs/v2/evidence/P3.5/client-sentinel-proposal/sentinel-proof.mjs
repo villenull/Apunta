@@ -41,7 +41,10 @@ function extractShipped() {
 
 const shipped = extractShipped();
 const beforeText = shipped.text;
-const afterText = readFileSync(join(here, 'candidate-after.mjs'), 'utf8');
+// The candidate is a raw extraction witness, not an executable module: it is
+// read as text and evaluated with `new Function`, so it carries a `.txt`
+// extension and is not linted as an .mjs file.
+const afterText = readFileSync(join(here, 'candidate-after.mjs.txt'), 'utf8');
 
 const before = new Function(`${beforeText}\nreturn { parseSourceTable, classifySourceOutputs };`)();
 const after = new Function(`${afterText}\nreturn { parseSourceTable, classifySourceOutputs };`)();
@@ -215,13 +218,20 @@ const CASES = [
 let pass = 0;
 let fail = 0;
 
+// Output-only: this file sits under docs/, so it reports through
+// process.stdout.write rather than console (which eslint's no-console
+// forbids outside the scripts/ exemption).
+function report(line) {
+  process.stdout.write(`${line}\n`);
+}
+
 function check(label, ok, detail) {
   if (ok) {
     pass += 1;
-    console.log(`PASS ${label}`);
+    report(`PASS ${label}`);
   } else {
     fail += 1;
-    console.log(`FAIL ${label}: ${detail}`);
+    report(`FAIL ${label}: ${detail}`);
   }
 }
 
@@ -250,7 +260,6 @@ function expectClassified(label, got, wanted) {
     check(label, false, `threw ${JSON.stringify(got.error)}`);
     return;
   }
-  const { virtual, realMic, unrelated } = got.value;
   for (const key of ['virtual', 'realMic', 'unrelated', 'clientId']) {
     if (!(key in wanted)) continue;
     const actual = key === 'clientId' ? got.value.all[0].clientId : got.value[key].length;
@@ -258,11 +267,11 @@ function expectClassified(label, got, wanted) {
   }
 }
 
-console.log(`harness sha256      ${sha(readFileSync(join(repo, 'scripts/v2/tauri-audio.test.mjs'), 'utf8'))}`);
-console.log(`before extract      ${sha(beforeText)}`);
-console.log(`candidate after     ${sha(afterText)}`);
-console.log(`extracted lines     ${shipped.span.start}-${shipped.span.end} of scripts/v2/tauri-audio.test.mjs`);
-console.log('');
+report(`harness sha256      ${sha(readFileSync(join(repo, 'scripts/v2/tauri-audio.test.mjs'), 'utf8'))}`);
+report(`before extract      ${sha(beforeText)}`);
+report(`candidate after     ${sha(afterText)}`);
+report(`extracted lines     ${shipped.span.start}-${shipped.span.end} of scripts/v2/tauri-audio.test.mjs`);
+report('');
 
 for (const testCase of CASES) {
   const sources = testCase.sources ?? SOURCES;
@@ -312,6 +321,6 @@ check(
   'function count differs',
 );
 
-console.log('');
-console.log(`${pass} passed, ${fail} failed`);
+report('');
+report(`${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);

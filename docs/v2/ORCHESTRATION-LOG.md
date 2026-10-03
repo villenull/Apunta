@@ -2649,3 +2649,11 @@ Owner answered Allow repository push for github.com/villenull/Apunta. Explicit
 push origin main passed automatic review and completed 8735566..889f19b. Active
 parser artifact changes remain unstaged, not exported. Push authorization persists
 for this origin; no need to re-ask. No source/runtime/budget authority changed.
+
+## 2026-10-03 — idle worker report recovered at user status request
+
+User correctly observed 18d2bbc1 idle. Event check confirmed finished artifacts;
+get_agent_activity limit1 recovered full final report not delivered by callback.
+No unfinished work remained; archival succeeded. Root reran 75-case proof exit0,
+verified shipping source b886f8bb and bounded patch/output diffs. Fresh independent
+review follows stable local integration; no runtime/new attempt authority.

@@ -68,9 +68,11 @@ The legacy long `printf` path agrees a third time (excerpt C): the value from
 ## Sources, short format
 
 `get_source_info_callback` at `0xa07b-0xa0bd` prints `%u\t%s\t%s\t%s\t%s`
-with `[0] = *(u32*)(info+0x00)` (source index) and `[1] = *(char**)(info+0x08)`
-(source name). `parseSourceTable`'s index-to-name reading is therefore correct
-as shipped, and `sources.has(sourceId)` is a lookup in the right table.
+with `[0] = *(u32*)(info+0x08)` (source index) and `[1] = *(char**)(info+0x00)`
+(source name). The printed column order the harness relies on is unchanged
+(column 0 = index, column 1 = name). `parseSourceTable`'s index-to-name reading
+is therefore correct as shipped, and `sources.has(sourceId)` is a lookup in the
+right table.
 
 ## Two corrections to the record
 

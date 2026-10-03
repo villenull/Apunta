@@ -1,0 +1,17 @@
+# Final lint / format / syntax on exactly the files this repair changed
+
+Scope note: these are the CHANGED files. No claim is made about `eslint .` over the
+whole repository, and none should be read into this file. The 13 author errors and
+the 6 IR errors are the only lint findings addressed; see README.md.
+
+$ npx eslint docs/v2/evidence/P3.5/client-sentinel-proposal/ docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+eslint exit=0
+
+$ npx prettier --check <both .mjs>
+Checking formatting...
+All matched files use Prettier code style!
+prettier exit=0
+
+$ node --check <both .mjs>
+sentinel-proof node --check exit=0
+adversarial node --check exit=0

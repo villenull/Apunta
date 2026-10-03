@@ -1,0 +1,19 @@
+# IR-1: candidate.patch now targets the shipping file, and replays
+
+candidate.patch is byte-identical to the reviewer's verified patch:
+
+$ cmp docs/v2/evidence/P3.5/client-sentinel-proposal-ir/actual-source.patch \
+      docs/v2/evidence/P3.5/client-sentinel-proposal/candidate.patch
+cmp exit=0  (0 = byte-identical)
+
+4350f5eca8764d7fc0f26eedf9fc6a814f19a05fea3a9813bf067203503ac198  docs/v2/evidence/P3.5/client-sentinel-proposal-ir/actual-source.patch
+4350f5eca8764d7fc0f26eedf9fc6a814f19a05fea3a9813bf067203503ac198  docs/v2/evidence/P3.5/client-sentinel-proposal/candidate.patch
+
+Headers and hunk (was: build/p35-client-proposal/{before,after}-extract.mjs at @@ -39,8 +39,13 @@):
+
+$ grep -n '^\(---\|+++\|@@\)' docs/v2/evidence/P3.5/client-sentinel-proposal/candidate.patch
+1:--- a/scripts/v2/tauri-audio.test.mjs
+2:+++ b/scripts/v2/tauri-audio.test.mjs
+3:@@ -306,8 +306,13 @@
+
+hunk count: $(grep -c '^@@' candidate.patch) = 1

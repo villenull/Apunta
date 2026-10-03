@@ -1,0 +1,98 @@
+# IR adversarial proof - output-only repair (6 no-console errors -> 0)
+
+Root's additional bounded grant: fix ONLY the output calls in the already-committed
+independent proof `docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs`,
+faithfully, via utilformat/stdoutwrite. All assertions, cases, classification and
+control flow preserved; before/after stdout, stderr and exit compared exactly. The
+reviewer report and every other IR artefact are untouched. No runtime, no source edit,
+no attempt 4. This receives fresh independent review with the package.
+
+Snapshot taken from 29d36ac into the ignored scratch BEFORE any edit:
+build/p35-client-package-repair/adversarial-snapshot/
+
+
+Fixture (root's 'preserve the original IR artifact referring the old baseline'):
+adversarial-checks.mjs is UNCHANGED in what it reads. Both runs execute
+inside the ignored snapshot build/p35-client-package-repair/adversarial-snapshot/, which holds the
+29d36ac bytes verbatim:
+  docs/.../client-sentinel-proposal/candidate-after.mjs        e0a01c008ea784afc3ea03609cd4e07f24c69b90615f78da0d422b558d9224e1
+  scripts/v2/tauri-audio.test.mjs                             b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+  build/p35-client-proposal-ir/replay/scripts/v2/tauri-audio.test.mjs
+                                                               85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14
+  (the replay copy is reproduced by applying the now byte-identical
+   candidate.patch to the shipping file, so it is the reviewer's file.)
+The author's candidate-after.mjs was renamed to candidate-after.mjs.txt with
+BYTE-IDENTICAL content (e0a01c00...); only the name changed. The IR script's
+read path is therefore left exactly as the reviewer wrote it.
+
+$ node docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs   # BEFORE, verbatim at 29d36ac
+exit=0
+$ node docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs   # AFTER, output-only repair
+exit=0
+
+$ diff adv-before-stdout.txt adv-after-stdout.txt
+diff exit=0   (0 = byte-identical stdout; nothing normalised, filtered or suppressed)
+$ diff adv-before-stderr.txt adv-after-stderr.txt
+diff exit=0   (0 = byte-identical stderr)
+
+stderr bytes: before=0  after=0
+stdout sha256:
+4a36353371e9cc1f87c7b20b95ba362f704e08966847384f76d1cbd4bb445dac  build/p35-client-package-repair/adv-before-stdout.txt
+4a36353371e9cc1f87c7b20b95ba362f704e08966847384f76d1cbd4bb445dac  build/p35-client-package-repair/adv-after-stdout.txt
+counts: BEFORE PASS=19 FAIL=0 | AFTER PASS=19 FAIL=0
+
+$ npx eslint docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+eslint exit=0   (was: 6 no-console errors, lines 57/60/180/181/182/183)
+
+$ npx prettier --check docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+Checking formatting...
+All matched files use Prettier code style!
+prettier exit=0
+
+$ node --check docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+node --check exit=0
+diff --git i/docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs w/docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+index 3041786..a5f2c54 100644
+--- i/docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
++++ w/docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+@@ -51,13 +51,17 @@ const row = (a, b, c) => `${a}\t${b}\t${c}\tPipeWire\tfloat32le 2ch 48000Hz`;
+ 
+ let pass = 0;
+ let fail = 0;
++// Output-only: this file sits under docs/, so it reports through
++// process.stdout.write rather than console (which eslint's no-console forbids
++// outside the scripts/ exemption). Nothing else about the run changes.
++const report = (line) => process.stdout.write(`${line}\n`);
+ const check = (label, ok, detail) => {
+   if (ok) {
+     pass += 1;
+-    console.log(`PASS ${label}`);
++    report(`PASS ${label}`);
+   } else {
+     fail += 1;
+-    console.log(`FAIL ${label}: ${detail}`);
++    report(`FAIL ${label}: ${detail}`);
+   }
+ };
+ const run = (fn, outputs, sources) => {
+@@ -177,8 +181,8 @@ const candFn = extractFunction(cand, 'classifySourceOutputs');
+ const patchedFn = extractFunction(afterText, 'classifySourceOutputs');
+ check('author candidate-after.mjs matches the patched shipping function', candFn === patchedFn, 'function bodies differ');
+ 
+-console.log('');
+-console.log(`before sha256 ${sha(beforeText)}`);
+-console.log(`after  sha256 ${sha(afterText)}`);
+-console.log(`${pass} passed, ${fail} failed`);
++report('');
++report(`before sha256 ${sha(beforeText)}`);
++report(`after  sha256 ${sha(afterText)}`);
++report(`${pass} passed, ${fail} failed`);
+ process.exit(fail === 0 ? 0 : 1);
+
+Assertion / control-flow inventory, unchanged:
+  check() call sites:   before 16 / after 16
+  run() call sites:     before 15 / after 15
+  readFileSync sites:   before 5  / after 5   (no path was edited)
+  console references:   before 6  / after 0
+
+No case, threshold, expected value, classification or branch condition was touched.

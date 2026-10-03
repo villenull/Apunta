@@ -1,0 +1,95 @@
+# 75 cases re-run, and the BEFORE/AFTER comparison
+
+## The 75 cases, re-run on the repaired proof
+
+$ node docs/v2/evidence/P3.5/client-sentinel-proposal/sentinel-proof.mjs
+exit=0
+
+harness sha256      b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+before extract      6340e8609b1f44f98b7f8c714a96b26322784f8d16ea10522810a87ab290a08f
+candidate after     e0a01c008ea784afc3ea03609cd4e07f24c69b90615f78da0d422b558d9224e1
+extracted lines     271-329 of scripts/v2/tauri-audio.test.mjs
+
+PASS BEFORE A1 valid dash on the virtual source
+PASS AFTER  A1 valid dash on the virtual source (virtual)
+PASS AFTER  A1 valid dash on the virtual source (realMic)
+PASS AFTER  A1 valid dash on the virtual source (unrelated)
+PASS AFTER  A1 valid dash on the virtual source (clientId)
+PASS BEFORE A2 valid dash on the owner real microphone (leak must be detected)
+PASS AFTER  A2 valid dash on the owner real microphone (leak must be detected) (virtual)
+PASS AFTER  A2 valid dash on the owner real microphone (leak must be detected) (realMic)
+PASS AFTER  A2 valid dash on the owner real microphone (leak must be detected) (unrelated)
+PASS AFTER  A2 valid dash on the owner real microphone (leak must be detected) (clientId)
+PASS BEFORE A3 valid dash on an unrelated source (caller must still stop on it)
+PASS AFTER  A3 valid dash on an unrelated source (caller must still stop on it) (virtual)
+PASS AFTER  A3 valid dash on an unrelated source (caller must still stop on it) (realMic)
+PASS AFTER  A3 valid dash on an unrelated source (caller must still stop on it) (unrelated)
+PASS AFTER  A3 valid dash on an unrelated source (caller must still stop on it) (clientId)
+PASS BEFORE A4 attempt 3 V3 row verbatim, source index absent from the table
+PASS AFTER  A4 attempt 3 V3 row verbatim, source index absent from the table
+PASS BEFORE A5 attempt 3 V4 row verbatim, source index absent from the table
+PASS AFTER  A5 attempt 3 V4 row verbatim, source index absent from the table
+PASS BEFORE A6 dash row whose source index is in the table (the shape the fix enables)
+PASS AFTER  A6 dash row whose source index is in the table (the shape the fix enables) (virtual)
+PASS AFTER  A6 dash row whose source index is in the table (the shape the fix enables) (realMic)
+PASS AFTER  A6 dash row whose source index is in the table (the shape the fix enables) (unrelated)
+PASS AFTER  A6 dash row whose source index is in the table (the shape the fix enables) (clientId)
+PASS BEFORE A7 numeric client, virtual source (virtual)
+PASS BEFORE A7 numeric client, virtual source (realMic)
+PASS BEFORE A7 numeric client, virtual source (unrelated)
+PASS BEFORE A7 numeric client, virtual source (clientId)
+PASS AFTER  A7 numeric client, virtual source (virtual)
+PASS AFTER  A7 numeric client, virtual source (realMic)
+PASS AFTER  A7 numeric client, virtual source (unrelated)
+PASS AFTER  A7 numeric client, virtual source (clientId)
+PASS BEFORE A8 numeric client, real microphone (leak must be detected both sides) (realMic)
+PASS BEFORE A8 numeric client, real microphone (leak must be detected both sides) (clientId)
+PASS AFTER  A8 numeric client, real microphone (leak must be detected both sides) (realMic)
+PASS AFTER  A8 numeric client, real microphone (leak must be detected both sides) (clientId)
+PASS BEFORE A9 numeric client 0 (a real client index, not a sentinel) (virtual)
+PASS BEFORE A9 numeric client 0 (a real client index, not a sentinel) (clientId)
+PASS AFTER  A9 numeric client 0 (a real client index, not a sentinel) (virtual)
+PASS AFTER  A9 numeric client 0 (a real client index, not a sentinel) (clientId)
+PASS BEFORE A10 numeric client -1 (retained as-is: pactl prints `-`, not `-1`) (virtual)
+PASS BEFORE A10 numeric client -1 (retained as-is: pactl prints `-`, not `-1`) (clientId)
+PASS AFTER  A10 numeric client -1 (retained as-is: pactl prints `-`, not `-1`) (virtual)
+PASS AFTER  A10 numeric client -1 (retained as-is: pactl prints `-`, not `-1`) (clientId)
+PASS BEFORE A11 numeric client with a float-shaped token (unchanged leniency) (virtual)
+PASS BEFORE A11 numeric client with a float-shaped token (unchanged leniency) (clientId)
+PASS AFTER  A11 numeric client with a float-shaped token (unchanged leniency) (virtual)
+PASS AFTER  A11 numeric client with a float-shaped token (unchanged leniency) (clientId)
+PASS BEFORE A12 third column is garbage text
+PASS AFTER  A12 third column is garbage text
+PASS BEFORE A13 third column is a driver name in the wrong place
+PASS AFTER  A13 third column is a driver name in the wrong place
+PASS BEFORE A14 third column is a double dash
+PASS AFTER  A14 third column is a double dash
+PASS BEFORE A15 third column is a dash with a digit (n/a)
+PASS AFTER  A15 third column is a dash with a digit (n/a)
+PASS BEFORE A16 dash with a non-numeric source index
+PASS AFTER  A16 dash with a non-numeric source index
+PASS BEFORE A17 dash with a non-numeric stream index
+PASS AFTER  A17 dash with a non-numeric stream index
+PASS BEFORE A18 dash with an unknown source index
+PASS AFTER  A18 dash with an unknown source index
+PASS BEFORE A19 malformed row with two columns
+PASS AFTER  A19 malformed row with two columns
+PASS BEFORE A20 dash in the first column
+PASS AFTER  A20 dash in the first column
+PASS BEFORE A21 dash in the second column
+PASS AFTER  A21 dash in the second column
+PASS BEFORE A22 sources table carries a duplicate index (unchanged guard)
+PASS AFTER  A22 sources table carries a duplicate index (unchanged guard)
+PASS BEFORE A23 sources table row is malformed (unchanged guard)
+PASS AFTER  A23 sources table row is malformed (unchanged guard)
+PASS candidate leaves the source table and every preceding line byte-identical
+PASS candidate leaves the unknown-source guard and the grouping byte-identical
+PASS candidate adds no new top-level function
+
+75 passed, 0 failed
+
+$ cmp docs/v2/evidence/P3.5/client-sentinel-proposal/sentinel-proof-output.txt <that stdout>
+cmp exit=0   (0 = the committed record is byte-for-byte the re-run; not regenerated, not edited)
+
+Verdict lines, counted and unedited: PASS=75  FAIL=0
+Last line: 75 passed, 0 failed

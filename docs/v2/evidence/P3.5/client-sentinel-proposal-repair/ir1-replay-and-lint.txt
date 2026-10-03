@@ -1,0 +1,53 @@
+# IR-1 — replay of candidate.patch against a fresh shipping baseline
+
+Scratch (git-ignored): build/p35-client-package-repair/  (`git check-ignore -v` -> .gitignore:55:build/)
+Nothing here is a build of the app: patch, sha256sum, node --check, prettier, eslint.
+
+$ sha256sum scripts/v2/tauri-audio.test.mjs              # committed shipping file
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs
+$ sha256sum build/p35-client-package-repair/baseline.mjs   # fresh copy of it
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  build/p35-client-package-repair/baseline.mjs
+
+$ cd build/p35-client-package-repair/replay && patch -p1 --dry-run < <candidate.patch>
+checking file scripts/v2/tauri-audio.test.mjs
+dry-run exit=0
+patching file scripts/v2/tauri-audio.test.mjs
+apply exit=0
+
+$ sha256sum build/p35-client-package-repair/replay/scripts/v2/tauri-audio.test.mjs
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  build/p35-client-package-repair/replay/scripts/v2/tauri-audio.test.mjs
+expected prefix 85fbb13d  (reviewer's built-after hash, patch-replay-and-lint.txt:6) -> MATCH
+
+$ node --check build/p35-client-package-repair/replay/scripts/v2/tauri-audio.test.mjs
+node --check exit=0
+$ npx prettier --check --stdin-filepath scripts/v2/tauri-audio.test.mjs < <replay>
+prettier exit=0
+$ npx eslint --stdin --stdin-filename scripts/v2/tauri-audio.test.mjs < <replay>
+eslint exit=0
+
+Scope, read from the replayed file:
+  one function: classifySourceOutputs, declared at line 300; it is the only edited region
+  changed span: 309,310c309,315  ->  2 lines removed, 7 added
+  parseSourceTable (line 271) and the unknown-source guard are byte-identical
+  new top-level functions added: 0
+
+$ sha256sum scripts/v2/tauri-audio.test.mjs              # after all of the above
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs
+$ git status --porcelain -- scripts/ | wc -l
+0
+
+Full diff baseline -> replay (0 lines of context):
+
+--- build/p35-client-package-repair/baseline.mjs	2026-10-03 15:41:36.208246172 -0600
++++ build/p35-client-package-repair/replay/scripts/v2/tauri-audio.test.mjs	2026-10-03 15:41:44.869910536 -0600
+@@ -309,2 +309,7 @@
+-    const clientId = Number(columns[2]);
+-    if (![streamId, sourceId, clientId].every((value) => Number.isInteger(value))) {
++    // Only the literal `-` means "no client"; any other client-column value
++    // must still be a plain integer, exactly as before.
++    const clientId = columns[2] === '-' ? null : Number(columns[2]);
++    if (
++      ![streamId, sourceId].every((value) => Number.isInteger(value)) ||
++      (clientId !== null && !Number.isInteger(clientId))
++    ) {
+diff exit=1  (1 = differences, expected)

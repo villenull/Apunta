@@ -1,0 +1,24 @@
+# Shipping source and scope, unchanged
+
+The repair is artifact-only. The one file the patch would touch was not touched.
+
+$ sha256sum scripts/v2/tauri-audio.test.mjs
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs
+candidate '7e16513' = the same bytes; the replay hash 85fbb13d... exists only in ignored scratch.
+
+$ git status --porcelain -- scripts/ web/ shared/ server/
+(empty above = no source changed)
+
+$ git status --porcelain   # everything this repair touched, plus root's in-flight state files
+ M docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+ D docs/v2/evidence/P3.5/client-sentinel-proposal/candidate-after.mjs
+ M docs/v2/evidence/P3.5/client-sentinel-proposal/candidate.patch
+ M docs/v2/evidence/P3.5/client-sentinel-proposal/format-primary-evidence.md
+ M docs/v2/evidence/P3.5/client-sentinel-proposal/sentinel-proof.mjs
+ M docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+?? docs/v2/evidence/P3.5/client-sentinel-proposal-repair/
+?? docs/v2/evidence/P3.5/client-sentinel-proposal/candidate-after.mjs.txt
+
+Not touched, and not to be touched by this repair: cards, checkpoints, config,
+tooling, manifests, contracts, thresholds, Expected cells. No fifth attempt, no
+counter reset, no row retry, no schema or Expected change.

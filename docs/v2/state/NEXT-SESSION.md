@@ -1,3 +1,14 @@
+## Artifact repair recovered and completed; fresh review next
+
+Owner observed idle worker. Event check confirmed 18d2bbc1 IDLE with complete
+repair evidence. Narrow latest activity recovered its missing final report; no
+new repair turn needed. Worker archived successfully. Root reran sentinel proof:
+75/75, exit 0; shipping source b886f8bb unchanged. Repaired patch now targets the
+shipping file, anchors exactly three, artifact output cleanup preserves results.
+Historical IR script intentionally replays against its old snapshot after the
+text-witness rename; current package proof runs in place. Fresh independent
+package review is next, no owner attempt decision yet.
+
 ## Origin push approved and completed
 
 Owner explicitly approved pushing completed reviews and orchestration state to

@@ -51,13 +51,17 @@ const row = (a, b, c) => `${a}\t${b}\t${c}\tPipeWire\tfloat32le 2ch 48000Hz`;
 
 let pass = 0;
 let fail = 0;
+// Output-only: this file sits under docs/, so it reports through
+// process.stdout.write rather than console (which eslint's no-console forbids
+// outside the scripts/ exemption). Nothing else about the run changes.
+const report = (line) => process.stdout.write(`${line}\n`);
 const check = (label, ok, detail) => {
   if (ok) {
     pass += 1;
-    console.log(`PASS ${label}`);
+    report(`PASS ${label}`);
   } else {
     fail += 1;
-    console.log(`FAIL ${label}: ${detail}`);
+    report(`FAIL ${label}: ${detail}`);
   }
 };
 const run = (fn, outputs, sources) => {
@@ -177,8 +181,8 @@ const candFn = extractFunction(cand, 'classifySourceOutputs');
 const patchedFn = extractFunction(afterText, 'classifySourceOutputs');
 check('author candidate-after.mjs matches the patched shipping function', candFn === patchedFn, 'function bodies differ');
 
-console.log('');
-console.log(`before sha256 ${sha(beforeText)}`);
-console.log(`after  sha256 ${sha(afterText)}`);
-console.log(`${pass} passed, ${fail} failed`);
+report('');
+report(`before sha256 ${sha(beforeText)}`);
+report(`after  sha256 ${sha(afterText)}`);
+report(`${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
