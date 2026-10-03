@@ -2703,3 +2703,13 @@ medium launched RUNNING withcallbacks on disjoint newreport/evidence paths.
 Rootchecksyntax/eslint/prettier exit0; oldrecords/anchors/criteria equality PASS.
 No acceptance rowrun, no leases. Newsourcecommit5857079 remains local untilIR.
 Root checkpoint ownership remains; no worker may write it beforeruntimegrant.
+
+## 2026-10-03 — owner EOD product deadline
+
+Owner asks 100% working product on Omarchy by EOD and budgeted agents/plan.
+Root clock22:28UTC16:28MexicoCity, budgets7.5h to23:59local; execution plan
+records observable coreworkflow and timed checkpoints, separate independent roles,
+root+3freeworker capacity, serial builds/audio/realmodel, protectedholds unchanged.
+c68e3995 launched RUNNING withcallback for read-only criticalpath mapping; no
+runtime/system/network/patientdata access. Existing sourceIR/runtimeprep continue.
+Omarchy skill loaded for any desktopintegration; packageddefaultsreadonly.

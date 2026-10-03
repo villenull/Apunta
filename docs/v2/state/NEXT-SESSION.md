@@ -1,3 +1,18 @@
+## New owner EOD working-product objective
+
+Owner requests budgeted execution and subagents toward a fully working product
+on Omarchy by EOD. Execution plan: EOD-2026-10-03-EXECUTION-PLAN.md, deadline
+23:59 America/Mexico_City (05:59 UTC next day), ~7.5h at planning. Core flow proof,
+functional fixes and integrated native delivery prioritized over ceremonial docs.
+Protected attempt/quiet-machine/clinical/licensing/live-handover decisions persist.
+
+c68e3995-6ece-48e6-beb4-87ac582deb68 (LongCat free high) confirmed RUNNING
+with callback, owns new EOD-2026-10-03-CRITICAL-PATH.md and eod evidence only;
+read-only shortest-path/owner-gap analysis. adc88147 sourceIR and a4e666c4
+runtimeprep were RUNNING at objective boundary; neither holds host resources.
+Latest a4e666c4 notification is narrative-only, not accepted completion; reconcile
+at next boundary and recover its report if idle. Root owns state, no runtime yet.
+
 ## Exact attempt4 source review and runtime preparation running
 
 Source candidate 5857079 (hash85fbb13d) is the exact owner AM-194 patch.
