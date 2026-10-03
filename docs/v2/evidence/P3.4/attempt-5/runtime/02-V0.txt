@@ -1,0 +1,102 @@
+Row V0 (the re-bundle; Rule B trigger, run once)
+Working directory: repository root (~/Projects/Apunta)
+Exact command: `export PATH="$HOME/.cargo/bin:$PATH" && export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && export APUNTA_WHISPER_WORK_DIR="$HOME/.cache/apunta-v2/whisper-src" && node --version && P34_FLAGGED="$PWD/build/p3.4-web" && trap 'rm -rf "$P34_FLAGGED" build/linux-resources/web/dist' EXIT INT TERM HUP && test -x "${APUNTA_WHISPER_WORK_DIR:-<sandbox>/whisper-src}/whisper.cpp/build-${APUNTA_WHISPER_BACKEND:-vulkan}/bin/whisper-cli" && mkdir -p build/p3.4-web && VITE_APUNTA_TEST_IDENTITY=1 npm --prefix web run build -- --outDir ../build/p3.4-web/dist --emptyOutDir && node -e "const fs=require('fs'),p=process.argv[1],d=p+'/assets';const n=fs.existsSync(d)?fs.readdirSync(d).filter(f=>f.endsWith('.js')).filter(f=>fs.readFileSync(d+'/'+f,'utf8').includes('p3.4-observe')).length:-1;console.log('marker bundles in',p+':',n);process.exit(n>0?0:1)" build/p3.4-web/dist && bash scripts/v2/package-linux-resources.sh && node -e "const fs=require('fs'),p=process.argv[1],d=p+'/assets';const n=fs.existsSync(d)?fs.readdirSync(d).filter(f=>f.endsWith('.js')).filter(f=>fs.readFileSync(d+'/'+f,'utf8').includes('p3.4-observe')).length:-1;console.log('marker bundles in',p+':',n);process.exit(n===0?0:1)" web/dist && rm -rf build/linux-resources/web/dist && cp -R build/p3.4-web/dist build/linux-resources/web/dist && node -e "const fs=require('fs'),p=process.argv[1],d=p+'/assets';const n=fs.existsSync(d)?fs.readdirSync(d).filter(f=>f.endsWith('.js')).filter(f=>fs.readFileSync(d+'/'+f,'utf8')).length:-1;console.log('marker bundles in',p+':',n);process.exit(n>0?0:1)" build/linux-resources/web/dist && npm run tauri:build:test`
+Pre-step, authorized by AM-190 and by dispatch/P3.4-runtime.md: build/p3.5-env-repair/gst-helpers
+created, the installed host scanner /usr/lib/gstreamer-1.0/gst-plugin-scanner copied into it, and
+GSTREAMER_HELPERS_DIR exported to its absolute path in the shell that ran this row. No config,
+manifest, source, card or tool edit.
+Start (UTC): 2026-10-03T20:27:38Z
+End (UTC): 2026-10-03T20:29:54Z
+Exit code: V0_EXIT=0
+Status: PASS
+
+Result: node --version printed exactly v24.19.0; the whisper-cli precondition passed on the
+already-present A06 candidate; the three marker counts are 1 (build/p3.4-web/dist), exactly 0
+(web/dist, the release invariant) and 16 (build/linux-resources/web/dist, the copy that reached
+the AppImage); AppImage built 2026-10-03 14:29 local / 20:29Z, 185.22 MiB.
+The producer's own whisper step printed "== Building whisper-cli (A06)" and "copied whisper-cli
+and 15 shared libraries into bin/" with no fetch line and no clone line anywhere in the row log.
+
+--- row log ---
+v24.19.0
+
+> @apunta/web@0.0.0 build
+> vite build --outDir ../build/p3.4-web/dist --emptyOutDir
+
+vite v8.2.2 building client environment for production...
+transforming...
+✓ 310 modules transformed.
+rendering chunks...
+computing gzip size...
+../build/p3.4-web/dist/index.html                              1.26 kB │ gzip:  0.62 kB
+../build/p3.4-web/dist/assets/index-CdfGWZcu.aff               3.08 kB
+../build/p3.4-web/dist/assets/index-CmfKht-g.dic             551.76 kB
+../build/p3.4-web/dist/assets/index-SBuBNj0-.css              84.61 kB │ gzip: 15.26 kB
+../build/p3.4-web/dist/assets/rolldown-runtime-CbXtAM7H.js     0.58 kB │ gzip:  0.36 kB
+../build/p3.4-web/dist/assets/formatDraft-mqUN-SEL.js          0.79 kB │ gzip:  0.42 kB
+../build/p3.4-web/dist/assets/useImportBatch-CRSjMUZs.js       2.15 kB │ gzip:  0.97 kB
+../build/p3.4-web/dist/assets/Licenses-D9VLTtXH.js             2.64 kB │ gzip:  1.14 kB
+../build/p3.4-web/dist/assets/About-jn-7GdDz.js                3.69 kB │ gzip:  0.92 kB
+../build/p3.4-web/dist/assets/OnboardingFormat-D0tjLzDt.js     5.91 kB │ gzip:  2.03 kB
+../build/p3.4-web/dist/assets/Setup-CvVyGeka.js                6.93 kB │ gzip:  2.54 kB
+../build/p3.4-web/dist/assets/HalaxyImport-zaJG-Jpn.js         7.16 kB │ gzip:  2.34 kB
+../build/p3.4-web/dist/assets/OnboardingPreview-Dm4texon.js    7.61 kB │ gzip:  2.42 kB
+../build/p3.4-web/dist/assets/speller-Dpgpt73Y.js              9.59 kB │ gzip:  3.98 kB
+../build/p3.4-web/dist/assets/Import-CvzI1B9g.js               9.71 kB │ gzip:  2.81 kB
+../build/p3.4-web/dist/assets/Settings-6Kc3crNd.js            18.28 kB │ gzip:  4.71 kB
+../build/p3.4-web/dist/assets/app-shared-DoDFBWmc.js         116.45 kB │ gzip: 38.22 kB
+../build/p3.4-web/dist/assets/index-B537ZKO4.js              174.10 kB │ gzip: 47.35 kB
+../build/p3.4-web/dist/assets/vendor-react-PeHSF_v7.js       181.75 kB │ gzip: 57.16 kB
+../build/p3.4-web/dist/assets/api-CpirRXqe.js                239.48 kB │ gzip: 66.16 kB
+
+✓ built in 92ms
+marker bundles in build/p3.4-web/dist: 1
+
+== Recording the build environment
+
+== Copying the pinned Node tree (A01)
+copied ~/.local/share/apunta-node/node-v24.19.0-linux-x64 -> ~/Projects/Apunta/build/linux-resources/node (v24.19.0)
+tarball sha256 recorded by P0.1: f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4
+
+== Building the server and the web app
+
+== Bundling the server (server/server.mjs)
+
+  build/linux-resources/server/server.mjs  6.8mb ⚠️
+
+⚡ Done in 177ms
+injected app version: 0.0.0
+
+== Copying the migrations
+
+== Copying the web build
+
+== Copying better-sqlite3
+
+== Building whisper-cli (A06)
+copied whisper-cli and 15 shared libraries into bin/ (RUNPATH \$ORIGIN:)
+
+== Copying the licences
+
+== Writing manifest.json
+manifest lists 4804 files
+
+== Done
+output: ~/Projects/Apunta/build/linux-resources
+node:   v24.19.0
+files:  4804
+marker bundles in web/dist: 0
+marker bundles in build/linux-resources/web/dist: 16
+
+> apunta@0.0.0 tauri:build:test
+> tauri build --features test-identity --config src-tauri/tauri.test.conf.json
+
+        Info Looking up installed tauri packages to check mismatched versions...
+   Compiling apunta v0.0.0 (~/Projects/Apunta/src-tauri)
+    Finished `release` profile [optimized] target(s) in 28.63s
+       Built application at: ~/Projects/Apunta/src-tauri/target/release/apunta
+        Info Patching ~/Projects/Apunta/src-tauri/target/release/apunta with bundle type information: appimage
+    Bundling Apunta (test)_0.0.0_amd64.AppImage (~/Projects/Apunta/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage)
+    Finished 1 bundle at:
+        ~/Projects/Apunta/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage (185.22 MiB)
+

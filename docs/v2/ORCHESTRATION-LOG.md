@@ -2545,3 +2545,14 @@ Runtimeworkerd353b075 reportsV4alreadyFAILonce, no rerun; continuesfinalevidence
 This failure is retained, no sixthattempt. Separatebounded evidence-only lint
 cleanup dispatched forfuturework, exclusive oldprobe+newrepair evidence, no
 runtime/sourcefiles or tests changed. Independentreview will followcleanup.
+
+### 2026-10-03 — final runtime return accepted as failures, resources released
+
+Narrowlatestactivity resolved idle-runtime mismatch: complete returnwritten,
+V0/V1/V3PASS V2FAIL16/17+2NOTRUN V4FAIL, no rerun. Cleanup/port/free verifiedin
+workerrecord; archivedd353b075 successfully and releasedsolebuildlease. Root
+checkpointpreservesactualcriteria/history and statusBLOCKEDfinal5/no6. Review
+cleanupauthor8632dc30 archived; freshreviewerb71ccd91confirmedRUNNINGcallback.
+Rootrelocated11misplacedscratchfiles toignoredbuild byte-identically. Read-only
+pointerdiagnostician1546370c confirmedRUNNINGcallback, no resourceorwriteconflict.
+P3.5ready afterevidencelintreview, ownruntimelease andpluginchecks, no4.

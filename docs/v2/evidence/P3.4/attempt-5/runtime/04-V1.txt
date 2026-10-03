@@ -1,0 +1,19 @@
+Row V1
+Working directory: repository root (~/Projects/Apunta)
+Exact command: `npm run build:shared && npx vitest run server/src/http/csp.test.ts`
+Start (UTC): 2026-10-03T20:30:25Z
+End (UTC): 2026-10-03T20:30:27Z
+Exit code: V1_EXIT=0
+Status: PASS
+
+1 file collected, 12 passed, 0 skipped. A "No test files found" for this path would be FAIL; it
+did not happen. Inherited test re-run in full; csp.ts and csp.test.ts untouched by this session.
+
+--- row log (tail) ---
+{"level":30,"time":1791059427341,"pid":2488624,"hostname":"FBI-PC","reqId":"req-9","res":{"statusCode":503},"responseTime":0.06726000000003296,"msg":"request completed"}
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  14:30:26
+   Duration  571ms (transform 281ms, setup 0ms, import 437ms, tests 76ms, environment 0ms)
+

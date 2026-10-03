@@ -1,0 +1,31 @@
+Containment, cleanup and new side effects, for the root checkpoint
+
+Own processes: exactly one app launch (V2) plus the sandbox server it spawned. The harness
+stopped the shell by pid (SIGTERM, printed in the V2 log) and its five containment assertions
+all passed. This session issued no pkill and signalled no pid it did not own.
+
+Independent checks after V2 and again after V4:
+  ps -eo pid,etimes,comm | grep -Ei "apunta|Xvfb|ollama|cargo"  ->  only the pre-existing ollama
+    server (pid 1123, etimes 112156, not started by this session). No app, no Xvfb, no cargo.
+  bind/release on 127.0.0.1:7835  ->  7835 free.
+  build/p3.4-web                     ->  absent (removed by V0's own trap on exit)
+  build/linux-resources/web/dist     ->  absent (removed by the same trap)
+  marker bundles in web/dist         ->  0 (the release invariant holds on the shipping tree)
+
+New side effects this session, all in ignored build/ or in src-tauri/target/, none tracked:
+  1. build/p3.5-env-repair/gst-helpers/gst-plugin-scanner  (AM-190 setup, 1 file, 14432 B).
+     Left in place on purpose: it is the P3.5 setup path root asked for, and P3.5's next step
+     needs it. It is gitignored scratch, not repository state.
+  2. build/p3.5-env-repair/registry-{appsink,autoaudiosrc,alsasrc,pulsesrc}.bin  (4 fresh
+     registries from the dry inspections, ~963 KB each). Ignored scratch.
+  3. web/dist, server/dist and build/linux-resources/** rewritten by V0's producer run - the
+     producer's documented behaviour, and shipping web/dist verified unflagged (0 markers).
+  4. src-tauri/target/** rewritten: release binary, AppImage and AppDir, newest AppImage
+     2026-10-03 14:29 local. Output only, never a Rule B input.
+  5. /tmp/opencode/p34rt/** (row scripts and logs) and /tmp/apunta-v2-p3.4-v2.env - outside the
+     repository, scratch.
+  Sandbox run used: <sandbox>/2026-10-03T20-30-31-220Z-83dd39e4 (APUNTA_TEST_RUN_ID), port 7835.
+
+Not done, deliberately: no source, config, tool, card, checkpoint, contract, fixture, dispatch
+or shared-fixture write; no git add, commit, branch, worktree, pull, merge, rebase or reset; no
+child agent; no microphone, audio or P3.5 capture; no port 7717; no live data folder.

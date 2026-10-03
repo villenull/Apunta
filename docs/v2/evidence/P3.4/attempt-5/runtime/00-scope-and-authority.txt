@@ -1,0 +1,37 @@
+P3.4 attempt 5 - runtime continuation: scope, authority and pinned commands
+
+Dispatch followed: docs/v2/state/dispatch/P3.4-runtime.md (continuation) and
+docs/v2/state/dispatch/P3.4.md (card, generated at 7b9c63a, attempt 5 of 3, port 7835).
+No implementation, no new attempt, no counter reset, no retry of any row.
+
+Authority relied on: AM-188 (assertion/measurement package), AM-189 (attempt 5 with keyed
+tooling), AM-190 (scanner scratch + GSTREAMER_HELPERS_DIR setup; the four dry inspections),
+AM-192 (the single pre-runtime code repair, already applied as candidate 291372f). The
+independent source review recorded source 291372f / harness 865ccab3 as CLEAR; this session
+re-ran no unit check and no review, and made no source, config, tool, card, checkpoint,
+contract or fixture edit.
+
+Drift check before any row (the dispatch stop condition):
+  git diff --name-only 7b9c63a HEAD  ->  docs/v2/ORCHESTRATION-LOG.md,
+    docs/v2/state/NEXT-SESSION.md, docs/v2/state/dispatch/P3.4-runtime.md,
+    docs/v2/state/dispatch/P3.4.md      (documentation and dispatch only)
+  git status --porcelain -- server shared web src-tauri e2e scripts package.json
+    package-lock.json eslint.config.js  ->  empty
+So no path this card reviews differs between the dispatch generation point and HEAD, and the
+worktree is clean over every Rule B input. Nothing to report as implementation drift.
+
+Environment at execution: node v24.19.0 (pinned, A01 tarball path), cargo 1.99.0
+($HOME/.cargo/bin), gst-inspect-1.0 at /usr/bin/gst-inspect-1.0, host scanner executable at
+/usr/lib/gstreamer-1.0/gst-plugin-scanner. Port 7835 free-bind/release check performed before
+the lease: bind ok, released ok.
+
+Row commands pinned before execution (sha256 of the exact script text handed to bash):
+  V0 ece681359dd54dcc3a1005c98f6a1217894ccaccb596777c4d843c4e600d004a
+  V1 555916a79b834dfb6c06cc1e82f0446c4790cec3d3792f626c5803bcbce4441b
+  V2 587ec485c9e7ec09560754e5960f3ebfc40419f25f969148f3b122f354abc52a
+  V3 abc61e382d40d54a27316df11f1eec0f8aeb21f1f66c293e8c52ca7b82b6bb62 (as run; see 06-V3.txt)
+  V4 8f26946126609f56b21a8a660f287f6073b398bfd9463a6558ba81a784317ca0
+
+Serial build lease held for the whole run: no P3.5 capture, no other build, no model work ran
+in parallel, and no concurrent build worker was observed (no cargo, tauri, node build or
+apunta process was running before V0).

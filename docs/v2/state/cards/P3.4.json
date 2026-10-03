@@ -7,15 +7,16 @@
   ],
   "baseCommit": "6974943",
   "attempt": 5,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Corrected source independently CLEAR; root authenticated-prerequisite recheck PASS. Final runtime worker d353b075 dispatched with exclusive build lease.",
-  "nextAllowedAction": "runtime-worker-v0-v4-once-in-card-order-no-sixth",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Final once-only runtime attempt5 complete: V0/V1/V3 PASS, V2 FAIL (click window read-back WINDOW=0), V4 FAIL (outside-source proof lint). Worker stopped, cleanup verified, build lease released.",
+  "nextAllowedAction": "read-only-runtime-failure-review-and-coordinator-decision-no-rerun-no-sixth",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
     "V2: four sandbox launches of the real AppImage on port 7835 (<sandbox>/2026-10-02T23-09-25-372Z-7099e32b, 23-11-43-686Z-078bd8cc, 23-14-44-140Z-b6a7bbc6, 23-18-12-989Z-74194898, 23-38-00-485Z-b72ab858), every one stopped by pid, never pkill. The first is where the frozen-snapshot defect was found; the last is the recorded run.",
     "scripts/v2/tauri-security.test.mjs: the observation readers now resolve their source per read (one stderrAt helper plus thunks at seven polling call sites), the observed CSP header is printed on a pass as well as a failure, and the fixture note is created before the observation gate with one ctrl+r so the page renders the workspace. No assertion, predicate, pass condition or timeout was changed.",
-    "web/src/main.tsx: NOT touched by this attempt. The plain https://example.invalid/ literal and its single no-restricted-syntax suppression stand as attempt 3 left them."
+    "web/src/main.tsx: NOT touched by this attempt. The plain https://example.invalid/ literal and its single no-restricted-syntax suppression stand as attempt 3 left them.",
+    "Attempt5 V0 rebuilt shared outputs/AppImage with approved scanner env; four fresh registry dryplugin checksPASS; web/dist unflagged0markers and V0 scratch removed; sandbox launch ownpidcleanup/port7835free, buildlease released."
   ],
   "changedFiles": [
     "scripts/v2/tauri-security.test.mjs",
@@ -45,29 +46,34 @@
       "verification": "Inherited from attempt 3 and re-confirmed by V0's first assertion this attempt: the candidate at ~/.cache/apunta-v2/whisper-src is executable, so S0 was SKIPPED and nothing was acquired as a new item."
     },
     "V0": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
-      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/02-V0.txt",
+      "verification": "Once-only flagged producer/build: marker counts1/0/16, AppImage built; AM190 bundled scanner/four dryplugins PASS separately."
     },
     "V1": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
-      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/04-V1.txt",
+      "verification": "Once-only CSP unit12PASS,0skipped."
     },
     "V2": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
-      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/05-V2.txt",
+      "verification": "Once-only app launch, exact IPC ACL denial/CSP/style and5containment PASS; click window read-back FAIL WINDOW0, b/c NOT RUN, no click/retry."
     },
     "V3": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
-      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/06-V3.txt",
+      "verification": "Rendered command decoded before shell execution; once-only guards0matches/no capabilities PASS."
     },
     "V4": {
-      "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md",
-      "verification": "Attempt5 acceptance row not executed: code/unit80PASS is preparation only. Independent code review and authenticated prerequisite/preflight required before V0\u2013V4 exactly once in order."
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/07-V4.txt",
+      "verification": "Once-only npmtest2235PASS then lint13evidenceerrors FAIL; typecheck/cargo downstream notexecuted; no rerun/waiver."
     }
   },
   "sandboxRuns": [
@@ -75,7 +81,8 @@
     "<sandbox>/2026-10-02T23-18-12-989Z-74194898 (V2, port 7835)",
     "<sandbox>/2026-10-02T23-14-44-140Z-b6a7bbc6 (V2, port 7835)",
     "<sandbox>/2026-10-02T23-11-43-686Z-078bd8cc (V2, port 7835)",
-    "<sandbox>/2026-10-02T23-09-25-372Z-7099e32b (V2, port 7835 - where the frozen-snapshot defect was found)"
+    "<sandbox>/2026-10-02T23-09-25-372Z-7099e32b (V2, port 7835 - where the frozen-snapshot defect was found)",
+    "<sandbox>/2026-10-03T20-30-31-220Z-83dd39e4 (attempt5 V2, port7835, one launch, stopped by own pid)"
   ],
   "priorAttempt4Criteria": {
     "S0": {
@@ -117,9 +124,9 @@
   "implementationReviewWorkerId": null,
   "implementationReviewReport": "docs/v2/state/reviews/P3.4-correction-applied.md",
   "implementationReviewVerdict": "Corrected shipping source CLEAR under AM-192; runtime rows NOT RUN pending authenticated prerequisites/preflight",
-  "coordinatorBlockingFinding": null,
+  "coordinatorBlockingFinding": "V2 handler click FAIL: pointer read-back WINDOW=0 PID=undefined, clickN=0; navigation b/c NOT RUN. V4 npm tests2235 PASS then evidence-artifact lint FAIL. Final budget exhausted, no row rerun/sixth.",
   "implementationCandidate": "291372f",
-  "updatedUtc": "2026-10-03T20:27:14.415498+00:00",
+  "updatedUtc": "2026-10-03T20:49:14.829682+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
   "reBundle": {
@@ -157,5 +164,5 @@
     "optionalA06": "PARKED",
     "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5"
   },
-  "runtimeWorkerId": "d353b075-dfa3-4ddd-8cc0-ad095f98a12f"
+  "runtimeWorkerId": null
 }

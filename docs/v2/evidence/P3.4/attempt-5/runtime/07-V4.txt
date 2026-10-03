@@ -1,0 +1,57 @@
+Row V4
+Working directory: repository root (~/Projects/Apunta)
+Exact command: `export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && npm test && npm run lint && npm run typecheck && ( export PATH="$HOME/.cargo/bin:$PATH" && cd src-tauri && cargo fmt --check && cargo clippy -- -D warnings && cargo test )`
+Start (UTC): 2026-10-03T20:33:19Z
+End (UTC): 2026-10-03T20:33:35Z
+Exit code: V4_EXIT=1
+Status: FAIL at the lint step. STOP reported to root, not repaired, not re-run.
+
+Order of the card's own single && chain: node --version printed exactly v24.19.0; npm test
+PASSED (163 files, 2235 tests, 0 failed); npm run lint FAILED with 13 eslint errors, every one of
+them in a committed evidence artifact that is neither source nor in this card's May edit:
+
+  docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs  (4 errors;
+    committed in 9f3acf5, the attempt-5 code-review artifact of an earlier reviewer)
+  docs/v2/evidence/P3.5/runtime-readiness/v5-provenance.unescaped.mjs          (9 errors;
+    committed in 1917b04, the P3.5 provenance writer artifact)
+
+No eslint error is reported in any source path, in any May-edit path, or in any file this session
+wrote. Per the card ("a red lint or typecheck in a file outside May edit is a stop, not something
+to fix here", HS-9) the row stops here. Nothing was suppressed, no rule or config was edited, and
+the row was not repeated. Because the cell is one && chain, npm run typecheck and the
+cargo fmt/clippy/test subshell did not execute; that is the command's own short-circuit, not a
+skip and not a NOT RUN I chose.
+
+Reported to root during the run: root had already byte-preserving renamed the P3.5 witness to
+.txt in its own commit after seeing the same failure, and a further fix commit for the remaining
+P3.4 review artifact was in progress. Neither changes this row: it ran once and it FAILed, and a
+later green tree does not convert it.
+
+--- row log (tail) ---
+   Start at  14:33:20
+   Duration  11.51s (transform 4.91s, setup 0ms, import 21.50s, tests 29.54s, environment 16.75s)
+
+
+> apunta@0.0.0 lint
+> eslint . && prettier --check . && node scripts/check-no-external-urls.mjs && node scripts/collect-licenses.mjs --check && node scripts/check-ui-strings.mjs
+
+
+~/Projects/Apunta/docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+   10:3  error  'frameFrom' is defined but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+   22:3  error  Unexpected console statement. Only these console methods are allowed: warn, error    no-console
+   42:7  error  'factLine' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  165:1  error  Unexpected console statement. Only these console methods are allowed: warn, error    no-console
+
+~/Projects/Apunta/docs/v2/evidence/P3.5/runtime-readiness/v5-provenance.unescaped.mjs
+  1:10    error  A `require()` style import is forbidden                                            @typescript-eslint/no-require-imports
+  1:86    error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1:2901  error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1:6150  error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1:6231  error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1:6264  error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1:6312  error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1:6425  error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1:6472  error  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+✖ 13 problems (13 errors, 0 warnings)
+

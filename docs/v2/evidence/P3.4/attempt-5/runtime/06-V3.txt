@@ -1,0 +1,21 @@
+Row V3
+Working directory: repository root (~/Projects/Apunta)
+Exact command: `b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0`
+Start (UTC): 2026-10-03T20:33:07Z
+End (UTC): 2026-10-03T20:33:07Z
+Exit code: V3_EXIT=0
+Status: PASS
+
+Command-extraction note, recorded because it is a deviation of method and not of the row: the
+card's table cell stores the shell OR as markdown-escaped pipes. Extracted literally, bash parses
+them as two ordinary pipes and aborts at parse time with "syntax error near unexpected token
+'}'", before a single assertion runs. The row had therefore NOT RUN at that point. The cell was
+re-extracted with the four table escapes rendered as the rendered cell shows them, bash -n then
+exits 0, and the row was executed exactly once. Command fidelity only: no guard, count, path,
+threshold or assertion was changed. The V0, V1, V2 and V4 cells contain no escaped pipe and were
+unaffected; their command hashes are in 00-scope-and-authority.txt.
+
+Command sha256 as run: abc61e382d40d54a27316df11f1eec0f8aeb21f1f66c293e8c52ca7b82b6bb62
+
+--- row log ---
+P3.4-V3: 4 forbidden words over 4 paths, matches: 0

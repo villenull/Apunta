@@ -1,3 +1,24 @@
+## P3.4 final runtime recorded BLOCKED; build lease released
+
+Runtimeworkerd353b075 completed fullreturn and archival succeeded. V0/V1/V3PASS,
+V2FAILpointerWINDOW0/PIDundefined (no click, b/cNOTRUN), V4FAIL13evidence-linterrors
+after2235npmtestsPASS; downstreamtypecheck/cargo notexecuted. All5containmentPASS,
+bundledscanner/fourpluginsPASS. Oneapp/sandboxlaunch, ownpidcleanupverified,
+port7835free, unflaggedweb0markers; solebuildlease RELEASED. No V4retry orattempt6.
+
+Cleanupreviewerb71ccd91-de9f-4a11-8d3e-bd3e7805d2c9 (Space Bunny free medium)
+RUNNING withcallback, evidence-only outputlint fidelity, oldprobe+newirreport.
+Author8632dc30 archived; its misplaced scratch relocated byte-identically to
+ignored build/p34-review-probe-lint-preserved, addendumrecorded. Do notcommitin-
+flightIRfiles. AfterCLEAR integratecleanup and launchP35 finalruntime3 with
+exclusivecheckpointwriterhandoff and lease, currentregenerateddispatch required.
+
+Diagnostician1546370c-7ff0-4ed9-83e4-3aec43700e5e (LongCat free high) confirmed
+RUNNING withcallback, read-only finalpointerfailurecode/evidence/localdocs and
+syntheticreasoning. No app/displayprobe/build/rowrerun/sourceedit/ownergrant.
+Exclusive final-diagnosis evidence + P3.4-final-runtime-diagnosis.md. It uses no
+resources and does notblockindependentP35. No activebuild/port reservations.
+
 ## P3.4 runtime row failure reported; no rerun, final evidence pending
 
 Runtimeworkerd353b075 reports V4 already FAIL/once and is still finishing evidence.

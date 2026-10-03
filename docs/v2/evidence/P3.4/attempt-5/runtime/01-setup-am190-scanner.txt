@@ -1,0 +1,20 @@
+AM-190 authorised setup, run once, before V0 and in the same build environment as V0
+
+Commands (the environment-proposal-repair2 step-1 scanner preparation, verbatim, minus the
+tauri build that P3.4's own V0 performs):
+
+  mkdir -p build/p3.5-env-repair/gst-helpers
+  cp /usr/lib/gstreamer-1.0/gst-plugin-scanner build/p3.5-env-repair/gst-helpers/
+  export GSTREAMER_HELPERS_DIR="$PWD/build/p3.5-env-repair/gst-helpers"
+
+Result: the scratch directory holds one file, gst-plugin-scanner, mode 755, 14432 bytes, copied
+from the installed host path. GSTREAMER_HELPERS_DIR was exported to the absolute path
+~/Projects/Apunta/build/p3.5-env-repair/gst-helpers in the shell that ran V0, so V0 ran with it
+in its environment. The path is gitignored (build/ at .gitignore:55), so no tracked file moved.
+
+Nothing else was set up: no tool, package, model, config key, manifest or source file was
+edited or installed by this session, and no other host was contacted.
+
+Effect visible in V0: the AppDir produced by V0 carries
+usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner, which is what the four dry inspections in
+03-am190-four-dry-inspections.txt then assert with test -x.
