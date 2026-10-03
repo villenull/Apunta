@@ -1966,3 +1966,7 @@ P3.4 author8e2d3856 archived. Revised proposal plus repair2 report returned; rep
 S3.3a reviewer a72396be archived success. No candidate defects; V1-V5 PASS,48 tests,26 adversarial AST cases, original effective rules21/21 equal. V6/V7 owner-held NOT RUN, V8 original FAIL preserved. Coordinator immutable candidate interval85dc7ce..eac3291 scope proof9 allowed paths, supplemental only. Status BLOCKED awaiting quiet-machine and verification bookkeeping; no APPROVED or further source attempt. Limited build lease released.
 
 P3.4 independent reviewer9fec0d3f archived after DEFECT, three blockers/six additional findings. Fresh authorb9ad8e45-58e4-4b6a-a263-3b7a461d82bb owns proposal+repair4 report only, all findings specified, no extra owner question or runtime authorization. P3.5 author62e08cac continues scoped instruction repair3.
+
+## P3.5 repair3 submitted for fresh review — 2026-10-03T02:06:13.085476+00:00
+
+Author62e08cac archived success; exact card-command/trap paragraph + own report grant respected. Coordinator fake-pactl replay54/54 branches expected, no realhost tools/actions. Root corrected one contradictory abandonedrecord deletion sentence to preserve audit history. Stable unaccepted candidate de94da0. Fresh reviewerb3c0498a-c297-409a-9d9a-4da6aadb0abd Space Bunny medium owns only command-ir3 report/evidence, callback enabled. Attempt0, no audio dispatch. P3.4 authorb9ad8e45 continues proposal repair, no runtime/budget authority. S3.3a owner-held, no build lease held.

@@ -1,3 +1,9 @@
+## Latest P3.5 checkpoint — 2026-10-03T02:06:13.085476+00:00
+
+P3.5 instruction repair3 candidate de94da0 committed UNACCEPTED; coordinator54 synthetic branches passed. Writer62e08cac archived. Fresh independent command reviewerb3c0498a-c297-409a-9d9a-4da6aadb0abd running report/evidence-only; callback. Card NOT STARTED attempt0, no audio/build work dispatched. SandboxRuns current attempt capture identities required; root preserves abandonedrun history.
+
+P3.4 authorb9ad8e45 remains scoped to proposal repair4/report; fifth attempt unauthorized. S3.3a BLOCKED existing quiet-machine hold, review complete/source no defects, original V8 FAIL preserved. Build lease free.
+
 ## Latest independent-review checkpoint — 2026-10-03T02:03:42.400869+00:00
 
 Supersedes prior S3.3a SUBMITTED entry: now BLOCKED on existing quiet-machine hold and scope-row reconciliation, not source defects. Candidate eac3291 independent review V1-V5 PASS/48 tests, AST adversarial26 cases, no source change needed. V6/V7 NOT RUN, original V8 FAIL retained; immutable candidate interval9 allowed paths proved in review-2/COORDINATOR-SCOPE.md. Reviewer a72396be archived, build lease free. Do not dispatch S3.3 before approval.

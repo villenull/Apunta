@@ -4,16 +4,16 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "8fd82fe",
+  "baseCommit": "de94da0",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "Docs repair2 submitted UNACCEPTED. Coordinator synthetic ordering replay finds source/module leaks BEFORE unrelated final row PASS because awk c resets eachrow; stale complete baseline passes. Independent reviewer541465b5-2a09-4771-acb9-8480600fb80b running. No implementation (attempt0). Planned intended-source name already corrected.",
-  "nextAllowedAction": "await-independent-V5-command-IR2",
+  "lastCompletedStep": "Command repair3 submitted UNACCEPTED at de94da0; coordinator replay54/54 branches as expected, history-retention prose corrected. Fresh independent command reviewer dispatched; no implementation attempt.",
+  "nextAllowedAction": "await-independent-V5-command-IR3",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T01:27:48.690998+00:00",
+  "updatedUtc": "2026-10-03T02:06:13.085476+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",
@@ -78,8 +78,20 @@
       "verdict": "CLEAR 10/0/0",
       "report": "docs/v2/state/reviews/P3.5-ir8.md",
       "outcome": "card is fit for implementation; no attempt spent"
+    },
+    {
+      "report": "docs/v2/state/reviews/P3.5-V5-command-ir.md",
+      "verdict": "DEFECT",
+      "attemptConsumed": false
+    },
+    {
+      "report": "docs/v2/state/reviews/P3.5-V5-command-ir2.md",
+      "verdict": "DEFECT",
+      "attemptConsumed": false
     }
   ],
   "notes": "AM-123: round 5's single finding. The anchor moved 283c222 -> 4ba1630 -> 935911e; AM-121's own instruction to anchor at 4ba1630 was one commit short, because two of that repair's edits were in the card and landed in 935911e. Round 5 also carried a note, not a defect: V1 does not set LD_LIBRARY_PATH for the Piper venv, which both reference scripts do as a fallback. Recorded so a future attempt knows it was seen. AM-134: baseCommit moves to d9c38aa. The card is NOT dispatchable before P3.4's hook exists; that ordering is stated in card text rather than as a DEPENDENCIES.md edge, because a hard edge would make the dispatcher refuse this card until P3.4 is fully APPROVED and the hook need only exist. The owner has not ruled on the edge. AM-138: baseCommit moves to 5fb42a9. Two items were considered and deliberately left: the /p3.5-marker path lacks P3.4 /api prefix (not load-bearing - the harness reads the URL as logged, identical either way) and the two cards invert who owns the gate (attribution prose, character-identical form, only one gate ever written).",
-  "statusNote": "Cleared for implementation at round 8 (AM-141) and deliberately held, because its rows read the same stderr channel P3.8 fixes. The status word stays inside RUN-CONFIG.md's vocabulary: nothing is running, so IN PROGRESS would be false, and no stop condition fired, so BLOCKED would be false. The hold is carried by nextAllowedAction and by the HELD section of BLOCKED.md, not by inventing a status word."
+  "statusNote": "NOT STARTED attempt0: original round8 clear superseded by new V5 defect reviews and repairs. P3.8 forwarding hold resolved. Repair3 awaits fresh independent review; build lease free. No audio implementation authorized by instruction-review verdict alone; coordinator must dispatch after CLEAR.",
+  "commandReviewWorkerId": "b3c0498a-c297-409a-9d9a-4da6aadb0abd",
+  "continuationNotes": "SandboxRuns chosen as durable attempt/step/runId/dateUtc anchor for three capture records; trusted coordinator provenance, original restoration/leak assertions unchanged. Earlier-attempt history retained. IR09.1 old grep-c wording in Expected remains disclosed; no Expected cell changed."
 }
