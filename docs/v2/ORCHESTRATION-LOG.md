@@ -2847,3 +2847,12 @@ model/tag readiness plus exact installer acquisition preparation; owner not
 asked to run routine commands. a2c4bab2 prepares P36nativebrief separately,
 c88d6043 owns only runtime/build/app/7835 and P34checkpoint. 2a0f977 records
 P35APPROVEDAM197 after finalCLEAR, old FAILs retained. No modelinference/pull yet.
+
+## 2026-10-03 — integration author preparation handed to independent validation
+
+a2c4bab2 finished/archived,50c0854 preserves author prep. Metadata/icons already
+correct; remaining harness approach has UI/API and capture/clipboard claims
+requiring validation, not adopted as dispatch authority. Fresh e74efcc6 running
+independent practical validation with exactcardcriteria preserved, separate new
+report/evidence. Securityruntimec88d6043/nativelease and modelreadiness4e7416af
+continue; no P36implementation/dependency bypass or new ownergate invented.

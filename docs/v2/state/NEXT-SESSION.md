@@ -1,3 +1,19 @@
+## Native integration preparation under independent validation
+
+a2c4bab2 finished/archived; author analysis committed50c0854, not adopted as
+implementation authority. Icons/metadata already correct, no gratuitous edits.
+Fresh e74efcc6-6665-49ee-8d77-0bf3bb543e30 confirmed RUNNING callback, owns new
+P3.6-dispatch-preparation-ir report/evidence only. Validate UI actuation versus
+self-created API facts, clipboard/capture feasibility, coordinate frames,
+normative row order and all ten actual flows; no acceptance relaxation by
+dispatch prose. P3.5 already proves virtual mic under Xvfb, so author's 'cannot'
+claim is unadopted. Existing instruction reviews/Stop8 references carry forward.
+No P3.6 dispatch or implementation until P3.4 approved and approach validated.
+
+c88d6043 retains exclusive native security runtime/build/app/7835 and sole
+P3.4 checkpoint write lease. 4e7416af model/tag readiness correction still
+RUNNING at this boundary. All three scopes disjoint; no duplicate native work.
+
 ## English readiness qualification; native security run active
 
 6307e8a2 static author finished/archived; report preserved as analysis, not
