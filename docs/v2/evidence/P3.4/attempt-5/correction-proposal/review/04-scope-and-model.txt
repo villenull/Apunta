@@ -1,0 +1,30 @@
+# 04 — function-level scope: exactly which functions change (independent reviewer)
+top-level function declarations: shipped 79, patched 79
+changed: ['waitForLabel', 'runFlowGuarded', 'assertInjectedNoteInert']
+missing after: []
+new after: []
+byte-identical: 76
+
+## the three changed functions are exactly the real-IO seam wrappers + the (d) call site
+
+# 05 — model port purity (independent reviewer)
+
+## do the two corrected functions exist in the pure model?
+waitForLabel occurrences in model.mjs: 0
+runFlowGuarded occurrences in model.mjs: 0
+runFlow occurrences in model.mjs: 1
+
+## model hashes (impl5 §1 expects dbca7da9… / 9c2c5862…)
+dbca7da9ece908729431dbf8e83c8e66d014cbb7b87e7abc2f11480cb33ed9f4  /home/villenull/Projects/Apunta/build/p3.4-spec-v5-repair2/model.mjs
+9c2c58621bf1e435b7577831fc692b6db5d2ecd16af691715ebe0eeccf1346c0  /home/villenull/Projects/Apunta/build/p3.4-spec-v5-repair2/model.test.mjs
+
+## the model's own 73 cases still pass (pinned node)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 73
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 58.602045
+model test exit: 0

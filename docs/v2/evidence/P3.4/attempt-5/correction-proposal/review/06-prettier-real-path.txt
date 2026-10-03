@@ -1,0 +1,45 @@
+# 08 — prettier at the REAL shipped path (independent reviewer)
+pinned node: v24.19.0
+
+## the repo's prettier config
+{
+  "singleQuote": true,
+  "printWidth": 110,
+  "trailingComma": "all",
+  "semi": true
+}
+
+## the patched file checked the way npm run lint will check it:
+## (prettier --check . from the root sees scripts/v2/tauri-security.test.mjs;
+##  build/ is in .gitignore, so a build/-path check is vacuously skipped)
+
+## control: a deliberately BROKEN file in build/, checked from the root
+Checking formatting...
+All matched files use Prettier code style!
+broken-control-from-root exit: 0  (VACUOUS: the file was never checked)
+
+## the same broken content via stdin at the real path
+(stdin)
+broken-control-stdin exit: 1  (really checked)
+
+## the SHIPPED file at its real path (baseline)
+shipped exit: 0
+
+## the PATCHED file at its real path
+(stdin)
+patched exit: 1  (FAILS)
+
+## the only formatting delta (one line, 112 chars > printWidth 110)
+1762c1762,1763
+<     classify: () => (tagForLabel(stderrSource, label) === null ? { ok: false, terminal: false } : { ok: true }),
+---
+>     classify: () =>
+>       tagForLabel(stderrSource, label) === null ? { ok: false, terminal: false } : { ok: true },
+
+## eslint on the patched content at its real path (via --stdin)
+eslint exit: 0 (clean)
+
+## conclusion: the evidence's 03 'prettier exit=0' was run against the
+## gitignored build/ path and never checked the file. At its real path the
+## patch fails prettier on exactly one line (the classify arrow in the
+## patched waitForLabel). The fix is a format-only wrap; no behaviour change.

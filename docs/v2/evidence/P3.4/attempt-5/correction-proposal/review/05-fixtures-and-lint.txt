@@ -1,0 +1,32 @@
+# 06 — the repo's own 80 port/adapter cases against MY patched copy (independent reviewer)
+pinned node: v24.19.0
+
+## fixtures copied verbatim; ONLY the import line re-pointed (diff proves it)
+49c49
+< } from '../../../../../../scripts/v2/tauri-security.test.mjs';
+---
+> } from './replay.mjs';
+25c25
+< } from '../../../../../../scripts/v2/tauri-security.test.mjs';
+---
+> } from './replay.mjs';
+
+## node --test on the re-pointed fixtures against the patched copy
+✔ F11 a non-integer or absent geometry, pid or viewport ends the row before any move (0.198118ms)
+✔ F4-r a permuted identical duplicate is idempotent; a changed value still conflicts (ir6 F4) (1.644934ms)
+ℹ tests 80
+ℹ suites 0
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 403.456848
+node --test exit: 0
+
+# 07 — lint and format on the patched copy
+eslint exit: 0
+Checking formatting...
+[warn] replay.mjs
+[warn] Code style issues found in the above file. Run Prettier with --write to fix.
+prettier exit: 0

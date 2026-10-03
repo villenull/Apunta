@@ -1,0 +1,60 @@
+# 03 — the patch replays byte-identically onto the shipped file
+pinned node: v24.19.0
+
+## the committed diff is a plain unified diff against the shipped path: 4 hunks
+
+## apply it to a FRESH copy of the shipped file, inside the ignored scratch dir
+patching file replay.mjs
+patch exit=0
+865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  replay.mjs
+865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  harness-patched.mjs
+cmp: replay.mjs is BYTE-IDENTICAL to harness-patched.mjs (exit 0)
+node --check exit=0
+
+## ESLint, with the ignore rule defeated (--no-ignore), so this is a real result
+eslint --no-ignore exit=0
+
+## Prettier, at a REAL, non-ignored filepath. Prettier 3.9.6 SKIPS everything under the
+## gitignored build/ (proved below), so a --check on the scratch path is VACUOUS.
+## --stdin-filepath applies the repo config for the real path without writing any file.
+  control, a deliberately mis-formatted file:
+(stdin)
+  control exit=1 (non-zero == the check is real)
+  corrected patch exit=0
+  shipped file exit=0
+
+## why the earlier build/-path claim was wrong (recorded, not quietly dropped):
+Checking formatting...
+All matched files use Prettier code style!
+  same bad file under build/ exit=0 (0 == silently skipped, hence vacuous)
+
+## the format-only fix the independent review required, now inside 02-patch.diff:
+  1355:    classify: (fact) => {
+  1356-      const counter = strictInteger(String(fact?.[POINTER.counter] ?? ''));
+  1357-      if (counter === null) return { ok: false, terminal: false };
+  --
+  1389:    classify: (fact) => {
+  1390-      const counter = strictInteger(String(fact?.[POINTER.counter] ?? ''));
+  1391-      if (counter === null || !(counter > counterBefore)) return { ok: false, terminal: false };
+  --
+  1461:    classify: (fact) => {
+  1462-      const counter = strictInteger(String(fact?.[CLICK.counter] ?? ''));
+  1463-      if (counter === null) return { ok: false, terminal: false };
+  --
+  1485:    classify: (fact) => {
+  1486-      const advanced = strictInteger(String(fact?.[CLICK.counter] ?? ''));
+  1487-      if (advanced === null || advanced <= counterBefore) return { ok: false, terminal: false };
+  --
+  1519:    classify: (after) => {
+  1520-      const verdict = landingFact(before, after, expected);
+  1521-      if (verdict.ok) return verdict;
+  --
+  1631:    classify: (fact) => {
+  1632-      if (fact?.[VIEWPORT.w] === undefined || fact?.[VIEWPORT.h] === undefined)
+  1633-        return { ok: false, terminal: false };
+  --
+  1762:    classify: () =>
+  1763-      tagForLabel(stderrSource, label) === null ? { ok: false, terminal: false } : { ok: true },
+  1764-  });
+  (the previous single-line form was 112 chars > printWidth 110 and failed prettier
+   at the real path; this is a wrap only, with identical behaviour)

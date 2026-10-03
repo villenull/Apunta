@@ -1,0 +1,34 @@
+# P3.4 attempt 5 — pre-runtime correction proposal — baseline
+pinned node: v24.19.0  (/home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node)
+date (UTC): 2026-10-03T06:32:57Z
+
+## commits (root recorded the impl5 review while this packet was prepared)
+9f3acf5 Record P3.4 code review and hold separate deadline wait
+8269e7a Track final P3.4 code review and preserve prior acceptance evidence
+b19e59f Implement approved P3.4 ACL probe and measured click observations
+14c0663 Accept independently verified config application evidence
+
+## the source candidate is unchanged: b19e59f vs HEAD, source files only
+(empty diff above: exit 0)
+the newest commit 9f3acf5 is docs/state-only:
+ docs/v2/state/cards/P3.4.json                      |  11 +-
+ docs/v2/state/reviews/P3.4-impl5.md                | 263 +++++++++++++++++++++
+ 16 files changed, 732 insertions(+), 6 deletions(-)
+no source path in 9f3acf5
+
+## hashes (working tree == b19e59f)
+fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672  scripts/v2/tauri-security.test.mjs
+45f4e588104b442e8dc2105c95f8dfc1059d089ab957f1abb06c91b7352e985a  web/src/main.tsx
+dbca7da9ece908729431dbf8e83c8e66d014cbb7b87e7abc2f11480cb33ed9f4  build/p3.4-spec-v5-repair2/model.mjs
+review P3.4-impl5.md §1 expects: harness fac8225f…, main.tsx 45f4e588…, model dbca7da9…
+
+## scratch copies (ignored: .gitignore:55 'build/')
+fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672  build/p34-final-correction/harness-original.mjs
+2ba12f1aac77d89884e906eb25412f84a5c239cdbe821cda02f3d18b6dbf7a60  build/p34-final-correction/harness-original-proof.mjs
+0691372bc4bc55e84da9dc41b10b3f11fbc00d98b7f6f642fe05e499258d76b1  build/p34-final-correction/harness-patched.mjs
+cf8e6a67a0babc4c8d0e4fa87ef3ea7530d78203f8a1b39cb120dc7ab949c5a7  build/p34-final-correction/harness-patched-proof.mjs
+0691372bc4bc55e84da9dc41b10b3f11fbc00d98b7f6f642fe05e499258d76b1  build/p34-final-correction/harness-replay.mjs
+
+## nothing staged, nothing committed by this packet
+(nothing staged)
+?? docs/v2/evidence/P3.4/attempt-5/correction-proposal/

@@ -1,0 +1,49 @@
+# 06 — scope: exactly what the correction touches, and what it deliberately does not
+pinned node: v24.19.0
+
+## diff stat against the shipped file
+  +44 / -20 lines, 4 hunks, one file
+
+## every changed line lies inside exactly three real-IO seam functions
+  changed, shipped side   : ['assertInjectedNoteInert', 'runFlowGuarded', 'waitForLabel']
+  changed, corrected side : ['assertInjectedNoteInert', 'runFlowGuarded', 'waitForLabel']
+  confined to the seam    : True
+  --- other functions, byte-identical after the patch ---
+  checked: 31 | differing: none
+
+## every top-level function in the file, and whether the patch changed it
+  top-level functions in the file: 79
+  CHANGED by the patch : ['waitForLabel', 'runFlowGuarded', 'assertInjectedNoteInert']
+  byte-identical       : 76
+
+## O1 (label uniqueness) is deliberately NOT fixed -- it stays the disclosed latent false-FAIL risk
+  1739:function tagForLabel(stderrSource, label) {
+  1740-  const frame = frameFrom(stderrSource);
+  1741-  if (frame.ok !== true) return null;
+  1742-  const matches = [...frame.rects.values()].filter((r) => r.l === label);
+  1743-  if (matches.length !== 1) return null;
+  1744-  return matches[0].t;
+  1745-}
+  -> tagForLabel is byte-identical after the patch (it is not in the CHANGED list above),
+     so a same-label/different-tag tooltip still yields null and the (d) row FAILs. That is
+     O1 in docs/v2/state/reviews/P3.4-impl5.md §6, retained on purpose: it fails closed (no
+     mis-click), it is not a criterion of the approved contract, and fixing it here would
+     widen this packet. It stays a disclosed false-FAIL risk on the acceptance rows.
+
+## untouched: thresholds, guards, assertions, the public surface, dependencies
+  uppercase constants: 24 | changed: none
+  export block identical: True
+  named-value constants identical: True
+  new files under server/ shared/ installer/:       0 (0)
+  package.json / package-lock.json changed:        0 (0)
+  web/src/main.tsx (P3.5 audio seam) changed:     0 (0)
+  scripts/v2/tauri-security.test.mjs changed:      0 (0 -- the real source is untouched)
+  card / dispatch / checkpoint / contract changed: 0 (0)
+  'pkill' in the harness: 4 occurrences, all in comments (4 of them); code use 0
+
+## the model port cannot drift: neither corrected function exists in the model
+0
+  0 -> both are real-IO seam wrappers the harness itself added, so the pure model and its
+     73 cases are untouched (73/73 still pass, see 05). Model hashes unchanged:
+dbca7da9ece908729431dbf8e83c8e66d014cbb7b87e7abc2f11480cb33ed9f4  build/p3.4-spec-v5-repair2/model.mjs
+9c2c58621bf1e435b7577831fc692b6db5d2ecd16af691715ebe0eeccf1346c0  build/p3.4-spec-v5-repair2/model.test.mjs

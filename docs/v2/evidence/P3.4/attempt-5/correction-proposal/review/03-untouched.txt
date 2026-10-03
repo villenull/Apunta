@@ -1,0 +1,35 @@
+# 03 — what the patch does NOT change (independent reviewer)
+
+## uppercase named constants (claim: all 24 identical)
+IDENTICAL
+
+## export block (claim: identical)
+IDENTICAL
+
+## killActiveCommands (claim: untouched)
+IDENTICAL
+
+## pkill occurrences in the patched file (claim: comments only)
+67: * No `pkill`, ever (C-ISO@1 rule 7): every process this file stops is one it
+281: * Stops one pid this harness started, by pid — never `pkill` (C-ISO@1 rule 7).
+1813: * this harness still has running by its own pid — never `pkill`, never a
+1822:  // started, by their own pid — never `pkill`, never a foreign process.
+2330: * deadline can be stopped by its own pid — never `pkill` (C-ISO@1 rule 7), and
+
+## createTargetDeadline call sites in the patched file (claim: one per target, no second budget)
+830:function createTargetDeadline(startMs, budgetMs = TARGET_BUDGET_MS) {
+2133:  const patientDeadline = createTargetDeadline(clock.now());
+2162:  const noteDeadline = createTargetDeadline(clock.now());
+2446:  createTargetDeadline,
+
+## TARGET_BUDGET_MS (claim: still 30_000, nothing widened)
+157:const TARGET_BUDGET_MS = 30_000;
+830:function createTargetDeadline(startMs, budgetMs = TARGET_BUDGET_MS) {
+
+## the 30_000 literal in the (d) handler half (claim: gone, replaced by the shared deadline)
+157:const TARGET_BUDGET_MS = 30_000;
+1873:      await waitForOwnership(30_000, 'V2'),
+2041:    30_000,
+2062:    30_000,
+2087:    30_000,
+2194:    30_000,

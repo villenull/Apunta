@@ -1,0 +1,26 @@
+# 01 — baseline: candidate stability and hashes (independent reviewer)
+pinned node: v24.19.0
+date (UTC): 2026-10-03T06:47:10Z
+
+## git state
+9f3acf5 Record P3.4 code review and hold separate deadline wait
+8269e7a Track final P3.4 code review and preserve prior acceptance evidence
+b19e59f Implement approved P3.4 ACL probe and measured click observations
+14c0663 Accept independently verified config application evidence
+
+## working tree == b19e59f for the two source files (empty diff = unchanged)
+exit: 0
+
+## shipped file hash (extracted from git, not from the working tree)
+fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672  -
+expected per impl5 review §1: fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672
+
+## card checkpoint facts
+status = BLOCKED
+attempt = 5
+baseCommit = 6974943
+implementationCandidate = b19e59f
+nextAllowedAction = prepare-bounded-pre-runtime-deadline-correction-owner-exception-no-sixth-attempt
+
+## AM-189 (the amendment the proposal rests on)
+AM-189 

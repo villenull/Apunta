@@ -2435,3 +2435,14 @@ lint cleanup, preserved patch/fixtures/source. Exclusive paths are the correctio
 proposal, review/probe.mjs and new final-preparation evidence; ignored scratch.
 No other useful independent work is ready while source authority and local
 installation authentication remain outstanding. No lease or port reserved.
+
+### 2026-10-03 — final correction package review dispatched
+
+Preparation worker 30622fa3 returned and archival succeeded. Root scoped eslint
+passes on correction-proposal; source diff versus b19e59f is empty. Root corrected
+two residual prose contradictions (decline means no repair; historical review
+text excludes output-cleaned probe). Prepared source patch remains untouched.
+Fresh reviewer 4d5f0ebb-6c7d-4fae-9791-4da56160677c (LongCat free, high) confirmed
+running with callback, isolated report/evidence writes only. Final patch/proofs,
+80-case port and output fidelity await independent verdict before owner decision.
+No acceptance rows or runtime actions; authentication route choice remains pending.

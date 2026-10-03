@@ -1,0 +1,48 @@
+# 07 — response to the independent review of this proposal
+
+Reviewer: docs/v2/state/reviews/P3.4-correction.md (fresh session, free model, high
+effort, never an author of the patch or of any evidence here). Raw output in review/.
+Verdict returned: CHANGES REQUESTED — one required change, format-only.
+
+## The finding, which was CORRECT
+
+My evidence 03 claimed 'prettier exit=0'. That claim was VACUOUS. Prettier 3.9.6 skips
+every file under the gitignored build/, so --check on the scratch copy could not fail.
+Reproduced with a control file (see 03):
+  deliberately mis-formatted file under build/  -> exit 0 (silently skipped)
+  the same file via --stdin-filepath at the real path -> exit 1 (really checked)
+
+## What the patched file actually did at the real path
+One line of the patched waitForLabel was 112 chars, over the repo's printWidth 110, so
+applying the patch as it stood would have FAILED npm run lint:
+  1762:    classify: () =>
+
+## The fix applied (format only, zero behaviour change)
+The classify expression is wrapped exactly as prettier itself formats it, and the wrap is
+now INSIDE 02-patch.diff — so the exception the owner is asked to grant covers it:
+  1762:    classify: () =>
+  1763-      tagForLabel(stderrSource, label) === null ? { ok: false, terminal: false } : { ok: true },
+
+## Re-verified after the fix (pinned node v24.19.0)
+  patch -p1 replay onto the shipped file      -> exit 0, byte-identical (sha 865ccab3…)
+  node --check                                -> exit 0
+  eslint --no-ignore                          -> exit 0
+  prettier at the REAL path (--stdin-filepath)-> exit 0
+  the same prettier check on the SHIPPED file -> exit 0 (baseline: it was clean)
+  the 80 port/adapter cases                   -> exit 0 (80/80)
+  the synthetic probe                        -> exit 0 (ALL PASS)
+
+## One further item the reviewer noted, recorded not fixed
+The post-landing waitForFact(..., 30_000) at :2194 is a pre-existing, unchanged 30 s wait
+for the probe sentinel AFTER both targets have landed. It is outside the target deadline and
+outside this patch's scope; widening the patch to cover it is not proposed. Disclosed here.
+
+## Reviewer's own independent findings that stand
+O3 is a real contradiction of the approved §E text (the impl5 'analogous to the gate's 45 s
+window' mitigation fails: §E preserves only the 45 s and 30 s windows, and the label wait is
+a third budget). O2 is exactly as described. 76 of 79 top-level functions byte-identical, no
+widened timeout, no second budget, no weakened assertion, no new helper, no changed export.
+Its own probe reproduced both defects and confirmed both fixes, and its control showed the
+kill branch is reachable on the shipped code for an EXACT reason.
+
+No reviewer file was edited. No source file was edited. Nothing staged, nothing committed.

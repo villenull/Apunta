@@ -1,3 +1,18 @@
+## Final bounded correction package under independent review
+
+Worker 30622fa3 completed and archival succeeded. Evidence output cleanup passed
+root scoped eslint; both P3.4 source files remain identical to b19e59f. Prepared
+patch is unchanged. Historical CHANGES REQUESTED review remains preserved.
+
+Reviewer 4d5f0ebb-6c7d-4fae-9791-4da56160677c (LongCat free, high) is confirmed
+RUNNING with completion notification. Exclusive writes: P3.4-correction-final.md
+and attempt-5/correction-final-review evidence; no author/source edits. It checks
+the final patch, deadline/own-pid proof, 80 cases, formatting and evidence fidelity.
+Root will verify and integrate the return before presenting ONE bounded owner
+exception. Source repair is not granted; no sixth attempt, counter reset, retry
+or acceptance execution. Authentication route question remains pending. P3.5 is
+independent, waiting on authentication/preflight; no lease or port reserved.
+
 ## Correction proposal preparation continues; source unchanged
 
 Correction author d78ad179 and child reviewer 8b831309 are stopped and archived.

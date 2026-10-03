@@ -1,0 +1,156 @@
+# 01 — extraction from the ACTUAL shipped source (scripts/v2/tauri-security.test.mjs @ b19e59f)
+printed with sed from the working tree, which is byte-identical to b19e59f (see 00-baseline.txt)
+nothing here is paraphrased; line numbers are the shipped file's own
+
+== A. approved proposal §E (docs/v2/state/P3.4-REPAIR-PROPOSAL-v5.md:191-204) ==
+## E. Contract 3 — one immutable 30-second target deadline
+
+One deadline is taken once, before the first dispatch, and it covers calibration,
+selection, every command, every await, the witness and the landing. **It has no
+`reset`, no `extend` and no per-step cap that could renew.** Every dispatch and every
+await is **raced against the deadline's own remaining time**, not merely checked
+against it before starting: a hung `mousemove` and a hung `click` both end at the
+deadline instead of extending the row, and no continuation runs afterwards. A result
+that arrives after it is a failure, not a success. There are no phase timers and no
+second budget. A dispatch after the deadline never happens, and no terminal path —
+failed calibration, undelivered pointermove, ambiguous target, incomplete frame,
+read-back miss, command failure, expired deadline — issues a click. The row's 45 s
+first-fact window and 30 s click window keep their lengths; **no timeout is widened
+to accommodate a wait**.
+
+
+== B. O3 as shipped: the (d) handler half's two budgets ==
+        1	  const stderrSource = () => run.output.stderr;
+        2	  const ops = makeOps(windowId, appPid, stderrSource);
+        3	  const clock = createRealClock();
+        4	
+        5	  const patientTag = await waitForLabel(stderrSource, PATIENT_LABEL, 30_000);
+        6	  if (patientTag === null) {
+        7	    check(
+        8	      `(d) handler: the ${JSON.stringify(PATIENT_LABEL)} row was clicked and landed`,
+        9	      false,
+       10	      `the hook published no unique rectangle carrying the label ${JSON.stringify(PATIENT_LABEL)}; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}`,
+       11	    );
+       12	    return;
+       13	  }
+       14	
+       15	  const patient = await runFlowGuarded({
+       16	    deadline: createTargetDeadline(clock.now()),
+       17	    clock,
+       18	    schedule: realSchedule,
+       19	    frame: frameFrom(stderrSource),
+       20	    wanted: { label: PATIENT_LABEL, tag: patientTag },
+       21	    expected: { kind: 'patient-href' },
+       22	    ops,
+       23	  });
+       24	  if (
+   (2108+11=2119 .. 2108+23=2131; the real line numbers are 2112 waitForLabel / 2123 createTargetDeadline)
+
+== B2. the same, verbatim by real line number ==
+  const patientTag = await waitForLabel(stderrSource, PATIENT_LABEL, 30_000);
+    deadline: createTargetDeadline(clock.now()),
+  const noteTag = await waitForLabel(stderrSource, NOTE_LABEL, 30_000);
+    deadline: createTargetDeadline(clock.now()),
+
+== C. waitForLabel as shipped: a private wall-clock budget, not the deadline ==
+/** Waits for the frame to carry exactly one rectangle for `label`, or null on timeout. */
+async function waitForLabel(stderrSource, label, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const tag = tagForLabel(stderrSource, label);
+    if (tag !== null) return tag;
+    if (Date.now() >= deadline) return null;
+    await sleep(250);
+  }
+}
+
+== D. O2 as shipped: reason-string equality in runFlowGuarded ==
+/**
+ * Runs the flow and, when the deadline expired a dispatch, stops the command
+ * this harness still has running by its own pid — never `pkill`, never a
+ * process this harness did not start, and never a stranded process.
+ */
+async function runFlowGuarded(args) {
+  const result = await runFlow(args);
+  if (!result.ok && result.reason === DEADLINE_EXPIRED) await killActiveCommands();
+  return result;
+}
+
+== D2. why the equality can never match: runFlow prefixes the click path's reason ==
+  return finish({ ...clicked, reason: `${two.reason}; ${clicked.reason}` });
+167:const DEADLINE_EXPIRED = 'the target deadline expired';
+
+== E. the ONE existing deadline constructor, unmodified, and the constants ==
+/**
+ * One immutable target deadline. `reset` does not exist: there is no cap to
+ * renew and no extension. A late completion can never re-arm it.
+ */
+function createTargetDeadline(startMs, budgetMs = TARGET_BUDGET_MS) {
+  const at = startMs + budgetMs;
+  return {
+    at,
+    start: startMs,
+    budgetMs,
+    remaining: (nowMs) => Math.max(0, at - nowMs),
+    expired: (nowMs) => nowMs >= at,
+  };
+}
+const TARGET_BUDGET_MS = 30_000;
+const OBSERVATION_POLL_MS = 250;
+const DEADLINE_EXPIRED = 'the target deadline expired';
+const PATIENT_LABEL = 'John Smith';
+const NOTE_LABEL = 'Progress note';
+
+== F. the existing shared poll and schedule the correction reuses, unmodified ==
+const realSchedule = (ms) => sleep(ms);
+async function pollObservation({
+  deadline,
+  clock,
+  currentFact,
+  classify,
+  schedule,
+  waitMs = OBSERVATION_POLL_MS,
+}) {
+  const wait =
+    schedule ??
+    ((ms) =>
+      new Promise((resolve) => {
+        clock.at(clock.now() + ms, resolve);
+      }));
+  for (;;) {
+    if (deadline.expired(clock.now())) return { ok: false, reason: DEADLINE_EXPIRED };
+    const read = await awaitGuarded(deadline, clock, currentFact);
+    if (!read.ok) return { ok: false, reason: read.reason };
+    let verdict;
+    try {
+      verdict = classify(read.value);
+    } catch (error) {
+      return { ok: false, reason: `the observation predicate threw: ${String(error)}` };
+    }
+    if (verdict?.ok === true) return { ok: true, fact: read.value, reason: verdict.reason ?? 'observed' };
+    if (verdict?.ok === false && verdict.terminal === true) return { ok: false, reason: verdict.reason };
+    const waited = await raceDeadline(
+      deadline,
+      clock,
+      Promise.resolve().then(() => wait(waitMs)),
+    );
+    if (!waited.ok) return { ok: false, reason: DEADLINE_EXPIRED };
+  }
+}
+
+== G. the cleanup the correction keeps: tracked pids only, never pkill ==
+/** Stops every command this harness still has running, by pid, and clears the set. */
+async function killActiveCommands() {
+  for (const child of [...activeCommands]) {
+    try {
+      if (child.exitCode === null && child.signalCode === null) process.kill(child.pid, 'SIGKILL');
+    } catch {
+      // already gone
+    }
+  }
+  activeCommands.clear();
+}
+67: * No `pkill`, ever (C-ISO@1 rule 7): every process this file stops is one it
+281: * Stops one pid this harness started, by pid — never `pkill` (C-ISO@1 rule 7).
+1800: * this harness still has running by its own pid — never `pkill`, never a
+2307: * deadline can be stopped by its own pid — never `pkill` (C-ISO@1 rule 7), and

@@ -1,0 +1,89 @@
+# 02 — scoped lint, format and syntax on the durable evidence file
+
+pinned node: v24.19.0
+path: docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+
+## 1. eslint — BEFORE (the received file, snapshotted to the ignored scratch)
+
+docs/ is NOT in eslint.config.js ignores, so this check is real (unlike prettier, see 2).
+
+```
+
+/home/villenull/Projects/Apunta/build/p34-correction-final-prep/probe-before.mjs
+   22:52  error  'tagForLabel' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   25:20  error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+   28:3   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  177:1   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  178:1   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  179:1   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  180:1   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  235:3   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  236:3   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  250:3   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+  294:1   error  Unexpected console statement. Only these console methods are allowed: warn, error       no-console
+
+✖ 11 problems (11 errors, 0 warnings)
+
+exit: 1
+```
+
+## 2. eslint — AFTER
+
+```
+exit: 0
+```
+
+## 3. syntax
+
+```
+node --check exit: 0
+```
+
+## 4. prettier — three modes, because two of them are vacuous
+
+`.prettierignore` lists `docs/v2/evidence/` (line 11), so `npm run lint`'s
+`prettier --check .` **skips this file by design**; its exit says nothing either way.
+
+```
+$ npx prettier --check docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit: 0   <- skipped by .prettierignore; VACUOUS
+```
+
+```
+$ npx prettier --check --stdin-filepath docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs < docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+exit: 0   <- still skipped (stdin-filepath inherits the ignore)
+```
+
+The only mode that actually applies the repo config to this file is a
+**non-ignored** `--stdin-filepath`, because printWidth is 110:
+
+```
+$ npx prettier --check --stdin-filepath scripts/v2/tauri-security.test.mjs < docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+exit: 1
+```
+
+```
+$ npx prettier --ignore-path /dev/null --check docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+[warn] docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+[warn] Code style issues found in the above file. Run Prettier with --write to fix.
+exit: 1   <- ALSO VACUOUS, the other way: it silently drops .prettierrc.json
+```
+
+Note that the first mode reports clean and the third reports a violation, for the
+same file — that disagreement is the tell that one of them is not looking at
+anything. Modes 3 and 4 were also run on the BEFORE snapshot and return exactly
+the same results, so the format delta is **pre-existing and untouched by this
+pass**:
+
+```
+mode 4 on BEFORE snapshot: exit 1
+mode 4 rewrite, diff lines BEFORE: 160   AFTER: 160   (unchanged by this pass)
+```
+
+**Decision, stated:** this pass does **not** reflow those lines. `docs/v2/evidence/`
+is outside prettier's remit for this repo, the 26 lines over `printWidth: 110` are
+pre-existing, and rewriting 160 lines of a file a reviewer must diff for semantic
+fidelity is not a mechanical cleanup. eslint — which the repo *does* enforce on
+docs/ — went 1 -> 0, and that is the only lint state this pass changed.

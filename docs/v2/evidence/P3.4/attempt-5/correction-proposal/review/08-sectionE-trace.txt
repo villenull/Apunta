@@ -1,0 +1,107 @@
+# 09 — §E trace: every await in the patched (d) handler half (independent reviewer)
+
+## the patched assertInjectedNoteInert, verbatim
+async function assertInjectedNoteInert(run, windowId, appPid, created) {
+  // The three calls were already made, and already asserted, before the
+  // observation gate so that the app's first paint could show a patient row.
+  // Creating them again here would only add a duplicate patient and a duplicate
+  // format, and would leave two rows carrying the same visible label.
+  if (!created.ok) return;
+
+  const stderrSource = () => run.output.stderr;
+  const ops = makeOps(windowId, appPid, stderrSource);
+  const clock = createRealClock();
+
+  // §E: the deadline is taken ONCE, before the first dispatch, and label
+  // discovery is selection, so it shares this one budget — the SAME object goes
+  // to the flow. No second 30 s window, nothing widened.
+  const patientDeadline = createTargetDeadline(clock.now());
+  const patientTag = await waitForLabel(stderrSource, PATIENT_LABEL, patientDeadline, clock, realSchedule);
+  if (!patientTag.ok) {
+    check(
+      `(d) handler: the ${JSON.stringify(PATIENT_LABEL)} row was clicked and landed`,
+      false,
+      `the hook published no unique rectangle carrying the label ${JSON.stringify(PATIENT_LABEL)}; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}; ${patientTag.reason}`,
+    );
+    return;
+  }
+
+  const patient = await runFlowGuarded({
+    deadline: patientDeadline,
+    clock,
+    schedule: realSchedule,
+    frame: frameFrom(stderrSource),
+    wanted: { label: PATIENT_LABEL, tag: patientTag.tag },
+    expected: { kind: 'patient-href' },
+    ops,
+  });
+  if (
+    !check(
+      `(d) handler: the ${JSON.stringify(PATIENT_LABEL)} row was clicked and landed`,
+      patient.ok && patient.dispatched.filter((name) => name === 'click').length === 1,
+      `${patient.reason} (dispatched ${patient.dispatched.join(', ')})`,
+    )
+  )
+    return;
+
+  const noteDeadline = createTargetDeadline(clock.now());
+  const noteTag = await waitForLabel(stderrSource, NOTE_LABEL, noteDeadline, clock, realSchedule);
+  if (!noteTag.ok) {
+    check(
+      `(d) handler: the ${JSON.stringify(NOTE_LABEL)} row was clicked and landed`,
+      false,
+      `the hook published no unique rectangle carrying the label ${JSON.stringify(NOTE_LABEL)} after the patient opened; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}; ${noteTag.reason}`,
+    );
+    return;
+  }
+
+  const note = await runFlowGuarded({
+    deadline: noteDeadline,
+    clock,
+    schedule: realSchedule,
+    frame: frameFrom(stderrSource),
+    wanted: { label: NOTE_LABEL, tag: noteTag.tag },
+    expected: { kind: 'script-text' },
+    ops,
+  });
+  if (
+    !check(
+      `(d) handler: the ${JSON.stringify(NOTE_LABEL)} row was clicked and landed`,
+      note.ok && note.dispatched.filter((name) => name === 'click').length === 1,
+      `${note.reason} (dispatched ${note.dispatched.join(', ')})`,
+    )
+  )
+    return;
+
+  const fact = await waitForFact(
+    stderrSource,
+    (line) => line['probe'] !== undefined && line['scriptText'] !== undefined,
+    30_000,
+  );
+  check(
+    `(d) handler: window.${PROBE_SENTINEL} is undefined`,
+    fact !== null && fact['probe'] === 'undefined',
+    fact === null
+      ? 'no fact line carrying the probe global arrived'
+      : `the page reported ${JSON.stringify(fact['probe'])}`,
+  );
+  check(
+    `(d) handler: the literal ${PROBE_LITERAL} is visible in the rendered body`,
+    fact !== null && fact['scriptText'] === 'true',
+    fact === null ? 'no fact line arrived' : `the page reported ${JSON.stringify(fact['scriptText'])}`,
+  );
+}
+
+## every top-level await in that function and its bound
+  const patientTag = await waitForLabel(stderrSource, PATIENT_LABEL, patientDeadline, clock, realSchedule);
+  const patient = await runFlowGuarded({
+  const noteTag = await waitForLabel(stderrSource, NOTE_LABEL, noteDeadline, clock, realSchedule);
+  const note = await runFlowGuarded({
+  const fact = await waitForFact(
+
+## classification:
+  waitForLabel(...)            -> pollObservation, bounded by the deadline object passed in
+  runFlowGuarded({deadline})  -> runFlow: every read/dispatch/wait via awaitGuarded/
+                                 dispatchGuarded/pollObservation on the SAME deadline
+  waitForFact(..., 30_000)     -> the post-landing assertion evidence wait, pre-existing,
+                                 unchanged, outside the click flow (see report item 4)

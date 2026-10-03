@@ -1,0 +1,44 @@
+# 05 — the standard 80 port/adapter cases still pass against the corrected scratch copy
+pinned node: v24.19.0
+
+## the fixtures are the repo's own, unmodified except for one import line re-pointed
+## at the corrected scratch copy. No shipping helper file exists or is needed.
+@@ -46,7 +46,7 @@
+   selectTarget,
+   solveTransform,
+   targetCentre,
+-} from '../../../../../../scripts/v2/tauri-security.test.mjs';
++} from './harness-patched-proof.mjs';
+ 
+ // ------------------------------------------------------------ fixtures ----
+ 
+@@ -22,7 +22,7 @@
+   pollObservation,
+   spawnAsync,
+   tagForLabel,
+-} from '../../../../../../scripts/v2/tauri-security.test.mjs';
++} from './harness-patched-proof.mjs';
+ 
+ const batchLine = ({ epoch, batch, total, entries }) => {
+   const query = new URLSearchParams();
+## the committed fixtures are untouched:
+(empty == untouched)
+
+## node --test on the scratch copies of those fixtures
+✔ F4-r a permuted identical duplicate is idempotent; a changed value still conflicts (ir6 F4) (0.091509ms)
+ℹ tests 80
+ℹ suites 0
+ℹ pass 80
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 402.841471
+node --test exit: 0
+
+## the 73 ported case NAMES are unchanged (the correction touches no ported function):
+73
+## and the model's own 73 cases still pass, untouched:
+ℹ tests 73
+ℹ pass 73
+ℹ fail 0

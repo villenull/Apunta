@@ -1,0 +1,50 @@
+== (A) O3: delayed label + flow must share ONE deadline ==
+  SHIPPED: tag=TR, ok=true, clicks=1, wall=952ms of 800ms
+           reason: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: moved, read back within 1 px, ptrN 2 -> 3; the clicked element matched clickTag, clickTestId and trimmed clickText; href transitioned to "http://127.0.0.1/patients/1"
+  PATCHED: tag="TR", ok=false, clicks=0, wall=800ms of 800ms
+           reason: bootstrap 2: the target deadline expired
+  PASS  defect on shipped: a SECOND budget let the flow click after label discovery spent the first
+  PASS  defect on shipped: the (d) half spent MORE than one target budget :: 952ms > 800ms — 30 s + 30 s per target as shipped
+  PASS  patched: the row ends at the ONE deadline with no click
+  PASS  patched: wall clock bounded by the one budget :: 800ms <= 1000ms
+  PASS  patched positive path: an in-time label still returns the tag and the flow clicks :: wall=701ms
+  PASS  patched positive path: inside the one budget :: 701ms
+
+== (B) O2: the cleanup kill must fire for a PREFIXED deadline reason ==
+  SHIPPED: ok=false, clicks=0, reason exactly DEADLINE_EXPIRED=false (contains: true), deadline.expired=true, tracked killed=false, foreign survived=true
+           reason: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: the target deadline expired
+  PATCHED: ok=false, clicks=0, reason exactly DEADLINE_EXPIRED=false (contains: true), deadline.expired=true, tracked killed=true, foreign survived=true
+           reason: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: the target deadline expired
+  PASS  defect on shipped: the hung target warp fails with a PREFIXED reason
+  PASS  defect on shipped: the cleanup branch is inert — tracked child survives runFlowGuarded
+  PASS  patched: the tracked hung command is killed by pid at the deadline
+  PASS  patched: an untracked/foreign process is never killed
+  PASS  shipped: an untracked/foreign process is never killed either
+  PASS  patched: no click, and the deadline really is expired at cleanup
+
+== (B2) control: an EXACT reason fires the branch even on shipped ==
+  SHIPPED: ok=false, reason exactly DEADLINE_EXPIRED=true, tracked killed=true, foreign survived=true
+  PATCHED: ok=false, reason exactly DEADLINE_EXPIRED=true, tracked killed=true, foreign survived=true
+  PASS  control: hung geometry yields the EXACT reason and the branch fires even on shipped — the branch is not dead code, the string match is the bug
+  PASS  control: patched also kills tracked, spares foreign
+
+== (D) static §E checks on the ACTUAL file text ==
+  SHIPPED problems (13):
+    - patient: no patientDeadline taken
+    - patient: label discovery carries its own 30_000 ms budget
+    - patient: label discovery does not receive patientDeadline
+    - patient: the flow does not receive the SAME object
+    - note: no noteDeadline taken
+    - note: label discovery carries its own 30_000 ms budget
+    - note: label discovery does not receive noteDeadline
+    - note: the flow does not receive the SAME object
+    - waitForLabel still takes a private timeoutMs
+    - waitForLabel still builds its own wall-clock deadline
+    - waitForLabel does not use the shared pollObservation
+    - runFlowGuarded still matches the reason by string equality
+    - runFlowGuarded does not test the deadline itself
+  PATCHED problems (0):
+  PASS  the static checker is non-vacuous on the shipped file (13 defects) :: 13
+  PASS  the static checker finds nothing on the patched file
+
+ALL PASS

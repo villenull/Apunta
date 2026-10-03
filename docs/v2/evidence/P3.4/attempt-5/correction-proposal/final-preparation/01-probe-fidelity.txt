@@ -1,0 +1,153 @@
+# 01 — probe fidelity: BEFORE vs AFTER, replayed on the untouched proof modules
+
+pinned node: v24.19.0
+cleaned path: `docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs`
+cwd for every run: `build/p34-correction-final-prep/` — the proof modules must sit next to
+the probe, because the probe imports `./shipped-proof.mjs` relative to **its own file** and
+reads `shipped-proof.mjs` / `patched-proof.mjs` relative to the **cwd** (see `README.md`).
+
+## 1. what changed, and what was proved unused first
+
+```
+console.log occurrences   BEFORE: 10    AFTER: 0
+emit(...) call sites      BEFORE: n/a     AFTER: 10    (one per former console.log)
+tagForLabel occurrences   BEFORE: 1     AFTER: 0
+```
+
+`tagForLabel` was proved unused **before** removal: it occurred exactly once in the file,
+on its own destructuring line 22, while every other name in that same destructure has at
+least one use (`MARKER_PATH` 2, `createBatchReader` 2, `frameFrom` 3, `DEADLINE_EXPIRED`
+6). Only the unused name went; no proof module, fixture, assertion, budget or constant
+was touched.
+
+## 2. argument, order, control-flow and return-value equivalence
+
+Every former `console.log(X)` became `emit(X)` carrying the **same single argument** — no
+reordering, no argument added or dropped. `emit` is `process.stdout.write(format(...args)
++ '\n')`, which is console.log's own contract: arguments joined by `format`, one trailing
+newline.
+
+- **Return values.** `say` was `const say = (s) => console.log(s);` — an arrow *expression*
+  whose value was console.log's `undefined`. It is now a block body,
+  `const say = (s) => { emit(s); };`, so it still returns `undefined`; it does not return
+  `emit`'s boolean, which `process.stdout.write` would otherwise hand back. Nothing reads
+  `say`'s value, so getting this right cost nothing.
+- **`format` cannot mangle these strings.** `util.format` interprets `%s` / `%d` / `%j` even
+  with no extra arguments — checked directly: `format('%s and %d')` returns `"-> and NaN"`.
+  This file contains **no `%` character at all** (`grep -c '%'` → 0), so `format(s) === s`
+  for every string printed. That is the static half of the proof; the replay is the
+  empirical half.
+- **Control flow** is untouched: no statement added, removed, reordered or re-scoped.
+  Only the callee of each print changed.
+
+## 3. the replay
+
+Three runs of each, same cwd, same two proof modules, byte-identical to the reviewer's own
+scratch copies:
+
+```
+5a5272c5fc6358f6ff45cfd86a8245fdc265f321d5e222da327c55146795ee55  shipped-proof.mjs
+145484f199bb32684d1741a99f1d021cfbedb735c9167e2986309af5004abe30  patched-proof.mjs
+```
+
+(identical to `build/p34-correction-ir/` — the reviewer's originals, copied not rebuilt)
+
+| run | exit | stdout lines | stderr bytes |
+| --- | --- | --- | --- |
+| before | 0 | 50 | 0 |
+| before.2 | 0 | 50 | 0 |
+| before.3 | 0 | 50 | 0 |
+| after | 0 | 50 | 0 |
+| after.2 | 0 | 50 | 0 |
+| after.3 | 0 | 50 | 0 |
+
+Raw `diff before.out after.out`:
+
+```
+4c4
+<   PATCHED: tag="TR", ok=false, clicks=0, wall=801ms of 800ms
+---
+>   PATCHED: tag="TR", ok=false, clicks=0, wall=800ms of 800ms
+9,11c9,11
+<   PASS  patched: wall clock bounded by the one budget :: 801ms <= 1000ms
+<   PASS  patched positive path: an in-time label still returns the tag and the flow clicks :: wall=701ms
+<   PASS  patched positive path: inside the one budget :: 701ms
+---
+>   PASS  patched: wall clock bounded by the one budget :: 800ms <= 1000ms
+>   PASS  patched positive path: an in-time label still returns the tag and the flow clicks :: wall=702ms
+>   PASS  patched positive path: inside the one budget :: 702ms
+```
+
+Every differing line is an **observed elapsed millisecond**, and nothing else. No verdict
+word, no PASS/FAIL set, no status flag, no reason string, no count differs.
+
+## 4. normalisation, and the exact limit of what was normalised
+
+Rule applied: `sed -E 's/[0-9]+ms/<ms>/g'` — every millisecond figure becomes a
+placeholder. Deliberately blunt, so read what it covers: it also masks the **semantic
+constants** printed alongside the timings (`BUDGET = 800`, the `BUDGET + 200 = 1000`
+bound, `MOVE_MS = 150`). Those are probe **source constants**, not observations, and they
+are proved unchanged separately: a diff of the two probe files shows only the 10 print
+call sites, the added import, the destructure and the `emit` / `say` block. No constant,
+budget, threshold or assertion string is edited. **No verdict and no status was
+normalised** — every PASS line, every `ok=` / `killed=` / `survived=` / `problems (N)`
+field and the final `ALL PASS` are compared literally.
+
+| normalised output | md5 |
+| --- | --- |
+| `before.out` | `437fac0f33cf4fcf87aa921dd90c029f` |
+| `before.2.out` | `437fac0f33cf4fcf87aa921dd90c029f` |
+| `before.3.out` | `437fac0f33cf4fcf87aa921dd90c029f` |
+| `after.out` | `437fac0f33cf4fcf87aa921dd90c029f` |
+| `after.2.out` | `437fac0f33cf4fcf87aa921dd90c029f` |
+| `after.3.out` | `437fac0f33cf4fcf87aa921dd90c029f` |
+
+All six normalise to one digest, so BEFORE and AFTER are equal on every non-timing byte.
+
+## 5. the retained historical output reproduces exactly
+
+```
+$ diff <review/07-probe-output.txt, normalised> <AFTER run, normalised>
+exit: 0  (identical)
+```
+
+Raw difference against the retained historical file
+`docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/07-probe-output.txt`
+(untouched on disk; exit `1`):
+
+```
+2c2
+<   SHIPPED: tag=TR, ok=true, clicks=1, wall=952ms of 800ms
+---
+>   SHIPPED: tag=TR, ok=true, clicks=1, wall=953ms of 800ms
+7c7
+<   PASS  defect on shipped: the (d) half spent MORE than one target budget :: 952ms > 800ms — 30 s + 30 s per target as shipped
+---
+>   PASS  defect on shipped: the (d) half spent MORE than one target budget :: 953ms > 800ms — 30 s + 30 s per target as shipped
+10,11c10,11
+<   PASS  patched positive path: an in-time label still returns the tag and the flow clicks :: wall=701ms
+<   PASS  patched positive path: inside the one budget :: 701ms
+---
+>   PASS  patched positive path: an in-time label still returns the tag and the flow clicks :: wall=702ms
+>   PASS  patched positive path: inside the one budget :: 702ms
+```
+
+Four lines, and **every one is an observed elapsed millisecond** of a real clock — the exact
+figures move by 1–2 ms from replay to replay (`952→953`, `701→702` here), which is why the
+normalised comparison in §4 exists. The statuses the reviewer recorded — shipped `ok=true`, 1 click, over budget; patched `ok=false`,
+0 clicks, ending at the deadline; tracked child survives on shipped and is killed on
+patched; foreign child survives on both; 13 static problems on shipped and 0 on patched;
+`ALL PASS`; exit 0 — all reproduce literally.
+
+The O2 and O3 findings, the 80/80 fixtures and the reviewer's CHANGES REQUESTED are
+**untouched claims**. This pass neither re-runs nor re-adjudicates them.
+
+## 6. format deltas, so the counts above reconcile with `02`
+
+```
+mode-4 (non-ignored --stdin-filepath) rewrite, changed lines:
+  BEFORE snapshot 160    AFTER 160
+```
+
+Identical, so this pass moved no line across `printWidth: 110`. See
+`02-lint-format-syntax.txt`.

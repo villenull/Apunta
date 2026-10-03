@@ -1,0 +1,102 @@
+# 04 — synthetic proof, non-vacuous: the same checks FAIL on the shipped copy and PASS on the corrected copy
+pinned node: v24.19.0
+scratch: build/p34-final-correction/ (ignored)
+
+## what was NOT touched: no app, no build, no server, no database, no model runtime,
+## no audio, no input, no display, no download, no install, no network, port 7717 never contacted.
+## The only children spawned are local 'node -e' sleepers (one tracked through the harness's
+## own spawnAsync, one bare-spawned and untracked) plus the probe itself.
+
+## the two scratch copies the probe imports
+2ba12f1aac77d89884e906eb25412f84a5c239cdbe821cda02f3d18b6dbf7a60  build/p34-final-correction/harness-original-proof.mjs
+e03dffa15213cbef3fdd3d8d586dc6ce2eef2b97fbc3545ae65adc01e755cff6  build/p34-final-correction/harness-patched-proof.mjs
+harness-original-proof.mjs == the shipped file + a 3-line proof-only export footer (no behaviour change):
+@@ -2439,6 +2439,10 @@
+   toNativePoint,
+ };
+ 
++// PROOF-ONLY (scratch, never shipped): export the two real-IO seam wrappers so
++// the probe can drive the ACTUAL functions. Additive; no behaviour change.
++export { runFlowGuarded, waitForLabel };
++
+ const isEntryPoint =
+   process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+ if (isEntryPoint) {
+harness-patched-proof.mjs == the corrected file + the same 3-line footer:
+@@ -2463,6 +2463,10 @@
+   toNativePoint,
+ };
+ 
++// PROOF-ONLY (scratch, never shipped): export the two real-IO seam wrappers so
++// the probe can drive the ACTUAL functions. Additive; no behaviour change.
++export { runFlowGuarded, waitForLabel };
++
+ const isEntryPoint =
+   process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+ if (isEntryPoint) {
+
+## full probe output
+== §E static check on the ACTUAL harness text (same checker, both copies) ==
+  BEFORE (shipped b19e59f harness):
+    defect  patient: no patientDeadline taken
+    defect  patient: label discovery carries its own 30_000 ms budget
+    defect  patient: label discovery does not receive patientDeadline
+    defect  patient: the flow does not receive the SAME object
+    defect  note: no noteDeadline taken
+    defect  note: label discovery carries its own 30_000 ms budget
+    defect  note: label discovery does not receive noteDeadline
+    defect  note: the flow does not receive the SAME object
+    defect  waitForLabel still takes a private timeoutMs
+    defect  waitForLabel still builds its own wall-clock deadline
+    defect  waitForLabel does not use the shared pollObservation
+    defect  runFlowGuarded still matches the prefixed reason by string equality
+    defect  runFlowGuarded does not test the deadline itself
+  AFTER  (shipped + proposed correction):
+
+  13 problem(s) before, 0 after
+
+== O3: does label discovery share the flow ONE deadline? ==
+  BEFORE: label "TR", flow ok=true, clicks=1, moves=3, wall=853ms of 700ms budget
+          reason: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: moved, read back within 1 px, ptrN 2 -> 3; the clicked element matched clickTag, clickTestId and trimmed clickText; href transitioned to "http://127.0.0.1/patients/1"
+  AFTER : label "TR", flow ok=false, clicks=0, moves=3, wall=700ms of 700ms budget
+          reason: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: the target deadline expired
+  PASS  DEFECT REPRODUCED on the shipped copy: a SECOND budget let the flow click after label discovery already spent the first
+  PASS  DEFECT REPRODUCED on the shipped copy: the (d) half can spend MORE than one target budget :: 853ms > 700ms — 30 s + 30 s = 60 s per target, as shipped
+  PASS  one budget after: the row ends at the deadline with no click
+  PASS  wall clock bounded by the one budget :: 700ms <= 850ms
+  PASS  label discovery still returns the tag when it arrives in time
+
+== O2: does the deadline-kill branch fire for a hung command? ==
+  ORIGINAL: flow ok=false, clicks=0, reason is PREFIXED (contains the target deadline expired: true), deadline.expired=true, tracked child killed=false, untracked child survived=true
+          reason: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: the target deadline expired
+  PATCHED : flow ok=false, clicks=0, reason is PREFIXED (contains the target deadline expired: true), deadline.expired=true, tracked child killed=true, untracked child survived=true
+          reason: bootstrap 2: moved, read back within 1 px, ptrN 1 -> 2; the target warp: the target deadline expired
+  ORIGINAL: flow ok=false, clicks=0, reason is EXACT, deadline.expired=true, tracked child killed=true, untracked child survived=true
+          reason: the target deadline expired
+  PASS  DEFECT REPRODUCED on the shipped copy: the cleanup branch is inert for a PREFIXED reason
+  PASS  after: the tracked hung command is killed by pid immediately
+  PASS  after: an untracked/foreign process is never killed
+  PASS  after: no click, and the deadline really is expired at cleanup
+  PASS  CONTROL: the branch is NOT dead code -- on the shipped copy an EXACT DEADLINE_EXPIRED (hung geometry) does fire the kill, so only the string match is wrong
+
+ALL PASS
+
+probe exit: 0 (see the ALL PASS line above)
+
+## scale honesty: the probe runs the SAME code paths at 1/43 scale.
+##   700 ms stands in for TARGET_BUDGET_MS = 30000; 250 ms is the real OBSERVATION_POLL_MS;
+##   200 ms per move stands in for measured xdotool latency (never measured here: no display).
+##   What is proved is WHICH DEADLINE OBJECT GOVERNS each await and the click, not absolute timing.
+
+## REVISION 1 (self-caught). The first run hung the flow's THIRD move under a 400 ms budget,
+## which the deadline reached during the SECOND bootstrap move: the reason was 'bootstrap 2: the
+## target deadline expired', an early return at :1684, not the :1712 prefix O2 is about. The
+## branch is inert either way, but the label overstated it. The O2 scenario now uses a 900 ms
+## budget and a 20 ms move latency so the flow reaches and hangs on the TARGET WARP, and the
+## reason is the genuine :1712 prefix ('bootstrap 2: moved, ...; the target warp: the target
+## deadline expired').
+
+## REVISION 2 (from the independent review, item 8). A CONTROL was added: an EXACT
+## DEADLINE_EXPIRED (hung geometry) DOES fire the kill on the shipped copy, so the branch is
+## demonstrably reachable and only the string comparison is wrong. Non-vacuity therefore holds
+## in both directions: the defect reproduces, the control passes, and both are corrected.

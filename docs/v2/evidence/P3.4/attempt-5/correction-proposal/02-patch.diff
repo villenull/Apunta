@@ -1,0 +1,116 @@
+--- a/scripts/v2/tauri-security.test.mjs	(b19e59f)
++++ b/scripts/v2/tauri-security.test.mjs	(+ the proposed correction)
+@@ -1744,15 +1744,29 @@
+   return matches[0].t;
+ }
+ 
+-/** Waits for the frame to carry exactly one rectangle for `label`, or null on timeout. */
+-async function waitForLabel(stderrSource, label, timeoutMs) {
+-  const deadline = Date.now() + timeoutMs;
+-  for (;;) {
+-    const tag = tagForLabel(stderrSource, label);
+-    if (tag !== null) return tag;
+-    if (Date.now() >= deadline) return null;
+-    await sleep(250);
+-  }
++/**
++ * Waits for the frame to carry exactly one rectangle for `label`, bounded by the
++ * SAME immutable target deadline the flow then spends: label discovery IS the
++ * selection step, so §E's one deadline covers it too. There is no second 30 s
++ * budget in front of the flow and no window is widened. This is the existing
++ * shared `pollObservation` at the same 250 ms `OBSERVATION_POLL_MS` step through
++ * the injected `schedule` — no phase timer, no second timer. A label that is not
++ * unique yet is "not yet", never a failure; only the deadline ends the wait.
++ */
++async function waitForLabel(stderrSource, label, deadline, clock, schedule) {
++  const polled = await pollObservation({
++    deadline,
++    clock,
++    schedule,
++    currentFact: () => frameFrom(stderrSource),
++    classify: () =>
++      tagForLabel(stderrSource, label) === null ? { ok: false, terminal: false } : { ok: true },
++  });
++  if (!polled.ok) return { ok: false, reason: polled.reason };
++  const tag = tagForLabel(stderrSource, label);
++  if (tag === null)
++    return { ok: false, reason: `no unique rectangle carries the label ${JSON.stringify(label)}` };
++  return { ok: true, tag };
+ }
+ 
+ /**
+@@ -1802,7 +1816,12 @@
+  */
+ async function runFlowGuarded(args) {
+   const result = await runFlow(args);
+-  if (!result.ok && result.reason === DEADLINE_EXPIRED) await killActiveCommands();
++  // The deadline's OWN state, never the reason string: `runFlow` prefixes the
++  // click path's reason (`...; the target deadline expired`), so the equality
++  // test against DEADLINE_EXPIRED could never match it and this branch was
++  // inert. `killActiveCommands` still stops only the children THIS harness
++  // started, by their own pid — never `pkill`, never a foreign process.
++  if (!result.ok && args.deadline.expired(args.clock.now())) await killActiveCommands();
+   return result;
+ }
+ 
+@@ -2109,22 +2128,26 @@
+   const ops = makeOps(windowId, appPid, stderrSource);
+   const clock = createRealClock();
+ 
+-  const patientTag = await waitForLabel(stderrSource, PATIENT_LABEL, 30_000);
+-  if (patientTag === null) {
++  // §E: the deadline is taken ONCE, before the first dispatch, and label
++  // discovery is selection, so it shares this one budget — the SAME object goes
++  // to the flow. No second 30 s window, nothing widened.
++  const patientDeadline = createTargetDeadline(clock.now());
++  const patientTag = await waitForLabel(stderrSource, PATIENT_LABEL, patientDeadline, clock, realSchedule);
++  if (!patientTag.ok) {
+     check(
+       `(d) handler: the ${JSON.stringify(PATIENT_LABEL)} row was clicked and landed`,
+       false,
+-      `the hook published no unique rectangle carrying the label ${JSON.stringify(PATIENT_LABEL)}; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}`,
++      `the hook published no unique rectangle carrying the label ${JSON.stringify(PATIENT_LABEL)}; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}; ${patientTag.reason}`,
+     );
+     return;
+   }
+ 
+   const patient = await runFlowGuarded({
+-    deadline: createTargetDeadline(clock.now()),
++    deadline: patientDeadline,
+     clock,
+     schedule: realSchedule,
+     frame: frameFrom(stderrSource),
+-    wanted: { label: PATIENT_LABEL, tag: patientTag },
++    wanted: { label: PATIENT_LABEL, tag: patientTag.tag },
+     expected: { kind: 'patient-href' },
+     ops,
+   });
+@@ -2137,22 +2160,23 @@
+   )
+     return;
+ 
+-  const noteTag = await waitForLabel(stderrSource, NOTE_LABEL, 30_000);
+-  if (noteTag === null) {
++  const noteDeadline = createTargetDeadline(clock.now());
++  const noteTag = await waitForLabel(stderrSource, NOTE_LABEL, noteDeadline, clock, realSchedule);
++  if (!noteTag.ok) {
+     check(
+       `(d) handler: the ${JSON.stringify(NOTE_LABEL)} row was clicked and landed`,
+       false,
+-      `the hook published no unique rectangle carrying the label ${JSON.stringify(NOTE_LABEL)} after the patient opened; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}`,
++      `the hook published no unique rectangle carrying the label ${JSON.stringify(NOTE_LABEL)} after the patient opened; the frame is ${JSON.stringify(frameFrom(stderrSource).reason ?? '(ok)')}; ${noteTag.reason}`,
+     );
+     return;
+   }
+ 
+   const note = await runFlowGuarded({
+-    deadline: createTargetDeadline(clock.now()),
++    deadline: noteDeadline,
+     clock,
+     schedule: realSchedule,
+     frame: frameFrom(stderrSource),
+-    wanted: { label: NOTE_LABEL, tag: noteTag },
++    wanted: { label: NOTE_LABEL, tag: noteTag.tag },
+     expected: { kind: 'script-text' },
+     ops,
+   });

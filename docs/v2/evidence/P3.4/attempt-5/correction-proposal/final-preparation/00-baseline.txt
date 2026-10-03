@@ -1,0 +1,85 @@
+# 00 — baseline: what was true before this pass, and what this pass touched
+
+pinned node: v24.19.0
+date (UTC): 2026-10-03T07:20:00Z
+
+## 1. git state
+
+```
+$ git log --oneline -3
+8d4fa54 Record bounded correction evidence preparation
+9f3acf5 Record P3.4 code review and hold separate deadline wait
+8269e7a Track final P3.4 code review and preserve prior acceptance evidence
+
+$ git status --short
+?? docs/v2/evidence/P3.4/attempt-5/correction-proposal/
+?? docs/v2/state/P3.4-PRE-RUNTIME-CORRECTION.md
+?? docs/v2/state/reviews/P3.4-correction.md
+
+```
+
+## 2. the shipped source is untouched
+
+```
+$ git show b19e59f:scripts/v2/tauri-security.test.mjs | sha256sum
+fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672  (from git)
+$ sha256sum scripts/v2/tauri-security.test.mjs
+fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672  scripts/v2/tauri-security.test.mjs
+$ git diff --stat b19e59f HEAD -- scripts/v2/tauri-security.test.mjs   (empty = unchanged)
+$ git diff --stat -- scripts/v2/tauri-security.test.mjs                 (empty = worktree clean)
+```
+
+## 3. hashes of everything in the correction-proposal tree
+
+```
+fc53136c6506d6e08029d0c0d154639d64e77d22227fcb2c755ea3811eee7f4e  docs/v2/evidence/P3.4/attempt-5/correction-proposal/02-patch.diff
+df08c80b022e4a1b92c60646dd64b5ffbcf8cd3af6bc9a9ef78e0dbd71650308  docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+d9520db05edc3729609d05c0008c1fbc90b692b4e201ecae243a260868dfd526  docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/07-probe-output.txt
+```
+
+`02-patch.diff` and `review/07-probe-output.txt` are **historical bytes** and were not
+opened for writing by this pass. `review/probe.mjs` (the second hash) is the one file in
+that tree this pass changed; that hash is its post-change state.
+
+## 4. scratch, and proof that it is ignored
+
+```
+$ git check-ignore -v build/p34-correction-final-prep
+.gitignore:55:build/	build/p34-correction-final-prep
+$ ls build/p34-correction-final-prep
+after.2.err after.2.out after.2.out.norm after.3.err after.3.out after.3.out.norm after.err after.out after.out.norm before.2.err before.2.out before.2.out.norm before.3.err before.3.out before.3.out.norm before.err before.out before.out.norm patched-proof.mjs pretty-after.mjs pretty-before.mjs probe-after.mjs probe-before.mjs shipped-proof.mjs 
+```
+
+The two proof modules in that scratch dir are byte-identical copies of the
+reviewer's own, which are themselves what `review/07-probe-output.txt` was produced
+against:
+
+```
+5a5272c5fc6358f6ff45cfd86a8245fdc265f321d5e222da327c55146795ee55  build/p34-correction-ir/shipped-proof.mjs
+145484f199bb32684d1741a99f1d021cfbedb735c9167e2986309af5004abe30  build/p34-correction-ir/patched-proof.mjs
+```
+
+## 5. writes made by this pass — the complete list
+
+```
+modified  docs/v2/state/P3.4-PRE-RUNTIME-CORRECTION.md
+modified  docs/v2/evidence/P3.4/attempt-5/correction-proposal/review/probe.mjs
+new       docs/v2/evidence/P3.4/attempt-5/correction-proposal/final-preparation/**
+scratch   build/p34-correction-final-prep/**   (gitignored)
+```
+
+### A note on HEAD, recorded because it moved mid-pass
+
+`git log` above shows `8d4fa54 "Record bounded correction evidence preparation"` at the
+head. That commit landed from another session **during** this pass and touches only
+`docs/v2/ORCHESTRATION-LOG.md` and `docs/v2/state/NEXT-SESSION.md`
+(`git show --stat 8d4fa54`: 2 files, +30). It captured **none** of this pass's files —
+all three paths above are still untracked, which is the correct state, since this pass was
+instructed not to stage or commit. `b19e59f` remains the implementation candidate and the
+source hash is unchanged.
+
+Nothing staged. Nothing committed. Nothing pushed. No source file, card, dispatch,
+checkpoint, contract, threshold, tool or acceptance row was touched, and no app,
+build, server, database, model, audio, input, display, download, install or network
+was used; port 7717 was never contacted and the live data folder was never opened.
+The only child processes were the probe's own local `node -e` sleepers.
