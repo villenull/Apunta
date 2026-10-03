@@ -13,7 +13,7 @@ parses, and `git`/`ss`/`pgrep` inspection.
 | --- | --- |
 | `state-snapshot.txt` | HEAD, tree cleanliness, config key, scanner/voice presence, checkpoint shape, port/build-lease state. |
 | `synthetic-checks.txt` | Harness and sandbox `node --check`; the V5 provenance program extracted from the card and unescaped then parsed; stale-dispatch vs current-card markers; checkpoint provenance counts; AM-190 artifact presence. |
-| `v5-provenance.unescaped.mjs` | The V5 `node -e` program as it executes after Markdown unescaping (`\|`→`\|`); parses clean. Not run against real state. |
+| `v5-provenance.unescaped.txt` | The V5 `node -e` program as it executes after Markdown unescaping (`\|`→`\|`); parses clean. Not run against real state. |
 | `commands.md` | Every read-only command used, with exit status. |
 
 ## Findings at a glance
@@ -35,3 +35,8 @@ parses, and `git`/`ss`/`pgrep` inspection.
   regenerate at stable current HEAD with `--attempt 3 --port 7837`.
 - Real holds: P3.4 exclusive build lease; U-2 (`GSTREAMER_HELPERS_DIR`
   inheritance) unobserved; dry plugin gate must PASS before V3/V4.
+
+The extracted command is a verbatim textual witness, not a repository module.
+It is stored as .txt to preserve the card's CommonJS/console bytes without
+introducing a linted module. Syntax checking uses an ignored .mjs copy as the
+historical commands table records; no command, assertion or fixture is changed.

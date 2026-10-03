@@ -13,3 +13,9 @@ Dispatch regenerated at runtime anchor888bcc4/attempt3/port7837. Original source
 base8783181 and CLEAR candidate7e16513 remain unchanged as implementation history.
 No runtime row or resource reservation executed by readiness preparation. P3.4
 runtime worker d353b075 owns the build lease until confirmed cleanup/release.
+
+Root found the raw node-e command witness had been saved as a repository .mjs
+module, causing nine global lint errors (CommonJS require and console output).
+Renamed only the durable witness to .txt with byte identity verified; README path
+updated. The ignored syntax-check copy remains .mjs. No lint rule suppression,
+proof rewrite or card command change; literal command evidence remains exact.

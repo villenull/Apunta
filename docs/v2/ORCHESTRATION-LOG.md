@@ -2534,3 +2534,14 @@ Checkpointexclusivewrite will be delegated tofinalruntimeworker insideMayedit,
 root suspended untilreturn, exactcaptureobjects/anchors appendedperrowbeforeV5;
 acceptance/provenance unchanged. P34d353b075 confirmedRUNNING ateventboundary,
 solebuildleaseholder. No P35runtime/port/buildlease reserved untilrelease.
+
+### 2026-10-03 — final row lint failure preserved; raw witness extension corrected
+
+Readiness extraction was accidentally shipped as .mjs despite being verbatim
+node-e text, causing9 lint errors. Root renamed witness to.txt byte-identically
+(sha256ee3d4d07), READMEupdated; no command/proof/assertion/rule change. Root
+then globaleslintfound4 pre-existingerrors in saved P34independentintegrationprobe.
+Runtimeworkerd353b075 reportsV4alreadyFAILonce, no rerun; continuesfinalevidence.
+This failure is retained, no sixthattempt. Separatebounded evidence-only lint
+cleanup dispatched forfuturework, exclusive oldprobe+newrepair evidence, no
+runtime/sourcefiles or tests changed. Independentreview will followcleanup.
