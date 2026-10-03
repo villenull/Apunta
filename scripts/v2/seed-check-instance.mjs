@@ -89,16 +89,21 @@ async function seed() {
 
   const created = [];
   if (formats.length === 0) {
-    const format = await post('/api/formats', {
-      name: 'Check instance format',
-      sections: SECTIONS,
-      instructions: INSTRUCTIONS,
-    });
+    // The body's own object, not the Response: the id and the name both live in
+    // the JSON the POST returned, so the request has to be read before either
+    // can be believed.
+    const format = await (
+      await post('/api/formats', {
+        name: 'Check instance format',
+        sections: SECTIONS,
+        instructions: INSTRUCTIONS,
+      })
+    ).json();
     if (!format?.id) refuse('That Apunta took the format and returned no id for it.');
     created.push(`format ${format.name}`);
   }
   if (patients.length === 0) {
-    const patient = await post('/api/patients', { name: PATIENT });
+    const patient = await (await post('/api/patients', { name: PATIENT })).json();
     if (!patient?.id) refuse('That Apunta took the patient and returned no id for it.');
     created.push(`patient ${patient.name}`);
   }

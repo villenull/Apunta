@@ -68,10 +68,16 @@ const TREE_BY_LOCALE = { en: 'her-format', 'es-MX': 'her-format-es' };
  *
  * Every pattern is a `source` and a `flags` string, never a re-serialised
  * `/…/flags` literal: the strings a pin file records have to be byte-present in
- * this file, and a slash-delimited rewrite is byte-present only by luck. Each
- * entry below is the literal as it appears in the rule named beside it, and
- * `scripts/check-note-format.test.mjs` asserts exactly that — so the dump and
- * the rules cannot drift apart without the suite going red.
+ * this file, and a slash-delimited rewrite is byte-present only by luck.
+ *
+ * These literals are a second copy of rules that execute further down
+ * (`splitSections`, `exampleSentences`, `flagsFor`), and Must-not-edit forbids
+ * single-sourcing them. A copy can drift, so the guard is
+ * `scripts/check-note-format.test.mjs`: it takes the executing node out of this
+ * file's syntax tree and compares it against what the dump reports, field by
+ * field, so an edit to either side is red. A grep for the literal anywhere in
+ * this file would not do that — it is satisfied by this block, which is the
+ * copy it is supposed to police.
  */
 const PINNED_SECTIONS = {
   en: [
@@ -197,10 +203,13 @@ for (let index = 0; index < argv.length; index += 1) {
       index += 1;
       continue;
     }
-    for (let next = index + 1; next < argv.length && !argv[next].startsWith('-'); next += 1)
+    let last = index;
+    for (let next = index + 1; next < argv.length && !argv[next].startsWith('-'); next += 1) {
       only.add(argv[next]);
+      last = next;
+    }
     if (only.size === 0) refuseUsage(`${arg} needs a value`, arg);
-    index += 1;
+    index = last;
     continue;
   }
   if (arg.startsWith('-')) refuseUsage(`unknown argument ${arg}`, arg);
