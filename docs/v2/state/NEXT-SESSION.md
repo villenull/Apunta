@@ -1,3 +1,20 @@
+## English readiness qualification; native security run active
+
+6307e8a2 static author finished/archived; report preserved as analysis, not
+adopted wholesale. Its P3.4 IPC/owner gate advice is stale: ACL already PASS,
+AM-195 attempt6 active. Limited path stat cannot prove model absent everywhere;
+routine ollama-list requires no owner action. P3.5 approved and Stop8 re-pin CLEAR.
+Fresh 4e7416af-b0fb-4f98-8a27-23f7a6e17086 confirmed RUNNING callback, owns new
+ENGLISH-EOD-model-readiness-correction report/evidence only. Read-only host tags
+allowed, no inference/download/liveDB. Prepare exact pinned English installer
+acquisition authority if HS-3 requires it; no Spanish hold lifted.
+
+a2c4bab2-7d8a-443e-8099-97551ccf280d confirmed RUNNING callback, owns new
+P3.6-dispatch-preparation report/evidence only. Static native integration brief;
+no build or dependency bypass. c88d6043 still security runtime/sole checkpoint
+and build/app/7835 lease holder. Root cannot touch that checkpoint until return.
+Completed capture approval committed2a0f977, eligible owner-authorized push.
+
 ## P3.5 APPROVED; security attempt6 running; integration preparation parallel
 
 f761585c final capture review CLEAR41/41 and archived successfully. Root verified

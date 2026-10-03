@@ -2838,3 +2838,12 @@ P3.4 dispatch0285e4f, c88d6043 confirmedrunning with own build/app/7835 lease an
 SOLEP34checkpointwriter. No runtime retry/no7. English readiness6307e8a2 active,
 separate staticP36implementationbrief dispatched; P36waitsP34approval. All active
 scopewriters disjoint; onlycompletedsource/reviews/state eligiblepush.
+
+## 2026-10-03 — English model readiness correction dispatched
+
+6307e8a2 complete/archived, static report preserved but staleIPC/gates and broad
+absence conclusion not adopted. Fresh4e7416af runs bounded corrective read-only
+model/tag readiness plus exact installer acquisition preparation; owner not
+asked to run routine commands. a2c4bab2 prepares P36nativebrief separately,
+c88d6043 owns only runtime/build/app/7835 and P34checkpoint. 2a0f977 records
+P35APPROVEDAM197 after finalCLEAR, old FAILs retained. No modelinference/pull yet.
