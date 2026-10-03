@@ -1,3 +1,25 @@
+## Both bounded owner exceptions ready and pending; no workers retained
+
+P3.5 completion review 2ff14a21 finished READY, archived successfully. e7ace67
+saves review plus required Option2 wording remedy: decline parks BLOCKED, no
+approval/dependency release; only transcription error/UI clauses defer to S4a.2.
+Independent 49/49 proof verifies exact seven-key isolation, real-default refusal,
+never-started silence arm, one real record/anchor to three at attempt4, histories
+preserved. V5 actual checkpoint FAIL and synthetic completed shape PASS retained.
+
+Owner questions submitted and pending:
+1. P3.4 exact four-patch instrument/tool/fixture package, independent shipping
+   source review then one attempt6 V0–V4 once; no7/reset/retry/waiver.
+2. P3.5 §4 silence command once and ONE read-only V5 reevaluation within attempt4;
+   append one real record/anchor only, no successful capture/tone/build repeat,
+   no5/reset/source/card edit/acceptance relaxation. AM-194 still prohibits retry
+   until explicit reply. Prior BLOCKED/FAIL history remains recorded.
+
+All owned workers complete and archived; no build/audio/app/port reservation.
+No further ready runtime/integration dispatch before these protected decisions.
+P3.6 dependency gates unchanged. EOD scope and broader push questions also
+pending; local HEAD includes source/checkpoints so remote push remains withheld.
+
 ## Security instrument owner decision pending; silence review still running
 
 20158e9c independently CLEAR and archived successfully. 32a12a5 saves final
