@@ -2626,3 +2626,9 @@ First repairs client-sentinel package IR1–3/IR4; second adds audit qualificati
 without rewriting original evidence. No attempt 4, attempt 6 or source grant.
 Next: verify and archive returns, integrate coherent artifacts, fresh independent
 package review, then one concrete owner decision if CLEAR.
+
+Push withheld: automatic approval review rejected the combined commit/push
+because remote trust/ownership was not established. Local commit b3e5cfd then
+succeeded separately. Origin reads https://github.com/villenull/Apunta; no push
+workaround attempted. Root requested explicit owner push authorization through
+an asynchronous question. Artifact repairs continue; no runtime authority change.
