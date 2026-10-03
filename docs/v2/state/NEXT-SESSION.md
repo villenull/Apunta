@@ -1,3 +1,22 @@
+## EOD completion packages and independent security review running
+
+4a2bfc67-8032-40ed-9fca-1e0176599368 (LongCat free high) confirmed RUNNING
+with callback; own new P3.4-eod-instrument-ir report/evidence only. Reviews the
+protected nativeidentity correction/source/tool patches and flags stale redtool
+fixture rather than waiving it. Actual P3.4 source untouched, no6authorized.
+
+f3125615-bec2-4913-83fa-5a36f8034481 (Space Bunny free medium) confirmed
+RUNNING with callback; owns new P3.5-SILENCE-COMPLETION-PROPOSAL.md/evidence.
+Prepares unstarted silence arm once + V5 one reevaluation within4 as explicit
+ownerexception; no successfulcapture/tone rerun/rebuild/sourcepatch/fifth. Synthetic
+isolation proof only. Independent review then owner ask, no grant yet.
+
+17f00ebf still P3.6 static coordinator-reference re-pin author, separate card
+prose only. No host resource holder; final4 cleanup released build/audio/app/ports.
+Root owns checkpoint again. Initial history length assertion failed on two extra
+cleanup strings, follow-up object-aware check confirms +2objects/+2anchors with
+all oldprefixes/priorcriteria unchanged. No history/provenance fabrication.
+
 ## Final attempt4 returned; capture/tone PASS, silence never started
 
 1ca9d0e6 completed and archived. V0/V1/V2/plugin gate PASS, V3 35/35 PASS,

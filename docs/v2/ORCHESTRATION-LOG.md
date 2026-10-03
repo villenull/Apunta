@@ -2757,3 +2757,9 @@ V4BLOCKED2 andV5provenanceFAIL1preserved. Rootverified priorrecords/anchors/
 criteriaunchanged,+2newrecords, counter4. Cleanupconfirmedoutside; ownership/
 leasesreleasedroot. No5/retry. Prepareboundedneverstartedtailcompletionexception.
 4b9525c7 P34proposalcomplete/archived, independentreviewnext, no sourcegrant.
+
+History check qualification: first strict check expected sideEffectsDone length+2
+and failed because the runtime appended two cleanup strings as well as two capture
+objects. Follow-up object-aware check confirms original prefixes/priorcriteria
+unchanged, +2 capture objects/+2 anchors plus two cleanup strings; attempt4fixed.
+No history or provenance defect. Root read finalV3/V4 and outsidecleanup logs.
