@@ -1,3 +1,15 @@
+## Security instrument owner decision pending; silence review still running
+
+20158e9c independently CLEAR and archived successfully. 32a12a5 saves final
+review and exact cosmetic hash/authority wording remedies. Four prepared patches
+replay 80/80 observation tests and 29/29 tool tests; no shipping change applied.
+Owner question submitted: exact four patches, independent shipping-source review,
+one P3.4 attempt6 V0–V4 once/no7/reset/retry/waiver. AM-189 still governs until
+explicit reply; no grant inferred. Silence reviewer 2ff14a21 confirmed RUNNING
+at latest event boundary, callback armed; own new ir artifacts only.
+No resource lease. Additional useful runtime/integration work waits on protected
+authority and the silence review; no duplicate preparation worker needed.
+
 ## Security fixture repair complete; fresh independent review running
 
 3f3ce4a1 completed and archived successfully; proposal-only repair committed

@@ -2787,3 +2787,12 @@ repair: instrument bytes unchanged, compatible committed fixtures 80/80 and
 tool guard 29/29. Fresh independent reviewer 20158e9c confirmed running with
 callback and exclusive new ir2 outputs. Silence reviewer 2ff14a21 remains
 running at this event boundary. No protected changes or runtime authorized.
+
+## 2026-10-03 — security instrument owner-ready and decision submitted
+
+20158e9c independently CLEAR, archived successfully. 32a12a5 retains complete
+review plus exact cosmetic remedies. Four-patch replay 80/80 and 29/29 green;
+instrument safety prior32/32 carried by identical hash, author22/22 rerun.
+Async owner question submitted for exact package plus one attempt6, independent
+shipping-source review then V0–V4 once, no7/reset/retry/waiver. No grant assumed.
+2ff14a21 silence review remains running with callback. Resources unheld.
