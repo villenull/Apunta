@@ -1,0 +1,68 @@
+node 24.19.0
+PASS repaired step-0 extracted from repair2/verify.mjs
+PASS prepared step-0 extracted from repair/verify.mjs
+PASS prepared command was fail-open (`command -v patchelf || echo`)
+PASS repaired command asserts patchelf with exit 1
+PASS repaired command asserts each element with exit 1
+PASS repaired command asserts scanner with test -x
+PASS host scanner literal occurs exactly once in repaired command
+PASS host scanner literal occurs exactly once in prepared command
+PASS repair2/verify.mjs equals repair/verify.mjs outside the header comment and step-0 snippet
+PASS all eight branches are exercised — 8
+--- healthy: repaired exit=0, prepared exit=0 ---
+PASS [healthy] repaired exits 0 — exit=0
+PASS [healthy] repaired prints the PASS marker
+PASS [healthy] exactly four gst-inspect-1.0 calls, one per element, in order — appsink autoaudiosrc alsasrc pulsesrc
+PASS [healthy] prepared also exits 0 on the healthy branch
+--- patchelf-absent: repaired exit=1, prepared exit=0 ---
+PASS [patchelf-absent] repaired exits non-zero — exit=1
+PASS [patchelf-absent] the stopping failure names the missing prerequisite — FAIL: patchelf absent
+PASS [patchelf-absent] prepared printed FAIL: patchelf absent, ran on, and exited 0 (the defect)
+--- appsink-absent: repaired exit=1, prepared exit=0 ---
+PASS [appsink-absent] repaired exits non-zero — exit=1
+PASS [appsink-absent] the stopping failure names the missing prerequisite — FAIL: appsink not visible
+PASS [appsink-absent] prepared printed MISSING appsink, ran on, and exited 0 (the defect)
+--- autoaudiosrc-absent: repaired exit=1, prepared exit=0 ---
+PASS [autoaudiosrc-absent] repaired exits non-zero — exit=1
+PASS [autoaudiosrc-absent] the stopping failure names the missing prerequisite — FAIL: autoaudiosrc not visible
+PASS [autoaudiosrc-absent] prepared printed MISSING autoaudiosrc, ran on, and exited 0 (the defect)
+--- alsasrc-absent: repaired exit=1, prepared exit=0 ---
+PASS [alsasrc-absent] repaired exits non-zero — exit=1
+PASS [alsasrc-absent] the stopping failure names the missing prerequisite — FAIL: alsasrc not visible
+PASS [alsasrc-absent] prepared printed MISSING alsasrc, ran on, and exited 0 (the defect)
+--- pulsesrc-absent: repaired exit=1, prepared exit=0 ---
+PASS [pulsesrc-absent] repaired exits non-zero — exit=1
+PASS [pulsesrc-absent] the stopping failure names the missing prerequisite — FAIL: pulsesrc not visible
+PASS [pulsesrc-absent] prepared printed MISSING pulsesrc, ran on, and exited 0 (the defect)
+--- scanner-absent: repaired exit=1, prepared exit=1 ---
+PASS [scanner-absent] repaired exits non-zero — exit=1
+PASS [scanner-absent] the stopping failure names the missing prerequisite — FAIL: scanner missing or not executable
+PASS [scanner-absent] prepared ran all four elements before its last test -f failed
+--- scanner-not-executable: repaired exit=1, prepared exit=0 ---
+PASS [scanner-not-executable] repaired exits non-zero — exit=1
+PASS [scanner-not-executable] the stopping failure names the missing prerequisite — FAIL: scanner missing or not executable
+PASS [scanner-not-executable] prepared exits 0 (test -f read a non-executable scanner as present) — exit=0
+PASS proposal is within 250 lines — 250
+PASS proposal holds exactly two recommended choices
+PASS proposal step 0 is found before step 1
+PASS step 0 says the read is fail-closed
+PASS step 0 says it stops the run
+PASS step 0 keeps the patchelf assertion
+PASS step 0 keeps four separate element reads
+PASS step 0 keeps the scanner assertion
+PASS step 0 keeps the expected-now failure
+PASS step 0 requires the same read re-run after the install
+PASS step 0 requires exit 0 (PASS) before step 1
+PASS step 0 changes no duration or threshold
+PASS A03 names gst-plugins-base and gst-plugins-good and patchelf
+PASS A03 stays this-Arch-host-only
+PASS A03 keeps Ubuntu archive via apt
+PASS A03 replacement cell is found
+PASS A03 replacement cell has no INSTALL.md/archlinux.org citation
+PASS A10 names all nine observed query keys
+PASS A10 does not admit A07's tenth name
+PASS A10 names the redirect host
+PASS A10 claims no redownload
+PASS no owner question is raised (still preparation only)
+PASS proposal points at the repair2 evidence
+ALL CHECKS PASS

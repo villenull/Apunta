@@ -2234,3 +2234,18 @@ No owner environment choices asked until this review returns; no install/build
 or capture authority. P3.5 source CLEAR, runtime BLOCKED, no attempt4.
 Evidence replay repair49f37328 continues; P3.4 owner choices still PENDING.
 
+
+## P3.5 environment independently CLEAR; two owner decisions pending
+
+IR3 independently CLEAR candidate408e1bb: 58 review checks PASS, all eight
+preflight branches reproduced hermetically; author51checks/rootcheck PASS.
+Reviewer4773623b archived. Two owner questions asked asynchronously: grouped
+base-or-test config media bundling/scanner setup/narrow A03 three-package
+pkexec grant plus V0 clarification; separate exact nine A10 query names/host
+future admission (prior violation remains, no redownload). Both OUTSTANDING,
+no selection inferred from silence. No source/config/card/manifest patch,
+install/build/capture authorized yet. Source independently CLEAR; runtime
+BLOCKED and original V3/V4/V5/provenance retained; no attempt4 exists.
+P3.4 two owner choices remain PENDING. Output replay repair49f37328 still
+running on separate scope, callback; no build lease or ports reserved.
+
