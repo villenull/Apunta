@@ -8,8 +8,8 @@
   "baseCommit": "e46bad4",
   "attempt": 4,
   "status": "BLOCKED",
-  "lastCompletedStep": "IR6 confirmed all IR5 repairs, but four model defects remain. Coordinator reproduced fail-open geometry. Reviewer archived, fresh bounded async-model repair dispatched; no runtime amendment adopted.",
-  "nextAllowedAction": "await-ir6-model-repair-then-fresh-independent-review",
+  "lastCompletedStep": "IR6 model repair returned with deadline observation polls and measured native solve. Root pinned73/73 model and14/14 tooling PASS; author archived. Independent conformance review next, no runtime authority.",
+  "nextAllowedAction": "independent-review-ir6-repaired-observation-model",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -113,5 +113,5 @@
     "next": "Concrete owner assertion/hook/budget proposal, independent review, then owner decision."
   },
   "proposalReviewWorkerId": null,
-  "proposalRepairWorkerId": "9ebcf35f-3c63-45a0-95bf-c60dba107cf2"
+  "proposalRepairWorkerId": null
 }
