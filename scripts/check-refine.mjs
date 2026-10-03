@@ -6,9 +6,19 @@
  *
  * Two fixture sets run: the SOAP-shaped scenarios, and the owner's own progress
  * format shaped after her 2026-09-23 hands-on pass.
+ *
+ *   npm run check:refine
+ *   npm run check:refine -- --only tone-request shorten-keeps-facts
+ *   node scripts/check-refine.mjs --print-rules        # the rule surface, no server
+ *   node scripts/check-refine.mjs --self-test          # the controls, no server
+ *   node scripts/check-refine.mjs --expect-scenarios 16
+ *
+ * --print-rules and --self-test make no request and import nothing built, so
+ * they run anywhere; --expect-scenarios N and --expect-fixtures N assert what
+ * the run actually did, after it did it.
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +32,279 @@ function checkPort(url) {
     return parsed.port === '' ? null : Number(parsed.port);
   } catch {
     return null;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The command line.
+ *
+ *   --locale <en|es-MX>   --print-rules   --self-test   --only <id>
+ *   --expect-scenarios N  --expect-fixtures N
+ *
+ * The grammar is the same one in both check scripts; only what each flag counts
+ * differs. Exit codes: 0 a complete run (or a rules dump, or a self-test whose
+ * controls all fired), 2 a usage or pre-flight refusal, 3 a count assertion the
+ * run did not meet, 4 a control that did not fire, 5 a flag that was understood
+ * but names something that is not here, 6 a set that could not be enumerated.
+ *
+ * This block sits above the built-server import and above every request, so
+ * --print-rules and --self-test need no build, no server and no model. With no
+ * flag at all it consumes nothing, computes no locale and refuses nothing, and
+ * the pre-flight guards below run exactly as they always have.
+ * ------------------------------------------------------------------------- */
+
+const LOCALES = ['en', 'es-MX'];
+const BOOLEAN_FLAGS = ['--print-rules', '--self-test'];
+const VALUE_FLAGS = ['--locale', '--only', '--expect-scenarios', '--expect-fixtures'];
+const DEFAULT_LOCALE = 'en';
+const TREE_BY_LOCALE = { en: 'refine', 'es-MX': 'refine-es' };
+
+/** The fixture files this run reads, in the order it reads them. */
+const FIXTURE_FILES = ['scenarios.json', 'owner-progress.json'];
+
+/**
+ * The rule surface, as `--print-rules` reports it.
+ *
+ * Every pattern is a `source` and a `flags` string, never a re-serialised
+ * `/…/flags` literal: the strings a pin file records have to be byte-present in
+ * this file, and a slash-delimited rewrite is byte-present only by luck. Each
+ * entry below is the literal as it appears in the rule function named beside
+ * it, and `scripts/check-refine.test.mjs` asserts exactly that — so the dump
+ * and the rules cannot drift apart without the suite going red.
+ */
+const PINNED_HEADING = /^([A-Z][A-Za-z ]+):\s?(.*)$/;
+const PINNED_WORD_SPLIT = /[^a-z0-9]+/;
+const PINNED_CLAIM_VERBS = [
+  { kind: 'added', re: /\b(?:added|add|included|include|inserted|insert)\b/i }, // CLAIM_VERBS
+  { kind: 'removed', re: /\b(?:removed|remove|cleared|clear|deleted|delete|took out|take out)\b/i },
+  { kind: 'shortened', re: /\b(?:shortened|shorten|condensed|condense|trimmed|trimmed|tightened)\b/i },
+  { kind: 'expanded', re: /\b(?:expanded|expand|elaborated)\b/i },
+];
+const PINNED_SERVER_OPENINGS = [
+  'Apunta did not change the note', // SERVER_OPENINGS
+  'Apunta held back part of this revision',
+  'Apunta blocked part of this revision',
+  'Apunta kept your other notes out of this revision',
+  'Apunta could not',
+  'Apunta left the note unchanged',
+  'Apunta applied the corrections',
+  'Apunta left',
+];
+
+const patternOf = (expression) => ({ source: expression.source, flags: expression.flags });
+
+/**
+ * Canned input for `--self-test`: pinned in-script, so the self-test needs no
+ * fixture tree, no server, no model and no build. Each control names the rule
+ * it exercises, so a control that stops firing says which rule stopped.
+ */
+const CONTROL_DRAFT = [
+  'Subjective: Client reports sleep is still broken and wakes at three.',
+  'Objective: Alert and engaged throughout, arrived on time.',
+  'Assessment: Sleep has not moved this fortnight.',
+  'Plan: Sleep hygiene review and a shorter wind-down.',
+].join('\n');
+
+const CONTROLS_BY_LOCALE = {
+  en: [
+    {
+      flag: 'sectionsOf: a draft under the English headings parses into those sections',
+      ok: () =>
+        Object.values(sectionsOf(CONTROL_DRAFT, ['Subjective', 'Objective', 'Assessment', 'Plan'])).every(
+          (value) => value.trim() !== '',
+        ),
+    },
+    {
+      flag: 'wordCount: content words only, not headings or punctuation',
+      ok: () => wordCount('reports sleep — is broken!') === 4,
+    },
+    {
+      flag: 'fixtureFilter: the English tree is the two refine fixture files',
+      ok: () => FIXTURE_FILES.length === 2 && FIXTURE_FILES.every((name) => name.endsWith('.json')),
+    },
+  ],
+  'es-MX': [],
+};
+
+/** The sections each fixture file names, read from the tree itself. */
+function sectionsByFixtureFor(tree) {
+  const byFixture = {};
+  for (const file of FIXTURE_FILES) {
+    try {
+      byFixture[file] = JSON.parse(readFileSync(join(root, 'e2e', 'fixtures', tree, file), 'utf8')).sections;
+    } catch {
+      // A tree without that file contributes nothing, and the dump still
+      // prints: --print-rules reports a surface, it does not measure one.
+    }
+  }
+  return byFixture;
+}
+
+function refuseUsage(problem, token) {
+  console.error(`Refusing to run: ${problem}.`);
+  if (token !== undefined) console.error(`  the argument: ${token}`);
+  process.exit(2);
+}
+
+function readCount(flag, value) {
+  if (!/^\d+$/.test(value))
+    refuseUsage(`${flag} needs a whole number of things, and '${value}' is not one`, value);
+  return Number(value);
+}
+
+const argv = process.argv.slice(2);
+const seen = new Set();
+/** `-- --only tone-request shorten-keeps-facts` still means both ids. */
+const only = new Set();
+let locale = null;
+let printRules = false;
+let selfTest = false;
+let expectScenarios = null;
+let expectFixtures = null;
+
+for (let index = 0; index < argv.length; index += 1) {
+  const arg = argv[index];
+  if (BOOLEAN_FLAGS.includes(arg)) {
+    if (seen.has(arg)) refuseUsage(`${arg} was given twice`, arg);
+    seen.add(arg);
+    if (arg === '--print-rules') printRules = true;
+    else selfTest = true;
+    continue;
+  }
+  if (VALUE_FLAGS.includes(arg)) {
+    if (seen.has(arg)) refuseUsage(`${arg} was given twice`, arg);
+    seen.add(arg);
+    const value = argv[index + 1];
+    if (value === undefined || value.startsWith('-')) refuseUsage(`${arg} needs a value`, arg);
+    if (arg === '--locale') {
+      locale = value;
+      index += 1;
+      continue;
+    }
+    if (arg === '--expect-scenarios') {
+      expectScenarios = readCount(arg, value);
+      index += 1;
+      continue;
+    }
+    if (arg === '--expect-fixtures') {
+      expectFixtures = readCount(arg, value);
+      index += 1;
+      continue;
+    }
+    for (let next = index + 1; next < argv.length && !argv[next].startsWith('-'); next += 1)
+      only.add(argv[next]);
+    if (only.size === 0) refuseUsage(`${arg} needs a value`, arg);
+    index += 1;
+    continue;
+  }
+  if (arg.startsWith('-')) refuseUsage(`unknown argument ${arg}`, arg);
+  refuseUsage(`unexpected argument ${arg}`, arg);
+}
+
+// 1. grammar, above.
+// 2. locale, consumed here and never reaching `only`.
+if (locale !== null && !LOCALES.includes(locale))
+  refuseUsage(`--locale does not know '${locale}'; it knows ${LOCALES.join(', ')}`, locale);
+
+// 3. the rules dump: constants only, no request, and 0 whatever the locale.
+if (printRules) {
+  const dumpLocale = locale ?? DEFAULT_LOCALE;
+  writeSync(
+    1,
+    `${JSON.stringify(
+      {
+        script: 'check-refine',
+        locale: dumpLocale,
+        sectionsByFixture: sectionsByFixtureFor(TREE_BY_LOCALE[dumpLocale]),
+        headingPattern: patternOf(PINNED_HEADING),
+        fixtureFilter: [...FIXTURE_FILES],
+        wordCountSplit: patternOf(PINNED_WORD_SPLIT),
+        claimVerbs: PINNED_CLAIM_VERBS.map(({ kind, re }) => ({ kind, ...patternOf(re) })),
+        serverOpenings: [...PINNED_SERVER_OPENINGS],
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  process.exit(0);
+}
+
+// 4. the controls, above tree resolution: a locale with no controls is 5 even
+// when it has no tree either.
+if (selfTest) {
+  const controls = CONTROLS_BY_LOCALE[locale ?? DEFAULT_LOCALE];
+  if (controls.length === 0) {
+    console.error(
+      `--self-test --locale ${locale} has no controls in this tree, and a self-test that asserts nothing is not a passing self-test.`,
+    );
+    process.exit(5);
+  }
+  let missed = 0;
+  for (const control of controls) {
+    let fired;
+    try {
+      fired = control.ok() === true;
+    } catch {
+      fired = false;
+    }
+    writeSync(1, `${fired ? 'ok  ' : 'MISS'} ${control.flag}\n`);
+    if (!fired) missed += 1;
+  }
+  if (missed > 0) {
+    writeSync(1, `${String(missed)} of ${String(controls.length)} control(s) did not fire.\n`);
+    process.exit(4);
+  }
+  writeSync(1, `all ${String(controls.length)} control(s) fired.\n`);
+  process.exit(0);
+}
+
+// 5. the tree the locale names has to exist — but only when a locale was asked
+// for, so that no flag at all leaves the tree question unasked.
+const activeLocale = locale ?? DEFAULT_LOCALE;
+const tree = TREE_BY_LOCALE[activeLocale];
+if (locale !== null && !existsSync(join(root, 'e2e', 'fixtures', tree))) {
+  console.error(
+    `--locale ${locale} names e2e/fixtures/${tree}/, which is not in this tree, so there is nothing here to measure.`,
+  );
+  process.exit(5);
+}
+
+// The counts are of what ran and what was read, so both need the set they count
+// enumerated first. A tree that cannot be enumerated is 6, never 0.
+let enumerated = null;
+function enumerateFixtures() {
+  if (enumerated !== null) return enumerated;
+  const ids = new Set();
+  const files = [];
+  for (const file of FIXTURE_FILES) {
+    const path = join(root, 'e2e', 'fixtures', tree, file);
+    let fixture = null;
+    try {
+      fixture = JSON.parse(readFileSync(path, 'utf8'));
+    } catch (error) {
+      console.error(
+        `The scenarios --expect-scenarios counts cannot be enumerated: ${path} could not be read or parsed (${
+          error instanceof Error ? error.message.split('\n')[0] : String(error)
+        }).`,
+      );
+      process.exit(6);
+    }
+    files.push(file);
+    for (const scenario of fixture.scenarios ?? []) ids.add(scenario.id);
+  }
+  enumerated = { ids, files };
+  return enumerated;
+}
+if (expectScenarios !== null || expectFixtures !== null) enumerateFixtures();
+
+// 6. an unknown --only id is refused whenever --only was passed, with or
+// without --locale, against the ids that tree actually contains.
+if (only.size > 0) {
+  const known = enumerateFixtures().ids;
+  for (const id of only) {
+    if (known.has(id)) continue;
+    console.error(`--only does not name a scenario in ${tree}/: ${id}`);
+    process.exit(2);
   }
 }
 
@@ -58,9 +341,6 @@ function stillHas(note, text) {
   const present = factTokens(note);
   return facts.every((fact) => present.has(fact));
 }
-/** `-- --only tone-request shorten-keeps-facts` runs just those scenarios; the default is all of them. */
-const only = new Set(process.argv.slice(2).filter((arg) => arg !== '--only'));
-
 if (!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(BASE)) {
   console.error(`Refusing to talk to ${BASE}: this only ever speaks to a local Apunta.`);
   process.exit(2);
@@ -220,7 +500,7 @@ let fenced = 0;
 let scoped = 0;
 const summary = [];
 
-for (const file of ['scenarios.json', 'owner-progress.json']) {
+for (const file of FIXTURE_FILES) {
   const fixture = JSON.parse(readFileSync(join(root, 'e2e', 'fixtures', 'refine', file), 'utf8'));
   const names = fixture.sections;
   const asText = (sections) => names.map((name) => `${name}: ${sections[name] ?? ''}`.trim()).join('\n\n');
@@ -446,3 +726,19 @@ console.log(
 );
 console.log('Flags are a prompt to read the turn above, not a verdict.');
 console.log('The notes stay in the database; delete those patients to clear them.');
+
+// The counts are the assertion, and they come after the measurement is on
+// record: --expect-scenarios counts scenarios that RAN, --expect-fixtures counts
+// fixture files read.
+let countMissed = false;
+if (expectScenarios !== null && expectScenarios !== scenarios) {
+  console.error(`--expect-scenarios ${String(expectScenarios)}, but ${String(scenarios)} scenario(s) ran.`);
+  countMissed = true;
+}
+if (expectFixtures !== null && expectFixtures !== enumerateFixtures().files.length) {
+  console.error(
+    `--expect-fixtures ${String(expectFixtures)}, but ${String(enumerateFixtures().files.length)} fixture file(s) were read.`,
+  );
+  countMissed = true;
+}
+if (countMissed) process.exit(3);
