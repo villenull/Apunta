@@ -4,16 +4,16 @@
   "contracts": [
     "C-ISO@1"
   ],
-  "baseCommit": "5fb42a9",
+  "baseCommit": "ea6597011e41fb7b4766918d5fb1d6198257ef0b",
   "attempt": 0,
   "status": "NOT STARTED",
-  "lastCompletedStep": "Round 8 was CLEAR 10/0/0 under AM-141; no implementation has run (attempt 0). P3.8 forwarding hold resolved by AM-180. Continuation audit found V5 command polarity/aggregation defect needing correction and fresh review before dispatch. No new dependency on P3.4 is invented.",
-  "nextAllowedAction": "prepare-V5-command-correction-and-independent-instruction-review; implementation waits for exclusive build lease",
+  "lastCompletedStep": "V5 command-only author completed and archived. Coordinator corrected remaining virtual-source typo references. Repair committed for review, not acceptance; coordinator fake-pactl replay exposes empty/wrong default passing. Independent instruction reviewer d046abb1-5f79-45d5-b179-adbd441b1daa running; attempt remains 0.",
+  "nextAllowedAction": "await-independent-V5-command-review; no implementation before restoration defect resolved",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T00:57:49.864176+00:00",
+  "updatedUtc": "2026-10-03T01:08:21.297676+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink appointa_p35 and remap source appointa_p35_mic, made the default capture source for the duration of a capture row",

@@ -32,12 +32,18 @@ no running sandbox/app/build commands, and no build or GPU lease. Source base
   reconciled under AM-180; S3.2 CHANGES REQUESTED, attempt 1 consumed and
   repair 2 not dispatched. P3.5 forwarding hold resolved; V5 repair/review
   pending. Historical nine-card port claim withdrawn: no ready task blocked.
-- **P3.5 V5 command repair RUNNING:** worker
+- **P3.5 V5 command repair COMPLETE, author archived:** worker
   `8ea4b967-25b8-4855-bf55-b8a439a96a37`, exclusive V5 command cell in
   `cards/P3.5.md` plus `state/reviews/P3.5-V5-command-repair.md`. Preserve
   Expected and every other row byte-identical; synthetic clean/bad branch
-  execution only, no audio/build/app/runtime changes. One repair attempt then
-  fresh independent review. Scratch only ignored project folder.
+  execution only, no audio/build/app/runtime changes. One repair attempt spent; command repair committed UNACCEPTED.
+  Coordinator corrected five remaining source-name typos; fake-pactl replay
+  proves empty/wrong default still PASS. Independent reviewer
+  `d046abb1-5f79-45d5-b179-adbd441b1daa` RUNNING, exclusive
+  `state/reviews/P3.5-V5-command-ir.md`. Initial narration-only finish event
+  was followed by coordinator counterexample prompt; actual status confirmed
+  RUNNING, no report yet. No implementation/audio until corrected and CLEAR.
+  Scratch only ignored project folder.
 - All current workers use `opencode-go/space-bunny-free`, **medium** effort,
   same workspace, leave uncommitted, completion notifications enabled.
 - Coordinator owns all shared state/card/dispatch/log files. Accept reports by
