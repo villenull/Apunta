@@ -7,9 +7,9 @@
   ],
   "baseCommit": "6974943",
   "attempt": 5,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Final attempt5 code/unit candidate b19e59f SUBMITTED; root80/80 synthetic model/adapters PASS, P3.5 audio seam byte-identical; source author archived. Independent reviewer66459613 running, no acceptance row executed.",
-  "nextAllowedAction": "prepare-bounded-pre-runtime-deadline-correction-owner-exception-no-sixth-attempt",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "AM-192 exact prepared patch applied; source hash 865ccab3; no acceptance row run. Corrected source awaiting independent review.",
+  "nextAllowedAction": "independent-review-am192-corrected-source-before-once-only-runtime",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -116,10 +116,10 @@
   },
   "implementationReviewWorkerId": null,
   "implementationReviewReport": "docs/v2/state/reviews/P3.4-impl5.md",
-  "implementationReviewVerdict": "Reviewer CLEAR; coordinator BLOCKED on O3 approved-deadline mismatch",
-  "coordinatorBlockingFinding": "O3 adds a 30-second label-discovery wait before the immutable target deadline, contrary to approved proposal section E selection/every-await/no-second-budget. O2 early deadline kill is inert; final cleanup still holds. No source correction or runtime authorized without bounded preparation exception.",
+  "implementationReviewVerdict": "Corrected source review pending; prior candidate review retained",
+  "coordinatorBlockingFinding": null,
   "implementationCandidate": "b19e59f",
-  "updatedUtc": "2026-10-03T03:11:45.304262+00:00",
+  "updatedUtc": "2026-10-03T13:59:43.271250+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
   "reBundle": {
@@ -150,10 +150,11 @@
     "next": "Concrete owner assertion/hook/budget proposal, independent review, then owner decision."
   },
   "proposalReviewWorkerId": null,
-  "proposalRepairWorkerId": "d78ad179-5fa9-4f24-986a-60a174ddaaf9",
+  "proposalRepairWorkerId": null,
   "ownerDecisions": {
     "assertionPackage": "APPROVED AM-188",
     "attempt5WithKeyedTooling": "APPROVED AM-189",
-    "optionalA06": "PARKED"
+    "optionalA06": "PARKED",
+    "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5"
   }
 }
