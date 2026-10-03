@@ -1,0 +1,30 @@
+# 02 card invariants -- 7 fields and V0-V5 commands/Expected byte-identical via plan-lib codec
+# generated 2026-10-03T22:49:03Z
+
+# 7 fields
+OK   Parent: "P3"
+OK   Role: "IMPLEMENTATION"
+OK   Level: "L3"
+OK   Contracts: "C-BRIDGE@1, C-OWN@1"
+OK   Depends: "P3.4, P3.5, P3.7, P2.R"
+OK   Findings: "R15"
+OK   Confidence: "n/a"
+
+# verification rows (id, command, expected)
+OK   V0: command identical (971 B), expected identical (4682 B)
+OK   V1: command identical (838 B), expected identical (3103 B)
+OK   V2: command identical (154 B), expected identical (1483 B)
+OK   V3: command identical (1502 B), expected identical (8446 B)
+OK   V4: command identical (1404 B), expected identical (5767 B)
+OK   V5: command identical (332 B), expected identical (1730 B)
+
+row count before/after: 6/6
+
+# pinned V3 command present verbatim (P3.4.md at working tree = 04d071e)
+P3.4 V3 raw literal table span bytes: 628 (GFM escapes included)
+P3.4 V3 parsed command bytes        : 624 (what P3.6 carries)
+raw contains backslash-pipe-pipe : true | parsed contains bare OR : true
+present in P3.6.md after: YES
+present in P3.6.md before: NO
+
+ALL INVARIANTS HOLD

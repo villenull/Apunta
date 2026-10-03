@@ -1,0 +1,14 @@
+# 06 untouched files -- git status and P3.4.md identity
+# generated 2026-10-03T22:49:03Z
+
+$ git status --porcelain
+ M docs/v2/cards/P3.6.md
+?? docs/v2/evidence/P3.6/security-repin/
+?? docs/v2/state/reviews/P3.6-security-repin-author.md
+
+$ git diff --stat HEAD -- docs/v2/cards/P3.4.md  (expect empty)
+
+$ git diff --stat 04d071e HEAD -- docs/v2/cards/P3.4.md docs/v2/cards/P3.6.md  (expect empty)
+
+$ git log --oneline -1 04d071e
+04d071e Track EOD serial runtime lease and parallel authorized preparation

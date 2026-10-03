@@ -1,0 +1,34 @@
+# 04 negative fixtures -- exact P3.4 V3 command, $b relocated under build/p36-repin
+# generated 2026-10-03T22:49:03Z
+
+# exact P3.4 V3 command, one token relocated for scratch ($b under the fixture)
+b="$PWD/.hits"; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0
+
+## clean: exit 0 (expected 0) OK
+P3.4-V3: 4 forbidden words over 4 paths, matches: 0
+
+## forbidden-invoke_handler: exit 1 (expected 1) OK
+FAIL: 'invoke_handler' appears in a file the AppImage is built from:
+src-tauri/src/x.rs:1:fn main() { invoke_handler(); }
+P3.4-V3: 4 forbidden words over 4 paths, matches: 1
+
+## forbidden-withGlobalTauri: exit 1 (expected 1) OK
+FAIL: 'withGlobalTauri": true' appears in a file the AppImage is built from:
+src-tauri/tauri.conf.json:1:{ "withGlobalTauri": true }
+P3.4-V3: 4 forbidden words over 4 paths, matches: 1
+
+## forbidden-VITE_APUNTA_TEST_IDENTITY: exit 1 (expected 1) OK
+FAIL: 'VITE_APUNTA_TEST_IDENTITY' appears in a file the AppImage is built from:
+src-tauri/build.rs:1:const X: &str = "VITE_APUNTA_TEST_IDENTITY";
+P3.4-V3: 4 forbidden words over 4 paths, matches: 1
+
+## forbidden-p3.4-observe: exit 1 (expected 1) OK
+FAIL: 'p3.4-observe' appears in a file the AppImage is built from:
+src-tauri/src/y.rs:1:// p3.4-observe
+P3.4-V3: 4 forbidden words over 4 paths, matches: 1
+
+## capabilities-dir: exit 1 (expected 1) OK
+P3.4-V3: 4 forbidden words over 4 paths, matches: 0
+FAIL: src-tauri/capabilities exists, so a capability was added
+
+ALL FIXTURE CHECKS HOLD

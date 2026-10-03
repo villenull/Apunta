@@ -1,0 +1,151 @@
+# 01 before/after diff scope -- docs/v2/cards/P3.6.md
+# baseline HEAD f343650; reference pin 04d071e (P3.4.md identical at both)
+# generated 2026-10-03T22:49:03Z
+
+$ git diff --stat HEAD -- docs/v2/cards/P3.6.md
+ docs/v2/cards/P3.6.md | 86 +++++++++++++++++++++++++--------------------------
+ 1 file changed, 43 insertions(+), 43 deletions(-)
+
+$ git diff HEAD -- docs/v2/cards/P3.6.md
+diff --git c/docs/v2/cards/P3.6.md w/docs/v2/cards/P3.6.md
+index fa32e86..087bf92 100644
+--- c/docs/v2/cards/P3.6.md
++++ w/docs/v2/cards/P3.6.md
+@@ -98,25 +98,21 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+   empty, **no `src-tauri/capabilities/` directory is created**, and no
+    `invoke_handler` is added to this file, to `src-tauri/tauri.test.conf.json` or
+    to `src-tauri/build.rs`. That is P3.4's V3 invariant, **quoted here verbatim
+-   and pinned to `docs/v2/cards/P3.4.md` at commit `5dcabae`**, all three of its
+-   commands and nothing shortened:
+-   `grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs; test ! -e src-tauri/capabilities; ! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs`
+-   — **the `\|` is load-bearing, and it must not be "tidied" back to a bare `|`.**
+-   These four copies sit in bullets and a numbered list, not in a markdown table,
+-   so nothing here needs a doubled backslash: the escape is `grep`'s own, and
+-   `grep` here is plain BRE (no `-E`), where a **bare `|` is an ordinary literal**.
+-   The unescaped spelling therefore does not mean "either string" — it means
+-   "the one string that has a pipe in the middle of it", which no file can
+-   contain, so both guards are **silent on any real violation**: a file holding
+-   `invoke_handler` and no pipe is reported as clean by the bare form and matched
+-   by the escaped one, and the negated form `! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe"`
+-   returns success against a file that *does* hold `p3.4-observe`. P3.4's own cell
+-   stores the escape for exactly this reason, so the copy is the same **command**
+-   as well as the same rendered text. **It is four paths, not three: `src-tauri/src` is in both grep
+-   file lists**, and the **third command is the hook's bound on the shell side** —
+-   `VITE_APUNTA_TEST_IDENTITY` and `p3.4-observe` must match nothing anywhere in
+-   the files the AppImage is built from — which an earlier version of this card
+-   did not mention at all, so it also appears in S1's anchor below. It is
++   and pinned to `docs/v2/cards/P3.4.md` at commit `04d071e`**, all of its
++   assertions and nothing shortened:
++   `b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0`
++   — **the `\|\|` in P3.4's table cell is a table escape, not a shell escape:
++   the plan's codec reads it back as `||`, the shell's OR, and this prose copy
++   carries the bare `||` because a bullet is not a markdown table.** There is no
++   `grep` alternation left to escape: the guard is a **`for` loop over four fixed
++   words** with `grep -rnF -e "$w"`, so a bare `|` cannot silently turn an
++   alternation into a literal the way the old BRE spelling could, and **no `\|`
++   survives anywhere in this command.** **It is four paths, not three:
++   `src-tauri/src` is in the loop's file list with `src-tauri/tauri.conf.json`,
++   `src-tauri/tauri.test.conf.json` and `src-tauri/build.rs`**, and the **two
++   hook-bound words — `VITE_APUNTA_TEST_IDENTITY` and `p3.4-observe` — are two of
++   the four the same loop requires absent**, which an earlier version of this card
++   did not mention at all, so they also appear in S1's anchor below. It is
+    carried this way because a
+   capability added here turns P3.4's row red at P3.R, not here — and because
+   P3.4 is `BLOCKED` with a fourth attempt authorised, **a difference between
+@@ -133,13 +129,15 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+ - **The P3.4 V3 invariant, by name.** No `src-tauri/capabilities/` directory; no
+   `withGlobalTauri: true`; no `invoke_handler` — in
+   `src-tauri/tauri.conf.json`, in `src-tauri/tauri.test.conf.json` or in
+-  `src-tauri/build.rs`. P3.4's V3 row is **three commands, quoted verbatim under
+-  May edit and pinned to `docs/v2/cards/P3.4.md` at commit `5dcabae`** — both
+-  greps over **four** paths (`src-tauri/src` among them) requiring no match,
+-  `test ! -e src-tauri/capabilities`, **and** the
+-  `! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs` hook-bound assertion; this card grants the two config files and nothing that
++  `src-tauri/build.rs`. P3.4's V3 row is **one `for` loop over four fixed words
++  — `invoke_handler`, `withGlobalTauri": true`, `VITE_APUNTA_TEST_IDENTITY` and
++  `p3.4-observe` — over **four** paths (`src-tauri/src` among them) requiring no
++  match, **plus** `test ! -e src-tauri/capabilities`**, quoted verbatim under May
++  edit and pinned to `docs/v2/cards/P3.4.md` at commit `04d071e`; the hook-bound
++  pair is two of the four words the loop carries, so this card grants the two
++  config files and nothing that
+    could break that row. **That row is pinned to
+-  `docs/v2/cards/P3.4.md` at commit `5dcabae`, and a difference between it and
++  `docs/v2/cards/P3.4.md` at commit `04d071e`, and a difference between it and
+   the text quoted here at dispatch time is Stop condition 8.**
+ - `src-tauri/src/**`, `src-tauri/build.rs`, `src-tauri/Cargo.toml`,
+   `src-tauri/Cargo.lock`, `src-tauri/gen/**`, `src-tauri/target/**`,
+@@ -199,11 +197,12 @@ licences, and every existing e2e flow can be completed inside it (fake AI).
+   which makes its card text the text most likely to be revised. Both drift
+   directions fail silently: a **widened** P3.4 set would make the skip rule above
+   too narrow and ship a stale bundle, and a **narrowed or reworded** one would
+-  make the greps in Must not edit match nothing and leave P3.4's real invariant
++  make the guard in Must not edit match nothing and leave P3.4's real invariant
+   unasserted here. **Any difference between P3.4's Rule B bullet as it stands at
+   dispatch time and the copy pinned above is Stop condition 8: report it and
+-  stop.** The identical pin applies to the V3 invariant quoted under May edit
+-  and Must not edit, for the identical reason.
++  stop.** The same stop applies to the V3 invariant quoted under May edit
++  and Must not edit, for the identical reason — its pin is `04d071e` rather than
++  Rule B's `5dcabae`, because the V3 cell moved and Rule B's bullet did not.
+ - **There is no `package:linux` script, so the literal producer invocation is the
+   only correct one.** `bash scripts/v2/package-linux-resources.sh` is what V0 and
+   V1 run, and adding a wrapper would be an edit to `package.json`, which is not in
+@@ -285,13 +284,13 @@ says it is already done. Check the anchors in order before doing any work.
+    change that cannot be made without touching one of those is Stop condition 4,
+ not a licence to touch it.
+    *Anchor:* `diff -r docs/v2/assets/tauri-icons/ src-tauri/icons/` is empty
+-    (this is what V2 asserts), and **all three of P3.4's commands** hold —
+-    `grep -rn "invoke_handler\|withGlobalTauri\": true" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs`
+-    matches nothing, `test ! -e src-tauri/capabilities` passes, and
+-    `! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs`
+-    finds nothing. **All three, not a subset:** the third is the hook's bound on
+-    the shell side, and an anchor running only the first would leave it
+-    unasserted here while P3.4 asserts it there.
++    (this is what V2 asserts), and **P3.4's V3 command** — the four-word loop
++    quoted verbatim under May edit and pinned at `04d071e` — exits 0: all four
++    words (`invoke_handler`, `withGlobalTauri": true`, `VITE_APUNTA_TEST_IDENTITY`,
++    `p3.4-observe`) match nothing over the same four paths, and
++    `test ! -e src-tauri/capabilities` passes. **All four, not a subset:** the
++    hook-bound pair is the shell-side bound, and an anchor checking only the
++    first two would leave it unasserted here while P3.4 asserts it there.
+     **One thing more is read and written down here, before any row runs: the
+     literal base commit hash on this dispatch's `- Base commit:` header line.**
+     Copy that hash out of the header by hand, record it in
+@@ -462,7 +461,7 @@ reason a row is relaxed. Every attempt also updates
+    wrapper. Report the reason and stop. **The invariant is not this card's to
+    relax:** P3.4 is the card that owns it, it is `BLOCKED` at an exhausted
+    attempt budget with a fourth authorised, and its V3 row is quoted and pinned
+-   at `5dcabae`; breaking that row here would be discovered at P3.R rather than
++   at `04d071e`; breaking that row here would be discovered at P3.R rather than
+    here. A card about
+    integration does not get to widen the bridge.
+ 5. **The flows cannot be driven and the harness finds no way to read the app** —
+@@ -486,12 +485,13 @@ reason a row is relaxed. Every attempt also updates
+    May edit** (HS-9). A red lint elsewhere on the machine is not this card's row.
+ 8. **A pinned text this card quotes differs from it at dispatch time: P3.4's
+    Rule B bullet, P3.4's V3 invariant row, `server/src/http/csp.ts`'s directive
+-    list, or P3.3's fatal-mode row set.** Each is pinned — Rule B's set, and
+-    P3.4's V3 command cell **as quoted verbatim under May edit and Must not
+-    edit** (all three commands, `src-tauri/src` in both grep file lists and the
+-    `! grep -rn "VITE_APUNTA_TEST_IDENTITY\|p3.4-observe" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs`
+-    third command included), to `docs/v2/cards/P3.4.md` at commit `5dcabae`; the
+-    CSP's directives to
++    list, or P3.3's fatal-mode row set.** Each is pinned — Rule B's set to
++    `docs/v2/cards/P3.4.md` at commit `5dcabae`; P3.4's V3 command cell **as
++    quoted verbatim under May edit and Must not edit** (the four-word loop over
++    the same four paths, `src-tauri/src` among them, with the hook-bound
++    `VITE_APUNTA_TEST_IDENTITY` / `p3.4-observe` pair inside it, and the
++    `test ! -e src-tauri/capabilities` conjunct included) to
++    `docs/v2/cards/P3.4.md` at commit `04d071e`; the CSP's directives to
+     `server/src/http/csp.ts` at `d56af1d`; P3.3's row set to
+    `docs/v2/cards/P3.3.md` at `321b4fa`. **Report the difference verbatim — the
+    old wording and the new — and
+@@ -500,7 +500,7 @@ reason a row is relaxed. Every attempt also updates
+    fourth attempt authorised, so its text is expected to move, and a by-reference
+    inheritance would follow it silently in whichever direction it moved — a
+    **widened** set makes V0's skip rule too narrow and ships a stale bundle, a
+-   **narrowed or reworded** one makes this card's greps match nothing and leaves
++   **narrowed or reworded** one makes this card's guard match nothing and leaves
+    P3.4's invariant unasserted here. Neither failure announces itself. The same
+    holds for the other two, in the same way: a changed CSP list would leave V3
+    asserting a header the server no longer sends, and a moved P3.3 row would

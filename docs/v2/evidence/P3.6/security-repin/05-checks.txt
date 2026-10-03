@@ -1,0 +1,11 @@
+# 05 checks -- plan no-write and prettier
+# generated 2026-10-03T22:49:03Z
+
+$ node docs/v2/tools/check-plan.mjs --no-write
+Plan consistent: 71 cards, 12 parent reviews, 14 contracts, R01-R20 covered, no cycles.
+exit=0
+
+$ npx prettier --check docs/v2/cards/P3.6.md
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
