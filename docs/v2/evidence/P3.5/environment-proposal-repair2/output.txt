@@ -1,0 +1,182 @@
+node 24.19.0
+PASS repaired step-0 snippet extracted from repair2/verify.mjs
+PASS prepared step-0 snippet extracted from repair/verify.mjs
+PASS bash -n repaired step-0 snippet — exit 0
+PASS bash -n prepared step-0 snippet — exit 0
+PASS repair2/verify.mjs differs from repair/verify.mjs only in the header note and the step-0 snippet
+PASS repaired snippet asserts patchelf with exit 1
+PASS repaired snippet asserts each element with exit 1
+PASS repaired snippet asserts the scanner executable with exit 1
+PASS prepared snippet was fail-open (recorded, not repaired here)
+PASS proposal step 0 found
+PASS proposal step 0 says the read is fail-closed
+PASS proposal step 0 says it stops at the first failure
+PASS proposal step 0 keeps the patchelf assertion
+PASS proposal step 0 keeps the four separate element reads
+PASS proposal step 0 keeps "the scanner exists"
+PASS proposal step 0 keeps the expected-now failure
+PASS proposal step 0 requires the same read re-run after the install
+PASS proposal step 0 requires exit 0 (PASS) before step 1
+PASS proposal has no duration, threshold or acceptance edit
+PASS proposal still holds exactly two owner choices
+PASS proposal points at the repair2 evidence
+PASS proposal stays within 250 lines
+PASS repaired: host scanner path occurs exactly once — 1 occurrence(s)
+PASS prepared: host scanner path occurs exactly once — 1 occurrence(s)
+--- healthy / repaired: stdout ---
+v24.19.0
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+scanner present
+STEP-0 PASS: prerequisites satisfied
+     healthy / repaired: exit=0
+--- healthy / prepared (first family, unchanged): stdout ---
+v24.19.0
+build/p3.5-env-repair2/fakepath/healthy/bin/patchelf
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+scanner present
+     healthy / prepared (first family, unchanged): exit=0
+PASS [healthy] repaired exits 0 — exit=0
+PASS [healthy] repaired prints the PASS marker
+PASS [healthy] four separate gst-inspect-1.0 invocations, one per element — appsink autoaudiosrc alsasrc pulsesrc
+     healthy / prepared: exit=0 (also 0: this branch is healthy for it too)
+--- patchelf-absent / repaired: stdout ---
+v24.19.0
+FAIL: patchelf absent
+     patchelf-absent / repaired: exit=1
+--- patchelf-absent / prepared (first family, unchanged): stdout ---
+v24.19.0
+FAIL: patchelf absent
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+scanner present
+     patchelf-absent / prepared (first family, unchanged): exit=0
+PASS [patchelf-absent] repaired exits non-zero — exit=1
+PASS [patchelf-absent] the failure that stops it names the missing prerequisite — FAIL: patchelf absent
+PASS [patchelf-absent] prepared exits 0 anyway — the defect this repair fixes — exit=0
+--- appsink-absent / repaired: stdout ---
+v24.19.0
+FAIL: appsink not visible
+     appsink-absent / repaired: exit=1
+--- appsink-absent / prepared (first family, unchanged): stdout ---
+v24.19.0
+build/p3.5-env-repair2/fakepath/appsink-absent/bin/patchelf
+MISSING appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+scanner present
+     appsink-absent / prepared (first family, unchanged): exit=0
+PASS [appsink-absent] repaired exits non-zero — exit=1
+PASS [appsink-absent] the failure that stops it names the missing prerequisite — FAIL: appsink not visible
+PASS [appsink-absent] prepared exits 0 anyway — the defect this repair fixes — exit=0
+--- autoaudiosrc-absent / repaired: stdout ---
+v24.19.0
+OK appsink
+FAIL: autoaudiosrc not visible
+     autoaudiosrc-absent / repaired: exit=1
+--- autoaudiosrc-absent / prepared (first family, unchanged): stdout ---
+v24.19.0
+build/p3.5-env-repair2/fakepath/autoaudiosrc-absent/bin/patchelf
+OK appsink
+MISSING autoaudiosrc
+OK alsasrc
+OK pulsesrc
+scanner present
+     autoaudiosrc-absent / prepared (first family, unchanged): exit=0
+PASS [autoaudiosrc-absent] repaired exits non-zero — exit=1
+PASS [autoaudiosrc-absent] the failure that stops it names the missing prerequisite — FAIL: autoaudiosrc not visible
+PASS [autoaudiosrc-absent] prepared exits 0 anyway — the defect this repair fixes — exit=0
+--- alsasrc-absent / repaired: stdout ---
+v24.19.0
+OK appsink
+OK autoaudiosrc
+FAIL: alsasrc not visible
+     alsasrc-absent / repaired: exit=1
+--- alsasrc-absent / prepared (first family, unchanged): stdout ---
+v24.19.0
+build/p3.5-env-repair2/fakepath/alsasrc-absent/bin/patchelf
+OK appsink
+OK autoaudiosrc
+MISSING alsasrc
+OK pulsesrc
+scanner present
+     alsasrc-absent / prepared (first family, unchanged): exit=0
+PASS [alsasrc-absent] repaired exits non-zero — exit=1
+PASS [alsasrc-absent] the failure that stops it names the missing prerequisite — FAIL: alsasrc not visible
+PASS [alsasrc-absent] prepared exits 0 anyway — the defect this repair fixes — exit=0
+--- pulsesrc-absent / repaired: stdout ---
+v24.19.0
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+FAIL: pulsesrc not visible
+     pulsesrc-absent / repaired: exit=1
+--- pulsesrc-absent / prepared (first family, unchanged): stdout ---
+v24.19.0
+build/p3.5-env-repair2/fakepath/pulsesrc-absent/bin/patchelf
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+MISSING pulsesrc
+scanner present
+     pulsesrc-absent / prepared (first family, unchanged): exit=0
+PASS [pulsesrc-absent] repaired exits non-zero — exit=1
+PASS [pulsesrc-absent] the failure that stops it names the missing prerequisite — FAIL: pulsesrc not visible
+PASS [pulsesrc-absent] prepared exits 0 anyway — the defect this repair fixes — exit=0
+--- scanner-absent / repaired: stdout ---
+v24.19.0
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+FAIL: scanner missing or not executable
+     scanner-absent / repaired: exit=1
+--- scanner-absent / prepared (first family, unchanged): stdout ---
+v24.19.0
+build/p3.5-env-repair2/fakepath/scanner-absent/bin/patchelf
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+     scanner-absent / prepared (first family, unchanged): exit=1
+PASS [scanner-absent] repaired exits non-zero — exit=1
+PASS [scanner-absent] the failure that stops it names the missing prerequisite — FAIL: scanner missing or not executable
+     scanner-absent / prepared: exit=1
+PASS [scanner-absent] prepared ran all four elements to the end without stopping
+--- scanner-not-executable / repaired: stdout ---
+v24.19.0
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+FAIL: scanner missing or not executable
+     scanner-not-executable / repaired: exit=1
+--- scanner-not-executable / prepared (first family, unchanged): stdout ---
+v24.19.0
+build/p3.5-env-repair2/fakepath/scanner-not-executable/bin/patchelf
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+scanner present
+     scanner-not-executable / prepared (first family, unchanged): exit=0
+PASS [scanner-not-executable] repaired exits non-zero — exit=1
+PASS [scanner-not-executable] the failure that stops it names the missing prerequisite — FAIL: scanner missing or not executable
+     scanner-not-executable / prepared: exit=0
+PASS [scanner-not-executable] prepared ran all four elements to the end without stopping
+--- this host / repaired step-0, verbatim, unstubbed ---
+v24.19.0
+FAIL: patchelf absent
+     host / repaired: exit=1
+PASS host: repaired step-0 exits non-zero (expected FAIL preserved)
+PASS host: the failure names patchelf
+PASS host: it stopped before any element read
+ALL CHECKS PASS
