@@ -2507,3 +2507,13 @@ No credentialcapture or furtherautomaticretry. Prepared P3.4 runtime continuatio
 and regenerated dispatch on current source with AM189, sameattempt5/base6974943/
 port7835, appliedreview findings. No row consumed or build/port lease reserved.
 Runtime dispatch waits installer/preflightPASS, then serial V0–V4 once in order.
+
+### 2026-10-03 — authenticated STEP0 PASS; final runtime released
+
+Archived installerff7186b2 after exit0; root independently reran verify.sh PASS0,
+exactthreepackages, pinnedNode, fourplugins andscannerpresent. No credentials.
+Dispatched runtimeworkerd353b075 (Space Bunny free medium), confirmed RUNNING with
+callback, exclusive buildlease +port7835 afterfreebind. Own runtimeevidence/return
+only; finalattempt5 V0–V4once, AM190scannerenv+drybundledchecks, no sourcerepair or
+sixth. Root holdsstatewrites; no otherbuild/capture/modelwork parallel. HostSTEP0
+notmistaken forbundledpluginPASS. Resource releases after ownprocesscleanup/return.

@@ -1,3 +1,19 @@
+## Installed prerequisites PASS; P3.4 final runtime worker running
+
+Workerff7186b2 completed installerexit0 and archival succeeded. Exact three
+packages installed; root reran verify.sh exit0 ALL CHECKS PASS, pinnedNode and
+four separate hostpluginreads/scannerPASS. No credentials captured. HostSTEP0
+only; bundledplugin checks still required. Evidence integrated before runtime.
+
+Runtime workerd353b075-dfa3-4ddd-8cc0-ad095f98a12f (Space Bunny free medium)
+confirmed RUNNING with completion callback. Holds exclusive serial build lease
+(AppImage/resource/webdist/globalbuilds) and reserves sandboxport7835 after its
+bind/releasecheck; release after ownprocesscleanup andreturn. Exclusive writes:
+attempt5/runtime evidence and returns/P3.4.md, root ownscheckpoint/state. V0–V4
+once in cardorder underAM189/192, no retry/reset/sixth/sourceedit. Approvedscanner
+setup beforeV0, freshregistrydrybundledpluginchecks beforeapplaunch. P3.5capture
+andotherbuild/modelwork wait resource release; read-onlypreparation remains possible.
+
 ## Owner saw password prompt; corrected local authentication retry running
 
 Owner confirmed previous Ghostty window displayed a password prompt. AM190/193

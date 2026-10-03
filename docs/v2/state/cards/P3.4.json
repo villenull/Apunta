@@ -7,9 +7,9 @@
   ],
   "baseCommit": "6974943",
   "attempt": 5,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Applied exact AM-192 correction candidate291372f; independent source review CLEAR, 80 cases and non-vacuous deadline/own-pid proof PASS. Reviewer archived.",
-  "nextAllowedAction": "authenticated-prerequisite-preflight-pass-then-v0-v4-once-in-card-order",
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Corrected source independently CLEAR; root authenticated-prerequisite recheck PASS. Final runtime worker d353b075 dispatched with exclusive build lease.",
+  "nextAllowedAction": "runtime-worker-v0-v4-once-in-card-order-no-sixth",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -119,7 +119,7 @@
   "implementationReviewVerdict": "Corrected shipping source CLEAR under AM-192; runtime rows NOT RUN pending authenticated prerequisites/preflight",
   "coordinatorBlockingFinding": null,
   "implementationCandidate": "291372f",
-  "updatedUtc": "2026-10-03T14:05:59.798641+00:00",
+  "updatedUtc": "2026-10-03T20:27:14.415498+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
   "reBundle": {
@@ -156,5 +156,6 @@
     "attempt5WithKeyedTooling": "APPROVED AM-189",
     "optionalA06": "PARKED",
     "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5"
-  }
+  },
+  "runtimeWorkerId": "d353b075-dfa3-4ddd-8cc0-ad095f98a12f"
 }
