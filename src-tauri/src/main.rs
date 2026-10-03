@@ -29,6 +29,7 @@
 mod bridge;
 mod launch;
 mod lifecycle;
+mod permissions;
 mod quit;
 mod signals;
 
@@ -487,6 +488,16 @@ fn show_main(handle: &tauri::AppHandle, port: u16) -> bool {
     // `http://127.0.0.1:<port>@evil.example/…`, whose host is `evil.example`.
     .on_navigation(move |target| is_allowed_origin(target, &allowed))
     .on_new_window(|_url, _features| tauri::webview::NewWindowResponse::Deny)
+    // P3.5: the microphone, and nothing else, for this origin and no other.
+    // WebKitGTK asks through this signal and carries no URL, so the origin comes
+    // from `webview.url()` and an origin that cannot be read is refused; on
+    // Linux the platform default is `Deny`, so the handler has to be registered
+    // even for the app's own origin. See `permissions.rs`. `origin` is cloned
+    // here rather than moved, because the line below the builder still names it.
+    .on_permission_request({
+        let allowed_origin = origin.clone();
+        move |webview, kind| permissions::decide_for_webview(&webview, kind, &allowed_origin)
+    })
     .build();
     let opened = built.is_ok();
     match built {
@@ -591,7 +602,7 @@ fn main_window_geometry(handle: &tauri::AppHandle) -> (f64, f64, f64, f64) {
 ///
 /// A path, a query and a fragment are all allowed — they are the app's own — and
 /// any other host, port or scheme is refused.
-fn is_allowed_origin(target: &tauri::Url, allowed: &str) -> bool {
+pub(crate) fn is_allowed_origin(target: &tauri::Url, allowed: &str) -> bool {
     // `allowed` is produced by this file from a port, and is `http://127.0.0.1:<port>`.
     let Ok(expected) = allowed.parse::<tauri::Url>() else {
         // An origin this function cannot parse is an origin it refuses. Failing

@@ -10,6 +10,7 @@ on resolve, and never carry a `→ RESOLVED` follow-up line.**
 
 ## Blocked
 
+P3.5 | Attempt 1 of 3 returned BLOCKED: V3 unavailable capture elements; V4 NOT RUN; V5 FAIL on five V3 provenance records. Default restored and test devices/processes/ports cleared independently. Candidate pending independent review; no retry or installation dispatched. A10 signed redirect followed outside query-key admission, recorded for manifest decision. | docs/v2/state/returns/P3.5.md; docs/v2/evidence/P3.5/COORDINATOR-RETURN.md | Independently review candidate and environment diagnosis, then prepare bounded manifest/install decision before attempt 2. Preserve history. Build lease released. | P3.6, P3.R
 S3.3a | Attempt2 implementation independently reviewed with no candidate defects. V1-V5 PASS, 48 tests and 26 adversarial checks; V6/V7 NOT RUN under existing owner quiet-machine hold. V8 shared-tree sweep FAIL attributed to coordinator/other-card docs; isolated candidate interval9 paths within scope, supplementary proof only. | docs/v2/state/reviews/S3.3a-impl2.md; docs/v2/evidence/S3.3a/review-2/COORDINATOR-SCOPE.md | Await existing quiet-machine hold lifted; run V6/V7 on isolated port7841 with real model, no fake, and reconcile scope-row base/shared-tree evidence before approval. No source repair needed. Build lease released. | S3.3
 
 P3.4 | Attempt 4 consumed under owner exception AM-138 (normal budget 3); no attempt 5 authorised. AM-183: V0/V1/V3/V4 PASS, V2 13 PASS / 2 FAIL / 2 NOT RUN, containment PASS. Forwarding and frozen-stderr polling blockers cleared. Global assertion and synthetic click failures require diagnosis/ruling; contradictory old handoff explanations are not adopted. | `docs/v2/state/cards/P3.4.json`; `docs/v2/state/SESSION-HANDOFF-2026-10-02.md`; `docs/v2/state/reviews/P3.4-diagnosis-2026-10-03.md` (diagnosis complete; proposal review findings in repair) | Prepare concrete protected-assertion/budget decision after read-only diagnosis. No rerun authorised. | P3.6, P3.R, and through P3.R P5.4 and P5.R
@@ -18,7 +19,6 @@ S6.1 | Production BLOCKED on a licence election no agent may make. L-POLICY@1's 
 
 ## Held — cleared, not dispatched, not blocked on any decision
 
-P3.5 | Round 8 CLEAR under AM-141; attempt 0. P3.8 forwarding hold resolved by AM-180. V5 command repair independently CLEAR under AM-187, 89 synthetic branches; ready for first implementation dispatch. | `docs/v2/state/reviews/continuation-state-audit-2026-10-03.md`; `docs/v2/state/cards/P3.5.json` | Dispatch attempt1 with build lease and virtual-only capture; no model acquired or run, no acceptance claim. | P3.6, P3.R, and through P3.R P5.4 and P5.R
 
 ## Also recorded elsewhere, not here
 

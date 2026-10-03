@@ -1,3 +1,17 @@
+## P3.5 attempt-one return — 2026-10-03T03:32:34.869401+00:00
+
+P3.5 author 2028c17e finished and archived successfully. Candidate unapproved:
+V0/V1/V2 claimed PASS, V3 BLOCKED, V4 NOT RUN, V5 FAIL on five V3 records.
+Coordinator confirms default USB source restored, no test source/sink/modules,
+no matching app/build/playback processes, ports 7837/7839 free; lease released.
+Five offline permission tests pass. See evidence/P3.5/COORDINATOR-RETURN.md.
+Independent review next, including numeric pactl stream-source mapping, host vs
+bundled appsink availability, literal acceptance and query redirect violation.
+No installation/download/retry authorization inferred; attempt remains 1 of 3.
+
+P3.4 repair 342834e0 remains sole proposal-v5 writer, ignored copied model only.
+No fifth attempt authorized. Quiet-machine holds remain.
+
 ## Latest bounded v5 repair — 2026-10-03T03:18:55.521532+00:00
 
 IR5 is DEFECT with five bounded findings and field/freshness coverage gaps.

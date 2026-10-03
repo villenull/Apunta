@@ -6,20 +6,136 @@
   ],
   "baseCommit": "8783181",
   "attempt": 1,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-187 command CLEAR accepted; first implementation dispatch generated, no runtime verification yet.",
-  "nextAllowedAction": "await-attempt-1-return",
-  "sideEffectsDone": [],
-  "changedFiles": [],
-  "criteria": {},
-  "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T02:15:14.470476+00:00",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Attempt 1 implemented all four granted feature paths and ran V0, V1, V2 and the V3 capture up to the record click. V3 is blocked by missing GStreamer capture elements (A03 owner action); V4 was not run and V5 fails closed on duplicate V3 provenance.",
+  "nextAllowedAction": "owner-installs-gstreamer-plugins-then-coordinator-dispatches-attempt-2",
+  "sideEffectsDone": [
+    "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
+    {
+      "step": "V3",
+      "attempt": 1,
+      "runId": "2026-10-03T02-30-49-593Z-2f516bcb",
+      "dateUtc": "2026-10-03T02:30:52.910Z",
+      "prevDefault": "alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo",
+      "sinkId": "536870916",
+      "srcId": "536870917"
+    },
+    {
+      "step": "V3",
+      "attempt": 1,
+      "runId": "2026-10-03T02-45-28-783Z-79cf3de5",
+      "dateUtc": "2026-10-03T02:45:31.917Z",
+      "prevDefault": "alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo",
+      "sinkId": "536870916",
+      "srcId": "536870917"
+    },
+    {
+      "step": "V3",
+      "attempt": 1,
+      "runId": "2026-10-03T02-59-21-201Z-181a31e3",
+      "dateUtc": "2026-10-03T02:59:24.270Z",
+      "prevDefault": "alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo",
+      "sinkId": "536870916",
+      "srcId": "536870917"
+    },
+    {
+      "step": "V3",
+      "attempt": 1,
+      "runId": "2026-10-03T03-10-51-962Z-4b75b5f9",
+      "dateUtc": "2026-10-03T03:10:55.342Z",
+      "prevDefault": "alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo",
+      "sinkId": "536870916",
+      "srcId": "536870917"
+    },
+    {
+      "step": "V3",
+      "attempt": 1,
+      "runId": "2026-10-03T03-21-44-908Z-5da93850",
+      "dateUtc": "2026-10-03T03:21:47.971Z",
+      "prevDefault": "alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo",
+      "sinkId": "536870916",
+      "srcId": "536870917"
+    },
+    "HOST STATE RESTORED: pactl get-default-source is back to alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo, and no sink_name=apunta_p35 / source_name=apunta_p35 module is loaded. Verified from outside after the row.",
+    "BUILD SCRATCH REMOVED: build/p3.5-web and build/linux-resources/web/dist were removed by V2's trap; web/dist is unflagged (marker count 0)."
+  ],
+  "changedFiles": [
+    "web/src/main.tsx",
+    "src-tauri/src/permissions.rs",
+    "src-tauri/src/main.rs",
+    "scripts/v2/tauri-audio.test.mjs"
+  ],
+  "criteria": {
+    "V0": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.5/V0-host-and-build.md",
+      "note": "Every probe passed. Two literal readings disclosed, neither an adaptation: pactl info prints 'Server Name: PulseAudio (on PipeWire 1.6.8)' (pipewire-pulse answering the Pulse protocol; pulseaudio and pacmd are both absent, which is the substantive assertion), and pactl list short sources carries no '*' marker for the default source; pactl get-default-source was recorded separately and is not apunta_p35_mic."
+    },
+    "V1": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.5/V1-fixture.md",
+      "note": "dictation-30s.wav (16 kHz mono s16le, 15.78 s) and silence-10s.wav (exactly 10.00 s) under <sandbox>/audio-en; raw 22,050 Hz deleted in the same row; nothing committed."
+    },
+    "V2": {
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/P3.5/V2-test-build.md",
+      "note": "Marker counts: build/p3.5-web/dist 1, web/dist 0 after the producer, build/linux-resources/web/dist 1; AppImage rebuilt. The literal command's first run failed at 'npm run tauri:build:test' because cargo is not on the desktop PATH; re-run with ~/.cargo/bin on PATH, exit 0."
+    },
+    "V3": {
+      "status": "BLOCKED",
+      "evidence": "docs/v2/evidence/P3.5/V3-capture-spoken.md",
+      "note": "All five real clicks landed and the app's recorder started, then WebKitGTK refused to capture: 'GStreamer element appsink not found. Please install it.' and 'Audio capture was requested but no device was found amongst 0 devices'. The host has only gst-plugin-pipewire: autoaudiosrc, alsasrc and pulsesrc are all absent. That is the card's A03 stop condition; the owner line is in docs/v2/state/OWNER-ACTIONS.md. Five V3 records exist at attempt 1 because the harness needed five invocations to reach the record click; V5 therefore fails closed on duplicate provenance by design."
+    },
+    "V4": {
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/P3.5/V4-non-speech.md",
+      "note": "Not run: V3 is blocked by the same missing GStreamer elements, so a tone and silence case could not produce frames either. Run after the owner installs the plugins."
+    },
+    "V5": {
+      "status": "FAIL",
+      "evidence": "docs/v2/evidence/P3.5/V5-containment.md",
+      "note": "Containment residue checks pass from outside (default source restored, no apunta_p35 sink, source or module). The provenance half fails closed: five PREV_DEFAULT records at attempt 1 for step V3 where the row names three runs in the order V3, V4-tone, V4-silence. That is the duplicate-provenance case the card defines, and it is the coordinator's call, not this session's."
+    }
+  },
+  "sandboxRuns": [
+    {
+      "attempt": 1,
+      "step": "V3",
+      "runId": "2026-10-03T02-30-49-593Z-2f516bcb",
+      "dateUtc": "2026-10-03T02:30:52.910Z"
+    },
+    {
+      "attempt": 1,
+      "step": "V3",
+      "runId": "2026-10-03T02-45-28-783Z-79cf3de5",
+      "dateUtc": "2026-10-03T02:45:31.917Z"
+    },
+    {
+      "attempt": 1,
+      "step": "V3",
+      "runId": "2026-10-03T02-59-21-201Z-181a31e3",
+      "dateUtc": "2026-10-03T02:59:24.270Z"
+    },
+    {
+      "attempt": 1,
+      "step": "V3",
+      "runId": "2026-10-03T03-10-51-962Z-4b75b5f9",
+      "dateUtc": "2026-10-03T03:10:55.342Z"
+    },
+    {
+      "attempt": 1,
+      "step": "V3",
+      "runId": "2026-10-03T03-21-44-908Z-5da93850",
+      "dateUtc": "2026-10-03T03:21:47.971Z"
+    }
+  ],
+  "updatedUtc": "2026-10-03T03:30:00.000000+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",
       "scope": "host-global, the single mutation AM-109 permits outside the run folder",
       "cleanup": "restore the remembered default source, then `pactl unload-module` the source and the sink, in that order, on every exit path including signals; verified from outside by row V5",
-      "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see the card's stop condition, 'The current default source is a physical device', which names the leftover case \u2014 not nextAllowedAction, which covers review dispatch and does not restate the PipeWire preflight. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
+      "resumeInstruction": "If a session dies mid-row, this is the side effect that leaks. Clear it before anything else; see the card's stop condition, 'The current default source is a physical device', which names the leftover case — not nextAllowedAction, which covers review dispatch and does not restate the PipeWire preflight. Each row records PREV_DEFAULT, SINK_ID and SRC_ID in sideEffectsDone so a later session can undo it without re-deriving them."
     },
     {
       "what": "the en_US-ljspeech-medium voice, only if it is not already on disk",
@@ -31,7 +147,7 @@
       "what": "the flagged web bundle, built into build/p3.5-web/ by row V2 and copied over build/linux-resources/web/dist for the duration of that row",
       "scope": "git-ignored build output only; web/dist is left unflagged on every path",
       "cleanup": "V2 removes BOTH build/p3.5-web and build/linux-resources/web/dist through one trap on EXIT INT TERM HUP; the removal runs after `npm run tauri:build:test`, by which point the AppImage already carries its own copy, so deleting the shipping directory is safe. If either survives, remove both before the next build.",
-      "resumeInstruction": "Check `web/dist/assets/*.js` for the marker string p3.5-marker before and after V2; a non-zero count outside V2's own flagged bundle is a FAIL and an owner escalation, remedied by an unflagged `npm run build`. After V2, `build/linux-resources/web/dist` does not exist: any later release build must re-run the producer directly, `bash scripts/v2/package-linux-resources.sh`, before `npm run tauri:build`, or it has no web bundle to ship. There is no `npm run package:linux` \u2014 the root package.json defines no such script and package.json is Must-not-edit for this card \u2014 so the literal `bash` invocation is the only correct one."
+      "resumeInstruction": "Check `web/dist/assets/*.js` for the marker string p3.5-marker before and after V2; a non-zero count outside V2's own flagged bundle is a FAIL and an owner escalation, remedied by an unflagged `npm run build`. After V2, `build/linux-resources/web/dist` does not exist: any later release build must re-run the producer directly, `bash scripts/v2/package-linux-resources.sh`, before `npm run tauri:build`, or it has no web bundle to ship. There is no `npm run package:linux` — the root package.json defines no such script and package.json is Must-not-edit for this card — so the literal `bash` invocation is the only correct one."
     }
   ],
   "instructionReviews": [
@@ -96,6 +212,6 @@
     }
   ],
   "notes": "AM-123: round 5's single finding. The anchor moved 283c222 -> 4ba1630 -> 935911e; AM-121's own instruction to anchor at 4ba1630 was one commit short, because two of that repair's edits were in the card and landed in 935911e. Round 5 also carried a note, not a defect: V1 does not set LD_LIBRARY_PATH for the Piper venv, which both reference scripts do as a fallback. Recorded so a future attempt knows it was seen. AM-134: baseCommit moves to d9c38aa. The card is NOT dispatchable before P3.4's hook exists; that ordering is stated in card text rather than as a DEPENDENCIES.md edge, because a hard edge would make the dispatcher refuse this card until P3.4 is fully APPROVED and the hook need only exist. The owner has not ruled on the edge. AM-138: baseCommit moves to 5fb42a9. Two items were considered and deliberately left: the /p3.5-marker path lacks P3.4 /api prefix (not load-bearing - the harness reads the URL as logged, identical either way) and the two cards invert who owns the gate (attribution prose, character-identical form, only one gate ever written).",
-  "statusNote": "Attempt1 of3 dispatched. Worker owns four feature paths plus its card-granted checkpoint/evidence/return. Exclusive build lease, ports7837/7839 until return and process shutdown verified. Capture-only synthetic virtual source; no model acquisition/run.",
+  "statusNote": "Attempt 1 of 3 finished and BLOCKED, not submitted. Four feature paths written (web/src/main.tsx, src-tauri/src/permissions.rs, src-tauri/src/main.rs three changes, scripts/v2/tauri-audio.test.mjs); nothing committed and nothing staged. A10 voice acquired with licence and SHA-256 evidence. Microphone containment held on every path: the virtual source was the default only inside a capture row, the USB microphone was never the capture device, and the host default and modules are restored now.",
   "continuationNotes": "SandboxRuns chosen as durable attempt/step/runId/dateUtc anchor for three capture records; trusted coordinator provenance, original restoration/leak assertions unchanged. Earlier-attempt history retained. IR09.1 old grep-c wording in Expected remains disclosed; no Expected cell changed. Expected still quotes old grep-c commands; protected cell unchanged. Record those literal count witnesses as well as running V5; any nonzero Expected count remains FAIL/stop, not waived. Same-attempt capture rerun would duplicate provenance and must stop; a new implementation attempt requires coordinator dispatch within3budget."
 }

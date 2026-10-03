@@ -61,6 +61,89 @@ function installObservationHook(): void {
   let lastFacts = '';
   let lastRects = '';
 
+  // ---------------------------------------------------------------- P3.5 --
+  //
+  // P3.5's own half of this one hook: its own marker path, its own capture
+  // facts and its own three `data-testid` rectangles. Everything below is inside
+  // this function, inside the same gated `if`, and runs on P3.4's poll — there is
+  // no second gate, no second interval and no second `if` (owner decision
+  // 2026-10-02, AM-124, AM-138).
+  const audioMarkerPath = '/p3.5-marker';
+
+  /**
+   * The three rectangles P3.4's text-leaf rule cannot publish: `home-search` is
+   * an `<input>` (no `innerText`, no children) and the other two are buttons with
+   * element children, which is exactly what that rule skips. Each is keyed by
+   * its `data-testid` and by nothing else, and carries four numbers — never the
+   * input's value, the typed text, a patient name or a transcript (HS-8).
+   */
+  const audioTestIds = ['home-action-note', 'home-search', 'record-start'];
+
+  /** The phase, read out of the DOM the app already renders (`Capture.tsx`). */
+  const capturePhases = ['record-start', 'record-stop', 'record-stage', 'record-done', 'capture-error'];
+
+  let levelPeak = 0;
+  let lastAudioSnapshot = '';
+
+  const present = (testId: string): boolean => document.querySelector(`[data-testid="${testId}"]`) !== null;
+
+  const readPhase = (): string => {
+    const shown = capturePhases.filter((testId) => present(testId));
+    return shown.length === 0 ? 'none' : shown.join('+');
+  };
+
+  /**
+   * `--level` on `record-dot`, the app's own level and nothing else. It is
+   * `presenceOf(smoothed)`, so it is quantised to `0` or to `[0.55, 1.00]`.
+   */
+  const readLevel = (): number => {
+    const dot = document.querySelector<HTMLElement>('[data-testid="record-dot"]');
+    if (dot === null) return 0;
+    const value = Number.parseFloat(getComputedStyle(dot).getPropertyValue('--level').trim());
+    return Number.isFinite(value) ? value : 0;
+  };
+
+  const readAudioFacts = (): URLSearchParams => {
+    const query = new URLSearchParams();
+    const phase = readPhase();
+    const level = readLevel();
+    // A running maximum over every value this poll reads, not a per-sample one:
+    // "never rose above the threshold for the whole recording" cannot be decided
+    // from a change-only publish, so the maximum is kept here and reset on each
+    // `record-start`.
+    if (present('record-start')) levelPeak = 0;
+    else if (level > levelPeak) levelPeak = level;
+    const timer = document.querySelector('[data-testid="record-timer"]');
+    query.set('phase', phase);
+    query.set('timer', (timer?.textContent ?? '').trim());
+    query.set('level', String(level));
+    query.set('levelPeak', String(levelPeak));
+    for (const testId of audioTestIds) {
+      const element = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+      if (element === null) continue;
+      const rect = element.getBoundingClientRect();
+      query.set(`tid_${testId}_x`, String(Math.round(rect.x)));
+      query.set(`tid_${testId}_y`, String(Math.round(rect.y)));
+      query.set(`tid_${testId}_w`, String(Math.round(rect.width)));
+      query.set(`tid_${testId}_h`, String(Math.round(rect.height)));
+    }
+    return query;
+  };
+
+  /**
+   * The same-origin `fetch` is the channel the harness requires: Fastify's
+   * request logger writes the URL to the bundled server's stdout, which the shell
+   * drains and re-emits to stderr as `apunta: ignoring a bridge line (…)`. The
+   * same origin means no new network access (HS-6).
+   */
+  const publishAudioFacts = (force: boolean): void => {
+    const facts = readAudioFacts();
+    const signature = facts.toString();
+    if (!force && signature === lastAudioSnapshot) return;
+    lastAudioSnapshot = signature;
+    void fetch(`${audioMarkerPath}?${signature}`, { credentials: 'same-origin' }).catch(() => undefined);
+  };
+
   const send = (query: URLSearchParams): void => {
     void fetch(`${markerPath}?${query.toString()}`, { credentials: 'same-origin' }).catch(() => undefined);
   };
@@ -170,6 +253,7 @@ function installObservationHook(): void {
 
   const poll = (): void => {
     publishFacts(false);
+    publishAudioFacts(false);
     const rects = readRects();
     const signature = JSON.stringify(rects);
     if (signature !== lastRects) {
