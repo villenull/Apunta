@@ -1,3 +1,13 @@
+## P3.5 final runtime readiness review runs without resource use
+
+Readiness revieweraa834596-509d-4895-99fc-53cbd63f6c5d (LongCat free high)
+confirmed RUNNING with callback. Exclusive writes P3.5-runtime-readiness.md and
+runtime-readiness evidence; read-only/synthetic command preparation only. It
+checks finalattempt3 sequence, scanner/build/dryplugin gates, provenance/anchor
+handoff, preservedExpected witnesses and staleattempt1dispatch replacement.
+No build/capture/input/DB/pactl or realmodel. P3.4 workerd353b075 remains sole
+buildlease holder, finalonce-only runtime; no P3.5resource reservation yet.
+
 ## Installed prerequisites PASS; P3.4 final runtime worker running
 
 Workerff7186b2 completed installerexit0 and archival succeeded. Exact three
