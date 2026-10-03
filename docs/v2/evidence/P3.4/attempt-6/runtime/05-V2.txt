@@ -1,0 +1,219 @@
+V2 - the real AppImage on port 7835 - PASS, 20/20 assertions
+============================================================
+
+Row status: PASS
+Exit code: 0
+Working directory: repository root (~/Projects/Apunta)
+Start (UTC): 2026-10-03T23:35:09Z
+End (UTC):   2026-10-03T23:35:35Z
+Node: v24.19.0 (printed by the row itself, exactly as its cell requires)
+Sandbox run id: 2026-10-03T23-35-09-127Z-5bce1465
+Sandbox run folder: <sandbox>/2026-10-03T23-35-09-127Z-5bce1465
+Port: 7835, this card's only pin. 7810 is the owner's preview and was not used.
+7717 was never contacted (HS-1).
+
+Environment preparation, outside the row's own text and recorded as such:
+
+  export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH"
+  export GSTREAMER_HELPERS_DIR="$PWD/build/p34-runtime6/gst"   (AM-190, see 02-)
+
+Exact command, the row's cell verbatim once the GFM code-span delimiters are
+removed:
+
+  export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" \
+    && node --version \
+    && node scripts/v2/sandbox.mjs env --port 7835 > /tmp/apunta-v2-p3.4-v2.env \
+    && . /tmp/apunta-v2-p3.4-v2.env \
+    && node scripts/v2/tauri-security.test.mjs security
+
+ASSAULT SUMMARY - the actual counts, read from the run's own output
+
+  PASS assertions:      20
+  FAIL assertions:       0
+  NOT RUN assertions:   0
+  harness line: "20/20 assertions passed"
+  process exit code:    0
+
+NOT RUN is never reported as PASS here, and nothing was NOT RUN: all five of
+(a), (b), (c), (d) both halves and (e) produced a readable fact this run, which
+is what attempt 4 and attempt 5 could not achieve. Both attempts recorded
+NOT RUN rows; this run recorded none. The full assertion list, in the order the
+harness printed it, all twenty, is reproduced below verbatim.
+
+THE TWENTY PASSES, VERBATIM FROM THE RUN
+
+  PASS V2 appimage: ~/Projects/Apunta/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+  PASS V2 the AppImage is newer than every Rule B input
+  PASS V2 no Rule B path named by git is newer than the AppImage
+  PASS V2 the app's own window is up
+  PASS V2 the server answers with this run id
+  PASS (d) header: the SPA fallback HTML carries rule 6's six directives
+  PASS (d) handler: the fixture note is created over HTTP
+  PASS (a) __TAURI__ is absent and the built-in IPC command is ACL-denied
+  PASS (d) handler: the "John Smith" row was clicked and landed
+  PASS (d) handler: the "Progress note" row was clicked and landed
+  PASS (d) handler: window.__APUNTA_CSP_PROBE__ is undefined
+  PASS (d) handler: the literal <script> is visible in the rendered body
+  PASS (e) an inline style attribute is applied in the shipped binary
+  PASS (b) navigation to the reserved .invalid origin is refused
+  PASS (c) window.open is cancelled for a loopback URL and for the reserved .invalid origin
+  PASS containment no server process from the run survives
+  PASS containment no second lock, database, -wal or -shm
+  PASS containment the sandbox port is free afterwards
+  PASS containment the observation channel is gone, and cannot ship
+  PASS containment ollama is still running
+
+  (the first line is the AppImage resolution; the run also printed two
+   informational lines about the display and the forced GDK_SCALE, reproduced
+   below. Counting the two freshness passes, the two launch passes, the five
+   security assertions and the five containment assertions gives 20.)
+
+WHAT EACH THING THAT HAD BEEN FAILING OR NOT RUNNING NOW DID, FROM THE
+PUBLISHED FACTS THEMSELVES - NOT FROM ANY SUBSTITUTE READING
+
+- (a) IPC reachability. The AM-188 assertion is a live ACL denial, not the
+  `typeof` of a global. The published fact line carries, verbatim:
+
+    tauri=undefined
+    tauriInternals=object
+    ipc=object
+    ipcInvoke=function
+    ipcProbe=rejected
+    ipcProbeMsg=Command plugin:event|listen not allowed by ACL
+
+  `ipcProbe` reads `rejected` and `ipcProbeMsg` is exactly the ACL denial for a
+  known harmless built-in command, resolved inside the existing 30-second
+  assertion deadline. This is what attempt 4 recorded as FAIL (a) with
+  tauriInternals=object and no reachability probe at all, and what attempt 5
+  proved for the first time. One denial does not prove every command is denied
+  and the row does not claim it: AM-188's "one denial does not prove every
+  command is denied" is honoured by the assertion staying one assertion with one
+  pass condition.
+
+- (b) navigation refused. The published `attempt` field reads
+  `b:assign-location-href` on a fact line published AFTER the attempt, and on
+  that same line href still reads
+  `http://127.0.0.1:7835/?patient=...&note=...`. The refusal is therefore read
+  from outside the page, on the app's own origin, and not from a changed title
+  or a changed geometry. No load of the reserved .invalid origin is claimed or
+  observed.
+
+- (c) window.open cancelled, both halves. Two further published `attempt`
+  values on later fact lines: `c:window-open-external` and
+  `c:window-open-same-origin`, with the app window unchanged.
+
+- (d) header half. Observed live, on the SPA-fallback HTML over the app's own
+  origin:
+
+    GET /patients: status 200
+    content-type: "text/html; charset=utf-8"
+    content-security-policy "default-src 'self'; script-src 'self';
+      connect-src 'self'; object-src 'none'; base-uri 'none';
+      frame-ancestors 'none'; style-src 'self' 'nonce-bIgdzjlJYPg5SqyNnKU0Mg==';
+      style-src-attr 'unsafe-inline'"
+
+  All six of rule 6 verbatim, no extra source in any of the six, plus the
+  per-response nonce and the style-src-attr the card's AM-114 decision carries.
+  This half fails on an unmodified tree, which is what keeps (d) from passing
+  vacuously.
+
+- (d) handler half - BOTH CLICKS LANDED. This is the half attempt 4 failed
+  (the click on the John Smith row at 99,284 did not land within 30 s) and the
+  half that made (b) and (c) NOT RUN behind it. The published pointer witness
+  and click counters read:
+
+    vpW=1280 vpH=860
+    ptrN=6 ptrCX=396 ptrCY=266
+    clickN=2 clickCX=396 clickCY=266 clickTag=DIV clickTestId= clickText=Progress note
+
+  `ptrN=6` is the fresh page witness; `clickN=2` is the exactly-one-click stage
+  having completed on each of the two rows; `clickText=Progress note` names the
+  second landing. The rows were located by their visible text - "John Smith" and
+  "Progress note" - at the rectangles the hook published, never by a class name,
+  a test id or a selector. The landing is proved by the published fact set
+  changing, specifically `scriptText=true`, and never by the assertion the click
+  enables. Then `probe=undefined` (window.__APUNTA_CSP_PROBE__ absent) and
+  `scriptText=true` (the literal `<script>` visible in the rendered body).
+
+- (e) the style attribute is applied in the shipped binary.
+
+    styleAttr=color-scheme: dark; --accent: #2a9d8f; --on-accent: #ffffff; --accent-ink: #217e73;
+    styleComputed=dark
+
+  The attribute applied rather than being blocked. A blocked attribute would
+  read `auto` or empty here. This is what proves `style-src-attr
+  'unsafe-inline'` is a deliberate, effective relaxation and not a header string
+  nobody checked.
+
+THE TWO FRESHNESS ASSERTIONS, AND WHY V0 DID NOT NEED TO RUN
+
+  PASS V2 the AppImage is newer than every Rule B input
+  PASS V2 no Rule B path named by git is newer than the AppImage
+
+  The harness re-derives both itself, independently of anything recorded here.
+  Measured directly as well, before V2 ran (see 03-V0-not-run.txt):
+    AppImage mtime                    2026-10-03T22:39:34.366Z
+    newest Rule B input mtime         2026-10-03T06:06:41.280Z  (web/src/main.tsx)
+    git-named Rule B paths            39 (from d56af1d...HEAD plus working tree)
+    of those, newer than the AppImage 0
+
+  So the AppImage this row launched is fresh against Rule B's set by the
+  harness's own arithmetic, which is the assertion, not an assurance.
+
+CONTAINMENT - all five asserted by the row, none weakened, all measured again
+from outside afterwards
+
+  1. no process from the run survives.
+     The harness stopped the shell by pid (SIGTERM to pid 2933194) - by pid,
+     never pkill (C-ISO@1 rule 7). Measured after the row: no tauri-security,
+     no AppImage and no apunta process of this run remains.
+  2. no second lock, database, -wal or -shm in the run folder.
+     The run folder holds exactly one of the four: <sandbox>/.../data/apunta.db.
+     No apunta.lock, no -wal, no -shm. One database, created by this run.
+  3. the port is free afterwards.
+     Measured after the row: 7835 free. 7717 was never contacted and is not
+     listening; nothing in this row touched the live instance.
+  4. the observation channel is gone when the row ends, and cannot ship.
+     (a) after the app was stopped by pid, a second read of the accumulated
+     stderr a short interval later shows no new /api/p3.4-observe line; and
+     (b) web/dist/assets/*.js, re-measured after the row finished: 16 js
+     bundles, marker 'p3.4-observe' in 0, gate 'VITE_APUNTA_TEST_IDENTITY' in 0.
+     The channel this row used is provably not a channel any owner can ship.
+  5. ollama is still running.
+     pid 1123 /usr/bin/ollama serve, read from outside the run. `ollama list`
+     read once, read-only: the same tags with the same ids and the same
+     modification dates as before the row. No model was pulled, loaded,
+     unloaded or removed (HS-3). No model inference of any kind was performed
+     by this card or this row.
+
+DISPLAY AND SANDBOX PREFIX, RECORDED AS THE CARD ASKS
+
+  the harness recorded: "display: the inherited X display :99"
+  and: "GDK_SCALE forced to 1 in the private headless shell environment; the
+        two-point calibration still measures the real scale"
+
+  The card states the xvfb-run prefix is the harness's choice at run time
+  (xvfb-run if present, else the desktop session), recorded in the evidence and
+  not decided by the reader. This run inherited an existing :99; this session
+  started no X server and stopped none. The measured native/client two-point
+  affine calibration and the read-back-within-1px containment check are the
+  AM-195 native-identity package doing its job, and they are why the two clicks
+  landed where attempts 4 and 5 could not land theirs.
+
+WHAT WAS NOT DONE IN THIS ROW
+-----------------------------
+  - No threshold, timeout, assertion, predicate or pass condition was changed,
+    added, removed or relaxed. The 30-second deadline, the exactly-one-click
+    stage, the landing rule, the <=1 px read-back containment and the IPC/ACL
+    assertion are the ones the reviewed harness carries (sha256 cc733cd0...,
+    byte-identical to what docs/v2/state/reviews/P3.4-eod-instrument-ir2.md
+    reviewed and to what impl6 re-hashed).
+  - No click was repeated, no timeout was extended, no row was repaired and no
+    partial re-run followed. The row ran once and its exit code was accepted as
+    it came.
+  - No second port was bound and no listener was opened; the harness binds
+    nothing (Fixed decisions, "No port, no listener, no variable").
+  - No live data folder was opened and no path outside the sandbox run folder
+    was read as data.
+  - Every fixture is synthetic (HS-8): the patient is the prototype's sample
+    John Smith and the note content is e2e/fixtures/csp/injection-probe.md.

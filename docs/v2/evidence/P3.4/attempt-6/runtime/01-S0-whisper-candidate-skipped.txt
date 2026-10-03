@@ -1,0 +1,45 @@
+P3.4 attempt 6 - S0 (the A06 whisper.cpp candidate) - SKIPPED
+=================================================================
+
+Row status: SKIPPED (the card's own skip path), not run, not an acquisition.
+Card text: docs/v2/state/dispatch/P3.4.md, Steps, step 0 (S0), and its *Anchor*.
+
+Working directory: repository root (~/Projects/Apunta)
+Anchor tested, verbatim from the card:
+
+  test -x "${APUNTA_WHISPER_WORK_DIR:-/tmp/apunta-v2/whisper-src}/whisper.cpp/build-${APUNTA_WHISPER_BACKEND:-vulkan}/bin/whisper-cli"
+
+Measured:
+
+  APUNTA_WHISPER_WORK_DIR (the value V0's own command exports):
+    ~/.cache/apunta-v2/whisper-src
+  APUNTA_WHISPER_BACKEND (unset, so the default applies):
+    vulkan
+  candidate path:
+    ~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli
+  WHISPER_EXECUTABLE=yes
+
+Result: the anchor holds, so S0 was SKIPPED exactly as the card prescribes.
+Nothing was cloned, fetched, built or downloaded by this step; no other A-row
+was touched; no host was contacted. The existing A06 records in
+docs/v2/evidence/P3.1/ continue to stand unchanged.
+
+Note on the card's S0 prose versus the producer's behaviour, carried forward
+from attempt 4 and recorded again here without being acted on: the card says
+"the only way a producer run touches no network at all is for the candidate to
+be already executable", which is true in substance and wrong in mechanism.
+scripts/v2/package-linux-resources.sh:206 calls
+scripts/build-whisper-candidate.sh unconditionally and that script has no
+candidate-exists guard before its `git fetch` at :77, so a producer run re-fetches
+the ALREADY-PINNED A06 revision from github.com on every run. It is a fetch of
+nothing already pinned-and-verified being re-obtained, not a new acquisition,
+and HS-3 is not crossed because A06's row, revision, hosts and query rules are
+exactly the ones build-whisper-candidate.sh already implements.
+
+This attempt did NOT run the producer at all (V0 was NOT RUN - see
+02-V0.txt), so no such fetch happened during attempt 6. Recorded explicitly,
+as required, rather than left to be discovered:
+
+  network requests made by the A06/producer path during attempt 6: NONE.
+  The producer script was not executed on this attempt. The AppImage V2
+  launched is the one attempt 5's V0 produced on 2026-10-03T22:39:34Z.

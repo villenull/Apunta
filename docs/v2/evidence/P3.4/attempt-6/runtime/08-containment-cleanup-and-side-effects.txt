@@ -1,0 +1,128 @@
+Containment, cleanup, side effects and lease release - attempt 6
+================================================================
+
+All measurements below were taken from OUTSIDE the row, after it ended. Nothing
+here is a substitute for the containment assertions the harness itself made;
+those five are in 05-V2.txt and all five passed inside the row.
+
+OWN PROCESSES
+-------------
+  The harness stopped the AppImage shell by pid - SIGTERM to pid 2933194 - by
+  pid on every path, never by pkill (C-ISO@1 rule 7).
+  Measured after the row: no tauri-security process, no AppImage process and no
+  bundled-server process of this run remains.
+  This session started no background process of its own that outlived the rows,
+  and killed nothing it did not start. No pkill was issued at any point.
+
+PORT
+----
+  7835, this card's only pin: FREE after the row. The harness's own containment
+  assertion said so from inside, and it was re-measured from outside.
+  7810, the owner's preview: not used.
+  7717, the live instance: never contacted, and not listening. HS-1 held.
+
+SECOND DATABASE, LOCK, WAL, SHM
+-------------------------------
+  One sandbox run folder was created, <sandbox>/2026-10-03T23-35-09-127Z-5bce1465,
+  by `sandbox.mjs env` and used by V2 alone.
+  Inside it, exactly one of the four artefacts: data/apunta.db.
+  No apunta.lock, no -wal, no -shm. No second database anywhere.
+  The live Apunta data folder was never opened, listed, read, copied or queried.
+
+RELEASE INVARIANT - re-measured after every row had finished
+-------------------------------------------------------------
+  web/dist/assets/*.js
+    js bundles                                        16
+    containing the marker 'p3.4-observe'               0
+    containing the gate 'VITE_APUNTA_TEST_IDENTITY'    0
+
+  Same measurement before V2 ran (03-V0-not-run.txt §4c): 16 / 0 / 0.
+  Unchanged across the attempt, on success and on failure alike. web/dist is
+  left unflagged on every path, which is the card's requirement and HS-7's.
+
+  The flagged bundle exists only in the AppDir the AppImage reads, where it is
+  1 of 16 and the gate string is 0 of 16 - the correct flagged-build shape.
+
+MODEL AND OLLAMA
+----------------
+  ollama still running, read from outside the run: pid 1123 /usr/bin/ollama serve.
+  `ollama list` read once, read-only: the same tags, the same ids and the same
+  modification dates as before. Nothing pulled, nothing loaded, nothing
+  unloaded, nothing removed (HS-3).
+  No model inference of any kind was performed by this card or this attempt.
+  No microphone was opened and no audio was captured or played (HS-1, and the
+  physical-microphone prohibition). The four GStreamer dry inspections read
+  plugin registries only; they launched no app and touched no audio device.
+
+NETWORK AND EGRESS
+------------------
+  No network request of any kind was made by this attempt.
+  Specifically: V0 was NOT RUN, so `scripts/v2/package-linux-resources.sh` was
+  never executed and the A06 `git fetch` that
+  `scripts/build-whisper-candidate.sh:77` performs unconditionally inside it
+  did not happen. That behaviour is recorded explicitly in 01-S0 and 03-V0
+  because it is the one network-touching path this card has and it was not
+  taken.
+  No host outside the A06 allow-list was contacted, no model was acquired, no
+  package was installed, and no key, token or credential was created, read or
+  printed. HS-3, HS-5 and HS-6 held.
+  The only network traffic on the host during V2 was loopback, inside the
+  sandbox: the app talking to its own bundled server on 7835, and the harness
+  polling it on the same port.
+
+BUILD AND DISPLAY LEASES
+------------------------
+  The native BUILD lease and the display lease were this session's alone for the
+  whole attempt and are now released:
+    - No build was run. V0 was NOT RUN, so no AppImage was produced, no
+      `build/linux-resources/**` was rewritten, no `server/dist/**` was rewritten
+      and no `web/dist/**` was rewritten by this attempt.
+    - No X server was started and none was stopped. The harness inherited an
+      existing display :99 and recorded that it did; this session neither
+      created nor reaped it.
+    - The AppDir and AppImage V2 exercised are attempt 5's outputs, unmodified
+      by this attempt.
+
+WHAT WAS WRITTEN
+----------------
+  Only, and only these:
+    docs/v2/evidence/P3.4/attempt-6/runtime/**   (new, this attempt's evidence)
+    docs/v2/state/cards/P3.4.json                (the checkpoint, updated)
+    docs/v2/state/returns/P3.4.md                (appended to, not rewritten)
+
+  Nothing was staged and nothing was committed. No shared `build/` parent was
+  created, written or deleted; this attempt's scratch is its own ignored
+  `build/p34-runtime6/`. No source file, card, contract, manifest, config, tool,
+  fixture, dispatch or pre-existing evidence file was edited by this attempt.
+
+  The working tree was dirty when this attempt began and was left dirty in the
+  same places. Those files belong to other sessions:
+
+     M docs/v2/ORCHESTRATION-LOG.md
+     M docs/v2/state/AMENDMENTS.md
+     M docs/v2/state/NEXT-SESSION.md
+     M docs/v2/state/PROGRESS.json
+     M docs/v2/state/cards/P3.5.json
+    ?? docs/v2/evidence/english-eod-readiness/
+    ?? docs/v2/state/reviews/ENGLISH-EOD-runtime-readiness.md
+
+  None of them was touched, staged or committed here. CLAUDE.md's rule about
+  background agents' in-flight work was followed literally: leave it alone, push
+  nothing, commit nothing.
+
+SECRETS AND SANITISATION
+------------------------
+  Every evidence file in this directory is sanitised per RUN-CONFIG §4: the home
+  folder is written `~`, the sandbox root is written `<sandbox>`, and the host's
+  hostname - which appears in the application log lines the harness echoes -
+  is written `<host>`. No key, token, password or credential appears in any file
+  here. The only personal name present is John Smith, the prototype's sample
+  patient, which HS-8 names as the correct synthetic subject.
+
+RAW LOGS
+--------
+  The unedited stdout/stderr of every row is in this attempt's ignored scratch
+  root `build/p34-runtime6/` (V1.log, V2.log, V3.log, V4.log, v0-predicate.out.txt,
+  the extracted and unescaped cells, and the corrected-but-unexecuted V3 cell).
+  Raw logs are not committed, per RUN-CONFIG §4. Nothing was deleted from that
+  root; it is gitignored and it is left in place for a reviewer.

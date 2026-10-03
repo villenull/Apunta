@@ -1,0 +1,49 @@
+V1 - the server CSP unit suite - PASS
+======================================
+
+Row status: PASS
+Exit code: 0
+Working directory: repository root (~/Projects/Apunta)
+Start (UTC): 2026-10-03T23:34:52Z
+End (UTC):   2026-10-03T23:34:56Z
+Duration: 0.652 s of build:shared; vitest 650 ms
+Node: v24.19.0 (the pinned A01 tarball, exported onto PATH before the row ran)
+
+Environment preparation, outside the row's own text and recorded as such:
+
+  export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH"
+
+The row's cell carries no PATH export of its own; the pinned Node is required
+for the row to mean anything (RUN-CONFIG, and V2/V4's own cells which do export
+it). Nothing else was set, nothing was installed, nothing was configured.
+
+Exact command, the row's cell verbatim once the GFM code-span delimiters are
+removed:
+
+  npm run build:shared && npx vitest run server/src/http/csp.test.ts
+
+Excerpt, tail:
+
+  RUN  v4.1.11 ~/Projects/Apunta
+
+  Test Files  1 passed (1)
+       Tests  12 passed (12)
+    Start at  17:34:55
+    Duration  650ms (transform 262ms, setup 0ms, import 480ms, tests 117ms,
+    environment 0ms)
+
+The row's own condition on collection, asserted rather than assumed: the named
+file WAS collected. "Test Files 1 passed (1)" with 12 tests and 0 skipped. A
+`No test files found` for this path would have been a FAIL and never a PASS.
+
+Notes, recorded and not acted on:
+- The in-process server the suite starts binds 127.0.0.1:7812 and answers 503,
+  which is the suite's own boot-error-server fixture on a temporary APUNTA_WEB_DIST
+  directory the test writes and tears down. It is a unit test with its own
+  temporary data, not a launched sandbox instance; port 7812 is not this card's
+  pin (7835) and 7717 was never contacted.
+- Neither server/src/http/csp.ts nor server/src/http/csp.test.ts was touched by
+  this attempt, and no test case was added, removed, skipped or weakened. This
+  is the fourth consecutive 12/12 on an unchanged file.
+- No file was written by this attempt other than this attempt's own evidence
+  under docs/v2/evidence/P3.4/attempt-6/runtime/.

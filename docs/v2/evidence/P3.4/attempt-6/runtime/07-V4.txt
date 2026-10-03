@@ -1,0 +1,129 @@
+V4 - npm test, lint, typecheck, cargo - FAIL at lint, on files outside May edit
+=============================================================================
+
+Row status: FAIL
+Exit code: 1
+Working directory: repository root (~/Projects/Apunta)
+Start (UTC): 2026-10-03T23:38:24Z
+End (UTC):   2026-10-03T23:38:40Z
+Duration: 16.172 s of wall clock before the row stopped
+Node: v24.19.0 (printed by the row itself, exactly as its cell requires)
+
+Exact command, the row's cell verbatim once the GFM code-span delimiters are
+removed, in the card's own order and with nothing added, removed or reordered:
+
+  export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" \
+    && node --version \
+    && npm test \
+    && npm run lint \
+    && npm run typecheck \
+    && ( export PATH="$HOME/.cargo/bin:$PATH" && cd src-tauri \
+         && cargo fmt --check && cargo clippy -- -D warnings && cargo test )
+
+WHAT RAN, AND WHAT DID NOT - the actual counts
+----------------------------------------------
+  node --version        v24.19.0                                    ran, as printed
+  npm test              exit 0                                       ran in full
+                         Test Files  163 passed (163)
+                         Tests       2235 passed (2235)
+                         Duration    11.27 s
+  npm run lint          exit 1                                       ran, FAILED
+                         eslint .  ->  13 problems (13 errors, 0 warnings)
+                         prettier --check .  and the three scripts after it
+                                                    NEVER RAN (&& short-circuit)
+  npm run typecheck                                   NEVER RAN (downstream of lint)
+  cargo fmt --check                                 NEVER RAN (downstream of lint)
+  cargo clippy -- -D warnings                      NEVER RAN (downstream of lint)
+  cargo test                                        NEVER RAN (downstream of lint)
+
+So this row produced one real number worth recording - 163 test files and 2235
+tests, all passing - and then stopped. The Rust half did not execute. It is
+recorded as NOT RUN, not as PASS and not as skipped.
+
+THE FAILURE, IN FULL - all thirteen errors, and every one of them is a file this
+card may not edit
+
+/home/villenull/Projects/Apunta/docs/v2/evidence/P3.5/attempt-4/final-completion-ir/verify.mjs
+  8:3   error  Unexpected console statement. Only these console methods are
+               allowed: warn, error                          no-console
+  78:1  error  Unexpected console statement. Only these console methods are
+               allowed: warn, error                          no-console
+
+/home/villenull/Projects/Apunta/docs/v2/evidence/P3.5/silence-completion-ir/v5-program-own-extraction.mjs
+  1:10    error  A `require()` style import is forbidden
+                  @typescript-eslint/no-require-imports
+  1:86    error  Unexpected console statement ...              no-console
+  1:2901  error  Unexpected console statement ...              no-console
+  1:6150  error  Unexpected console statement ...              no-console
+  1:6231  error  Unexpected console statement ...              no-console
+  1:6264  error  Unexpected console statement ...              no-console
+  1:6312  error  Unexpected console statement ...              no-console
+  1:6425  error  Unexpected console statement ...              no-console
+  1:6472  error  Unexpected console statement ...              no-console
+
+/home/villenull/Projects/Apunta/docs/v2/evidence/P3.5/silence-completion-ir/verify.mjs
+  161:9  error  'r' is assigned a value but never used. Allowed unused vars
+                must match /^_/u
+                @typescript-eslint/no-unused-vars
+  183:1  error  Unexpected console statement ...               no-console
+
+  ✖ 13 problems (13 errors, 0 warnings)
+
+WHY THIS IS A STOP AND NOT SOMETHING TO FIX
+--------------------------------------------
+All thirteen are in `docs/v2/evidence/P3.5/`. P3.4's "May edit" list is
+`src-tauri/**` except `src-tauri/ui/`, three named server files, `web/src/main.tsx`,
+`scripts/v2/tauri-security.test.mjs`, one fixture,
+`docs/v2/evidence/P3.4/**` and `docs/v2/state/cards/P3.4.json`. The card says
+this in as many words:
+
+  "A red `lint` or `typecheck` in a file outside May edit is a stop, not
+   something to fix here (HS-9)."
+
+It is a stop. Nothing was repaired, nothing was suppressed, no eslint directive
+was added, no file outside May edit was touched, and no re-run followed.
+
+Both offending files are committed and tracked, so this is not another session's
+uncommitted in-flight work being caught mid-write; it is red lint sitting in
+`main`:
+
+  git ls-files docs/v2/evidence/P3.5/silence-completion-ir/
+    docs/v2/evidence/P3.5/silence-completion-ir/v5-program-own-extraction.mjs
+    docs/v2/evidence/P3.5/silence-completion-ir/verify-output.txt
+    docs/v2/evidence/P3.5/silence-completion-ir/verify.mjs
+
+The root `lint` script is `eslint . && prettier --check . && ...`, and `eslint .`
+walks `docs/` as well as `server/`, `web/` and `src-tauri/`. So P3.5's evidence
+scripts have been able to redden the whole repository's lint at any time since
+they landed. That is a finding about P3.5's evidence and about the lint
+configuration's reach, and it belongs to the coordinator and to P3.5. It is
+recorded here, not fixed here.
+
+WHOSE FAULT THIS ROW IS, STATED PLAINLY
+----------------------------------------
+Not this card's. Nothing in P3.4's May edit, and nothing in the whole diff
+`88811af...HEAD`, is implicated: the four AM-195 shipping files are
+`scripts/v2/tauri-security.test.mjs`, `docs/v2/tools/build-dispatch.mjs`,
+`docs/v2/tools/build-dispatch.test.mjs` and two evidence fixtures, and
+`scripts/v2/tauri-security.test.mjs` lints clean - the review that cleared the
+package ran `eslint --no-ignore` on all four paths and got exit 0
+(docs/v2/evidence/P3.4/attempt-6/source-review/02-suites-and-checks.txt).
+
+It is also not the same defect attempt 5 hit. Attempt 5's V4 failed at lint on
+thirteen evidence-artifact errors that were its OWN output, which it could and
+should have formatted before running the row. This attempt's thirteen errors are
+none of its own output; this attempt's own evidence is Markdown and plain text
+and is prettier-clean.
+
+WHAT WAS NOT DONE
+-----------------
+  - The row was not re-run. It ran once and exited 1 and that is the record.
+  - `prettier --write` was NOT run across the tree, and no eslint configuration,
+    ignore file, override or directive was added or changed. Loosening the lint
+    that reddened the row would be an HS-7 finding.
+  - `npm run typecheck` was not run "separately" to get a second green number
+    out of the row. It is downstream of a failed `&&` and it is recorded NOT
+    RUN.
+  - The cargo half was not run separately either, for the same reason.
+  - No expectation was weakened: the 2235 tests are the tests the tree has, all
+    of which passed.

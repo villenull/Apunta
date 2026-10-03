@@ -7,25 +7,31 @@
   ],
   "baseCommit": "6974943",
   "attempt": 6,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-195 exact source and fixtures applied at88811af, independent shipping source CLEAR; attempt6 runtime dispatch authorized once",
-  "nextAllowedAction": "AM-195-V0-through-V4-once-card-order-no-seventh-no-retry",
+  "status": "CHANGES REQUESTED",
+  "lastCompletedStep": "AM-195 attempt6 runtime executed once in card order: S0 SKIPPED, V0 NOT RUN, V1 PASS, V2 PASS 20/20, V3 BLOCKED, V4 FAIL at lint on P3.5 evidence outside May edit",
+  "nextAllowedAction": "coordinator decision. No attempt7, no reset, no retry, no waiver. V3 exit status unrecoverable (implementer extraction error) and V4 red in docs/v2/evidence/P3.5 - both need a coordinator call, not an implementer retry.",
   "sideEffectsDone": [
-    "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
-    "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
-    "V2: four sandbox launches of the real AppImage on port 7835 (<sandbox>/2026-10-02T23-09-25-372Z-7099e32b, 23-11-43-686Z-078bd8cc, 23-14-44-140Z-b6a7bbc6, 23-18-12-989Z-74194898, 23-38-00-485Z-b72ab858), every one stopped by pid, never pkill. The first is where the frozen-snapshot defect was found; the last is the recorded run.",
-    "scripts/v2/tauri-security.test.mjs: the observation readers now resolve their source per read (one stderrAt helper plus thunks at seven polling call sites), the observed CSP header is printed on a pass as well as a failure, and the fixture note is created before the observation gate with one ctrl+r so the page renders the workspace. No assertion, predicate, pass condition or timeout was changed.",
-    "web/src/main.tsx: NOT touched by this attempt. The plain https://example.invalid/ literal and its single no-restricted-syntax suppression stand as attempt 3 left them.",
-    "Attempt5 V0 rebuilt shared outputs/AppImage with approved scanner env; four fresh registry dryplugin checksPASS; web/dist unflagged0markers and V0 scratch removed; sandbox launch ownpidcleanup/port7835free, buildlease released."
+    "S0: SKIPPED on its own anchor. ~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli is executable, so nothing was cloned, fetched, built or downloaded and the P3.1 A06 records stand unchanged. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/01-S0-whisper-candidate-skipped.txt",
+    "V0: NOT RUN. Rule B trigger derived on four axes and found empty - git diff 88811af...HEAD over Rule B set 0 paths, git status --porcelain over it 0 paths, checkpoint changedFiles naming 0 Rule B paths, and the two things those predicates cannot see measured directly: AppImage mtime 2026-10-03T22:39:34.366Z is newer than the newest Rule B input 2026-10-03T06:06:41.280Z (web/src/main.tsx), and the shipped AppDir web bundle carries the marker in 1 of 16 js bundles with the gate string in 0. The producer was NOT executed, so no A06 refetch, no network request of any kind, no rewrite of build/linux-resources/**, server/dist/** or web/dist/**, and no AppImage build. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/03-V0-not-run.txt and 00-v0-predicates-and-prerequisites.txt",
+    "AM-190 authorised setup, run once before V2: gst-plugin-scanner copied from the installed host path into this attempt own ignored build/p34-runtime6/gst and GSTREAMER_HELPERS_DIR exported to it in the shell that ran V2. Four dry bundled-plugin inspections then PASS (appsink, autoaudiosrc, alsasrc, pulsesrc), one fresh registry each, bundled scanner asserted with test -x. No app, no audio device, no microphone. Not rebuild-gated this attempt since no rebuild happened; run anyway as authorised and read-only. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/02-am190-scanner-and-four-dry-inspections.txt",
+    "V1: once only. exit 0, 12 passed 0 skipped, csp.test.ts collected. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/04-V1.txt",
+    "V2: once only, ONE AppImage launch, real binary, port 7835, sandbox run 2026-10-03T23-35-09-127Z-5bce1465. exit 0, 20/20 assertions passed, 0 FAIL, 0 NOT RUN. (a) is a live ACL denial ipcProbe=rejected / ipcProbeMsg=Command plugin:event|listen not allowed by ACL; (b) attempt=b:assign-location-href with href still on the app origin; (c) attempt=c:window-open-external and c:window-open-same-origin; (d) header half carries rule 6 six directives verbatim plus the per-response nonce and style-src-attr, and the handler half landed BOTH clicks with ptrN=6 fresh witness, clickN=2 and clickText=Progress note; (e) styleComputed=dark against styleAttr. All five containment assertions passed inside the row and every one was re-measured from outside. AppImage stopped by pid 2933194, never pkill. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/05-V2.txt",
+    "V3: row BLOCKED, not PASS and not FAIL. This session own extraction error: the mechanically extracted cell kept its GFM code-span backticks, so the file was run as a command substitution and the row body executed inside it. Its guards ran once in order, hits file 0 bytes, src-tauri/capabilities absent, and no FAIL line fired (bash reported the row own success label as the first word of the substitution output). The row pass condition test \"$bad\" = 0 exit status was consumed and is unrecoverable, so PASS is not claimed. NOT retried because the row had started. Corrected cell written to build/p34-runtime6/V3.command.corrected.txt and deliberately NOT executed. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/06-V3.txt",
+    "V4: once only. npm test exit 0 with 163 files / 2235 tests all passing; npm run lint exit 1 with 13 eslint errors, every one in docs/v2/evidence/P3.5/ (attempt-4/final-completion-ir/verify.mjs, silence-completion-ir/v5-program-own-extraction.mjs, silence-completion-ir/verify.mjs), all committed to main and all outside P3.4 May edit. prettier --check, typecheck and the entire cargo half are downstream of the failed && and are NOT RUN. Not repaired, not suppressed, not re-run. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/07-V4.txt",
+    "Cleanup and release: no own process survives; port 7835 free; 7717 never contacted; one sandbox run folder with exactly one data/apunta.db and no lock, -wal or -shm; web/dist left unflagged (16 js bundles, 0 marker, 0 gate) on every path; ollama still running pid 1123 with the same tags, ids and dates, nothing pulled, loaded or removed, and no model inference of any kind; no microphone and no audio; no network request of any kind by this attempt. The native BUILD and display leases are released and no X server was started or stopped. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/08-containment-cleanup-and-side-effects.txt",
+    "Writes: only docs/v2/evidence/P3.4/attempt-6/runtime/** (new), this checkpoint, and an append to docs/v2/state/returns/P3.4.md. Nothing staged, nothing committed, no shared build/ parent created, written or deleted, no source, card, contract, manifest, config, tool, fixture, dispatch or pre-existing evidence file edited. Other sessions dirty files left untouched."
   ],
   "changedFiles": [
-    "scripts/v2/tauri-security.test.mjs",
-    "docs/v2/evidence/P3.4/README.md",
-    "docs/v2/evidence/P3.4/V0-rebundle.md",
-    "docs/v2/evidence/P3.4/V1-csp-unit.md",
-    "docs/v2/evidence/P3.4/V2-appimage-security.md",
-    "docs/v2/evidence/P3.4/V3-config-greps.md",
-    "docs/v2/evidence/P3.4/V4-lint-typecheck-tests.md",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/README.md",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/00-v0-predicates-and-prerequisites.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/01-S0-whisper-candidate-skipped.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/02-am190-scanner-and-four-dry-inspections.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/03-V0-not-run.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/04-V1.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/05-V2.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/06-V3.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/07-V4.txt",
+    "docs/v2/evidence/P3.4/attempt-6/runtime/08-containment-cleanup-and-side-effects.txt",
     "docs/v2/state/cards/P3.4.json",
     "docs/v2/state/returns/P3.4.md"
   ],
@@ -41,32 +47,43 @@
   ],
   "criteria": {
     "S0": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.4/acquisition-A06.md",
-      "verification": "Inherited from attempt 3 and re-confirmed by V0's first assertion this attempt: the candidate at ~/.cache/apunta-v2/whisper-src is executable, so S0 was SKIPPED and nothing was acquired as a new item."
+      "status": "SKIPPED",
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/01-S0-whisper-candidate-skipped.txt",
+      "verification": "Attempt 6: SKIPPED on the card own anchor. ~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli executable, so nothing acquired, nothing fetched, nothing built. A06 records in docs/v2/evidence/P3.1/ stand unchanged."
     },
     "V0": {
       "status": "NOT RUN",
-      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
+      "exit": "none - the row was not executed",
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/03-V0-not-run.txt",
+      "verification": "Attempt 6: NOT RUN, and not a skip assumed. Rule B trigger measured on four axes and found empty: git diff 88811af...HEAD over Rule B set 0; git status --porcelain over it 0; checkpoint changedFiles naming 0 Rule B paths; and the two things the card own three predicates cannot see measured directly - AppImage 2026-10-03T22:39:34.366Z newer than the newest Rule B input 2026-10-03T06:06:41.280Z (web/src/main.tsx), shipped AppDir web bundle carrying the marker in 1 of 16 with the gate string in 0. The producer was not run, so no A06 refetch and no network request of any kind. Not PASS and not skipped."
     },
     "V1": {
-      "status": "NOT RUN",
-      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/04-V1.txt",
+      "verification": "Attempt 6: exit 0, 650 ms. 1 file collected, 12 passed, 0 skipped. csp.ts and csp.test.ts untouched; no case added, removed or weakened."
     },
     "V2": {
-      "status": "NOT RUN",
-      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/05-V2.txt",
+      "verification": "Attempt 6: exit 0. ACTUAL COUNTS 20 PASS, 0 FAIL, 0 NOT RUN, harness line 20/20 assertions passed. One real AppImage launch on port 7835, sandbox run 2026-10-03T23-35-09-127Z-5bce1465, stopped by pid 2933194 and never pkill. (a) live ACL denial ipcProbe=rejected with ipcProbeMsg=Command plugin:event|listen not allowed by ACL; (b) attempt=b:assign-location-href with href still on the app origin afterwards; (c) attempt=c:window-open-external and c:window-open-same-origin, app window unchanged; (d) header half carries rule 6 six directives verbatim plus per-response nonce and style-src-attr unsafe-inline on a 200 text/html for GET /patients, handler half landed BOTH clicks located by visible text with ptrN=6 fresh witness, clickN=2, clickText=Progress note, then probe=undefined and scriptText=true; (e) styleAttr color-scheme: dark with styleComputed=dark. Both freshness assertions passed. All five containment assertions passed inside the row and re-measured outside. First attempt at which no criterion was NOT RUN."
     },
     "V3": {
-      "status": "NOT RUN",
-      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
+      "status": "BLOCKED",
+      "exit": "not attributable - the wrapper this session ran exited 127 and that 127 is the wrapper own, not the row",
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/06-V3.txt",
+      "verification": "Attempt 6: BLOCKED. Implementer-side extraction error: the mechanically extracted cell kept its GFM code-span backticks, so the file ran as a command substitution and the row body executed inside it once, in order. Its guards all completed and none fired - hits file 0 bytes, src-tauri/capabilities absent, and bash reported the row own success label P3.4-V3: as the first word of the substitution output, which a FAIL: line would have preceded. The row pass condition test \"$bad\" = 0 exit status was consumed by the substitution and is unrecoverable, so PASS is not claimed; no guard fired so FAIL is not claimed either; the guards did run so NOT RUN is not claimed. NOT retried because the row had started. Corrected cell recorded and deliberately not executed."
     },
     "V4": {
-      "status": "NOT RUN",
-      "verification": "AM-195 once-only attempt6 runtime pending, prior outcomes retained."
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/07-V4.txt",
+      "verification": "Attempt 6: exit 1 at npm run lint. npm test exit 0 with 163 files / 2235 tests all passing. eslint . 13 errors, every one in docs/v2/evidence/P3.5/ (attempt-4/final-completion-ir/verify.mjs, silence-completion-ir/v5-program-own-extraction.mjs, silence-completion-ir/verify.mjs), all committed to main and all outside P3.4 May edit. prettier --check, the three lint scripts after it, typecheck and the whole cargo half are downstream of the failed && and are NOT RUN. Outside-May-edit red is a stop, not a repair (HS-9); nothing repaired, suppressed, loosened or re-run. Distinct from attempt 5, whose lint failure was on its own evidence output."
     }
   },
   "sandboxRuns": [
+    "<sandbox>/2026-10-03T23-35-09-127Z-5bce1465 (attempt6 V2, port 7835, ONE launch, stopped by own pid 2933194)",
     "<sandbox>/2026-10-02T23-38-00-485Z-b72ab858 (V2, recorded run, port 7835)",
     "<sandbox>/2026-10-02T23-18-12-989Z-74194898 (V2, port 7835)",
     "<sandbox>/2026-10-02T23-14-44-140Z-b6a7bbc6 (V2, port 7835)",
@@ -116,14 +133,14 @@
   "implementationReviewVerdict": "CLEAR AM-195 exact four shipping patches; 80/80+29/29+13/13, no extra source path",
   "coordinatorBlockingFinding": "V2 handler click FAIL: pointer read-back WINDOW=0 PID=undefined, clickN=0; navigation b/c NOT RUN. V4 npm tests2235 PASS then evidence-artifact lint FAIL. Final budget exhausted, no row rerun/sixth.",
   "implementationCandidate": "88811af",
-  "updatedUtc": "2026-10-03T23:31:31.085089+00:00",
+  "updatedUtc": "2026-10-03T23:40:05.570Z",
   "srcTauriTouched": false,
-  "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
+  "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/ and did not touch src-tauri/ui/. S4 was not entered: nothing in the tree was shown to break a guard. The V4 cargo half was NOT RUN - it is downstream of a failed lint && - so P3.3 navigation-guard cargo unit tests were not executed on this attempt. V4 V3 word loop did execute inside the command substitution and src-tauri/capabilities was absent at that moment, but that row carries no usable exit status and is not offered as evidence for anything.",
   "reBundle": {
-    "required": true,
-    "done": true,
-    "why": "Required, and not because a git predicate said so. All three of the card's predicates were EMPTY - git diff e46bad4...HEAD over Rule B's set empty, git status --porcelain over it empty, and the checkpoint's changedFiles naming no Rule B path - while the shipped AppImage's web bundle carried p3.4-observe in 0 of 16 bundles and the gate string in 0 of 16. src-tauri/src/main.rs HAD changed under Rule B (P3.8, AM-180, mtime 14:48:10) and the AppImage was newer than it (16:50:00), so the binary was FRESH and UNFLAGGED at the same time, and V2's freshness walk would have passed. Run 2026-10-02T23:06:09Z to 23:07:29Z, exit 0.",
-    "note": "This is a defect in the card's three 'run V0 only if' predicates, recorded as an observation and NOT worked around: none of them looks at what the producer last put in build/linux-resources/, which is why an unflagged bundle can pass all three. A future revision should add the shipped-bundle marker count to the predicate."
+    "required": false,
+    "done": false,
+    "why": "NOT required on attempt 6, derived not assumed. All three of the card own predicates empty: git diff --name-only 88811af...HEAD over Rule B set 0 paths; git status --porcelain over it 0 paths; checkpoint changedFiles naming 0 Rule B paths. The AM-195 package touches scripts/v2/tauri-security.test.mjs, docs/v2/tools/build-dispatch.mjs, docs/v2/tools/build-dispatch.test.mjs and two evidence fixtures - none of them reaches bundle.resources. Measured directly, because the card own three predicates cannot see it and reBundle.note asks a future revision to add exactly this: the AppImage mtime 2026-10-03T22:39:34.366Z is newer than the newest mtime anywhere under Rule B set, 2026-10-03T06:06:41.280Z on web/src/main.tsx; the shipped AppDir web bundle carries the marker in 1 of 16 js bundles with the gate string in 0, so the channel IS present; and web/dist carries 0 marker and 0 gate. V0 was therefore NOT RUN and the producer was not executed.",
+    "note": "The attempt-4 required:true rationale no longer describes the tree and has been replaced by this measurement. RESIDUAL PROVENANCE FACT, stated not resolved: the binary V2 exercised is attempt 5 V0 output, not this attempt own. It is sound against Rule B and the harness re-derived both freshness assertions itself and passed them, but a reviewer should be told rather than left to infer. The card predicate defect stands unfixed and was not worked around - it was measured around, once, by hand, without editing the card."
   },
   "hookBoundary": {
     "gate": "import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'",
@@ -153,7 +170,7 @@
     "attempt5WithKeyedTooling": "APPROVED AM-189",
     "optionalA06": "PARKED",
     "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5",
-    "nativeIdentityAttempt6": "APPROVED AM-195 exact four patches, independent source review then V0\u2013V4 once/no7"
+    "nativeIdentityAttempt6": "APPROVED AM-195 exact four patches, independent source review then V0–V4 once/no7"
   },
   "runtimeWorkerId": null,
   "finalDiagnosisReport": "docs/v2/state/reviews/P3.4-final-runtime-diagnosis.md",
@@ -194,5 +211,18 @@
       "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/07-V4.txt",
       "verification": "Once-only npmtest2235PASS then lint13evidenceerrors FAIL; typecheck/cargo downstream notexecuted; no rerun/waiver."
     }
+  },
+  "priorAttempt6Outcome": {
+    "authorisedBy": "AM-195, explicit change to COORDINATOR section 4 and the AM-189 no-sixth boundary",
+    "sourceCandidate": "88811af, independent shipping-source review CLEAR (docs/v2/state/reviews/P3.4-impl6.md)",
+    "rowsRunOnceInCardOrder": true,
+    "rowsRetried": 0,
+    "rowsRepaired": 0,
+    "waiverRequested": null,
+    "remainingToCoordinator": [
+      "V3 carries no usable exit status because of an implementer-side extraction error; the card cannot say whether its guards passed and this attempt will not re-run it.",
+      "V4 is red at eslint on 13 errors in docs/v2/evidence/P3.5/, committed to main and outside P3.4 May edit. The root lint script is eslint . and eslint walks docs/, so P3.5 evidence can redden the whole repository. That is a P3.5 and coordinator question.",
+      "V2 passing 20/20 with zero NOT RUN is the first run of this card to do so; whether that closes the card is the coordinator call, and the implementation review still has to re-run the rows."
+    ]
   }
 }

@@ -1,0 +1,81 @@
+== HEAD ==
+0285e4fc50d83a6af0a89449e39351dfccae5213
+== branch ==
+main
+
+== P1: git diff --name-only 88811af...HEAD -- Rule B set ==
+P1_COUNT=0
+
+== P1b: every file changed in base..HEAD (informational) ==
+docs/v2/ORCHESTRATION-LOG.md
+docs/v2/evidence/P3.4/attempt-6/source-review/01-identity-replay.txt
+docs/v2/evidence/P3.4/attempt-6/source-review/02-suites-and-checks.txt
+docs/v2/evidence/P3.4/attempt-6/source-review/03-instrument-and-tool-logic.txt
+docs/v2/evidence/P3.4/attempt-6/source-review/04-tool-grant-print-only.txt
+docs/v2/evidence/P3.4/attempt-6/source-review/05-scope-writes-and-observations.txt
+docs/v2/evidence/P3.4/attempt-6/source-review/README.md
+docs/v2/state/NEXT-SESSION.md
+docs/v2/state/PROGRESS.json
+docs/v2/state/cards/P3.4.json
+docs/v2/state/dispatch/P3.4.md
+docs/v2/state/reviews/P3.4-impl6.md
+
+== P2: git status --porcelain -- Rule B set ==
+P2_COUNT=0
+
+== P2b: full git status --porcelain ==
+ M docs/v2/ORCHESTRATION-LOG.md
+ M docs/v2/state/AMENDMENTS.md
+ M docs/v2/state/NEXT-SESSION.md
+ M docs/v2/state/PROGRESS.json
+ M docs/v2/state/cards/P3.5.json
+?? docs/v2/evidence/P3.5/attempt-4/final-completion-ir/
+?? docs/v2/evidence/english-eod-readiness/
+?? docs/v2/state/reviews/ENGLISH-EOD-runtime-readiness.md
+?? docs/v2/state/reviews/P3.5-final-completion-ir.md
+
+== P3: checkpoint changedFiles naming a Rule B path ==
+changedFiles: ["scripts/v2/tauri-security.test.mjs","docs/v2/evidence/P3.4/README.md","docs/v2/evidence/P3.4/V0-rebundle.md","docs/v2/evidence/P3.4/V1-csp-unit.md","docs/v2/evidence/P3.4/V2-appimage-security.md","docs/v2/evidence/P3.4/V3-config-greps.md","docs/v2/evidence/P3.4/V4-lint-typecheck-tests.md","docs/v2/state/cards/P3.4.json","docs/v2/state/returns/P3.4.md"]
+P3_COUNT=0 []
+
+== newest mtime under Rule B set (excluding target/ gen/) ==
+1791007601.2806576380 2026-10-03 00:06:41.2806576380 web/src/main.tsx
+1791005983.4225331170 2026-10-02 23:39:43.4225331170 src-tauri/tauri.conf.json
+1790993908.5457490890 2026-10-02 20:18:28.5457490890 src-tauri/src/permissions.rs
+1790993882.3658971860 2026-10-02 20:18:02.3658971860 src-tauri/src/main.rs
+1790971844.0853688290 2026-10-02 14:10:44.0853688290 server/src/eval/controls.test.ts
+1790920021 2026-10-01 23:47:01.160576420 -0600 package.json
+1790913938 2026-10-01 22:05:38.807188724 -0600 package-lock.json
+1790384095 2026-09-25 18:54:55.004863563 -0600 web/vite.config.ts
+1790384095 2026-09-25 18:54:55.002468946 -0600 web/package.json
+1790384095 2026-09-25 18:54:55.002292917 -0600 web/index.html
+1790384094 2026-09-25 18:54:54.997509442 -0600 server/package.json
+
+== AppImage ==
+total 189652
+drwxr-xr-x 1 villenull villenull       108 Oct  3 16:39 .
+drwxr-xr-x 1 villenull villenull        16 Oct  3 16:39 ..
+-rwxr-xr-x 1 villenull villenull 194202104 Oct  3 16:39 Apunta (test)_0.0.0_amd64.AppImage
+drwxr-xr-x 1 villenull villenull       182 Oct  3 16:39 Apunta (test).AppDir
+
+== AppDir shipped web bundle marker/gate counts ==
+NO AppDir web/dist/assets
+
+== web/dist marker/gate counts ==
+js bundles: 16
+marker: 0
+gate:   0
+
+== whisper candidate (V0 first assertion / S0 anchor) ==
+candidate=~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli
+WHISPER_EXECUTABLE=yes
+
+== pinned Node / cargo ==
+v24.19.0
+lrwxrwxrwx 1 villenull villenull 6 Oct  1 21:52 ~/.cargo/bin/cargo -> rustup
+
+== port 7835 / 7717 occupancy ==
+neither 7835 nor 7717 listening
+
+== ollama running ==
+1123 /usr/bin/ollama serve

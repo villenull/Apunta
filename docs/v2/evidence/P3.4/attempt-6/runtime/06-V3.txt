@@ -1,0 +1,119 @@
+V3 - the four forbidden words and the capabilities guard - BLOCKED
+================================================================
+
+Row status: BLOCKED
+Exit code: NOT ATTRIBUTABLE - see the cause below. The wrapper this session
+  actually executed exited 127; that 127 belongs to the wrapper, not to the
+  row, and it is NOT reported as the row's exit code.
+Working directory: repository root (~/Projects/Apunta)
+Start (UTC): 2026-10-03T23:35:44Z
+End (UTC):   2026-10-03T23:35:44Z
+Evidence: this file, in full - the row produced no failure output to reproduce.
+Status word: BLOCKED. Not PASS, not FAIL, not NOT RUN. See §3.
+
+§1. WHAT HAPPENED, PLAINLY
+--------------------------
+This session made an extraction error of its own and it is the whole cause.
+
+The row's commands were extracted from the dispatch's verification table into
+`build/p34-runtime6/V3.command.txt` mechanically, cell by cell. The mechanical
+extraction kept the GFM code-span delimiters, so the file began with a
+backtick and ended with a backtick:
+
+   `b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; ... test "$bad" = 0`
+
+This session then ran that file with `bash build/p34-runtime6/V3.command.txt`
+instead of running the row the way V1, V2 and V4 were run - typed out with the
+code-span delimiters removed. `bash -n` had passed, because a line whose whole
+body sits between two backticks is a syntactically valid COMMAND
+SUBSTITUTION: bash runs the contents as a substitution and then tries to execute
+its output as a command name. So the syntax check could not catch this, and the
+brief's own guard - parse the cells, unescape, syntax-check, and only then
+execute - was carried out in the wrong order: the parse was incomplete and the
+execution happened anyway.
+
+Observed, in full, the entire output of the run:
+
+  build/p34-runtime6/V3.command.txt: line 1: P3.4-V3:: command not found
+
+§2. WHAT THE ROW'S OWN COMMANDS DID BEFORE THAT
+----------------------------------------------
+The substitution ran the row's body once, in the row's own order, before bash
+tried to execute its output. Directly evidenced, measured after the run:
+
+  - /tmp/apunta-v2-p3.4-v3/ exists and was created by this run (`rm -rf` then
+    `mkdir -p`).
+  - /tmp/apunta-v2-p3.4-v3/hits exists, created by the final `grep ... >"$b/hits"`
+    redirection, and is 0 bytes - the last of the four greps matched nothing.
+  - `test ! -e src-tauri/capabilities` ran; src-tauri/capabilities is ABSENT.
+  - NO guard fired. The row only prints anything on failure - one
+    `FAIL: '<word>' appears in a file the AppImage is built from:` line per
+    matching word, plus the capabilities FAIL line - and then prints its own
+    label `P3.4-V3: 4 forbidden words over 4 paths, matches: $hits`. Bash
+    reports only the FIRST WORD of a substitution's output as the command it
+    could not find. The first word reported was `P3.4-V3:`, i.e. the row's own
+    success label. Had any `FAIL:` line fired it would have come first in the
+    output and bash would have reported `FAIL:` as the command not found.
+
+So, on the evidence available: the four-word loop completed with `hits` at 0,
+the capabilities guard completed, and no guard fired.
+
+§3. WHY THIS IS NOT `PASS`, AND NOT `FAIL`
+------------------------------------------
+The row's pass condition, by the card's own words, is `test "$bad" = 0` and the
+cell says "exit 0, and every guard in the cell now feeds that one exit code".
+
+That exit status was consumed by the command substitution and is not
+observable. It is gone. A reviewer cannot recover it from this run, and neither
+can this session.
+
+This is why the status is BLOCKED rather than PASS:
+
+  - it is NOT PASS, because the row's own pass condition - the exit code of
+    `test "$bad" = 0` - was never observed. Recording PASS here would be
+    reporting an unobserved exit status as an observed one, which is precisely
+    the substitution the card forbids ("NOT RUN is never PASS", and RUN-CONFIG
+    §4: a criterion that could not be established is not PASS).
+  - it is NOT FAIL, because no guard fired and the row emitted no failure line.
+    A FAIL would misattribute the outcome to the tree when the cause is an
+    extraction error made by this session, three rows into a card whose V2 had
+    just passed 20/20.
+  - it is NOT `NOT RUN`, because the row's guards did run, once, in order. That
+    is a fact and it should not be hidden behind a word that would imply the
+    commands never executed.
+
+§4. NO RETRY, AND WHY
+---------------------
+The row had started: its commands executed. The once-only rule for this attempt
+and the explicit instruction not to retry a row that has started both apply, so
+this row was NOT run again. No second V3 exists in this attempt, no partial
+re-run exists, and the corrected command was written to
+`build/p34-runtime6/V3.command.corrected.txt` for the record and deliberately NOT
+executed.
+
+That is the whole cost of the error, and it is left visible rather than absorbed
+by a convenient re-run: one row of this attempt carries no usable exit code, and
+it is the coordinator's to weigh.
+
+§5. THE ROW'S COMMAND, FOR THE RECORD, UNEXECUTED
+--------------------------------------------------
+With the code-span delimiters removed - this is what a correctly parsed cell
+looks like, recorded here so a reviewer does not have to re-derive it, and NOT
+executed by this session:
+
+  b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0
+
+Note that this cell is also the only one of the five that needed GFM
+unescaping: its raw cell carries `\"withGlobalTauri\": true\"` with an escaped
+double quote, which unescapes to the single word `withGlobalTauri": true`. That
+unescaping WAS applied and is reflected in the file; the delimiters were not.
+The other four cells needed no unescaping and were run from their unescaped
+text.
+
+§6. WHAT WAS NOT TOUCHED
+------------------------
+No source, card, contract, manifest, config, tool, fixture or checkpoint was
+edited by this row. No threshold was moved. No guard was weakened: the four
+words, the four paths, the loop over the words, and `test ! -e
+src-tauri/capabilities` are exactly the card's, and the alternation this row's
+history warns about was not reintroduced in any form.
