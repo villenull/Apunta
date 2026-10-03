@@ -1,3 +1,21 @@
+## P3.4 runtime row failure reported; no rerun, final evidence pending
+
+Runtimeworkerd353b075 reports V4 already FAIL/once and is still finishing evidence.
+Keep its build lease until ownprocesscleanup/releaseconfirmed, no P3.5runtimeyet.
+Root outside-roweslintfound fourpre-existingerrors in saved independentintegration
+probe. No attempt6 or V4rerun granted; do notreclassifyfailureaftercleanup.
+Root byte-preserving renamed readiness raw node-e witness.mjs to.txt (9 otherlint
+errors removed), no source/card/assertion/rule changes. Currentglobaleslint still
+fails4 oldprobeerrors until separatecleanup completes.
+
+Evidence-only cleanupworker8632dc30-0316-4701-90f1-c238008401d9 (LongCat free high)
+confirmed RUNNING withcallback. Exclusive old03-independent-integration-probe.mjs
+plusnewreview-probe-lint-repair evidence, no resourcelease/runtime/sourcechanges.
+It fixes two output calls and two unused bindings with BEFORE/AFTERproof, no
+assertion/test/budget change. Fresh independentreview next; finalV4FAIL retained.
+P3.5prepared but waits buildlease release and lintcleanup/stablereview. Record
+P3.4actualrowresults only after finalreturnevidence, not guessedmidtaskstatuses.
+
 ## P3.5 readiness CLEAR, prepared behind P3.4 build lease
 
 Revieweraa834596 completed CLEAR and archival succeeded. Root read and accepted
