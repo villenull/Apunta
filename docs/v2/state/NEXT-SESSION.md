@@ -1,3 +1,29 @@
+## English EOD scope confirmed; AM-195/196 execution dispatched
+
+Owner selected English desktop tonight and authorized completed reviewed source
+and checkpoint pushes. Push535281f succeeded to configured villenull/Apunta.
+4060909 records AM-195 exact four P3.4 patches/one6 and AM-196 silence completion
+plus V5 once within4. Previous criteria preserved as priorAttempt5Criteria and
+priorAttempt4IncompleteCriteria. No seventh/fifth/reset/retry beyond exact grants.
+
+Confirmed RUNNING with callbacks, exclusive scopes:
+- 0f30fdda-427d-4054-9689-526c5267e85a: P3.5 silence once/V5 once. Native
+  app/audio/Pulse/7839 lease holder and SOLE P3.5 checkpoint writer until return.
+  Append return and new attempt4/silence-completion evidence; no rebuild/tone or
+  capture repeat. Release after outside cleanup/default/devices/process/port proof.
+- 4f0388d9-08a9-47cf-ab54-694b34d0723b: apply EXACT four AM-195 patches to
+  security harness, generator/test and ported fixture; new attempt6/implementation
+  evidence. No source repair beyond patch, no state/card/dispatch/runtime. Root
+  owns P3.4 checkpoint; fresh independent source review required after return.
+- 6307e8a2-9f84-4a2b-bda1-13a3ccc4bd94: static English real-speech/recovery
+  readiness; new english-eod-readiness report/evidence only. No model/runtime,
+  acquisition, source changes or live data. Identify existing model paths and
+  authorized sandbox demonstration commands; Spanish holds remain intact.
+
+Root must NOT stage/write active worker paths or P3.5 checkpoint. Build/audio
+runtime serialized; P3.4 runtime waits source review plus P3.5 lease release.
+P3.6 gates still unchanged. No heartbeat created; callbacks continue pipeline.
+
 ## Both bounded owner exceptions ready and pending; no workers retained
 
 P3.5 completion review 2ff14a21 finished READY, archived successfully. e7ace67

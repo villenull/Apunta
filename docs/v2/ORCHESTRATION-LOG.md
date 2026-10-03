@@ -2807,3 +2807,14 @@ real record/anchor, all histories retained, no5/reset/rebuild/source/card edit.
 Security exact four-patch + one6 question already pending. All workers archived,
 resources free, P3.6 still dependency-blocked. No implicit authority from silence;
 next action awaits owner responses, then serial authorized runtime/source review.
+
+## 2026-10-03 — owner scope/authorities granted and actual execution resumed
+
+English desktop scope confirmed, expanded reviewed-source/checkpoint push grant
+received; origin push535281f succeeded. AM-195/196 committed4060909 with prior
+criteria snapshots retained. Three asynchronous workers confirmed running:
+0f30fdda owns silence once/V5 once and exclusive audio/app/7839 + P3.5 checkpoint;
+4f0388d9 applies four exact P3.4 patches only then fresh source review;
+6307e8a2 prepares English speech/recovery commands statically. No resource conflict,
+no owner wait remains for these bounded actions. Spanish holds/live handover
+remain protected. Root cannot write/stage active scopes; no in-flight push.
