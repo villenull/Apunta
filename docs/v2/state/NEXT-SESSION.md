@@ -1,3 +1,19 @@
+## IR6 bounded repair dispatch — 2026-10-03T03:43:21.165939+00:00
+
+IR6 closes every IR5 finding but reports four remaining model defects: geometry
+command failure accepted, missing asynchronous observation poll, commanded vs
+measured solve, and key-order-sensitive identical duplicates. Coordinator reproduced
+geometry code/signal/XError allowing a click on numeric synthetic fields.
+Independent report and four probes preserved; reviewer eccb294a archived successfully.
+Fresh LongCat free high author 9ebcf35f-3c63-45a0-95bf-c60dba107cf2 RUNNING,
+callback. Writes only minimal <=400-line v5 spec clauses, new proposal-v5-repair2
+evidence, and ignored build/p3.4-spec-v5-repair2 copies. Older artifacts intact.
+Await bounded async-observation/readback repair then fresh independent review.
+No assertion amendment, tooling edit or fifth runtime attempt authorized.
+
+P3.5 independent reviewer bcdc1dbf continues on stable 46419f5; no active source
+writer or build lease. Quiet-machine holds and owner-only decisions unchanged.
+
 Independent repaired P3.4 reviewer eccb294a-ef73-4e87-a5d2-f101dcc05d24 is RUNNING, LongCat free high, callback; stable repair fe89a69. Owns IR6 report/evidence only. P3.5 reviewer bcdc1dbf also RUNNING. No build lease held. Await notifications; all source candidates stable.
 
 ## Stable candidates under review — 2026-10-03T03:34:50.392903+00:00
