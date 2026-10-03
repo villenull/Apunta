@@ -1,3 +1,21 @@
+## P3.5 environment proposal repair — 2026-10-03T04:14:45.403035+00:00
+
+Independent proposal IR is bounded DEFECT. Config schema valid, but absent
+patchelf is immediate build prerequisite; multi-name gst-inspect checks only last
+element; scanner presence not assured; manifest replacement removed Ubuntu;
+default-source OR weakened assertion; duration lowering unnecessary. Reviewer
+3ba19428 archived. Fresh LongCat high author2c2ab067-aa56-479f-ab3c-9b50a235eed0
+RUNNING, callback, owns only environment proposal (<=250lines) and new
+ environment-proposal-repair evidence. Preserve30s by fixturecommand repair,
+park samplingquestion, add only narrow Arch packages and two ownerchoices.
+Root local pacman confirms scanner /usr/lib/gstreamer-1.0/gst-plugin-scanner;
+cached plugin supports GSTREAMER_HELPERS_DIR. Dedicated ignored helperdir with
+only scanner is a supported command-preparation candidate, not adopted yet.
+No config/manifest/card/source edits or install/runtime permission granted.
+
+P3.4 IR7 a3fe9bac and P3.5 sourceIR2 ab52a4b7 continue. No build lease.
+Global evidence-output lint repair deferred until stable proof-input checks finish.
+
 Confirmed reviews now RUNNING, all with finish callbacks: P3.4 IR7 a3fe9bac-67cc-41a1-9cc0-f541c1c7a455 (LongCat free high) on stable11a8d38 plus ignored repair2 model; P3.5 source IR2 ab52a4b7-f0df-43ae-ac03-fdd7e52ee905 (Space Bunny free medium) on stable9e6094b; environment proposal IR3ba19428 continues on6ee7611. Each owns only its report/evidence home. No source writer, no build lease, no runtime permission. Old proof scripts remain stable for these reviews; output-only lint repair follows their input snapshot checks rather than mutating evidence underneath them. Await callbacks, then integrate actual verdicts, archive finished workers, and refill useful authorized work.
 
 ## Both bounded repairs submitted — 2026-10-03T04:04:30.461836+00:00
