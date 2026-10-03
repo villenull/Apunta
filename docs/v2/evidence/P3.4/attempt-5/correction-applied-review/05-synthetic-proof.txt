@@ -1,0 +1,52 @@
+05 — synthetic deadline / own-pid proof against the ACTUAL shipping functions
+=============================================================================
+
+Method. The shipped harness has an `isEntryPoint` guard, so importing it runs
+nothing. Its export block does not export `waitForLabel`/`runFlowGuarded`, so
+the scratch proof copies add EXACTLY ONE additive line (plus a 3-line comment):
+
+  export { runFlowGuarded, waitForLabel };
+
+  baseline-proof.mjs = b19e59f blob + that additive export
+  shipping-proof.mjs = shipping 865ccab3 + that additive export
+  diff in both cases is additive only (4 lines appended; 2446->2450 and
+  2470->2474). The functions driven are the actual shipping bytes.
+
+The probe is the prior corrected proof (build/p34-final-correction/probe.mjs),
+re-pointed at those two modules and at the two real file paths; no logic changed.
+It spawns only local `node -e` sleepers. Command and result:
+
+  node build/p34-correction-applied-ir/probe.mjs     exit 0, stderr empty
+  output: ALL PASS
+
+§E static check on the actual harness text (same checker both copies):
+  13 problems before (b19e59f), 0 after (shipping).
+  before: patient/note take no shared deadline; label discovery carries its own
+  30_000 budget and does not receive the deadline; the flow does not receive the
+  SAME object; waitForLabel still takes a private timeoutMs and builds its own
+  wall-clock deadline and does not use pollObservation; runFlowGuarded matches
+  the prefixed reason by string equality and does not test the deadline itself.
+
+O3 — does label discovery share the flow's ONE deadline?
+  BEFORE (b19e59f): label found, flow ok=true, clicks=1, wall=854 ms of a
+    700 ms budget (the synthetic 1/43-scale stand-in for 30 s). A SECOND budget
+    let the click land after label discovery already spent the first.
+  AFTER (shipping): flow ok=false, clicks=0, wall=700 ms = the one budget; the
+    target warp ends on "the target deadline expired". Label still resolves to
+    tag TR when it arrives in time.
+
+O2 — does the deadline-kill branch fire for a hung command?
+  A tracked hung child (real local node sleeper registered through spawnAsync)
+  plus an UNTRACKED bare-spawned sibling.
+  BEFORE: reason is PREFIXED ("...; the target deadline expired"), tracked child
+    killed=false -> branch inert; untracked child survived=true.
+  AFTER:  tracked child killed=true; untracked child survived=true; no click;
+    deadline.expired=true.
+  CONTROL on the b19e59f copy: a hung geometry returns the EXACT
+    DEADLINE_EXPIRED and DOES fire the kill -> the branch is not dead code and
+    only the string match was wrong.
+
+Conclusion. The fix is non-vacuous and behaves as AM-192 describes: label
+discovery is inside the one immutable deadline, and the cleanup is classified
+from the deadline's own state. The kill remains own-pid only; a foreign process
+survives in every scenario.

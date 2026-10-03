@@ -26,3 +26,13 @@ O2 cleanup checks an exact reason that runFlow prefixes; final own-pid cleanup
 still holds but the early branch is inert. Both are included in proposedpatch.
 P3.5 independent capture work remains eligible once its authentication/preflight
 is ready; its source/permissions/media config are separately independently clear.
+
+## AM-192 applied correction independently CLEAR
+
+Candidate291372f harness865ccab3 equals the exact owner-granted patch. Fresh
+review P3.4-correction-applied.md confirmed source scope, preserved fixtures and
+P3.5 seam, 80 cases, real-path format/lint and non-vacuous O3/O2 own-pid proof.
+Reviewer8084112d archived; earlier root finding and evidence above are history.
+Current code is CLEAR. Runtime rows remain NOT RUN while approved local terminal
+installation worker5d98dc33 completes authentication and fail-closed preflight.
+No sixth attempt, reset, retry or acceptance row repetition authorized.

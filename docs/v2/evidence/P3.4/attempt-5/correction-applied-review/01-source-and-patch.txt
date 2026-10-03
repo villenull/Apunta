@@ -1,0 +1,42 @@
+01 — the shipping source IS the exact granted patch
+===================================================
+
+Shipping source
+---------------
+  sha256sum scripts/v2/tauri-security.test.mjs
+  865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e
+  -> equals the AM-192 expected hash, exactly.
+
+Baseline
+--------
+  git show b19e59f:scripts/v2/tauri-security.test.mjs | sha256sum
+  fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672
+
+Replay baseline + exact patch
+-----------------------------
+  git show b19e59f:scripts/v2/tauri-security.test.mjs > build/p34-correction-applied-ir/baseline.mjs
+  cp baseline.mjs replay.mjs
+  patch -p1 replay.mjs < docs/v2/evidence/P3.4/attempt-5/correction-proposal/02-patch.diff
+    patching file replay.mjs           exit 0
+  patch --dry-run -p1 (fresh copy)     exit 0
+  sha256sum replay.mjs
+    865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e
+  diff replay.mjs scripts/v2/tauri-security.test.mjs
+    (empty)  -> REPLAY IS BYTE-IDENTICAL TO THE SHIPPING SOURCE
+  node --check baseline.mjs / replay.mjs / shipping source   exit 0 / 0 / 0
+
+Applied diff equals the patch body
+----------------------------------
+  git diff b19e59f HEAD -- scripts/v2/tauri-security.test.mjs
+    --stat:  1 file changed, 44 insertions(+), 20 deletions(-)
+    --numstat: 44  20  scripts/v2/tauri-security.test.mjs
+    hunks: 4
+  Content lines (+/-/space, excluding @@/diff/index/---/+++):
+    patch body   110 lines
+    applied body 110 lines
+    diff -> IDENTICAL. The only textual differences are the git diff header
+    (diff --git / index lines) and the @@ hunk-header trailing context labels,
+    which the `patch`-format file omits. No source line differs.
+
+So the granted patch is the applied patch, and the applied patch is the shipping
+source: baseline fac8225f + 02-patch.diff = 865ccab3 = HEAD blob.

@@ -1,0 +1,27 @@
+06 — git scope: no wider edit, contract and fixtures preserved
+==============================================================
+
+Correction commit 291372f (the commit that applied AM-192) touches exactly:
+  docs/v2/state/AMENDMENTS.md
+  docs/v2/state/cards/P3.4.json
+  scripts/v2/tauri-security.test.mjs
+  -> the only non-doc path is the one source file the grant names. No path
+     outside docs/ and that file; no src-tauri/, no web/, no e2e/, no shared/,
+     no server/, no other scripts/.
+
+  git show --name-only 291372f | grep -vE '^(docs/|scripts/v2/tauri-security.test.mjs)'
+    NONE
+
+Whole-range check b19e59f..HEAD for the paths the grant protects:
+  git diff --name-only b19e59f HEAD -- web/   (empty)  -> P3.5 seam untouched
+  git diff --name-only b19e59f HEAD -- e2e/   (empty)  -> fixtures untouched
+
+Contract: C-BRIDGE@1 / C-REQ@1 / C-ISO@1 reference counts are identical
+baseline vs shipping; no contract file changed.
+
+Worktree at review: `git status --porcelain` empty. Scratch lives in the
+gitignored build/p34-correction-applied-ir/, so nothing this review did is
+visible to git. Nothing staged, committed or pushed.
+
+Bounded finding: none. The applied source is the exact granted patch, four
+hunks, +44/-20, one file; no broader edit exists to report.

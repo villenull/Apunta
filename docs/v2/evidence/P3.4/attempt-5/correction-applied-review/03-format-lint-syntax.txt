@@ -1,0 +1,22 @@
+03 — real source syntax / format / lint, non-vacuously
+======================================================
+
+Pinned Node v24.19.0
+(/home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node).
+
+  node --check scripts/v2/tauri-security.test.mjs              exit 0
+  npx prettier --check scripts/v2/tauri-security.test.mjs
+      "All matched files use Prettier code style!"             exit 0
+  npx eslint scripts/v2/tauri-security.test.mjs                exit 0
+
+Applied copy, checked at the REAL path (stdin, so the repo config applies):
+  npx prettier --check --stdin-filepath scripts/v2/tauri-security.test.mjs \
+      < build/p34-correction-applied-ir/replay.mjs             exit 0
+  npx eslint --stdin --stdin-filename scripts/v2/tauri-security.test.mjs \
+      < build/p34-correction-applied-ir/replay.mjs             exit 0
+
+Non-vacuity control (the gitignored-build trap):
+  deliberately mis-formatted file at the real path (stdin-filepath)  exit 1
+  same mis-formatted file passed as a path under build/ (gitignored) exit 0
+  -> the check is real at the real path and silently skipped under build/, so
+     the exit-0 above is a real pass, not a skipped file.

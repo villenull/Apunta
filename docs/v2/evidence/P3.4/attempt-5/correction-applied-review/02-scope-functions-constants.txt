@@ -1,0 +1,43 @@
+02 — scope is exactly O3 + O2; nothing else moves
+=================================================
+
+Function-level extraction (brace-matched, baseline vs shipping):
+  functions total: 79
+  identical: 76
+  changed/added/removed: 3
+    assertInjectedNoteInert
+    runFlowGuarded
+    waitForLabel
+
+Named witnesses:
+  tagForLabel          BYTE-IDENTICAL   (O1 retained)
+  killActiveCommands   BYTE-IDENTICAL   (own-pid kill untouched)
+  pollObservation      BYTE-IDENTICAL
+  createTargetDeadline BYTE-IDENTICAL   (no reset/extend)
+  runFlow              BYTE-IDENTICAL
+
+The three changed functions, before -> after:
+  waitForLabel: private `Date.now()+timeoutMs` loop -> shared pollObservation
+    bounded by the passed-in immutable deadline, same 250 ms OBSERVATION_POLL_MS,
+    returns {ok,tag}/{ok:false,reason} instead of tag/null.
+  runFlowGuarded: `result.reason === DEADLINE_EXPIRED` -> `args.deadline.expired(
+    args.clock.now())` (the deadline's own state).
+  assertInjectedNoteInert: the two label-discovery call sites now create
+    patientDeadline / noteDeadline ONCE and pass the SAME object to waitForLabel
+    and to the flow; `.tag` is unwrapped and `patientTag.reason`/`noteTag.reason`
+    appended to the existing failure detail. No assertion text, predicate, pass
+    condition or timeout widened.
+
+Constants and literals:
+  diff of `^const [A-Z]` lines baseline vs shipping: IDENTICAL.
+  TARGET_BUDGET_MS = 30_000 at :157: unchanged (not widened).
+  `30_000` occurrences: baseline 8, shipping 6.
+    removed: :2112 and :2140 (the two private label-discovery budgets).
+    remaining 6 are pre-existing and unrelated: TARGET_BUDGET_MS :157,
+      waitForOwnership(30_000,'V2') :1874, and four waitForFact/gate waits at
+      :2042, :2063, :2088, :2195.
+  `pkill` appears only in comments (:67, :281, :1814, :1823, :2331); the kill is
+  still by the harness's own tracked pids through spawnAsync.
+
+Contract refs C-BRIDGE@1 / C-REQ@1 / C-ISO@1: occurrence counts IDENTICAL
+baseline vs shipping. No export added, removed or renamed.

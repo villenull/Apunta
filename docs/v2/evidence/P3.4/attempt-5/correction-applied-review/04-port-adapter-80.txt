@@ -1,0 +1,23 @@
+04 — the repo's own 80 port/adapter cases against SHIPPING imports
+==================================================================
+
+The committed fixtures import the shipping source directly, by relative path:
+  docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs:49
+    } from '../../../../../../scripts/v2/tauri-security.test.mjs';
+  docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+    } from '../../../../../../scripts/v2/tauri-security.test.mjs';
+
+Run in place, so the import resolves to the actual shipping file (no re-point,
+no copy):
+
+  node --test docs/v2/evidence/P3.4/attempt-5/implementation/ported-model.test.mjs \
+              docs/v2/evidence/P3.4/attempt-5/implementation/adapters.test.mjs
+  exit 0
+  tests 80 / pass 80 / fail 0 / cancelled 0 / skipped 0 / todo 0
+  (73 in ported-model.test.mjs + 7 in adapters.test.mjs)
+
+Meaning and limit (unchanged from the prior reviews): this is a
+port-regression check — the shipped functions keep the reviewed model's
+behaviour. It is not, by itself, proof of the O3/O2 fix; that is proven by the
+behavioural probe in 05. All fixtures are synthetic; no app, server, DB,
+display, pointer, network or patient data.

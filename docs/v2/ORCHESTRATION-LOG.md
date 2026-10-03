@@ -2468,3 +2468,12 @@ command, no credential capture. Fresh reviewer8084112d (LongCat free high) and
 local authentication/preflight worker5d98dc33 (Space Bunny free medium) confirmed
 running with callbacks and disjoint evidence scopes. No build or runtime task
 launched, no lease/port reserved. Root owns state and integration.
+
+### 2026-10-03 — corrected P3.4 shipping source CLEAR
+
+Reviewer8084112d returned CLEAR and archival succeeded. Exact AM192 shipping
+patch/hash verified, 80 fixtures, non-vacuous O3/O2 proof with foreign child
+surviving, real-path lint/format/syntax all PASS. Root syntax0. No source edits
+or acceptance rows by review. At event boundary authentication worker5d98dc33
+confirmed RUNNING with callback. P3.4 held only for installer/preflight, no lease
+or port. Next after PASS: serial build and final once-only V0–V4, no attempt6.

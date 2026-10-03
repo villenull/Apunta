@@ -1,0 +1,37 @@
+P3.4 correction-applied review — scope and authority
+====================================================
+
+Role. Independent corrected-source reviewer, spawned after OWNER grant AM-192.
+I did not author the patch, the correction proposal, the final review, the card
+or any attempt-5 evidence. I ran no acceptance row.
+
+Authority read. CLAUDE.md; docs/v2/COORDINATOR.md (root); the attempt-5
+COORDINATOR.md; docs/v2/state/AMENDMENTS.md AM-192; docs/v2/state/cards/P3.4.json;
+docs/v2/state/reviews/P3.4-correction-final.md and its COORDINATOR addendum;
+docs/v2/evidence/P3.4/attempt-5/correction-proposal/**.
+
+Grant under test. AM-192: apply EXACTLY correction-proposal/02-patch.diff, four
+hunks +44/-20 in scripts/v2/tauri-security.test.mjs; no sixth attempt, counter
+reset, retry, broader source edit or acceptance-row repetition.
+
+Repository state at review.
+  HEAD          291372f270272e43c359b1dd2efe26ce8fbdfafc
+                ("Apply approved P3.4 shared deadline correction", 2026-10-03)
+  branch        main
+  baseline      b19e59f (source blob fac8225fde0c6a7c51813e65099875a58115117c3d7962d5d2c4bc33a97bb672)
+  worktree      clean (git status --porcelain empty)
+  scratch       build/p34-correction-applied-ir/ (gitignored)
+
+Writes (exclusive). NEW docs/v2/state/reviews/P3.4-correction-applied.md and
+NEW docs/v2/evidence/P3.4/attempt-5/correction-applied-review/**; scratch in the
+ignored build/p34-correction-applied-ir/. No source edit, no stage, no commit, no
+push, no acceptance row, no V0-V4.
+
+Forbidden and not used. No app, build, server, database, model, audio, input,
+display, pactl, download, install or network; port 7717 never contacted; live data
+folder never opened. The only child processes were two local `node -e` sleepers
+spawned by the synthetic O2 probe (one tracked through the harness seam, one bare
+foreign sibling), as the prior corrected proof already did. Everything ran on
+pinned Node /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node
+(v24.19.0). Runtime remains held: V0-V4 stay NOT RUN, awaiting source CLEAR plus
+authenticated preflight. The P3.5 seam is unchanged and untouched.

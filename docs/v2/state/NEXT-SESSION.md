@@ -1,3 +1,17 @@
+## Corrected source CLEAR; authenticated prerequisites remain the runtime gate
+
+Reviewer8084112d completed CLEAR and archival succeeded. Actual harness865ccab3
+is exact AM-192 patch, 80 fixtures plus non-vacuous deadline/own-pid proof PASS;
+root syntax0, source scope retained. Review/report evidence integrated separately.
+P3.4 attempt5 BLOCKED only on installation/preflight; V0–V4 NOT RUN, no sixth.
+
+At completion-boundary check, local authentication worker5d98dc33 confirmed
+RUNNING with callback. AM193 local Ghostty route authorized, only installer exit
+and read-only prerequisite outputs may be recorded; no credential capture or
+repeat install automatically. Await its report, archive and verify. Preflight
+PASS unlocks serial build/flagged packaging then P3.4 V0–V4 once in card order;
+P3.5 final-attempt3 runtime remains separately eligible. No lease/port reserved.
+
 ## Exact correction approved/applied; review and local installation running
 
 Owner approved exact P3.4 correction (AM-192) and local Ghostty authentication
