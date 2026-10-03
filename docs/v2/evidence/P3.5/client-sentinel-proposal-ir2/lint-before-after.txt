@@ -1,0 +1,22 @@
+# IR-2 lint remedies, independent
+
+=== BEFORE (29d36ac content linted via --stdin with the real filename) ===
+sentinel-proof.mjs:       12 problems (12 errors, 0 warnings)
+candidate-after.mjs:      1 problem (1 error, 0 warnings)
+adversarial-checks.mjs:   6 problems (6 errors, 0 warnings)
+
+=== AFTER (ce293ed files) ===
+$ npx eslint docs/.../client-sentinel-proposal/ docs/.../client-sentinel-proposal-ir/adversarial-checks.mjs
+eslint exit=0 (output bytes 0)
+$ npx prettier --check <both runnable .mjs>
+prettier exit=0
+Checking formatting...
+All matched files use Prettier code style!
+$ node --check <both>
+proof node --check exit=0
+adversarial node --check exit=0
+
+=== Root global eslint (independently rerun) ===
+$ npx eslint .
+eslint . exit=0 (output bytes 0)
+build/** is eslint-ignored (eslint.config.js:84), so scratch is not linted.

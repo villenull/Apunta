@@ -1,0 +1,39 @@
+PASS shipped code throws on literal dash client (non-vacuous)
+PASS patched code classifies literal dash on virtual source with clientId null
+PASS dash client on the real microphone is still a detected leak (realMic=1)
+PASS dash client on unknown source still throws the unknown-source error
+PASS numeric client on unknown source still fails closed
+PASS client token "--" still throws (before and after)
+PASS client token "n/a" still throws (before and after)
+PASS client token "x" still throws (before and after)
+PASS client token "PipeWire" still throws (before and after)
+PASS client token "-1x" still throws (before and after)
+PASS client token "−" still throws (before and after)
+PASS client token "Infinity" still throws (before and after)
+PASS dash in source column still refused
+PASS dash in stream column still refused
+PASS dash in stream column with dash client still refused
+PASS two-column row still malformed
+PASS numeric token "167" identical before/after
+PASS numeric token "0" identical before/after
+PASS numeric token "-1" identical before/after
+PASS numeric token "167.0" identical before/after
+PASS numeric token "+5" identical before/after
+PASS numeric token "0x10" identical before/after
+PASS numeric token "1e3" identical before/after
+PASS numeric token "007" identical before/after
+PASS numeric -1 stays the number -1, not the sentinel
+PASS duplicate source index still stops
+PASS malformed source table row still stops
+PASS non-numeric source table index still stops
+PASS dash row and a numeric real-mic stream both classify; realMic still flags the leak
+PASS exactly one contiguous changed region of 2 removed / 7 added lines
+PASS unknown-source guard and grouping are byte-identical
+PASS parseSourceTable is byte-identical
+PASS no new top-level function added (extraction has exactly the two)
+PASS whitespace inside the client field splits columns; the literal dash column is accepted (pre-existing split, not a new token)
+PASS candidate-after.mjs.txt classifySourceOutputs matches the patched shipping function
+
+shipping sha256 b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+replay   sha256 85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14
+35 passed, 0 failed

@@ -1,0 +1,17 @@
+# IR-2: shipping source, candidate.patch byte-identity, headers/hunk
+
+$ sha256sum scripts/v2/tauri-audio.test.mjs
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs
+
+$ cmp client-sentinel-proposal-ir/actual-source.patch client-sentinel-proposal/candidate.patch
+cmp exit=0
+
+$ sha256sum both patches
+4350f5eca8764d7fc0f26eedf9fc6a814f19a05fea3a9813bf067203503ac198  docs/v2/evidence/P3.5/client-sentinel-proposal-ir/actual-source.patch
+4350f5eca8764d7fc0f26eedf9fc6a814f19a05fea3a9813bf067203503ac198  docs/v2/evidence/P3.5/client-sentinel-proposal/candidate.patch
+
+$ grep -n headers/hunks candidate.patch
+1:--- a/scripts/v2/tauri-audio.test.mjs
+2:+++ b/scripts/v2/tauri-audio.test.mjs
+3:@@ -306,8 +306,13 @@
+hunk count: 1

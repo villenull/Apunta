@@ -1,0 +1,21 @@
+# Author 75-case proof: 29d36ac BEFORE vs ce293ed AFTER, exact
+
+BEFORE = sentinel-proof.mjs at 29d36ac (sha b63604de...) in a mirrored scratch tree;
+AFTER  = the repaired file at ce293ed. Same depth, byte-identical harness.
+
+$ diff author-before-stdout.txt author-after-stdout.txt
+stdout diff exit=0
+$ diff author-before-stderr.txt author-after-stderr.txt
+stderr diff exit=0
+
+BEFORE exit=0  AFTER exit=0  (both runs)
+stderr bytes: before=0 after=0
+$ sha256sum author-before-stdout.txt author-after-stdout.txt
+d7473bc93483d50fe42cb4dcea8cef1ea42c6e2019f500d005f5b23d1fca0df8  build/p35-client-proposal-ir2/author-before-stdout.txt
+d7473bc93483d50fe42cb4dcea8cef1ea42c6e2019f500d005f5b23d1fca0df8  build/p35-client-proposal-ir2/author-after-stdout.txt
+last line both: 75 passed, 0 failed
+
+=== 75-case rerun vs committed sentinel-proof-output.txt ===
+$ node sentinel-proof.mjs > proof-stdout.txt ; cmp committed output
+cmp exit=0
+PASS=75 FAIL=0

@@ -1,0 +1,29 @@
+# Proposal criteria (ce293ed)
+
+=== logical line count (repo convention = content lines: awk NR / splitlines) ===
+P3.4-correction-final.md:144 F2 defines "logical lines" as content lines when a
+capped doc lacks a trailing newline. Applied here:
+
+current wc -l (newlines):        160
+current awk END{print NR}:       161
+current splitlines:              161
+current trailing newline:        NO
+29d36ac wc -l / awk NR:          160 / 160 (ended with newline)
+CAP: <=160 logical lines  ->  161 content lines: OVER BY 1
+
+=== §6 exactly two options, explicit AM-190 change, no existing grant ===
+139:**A. Change AM-190's no-attempt-4 boundary for this card only (Recommended).**
+151:**B. Spark — park the card as `BLOCKED` with no change.** No boundary is
+
+=== exactly three capture anchors at the new attempt; V5 read-only; no 5/reset/retry/Expected relax ===
+139:**A. Change AM-190's no-attempt-4 boundary for this card only (Recommended).**
+143:with **fresh anchors for the new attempt = exactly three capture records, one per
+145:fixes. **V5 is a read-only verification** of those three records plus the live
+148:records and anchors and both attempt-3 records. **No fifth attempt, no counter
+149:reset, no retry of any row, no threshold, schema or Expected-cell change.**
+
+literal anchor word "four": 1
+132:   records exist at attempt 3, no fourth may be appended, and the once-only V0–V5
+
+=== bounded prose typo ===
+151:**B. Spark — park the card as `BLOCKED` with no change.** No boundary is

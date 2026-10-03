@@ -1,0 +1,27 @@
+# IR 19-case historical proof: documented snapshot reproduction
+
+At root the preserved IR script now stops at case 19 (ENOENT candidate-after.mjs,
+renamed to .mjs.txt). Cases 1-18 pass. This is the documented reason the root run
+is historical, not current CLI; the documented snapshot reproduces it.
+
+Snapshot (build/p35-client-proposal-ir2/adversarial-snapshot) holds the 29d36ac bytes:
+  scripts/v2/tauri-audio.test.mjs            b886f8bb...
+  build/p35-client-proposal-ir/replay/...    85fbb13d...
+  docs/.../candidate-after.mjs                e0a01c00... (old name, 29d36ac)
+
+$ node adversarial-checks.mjs (BEFORE, 29d36ac verbatim) from snapshot root
+BEFORE exit=0
+$ node adversarial-checks.mjs (AFTER, ce293ed output-only repair) from snapshot root
+AFTER exit=0
+$ diff ir-snapshot-before-stdout.txt ir-snapshot-after-stdout.txt
+stdout diff exit=0
+$ diff ir-snapshot-before-stderr.txt ir-snapshot-after-stderr.txt
+stderr diff exit=0
+stderr bytes: before=0 after=0
+$ sha256sum ir-snapshot-before-stdout.txt ir-snapshot-after-stdout.txt
+4a36353371e9cc1f87c7b20b95ba362f704e08966847384f76d1cbd4bb445dac  build/p35-client-proposal-ir2/ir-snapshot-before-stdout.txt
+4a36353371e9cc1f87c7b20b95ba362f704e08966847384f76d1cbd4bb445dac  build/p35-client-proposal-ir2/ir-snapshot-after-stdout.txt
+last line both: 19 passed, 0 failed
+
+$ git diff 29d36ac ce293ed -- client-sentinel-proposal-ir/adversarial-output.txt ...
+adversarial-output.txt and every other IR artefact except adversarial-checks.mjs: unchanged

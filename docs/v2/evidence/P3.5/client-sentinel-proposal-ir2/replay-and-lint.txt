@@ -1,0 +1,46 @@
+# IR-1: replay candidate.patch on a fresh git-ignored baseline
+
+Scratch: build/p35-client-proposal-ir2 (git check-ignore -v -> .gitignore:55:build/)
+
+$ sha256sum fresh baseline copy (build/p35-client-proposal-ir2/baseline.mjs)
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  build/p35-client-proposal-ir2/baseline.mjs
+
+$ patch -p1 --dry-run < candidate.patch (in replay/)
+dry-run exit=0 (checking file scripts/v2/tauri-audio.test.mjs)
+
+$ patch -p1 < candidate.patch
+apply exit=0
+
+$ sha256sum replay/scripts/v2/tauri-audio.test.mjs
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  build/p35-client-proposal-ir2/replay/scripts/v2/tauri-audio.test.mjs
+expected 85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14 -> MATCH
+
+$ node --check replay/scripts/v2/tauri-audio.test.mjs
+node --check exit=0
+
+$ npx prettier --check --stdin-filepath scripts/v2/tauri-audio.test.mjs < replay
+prettier exit=0
+
+$ npx eslint --stdin --stdin-filename scripts/v2/tauri-audio.test.mjs < replay
+eslint exit=0
+
+$ diff -U0 baseline.mjs replay/scripts/v2/tauri-audio.test.mjs
+--- build/p35-client-proposal-ir2/baseline.mjs	2026-10-03 15:56:01.033069030 -0600
++++ build/p35-client-proposal-ir2/replay/scripts/v2/tauri-audio.test.mjs	2026-10-03 15:56:01.161844934 -0600
+@@ -309,2 +309,7 @@
+-    const clientId = Number(columns[2]);
+-    if (![streamId, sourceId, clientId].every((value) => Number.isInteger(value))) {
++    // Only the literal `-` means "no client"; any other client-column value
++    // must still be a plain integer, exactly as before.
++    const clientId = columns[2] === '-' ? null : Number(columns[2]);
++    if (
++      ![streamId, sourceId].every((value) => Number.isInteger(value)) ||
++      (clientId !== null && !Number.isInteger(clientId))
++    ) {
+diff exit=1 (1 = expected differences)
+changed hunks: 1
+removed lines: 2
+added lines:   7
+
+$ sha256sum scripts/v2/tauri-audio.test.mjs (after all of the above)
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs

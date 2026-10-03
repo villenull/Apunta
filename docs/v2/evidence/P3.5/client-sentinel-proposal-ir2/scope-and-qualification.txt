@@ -1,0 +1,19 @@
+# Root run of the preserved IR script, and audit qualification retained
+
+=== IR script at repo root (current tree, old baseline renamed) ===
+$ node docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+exit=1: cases 1-18 PASS, then ENOENT candidate-after.mjs (renamed to .mjs.txt).
+Documented as intentional: the preserved IR artefact reads the old baseline name
+and the reviewer scratch replay path; its snapshot reproduction is in
+ir-snapshot-before-after.txt (19/19, exit 0). No criterion was invented.
+
+=== raw witness rename is byte-identical ===
+29d36ac candidate-after.mjs     : e0a01c008ea784afc3ea03609cd4e07f24c69b90615f78da0d422b558d9224e1
+ce293ed candidate-after.mjs.txt : e0a01c008ea784afc3ea03609cd4e07f24c69b90615f78da0d422b558d9224e1
+git detects rename with 0 content change.
+
+=== audit qualification retained, unchanged by ce293ed ===
+docs/v2/state/reviews/P3.5-final-runtime-audit-qualification.md is present and
+untouched by ce293ed (git diff ce293ed^ ce293ed -> empty). It states actual device
+attachment is unproven and the physical mic was neither proven used nor not used.
+The proposal does not claim a physical-mic proof (see its §4 and §5.1).
