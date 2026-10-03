@@ -1,0 +1,33 @@
+FAIL P0.2 V1: exit 2 bash: -c: line 1: syntax error near unexpected token `before'
+FAIL P3.1 V4: exit 2 bash: -c: line 1: unexpected EOF while looking for matching ``'
+ok   P3.4 V0
+ok   P3.4 V1
+ok   P3.4 V2
+ok   P3.4 V3
+ok   P3.4 V4
+ok   P3.5 V0
+ok   P3.5 V1
+ok   P3.5 V2
+ok   P3.5 V3
+ok   P3.5 V4
+ok   P3.5 V5
+FAIL P3.6 V3: exit 2 bash: -c: line 1: syntax error near unexpected token `the'
+FAIL P3.8 V0: exit 2 bash: -c: line 1: syntax error near unexpected token `cwd:'
+FAIL P3.8 V1: exit 2 bash: -c: line 1: syntax error near unexpected token `cwd:'
+FAIL P3.8 V2: exit 2 bash: -c: line 1: syntax error near unexpected token `cwd:'
+FAIL P3.8 V3: exit 2 bash: -c: line 1: syntax error near unexpected token `cwd:'
+FAIL P3.8 V4: exit 2 bash: -c: line 1: syntax error near unexpected token `cwd:'
+FAIL P4.4 V3: exit 2 bash: -c: line 1: syntax error near unexpected token `('
+FAIL P5.3 V2: exit 2 bash: -c: line 1: syntax error near unexpected token `sandbox'
+FAIL P5.4 V1: exit 2 bash: -c: line 1: unexpected EOF while looking for matching `''
+FAIL P5.5 V2: exit 2 bash: -c: line 1: syntax error near unexpected token `('
+FAIL Q1.1 V6: exit 2 bash: -c: line 1: syntax error near unexpected token `('
+FAIL S2.6 V1: exit 2 bash: -c: line 1: syntax error near unexpected token `('
+FAIL S2.6 V15: exit 2 bash: -c: line 1: syntax error near unexpected token `('
+FAIL S3.1 V3: exit 2 bash: -c: line 1: syntax error near unexpected token `run'
+FAIL S3.2 V4: exit 2 bash: -c: line 1: unexpected EOF while looking for matching `''
+FAIL S4a.1 V3: exit 2 bash: -c: line 1: syntax error near unexpected token `on'
+FAIL S5.5 V2: exit 2 bash: -c: line 1: syntax error near unexpected token `('
+FAIL S5.6 V1: exit 2 bash: -c: line 1: syntax error near unexpected token `4'
+FAIL S6.1 V3: exit 2 bash: -c: line 1: unexpected EOF while looking for matching `''
+rows=287 bad=21

@@ -1,0 +1,116 @@
+result | card | attempt | exception | mode | observed | expected | note
+ok | T1 | 1 | (none) | implement | GENERATED | GENERATED | 1 of 3
+ok | T1 | 2 | (none) | implement | GENERATED | GENERATED | 2 of 3
+ok | T1 | 3 | (none) | implement | GENERATED | GENERATED | 3 of 3
+ok | P3.4 | 1 | (none) | implement | GENERATED | GENERATED | 1 of 3
+ok | P3.4 | 2 | (none) | implement | GENERATED | GENERATED | 2 of 3
+ok | P3.4 | 3 | (none) | implement | GENERATED | GENERATED | 3 of 3
+ok | S3.2 | 1 | (none) | implement | GENERATED | GENERATED | 1 of 3
+ok | S3.2 | 2 | (none) | implement | GENERATED | GENERATED | 2 of 3
+ok | S3.2 | 3 | (none) | implement | GENERATED | GENERATED | 3 of 3
+ok | T1 | 4 | (none) | implement | exit 2 | exit 2 | 
+ok | T1 | 4 | AM-138 | implement | GENERATED | GENERATED | 4 of 3, plus one corrective attempt the owner authorised by AM-138 — there is no attempt 5
+ok | P3.4 | 4 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.4 | 4 | AM-138 | implement | GENERATED | GENERATED | 4 of 3, plus one corrective attempt the owner authorised by AM-138 — there is no attempt 5
+ok | S3.2 | 4 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.2 | 4 | AM-138 | implement | GENERATED | GENERATED | 4 of 3, plus one corrective attempt the owner authorised by AM-138 — there is no attempt 5
+ok | T1 | 5 | (none) | implement | exit 2 | exit 2 | 
+ok | T1 | 5 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T1 | 5 | AM-189 | review | exit 2 | exit 2 | 
+ok | T1 | 5 | AM-189 | ir | exit 2 | exit 2 | 
+ok | S3.2 | 5 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.2 | 5 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.2 | 5 | AM-189 | review | exit 2 | exit 2 | 
+ok | S3.2 | 5 | AM-189 | ir | exit 2 | exit 2 | 
+ok | S3.3a | 5 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.3a | 5 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.3a | 5 | AM-189 | review | exit 2 | exit 2 | 
+ok | S3.3a | 5 | AM-189 | ir | exit 2 | exit 2 | 
+ok | P3.5 | 5 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.5 | 5 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.5 | 5 | AM-189 | review | exit 2 | exit 2 | 
+ok | P3.5 | 5 | AM-189 | ir | exit 2 | exit 2 | 
+ok | T0.R | 5 | (none) | implement | exit 2 | exit 2 | 
+ok | T0.R | 5 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T0.R | 5 | AM-189 | review | exit 2 | exit 2 | 
+ok | T0.R | 5 | AM-189 | ir | exit 2 | exit 2 | 
+ok | P3.4 | 5 | AM-189 | implement | GENERATED | GENERATED | 5 of 3, plus two corrective attempts the owner authorised by AM-189 — there is no attempt 6
+ok | P3.4 | 5 | AM-189 | review | GENERATED | GENERATED | 5 of 3, plus two corrective attempts the owner authorised by AM-189 — there is no attempt 6
+ok | P3.4 | 5 | AM-189 | ir | GENERATED | GENERATED | 5 of 3, plus two corrective attempts the owner authorised by AM-189 — there is no attempt 6
+ok | P3.4 | 5 | AM-18 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 5 | am-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 5 | AM-1890 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 5 | X-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 5 | AM-189  | implement | exit 2 | exit 2 | 
+ok | T1 | 6 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T1 | 6 | (none) | implement | exit 2 | exit 2 | 
+ok | T1 | 7 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T1 | 7 | (none) | implement | exit 2 | exit 2 | 
+ok | T1 | 12 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T1 | 12 | (none) | implement | exit 2 | exit 2 | 
+ok | T1 | 999 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T1 | 999 | (none) | implement | exit 2 | exit 2 | 
+ok | T1 | 6 | AM-189 | review | exit 2 | exit 2 | 
+ok | T1 | 6 | AM-189 | ir | exit 2 | exit 2 | 
+ok | P3.4 | 6 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 6 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.4 | 7 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 7 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.4 | 12 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 12 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.4 | 999 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 999 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.4 | 6 | AM-189 | review | exit 2 | exit 2 | 
+ok | P3.4 | 6 | AM-189 | ir | exit 2 | exit 2 | 
+ok | S3.2 | 6 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.2 | 6 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.2 | 7 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.2 | 7 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.2 | 12 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.2 | 12 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.2 | 999 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.2 | 999 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.2 | 6 | AM-189 | review | exit 2 | exit 2 | 
+ok | S3.2 | 6 | AM-189 | ir | exit 2 | exit 2 | 
+ok | S3.3a | 6 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.3a | 6 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.3a | 7 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.3a | 7 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.3a | 12 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.3a | 12 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.3a | 999 | AM-189 | implement | exit 2 | exit 2 | 
+ok | S3.3a | 999 | (none) | implement | exit 2 | exit 2 | 
+ok | S3.3a | 6 | AM-189 | review | exit 2 | exit 2 | 
+ok | S3.3a | 6 | AM-189 | ir | exit 2 | exit 2 | 
+ok | P3.5 | 6 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.5 | 6 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.5 | 7 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.5 | 7 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.5 | 12 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.5 | 12 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.5 | 999 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.5 | 999 | (none) | implement | exit 2 | exit 2 | 
+ok | P3.5 | 6 | AM-189 | review | exit 2 | exit 2 | 
+ok | P3.5 | 6 | AM-189 | ir | exit 2 | exit 2 | 
+ok | T0.R | 6 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T0.R | 6 | (none) | implement | exit 2 | exit 2 | 
+ok | T0.R | 7 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T0.R | 7 | (none) | implement | exit 2 | exit 2 | 
+ok | T0.R | 12 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T0.R | 12 | (none) | implement | exit 2 | exit 2 | 
+ok | T0.R | 999 | AM-189 | implement | exit 2 | exit 2 | 
+ok | T0.R | 999 | (none) | implement | exit 2 | exit 2 | 
+ok | T0.R | 6 | AM-189 | review | exit 2 | exit 2 | 
+ok | T0.R | 6 | AM-189 | ir | exit 2 | exit 2 | 
+ok | P3.4 | 0 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | -1 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 4.5 | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | x | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 |  | AM-189 | implement | exit 2 | exit 2 | 
+ok | P3.4 | 5 | AM-189 | implement | exit 3 | exit 3 | dependency gate still wins
+ok | S2.5.md (S2.5, AM-049) | 4 | AM-049 | implement | GENERATED | GENERATED | byte-identical to the shipped line
+ok | P3.4.md (P3.4, AM-138) | 4 | AM-138 | implement | GENERATED | GENERATED | byte-identical to the shipped line
+ok | P4.1.md (P4.1, AM-064) | 4 | AM-064 | implement | GENERATED | GENERATED | byte-identical to the shipped line
+ok | P4.1-ir.md (P4.1, AM-064) | 4 | AM-064 | implement | GENERATED | GENERATED | byte-identical to the shipped line
+
+113/113 rows as expected; 0 mismatches.

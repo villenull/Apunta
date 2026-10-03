@@ -1,0 +1,36 @@
+# config hashes
+c8abfc5 baseline: 3ff6aa5a78cd782e92a3694e9d85b84f519d0ea06beadd7f635d93f6b57cd563  -
+HEAD current:     e91c7e5760da2d2dee460cfe70b579312201dda78255ee26388bcdc36e7de923  src-tauri/tauri.conf.json
+overlay HEAD:     3e109252d57fd38fbfe7e23bb2d9fa93ce499cb5381f451f31ede6b36d5a1760  src-tauri/tauri.test.conf.json
+overlay c8abfc5:   3e109252d57fd38fbfe7e23bb2d9fa93ce499cb5381f451f31ede6b36d5a1760  -
+
+# in-range commits (375d3c1..507c026)
+507c026 Enable approved media bundling in base Tauri config
+c8abfc5 Permit owner-keyed final P3.4 attempt five only
+5bebe42 Track authorized final P3.4 preparation and capture prerequisites
+6974943 Escape approved IPC command pipe in P3.4 card cell
+b077d1a Adopt owner-approved P3.4 final attempt and P3.5 capture package
+
+# files changed in range
+docs/v2/ACQUISITION.md
+docs/v2/ORCHESTRATION-LOG.md
+docs/v2/cards/P3.4.md
+docs/v2/cards/P3.5.md
+docs/v2/evidence/P3.4/attempt-5/tooling/README.md
+docs/v2/evidence/P3.4/attempt-5/tooling/guard-matrix.mjs
+docs/v2/evidence/P3.5/environment-application/COORDINATOR.md
+docs/v2/evidence/P3.5/environment-application/README.md
+docs/v2/evidence/P3.5/environment-application/apply-checks.mjs
+docs/v2/evidence/P3.5/environment-application/commands.md
+docs/v2/evidence/P3.5/environment-application/config-parse-check-output.txt
+docs/v2/evidence/P3.5/environment-application/config.diff
+docs/v2/evidence/P3.5/environment-application/delta.md
+docs/v2/evidence/P3.5/environment-application/output.txt
+docs/v2/state/AMENDMENTS.md
+docs/v2/state/NEXT-SESSION.md
+docs/v2/state/OWNER-ACTIONS.md
+docs/v2/state/cards/P3.4.json
+docs/v2/state/cards/P3.5.json
+docs/v2/tools/build-dispatch.mjs
+docs/v2/tools/build-dispatch.test.mjs
+src-tauri/tauri.conf.json

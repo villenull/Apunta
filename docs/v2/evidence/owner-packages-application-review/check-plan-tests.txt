@@ -1,0 +1,12 @@
+✔ a row whose command carries an unescaped pipe is an error, not a truncation (15.741507ms)
+✔ the same row with its pipes escaped passes (17.634149ms)
+✔ an unescaped pipe in an expected cell is caught as well as one in a command (30.082068ms)
+✔ a BRE alternation in a card needs three backslashes, and both spellings are well-formed rows (31.631833ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 121.115316

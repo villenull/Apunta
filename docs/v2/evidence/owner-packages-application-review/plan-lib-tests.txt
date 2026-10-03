@@ -1,0 +1,17 @@
+✔ the round trip is identity on every cell over the stress alphabet (8.848874ms)
+✔ trimming is the *only* thing that does not survive (0.106219ms)
+✔ a cell never gains a backslash it did not need (0.06346ms)
+✔ the cell count is never wrong, whatever the content (0.455466ms)
+✔ every spelling of a pipe, and what each one means (0.127459ms)
+✔ the card parser is the codec, not a second opinion about it (0.301627ms)
+✔ every verification row in the plan re-emits its own cell byte for byte (11.761326ms)
+✔ loadPlan and the codec agree on every card it can read (13.090233ms)
+✔ writing a card with the surviving spelling and reading it back is stable (0.482806ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 62.861911

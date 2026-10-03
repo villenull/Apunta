@@ -1,0 +1,7 @@
+$ node docs/v2/tools/build-dispatch.mjs P3.4 --base 6974943 --port 7841 --attempt 5 --attempt-exception AM-189 --print
+exit=0 (verified live; git status clean after)
+--- attempt lines in generated output ---
+8:- Attempt 5 of 3, plus two corrective attempts the owner authorised by AM-189 — there is no attempt 6. Checkpoint: `docs/v2/state/cards/P3.4.json`.
+929:- Attempt: 5 of 3
+--- generated output bytes ---
+89519 build/owner-package-ir/print-attempt5.out

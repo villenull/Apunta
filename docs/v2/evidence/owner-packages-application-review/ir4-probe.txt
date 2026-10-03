@@ -1,0 +1,22 @@
+✔ T1: --attempt 5 with no exception is refused (16.018205ms)
+✔ T2: --attempt 5 with a well-formed AM-nnn for another card is refused, naming no attempt 6 (14.742697ms)
+✔ T3: --attempt 5 with AM-nnn for card P3.4 succeeds with exactly status 0 (17.715488ms)
+✔ T4: --attempt 6 is refused for P3.4 itself (13.267992ms)
+✔ T5: attempt 4 line is byte-identical to the shipped literal (16.881487ms)
+✔ T5b: attempt 4 failure message is byte-identical to the shipped one (13.388571ms)
+✔ extra: attempt 5 line reads as the AM-049 parallel sentence (16.737748ms)
+✔ extra: attempts 1-3 unchanged (51.012756ms)
+✔ extra: --attempt 7+ refused; --attempt 0 / nan refused (83.296073ms)
+✔ extra: --attempt 5 in --review mode: same keyed refusal, same single permitted id (44.292551ms)
+✔ extra: --attempt 5 in --ir mode is refused for another card and permitted for P3.4 (30.835702ms)
+✔ extra: attempt 5 is refused for P3.4 when the exception is malformed (57.700342ms)
+✔ extra: dependency gate still exits 3 after the grant (no PASS on exit 3) (13.557769ms)
+✔ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (67.823623ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 489.630407

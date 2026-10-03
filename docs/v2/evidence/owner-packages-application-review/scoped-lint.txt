@@ -1,0 +1,8 @@
+# scoped lint/format (repo configs), 2026-10-03T05:52:17Z
+$ ./node_modules/.bin/eslint docs/v2/tools/build-dispatch.mjs docs/v2/tools/build-dispatch.test.mjs docs/v2/evidence/P3.4/attempt-5/tooling/guard-matrix.mjs docs/v2/evidence/P3.5/environment-application/apply-checks.mjs
+exit=0
+
+$ ./node_modules/.bin/prettier --check <same four files> src-tauri/tauri.conf.json
+Checking formatting...
+All matched files use Prettier code style!
+exit=0

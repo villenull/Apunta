@@ -1,0 +1,34 @@
+✔ emit then parse returns byte-identical command text (0.686224ms)
+✔ an already-escaped pipe neither gains nor loses a backslash (0.114239ms)
+✔ an emitted cell is byte-identical to the child's own cell (0.104019ms)
+✔ a BRE alternation is still an alternation after the round trip (4.0813ms)
+✔ the refusal advice names only spellings that survive the pipeline (14.727017ms)
+✔ a card may write a BRE alternation, and the guard still fires after the copy (20.383132ms)
+✔ fill() reaches a borrowed body: no {{…}} survives a generated dispatch (16.213353ms)
+✔ a borrowed row whose cell carries an unescaped pipe is refused, not truncated (14.104284ms)
+✔ a port placeholder nothing substitutes fails generation loudly (34.905132ms)
+✔ findUnfilledPorts reads command cells only, never prose (0.338917ms)
+✔ --print writes nothing; without it the dispatch is written (32.312706ms)
+✔ substituteTokens fills every token it claims and leaves the rest alone (0.135059ms)
+✔ T1: --attempt 5 with no exception is refused (13.822656ms)
+✔ T2: --attempt 5 with a well-formed AM-nnn for another card is refused, naming no attempt 6 (14.758387ms)
+✔ T3: --attempt 5 with AM-nnn for card P3.4 succeeds with exactly status 0 (16.397441ms)
+✔ T4: --attempt 6 is refused for P3.4 itself (14.180272ms)
+✔ T5: attempt 4 line is byte-identical to the shipped literal (16.226853ms)
+✔ T5b: attempt 4 failure message is byte-identical to the shipped one (13.541198ms)
+✔ extra: attempt 5 line reads as the AM-049 parallel sentence (15.907566ms)
+✔ extra: attempts 1-3 unchanged (50.50382ms)
+✔ extra: --attempt 7+ refused; --attempt 0 / nan refused (84.895297ms)
+✔ extra: --attempt 5 in --review mode: same keyed refusal, same single permitted id (57.705011ms)
+✔ extra: --attempt 5 in --ir mode is refused for another card and permitted for P3.4 (31.398965ms)
+✔ extra: attempt 5 is refused for P3.4 when the exception is malformed (56.200015ms)
+✔ extra: dependency gate still exits 3 after the grant (no PASS on exit 3) (13.719897ms)
+✔ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (70.10181ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 640.974496

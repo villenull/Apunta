@@ -1,0 +1,1 @@
+Plan consistent: 71 cards, 12 parent reviews, 14 contracts, R01-R20 covered, no cycles.

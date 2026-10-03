@@ -132,11 +132,12 @@ check('app.security.capabilities is still an empty list', Array.isArray(current.
 // Option A, so the overlay keeps no key of its own.
 check(`${OVERLAY} is byte-identical to c8abfc5 (no overlay edit)`, overlayText === overlayHead, overlayText === overlayHead ? '' : `sha256 ${hash(overlayText)}`);
 
-// Nothing outside the one config file was touched: no permissions, no main.rs,
-// no build.rs, no helper or build script, no web/server/shared/installer.
-const tracked = ['src-tauri', 'scripts', 'web', 'server', 'shared', 'installer'].map((p) => git('status', '--porcelain', '--', p)).filter(Boolean);
-const changedPaths = tracked.map((l) => l.slice(3).trim());
-check('the only changed file under src-tauri, scripts, web, server, shared, installer is the shipping config', changedPaths.length === 1 && changedPaths[0] === CONFIG, changedPaths.join(' ') || 'none');
+// The application commit changed exactly one feature file. Inspect that pinned
+// commit, rather than require an uncommitted config in the current workspace:
+// other cards may continue after integration without rewriting this evidence.
+const changedPaths = git('diff', '--name-only', 'c8abfc5', '507c026', '--',
+  'src-tauri', 'scripts', 'web', 'server', 'shared', 'installer').split('\n').filter(Boolean);
+check('the application commit changed only the shipping config under the feature roots', changedPaths.length === 1 && changedPaths[0] === CONFIG, changedPaths.join(' ') || 'none');
 check('nothing is staged', git('diff', '--cached', '--name-only') === '');
 check('the modified config file has no untracked sibling', git('status', '--porcelain', '--', 'src-tauri').split('\n').filter((l) => l.includes('??')).length === 0);
 
