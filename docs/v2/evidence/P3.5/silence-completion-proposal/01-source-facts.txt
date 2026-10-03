@@ -1,0 +1,141 @@
+# P3.5 silence-completion proposal — source facts, read at 2026-10-03T22:53:22Z
+
+$ sed -n 176,199p scripts/v2/sandbox.mjs   (the C-ISO@1 guard)
+ */
+export function resolveSandboxDataDir(env, runDataDir) {
+  const raw = env['APUNTA_DATA_DIR'];
+  const dataDir = raw === undefined || raw === '' ? runDataDir : resolve(raw);
+  const rootReal = existsSync(SANDBOX_ROOT) ? realpathSync(SANDBOX_ROOT) : SANDBOX_ROOT;
+  let dataReal = dataDir;
+  try {
+    dataReal = realpathSync(dataDir);
+  } catch {
+    // Not created yet: fall back to the resolved (not yet canonical) path.
+  }
+  const def = platformDataDir(process.platform, process.env, homedir());
+  const defKey = comparablePath(def);
+  const dataKey = comparablePath(dataDir);
+  if (dataKey === defKey || dataKey.startsWith(defKey + '/')) {
+    throw new SandboxRefusal(
+      `refusing data folder ${dataDir}: it equals (or sits inside) the platform default ${def}. Sandbox runs never touch the live data folder.`,
+    );
+  }
+  if (!contained(dataReal, rootReal) && !contained(dataDir, SANDBOX_ROOT)) {
+    throw new SandboxRefusal(
+      `refusing data folder ${dataDir}: outside ${SANDBOX_ROOT}. The sandbox keeps every path under ${SANDBOX_ROOT}.`,
+    );
+  }
+
+$ sed -n 297,310p scripts/v2/sandbox.mjs   (printEnv: the seven names)
+}
+
+function printEnv(port, runId, dataDir) {
+  const lines = [
+    `export APUNTA_DATA_DIR=${shellQuote(dataDir)}`,
+    `export APUNTA_PORT=${shellQuote(String(port))}`,
+    `export APUNTA_NO_OPEN='1'`,
+    `export APUNTA_TEST_RUN_ID=${shellQuote(runId)}`,
+    `export APUNTA_V2='1'`,
+    `export APUNTA_CHECK_URL=${shellQuote(`http://127.0.0.1:${String(port)}`)}`,
+    `export APUNTA_E2E_PORT=${shellQuote(String(port))}`,
+  ];
+  process.stdout.write(`${lines.join('\n')}\n`);
+}
+
+$ sed -n 353,364p scripts/v2/sandbox.mjs   (cmdEnv: one run folder, one port check)
+async function cmdEnv(portRaw) {
+  const port = validatePort(portRaw);
+  const runId = newRunId();
+  const validatedDataDir = resolveSandboxDataDir(process.env, join(SANDBOX_ROOT, runId, 'data'));
+  await assertPortFree(port);
+  const run = ensureRunDir(runId);
+  const override = process.env['APUNTA_DATA_DIR'];
+  const dataDir = override === undefined || override === '' ? run.dataDir : validatedDataDir;
+  printEnv(port, runId, dataDir);
+}
+
+function usage() {
+
+$ sed -n 25,41p shared/src/platform-paths.ts   (platformDataDir reads APUNTA_DATA_DIR first)
+export function platformDataDir(
+  platform: string,
+  env: Readonly<Record<string, string | undefined>>,
+  home: string,
+): string {
+  const override = env['APUNTA_DATA_DIR'];
+  if (override !== undefined && override !== '') return normalise(override);
+  if (platform === 'darwin') return `${normalise(home)}/Library/Application Support/Apunta`;
+  if (platform === 'win32') {
+    const appData = env['APPDATA'];
+    if (appData !== undefined && appData !== '') return `${normalise(appData)}/Apunta`;
+    return `${normalise(home)}/AppData/Roaming/Apunta`;
+  }
+  const xdg = env['XDG_DATA_HOME'];
+  if (xdg !== undefined && xdg !== '') return `${normalise(xdg)}/apunta`;
+  return `${normalise(home)}/.local/share/apunta`;
+}
+
+$ sed -n 121,141p scripts/v2/tauri-audio.test.mjs   (the harness refuses without the three sandbox keys and without APUNTA_ALLOW_AUDIO_TEST=1)
+const port = Number(process.env['APUNTA_PORT']);
+const dataDir = process.env['APUNTA_DATA_DIR'];
+const runId = process.env['APUNTA_TEST_RUN_ID'];
+
+if (!Number.isInteger(port) || !dataDir || !runId) {
+  process.stderr.write(
+    'tauri-audio: source the sandbox environment first:\n' +
+      '  node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-…env && . /tmp/apunta-v2-…env\n' +
+      'APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required.\n',
+  );
+  process.exit(2);
+}
+
+// The host-global mutation below is never reached by accident: a session that
+// forgot to set this gets exit 2, exactly as one that forgot to source the
+// sandbox does.
+if (process.env['APUNTA_ALLOW_AUDIO_TEST'] !== '1') {
+  process.stderr.write(
+    'tauri-audio: refusing to touch the host microphone without APUNTA_ALLOW_AUDIO_TEST=1\n',
+  );
+  process.exit(2);
+
+$ sed -n 663,690p scripts/v2/tauri-audio.test.mjs   (the AppImage child inherits process.env; HOME and XDG_* are pointed into the sandbox)
+function launchApp(appImage) {
+  const child = spawn(appImage, [], {
+    cwd: '/',
+    env: {
+      ...process.env,
+      WAYLAND_DISPLAY: '',
+      // The desktop session this harness is invoked from exports `GDK_SCALE=2`,
+      // and it reaches the app through the environment. That is a property of the
+      // **session**, not of this sandbox display: it made the shell read a scale
+      // of 2 off a plain 1400x1000 Xvfb screen, halve its window in CSS pixels
+      // (1330x950 physical = 665x475 logical), and push the very controls this
+      // card has to click below the fold. `GDK_SCALE=1` makes the sandbox
+      // display 1:1, so a `getBoundingClientRect` rectangle is a physical pixel
+      // offset from the window origin and `xdotool --window` coordinates mean
+      // what they say. It is the test environment being stated, not the app
+      // being configured: nothing in `web/`, `server/` or `src-tauri/` changes,
+      // and the scale the app actually used is asserted from the app's own
+      // stderr line below rather than assumed.
+      GDK_SCALE: '1',
+      GDK_DPI_SCALE: '1',
+      XDG_CACHE_HOME: join(dataDir, '..', 'cache'),
+      XDG_CONFIG_HOME: join(dataDir, '..', 'config'),
+      XDG_DATA_HOME: join(dataDir, '..', 'xdg'),
+      HOME: join(dataDir, '..', 'home'),
+      XDG_BACKEND: 'x11',
+      GDK_BACKEND: 'x11',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+
+$ cat /tmp/apunta-v2-p3.5-v4-tone.env   (the file the failing cell sourced: exactly seven exports)
+export APUNTA_DATA_DIR='/tmp/apunta-v2/2026-10-03T22-40-18-947Z-72d61c98/data'
+export APUNTA_PORT='7837'
+export APUNTA_NO_OPEN='1'
+export APUNTA_TEST_RUN_ID='2026-10-03T22-40-18-947Z-72d61c98'
+export APUNTA_V2='1'
+export APUNTA_CHECK_URL='http://127.0.0.1:7837'
+export APUNTA_E2E_PORT='7837'
+
+$ wc -c /tmp/apunta-v2-p3.5-v4-silence.env   (the second env file the refusal left empty)
+0 /tmp/apunta-v2-p3.5-v4-silence.env

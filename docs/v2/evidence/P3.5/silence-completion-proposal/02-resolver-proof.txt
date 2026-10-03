@@ -1,0 +1,15 @@
+# P3.5 silence-completion proposal — resolver proof (read-only)
+# node: v24.19.0  at: 2026-10-03T22:50:44Z
+# command: node build/p35-silence-proposal/prove-resolver.mjs
+
+host: platform=linux HOME=/home/villenull XDG_DATA_HOME=/home/villenull/.local/share
+inherited APUNTA_DATA_DIR at proof start: undefined
+case A platform default: /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data
+case A (leaked APUNTA_DATA_DIR): REFUSED as at 22:40:18 -> refusing data folder /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data: it equals (or sits inside) the platform default /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data. Sandbox runs never touch the live data folder.
+case B platform default: /home/villenull/.local/share/apunta
+case B (isolated env): ACCEPTED -> /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data
+case B equals platform default: false
+case B inside /tmp/apunta-v2: true
+case C (real default as data dir): REFUSED (guard intact) -> refusing data folder /home/villenull/.local/share/apunta: it equals (or sits inside) the platform default /home/villenull/.local/share/apunta. Sandbox runs never touch the live data folder.
+fs check: /tmp/apunta-v2/00000000-0000-7000-8000-000000000000 exists=false
+exit=0

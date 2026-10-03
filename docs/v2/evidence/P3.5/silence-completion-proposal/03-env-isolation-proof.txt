@@ -1,0 +1,53 @@
+== A. the card cell as written: two guard calls in ONE shell ==
+   (the tone env file is the byte content of /tmp/apunta-v2-p3.5-v4-tone.env)
+  first call, 7837, at source time:
+    INHERITED APUNTA_DATA_DIR=/tmp/apunta-v2/2026-10-03T22-40-18-947Z-72d61c98/data
+    INHERITED APUNTA_PORT=7837
+    INHERITED APUNTA_NO_OPEN=1
+    INHERITED APUNTA_TEST_RUN_ID=2026-10-03T22-40-18-947Z-72d61c98
+    INHERITED APUNTA_V2=1
+    INHERITED APUNTA_CHECK_URL=http://127.0.0.1:7837
+    INHERITED APUNTA_E2E_PORT=7837
+  second call, 7839, same shell, same && chain:
+    INHERITED APUNTA_DATA_DIR=/tmp/apunta-v2/2026-10-03T22-40-18-947Z-72d61c98/data
+    INHERITED APUNTA_PORT=7837
+    INHERITED APUNTA_NO_OPEN=1
+    INHERITED APUNTA_TEST_RUN_ID=2026-10-03T22-40-18-947Z-72d61c98
+    INHERITED APUNTA_V2=1
+    INHERITED APUNTA_CHECK_URL=http://127.0.0.1:7837
+    INHERITED APUNTA_E2E_PORT=7837
+   -> the second call reads APUNTA_DATA_DIR as the platform default it
+      must never equal: this is the 22:40:18 refusal, reproduced by flow.
+
+== B. the proposed isolation: one arm per subshell ==
+  B1. the tone arm ran in a subshell that has since exited; the parent sees:
+    inherited sandbox keys: none
+  B2. the silence arm's guard call, even from a contaminated parent, via env -u:
+    sandbox keys visible inside env -u: none
+    host Pulse, display and XDG preserved inside env -u:
+      HOME=/home/villenull
+      XDG_DATA_HOME=/home/villenull/.local/share
+      XDG_RUNTIME_DIR=/run/user/1000
+      XDG_CONFIG_HOME=/home/villenull/.config
+      XDG_CACHE_HOME=/home/villenull/.cache
+      DISPLAY=:0
+      DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+      PULSE_SERVER=<unset>
+      WAYLAND_DISPLAY=wayland-1
+  B3. the silence arm's own exports die with its subshell:
+    inside the silence subshell:
+    INHERITED APUNTA_DATA_DIR=/tmp/apunta-v2/2026-10-03T22-40-18-947Z-72d61c98/data
+    INHERITED APUNTA_PORT=7837
+    INHERITED APUNTA_NO_OPEN=1
+    INHERITED APUNTA_TEST_RUN_ID=2026-10-03T22-40-18-947Z-72d61c98
+    INHERITED APUNTA_V2=1
+    INHERITED APUNTA_CHECK_URL=http://127.0.0.1:7837
+    INHERITED APUNTA_E2E_PORT=7837
+    after it exited:
+    inherited sandbox keys: none
+
+== C. what this host routes Pulse through (unchanged by the proposal) ==
+PULSE_SERVER=<unset>
+XDG_RUNTIME_DIR=/run/user/1000
+DISPLAY=:0
+Server Name: PulseAudio (on PipeWire 1.6.8)

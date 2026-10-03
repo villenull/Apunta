@@ -1,0 +1,28 @@
+parsed row: id=V4 cells=3
+cell splits into 9 && segments; tone at 5, silence at 8
+  seg 0: export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bi
+  seg 1: node --version
+  seg 2: node scripts/v2/sandbox.mjs env --port 7837 > /tmp/apunta-v2-p3.5-v4-t
+  seg 3: . /tmp/apunta-v2-p3.5-v4-tone.env
+  seg 4: export APUNTA_ALLOW_AUDIO_TEST=1
+  seg 5: node scripts/v2/tauri-audio.test.mjs tone
+  seg 6: node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-s
+  seg 7: . /tmp/apunta-v2-p3.5-v4-silence.env
+  seg 8: node scripts/v2/tauri-audio.test.mjs silence
+silence arm segments (verbatim from the card):
+  node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-silence.env
+  . /tmp/apunta-v2-p3.5-v4-silence.env
+  node scripts/v2/tauri-audio.test.mjs silence
+
+completion command:
+( env -u APUNTA_DATA_DIR -u APUNTA_PORT -u APUNTA_NO_OPEN -u APUNTA_TEST_RUN_ID -u APUNTA_V2 -u APUNTA_CHECK_URL -u APUNTA_E2E_PORT node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-silence.env && . /tmp/apunta-v2-p3.5-v4-silence.env && export APUNTA_ALLOW_AUDIO_TEST=1 && node scripts/v2/tauri-audio.test.mjs silence )
+
+wrote build/p35-silence-proposal/card-P3.5.patched.md (scratch copy only)
+diff hunks: 1 | changed lines: 0
+diff lines: 12
+changed line numbers in the copy: [695] (expect only 695)
+real card unchanged by this script: true
+real card bytes == pre-read bytes: true
+Expected cell byte-equal: true
+every other row byte-equal: true
+cell row count: 6

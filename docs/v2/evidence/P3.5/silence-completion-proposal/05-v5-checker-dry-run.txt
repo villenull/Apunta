@@ -1,0 +1,16 @@
+# P3.5 silence-completion proposal — V5 acceptance-checker dry run (no runtime, no pactl, synthetic copy)
+# at 2026-10-03T22:52:48Z
+
+== 1. the real checkpoint as it stands (expect the recorded FAIL)
+FAIL: no sandboxRuns entry names step V4-silence at attempt 4; a PREV_DEFAULT record with no matching capture run cannot be identified, so the baseline is unverifiable
+checker exit=1
+== 2. a synthetic copy with ONE appended V4-silence record + anchor
+V5 ignoring 7 PREV_DEFAULT record(s) from earlier attempts; earlier history is kept, not deleted, and is excluded by the attempt 4 selection
+V5 attempt 4: baseline records tied to the sandboxRuns entries for V3, V4-tone and V4-silence
+V5 recorded PREV_DEFAULT: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+V5 current default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+checker exit=0
+
+counts: real sandboxRuns=9 (attempt 4: 2), synthetic copy=10 (attempt 4: 3)
+attempt-1 records kept: 5; attempt-3 kept: 2; priorAttempt1Criteria=present; priorAttempt3Criteria=present
+real checkpoint bytes unchanged by this script: true (read-only access)

@@ -1,0 +1,23 @@
+# P3.5 silence-completion proposal — verification (no runtime, no build, no install)
+# at 2026-10-03T22:53:10Z  node v24.19.0
+
+$ bash -n build/p35-silence-proposal/completion-command.sh
+exit=0
+$ bash -n build/p35-silence-proposal/prepared-V4-cell.sh
+exit=0
+$ bash -n build/p35-silence-proposal/03-env-isolation-proof.sh
+exit=0
+$ node --check build/p35-silence-proposal/prove-resolver.mjs
+exit=0
+$ node --check build/p35-silence-proposal/derive-commands.mjs
+exit=0
+$ node --check build/p35-silence-proposal/dry-run-v5-checker.mjs
+exit=0
+
+$ npm run typecheck
+no error lines; tsc exited 0 for server, shared, installer, web, e2e
+
+$ git check-ignore -v build/p35-silence-proposal
+.gitignore:55:build/	build/p35-silence-proposal
+
+$ git status --porcelain (whole tree)
