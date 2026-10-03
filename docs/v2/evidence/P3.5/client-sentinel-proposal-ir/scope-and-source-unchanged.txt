@@ -1,0 +1,26 @@
+# Source-unchanged and scope evidence (reviewer)
+
+$ git rev-parse HEAD
+87355661081497c85acb008da9d96ae3f3bb16b8
+
+$ git status --short   # only the two NEW review paths should appear beyond the author's two untracked paths
+?? docs/v2/evidence/P3.5/client-sentinel-proposal-ir/
+?? docs/v2/evidence/P3.5/client-sentinel-proposal/
+?? docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+
+$ sha256sum scripts/v2/tauri-audio.test.mjs   # shipping source, unchanged
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs
+
+# author's prepared family, hashes as reviewed (NOT modified)
+df1b2de9290f7d263b7fd1481d8f5653eac72922913011111ff3823583371381  docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md
+e0a01c008ea784afc3ea03609cd4e07f24c69b90615f78da0d422b558d9224e1  docs/v2/evidence/P3.5/client-sentinel-proposal/candidate-after.mjs
+39a45488e7da4a3efb25894170f4d3287e19e42b2d8925eaf03c6950287354ef  docs/v2/evidence/P3.5/client-sentinel-proposal/candidate.patch
+8da14c37f033fafe5e8ce19263d7c2adf754d6176d20dd4d74e02273224add56  docs/v2/evidence/P3.5/client-sentinel-proposal/format-primary-evidence.md
+6552a3c13f387c2f227b59a67fab492140ca25015bc93ae1b6eeded305cba93c  docs/v2/evidence/P3.5/client-sentinel-proposal/pactl-disasm-excerpt.txt
+b63604ded18e3825a243907c2630f5d5295e853941867f651d8cae029a78bda9  docs/v2/evidence/P3.5/client-sentinel-proposal/sentinel-proof.mjs
+d7473bc93483d50fe42cb4dcea8cef1ea42c6e2019f500d005f5b23d1fca0df8  docs/v2/evidence/P3.5/client-sentinel-proposal/sentinel-proof-output.txt
+
+$ git check-ignore -v build/p35-client-proposal-ir
+.gitignore:55:build/	build/p35-client-proposal-ir
+
+$ git diff --stat   # tracked files: none changed

@@ -1,3 +1,17 @@
+## Final audits returned; bounded proposal repairs are next
+
+Both completed reviewers were archived successfully: f2445f07 (runtime audit)
+and 0dfdfdf1 (client-sentinel package review). The parser change is independently
+sound, but the package remains DEFECT: its patch targets an extract, its proof
+artifacts have 13 lint errors, and its option invents a fourth capture anchor.
+Repair these before any owner question; V5 requires three capture anchors and
+adds none. No P3.5 attempt 4 or P3.4 attempt 6 is authorized.
+
+The runtime audit also needs a qualification: source-outputs column four is the
+driver, not a sink name, and setting the virtual default does not by itself prove
+which device the app opened. Preserve the original audit and append corrections.
+No runtime, resource lease, source patch or acquisition is active.
+
 ## Audit completion mismatch recovered; proposal IR continues
 
 Auditorf2445f07 completionnotification was narrativeonly. Eventcheck foundIDLE

@@ -1,0 +1,98 @@
+# objdump -d --no-show-raw-insn /usr/bin/pactl (build id 390bb5197f783b5b84f491a26f0f8ff01de64573)
+# libpulse 17.0+r98+gb096704c0-1, pipewire-pulse 1:1.6.8-1
+
+## A. short-format printf in get_source_output_info_callback (0xb9bc-0xb9f2)
+    b9bc:	mov    0x18(%r12),%ecx
+    b9c1:	mov    0xc8(%r12),%r9
+    b9c9:	mov    (%r12),%edx
+    b9cd:	lea    0x5d8f(%rip),%rsi        # 11763 <_IO_stdin_used+0x763>
+    b9d4:	mov    $0x2,%edi
+    b9d9:	test   %r9,%r9
+    b9dc:	cmove  %rax,%r9
+    b9e0:	cmpl   $0xffffffff,0x14(%r12)
+    b9e6:	cmovne %rbx,%r8
+    b9ea:	sub    $0x8,%rsp
+    b9ee:	xor    %eax,%eax
+    b9f0:	push   %r15
+    b9f2:	call   *0xa150(%rip)        # 15b48 <__printf_chk@GLIBC_2.3.4>
+
+## B. JSON member table in the same callback (0xbd22-0xbd9f) — offsets named by pactl itself
+    bd22:	mov    (%r12),%edx
+    bd26:	lea    0x5eaf(%rip),%rsi        # 11bdc <pactl.c.a5788aa4+0x2ee>
+    bd2d:	mov    %r14,%rdi
+    bd30:	call   *0x9e72(%rip)        # 15ba8 <pa_json_encoder_add_member_int@Base>
+    bd36:	mov    0xc8(%r12),%rdx
+    bd3e:	lea    0x5836(%rip),%rsi        # 1157b <_IO_stdin_used+0x57b>
+    bd45:	mov    %r14,%rdi
+    bd48:	call   *0xa1ba(%rip)        # 15f08 <pa_json_encoder_add_member_string@Base>
+    bd4e:	cmpl   $0xffffffff,0x10(%r12)
+    bd54:	je     c258 <get_source_output_info_callback+0x9a8>
+    bd5a:	lea    -0xa70(%rbp),%rdx
+    bd61:	lea    0x583f(%rip),%rsi        # 115a7 <_IO_stdin_used+0x5a7>
+    bd68:	mov    %r14,%rdi
+    bd6b:	call   *0xa197(%rip)        # 15f08 <pa_json_encoder_add_member_string@Base>
+    bd71:	cmpl   $0xffffffff,0x14(%r12)
+    bd77:	je     c240 <get_source_output_info_callback+0x990>
+    bd7d:	mov    %rbx,%rdx
+    bd80:	lea    0x52d6(%rip),%rsi        # 1105d <_IO_stdin_used+0x5d>
+    bd87:	mov    %r14,%rdi
+    bd8a:	call   *0xa178(%rip)        # 15f08 <pa_json_encoder_add_member_string@Base>
+    bd90:	mov    0x18(%r12),%edx
+    bd95:	lea    0x5d55(%rip),%rsi        # 11af1 <pactl.c.a5788aa4+0x203>
+    bd9c:	mov    %r14,%rdi
+    bd9f:	call   *0x9e03(%rip)        # 15ba8 <pa_json_encoder_add_member_int@Base>
+
+## C. long legacy printf varargs (0xbbc5-0xbc85) — 0x18 is pushed as the 'Source: %u' slot
+    bbc5:	lea    -0xa70(%rbp),%r8
+    bbcc:	cmpl   $0xffffffff,0x10(%r12)
+    bbd2:	je     c1f0 <get_source_output_info_callback+0x940>
+    bbd8:	mov    0xc8(%r12),%rcx
+    bbe0:	lea    0x5985(%rip),%rax        # 1156c <_IO_stdin_used+0x56c>
+    bbe7:	mov    (%r12),%r12d
+    bbeb:	mov    %r8,-0xb10(%rbp)
+    bbf2:	mov    $0x5,%edx
+    bbf7:	lea    0x6cb2(%rip),%rsi        # 128b0 <pactl.c.a5788aa4+0xfc2>
+    bbfe:	lea    0x542d(%rip),%rdi        # 11032 <_IO_stdin_used+0x32>
+    bc05:	test   %rcx,%rcx
+    bc08:	cmove  %rax,%rcx
+    bc0c:	mov    %rcx,-0xb08(%rbp)
+    bc13:	call   *0xa1f7(%rip)        # 15e10 <dcgettext@GLIBC_2.2.5>
+    bc19:	sub    $0x8,%rsp
+    bc1d:	mov    %rbx,%r9
+    bc20:	mov    %r12d,%edx
+    bc23:	push   %r14
+    bc25:	mov    %rax,%rsi
+    bc28:	mov    $0x2,%edi
+    bc2d:	mov    $0x3,%eax
+    bc32:	push   -0xae0(%rbp)
+    bc38:	push   -0xac0(%rbp)
+    bc3e:	push   -0xb00(%rbp)
+    bc44:	push   -0xaf8(%rbp)
+    bc4a:	push   -0xad0(%rbp)
+    bc50:	push   -0xac8(%rbp)
+    bc56:	push   %r15
+    bc58:	mov    -0xab8(%rbp),%ecx
+    bc5e:	push   %rcx
+    bc5f:	movsd  -0xae8(%rbp),%xmm2
+    bc67:	movsd  -0xaf0(%rbp),%xmm1
+    bc6f:	movsd  -0xad8(%rbp),%xmm0
+    bc77:	mov    -0xb10(%rbp),%r8
+    bc7e:	mov    -0xb08(%rbp),%rcx
+    bc85:	call   *0x9ebd(%rip)        # 15b48 <__printf_chk@GLIBC_2.3.4>
+
+## D. short format for SOURCES in get_source_info_callback (0xa07b-0xa0bd)
+    a07b:	mov    0x148(%r12),%r8
+    a083:	mov    (%r12),%rcx
+    a087:	mov    $0x2,%edi
+    a08c:	lea    0x74d9(%rip),%rdx        # 1156c <_IO_stdin_used+0x56c>
+    a093:	mov    0x16c(%r12),%eax
+    a09b:	lea    0xb77e(%rip),%rsi        # 15820 <state_table.18>
+    a0a2:	mov    %r14,%r9
+    a0a5:	add    $0x1,%eax
+    a0a8:	test   %r8,%r8
+    a0ab:	cmove  %rdx,%r8
+    a0af:	cltq
+    a0b1:	sub    $0x8,%rsp
+    a0b5:	mov    0x8(%r12),%edx
+    a0ba:	push   (%rsi,%rax,8)
+    a0bd:	lea    0x755d(%rip),%rsi        # 11621 <_IO_stdin_used+0x621>

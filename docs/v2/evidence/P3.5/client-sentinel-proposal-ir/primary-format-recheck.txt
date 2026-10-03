@@ -1,0 +1,95 @@
+# Independent read-only inspection of the host's /usr/bin/pactl (no live pactl run)
+
+$ pacman -Qo /usr/bin/pactl
+/usr/bin/pactl is owned by libpulse 17.0+r98+gb096704c0-1
+$ pacman -Q libpulse pipewire-pulse
+libpulse 17.0+r98+gb096704c0-1
+pipewire-pulse 1:1.6.8-1
+$ readelf -n /usr/bin/pactl | grep -i 'build id'
+  GNU                  0x00000014	NT_GNU_BUILD_ID (unique build ID bitstring)
+    Build ID: 390bb5197f783b5b84f491a26f0f8ff01de64573
+
+$ readelf -S /usr/bin/pactl | grep -A1 .rodata   # vaddr 0x11000 = file offset 0x11000
+  [14] .rodata           PROGBITS         0000000000011000  00011000
+       0000000000003290  0000000000000000   A       0     0     32
+
+# .rodata bytes: '-' at 0x11755, source-outputs short fmt at 0x11763, sources short fmt at 0x11621
+ 11750 72636573 002d0073 696e6b5f 696e7075  rces.-.sink_inpu
+ 11760 74730025 75092575 09257309 25730925  ts.%u.%u.%s.%s.%
+ 11770 730a0066 6f726d61 7400636f 726b6564  s..format.corked
+ 11610 41524520 0073696e 6b730073 74617465  ARE .sinks.state
+ 11620 00257509 25730925 73092573 0925730a  .%u.%s.%s.%s.%s.
+ 11630 00616374 75616c00 636f6e66 69677572  .actual.configur
+
+# JSON member strings: client @0x1105d, source @0x11af1, index @0x11bdc, driver @0x1157b
+  1105d client
+  1157b driver
+  11621 %u	%s	%s	%s	%s
+  11763 %u	%u	%s	%s	%s
+ 11ae0 656e642d 73696e6b 00737573 70656e64  end-sink.suspend
+ 11af0 2d736f75 72636500 7365742d 63617264  -source.set-card
+
+# get_source_output_info_callback short printf: client is %s from 0x14, '-' when 0x14 == -1
+
+/usr/bin/pactl:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+000000000000b9b0 <get_source_output_info_callback+0x100>:
+    b9b0:	add    $0x5bb7,%eax
+    b9b5:	lea    0x5d99(%rip),%r8        # 11755 <_IO_stdin_used+0x755>
+    b9bc:	mov    0x18(%r12),%ecx
+    b9c1:	mov    0xc8(%r12),%r9
+    b9c9:	mov    (%r12),%edx
+    b9cd:	lea    0x5d8f(%rip),%rsi        # 11763 <_IO_stdin_used+0x763>
+    b9d4:	mov    $0x2,%edi
+    b9d9:	test   %r9,%r9
+    b9dc:	cmove  %rax,%r9
+    b9e0:	cmpl   $0xffffffff,0x14(%r12)
+    b9e6:	cmovne %rbx,%r8
+    b9ea:	sub    $0x8,%rsp
+    b9ee:	xor    %eax,%eax
+    b9f0:	push   %r15
+    b9f2:	call   *0xa150(%rip)        # 15b48 <__printf_chk@GLIBC_2.3.4>
+
+# JSON branch: offset 0x14 -> member 'client', 0x18 -> member 'source'
+
+/usr/bin/pactl:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+000000000000bd71 <get_source_output_info_callback+0x4c1>:
+    bd71:	cmpl   $0xffffffff,0x14(%r12)
+    bd77:	je     c240 <get_source_output_info_callback+0x990>
+    bd7d:	mov    %rbx,%rdx
+    bd80:	lea    0x52d6(%rip),%rsi        # 1105d <_IO_stdin_used+0x5d>
+    bd87:	mov    %r14,%rdi
+    bd8a:	call   *0xa178(%rip)        # 15f08 <pa_json_encoder_add_member_string@Base>
+    bd90:	mov    0x18(%r12),%edx
+    bd95:	lea    0x5d55(%rip),%rsi        # 11af1 <pactl.c.a5788aa4+0x203>
+    bd9c:	mov    %r14,%rdi
+    bd9f:	.byte 0xff
+
+## Appendix: sources (not source-outputs) short format, checked independently
+
+# short sources fmt @0x11621 is '%u\t%s\t%s\t%s\t%s' (index, name, driver, sample-spec, state)
+# the first %u loads *(u32*)(info+0x8); the first %s loads *(char**)(info+0x0)
+    a07b:	mov    0x148(%r12),%r8
+    a083:	mov    (%r12),%rcx
+    a0b5:	mov    0x8(%r12),%edx
+    a0bd:	lea    0x755d(%rip),%rsi        # 11621 <_IO_stdin_used+0x621>
+
+# the same binary's JSON branch names *(u32*)(info+0x8) 'index' and *(char**)(info+0x0) 'name'
+    a699:	mov    0x8(%r12),%edx
+    a69e:	lea    0x7537(%rip),%rsi        # 11bdc <pactl.c.a5788aa4+0x2ee>
+    a6d6:	mov    (%r12),%rdx
+    a6da:	lea    0x762d(%rip),%rsi        # 11d0e <pactl.c.a5788aa4+0x420>
+    a6ea:	mov    0x10(%r12),%rdx
+    a6ef:	rex.W
+
+# NOTE: this transposes the two offsets as stated in the author's
+# format-primary-evidence.md section 'Sources, short format' (which says
+# index=0x00, name=0x08). The printed column order the harness relies on
+# (column 0 = index, column 1 = name) is unchanged and correct.

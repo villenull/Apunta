@@ -2603,3 +2603,14 @@ Resumedsameunfinishedboundedassignment towriteexistingauditnow, no runtimeor
 newinvestigation. ProposalIR0dfdfdf1confirmedRUNNING, source/budgetunchanged.
 RootflaggedinventedfourthV5anchor asdefect: mustretainexactthreecaptureanchors.
 Noacceptedownerpackagebeforeartifact/header/provenanceclaritycorrections.
+
+## 2026-10-03 — final audit and parser-package review returned
+
+Both reviewers completed; archival confirmed for f2445f07 and 0dfdfdf1. Runtime
+history/cleanup audit returned BLOCKED with preserved provenance. Root identified
+two further audit prose errors: column four is driver, and a default-source guard
+does not prove device attachment. Original report is retained pending additive
+qualification. Parser package IR confirms the minimal change is safe but finds
+wrong patch headers, 13 artifact lint errors and an invented fourth anchor;
+package is not owner-ready. Original artifacts/reviews retained for repair diff.
+No source patch, additional capture or attempt-budget amendment authorized.

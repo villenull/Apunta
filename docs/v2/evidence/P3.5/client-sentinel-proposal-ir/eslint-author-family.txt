@@ -1,0 +1,25 @@
+$ node --version
+v24.19.0
+
+$ npx eslint docs/v2/evidence/P3.5/client-sentinel-proposal/candidate-after.mjs docs/v2/evidence/P3.5/client-sentinel-proposal/sentinel-proof.mjs
+
+/home/villenull/Projects/Apunta/docs/v2/evidence/P3.5/client-sentinel-proposal/candidate-after.mjs
+  33:10  error  'classifySourceOutputs' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/villenull/Projects/Apunta/docs/v2/evidence/P3.5/client-sentinel-proposal/sentinel-proof.mjs
+  221:5   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  224:5   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  253:11  error  'virtual' is assigned a value but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+  253:20  error  'realMic' is assigned a value but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+  253:29  error  'unrelated' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  261:1   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  262:1   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  263:1   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  264:1   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  265:1   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  315:1   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+  316:1   error  Unexpected console statement. Only these console methods are allowed: warn, error     no-console
+
+✖ 13 problems (13 errors, 0 warnings)
+
+eslint exit=1

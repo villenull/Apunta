@@ -1,0 +1,50 @@
+$ sha256sum scripts/v2/tauri-audio.test.mjs   # committed shipping file, unchanged
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs
+
+$ node build/p35-client-proposal-ir/make-patch.mjs   # locate the one block, build the patched copy
+before sha256 b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+after  sha256 85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14
+old block occurrences 1
+before lines 1680 after lines 1685
+
+$ diff -u --label a/scripts/v2/tauri-audio.test.mjs --label b/scripts/v2/tauri-audio.test.mjs before.mjs after.mjs > actual-source.patch
+diff exit=1 (1 = differences, expected)
+
+--- actual-source.patch (concrete, targets the shipping file) ---
+--- a/scripts/v2/tauri-audio.test.mjs
++++ b/scripts/v2/tauri-audio.test.mjs
+@@ -306,8 +306,13 @@
+     if (columns.length < 3) throw new Error(`malformed pactl source-outputs row: ${JSON.stringify(raw)}`);
+     const streamId = Number(columns[0]);
+     const sourceId = Number(columns[1]);
+-    const clientId = Number(columns[2]);
+-    if (![streamId, sourceId, clientId].every((value) => Number.isInteger(value))) {
++    // Only the literal `-` means "no client"; any other client-column value
++    // must still be a plain integer, exactly as before.
++    const clientId = columns[2] === '-' ? null : Number(columns[2]);
++    if (
++      ![streamId, sourceId].every((value) => Number.isInteger(value)) ||
++      (clientId !== null && !Number.isInteger(clientId))
++    ) {
+       throw new Error(`non-numeric source-outputs column: ${JSON.stringify(raw)}`);
+     }
+     if (!sources.has(sourceId)) {
+
+$ (cd replay && patch -p1 --dry-run < ../actual-source.patch && patch -p1 < ../actual-source.patch)
+checking file scripts/v2/tauri-audio.test.mjs
+patching file scripts/v2/tauri-audio.test.mjs
+
+$ sha256sum replay/scripts/v2/tauri-audio.test.mjs   # must equal the built after.mjs
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  build/p35-client-proposal-ir/replay/scripts/v2/tauri-audio.test.mjs
+
+$ node --check build/p35-client-proposal-ir/replay/scripts/v2/tauri-audio.test.mjs
+node --check exit=0
+
+$ npx prettier --check --stdin-filepath scripts/v2/tauri-audio.test.mjs < after.mjs   # real filepath
+prettier exit=0
+
+$ npx eslint --stdin --stdin-filename scripts/v2/tauri-audio.test.mjs < after.mjs   # real filepath, scoped
+eslint exit=0
+
+$ sha256sum scripts/v2/tauri-audio.test.mjs   # actual source unchanged after all of this
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  scripts/v2/tauri-audio.test.mjs

@@ -1,0 +1,18 @@
+--- a/scripts/v2/tauri-audio.test.mjs
++++ b/scripts/v2/tauri-audio.test.mjs
+@@ -306,8 +306,13 @@
+     if (columns.length < 3) throw new Error(`malformed pactl source-outputs row: ${JSON.stringify(raw)}`);
+     const streamId = Number(columns[0]);
+     const sourceId = Number(columns[1]);
+-    const clientId = Number(columns[2]);
+-    if (![streamId, sourceId, clientId].every((value) => Number.isInteger(value))) {
++    // Only the literal `-` means "no client"; any other client-column value
++    // must still be a plain integer, exactly as before.
++    const clientId = columns[2] === '-' ? null : Number(columns[2]);
++    if (
++      ![streamId, sourceId].every((value) => Number.isInteger(value)) ||
++      (clientId !== null && !Number.isInteger(clientId))
++    ) {
+       throw new Error(`non-numeric source-outputs column: ${JSON.stringify(raw)}`);
+     }
+     if (!sources.has(sourceId)) {

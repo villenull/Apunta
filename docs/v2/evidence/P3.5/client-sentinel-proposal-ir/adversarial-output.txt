@@ -1,0 +1,25 @@
+$ node docs/v2/evidence/P3.5/client-sentinel-proposal-ir/adversarial-checks.mjs
+PASS dash client on virtual source classifies and clientId is null
+PASS dash client on virtual source is non-vacuous: shipped code throws
+PASS dash client on the real microphone is detected as a leak
+PASS dash client on an unknown source still throws the unknown-source error, not a pass
+PASS dash in the source column is still refused (source column stays strict)
+PASS dash in the stream column is still refused
+PASS two-column row is still malformed
+PASS a double dash is not the sentinel
+PASS a dash-with-digit token is not the sentinel
+PASS numeric client 167 is identical before and after and equals 167
+PASS numeric client 0 is identical before and after and equals 0
+PASS numeric client -1 is identical before and after and equals -1
+PASS numeric client 167.0 is identical before and after and equals 167
+PASS negative client -1 is retained as a number, not turned into the sentinel
+PASS numeric client on an unknown source still fails closed
+PASS duplicate source index still stops
+PASS malformed source table row still stops
+PASS exactly one contiguous changed region, the shipped client-sentinel block
+PASS author candidate-after.mjs matches the patched shipping function
+
+before sha256 b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+after  sha256 85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14
+19 passed, 0 failed
+adversarial exit=0
