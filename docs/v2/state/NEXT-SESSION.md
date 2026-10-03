@@ -1,3 +1,16 @@
+## Latest v5 independent review — 2026-10-03T03:11:45.304262+00:00
+
+P3.4 v5 proposal398lines + MODEL report committedbf6e7f0, authorbad31d56 archived.
+Coordinator pinnedNode41model/14tooling PASS, evidence proposal-v5/COORDINATOR.md.
+These fixturepasses do not establish fullcontract conformance: truncated validheader
+highwater, bootstrap containment, removedfixtures, selectiontriple and ordering
+flagged. Independent reviewer963b4642-4472-49f2-9d83-1cb97dcbcdd5 RUNNING LongCat
+free high, report/proposal-ir5 evidenceonly. Ownscratchcopies, authormodel stable.
+Await review; no ownerquestion or fifthattempt granted.
+
+P3.5implementation2028c17e solefeaturewriter/buildlease/7837+7839 continues.
+Never stage its in-flight source or outputs. Existingquietmachine holds unchanged.
+
 ## Latest small-spec dispatch — 2026-10-03T02:59:39.793129+00:00
 
 Committee comparison complete. Both final responses saved and both members archived. Coordinator resolution includes finite/identifiable axes before conversion and complete batch sightings before duplicate comparison; older fallback still forbidden after newer valid header. No single-point/signature-frame/settled-gate recommendation survives.
