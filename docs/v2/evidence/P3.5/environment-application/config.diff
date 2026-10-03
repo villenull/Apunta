@@ -1,0 +1,16 @@
+diff --git i/src-tauri/tauri.conf.json w/src-tauri/tauri.conf.json
+index 1d748ed..c9a9125 100644
+--- i/src-tauri/tauri.conf.json
++++ w/src-tauri/tauri.conf.json
+@@ -29,6 +29,11 @@
+     ],
+     "resources": {
+       "../build/linux-resources/": "linux-resources/"
++    },
++    "linux": {
++      "appimage": {
++        "bundleMediaFramework": true
++      }
+     }
+   }
+ }

@@ -29,6 +29,11 @@
     ],
     "resources": {
       "../build/linux-resources/": "linux-resources/"
+    },
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      }
     }
   }
 }
