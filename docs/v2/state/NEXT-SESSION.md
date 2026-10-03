@@ -14,12 +14,18 @@ no running sandbox/app/build commands, and no build or GPU lease. Source base
   older claim that this card cannot dispatch is false for a correctly supplied
   port. Implement/test hermetic rows now; **V6/V7 held** for the existing
   owner quiet-machine decision, no real-model call authorised by this run.
-- **P3.4 diagnosis RUNNING:** worker
+- **P3.4 diagnosis COMPLETE, worker archived:** worker
   `5e75e3cf-db70-4d84-8eaa-9b19fd6e51fb`, only
   `state/reviews/P3.4-diagnosis-2026-10-03.md`. Read-only source/evidence
   investigation: handoff conflicts with checkpoint and code about both global
-  assertions and fixture insertion. No fifth attempt, launch, build or change
-  to protected acceptance is authorised. P3.4 remains BLOCKED.
+  assertions and fixture insertion. Both old handoff FAIL explanations are contradicted by source/evidence.
+  Internals object is unconditionally injected; fixture insertion succeeded.
+  Coordinate mismatch is a hypothesis, not a measured cause. No fifth attempt,
+  launch, build or protected assertion amendment is authorised. P3.4 BLOCKED.
+- **P3.4 bounded owner proposal RUNNING:** worker
+  `29ca4968-a273-45ca-8f7d-a0e59a37128d`, only `state/P3.4-REPAIR-PROPOSAL-2026-10-03.md`.
+  Prepare exact ACL-probe/geometry/landing-proof repairs and additional-attempt
+  exception for independent review before owner decision; no adoption or launch.
 - **State/queue audit COMPLETE, worker archived:** worker
   `f2e5abe1-b39e-4a9c-a653-1829a43810a8`, only
   `state/reviews/continuation-state-audit-2026-10-03.md`. Status provenance and real placeholder refusals verified. P3.8 APPROVED

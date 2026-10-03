@@ -1,3 +1,14 @@
+> **Verified correction, 2026-10-03:** The historical explanations of both
+> P3.4 failures below are wrong. Assertion (a) requires **both globals absent**;
+> `__TAURI__` absence passed and always-injected `__TAURI_INTERNALS__` failed.
+> The fixture **was created** (three 201 responses; V2 assertion 7 PASS), and
+> the John Smith rectangle existed. The click failed to produce a qualifying
+> observation; a coordinate-space mismatch is a hypothesis, not a measured
+> cause. See `reviews/P3.4-diagnosis-2026-10-03.md`. Also withdraw the nine-card
+> port-blocker claim: `reviews/continuation-state-audit-2026-10-03.md` verified
+> no ready card blocked on it. Current workers and leases are in NEXT-SESSION.
+> No fifth P3.4 attempt or protected assertion amendment is authorised.
+
 # Session handoff — 2026-10-02, end of a long orchestration session
 
 **Read this first on a new instance, then `docs/v2/state/NEXT-SESSION.md` for the
