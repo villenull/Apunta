@@ -1,0 +1,10 @@
+# P3.5 attempt-4 runtime, raw step0 output
+# source: git-ignored scratch build/p35-final-runtime4/00-step0.txt
+
+v24.19.0
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+scanner present
+STEP-0 PASS: prerequisites satisfied

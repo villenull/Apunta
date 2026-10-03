@@ -1,0 +1,24 @@
+# P3.5 attempt-4 runtime, raw cleanup-verification output
+# source: git-ignored scratch build/p35-final-runtime4/10-cleanup-verification.txt
+
+=== own processes (AppImage / harness / Xvfb / sandbox server / paplay) ===
+(none above = none)
+=== ports 7837/7839 ===
+(none above = free)
+=== default source ===
+alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+=== streams on the real microphone ===
+0
+=== streams on the virtual source ===
+0
+=== exact-token residue ===
+0
+0
+0
+=== web/dist unflagged ===
+0 in every file
+=== flagged scratch gone ===
+ls: cannot access 'build/p3.5-web': No such file or directory
+ls: cannot access 'build/linux-resources/web/dist': No such file or directory
+=== ollama untouched ===
+1123 /usr/bin/ollama serve

@@ -1,0 +1,28 @@
+# Synthetic before/after proof — node build/p34-eod-instrument/before-after.mjs
+# Uses the ACTUAL shipped exports from baseline/ (== shipping 865ccab3) and candidate/.
+
+PASS BEFORE rejects the real attempt-5 shape (WINDOW=0, no PID)
+PASS AFTER accepts the real attempt-5 shape
+PASS AFTER accepts a read-back with no WINDOW key at all
+PASS AFTER fails closed when the measured point is outside the owned rectangle
+PASS AFTER fails closed at 2 px off
+PASS AFTER fails closed with no usable X/Y
+PASS AFTER treats a foreign getmouselocation WINDOW as diagnostic, not a failure
+PASS BEFORE passes only via the fabricated PID the real command never emits
+PASS BEFORE the bootstrap move fails on the real shape (reproduces attempt-5)
+PASS BEFORE it dispatched the move and the read only
+PASS AFTER the bootstrap move passes on the same real shape
+PASS AFTER it dispatched the move and the read only
+PASS AFTER a stale pointer (no fresh page witness) ends at the deadline with no click
+PASS AFTER a read-back 2 px off fails closed
+PASS AFTER the click stage lands on the real WINDOW=0 shape
+PASS AFTER exactly one click was dispatched
+PASS AFTER an off-by-2 read-back means zero clicks
+PASS AFTER a foreign window owner stops runFlow before any move
+PASS AFTER a foreign owner dispatches only the geometry and pid commands
+PASS AFTER the app-owned window lets runFlow reach the landing and click exactly once
+PASS AFTER the owned window path dispatches getwindowpid then exactly one click
+PASS BEFORE a foreign window owner is not even read (no getwindowpid dispatch)
+
+22/22 synthetic before/after checks passed
+EXIT=0

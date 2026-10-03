@@ -1,0 +1,125 @@
+--- a/scripts/v2/tauri-security.test.mjs
++++ b/scripts/v2/tauri-security.test.mjs
+@@ -1026,7 +1026,27 @@
+   );
+ }
+ 
+-/** Native read-back: where the pointer actually is, and which window is under it. */
++/**
++ * Native read-back: where the pointer actually is, and whether that measured
++ * point lies inside the app's OWN window.
++ *
++ * Identity is carried by two facts the measurement can actually produce here:
++ *   1. the MEASURED native point (X, Y) is inside the window rectangle read once
++ *      from `getwindowgeometry <appWindowId>`, and `runFlow` independently
++ *      confirms with `getwindowpid <appWindowId>` that this window belongs to the
++ *      app's pid before any move is issued; and
++ *   2. `guardedMove` requires, after this read-back, a fresh page pointer witness
++ *      from the app's own hook (`ptrN` strictly greater), which only the app's own
++ *      webview can publish.
++ *
++ * `xdotool getmouselocation --shell` emits no `PID` field at all — the approved
++ * §D.4 `or PID` arm was unsatisfiable — and it resolves `WINDOW=0` under a
++ * window-manager-less Xvfb even while the pointer is over the app. So the
++ * `WINDOW`/`PID` values from this command are recorded as DIAGNOSTIC TEXT ONLY
++ * and are never a pass condition; the owned rectangle plus the fresh page
++ * witness are what guard identity. A missing or unusable X/Y, a point more than
++ * 1 px off, or a point outside the owned rectangle all fail closed.
++ */
+ function checkReadback(point, read, window, appPid) {
+   const dx = Math.abs(Number(read?.X) - point.x);
+   const dy = Math.abs(Number(read?.Y) - point.y);
+@@ -1037,19 +1057,24 @@
+       ok: false,
+       reason: `native read-back is ${String(dx)},${String(dy)} px from the point asked for`,
+     };
+-  const sameWindow = String(read?.WINDOW ?? '') === String(window.id);
+-  const pid = Number(read?.PID);
+-  const samePid = Number.isInteger(pid) && pid > 0 && pid === appPid;
+-  if (!sameWindow && !samePid)
++  const native = { x: Number(read.X), y: Number(read.Y) };
++  if (!containedInWindow(native, window))
+     return {
+       ok: false,
+-      reason: `pointer is not over the app window: WINDOW=${String(read?.WINDOW)} PID=${String(read?.PID)}`,
++      reason: `native read-back ${String(native.x)},${String(native.y)} is outside the owned app window rectangle ${String(window.x)},${String(window.y)} ${String(window.w)}x${String(window.h)}`,
+     };
++  const sameWindow = String(read?.WINDOW ?? '') === String(window.id);
++  const pid = Number(read?.PID);
++  const samePid = Number.isInteger(pid) && pid > 0 && pid === appPid;
+   return {
+     ok: true,
+-    reason: sameWindow
+-      ? 'read-back within 1 px over the app window'
+-      : 'read-back within 1 px over the app pid',
++    reason:
++      'read-back within 1 px inside the owned app window' +
++      (sameWindow
++        ? '; getmouselocation also names the app window'
++        : samePid
++          ? '; getmouselocation also names the app pid'
++          : `; getmouselocation named no app window or pid (WINDOW=${String(read?.WINDOW)} PID=${String(read?.PID)}), diagnostic only`),
+   };
+ }
+ 
+@@ -1323,8 +1348,9 @@
+  *   2. the pointer counter BASELINE, a bounded wait for its presence;
+  *   3. the dispatch, raced against the immutable deadline;
+  *   4. status / signal / XError fail closed;
+- *   5. the native read-back, <= 1 px, over the app window id or a positive pid,
+- *      returned as the MEASURED native point;
++ *   5. the native read-back, <= 1 px and inside the owned app window rectangle,
++ *      returned as the MEASURED native point (the getmouselocation WINDOW/PID are
++ *      diagnostic only);
+  *   6. a bounded wait for a fact whose pointer counter is STRICTLY GREATER than
+  *      step 2's.
+  */
+@@ -1623,6 +1649,28 @@
+       reason: `the application pid read ${JSON.stringify(raw.pid)}, not a positive integer`,
+     });
+ 
++  // Independent native ownership of the measured rectangle: `getwindowpid` reads
++  // `_NET_WM_PID` for the exact window id `getwindowgeometry` was read from, so
++  // the rectangle every later containment and read-back rests on is proven to
++  // belong to the app process before a single move is issued. This replaces the
++  // dead `getmouselocation ... PID` arm: `getwindowpid` is a real command and
++  // emits a real pid, and it is raced against the one deadline like every other
++  // dispatch. A non-integer, non-positive or non-matching pid fails closed with
++  // no move and no click.
++  const owner = await awaitGuarded(deadline, clock, () => {
++    dispatched.push('getwindowpid');
++    return ops.windowPid(window.id);
++  });
++  if (!owner.ok) return finish({ ok: false, reason: owner.reason });
++  const ownerCheck = checkCommand('getwindowpid', owner.value);
++  if (!ownerCheck.ok) return finish({ ok: false, reason: ownerCheck.reason });
++  const ownerPid = Number(String(owner.value.stdout ?? '').trim());
++  if (!Number.isInteger(ownerPid) || ownerPid <= 0 || ownerPid !== appPid)
++    return finish({
++      ok: false,
++      reason: `the measured window ${String(window.id)} is owned by pid ${String(ownerPid)}, not the app pid ${String(appPid)}; no move and no click issued`,
++    });
++
+   const viewport = await pollObservation({
+     deadline,
+     clock,
+@@ -1772,8 +1820,9 @@
+ /**
+  * The real command seam for the (d) handler half: every command the flow
+  * dispatches, wrapped in the one result shape. `windowGeometry` reads the app
+- * window once; `move`/`read`/`click` are the flow's dispatches; `nextFact` is
+- * the newest published fact line.
++ * window once; `windowPid` independently confirms that window's owner pid;
++ * `move`/`read`/`click` are the flow's dispatches; `nextFact` is the newest
++ * published fact line.
+  */
+ function makeOps(windowId, appPid, stderrSource) {
+   const parseShell = (result) => {
+@@ -1798,6 +1847,7 @@
+         pid: String(appPid),
+       };
+     },
++    windowPid: (id) => spawnAsync('xdotool', ['getwindowpid', String(id)]),
+     move: (point) => spawnAsync('xdotool', ['mousemove', '--sync', String(point.x), String(point.y)]),
+     read: async () => {
+       const result = await spawnAsync('xdotool', ['getmouselocation', '--shell']);

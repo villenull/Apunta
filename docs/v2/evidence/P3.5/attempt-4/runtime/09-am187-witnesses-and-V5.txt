@@ -1,0 +1,20 @@
+# P3.5 attempt-4 runtime, raw am187-witnesses-and-V5 output
+# source: git-ignored scratch build/p35-final-runtime4/09-am187-and-V5.txt
+# started: 2026-10-03T22:42:58Z
+# ended:   2026-10-03T22:42:58Z
+
+=== AM-187 literal witness 1 ===
+0
+grep exit=1
+=== AM-187 literal witness 2 ===
+0
+grep exit=1
+=== V5 cell ===
+V5 default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+FAIL: no sandboxRuns entry names step V4-silence at attempt 4; a PREV_DEFAULT record with no matching capture run cannot be identified, so the baseline is unverifiable
+V5 lines in pactl list short sources holding an exact task name: 0
+V5 lines in pactl list short sinks holding an exact task name: 0
+V5 loaded module-null-sink modules holding an exact task name: 0
+V5 loaded module-remap-source modules holding an exact task name: 0
+V5 bad=1
+V5 cell exit=1

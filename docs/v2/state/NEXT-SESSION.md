@@ -1,3 +1,22 @@
+## Final attempt4 returned; capture/tone PASS, silence never started
+
+1ca9d0e6 completed and archived. V0/V1/V2/plugin gate PASS, V3 35/35 PASS,
+tone35/35 PASS. V4 overall BLOCKED exit2 because second sandbox env inherited
+first case exports and refused platform-default data directory. Silence NOTRUN,
+never bound7839 or createdrecord. V5FAIL provenance only, livecleanup clean.
+Root verified old7record/anchor prefixes and prior1/3criteria unchanged, +2new
+attempt4 records/anchors, attempt4 unchanged. Checkpoint ownership returnedroot;
+statusBLOCKED, no fifth or repeat granted. Build/audio/app lease released,
+defaultUSBsource restored/devices0/processesgone/portsfree per outsideevidence.
+
+4b9525c7 completed P34 instrument proposal and archived; shippinguntouched.
+Prepared exactcandidate+toolpatch, synthetic22PASS, tool29testsoneknownbaseline
+stalefixtureFAIL. Fresh independentreviewnext; not owner-readyuntilthatreview.
+17f00ebf P36referenceauthor still active and separate, no hostresource use.
+Scope/pushownerquestions pending. Need bounded completion proposal ONLYfornever-
+started silence and V5reevaluation, independentreviewthenownerexception; no
+successfulcapture/tone rerun or sourcepatch/provenanceinvention.
+
 ## Integration preparation returned; coordinator Stop8 re-pin in progress
 
 e0b93d29 completed and was archived successfully. P3.6 still dependency-blocked

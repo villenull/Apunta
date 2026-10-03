@@ -6,9 +6,9 @@
   ],
   "baseCommit": "8783181",
   "attempt": 4,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Final attempt4 V0/V1/V2/V3 and tone PASS; silence NOT RUN due chained sandbox environment refusal, V4 BLOCKED and V5 FAIL missing third record. Original history retained, outside cleanup verified, lease released.",
-  "nextAllowedAction": "read-only-silence-arm-completion-proposal-no-repeat-no-fifth",
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Source review CLEAR and runtime readiness READY; attempt4 dispatch regenerated under AM194, rows NOT RUN.",
+  "nextAllowedAction": "launch-serial-once-only-runtime4-after-host-preflight",
   "sideEffectsDone": [
     "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
     {
@@ -105,34 +105,34 @@
   ],
   "criteria": {
     "V0": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.5/attempt-4/runtime/03-V0.txt; docs/v2/evidence/P3.5/V0-host-and-build.md",
-      "verification": "Run once 2026-10-03T22:36:41Z to 22:36:43Z, exit 0, preceded by the AM-190 STEP-0 prerequisite read at exit 0 (docs/v2/evidence/P3.5/attempt-4/runtime/00-step0.txt). Pinned Node printed exactly v24.19.0; pactl, paplay, ffmpeg and xdotool all resolved and xvfb-run is present (informational only); the literal witness pactl list short sinks | grep -c apunta_p35 printed 0 with grep exit 1 on the zero count; pulseaudio and pacmd both absent; Server Name: PulseAudio (on PipeWire 1.6.8); the cell itself printed Default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo, non-empty and not apunta_p35_mic; en_US-ljspeech-medium is on disk; ggml-tiny.en.bin is absent; cargo test permissions ran 5 tests, 5 passed 0 failed, 55 filtered out; an AppImage exists. The Expected cell also asks for the pre-change src-tauri/src listing and grep, which are reads of 8783181 and are recorded in the V0 evidence file from the base commit rather than restated."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md",
+      "verification": "AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0\u2013V5."
     },
     "V1": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.5/attempt-4/runtime/04-V1.txt",
-      "verification": "Run once 2026-10-03T22:37:12Z, exit 0. Two artefacts under <sandbox>/audio-en: dictation-30s.wav, 16 kHz mono pcm_s16le, exactly 30.000000 s, Piper at --noise_scale 0 --noise_w 0 with OMP_NUM_THREADS=1, looped and resampled by ffmpeg with bitexact, SHA-256 79719c56b2ca0477cd0bde9647324efa4a60119d955e53b985ac599fdb5d0a5f; and silence-10s.wav, 16 kHz mono, exactly 10 s, written directly by anullsrc, SHA-256 eeae5c4c90de536fe309bd6b1062c1493a80703d6e5ac97a3c51c98980220f78. The raw 22050 Hz file was deleted in the same cell. No acquisition: the A10 voice was already on disk, so nothing was fetched and no acquisition record was added."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md",
+      "verification": "AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0\u2013V5."
     },
     "V2": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.5/attempt-4/runtime/05-V2.txt",
-      "verification": "Run once 2026-10-03T22:37:56Z to 22:39:47Z, exit 0. One flagged build on the AM-190 base configuration with the scanner-only GSTREAMER_HELPERS_DIR; no convenience rebuild and no second build. Marker counts with their labels: build/p3.5-web/dist = 1, web/dist = exactly 0 after the producer ran, build/linux-resources/web/dist = 1. npm run tauri:build:test ran last and produced Apunta (test)_0.0.0_amd64.AppImage (185.21 MiB). The trap removed both build/p3.5-web and build/linux-resources/web/dist, both confirmed absent afterwards, and web/dist/assets/*.js reads 0 for the marker on every file."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md",
+      "verification": "AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0\u2013V5."
     },
     "V3": {
-      "status": "PASS",
-      "evidence": "docs/v2/evidence/P3.5/attempt-4/runtime/07-V3.txt",
-      "verification": "Run once 2026-10-03T22:39:52Z to 22:40:11Z, exit 0, 35 of 35 assertions passed. It reached every assertion attempt 3 stopped short of: the virtual source read back as the default before the launch; the durable p3.5-capture-record.json and its matching RECORD line; the window at scale 1; the server answering with this run id; a fabricated John Smith created through the API in the run folder; all five real pointer clicks; phase recording with the marker moving through starting; the record-timer past 10 s; the containment reads, where pactl list short source-outputs resolved the literal - client column (8607 8599 - PipeWire float32le 2ch 48000Hz) that attempt 3 could not parse, a capture stream was present on apunta_p35_mic and none on alsa_input.usb-UGREEN; the marker delivered on the child stderr inside the apunta: ignoring a bridge line wrapper with level=1 levelPeak=1; POST /api/transcribe/preview and POST /api/transcribe with real WAV payloads answering 500 and surfacing whisper_model_missing, which is the card own designed no-model state; levelPeak not 0; and the teardown, the original default source restored, both of this run modules unloaded, nothing of the run left listening and no server process surviving. GET /api/notes was empty before and after and is recorded as a vacuous precondition, not as evidence; every word-level claim stays deferred to S4a.2."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md",
+      "verification": "AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0\u2013V5."
     },
     "V4": {
-      "status": "BLOCKED",
-      "evidence": "docs/v2/evidence/P3.5/attempt-4/runtime/08-V4.txt",
-      "verification": "Run once 2026-10-03T22:40:18Z, cell exit 2. The tone case on 7837 passed 35 of 35 assertions, including the containment reads the AM-194 patch unblocked, a capture stream on apunta_p35_mic with none on the real microphone, levelPeak not 0, whisper_model_missing surfaced, and its own containment created, recorded and torn down inside the case. The silence case then did not run: the cell own second sandbox.mjs env --port 7839 aborted with exit 2 and printed refusing data folder /tmp/apunta-v2/2026-10-03T22-40-18-947Z-72d61c98/data: it equals (or sits inside) the platform default, because the tone env file sourced earlier in the same && chain left APUNTA_DATA_DIR exported, so the second env call re-read it as its own platform default (scripts/v2/sandbox.mjs:176-195). /tmp/apunta-v2-p3.5-v4-silence.env was written empty, no run folder for 7839 was created, no module or sink was created, port 7839 was never bound, and no capture record exists for V4-silence. The case was deliberately not started separately and the cell was not re-run. This attempt therefore proves tone discrimination and proves nothing about silence: no claim in either direction for the silence mode."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md",
+      "verification": "AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0\u2013V5."
     },
     "V5": {
-      "status": "FAIL",
-      "evidence": "docs/v2/evidence/P3.5/attempt-4/runtime/09-am187-witnesses-and-V5.txt",
-      "verification": "Run once 2026-10-03T22:42:57Z, exit 1. The live half passed in full: the default source is the owner USB microphone, all four residue counts are 0, and V5 bad=1 comes only from the provenance half. That half failed closed with its reason printed: no sandboxRuns entry names step V4-silence at attempt 4, because the silence mode never created a record. Provenance was not repaired, invented or back-filled; attempt 4 holds exactly the two records its two capture modes actually created, V3 then V4-tone, with matching anchors and distinct runIds. The AM-187 literal witnesses were recorded alongside with their commands: pactl list short sources | grep -c apunta_p35 = 0 and pactl list short sinks | grep -c apunta_p35 = 0, each with the grep exit 1 on a zero count recorded rather than suppressed; no Expected cell was edited. The five attempt-1 and two attempt-3 records and their seven anchors are untouched and were excluded by the attempt === 4 selection; nothing was deleted, sorted, deduplicated or restamped."
+      "status": "NOT RUN",
+      "evidence": "docs/v2/state/P3.5-CLIENT-SENTINEL-PROPOSAL.md",
+      "verification": "AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0\u2013V5."
     }
   },
   "sandboxRuns": [
@@ -191,7 +191,7 @@
       "dateUtc": "2026-10-03T22:40:22.023Z"
     }
   ],
-  "updatedUtc": "2026-10-03T22:44:20.000000+00:00",
+  "updatedUtc": "2026-10-03T22:42:55.300785+00:00",
   "plannedSideEffects": [
     {
       "what": "PipeWire null sink apunta_p35 and remap source apunta_p35_mic, made the default capture source for the duration of a capture row",

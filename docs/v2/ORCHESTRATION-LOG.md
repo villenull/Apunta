@@ -2747,3 +2747,13 @@ Runtime1ca9d0e6 +P34proposal4b9525c7 RUNNING atboundary, no extra hostwork.
 Active re-pin author: 17f00ebf-e30c-4d00-a404-1c8863233161, LongCat Go free high,
 confirmed RUNNING with callback; exclusive P3.6 reference prose and new
 security-repin report/evidence, no host runtime or checkpoint ownership.
+
+## 2026-10-03 — final capture4 proves recording and containment
+
+1ca9d0e6 complete/archived. V3capture35/35 +tone35/35 PASS, literalclientsentinel
+fixed and actualvirtualsource resolved/no realmicstream asserted. V4silencenever
+started: chainedsandboxenvinheritsAPUNTA_DATA_DIR thenCISOcorrectlyrefuses;
+V4BLOCKED2 andV5provenanceFAIL1preserved. Rootverified priorrecords/anchors/
+criteriaunchanged,+2newrecords, counter4. Cleanupconfirmedoutside; ownership/
+leasesreleasedroot. No5/retry. Prepareboundedneverstartedtailcompletionexception.
+4b9525c7 P34proposalcomplete/archived, independentreviewnext, no sourcegrant.

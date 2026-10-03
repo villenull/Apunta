@@ -1,0 +1,11 @@
+# Patch scope — candidate.patch touches only scripts/v2/tauri-security.test.mjs
+ scripts/v2/tauri-security.test.mjs |   76 ++++++++++++++++++++++++++++++------
+ 1 file changed, 63 insertions(+), 13 deletions(-)
+
+# tooling.patch touches only docs/v2/tools/build-dispatch.mjs and .test.mjs
+ docs/v2/tools/build-dispatch.mjs      |   46 +++++++++++++++++++++---------
+ docs/v2/tools/build-dispatch.test.mjs |   50 +++++++++++++++++++++++++++++++--
+ 2 files changed, 79 insertions(+), 17 deletions(-)
+
+# Nothing under these P3.4-owned real paths was edited by this preparation:
+(empty above = untouched; the only dirty tracked file in the tree is the P3.5 background agent's own docs/v2/state/cards/P3.5.json)

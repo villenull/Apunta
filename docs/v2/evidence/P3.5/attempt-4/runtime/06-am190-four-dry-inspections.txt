@@ -1,0 +1,9 @@
+# P3.5 attempt-4 runtime, raw am190-four-dry-inspections output
+# source: git-ignored scratch build/p35-final-runtime4/06-am190-gate.txt
+
+bundled scanner executable: src-tauri/target/release/bundle/appimage/Apunta (test).AppDir/usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
+OK appsink
+OK autoaudiosrc
+OK alsasrc
+OK pulsesrc
+AM-190 GATE PASS: four separate dry inspections, fresh registry each

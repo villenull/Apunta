@@ -1,0 +1,6 @@
+# Format and lint on the candidate files
+$ npx prettier --check <candidate files + proof>
+Checking formatting...
+All matched files use Prettier code style!
+$ npx eslint --no-ignore <candidate files + proof>
+ESLINT_EXIT=0

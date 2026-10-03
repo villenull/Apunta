@@ -1,0 +1,28 @@
+# P3.4 EOD instrument proposal — commands, hashes and exits (read-only + ignored build)
+# Captured 2026-10-03T22:43:13Z at main 04d071e
+
+## 0. Baseline identity (shipping bytes vs ignored copies)
+865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  scripts/v2/tauri-security.test.mjs
+865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e  build/p34-eod-instrument/baseline/tauri-security.test.mjs
+f6f22ab0063be475eb6532455cd707fe3d7048929b4c911924ce69503736c2e3  docs/v2/tools/build-dispatch.mjs
+f6f22ab0063be475eb6532455cd707fe3d7048929b4c911924ce69503736c2e3  build/p34-eod-instrument/baseline/build-dispatch.mjs
+d4dcf3c29b1b77c3b4f325d0a68fe76a5a6efbe4b5b8c6415064f31925df7aec  docs/v2/tools/build-dispatch.test.mjs
+d4dcf3c29b1b77c3b4f325d0a68fe76a5a6efbe4b5b8c6415064f31925df7aec  build/p34-eod-instrument/baseline/build-dispatch.test.mjs
+
+## 1. Candidate hashes
+cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16  build/p34-eod-instrument/candidate/tauri-security.test.mjs
+3f77b55bdea4a2e00019d3f66b5e96479c476a3e4a5af45575c6b9971cef56c4  build/p34-eod-instrument/candidate/build-dispatch.mjs
+5cefe88f30f4c2df978ce3553e12d287e696a77f8f535f8287ddb717a678f4b9  build/p34-eod-instrument/candidate/build-dispatch.test.mjs
+22d4a40e46553ffccc1738dd3afa235f5c9112efcbd8af4c3d36c3ccd6068458  build/p34-eod-instrument/candidate.patch
+1f405b87ebc686f805b4700685ba77cd6a57dc87c14e1a05a526c32ea6d54529  build/p34-eod-instrument/tooling.patch
+
+## 2. candidate.patch applies to the real shipping path (read-only check)
+candidate.patch: APPLIES CLEANLY (exit 0)
+
+## 3. tooling.patch applies to the real tool paths (read-only check)
+tooling.patch: APPLIES CLEANLY (exit 0)
+
+## 4. Syntax
+candidate harness: SYNTAX OK
+candidate tool: SYNTAX OK
+candidate tool test: SYNTAX OK

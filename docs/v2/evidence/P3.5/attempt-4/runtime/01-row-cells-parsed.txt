@@ -1,0 +1,19 @@
+# P3.5 attempt-4 runtime, raw row-cells-parsed output
+# source: git-ignored scratch build/p35-final-runtime4/01-extract-rows.txt
+# started: card docs/v2/cards/P3.5.md rows: V0,V1,V2,V3,V4,V5
+dispatch docs/v2/state/dispatch/P3.5.md rows: V0,V1,V2,V3,V4,V5,V0,V1,V2,V3,V4,V5
+V0 command cells identical: true cellcount 3 3
+V1 command cells identical: true cellcount 3 3
+V2 command cells identical: true cellcount 3 3
+V3 command cells identical: true cellcount 3 3
+V4 command cells identical: true cellcount 3 3
+V5 command cells identical: true cellcount 3 3
+
+card docs/v2/cards/P3.5.md rows: V0,V1,V2,V3,V4,V5
+dispatch docs/v2/state/dispatch/P3.5.md rows: V0,V1,V2,V3,V4,V5,V0,V1,V2,V3,V4,V5
+V0 command cells identical: true cellcount 3 3
+V1 command cells identical: true cellcount 3 3
+V2 command cells identical: true cellcount 3 3
+V3 command cells identical: true cellcount 3 3
+V4 command cells identical: true cellcount 3 3
+V5 command cells identical: true cellcount 3 3

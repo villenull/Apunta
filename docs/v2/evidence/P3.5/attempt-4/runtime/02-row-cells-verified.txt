@@ -1,0 +1,21 @@
+# P3.5 attempt-4 runtime, raw row-cells-verified output
+# source: git-ignored scratch build/p35-final-runtime4/02-cell-verification.txt
+
+V0 command: byte-identical to the readiness witness
+V0 backslash-lines: 0
+V0 bash -n exit=0
+V1 command: byte-identical to the readiness witness
+V1 backslash-lines: 0
+V1 bash -n exit=0
+V2 command: byte-identical to the readiness witness
+V2 backslash-lines: 0
+V2 bash -n exit=0
+V3 command: byte-identical to the readiness witness
+V3 backslash-lines: 0
+V3 bash -n exit=0
+V4 command: byte-identical to the readiness witness
+V4 backslash-lines: 0
+V4 bash -n exit=0
+V5 command: byte-identical to the readiness witness
+V5 backslash-lines: 0
+V5 bash -n exit=0

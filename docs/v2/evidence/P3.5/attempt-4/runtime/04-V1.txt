@@ -1,0 +1,10 @@
+# P3.5 attempt-4 runtime, raw V1 output
+# source: git-ignored scratch build/p35-final-runtime4/04-V1.txt
+# started: 2026-10-03T22:37:12Z
+# ended:   2026-10-03T22:37:13Z
+# V1 exit=0
+
+v24.19.0
+30.000000
+79719c56b2ca0477cd0bde9647324efa4a60119d955e53b985ac599fdb5d0a5f  /tmp/apunta-v2/2026-10-03T22-37-12-589Z-2b44c153/audio-en/dictation-30s.wav
+eeae5c4c90de536fe309bd6b1062c1493a80703d6e5ac97a3c51c98980220f78  /tmp/apunta-v2/2026-10-03T22-37-12-589Z-2b44c153/audio-en/silence-10s.wav

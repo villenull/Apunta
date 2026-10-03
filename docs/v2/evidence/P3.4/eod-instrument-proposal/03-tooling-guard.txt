@@ -1,0 +1,45 @@
+# Candidate tooling guard tests — node --test build/p34-eod-instrument/candidate/build-dispatch.test.mjs
+# (real tool copied; plan-lib, contracts, templates and the four shipped dispatches copied read-only beside it)
+
+✔ emit then parse returns byte-identical command text (0.661503ms)
+✔ an already-escaped pipe neither gains nor loses a backslash (0.390286ms)
+✔ an emitted cell is byte-identical to the child's own cell (0.101409ms)
+✔ a BRE alternation is still an alternation after the round trip (3.475356ms)
+✔ the refusal advice names only spellings that survive the pipeline (15.802473ms)
+✔ a card may write a BRE alternation, and the guard still fires after the copy (23.605546ms)
+✔ fill() reaches a borrowed body: no {{…}} survives a generated dispatch (20.462677ms)
+✔ a borrowed row whose cell carries an unescaped pipe is refused, not truncated (14.374698ms)
+✔ a port placeholder nothing substitutes fails generation loudly (36.440209ms)
+✔ findUnfilledPorts reads command cells only, never prose (0.292337ms)
+✔ --print writes nothing; without it the dispatch is written (40.068103ms)
+✔ substituteTokens fills every token it claims and leaves the rest alone (0.152388ms)
+✔ T1: --attempt 5 with no exception is refused (14.219039ms)
+✔ T2: --attempt 5 with a well-formed AM-nnn for another card is refused, naming no attempt 6 (13.377297ms)
+✔ T3: --attempt 5 with AM-nnn for card P3.4 succeeds with exactly status 0 (20.318039ms)
+✔ T4: --attempt 6 with AM-nnn for card P3.4 succeeds with exactly status 0 (19.480647ms)
+✔ T4b: --attempt 6 with a well-formed AM-nnn for another card is refused, naming no attempt 7 (12.961501ms)
+✔ T4c: --attempt 6 with no exception is refused (14.040241ms)
+✔ T5: attempt 4 line is byte-identical to the shipped literal (19.238749ms)
+✔ T5b: attempt 4 failure message is byte-identical to the shipped one (13.686845ms)
+✔ extra: attempt 5 line reads as the AM-049 parallel sentence (25.206651ms)
+✔ extra: attempt 6 line reads as the AM-049 parallel sentence (26.731246ms)
+✔ extra: attempts 1-3 unchanged (60.310273ms)
+✔ extra: --attempt 7+ refused; --attempt 0 / nan refused (84.035978ms)
+✔ extra: --attempt 5 in --review mode: same keyed refusal, same single permitted id (66.6206ms)
+✔ extra: --attempt 5 in --ir mode is refused for another card and permitted for P3.4 (32.754415ms)
+✔ extra: attempt 5 is refused for P3.4 when the exception is malformed (61.210314ms)
+✔ extra: dependency gate still exits 3 after the grant (no PASS on exit 3) (14.642185ms)
+✖ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (20.513977ms)
+ℹ tests 29
+ℹ pass 28
+ℹ fail 1
+✖ failing tests:
+✖ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (20.513977ms)
+
+# Baseline (shipping) same file, same command, for the pre-existing failure:
+✖ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (20.983833ms)
+ℹ tests 26
+ℹ pass 25
+ℹ fail 1
+✖ failing tests:
+✖ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (20.983833ms)
