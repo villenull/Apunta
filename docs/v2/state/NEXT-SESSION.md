@@ -1,3 +1,9 @@
+## Committee reconciliation running — 2026-10-03T02:52:43.756147+00:00
+
+Bothinitialresponses saved: P3.4-committee-longcat.md and P3.4-committee-space-bunny.md. Agree smallcontractspec+executablefakeclock/parsermodel ratherthan9prosefixes. Followups tobothareRUNNING: readotherargument andresolve calibration1pointvs2point, boundeduniquepublicationidentity, freshbatchreplacement/counts, singledeadline, andpendingIPCFAILsemantics. Do nottreatinitialagreementasconsensus onalgorithm. LongCat314a0b4b andBunny491d8dd0 remainavailable/read-only, callbacks. No source/newfilegrant/runtimeattempt authorized.
+
+P3.5worker2028c17e solefeaturewriter/buildlease/7837+7839, partialsource untouched. Existingquietmachineholds remain.
+
 ## Committee partial return — 2026-10-03T02:48:48.463213+00:00
 
 LongCat314a0b4b response recorded in state/reviews/P3.4-committee-longcat.md (analysisonly, notconsensus). Othermember491d8dd0 awaited viafinishnotification. Do notspawnproposalrepair yet: compareboth and reconcile singlepointoffset/calibrationscale/freshframe assumptions, minimaltests/scope and deadlinecontract. Neitherowneramendment adopted nor fifthattemptauthorized. Keepmembersavailable forconvergence, archiveafterfinalexchange.
