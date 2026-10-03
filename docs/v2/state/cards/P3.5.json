@@ -7,8 +7,8 @@
   "baseCommit": "8783181",
   "attempt": 4,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Exact source patch independently CLEAR; readiness report recovered READY; no acceptance row run.",
-  "nextAllowedAction": "regenerate-AM194-attempt4-dispatch-and-launch-once-only-runtime",
+  "lastCompletedStep": "Source review CLEAR and runtime readiness READY; attempt4 dispatch regenerated under AM194, rows NOT RUN.",
+  "nextAllowedAction": "launch-serial-once-only-runtime4-after-host-preflight",
   "sideEffectsDone": [
     "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
     {
@@ -292,7 +292,7 @@
       "verification": "Final attempt3 current runtime row not executed; priorAttempt1Criteria retained. Once-only with approved plugin gate and exact current provenance."
     }
   },
-  "runtimeBaseCommit": "7158635",
+  "runtimeBaseCommit": "498cc98",
   "originalImplementationBase": "8783181",
   "clearImplementationCandidate": "5857079",
   "runtimeWorkerId": null,
