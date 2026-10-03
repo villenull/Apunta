@@ -7,39 +7,53 @@
   ],
   "baseCommit": "9d92d7b",
   "attempt": 1,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-182 independent instruction review CLEAR 10/0/0 verified; implementation dispatch generated successfully with port 7841.",
-  "nextAllowedAction": "await-implementation-return",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Attempt1 returned; source candidate56d1847 committed for independent review, not accepted. Coordinator reran25 hermetic tests PASS and reproduced multi-ID parser and seeder valid201 defects. V6/V7 remain owner-held; V8 recorded FAIL on foreign documentation drift. Implementer archived, build/port7841 lease released.",
+  "nextAllowedAction": "await-independent-implementation-review",
   "sideEffectsDone": [],
-  "changedFiles": [],
+  "changedFiles": [
+    "scripts/check-refine.mjs",
+    "scripts/check-note-format.mjs",
+    "scripts/check-refine.test.mjs",
+    "scripts/check-note-format.test.mjs",
+    "scripts/v2/seed-check-instance.mjs"
+  ],
   "criteria": {
     "V1": {
-      "status": "NOT RUN"
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     },
     "V2": {
-      "status": "NOT RUN"
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     },
     "V3": {
-      "status": "NOT RUN"
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     },
     "V4": {
-      "status": "NOT RUN"
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     },
     "V5": {
-      "status": "NOT RUN"
+      "status": "PASS",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     },
     "V6": {
-      "status": "NOT RUN"
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     },
     "V7": {
-      "status": "NOT RUN"
+      "status": "NOT RUN",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     },
     "V8": {
-      "status": "NOT RUN"
+      "status": "FAIL",
+      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T00:52:05.771999+00:00",
+  "updatedUtc": "2026-10-03T01:12:39.892248+00:00",
   "level": "L3",
-  "notes": "Implementation attempt 1 of 3 dispatched to 19c116db-8726-421f-ad5b-ef3c02ab9ad6. Exclusive five source paths per card plus own evidence/return. Build lease and port 7841 assigned until return and command shutdown confirmed. V6/V7 real-model calls held pending existing owner quiet-machine decision; no pass claim. FD1 unreachable-server escalation remains open. Coordinator owns checkpoint. All criteria begin NOT RUN."
+  "notes": "Attempt1 of3 consumed; independent review active. Candidate56d1847 known defects preserved in evidence/COORDINATOR.md. No card approval, no real-model calls. Build/port7841 released from completed implementer; reviewer holds build only if V1 requires missing dist. Quiet-machine hold unchanged."
 }

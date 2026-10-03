@@ -6,13 +6,15 @@ This block supersedes older running/lease claims below. Coordinator
 no running sandbox/app/build commands, and no build or GPU lease. Source base
 `9d92d7b`; tree initially clean, all prior work pushed.
 
-- **S3.3a attempt 1 of 3 RUNNING:** worker
+- **S3.3a attempt 1 of 3 SUBMITTED, implementer archived:** worker
   `19c116db-8726-421f-ad5b-ef3c02ab9ad6`, exclusive five script paths named in
-  card plus own evidence/return. Build lease and port **7841** held until
-  worker returns and commands are confirmed stopped. Card independently CLEAR
+  card plus own evidence/return. Implementation candidate **56d1847**, not accepted. Original build/port
+  **7841** lease released; independent reviewer holds build only if needed. Card independently CLEAR
   10/0/0 under AM-182. Dispatch generation **succeeded** with --port 7841;
   older claim that this card cannot dispatch is false for a correctly supplied
-  port. Implement/test hermetic rows now; **V6/V7 held** for the existing
+  port. 25 coordinator hermetic tests PASS; parser multi-ID and seeder JSON
+  defects reproduced. Independent implementation review RUNNING (worker
+  `cbcf3dd0-9f51-4147-8ab5-8b4b88da58f2`), source stable, no repair writer. **V6/V7 held** for the existing
   owner quiet-machine decision, no real-model call authorised by this run.
 - **P3.4 diagnosis COMPLETE, worker archived:** worker
   `5e75e3cf-db70-4d84-8eaa-9b19fd6e51fb`, only
