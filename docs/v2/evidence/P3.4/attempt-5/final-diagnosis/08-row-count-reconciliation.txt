@@ -1,0 +1,37 @@
+Row-count reconciliation (transparent, no reclassification)
+
+Printed summary (05-V2.txt:76): "16/17 assertions passed, 2 NOT RUN".
+
+Harness counter (scripts/v2/tauri-security.test.mjs:2407-2414):
+  failed = results.filter(r => r.failed === true)
+  notRunCount = results.filter(r => r.notRun === true).length
+  line = `${results.length - failed.length}/${results.length} assertions passed`
+  exit = failed.length > 0 || notRunCount > 0 ? 1 : 0
+So NOT RUN rows are not counted as failed; "16/17 passed" is a NON-FAIL count.
+
+The 17 rows in 05-V2.txt:
+  PASS (14):
+    1  V2 appimage
+    2  V2 AppImage newer than every Rule B input
+    3  V2 no Rule B path named by git is newer than the AppImage
+    4  V2 the app's own window is up
+    5  V2 the server answers with this run id
+    6  (d) header
+    7  (d) handler fixture creation
+    8  (a) IPC ACL denial
+    9  (e) inline style applied
+    10 containment no server process
+    11 containment no second lock/db/-wal/-shm
+    12 containment sandbox port free
+    13 containment observation channel gone and cannot ship
+    14 containment ollama still running
+  FAIL (1):
+    15 (d) handler click
+  NOT RUN (2):
+    16 (b)
+    17 (c)
+
+14 + 2 = 16 non-failed; 1 failed; 17 total. "16/17 passed" therefore means
+"16 did not fail", NOT 16 PASSes. The card, return and README all record V2 as
+FAIL with "1 FAIL, 2 NOT RUN". No row is reclassified; the only imprecision is
+the word "PASS" in "16/17 PASS".

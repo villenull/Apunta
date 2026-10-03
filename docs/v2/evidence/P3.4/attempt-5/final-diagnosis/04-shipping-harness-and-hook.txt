@@ -1,0 +1,30 @@
+Shipping harness and hook under test
+
+Harness: scripts/v2/tauri-security.test.mjs
+  sha256 865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e
+  (re-derived locally; matches cards/P3.4.json, AM-192 and
+   state/reviews/P3.4-correction-applied.md:29-32)
+  git status: clean at diagnosis; last commit touching it 291372f (AM-192).
+  Key functions:
+    checkReadback           scripts/v2/tauri-security.test.mjs:1030-1054
+    guardedMove             :1331-1418  (baseline -> mousemove -> read -> witness)
+    runClick                :1426-1528
+    makeOps.read            :1802-1806  (reads fields['X'],['Y'],['WINDOW'],['PID'])
+    makeOps.move            :1801       (xdotool mousemove --sync x y)
+    makeOps.click           :1807       (xdotool click 1)
+    result counter          :2407-2414  (length - failed, NOT RUN not failed)
+
+Hook: web/src/main.tsx
+  sha256 45f4e588104b442e8dc2105c95f8dfc1059d089ab957f1abb06c91b7352e985a
+  gate: import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1' (main.tsx:401)
+  pointermove on window increments ptrN, records event.clientX/clientY
+    (main.tsx:135-139)
+  capture-phase click on document increments clickN, records clientX/clientY,
+    tag/testid/text (main.tsx:140-152)
+  publishes ptrN/ptrCX/ptrCY/clickN/clickCX/clickCY on the fact line
+    (main.tsx:273-278)
+
+Approved proposal: docs/v2/state/P3.4-REPAIR-PROPOSAL-v5.md
+  sha256 12a81e7c3361e906a88e169dce10a902f4fe0750d7db8558a7aab6acca3e60ed
+Pure model: build/p3.4-spec-v5-repair2/model.mjs
+  sha256 dbca7da9ece908729431dbf8e83c8e66d014cbb7b87e7abc2f11480cb33ed9f4

@@ -1,0 +1,28 @@
+Attempt-5 checkpoint and row verdicts (cited, retained verbatim)
+
+Source: docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md
+  - Owner AM-188/189 authorize the reviewed assertion/measurement package and
+    exactly one exceptional attempt 5. Candidate b19e59f integrated only the two
+    permitted feature files; root synthetic 80/80 PASS; P3.5 audio hook block
+    byte-unchanged against 6974943.
+  - Independent reviewer 66459613 code/unit only; no acceptance-row reruns.
+  - AM-192 applied correction independently CLEAR; candidate 291372f harness
+    865ccab3 equals the exact owner-granted patch; reviewer 8084112d archived.
+  - Current code CLEAR. Runtime rows NOT RUN while installation preflight
+    completed. No sixth attempt, reset, retry or acceptance-row repetition.
+
+Source: docs/v2/state/cards/P3.4.json
+  attempt = 5; status = BLOCKED; implementationCandidate = 291372f;
+  preRuntimeCorrection = "APPROVED AM-192, exact four-hunk patch only within
+  attempt5"; coordinatorBlockingFinding = "V2 handler click FAIL: pointer
+  read-back WINDOW=0 PID=undefined, clickN=0; navigation b/c NOT RUN. V4 npm
+  tests 2235 PASS then evidence-artifact lint FAIL. Final budget exhausted, no
+  row rerun/sixth."
+
+Row verdicts (docs/v2/evidence/P3.4/attempt-5/runtime/README.md:13-24):
+  setup PASS(0) | V0 PASS(0) | AM-190 dry PASS(0) | V1 PASS(0)
+  V2  FAIL(1) - 16/17 non-failed, 1 FAIL, 2 NOT RUN
+  V3  PASS(0) | V4 FAIL(1) - npm test 2235/2235 PASS, then lint red on two
+  committed evidence .mjs outside May edit.
+
+No row repeated, no criterion changed, no failure waived.

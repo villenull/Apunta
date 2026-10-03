@@ -1,0 +1,25 @@
+V4 FAIL is outside-source proof lint (docs/v2/evidence/P3.4/attempt-5/runtime/07-V4.txt)
+
+Command: node --version && npm test && npm run lint && npm run typecheck &&
+  (cargo fmt --check && cargo clippy -- -D warnings && cargo test)
+Start 2026-10-03T20:33:19Z, end 20:33:35Z, V4_EXIT=1.
+node v24.19.0; npm test PASS (163 files, 2235 tests, 0 failed); npm run lint
+FAIL with 13 eslint errors, all in two committed evidence .mjs artifacts outside
+May edit:
+
+  docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+    (4 errors; committed 9f3acf5) - unused frameFrom, unused factLine, 2 console.
+  docs/v2/evidence/P3.5/runtime-readiness/v5-provenance.unescaped.mjs
+    (9 errors; committed 1917b04) - require import + 8 console.
+
+No source path and no May-edit path is named. Per the card and HS-9 this is a
+stop, not a repair; the row ran once. The cell is one && chain, so typecheck and
+the cargo subshell did not execute (the command's own short-circuit, not a
+chosen skip).
+
+Later, non-acceptance cleanup does NOT convert the row:
+  attempt-5/review-probe-lint-repair/README.md:1-8 - separate reversible
+  evidence-format cleanup of the P3.4 probe, explicitly "not rerun, no attempt 6",
+  V4 FAIL left as it stands. (Currently uncommitted in the working tree; not
+  touched by this diagnosis.)
+  Root byte-preservingly renamed the P3.5 witness in its own commit.

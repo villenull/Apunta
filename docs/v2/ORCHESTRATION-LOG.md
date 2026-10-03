@@ -2556,3 +2556,12 @@ cleanupauthor8632dc30 archived; freshreviewerb71ccd91confirmedRUNNINGcallback.
 Rootrelocated11misplacedscratchfiles toignoredbuild byte-identically. Read-only
 pointerdiagnostician1546370c confirmedRUNNINGcallback, no resourceorwriteconflict.
 P3.5ready afterevidencelintreview, ownruntimelease andpluginchecks, no4.
+
+### 2026-10-03 — diagnosis and faithful lint repair accepted
+
+Archived diagnostician1546370c and cleanupreviewerb71ccd91 successfully. Diagnosis
+sourceprovesgetmouselocation emitsnoPID; approvedfallbackdead, WINDOW0causeunknown.
+ActualV2count14PASS+2NOTRUN+1FAIL, printed16/17nonfailed; rootqualificationretains
+rawrecord/status. No protectedchange/rerun/attempt6. CleanupindependentCLEAR19
+assertions outputbyteexact, rulesunchanged; globaleslintreview0 androot0. Scratch
+relocation verified, no untrackedcode. P35readyruntime independentafterintegration.

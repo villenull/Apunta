@@ -1,0 +1,37 @@
+V2 FAIL facts (docs/v2/evidence/P3.4/attempt-5/runtime/05-V2.txt)
+
+Row: port 7835, one launch, stopped by pid, never pkill.
+Start 2026-10-03T20:30:31Z, end 20:31:41Z, V2_EXIT=1.
+Status: FAIL - 16/17 non-failed, 1 FAIL, 2 NOT RUN. Not retried, no corrective
+click, no timeout widened, no assertion changed, no budget reset.
+
+PROVEN PASS (05-V2.txt:13-21,45-50,70-74):
+  (a) __TAURI__ absent and built-in IPC ACL-denied:
+      ipc=object, ipcInvoke=function, ipcProbe=rejected,
+      ipcProbeMsg="Command plugin:event|listen not allowed by ACL".
+  (d) header half: GET /patients 200 text/html carrying rule 6's six directives
+      verbatim plus style-src 'self' 'nonce-...' and
+      style-src-attr 'unsafe-inline'; no extra source in the six.
+  (d) handler fixture creation: format/patient/note over HTTP, 201.
+  (e) inline style attribute applied (styleComputed agrees with styleAttr).
+  5/5 containment PASS.
+
+FAIL (05-V2.txt:22-25,49):
+  (d) handler half, the click:
+  "bootstrap 1: pointer is not over the app window: WINDOW=0 PID=undefined
+   (dispatched getwindowgeometry, mousemove, getmouselocation)"
+  The rectangles were published and correct (John Smith at 14,276 / 231x17;
+  Progress note reachable via the home action tile tid_home-action-note).
+
+NOT RUN (05-V2.txt:26-29,51-52):
+  (b) navigation to the reserved .invalid origin is refused - hook published no
+      attempt naming (b); baseline window signature {"count":5,
+      "app":"Apunta 1280x860 pid=2489109"}.
+  (c) window.open is cancelled - hook published no attempt naming (c).
+  Cause: (d)'s handler half never opened the note, so scriptText never turned
+  true, the card's own precondition for (b) and (c).
+
+PAGE POINTER FACT vs NATIVE READ-BACK (05-V2.txt:57,67):
+  baseline fact: ptrN=0 ptrCX=0 ptrCY=0 clickN=0.
+  after the mousemove: ptrN=1 ptrCX=640 ptrCY=430 clickN=0.
+  So the page received a pointermove at client (640,430); no click was sent.

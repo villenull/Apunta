@@ -1,0 +1,30 @@
+Approved contract §D.4 and the model's readback (source-proven defect)
+
+docs/v2/state/P3.4-REPAIR-PROPOSAL-v5.md:154-159 (§D.4, owner-approved AM-188):
+  "For every move ... wait (bounded by the one deadline) for a ptrN baseline,
+   then dispatch and wait for a fact line whose ptrN is strictly greater; read
+   the pointer back with `xdotool getmouselocation --shell` and require
+   |X_read - X_asked| <= 1 and the same in y, plus `WINDOW` equal to the app
+   window id **or** `PID` equal to the app's positive pid."
+
+Harness implementation, faithful to the text:
+  scripts/v2/tauri-security.test.mjs:1040-1047
+    const sameWindow = String(read?.WINDOW ?? '') === String(window.id);
+    const pid = Number(read?.PID);
+    const samePid = Number.isInteger(pid) && pid > 0 && pid === appPid;
+    if (!sameWindow && !samePid) return { ok:false, reason:
+      `pointer is not over the app window: WINDOW=${String(read?.WINDOW)}
+       PID=${String(read?.PID)}` };
+  makeOps.read (1802-1806) parses fields['PID'] from
+  `xdotool getmouselocation --shell` output.
+
+Pure model mirrors the same logic:
+  build/p3.4-spec-v5-repair2/model.mjs:299-311 (checkReadback, same WINDOW/PID).
+  model.test.mjs:236 asserts the PID arm with a SYNTHETIC read
+  `{ X:'700', Y:'500', PID: String(APP_PID) }` - a field the real command never
+  emits.
+  model.test.mjs:238 asserts WINDOW:'999' fails.
+  No fixture covers WINDOW:'0' with no PID (the observed real output).
+
+Consequence: the `or PID` arm of §D.4 is unsatisfiable with the named command.
+This is a contract-level source-proven defect, not a harness deviation.

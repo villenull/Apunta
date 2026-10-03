@@ -1,0 +1,25 @@
+The contradiction: native read-back vs real page pointer fact
+
+Observed native read-back (05-V2.txt:49):
+  WINDOW=0 PID=undefined after xdotool mousemove --sync 640 430
+  (bootstrap 1 target = windowX + round(vpW*0.50), windowY + round(vpH*0.50),
+   vpW=1280 vpH=860 -> client (640,430)).
+  Position tolerance passed (|X_read - x_asked| <= 1), so only the window/pid
+  identity conjunct failed.
+
+Observed page pointer fact, same run (05-V2.txt:67):
+  ptrN=1 ptrCX=640 ptrCY=430 clickN=0
+  baseline before the move (05-V2.txt:57): ptrN=0.
+
+Interpretation:
+  web/src/main.tsx:135-139 increments ptrN on the page's own pointermove. A
+  pointermove at client (640,430) means the WebKitGTK page received the warp at
+  the target point. The physical pointer was therefore over the app's rendered
+  page, while the native read-back reported no window. The harness sentence
+  "pointer is not over the app window" is not true of the pointer; it describes
+  what `xdotool getmouselocation` could resolve.
+
+  clickN=0: no click was dispatched, because checkReadback failed first.
+
+Not inferred: no titlebar offset, no containment bypass, no relaxed threshold.
+All five containment assertions passed.

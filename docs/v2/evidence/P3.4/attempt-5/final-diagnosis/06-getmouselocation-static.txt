@@ -1,0 +1,37 @@
+getmouselocation --shell static analysis (local, read-only, no display probe)
+
+1. man xdotool (installed):
+   getmouselocation [--shell]
+     "Outputs the x, y, screen, and window id of the mouse cursor."
+     --shell example output:
+       X=880
+       Y=443
+       SCREEN=0
+       WINDOW=16777250
+   No PID field is documented or emitted. (getwindowpid is a separate command
+   reading _NET_WM_PID.)
+
+2. strings -a /usr/bin/xdotool (version 4.20260303.1):
+   x:%d y:%d screen:%d window:%ld
+   %sX=%d / %sY=%d / %sSCREEN=%d / %sWINDOW=%d / %sWINDOW=%ld
+   No "PID" format string exists.
+
+3. libxdo.so.4 xdo_get_mouse_location2 (0x6930) static control flow:
+   - loops screens; XQueryPointer(xdpy, root, &root_ret, &child, ...).
+   - if child == 0 -> substitutes root_ret.
+   - if child != 0 and child != root -> xdo_find_window_client(xdo, child,
+     &client, 0), then possibly direction 1; may set child = 0 when the client
+     resolution yields 0.
+   - *window_ret = child.
+   xdo_find_window_client (0x6740) walks the tree via XQueryTree looking for the
+   WM_CLASS class hint (XInternAtom at .rodata b3d3; the adjacent rodata reads
+   "XGetClassHint[WM_CLASS]").
+
+   => WINDOW=0 can occur when the WM_CLASS client resolution fails. On a bare
+   Xvfb with no window manager, over a non-client subwindow, this is a plausible
+   false negative. The exact trigger in this run is NOT proven from the frozen
+   evidence and is not claimed.
+
+Raw captures: build/p34-final-diagnosis/getmouselocation.man.txt,
+  getmouselocation.strings.txt, libxdo.xdo_get_mouse_location2.disasm.txt,
+  libxdo.xdo_find_window_client.disasm.txt.

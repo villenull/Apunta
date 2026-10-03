@@ -1,0 +1,36 @@
+P3.4 final runtime diagnosis (attempt 5) - scope and authority
+
+Role: read-only diagnosis. No runtime rerun, no attempt 6, no source edit, no
+child agent, no question, no stage/commit. No authority adopted.
+
+Write set (exclusive, all NEW):
+  docs/v2/state/reviews/P3.4-final-runtime-diagnosis.md
+  docs/v2/evidence/P3.4/attempt-5/final-diagnosis/**
+  build/p34-final-diagnosis/**            (ignored scratch)
+
+Not done: no app, server, database, audio, microphone, model, input, display,
+pactl, network, install, port 7717 or acceptance-row run; no display probe; no
+source/config/card/checkpoint/contract/fixture edit; no git add/commit/branch.
+
+Read (frozen, unchanged): docs/CLAUDE.md, docs/v2/COORDINATOR.md,
+  docs/v2/state/cards/P3.4.json, docs/v2/state/returns/P3.4.md,
+  docs/v2/state/dispatch/P3.4.md, docs/v2/state/dispatch/P3.4-runtime.md,
+  docs/v2/state/P3.4-REPAIR-PROPOSAL-v5.md,
+  docs/v2/state/P3.4-PRE-RUNTIME-CORRECTION.md,
+  docs/v2/state/reviews/P3.4-correction-applied.md,
+  docs/v2/state/reviews/P3.4-impl5.md,
+  docs/v2/evidence/P3.4/attempt-5/COORDINATOR.md,
+  docs/v2/evidence/P3.4/attempt-5/runtime/**,
+  docs/v2/evidence/P3.4/attempt-5/review-probe-lint-repair/README.md,
+  scripts/v2/tauri-security.test.mjs (read-only),
+  web/src/main.tsx (read-only),
+  build/p3.4-spec-v5-repair2/model.mjs and model.test.mjs (ignored build).
+
+Static tooling used, local and read-only: man xdotool; strings/xdotool;
+objdump/nm on /usr/lib/libxdo.so.4; sha256sum; git show/log.
+
+Reference commits:
+  base 7b9c63a0297c339c7d64f56a97663a1e1a7c4eed
+  candidate 291372f270272e43c359b1dd2efe26ce8fbdfafc
+  runtime evidence committed 14a4ae125d4212905ae8b8ce81c2af0c4da80a2b
+  HEAD at diagnosis 14a4ae125d4212905ae8b8ce81c2af0c4da80a2b

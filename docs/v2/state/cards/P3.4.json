@@ -61,7 +61,7 @@
       "status": "FAIL",
       "exit": 1,
       "evidence": "docs/v2/evidence/P3.4/attempt-5/runtime/05-V2.txt",
-      "verification": "Once-only app launch, exact IPC ACL denial/CSP/style and5containment PASS; click window read-back FAIL WINDOW0, b/c NOT RUN, no click/retry."
+      "verification": "Once-only app launch, exact IPC ACL denial/CSP/style and5containment PASS; click window read-back FAIL WINDOW0, b/c NOT RUN, no click/retry. Actual14PASS+2NOTRUN+1FAIL; printed16/17 counts non-failed, NOT RUN not PASS."
     },
     "V3": {
       "status": "PASS",
@@ -164,5 +164,7 @@
     "optionalA06": "PARKED",
     "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5"
   },
-  "runtimeWorkerId": null
+  "runtimeWorkerId": null,
+  "finalDiagnosisReport": "docs/v2/state/reviews/P3.4-final-runtime-diagnosis.md",
+  "finalDiagnosis": "getmouselocation emits no PID, so approved PID disjunct is unsatisfiable; WINDOW0 native-client false negative mechanism not proven. 14 actual PASS +2 NOT RUN +1 FAIL, printed16/17 counts non-failed rows. No source/contract repair, rerun or attempt6 authorized."
 }

@@ -1,0 +1,21 @@
+Cleanup and lease (docs/v2/evidence/P3.4/attempt-5/runtime/08-containment-cleanup-and-side-effects.txt)
+
+Own processes: exactly one app launch (V2) plus the sandbox server it spawned.
+The harness stopped the shell by pid (SIGTERM, printed in the V2 log) and its
+five containment assertions all passed. This session issued no pkill and
+signalled no pid it did not own.
+
+Independent checks after V2 and again after V4:
+  ps -eo pid,etimes,comm | grep -Ei "apunta|Xvfb|ollama|cargo" -> only the
+    pre-existing ollama server (pid 1123, etimes 112156).
+  bind/release on 127.0.0.1:7835 -> free.
+  build/p3.4-web and build/linux-resources/web/dist -> absent (V0's own trap).
+  marker bundles in web/dist -> 0 (release invariant holds).
+
+Card: docs/v2/state/cards/P3.4.json:11
+  lastCompletedStep = "Final once-only runtime attempt5 complete: V0/V1/V3 PASS,
+  V2 FAIL (click window read-back WINDOW=0), V4 FAIL (outside-source proof lint).
+  Worker stopped, cleanup verified, build lease released."
+
+P3.5 independence: P3.4-PRE-RUNTIME-CORRECTION.md:110-114 states P3.5's
+dependencies are P3.3 and S1.R, not P3.4, so P3.5 continues independently.

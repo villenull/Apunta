@@ -1,0 +1,32 @@
+Bounded unknown and measurement proposal (no authority adopted)
+
+SOURCE-PROVEN (high confidence):
+  - `xdotool getmouselocation --shell` emits X, Y, SCREEN, WINDOW only; no PID.
+    Therefore §D.4's `or PID` arm (P3.4-REPAIR-PROPOSAL-v5.md:158) is
+    unsatisfiable with the named command, and checkReadback's samePid
+    (tauri-security.test.mjs:1041-1042) is dead code for real runs.
+  - The observed PID=undefined is the parser reading an absent key.
+  - Same run, the page's own hook published ptrN=1 ptrCX=640 ptrCY=430 after the
+    mousemove, so the pointer was over the app; the native read-back's "not over
+    the app window" is not a true statement about the pointer.
+
+PLATFORM/MEASUREMENT-UNKNOWN (medium confidence, unproven):
+  - The exact reason `WINDOW=0` on this bare Xvfb: static libxdo control flow
+    shows WINDOW can be 0 when the WM_CLASS client resolution fails, but the
+    trigger here is not proven from the frozen evidence.
+
+REMEDY SHAPES (all require owner grant; NONE adopted or started):
+  A. Remove/replace the dead PID arm of §D.4 with a read-back that can emit a
+     pid, e.g. `xdotool getwindowpid <WINDOW>` after a non-zero WINDOW, or
+     `xdotool getwindowfocus getwindowpid`. Source-proven but does not address
+     WINDOW=0 by itself.
+  B. Bounded measurement (diagnostic, not an acceptance row): on the same bare
+     Xvfb and known app window, warp to its centre once and record
+     `xdotool getmouselocation --shell` (WINDOW/PID),
+     `xdotool getwindowgeometry --shell <id>`, `xdotool getwindowpid <id>`, and
+     the page's ptrN/ptrCX/ptrCY, to establish whether WINDOW=0 is systematic.
+  C. Contract-level: trust the page's own fresh pointer witness (ptrN strictly
+     advanced, ptrCX/ptrCY within tolerance) - already required by §D.7 - as the
+     pointer-over-app fact instead of the unreliable native WINDOW/PID identity.
+
+No threshold relaxed, no assertion softened, no row rerun, no authority assumed.
