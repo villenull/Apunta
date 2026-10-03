@@ -1,0 +1,35 @@
+# V3 has no observation hook: static proof, 2026-10-03T23:35:43Z
+## the gate is a Vite build-time variable
+24- * place P3.5's own facts and its own marker path `/p3.5-marker` go **inside
+25- * this same block** — one hook, one gate, one poll, never two of any of them.
+26- *
+27: * It is reached only from the `import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'`
+28- * branch below, which is a build-time substitution: with the variable absent the
+29- * expression is `undefined === '1'`, the branch is dead, and the minifier drops
+30- * the block and every string in it. V0 asserts the marker path is absent from
+31- * `web/dist/assets/*.js`, and the flagged bundle is built outside `web/dist`
+32- * precisely so that a shippable bundle can never carry it.
+33- *
+--
+398-  window.setInterval(poll, pollMs);
+399-}
+400-
+401:if (import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1') {
+402-  installObservationHook();
+403-}
+404-
+405-const container = document.getElementById('root');
+406-if (!container) throw new Error('#root is missing from index.html');
+407-
+
+## no other web reference
+web/src/main.tsx:27: * It is reached only from the `import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1'`
+web/src/main.tsx:40:  const markerPath = '/api/p3.4-observe';
+web/src/main.tsx:401:if (import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1') {
+
+## the producer sets no VITE_* and no build flag: P3.6's V0 bundle is UNFLAGGED
+104:(cd "$REPO_ROOT" && npm run build:shared >/dev/null && npm run build >/dev/null)
+## package.json build scripts (no VITE_ injection)
+npm run build:shared && npm run build --workspace @apunta/server && npm run build --workspace @apunta/installer && npm run build --workspace @apunta/web
+tauri build --features test-identity --config src-tauri/tauri.test.conf.json
+## conclusion: V3's flows read facts over the app's own API on 127.0.0.1:$APUNTA_PORT

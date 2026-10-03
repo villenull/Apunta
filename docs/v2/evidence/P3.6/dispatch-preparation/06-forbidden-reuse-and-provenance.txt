@@ -1,0 +1,89 @@
+# forbidden reuse and borrowed-instrument provenance, 2026-10-03T23:35:51Z
+## P3.4's native window/pid identity read-back is dead by construction: do NOT reuse
+## 4. Source-proven contradiction: the PID disjunct cannot ever be true
+
+The approved contract **§D.4** (`docs/v2/state/P3.4-REPAIR-PROPOSAL-v5.md:154-159`)
+requires, for every move:
+
+> read the pointer back with `xdotool getmouselocation --shell` and require
+> `|X_read − X_asked| ≤ 1` and the same in y, plus `WINDOW` equal to the app
+> window id **or** `PID` equal to the app's positive pid.
+
+The harness implements exactly that (`checkReadback:1040-1047`), and the pure
+model mirrors it (`build/p3.4-spec-v5-repair2/model.mjs:299-311`).
+
+**`xdotool getmouselocation --shell` does not emit a `PID` field.** This is
+source-proven three ways, locally:
+
+1. Man page (`man xdotool`): *"Outputs the x, y, screen, and window id of the
+   mouse cursor"*, and the documented `--shell` output is
+   `X=… / Y=… / SCREEN=… / WINDOW=…` only.
+2. Binary strings of the installed `xdotool` 4.20260303.1: the two
+   `getmouselocation` formats are `x:%d y:%d screen:%d window:%ld` and
+   `%sWINDOW=%d` / `%sWINDOW=%ld`; there is no `PID` format string. (`getwindowpid`
+   is a separate command, reading `_NET_WM_PID`.)
+3. The observed value `PID=undefined` (`05-V2.txt:49,22`) is the parser reading
+   an absent key (`makeOps.read`, `scripts/v2/tauri-security.test.mjs:1802-1806`
+   reads `fields['PID']`, which never exists).
+
+**Consequence.** The `WINDOW` **or** `PID` fallback is dead by construction:
+`samePid` (`:1041-1042`) can never be true for a real run. The contract's own
+"or PID" arm is unsatisfiable with the command the contract names. This is a
+**contract-level, source-proven defect** faithfully implemented by the harness —
+not a harness deviation. The pure model cannot catch it because its fixtures
+inject a synthetic `PID` (`model.test.mjs:236`), which the real command never
+produces.
+
+## 5. Real page pointer facts vs the native read-back (the contradiction)
+
+`web/src/main.tsx:135-139` increments `ptrN` on the page's `pointermove` and
+records `event.clientX/clientY`. In the failing run, after the `mousemove` the
+page published `ptrN=1 ptrCX=640 ptrCY=430` (`05-V2.txt:67`) — i.e. the WebKitGTK
+
+## the env block that does work: provenance lines
+454:      WAYLAND_DISPLAY: '',
+455:      XDG_CACHE_HOME: join(dataDir, '..', 'cache'),
+460:      GDK_BACKEND: 'x11',
+461:      // GDK_SCALE=1 in the private headless shell environment: the P3.5
+462:      // exposure measured a GDK_SCALE=2 leak on this desktop, and this is the
+467:      GDK_SCALE: '1',
+472:    '  display: GDK_SCALE forced to 1 in the private headless shell environment; the two-point calibration still measures the real scale\n',
+## same in P3.5's harness
+  return reexec;
+}
+
+function launchApp(appImage) {
+  const child = spawn(appImage, [], {
+    cwd: '/',
+    env: {
+      ...process.env,
+      WAYLAND_DISPLAY: '',
+      // The desktop session this harness is invoked from exports `GDK_SCALE=2`,
+      // and it reaches the app through the environment. That is a property of the
+      // **session**, not of this sandbox display: it made the shell read a scale
+      // of 2 off a plain 1400x1000 Xvfb screen, halve its window in CSS pixels
+      // (1330x950 physical = 665x475 logical), and push the very controls this
+      // card has to click below the fold. `GDK_SCALE=1` makes the sandbox
+      // display 1:1, so a `getBoundingClientRect` rectangle is a physical pixel
+      // offset from the window origin and `xdotool --window` coordinates mean
+      // what they say. It is the test environment being stated, not the app
+      // being configured: nothing in `web/`, `server/` or `src-tauri/` changes,
+      // and the scale the app actually used is asserted from the app's own
+      // stderr line below rather than assumed.
+      GDK_SCALE: '1',
+      GDK_DPI_SCALE: '1',
+      XDG_CACHE_HOME: join(dataDir, '..', 'cache'),
+      XDG_CONFIG_HOME: join(dataDir, '..', 'config'),
+      XDG_DATA_HOME: join(dataDir, '..', 'xdg'),
+      HOME: join(dataDir, '..', 'home'),
+      XDG_BACKEND: 'x11',
+      GDK_BACKEND: 'x11',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const output = { stdout: '', stderr: '' };
+  child.stdout.on('data', (chunk) => {
+    output.stdout += chunk.toString('utf8');
+  });
+## no sibling harness takes a screenshot: the card's screenshot duty is new
+(empty = none; ImageMagick 'import' is present per 01-host-facts.txt)

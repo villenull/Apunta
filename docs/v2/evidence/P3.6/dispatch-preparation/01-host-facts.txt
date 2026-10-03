@@ -1,0 +1,21 @@
+# host facts, read-only, 2026-10-03T23:35:31Z
+## tools
+xvfb-run       /usr/bin/xvfb-run
+xdotool        /usr/bin/xdotool
+import         /usr/bin/import
+convert        /usr/bin/convert
+ffmpeg         /usr/bin/ffmpeg
+pactl          /usr/bin/pactl
+unsquashfs     MISSING
+node           /home/villenull/.local/share/mise/installs/node/26.8.2/bin/node
+## node pinned
+/home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin
+## whisper candidate
+-rwxr-xr-x 1 villenull villenull 1064648 Oct  2 13:00 /home/villenull/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli
+## cargo
+lrwxrwxrwx 1 villenull villenull 6 Oct  1 21:52 /home/villenull/.cargo/bin/cargo -> rustup
+## ollama
+1123 /usr/bin/ollama serve
+## listeners 7800-7899
+LISTEN 7835
+(none listed above means free)

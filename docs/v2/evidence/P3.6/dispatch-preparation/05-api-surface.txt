@@ -1,0 +1,93 @@
+# the app's own API over the sandbox origin: route map, 2026-10-03T23:35:47Z
+server/src/routes/backup.ts   app.delete('/api/backup/restore', async (_request, reply) => {
+server/src/routes/backup.ts   app.get('/api/backup', async (): Promise<BackupStatusResponse> => {
+server/src/routes/backup.ts   app.post('/api/backup', async (request, reply): Promise<CreateBackupResponse> => {
+server/src/routes/backup.ts   app.post('/api/backup/restore', async (request): Promise<RestoreBackupResponse> => {
+server/src/routes/backup.ts   app.post('/api/backup/verified', async (): Promise<VerifiedRestoreResponse> => {
+server/src/routes/brainstorm.ts   app.delete('/api/patients/:id/brainstorm', async (request): Promise<BrainstormThreadResponse> => {
+server/src/routes/brainstorm.ts   app.get('/api/patients/:id/brainstorm', async (request): Promise<BrainstormThreadResponse> => {
+server/src/routes/brainstorm.ts   app.post('/api/patients/:id/brainstorm', async (request, reply) => {
+server/src/routes/chat.ts   app.get('/api/notes/:id/chat', async (request): Promise<ChatMessageListResponse> => {
+server/src/routes/chat.ts   app.post('/api/notes/:id/chat', async (request, reply) => {
+server/src/routes/formats-detect.ts   app.post('/api/formats/detect', async (request): Promise<DetectFormatResponse> =>
+server/src/routes/formats-detect.ts   app.post('/api/formats/flatten-skill', async (request): Promise<SkillFlattenResponse> =>
+server/src/routes/formats.ts   app.delete('/api/formats/:id', async (request, reply) => {
+server/src/routes/formats.ts   app.get('/api/formats', async (): Promise<NoteFormatListResponse> => {
+server/src/routes/formats.ts   app.get('/api/formats/:id', async (request): Promise<NoteFormat> => {
+server/src/routes/formats.ts   app.patch('/api/formats/:id', async (request): Promise<NoteFormat> => {
+server/src/routes/formats.ts   app.post('/api/formats', async (request, reply): Promise<NoteFormat> => {
+server/src/routes/formats.ts   app.post('/api/formats/standard', async (_request, reply): Promise<NoteFormat> => {
+server/src/routes/generate.ts   app.post('/api/generate', async (request, reply) => {
+server/src/routes/halaxy.ts   app.post('/api/import/halaxy/preview', async (request): Promise<HalaxyPreviewResponse> => {
+server/src/routes/halaxy.ts   app.post('/api/import/halaxy', (request, reply): HalaxyImportResponse => {
+server/src/routes/import.ts   app.get('/api/import/batches', (): ImportBatchListResponse => ({ batches: listImportBatches(db) }));
+server/src/routes/import.ts   app.post('/api/import/claude/preview', async (request): Promise<ClaudeImportReport> => {
+server/src/routes/import.ts   app.post('/api/import/claude/run', async (request, reply): Promise<ClaudeImportReport> => {
+server/src/routes/licenses.ts   app.get('/api/licenses', async (_request) => {
+server/src/routes/notes.ts   app.delete('/api/notes/:id', async (request, reply) => {
+server/src/routes/notes.ts   app.get('/api/notes/:id', async (request): Promise<Note> => {
+server/src/routes/notes.ts   app.get('/api/patients/:id/notes', async (request): Promise<NoteListResponse> => {
+server/src/routes/notes.ts   app.patch('/api/notes/:id', async (request): Promise<Note> => {
+server/src/routes/notes.ts   app.post('/api/notes', async (request, reply): Promise<Note> => {
+server/src/routes/notes.ts   app.post('/api/notes/:id/publish', async (request): Promise<Note> => {
+server/src/routes/notes.ts   app.post('/api/notes/:id/unpublish', async (request): Promise<Note> => {
+server/src/routes/patientGroups.ts   app.get('/api/patient-groups', async (): Promise<PatientGroupListResponse> => {
+server/src/routes/patientGroups.ts   app.patch('/api/patient-groups/:id', async (request): Promise<PatientGroup> => {
+server/src/routes/patientGroups.ts   app.post('/api/patient-groups', async (request, reply): Promise<PatientGroup> => {
+server/src/routes/patients.ts   app.delete('/api/patients/:id', async (request, reply) => {
+server/src/routes/patients.ts   app.get('/api/patients', async (request): Promise<PatientListResponse> => {
+server/src/routes/patients.ts   app.get('/api/patients/:id', async (request): Promise<Patient> => {
+server/src/routes/patients.ts   app.patch('/api/patients/:id', async (request): Promise<Patient> => {
+server/src/routes/patients.ts   app.post('/api/patients', async (request, reply): Promise<Patient> => {
+server/src/routes/plans.ts   app.delete('/api/plans/:id/goals/:goalId', async (request, reply) => {
+server/src/routes/plans.ts   app.get('/api/patients/:id/plan', async (request): Promise<PlanResponse> => {
+server/src/routes/plans.ts   app.get('/api/patients/:id/plan/versions', async (request): Promise<PlanVersionListResponse> => {
+server/src/routes/plans.ts   app.get('/api/plans/:id/export', async (request, reply): Promise<string> => {
+server/src/routes/plans.ts   app.patch('/api/plans/:id', async (request): Promise<TreatmentPlan> => {
+server/src/routes/plans.ts   app.patch('/api/plans/:id/goals/:goalId', async (request): Promise<PlanGoal> => {
+server/src/routes/plans.ts   app.post('/api/patients/:id/plan', async (request, reply): Promise<PlanResponse> => {
+server/src/routes/plans.ts   app.post('/api/patients/:id/plan/suggest', async (request, reply) => {
+server/src/routes/plans.ts   app.post('/api/plans/:id/activate', async (request): Promise<PlanResponse> => {
+server/src/routes/plans.ts   app.post('/api/plans/:id/goals', async (request, reply): Promise<PlanGoal> => {
+server/src/routes/prep.ts   app.get('/api/patients/:id/prep', async (request): Promise<SessionBriefListResponse> => {
+server/src/routes/prep.ts   app.post('/api/patients/:id/prep', async (request, reply) => {
+server/src/routes/prep.ts   app.post('/api/patients/:id/prep/save', async (request, reply): Promise<SessionBrief> => {
+server/src/routes/settings.ts   app.get('/api/settings', async (): Promise<Settings> => responseFor(db, profileOptions));
+server/src/routes/settings.ts   app.put('/api/settings', async (request): Promise<Settings> => {
+server/src/routes/transcribe.ts   app.post('/api/transcribe', async (request, reply) => {
+server/src/routes/transcribe.ts   app.post('/api/transcribe/dictation', async (request, reply): Promise<TranscribeDictationResponse> => {
+server/src/routes/transcribe.ts   app.post('/api/transcribe/preload', async (request, reply): Promise<void> => {
+server/src/routes/transcribe.ts   app.post('/api/transcribe/preview', async (request, reply): Promise<TranscribePreviewResponse> => {
+
+## transcribe multipart fields (schema)
+import { z } from 'zod';
+
+import { boundedText, IdSchema, MAX_BODY_CHARS, optionalText } from './common.js';
+import type { AiErrorCodeSchema } from './generate.js';
+
+/**
+ * `POST /api/transcribe` — record → transcript → draft, in one request (M5).
+ *
+ * The browser records 16 kHz mono and writes the WAV itself, so the server
+ * spawns `whisper-cli` on what arrives and never transcodes anything. The
+ * stream then continues into the *same* drafting path `/api/generate` uses, so
+ * the capture screen shows one continuous progression: transcribing, then a
+ * draft taking shape, then the saved note.
+ */
+
+/** Multipart text fields. The audio itself is the one file part. */
+export const TranscribeFieldsSchema = z.object({
+  patient_id: IdSchema,
+  format_id: IdSchema,
+  /** Defaults to the format's name, as `/api/generate` does. */
+  title: boundedText(200).optional(),
+  /**
+   * Anything she typed alongside the recording. Her own words outrank a
+   * machine transcript, so both are sent and the prompt labels them
+   * differently (`shared/src/generate.ts`).
+   */
+  typed_notes: optionalText(MAX_BODY_CHARS).optional(),
+});
+export type TranscribeFields = z.infer<typeof TranscribeFieldsSchema>;
+
+## SSE event names

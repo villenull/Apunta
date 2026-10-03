@@ -1,0 +1,10 @@
+# dependency gate, PROGRESS.json, 2026-10-03T23:35:34Z
+P3.4 IN PROGRESS
+P3.5 APPROVED
+P3.7 APPROVED
+P2.R APPROVED
+P3.6 NOT STARTED
+## build-dispatch gate lines
+204:  if (missing.length > 0) fail(3, `not dispatchable: dependencies not APPROVED: ${missing.join(', ')}`);
+## dispatch file present?
+no dispatch (correct: P3.4 unapproved)
