@@ -1,0 +1,83 @@
+05 — output-transformation equivalence, and the no-weakening audit
+==================================================================
+
+The whole behavioral risk of this pass reduces to one substitution, applied
+twice:
+
+  console.log(EXPR)      ->   process.stdout.write(format('%s', EXPR) + '\n')
+
+Node's own definitions, from the builtin source and semantics:
+
+  console.log(x) with a single string argument x writes exactly
+  formatWithOptions(inspectOptions, x) + '\n', and util.format's single-
+  string short-circuit returns that argument verbatim. So
+  console.log(x) === x + '\n' for any string x.
+  format('%s', x) substitutes x into the specifier and returns String(x);
+  x is the SUBSTITUTION ARGUMENT, not the format string, so any '%' sequence
+  inside x is emitted literally and is never re-interpreted.
+
+Equivalence tested empirically on pinned Node v24.19.0 over adversarial
+strings, including the format-string hazards, the empty string, an embedded
+newline, a leading newline (the summary line's case), non-ASCII, and a
+300-char string:
+
+  "", "plain", "a %s b", "%d%%", "100%", "ends with %", "multi\nline",
+  "\nALL PASS", "éü", "x"*300 + "%j"
+
+  single-string equivalence mismatches: 0 of 10
+
+As a bonus, the real probe output contains no '%' character at all
+(`grep -c '%'` on the capture -> 0), so no live path even reaches the
+hazard. The two call sites were both string template literals, so both took
+the single-string path in both versions.
+
+Conclusion: the substitution is byte-total for the values this probe can
+produce. Combined with 04 (stdout sha256 identical across four runs), the
+pass's central claim — statuses and outputs byte-exact, verdict and status
+unchanged — is established, not merely asserted.
+
+NO-WEAKENING AUDIT (what a reviewer must rule out before CLEAR):
+
+  rule suppression        none. The candidate diff contains no eslint-disable,
+                          no eslint-disable-next-line, no /* eslint-env */,
+                          no /* prettier-ignore */, no oxlint/biome suppression
+                          comment, and no config file change.
+  config edits            none. eslint.config.js, .prettierrc.json and
+                          .prettierignore are unmodified in this pass
+                          (`git status --porcelain` on all three: clean).
+  dependency surface      none added beyond the builtin `node:util`, already
+                          loaded by the runtime. No package.json change, no
+                          new dep, no lockfile change, no import of anything
+                          outside `node:` and the local harness path.
+  privacy posture         unchanged. No network call, no fetch, no http, no
+                          child process beyond the probe's own pre-existing
+                          synthetic `node -e` spawn, no audio, no DB, no
+                          display, no port. The stdout rewrite does not alter
+                          where bytes go: console.log and process.stdout.write
+                          both target fd 1.
+  assertion strength      unchanged. 19 ok() call sites byte-identical; no
+                          assertion was deleted, reordered, negated, given a
+                          weaker condition, or converted into a warning. The
+                          ok() verdict ternary `cond ? 'PASS' : 'FAIL'` and
+                          `if (!cond) failures += 1;` are untouched. There is
+                          no `if (false)`, no early return, no try/catch
+                          swallow, no `.catch(() => {})` introduced.
+  budget / threshold      unchanged. Every numeric and deadline token in the
+                          file is identical (see 02).
+  exit status             unchanged: `process.exit(failures === 0 ? 0 : 1)`.
+  formatting              deliberately NOT reformatted. The durable path is
+                          under `docs/v2/evidence/`, which .prettierignore
+                          excludes, so repo-wide `prettier --check .` never
+                          judges this file at all — its pre-existing
+                          printWidth overruns are documentation-only and
+                          cannot fail any lint gate. The pass recorded them
+                          read-only (a would-be copy, never applied) instead
+                          of reformatting a whole-source proof. Correct call:
+                          reformatting would have produced a large diff in an
+                          evidence artifact and bought nothing.
+  evidence integrity      the pre-cleanup bytes remain recoverable from git
+                          alone (HEAD still holds blob 7a7ff09 = e41e73aa...)
+                          AND from the preserved scratch snapshot
+                          (build/p34-review-probe-lint-preserved/
+                           03-independent-integration-probe.before.mjs,
+                           verified e41e73aa... after root's relocation).

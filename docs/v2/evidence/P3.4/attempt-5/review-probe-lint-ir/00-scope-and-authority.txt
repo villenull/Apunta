@@ -1,0 +1,30 @@
+00 — review scope and authority
+================================
+
+Role: INDEPENDENT, EVIDENCE-ONLY review of the bounded lint cleanup pass
+"review-probe-lint-repair" on
+docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs.
+
+Same workspace, branch main. This review is NOT a source correction, NOT a
+waiver, and NOT an acceptance row. It asserts nothing about P3.4's runtime
+verdict.
+
+Grant (exclusive writes, all NEW):
+  docs/v2/state/reviews/P3.4-review-probe-lint-ir.md      (this review)
+  docs/v2/evidence/P3.4/attempt-5/review-probe-lint-ir/** (NEW, this bundle)
+  scratchbuild/p34-review-probe-lint-ir/                   (ignored scratch)
+
+Honored constraints:
+  - no /vill, no children, no owner questions, no commit/stage/push
+  - no source edit to any file under server/ web/ shared/ scripts/ src-tauri/
+    or to the candidate probe; candidate verified read-only via git blob
+  - no npm test, no V row, no attempt 6, no global typecheck, no build,
+    no runtime lease, no app/server/DB/audio/mic/model/input/display/pactl,
+    no network, no install, port 7717 never contacted
+  - candidate NOT executed at its durable path in place; replayed only on
+    ignored copies under scratchbuild/ with the import path repointed
+  - one global read-only eslint run, to answer "is future lint green"
+  - pinned Node v24.19.0 for every execution
+  - concurrent runtime worker d353b075's writes
+    (docs/v2/state/returns/P3.4.md, untracked runtime/) read-only, untouched
+  - final P3.4 V4 row stays FAIL, once. No rerun requested or implied.

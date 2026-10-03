@@ -1,0 +1,42 @@
+03 — dead-code zero-reference proof, independently reproduced
+=============================================================
+
+Claim: the removed `frameFrom` import specifier and the removed `factLine`
+arrow were dead in the BEFORE file, so their removal deletes no reachable
+code.
+
+Probe, BEFORE (git blob 7a7ff09, on my ignored copy):
+  grep -c 'frameFrom'  ->  1
+  grep -n 'frameFrom'  ->  10:  frameFrom,
+  grep -c 'factLine'   ->  1
+  grep -n 'factLine'   ->  42:const factLine = (facts) =>
+
+Probe, AFTER:
+  grep -c 'frameFrom'  ->  0
+  grep -c 'factLine'   ->  0
+
+Exactly one occurrence each in BEFORE, at the import specifier and at the
+definition itself. Zero references anywhere else in the file — no call, no
+pass-through, no export list, no string mention. Removing them is provably
+dead-code removal, not a silent behavior deletion.
+
+Harness side, scripts/v2/tauri-security.test.mjs (untouched, git-clean):
+  frameFrom defined at 1732, called at 1740/1761/2140/2149/2169/2178,
+  still exported at 2450. So the harness retains frameFrom for its other
+  consumers; only the probe's unused specifier went away.
+  `factLine` does not exist in the harness at all — it was probe-local, so
+  its removal cannot affect any other file.
+
+Consumers of the probe: the candidate is evidence, executed directly by
+node, not imported by any other source file. Its path is unchanged, so the
+document references to it (docs/v2/evidence/P3.4/attempt-5/runtime/README.md,
+docs/v2/state/reviews/P3.4-impl5.md, docs/v2/state/NEXT-SESSION.md) remain
+valid; none of those reports was edited (see 07).
+
+No initializer with side effects was dropped: `factLine`'s body was a pure
+arrow over MARKER_PATH + URLSearchParams — no I/O, no allocation that
+escapes, no registration, no throw at module scope. Evaluating it had no
+effect, so not evaluating it has none either. `frameFrom` was never called,
+so its absence cannot change any harness state.
+
+VERDICT: 0-ref claim CONFIRMED, independently. Pure initializer confirmed.

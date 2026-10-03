@@ -1,0 +1,43 @@
+07 — proof preservation
+=======================
+
+Original review reports and historical hashes — NOT modified:
+
+  git status --short docs/v2/evidence/P3.4/attempt-5/review/ \
+                     docs/v2/state/reviews/ docs/v2/state/NEXT-SESSION.md
+    M docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+    (the only modified file in those trees is the probe itself, by this pass;
+     every other review report, baseline, hash list and review verdict is
+     byte-unchanged)
+
+  The pre-cleanup probe is preserved twice over:
+    - git history:  git show HEAD:…03-independent-integration-probe.mjs | sha256sum
+                    e41e73aaaf53658a4959d448898a2907fe9d441716539266b03cbb9841bd4329
+    - scratch:      scratchbuild/p34-review-probe-lint/03-independent-integration-probe.before.mjs
+                    e41e73aaaf53658a4959d448898a2907fe9d441716539266b03cbb9841bd4329
+
+  The shipping harness under test is untouched:
+    scripts/v2/tauri-security.test.mjs
+      sha256 865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e
+      git status scripts/  ->  clean
+
+Runtime evidence — NOT rerun, NOT waived:
+
+  The P3.4 final runtime V4 result (FAIL, once, on the old review-probe lint)
+  stands as the root worker's finishing evidence. This pass ran no runtime
+  row, opened no V-row, used no runtime lease, and made no attempt 6.
+
+Git scope at return:
+
+  M docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs   (this pass)
+  M docs/v2/state/returns/P3.4.md            (root P3.4 worker's concurrent finishing
+                                            evidence — NOT this pass; mtime
+                                            2026-10-03 14:36, +185 lines of
+                                            attempt-5 runtime return; left
+                                            untouched, no file conflict)
+  ?? docs/v2/evidence/P3.4/attempt-5/runtime/   (root worker's finishing evidence,
+                                            present at session start; untouched)
+  ?? scratchbuild/                              (this pass's untracked scratch)
+
+Nothing staged, nothing committed, no repair-count or source-budget claim.
+A fresh independent review root will assign the next step after this return.

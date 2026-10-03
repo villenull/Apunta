@@ -1,0 +1,65 @@
+06 — lint status: scoped, then repo-wide
+========================================
+
+Node v24.19.0, read-only, no build.
+
+Scoped eslint — the pass's own claim, reproduced:
+
+  npx eslint <durable candidate> <my repointed AFTER copy>
+    exit 0, no output
+
+  npx eslint <my repointed BEFORE copy>
+    exit 1, exactly 4 errors, exactly the four the pass documented:
+      10:3   'frameFrom' is defined but never used        @typescript-eslint/no-unused-vars
+      22:3   Unexpected console statement                 no-console
+      42:7   'factLine' is assigned a value but never used @typescript-eslint/no-unused-vars
+      165:1  Unexpected console statement                 no-console
+
+  -> the BEFORE/AFTER lint delta is exactly 4 -> 0, and it is exactly the
+     V4 failure cause recorded in
+     docs/v2/evidence/P3.4/attempt-5/runtime/07-V4.txt lines 39-43. The four
+     errors the V4 row failed on, and only those, are the ones the pass
+     removed.
+
+Scoped node --check (syntax), both durable candidate and copy: exit 0.
+
+Repo-wide `npx eslint .` — the "will future lint be green" question. Run
+twice, both read-only, because the tree changed between them (root relocated
+the author's scratch out of eslint's scope mid-review). Both runs disclosed.
+
+  Run 1, before relocation — exit 1, 9 errors, and every single error was in
+  an untracked scratch directory, none in any tracked path:
+      scratchbuild/p34-review-probe-lint-ir/ir.before.mjs        4 errors  (my review copy)
+      scratchbuild/p34-review-probe-lint/...before.mjs           4 errors  (author's snapshot)
+      scratchbuild/p34-review-probe-lint/05-misformat-control.mjs 1 error  (author's control)
+  The durable candidate was NOT among the errors. Note the structural cause:
+  eslint.config.js ignores `build/**` but does NOT ignore `scratchbuild/**`,
+  and .prettierignore likewise does not mention it, so root `npm run lint`
+  (`eslint . && prettier --check . && ...`) walks any scratch kept there.
+
+  Run 2, after root relocated the author's 11 scratch files to
+  build/p34-review-probe-lint-preserved/ (eslint-ignored) and after I
+  relocated my own captures to build/p34-review-probe-lint-ir/:
+      npx eslint .    exit 0, no output
+
+  -> repo-wide eslint is GREEN. The candidate is now lint-clean and nothing
+     else in the repository regressed.
+
+Context on the V4 row's 13 errors (docs/v2/.../runtime/07-V4.txt): they were 4
+in this probe plus 9 in
+docs/v2/evidence/P3.5/runtime-readiness/v5-provenance.unescaped.mjs. That
+second artifact no longer exists under that name — the tracked file is now
+v5-provenance.unescaped.txt (git ls-files confirms), committed at HEAD and
+untouched by this pass. So of V4's 13 errors, 4 were the probe's (now fixed
+and verified) and the other 9 had already been retired by that rename. This
+pass therefore does leave `eslint .` green, which is a stronger result than
+the pass claimed and it is recorded here as verified, not assumed.
+
+Prettier: the durable candidate is under `docs/v2/evidence/`, which
+.prettierignore excludes, so `prettier --check .` skips it silently. Its
+pre-existing printWidth overruns therefore cannot turn any lint gate red.
+This review ran no repo-wide prettier and did not reformat anything.
+
+Not run, by instruction: no npm test, no V row, no global typecheck, no
+build. The only executions in this review were the four candidate replays,
+the equivalence micro-checks, node --check, and the two eslint runs.

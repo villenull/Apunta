@@ -1,0 +1,44 @@
+03 — cleanup edit diff (exact)
+=============================
+
+diff scratchbuild/p34-review-probe-lint/03-independent-integration-probe.before.mjs \
+     docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+
+1c1
+< // Independent integration probe (scratch, ignored). Exercises the SHIPPED
+---
+> // Independent integration probe (durable evidence). Exercises the SHIPPED
+3a4
+> import { format } from 'node:util';
+10d10
+<   frameFrom,
+22c22
+<   console.log(`${cond ? 'PASS' : 'FAIL'} ${name}${detail ? ` :: ${detail}` : ''}`);
+---
+>   process.stdout.write(format('%s', `${cond ? 'PASS' : 'FAIL'} ${name}${detail ? ` :: ${detail}` : ''}`) + '\n');
+42,43d41
+< const factLine = (facts) =>
+<   `${MARKER_PATH}?${new URLSearchParams(Object.entries(facts).map(([k, v]) => [k, String(v)])).toString()}`;
+165c163
+< console.log(`\n${failures === 0 ? 'ALL PASS' : `${failures} FAILURE(S)`}`);
+---
+>   process.stdout.write(format('%s', `\n${failures === 0 ? 'ALL PASS' : `${failures} FAILURE(S)`}`) + '\n');
+
+Interpretation (only these, nothing else):
+
+  1. Header comment: "(scratch, ignored)" corrected to "(durable evidence)" —
+     the old wording was inaccurate for the durable proof. Comment-only change.
+  2. Added `import { format } from 'node:util';` (needed by the replacement).
+  3. Removed the dead `frameFrom` import specifier (0 refs, see 02).
+  4. Replaced `console.log` (line 22) with
+     `process.stdout.write(format('%s', <same template>) + '\n')`.
+     console.log(x) === format('%s', x) + '\n' byte-for-byte, including when
+     x contains '%' (the '%s' wrapper makes the format call total). Args,
+     format, control flow, verdict and status unchanged.
+  5. Removed the dead `factLine` arrow definition (0 refs, see 02).
+  6. Replaced the final `console.log` (line 165) the same way.
+
+NOT touched: every assertion, fixture, budget, the ok() verdict logic, the
+failures counter, the exit-code expression, the runFlow scenarios, the hung
+warp scenario, the spawnAsync shape check, and the import path (valid in
+place — proven by the BEFORE/AFTER runs at the durable path).

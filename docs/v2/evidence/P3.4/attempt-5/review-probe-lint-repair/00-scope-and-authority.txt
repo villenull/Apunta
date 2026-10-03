@@ -1,0 +1,34 @@
+00 — scope and authority
+========================
+
+Role: bounded, evidence-only cleanup of the durable attempt-5 review probe
+docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs,
+performed so future P3.5 work starts from a lint-clean probe.
+
+This is NOT a source correction and NOT a waiver. The P3.4 final runtime V4
+already FAILed once on the old review-probe lint; that result MUST remain FAIL.
+The runtime was NOT rerun and there was NO attempt 6. No source file was
+edited; no assertion, fixture, budget, control flow, verdict or status in the
+probe was changed.
+
+Grant (exclusive writes):
+
+  docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+  docs/v2/evidence/P3.4/attempt-5/review-probe-lint-repair/**   (NEW, this report)
+  scratchbuild/p34-review-probe-lint/                            (untracked scratch)
+
+Constraints honored:
+
+  - same workspace, main; no /vill, no children, no owner questions
+  - no commit, no stage, no push
+  - no app, build, server, audio, mic, model, input, display, pactl, network,
+    install or port 7717 use; no global test/V row or runtime lease use
+  - original review reports and historical hashes not modified
+  - pinned Node v24.19.0 for every run
+  - BEFORE/AFTER on the SAME current shipping source (harness 865ccab3…)
+  - statuses and outputs byte-exact except observed wall timings; limits
+    reported, no semantic budget normalization
+  - one cleanup pass; no repair-count or source-budget claim
+  - root P3.4 worker d353b075's final-row FAIL is its own finishing evidence;
+    its concurrent writes (docs/v2/state/returns/P3.4.md, untracked runtime/)
+    were left untouched — no file conflict, different scope

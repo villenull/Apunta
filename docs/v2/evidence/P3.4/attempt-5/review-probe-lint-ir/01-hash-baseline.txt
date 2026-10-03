@@ -1,0 +1,44 @@
+01 — hash baseline
+====================
+
+Node: /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node
+      --version -> v24.19.0   (pinned; the ambient `node` on PATH is v26.8.2
+      and was NOT used for any run in this review)
+
+Repository HEAD at review time: 7ab0e71c4fd978d7911f3898f0eb5f123755823c
+Branch: main
+
+Candidate blob (BEFORE, as claimed):
+  git cat-file blob 7a7ff09a029e7e56781c742ace579ae82063ca14 \
+    | sha256sum
+  e41e73aaaf53658a4959d448898a2907fe9d441716539266b03cbb9841bd4329
+  -> matches the pass's claimed BEFORE hash e41e73aa... EXACTLY
+
+Candidate working tree (AFTER, as claimed):
+  sha256sum docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+  a2a734caf29b2f39cd5259a26ce51c45cd6f781eaf0ff24f3b8bd941b502b906
+  -> matches the pass's claimed AFTER hash a2a734ca... EXACTLY
+
+Author attribution:
+  `git log -1 --format=%an%n%ae` reported by the pass as 8632dc30 — see 07.
+  The candidate is an UNCOMMITTED working-tree modification; HEAD still
+  carries the BEFORE blob, so the cleanup is reversible from git alone.
+
+Shipping harness under test (must be identical before and after):
+  sha256sum scripts/v2/tauri-security.test.mjs
+  865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e
+  git status --porcelain scripts/ | wc -l   ->  0   (clean)
+  -> matches the pass's claimed 865ccab3... EXACTLY
+
+Scratch replay copies (mine, import path repointed only — see 04):
+  ir.before.mjs  17cd1278864e1e7127d24943410e3a77b98852ce735a48bc840bc55c3b344564
+  ir.after.mjs   4852086dd831d9be1854a634ee9377b356c6f8b5032f710bf0f6ab63d6880846
+
+Independent corroboration of the repoint: the pre-existing, gitignored
+build copy build/p3.4-impl5-ir/integration-check.mjs hashes to
+17cd1278864e1e7127d24943410e3a77b98852ce735a48bc840bc55c3b344564 — byte
+identical to my ir.before.mjs. The pass's claim that a scratch copy differs
+from the durable probe by the import path ALONE is therefore confirmed by a
+third artifact neither the pass nor this review had to construct.
+
+Line counts: BEFORE 166, AFTER 164 (166 - 2 dead lines; no other change).

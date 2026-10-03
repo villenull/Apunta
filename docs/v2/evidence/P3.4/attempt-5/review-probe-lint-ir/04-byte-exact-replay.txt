@@ -1,0 +1,92 @@
+04 — byte-exact replay: stdout / stderr / exit
+==============================================
+
+Node v24.19.0 (pinned). Method: the candidate was NOT executed at its durable
+path in place. It was replayed only on ignored copies under
+scratchbuild/p34-review-probe-lint-ir/, each differing from its durable
+counterpart by the import path ALONE, repointed from
+'../../../../../../scripts/v2/tauri-security.test.mjs' to
+'../../scripts/v2/tauri-security.test.mjs' so it resolves from the scratch
+directory. Both point at the same shipping harness,
+sha256 865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e,
+which was git-clean before, during and after.
+
+Commands and results (two runs each, deliberately repeated to catch
+nondeterminism):
+
+  node ir.before.mjs > out.before.1.txt 2> err.before.1.txt   exit 0
+  node ir.before.mjs > out.before.2.txt 2> err.before.2.txt   exit 0
+  node ir.after.mjs  > out.after.1.txt  2> err.after.1.txt    exit 0
+  node ir.after.mjs  > out.after.2.txt  2> err.after.2.txt    exit 0
+
+  sha256sum of all four stdout captures:
+    bbc286f9302e8ed3d8dfa3cb9e2c6489505cde0828fa63dd31310d2598959ead
+    bbc286f9302e8ed3d8dfa3cb9e2c6489505cde0828fa63dd31310d2598959ead
+    bbc286f9302e8ed3d8dfa3cb9e2c6489505cde0828fa63dd31310d2598959ead
+    bbc286f9302e8ed3d8dfa3cb9e2c6489505cde0828fa63dd31310d2598959ead
+
+  sha256sum of all four stderr captures:
+    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+    (e3b0c442... is the sha256 of the empty string: stderr empty in all four)
+
+  cmp out.before.1.txt out.after.1.txt  -> IDENTICAL
+  cmp out.before.1.txt out.before.2.txt -> IDENTICAL (run-to-run stable)
+  cmp out.before.1.txt out.after.2.txt  -> IDENTICAL
+
+  stdout sha256 bbc286f9... == the hash the pass claimed. CONFIRMED.
+
+  exit status identical: 0 before, 0 after. No FAILURE(S) line in any capture.
+
+Output shape, counted from the capture (21 lines, 1348 bytes):
+
+  line  1..19   19 assertion lines, every one beginning "PASS "
+  line  20     empty (from the leading \n of the summary)
+  line  21     "ALL PASS"
+
+No "FAIL" verdict line exists anywhere. Three lines merely CONTAIN the
+substring "FAIL" as part of an assertion NAME (lines 3, 4, 6: "assert pending
+FAILs", "assert resolved FAILs", "assert a wrong rejection msg FAILs") —
+these are names of the synthetic negative controls the probe asserts, and
+they are byte-identical before and after. The probe is not vacuous: its 19
+assertions exercise real harness behavior — the href+ipcProbe gate, cascade
+arming and its five-row shape, markerLinesOf, tagForLabel, runFlow's success
+path with its full move/click trace, the deadline-expiry path, the
+runFlow-reason-is-not-DEADLINE_EXPIRED discriminator, and a real
+spawnAsync(`node -e`) child process.
+
+DOCUMENTATION NIT (not a fidelity defect): the pass's 04 file says "20 PASS
+lines + ALL PASS". The true count is 19 PASS assertion lines plus the ALL
+PASS summary (21 lines total, 1348 bytes). The authoritative artifact — the
+byte-exact stdout hash — matches exactly, so this is a prose count slip in
+the report, not a discrepancy in the evidence. Nothing downstream depends on
+the line count.
+
+Non-determinism: none observed. The probe prints no timestamps, no timings,
+no durations, no paths outside the fixed import. Hash stable across four runs.
+
+Truncation bound for the stdout.write + process.exit pattern: the classic
+hazard is that process.stdout.write is async on a pipe while process.exit is
+not, so a large pending write could be cut. Measured through a real pipe:
+
+  declared 1348 bytes -> captured 1349 (payload + the added \n)
+  declared 65536      -> captured 65537
+  declared 200000     -> captured 200001
+  declared 1000000    -> captured 1000001
+
+  No truncation at any size up to 1 MB. The probe emits 1348 bytes, roughly
+  three orders of magnitude below the first size that could plausibly matter,
+  and the hash above confirms the real run is complete. The hazard is real in
+  general but is not reachable here.
+
+Reproduce:
+
+  export PATH=/home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH
+  cd /home/villenull/Projects/Apunta/scratchbuild/p34-review-probe-lint-ir
+  git cat-file blob 7a7ff09 > ir.before.mjs
+  cp ../../docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs ir.after.mjs
+  sed -i "s|'../../../../../../scripts/v2/tauri-security.test.mjs'|'../../scripts/v2/tauri-security.test.mjs'|" ir.*.mjs
+  node ir.before.mjs | sha256sum   # bbc286f9...
+  node ir.after.mjs  | sha256sum   # bbc286f9...

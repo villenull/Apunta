@@ -1,0 +1,36 @@
+05 — scratch copy: import repoint only
+======================================
+
+The durable probe's import relative path is valid when run in place: from
+docs/v2/evidence/P3.4/attempt-5/review/, six levels up reach the repo root, so
+'../../../../../../scripts/v2/tauri-security.test.mjs' resolves to the shipped
+harness. Proven by the BEFORE and AFTER runs at the durable path (04).
+
+The scratch copy lives at scratchbuild/p34-review-probe-lint/, where that
+six-level path would NOT resolve. Per instruction, the scratch copy's import
+was repointed — ONLY the path — to the actual shipped harness
+(sha256 865ccab3a1c5d21783eedda0e866633c457388585e6bd36b1df34f236f37693e):
+
+  cp <durable probe> scratchbuild/p34-review-probe-lint/03-independent-integration-probe.scratch.mjs
+  sed -i "s|'../../../../../../scripts/v2/tauri-security.test.mjs'|'../../scripts/v2/tauri-security.test.mjs'|" <scratch copy>
+
+Identity proof — the two copies differ in exactly one line, the import path:
+
+  diff <durable probe> <scratch copy>
+  18c18
+  < } from '../../../../../../scripts/v2/tauri-security.test.mjs';
+  ---
+  > } from '../../scripts/v2/tauri-security.test.mjs';
+
+Resolution proof — the repointed path reaches the shipped harness:
+
+  ls scratchbuild/p34-review-probe-lint/../../scripts/v2/tauri-security.test.mjs
+    -> exists (96910 bytes), sha256 865ccab3… (unchanged, git-clean)
+
+Behavioral proof — the scratch copy runs byte-identical to the durable copy
+against the same harness (04): exit 0, stdout sha256 bbc286f9…, empty stderr.
+
+Hashes:
+  durable  a2a734caf29b2f39cd5259a26ce51c45cd6f781eaf0ff24f3b8bd941b502b906
+  scratch 4852086dd831d9be1854a634ee9377b356c6f8b5032f710bf0f6ab63d6880846
+  (different bytes by design: one import-path line)

@@ -1,0 +1,26 @@
+02 — dead-code zero-reference proof
+===================================
+
+Pinned Node v24.19.0.
+
+Claim: `frameFrom` and `factLine` are each referenced exactly once in the
+durable probe — at their own import/definition — and nowhere else. Removing the
+import specifier and the function definition therefore deletes dead code only.
+
+  grep -c 'frameFrom' <probe>   ->  1
+  grep -n 'frameFrom' <probe>   ->  10:  frameFrom,          (the import specifier)
+
+  grep -c 'factLine' <probe>    ->  1
+  grep -n 'factLine' <probe>    ->  42:const factLine = (facts) =>   (the definition)
+
+Harness side (scripts/v2/tauri-security.test.mjs, untouched):
+
+  - `frameFrom` is defined at line 1732 and exported at line 2450
+    (inside the harness export block). Removing the probe's unused specifier
+    does not affect the harness; the harness still exports it.
+  - `factLine` does not exist in the harness at all; it was probe-local.
+
+No other repo file imports the probe (it is evidence, run directly by node);
+the docs that name it (runtime/README.md, state/reviews/P3.4-impl5.md,
+state/NEXT-SESSION.md) are historical reports, left unmodified, and the file
+path is unchanged so the references remain valid.

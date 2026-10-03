@@ -1,0 +1,39 @@
+04 — BEFORE/AFTER output fidelity
+================================
+
+Pinned Node v24.19.0. Same current shipping source for both runs
+(scripts/v2/tauri-security.test.mjs, sha256 865ccab3…, git-clean throughout).
+
+BEFORE (durable probe, in place, pre-edit):
+
+  node docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+  exit 0   wall 151 ms (observed limit only; no semantic normalization)
+  stdout sha256 bbc286f9302e8ed3d8dfa3cb9e2c6489505cde0828fa63dd31310d2598959ead
+  stderr empty (sha256 e3b0c442…, the empty-string hash)
+  status: 20 PASS lines + "ALL PASS"
+
+AFTER (durable probe, in place, post-edit):
+
+  node docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+  exit 0   wall 151 ms (observed limit only)
+  stdout sha256 bbc286f9302e8ed3d8dfa3cb9e2c6489505cde0828fa63dd31310d2598959ead
+  stderr empty
+
+  cmp BEFORE.out AFTER.out  ->  byte-exact (identical sha256)
+  cmp BEFORE.err AFTER.err  ->  byte-exact (both empty)
+
+SCRATCH (copy under scratchbuild/, import path repointed — see 05):
+
+  cd scratchbuild/p34-review-probe-lint
+  node 03-independent-integration-probe.scratch.mjs
+  exit 0   wall 149 ms (observed limit only)
+  stdout sha256 bbc286f9302e8ed3d8dfa3cb9e2c6489505cde0828fa63dd31310d2598959ead
+  stderr empty
+
+  cmp BEFORE.out SCRATCH.out  ->  byte-exact
+
+Verdict: statuses and outputs are byte-exact across BEFORE, AFTER and the
+scratch copy. The only observed differences are wall-clock timings
+(151 / 151 / 149 ms), reported as limits; the probe prints no timestamps and
+carries no timing in its output, so nothing semantic changed. No budget or
+semantic normalization was applied or claimed.

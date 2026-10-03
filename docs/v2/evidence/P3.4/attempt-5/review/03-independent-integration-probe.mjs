@@ -1,13 +1,13 @@
-// Independent integration probe (scratch, ignored). Exercises the SHIPPED
+// Independent integration probe (durable evidence). Exercises the SHIPPED
 // harness functions with injected synthetic IO. No app, server, display, input,
 // network or DB. Run: pinned node build/p3.4-impl5-ir/integration-check.mjs
+import { format } from 'node:util';
 import {
   MARKER_PATH,
   DEADLINE_EXPIRED,
   createRealClock,
   createTargetDeadline,
   createBatchReader,
-  frameFrom,
   markerLinesOf,
   tagForLabel,
   runFlow,
@@ -19,7 +19,7 @@ import {
 
 let failures = 0;
 const ok = (name, cond, detail = '') => {
-  console.log(`${cond ? 'PASS' : 'FAIL'} ${name}${detail ? ` :: ${detail}` : ''}`);
+  process.stdout.write(format('%s', `${cond ? 'PASS' : 'FAIL'} ${name}${detail ? ` :: ${detail}` : ''}`) + '\n');
   if (!cond) failures += 1;
 };
 
@@ -39,8 +39,6 @@ const batchLine = ({ epoch, batch, total, entries }) => {
   }
   return `${MARKER_PATH}?${q.toString()}`;
 };
-const factLine = (facts) =>
-  `${MARKER_PATH}?${new URLSearchParams(Object.entries(facts).map(([k, v]) => [k, String(v)])).toString()}`;
 const stderrOf = (lines) => lines.map((l) => `apunta: ignoring a bridge line (Unreadable): GET ${l}`).join('\n');
 
 // ---------------------------------------------------------------- gate/assert
@@ -162,5 +160,5 @@ ok(
 const shape = await spawnAsync(process.execPath, ['-e', "process.stdout.write('o');process.stderr.write('e')"]);
 ok('spawnAsync returns the four-field shape', JSON.stringify(Object.keys(shape).sort()) === JSON.stringify(['code', 'signal', 'stderr', 'stdout']), JSON.stringify(shape));
 
-console.log(`\n${failures === 0 ? 'ALL PASS' : `${failures} FAILURE(S)`}`);
+process.stdout.write(format('%s', `\n${failures === 0 ? 'ALL PASS' : `${failures} FAILURE(S)`}`) + '\n');
 process.exit(failures === 0 ? 0 : 1);

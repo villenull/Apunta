@@ -1,0 +1,52 @@
+06 — scoped eslint / syntax / format
+====================================
+
+Pinned Node v24.19.0.
+
+eslint (scoped, both copies):
+
+  npx eslint docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+    exit 0   (was: 4 errors — unused frameFrom specifier, unused factLine,
+                 two console.log under no-console)
+  npx eslint scratchbuild/p34-review-probe-lint/03-independent-integration-probe.scratch.mjs
+    exit 0
+
+node --check (scoped, both copies):
+
+  node --check docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+    exit 0
+  node --check scratchbuild/p34-review-probe-lint/03-independent-integration-probe.scratch.mjs
+    exit 0
+
+prettier — config status:
+
+  .prettierrc.json is tracked (git ls-files) and NOT gitignored; it is
+  non-vacuous: { singleQuote, printWidth: 110, trailingComma: all, semi }.
+  .prettierignore lists docs/v2/evidence/ — so a direct prettier check on
+  the durable path is VACUOUS (the file is skipped, exit 0 without judging):
+
+    npx prettier --check docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+      "All matched files use Prettier code style!"  exit 0   (skipped: ignored path)
+
+  Non-vacuous check (scratch copy is NOT under .prettierignore, so the repo
+  config really inspects it):
+
+    npx prettier --check scratchbuild/p34-review-probe-lint/03-independent-integration-probe.scratch.mjs
+      [warn] Code style issues found            exit 1
+
+  Non-vacuity controls (the config actually judges):
+
+    printf 'const x=1\n' > scratchbuild/p34-review-probe-lint/05-misformat-control.mjs
+    npx prettier --check scratchbuild/p34-review-probe-lint/05-misformat-control.mjs
+      exit 1   (mis-formatted file flagged)
+    npx prettier --check scripts/v2/tauri-security.test.mjs
+      exit 0   (known-good file passes)
+
+Pre-existing format issues — RECORDED, NOT reformatted (per instruction: avoid
+whole-source proof reformat). The probe predates any prettier pass (its
+directory is prettier-ignored); prettier would re-wrap several lines that
+exceed printWidth 110 (the ok() output line, stderrOf, the batchLine good
+constant, makeSyntheticOps signature/state, two ok() calls, the spawnAsync
+shape lines). The full would-be diff was captured read-only at
+scratchbuild/p34-review-probe-lint/04-prettier-would.be.mjs. No reformat was
+applied to any copy; the cleanup pass touched only the six items in 03.

@@ -1,0 +1,105 @@
+07 — defects, preservation, concurrency
+========================================
+
+FINDINGS
+
+F1. Scratch location (RESOLVED at the event boundary, by root — recorded here
+    as a pass defect, not as a live problem).
+    Defect. The pass kept 11 scratch files, including executable .mjs, in
+    `scratchbuild/p34-review-probe-lint/`. That path is NOT ignored:
+    `git check-ignore -q scratchbuild/...` exits non-zero, eslint.config.js
+    ignores `build/**` but not `scratchbuild/**`, and .prettierignore does
+    not list it either. Consequence, measured: repo-wide `npx eslint .` was
+    exit 1 with 5 of its errors coming from the pass's own scratch — a
+    deliberately misformatted 10-byte control file
+    (`05-misformat-control.mjs`, `const x=1`, unused-var error) and the
+    BEFORE snapshot carrying the very 4 errors the pass existed to remove.
+    A cleanup pass whose stated purpose is "so future P3.5 work starts from a
+    lint-clean probe" was itself the largest single contributor to repo-wide
+    lint red. Path: scratchbuild/p34-review-probe-lint/**.
+    Resolution. Root relocated all 11 files byte-identically to
+    build/p34-review-probe-lint-preserved/ (ignored) and removed the empty
+    scratchbuild/. I re-verified all 11 files are present and every
+    hash-asserted file is unchanged at the new location:
+      03-...before.mjs   e41e73aa...  == BEFORE blob, as declared
+      03-...scratch.mjs  4852086d...  == as declared in the pass's 05 file
+      01/02/03 *.out     bbc286f9...  x3, as declared
+      01/02/03 *.err     e3b0c442...  x3, empty as declared
+      00-hashes-before.txt, 04-prettier-would.be.mjs, 05-misformat-control.mjs
+        present; the control is 10 bytes, exactly `const x=1\n`, matching
+        the described non-vacuity control. No hash was declared for these
+        three, so they are attested by content, not by digest.
+    The pass's own report files under
+    docs/v2/evidence/P3.4/attempt-5/review-probe-lint-repair/ still cite the
+    OLD scratchbuild/p34-review-probe-lint/ paths and say the empty
+    scratchbuild/ was its scratch. That historical text is retained by
+    instruction; this file is the correction of record. Nothing in it needs
+    rewriting because no hash, command result or claim changes.
+
+F2. Header comment half-corrected (OPEN, cosmetic, non-behavioral).
+    Path: docs/v2/evidence/P3.4/attempt-5/review/03-independent-integration-probe.mjs
+    line 1 (and line 4).
+    The pass changed "(scratch, ignored)" to "(durable evidence)" — accurate,
+    the file is git-tracked — but left line 4 reading
+    `Run: pinned node build/p3.4-impl5-ir/integration-check.mjs`, which
+    points at a gitignored, eslint-ignored, machine-local build directory
+    that will not exist on another machine, and does not tell the reader how
+    to run the file from its durable location (node, from the repo root, on
+    the same path). So the file now declares itself durable while its only
+    run instruction still addresses scratch. No assertion, fixture, budget,
+    verdict or status is affected; nothing executes differently. If a
+    follow-up comment-only pass happens, this is the line to fix. It does not
+    block acceptance of the cleanup.
+
+F3. Prose count slip (OPEN, cosmetic).
+    Path: docs/v2/evidence/P3.4/attempt-5/review-probe-lint-repair/04-before-after-output-fidelity.txt
+    "20 PASS lines + ALL PASS". Measured: 19 assertion lines beginning
+    "PASS", then a blank line, then "ALL PASS" — 21 lines, 1348 bytes. The
+    stdout digest the same file quotes, bbc286f9..., is correct and is what
+    actually carries the claim, so the slip is in prose only. Three lines
+    contain the substring "FAIL" inside assertion NAMES ("assert pending
+    FAILs", "assert resolved FAILs", "assert a wrong rejection msg FAILs") —
+    those are names of negative controls, not failures.
+
+No other finding. Specifically NOT found: no weakening, no assertion
+change, no budget change, no verdict or status change, no undeclared edit,
+no hash mismatch, no unreproducible claim, no fabricated evidence, no scope
+overreach into another worker's artifacts.
+
+PRESERVATION
+
+  Historical reports and hashes: unmodified. `git diff --stat HEAD` over
+  docs/v2/evidence/P3.4/attempt-5/review/, docs/v2/state/reviews/ and
+  docs/v2/state/NEXT-SESSION.md reports exactly one changed file — the
+  candidate probe itself (4 insertions, 6 deletions). No review verdict, no
+  baseline, no hash list, no prior report was rewritten. The strings
+  e41e73aa and bbc286f9 appear nowhere in the historical tree; they exist
+  only inside the pass's own two evidence directories, so no historical hash
+  was disturbed by this pass.
+  Shipping source: untouched. `git status --porcelain scripts/` clean;
+  harness sha256 865ccab3... unchanged throughout. No file under server/,
+  web/, shared/, src-tauri/ or any card was touched by this review.
+  V4 row: FAIL, once, retained. docs/v2/evidence/P3.4/attempt-5/runtime/07-V4.txt
+  and docs/v2/state/returns/P3.4.md still record V4 as FAIL with "stop, not
+  repair" and "there is no attempt 6". This review did not rerun any runtime
+  row, did not open a V row, used no runtime lease, and its verdict does not
+  convert that FAIL. Root's subsequent staging of the runtime evidence and
+  card updates is root's own finishing work, outside this review's scope and
+  untouched by it.
+
+CONCURRENCY
+
+  The runtime worker (d353b075) wrote docs/v2/state/returns/P3.4.md and the
+  untracked runtime/ directory at 14:35-14:36; the cleanup pass edited the
+  probe at 14:41 and wrote its evidence at 14:44-14:46. Disjoint paths, no
+  overlap, no conflict. This review read both sets read-only and wrote only
+  its own bundle and its own review file.
+
+ATTRIBUTION CAVEAT
+
+  The task described the candidate as authored by 8632dc30. The candidate is
+  an UNCOMMITTED working-tree modification, so git carries no author for it;
+  the HEAD blob it derives from was last committed by Diego Huyke in 9f3acf5.
+  The 8632dc30 attribution is taken from the task statement and cannot be
+  confirmed from repository metadata. It does not affect any technical
+  finding.
