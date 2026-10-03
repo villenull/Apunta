@@ -1,0 +1,30 @@
+# Owner AM-194 grant — preserved boundaries
+
+$ grep -n AM-194 docs/v2/state/AMENDMENTS.md
+427:AM-194 | P3.5 OWNER APPROVED exact client-sentinel patch and one attempt 4 | Explicit CHANGE to AM-190 no-attempt-4 boundary for P3.5 only. Apply exactly evidence/P3.5/client-sentinel-proposal/candidate.patch (4350f5ec prefix), one function in scripts/v2/tauri-audio.test.mjs: literal client '-' becomes null, stream/source validation and unknown-source/real-microphone checks unchanged. Independent source review precedes V0–V5 once in card order. Exactly three new attempt4 capture records/anchors V3, V4-tone, V4-silence; V5 read-only adds none. All prior failed histories and five attempt1/two attempt3 records retained. No fifth attempt, counter reset, row retry, schema/threshold/Expected relaxation or public-distribution grant. AM-190/191/193 environment/acquisition/authentication boundaries otherwise unchanged. | Owner explicit answer to independently CLEAR proposal §6; final verification recorded caa6e18
+
+--- AM-194 text ---
+AM-194 | P3.5 OWNER APPROVED exact client-sentinel patch and one attempt 4 | Explicit CHANGE to AM-190 no-attempt-4 boundary for P3.5 only. Apply exactly evidence/P3.5/client-sentinel-proposal/candidate.patch (4350f5ec prefix), one function in scripts/v2/tauri-audio.test.mjs: literal client '-' becomes null, stream/source validation and unknown-source/real-microphone checks unchanged. Independent source review precedes V0–V5 once in card order. Exactly three new attempt4 capture records/anchors V3, V4-tone, V4-silence; V5 read-only adds none. All prior failed histories and five attempt1/two attempt3 records retained. No fifth attempt, counter reset, row retry, schema/threshold/Expected relaxation or public-distribution grant. AM-190/191/193 environment/acquisition/authentication boundaries otherwise unchanged. | Owner explicit answer to independently CLEAR proposal §6; final verification recorded caa6e18
+
+--- proposal §6 Option A (lines 139-149) ---
+**A. Change AM-190's no-attempt-4 boundary for this card only (Recommended).**
+A single additional attempt, authorised by you and nobody else: exactly the patch
+in §2 applied to the one file `scripts/v2/tauri-audio.test.mjs`; an independent
+review of that patch before anything runs; then V0–V5 once each, in card order,
+with **fresh anchors for the new attempt = exactly three capture records, one per
+capture run, for `V3`, `V4-tone` and `V4-silence`** — the same three the card
+fixes. **V5 is a read-only verification** of those three records plus the live
+residue: it adds **no** capture record, provenance record or `sandboxRuns` anchor.
+The three failed attempt histories stay verbatim, as do all five attempt-1
+records and anchors and both attempt-3 records. **No fifth attempt, no counter
+reset, no retry of any row, no threshold, schema or Expected-cell change.**
+
+--- card ownerDecisions + current criteria evidence ---
+attempt: 4 status: IN PROGRESS
+clientSentinelAttempt4: APPROVED AM-194 exact patch + one attempt4; no5/reset/retry/Expected relaxation
+V0 NOT RUN -> AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0–V5.
+V1 NOT RUN -> AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0–V5.
+V2 NOT RUN -> AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0–V5.
+V3 NOT RUN -> AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0–V5.
+V4 NOT RUN -> AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0–V5.
+V5 NOT RUN -> AM-194 attempt4 row not run; priorAttempt3Criteria retained verbatim. Independent corrected-source review required before once-only V0–V5.

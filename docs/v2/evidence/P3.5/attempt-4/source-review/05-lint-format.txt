@@ -1,0 +1,19 @@
+# Syntax, eslint and prettier on the real file paths
+
+$ node --check scripts/v2/tauri-audio.test.mjs
+exit=0
+$ npx prettier --check scripts/v2/tauri-audio.test.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+$ npx eslint scripts/v2/tauri-audio.test.mjs
+exit=0
+
+$ node --check docs/v2/evidence/P3.5/attempt-4/source-review/independent-adversarial.mjs
+exit=0
+$ npx prettier --check docs/v2/evidence/P3.5/attempt-4/source-review/independent-adversarial.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+$ npx eslint docs/v2/evidence/P3.5/attempt-4/source-review/independent-adversarial.mjs
+exit=0

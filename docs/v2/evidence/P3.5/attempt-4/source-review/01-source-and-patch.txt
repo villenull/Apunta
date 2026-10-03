@@ -1,0 +1,58 @@
+# AM-194 source patch identity — baseline + authorized patch == shipping
+
+$ git rev-parse HEAD
+bd1764bf57ad3882e7c2be044f3958aa02ff5ad4
+$ git show caa6e18:scripts/v2/tauri-audio.test.mjs | sha256sum   # baseline
+b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb  -
+$ sha256sum scripts/v2/tauri-audio.test.mjs                    # working tree == shipping
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  scripts/v2/tauri-audio.test.mjs
+$ git show 5857079:scripts/v2/tauri-audio.test.mjs | sha256sum  # shipping commit
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  -
+
+$ sha256sum candidate.patch (prefix expected 4350f5ec)
+4350f5eca8764d7fc0f26eedf9fc6a814f19a05fea3a9813bf067203503ac198  docs/v2/evidence/P3.5/client-sentinel-proposal/candidate.patch
+
+$ patch -p1 --dry-run < candidate.patch   (fresh baseline copy)
+checking file scripts/v2/tauri-audio.test.mjs
+Reversed (or previously applied) patch detected!  Assume -R? [n] 
+Apply anyway? [n] 
+Skipping patch.
+1 out of 1 hunk ignored
+dryrun_exit=1
+$ patch -p1 < candidate.patch
+patching file scripts/v2/tauri-audio.test.mjs
+Reversed (or previously applied) patch detected!  Assume -R? [n] 
+Apply anyway? [n] 
+Skipping patch.
+1 out of 1 hunk ignored -- saving rejects to file scripts/v2/tauri-audio.test.mjs.rej
+apply_exit=1
+$ sha256sum replayed   (expected 85fbb13d)
+85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14  build/p35-source-review4/apply/scripts/v2/tauri-audio.test.mjs
+$ cmp replayed shipping-source.mjs
+cmp_exit=0
+
+$ diff -u baseline shipping
+--- build/p35-source-review4/baseline-source.mjs	2026-10-03 16:25:17.427152209 -0600
++++ build/p35-source-review4/shipping-source.mjs	2026-10-03 16:25:17.428152202 -0600
+@@ -306,8 +306,13 @@
+     if (columns.length < 3) throw new Error(`malformed pactl source-outputs row: ${JSON.stringify(raw)}`);
+     const streamId = Number(columns[0]);
+     const sourceId = Number(columns[1]);
+-    const clientId = Number(columns[2]);
+-    if (![streamId, sourceId, clientId].every((value) => Number.isInteger(value))) {
++    // Only the literal `-` means "no client"; any other client-column value
++    // must still be a plain integer, exactly as before.
++    const clientId = columns[2] === '-' ? null : Number(columns[2]);
++    if (
++      ![streamId, sourceId].every((value) => Number.isInteger(value)) ||
++      (clientId !== null && !Number.isInteger(clientId))
++    ) {
+       throw new Error(`non-numeric source-outputs column: ${JSON.stringify(raw)}`);
+     }
+     if (!sources.has(sourceId)) {
+$ hunk count
+1
+$ git diff --numstat caa6e18 5857079 -- scripts/v2/tauri-audio.test.mjs
+7	2	scripts/v2/tauri-audio.test.mjs
+$ git diff --name-only caa6e18 5857079 | grep -v '^docs/'   # non-doc files
+scripts/v2/tauri-audio.test.mjs

@@ -1,0 +1,1 @@
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && node scripts/v2/sandbox.mjs env --port 7837 > /tmp/apunta-v2-p3.5-v3.env && . /tmp/apunta-v2-p3.5-v3.env && export APUNTA_ALLOW_AUDIO_TEST=1 && node scripts/v2/tauri-audio.test.mjs capture

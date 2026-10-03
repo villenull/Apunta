@@ -1,0 +1,44 @@
+# EOD 2026-10-03 critical-path — sanitized readiness metadata
+
+Read-only `stat`/`ls` observations only. No app, build, model, mic, audio,
+display, input, live `pactl`, server, DB, network or port 7717 was used.
+No patient content, no credentials, no env dump. Home written `~`.
+
+HEAD: bd1764b (main). Working tree dirty only with the returned P3.5
+attempt-4 review/evidence (untracked).
+
+## Build artefacts present (paths only)
+
+- src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+  (194,202,104 bytes, mtime 2026-10-03 15:03) + Apunta (test).AppDir
+- **No production-identity AppImage present** (`Apunta_*.AppImage` absent).
+- build/linux-resources/ present: bin, manifest.json, migrations, native,
+  node, node_modules, server, THIRD-PARTY-LICENSES.md, web
+- build/linux-resources/bin/: whisper libs + whisper-cli (see below)
+- installer/dist/ present
+- web/dist/, server/dist/ present
+- ~/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node present
+- ~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli present
+- ~/.local/share/apunta-piper/voices/: en_US-ljspeech-medium.onnx(.json),
+  es_MX-ald-medium.onnx(.json)
+- ~/.local/share/apunta (live v1 data dir): **absent on this box**
+- .cache/v2-stt (S4a.2 cache): **absent**
+
+## Plan status (docs/v2/state/PROGRESS.json, 83 cards)
+
+- APPROVED 47, NOT STARTED 30, BLOCKED 4, IN PROGRESS 1, CHANGES REQUESTED 1
+- P2.R APPROVED; P3.R NOT STARTED; P3.6 NOT STARTED
+- P3.4 BLOCKED (attempt 5 exhausted, no 6); P3.5 IN PROGRESS (attempt 4)
+- P4.3/P4.4/P4.5: P4.5 APPROVED, P4.3/P4.4 NOT STARTED
+- P5.4/P5.5 NOT STARTED; P5.3 BLOCKED
+- S3.2 CHANGES REQUESTED (quiet-machine hold); S3.3a BLOCKED (quiet-machine hold)
+- S4a.2 NOT STARTED (owner-parked); P6.1 NOT STARTED
+
+## In-flight worker returns now on disk (untracked)
+
+- docs/v2/state/reviews/P3.5-impl4.md — **SOURCE CLEAR** (AM-194 patch,
+  shipping blob 85fbb13d…, one hunk, 75-case + 35-case proofs pass).
+- docs/v2/state/reviews/P3.5-runtime4-readiness.md — **READY for dispatch**,
+  conditional on (a) source CLEAR [now met], (b) root regenerates the
+  attempt-4 dispatch, (c) root delegates sole checkpoint writer.
+- docs/v2/evidence/P3.5/attempt-4/{source-review,runtime-readiness}/.

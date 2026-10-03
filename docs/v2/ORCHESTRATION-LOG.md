@@ -2713,3 +2713,14 @@ root+3freeworker capacity, serial builds/audio/realmodel, protectedholds unchang
 c68e3995 launched RUNNING withcallback for read-only criticalpath mapping; no
 runtime/system/network/patientdata access. Existing sourceIR/runtimeprep continue.
 Omarchy skill loaded for any desktopintegration; packageddefaultsreadonly.
+
+## 2026-10-03 — corrected source CLEAR, runtime readiness recovered
+
+adc88147 returned CLEAR after sibling a4e666c4 twice deleted sharedattempt4parent
+outsideownscope. Source review regenerated allownedartifacts, rootverifiedeight
+files+35caseproof (sandboxgitEPERM then escalatedreadonlyproof). Initialarchival
+rejectedpendingrecovery, recoveredartifactsconfirmed and archival succeeded.
+a4e666c4 finalreportrecovered viaactivitylimit1, READY, archived. Recordscope
+incident/no sharedparent deletion forfutureworkers. c68e3995 analysisarchived;
+staleV2(a) advice notadopted (AM188ACLdenialalreadyPASS). No acceptwithdisclosure
+orprotectedgatewaiver. Finalonce-onlyruntime remainsready underAM194.

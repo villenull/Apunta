@@ -1,0 +1,49 @@
+# 35 independent adversarial mechanism checks (reviewer's own extractor and cases)
+
+$ sha256sum independent-adversarial.mjs
+ea2e84cc8cab2c716daa3311e8cb5f85c209774bc45cdeea04b7b76b895b197a  docs/v2/evidence/P3.5/attempt-4/source-review/independent-adversarial.mjs
+
+$ node independent-adversarial.mjs
+baseline source sha256 b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+shipping source sha256 85fbb13d5af891d3778eab1c1a167b2bdcb3493b27bf4f156e4832a748924c14
+baseline extract       57c26a79ff052a740e87e9a1cf5ace65a604cf2a03401ffcc3e13ff2339a50e4
+shipping extract       21d55850ffae7a81fa21e1458bb78b9cbb82e6dc16f088878dcb00a6edc089a8
+
+PASS 01 baseline throws on a dash client
+PASS 02 shipping classifies a dash client on the virtual source
+PASS 03 shipping dash client is carried as null
+PASS 04 shipping dash on the real microphone lands in realMic
+PASS 05 shipping dash on an unrelated source lands in unrelated
+PASS 06 shipping dash with an unknown source still throws
+PASS 07 baseline dash with an unknown source also throws
+PASS 08 shipping refuses client token "--"
+PASS 09 shipping refuses client token "−"
+PASS 10 shipping refuses client token "n/a"
+PASS 11 shipping refuses client token "x"
+PASS 12 shipping refuses client token "PipeWire"
+PASS 13 shipping refuses client token "Infinity"
+PASS 14 shipping refuses client token "NaN"
+PASS 15 shipping refuses client token "1.5"
+PASS 16 shipping refuses client token "0x"
+PASS 17 non-numeric stream index still throws
+PASS 18 non-numeric source index still throws
+PASS 19 dash in the stream column still throws
+PASS 20 dash in the source column still throws
+PASS 21 two-column row still throws
+PASS 22 duplicate source index still throws
+PASS 23 malformed source table row still throws
+PASS 24 numeric client on the real microphone still lands in realMic
+PASS 25 baseline numeric real-mic detection is identical
+PASS 26 dash real-mic row is realMic only
+PASS 27 client token "167" is identical before/after and equals 167
+PASS 28 client token "0" is identical before/after and equals 0
+PASS 29 client token "-1" is identical before/after and equals -1
+PASS 30 client token "167.0" is identical before/after and equals 167
+PASS 31 client token "+5" is identical before/after and equals 5
+PASS 32 client token "0x10" is identical before/after and equals 16
+PASS 33 client token "007" is identical before/after and equals 7
+PASS 34 client token "1e3" is identical before/after and equals 1000
+PASS 35 shipping function slice is byte-identical to the committed candidate witness
+
+35 passed, 0 failed
+exit=0

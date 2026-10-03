@@ -1,0 +1,34 @@
+# Checkpoint: prior attempt-3 criteria preserved, no reset, V0-V5 NOT RUN
+
+$ node build/p35-source-review4/checkpoint-check.mjs
+PASS priorAttempt3Criteria === caa6e18.criteria (f3f72041b3a9 == f3f72041b3a9)
+PASS sideEffectsDone unchanged (e517b7b9d1db == e517b7b9d1db)
+PASS sandboxRuns unchanged (cbc25b68a42d == cbc25b68a42d)
+PASS priorAttempt1Criteria unchanged (4854f7f79d91 == 4854f7f79d91)
+PASS plannedSideEffects unchanged (fba15742e607 == fba15742e607)
+PASS attempt 3 -> 4 (one increment, no reset)
+PASS current V0-V5 status: V0=NOT RUN V1=NOT RUN V2=NOT RUN V3=NOT RUN V4=NOT RUN V5=NOT RUN
+PASS priorAttempt3Criteria.V4 still records silence NOT RUN
+priorAttempt3Criteria keys: V0,V1,V2,V3,V4,V5
+caa6e18.criteria keys: V0,V1,V2,V3,V4,V5
+exit=0
+
+$ git show caa6e18:docs/v2/state/cards/P3.5.json | criteria statuses
+V0 PASS
+V1 PASS
+V2 PASS
+V3 BLOCKED
+V4 BLOCKED
+V5 FAIL
+
+$ node build/p35-source-review4/card-keydiff.mjs
+CHANGED attempt
+CHANGED status
+CHANGED lastCompletedStep
+CHANGED nextAllowedAction
+CHANGED criteria
+CHANGED updatedUtc
+CHANGED sourceReviewVerdict
+CHANGED ownerDecisions
+ADDED   priorAttempt3Criteria
+unchanged keys: applicationReviewReport, applicationReviewVerdict, baseCommit, card, changedFiles, clearImplementationCandidate, codeRepairWorkerId, codeReviewWorkerId, configEvidenceReviewReport, continuationNotes, contracts, environmentRepairWorkerId, environmentReviewReport, environmentReviewVerdict, environmentReviewWorkerId, instructionReviews, notes, originalImplementationBase, planVersion, plannedSideEffects, priorAttempt1Criteria, runtimeBaseCommit, runtimeFinalReport, runtimeLeaseReleased, runtimeWorkerId, sandboxRuns, sideEffectsDone, sourceReviewReport, statusNote

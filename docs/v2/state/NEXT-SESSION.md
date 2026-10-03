@@ -1,3 +1,20 @@
+## Source CLEAR and runtime READY; final attempt4 launch next
+
+adc88147 source review complete, source proof artifacts regenerated after sibling
+scope violation. Root verified all eight files present and re-ran 35-case proof.
+Initial archive auto-review hold was resolved by checking recovered artifacts;
+archival then succeeded. a4e666c4 READY report recovered via narrow activity;
+archived successfully. Its deletion of shared attempt4 evidence violated scope;
+source reviewer regenerated its outputs and no source changed. Future workers
+must never delete a shared parent or another worker's evidence. Root integrates
+only exact completed subdirectories, not entire attempt4 parent.
+
+c68e3995 EOD analyst completed and archived. Its report contains stale P3.4 facts:
+AM188 exact IPC denial already PASSED attempt5, so advice to amend V2(a) again
+is not applicable. Its accept-with-disclosure suggestion is NOT adopted: failed
+or NOTRUN acceptance stays open, no hidden waiver or dependency bypass. Root
+qualifies this separately. Runtime attempt4 remains the ready authorized path.
+
 ## New owner EOD working-product objective
 
 Owner requests budgeted execution and subagents toward a fully working product
