@@ -1,3 +1,31 @@
+## EOD rolling pipeline: runtime4 active, static preparation parallel
+
+1ca9d0e6-25ed-47ea-a781-5fe2c85cb8e6 (Space Bunny free medium) confirmed
+RUNNING with callback. Owns exclusive build/audio/capture/app lease and ports
+7837/7839 after host preflight, SOLE cards/P3.5.json writer through final return.
+Root MUST NOT write or stage that checkpoint or runtime evidence in flight.
+Owns returns/P3.5.md append, new attempt4/runtime and required V0 witness. Exact
+V0–V5 once plus four dry plugin gate; no fifth/retry/source workaround. Release
+only after outside cleanup/process/port checks and final return. Original history
+preserved; source CLEAR and fresh runtime dispatch committed 3f87a8b.
+
+4b9525c7-398e-4eb8-b413-a123b81dd591 (LongCat free high) confirmed RUNNING
+with callback, owns new P3.4-EOD-INSTRUMENT-PROPOSAL.md and its new evidence only.
+Prepares minimal faulty native identity measurement correction/synthetic source
+copy proof and exact bounded owner exception; no actual source/card/tool/runtime.
+No accept-with-disclosure or redundant IPC amendment; IPC already PASS.
+Fresh independent review before any owner question; no sixth currently authorized.
+
+e0b93d29-abeb-472f-9985-5ba7a078be44 (Space Bunny free medium) confirmed
+RUNNING with callback, owns new P3.6-EOD-readiness report/evidence only. Static
+instruction preparation, no dependency bypass or host resources. Root+three free
+workers is the capacity budget; no other workloads or reservations.
+
+Push source/checkpoint scope question and EOD English/full bilingual scope
+question pending asynchronously. Origin approved for reviews, broader source
+export withheld after automatic review rejection. No real-model/liveDB/7717
+work. Root handles state except delegated P3.5 checkpoint; no heartbeat.
+
 ## Source CLEAR and runtime READY; final attempt4 launch next
 
 adc88147 source review complete, source proof artifacts regenerated after sibling
