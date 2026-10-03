@@ -1,3 +1,13 @@
+## Latest continuation checkpoint — 2026-10-03T01:54:55.367700+00:00
+
+This block supersedes earlier state. S3.3a SUBMITTED attempt2 candidate eac3291: coordinator48 hermetic tests PASS; independent reviewer a72396be-3b29-4d52-9a01-b105aa5e3300 running (report/review-2 evidence only). Build lease limited to missing-dist review precondition. Owner quiet-machine V6/V7 NOT RUN; V8 foreign-docs FAIL preserved.
+
+P3.5 remains NOT STARTED attempt0: reviewer541465b5 found counter-reset and stale-baseline false passes, archived. Documentation repair3 author62e08cac-9356-4a10-97de-bbfa708d2e03 running, card V5/trap paragraph + own report only. Structured sandboxRuns chosen as current capture identity, preserve history. No audio task dispatched.
+
+P3.4 remains BLOCKED attempt4, no fifth authorized. Proposal author8e2d3856 archived; returned revised proposal and self-check mislabelled independent. Coordinator minor text corrections prepared. Fresh independent reviewer9fec0d3f-2928-4d7d-a64f-06629cc72b5b running, ir3 only. Finish concrete reviewed owner package before any approval question.
+
+All workers Space Bunny medium, same workspace, callbacks enabled. Finished old orchestrator archived at owner request. Other owner decisions/holds unchanged.
+
 # Latest event checkpoint — repair and review pipeline, 2026-10-03
 
 - S3.3a command IR4 complete/archived; commands CLEAR, prose P1 corrected at

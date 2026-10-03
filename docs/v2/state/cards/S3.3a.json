@@ -7,9 +7,9 @@
   ],
   "baseCommit": "dbafbc1",
   "attempt": 2,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Independent IR4 commands CLEAR; stale equality-only explanatory sentence corrected. Source repair attempt2 dispatched within original rule-body protections.",
-  "nextAllowedAction": "await-attempt-2-return",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Attempt2 submitted at eac3291; coordinator independently passed all 48 hermetic tests. Independent review dispatched.",
+  "nextAllowedAction": "await-independent-attempt-2-review",
   "sideEffectsDone": [],
   "changedFiles": [
     "scripts/check-refine.mjs",
@@ -21,40 +21,40 @@
   "criteria": {
     "V1": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     },
     "V2": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     },
     "V3": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     },
     "V4": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     },
     "V5": {
       "status": "PASS",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     },
     "V6": {
       "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     },
     "V7": {
       "status": "NOT RUN",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     },
     "V8": {
       "status": "FAIL",
-      "evidence": "docs/v2/evidence/S3.3a/ROWS.md"
+      "evidence": "docs/v2/evidence/S3.3a/attempt-2/REPORT.md"
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-03T01:27:48.690998+00:00",
+  "updatedUtc": "2026-10-03T01:54:55.367700+00:00",
   "level": "L3",
-  "notes": "Attempt2 of3; D1/D2 CLI/seeder repairs and D3 effective-rule AST equality in tests only using existing TypeScript. Original executing rules/constants/summary unchanged. Realmodel V6/V7 ownerheld. Exclusive5source paths; task build lease/port7841 until return. Source base dbafbc1; dispatch --findings requires full repository-relative path, first abbreviated-path generator refusal wrote no dispatch.",
-  "workerId": "8bf39df4-9e62-49e3-90e6-28ca784e09ee"
+  "notes": "Attempt2 of3, stable candidate eac3291, repair base dbafbc1. D1-D3 repaired; original rule bodies and summary unchanged. V6/V7 owner quiet-machine hold; V8 FAIL foreign coordinator docs preserved. Writer archived. Limited build lease transferred to independent reviewer only if dist missing; no real-model run.",
+  "workerId": "a72396be-3b29-4d52-9a01-b105aa5e3300"
 }
