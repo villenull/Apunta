@@ -1,3 +1,28 @@
+## Owner approvals adopted; P3.4 final code preparation and P3.5 config running
+
+Owner explicitly approved all four outstanding choices. AM-188 adopts P3.4
+reviewed assertion/measurement package. AM-189 grants exactlyoneattempt5 and
+keyedgenerator/tooltests; no6. AM-190 chooses BASEmedia config, supportedscanner,
+threepackageA03pkexec andV0clarification, noP35attempt4/distributiongrant.
+AM-191 admits exactnine futureA10 querynames onus.aws.cdn.hf.co; priorviolation
+remains, noredownload. Manifest/card amendments committed b077d1a; root initial
+P34tablecell had unescaped literalcommandpipe, check-plan caughtit and6974943
+correctsencoding; planvalidationthenexit0. No assertion hidden/weakened.
+
+RUNNING callback workers, disjoint scopes:
+- fc8797fd-73e6-41da-b737-635b0d4df936 SpaceBunnymedium: two dispatchtool files + attempt5/tooling evidence only; no runtime.
+- fe02cc00-42f8-49b8-81b5-d0fa8823fa60 SpaceBunnymedium: BASEtauri.conf.json one media key + environment-application evidence only; no build/install.
+- 9b1b88ff-d7c1-4f5d-8800-e755915138c8 LongCathigh: twoP34featurefiles main.tsx/harness + attempt5/implementation evidence only; codeunitfinalattempt5, root ownscheckpoint. Actual reviewedmodelport tested synthetically before independentreview, noV0–V4run yet.
+
+Root owns card/manifest/checkpoint/review integration. P34counter5INPROGRESS;
+criteria currently remain explicitly historical attempt4 until runtimeonce-only
+rows recordcurrentattempt. P35counter3BLOCKED runtimeheld until config/cardreview,
+prerequisitePASS, serialbuildlease. Root installer command session3410 is
+pending graphicalpolkit ownerauthentication/terminal pacmanconfirmation;
+exactAM190packages only, timeout180s, no passwords typed/logged. No buildlease
+held. Build/capture rows serialized; no hiddenreruns or fallbackpath. Other
+quiet-machineholds andoptionalA06park remainunchanged.
+
 ## Evidence lint cleanup complete and independently CLEAR
 
 Final checker candidateb457db4 independently CLEAR in evidence-output-lint-replay-ir.md.

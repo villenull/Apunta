@@ -5,11 +5,11 @@
     "C-BRIDGE@1",
     "C-REQ@1"
   ],
-  "baseCommit": "e46bad4",
-  "attempt": 4,
-  "status": "BLOCKED",
+  "baseCommit": "6974943",
+  "attempt": 5,
+  "status": "IN PROGRESS",
   "lastCompletedStep": "Owner approved assertion/measurement package AM-188 and exactly one attempt5/keyed tooling AM-189; prepare code and independently review before once-only runtime rows.",
-  "nextAllowedAction": "apply-owner-package-and-keyed-tooling-then-dispatch-final-attempt-five",
+  "nextAllowedAction": "attempt-five-code-unit-only-then-independent-review-before-once-only-runtime",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
