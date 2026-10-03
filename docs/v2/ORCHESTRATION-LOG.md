@@ -2261,3 +2261,23 @@ No runtime/source/card/config authority. P3.4 two owner choices and P3.5 two
 owner choices remain PENDING; no answers inferred. P3.5 source/environment
 package CLEAR, runtime BLOCKED; no attempt4; no buildlease or portsreserved.
 
+
+## Evidence lint cleanup complete and independently CLEAR
+
+Final checker candidateb457db4 independently CLEAR in evidence-output-lint-replay-ir.md.
+Reviewer801e72d8 archived. Main12/12 replay, completion4-baseline replay, forcedDEBUG
+order controls, semantic negatives, addedspan audit, and globaleslint all exit0.
+Proof outputs/status preserved; currentlegacyproof exit2 preserved on both sides.
+Historical README/hash records retained. Minor citation/count/label notes retained
+in review, no substantive blocker and no further repair required.
+
+No workers active, no source writer, no build/GPU lease or portsreserved by this
+continuation. All completed evidence/reviews and coordinator checkpoint committed
+and pushed. Next authorized work depends on owner responses: P3.4 protected
+assertion/measurement package + exactlyoneattempt5/keyedtooling; P3.5 grouped
+capture config/scanner/A03/V0 grant + exact futureA10 query admission. All four
+questions PENDING; no source/card/tool/config/manifest patch/install/build/capture
+permission inferred. P3.5 source/envpackage CLEAR but runtimeBLOCKED and original
+V3/V4/V5/provenance retained; noattempt4. Quiet-machine holds remain for S3.2 and
+S3.3a real-model rows. OptionalP3.4A06parked; otherowner gates unchanged.
+

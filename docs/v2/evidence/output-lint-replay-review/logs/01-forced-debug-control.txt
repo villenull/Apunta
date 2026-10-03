@@ -1,0 +1,32 @@
+$ APUNTA_NODE=<pinned> <pinned> docs/v2/evidence/output-lint-replay-repair/forced-debug-control.mjs
+  ok    C0 checker lists line rule before path rule    line rule at char 4526, path rule at char 4614
+tool copy    /home/villenull/Projects/Apunta/build/ir4/build-dispatch.mjs  sha256 b41edf2ccc7a39abb299d7c209955c9e30c37e6245f35e3035ee8895a513293a
+before file  3bd142f:docs/v2/evidence/P3.4/proposal-ir4/tooling-guard.test.mjs  sha256 ec99468e0ed8a1ed622cc2c6a825f44f5215867e2ac0891907c963b065b8a851
+after file   docs/v2/evidence/P3.4/proposal-ir4/tooling-guard.test.mjs  sha256 ef402642e2c78dd7c69b23cc1f59cd34408433bc9a1aa9104b389cc3613d3e31
+
+== forced on --attempt 4 (the case the DEBUG line exists for)
+  ok    C1 exit status equal on both sides and non-zero before 1 / after 1
+  ok    C2 DEBUG lines: same count, byte-identical, none normalised count 1, bytes identical, DEBUG survives normalisation
+  ok    C3 raw stdout NOT byte-identical (so C5 is doing work) raw streams differ in reporter timings + reporter duration line + import+1 line shift + the test file's own path
+  ok    C3b raw stderr byte-identical                  0 bytes, both sides
+  ok    C4 pass/fail marks identical, same count       7 failing of 18
+  ok    C5 equal after the repaired normalisation order stdout and stderr both
+  ok    C6 UNEQUAL under the previously committed order (D1) first difference line 28: "test at <TESTFILE>:130:1" != "test at <TESTFILE>:131:1"
+  ok    C7 every stack frame shifts by exactly +1      6 frames, deltas 1
+  ok    C8 nothing normalised outside the three permitted shapes no substantive line absorbed
+
+== forced on --attempt 1 (a different broken invocation, same shift)
+  ok    C9 exit status equal on both sides and non-zero before 1 / after 1
+  ok    C10 equal after the repaired normalisation order stdout and stderr both
+  ok    C11 UNEQUAL under the previously committed order (D1) first difference line 26: "test at <TESTFILE>:154:1" != "test at <TESTFILE>:155:1"
+
+== negative controls: different semantic output must stay unequal
+  ok    N1 same file, different broken invocation (after) repaired order: unequal; previous order: unequal
+  ok    N2 same file, different broken invocation (before) repaired order: unequal; previous order: unequal
+  ok    N3 across the invocations, before against after repaired order: unequal; previous order: unequal
+  ok    N4 a changed verdict stays unequal under both orders one character, applied
+  ok    N5 the audit rejects an over-broad rule set    0 out-of-shape lines with the four rules, 60 with an extra rule rewriting digits
+  ok    N6 a change inside a reporter timing is still absorbed rule 1 is live, and confined
+
+PASS: 0 failed check(s); runs under /home/villenull/Projects/Apunta/build/evidence-replay-repair/runs/.
+EXIT=0

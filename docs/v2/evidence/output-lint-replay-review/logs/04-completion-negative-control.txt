@@ -1,0 +1,8 @@
+$ APUNTA_NODE=<pinned> <pinned> docs/v2/evidence/output-lint-completion/negative-control.mjs
+  ok    control replay: one changed word in the after blob is caught (exit 0 vs 0, stdout differs)
+  ok    control verifier (binding is read elsewhere): rejected, exit 1, reported "reference(s) outside the declarator"
+  ok    control verifier (binding is read elsewhere (P3.4 target)): rejected, exit 1, reported "reference(s) outside the declarator"
+  ok    control verifier (initialiser is impure (P3.4 target)): rejected, exit 1, reported "not provably pure"
+
+PASS: 0 vacuous control(s).
+EXIT=0

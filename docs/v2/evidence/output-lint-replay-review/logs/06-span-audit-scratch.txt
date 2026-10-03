@@ -1,0 +1,11 @@
+$ <pinned> build/evidence-replay-ir/audit-scratch4.mjs   (ignored scratch; characterizes the span audit)
+ok    real output, real four rules: 0 leaks
+ok    over-broad rule set (also rewrites digits): leaks reported
+ok    over-broad rule set leaks are substantive lines
+leak count with over-broad set: 60
+first leak: "DEBUG S2.5.md - Attempt 4 of 3, plus one corrective attempt the owner authorised by AM-049 — there is no attempt 5. Checkpoint: `docs/v2/state/cards/S2.5.json`. 1 BROKEN TOOL: forced failure on --attempt 4"
+EXIT=0
+
+# The same fail-closed behaviour the control's N5 asserts, run independently
+# against the control's parameterized auditOutside(): 0 leaks with the four
+# committed rules, 60 with an added digit-rewriting rule.

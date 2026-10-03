@@ -1,0 +1,8 @@
+$ <pinned> -e "...indexOf both rule literals in the committed checker..."
+lineRule 4526
+pathRule 4614
+EXIT=0
+
+# Committed file: line rule at 4526, path rule at 4614 — what the control's
+# C0 printed. The control README's observed column (4538/4626) is stale by
+# 12 characters; the check itself passes on the committed order.

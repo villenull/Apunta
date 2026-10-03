@@ -1,0 +1,14 @@
+$ APUNTA_NODE=<pinned> <pinned> docs/v2/evidence/output-lint-completion/replay.mjs
+== docs/v2/evidence/P3.5/review-1/source-outputs-mapping.mjs
+  ok    harness @46419f5 (its own baseline)  exit 0  stdout/stderr byte-identical (zero normalisation)
+         before exit 0 / after exit 0; harness sha256 recorded in the report
+== docs/v2/evidence/P3.5/review-1/source-outputs-mapping.mjs
+  ok    harness @HEAD (today, predicate rewritten)  exit 2  stdout/stderr byte-identical (zero normalisation)
+         before exit 2 / after exit 2; harness sha256 recorded in the report
+== docs/v2/evidence/P3.5/review-1/stale-rectangle.mjs
+  ok    pure, no external input  exit 0  stdout/stderr byte-identical (zero normalisation)
+== docs/v2/evidence/P3.4/proposal-v5-repair/ir5-counterexamples.mjs
+  ok    dead SCALED_NATIVE removed  exit 0  stdout/stderr byte-identical (zero normalisation)
+
+PASS: 0 mismatch(es) against 39c6723.
+EXIT=0
