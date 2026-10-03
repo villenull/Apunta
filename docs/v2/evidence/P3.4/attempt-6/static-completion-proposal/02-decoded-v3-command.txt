@@ -1,0 +1,27 @@
+P3.4 V3 — the correctly decoded card cell, recorded and NOT executed
+====================================================================
+
+Source cell:  docs/v2/cards/P3.4.md, Verification row V3, read through the
+              card's own codec parseCells (docs/v2/tools/plan-lib.mjs), which
+              trims and GFM-unescapes the cell but leaves the code-span
+              backticks in place.
+Raw cell sha256 (with the outer backticks, 626 bytes):
+              91b602548a986900c698eedc314b42c36d60e1888d31cc496decdae3583f7d6a
+Decode:       strip exactly one leading and one trailing code-span backtick
+              (parseCells already removed the cell padding and turned `\|`
+              into `|`).
+Decoded body sha256 (624 bytes, no trailing newline):
+              94dd69952e08bc153165fa6503901a02f9760777e89c5f52bbc744b197de4168
+bash -n:      exit 0
+Executed:     NO. This file is the record of the correct parse; the proposal
+              asks the owner for exactly one execution of it, nothing here ran
+              it.
+
+Byte-identity check, measured not asserted: the decoded body is byte-identical
+to the implementer's own `build/p34-runtime6/V3.command.corrected.txt` (624
+bytes, same sha256 94dd6995…), which attempt 6 wrote and deliberately did not
+execute. Two independent parses agree.
+
+The decoded body, verbatim:
+
+b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0

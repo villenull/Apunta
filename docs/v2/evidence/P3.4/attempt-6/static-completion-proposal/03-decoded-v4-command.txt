@@ -1,0 +1,19 @@
+P3.4 V4 — the correctly decoded card cell, recorded and NOT executed
+====================================================================
+
+Source cell:  docs/v2/cards/P3.4.md, Verification row V4, read through the
+              card's own codec parseCells (docs/v2/tools/plan-lib.mjs).
+Raw cell sha256 (with the outer backticks, 273 bytes):
+              684f17e8ebac133894079a48a3f56e5e56e35fbaf1c82b187deb15b4c46e41a5
+Decode:       strip exactly one leading and one trailing code-span backtick.
+Decoded body: 271 bytes, no trailing newline.
+bash -n:      exit 0
+Executed:     NO.
+
+The proposal is explicit that V4 is re-run as THIS whole cell, verbatim — the
+full `&&` chain — and never as a partial `npm run lint` or a substitute. A
+partial run would not be the card's row and is refused.
+
+The decoded body, verbatim:
+
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && npm test && npm run lint && npm run typecheck && ( export PATH="$HOME/.cargo/bin:$PATH" && cd src-tauri && cargo fmt --check && cargo clippy -- -D warnings && cargo test )

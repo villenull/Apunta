@@ -1,0 +1,46 @@
+== P3.4 static-completion — decode proof and negative control ==
+node v26.8.2
+
+-- V3 raw cell (as parseCells returns it, code span intact) --
+starts with backtick: true
+ends with backtick:   true
+length:               626
+sha256(raw cell):     91b602548a986900c698eedc314b42c36d60e1888d31cc496decdae3583f7d6a  -
+
+-- V3 decoded body (code span stripped, NOT executed) --
+b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0
+
+decoded length: 624
+bash -n on decoded: exit 0
+structural guard on decoded: PASS (no outer backtick)
+wrote build/p34-static-completion/V3.decoded.txt
+
+-- V4 raw cell (as parseCells returns it, code span intact) --
+starts with backtick: true
+ends with backtick:   true
+length:               273
+sha256(raw cell):     684f17e8ebac133894079a48a3f56e5e56e35fbaf1c82b187deb15b4c46e41a5  -
+
+-- V4 decoded body (code span stripped, NOT executed) --
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && npm test && npm run lint && npm run typecheck && ( export PATH="$HOME/.cargo/bin:$PATH" && cd src-tauri && cargo fmt --check && cargo clippy -- -D warnings && cargo test )
+
+decoded length: 271
+bash -n on decoded: exit 0
+structural guard on decoded: PASS (no outer backtick)
+wrote build/p34-static-completion/V4.decoded.txt
+
+-- NEGATIVE CONTROL: outer backticks bash -n cannot see --
+wrapper bytes: "`printf 'P3.4-V3: synthetic body ran\\n'`"
+bash -n on the WRAPPER: exit 0  <- bash -n is blind to the bad wrapper
+structural guard on the WRAPPER: synthetic: NEGATIVE CONTROL FIRED — outer code-span backtick present
+negative control fired: true
+
+-- NEGATIVE CONTROL: the wrapper reproduces the outer-127 symptom --
+bash build/p34-static-completion/negative-control.raw.txt
+exit: 127
+stdout: ""
+stderr: "build/p34-static-completion/negative-control.raw.txt: line 1: P3.4-V3:: command not found"
+
+-- POSITIVE CONTROL: the body alone runs clean --
+exit: 0 stdout: "P3.4-V3: synthetic body ran"
+

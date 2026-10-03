@@ -1,0 +1,62 @@
+P3.4 static-completion proposal — verification performed
+========================================================
+
+All commands below are read-only. No V3 shipping guard and no V4 row was
+executed; only the synthetic fixtures in 01 were run. Nothing was staged or
+committed.
+
+NODE
+  ambient node used for this read-only preparation proof: v26.8.2
+  pinned node present: ~/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node
+    -> v24.19.0 (the card's own V0/V2/V4 rows require the pinned node; this
+       preparation is not a row, and it is disclosed rather than glossed)
+
+DECODE
+  V3 raw cell (parseCells, code span intact)   626 bytes
+     sha256 91b602548a986900c698eedc314b42c36d60e1888d31cc496decdae3583f7d6a
+  V3 decoded body (one backtick stripped each end) 624 bytes
+     sha256 94dd69952e08bc153165fa6503901a02f9760777e89c5f52bbc744b197de4168
+  V4 raw cell                                   273 bytes
+     sha256 684f17e8ebac133894079a48a3f56e5e56e35fbaf1c82b187deb15b4c46e41a5
+  V4 decoded body                               271 bytes
+
+SYNTAX
+  bash -n on V3 decoded body: exit 0
+  bash -n on V4 decoded body: exit 0
+  bash -n on the backtick WRAPPER (negative control): exit 0  <- blind
+  structural guard on the wrapper: FIRED (outer code-span backtick present)
+  running the wrapper (synthetic printf body): exit 127,
+     "P3.4-V3:: command not found" — the attempt-6 symptom reproduced on a
+     harmless synthetic body, never the card's guards.
+
+BYTE IDENTITY
+  V3 decoded body == implementer's build/p34-runtime6/V3.command.corrected.txt
+     (624 bytes, sha256 94dd6995…), measured with `head -c 624` and sha256sum.
+  Two independent parses agree byte for byte.
+
+SOURCE IDENTITY
+  scripts/v2/tauri-security.test.mjs sha256
+     cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16
+  unchanged; no source, card, checkpoint, contract, manifest, tool, fixture or
+  history file was edited by this preparation.
+
+SCRATCH
+  git check-ignore -v build/p34-static-completion
+     .gitignore:55:build/  build/p34-static-completion
+
+WRITES AT THIS BOUNDARY
+  new: docs/v2/state/reviews/P3.4-attempt6-runtime-audit.md
+  new: docs/v2/state/P3.4-STATIC-COMPLETION-PROPOSAL.md
+  new: docs/v2/evidence/P3.4/attempt-6/static-completion-proposal/**
+  ignored scratch: build/p34-static-completion/
+
+OTHER WORKERS' IN-FLIGHT PATHS, READ BUT NOT TOUCHED
+  The tree also shows the concurrent worker 71cb8245's artifact-lint repair:
+    ?? docs/v2/evidence/eod-proof-lint-repair/
+     M docs/v2/evidence/P3.5/attempt-4/final-completion-ir/verify.mjs
+     M docs/v2/evidence/P3.5/silence-completion-ir/verify.mjs
+    R  docs/v2/evidence/P3.5/silence-completion-ir/v5-program-own-extraction.mjs
+        -> …/v5-program-own-extraction.mjs.txt
+  These are 71cb8245's to finish and to have independently reviewed. Nothing in
+  this preparation reads, runs, stages, edits or commits them. The proposal's
+  V4 leg waits on that repair being independently CLEAR.
