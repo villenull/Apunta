@@ -8,8 +8,8 @@
   "baseCommit": "e46bad4",
   "attempt": 4,
   "status": "BLOCKED",
-  "lastCompletedStep": "Revision4 independent review DEFECT: N1-N3/M1-M6; prior findings closed, tooling guard independently14/14 sound but fixture documentation defective. Coordinator reproduced mixed-frame falsepass. Read-only contrasting committee dispatched to simplify plan; no runtime attempt.",
-  "nextAllowedAction": "await-two-member-committee-plan-then-concrete-reviewed-owner-package",
+  "lastCompletedStep": "Read-only committee converged after coordinator resolved crossed arguments; two final counterexamples incorporated (finite identifiable transform, complete sightings before duplicate comparison). Short spec plus pure model author dispatched, no card/runtime/tooling adoption.",
+  "nextAllowedAction": "await-small-spec-and-synthetic-model-return-then-independent-review",
   "sideEffectsDone": [
     "V0: the re-bundle, run verbatim with the producer - flagged web bundle built in build/p3.4-web (removed by the row's own trap on exit), producer run once, flagged copy put into build/linux-resources/web/dist after the producer (removed by the trap on exit), tauri:build:test run, AppImage built 2026-10-02 17:07:29 -0600. Release invariant held: 1 marker bundle in the flagged build, exactly 0 in shipping web/dist, 16 js bundles in the copy that reached the AppImage.",
     "One network request, not an acquisition: build-whisper-candidate.sh:77 fetched the ALREADY-PINNED A06 revision to github.com, because package-linux-resources.sh:206 calls that script unconditionally and it has no candidate-exists guard. See V0-rebundle.md - this corrects the card's own S0 text and the coordinator's pre-run ruling.",
@@ -82,7 +82,7 @@
     "<sandbox>/2026-10-02T23-11-43-686Z-078bd8cc (V2, port 7835)",
     "<sandbox>/2026-10-02T23-09-25-372Z-7099e32b (V2, port 7835 - where the frozen-snapshot defect was found)"
   ],
-  "updatedUtc": "2026-10-03T02:46:00.150465+00:00",
+  "updatedUtc": "2026-10-03T02:59:39.793129+00:00",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/, and src-tauri/ui/ was not touched. S4 was not entered: nothing in the tree was shown to break a guard. V4's 55 cargo tests include P3.3's navigation-guard cases and are green. What is unproven is (b) and (c) read through the page in the shipped binary, which is a channel-and-click question in the harness, not a guard question.",
   "reBundle": {
@@ -112,8 +112,5 @@
     "proposalWorker": "29ca4968-a273-45ca-8f7d-a0e59a37128d",
     "next": "Concrete owner assertion/hook/budget proposal, independent review, then owner decision."
   },
-  "committeeWorkerIds": [
-    "491d8dd0-6cc8-4ec5-8762-dbb4bf89507a",
-    "314a0b4b-66d2-4cc0-97a5-415b8698565c"
-  ]
+  "proposalAuthorWorkerId": "bad31d56-4d72-4c5a-8e16-780ea17f70fc"
 }
