@@ -2565,3 +2565,13 @@ ActualV2count14PASS+2NOTRUN+1FAIL, printed16/17nonfailed; rootqualificationretai
 rawrecord/status. No protectedchange/rerun/attempt6. CleanupindependentCLEAR19
 assertions outputbyteexact, rulesunchanged; globaleslintreview0 androot0. Scratch
 relocation verified, no untrackedcode. P35readyruntime independentafterintegration.
+
+### 2026-10-03 — independent final capture runtime dispatched
+
+Cleanedproof61d6815independentCLEAR, rootglobaleslint0; diagnosis7158635read-only
+retainsP34finalfailures/no6. RegeneratedP35attempt3runtimebase7158635; committed
+prelaunchcheckpoint231b41b withhistorypreserved. Dispatched e64d5224 (Space Bunny
+free medium), confirmedRUNNINGcallback. Exclusive serialbuild/capture/audiolease,
+ports7837/7839afterfreebind, checkpointwritehandoffinsideMayedit; rootnottouches
+activecheckpoint. V0–V5once includingfreshbundledgate+exactcaptureprovenance,
+no4/retry/physicalmic orsourceedits. Awaitreturncleanupbeforelease release.

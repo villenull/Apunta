@@ -1,3 +1,20 @@
+## P3.5 final runtime running; exclusive checkpoint ownership delegated
+
+Root integrated cleanupCLEAR61d6815 and read-onlydiagnosis7158635, globaleslint0.
+P3.4 final5 BLOCKED, actual14PASS/2NOTRUN/1FAILclick plusV4FAIL; no6/rerun. Saved
+proof cleanup doesn'tchangefailure. Allfinishedworkers archivedsuccessfully.
+
+P3.5dispatchregenerated runtimebase7158635; originalbase8783181/source7e16513
+retained. Prelaunchcheckpointcommit231b41b preservedpriorAttempt1Criteria+five
+records andsetcurrentrowsNOTRUN/attempt3. Worker e64d5224-d777-4a0e-af90-d517a4d73e05
+(Space Bunny free medium) confirmed RUNNING withcallback. Holds exclusive serial
+build/capture/audiolease+ports7837/7839 afterfreechecks. Owns cards/P3.5.json
+EXCLUSIVELY duringrun, returns/P3.5.md andnewattempt3/runtime evidence; ROOT MUST
+NOTWRITEORSTAGEthatcheckpoint untilreturn. Exactpermodecaptureobject/anchors
+appendbeforeV5, historypreserved. V0–V5once +ownfourdryplugins gate, no4/retry or
+sourceedit. Nootherapp/build/audio/realmodel parallel. Releaseafterowncleanupand
+return. Rootownsotherstate integration; pendingP34protectedchanges unauthorized.
+
 ## P3.4 final runtime recorded BLOCKED; build lease released
 
 Runtimeworkerd353b075 completed fullreturn and archival succeeded. V0/V1/V3PASS,
