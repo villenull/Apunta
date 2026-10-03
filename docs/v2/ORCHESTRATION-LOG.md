@@ -2818,3 +2818,14 @@ criteria snapshots retained. Three asynchronous workers confirmed running:
 6307e8a2 prepares English speech/recovery commands statically. No resource conflict,
 no owner wait remains for these bounded actions. Spanish holds/live handover
 remain protected. Root cannot write/stage active scopes; no in-flight push.
+
+## 2026-10-03 — silence PASS and exact security application submitted
+
+0f30fdda complete/archived, silence35/35 and V5PASS; one genuine added capture
+object/anchor, prior failure snapshots intact, outside cleanup lease released.
+92df606 preserves runtime. Fresh final evidence reviewer f761585c running.
+4f0388d9 complete/archived, exact four shipping patches committed88811af;
+80/80+29/29+13/13, candidate hashes match grant. Fresh shipping reviewer
+3cb741f0 running; no security V-row run yet. Static English readiness6307e8a2
+remains active. Root restored stray generated DEPENDENCIES baseline, no gate
+change. Source application not pushed before independent shipping CLEAR.

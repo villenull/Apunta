@@ -1,3 +1,23 @@
+## Silence completed and security patches applied; independent final reviews
+
+0f30fdda finished and archived successfully. 92df606 saves AM-196 silence
+35/35 PASS and V5 read-only PASS, genuine run a17f4bbf with exactly one added
+record/anchor. Three captures at4; old criteria/history retained in snapshots.
+Source/AppImage unchanged, no capture/tone/build repeat. Outside cleanup releases
+native audio/app/ports lease. Card SUBMITTED, approval awaits final evidence review.
+f761585c-fdc9-44af-b35c-3c9b79dd8c2a confirmed RUNNING with callback; owns new
+P3.5-final-completion-ir report/evidence only, no runtime recheck.
+
+4f0388d9 finished and archived successfully. 88811af saves exact four AM-195
+shipping patches, expected hashes, 80/80+29/29+13/13. Source not exported until
+fresh independent shipping review. 3cb741f0-11e5-4d9d-967f-20e6c3f3eb26 confirmed
+RUNNING with callback; new P3.4-impl6 report/source-review only. No V0–V4 executed.
+6307e8a2 English readiness analysis still RUNNING at latest event boundary.
+No native resource holder. Root owns both checkpoints again. Generated stray
+DEPENDENCIES.md write from completed worker's check-plan was restored to HEAD;
+no dependency gate changed. Next source CLEAR → serial P3.4 runtime; evidence
+CLEAR → P3.5 approval, keeping earlier failures and word-level limits explicit.
+
 ## English EOD scope confirmed; AM-195/196 execution dispatched
 
 Owner selected English desktop tonight and authorized completed reviewed source
