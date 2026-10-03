@@ -2687,3 +2687,11 @@ carried forward notrerun. Patch/source/proof bytes unchanged. Final report/evide
 integrated; owner question next requires explicit change AM190no4. No grant/source
 patch/runtime active; all owned workers archived and resources unheld. Origin
 push hold ends because independent package review is now complete.
+
+## 2026-10-03 — owner AM-194 grants exact patch + one attempt4
+
+Owner explicitly authorized proposed change AM190no4, exactcandidatepatch and
+one attempt4 after source review. Root applied shipping patch unchanged, expected
+hash85fbb13d. Counter3→4, priorAttempt3Criteria retained, oldrecords/anchors unchanged.
+Currentcriteria NOTRUN, source review pending. No fifth/reset/retry/Expectedrelax.
+Next independent corrected-source review, then V0–V5once with threecaptureanchors.

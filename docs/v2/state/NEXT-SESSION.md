@@ -1,3 +1,13 @@
+## Owner AM-194 approved exact P3.5 repair and one attempt 4
+
+Explicitly changes AM-190 no-fourth boundary only for this exact patch and one
+additional attempt. Root applied candidate.patch unchanged; shipping hash now
+85fbb13d. Attempt incremented 3→4, priorAttempt3Criteria preserved verbatim;
+original sideEffectsDone/sandboxRuns unchanged. Current V0–V5 NOT RUN, source
+review pending. No fifth/reset/retry/Expected/schema/threshold relaxation.
+Independent source review must CLEAR before single serial rebuild and runtime.
+Exactly three new capture records/anchors; V5 reads them and adds none.
+
 ## Client-sentinel package CLEAR; owner attempt decision pending
 
 Final verifier f4bad20a-0fa3-4d06-84a0-0a6ab559f4d0 completed and was archived.
