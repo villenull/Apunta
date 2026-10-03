@@ -1,3 +1,15 @@
+## P3.5 environment preflight repaired; final review running
+
+Candidate408e1bb fixes only prepared prerequisite command and proposal pointers.
+Root synthetic suite exits0; unstubbed host exits1 on absent patchelf before any
+element probe, expected failure preserved. Prior author/reviewer bytes retained.
+Author a5fc3157 archived. Fresh independent reviewer
+4773623b-9f5a-4d14-885d-28fb9934f8bb (LongCat free high, callback) owns only
+P3.5-environment-proposal-ir3.md and environment-proposal-ir3 evidence.
+No owner environment choices asked until this review returns; no install/build
+or capture authority. P3.5 source CLEAR, runtime BLOCKED, no attempt4.
+Evidence replay repair49f37328 continues; P3.4 owner choices still PENDING.
+
 ## Independent evidence lint review: proofs pass; checker repair running
 
 Combined cleanup e88a13a..83b32e0 independently verified: 58 output substitutions,

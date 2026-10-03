@@ -8,7 +8,7 @@
   "attempt": 3,
   "status": "BLOCKED",
   "lastCompletedStep": "Attempt 3 code/unit repair only, runtime held: D2-1 presence-and-non-empty check added inside tidsFromNewestMarker (attempt-2 review-2 D2-1), plus factual corrections to the attempt-2 report and return (D3-1 timeline, D3-2 lint counts qualified by commit, D3-3 semantic preservation). Attempt-2 rows, five PREV_DEFAULT records and every anchor untouched; runtime verdicts unchanged (V3 BLOCKED, V4 NOT RUN, V5 FAIL).",
-  "nextAllowedAction": "repair-environment-preflight-then-independent-review-before-owner-decision-runtime-held",
+  "nextAllowedAction": "independent-environment-preflight-review-before-owner-decision-runtime-held",
   "sideEffectsDone": [
     "A10 acquisition: en_US-ljspeech-medium voice, acquired because it was absent (only es_MX-ald-medium was on disk). Model 63,531,379 bytes, SHA-256 6f52a751e2349abe7a76735eb09dc1875298c77ea2342ffd2fef79ff81b87f22; config 4,972 bytes, SHA-256 141d612cc0a95ed7efc1ca936b845c2364967f2e9217c5dbfcf69fc4d6c65860; installed at ~/.local/share/apunta-piper/voices/. Licence: dataset public domain (LJ Speech), repository tag license:mit; the model card says nothing about redistributing generated audio, so the audio is generated at test time into the sandbox and never committed (L-POLICY row 4). Full record in docs/v2/evidence/P3.5/acquisitions.md, including the A10 redirect/query-key question referred to the coordinator.",
     {
@@ -216,8 +216,8 @@
   "continuationNotes": "SandboxRuns chosen as durable attempt/step/runId/dateUtc anchor for three capture records; trusted coordinator provenance, original restoration/leak assertions unchanged. Earlier-attempt history retained. IR09.1 old grep-c wording in Expected remains disclosed; no Expected cell changed. Expected still quotes old grep-c commands; protected cell unchanged. Record those literal count witnesses as well as running V5; any nonzero Expected count remains FAIL/stop, not waived. Same-attempt capture rerun would duplicate provenance and must stop; a new implementation attempt requires coordinator dispatch within3budget.",
   "codeRepairWorkerId": null,
   "codeReviewWorkerId": null,
-  "environmentReviewWorkerId": null,
+  "environmentReviewWorkerId": "4773623b-9f5a-4d14-885d-28fb9934f8bb",
   "sourceReviewVerdict": "CLEAR",
   "sourceReviewReport": "docs/v2/state/reviews/P3.5-impl3.md",
-  "environmentRepairWorkerId": "a5fc3157-cf24-48e6-b200-1586cf927040"
+  "environmentRepairWorkerId": null
 }
