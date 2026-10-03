@@ -18,7 +18,7 @@ S6.1 | Production BLOCKED on a licence election no agent may make. L-POLICY@1's 
 
 ## Held — cleared, not dispatched, not blocked on any decision
 
-P3.5 | Round 8 CLEAR under AM-141; attempt 0. P3.8 forwarding hold resolved by AM-180. Continuation audit found V5 polarity/aggregation defect; prepare bounded correction and fresh independent instruction review before implementation. | `docs/v2/state/reviews/continuation-state-audit-2026-10-03.md`; `docs/v2/state/cards/P3.5.json` | Correct V5 without changing required cleanup/restoration assertions, obtain independent review, with S3.3a build lease now released. No acceptance claim. | P3.6, P3.R, and through P3.R P5.4 and P5.R
+P3.5 | Round 8 CLEAR under AM-141; attempt 0. P3.8 forwarding hold resolved by AM-180. V5 command repair independently CLEAR under AM-187, 89 synthetic branches; ready for first implementation dispatch. | `docs/v2/state/reviews/continuation-state-audit-2026-10-03.md`; `docs/v2/state/cards/P3.5.json` | Dispatch attempt1 with build lease and virtual-only capture; no model acquired or run, no acceptance claim. | P3.6, P3.R, and through P3.R P5.4 and P5.R
 
 ## Also recorded elsewhere, not here
 
