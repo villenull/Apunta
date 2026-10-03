@@ -2096,3 +2096,6 @@ alone is insufficient. A03 pacman/apt and A10 query-rule decisions must be prepa
 with exact bounded packaging grant. Existing five V3 records not deleted/waived.
 P3.4 author 9ebcf35f continues model/spec only. No build lease held.
 
+
+P3.5 environment decision author 9dc53af6-a180-4bd3-896b-5b6849599216 is RUNNING (Space Bunny free medium, callback), owns only new P3.5-ENVIRONMENT-PROPOSAL.md and environment-proposal evidence. Prepares exact bounded config/media-bundling and manifest/install package, no source/config/install/runtime authority. Local Tauri schema exposes bundleMediaFramework; semantics and plugin/scanner inclusion must be evidenced, not assumed. Independent review precedes owner questions. Root definition-of-done repair backlog: committed P3.4 evidence console output triggers global lint; repair output without disabling lint, then independently review. No file assigned for that yet.
+
