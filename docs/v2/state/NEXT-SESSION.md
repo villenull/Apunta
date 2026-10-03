@@ -1,3 +1,17 @@
+## Independent evidence lint review: proofs pass; checker repair running
+
+Combined cleanup e88a13a..83b32e0 independently verified: 58 output substitutions,
+two pure unread constant deletions, 12/12 plus 4-baseline replay PASS, global lint0.
+Reviewer 88de21e2 archived. Two bounded checker/report defects remain: stack-line
+normalization was ordered after path replacement, and normalized success was
+labelled byte-identical. No evidence corruption found. Fresh repair author
+49f37328-8176-4f57-bb9d-85ee1bc8e1f3 (Space Bunny free medium, callback) owns only
+replay checker, narrow README addendum and new output-lint-replay-repair evidence.
+Must commit executable forced-DEBUG/semantic negative controls and fresh review.
+Environment preflight repair a5fc3157 continues on disjoint proposal/new evidence.
+P3.5 source CLEAR/runtime BLOCKED; no attempt4. P3.4 owner choices PENDING.
+No source writer/build lease/runtime/install permission.
+
 ## Source clear; environment preflight repair and lint review running
 
 P3.5 final source candidate 7e16513 independently CLEAR: 67/67 candidate cases

@@ -1,0 +1,25 @@
+$ /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node dead-binding-verify.mjs absent
+
+== docs/v2/evidence/P3.5/review-1/source-outputs-mapping.mjs :: SINK_NAME
+   ok      0 declarations, 0 other reference(s) — binding absent
+
+== docs/v2/evidence/P3.4/proposal-v5-repair/ir5-counterexamples.mjs :: SCALED_NATIVE
+   ok      0 declarations, 0 other reference(s) — binding absent
+
+dead-binding-verify (absent): both bindings safe to delete / confirmed absent.
+EXIT=0
+
+$ APUNTA_VERIFIER_ROOT=<e88a13a blobs> /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node dead-binding-verify.mjs check
+
+== docs/v2/evidence/P3.5/review-1/source-outputs-mapping.mjs :: SINK_NAME
+   decl    line 56  init = 'apunta_p35'
+   reads   0 references outside its own declarator — deleting it changes no read
+   effect  initialiser is literals + allow-listed pure calls only — no I/O, no mutation
+
+== docs/v2/evidence/P3.4/proposal-v5-repair/ir5-counterexamples.mjs :: SCALED_NATIVE
+   decl    line 28  init = { x: Math.round(1.5 * CLIENT_TARGET.x + 26), y: Math.round(1.5 * CLIENT_TARGET.y + 31) }
+   reads   0 references outside its own declarator — deleting it changes no read
+   effect  initialiser is literals + allow-listed pure calls only — no I/O, no mutation
+
+dead-binding-verify (check): both bindings safe to delete / confirmed absent.
+EXIT=0

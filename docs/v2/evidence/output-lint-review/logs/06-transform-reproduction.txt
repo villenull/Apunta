@@ -1,0 +1,24 @@
+Independent transform reproduction: apply committed transform.mjs to pre-edit git blobs,
+then diff against the committed working tree. Base: P3.4 files 3bd142f, P3.5 files 39c6723.
+
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir4/attempt-line-identity.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir5/click-witness.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir4/frame-identity-adversarial.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir6/geometry-command.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir5/hung-dispatch.mjs
+DIFF  docs/v2/evidence/P3.4/proposal-v5-repair/ir5-counterexamples.mjs:
+29d28
+< const SCALED_NATIVE = { x: Math.round(1.5 * CLIENT_TARGET.x + 26), y: Math.round(1.5 * CLIENT_TARGET.y + 31) };
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir6/measured-native.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir6/observation-wait.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir4/plan-fixture-filename-id.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir5/reader-epoch.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir6/reordered-duplicate.mjs
+DIFF  docs/v2/evidence/P3.5/review-1/source-outputs-mapping.mjs:
+57d56
+< const SINK_NAME = 'apunta_p35';
+MATCH (transform-only)  docs/v2/evidence/P3.5/review-1/stale-rectangle.mjs
+MATCH (transform-only)  docs/v2/evidence/P3.4/proposal-ir4/tooling-guard.test.mjs
+
+Result: 12/14 reproduce byte-for-byte from the transform alone; the only extra
+differences are the two documented dead-const deletions (SCALED_NATIVE, SINK_NAME).

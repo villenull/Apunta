@@ -1,0 +1,8 @@
+Deleted-constant reference check against e88a13a (pre-edit):
+  SINK_NAME occurrences:      1  (only the declaration)
+  SCALED_NATIVE occurrences:  1  (only the declaration)
+  SINK_NAME now:              0
+  SCALED_NATIVE now:          0
+
+dead-binding-verify.mjs check on the e88a13a blobs: exit 0, 0 references outside
+the declarator, initialiser provably pure (see logs/05-dead-binding-verify.txt).

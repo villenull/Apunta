@@ -1,0 +1,16 @@
+$ APUNTA_NODE=/home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node docs/v2/evidence/P3.4/output-lint-repair/replay-check.mjs
+  ok    ir4-attempt-line-identity  exit 0  stdout/stderr byte-identical
+  ok    ir4-frame-identity         exit 0  stdout/stderr byte-identical
+  ok    ir4-plan-fixture-filename  exit 0  stdout/stderr byte-identical
+  ok    ir4-tooling-guard          exit 0  stdout/stderr byte-identical
+  ok    ir5-reader-epoch           exit 0  stdout/stderr byte-identical
+  ok    ir5-click-witness          exit 0  stdout/stderr byte-identical
+  ok    ir5-hung-dispatch          exit 0  stdout/stderr byte-identical
+  ok    ir6-geometry-command       exit 0  stdout/stderr byte-identical
+  ok    ir6-observation-wait       exit 0  stdout/stderr byte-identical
+  ok    ir6-measured-native        exit 0  stdout/stderr byte-identical
+  ok    ir6-reordered-duplicate    exit 0  stdout/stderr byte-identical
+  ok    repair2-ir5-counterex      exit 0  stdout/stderr byte-identical
+
+12 case(s) replayed against 3bd142f; 0 failure(s).
+EXIT=0

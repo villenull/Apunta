@@ -1,0 +1,11 @@
+Hash verification of the reports (sha256).
+
+== output-lint-completion/README.md table ==
+  P3.5/review-1/source-outputs-mapping.mjs      before=OK after=OK
+  P3.5/review-1/stale-rectangle.mjs             before=OK after=OK
+  P3.4/proposal-v5-repair/ir5-counterexamples.mjs before=OK after=OK
+
+== ignored models / patched tool (read-only) ==
+  build/p3.4-spec-v5/model.mjs                  6bb4995267f81fd64dc5e181a147564f679eadd7eaabae8e2995cc112cfbf258
+  build/p3.4-spec-v5-repair/model.mjs           e9e8ce7a422d0bb88f81a20249e2dc9e7b786038dd2012e2f1050ed49d57a699
+  build/ir4/build-dispatch.mjs                  b41edf2ccc7a39abb299d7c209955c9e30c37e6245f35e3035ee8895a513293a

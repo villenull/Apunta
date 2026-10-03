@@ -1,0 +1,30 @@
+source-outputs-mapping.mjs under both baselines (replay.mjs, zero normalisation).
+Harness blobs:
+  46419f5  1eb4b9267fac86e3a0804c3521bc8efdaba3c3250bec9f4810a6b89da65606b4
+  39c6723  b886f8bbc7006765a50911874f3188a79e4235a26863c419b41a24adb8931cdb
+
+== harness @46419f5 (its own baseline) ==
+before exit: 0  after exit: 0
+--- stdout ---
+harness predicate extracted (283 chars):
+const streamLines = sourceOutputs.split('\n').filter((line) => line.trim() !== '');
+    const onVirtual = streamLines.filter((line) => line.split(/\s+/)[2] === SOURCE_NAME);
+    const onRealMic = streamLines.filter((line) => (line.split(/\s+/)[2] ?? '').startsWith(REAL_MIC_PREFIX));
+
+fabricated source-outputs line 0 columns:
+["12","70","167","PipeWire","s16le","2ch","48000Hz"]
+
+PASS the correct mapping sees the virtual capture stream: 1
+PASS the shipped predicate misses the virtual capture stream (column [2] is the client index, not the source name): onVirtual=0 (col[2]="167", SOURCE_NAME=apunta_p35_mic)
+PASS the correct mapping sees the stream on the owner's real microphone: 1
+PASS the shipped predicate misses the real-microphone leak (the safety-critical false negative): onRealMic=0 (col[2]="168", REAL_MIC_PREFIX=alsa_input.usb-UGREEN)
+PASS even with a source name in column [1], the shipped predicate still misses it (it reads column [2]): onVirtual=0
+
+Verdict: containment predicate is DEFECTIVE (defect reproduced)
+--- stderr ---
+
+== harness @HEAD/39c6723 (predicate rewritten) ==
+before exit: 2  after exit: 2
+--- stdout ---
+--- stderr ---
+could not extract the predicate from the harness

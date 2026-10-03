@@ -1,0 +1,62 @@
+Forced DEBUG control (reproduced independently): a copy of build/ir4 under
+build/evidence-output-lint-review/debug-control/broken-tool whose build-dispatch.mjs
+exits 1 on --attempt 4. Both tooling-guard.test.mjs versions run with pinned node.
+
+orig (3bd142f) exit=1  new (working tree) exit=1
+DEBUG lines emitted: orig=1 new=1
+
+DEBUG line bytes:
+  orig: DEBUG S2.5.md - Attempt 4 of 3, plus one corrective attempt the owner authorised by AM-049 — there is no attempt 5. Checkpoint: `docs/v2/state/cards/S2.5.json`. 1 BROKEN TOOL: forced failure on --attempt 4
+  new : DEBUG S2.5.md - Attempt 4 of 3, plus one corrective attempt the owner authorised by AM-049 — there is no attempt 5. Checkpoint: `docs/v2/state/cards/S2.5.json`. 1 BROKEN TOOL: forced failure on --attempt 4
+DEBUG byte-identical: YES
+stderr identical: YES
+
+raw stdout diff (only timings + test-file path + line numbers):
+  < ✔ T1: --attempt 5 with no exception is refused (35.21262ms)
+  < ✔ T2: --attempt 5 with a well-formed AM-nnn for another card is refused, naming no attempt 6 (25.130918ms)
+  < ✔ T3: --attempt 5 with AM-nnn for card P3.4 succeeds with exactly status 0 (28.624008ms)
+  < ✔ T4: --attempt 6 is refused for P3.4 itself (25.157549ms)
+  < ✖ T5: attempt 4 line is byte-identical to the shipped literal (12.643479ms)
+  < ✖ T5b: attempt 4 failure message is byte-identical to the shipped one (11.695647ms)
+  < ✔ extra: attempt 5 line reads as the AM-049 parallel sentence (28.391149ms)
+  < ✔ extra: attempts 1-3 unchanged (88.607789ms)
+  < ✔ extra: --attempt 7+ refused; --attempt 0 / nan refused (153.20186ms)
+  < ✔ extra: --attempt 5 in --review mode: same keyed refusal, same single permitted id (79.943105ms)
+  < ✔ extra: --attempt 5 in --ir mode is refused for another card and permitted for P3.4 (53.907965ms)
+  < ✔ extra: attempt 5 is refused for P3.4 when the exception is malformed (105.229652ms)
+  < ✔ extra: dependency gate still exits 3 after the grant (no PASS on exit 3) (25.685264ms)
+  < ✖ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (12.061924ms)
+  > ✔ T1: --attempt 5 with no exception is refused (27.681596ms)
+  > ✔ T2: --attempt 5 with a well-formed AM-nnn for another card is refused, naming no attempt 6 (27.978324ms)
+  > ✔ T3: --attempt 5 with AM-nnn for card P3.4 succeeds with exactly status 0 (29.563729ms)
+  > ✔ T4: --attempt 6 is refused for P3.4 itself (26.10531ms)
+  > ✖ T5: attempt 4 line is byte-identical to the shipped literal (12.012484ms)
+  > ✖ T5b: attempt 4 failure message is byte-identical to the shipped one (11.521978ms)
+  > ✔ extra: attempt 5 line reads as the AM-049 parallel sentence (28.223671ms)
+  > ✔ extra: attempts 1-3 unchanged (85.175309ms)
+  > ✔ extra: --attempt 7+ refused; --attempt 0 / nan refused (155.534519ms)
+  > ✔ extra: --attempt 5 in --review mode: same keyed refusal, same single permitted id (78.716596ms)
+  > ✔ extra: --attempt 5 in --ir mode is refused for another card and permitted for P3.4 (54.645598ms)
+  > ✔ extra: attempt 5 is refused for P3.4 when the exception is malformed (104.231671ms)
+  > ✔ extra: dependency gate still exits 3 after the grant (no PASS on exit 3) (25.816452ms)
+  > ✖ extra: the three shipped attempt-4 dispatch lines are reproduced byte for byte (13.892668ms)
+  < ℹ duration_ms 717.168608
+  > ℹ duration_ms 708.91448
+
+Stack-frame line shifts are all exactly +1 (one added import line):
+  orig tooling-guard.test.mjs:130
+  orig tooling-guard.test.mjs:132
+  orig tooling-guard.test.mjs:137
+  orig tooling-guard.test.mjs:139
+  orig tooling-guard.test.mjs:217
+  orig tooling-guard.test.mjs:227
+  new  tooling-guard.test.mjs:131
+  new  tooling-guard.test.mjs:133
+  new  tooling-guard.test.mjs:138
+  new  tooling-guard.test.mjs:140
+  new  tooling-guard.test.mjs:218
+  new  tooling-guard.test.mjs:228
+
+NORMALISED in replay-check.mjs cannot express that shift (pattern order):
+  committed order -> "test at <TESTFILE>:130:1"
+  swapped order   -> "test at <TESTFILE>:N:1"
