@@ -1,0 +1,86 @@
+event: status
+data: {"stage":"connecting","message":"Thinking…"}
+
+event: status
+data: {"stage":"drafting","message":"Drafting the note…"}
+
+event: token
+data: {"section":"Risk review","text":"John"}
+
+event: token
+data: {"section":"Risk review","text":" Smith"}
+
+event: token
+data: {"section":"Risk review","text":" reports"}
+
+event: token
+data: {"section":"Risk review","text":" no"}
+
+event: token
+data: {"section":"Risk review","text":" self"}
+
+event: token
+data: {"section":"Risk review","text":"-h"}
+
+event: token
+data: {"section":"Risk review","text":"arm"}
+
+event: token
+data: {"section":"Risk review","text":" thoughts"}
+
+event: token
+data: {"section":"Risk review","text":" this"}
+
+event: token
+data: {"section":"Risk review","text":" month"}
+
+event: token
+data: {"section":"Risk review","text":" and"}
+
+event: token
+data: {"section":"Risk review","text":" denies"}
+
+event: token
+data: {"section":"Risk review","text":" any"}
+
+event: token
+data: {"section":"Risk review","text":" intent"}
+
+event: token
+data: {"section":"Risk review","text":" to"}
+
+event: token
+data: {"section":"Risk review","text":" harm"}
+
+event: token
+data: {"section":"Risk review","text":" anyone"}
+
+event: token
+data: {"section":"Risk review","text":"."}
+
+event: token
+data: {"section":"Note for next session","text":"Follow"}
+
+event: token
+data: {"section":"Note for next session","text":"-up"}
+
+event: token
+data: {"section":"Note for next session","text":" in"}
+
+event: token
+data: {"section":"Note for next session","text":" four"}
+
+event: token
+data: {"section":"Note for next session","text":" weeks"}
+
+event: token
+data: {"section":"Note for next session","text":"."}
+
+event: token
+data: {"section":"Discussion","text":"He continues the sertraline fifty milligrams daily and slept better this week. We reviewed sleep hygiene."}
+
+event: status
+data: {"stage":"saving","message":"Saving the draft…"}
+
+event: note
+data: {"note":{"id":"01a10454-e6e6-700e-aa49-1fec455f756d","patient_id":"01a10454-cff0-704e-a68c-8d9f17c986f4","format_id":"01a10454-cff2-70fc-8b4f-8412387c376c","locale":"en","title":"Progress note","status":"draft","revision":0,"content":"Location:\n\nClient presentation:\n\nRisk review: John Smith reports no self-harm thoughts this month and denies any intent to harm anyone.\n\nDiscussion: He continues the sertraline fifty milligrams daily and slept better this week. We reviewed sleep hygiene.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session: Follow-up in four weeks.","created_at":"2026-10-04T00:33:55.430Z","updated_at":"2026-10-04T00:33:55.430Z","published_at":null},"empty_sections":["Location","Client presentation","Intervention","Out of session actions"]}

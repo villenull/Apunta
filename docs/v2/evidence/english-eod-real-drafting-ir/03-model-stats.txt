@@ -1,0 +1,22 @@
+[
+  {
+    "msg": "note drafted",
+    "model": "qwen3.5:4b-q4_K_M",
+    "promptTokens": 3569,
+    "outputTokens": 100,
+    "tokensPerSecond": 90.9,
+    "loadMs": 3340,
+    "doneReason": "stop",
+    "attempts": 1
+  },
+  {
+    "msg": "note refined",
+    "model": "qwen3.5:4b-q4_K_M",
+    "promptTokens": 4019,
+    "outputTokens": 143,
+    "tokensPerSecond": 97.7,
+    "loadMs": 1,
+    "doneReason": "stop",
+    "attempts": 1
+  }
+]

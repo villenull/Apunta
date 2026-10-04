@@ -1,0 +1,9 @@
+BEFORE (draft, revision 0) — 343 bytes
+"Location:\n\nClient presentation:\n\nRisk review: John Smith reports no self-harm thoughts this month and denies any intent to harm anyone.\n\nDiscussion: He continues the sertraline fifty milligrams daily and slept better this week. We reviewed sleep hygiene.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session: Follow-up in four weeks."
+
+AFTER (refined, revision 1) — 316 bytes
+"Location:\n\nClient presentation:\n\nRisk review: John Smith reports no self-harm thoughts this month and denies any intent to harm anyone.\n\nDiscussion: He continues the sertraline fifty milligrams daily and slept better this week.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session: Follow-up in four weeks."
+
+DIFF: the AFTER Discussion body lost the final sentence "We reviewed sleep hygiene."
+BEFORE has it: true
+AFTER  has it: false

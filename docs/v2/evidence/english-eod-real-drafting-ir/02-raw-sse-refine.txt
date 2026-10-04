@@ -1,0 +1,26 @@
+event: message
+data: {"message":{"id":"01a10454-e6ed-70e4-ba31-6d239b3f57e2","note_id":"01a10454-e6e6-700e-aa49-1fec455f756d","role":"user","text":"Make the discussion shorter.","ref_quote":null,"created_at":"2026-10-04T00:33:55.437Z"}}
+
+event: status
+data: {"stage":"connecting","message":"Thinking…"}
+
+event: status
+data: {"stage":"drafting","message":"Drafting the note…"}
+
+event: status
+data: {"stage":"drafting","message":"Rewriting 1 of 7 sections…"}
+
+event: status
+data: {"stage":"drafting","message":"Rewriting 2 of 7 sections…"}
+
+event: status
+data: {"stage":"drafting","message":"Rewriting 3 of 7 sections…"}
+
+event: note-updated
+data: {"note":{"id":"01a10454-e6e6-700e-aa49-1fec455f756d","patient_id":"01a10454-cff0-704e-a68c-8d9f17c986f4","format_id":"01a10454-cff2-70fc-8b4f-8412387c376c","locale":"en","title":"Progress note","status":"draft","revision":1,"content":"Location:\n\nClient presentation:\n\nRisk review: John Smith reports no self-harm thoughts this month and denies any intent to harm anyone.\n\nDiscussion: He continues the sertraline fifty milligrams daily and slept better this week.\n\nIntervention:\n\nOut of session actions:\n\nNote for next session: Follow-up in four weeks.","created_at":"2026-10-04T00:33:55.430Z","updated_at":"2026-10-04T00:33:57.265Z","published_at":null},"empty_sections":["Location","Client presentation","Intervention","Out of session actions"],"outcome":"applied","outcome_reason":null}
+
+event: token
+data: {"text":"I shortened the Discussion section."}
+
+event: message
+data: {"message":{"id":"01a10454-ee11-709a-97e2-0eed8456df2f","note_id":"01a10454-e6e6-700e-aa49-1fec455f756d","role":"assistant","text":"I shortened the Discussion section.","ref_quote":null,"created_at":"2026-10-04T00:33:57.265Z"}}
