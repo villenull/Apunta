@@ -1,0 +1,47 @@
+P3.6 attempt 2 SOURCE review — scoped static checks (re-run by the reviewer)
+Working directory: repository root
+Node: v24.19.0 ($HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin)
+Subject: scripts/v2/tauri-e2e-smoke.test.mjs
+
+$ node --check scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ npx eslint scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+
+$ sha256sum scripts/v2/tauri-e2e-smoke.test.mjs
+7b7cd94801513be59d0e77a7ad036e767f5f1a4483e5bef94804fa15e90671f0  scripts/v2/tauri-e2e-smoke.test.mjs
+
+$ wc -l scripts/v2/tauri-e2e-smoke.test.mjs
+1757 scripts/v2/tauri-e2e-smoke.test.mjs
+
+Matches docs/v2/evidence/P3.6/attempt-2/implementation/01-scoped-checks.txt and
+02-file-hashes.txt exactly. No eslint-disable / @ts-ignore / prettier-ignore /
+suppression comment in the file.
+
+Candidate commit scope (git show --name-only 9321861):
+  scripts/v2/tauri-e2e-smoke.test.mjs            (new source)
+  docs/v2/evidence/P3.6/attempt-2/**             (evidence)
+  docs/v2/evidence/P3.6/resume-anchor.md         (evidence)
+  docs/v2/state/returns/P3.6.md                  (coordinator/author)
+  docs/v2/state/PROGRESS.json                    (coordinator)
+  docs/v2/state/cards/P3.6.json                  (coordinator)
+No package.json, package-lock.json, .gitignore, eslint, src-tauri/**, web/**,
+server/**, shared/** or capability path.
+
+Frozen V0 re-verification (read/hash only, no rebuild):
+  path  src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+  size  194214392 bytes
+  sha256 e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a
+  directory holds no production sibling (Apunta (test).AppDir only)
+
+Safe import probe (sandbox vars cleared; launches nothing):
+  env -u APUNTA_PORT -u APUNTA_DATA_DIR -u APUNTA_TEST_RUN_ID -u APUNTA_FAKE_AI \
+    node --input-type=module -e "import('./scripts/v2/tauri-e2e-smoke.test.mjs')"
+  -> "tauri-e2e-smoke: source the sandbox environment first: ..." then exits 2.
+  The module cannot be imported for a helper probe; there is no isEntryPoint guard.

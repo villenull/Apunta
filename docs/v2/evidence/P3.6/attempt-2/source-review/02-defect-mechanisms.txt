@@ -1,0 +1,95 @@
+P3.6 attempt 2 SOURCE review — exact defect mechanisms
+Read-only; line numbers are from scripts/v2/tauri-e2e-smoke.test.mjs at sha256
+7b7cd94801513be59d0e77a7ad036e767f5f1a4483e5bef94804fa15e90671f0 unless a
+repository path is named.
+
+D1 (HIGH) self-proving API facts — six flows pass without reaching the screen
+  harness :1579-1590 flowPatientList   check patients.length > 0
+  harness :1593-1620 flowPlan          check planFor(...) !== null
+  harness :1623-1645 flowBriefing      check briefsFor(...) !== null
+  harness :1648-1670 flowBrainstorm    check read.ok
+  harness :1673-1693 flowSettings      check apiGet('/api/settings').ok
+  harness :1456-1480 flowDraft         re-reads capture's note; never drives draft screen
+  routes  server/src/routes/plans.ts:91   `if (!plan) return { plan: null, goals: [] };`
+  routes  server/src/routes/prep.ts:51    `return { briefs: listSessionBriefs(db, id) };`
+  routes  server/src/routes/settings.ts:60 GET always 200
+  routes  server/src/routes/brainstorm.ts:127 GET always 200
+  routes  server/src/routes/patients.ts:32 GET { patients } independent of any screen
+  -> the fact is true before the UI action and unchanged by it; screenshot is
+     saved but never asserted on.
+
+D2 (HIGH) ownership containment guaranteed FAIL
+  harness :1149 ownershipBefore = snapshotOwnership()   BEFORE launch
+  harness :1153 run = launchApp(appImage.path)
+  harness :1283 created = after.filter((file,index)=> file.present && !ownershipBefore[index].present)
+  harness :1285-1288 check('smoke no second lock, database, -wal or -shm', created.length===0)
+  app     server/src/index.ts:39-40  ensureDataDir + acquireDataFolderLock(APUNTA_DATA_DIR)
+  app     server/src/config.ts:185   dbFile = join(dataDir,'apunta.db')
+  shell   src-tauri/src/main.rs:407  .env("APUNTA_DATA_DIR", &config.data_dir)
+  sandbox scripts/v2/sandbox.mjs env creates only empty data/ logs/ tmp/
+  sibling scripts/v2/tauri-lifecycle.test.mjs:1064-1075 snapshots AFTER first instance up
+  -> the run's own first lock/db are flagged as "created"; the check fails on a
+     healthy run.
+
+D3 (HIGH) no signal teardown for virtual audio
+  harness :59-60 header claims teardown "on every exit path, including signals"
+  harness :1264 containment.teardownSync() only in runSmoke finally
+  grep    no process.on('SIGINT'|'SIGTERM'|'SIGHUP'|'exit') in the harness
+  sibling scripts/v2/tauri-audio.test.mjs:518-528 installs exactly those traps
+  -> Ctrl-C/SIGTERM during capture leaves default source = apunta_p35_mic and
+     both modules loaded.
+
+D4 (HIGH/MED) observation containment vacuous when bundle absent
+  harness :935-951 observationChannelGone returns { occurrences:0, files:0 } when
+                 build/linux-resources/web/dist/assets does not exist
+  harness :1294-1298 check passes on occurrences===0 regardless of files===0
+  sibling scripts/v2/tauri-security.test.mjs:2300-2305 countInShippedWebDist
+          returns { marker:-1, gate:-1 } when web/dist/assets is absent (fails)
+  card    V3 names web/dist/assets/*.js; harness scans build/linux-resources/web/dist/assets
+
+D5 (MED) NOT RUN exits 0
+  harness :113-117 notRun pushes { ok:true, notRun:true }
+  harness :1744-1754 failed = results.filter(r=>!r.ok); return failed.length>0 ? 1 : 0
+  -> all-NOT-RUN run exits 0; V3's criterion is exit 0; card says NOT RUN is
+     never PASS / blocks approval. blockedCount branch is dead (blocked never set).
+
+D6 (MED) freshness predicate absent
+  card dispatch/P3.6.md line 447 (V3 Expected) requires
+     git diff --name-only <base>...HEAD -- <Rule B set> and
+     git status --porcelain -- <Rule B set>
+  grep    no git invocation in the harness; none in the V3 command
+  sibling scripts/v2/tauri-security.test.mjs:1900 implements RULE_B_BASE_COMMIT
+          freshness
+
+R1 (MED) colour-cluster ambiguity not fail-closed
+  harness :655 clusters.sort by size; :1334 and :1427 click clusters[0] (largest)
+  no margin/unique check; on multiple accent elements the wrong control may be clicked.
+
+R2 (MED) copy assertion is a colour count
+  harness :1570-1575 check distinctColours(copyShot) >= RENDER_MIN_COLOURS (8)
+  -> true of any rendered window; does not assert the Copied control.
+
+R3 (MED) physical mic stream never checked
+  harness :58-59 claims "a stream on it is a stop"; :981-1029 only reads back the
+  default source; no pactl list source-outputs / monitor check.
+
+R4 (MED) zero windows is FAIL, not NOT RUN
+  harness :1156-1165 one check FAIL for the window, then return; the eleven flows
+  are not recorded NOT RUN (card/fixed decision require NOT RUN).
+
+R5 (LOW/MED) import runs top-level and main()
+  harness :122-143 top-level process.exit(2) when sandbox vars absent
+  harness :1757 process.exitCode = await main() unconditionally
+  probe   importing with vars cleared exits 2 (see 01-scoped-checks.txt)
+  sibling scripts/v2/tauri-security.test.mjs ends with an isEntryPoint guard and
+          exports helpers.
+
+R6 (LOW) undeclared runtime deps not in Stop 2
+  harness uses import/identify/convert/compare (ImageMagick) and paplay; Stop 2
+  names only webkit2gtk-4.1, libxdo, libayatana-appindicator, xvfb-run/xdotool.
+  All present on this machine.
+
+R7 (LOW) redundant double xvfb-run
+  dispatch/P3.6.md V3 wraps the harness in `xvfb-run -a` when available; harness
+  :274-301 re-execs under `xvfb-run -a` again (guard env var set only by its own
+  re-exec); the outer display is discarded.
