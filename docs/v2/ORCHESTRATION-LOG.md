@@ -2949,3 +2949,12 @@ native/app/build repeat. Original BLOCKED/FAIL readings remain untouched.
 Fresh frozen-result audit follows before any P3.4 approval/P3.6 dispatch.
 Backend drafting audit ce24c1dd completed CLEAR, archived and saved in 3fae52b;
 clinical quality and full native English workflow remain unproven.
+
+## 2026-10-04 00:58 UTC — static audit CLEAR; one wording conflict sent to owner
+
+AM-199 V3/fullV4 passed, frozen20e69b7. Independent10b256b5 audit confirms
+exactdecode/attributableexits/fullchain/history/native20/20, archived. It flags
+conditionalV0 NOTRUN versus COORDINATOR§6 approvalprohibition; root verified
+bothtexts and requested ownerresolution without waiver/relabel/repeat. P36
+stillheld. Owner immediate preview started7811 synthetic/fakeAI/session2127,
+health/page200 and fabricatedJohnSmithseed; live data untouched.

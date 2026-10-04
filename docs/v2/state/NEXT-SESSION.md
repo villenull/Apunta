@@ -1,3 +1,22 @@
+## Static completion independently CLEAR; conditional-skip decision pending
+
+20e69b7 freezes AM-199 V3 exit0 and full V4 exit0 (2235 JS tests, lint,
+typecheck, fmt/clippy, 60 Rust tests). Reviewer 10b256b5 completed CLEAR on
+these readings, archived; prior attempt6 V3 BLOCKED/V4 FAIL remain verbatim.
+The reviewer flags COORDINATOR §6's unconditional no-NOT-RUN approval rule
+against the card V0's explicit run-only-if-changed/record-NOT-RUN condition.
+Root verified both exact clauses and asked the owner one bounded decision:
+accept this conditional skip and approve on verified freshness/native20/20,
+or keep held pending a separately approved rebuild plan. No grant yet.
+No row repeat or dependency bypass. P3.6 waits only this P3.4 decision.
+
+Owner requested an immediate app link: http://127.0.0.1:7811/ now responds200,
+fake AI/synthetic John Smith, fresh sandbox2026-10-04T00-55-28-177Z-941e64de.
+Managed exec session2127, serverpid3095449, ignored build/owner-preview/env.sh.
+This browser preview uses no live patientdata and is not native acceptance.
+Keep it running for the owner; no real inference/audio lease consumed.
+No active workers remain. All native/build/global-test/inference leases free.
+
 ## AM-199 static completion running; production integration is next
 
 The owner granted exactly one decoded V3 and one full V4 within P3.4 attempt 6.

@@ -1,0 +1,71 @@
+P3.4 static-completion final IR — identity, snapshot retention, frozen rows
+===========================================================================
+Read-only. No writes to any path outside this audit's two authorised homes.
+
+HEAD at audit: 20e69b7 ("Save once-only static security completion readings"),
+branch main, working tree clean (git status --porcelain empty).
+
+COMMIT MAP
+  3fae52b  Authorize bounded static security completion and save backend audit
+           (+AM-199 in docs/v2/state/AMENDMENTS.md, +checkpoint)
+  844ad23  Save bounded proof lint repair and static completion review
+           (P3.5 artifact-lint repair CLEAR + committed; static-completion-ir)
+  dcf4967  Admit pinned English speech model and preserve static completion
+           proposal
+  2bfaadb  Record approved static security completion execution (root docs only:
+           ORCHESTRATION-LOG, BLOCKED.md, NEXT-SESSION.md)
+  20e69b7  Save once-only static security completion readings
+           (+5 static-completion-runtime files, +checkpoint staticCompletionAttempt6,
+            +return addendum)
+
+CHECKPOINT APPEND-ONLY CHECK (git show 20e69b7 -- docs/v2/state/cards/P3.4.json)
+  Only these changed:
+    - lastCompletedStep / nextAllowedAction / updatedUtc (root recording)
+    - NEW sibling field "staticCompletionAttempt6": {authorisedBy AM-199,
+      V3 PASS exit 0, V4 PASS exit 0, priorReadingsRetained true,
+      nativeRowsRepeated false}
+  UNCHANGED, verified present at HEAD:
+    - criteria.V0 = NOT RUN, criteria.V1 = PASS, criteria.V2 = PASS,
+      criteria.V3 = BLOCKED, criteria.V4 = FAIL
+    - priorAttempt4Criteria (V2 FAIL, V4 PASS, ...), priorAttempt5Criteria
+      (V2 FAIL, V4 FAIL, ...), priorAttempt6Outcome
+  => new readings appended alongside; original attempt6 V3 BLOCKED / V4 FAIL
+     retained; no count lowered, no prior criterion overwritten.
+
+V4 WHOLE-CHAIN CHECK (03-V4-execution.txt, EXIT_CODE: 0)
+  node --version                       v24.19.0
+  npm test                             163 files / 2235 tests passed
+  npm run lint                         eslint . clean; prettier --check clean;
+                                       check-no-external-urls; collect-licenses
+                                       (111 packages); check-ui-strings TOTAL 0
+  npm run typecheck                    shared, server, installer, web, e2e
+  cargo fmt --check                    clean (no output)
+  cargo clippy -- -D warnings          clean (Compiling/Finished dev profile)
+  cargo test                           60 passed; 0 failed; 0 ignored
+  Downstream NOT RUN:                  none. Nothing short-circuited.
+
+V2 FROZEN (05-V2.txt, exit 0)
+  PASS assertions 20 / FAIL 0 / NOT RUN 0; "20/20 assertions passed".
+  (a) live ACL denial ipcProbe=rejected ipcProbeMsg="Command plugin:event|listen
+  not allowed by ACL"; (b) b:assign-location-href, href still app origin;
+  (c) c:window-open-external + c:window-open-same-origin; (d) six rule-6
+  directives + per-response nonce + style-src-attr, both clicks landed
+  ptrN=6 clickN=2 clickText=Progress note; (e) styleComputed=dark vs
+  styleAttr. All five containment PASS, re-measured outside.
+
+V0 FROZEN CONDITIONAL (03-V0-not-run.txt; card V0 Expected cell)
+  Card: "Run this row whenever any path in Rule B's set changed, and only then.
+  All three predicates must be empty to record it NOT RUN."
+  P1 git diff 88811af...HEAD over Rule B set: 0
+  P2 git status --porcelain over Rule B set:  0
+  P3 checkpoint changedFiles naming Rule B:   0
+  Direct measurements the three cannot see:
+    AppImage mtime 2026-10-03T22:39:34.366Z > newest Rule B input
+    2026-10-03T06:06:41.280Z (web/src/main.tsx);
+    shipped AppDir bundle marker 1/16, gate string 0; web/dist 0 marker.
+  Recorded NOT RUN, never PASS, never assumed skip. Producer not run.
+  Provenance retained: the binary V2 launched is attempt 5's V0 output.
+
+BOUNDARY
+  Read/hash/parse/git-compare only. No global tests, no lint regeneration, no
+  row rerun. Foreign dirty paths left alone (tree was clean at audit anyway).

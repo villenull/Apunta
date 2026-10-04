@@ -8,8 +8,8 @@
   "baseCommit": "6974943",
   "attempt": 6,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-199 decoded V3 and full V4 executed once, both exit0; original attempt6 readings retained, independent frozen evidence audit pending",
-  "nextAllowedAction": "independent-AM199-evidence-audit-no-row-rerun",
+  "lastCompletedStep": "AM-199 two static rows independently CLEAR; native20/20 retained; owner decision pending on conditional V0 NOT RUN versus coordinator approval prohibition",
+  "nextAllowedAction": "owner-conditional-V0-approval-decision-no-runtime",
   "sideEffectsDone": [
     "S0: SKIPPED on its own anchor. ~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli is executable, so nothing was cloned, fetched, built or downloaded and the P3.1 A06 records stand unchanged. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/01-S0-whisper-candidate-skipped.txt",
     "V0: NOT RUN. Rule B trigger derived on four axes and found empty - git diff 88811af...HEAD over Rule B set 0 paths, git status --porcelain over it 0 paths, checkpoint changedFiles naming 0 Rule B paths, and the two things those predicates cannot see measured directly: AppImage mtime 2026-10-03T22:39:34.366Z is newer than the newest Rule B input 2026-10-03T06:06:41.280Z (web/src/main.tsx), and the shipped AppDir web bundle carries the marker in 1 of 16 js bundles with the gate string in 0. The producer was NOT executed, so no A06 refetch, no network request of any kind, no rewrite of build/linux-resources/**, server/dist/** or web/dist/**, and no AppImage build. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/03-V0-not-run.txt and 00-v0-predicates-and-prerequisites.txt",
@@ -133,7 +133,7 @@
   "implementationReviewVerdict": "CLEAR AM-195 exact four shipping patches; 80/80+29/29+13/13, no extra source path",
   "coordinatorBlockingFinding": "V2 handler click FAIL: pointer read-back WINDOW=0 PID=undefined, clickN=0; navigation b/c NOT RUN. V4 npm tests2235 PASS then evidence-artifact lint FAIL. Final budget exhausted, no row rerun/sixth.",
   "implementationCandidate": "88811af",
-  "updatedUtc": "2026-10-04T00:54:00Z",
+  "updatedUtc": "2026-10-04T00:58:00Z",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/ and did not touch src-tauri/ui/. S4 was not entered: nothing in the tree was shown to break a guard. The V4 cargo half was NOT RUN - it is downstream of a failed lint && - so P3.3 navigation-guard cargo unit tests were not executed on this attempt. V4 V3 word loop did execute inside the command substitution and src-tauri/capabilities was absent at that moment, but that row carries no usable exit status and is not offered as evidence for anything.",
   "reBundle": {
@@ -230,7 +230,7 @@
     "authorisedBy": "AM-199",
     "workerId": "1fe0d4ce-65f7-43d7-b69d-7568d7010449",
     "sourceCandidate": "88811af",
-    "status": "SUBMITTED",
+    "status": "CLEAR",
     "priorReadingsRetained": true,
     "nativeRowsRepeated": false,
     "criteria": {
@@ -246,6 +246,7 @@
         "evidence": "docs/v2/evidence/P3.4/attempt-6/static-completion-runtime/03-V4-execution.txt",
         "verification": "Full card chain once: pinned Node24.19.0, 163 files/2235 npm tests, lint/typecheck, cargo fmt/clippy and 60 cargo tests all PASS; no downstream NOT RUN."
       }
-    }
+    },
+    "review": "docs/v2/state/reviews/P3.4-static-completion-final-ir.md"
   }
 }
