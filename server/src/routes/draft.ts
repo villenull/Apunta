@@ -215,6 +215,12 @@ export interface PersistDraftInput {
  * thread is complete the moment the note exists: a reload, a second tab, or a
  * draft opened next week all show the same conversation, and nothing has to
  * synthesise a message that was never stored.
+ *
+ * All of it is one transaction. Three separate writes meant a failure midway —
+ * a full disk, a patient deleted by another tab — could leave a note whose
+ * transcript was missing, and the transcript is the source the refine
+ * boilerplate lock checks against, so legitimate text would then be held back
+ * from a note that had never been drafted without one.
  */
 export function persistDraft(
   db: Database,
@@ -223,49 +229,51 @@ export function persistDraft(
   sections: Sections,
   retractions: readonly AppliedRetraction[] = [],
 ): Note {
-  const note = createNote(db, {
-    patient_id: input.patient_id,
-    format_id: input.format_id,
-    // C-LANG@1 rule 3: a drafted note is written in its format's language.
-    locale: format.locale,
-    // The prototype titles notes after their format ("Progress note").
-    title: input.title ?? format.name,
-    content: sectionsToText(sections, format.sections),
-  });
-
-  const typed = (input.typed_notes ?? '').trim();
-  if (typed !== '') {
-    createTranscript(db, { note_id: note.id, source: 'typed', raw_text: input.typed_notes ?? '' });
-  }
-  const transcript = (input.transcript ?? '').trim();
-  if (transcript !== '') {
-    createTranscript(db, {
-      note_id: note.id,
-      source: 'audio',
-      raw_text: input.transcript ?? '',
-      audio_filename: input.audio?.filename ?? null,
-      duration_seconds: input.audio?.durationSeconds ?? null,
+  return db.transaction((): Note => {
+    const note = createNote(db, {
+      patient_id: input.patient_id,
+      format_id: input.format_id,
+      // C-LANG@1 rule 3: a drafted note is written in its format's language.
+      locale: format.locale,
+      // The prototype titles notes after their format ("Progress note").
+      title: input.title ?? format.name,
+      content: sectionsToText(sections, format.sections),
     });
-  }
 
-  // What was cut before drafting is told to her here, in her own words, where
-  // the note's history lives — and stripped from what the model sees of that
-  // history (`chat.ts`), so a retracted claim cannot come back through it.
-  // The note's own locale, not the request's: this row is written with the
-  // note and shown under every later draft of it, and a refine answers in the
-  // note's language (C-LANG@1 rule 4). A note is written in its format's
-  // language (`createNote` above), which is the locale to render this in.
-  const opening = (() => {
-    const firstPass = msg(format.locale, 'chat.firstPass');
-    return retractions.length === 0
-      ? firstPass
-      : `${firstPass}\n\n${retractionNotice(retractions, format.locale)}`;
+    const typed = (input.typed_notes ?? '').trim();
+    if (typed !== '') {
+      createTranscript(db, { note_id: note.id, source: 'typed', raw_text: input.typed_notes ?? '' });
+    }
+    const transcript = (input.transcript ?? '').trim();
+    if (transcript !== '') {
+      createTranscript(db, {
+        note_id: note.id,
+        source: 'audio',
+        raw_text: input.transcript ?? '',
+        audio_filename: input.audio?.filename ?? null,
+        duration_seconds: input.audio?.durationSeconds ?? null,
+      });
+    }
+
+    // What was cut before drafting is told to her here, in her own words, where
+    // the note's history lives — and stripped from what the model sees of that
+    // history (`chat.ts`), so a retracted claim cannot come back through it.
+    // The note's own locale, not the request's: this row is written with the
+    // note and shown under every later draft of it, and a refine answers in the
+    // note's language (C-LANG@1 rule 4). A note is written in its format's
+    // language (`createNote` above), which is the locale to render this in.
+    const opening = (() => {
+      const firstPass = msg(format.locale, 'chat.firstPass');
+      return retractions.length === 0
+        ? firstPass
+        : `${firstPass}\n\n${retractionNotice(retractions, format.locale)}`;
+    })();
+    createChatMessage(db, {
+      note_id: note.id,
+      role: 'assistant',
+      text: opening,
+      ref_quote: null,
+    });
+    return note;
   })();
-  createChatMessage(db, {
-    note_id: note.id,
-    role: 'assistant',
-    text: opening,
-    ref_quote: null,
-  });
-  return note;
 }

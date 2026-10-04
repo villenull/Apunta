@@ -178,9 +178,26 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
             stream.end();
             return;
           }
-          const rewritten = updateDraftNoteContent(db, note.id, fastPath.content);
+          const rewritten = updateDraftNoteContent(db, note.id, fastPath.content, note.revision);
           if (rewritten === undefined) {
-            finishWithReply(db, stream, note.id, msg(locale, 'chat.publishedRefusal'));
+            // The write was refused: the note stopped being the draft this move
+            // was parsed from. A filed note keeps the lock's refusal; a note
+            // that was edited under us says so and hands back what is there.
+            const current = getNote(db, note.id);
+            if (current === undefined || current.status === 'published') {
+              finishWithReply(db, stream, note.id, msg(locale, 'chat.publishedRefusal'));
+              return;
+            }
+            const withheld = msg(locale, 'chat.noteChangedMidEdit');
+            stream.send('note-updated', {
+              note: current,
+              empty_sections: emptySectionNames(fastPath.sections, format.sections),
+              outcome: 'withheld',
+              outcome_reason: withheld,
+            });
+            stream.send('token', { text: withheld });
+            stream.send('message', { message: persistReply(db, note.id, withheld) });
+            stream.end();
             return;
           }
           if (stream.closed) {
@@ -437,20 +454,34 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
       if (attachedRewrite) replyText = `${replyText}\n\n${questionLeftAlone(locale)}`;
 
       let rewritten: Note | undefined;
+      /**
+       * The note as it stands now, once the revision-checked write has refused
+       * it, and whether there is still a note to send. The client is sent this
+       * rather than the note read at request start, so a held-back rewrite
+       * cannot roll the editor back to a superseded draft.
+       */
+      let afterRefusal: Note | undefined;
+      let noteGone = false;
       if (changed && content !== null) {
-        // Conditional on the note still being a draft: she may have filed it in
-        // the seconds the model spent thinking, and the finished rewrite must not
-        // land on a published record behind the lock's back. A write that no-ops
-        // for that reason emits no `note-updated` — her filed note is unchanged.
-        // Replace the model's claim with the same refusal used by the published
-        // lock, so the thread tells the truth about the race too.
-        rewritten = updateDraftNoteContent(db, note.id, content);
+        // Conditional on the note still being *the draft this rewrite was
+        // computed from*: she may have filed it in the seconds the model spent
+        // thinking, and the finished rewrite must not land on a published
+        // record behind the lock's back; she may equally have edited it in
+        // another window, or a late keepalive flush may have committed, and a
+        // rewrite built from the superseded text must not overwrite her work.
+        // Either way the write no-ops and no `note-updated` claims a revision.
+        // Replace the model's claim with the refusal that actually applies, so
+        // the thread tells the truth about the race too.
+        rewritten = updateDraftNoteContent(db, note.id, content, note.revision);
         if (rewritten === undefined) {
-          replyText = msg(locale, 'chat.publishedRefusal');
+          afterRefusal = getNote(db, note.id);
+          noteGone = afterRefusal === undefined;
+          const published = afterRefusal?.status === 'published';
+          replyText = msg(locale, published ? 'chat.publishedRefusal' : 'chat.noteChangedMidEdit');
           verdict = {
             outcome: 'withheld',
-            reason: msg(locale, 'chat.publishedMidEdit'),
-            reply: msg(locale, 'chat.publishedRefusal'),
+            reason: msg(locale, published ? 'chat.publishedMidEdit' : 'chat.noteChangedMidEdit'),
+            reply: replyText,
           };
         }
       }
@@ -465,9 +496,9 @@ export function registerChatRoutes(app: FastifyInstance, db: Database, providers
           outcome: verdict.outcome,
           outcome_reason: verdict.reason,
         });
-      } else if (updatedSections !== null && !question && verdict !== null) {
+      } else if (updatedSections !== null && !question && verdict !== null && !noteGone) {
         stream.send('note-updated', {
-          note,
+          note: afterRefusal ?? note,
           empty_sections: emptySectionNames(updatedSections, format.sections),
           outcome: verdict.outcome,
           outcome_reason: verdict.reason,

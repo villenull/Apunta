@@ -93,7 +93,8 @@ export function updateNote(db: Database, id: string, patch: UpdateNoteInput): No
 }
 
 /**
- * A refine-chat content revision, applied only while the note is still a draft.
+ * A refine-chat content revision, applied only while the note is still the
+ * draft the rewrite was computed from.
  *
  * The chat's published lock is tested when the refine *starts*, but a real
  * model runs for seconds and she may file the note inside that window. Writing
@@ -102,14 +103,28 @@ export function updateNote(db: Database, id: string, patch: UpdateNoteInput): No
  * the check and the write are one indivisible statement — no read-then-write
  * gap for a publish to land in — and the write simply no-ops, returning
  * `undefined`, when the note published while the model was thinking.
+ *
+ * The same window is open to a *hand* edit: a second window or tab, or a late
+ * keepalive flush from this one, commits a revision while the model thinks, and
+ * the rewrite is built from the note as it stood when the request started. So
+ * the caller passes the `revision` it read, and the write is conditional on it
+ * as well: a rewrite may only land on the exact draft it was written for. When
+ * it may not, the write no-ops exactly as the publish race does and the caller
+ * re-reads the note to tell the two refusals apart.
  */
-export function updateDraftNoteContent(db: Database, id: string, content: string): Note | undefined {
+export function updateDraftNoteContent(
+  db: Database,
+  id: string,
+  content: string,
+  /** The `revision` the rewrite was computed from, as read at request start. */
+  expectedRevision: number,
+): Note | undefined {
   const result = db
     .prepare(
       `UPDATE notes SET content = @content, revision = revision + 1, updated_at = @updated_at
-        WHERE id = @id AND status = 'draft'`,
+        WHERE id = @id AND status = 'draft' AND revision = @expected_revision`,
     )
-    .run({ id, content, updated_at: new Date().toISOString() });
+    .run({ id, content, expected_revision: expectedRevision, updated_at: new Date().toISOString() });
   if (result.changes === 0) return undefined;
   return getNote(db, id);
 }

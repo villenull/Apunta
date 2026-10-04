@@ -1400,6 +1400,87 @@ describe('POST /api/notes/:id/chat — the request, the diff and the reply', () 
     }
   });
 
+  /**
+   * The other half of the same window, and the one the lock cannot see: the
+   * note was *edited* while the model was revising it — a second window, or a
+   * late keepalive flush from this one. The rewrite is computed from the note
+   * as it stood when the request started, so writing it now would overwrite
+   * her edit without a trace. It is held back instead, the thread says so, and
+   * the note she PATCHed is what she is left with and what the client is sent.
+   */
+  it('holds back a rewrite when the note was edited mid-turn, and keeps her edit', async () => {
+    let release = (): void => {};
+    const held = new Promise<void>((resolve) => {
+      release = () => resolve();
+    });
+    let entered = (): void => {};
+    const insideStream = new Promise<void>((resolve) => {
+      entered = () => resolve();
+    });
+    class HoldingProvider extends FakeLlmProvider {
+      override async *refineNote(request: RefineNoteRequest): AsyncIterable<LlmEvent> {
+        const current = textToSections(request.noteText, request.sections);
+        yield { type: 'status', stage: 'drafting', message: 'Thinking…' };
+        // The stream is held open here, so the PATCH below lands in the window
+        // the write is conditional on.
+        entered();
+        await held;
+        yield {
+          type: 'refined',
+          reply: 'Shortened the Discussion.',
+          updatedSections: { ...current, Discussion: 'The wedding, mostly.' },
+          stats: STATS,
+        };
+      }
+    }
+
+    const local = await createTestApp({
+      providers: { llm: new HoldingProvider(), stt: new FakeSttProvider() },
+    });
+    try {
+      const own = await seedPatient(local.app, 'John Smith');
+      const localFormat = await seedFormat(local.app, { sections: OWNER_SECTIONS });
+      const note = await seedNote(local.app, own.id, localFormat.id, OWNER_NOTE);
+
+      const pending = local.app.inject({
+        method: 'POST',
+        url: `/api/notes/${note.id}/chat`,
+        payload: { message: 'Make the discussion shorter' },
+      });
+      await insideStream;
+
+      const handEdit = OWNER_NOTE.replace(
+        /Discussion: [^\n]*/,
+        'Discussion: She wanted to talk about her sister’s wedding. Typed by hand in the other window.',
+      );
+      expect(handEdit).not.toBe(OWNER_NOTE);
+      const patch = await local.app.inject({
+        method: 'PATCH',
+        url: `/api/notes/${note.id}`,
+        payload: { revision: note.revision, content: handEdit },
+      });
+      expect(patch.statusCode).toBe(200);
+
+      release();
+      const events = parseSse((await pending).body);
+
+      // Her edit is what is stored — the late rewrite did not land on it.
+      expect(getNote(local.db, note.id)?.content).toBe(handEdit);
+      const final = noteUpdated(events);
+      expect((final?.data['note'] as Note).content).toBe(handEdit);
+      expect((final?.data['note'] as Note).revision).toBe(note.revision + 1);
+      expect(final?.data['outcome']).toBe('withheld');
+      expect(String(final?.data['outcome_reason'])).toBe(t('chat.noteChangedMidEdit', {}, 'en'));
+      expect(assistantReply(events)).toBe(t('chat.noteChangedMidEdit', {}, 'en'));
+      // The model's claim is not in the thread: it describes an edit that did
+      // not happen, which is the whole reason the reply is the server's.
+      expect(assistantReply(events)).not.toContain('Shortened the Discussion.');
+    } finally {
+      release();
+      await local.close();
+    }
+  });
+
   it('does not let a request that only adds take anything out', async () => {
     // 2026-09-23 (b): "add that she's on sertraline 20 mg" deleted a
     // Discussion sentence instead of adding the medication.
