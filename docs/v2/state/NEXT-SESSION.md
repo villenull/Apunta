@@ -1,3 +1,27 @@
+## Real draft/refine returned; audit active, native completion still awaits owner
+
+ec84f011 completed/archived, leasesreleased. 1efd5da saves realbackendEnglish
+qwen draft5.875s/refine1.831s, pinnedNode24/fakeAIfalse/freshDB7847, noteGET
+persistence andrefineGET. This is typed-input backendavailability, NOTspeech
+handoff/UI/export/recovery/cardacceptance. Formatting/routing/emptysections
+imperfect, no clinicalqualityPASS. Rootfoundpersistednote hascontent notsections
+and doesnotcontain supplied sleep-hygiene intervention; authorrefine-removed
+sentence claim needs literalrawSSEaudit, notownsplit. Fresh ce24c1dd-d976-42a1
+-91dc-ae1864dbfb8e confirmed RUNNING callback frozenaudit/newevidence only;
+no inference/server rerun. Metadata/routing claims mustbequalifiedon evidence.
+
+0429 completed CLEAR report foundon disk at eventboundary, idleconfirmed,
+archivedsuccessfully. 23ownprobes/58controls +33author/17fixture checks green;
+exact1601Bbeforeafter, globaleslint0, no guards/suppression/config change.
+Authorreport replay side effect restoredbytebaseline and disclosedwithwitness.
+1efd5da preserves finalIR. Acquisitionreceipt/probe hygiene now independently
+complete. No unusedidleworkersretained. All native/server/Ollama/STT leasesfree.
+
+One workerexecutes useful audit; no otherdependency-ready producttask until
+pendingownerboundedstaticV3/fullV4 exception. P34BLOCKED/6 P35APPROVED/4
+P36held; no sixthnative rerun/seventh/reset/waiver. Nextaction grant→staticrows
+once withcurrentclean globalhygiene→freshresultaudit→coordinatordecision.
+
 ## Frozen STT audit saved; real English drafting readiness now executing
 
 ee832f2c finished/archived; 868302c preserves genuineproof with historical

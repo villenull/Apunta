@@ -2931,3 +2931,11 @@ negativequalified, actualprooflimitskept. 0429reviewrunningwithcontained
 author-reportrestore direction. ec84f011 realbackendEnglishdraft/refine
 sandbox7847 running, soleOllamainferencelease, no native/cardacceptance.
 Staticownergrantpending; never substitute APIactionsfor UIverification.
+
+## 2026-10-04 00:40 UTC — realwriting evidence returned, frozen audit active
+
+ec84realbackenddraft/refine completearchived, sourceuntouched/leasesfree.
+1efd5da preserves rawavailabilityreport; ce24freshfrozenaudit running. Root
+flagged ungroundedrefine-removal/bodyheading claims forliteralSSEcheck; no
+modelrerun. 0429probeIR CLEAR archived, authorreport restored/disclosed.
+Onlystaticownergrant blocksnativecriticalpath; no blocked-card bypass.
