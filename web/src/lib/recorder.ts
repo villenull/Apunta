@@ -24,6 +24,17 @@ import {
 const WORKLET_URL = '/pcm-worklet.js';
 const WORKLET_NAME = 'pcm-forwarder';
 
+/**
+ * How long `stop()` waits for the worklet's `'flushed'` acknowledgement.
+ *
+ * The ack is normally a round-trip across the port, well under a frame. If the
+ * worklet or its context has died — a `processorerror`, a closed context, a
+ * device lost after the graph was torn — the ack never comes, and waiting
+ * forever would strand the recording in memory with the UI stuck on it. After
+ * this bound, whatever is buffered becomes the file. Injectable for tests.
+ */
+export const FLUSH_TIMEOUT_MS = 1000;
+
 export type RecorderFailure =
   /** She said no to the microphone prompt, or the browser blocks it. */
   | 'permission'
@@ -244,7 +255,10 @@ export class Recorder {
   private buffer: PcmBuffer | null = null;
   private acceptingFrames = false;
   private flushResolve: (() => void) | null = null;
-  constructor(private readonly handlers: RecorderHandlers = {}) {}
+  constructor(
+    private readonly handlers: RecorderHandlers = {},
+    private readonly flushTimeoutMs: number = FLUSH_TIMEOUT_MS,
+  ) {}
 
   get seconds(): number {
     return this.buffer?.seconds ?? 0;
@@ -346,19 +360,35 @@ export class Recorder {
   async stop(): Promise<Blob> {
     if (!this.buffer) throw new RecorderError('failed', 'stop() before start()');
 
-    // Ask the worklet for its partial block and wait for its acknowledgement.
-    // The acknowledgement is the boundary: no samples accepted before it are
-    // discarded by teardown.
-    await new Promise<void>((resolve) => {
-      this.flushResolve = resolve;
-      this.node?.port.postMessage('flush');
-      if (this.node === null) resolve();
-    });
+    await this.flush();
     this.acceptingFrames = false;
 
     const wav = this.buffer.toWav();
     this.teardown();
     return wav;
+  }
+
+  /**
+   * Ask the worklet for its partial block and wait for its acknowledgement —
+   * but only so long. The acknowledgement is the boundary: no samples accepted
+   * before it are discarded by teardown. A worklet or context that has died
+   * never answers, so the bound is the boundary then, and whatever is buffered
+   * becomes the file. Both paths clear the resolver and the timer, so a late
+   * acknowledgement after the timeout is harmless.
+   */
+  private flush(): Promise<void> {
+    const node = this.node;
+    if (node === null) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const finish = (): void => {
+        clearTimeout(timer);
+        if (this.flushResolve === finish) this.flushResolve = null;
+        resolve();
+      };
+      const timer = setTimeout(finish, this.flushTimeoutMs);
+      this.flushResolve = finish;
+      node.port.postMessage('flush');
+    });
   }
 
   /** Throw the recording away — she navigated off, or it failed. */

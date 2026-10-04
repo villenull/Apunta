@@ -1,4 +1,4 @@
-import { basename, isAbsolute, join } from 'node:path';
+import { isAbsolute, join, win32 } from 'node:path';
 
 import {
   CreateBackupRequestSchema,
@@ -165,16 +165,24 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
  * with no other way to restore it. The archive is still the real gate —
  * `stageRestore` validates the manifest and refuses anything that is not
  * genuinely one of ours.
+ *
+ * Separators are read the Windows way whichever host this is, because a
+ * restored archive may have been handed over from a Windows machine (or be a
+ * Windows path on a POSIX one) and hard rule 4 says this logic stays
+ * OS-portable. `win32.basename` splits on both `/` and `\`; POSIX `basename`
+ * splits only on `/`. `win32.isAbsolute` likewise recognises `C:\…` and
+ * `\\server\share` on any host, so the filename is still extracted — and the
+ * bare-name confinement below still refuses either separator.
  */
-function resolveArchivePath(db: Database, config: AppConfig, file: string): string {
-  if (isAbsolute(file)) {
-    const name = file.split('/').pop() ?? '';
+export function resolveArchivePath(db: Database, config: AppConfig, file: string): string {
+  if (isAbsolute(file) || win32.isAbsolute(file)) {
+    const name = win32.basename(file);
     if (backupFilenameDate(name) === null) {
       throw badRequest('errors.bad_request.backup_filename_invalid', { name });
     }
     return file;
   }
-  if (basename(file) !== file || !file.toLowerCase().endsWith('.zip')) {
+  if (win32.basename(file) !== file || !file.toLowerCase().endsWith('.zip')) {
     throw notFound('errors.not_found.backup_file', { file });
   }
   return join(resolveBackupDir(db, config.dataDir), file);

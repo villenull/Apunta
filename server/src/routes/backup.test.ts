@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as BackupModule from '../backup/index.js';
 import { seedDatabase } from '../seed.js';
 import { createTestApp, type TestApp } from '../test/harness.js';
+import { resolveArchivePath } from './backup.js';
 
 /**
  * `runBackupAsync` is spied rather than mocked away, so the route's error
@@ -377,6 +378,43 @@ describe('POST /api/backup/restore — which files it will take', () => {
       expect(response.statusCode).toBe(400);
     } finally {
       await harness.close();
+    }
+  });
+});
+
+/**
+ * Hard rule 4: the path logic stays OS-portable. A Windows machine can hand
+ * over `C:\Users\…\apunta-backup-…zip`, and `file.split('/').pop()` never
+ * yields the filename for it, so a valid restore was rejected. `win32.basename`
+ * splits on both separators whatever the host, and the confinement below
+ * refuses either one.
+ */
+describe('resolveArchivePath', () => {
+  it('reads the filename from a POSIX absolute path', () => {
+    const archive = join(harness.dataDir, 'backups', 'apunta-backup-2026-01-01.zip');
+    expect(resolveArchivePath(harness.db, harness.config, archive)).toBe(archive);
+  });
+
+  it('reads the filename from a Windows absolute path, on any host', () => {
+    const archive = 'C:\\Users\\x\\Backups\\apunta-backup-2026-01-01.zip';
+    expect(resolveArchivePath(harness.db, harness.config, archive)).toBe(archive);
+  });
+
+  it('still refuses an absolute path whose filename is not one of ours', () => {
+    expect(() =>
+      resolveArchivePath(harness.db, harness.config, 'C:\\Users\\x\\Backups\\notes.zip'),
+    ).toThrow();
+  });
+
+  it('still refuses to climb out with either separator', () => {
+    const escapes = [
+      '../apunta-backup-2026-01-01.zip',
+      'nested/apunta-backup-2026-01-01.zip',
+      '..\\apunta-backup-2026-01-01.zip',
+      'nested\\apunta-backup-2026-01-01.zip',
+    ];
+    for (const file of escapes) {
+      expect(() => resolveArchivePath(harness.db, harness.config, file), file).toThrow();
     }
   });
 });

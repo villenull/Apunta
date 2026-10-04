@@ -119,6 +119,8 @@ describe('Recorder', () => {
     onmessage: ((event: MessageEvent<unknown>) => void) | null = null;
     postMessage(data: unknown): void {
       if (data !== 'flush') return;
+      // A dead worklet never answers; `stop()` must not wait forever for it.
+      if (!ackFlush) return;
       // The real worklet acknowledges once its partial block has crossed.
       queueMicrotask(() => {
         this.onmessage?.({ data: 'flushed' } as MessageEvent<unknown>);
@@ -137,9 +139,12 @@ describe('Recorder', () => {
   };
   /** The port of the node the last `start()` built. */
   let port: FakePort | null = null;
+  /** Whether the fake worklet answers a `'flush'`; a dead one does not. */
+  let ackFlush = true;
 
   beforeEach(() => {
     port = null;
+    ackFlush = true;
     class FakeAudioWorkletNode {
       readonly port = new FakePort();
       constructor(..._args: unknown[]) {
@@ -180,8 +185,11 @@ describe('Recorder', () => {
   });
 
   /** A started recorder and the worklet port feeding it. */
-  async function started(handlers: RecorderHandlers = {}): Promise<{ recorder: Recorder; port: FakePort }> {
-    const recorder = new Recorder(handlers);
+  async function started(
+    handlers: RecorderHandlers = {},
+    flushTimeoutMs?: number,
+  ): Promise<{ recorder: Recorder; port: FakePort }> {
+    const recorder = new Recorder(handlers, flushTimeoutMs);
     await recorder.start();
     if (port === null) throw new Error('the recorder never built a worklet node');
     return { recorder, port };
@@ -210,6 +218,33 @@ describe('Recorder', () => {
     // A frame the worklet sends after the flush boundary is not in the file.
     port.emit(new Float32Array(AUDIO_SAMPLE_RATE));
     expect(recorder.seconds).toBeCloseTo(1, 5);
+  });
+
+  /**
+   * A worklet that died — `processorerror`, a closed context, a device lost
+   * after the graph was built — never acknowledges the flush. `stop()` has to
+   * give up on the ack at the bound and hand back what is buffered, rather than
+   * hanging with the recording still in memory.
+   */
+  it('resolves within the flush timeout when the worklet never answers', async () => {
+    ackFlush = false;
+    const { recorder, port } = await started({}, 20);
+    port.emit(new Float32Array(AUDIO_SAMPLE_RATE));
+
+    const wav = await recorder.stop();
+    expect((await headerOf(wav)).durationSeconds).toBeCloseTo(1, 5);
+
+    // An acknowledgement that arrives after the timeout is harmless.
+    expect(() => port.onmessage?.({ data: 'flushed' } as MessageEvent<unknown>)).not.toThrow();
+    port.emit(new Float32Array(AUDIO_SAMPLE_RATE));
+    expect(recorder.seconds).toBeCloseTo(1, 5);
+  });
+
+  it('still waits for and honours a normal acknowledgement', async () => {
+    const { recorder, port } = await started();
+    port.emit(new Float32Array(AUDIO_SAMPLE_RATE));
+    const wav = await recorder.stop();
+    expect((await headerOf(wav)).durationSeconds).toBeCloseTo(1, 5);
   });
 });
 
