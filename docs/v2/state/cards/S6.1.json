@@ -6,9 +6,9 @@
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "baseCommit": "53f224e",
-  "status": "BLOCKED",
-  "lastCompletedStep": "Bounded synthetic assets proof accepted after independent ir3 CLEAR and coordinator 67-check rerun; documentation reconciled with existing provenance evidence",
-  "nextAllowedAction": "Production remains BLOCKED. Use accepted proof plus S6.1-AMENDMENT-PROPOSAL-v2.md and S6.1-NOTICE-PROVENANCE.md for remaining licence/attribution/scope decisions. No acquisition, notice publication or option adoption authorized by proof acceptance.",
-  "updatedUtc": "2026-10-02T06:12:31.638045+00:00"
+  "baseCommit": "c22b12b",
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "AM-203 applied to card and instruction-review corrections applied; production implementation dispatched",
+  "nextAllowedAction": "implementation return -> independent review; V4 stays BLOCKED while Exhibit A fields are [unknown]",
+  "updatedUtc": "2026-10-04T19:42:45.873117+00:00"
 }
