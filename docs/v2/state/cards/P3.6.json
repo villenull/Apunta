@@ -7,9 +7,9 @@
   ],
   "baseCommit": "62abb28",
   "attempt": 4,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-201 owner allowed exactly one fourth attempt bounded to F1-F7 of reviews/P3.6-impl3-source.md; attempt 4 CODE/UNIT repair dispatched 2026-10-04",
-  "nextAllowedAction": "attempt-4 harness repair (F1-F7 only) then fresh independent source review; native V3 only after CLEAR and a freshness check against current main",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Attempt 4 (AM-201) harness repair returned; independent source review reviews/P3.6-impl4-source.md CHANGES REQUESTED: D1 HIGH settings label never rendered (Drafting model needs >=2 LLM profiles), D2 MEDIUM narrowed ownership check cannot fail. F1-F5 CLEAR. Frozen test AppImage now stale under ruleBFreshness. Native V3 never run.",
+  "nextAllowedAction": "owner-decision: attempt 4 exhausted under AM-201; no fifth attempt without explicit owner grant",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {

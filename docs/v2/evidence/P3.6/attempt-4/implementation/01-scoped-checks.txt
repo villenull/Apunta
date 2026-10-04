@@ -1,0 +1,18 @@
+$ node --check scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ npx eslint scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+
+$ npx eslint docs/v2/evidence/P3.6/attempt-4/implementation/helper-tests.mjs
+exit=0
+
+$ npx prettier --check docs/v2/evidence/P3.6/attempt-4/implementation/helper-tests.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit=0

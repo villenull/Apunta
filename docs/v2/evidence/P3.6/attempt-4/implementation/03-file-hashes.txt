@@ -1,0 +1,7 @@
+sha256  lines  path
+9637b7daa32072cbe48143cc6618581a046dd926cec47bab830d687d40452e9c  3174  scripts/v2/tauri-e2e-smoke.test.mjs
+090472a285a89be22e447a6b72b29af8ac6408c71b2ff7bc9904228c10f0ca31  807  docs/v2/evidence/P3.6/attempt-4/implementation/helper-tests.mjs
+
+attempt-3 candidate (for comparison):
+ca8bc468ae15717ca14cdacf6848736672877448ced7d760066f756d4018314e    (from commit e212301)
+lines: 2789

@@ -59,7 +59,9 @@
  * count it saw.
  *
  * **Containment, all five asserted, none weakened to pass:** no process from
- * the run remains; no second `apunta.lock`, `apunta.db`, `-wal` or `-shm`;
+ * the run remains; no second `apunta.lock`, `apunta.db`, `-wal` or `-shm`
+ * (exactly those four names — the backup flow's own `backups/` directory is the
+ * run's output, not a second owner, and is reported rather than failed on);
  * 7879 is free afterwards; the observation channel is gone when the row ends
  * (zero occurrences of P3.4's marker path and gate string in the shipped
  * bundle); and `ollama` is still running, read from outside the run.
@@ -889,6 +891,22 @@ async function screenWords(file) {
 }
 
 /**
+ * Trailing punctuation off one token, however much of it there is.
+ *
+ * The app's own strings end in dots, and OCR hands them back as it reads them:
+ * `Ask a question or give feedback...` (`refine.inputPlaceholder`,
+ * `shared/src/i18n/en.ts:1058`) comes back as `feedback...`, and
+ * `Listening for words…` (`capture.listening`, `shared/src/i18n/en.ts:1010`,
+ * U+2026) comes back as `words…`, `words...` or `words.`. Stripping a **run** of
+ * `.`, `,` and U+2026 from both sides of the comparison is what makes the quoted
+ * string match whichever of those OCR actually produced — and it strips the
+ * quoted phrase's own dots identically, so the label stays quoted in full.
+ */
+function stripTrailingPunctuation(text) {
+  return text.replace(/[.,\u2026]+$/u, '');
+}
+
+/**
  * Every place `phrase` appears in the word list, as one box per occurrence.
  *
  * Words are compared case-insensitively and in reading order, and a match must
@@ -899,7 +917,8 @@ function findPhraseBoxes(words, phrase) {
   const wanted = phrase
     .toLowerCase()
     .split(/\s+/)
-    .filter((part) => part !== '');
+    .filter((part) => part !== '')
+    .map((part) => stripTrailingPunctuation(part));
   const found = [];
   for (let start = 0; start + wanted.length <= words.length; start += 1) {
     const slice = words.slice(start, start + wanted.length);
@@ -907,7 +926,7 @@ function findPhraseBoxes(words, phrase) {
     if (!sameLine) continue;
     const ordered = slice.every((word, index) => index === 0 || word.order === slice[index - 1].order + 1);
     if (!ordered) continue;
-    if (!slice.every((word, index) => word.text.toLowerCase().replace(/[.,]$/, '') === wanted[index]))
+    if (!slice.every((word, index) => stripTrailingPunctuation(word.text.toLowerCase()) === wanted[index]))
       continue;
     const left = Math.min(...slice.map((word) => word.left));
     const top = Math.min(...slice.map((word) => word.top));
@@ -967,6 +986,25 @@ async function waitForScreenLabel(window, phrase, timeoutMs) {
 }
 
 /**
+ * Clicks a label whose box was already grounded, at the box's own measured
+ * centre. A box that does not lie inside the window is refused rather than
+ * clicked at a clamped point.
+ */
+async function clickGroundedBox(window, offset, box, what) {
+  const inside = box.x >= 0 && box.y >= 0 && box.x + box.w <= window.width && box.y + box.h <= window.height;
+  if (!inside) {
+    return {
+      clicked: false,
+      why: `the measured label box ${JSON.stringify(box)} does not lie inside the ${String(window.width)}x${String(window.height)} window`,
+    };
+  }
+  const cx = window.x + offset.dx + Math.round(box.x + box.w / 2);
+  const cy = window.y + offset.dy + Math.round(box.y + box.h / 2);
+  const clicked = await clickNative(cx, cy, what);
+  return { clicked, why: clicked ? `${what} was clicked at its measured label centre` : 'the click failed' };
+}
+
+/**
  * Clicks the control whose label appears exactly once on screen, at the label's
  * own measured centre. A refused grounding is the caller's `NOT RUN`.
  */
@@ -977,21 +1015,8 @@ async function clickScreenLabel(window, offset, phrase, what) {
   if (words === null) return { clicked: false, why: 'tesseract read no words out of the window capture' };
   const grounded = groundPhrase(words, phrase);
   if (grounded.box === null) return { clicked: false, why: grounded.why };
-  const inside =
-    grounded.box.x >= 0 &&
-    grounded.box.y >= 0 &&
-    grounded.box.x + grounded.box.w <= window.width &&
-    grounded.box.y + grounded.box.h <= window.height;
-  if (!inside) {
-    return {
-      clicked: false,
-      why: `the measured label box ${JSON.stringify(grounded.box)} does not lie inside the ${String(window.width)}x${String(window.height)} window`,
-    };
-  }
-  const cx = window.x + offset.dx + Math.round(grounded.box.x + grounded.box.w / 2);
-  const cy = window.y + offset.dy + Math.round(grounded.box.y + grounded.box.h / 2);
-  const clicked = await clickNative(cx, cy, what);
-  return { clicked, why: grounded.why };
+  const result = await clickGroundedBox(window, offset, grounded.box, what);
+  return { clicked: result.clicked, why: grounded.why };
 }
 
 /**
@@ -1667,6 +1692,35 @@ function ownershipBaselineProof(names) {
   return { owned, missing };
 }
 
+/**
+ * What the post-run name set says against the baseline, split by what each part
+ * means.
+ *
+ * `secondOwned` is the question the check's name claims: one of the four C-OWN@1
+ * files (`apunta.lock`, `apunta.db`, `apunta.db-wal`, `apunta.db-shm`) appeared
+ * **beside** the baseline, which is a second server owning this folder.
+ *
+ * `otherNew` is everything else that appeared — and it is **not** a failure,
+ * because the run's own flows put things there on purpose: the backup flow writes
+ * `backups/` (`server/src/backup/store.ts:37-39`, the default backup directory is
+ * `join(dataDir, 'backups')`), so counting *every* new name as a second owner
+ * failed this row on a healthy run. Those names are still reported, so nothing is
+ * hidden by not failing on them.
+ *
+ * `vanished` is still over the **whole** baseline: nothing the first instance
+ * created may disappear behind it, whether it is one of the four or not.
+ */
+function ownershipContainment(baseline, after) {
+  const owned = ownershipFiles().map((file) => file.name);
+  const appeared = after.filter((name) => !baseline.includes(name));
+  return {
+    owned,
+    secondOwned: appeared.filter((name) => owned.includes(name)),
+    otherNew: appeared.filter((name) => !owned.includes(name)),
+    vanished: baseline.filter((name) => !after.includes(name)),
+  };
+}
+
 /** Saves a flow screenshot under the evidence directory, named by flow. */
 function saveEvidenceScreenshot(windowId, flow) {
   const file = join(scratchDir(), `window-${String(windowId)}.png`);
@@ -1988,21 +2042,24 @@ async function runSmoke() {
 
     if (baselineNames !== null) {
       const after = snapshotDataDirNames();
-      const extra = after.filter((name) => !baselineNames.includes(name));
-      const vanished = baselineNames.filter((name) => !after.includes(name));
+      const own = ownershipContainment(baselineNames, after);
       check(
         'smoke no second lock, database, -wal or -shm',
-        extra.length === 0,
-        extra.length === 0
-          ? `nothing appeared beside the ${String(baselineNames.length)}-name baseline (${JSON.stringify(baselineNames)})`
-          : `appeared beside the baseline: ${extra.join(', ')}`,
+        own.secondOwned.length === 0,
+        own.secondOwned.length === 0
+          ? `none of the four C-OWN@1 names (${own.owned.join(', ')}) appeared beside the ` +
+              `${String(baselineNames.length)}-name baseline` +
+              (own.otherNew.length === 0
+                ? ''
+                : `; the run's own other output, which is not ownership, was: ${own.otherNew.join(', ')}`)
+          : `a second owner appeared beside the baseline: ${own.secondOwned.join(', ')}`,
       );
       check(
         'smoke the data folder was not emptied behind the baseline',
-        vanished.length === 0,
-        vanished.length === 0
+        own.vanished.length === 0,
+        own.vanished.length === 0
           ? 'the baseline name set is intact'
-          : `gone from the baseline: ${vanished.join(', ')}`,
+          : `gone from the baseline: ${own.vanished.join(', ')}`,
       );
     } else {
       notRun(
@@ -2048,7 +2105,211 @@ async function runSmoke() {
 //
 // The labels below are quoted from `shared/src/i18n/en.ts` and the components
 // that render them, so each is a real string on a real pane rather than an
-// invented one.
+// invented one — and each was chosen because it renders **exactly once** on the
+// screen it is read on. `UI_LABELS` carries that proof next to every string: the
+// i18n key, the file and line that renders it, and the fact that no other line in
+// that file renders the same key. A screen that carries the same string twice is
+// where the pane has two openers, and those are handled by `openWorkspacePane`,
+// never by picking one of two boxes.
+
+/**
+ * Every label this harness grounds a click or a pane on, with its source.
+ *
+ * `i18nLine` is the line in `shared/src/i18n/en.ts` that defines the key, `file`
+ * is the component that renders it and `line` the line in **that** file. Both are
+ * asserted by the helper tests against the tree, so a label cannot drift away
+ * from the string the app renders without this file failing a check.
+ */
+const UI_LABELS = {
+  /** F1: the add-patient screen. `patients.add` is there **twice** (the h2 at
+   * `AddPatient.tsx:92` and the submit button at `:152`), so it is not a
+   * pane-only label; the identifier field's own label renders once. */
+  onboardingPane: {
+    key: 'patients.identifierLabel',
+    text: 'Identifier (optional)',
+    i18nLine: 2168,
+    file: 'web/src/routes/AddPatient.tsx',
+    line: 128,
+  },
+  /** F3: the capture screen's waiting state, U+2026 and all. */
+  captureListening: {
+    key: 'capture.listening',
+    text: 'Listening for words…',
+    i18nLine: 1010,
+    file: 'web/src/components/LiveRecording.tsx',
+    line: 74,
+  },
+  /** F2: the refine composer's placeholder, three ASCII dots and all. */
+  refinePlaceholder: {
+    key: 'refine.inputPlaceholder',
+    text: 'Ask a question or give feedback...',
+    i18nLine: 1058,
+    file: 'web/src/components/RefineColumn.tsx',
+    line: 284,
+  },
+  /** F4: the plan pane's empty-state control, inside the pane. */
+  planStart: {
+    key: 'plan.start',
+    text: 'Start a plan',
+    i18nLine: 1907,
+    file: 'web/src/components/PlanView.tsx',
+    line: 348,
+  },
+  /** F4: the notes column's plan switch, the control that **opens** the pane. */
+  planSwitch: {
+    key: 'plan.title',
+    text: 'Treatment plan',
+    i18nLine: 1835,
+    file: 'web/src/components/NotesColumn.tsx',
+    line: 111,
+  },
+  /** F4/F5: the welcome card's own hint line, unique on every screen it is on. */
+  planCardHint: {
+    key: 'workspace.cardPlanHint',
+    text: 'Set goals and track progress.',
+    i18nLine: 1752,
+    file: 'web/src/components/PatientWelcome.tsx',
+    line: 73,
+  },
+  /** F5: the notes column's briefing switch. */
+  prepSwitch: {
+    key: 'notes.prepareForSession',
+    text: 'Prepare for session',
+    i18nLine: 1527,
+    file: 'web/src/components/NotesColumn.tsx',
+    line: 122,
+  },
+  /** F5: the welcome card's briefing hint. */
+  prepCardHint: {
+    key: 'workspace.cardPrepHint',
+    text: 'A short summary before you see them.',
+    i18nLine: 1753,
+    file: 'web/src/components/PatientWelcome.tsx',
+    line: 79,
+  },
+  /** F5: the notes column's brainstorm switch. */
+  brainstormSwitch: {
+    key: 'brainstorm.title',
+    text: 'Brainstorm',
+    i18nLine: 1762,
+    file: 'web/src/components/NotesColumn.tsx',
+    line: 100,
+  },
+  /** F5: the welcome card's brainstorm hint. */
+  brainstormCardHint: {
+    key: 'workspace.cardBrainstormHint',
+    text: 'Think through the case out loud with the assistant.',
+    i18nLine: 1751,
+    file: 'web/src/components/PatientWelcome.tsx',
+    line: 67,
+  },
+  /** F6: a heading inside the open Appearance section. `settings.appearance` is
+   * on the modal **twice** (the nav label at `Settings.tsx:181` and the section
+   * heading at `:455`); `settings.draftingModel` renders once. */
+  settingsPane: {
+    key: 'settings.draftingModel',
+    text: 'Drafting model',
+    i18nLine: 2406,
+    file: 'web/src/routes/Settings.tsx',
+    line: 357,
+  },
+};
+
+/**
+ * The label every remaining flow grounds its control on, with its source: the
+ * labels the repair did **not** have to change, kept here so the whole set of
+ * grounded strings is in one place and the helper tests can check all of them.
+ */
+const FLOW_LABELS = {
+  onboardingFormat: {
+    key: 'format.addTitle',
+    text: 'Add your note format',
+    file: 'web/src/routes/OnboardingFormat.tsx',
+    line: 115,
+  },
+  draftChip: {
+    key: 'note.draftChip',
+    text: 'Draft',
+    file: 'web/src/components/NotesColumn.tsx',
+    line: 185,
+  },
+  publish: {
+    key: 'note.finishAndCopy',
+    text: 'Finish & copy',
+    file: 'web/src/components/NoteView.tsx',
+    line: 694,
+  },
+  editAgain: {
+    key: 'note.editAgain',
+    text: 'Edit again',
+    file: 'web/src/components/NoteView.tsx',
+    line: 694,
+  },
+  copy: { key: 'note.copy', text: 'Copy', file: 'web/src/components/NoteView.tsx', line: 678 },
+  copied: { key: 'note.copied', text: 'Copied', file: 'web/src/components/NoteView.tsx', line: 678 },
+  /** The fabricated seed's own name, not an i18n string (HS-8). */
+  patientRow: { key: null, text: PATIENT_NAME, file: null, line: null },
+  recents: {
+    key: 'patients.recents',
+    text: 'Recents',
+    file: 'web/src/components/PatientsColumn.tsx',
+    line: 1348,
+  },
+  planGoals: { key: 'plan.goals', text: 'Goals', file: 'web/src/components/PlanView.tsx', line: 376 },
+  prepHeading: {
+    key: 'prep.title',
+    text: 'Before this session',
+    file: 'web/src/components/PrepView.tsx',
+    line: 130,
+  },
+  brainstormEmpty: {
+    key: 'brainstorm.empty',
+    text: 'Think out loud about',
+    file: 'web/src/components/BrainstormView.tsx',
+    line: 181,
+  },
+  settingsMenu: {
+    key: 'common.settings',
+    text: 'Settings',
+    file: 'web/src/components/PatientsColumn.tsx',
+    line: 438,
+  },
+  backupTab: {
+    key: 'settings.backup',
+    text: 'Backup',
+    file: 'web/src/routes/Settings.tsx',
+    line: 87,
+  },
+  backupNow: {
+    key: 'backup.now',
+    text: 'Back up now',
+    file: 'web/src/components/BackupCard.tsx',
+    line: 197,
+  },
+};
+
+/**
+ * The three panes that are opened from the workspace rather than from inside
+ * themselves, each with the two on-screen openers and which of them is unique.
+ *
+ * The notes column's switch (`NotesColumn.tsx:100`, `:111`, `:122`) and the
+ * patient's welcome card (`PatientWelcome.tsx:66`, `:72`, `:78`) carry the **same
+ * label** for each of the three panes, and the workspace renders the welcome
+ * **beside** the notes column whenever a patient is open with no note
+ * (`Workspace.tsx:625` and `:713`), so with the welcome up the switch's label is
+ * on screen twice and refusing it is correct. The welcome card's **hint** is on
+ * screen exactly once in that state, and the whole card is one button, so
+ * clicking the hint opens the same pane. Once a pane is open the welcome is not
+ * rendered at all (`Workspace.tsx:706-711`), the switch's label is unique, and
+ * the hint is not on screen — which is why both paths are real UI actions on a
+ * uniquely identified control and neither is ever a choice between two boxes of
+ * the same label.
+ */
+const PANE_OPENERS = {
+  plan: { switch: UI_LABELS.planSwitch, cardHint: UI_LABELS.planCardHint },
+  prep: { switch: UI_LABELS.prepSwitch, cardHint: UI_LABELS.prepCardHint },
+  brainstorm: { switch: UI_LABELS.brainstormSwitch, cardHint: UI_LABELS.brainstormCardHint },
+};
 
 /** Confirms a pane by its pane-only label, or records why it is not confirmed. */
 async function confirmPane(window, flow, phrase, timeoutMs = 8000) {
@@ -2063,6 +2324,59 @@ async function confirmPane(window, flow, phrase, timeoutMs = 8000) {
   return false;
 }
 
+/**
+ * Which of a pane's two on-screen openers this screen identifies uniquely.
+ *
+ * Pure, so the choice is testable without a display: it takes the word list and
+ * the pane's two labels and answers `switch`, `card` or `null` with both reasons.
+ */
+function choosePaneOpener(words, pane) {
+  const asSwitch = groundPhrase(words, pane.switch.text);
+  if (asSwitch.box !== null) return { opener: 'switch', box: asSwitch.box, why: asSwitch.why };
+  const asCard = groundPhrase(words, pane.cardHint.text);
+  if (asCard.box !== null) return { opener: 'card', box: asCard.box, why: asCard.why };
+  return {
+    opener: null,
+    box: null,
+    why: `${pane.switch.text}: ${asSwitch.why}; ${pane.cardHint.text}: ${asCard.why}`,
+  };
+}
+
+/**
+ * Opens one of the workspace's panes through a control that is unique on the
+ * screen it is clicked on.
+ *
+ * The pane has two on-screen openers and which one is unique depends on the
+ * screen the workspace is in (see `PANE_OPENERS`): the notes column's switch, and
+ * the patient's welcome card, which carry the same label and are rendered
+ * together whenever a patient is open with no note. So this reads the screen
+ * **once** and:
+ *
+ * 1. grounds the switch's label — clicked when it appears exactly once, which is
+ *    every screen where the welcome is not up;
+ * 2. otherwise grounds the welcome card's **hint** line, which appears exactly
+ *    once in that state and is inside the card's own button, so clicking it opens
+ *    the same pane;
+ * 3. otherwise records `NOT RUN` with **both** reasons, so a refusal is still
+ *    fail-closed.
+ *
+ * Both paths are a real UI action at a measured centre of a uniquely identified
+ * label: neither is a choice between two boxes of the same label, and neither is
+ * an API call standing in for a click.
+ */
+async function openWorkspacePane(ctx, pane, what) {
+  const { window } = ctx;
+  const shot = await captureWindow(window.id);
+  if (shot === null) return { opened: false, why: 'the window capture failed' };
+  const words = await screenWords(shot);
+  if (words === null) return { opened: false, why: 'tesseract read no words out of the window capture' };
+
+  const chosen = choosePaneOpener(words, pane);
+  if (chosen.box === null) return { opened: false, why: chosen.why };
+  const result = await clickGroundedBox(window, ctx.offset, chosen.box, `${what} ${chosen.opener}`);
+  return { opened: result.clicked, why: chosen.why, opener: chosen.opener };
+}
+
 /** The onboarding Continue button: the app creates its standard format itself. */
 async function flowOnboarding(ctx) {
   const { window } = ctx;
@@ -2074,7 +2388,7 @@ async function flowOnboarding(ctx) {
   }
   // The onboarding screen is the one that asks for a note format
   // (`format.addTitle`, `routes/OnboardingFormat.tsx:115`).
-  const onScreen = await waitForScreenLabel(window, 'Add your note format', 4000);
+  const onScreen = await waitForScreenLabel(window, FLOW_LABELS.onboardingFormat.text, 4000);
   if (!onScreen.seen) {
     recordFlow(
       'onboarding',
@@ -2104,8 +2418,12 @@ async function flowOnboarding(ctx) {
   }
   pass('onboarding the Continue click is grounded in a unique accent cluster', picked.why);
 
-  // The screen the action lands on: the add-patient screen (`patients.add`).
-  if (!(await confirmPane(window, 'onboarding', 'Add patient'))) return;
+  // The screen the action lands on: the add-patient dialog. Its own title
+  // (`patients.add`) is on that screen **twice** — the dialog's h2
+  // (`AddPatient.tsx:92`) and the submit button (`AddPatient.tsx:152`) — so the
+  // label this confirms the screen with is the identifier field's, which renders
+  // once (`AddPatient.tsx:128`).
+  if (!(await confirmPane(window, 'onboarding', UI_LABELS.onboardingPane.text))) return;
 
   // The fact the action produces: the app created the standard format itself.
   // Before Continue there is no format at all, so this is not a pre-existing
@@ -2184,10 +2502,13 @@ async function flowCapture(ctx) {
   await pressKey(['Return'], 'Return to choose the highlighted patient');
   await sleep(2000);
 
-  // The capture screen is confirmed by its own label (`capture.listening`)
-  // before anything is recorded, so a screen that was never reached cannot
-  // produce a note.
-  if (!(await confirmPane(window, 'capture', 'Listening for words'))) return;
+  // The capture screen is confirmed by its own label (`capture.listening`,
+  // `shared/src/i18n/en.ts:1010`, quoted with its U+2026) before anything is
+  // recorded, so a screen that was never reached cannot produce a note. The
+  // waiting line renders it inside a `<span>` (`LiveRecording.tsx:74`) once; the
+  // second reference on that line is the thinking dots' **aria** label, which is
+  // not on the screen.
+  if (!(await confirmPane(window, 'capture', UI_LABELS.captureListening.text))) return;
 
   // The record control is a large option tile and the first focusable control on
   // the screen, so it is reached by the app's own keyboard.
@@ -2268,7 +2589,12 @@ async function flowDraft(ctx) {
   // The real action: click the drafted note's own row in the notes column. The
   // `Draft` chip (`note.draftChip`, `NotesColumn.tsx:185`) identifies it, and a
   // screen with two draft rows is refused rather than guessed at.
-  const opened = await clickScreenLabel(window, ctx.offset, 'Draft', "the drafted note's row");
+  const opened = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.draftChip.text,
+    "the drafted note's row",
+  );
   if (!opened.clicked) {
     recordFlow('draft', 'NOT RUN', `the drafted note's row could not be grounded: ${opened.why}`);
     notRun('draft', `the drafted note's row could not be grounded: ${opened.why}`);
@@ -2276,9 +2602,11 @@ async function flowDraft(ctx) {
   }
   await sleep(1200);
 
-  // The screen itself: the draft screen carries the refine column
-  // (`refine.inputPlaceholder`), which no other screen renders.
-  if (!(await confirmPane(window, 'draft', 'Ask a question or give feedback'))) return;
+  // The screen itself: the draft screen carries the refine column, whose
+  // composer placeholder (`refine.inputPlaceholder`,
+  // `shared/src/i18n/en.ts:1058`, `RefineColumn.tsx:284`) no other screen
+  // renders. It is quoted with its three ASCII dots.
+  if (!(await confirmPane(window, 'draft', UI_LABELS.refinePlaceholder.text))) return;
 
   const note = await noteById(notes[0].id);
   requireFlow(
@@ -2318,7 +2646,7 @@ async function flowRefine(ctx) {
   await sleep(2500);
 
   // The screen: the refine column is still the pane the message was sent from.
-  if (!(await confirmPane(window, 'refine', 'Ask a question or give feedback'))) return;
+  if (!(await confirmPane(window, 'refine', UI_LABELS.refinePlaceholder.text))) return;
   saveEvidenceScreenshot(window.id, 'refine');
 
   // The fact the send produces: the note moved. Before the send it was read and
@@ -2364,8 +2692,13 @@ async function flowPublishAndCopy(ctx) {
   const noteId = ctx.noteId;
 
   // The real action, on the control's own label: `Finish & copy`
-  // (`note.finishAndCopy`, `NoteView.tsx:688`).
-  const publishedClick = await clickScreenLabel(window, ctx.offset, 'Finish & copy', 'the publish control');
+  // (`note.finishAndCopy`, `NoteView.tsx:694`).
+  const publishedClick = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.publish.text,
+    'the publish control',
+  );
   if (!publishedClick.clicked) {
     recordFlow('publish+copy', 'NOT RUN', `the publish control could not be grounded: ${publishedClick.why}`);
     notRun('publish+copy', `the publish control could not be grounded: ${publishedClick.why}`);
@@ -2376,7 +2709,7 @@ async function flowPublishAndCopy(ctx) {
   // The visual state the click produced: the control's own label changed to
   // `Edit again` (`note.editAgain`). That is a control-specific string, not a
   // colour count.
-  const editAgain = await waitForScreenLabel(window, 'Edit again', 8000);
+  const editAgain = await waitForScreenLabel(window, FLOW_LABELS.editAgain.text, 8000);
   const published = await noteById(noteId);
   requireFlow(
     'publish+copy',
@@ -2392,12 +2725,12 @@ async function flowPublishAndCopy(ctx) {
   // Copy: the control's own label (`note.copy`) becomes `note.copied`. This is
   // the Copied **state**, read off the screen; the host clipboard is not read
   // and nothing is claimed about it.
-  const copyClick = await clickScreenLabel(window, ctx.offset, 'Copy', 'the copy control');
+  const copyClick = await clickScreenLabel(window, ctx.offset, FLOW_LABELS.copy.text, 'the copy control');
   if (!copyClick.clicked) {
     recordFlow('publish+copy', 'FAIL', `the copy control could not be grounded: ${copyClick.why}`);
     return;
   }
-  const copied = await waitForScreenLabel(window, 'Copied', 6000);
+  const copied = await waitForScreenLabel(window, FLOW_LABELS.copied.text, 6000);
   requireFlow(
     'publish+copy',
     'the copy control shows Copied',
@@ -2411,7 +2744,7 @@ async function flowPublishAndCopy(ctx) {
 async function flowPatientList(ctx) {
   const { window } = ctx;
   // The real action: click the fabricated patient's own row in the directory.
-  const opened = await clickScreenLabel(window, ctx.offset, PATIENT_NAME, "the patient's row");
+  const opened = await clickScreenLabel(window, ctx.offset, FLOW_LABELS.patientRow.text, "the patient's row");
   if (!opened.clicked) {
     recordFlow('patient list', 'NOT RUN', `the patient's row could not be grounded: ${opened.why}`);
     notRun('patient list', `the patient's row could not be grounded: ${opened.why}`);
@@ -2421,7 +2754,7 @@ async function flowPatientList(ctx) {
 
   // The screen: the directory's own section labels (`patients.recents`,
   // `PatientsColumn.tsx:1344`), which no other screen renders.
-  const recents = await waitForScreenLabel(window, 'Recents', 8000);
+  const recents = await waitForScreenLabel(window, FLOW_LABELS.recents.text, 8000);
   if (!recents.seen) {
     recordFlow(
       'patient list',
@@ -2452,23 +2785,42 @@ async function flowPlan(ctx) {
     notRun('plan', 'no patient exists, so there is no plan to open');
     return;
   }
-  // The real action, on the plan pane's own empty-state control
-  // (`plan.start`, `PlanView.tsx:348`): clicking it opens the pane **and** makes
-  // a plan exist, so the fact below is produced by the click rather than being
-  // an always-present envelope. The pane's switch button is refused on purpose:
-  // it shares its label (`plan.title`) with the pane heading, so it is not a
-  // unique target and this file does not click at an ambiguous label.
-  const started = await clickScreenLabel(window, ctx.offset, 'Start a plan', 'the start-a-plan control');
+  // First the pane is **opened**, by whichever of its two on-screen openers is
+  // unique on the screen the workspace is in (`openWorkspacePane`). `Start a
+  // plan` (`plan.start`, `PlanView.tsx:348`) is the pane's own empty-state
+  // control, so it is only on screen once the pane is open — clicking it without
+  // opening the pane first was a label that is never there.
+  const openedPane = await openWorkspacePane(ctx, PANE_OPENERS.plan, 'the plan pane');
+  if (!openedPane.opened) {
+    recordFlow('plan', 'NOT RUN', `the plan pane could not be opened by a unique control: ${openedPane.why}`);
+    notRun('plan', `the plan pane could not be opened by a unique control: ${openedPane.why}`);
+    return;
+  }
+  pass(
+    'plan the pane was opened by a uniquely identified control',
+    `${openedPane.opener}: ${openedPane.why}`,
+  );
+  await sleep(2000);
+
+  // Then the real action, on the pane's own empty-state control: clicking it
+  // makes a plan exist, so the fact below is produced by the click rather than
+  // being an always-present envelope.
+  const started = await clickScreenLabel(
+    window,
+    ctx.offset,
+    UI_LABELS.planStart.text,
+    'the start-a-plan control',
+  );
   if (!started.clicked) {
-    recordFlow('plan', 'NOT RUN', `the plan pane could not be opened by a unique control: ${started.why}`);
-    notRun('plan', `the plan pane could not be opened by a unique control: ${started.why}`);
+    recordFlow('plan', 'NOT RUN', `the start-a-plan control could not be grounded: ${started.why}`);
+    notRun('plan', `the start-a-plan control could not be grounded: ${started.why}`);
     return;
   }
   await sleep(2000);
 
   // The screen: the plan's own goals heading (`plan.goals`), which only the plan
   // pane renders.
-  const goals = await waitForScreenLabel(window, 'Goals', 8000);
+  const goals = await waitForScreenLabel(window, FLOW_LABELS.planGoals.text, 8000);
   if (!goals.seen) {
     recordFlow('plan', 'NOT RUN', `the plan pane did not show: ${String(goals.why ?? 'unknown')}`);
     notRun('plan', `the plan pane did not show: ${String(goals.why ?? 'unknown')}`);
@@ -2499,19 +2851,24 @@ async function flowBriefing(ctx) {
     notRun('briefing', 'no patient exists, so there is no briefing to open');
     return;
   }
-  // The real action, on the notes column's own switch control
-  // (`notes.prepareForSession`, `NotesColumn.tsx:118`), whose label differs from
-  // the pane's own heading so it is a unique target.
-  const opened = await clickScreenLabel(window, ctx.offset, 'Prepare for session', 'the briefing control');
-  if (!opened.clicked) {
+  // The real action, on whichever of the briefing's two on-screen openers is
+  // unique here (`openWorkspacePane`): the notes column's switch
+  // (`notes.prepareForSession`, `NotesColumn.tsx:122`) and the welcome card that
+  // carries the same label plus its own hint line. The switch's label is on
+  // screen **twice** while the patient's welcome is up beside the notes column,
+  // and exactly once once a pane is open, because the welcome is not rendered
+  // then; either way the click lands on a uniquely identified control.
+  const opened = await openWorkspacePane(ctx, PANE_OPENERS.prep, 'the briefing pane');
+  if (!opened.opened) {
     recordFlow('briefing', 'NOT RUN', `the briefing control could not be grounded: ${opened.why}`);
     notRun('briefing', `the briefing control could not be grounded: ${opened.why}`);
     return;
   }
+  pass('briefing the pane was opened by a uniquely identified control', `${opened.opener}: ${opened.why}`);
   await sleep(1500);
 
   // The screen: the prep pane's own heading (`prep.title`, `PrepView.tsx:130`).
-  const heading = await waitForScreenLabel(window, 'Before this session', 8000);
+  const heading = await waitForScreenLabel(window, FLOW_LABELS.prepHeading.text, 8000);
   if (!heading.seen) {
     recordFlow('briefing', 'NOT RUN', `the briefing pane did not show: ${String(heading.why ?? 'unknown')}`);
     notRun('briefing', `the briefing pane did not show: ${String(heading.why ?? 'unknown')}`);
@@ -2536,20 +2893,23 @@ async function flowBrainstorm(ctx) {
     notRun('brainstorm', 'no patient exists, so there is no brainstorm to open');
     return;
   }
-  // The real action, on the notes column's brainstorm switch (`brainstorm.title`,
-  // `NotesColumn.tsx:95`). The pane's own confirmation below is its empty-thread
-  // sentence, which is a different string.
-  const opened = await clickScreenLabel(window, ctx.offset, 'Brainstorm', 'the brainstorm control');
-  if (!opened.clicked) {
+  // The real action, on whichever of the brainstorm pane's two on-screen openers
+  // is unique here (`openWorkspacePane`): the notes column's switch
+  // (`brainstorm.title`, `NotesColumn.tsx:100`) and the welcome card that carries
+  // the same label plus its own hint line. The pane's own confirmation below is
+  // its empty-thread sentence, a different string.
+  const opened = await openWorkspacePane(ctx, PANE_OPENERS.brainstorm, 'the brainstorm pane');
+  if (!opened.opened) {
     recordFlow('brainstorm', 'NOT RUN', `the brainstorm control could not be grounded: ${opened.why}`);
     notRun('brainstorm', `the brainstorm control could not be grounded: ${opened.why}`);
     return;
   }
+  pass('brainstorm the pane was opened by a uniquely identified control', `${opened.opener}: ${opened.why}`);
   await sleep(1500);
 
   // The screen: the brainstorm pane's own empty-thread sentence
   // (`brainstorm.empty`, `BrainstormView.tsx:181`).
-  const thread = await waitForScreenLabel(window, 'Think out loud about', 8000);
+  const thread = await waitForScreenLabel(window, FLOW_LABELS.brainstormEmpty.text, 8000);
   if (!thread.seen) {
     recordFlow(
       'brainstorm',
@@ -2584,7 +2944,7 @@ async function openSettings(ctx) {
     if (shot === null) continue;
     const words = await screenWords(shot);
     if (words === null) continue;
-    const grounded = groundPhrase(words, 'Settings');
+    const grounded = groundPhrase(words, FLOW_LABELS.settingsMenu.text);
     if (grounded.box !== null) return true;
   }
   return false;
@@ -2601,7 +2961,12 @@ async function flowSettings(ctx) {
     notRun('settings', why);
     return;
   }
-  const opened = await clickScreenLabel(window, ctx.offset, 'Settings', 'the settings menu entry');
+  const opened = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.settingsMenu.text,
+    'the settings menu entry',
+  );
   if (!opened.clicked) {
     recordFlow('settings', 'NOT RUN', `the settings menu entry could not be grounded: ${opened.why}`);
     notRun('settings', `the settings menu entry could not be grounded: ${opened.why}`);
@@ -2609,9 +2974,13 @@ async function flowSettings(ctx) {
   }
   await sleep(1500);
 
-  // The screen: the settings pane's own section label (`settings.appearance`,
-  // `Settings.tsx:85`), which no other screen renders.
-  const appearance = await waitForScreenLabel(window, 'Appearance', 8000);
+  // The screen: a heading **inside** the open Appearance section
+  // (`settings.draftingModel`, `Settings.tsx:357`). The section's own name
+  // (`settings.appearance`) is on the modal twice — the nav label
+  // (`Settings.tsx:85`, rendered at `:181`) and the section heading
+  // (`Settings.tsx:455`) — so it is not a unique label and confirming the screen
+  // with it refused every healthy run.
+  const appearance = await waitForScreenLabel(window, UI_LABELS.settingsPane.text, 8000);
   if (!appearance.seen) {
     recordFlow(
       'settings',
@@ -2641,7 +3010,12 @@ async function flowBackup(ctx) {
     return;
   }
   // The settings pane's own backup tab (`settings.backup`, `Settings.tsx:87`).
-  const tab = await clickScreenLabel(window, ctx.offset, 'Backup', 'the settings backup tab');
+  const tab = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.backupTab.text,
+    'the settings backup tab',
+  );
   if (!tab.clicked) {
     recordFlow('backup', 'NOT RUN', `the backup tab could not be grounded: ${tab.why}`);
     notRun('backup', `the backup tab could not be grounded: ${tab.why}`);
@@ -2650,7 +3024,12 @@ async function flowBackup(ctx) {
   await sleep(1000);
 
   // The real action, on the card's own control (`backup.now`, `backup.now`).
-  const ran = await clickScreenLabel(window, ctx.offset, 'Back up now', 'the backup-now control');
+  const ran = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.backupNow.text,
+    'the backup-now control',
+  );
   if (!ran.clicked) {
     recordFlow('backup', 'NOT RUN', `the backup-now control could not be grounded: ${ran.why}`);
     notRun('backup', `the backup-now control could not be grounded: ${ran.why}`);
@@ -2762,9 +3141,12 @@ if (isEntryPoint) {
 }
 
 export {
+  choosePaneOpener,
   classifySourceOutputs,
   exitCodeFor,
   ownershipBaselineProof,
+  ownershipContainment,
+  stripTrailingPunctuation,
   scanBundleForObservationChannel,
   snapshotDataDirNames,
   findPhraseBoxes,
@@ -2786,4 +3168,7 @@ export {
   RULE_B_BASE,
   RULE_B_PATHS,
   REQUIRED_TOOLS,
+  FLOW_LABELS,
+  PANE_OPENERS,
+  UI_LABELS,
 };

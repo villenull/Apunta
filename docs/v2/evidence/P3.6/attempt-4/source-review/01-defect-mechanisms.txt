@@ -1,0 +1,190 @@
+P3.6 attempt 4 — independent SOURCE review, defect mechanisms (read-only)
+Reviewer: independent source reviewer. Nothing was built, run, launched or bound;
+no AppImage was rebuilt or launched; nothing was staged or committed.
+
+Hash verified
+  sha256sum scripts/v2/tauri-e2e-smoke.test.mjs
+    9637b7daa32072cbe48143cc6618581a046dd926cec47bab830d687d40452e9c   (matches the return note)
+  git diff --stat: 1 file changed, 461 insertions(+), 76 deletions(-); 2789 -> 3174 lines
+
+Scoped probes, all exit 0
+  node --check scripts/v2/tauri-e2e-smoke.test.mjs
+  npx eslint scripts/v2/tauri-e2e-smoke.test.mjs
+  npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs
+  npx eslint docs/v2/evidence/P3.6/attempt-4/implementation/helper-tests.mjs
+  npx prettier --check docs/v2/evidence/P3.6/attempt-4/implementation/helper-tests.mjs
+  node docs/v2/evidence/P3.6/attempt-4/implementation/helper-tests.mjs   -> 40/40
+    (its one live read is the read-only `git diff` / `git status` attempt 3's D6 test already did;
+     it printed "Rule B has 30 in-flight change(s) in this working tree")
+
+--------------------------------------------------------------------------------
+D1 (HIGH) — F6 is not fixed: the replacement label is inside a component the
+server guarantees never renders.
+
+Chain, all read in this tree:
+
+  harness:2983   const appearance = await waitForScreenLabel(window, UI_LABELS.settingsPane.text, 8000);
+  harness:2124   settingsPane: { key: 'settings.draftingModel', text: 'Drafting model',
+                                  i18nLine: 2406, file: 'web/src/routes/Settings.tsx', line: 357 }
+
+  shared/src/i18n/en.ts:2406     'settings.draftingModel': { text: 'Drafting model' }
+  web/src/routes/Settings.tsx:357   <h2 className="settings-title">{t('settings.draftingModel')}</h2>
+
+  ... but that h2 is inside LlmProfileSettings, declared with a nullable return:
+
+  web/src/routes/Settings.tsx:303  function LlmProfileSettings(): React.JSX.Element | null {
+  web/src/routes/Settings.tsx:323    const available = (Array.isArray(stored.llm_available_profiles) ? stored.llm_available_profiles : [])
+  web/src/routes/Settings.tsx:324      .filter((profile): profile is LlmProfile => profile === 'quick' || profile === 'thorough');
+  web/src/routes/Settings.tsx:326    if (available.length < 2) return null;
+
+  and available.length is always 1, because the server promotes one profile:
+
+  server/src/ai/profiles.ts:17-19  export const LLM_PROFILES: Partial<Record<LlmProfile, { model: string }>> = {
+                                   quick: { model: PROMOTED_DEFAULT_MODEL },
+                                 };                                  // "the sole promoted profile"
+  server/src/ai/profiles.ts:186   const profiles = Object.keys(LLM_PROFILES) as LlmProfile[];   // ['quick']
+  server/src/ai/profiles.ts:188   if (options.fakeAi) return { profile: 'quick', model, available: profiles };
+  server/src/ai/profiles.ts:214   settings[LLM_AVAILABLE_PROFILES_SETTING] = [...resolved.available];
+
+  grep over server/src (excluding *.test.ts) for LLM_AVAILABLE_PROFILES_SETTING / llm_available_profiles
+  finds exactly one writer: profiles.ts:214. There is no seed, migration or route that adds 'thorough'
+  (ModelEval rejected every Thorough candidate, per the comment at profiles.ts:9-11).
+
+  The modal's default section is 'appearance' (Settings.tsx:113), and that section renders
+  Settings.tsx:210-215  {show.includes('appearance') && (<><AppearanceSettings /><LlmProfileSettings /></>)}
+
+  => 'Drafting model' is never on the settings modal, in fake mode or real mode.
+     waitForScreenLabel times out -> recordFlow('settings','NOT RUN') + notRun(...) ->
+     exitCodeFor returns 4 (harness:2743-2748). V3 cannot exit 0.
+
+Why the implementer's own proof passed anyway: helper test
+  'F6 the settings heading is rendered once, and `Appearance` really is twice'
+counts lines containing t('settings.draftingModel') in Settings.tsx (== 2: the h2 and the
+role="radiogroup" aria-label at :358) and regex-matches the h2 line at :357. A line count
+cannot see an early `return null`, so the assertion is true and the label is unreachable.
+The same blind spot applies to every UI_LABELS proof: it proves where a string is WRITTEN,
+never whether the enclosing component MOUNTS.
+
+Verified replacements, all inside the open Appearance section with no profile guard:
+  settings.theme    'Theme'      en.ts:2424   Settings.tsx:465   (only t('settings.theme') in web/src)
+  settings.fontSize 'Font size'  en.ts:2426   Settings.tsx:478
+  settings.font     'Font'       en.ts:2428   Settings.tsx:524
+  doc.settings      'Settings'   en.ts:1288   Settings.tsx:168   (the modal's settings-nav-title,
+                                                             unique once the menu is closed —
+                                                             this is the option attempt 3's review named)
+
+--------------------------------------------------------------------------------
+D2 (MEDIUM) — F7's mechanism is the one the review prescribed and is implemented
+correctly, but as narrowed the check can never fail.
+
+  harness:1713  function ownershipContainment(baseline, after) {
+  harness:1715    const appeared = after.filter((name) => !baseline.includes(name));
+  harness:1716    return { owned, secondOwned: appeared.filter((n) => owned.includes(n)), ... };
+                }
+  harness:1689-1693  ownershipBaselineProof asserts ALL FOUR names are present in the baseline
+                     (checked at the run's baseline step; attempt 3 verified this too)
+  harness:1662-1667  ownershipFiles() === ['apunta.lock','apunta.db','apunta.db-wal','apunta.db-shm']
+  harness:2045-2055  check('smoke no second lock, database, -wal or -shm', own.secondOwned.length === 0, ...)
+
+A name already in the baseline can never be in `appeared`, so secondOwned === [] always.
+The check is one of the card's five containment assertions, and a second server owning the
+folder cannot show up as a NEW filename there — it either fails the lock or writes the same
+four names. So the assertion moved from falsely-red (attempt 3's F7: the backup's own backups/)
+to falsely-green.
+
+The one way it can still fire is a false positive of the same class: SQLite creates and removes
+apunta.db-wal, so if it were absent at baseline and the FIRST instance's own later writes
+re-created it, the row would report 'a second owner appeared'.
+
+Ways forward, both inside the harness file:
+  (a) make it falsifiable for the same four names: record device+inode (or mtime+size) per file
+      in the baseline and assert it is unchanged at the end, and/or read the holder out of
+      apunta.lock and assert it is still this run's pid; or
+  (b) keep it as a re-assertion of baseline presence and say so in the check's name and in the
+      file header, so no reader takes it for a second-owner detector.
+
+--------------------------------------------------------------------------------
+F1-F5 re-verified against CURRENT source (not against 04-defect-repair-map.md)
+
+F1  'Identifier (optional)'  en.ts:2168. grep 'identifierLabel' web/src -> exactly one hit,
+    AddPatient.tsx:128; the literal appears in no other component. 'patients.add' is still twice
+    on that screen (AddPatient.tsx:92 h2, :152 submit) and showTitle={false} (:85) keeps the
+    Dialog title prop off screen. Route: OnboardingFormat.tsx:76 navigates to returnTo, default
+    '/patients/new' (:30); App.tsx:117 routes that to AddPatient.                                CLEAR
+F2  'Ask a question or give feedback...'  en.ts:1058, rendered once at RefineColumn.tsx:284;
+    :285 is the composer's aria label. stripTrailingPunctuation = /[.,\u2026]+$/u on both sides.  CLEAR
+F3  'Listening for words…'  en.ts:1010, the visible <span> at LiveRecording.tsx:74. The second
+    reference on that line is ThinkingDots' aria label, and ThinkingDots.tsx:28 renders a visible
+    label only when the `label` prop is passed — it is not.                                        CLEAR
+    (caveat: the span renders only while the preview is empty, LiveRecording.tsx:73, and flowCapture
+     starts playback first — pre-existing, UNKNOWN without a native V3)
+F4  openWorkspacePane runs before clickScreenLabel('Start a plan'). 'Start a plan' en.ts:1907 =
+    PlanView.tsx:348, inside the current === null empty state — unreachable while the pane is closed.
+    Openers: NotesColumn.tsx:111 (plan.title) when the welcome is down, else PatientWelcome.tsx:73
+    (workspace.cardPlanHint), which sits inside that card's <button> (PatientWelcome.tsx:109-118). CLEAR
+F5  Same helper. Re-derived from Workspace.tsx: PatientWelcome renders only at :713
+    (view === 'notes' && note === null) and the notes column at :625 renders at the same time;
+    firstNoteOnly (:436) is false for a patient with a note. With the welcome up each shared label
+    is twice; with a pane open the welcome is NOT mounted and the switch is unique. NotesColumn.tsx
+    :100/:111/:122 and PatientWelcome.tsx:66/:72/:78 confirmed as the single render sites.
+    choosePaneOpener returns both refusal reasons when neither grounds -> NOT RUN.            CLEAR
+
+Labels attempt 3 left alone, audited for the same absent/duplicate/mis-quoted class:
+  Add your note format  1 occurrence in en.ts, OnboardingFormat.tsx:115                     ok
+  Draft                 1 occurrence; note.draftChip only at NotesColumn.tsx:185               ok
+  Finish & copy / Edit again   one ternary at NoteView.tsx:694                              ok
+  Copy / Copied         2 en.ts entries each: note.copy/copied (NoteView.tsx:678) and
+                        common.copy/copied — common.copy only in Setup.tsx:203,
+                        common.copied in PlanView.tsx:245 and Licenses.tsx:122, none on the
+                        note screen                                                                     ok
+  Recents               PatientsColumn.tsx:1344 passes the string to sectionDragProps, which
+                        returns only event handlers (:1030-1034); the only visible text is :1348 ok
+  Goals                 1 occurrence, PlanView.tsx:376, in the current !== null branch         ok
+  Before this session   1 occurrence, PrepView.tsx:130                                       ok
+  Think out loud about  1 occurrence, BrainstormView.tsx:181 (a call with { name }), the only
+                        brainstorm.empty render site                                           ok
+  Settings              visible at PatientsColumn.tsx:438 while the mission menu is open; the
+                        other references are other routes, or Workspace.tsx:804 / Settings.tsx:168
+                        inside the modal (and Settings.tsx:168 is showTitle={false}'s sibling —
+                        visible as the nav title, but only AFTER the modal opens, which is when
+                        the harness no longer grounds 'Settings')                              ok
+  Backup                visible as the nav label Settings.tsx:87 only while the appearance
+                        section is open; BackupCard's two backup.title headings (:169, :253)
+                        mount only after that tab is clicked, and 'Back up now' is grounded
+                        after the click                                                                     ok
+
+--------------------------------------------------------------------------------
+D1-D6 / R1-R7 intact, no check removed or renamed
+
+  diff of every line containing 'check(' between HEAD and the working tree: empty (21 sites).
+  diff of every notRun('...') flow name: empty.
+  D3 installTraps still first in main; D4 scanBundleForObservationChannel still 'unreadable'
+     fail-closed and the check still requires unreadable === null && occurrences === 0;
+     D5 exitCodeFor still maps any NOT RUN to 4; D6 ruleBFreshness still runs both git halves
+     with the literal base 62abb28 and compares against newestRuleBInput();
+     R1 pickPrimaryCluster still needs CLUSTER_MARGIN; R2 Edit again / Copied;
+     R3 assertNoPhysicalStream via classifySourceOutputs; R4 all eleven flows NOT RUN on abort;
+     R5 isEntryPoint gates main(); R6 REQUIRED_TOOLS preflight; R7 ensureDisplay.
+  Identity glob, measured frame-to-client, scale check, CSP assertion, pid-scoped stop: untouched.
+
+Scope: only scripts/v2/tauri-e2e-smoke.test.mjs and the new docs/v2/evidence/P3.6/attempt-4/**
+  are this candidate's. Also dirty on the shared tree, NOT this candidate's and NOT AM-201's:
+  docs/v2/CONTRACTS.md, docs/v2/cards/P5.3.md, P5.4.md, S6.1.md, server/src/**,
+  docs/v2/state/{P5.3,S6.1}-APPLIED-CHANGELOG.md (other workers' lanes; left alone per CLAUDE.md).
+  Nothing staged; HEAD is 8ec7c7f.
+
+--------------------------------------------------------------------------------
+Freshness of the frozen test AppImage (question 4, NOT a defect of this candidate)
+
+Invoked the harness's own exported helpers against
+src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage:
+
+  artifactMtime : 2026-10-04T04:15:39.670Z
+  newest input  : server/src/backup/restore.test.ts  2026-10-04T19:32:42.183Z
+  artifactNewer : false            <- ruleBFreshness says the bundle is stale
+  moved         : 30 paths         (26 committed across 62abb28...HEAD, 4 dirty)
+
+=> V3's freshness precondition CANNOT be met against the frozen image. V0 must re-run in full
+   (bash scripts/v2/package-linux-resources.sh, then npm run tauri:build:test, in S3's order)
+   before any native V3, and the identity glob re-counted under Stop 3. The predicate behaved
+   exactly as D6 intends; this is a planning item for the coordinator, not a candidate defect.
