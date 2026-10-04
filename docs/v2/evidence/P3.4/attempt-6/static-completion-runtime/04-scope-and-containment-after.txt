@@ -1,0 +1,52 @@
+04 - scope, hashes and containment after both rows
+==================================================
+date_utc: 2026-10-04T00:52:29Z
+head_before_and_after: 3fae52b899d4732d798f1d7959956c846864db06 (unchanged; nothing staged, nothing committed, no branch, no pull, no push)
+branch: main
+
+== author-artifact regeneration check (lint generator: collect-licenses.mjs --check, check-ui-strings.mjs)
+git status --porcelain -- THIRD-PARTY-LICENSES.md package-lock.json package.json:
+(empty above = no author artifact was rewritten; nothing to restore, nothing interpreted)
+THIRD-PARTY-LICENSES.md sha256: 1a7d5ab23c0c41b57339c4a4e662c668b448f1cd0435be3b0a6422d20f45e103
+package-lock.json sha256: f9ecaee78322d9b105e86e986479826af8b9a38c13c43c126fb66e5efc9a3e59
+
+== full working tree status after both rows
+?? docs/v2/evidence/P3.4/attempt-6/static-completion-runtime/
+(only the new evidence directory is untracked; nothing else in the tree moved)
+
+== scoped source hashes after (compare with 00-decode-and-identity.txt)
+harness_sha256: 97b504516222d26c7ad9d86237e4d618f6063c37dbf45c44f66954af9c5dcd39
+codec_sha256: 82e1d066b50ae7b57850f01b249610dcc6f809c97fb87531f968a3d085a6f767
+card_sha256: 4cc4856190eff2f7af44174670af7fa7c2340300c2cf83a2b917226435228965
+checkpoint_sha256: f72b1db8b4b3e81f16ab1dc30572de480bd4d8ce9031787be15048324dd6b0fa
+eslint_config_sha256: 96afe984aa4b56b0f2e252ea4ccb700429c2b636736b282e7c46777ba8378d17
+prettierignore_sha256: 12d42aba96f7e65f13560fbce3867b05e999078b4c77c40fd35029e4462bd718
+harness_sha256 (shipping, untouched): cc733cd0791cb896e57b07608dd97e4c1e835efb06f8b491d5f1010619df7a16
+
+== card V3 row fact re-read from the tree after execution (the grep targets and the capabilities dir)
+src-tauri/capabilities exists: NO
+grep targets present:
+  src-tauri/src: present
+  src-tauri/tauri.conf.json: present
+  src-tauri/tauri.test.conf.json: present
+  src-tauri/build.rs: present
+
+== V3 run folder (the row's own /tmp sandbox path, the card's own path)
+total 0
+-rw-r--r-- 1 villenull villenull 0 Oct  3 18:51 hits
+hits_bytes: 0
+
+== containment: nothing listening on 7717 was contacted by this worker; no app, no AppImage, no build producer
+live_data_dir_touched: NO (HS-1; no sandbox.mjs run, no server boot, no database opened)
+network: NO (no outbound call; the only sockets in the log above are loopback 7812/80 inside npm test's own in-process test servers)
+appimage_build: NO (npm run tauri:build:test never invoked; no producer script invoked)
+scratch: build/p34-static-runtime/ (git-ignored, .gitignore:55 build/)
+.gitignore:55:build/	build/p34-static-runtime
+
+== evidence files written by this worker (exclusive new directory)
+total 40
+-rw-r--r-- 1 villenull villenull  1722 Oct  3 18:50 00-decode-and-identity.txt
+-rw-r--r-- 1 villenull villenull  1742 Oct  3 18:51 01-bash-n-and-bytes.txt
+-rw-r--r-- 1 villenull villenull   839 Oct  3 18:51 02-V3-execution.txt
+-rw-r--r-- 1 villenull villenull 21223 Oct  3 18:52 03-V4-execution.txt
+-rw-r--r-- 1 villenull villenull  2661 Oct  3 18:52 04-scope-and-containment-after.txt

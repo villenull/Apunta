@@ -1,0 +1,29 @@
+01 - bash -n syntax check and exact bytes (before any execution)
+=================================================================
+date_utc: 2026-10-04T00:51:05Z
+bash_version: GNU bash, version 5.3.15(1)-release (x86_64-pc-linux-gnu)
+
+== build/p34-static-runtime/V3.command.txt
+bytes_on_disk: 624
+sha256_on_disk: 94dd69952e08bc153165fa6503901a02f9760777e89c5f52bbc744b197de4168
+trailing_newline_bytes:  0
+backtick_count: 0
+first_byte:  b
+last_byte:  0
+exact_bytes_follow:
+b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0; for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then echo "FAIL: '$w' appears in a file the AppImage is built from:"; head -n 5 "$b/hits"; hits=$((hits+1)); fi; done; echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"; test "$hits" = 0 || bad=1; test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }; test "$bad" = 0
+--- bash -n build/p34-static-runtime/V3.command.txt
+bash_n_exit: 0
+
+== build/p34-static-runtime/V4.command.txt
+bytes_on_disk: 271
+sha256_on_disk: 3bcc1bf4ea4cdb21e89460323c13f7f5271084170f4e0c328c8877f27dc5b732
+trailing_newline_bytes:  )
+backtick_count: 0
+first_byte:  e
+last_byte:  )
+exact_bytes_follow:
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && npm test && npm run lint && npm run typecheck && ( export PATH="$HOME/.cargo/bin:$PATH" && cd src-tauri && cargo fmt --check && cargo clippy -- -D warnings && cargo test )
+--- bash -n build/p34-static-runtime/V4.command.txt
+bash_n_exit: 0
+

@@ -1,0 +1,224 @@
+03 - V4 executed once, whole && chain verbatim
+==============================================
+row: P3.4 V4 (card docs/v2/cards/P3.4.md, Verification table)
+authority: AM-199 (whole chain, no partial substitute, no pre-acceptance lint)
+cwd: /home/villenull/Projects/Apunta
+head: 3fae52b899d4732d798f1d7959956c846864db06
+command_file: build/p34-static-runtime/V4.command.txt
+command_bytes: 271
+command_sha256: 3bcc1bf4ea4cdb21e89460323c13f7f5271084170f4e0c328c8877f27dc5b732
+invocations_of_this_file: 1 (one bash script invoke, one exit)
+start_utc: 2026-10-04T00:51:25Z
+--- full stdout+stderr of the row, verbatim, below ---
+v24.19.0
+
+> apunta@0.0.0 test
+> npm run build:shared && vitest run
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v4.1.11 /home/villenull/Projects/Apunta
+
+{"level":30,"time":1791075088558,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088583,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088598,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088614,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"POST","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1791075088559,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1791075088559,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.2448079999999777,"msg":"request completed"}
+{"level":40,"time":1791075088583,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1791075088583,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.21043800000001056,"msg":"request completed"}
+{"level":40,"time":1791075088599,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1791075088599,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.13895800000000236,"msg":"request completed"}
+{"level":40,"time":1791075088614,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"POST","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1791075088614,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.1386889999999994,"msg":"request completed"}
+{"level":30,"time":1791075088636,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"POST","url":"/api/formats/detect","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088656,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088667,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088678,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088693,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"OPTIONS","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075088705,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/patients","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":40,"time":1791075088636,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","rule":"origin","method":"POST","url":"/api/formats/detect","msg":"request rejected by the guard"}
+{"level":30,"time":1791075088636,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.14904900000004773,"msg":"request completed"}
+{"level":40,"time":1791075088656,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","rule":"sec_fetch_site","method":"GET","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1791075088656,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.09883899999999812,"msg":"request completed"}
+{"level":40,"time":1791075088667,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","rule":"options_origin","method":"OPTIONS","url":"/api/patients","msg":"request rejected by the guard"}
+{"level":30,"time":1791075088667,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":0.10280900000003612,"msg":"request completed"}
+{"level":30,"time":1791075088678,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.1303790000000049,"msg":"request completed"}
+{"level":30,"time":1791075088693,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.09300899999999501,"msg":"request completed"}
+{"level":30,"time":1791075088705,"pid":3089110,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.0981390000000033,"msg":"request completed"}
+{"level":30,"time":1791075089907,"pid":3089425,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089907,"pid":3089425,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.2568179999999529,"msg":"request completed"}
+{"level":30,"time":1791075089907,"pid":3089425,"hostname":"FBI-PC","reqId":"req-2","req":{"method":"GET","url":"/anything","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089908,"pid":3089425,"hostname":"FBI-PC","reqId":"req-2","res":{"statusCode":503},"responseTime":0.1584479999999644,"msg":"request completed"}
+{"level":30,"time":1791075089908,"pid":3089425,"hostname":"FBI-PC","reqId":"req-3","req":{"method":"GET","url":"/","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089908,"pid":3089425,"hostname":"FBI-PC","reqId":"req-3","res":{"statusCode":503},"responseTime":0.14042899999998326,"msg":"request completed"}
+{"level":30,"time":1791075089909,"pid":3089425,"hostname":"FBI-PC","reqId":"req-4","req":{"method":"GET","url":"/","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089909,"pid":3089425,"hostname":"FBI-PC","reqId":"req-4","res":{"statusCode":503},"responseTime":0.11598899999995638,"msg":"request completed"}
+{"level":30,"time":1791075089909,"pid":3089425,"hostname":"FBI-PC","reqId":"req-5","req":{"method":"GET","url":"/again","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089909,"pid":3089425,"hostname":"FBI-PC","reqId":"req-5","res":{"statusCode":503},"responseTime":0.09963899999996784,"msg":"request completed"}
+{"level":30,"time":1791075089912,"pid":3089425,"hostname":"FBI-PC","reqId":"req-6","req":{"method":"GET","url":"/","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089912,"pid":3089425,"hostname":"FBI-PC","reqId":"req-6","res":{"statusCode":503},"responseTime":0.11494899999996733,"msg":"request completed"}
+{"level":30,"time":1791075089912,"pid":3089425,"hostname":"FBI-PC","reqId":"req-7","req":{"method":"GET","url":"/anything","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089912,"pid":3089425,"hostname":"FBI-PC","reqId":"req-7","res":{"statusCode":503},"responseTime":0.08862900000002583,"msg":"request completed"}
+{"level":30,"time":1791075089921,"pid":3089425,"hostname":"FBI-PC","reqId":"req-8","req":{"method":"GET","url":"/api/health","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089921,"pid":3089425,"hostname":"FBI-PC","reqId":"req-8","res":{"statusCode":503},"responseTime":0.10283899999996038,"msg":"request completed"}
+{"level":30,"time":1791075089921,"pid":3089425,"hostname":"FBI-PC","reqId":"req-9","req":{"method":"GET","url":"/api/nothing","host":"localhost:7812","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075089921,"pid":3089425,"hostname":"FBI-PC","reqId":"req-9","res":{"statusCode":503},"responseTime":0.06788000000000238,"msg":"request completed"}
+{"level":30,"time":1791075090042,"pid":3089482,"hostname":"FBI-PC","msg":"Server listening at http://127.0.0.1:7812"}
+{"level":30,"time":1791075090046,"pid":3089482,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"evil.example:7812","remoteAddress":"127.0.0.1","remotePort":45732},"msg":"incoming request"}
+{"level":40,"time":1791075090046,"pid":3089482,"hostname":"FBI-PC","reqId":"req-1","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1791075090048,"pid":3089482,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":403},"responseTime":1.1897289999999998,"msg":"request completed"}
+{"level":30,"time":1791075090050,"pid":3089482,"hostname":"FBI-PC","reqId":"req-2","req":{"method":"GET","url":"/api/health","host":"","remoteAddress":"127.0.0.1","remotePort":45742},"msg":"incoming request"}
+{"level":40,"time":1791075090050,"pid":3089482,"hostname":"FBI-PC","reqId":"req-2","rule":"host","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1791075090050,"pid":3089482,"hostname":"FBI-PC","reqId":"req-2","res":{"statusCode":403},"responseTime":0.3380170000000078,"msg":"request completed"}
+{"level":30,"time":1791075090051,"pid":3089482,"hostname":"FBI-PC","reqId":"req-3","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":45732},"msg":"incoming request"}
+{"level":30,"time":1791075090052,"pid":3089482,"hostname":"FBI-PC","reqId":"req-3","res":{"statusCode":503},"responseTime":0.4824649999999906,"msg":"request completed"}
+{"level":30,"time":1791075090057,"pid":3089482,"hostname":"FBI-PC","reqId":"req-4","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":45752},"msg":"incoming request"}
+{"level":40,"time":1791075090057,"pid":3089482,"hostname":"FBI-PC","reqId":"req-4","rule":"origin","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1791075090057,"pid":3089482,"hostname":"FBI-PC","reqId":"req-4","res":{"statusCode":403},"responseTime":0.24442700000000173,"msg":"request completed"}
+{"level":30,"time":1791075090062,"pid":3089482,"hostname":"FBI-PC","reqId":"req-5","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":45762},"msg":"incoming request"}
+{"level":40,"time":1791075090062,"pid":3089482,"hostname":"FBI-PC","reqId":"req-5","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1791075090062,"pid":3089482,"hostname":"FBI-PC","reqId":"req-5","res":{"statusCode":403},"responseTime":0.1303089999999827,"msg":"request completed"}
+{"level":30,"time":1791075090065,"pid":3089482,"hostname":"FBI-PC","reqId":"req-6","req":{"method":"GET","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":45752},"msg":"incoming request"}
+{"level":40,"time":1791075090065,"pid":3089482,"hostname":"FBI-PC","reqId":"req-6","rule":"sec_fetch_site","method":"GET","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1791075090065,"pid":3089482,"hostname":"FBI-PC","reqId":"req-6","res":{"statusCode":403},"responseTime":0.14102900000000318,"msg":"request completed"}
+{"level":30,"time":1791075090067,"pid":3089482,"hostname":"FBI-PC","reqId":"req-7","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":45762},"msg":"incoming request"}
+{"level":40,"time":1791075090067,"pid":3089482,"hostname":"FBI-PC","reqId":"req-7","rule":"options_origin","method":"OPTIONS","url":"/api/health","msg":"request rejected by the guard"}
+{"level":30,"time":1791075090068,"pid":3089482,"hostname":"FBI-PC","reqId":"req-7","res":{"statusCode":403},"responseTime":1.200378999999998,"msg":"request completed"}
+{"level":30,"time":1791075090070,"pid":3089482,"hostname":"FBI-PC","reqId":"req-8","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":45752},"msg":"incoming request"}
+{"level":30,"time":1791075090071,"pid":3089482,"hostname":"FBI-PC","reqId":"req-8","res":{"statusCode":503},"responseTime":0.19141799999999876,"msg":"request completed"}
+{"level":30,"time":1791075090073,"pid":3089482,"hostname":"FBI-PC","reqId":"req-9","req":{"method":"OPTIONS","url":"/api/health","host":"127.0.0.1:7812","remoteAddress":"127.0.0.1","remotePort":45762},"msg":"incoming request"}
+{"level":30,"time":1791075090073,"pid":3089482,"hostname":"FBI-PC","reqId":"req-9","res":{"statusCode":503},"responseTime":0.12882899999999609,"msg":"request completed"}
+{"level":30,"time":1791075090331,"pid":3089564,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075090336,"pid":3089564,"hostname":"FBI-PC","reqId":"req-1","req":{"method":"GET","url":"/api/health","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075090333,"pid":3089564,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":1.841210999999987,"msg":"request completed"}
+{"level":30,"time":1791075090337,"pid":3089564,"hostname":"FBI-PC","reqId":"req-1","res":{"statusCode":503},"responseTime":0.25459700000001817,"msg":"request completed"}
+{"level":30,"time":1791075090337,"pid":3089564,"hostname":"FBI-PC","reqId":"req-2","req":{"method":"GET","url":"/api/nope","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+{"level":30,"time":1791075090337,"pid":3089564,"hostname":"FBI-PC","reqId":"req-2","res":{"statusCode":503},"responseTime":0.20148800000001188,"msg":"request completed"}
+effective time zone: America/Mexico_City (TZ=<unset>)
+
+ Test Files  163 passed (163)
+      Tests  2235 passed (2235)
+   Start at  18:51:26
+   Duration  10.13s (transform 4.07s, setup 0ms, import 17.94s, tests 27.19s, environment 13.97s)
+
+
+> apunta@0.0.0 lint
+> eslint . && prettier --check . && node scripts/check-no-external-urls.mjs && node scripts/collect-licenses.mjs --check && node scripts/check-ui-strings.mjs
+
+Checking formatting...
+All matched files use Prettier code style!
+THIRD-PARTY-LICENSES.md lists all 111 shipped packages.
+TOTAL 0
+
+> apunta@0.0.0 typecheck
+> npm run build:shared && npm run typecheck --workspaces --if-present
+
+
+> apunta@0.0.0 build:shared
+> npm run build --workspace @apunta/shared
+
+
+> @apunta/shared@0.0.0 build
+> tsc -p tsconfig.json
+
+
+> @apunta/shared@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+
+> @apunta/server@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+
+> @apunta/installer@0.0.0 typecheck
+> tsc -p tsconfig.typecheck.json
+
+
+> @apunta/web@0.0.0 typecheck
+> tsc -p tsconfig.json
+
+
+> @apunta/e2e@0.0.0 typecheck
+> tsc -p tsconfig.json
+
+   Compiling apunta v0.0.0 (/home/villenull/Projects/Apunta/src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.00s
+   Compiling apunta v0.0.0 (/home/villenull/Projects/Apunta/src-tauri)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.81s
+     Running unittests src/main.rs (target/debug/deps/apunta-3be0144fe377c2d8)
+
+running 60 tests
+test bridge::tests::a_fatal_line_needs_no_nonce ... ok
+test bridge::tests::a_name_inside_a_value_is_not_a_field ... ok
+test bridge::tests::a_fatal_line_without_a_code_is_malformed ... ok
+test bridge::tests::a_ready_line_without_our_nonce_is_refused ... ok
+test bridge::tests::another_protocol_revision_is_refused_rather_than_navigated_to ... ok
+test bridge::tests::escaped_characters_are_unescaped ... ok
+test bridge::tests::an_unrecognised_code_is_carried_verbatim_and_not_swallowed ... ok
+test bridge::tests::a_port_outside_the_range_is_malformed ... ok
+test bridge::tests::an_unknown_type_is_reported_rather_than_treated_as_fatal ... ok
+test bridge::tests::a_ready_line_with_another_nonces_nonce_is_refused ... ok
+test bridge::tests::field_order_does_not_matter ... ok
+test bridge::tests::reads_the_ready_line_cbridge_rule_1_fixes ... ok
+test bridge::tests::reads_the_two_fixed_codes ... ok
+test bridge::tests::the_shutdown_line_is_the_shape_cbridge_rule_2_spells ... ok
+test bridge::tests::the_two_codes_are_never_interchanged ... ok
+test bridge::tests::unreadable_lines_are_unreadable_not_fatal ... ok
+test launch::tests::a_missing_bundle_is_refused_rather_than_falling_back_to_the_checkout ... ok
+test launch::tests::a_test_build_on_the_live_port_is_refused ... ok
+test launch::tests::a_port_that_is_not_a_port_is_refused_in_both_identities ... ok
+test launch::tests::a_test_build_with_both_variables_resolves_the_bundled_launch ... ok
+test launch::tests::production_honours_a_non_live_port_with_a_data_folder_override ... ok
+test launch::tests::an_incomplete_bundle_is_refused_rather_than_half_resolved ... ok
+test launch::tests::a_test_build_without_both_variables_is_refused ... ok
+test launch::tests::identity_and_feature_must_agree ... ok
+test launch::tests::production_honours_xdg_data_home ... ok
+test launch::tests::the_two_identities_are_distinct_strings ... ok
+test launch::tests::production_defaults_to_7717_and_the_platform_default_folder ... ok
+test lifecycle::tests::a_child_that_exits_at_any_point_ends_the_ladder_and_nothing_more_is_signalled ... ok
+test launch::tests::the_live_port_is_refused_in_the_production_identity_too ... ok
+test lifecycle::tests::only_two_steps_send_a_signal_and_they_are_the_documented_two ... ok
+test launch::tests::the_four_overrides_all_point_inside_the_bundle ... ok
+test lifecycle::tests::sigterm_is_sent_once_not_on_every_poll ... ok
+test lifecycle::tests::the_budgets_are_the_card_values ... ok
+test lifecycle::tests::the_ladder_is_shutdown_then_ten_seconds_then_term_then_five_then_kill ... ok
+test permissions::tests::an_origin_the_shell_cannot_read_fails_closed ... ok
+test permissions::tests::every_other_permission_kind_is_refused ... ok
+test permissions::tests::an_allowed_origin_that_does_not_parse_refuses_rather_than_allows ... ok
+test quit::tests::a_finished_gate_stays_finished_under_further_claims ... ok
+test quit::tests::exactly_one_caller_owns_the_quit_however_many_ask ... ok
+test permissions::tests::the_apps_own_origin_is_granted_the_microphone ... ok
+test quit::tests::a_gate_nobody_claimed_never_reports_progress ... ok
+test quit::tests::the_exit_is_deferred_while_the_ladder_runs_and_allowed_once_it_is_done ... ok
+test permissions::tests::the_microphone_from_any_other_origin_is_refused ... ok
+test signals::tests::the_two_signals_are_the_posix_ones ... ok
+test tests::an_early_exit_is_never_reported_as_one_of_the_two_fixed_codes ... ok
+test tests::the_group_id_is_handed_out_exactly_once ... ok
+test tests::an_exit_75_without_a_fatal_line_still_gets_its_own_word ... ok
+test tests::the_guard_treats_the_effective_port_as_the_port ... ok
+test signals::tests::the_terminate_handlers_start_clear_and_are_the_posix_signals ... ok
+test tests::the_navigation_guard_fails_closed_on_an_unparseable_origin ... ok
+test tests::the_nonce_differs_between_calls_and_is_path_safe ... ok
+test tests::the_navigation_guard_allows_this_servers_own_origin_and_its_paths ... ok
+test tests::the_navigation_guard_refuses_anything_that_is_not_that_origin ... ok
+test tests::the_splash_and_error_urls_are_the_shells_own_assets ... ok
+test tests::the_two_codes_are_named_and_never_interchanged ... ok
+test tests::the_origin_the_guard_allows_is_the_one_the_ready_line_produced ... ok
+test quit::tests::eight_threads_racing_for_one_quit_produce_exactly_one_winner ... ok
+test signals::tests::the_probe_and_the_signal_reach_a_group_this_shell_created ... ok
+test tests::the_ladder_shuts_down_a_real_child_that_honours_shutdown ... ok
+test tests::the_ladder_signals_a_real_child_that_ignores_shutdown ... ok
+
+test result: ok. 60 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.01s
+
+--- end of row output ---
+end_utc: 2026-10-04T00:52:08Z
+EXIT_CODE: 0

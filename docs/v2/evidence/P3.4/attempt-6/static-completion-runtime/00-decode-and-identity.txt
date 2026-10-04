@@ -1,0 +1,23 @@
+00 - decode and identity (AM-199, attempt 6, no row executed yet)
+=============================================================
+date_utc_start: 2026-10-04T00:50:55Z
+cwd: /home/villenull/Projects/Apunta
+head: 3fae52b899d4732d798f1d7959956c846864db06
+node_used: v24.19.0
+node_path: /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64/bin/node
+harness: build/p34-static-runtime/decode.mjs
+harness_sha256: 97b504516222d26c7ad9d86237e4d618f6063c37dbf45c44f66954af9c5dcd39
+codec_sha256: 82e1d066b50ae7b57850f01b249610dcc6f809c97fb87531f968a3d085a6f767
+card_sha256: 4cc4856190eff2f7af44174670af7fa7c2340300c2cf83a2b917226435228965
+checkpoint_sha256: f72b1db8b4b3e81f16ab1dc30572de480bd4d8ce9031787be15048324dd6b0fa
+git_status_scoped_before:
+?? docs/v2/evidence/P3.4/attempt-6/static-completion-runtime/
+(empty above means clean in every path this worker may touch)
+
+--- decode run (planLib parseCard/parseCells + exactly-one-outer-backtick strip + structural guards) ---
+card P3.4 file /home/villenull/Projects/Apunta/docs/v2/cards/P3.4.md
+rows parsed V0,V1,V2,V3,V4
+
+DECODE OK - all guards passed, nothing executed
+row V3 raw_bytes=626 raw_sha256=91b602548a986900c698eedc314b42c36d60e1888d31cc496decdae3583f7d6a decoded_bytes=624 decoded_sha256=94dd69952e08bc153165fa6503901a02f9760777e89c5f52bbc744b197de4168 written=/home/villenull/Projects/Apunta/build/p34-static-runtime/V3.command.txt row V4 raw_bytes=273 raw_sha256=684f17e8ebac133894079a48a3f56e5e56e35fbaf1c82b187deb15b4c46e41a5 decoded_bytes=271 decoded_sha256=3bcc1bf4ea4cdb21e89460323c13f7f5271084170f4e0c328c8877f27dc5b732 written=/home/villenull/Projects/Apunta/build/p34-static-runtime/V4.command.txt decode_exit: 0
+date_utc_end: 2026-10-04T00:50:55Z

@@ -1,0 +1,17 @@
+02 - V3 executed once, correctly decoded, for an attributable exit
+===================================================================
+row: P3.4 V3 (card docs/v2/cards/P3.4.md, Verification table)
+status_word: recorded in the return file; this file is the raw record
+authority: AM-199 (bounded static completion inside attempt 6)
+cwd: /home/villenull/Projects/Apunta
+head: 3fae52b899d4732d798f1d7959956c846864db06
+command_file: build/p34-static-runtime/V3.command.txt
+command_bytes: 624
+command_sha256: 94dd69952e08bc153165fa6503901a02f9760777e89c5f52bbc744b197de4168
+invocations_of_this_file: 1 (one bash script invoke, one exit)
+start_utc: 2026-10-04T00:51:16Z
+--- full stdout+stderr of the row, verbatim, below ---
+P3.4-V3: 4 forbidden words over 4 paths, matches: 0
+--- end of row output ---
+end_utc: 2026-10-04T00:51:16Z
+EXIT_CODE: 0
