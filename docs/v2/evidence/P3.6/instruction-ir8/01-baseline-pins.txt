@@ -1,0 +1,47 @@
+P3.6 instruction review 8 — baseline, pins, source drift
+Read-only. No build, no launch, no port, no database, no 7717.
+
+Base commit (dispatch header, P3.6-ir.md:6): 62abb28
+Dispatch generated at: 62abb28 (header comment + "- Do not pull" line; the
+  generator uses `git rev-parse --short HEAD`, so base == generatedAt here)
+HEAD at review time: c312358
+
+git log --oneline 62abb28..HEAD
+  c312358 Record integration review handoff after native approval
+  a3a82ae Dispatch dependency-ready English AppImage integration
+
+git diff --name-only 62abb28..HEAD
+  docs/v2/ORCHESTRATION-LOG.md
+  docs/v2/state/NEXT-SESSION.md
+  docs/v2/state/PROGRESS.json
+  docs/v2/state/cards/P3.6.json
+  docs/v2/state/dispatch/P3.6-ir.md
+  docs/v2/state/dispatch/P3.6.md
+
+No "Read", "May edit" or "tests" source path differs between 62abb28 and HEAD.
+The two commits are documentation/state/dispatch only. Dispatch header stop rule
+("Stop and report if a source path this card reviews ... differs") is NOT met.
+
+PROGRESS.json dependency status (current):
+  P3.4 APPROVED  (AM-200, owner conditional V0 skip)
+  P3.5 APPROVED  (AM-197)
+  P3.7 APPROVED
+  P2.R APPROVED
+  P3.6 IN PROGRESS
+
+Stop-8 pins re-checked against current HEAD:
+  P3.4 V3 invariant, pin 04d071e:
+    git diff 04d071e HEAD -- docs/v2/cards/P3.4.md  -> EMPTY  (no drift)
+  Rule B bullet, pin 5dcabae:
+    git diff 5dcabae HEAD -- docs/v2/cards/P3.4.md  -> only the AM-188 hook-fact
+    text and the V3 row; the Rule B (staleness set) bullet is not in the diff.
+  CSP directives, pin d56af1d:
+    git diff d56af1d HEAD -- server/src/http/csp.ts server/src/app.ts -> EMPTY
+  P3.3 fatal-mode row set, pin 321b4fa:
+    git log 321b4fa..HEAD -- docs/v2/cards/P3.3.md -> 0 commits
+  No Stop 8 difference exists.
+
+V5 prerequisite evidence present:
+  docs/v2/evidence/P3.3/V4-fatal.md:3   Status: **PASS**
+  :27 PASS fatal-port the code is port_in_use and not data_folder_in_use
+  :34 PASS fatal-folder the code is data_folder_in_use and not port_in_use

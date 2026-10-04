@@ -1,0 +1,29 @@
+P3.6 instruction review 8 — normative rows unchanged vs c8c71e7
+Read-only; scratch under build/p36-ir8.
+
+Claim under test: the recent dependency-status prose correction did not change
+any verification row, Expected cell, or card field.
+
+git diff --stat c8c71e7..HEAD -- docs/v2/cards/P3.6.md
+  docs/v2/cards/P3.6.md | 24 ++++++++----------------
+  1 file changed, 8 insertions(+), 16 deletions(-)
+
+git diff c8c71e7..HEAD -- docs/v2/cards/P3.6.md | grep -c '^@@'
+  1
+
+The single hunk is the "## Dispatch status — read this before anything else"
+paragraph only (old "There is no dispatch ... P3.4 BLOCKED / P3.5 NOT STARTED"
+replaced by the current all-APPROVED paragraph). No other section is touched.
+
+Verification-table invariance, extracted by the same `| ID | Command` header
+anchor at both commits and diffed:
+  diff <(git show c8c71e7:docs/v2/cards/P3.6.md | sed -n '/^| ID | Command/,/^$/p') \
+       <(sed -n '/^| ID | Command/,/^$/p' docs/v2/cards/P3.6.md)
+  -> VERIFICATION ROWS IDENTICAL  (V0..V5 command + Expected, byte for byte)
+
+Therefore: the normative verification rows, Expected cells and card fields are
+unchanged by the recent prose correction. Confirmed independently.
+
+The dispatch body is the card text verbatim (generator emits an implementation
+card's body unchanged; the only mutation is the `--port <p>` placeholder, which
+no row here carries). So P3.6-ir.md's V0..V5 equal the card's V0..V5.

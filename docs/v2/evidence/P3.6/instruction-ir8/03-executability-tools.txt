@@ -1,0 +1,52 @@
+P3.6 instruction review 8 — executability of the clarification's mechanisms
+Read-only; `command -v` and file reads only. No process launched, no display,
+no port, no audio, no native lease.
+
+Tool availability on this machine (needed by the clarification):
+  xvfb-run         /usr/bin/xvfb-run      (V3's display branch)
+  xdotool          /usr/bin/xdotool       (UI actuation; Stop 2 fatal if absent)
+  xprop            /usr/bin/xprop         (_NET_FRAME_EXTENTS frame->client measure)
+  import           /usr/bin/import        (ImageMagick; per-flow screenshots)
+  pactl            /usr/bin/pactl         (P3.5 virtual source/sink)
+  xclip/xsel       ABSENT
+  wl-copy/wl-paste /usr/bin/wl-copy, /usr/bin/wl-paste  (Wayland; app is X11)
+  xwd/scrot/gnome-screenshot ABSENT (import covers screenshots)
+
+Private x11 scale env already implemented in the sibling harnesses:
+  scripts/v2/tauri-security.test.mjs:454 WAYLAND_DISPLAY: ''
+                                     :460 GDK_BACKEND: 'x11'
+                                     :467 GDK_SCALE: '1'
+  scripts/v2/tauri-audio.test.mjs:668 WAYLAND_DISPLAY: ''
+                                  :681 GDK_SCALE: '1'
+                                  :682 GDK_DPI_SCALE: '1'
+                                  :688 GDK_BACKEND: 'x11'
+  audio :809-818  `rectInsideWindow` — with no WM under xvfb-run there is no
+                  titlebar; the client rect is asserted, no titlebar height is
+                  invented (the measured/asserted frame->client property the
+                  clarification asks for). xprop is available for the WM case.
+
+Build/verify scripts named by the rows all exist:
+  scripts/v2/package-linux-resources.sh (producer; :50/:104/:141-146/:153/:155-158/:301)
+  scripts/v2/sandbox.mjs (env/run/selftest; prints APUNTA_DATA_DIR/PORT/NO_OPEN)
+  scripts/v2/tauri-lifecycle.test.mjs, scripts/v2/tauri-security.test.mjs (siblings)
+  package.json: tauri:build = `tauri build`
+                tauri:build:test = `tauri build --features test-identity
+                  --config src-tauri/tauri.test.conf.json`
+  no `package:linux` script (card says so; producer literal is the only invocation)
+  pinned node present: $HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin
+
+Observation-hook absence (why the clarification's screenshot grounding is needed):
+  web hook gate: web/src/main.tsx:401 `if (import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1')`
+  producer :104 `npm run build` runs with no VITE_* export -> web/dist unflagged
+  `test-identity` is a Cargo feature (src-tauri/Cargo.toml:30), separate from
+  the Vite gate. So V0/V3's test AppImage has the Rust identity feature but no
+  in-page observation hook; facts are read over the sandbox origin, coordinates
+  from grounded screenshots — exactly the clarification.
+
+Read-list paths and cited line anchors spot-checked (all present/accurate):
+  src-tauri/tauri.conf.json :3/:7/:10/:13/:14/:19/:30-31
+  src-tauri/src/launch.rs :58-68 (:60-63)
+  server/src/http/csp.ts :33-39 (six), :87-88 (two), :117 registerCsp
+  server/src/app.ts :13 import, :83 register
+  scripts/v2/package-linux-resources.sh :50/:104/:141-146/:153/:155-158/:301
+  docs/v2/assets/tauri-icons/ = 17 members; src-tauri/icons/ = 17 members
