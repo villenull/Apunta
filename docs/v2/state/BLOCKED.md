@@ -17,7 +17,6 @@ S6.1 | Production BLOCKED on a licence election no agent may make. L-POLICY@1's 
 
 ## Held — cleared, not dispatched, not blocked on any decision
 
-P3.4 | IN PROGRESS, attempt 6: native V2 PASS 20/20; AM-199 authorizes only decoded V3 and full V4 static completion, now running. Original V3 BLOCKED/V4 FAIL retained. | docs/v2/state/cards/P3.4.json; attempt-6 runtime and static-completion-runtime | Independent frozen evidence review and coordinator decision after completion; no native repeat or seventh attempt. | P3.6, P3.R
 
 
 ## Also recorded elsewhere, not here

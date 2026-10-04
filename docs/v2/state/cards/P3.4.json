@@ -7,9 +7,9 @@
   ],
   "baseCommit": "6974943",
   "attempt": 6,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-199 two static rows independently CLEAR; native20/20 retained; owner decision pending on conditional V0 NOT RUN versus coordinator approval prohibition",
-  "nextAllowedAction": "owner-conditional-V0-approval-decision-no-runtime",
+  "status": "APPROVED",
+  "lastCompletedStep": "AM-200 owner accepted lawful conditional V0 NOT RUN and attempt5 binary provenance; native20/20 and independently CLEAR static completions satisfy approval",
+  "nextAllowedAction": "dependency-released-P3.6",
   "sideEffectsDone": [
     "S0: SKIPPED on its own anchor. ~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli is executable, so nothing was cloned, fetched, built or downloaded and the P3.1 A06 records stand unchanged. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/01-S0-whisper-candidate-skipped.txt",
     "V0: NOT RUN. Rule B trigger derived on four axes and found empty - git diff 88811af...HEAD over Rule B set 0 paths, git status --porcelain over it 0 paths, checkpoint changedFiles naming 0 Rule B paths, and the two things those predicates cannot see measured directly: AppImage mtime 2026-10-03T22:39:34.366Z is newer than the newest Rule B input 2026-10-03T06:06:41.280Z (web/src/main.tsx), and the shipped AppDir web bundle carries the marker in 1 of 16 js bundles with the gate string in 0. The producer was NOT executed, so no A06 refetch, no network request of any kind, no rewrite of build/linux-resources/**, server/dist/** or web/dist/**, and no AppImage build. Evidence: docs/v2/evidence/P3.4/attempt-6/runtime/03-V0-not-run.txt and 00-v0-predicates-and-prerequisites.txt",
@@ -70,16 +70,16 @@
       "verification": "Attempt 6: exit 0. ACTUAL COUNTS 20 PASS, 0 FAIL, 0 NOT RUN, harness line 20/20 assertions passed. One real AppImage launch on port 7835, sandbox run 2026-10-03T23-35-09-127Z-5bce1465, stopped by pid 2933194 and never pkill. (a) live ACL denial ipcProbe=rejected with ipcProbeMsg=Command plugin:event|listen not allowed by ACL; (b) attempt=b:assign-location-href with href still on the app origin afterwards; (c) attempt=c:window-open-external and c:window-open-same-origin, app window unchanged; (d) header half carries rule 6 six directives verbatim plus per-response nonce and style-src-attr unsafe-inline on a 200 text/html for GET /patients, handler half landed BOTH clicks located by visible text with ptrN=6 fresh witness, clickN=2, clickText=Progress note, then probe=undefined and scriptText=true; (e) styleAttr color-scheme: dark with styleComputed=dark. Both freshness assertions passed. All five containment assertions passed inside the row and re-measured outside. First attempt at which no criterion was NOT RUN."
     },
     "V3": {
-      "status": "BLOCKED",
-      "exit": "not attributable - the wrapper this session ran exited 127 and that 127 is the wrapper own, not the row",
-      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/06-V3.txt",
-      "verification": "Attempt 6: BLOCKED. Implementer-side extraction error: the mechanically extracted cell kept its GFM code-span backticks, so the file ran as a command substitution and the row body executed inside it once, in order. Its guards all completed and none fired - hits file 0 bytes, src-tauri/capabilities absent, and bash reported the row own success label P3.4-V3: as the first word of the substitution output, which a FAIL: line would have preceded. The row pass condition test \"$bad\" = 0 exit status was consumed by the substitution and is unrecoverable, so PASS is not claimed; no guard fired so FAIL is not claimed either; the guards did run so NOT RUN is not claimed. NOT retried because the row had started. Corrected cell recorded and deliberately not executed."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/static-completion-runtime/02-V3-execution.txt",
+      "verification": "Decoded card body 624 bytes, structural guard and bash -n before one invocation; four forbidden words over four paths, 0 matches, no capabilities."
     },
     "V4": {
-      "status": "FAIL",
-      "exit": 1,
-      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/07-V4.txt",
-      "verification": "Attempt 6: exit 1 at npm run lint. npm test exit 0 with 163 files / 2235 tests all passing. eslint . 13 errors, every one in docs/v2/evidence/P3.5/ (attempt-4/final-completion-ir/verify.mjs, silence-completion-ir/v5-program-own-extraction.mjs, silence-completion-ir/verify.mjs), all committed to main and all outside P3.4 May edit. prettier --check, the three lint scripts after it, typecheck and the whole cargo half are downstream of the failed && and are NOT RUN. Outside-May-edit red is a stop, not a repair (HS-9); nothing repaired, suppressed, loosened or re-run. Distinct from attempt 5, whose lint failure was on its own evidence output."
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/static-completion-runtime/03-V4-execution.txt",
+      "verification": "Full card chain once: pinned Node24.19.0, 163 files/2235 npm tests, lint/typecheck, cargo fmt/clippy and 60 cargo tests all PASS; no downstream NOT RUN."
     }
   },
   "sandboxRuns": [
@@ -133,7 +133,7 @@
   "implementationReviewVerdict": "CLEAR AM-195 exact four shipping patches; 80/80+29/29+13/13, no extra source path",
   "coordinatorBlockingFinding": "V2 handler click FAIL: pointer read-back WINDOW=0 PID=undefined, clickN=0; navigation b/c NOT RUN. V4 npm tests2235 PASS then evidence-artifact lint FAIL. Final budget exhausted, no row rerun/sixth.",
   "implementationCandidate": "88811af",
-  "updatedUtc": "2026-10-04T00:58:00Z",
+  "updatedUtc": "2026-10-04T01:01:00Z",
   "srcTauriTouched": false,
   "srcTauriTouchedNote": "Still false and it stays false. This attempt edited no path under src-tauri/ and did not touch src-tauri/ui/. S4 was not entered: nothing in the tree was shown to break a guard. The V4 cargo half was NOT RUN - it is downstream of a failed lint && - so P3.3 navigation-guard cargo unit tests were not executed on this attempt. V4 V3 word loop did execute inside the command substitution and src-tauri/capabilities was absent at that moment, but that row carries no usable exit status and is not offered as evidence for anything.",
   "reBundle": {
@@ -171,7 +171,8 @@
     "optionalA06": "PARKED",
     "preRuntimeCorrection": "APPROVED AM-192, exact four-hunk patch only within attempt5",
     "nativeIdentityAttempt6": "APPROVED AM-195 exact four patches, independent source review then V0\u2013V4 once/no7",
-    "staticCompletionAttempt6": "APPROVED AM-199: decoded V3 once and full V4 once only; prior readings retained/no7/no native repeat"
+    "staticCompletionAttempt6": "APPROVED AM-199: decoded V3 once and full V4 once only; prior readings retained/no7/no native repeat",
+    "conditionalV0Approval": "APPROVED AM-200; retain NOT RUN and attempt5 provenance, no runtime repeat or result waiver"
   },
   "runtimeWorkerId": null,
   "finalDiagnosisReport": "docs/v2/state/reviews/P3.4-final-runtime-diagnosis.md",
@@ -230,7 +231,7 @@
     "authorisedBy": "AM-199",
     "workerId": "1fe0d4ce-65f7-43d7-b69d-7568d7010449",
     "sourceCandidate": "88811af",
-    "status": "CLEAR",
+    "status": "APPROVED",
     "priorReadingsRetained": true,
     "nativeRowsRepeated": false,
     "criteria": {
@@ -248,5 +249,42 @@
       }
     },
     "review": "docs/v2/state/reviews/P3.4-static-completion-final-ir.md"
+  },
+  "priorAttempt6IncompleteCriteria": {
+    "S0": {
+      "status": "SKIPPED",
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/01-S0-whisper-candidate-skipped.txt",
+      "verification": "Attempt 6: SKIPPED on the card own anchor. ~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli executable, so nothing acquired, nothing fetched, nothing built. A06 records in docs/v2/evidence/P3.1/ stand unchanged."
+    },
+    "V0": {
+      "status": "NOT RUN",
+      "exit": "none - the row was not executed",
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/03-V0-not-run.txt",
+      "verification": "Attempt 6: NOT RUN, and not a skip assumed. Rule B trigger measured on four axes and found empty: git diff 88811af...HEAD over Rule B set 0; git status --porcelain over it 0; checkpoint changedFiles naming 0 Rule B paths; and the two things the card own three predicates cannot see measured directly - AppImage 2026-10-03T22:39:34.366Z newer than the newest Rule B input 2026-10-03T06:06:41.280Z (web/src/main.tsx), shipped AppDir web bundle carrying the marker in 1 of 16 with the gate string in 0. The producer was not run, so no A06 refetch and no network request of any kind. Not PASS and not skipped."
+    },
+    "V1": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/04-V1.txt",
+      "verification": "Attempt 6: exit 0, 650 ms. 1 file collected, 12 passed, 0 skipped. csp.ts and csp.test.ts untouched; no case added, removed or weakened."
+    },
+    "V2": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/05-V2.txt",
+      "verification": "Attempt 6: exit 0. ACTUAL COUNTS 20 PASS, 0 FAIL, 0 NOT RUN, harness line 20/20 assertions passed. One real AppImage launch on port 7835, sandbox run 2026-10-03T23-35-09-127Z-5bce1465, stopped by pid 2933194 and never pkill. (a) live ACL denial ipcProbe=rejected with ipcProbeMsg=Command plugin:event|listen not allowed by ACL; (b) attempt=b:assign-location-href with href still on the app origin afterwards; (c) attempt=c:window-open-external and c:window-open-same-origin, app window unchanged; (d) header half carries rule 6 six directives verbatim plus per-response nonce and style-src-attr unsafe-inline on a 200 text/html for GET /patients, handler half landed BOTH clicks located by visible text with ptrN=6 fresh witness, clickN=2, clickText=Progress note, then probe=undefined and scriptText=true; (e) styleAttr color-scheme: dark with styleComputed=dark. Both freshness assertions passed. All five containment assertions passed inside the row and re-measured outside. First attempt at which no criterion was NOT RUN."
+    },
+    "V3": {
+      "status": "BLOCKED",
+      "exit": "not attributable - the wrapper this session ran exited 127 and that 127 is the wrapper own, not the row",
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/06-V3.txt",
+      "verification": "Attempt 6: BLOCKED. Implementer-side extraction error: the mechanically extracted cell kept its GFM code-span backticks, so the file ran as a command substitution and the row body executed inside it once, in order. Its guards all completed and none fired - hits file 0 bytes, src-tauri/capabilities absent, and bash reported the row own success label P3.4-V3: as the first word of the substitution output, which a FAIL: line would have preceded. The row pass condition test \"$bad\" = 0 exit status was consumed by the substitution and is unrecoverable, so PASS is not claimed; no guard fired so FAIL is not claimed either; the guards did run so NOT RUN is not claimed. NOT retried because the row had started. Corrected cell recorded and deliberately not executed."
+    },
+    "V4": {
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P3.4/attempt-6/runtime/07-V4.txt",
+      "verification": "Attempt 6: exit 1 at npm run lint. npm test exit 0 with 163 files / 2235 tests all passing. eslint . 13 errors, every one in docs/v2/evidence/P3.5/ (attempt-4/final-completion-ir/verify.mjs, silence-completion-ir/v5-program-own-extraction.mjs, silence-completion-ir/verify.mjs), all committed to main and all outside P3.4 May edit. prettier --check, the three lint scripts after it, typecheck and the whole cargo half are downstream of the failed && and are NOT RUN. Outside-May-edit red is a stop, not a repair (HS-9); nothing repaired, suppressed, loosened or re-run. Distinct from attempt 5, whose lint failure was on its own evidence output."
+    }
   }
 }
