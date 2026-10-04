@@ -1,3 +1,27 @@
+## Safe-close checkpoint: final candidate saved locally; source review running
+
+Owner asked whether committed/pushed and safe to close. At check the repairer
+was genuinelyidle with completereturn/proofs; archivedsuccessfully. e212301
+commits ALL completed attempt3code/unitrepairfiles locally, withcheckpoint
+SUBMITTED. Workingtreewasclean aftercommit. No nativeUIrun/inference/audio
+or build is active. Lastreviewed remote prefix pushed d435d3b; unreviewed
+source commits9321861 through e212301 and laterlocalstate remainLOCAL only.
+Do NOT push them beforefresh independentCLEAR underexistingownerpushscope.
+
+New reviewer ebb4f00f-45e2-486d-852c-335b47665e7c confirmedRUNNING callback;
+source/codeunitonly, writesP3.6-impl3-source.md +attempt-3/source-review.
+ActualnativeV3 stillneverrun, productnotcomplete. On genuineCLEAR, freeze
+review, updatecandidate/checkpoint, explicitgitpushoriginmain; onDEFECT,
+recordBLOCKED/exhaustedattempt3 andprepareconcretereviewableownerdecision,
+no fourth/reset/silentrepair. Preserveoldsourceverdict/histories/buildproof.
+
+Closing chat does not discard committed local work. Resume by reading THIS
+header/checkpoint/gitstatus, checkingactualreviewreport/status once, and
+continuingreview→authorizednativeV3→productionV1/V4→realworkflow ifgatespass.
+Do not promise unattendedcompletion or100percentproduct. Reviewmaycontinue
+underPaseo; no dependentruntime starts untilrootdecision. Existinguserpreview
+7811 is separate; its continued availability depends onmanagedterminalhost.
+
 ## Attempt 2 source defects saved; final normal repair attempt 3 active
 
 fcb63d3 freezes a1073d6a CHANGES REQUESTED: six confirmeddefects D1-D6

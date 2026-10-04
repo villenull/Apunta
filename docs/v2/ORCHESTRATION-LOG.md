@@ -2998,3 +2998,11 @@ FreshIR a1073d6a sixdefects/sevenrisks savedfcb63d3, archived. NoV3ran.
 Rootallocatesnormalfinalattempt3 c681994 and launches6c584826 boundedcode/unit
 repairwithcurrentfindings, preservedV0/history, sourceIRgatesnative. No
 fourth/reset/relaxation. OfflineOCRalreadyinstalled; no acquisition needed.
+
+## 2026-10-04 18:16 UTC — preserve all finished work before chat close
+
+Repaireridle/completereportverified, archived; e212301 savescandidate+proofs
+locally, cleanworkingtree. Userpushscope requiresindependentreview: pushed
+only reviewedprefixd435d3b, sourcecandidatesremainlocal. ebb4f00f freshsource
+reviewrunningcallback; no native/build/audio/inference active. Durableclose
+handoffstates nextactionsandnoautomaticcompletionpromise, attempt3budgetheld.
