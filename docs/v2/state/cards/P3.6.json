@@ -6,10 +6,10 @@
     "C-OWN@1"
   ],
   "baseCommit": "62abb28",
-  "attempt": 2,
-  "status": "SUBMITTED",
-  "lastCompletedStep": "Attempt2 V0 PASS and four bundled plugin inspections PASS; code/unit harness preparation complete, independent source review pending",
-  "nextAllowedAction": "fresh-harness-source-review-before-V3",
+  "attempt": 3,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Attempt2 source review CHANGES REQUESTED D1-D6/R1-R7; no V3/native UI executed; frozenV0PASS retained",
+  "nextAllowedAction": "final-normal-code-repair-then-fresh-shipping-source-review",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
@@ -21,7 +21,7 @@
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-04T16:38:00Z",
+  "updatedUtc": "2026-10-04T16:47:00Z",
   "instructionReview": "docs/v2/state/reviews/P3.6-ir8.md",
   "implementationWorkerId": null,
   "buildWorkerId": null,
@@ -32,5 +32,14 @@
     },
     "evidence": "docs/v2/evidence/P3.6/attempt-1/build-preparation/",
     "nativeUiRun": false
-  }
+  },
+  "priorAttempt2Criteria": {
+    "V0": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.6/attempt-2/build-preparation/05-v0-run.txt",
+      "verification": "Exact card V0 decoded once under attempt2, producer/test-AppImage build/identity guard; freshhash e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a. Attempt1 interruption preserved."
+    }
+  },
+  "sourceReview": "docs/v2/state/reviews/P3.6-impl2-source.md"
 }
