@@ -1,3 +1,21 @@
+## Offline fixture repair saved; final independent fidelity review running
+
+2f59df7e completed and archival confirmed. e7889bc preserves13casepairs
+byte-exact as offlineJSONfixturedata, same synthetic-fetch loop/outcomes;
+no ruleoverride/suppression/config change. Raw before snapshot .ts.txt kept
+byte-identical. Globaleslint hygiene reported0. Root accepts necessary replay
+adaptations for archived-materialization/importdepth and fixture-data NC2,
+subject to fresh independent verification; do not trim those controls merely
+because original brief called references-only. New reviewer0429c174-9196-4e71
+-a11e-d64a0092bed2 confirmed RUNNING callback, owns probe-final-ir report/new
+evidence only. No realnetwork/rawegresslog export/source/guard changes.
+
+5afa8666 still confirmed RUNNING at latest event boundary, owns soleSTT
+inference lease and exactapprovedspokenfixture sample. Await completion
+notification; do not duplicate inference. Staticcompletion ownerquestion
+stillpending, P34BLOCKED/P35APPROVED/P36dependency-held. No other ready native
+work; remaining capacity reserved for staticgrant or spoken-evidence IR.
+
 ## Spoken fixture correction active; preserve speechless control honestly
 
 a749eed7 completed/archived, lease released. Shipped realprovider/binary/model

@@ -2909,3 +2909,10 @@ P35cachedfile located byrootexactpath. 5afa8666 runs ONE realspokenSTT, sole
 inferencelease. 35768 outputcleanup archived with7residualURLliteral lint;
 2f59df7e moves exact offlinecase data to fixture JSON withoutoverride, preserving
 replay. Staticownerdecisionpending; no nativeacceptance row repetition.
+
+## 2026-10-04 00:19 UTC — complete offline fixture hygiene saved
+
+2f59df7e archived; e7889bc savesfixturedata and exactreplay controls. Root
+accepts necessary materialization/NC2 data adaptation conditionedindependent
+verification; 0429c174 freshIR confirmedrunning. No suppression/configchange.
+5afa8666 spokeninferenceactive callback; staticgrant stillpending, no rowrun.
