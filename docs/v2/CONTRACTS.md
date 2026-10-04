@@ -219,7 +219,14 @@ P5.5. **Consumers:** Tauri shell, server, web update notice.
 3. The web page talks only to the server over HTTP. Update endpoints
    (`GET /api/app/update`, `POST /api/app/update/{check,download,install}`)
    exist only when the server was started by the shell; in browser mode
-   they return 404.
+   they return 404. **Quiescence is not an updater endpoint.** The
+   `/api/app/quiesce*` routes are a **server-mode** route group: they exist in
+   both modes and are available in browser mode, and C-REQ@1's request guard is
+   unchanged for them. What differs by mode is only what releases a successful
+   quiesce's maintenance state: in **shell mode** maintenance stays on through
+   the snapshot and is released by the shell's next transition; in **browser
+   mode** it is held while at least one window is registered and the last
+   unregistration releases it, so no browser-mode state persists until restart.
 4. **No Tauri IPC from web content.** No capabilities for any webview
    origin, `withGlobalTauri: false`, no custom `invoke_handler` commands.
 5. Navigation: the main window may load only `http://127.0.0.1:<port>/…`.
@@ -383,6 +390,12 @@ and reports `ok` or `conflict`. Any blocker → `quiesce_result{ok:false}`.
 Window close uses the same check: close is deferred while a save is in
 flight; an active recording asks for confirmation; unsaved text is never
 discarded silently.
+**Quiescence is a server-mode route, not an updater endpoint.** The
+`/api/app/quiesce*` routes exist in shell mode and in browser mode alike and are
+available in both, behind C-REQ@1's unchanged request guard (C-BRIDGE@1 rule 3).
+In shell mode a successful quiesce leaves maintenance on through the snapshot,
+released by the shell's next transition; in browser mode it is held while at
+least one window is registered and the last unregistration releases it.
 
 **Migration** (every start, not only after updates):
 1. Acquire the lock (C-OWN). Apply a pending restore if any.

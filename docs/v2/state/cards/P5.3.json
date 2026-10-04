@@ -7,8 +7,8 @@
   "criteria": {},
   "sandboxRuns": [],
   "baseCommit": "53f224e",
-  "status": "BLOCKED",
-  "lastCompletedStep": "Bounded synthetic v3 proof/report accepted after independent ir2 and required disclosures; coordinator AST equivalence and unchanged 41-check output verified",
-  "nextAllowedAction": "Integrate completed proof evidence after active source work settles; actual production card remains BLOCKED by P3.3 dependency and unadopted contracts/ownership. Dirty pre-quiesce disconnect preservation/recovery gap must be addressed before production safety acceptance.",
-  "updatedUtc": "2026-10-02T06:47:20.996909+00:00"
+  "status": "NOT STARTED",
+  "lastCompletedStep": "Part B applied with AM-202/AM-205/AM-208, coordinator FD13 decisions, and applied-ir corrections R-01..R-10; check-plan 0 errors",
+  "nextAllowedAction": "generate dispatch and implement once S6.1 (shared i18n catalogues) and the bug #1 restore repair (backup tests) have released their files",
+  "updatedUtc": "2026-10-04T19:51:26.230163+00:00"
 }
