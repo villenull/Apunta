@@ -266,6 +266,9 @@ export const esMX = {
   'errors.bad_request.import_bad_existing': {
     text: 'No se pudieron leer las opciones de importación de pacientes.',
   },
+  'errors.bad_request.import_patient_not_active': {
+    text: 'Un paciente que seleccionaste ya no está activo. Regresa y vuelve a elegir.',
+  },
   'errors.bad_request.import_not_claude_export': {
     text: 'Ese archivo no es una exportación de Claude. Se esperaba el zip que te envió Claude, o su conversations.json.',
   },
@@ -478,6 +481,10 @@ export const esMX = {
 
   'chat.publishedMidEdit': {
     text: 'La nota se publicó antes de que se pudiera aplicar el cambio.',
+  },
+
+  'chat.noteChangedMidEdit': {
+    text: 'La nota cambió mientras Apunta trabajaba, así que no se aplicó nada.',
   },
 
   /* Las retenciones por alcance y las razones de una petición no cumplida. */
@@ -2478,6 +2485,8 @@ export const esMX = {
     },
     kind: { count: 'number' },
   },
+  'import.fallbackTitle': { text: 'Sesión importada, {date}' },
+  'import.fallbackTitleUndated': { text: 'Sesión importada' },
   'import.skip.beforeCutoff': {
     text: 'sin actividad desde la fecha de corte',
   },

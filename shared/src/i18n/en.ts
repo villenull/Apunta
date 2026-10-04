@@ -368,6 +368,10 @@ export const en = {
   'errors.bad_request.import_bad_existing': {
     text: 'Could not read the patient import choices.',
   },
+  /** `import/claude.ts` — a selected patient was archived or deleted after preview. */
+  'errors.bad_request.import_patient_not_active': {
+    text: 'A patient you selected is no longer active. Go back and choose again.',
+  },
   /** `import/claude.ts:84` — a zip that is not a Claude export. */
   'errors.bad_request.import_not_claude_export': {
     text: 'That file is not a Claude export. Expected the zip Claude sent you, or its conversations.json.',
@@ -719,6 +723,14 @@ export const en = {
    */
   'chat.publishedMidEdit': {
     text: 'The note became published before the edit could be applied.',
+  },
+
+  /**
+   * `routes/chat.ts` — the note was edited (another window, a late flush)
+   * while the model was revising it, so the revision-checked write no-opped.
+   */
+  'chat.noteChangedMidEdit': {
+    text: 'The note changed while Apunta was working, so nothing was applied.',
   },
 
   /*
@@ -2736,6 +2748,10 @@ export const en = {
    * stored, and the sentence around it is what a language has to translate.
    */
 
+  /** The fallback title of an imported note with a known date (Claude and Halaxy). */
+  'import.fallbackTitle': { text: 'Imported session, {date}' },
+  /** The fallback title of an imported note with no date. */
+  'import.fallbackTitleUndated': { text: 'Imported session' },
   /** `Import.tsx:34`. */
   'import.skip.beforeCutoff': { text: 'no activity since the cutoff' },
   /** `Import.tsx:35`. */
