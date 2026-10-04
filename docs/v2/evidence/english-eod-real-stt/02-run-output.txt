@@ -1,0 +1,10 @@
+{"kind":"environment","node":"v26.8.2","platform":"linux-x64","fakeAi":null,"defaultSttLanguage":"en"}
+{"kind":"artifact","role":"input","path":"/home/villenull/Projects/Apunta/e2e/fixtures/audio/dictation-10s.wav","sha256":"d487a3930b2baac09c1f3206106e852caec8ed3a2a4f5f3d92d6f8f092d5820f","bytes":320044}
+{"kind":"artifact","role":"model","path":"/home/villenull/Projects/Apunta/build/eod-model-cache/models/ggml-tiny.en.bin","sha256":"921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f","bytes":77704715}
+{"kind":"artifact","role":"binary","path":"/home/villenull/Projects/Apunta/build/linux-resources/bin/whisper-cli","sha256":"3a9f516ded6dc6f619e96570ac326922c5718e5e6bca03a735e5d07bd60804de","bytes":1064648}
+{"kind":"wav","path":"/home/villenull/Projects/Apunta/e2e/fixtures/audio/dictation-10s.wav","sha256":"d487a3930b2baac09c1f3206106e852caec8ed3a2a4f5f3d92d6f8f092d5820f","bytes":320044,"sampleRate":16000,"channels":1,"bitsPerSample":16,"durationSeconds":10}
+{"kind":"describe","binary":"/home/villenull/Projects/Apunta/build/linux-resources/bin/whisper-cli","model":"/home/villenull/Projects/Apunta/build/eod-model-cache/models/ggml-tiny.en.bin","binaryPresent":true,"modelPresent":true}
+{"kind":"stt_event","type":"progress","fraction":1,"message":"Transcribing…"}
+{"kind":"provider_log","message":"transcription finished","detail":{"seconds":10,"preview":false,"model":"ggml-tiny.en.bin","threads":"8","fallbacksLowProbability":0,"fallbacksHighEntropy":1,"loadMs":46,"melMs":3,"encodeMs":135,"decodeMs":243,"batchdMs":364,"promptMs":0,"totalMs":892}}
+{"kind":"stt_event","type":"transcript","text":"Oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh."}
+{"kind":"result","progressFrames":1,"transcript":"Oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh, oh.","transcriptNonEmpty":true,"elapsedMs":916}

@@ -1,0 +1,34 @@
+{
+  "kind": "derived_command",
+  "binary": "/home/villenull/Projects/Apunta/build/linux-resources/bin/whisper-cli",
+  "argv": [
+    "/home/villenull/Projects/Apunta/build/linux-resources/bin/whisper-cli",
+    "--model",
+    "/home/villenull/Projects/Apunta/build/eod-model-cache/models/ggml-tiny.en.bin",
+    "--file",
+    "/home/villenull/Projects/Apunta/e2e/fixtures/audio/dictation-10s.wav",
+    "--print-progress",
+    "--prompt",
+    "Okay, notes from today's session.",
+    "--threads",
+    "8",
+    "--language",
+    "en"
+  ],
+  "derived": {
+    "durationSeconds": 10,
+    "trailingSilenceDurationMs": null,
+    "durationArgApplied": false,
+    "threads": 8,
+    "threadPolicy": "availableParallelism() (authoritative final, preview/fitted unset)",
+    "language": "en",
+    "languageSource": "DEFAULT_STT_LANGUAGE (no resolveLanguage override)",
+    "prompt": "Okay, notes from today's session.",
+    "promptSource": "sttPrompt([]) — no Settings vocabulary",
+    "greedy": false,
+    "audioContext": null,
+    "beamSearch": "whisper.cpp defaults (provider sets beam-size only for previews)",
+    "timeoutMs": 180000,
+    "timeoutSource": "timeoutFor(durationSeconds) (no timeoutMs override)"
+  }
+}
