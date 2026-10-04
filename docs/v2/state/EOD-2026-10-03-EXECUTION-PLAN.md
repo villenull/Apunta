@@ -57,3 +57,14 @@ checkpoints to github.com/villenull/Apunta; unfinished worker edits excluded.
 AM-195 grants exact four P3.4 patches then independent source review and one
 attempt6. AM-196 grants only never-started silence plus one V5 recheck within4.
 Runtime remains serialized; all earlier failure evidence is retained.
+
+## 22:08 local execution budget update
+
+P3.4 and P3.5 APPROVED; the critical path is P3.6 native integration and a real
+English UI demonstration. Fresh IR8 CLEAR. Code author and disjoint V0 build
+run in parallel; source review gates UI launch. Reserve ~30min author/build,
+10min source review, 20min native fake-AI flows, 15min production build/extraction,
+15min real-AI persistence/export/recovery demonstration, then final handover.
+About110min remain; estimates can fail and no criterion will be relabelled.
+The former current-worker list and early authorization paragraphs are historical;
+current IDs/leases/expanded explicit grants are in NEXT-SESSION/checkpoints.

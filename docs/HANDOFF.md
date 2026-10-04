@@ -1,3 +1,21 @@
+# Current English desktop acceptance — 2026-10-03 evening
+
+P3.4 native security is APPROVED under AM-200 (20/20 native assertions,
+independently CLEAR static checks, owner-accepted conditional rebuild skip with
+old failures and binary provenance preserved). P3.5 microphone capture and
+containment are APPROVED under AM-197, including tone and silence. Production
+AppImage integration P3.6 is in progress, not yet accepted: its current
+instruction review is CLEAR and the native harness/test build are being prepared.
+The existing English Whisper cache and qwen model have real component proof;
+medication transcription and refinement fact-loss limitations remain recorded.
+Full native speech-to-note/export/recovery completion has not been claimed.
+
+Owner browser preview: http://127.0.0.1:7811/ — fresh isolated sample John Smith,
+simulated AI, no real patient data. Leave it running while the owner uses it.
+Live v1 migration/replacement remains owner-only; no live data has been opened.
+Continue from docs/v2/state/NEXT-SESSION.md and current checkpoints, not the
+historical sections below. Prior milestone evidence and failures remain history.
+
 # Where Apunta is — the handoff
 
 **Active v2 work (2026-09-27):** see `docs/v2/state/NEXT-SESSION.md` and
