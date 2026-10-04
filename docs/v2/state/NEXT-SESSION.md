@@ -1,3 +1,30 @@
+## AM-199 static completion running; production integration is next
+
+The owner granted exactly one decoded V3 and one full V4 within P3.4 attempt 6.
+Commit `3fae52b` records AM-199; original V3 BLOCKED/V4 FAIL remain unchanged.
+Worker `1fe0d4ce-65f7-43d7-b69d-7568d7010449` is running the two static rows,
+with the exclusive global-test/Cargo compilation lease. No native test, app,
+AppImage build, V0–V2, seventh attempt, reset or waiver is authorized.
+Root owns checkpoint/progress; worker owns new static-completion-runtime
+evidence and an append-only return. On completion, freeze evidence and obtain
+an independent read-only audit without rerunning either row. Approval depends
+on attributable PASS readings plus the already proven native 20/20; V0 remains
+its lawful conditional NOT RUN, never relabelled PASS.
+
+P3.5 is APPROVED under AM-197. P3.6 still waits for P3.4 approval. Its next
+implementation must exercise all eleven listed UI flows in a production
+unflagged AppImage, including virtual-source capture and visible Copied state;
+API calls may verify resulting state, not substitute for UI actions. Apply the
+seven corrections in P3.6-dispatch-preparation-ir.md to the dispatch brief.
+
+The English model receipt/guards and offline probe repairs are independently
+CLEAR. Frozen backend draft/refine audit is CLEAR (`3fae52b`): real typed-input
+qwen generation and persisted refinement work, but refinement dropped the
+provided sleep-hygiene intervention. The tiny English STT model garbled the
+medication phrase. Neither component proof is a clinical quality PASS or a
+complete native UI/export/recovery demonstration. All inference/server/audio
+leases are free; no extra inference is justified before native integration.
+
 ## Real draft/refine returned; audit active, native completion still awaits owner
 
 ec84f011 completed/archived, leasesreleased. 1efd5da saves realbackendEnglish

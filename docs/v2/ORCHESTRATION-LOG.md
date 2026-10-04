@@ -2939,3 +2939,13 @@ ec84realbackenddraft/refine completearchived, sourceuntouched/leasesfree.
 flagged ungroundedrefine-removal/bodyheading claims forliteralSSEcheck; no
 modelrerun. 0429probeIR CLEAR archived, authorreport restored/disclosed.
 Onlystaticownergrant blocksnativecriticalpath; no blocked-card bypass.
+
+## 2026-10-04 00:53 UTC — AM-199 static rows executing
+
+Owner granted the two static completion rows once within attempt 6. AM-199
+and checkpoint/progress were saved in 3fae52b. Worker 1fe0d4ce runs decoded
+V3 then whole V4 with attributable exits, sole global-test/Cargo lease; no
+native/app/build repeat. Original BLOCKED/FAIL readings remain untouched.
+Fresh frozen-result audit follows before any P3.4 approval/P3.6 dispatch.
+Backend drafting audit ce24c1dd completed CLEAR, archived and saved in 3fae52b;
+clinical quality and full native English workflow remain unproven.
