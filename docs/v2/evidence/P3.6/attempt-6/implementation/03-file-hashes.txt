@@ -25,3 +25,7 @@ The harness diff is exactly the two AM-209 changes (16 changed lines: the
 `lost`-path branch and its comment, the `vanished` exemption and its two
 comments). `git diff` on the harness is in the return note's summary and was
 reviewed line by line.
+
+## Post-review lint-only edit (2026-10-04, coordinator)
+
+CI lint (no-regex-spaces) rejected one regex. `/^  (quick|thorough):/` became `/^ {2}(quick|thorough):/`, which matches exactly the same strings. No other byte changed. New sha256: 2f362b7abbf09aac87dfd36df114a48ea312e84601437f2d2ff3460dc6c220f1

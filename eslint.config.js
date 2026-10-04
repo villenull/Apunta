@@ -113,7 +113,14 @@ export default tseslint.config(
     // Developer CLI tools whose whole job is printing a report to the person
     // who ran them. `no-console` stays on everywhere else, where it does real
     // work: it is part of keeping note content out of logs (hard rule 2).
-    files: ['scripts/**/*.mjs', 'tools/model-lab/**/*.{mjs,mts,ts}', '**/__fixtures__/**/*.mjs'],
+    files: [
+      'scripts/**/*.mjs',
+      'tools/model-lab/**/*.{mjs,mts,ts}',
+      '**/__fixtures__/**/*.mjs',
+      // Card evidence scripts (helper tests, review probes) print their own
+      // pass/fail report and run on synthetic data only.
+      'docs/v2/evidence/**/*.mjs',
+    ],
     rules: {
       'no-console': 'off',
     },

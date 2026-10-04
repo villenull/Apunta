@@ -763,7 +763,7 @@ await test('F6/D1 the label it replaced is unreachable, and that is why it was w
   // And the server publishes one profile, so `available` never reaches two.
   const profiles = readFileSync(join(repoRoot, 'server/src/ai/profiles.ts'), 'utf8').split('\n');
   assert.match(profiles[17], /quick: \{ model: PROMOTED_DEFAULT_MODEL \}/);
-  assert.equal(profiles.filter((line) => /^  (quick|thorough):/.test(line)).length, 1, 'exactly one profile is promoted');
+  assert.equal(profiles.filter((line) => /^ {2}(quick|thorough):/.test(line)).length, 1, 'exactly one profile is promoted');
   assert.match(profiles[185], /const profiles = Object\.keys\(LLM_PROFILES\)/);
   assert.match(profiles[187], /if \(options\.fakeAi\) return \{ profile: 'quick', model, available: profiles \}/);
 });

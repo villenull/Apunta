@@ -13,3 +13,7 @@ scripts/v2/tauri-e2e-smoke.test.mjs (attempt 4)                      3174  9637b
 files this attempt created or changed (git, explicit paths):
  M scripts/v2/tauri-e2e-smoke.test.mjs
 ?? docs/v2/evidence/P3.6/attempt-5/
+
+## Post-review lint-only edit (2026-10-04, coordinator)
+
+CI lint (no-regex-spaces) rejected one regex. `/^  (quick|thorough):/` became `/^ {2}(quick|thorough):/`, which matches exactly the same strings. No other byte changed. New sha256: d4946070b56af731961a43965f67e32373b55a358fca49eea274f5729e96c23d
