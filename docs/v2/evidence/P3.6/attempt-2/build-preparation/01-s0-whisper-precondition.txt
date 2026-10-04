@@ -1,0 +1,52 @@
+S0 -- A06 whisper candidate precondition (read-only; Stop 1)
+======================================================================
+
+Working directory: repository root
+Node under test: v24.19.0  ($HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin)
+Check date (UTC): 2026-10-04
+
+Anchor literal, from the card's S0:
+
+  test -x "${APUNTA_WHISPER_WORK_DIR:-$HOME/.cache/apunta-v2/whisper-src}/whisper.cpp/build-${APUNTA_WHISPER_BACKEND:-vulkan}/bin/whisper-cli"
+
+Resolution:
+  APUNTA_WHISPER_WORK_DIR : $HOME/.cache/apunta-v2/whisper-src   (the card's default)
+  APUNTA_WHISPER_BACKEND  : unset -> vulkan
+
+Measured candidate:
+  path   : $HOME/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli
+  mode   : -rwxr-xr-x  (executable)
+  size   : 1064648 bytes
+  mtime  : 2026-10-02 13:00:05.905778636 -0600
+  sha256 : 3a9f516ded6dc6f619e96570ac326922c5718e5e6bca03a735e5d07bd60804de
+
+  test -x  -> exit 0
+
+STATUS: PRECONDITION MET. The S0 anchor holds, so no step runs.
+
+This card ACQUIRED NOTHING, and the assertion was not satisfied by anything this
+session made. No clone, no fetch, no alternative revision, no other backend, no
+mirror, no tarball, no install, and no hand-fabricated build-*/bin/whisper-cli
+(Stop 1 / HS-3 -- "a guard satisfied by a lie is not a pass"). The producer
+compiled whisper from the pinned A06 candidate that was already present, which is
+the whole of this card's relationship with it: the acquisition lives in P3.4's
+S0 and is not duplicated here.
+
+V0 additionally asserts, as part of its own command, that
+  test "${APUNTA_WHISPER_WORK_DIR:-$HOME/.cache/apunta-v2/whisper-src}" = "$HOME/.cache/apunta-v2/whisper-src"
+i.e. that the work dir is the pinned clone and not a substituted path. That
+assertion ran inside V0 and V0 exited 0.
+
+Environment reads taken at the same time (missing here would be Stop 2):
+  webkit2gtk-4.1            pkg-config OK, 2.52.6
+  libxdo                    pkg-config OK, 4.20260303.1
+  libayatana-appindicator   PRESENT under this host's Arch pkg-config name
+                            ayatana-appindicator3-0.1 -- not absent; no install needed
+  patchelf                  /usr/bin/patchelf, 0.19.1
+  cargo                     1.99.0 (5f94df478 2026-08-27) via rustup, $HOME/.cargo/bin/cargo
+  gst-inspect-1.0           /usr/bin/gst-inspect-1.0
+  /usr/lib/gstreamer-1.0/gst-plugin-scanner   present, mode 755, 14432 bytes
+
+Stop 2 names xvfb-run and xdotool too; both present (/usr/bin/xvfb-run,
+/usr/bin/xdotool), which is recorded here for the V3 phase, not asserted here --
+V3 did not run in this phase.

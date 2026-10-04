@@ -7,17 +7,24 @@
   ],
   "baseCommit": "62abb28",
   "attempt": 2,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt1 V0 interrupted by supervisor timeout; recorded, normal second attempt allocated within three-attempt budget",
-  "nextAllowedAction": "attempt2 exactV0 detached supervisor then code-review-gatedV3",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Attempt2 V0 PASS and four bundled plugin inspections PASS; code/unit harness preparation complete, independent source review pending",
+  "nextAllowedAction": "fresh-harness-source-review-before-V3",
   "sideEffectsDone": [],
   "changedFiles": [],
-  "criteria": {},
+  "criteria": {
+    "V0": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P3.6/attempt-2/build-preparation/05-v0-run.txt",
+      "verification": "Exact card V0 decoded once under attempt2, producer/test-AppImage build/identity guard; freshhash e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a. Attempt1 interruption preserved."
+    }
+  },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-04T04:13:00Z",
+  "updatedUtc": "2026-10-04T16:38:00Z",
   "instructionReview": "docs/v2/state/reviews/P3.6-ir8.md",
-  "implementationWorkerId": "a28cfbfc-2dde-4226-bde3-42be5009bf3b",
-  "buildWorkerId": "07590b43-17e0-4f77-805c-e341ffd1d7ce",
+  "implementationWorkerId": null,
+  "buildWorkerId": null,
   "priorAttempt1Execution": {
     "V0": {
       "status": "BLOCKED",

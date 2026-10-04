@@ -1,0 +1,140 @@
+AM-190 authorised environment preparation + four dry bundled-plugin inspections
+======================================================================
+
+These are NOT acceptance rows of P3.6. They are the AM-190 authorised environment
+preparation and pre-launch check, run once, read-only, with no app launched, no
+microphone, no audio device, no capture and no network. They follow the AM-190 /
+environment-proposal-repair2 step-1 and step-2 snippets.
+
+Working directory: repository root
+Date (UTC): 2026-10-04
+Executed AFTER V0, against the AppDir V0 produced in this same run.
+
+--- Why an env var and not an install ----------------------------------------
+
+The repo already commits `bundleMediaFramework: true` in src-tauri/tauri.conf.json
+(:35, AM-190). That makes tauri-bundler invoke
+`linuxdeploy-plugin-gstreamer.sh`, which decides where to take its plugin scanner
+from by reading `GSTREAMER_HELPERS_DIR` first. So the scanner the image needs is
+already on this host at a fixed path and simply has to be pointed at, before the
+bundler runs.
+
+This is why the variable is exported BEFORE V0 and not after: exported afterwards
+it would be too late, the bundle would already be built without the scanner, and
+V3 would fail at launch for a reason that looks like a product defect. Setting it
+in the supervisor's environment, which the V0 child inherits, is what makes the
+bundler copy it.
+
+--- step 1: scanner preparation (own ignored dir) ---------------------------
+
+From the approved `step 1 scanner prep + rebuild env` snippet, with the shared
+parent build/p3.5-env-repair replaced by this attempt's own ignored root. No
+shared parent was created, written or deleted.
+
+  mkdir -p build/p36-build1/gst-helpers
+  cp /usr/lib/gstreamer-1.0/gst-plugin-scanner build/p36-build1/gst-helpers/
+  export GSTREAMER_HELPERS_DIR="$PWD/build/p36-build1/gst-helpers"
+
+Measured:
+
+  source : /usr/lib/gstreamer-1.0/gst-plugin-scanner   (the installed host file)
+           mode 755, 14432 bytes
+           sha256 743cea6660712f841711441d1858948cb19604d339aa00bb04c176c881c55ead
+  copy   : build/p36-build1/gst-helpers/gst-plugin-scanner
+           mode 755, 14432 bytes
+           sha256 743cea6660712f841711441d1858948cb19604d339aa00bb04c176c881c55ead
+  cmp    : byte-identical -> yes
+
+The exact scanner is preserved. The copy is a byte-for-byte duplicate of the
+host's installed binary, asserted with `test -x` rather than `test -f`, because
+the IR2-01 repair to this very snippet exists precisely because `test -f` reads a
+non-executable scanner as present.
+
+GSTREAMER_HELPERS_DIR exported to the absolute path
+~/Projects/Apunta/build/p36-build1/gst-helpers in the shell that ran V0. The path
+is gitignored (build/ at .gitignore:55), so no tracked file moved. Nothing was
+installed, downloaded, configured or replaced: the resolution AM-190 already
+established is the host's installed scanner binary, and that is what was reused.
+
+The cached plugin script ~/.cache/tauri/linuxdeploy-plugin-gstreamer.sh (4,858
+bytes) is the one that reads this variable -- the selection branch
+`if [ "$GSTREAMER_HELPERS_DIR" != "" ]` then `helpers_dir="${GSTREAMER_HELPERS_DIR}"`,
+and its scanner hook path sits under helpers_target_dir. That relationship is
+what the approved verify.mjs asserts, and it is what makes the export the correct
+lever rather than a guess.
+
+--- step 2: four separate dry bundled-plugin inspections --------------------
+
+From the approved `step 2 four separate dry inspections` snippet, with the
+registry directory moved to this attempt's own ignored root. Exact command:
+
+  A="src-tauri/target/release/bundle/appimage/Apunta (test).AppDir"
+  S="$A/usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner"
+  test -x "$S" || { echo "FAIL: scanner not bundled"; exit 1; }
+  for e in appsink autoaudiosrc alsasrc pulsesrc; do
+    R="build/p36-build1/registry-$e.bin"
+    rm -f "$R"
+    GST_REGISTRY="$R" LD_LIBRARY_PATH="$A/usr/lib" \
+      GST_PLUGIN_SYSTEM_PATH_1_0="$A/usr/lib/gstreamer-1.0" \
+      GST_PLUGIN_PATH_1_0="$A/usr/lib/gstreamer-1.0" \
+      GST_REGISTRY_REUSE_PLUGIN_SCANNER=no \
+      GST_PLUGIN_SCANNER_1_0="$S" \
+      gst-inspect-1.0 "$e" >/dev/null 2>&1
+    echo "gst-inspect-1.0 $e -> true exit $RC   registry: $R (...)"
+    ...
+  done
+
+START (UTC): 2026-10-04T04:17Z
+END   (UTC): 2026-10-04T04:17Z
+GATE EXIT  : 0
+
+TRUE EXITS, one invocation per element, recorded individually rather than
+collapsed:
+
+  test -x on the bundled scanner                     -> exit 0
+  gst-inspect-1.0 appsink                            -> TRUE EXIT 0
+        registry build/p36-build1/registry-appsink.bin            963277 bytes
+  gst-inspect-1.0 autoaudiosrc                       -> TRUE EXIT 0
+        registry build/p36-build1/registry-autoaudiosrc.bin       963277 bytes
+  gst-inspect-1.0 alsasrc                            -> TRUE EXIT 0
+        registry build/p36-build1/registry-alsasrc.bin            963277 bytes
+  gst-inspect-1.0 pulsesrc                           -> TRUE EXIT 0
+        registry build/p36-build1/registry-pulsesrc.bin           963277 bytes
+
+  GATE_EXIT=0
+
+Properties this gate was built to have, each observable above:
+
+  * four SEPARATE `gst-inspect-1.0` invocations, one per element, not one call
+    asked about all four -- so one element's absence cannot be masked by another's
+    presence;
+  * a FRESH registry per element (`rm -f` then GST_REGISTRY to a new path), so no
+    cached scan result from a previous element or a previous run can answer for
+    one that was never rescanned;
+  * GST_REGISTRY_REUSE_PLUGIN_SCANNER=no, so the plugin scanner actually runs
+    rather than a stale registry standing in for it;
+  * GST_PLUGIN_SCANNER_1_0 pointed at the scanner INSIDE the AppDir under
+    inspection, and the scanner asserted with `test -x` first -- the executable
+    requirement is met by assertion, not by presence;
+  * LD_LIBRARY_PATH and both plugin-path variables scoped to the AppDir's usr/lib,
+    so what answered is the bundled tree and not the host's system installation.
+
+Four registries of 963,277 bytes each were written under this attempt's own
+ignored build root. No capture of any kind: no app launched, no audio device
+opened, no microphone touched, no stream recorded, no fixture played, no model
+loaded, no network.
+
+--- Status, and the honest limit of what it proves ----------------------------
+
+PREPARATION STATUS: PASS (gate exit 0, all four elements visible).
+
+What this establishes: the test-identity AppDir V0 produced does carry an
+executable bundled scanner, and with that scanner and only that AppDir's plugin
+tree, all four elements P3.5's capture path depends on -- appsink, autoaudiosrc,
+alsasrc, pulsesrc -- are visible to GStreamer. It is a dry, read-only inspection.
+
+What it does NOT establish, and no claim is made about any of it: that the
+AppImage launches, that the window appears, that any flow completes, that audio
+can actually be captured, or that the eleven UI flows drive. Those are V3's, and
+V3 did not run in this phase. A green gate here is a precondition satisfied, not a
+card passing.

@@ -1,0 +1,102 @@
+Pre-build provenance, recorded BEFORE V0 started
+======================================================================
+
+Working directory: repository root
+Date (UTC): 2026-10-04, HEAD b9a9e82
+
+Purpose: the card forbids borrowing an earlier test image, and Stop 3 forbids
+launching an artefact left behind by another card's run. The identity guard at
+the end of V0 cannot distinguish those two cases, because the artefact NAME is
+derived from the config and a leftover and a fresh build share it. Hash, size and
+mtime are therefore what make the distinction, and they had to exist before the
+build to mean anything.
+
+--- 1. The pre-existing AppImage (P3.4's run; NOT used) --------------------
+
+  path : src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+  size : 194202104 bytes
+  mtime: 2026-10-03 16:39:34.366149323 -0600
+  sha256: d7fb91513e8c68b0a2e74628e7643e3079a60946866110979cb1815022d234df
+
+  path : src-tauri/target/release/bundle/appimage/Apunta (test).AppDir
+  mtime: 2026-10-03 16:39:28.029317248 -0600
+  bundled scanner inside it:
+    .../usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
+    mode 755, 19609 bytes, mtime 2026-10-03 16:39:28
+    sha256 80372e81f22548106fcb3a78c98343516bb8d6b961a4230173c7a43247891e15
+
+This image was NOT launched, NOT copied, NOT reused and NOT counted as V0's
+result. It was not moved or deleted by this session either: `src-tauri/target/**`
+is Must not edit, so housekeeping was provenance-only, exactly as the dispatch's
+O5 observation reads it.
+
+--- 2. Rule B OUTPUTS before the build (never inputs; the symptom) ----------
+
+  build/linux-resources   exists, newest mtime epoch 1791067047.587989357
+                          (build/linux-resources/manifest.json)
+  server/dist             exists, newest mtime epoch 1791067044.601009265
+  web/dist                exists, newest mtime epoch 1791067045.301076910
+
+--- 3. Rule B INPUTS before the build (the trigger set) --------------------
+
+  newest five, by mtime epoch:
+    1791007601.280657638  web/src/main.tsx
+    1791005983.422533117  src-tauri/tauri.conf.json
+    1790993908.545749089  src-tauri/src/permissions.rs
+    1790993882.365897186  src-tauri/src/main.rs
+    1790971844.085368829  server/src/eval/controls.test.ts
+
+  Every Rule B input was OLDER than every Rule B output above, so no output was
+  already stale when this phase began. That is a recorded observation, not a skip:
+  attempt 2 has no Rule B anchor to skip against (the anchor is the resume
+  anchor, which the harness author owns), so V0 ran unconditionally, which is
+  also what the card requires on attempt 1 and what root required for this run.
+
+--- 4. Build environment state before start -------------------------------
+
+  cargo tree already warm: src-tauri/target/release/apunta present, deps/ and
+  .fingerprint/ populated from an earlier build (so V0's compile is incremental --
+  measured 28.79s, not a 20-minute cold build)
+  bundler assets already cached under ~/.cache/tauri:
+    linuxdeploy-07333c6-x86_64.AppImage      (19,810,808 bytes)
+    linuxdeploy-plugin-appimage.AppImage     (16,488,952 bytes)
+    linuxdeploy-plugin-gstreamer.sh          (4,858 bytes)
+    linuxdeploy-plugin-gtk.sh                (14,640 bytes)
+    AppRun-x86_64                            (31,552 bytes)
+  => the bundler had its plugins locally, so V0 needed no network fetch.
+  disk: 710G available on / and /home; /tmp 8.8G available -- ample for a
+  ~185 MiB AppImage and its AppDir.
+
+--- 5. What the build was about to overwrite, and what it did --------------
+
+The `bundle/appimage/` directory held exactly two entries at start: the stale
+`Apunta (test)_0.0.0_amd64.AppImage` above and `Apunta (test).AppDir`. Attempt 1's
+interrupted bundling removed both (see 07-attempt-1-interruption.md and
+08-am149-observation.md). Attempt 2's V0 ran against a directory containing only
+a partial `Apunta (test).AppDir` and produced:
+
+  path : src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+  size : 194214392 bytes
+  mtime: 2026-10-03 22:15:39.670807293 -0600
+  sha256: e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a
+
+  bundled scanner inside the AppDir this run produced:
+    mode 755, 19609 bytes, mtime 2026-10-03 22:15:33
+    sha256 80372e81f22548106fcb3a78c98343516bb8d6b961a4230173c7a43247891e15
+
+  identity guard, counted over its OWN pattern (never the directory's contents):
+    C=0; for f in src-tauri/target/release/bundle/appimage/'Apunta (test)_'*.AppImage;
+       do if [ -e "$f" ]; then C=$((C+1)); fi; done   ->  C = 1   (row asserts -eq 1)
+  derived-name assertion:
+    VER=$(node -p "require('./src-tauri/tauri.conf.json').version")  ->  0.0.0
+    test -f "$B/Apunta (test)_${VER}_amd64.AppImage"                 ->  exit 0
+
+  old sha256 d7fb9151... vs new sha256 e6dd3ecb... : DIFFERENT.
+  Same name, different bytes: the artefact V3 will drive is this run's, not the
+  leftover's. That is the whole provenance argument, and it is why the old hash
+  was taken before the build rather than reconstructed afterwards.
+
+The bundled scanner hash is identical across both builds (80372e81...), which is
+consistent and expected: the scanner content linuxdeploy produces is
+deterministic once patchelf has rewritten it, and both builds started from the
+same host scanner via GSTREAMER_HELPERS_DIR.

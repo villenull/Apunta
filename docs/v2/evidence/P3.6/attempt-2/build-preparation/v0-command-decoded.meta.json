@@ -1,0 +1,11 @@
+{
+  "dispatch": "docs/v2/state/dispatch/P3.6.md",
+  "rowId": "V0",
+  "rowLine": 444,
+  "rawCellSha256": "f8abb188c7becf7f7b36d723b7c8d2c7e56840b8ae55a6a3f423feaa9e18ecfb",
+  "rawCellLength": 973,
+  "outerBackticksStripped": true,
+  "decodedLength": 969,
+  "decodedSha256": "cdb77a6b26ea2ded0923fd17f85ba1a1ebae75c6ed956d29a19f46a6f54184aa",
+  "decoded": "export PATH=\"$HOME/.cargo/bin:$PATH\" && export PATH=\"$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH\" && export APUNTA_WHISPER_WORK_DIR=\"$HOME/.cache/apunta-v2/whisper-src\" && node --version && test -x \"${APUNTA_WHISPER_WORK_DIR:-/tmp/apunta-v2/whisper-src}/whisper.cpp/build-${APUNTA_WHISPER_BACKEND:-vulkan}/bin/whisper-cli\" && test \"${APUNTA_WHISPER_WORK_DIR:-$HOME/.cache/apunta-v2/whisper-src}\" = \"$HOME/.cache/apunta-v2/whisper-src\" && node scripts/v2/sandbox.mjs env --port 7879 > /tmp/apunta-v2-p3.6-v0.env && . /tmp/apunta-v2-p3.6-v0.env && bash scripts/v2/package-linux-resources.sh && npm run tauri:build:test && ls -1 src-tauri/target/release/bundle/appimage/ && B=src-tauri/target/release/bundle/appimage && VER=$(node -p \"require('./src-tauri/tauri.conf.json').version\") && test -f \"$B/Apunta (test)_${VER}_amd64.AppImage\" && C=0 && for f in \"$B\"/'Apunta (test)_'*.AppImage; do if [ -e \"$f\" ]; then C=$((C+1)); fi; done && test \"$C\" -eq 1"
+}

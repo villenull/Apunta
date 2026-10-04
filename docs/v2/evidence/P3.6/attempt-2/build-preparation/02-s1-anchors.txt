@@ -1,0 +1,132 @@
+S1 -- anchors, read-only. No gratuitous change made.
+======================================================================
+
+Working directory: repository root
+Date (UTC): 2026-10-04
+HEAD: b9a9e82   branch: main
+
+--- 1. Icons: V2's substance, checked as the S1 anchor (V2 itself NOT RUN) ---
+
+  diff -r docs/v2/assets/tauri-icons/ src-tauri/icons/     -> exit 0, no output
+  file count, asset set : 17
+  file count, src-tauri : 17
+
+The two trees are byte-identical file for file: none added, none missing, none
+differing. This is V2's assertion satisfied, recorded here because S1's anchor is
+this comparison. V2 was not executed as a row in this phase and no V2 status is
+claimed.
+
+--- 2. Bundle metadata: already sufficient; nothing edited ------------------
+
+  src-tauri/tauri.conf.json
+    :3   "productName": "Apunta"
+    :4   "version": "0.0.0"
+    :5   "identifier": "app.apunta.desktop"
+    :19  "targets": ["appimage"]
+    :35  "bundleMediaFramework": true      <- AM-190, already committed
+
+  src-tauri/tauri.test.conf.json
+    identifier: app.apunta.desktop.test
+    productName: "Apunta (test)"           <- overrides identifier + productName only
+
+No metadata edit was needed and none was made. The dispatch clarification says
+"Icons and metadata already match: verify first, make no gratuitous changes", and
+verification found them matching. `version` was NOT bumped: the card derives every
+artefact name from the config at run time and a bump is not this phase's business.
+`app`, `bundle.resources` and `build.frontendDist` were not touched (not in May
+edit).
+
+--- 3. P3.4's V3 invariant, verbatim from the dispatch's May edit cell -------
+
+Command as quoted in the card (the four-word loop over four paths, plus the
+capabilities-directory conjunct):
+
+  b=/tmp/apunta-v2-p3.4-v3; rm -rf $b; mkdir -p $b; bad=0; hits=0;
+  for w in invoke_handler 'withGlobalTauri": true' VITE_APUNTA_TEST_IDENTITY p3.4-observe; do
+    if grep -rnF -e "$w" src-tauri/src src-tauri/tauri.conf.json \
+      src-tauri/tauri.test.conf.json src-tauri/build.rs >"$b/hits"; then
+      echo "FAIL: '$w' appears in a file the AppImage is built from:"
+      head -n 5 "$b/hits"; hits=$((hits+1));
+    fi
+  done
+  echo "P3.4-V3: 4 forbidden words over 4 paths, matches: $hits"
+  test "$hits" = 0 || bad=1
+  test ! -e src-tauri/capabilities || { echo "FAIL: src-tauri/capabilities exists, so a capability was added"; bad=1; }
+  test "$bad" = 0
+
+Measured:
+
+  P3.4-V3: 4 forbidden words over 4 paths, matches: 0
+  V3_INVARIANT_EXIT = 0
+
+All FOUR words, over all FOUR paths (`src-tauri/src` among them): no
+`invoke_handler`, no `withGlobalTauri": true`, no `VITE_APUNTA_TEST_IDENTITY`, no
+`p3.4-observe`. `src-tauri/capabilities` does not exist. The hook-bound pair is
+asserted, not merely the first two.
+
+Note on the cell's escapes: this command contains no `\|`. It is a `for` loop
+over four fixed words with `grep -rnF -e "$w"`, so no alternation can be turned
+into a literal. The bare `||` in the card's prose copy is the shell's OR; the
+`\|\|` seen in the markdown table cell is GFM's table escape and the plan's codec
+reads it back as `||`.
+
+--- 4. Dispatch header stop rule (source drift) ------------------------------
+
+Header base commit: 62abb28.  Dispatch generation commit: 8507952.
+
+  git diff --name-only 8507952..HEAD
+    docs/v2/state/cards/P3.6.json
+    docs/v2/state/dispatch/P3.6.md
+
+  Same diff restricted to every path the card lists under Read, writes or tests
+  (server/src, shared/src, server/package.json, server/migrations, src-tauri,
+  web/src, web/public, web/index.html, web/vite.config.ts, web/package.json,
+  root package.json, package-lock.json, e2e, scripts/v2/*, both tauri configs,
+  docs/v2/assets/tauri-icons, docs/v2/evidence/P3.3):
+    (no output -- no drift)
+
+Both changed paths are coordinator-owned state/dispatch files. The dispatch's own
+stop rule is therefore NOT met: documentation-only movement past the generation
+commit "alone is not a stop". No stop.
+
+Note that HEAD moved twice DURING this phase (7ea185e -> e3b8ef7 -> 8507952 ->
+b9a9e82) because the coordinator and the harness author were committing
+concurrently. Each movement was re-checked before the build started; none touched
+a source path, and the last check above is against the commit V0 actually ran at.
+
+--- 5. Stop 8 pins, re-verified at dispatch time ---------------------------
+
+  P3.4 Rule B set, pinned to docs/v2/cards/P3.4.md @ 5dcabae
+  P3.4 V3 invariant row, pinned to docs/v2/cards/P3.4.md @ 04d071e
+  server/src/http/csp.ts directive list, pinned to @ d56af1d
+  P3.3 fatal-mode row set, pinned to docs/v2/cards/P3.3.md @ 321b4fa
+
+The invariant row quoted under S1 above is the cell as it stands in the current
+dispatch, and it is byte-for-byte the same row this phase executed. No verbatim
+difference to report. V3's CSP assertion and V5's evidence-file assertion were
+not exercised in this phase (V3 and V5 did not run), so their pins are recorded as
+read, not as passed.
+
+--- 6. Base commit pin, read from the header by hand -------------------------
+
+The S1 anchor requires the literal hash on the dispatch's "- Base commit:" header
+line to be copied out by hand, not taken from a token in the card text. It reads:
+
+    - Base commit: `62abb28`
+
+Recorded here for the resume anchor, which the harness author owns; this phase
+does not write `resume-anchor.md`.
+
+--- 7. Port and neighbours -----------------------------------------------
+
+  7811  owner browser preview, pid 3095449  LISTEN  -- alive at 03:11:21 elapsed
+        (first check) and 03:17:09 (second), never signalled or restarted
+  7879  this card's pinned sandbox port -- no listener before V0
+  7717  live instance -- never contacted (HS-1)
+
+--- 8. No foreign build process before start ------------------------------
+
+  pgrep over cargo / rustc / tauri / linuxdeploy / package-linux-resources /
+  vite / tsc / esbuild / npm run: no process other than this session's own shell.
+
+S1 STATUS: PASS. Every anchor read; nothing needed changing; nothing changed.

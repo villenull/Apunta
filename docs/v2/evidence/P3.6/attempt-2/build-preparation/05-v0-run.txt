@@ -1,0 +1,128 @@
+V0 -- execution record, with exit attribution
+======================================================================
+
+Working directory : repository root
+Row               : V0, from docs/v2/state/dispatch/P3.6.md line 444
+Command file      : v0-command-decoded.sh (sha256 8399eb0273cd9a4c890e1f3d766d80c3035cac9e17e8ea3f427fcedc04aa0ea6)
+Supervisor        : build/p36-build1/run-v0-attempt2.sh, pid 3169428,
+                    PGID 3169428, SID 3169428 (own session, fully detached)
+Dispatch sha256   : a39092ca189ebd2098221722c61979adbe4d3db843c6c43ce1a6cc82bc57b83e
+HEAD               : b9a9e82
+Executions        : ONE. No second launch, no retry, no repair.
+
+START (UTC) : 2026-10-04T04:13:25Z
+END   (UTC) : 2026-10-04T04:15:39Z
+ELAPSED     : 134 seconds
+EXIT CODE   : 0
+
+Full stdout+stderr, unedited, is beside this file as v0-full-stdout.log (67
+lines, reproduced in substance below). Nothing was truncated: the card's Stop 3
+depends on the unredirected `ls -1` reaching the excerpt, so no pipe, no head and
+no tail was interposed anywhere in the chain.
+
+--- Exit attribution, clause by clause -------------------------------------
+
+The row is one `&&` chain, so exit 0 is the conjunction of every clause holding.
+Each clause was also read out of the captured output, because an exit code alone
+does not say which of the row's assertions did the work.
+
+  node --version                      -> "v24.19.0"
+      The Expected cell requires exactly this. The box default is outside the
+      root engines range (>=24.19.0 <25), and the producer's own `npm run build`
+      runs under whichever Node is first on PATH, so this is a real assertion and
+      not a formality.
+
+  test -x <pinned whisper-cli>        -> held (S0, pre-verified; the producer then
+                                         used the same candidate)
+  test "$APUNTA_WHISPER_WORK_DIR" = pinned path
+                                     -> held; the work dir was the pinned clone,
+                                         not a substituted path
+  sandbox.mjs env --port 7879 > /tmp/apunta-v2-p3.6-v0.env, then sourced
+                                     -> held; producer and build both ran inside
+                                         the sandbox environment on 7879, never
+                                         7717 (HS-1)
+
+  bash scripts/v2/package-linux-resources.sh      -> exit 0, full producer run
+      Copying the pinned Node tree (A01), tarball sha256 f625d97c... recorded
+        by P0.1
+      Building the server and the web app
+      Bundling the server -> build/linux-resources/server/server.mjs 6.8mb
+      Copying the migrations
+      Copying the web build
+      Copying better-sqlite3
+      Building whisper-cli (A06) -> "copied whisper-cli and 15 shared libraries
+        into bin/ (RUNPATH $ORIGIN:)"
+      Copying the licences
+      Writing manifest.json -> "manifest lists 4804 files"
+      == Done ==  output: <sandbox-independent repo path>/build/linux-resources
+        node v24.19.0, files 4804
+
+      Rule B satisfied in the producer's own half: server/dist and web/dist were
+      rebuilt and build/linux-resources rewritten from them, so what the AppImage
+      is about to carry cannot predate the source. This is the defect P3.4 lost an
+      attempt to, and V0 exists so this card does not repeat it.
+
+  npm run tauri:build:test             -> exit 0
+      tauri build --features test-identity --config src-tauri/tauri.test.conf.json
+      Compiling apunta v0.0.0 (src-tauri)
+      Finished `release` profile [optimized] target(s) in 27.75s
+      Built application at: src-tauri/target/release/apunta
+      Info Patching .../apunta with bundle type information: appimage
+      Bundling Apunta (test)_0.0.0_amd64.AppImage (185.22 MiB)
+      Finished 1 bundle at:
+        .../bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage (185.22 MiB)
+
+      This is the TEST identity, built from tauri.test.conf.json merged --
+      identifier app.apunta.desktop.test, productName "Apunta (test)" -- and not
+      the production build. No production image was produced, which is correct for
+      this phase: V1 is the production build and was not authorised to run.
+
+  ls -1 src-tauri/target/release/bundle/appimage/     -> printed, unredirected:
+      Apunta (test)_0.0.0_amd64.AppImage
+      Apunta (test).AppDir
+      Two entries, exactly as expected after a test-identity build. The listing is
+      in this record because Stop 3 requires the directory to be visible, and it
+      also shows no production sibling is present yet.
+
+  VER=$(node -p "require('./src-tauri/tauri.conf.json').version")   -> 0.0.0
+  test -f "$B/Apunta (test)_${VER}_amd64.AppImage"    -> exit 0
+      The name is DERIVED from the config at run time. No literal 0.0.0 was
+      written into the row, and no path was assembled by hand.
+
+  C loop over "$B"/'Apunta (test)_'*.AppImage  -> C = 1, test "$C" -eq 1 held
+      The count is taken by a LOOP, not a pipeline, so no GFM-escaped pipe can
+      turn the glob into a literal. It is counted over the test identity's own
+      pattern, never over the directory's whole contents, so it can neither be
+      satisfied nor defeated by a production sibling.
+
+--- Resulting artefact, measured after the run -------------------------------
+
+  src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+    size    194214392 bytes
+    mtime   2026-10-03 22:15:39.670807293 -0600
+    sha256  e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a
+
+  Pre-existing image before this phase, for contrast:
+    sha256  d7fb91513e8c68b0a2e74628e7643e3079a60946866110979cb1815022d234df
+    size    194202104 bytes,  mtime 2026-10-03 16:39:34 -0600
+
+  Different bytes. This run's artefact is not the earlier one.
+
+  Bundled scanner, inside the AppDir this run produced:
+    src-tauri/target/release/bundle/appimage/Apunta (test).AppDir/usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
+    mode 755, 19609 bytes, mtime 2026-10-03 22:15:33
+    sha256 80372e81f22548106fcb3a78c98343516bb8d6b961a4230173c7a43247891e15
+
+--- What V0's exit 0 does and does not mean ----------------------------------
+
+It means: the producer ran, the pinned whisper candidate compiled into the
+bundle, the licences were copied, the server and web outputs were rebuilt from the
+current source, the test-identity Rust binary compiled, the AppImage was bundled,
+and the artefact exists under a config-derived name with no sibling of its own
+identity beside it.
+
+It does not mean anything about V1, V3, V4 or V5, none of which ran. It is not an
+approval of the card. And it says nothing yet about whether the image launches --
+that is V3's job, against this exact artefact, which is now on disk.
+
+V0 STATUS: PASS, exit 0.

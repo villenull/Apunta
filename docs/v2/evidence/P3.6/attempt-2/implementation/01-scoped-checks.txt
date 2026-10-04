@@ -1,0 +1,17 @@
+P3.6 attempt 2 CODE/UNIT — scoped static checks
+Working directory: repository root
+Node: v24.19.0
+Start (UTC): 2026-10-04T04:29:31Z
+
+$ node --check scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ npx eslint scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+
+End (UTC): 2026-10-04T04:29:32Z

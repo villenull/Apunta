@@ -1,0 +1,19 @@
+P3.6 attempt 1 -- BUILD phase -- preflight record
+Written: 2026-10-04T04:07:44Z (UTC)
+Working directory: repository root
+HEAD: e3b8ef7  branch: main
+Tree state at start: 1 modified paths (clean if 0)
+
+== S0: A06 whisper candidate precondition (Stop 1) ==
+anchor literal: test -x "${APUNTA_WHISPER_WORK_DIR:-$HOME/.cache/apunta-v2/whisper-src}/whisper.cpp/build-${APUNTA_WHISPER_BACKEND:-vulkan}/bin/whisper-cli"
+work dir     : $HOME/.cache/apunta-v2/whisper-src   (== the card's default; V0 also asserts the equality)
+backend      : ${APUNTA_WHISPER_BACKEND:-vulkan} -> vulkan
+candidate    : $HOME/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli
+test -x      : exit 0  -> PRECONDITION MET, S0 anchor holds, no step runs
+size         : 1064648 bytes
+mtime        : 2026-10-02 13:00:05.905778636 -0600
+sha256       : 3a9f516ded6dc6f619e96570ac326922c5718e5e6bca03a735e5d07bd60804de
+
+This card ACQUIRED NOTHING. No clone, no fetch, no new revision, no other backend,
+no install, no hand-fabricated build-*/bin/whisper-cli (Stop 1 / HS-3). The route for a
+missing candidate is P3.4's S0, never this session.

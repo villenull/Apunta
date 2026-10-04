@@ -1,0 +1,2 @@
+7b7cd94801513be59d0e77a7ad036e767f5f1a4483e5bef94804fa15e90671f0  scripts/v2/tauri-e2e-smoke.test.mjs
+1757 scripts/v2/tauri-e2e-smoke.test.mjs

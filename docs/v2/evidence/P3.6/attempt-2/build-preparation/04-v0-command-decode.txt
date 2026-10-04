@@ -1,0 +1,84 @@
+V0 command decode -- byte-exact, from the current dispatch
+======================================================================
+
+Working directory: repository root
+Date (UTC): 2026-10-04
+Source: docs/v2/state/dispatch/P3.6.md
+        sha256 a39092ca189ebd2098221722c61979adbe4d3db843c6c43ce1a6cc82bc57b83e
+        header: base 62abb28, port 7879, attempt 2 of 3
+
+The command was NOT restated, retyped or reconstructed from prose. It was decoded
+out of the dispatch's own verification-table cell by an owned codec
+(build/p36-build1/decode-cells.mjs, this session's own file under this session's
+own ignored build root), and then compared against the cell.
+
+--- Method -------------------------------------------------------------------
+
+1. Locate the verification table by its own header row,
+   "| ID | Command (cwd: repo root) | Expected |" -> found at dispatch line 442,
+   parsed to exactly three cells: ["ID", "Command (cwd: repo root)", "Expected"].
+2. Parse each table row splitting on UNESCAPED pipes only. A `|` preceded by an
+   odd number of backslashes is GFM's escaped literal and is not a separator.
+   Each row must yield exactly three cells or the codec refuses to continue.
+3. Take the Command cell for row V0 -> dispatch line 444, and record its raw
+   sha256 BEFORE any transformation:
+     raw cell sha256    f8abb188c7becf7f7b36d723b7c8d2c7e56840b8ae55a6a3f423feaa9e18ecfb
+     raw cell length    973
+4. Strip ONE outer backtick pair, and only because the trimmed cell both starts
+   and ends with a backtick. Guard: if any backtick survives inside, refuse.
+     outer backticks stripped: true
+5. Unescape GFM table escapes in the cell interior: `\|` -> `|`, `\\` -> `\`.
+     decoded length 969   (973 - 4: two `\|` escapes, two characters each)
+     decoded sha256 cdb77a6b26ea2ded0923fd17f85ba1a1ebae75c6ed956d29a19f46a6f54184aa
+
+--- Structural guards, all of which had to pass before the bytes were used ----
+
+  header cell count is 3                       PASS
+  row cell count is 3                          PASS
+  command cell contains no newline             PASS
+  no backtick remains inside after stripping   PASS
+  no escaped pipe survived into the shell text PASS
+  no cell-boundary leak into the neighbouring
+    Expected column                            PASS
+  bash -n on the decoded command               exit 0
+
+The two `\|` occurrences are GFM table escapes, not shell escapes, and the codec
+unescaped exactly those and nothing else. This is why the decoded text contains
+the count loop with a plain `$f` glob and NOT a `\|wc -l` pipeline: the row this
+replaced counted through a pipeline, and the card's own note says the escape would
+otherwise turn an alternation or a pipe into a literal.
+
+--- Row invariance against the attempt-1 dispatch ---------------------------
+
+Attempt 1 decoded from the attempt-1 dispatch, attempt 2 from the attempt-2
+dispatch:
+
+  raw cell sha256    f8abb188... == f8abb188...   IDENTICAL
+  decoded sha256     cdb77a6b... == cdb77a6b...   IDENTICAL
+  cmp on the decoded files                       IDENTICAL
+
+So the root's regeneration changed the dispatch's header, the attempt number and
+prose, and did not change one byte of V0's command. The byte-exactness argument
+therefore does not depend on which of the two dispatches is read.
+
+--- The decoded command, exactly as executed ----------------------------------
+
+Written to v0-command-decoded.sh (also preserved beside this file), 969 bytes
+plus the trailing newline the writer adds, sha256 of the file
+8399eb0273cd9a4c890e1f3d766d80c3035cac9e17e8ea3f427fcedc04aa0ea6:
+
+export PATH="$HOME/.cargo/bin:$PATH" && export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && export APUNTA_WHISPER_WORK_DIR="$HOME/.cache/apunta-v2/whisper-src" && node --version && test -x "${APUNTA_WHISPER_WORK_DIR:-/tmp/apunta-v2/whisper-src}/whisper.cpp/build-${APUNTA_WHISPER_BACKEND:-vulkan}/bin/whisper-cli" && test "${APUNTA_WHISPER_WORK_DIR:-$HOME/.cache/apunta-v2/whisper-src}" = "$HOME/.cache/apunta-v2/whisper-src" && node scripts/v2/sandbox.mjs env --port 7879 > /tmp/apunta-v2-p3.6-v0.env && . /tmp/apunta-v2-p3.6-v0.env && bash scripts/v2/package-linux-resources.sh && npm run tauri:build:test && ls -1 src-tauri/target/release/bundle/appimage/ && B=src-tauri/target/release/bundle/appimage && VER=$(node -p "require('./src-tauri/tauri.conf.json").version") && test -f "$B/Apunta (test)_${VER}_amd64.AppImage" && C=0 && for f in "$B"/'Apunta (test)_'*.AppImage; do if [ -e "$f" ]; then C=$((C+1)); fi; done && test "$C" -eq 1
+
+--- Comparison against the card's V0 cell, read by eye -----------------------
+
+Every clause of the decoded line corresponds one-for-one with the V0 cell in the
+dispatch as read: the two PATH exports, APUNTA_WHISPER_WORK_DIR, `node --version`,
+the `test -x` on the pinned candidate, the work-dir equality assertion, the
+`sandbox.mjs env --port 7879` to /tmp/apunta-v2-p3.6-v0.env, the sourcing of it,
+the literal `bash scripts/v2/package-linux-resources.sh` (there is no `package:linux`
+script and adding a wrapper would be an edit outside May edit), `npm run
+tauri:build:test`, the unredirected `ls -1`, B, the VER derivation from the config,
+`test -f` on the derived name, the C loop over the test identity's own pattern, and
+`test "$C" -eq 1`. No clause was added, dropped, reordered or reworded.
+
+DECODE STATUS: PASS. The bytes executed are the bytes the card carries.
