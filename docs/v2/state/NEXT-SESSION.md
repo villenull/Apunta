@@ -1,3 +1,28 @@
+## Frozen STT audit saved; real English drafting readiness now executing
+
+ee832f2c finished/archived; 868302c preserves genuineproof with historical
+DEFECT verdict and additivequalification for oldcwdfalse-negative. Root applied
+only exactcurrentREADME factualremedy: preflighthash observedmatch, no automatic
+digest mismatchguard. No script/args/transcript/threshold changed, no rerun.
+HostNode26/tiny medication miss/bundledruntime limits remain visible.
+0429probeIR stillconfirmedrunning; replay alteredauthor results/report as side
+effect, root directed preserveobservedoutput intoIR and restore ONLY stable
+baseline bytes beforeclosing, no broadreset/index or extra cases. Narration-only
+completion event was notaccepted; actualstatusRUNNING nextcallback expected.
+
+Fresh ec84f011-1883-4b15-9450-fad8e32dd604 confirmed RUNNING callback:
+existingrealEnglish backend draft+one refine on fabricatedtypedP35material,
+NO fakeAI/pull/nativeUIclaim, pinnedNode24, freshguardedsandboxport7847.
+Exclusive Ollama INFERENCE and private7847 server leases untilownpidcleanup
+return. NEW english-eod-real-drafting evidence/ignoredscratch only; no code,
+card, live7717/userdata/Spanishbenchmark/modelcache edit. SupportedAPIsettings
+selectexistingqwen anden, GETpersistencereadback; UI/export/recovery stillP36due.
+This independentbackendreadiness is NOT P36/carddispatch or acceptance bypass.
+
+Staticcompletion question remainspending; no V3/V4 retry authorized. P34BLOCKED,
+P35APPROVED/P36dependencyheld. No additionalnativeworkready. Ifstaticgrant arrives,
+wait Ollamainferencelease release beforefullglobalV4 toavoidmachineinterference.
+
 ## Real spoken transcript observed; medication miss and host-runtime limit
 
 5afa8666 completed/archived, inference lease released. 363c67f saves one

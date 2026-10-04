@@ -2923,3 +2923,11 @@ verification; 0429c174 freshIR confirmedrunning. No suppression/configchange.
 phrase miss. HostNode26—not bundled24—disclosed; noclinicalquality PASS.
 ee832f2c frozenSTTaudit running callback, 0429probeIRrunning. Staticowner
 questionpending; P34BLOCKED/P35APPROVED/P36held. No repeatedinference/native.
+
+## 2026-10-04 00:30 UTC — audit qualification and realwriting readiness
+
+ee832f2c auditarchived868302c; exactREADMEclaim corrected, oldtonefalse
+negativequalified, actualprooflimitskept. 0429reviewrunningwithcontained
+author-reportrestore direction. ec84f011 realbackendEnglishdraft/refine
+sandbox7847 running, soleOllamainferencelease, no native/cardacceptance.
+Staticownergrantpending; never substitute APIactionsfor UIverification.
