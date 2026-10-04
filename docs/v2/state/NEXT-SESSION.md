@@ -8,13 +8,21 @@ Owner decisions AM-201..AM-204 recorded in 8593e57 (P3.6 attempt 4 allowed, not
 yet dispatched; holds kept). Each worker: one attempt, uncommitted, targeted
 vitest only; orchestrator runs full gates, independent review, then commits.
 
-| Worker | Model | Bugs | Exclusive write scope | Status |
+| Worker | Model | Task | Write scope | Status |
 | --- | --- | --- | --- | --- |
-| 81a960e5 | mimo-v2.6-flash-free | #1 restore WAL | backup/restore.ts(+test), db/safety.ts(+test), index.ts (binding thread) | RUNNING |
-| 4eb7ed90 | space-bunny-free | #5 refine revision, #6 persistDraft txn | db/notes.ts, routes/chat.ts, routes/draft.ts (+tests) | RUNNING |
-| 729dfd22 | space-bunny-free | #2 import locale, #4 stale patient 400 | routes/import.ts, routes/halaxy.ts, import/claude.ts, shared/src/import.ts (+tests) | RUNNING |
-| 9a3ee165 | longcat-2.5-preview-free | #7 audio retention | new audio/retention.ts, DELETE handlers in routes/notes.ts, routes/patients.ts (+tests); sweep not wired to boot | RUNNING |
-| c3618056 | longcat-2.5-preview-free | #8 recorder timeout, #9 backup path | web/src/lib/recorder.ts, routes/backup.ts (+tests) | RUNNING |
+| 81a960e5 | mimo-v2.6-flash-free | #1 restore WAL | backup/restore.ts(+test), db/safety.ts(+test), index.ts | RUNNING |
+| — | — | #2/#4 import | — | DONE 56d1c3a (review fa683c4f CLEAR) |
+| — | — | #5/#6 note writes | — | DONE 99ecd87 (review dbd7945c CLEAR) |
+| — | — | #7 audio retention | — | DONE 97122a9 (review 2a43273d CLEAR); boot sweep adopted AM-206, wire into index.ts AFTER #1 returns |
+| — | — | #8/#9 recorder/backup | — | DONE 06a09b0 (review 913f9a79 CLEAR) |
+| ad831fad | space-bunny-free | P3.6 attempt 4 harness repair F1–F7 (AM-201) | scripts/v2/tauri-e2e-smoke.test.mjs, evidence/P3.6/attempt-4/implementation/** | RUNNING |
+| dcca3243 | space-bunny-free | P5.3/P5.4 card text + contract clauses (AM-202, AM-205) | cards/P5.3.md, cards/P5.4.md, CONTRACTS.md (2 clauses), state/P5.3-APPLIED-CHANGELOG.md | RUNNING |
+| 8be2a651 | longcat-2.5-preview-free | S6.1 card apply (AM-203) | cards/S6.1.md, state/S6.1-APPLIED-CHANGELOG.md | RUNNING |
+
+Full gates green at 99ecd87 (2270 tests, lint, typecheck) and pushed. Next after
+each card edit: independent instruction review, then dispatch implementation.
+After P3.6 repair: fresh source review; the frozen test AppImage predates
+today's server fixes, so V3 needs a freshness decision/rebuild of V0 first.
 
 #3 (Node 26/jsdom) is a duplicate of P0.5/AM-047: not dispatched. Gates run on
 pinned Node 24.19.0. Next: on each return verify, independent review, commit.
