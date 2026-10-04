@@ -1,0 +1,15 @@
+[
+  ["loopback /api/pull", "http://127.0.0.1:11434/api/pull"],
+  ["loopback /api/generate", "http://127.0.0.1:11434/api/generate"],
+  ["loopback /api/chat", "http://127.0.0.1:11434/api/chat"],
+  ["loopback /api/tags", "http://127.0.0.1:11434/api/tags"],
+  ["loopback /api/show", "http://127.0.0.1:11434/api/show"],
+  ["loopback tags with query", "http://127.0.0.1:11434/api/tags?token=secret"],
+  ["plain-http catalogue host", "http://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin"],
+  ["allowed catalogue host", "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin"],
+  ["allowed redirect host", "https://us.aws.cdn.hf.co/x?Signature=SECRET&Policy=SECRET"],
+  ["unlisted external host", "https://evil.example.com/x"],
+  ["wrong port", "https://huggingface.co:8443/x"],
+  ["user-info", "https://user:pass@huggingface.co/x"],
+  ["fragment", "https://huggingface.co/x#frag"]
+]

@@ -1,0 +1,48 @@
+/* eslint-disable no-console, no-restricted-syntax -- verbatim BEFORE snapshot of the reviewer's probe, kept only as the left side of the replay; its findings are the recorded "before" state. */
+/**
+ * Synthetic, offline guard probe for the AM-198/A17 acquisition adapter.
+ *
+ * It imports the *scratch* adapter (byte-identical to the committed evidence
+ * copy) and replaces globalThis.fetch with a recorder that never opens a
+ * socket, so a refusal can be observed as "fetch was not reached".
+ */
+import { makeGuardedFetchImpl } from '../../../../build/eod-model-acquisition/guarded-fetch.js';
+
+const calls: string[] = [];
+(globalThis as unknown as { fetch: unknown }).fetch = async (input: unknown) => {
+  calls.push(String(input));
+  return new Response('stub', { status: 200 });
+};
+
+const log = 'build/eod-model-probe-repair/before-egress.jsonl';
+const guarded = makeGuardedFetchImpl(log);
+
+const cases: Array<[string, string]> = [
+  ['loopback /api/pull', 'http://127.0.0.1:11434/api/pull'],
+  ['loopback /api/generate', 'http://127.0.0.1:11434/api/generate'],
+  ['loopback /api/chat', 'http://127.0.0.1:11434/api/chat'],
+  ['loopback /api/tags', 'http://127.0.0.1:11434/api/tags'],
+  ['loopback /api/show', 'http://127.0.0.1:11434/api/show'],
+  ['loopback tags with query', 'http://127.0.0.1:11434/api/tags?token=secret'],
+  ['plain-http catalogue host', 'http://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin'],
+  ['allowed catalogue host', 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin'],
+  ['allowed redirect host', 'https://us.aws.cdn.hf.co/x?Signature=SECRET&Policy=SECRET'],
+  ['unlisted external host', 'https://evil.example.com/x'],
+  ['wrong port', 'https://huggingface.co:8443/x'],
+  ['user-info', 'https://user:pass@huggingface.co/x'],
+  ['fragment', 'https://huggingface.co/x#frag'],
+];
+
+for (const [label, url] of cases) {
+  const before = calls.length;
+  let outcome: string;
+  try {
+    await guarded(url);
+    outcome = 'ALLOWED';
+  } catch (error) {
+    outcome = `REFUSED (${(error as Error).message})`;
+  }
+  const socketOpened = calls.length > before;
+  console.log(`${label.padEnd(26)} -> ${outcome.padEnd(60)} fetchReached=${String(socketOpened)}`);
+}
+console.log(`total fetchReached=${String(calls.length)}`);

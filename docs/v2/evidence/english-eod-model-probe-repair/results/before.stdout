@@ -1,0 +1,14 @@
+loopback /api/pull         -> REFUSED (refused (loopback_path_not_metadata): http://127.0.0.1:11434/api/pull) fetchReached=false
+loopback /api/generate     -> REFUSED (refused (loopback_path_not_metadata): http://127.0.0.1:11434/api/generate) fetchReached=false
+loopback /api/chat         -> REFUSED (refused (loopback_path_not_metadata): http://127.0.0.1:11434/api/chat) fetchReached=false
+loopback /api/tags         -> ALLOWED                                                      fetchReached=true
+loopback /api/show         -> ALLOWED                                                      fetchReached=true
+loopback tags with query   -> REFUSED (refused (loopback_query_present): http://127.0.0.1:11434/api/tags?<redacted>) fetchReached=false
+plain-http catalogue host  -> REFUSED (refused (scheme_not_https): http://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin) fetchReached=false
+allowed catalogue host     -> ALLOWED                                                      fetchReached=true
+allowed redirect host      -> ALLOWED                                                      fetchReached=true
+unlisted external host     -> REFUSED (refused (host_not_allowed): https://evil.example.com/x) fetchReached=false
+wrong port                 -> REFUSED (refused (port_not_allowed): https://huggingface.co:8443/x) fetchReached=false
+user-info                  -> REFUSED (refused (user_info_present): https://huggingface.co/x) fetchReached=false
+fragment                   -> REFUSED (refused (fragment_present): https://huggingface.co/x) fetchReached=false
+total fetchReached=4

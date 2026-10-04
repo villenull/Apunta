@@ -1,0 +1,65 @@
+root            /home/villenull/Projects/Apunta
+scratch         build/eod-model-probe-repair (git-ignored, created before any write)
+baseline commit 872bf016c0db36ad4af2408ca699eed6d3d8b65d
+
+BEFORE archive  docs/v2/evidence/english-eod-model-probe-repair/before-probe.ts.txt (bytes preserved; materialized as build/eod-model-probe-repair/before-probe.ts)
+BEFORE delta    guarded-fetch import depth 4 -> 2 levels; no other byte changed
+
+PASS  NC3 repaired probe writes no log outside the repo  (log=build/eod-model-probe-repair/guard-probe-egress.jsonl)
+PASS  NC3 discriminates: the same predicate rejects a probe with an outside log path  (so the check above is not vacuous)
+PASS  NC3 negative control is never executed (it would write outside the repo)  (static check only)
+
+replay (synthetic fetch only, no sockets, tsx, cwd = repo root)
+  BEFORE build/eod-model-probe-repair/before-probe.ts
+    exit=0 stdout=1601B stderr=0B
+  AFTER  docs/v2/evidence/english-eod-model-acquisition-ir/guard-probe.ts
+    exit=0 stdout=1601B stderr=0B
+PASS  BEFORE and AFTER stdout are byte-identical
+PASS  BEFORE and AFTER stderr are byte-identical
+PASS  BEFORE and AFTER exit codes are equal
+PASS  AFTER exit code is 0  (got 0)
+PASS  AFTER stderr is empty
+PASS  BEFORE stderr is empty
+PASS  AFTER stdout equals the reviewer-recorded output byte for byte
+PASS  BEFORE stdout equals the reviewer-recorded output byte for byte
+PASS  AFTER stdout is 13 case lines plus the total  (14 lines)
+PASS  AFTER stdout still ends with total fetchReached=4  (total fetchReached=4)
+
+negative controls — each must be caught by the comparison above
+PASS  NC1 channel: printing to stderr instead of stdout is discriminated  (exit=0 stdout=0B)
+PASS  NC1 reproduces AFTER exactly on stderr
+PASS  NC1 keeps its decisions, proving only the channel changed
+PASS  NC2 data: one refused case flipped to allowed in the fixture is discriminated  (exit=0 stdout=1581B)
+PASS  NC2 keeps the case count and changes only the flipped decision  (14 lines)
+PASS  NC2 total moves from 4 to 5, so the changed fixture was consumed  (total fetchReached=5)
+
+scratch hygiene
+PASS  build/eod-model-probe-repair/before-egress.jsonl exists (content never read)
+PASS  build/eod-model-probe-repair/guard-probe-egress.jsonl exists (content never read)
+PASS  git check-ignore covers the scratch log  (.gitignore:55:build/	build/eod-model-probe-repair/guard-probe-egress.jsonl)
+PASS  no scratch file appears in git status
+
+scoped lint / format
+PASS  eslint is clean on the replay harness  ({})
+  AFTER  lint {}
+PASS  the two no-console errors the repair targets are gone from the probe  (0 remaining)
+PASS  NC4 lint discriminates: reverting only the two prints trips no-console twice  ({"@typescript-eslint/no-unused-vars":1,"no-console":2})
+PASS  NC4 is not vacuous: the control differs from the repaired probe
+PASS  the repaired probe now lints completely clean  (none)
+PASS  the case-table URL literals are gone from the executable source  (0 remaining)
+PASS  URL rule still fires on the archived case table (no rule exemption added)  ({"no-restricted-syntax":7,"no-console":2})
+PASS  the archive's own disable header is what hides them there
+PASS  eslint.config.js is unchanged (no rule override, no exemption)
+  residual no-restricted-syntax findings in docs/v2/evidence/english-eod-model-acquisition-ir/guard-probe.ts: 0
+  the 13 addresses now live in guard-cases.json as data; the rule still
+  fires on the archived source copy (7 findings), so no exemption exists.
+prettier: Checking formatting...
+All matched files use Prettier code style!
+PASS  prettier on the touched files  (exit 0)
+
+the probe case table is data (docs/v2/evidence/english-eod-model-acquisition-ir/guard-cases.json); docs/v2/evidence/english-eod-model-acquisition-ir/guard-probe.ts has no URL literal and no rule exemption
+egress jsonl content: never opened, copied or printed by this harness
+files outside the repository: none created, read, modified or deleted
+
+VERDICT: all checks passed
+head 1af73109f5e69d6806bc53075880c1b5f3f711fb
