@@ -943,7 +943,7 @@ export function planImport(read: ReadExport, options: ImportOptions): ImportPlan
       } else {
         const selectedPatient = existingById.get(selectedPatientId);
         if (selectedPatient === undefined || selectedPatient.archived === true)
-          throw new Error('The selected import patient is not an active patient.');
+          throw new ImportFormatError('errors.bad_request.import_patient_not_active');
         plan = {
           ...plan,
           name: selectedPatient.name,

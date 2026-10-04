@@ -88,7 +88,10 @@ export function registerImportRoutes(app: FastifyInstance, db: Database): void {
         const note = createNote(db, {
           patient_id: patientIds[planned.patient] as string,
           format_id: format.id,
-          title: importedNoteTitle(planned.recordedAt),
+          // The format's language is the note's language (C-LANG@1 rule 3), so
+          // a refine on an imported note answers in the note's language.
+          locale: format.locale,
+          title: importedNoteTitle(planned.recordedAt, format.locale),
           content: planned.body,
           ...(planned.recordedAt === null ? {} : { created_at: planned.recordedAt }),
         });
@@ -139,16 +142,25 @@ function planFor(db: Database, upload: ExportUpload): ImportPlan {
         WHERE t.source = 'import'`,
     )
     .all() as { raw_text: string; patient_id: string }[];
-  return planImport(upload.read, {
-    ...upload.options,
-    existing: listPatients(db, { includeArchived: true }).map((patient) => ({
-      id: patient.id,
-      name: patient.name,
-      archived: patient.archived_at !== null,
-    })),
-    imported: importedKeys(transcripts),
-    headings: listFormats(db).flatMap((format) => format.sections),
-  });
+  try {
+    return planImport(upload.read, {
+      ...upload.options,
+      existing: listPatients(db, { includeArchived: true }).map((patient) => ({
+        id: patient.id,
+        name: patient.name,
+        archived: patient.archived_at !== null,
+      })),
+      imported: importedKeys(transcripts),
+      headings: listFormats(db).flatMap((format) => format.sections),
+    });
+  } catch (error) {
+    // The planner's own keys travel with the error — a patient she selected
+    // after the preview that is no longer active — so this is a 400 in the
+    // request's language, exactly as the reader's four already are. On the run
+    // this throw rolls the transaction back, so a stale choice writes nothing.
+    if (error instanceof ImportFormatError) throw badRequest(error.key, error.params);
+    throw error;
+  }
 }
 interface ExportUpload {
   readonly bytes: Buffer;

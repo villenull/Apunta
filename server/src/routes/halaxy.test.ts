@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { HalaxyImportResponse, HalaxyPreviewResponse } from '@apunta/shared';
+import type { HalaxyImportResponse, HalaxyPreviewResponse, NoteFormatListResponse } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { listNotesForPatient } from '../db/notes.js';
@@ -28,6 +28,35 @@ function multipart(files: Array<{ name: string; bytes: Buffer }>): Buffer {
 }
 
 let harness: TestApp;
+
+/**
+ * The language of the format the run writes into. It takes the first format in
+ * the database — the same one the route reads — so every format is relabelled
+ * rather than a second one being added behind it.
+ */
+async function setFormatLocale(locale: 'en' | 'es-MX'): Promise<void> {
+  const list = await harness.app.inject({ method: 'GET', url: '/api/formats' });
+  for (const format of list.json<NoteFormatListResponse>().formats) {
+    const patched = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/formats/${format.id}`,
+      payload: { locale },
+    });
+    expect(patched.statusCode).toBe(200);
+  }
+}
+
+/** The one fixture PDF, through the preview the run's payload is built from. */
+async function previewJohn(): Promise<HalaxyPreviewResponse['patients'][number]> {
+  const response = await harness.app.inject({
+    method: 'POST',
+    url: '/api/import/halaxy/preview',
+    headers: { 'content-type': 'multipart/form-data; boundary=apunta-halaxy-test' },
+    payload: multipart([{ name: 'john-smith.pdf', bytes: PDF }]),
+  });
+  expect(response.statusCode).toBe(200);
+  return response.json<HalaxyPreviewResponse>().patients[0]!;
+}
 
 beforeEach(async () => {
   harness = await createTestApp();
@@ -149,5 +178,99 @@ describe('POST /api/import/halaxy', () => {
     expect(undone.json()).toMatchObject({ notes_deleted: 3, patients_deleted: 0 });
     expect(listPatients(harness.db, { includeArchived: true })).toHaveLength(1);
     expect(listNotesForPatient(harness.db, existing.id)).toHaveLength(1);
+  });
+
+  // Same rule as the Claude import (C-LANG@1 rule 3): the note's language is
+  // its format's, and a title is a sentence in that language.
+  it('writes the note, and an untitled fallback title, in the format’s language', async () => {
+    await setFormatLocale('es-MX');
+    const patient = await previewJohn();
+    const created = await harness.app.inject({
+      method: 'POST',
+      url: '/api/import/halaxy',
+      payload: {
+        patients: [
+          {
+            fileName: patient.fileName,
+            patientName: 'John Smith',
+            // No `title` on any note: the fallback is what is under test.
+            notes: patient.notes.map(({ date, text }) => ({ date, text })),
+          },
+        ],
+      },
+    });
+    expect(created.statusCode).toBe(201);
+
+    const john = listPatients(harness.db).find((p) => p.name === 'John Smith');
+    const notes = listNotesForPatient(harness.db, john?.id ?? '');
+    expect(notes).toHaveLength(3);
+    expect(notes.every((note) => note.locale === 'es-MX')).toBe(true);
+    expect(notes.map((note) => note.title).sort()).toEqual(
+      patient.notes.map(({ date }) => `Sesión importada, ${date}`).sort(),
+    );
+  });
+
+  it('keeps an English format’s fallback title in English', async () => {
+    const patient = await previewJohn();
+    const created = await harness.app.inject({
+      method: 'POST',
+      url: '/api/import/halaxy',
+      payload: {
+        patients: [
+          {
+            fileName: patient.fileName,
+            patientName: 'John Smith',
+            notes: patient.notes.map(({ date, text }) => ({ date, text })),
+          },
+        ],
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    const john = listPatients(harness.db).find((p) => p.name === 'John Smith');
+    const notes = listNotesForPatient(harness.db, john?.id ?? '');
+    expect(notes.every((note) => note.locale === 'en')).toBe(true);
+    expect(notes.map((note) => note.title).sort()).toEqual(
+      patient.notes.map(({ date }) => `Imported session, ${date}`).sort(),
+    );
+  });
+
+  // Halaxy reaches its stale patient the same way — she picked a chart on the
+  // preview screen and it is no longer there — and it was already a 400 with a
+  // catalogue key. This pins that, so it cannot quietly become a 500.
+  it('400s a patient she selected that is archived or unknown, and writes nothing', async () => {
+    const archived = await seedPatient(harness.app, 'John Smith');
+    const archivedResponse = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/patients/${archived.id}`,
+      payload: { archived: true },
+    });
+    expect(archivedResponse.statusCode).toBe(200);
+    // A well-formed id for a patient this database has never held.
+    const neverExisted = '018f1c40-0000-7000-8000-00000000abcd';
+    const patient = await previewJohn();
+
+    for (const existingPatientId of [archived.id, neverExisted]) {
+      const response = await harness.app.inject({
+        method: 'POST',
+        url: '/api/import/halaxy',
+        payload: {
+          patients: [
+            {
+              fileName: patient.fileName,
+              patientName: 'John Smith',
+              existingPatientId,
+              notes: patient.notes.map(({ date, text }) => ({ date, text })),
+            },
+          ],
+        },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json<{ error: string; message: string }>()).toMatchObject({
+        error: 'bad_request',
+        message: expect.stringMatching(/patient/i),
+      });
+    }
+    expect(listNotesForPatient(harness.db, archived.id)).toHaveLength(0);
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM import_batches').get()).toEqual({ n: 0 });
   });
 });

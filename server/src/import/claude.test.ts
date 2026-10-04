@@ -425,6 +425,42 @@ describe('planImport', () => {
     }
   });
 
+  // The patient she picked on the review screen is archived (or deleted) by the
+  // time she presses the button. That is a stale choice of hers, and it travels
+  // as a catalogue key so `routes/import.ts` can answer 400 in her language
+  // rather than letting a plain Error out to a 500.
+  it('refuses a patient she selected that is archived or gone, with a key to render', () => {
+    const existing = [
+      { id: 'p-gone', name: 'Ana Torres', archived: true },
+      { id: 'p-john', name: 'john', archived: false },
+    ];
+    for (const selected of [{ 'title:conv-john': 'p-gone' }, { 'title:conv-john': 'p-never-existed' }]) {
+      const failure = (): unknown =>
+        planImport(chats(), options({ existing, existingPatientIds: new Map(Object.entries(selected)) }));
+      expect(failure).toThrow(ImportFormatError);
+      expect(failure).toThrow('A patient you selected is no longer active. Go back and choose again.');
+      try {
+        failure();
+      } catch (error) {
+        expect(error).toBeInstanceOf(ImportFormatError);
+        expect((error as InstanceType<typeof ImportFormatError>).key).toBe(
+          'errors.bad_request.import_patient_not_active',
+        );
+        expect((error as InstanceType<typeof ImportFormatError>).messageIn('es-MX')).toBe(
+          'Un paciente que seleccionaste ya no está activo. Regresa y vuelve a elegir.',
+        );
+      }
+    }
+
+    // An active patient she selected still works, which is the control: the
+    // refusal is about the patient, not about having an id at all.
+    const { report } = planImport(
+      chats(),
+      options({ existing, existingPatientIds: new Map([['title:conv-john', 'p-john']]) }),
+    );
+    expect(report.patients[0]).toMatchObject({ name: 'john', source: 'existing', patient_id: 'p-john' });
+  });
+
   it('names patients from her list, merging conversations her list says are one person', () => {
     const { report } = planImport(chats(), options({ names: ['John Smith', 'Maria Ruiz', 'Nobody Here'] }));
     expect(report.patients.map((p) => [p.name, p.source, p.name_guessed, p.conversations, p.notes])).toEqual([

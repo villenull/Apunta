@@ -5,6 +5,7 @@ import type {
   ClaudeImportReport,
   ImportBatchListResponse,
   ImportUndoResponse,
+  NoteFormatListResponse,
   Patient,
 } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -67,6 +68,19 @@ afterEach(async () => {
 });
 
 const patients = (): Patient[] => listPatients(harness.db, { includeArchived: true });
+
+/** Every format in the test database, as the run reads them: the first one. */
+async function setFormatLocale(locale: 'en' | 'es-MX'): Promise<void> {
+  const list = await harness.app.inject({ method: 'GET', url: '/api/formats' });
+  for (const format of list.json<NoteFormatListResponse>().formats) {
+    const patched = await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/formats/${format.id}`,
+      payload: { locale },
+    });
+    expect(patched.statusCode).toBe(200);
+  }
+}
 
 describe('POST /api/import/claude/preview', () => {
   it('reports what a run would do, and writes nothing', async () => {
@@ -222,6 +236,117 @@ describe('POST /api/import/claude/run', () => {
     expect(latest?.content).toBe(
       'John, first session after the break. Sleep steady. Worksheet attached.\n\nShorter please.',
     );
+  });
+
+  // A note's language is its format's language (C-LANG@1 rule 3): an imported
+  // note that claims English on an es-MX format gets its refine replies and
+  // lock notices back in English, which is the whole rule about.
+  it('writes every note in the format’s language, and titles it in that language too', async () => {
+    await setFormatLocale('es-MX');
+    const { statusCode } = await post('run');
+
+    expect(statusCode).toBe(201);
+    const john = patients().find((p) => p.name === 'John') as Patient;
+    const notes = listNotesForPatient(harness.db, john.id);
+    expect(notes.map((n) => n.locale)).toEqual(['es-MX', 'es-MX', 'es-MX']);
+    expect(notes.map((n) => n.title).sort()).toEqual([
+      'Sesión importada, 2026-05-12',
+      'Sesión importada, 2026-06-09',
+      'Sesión importada, 2026-07-14',
+    ]);
+  });
+
+  it('leaves an English format’s notes and titles exactly as they were', async () => {
+    const { statusCode } = await post('run');
+    expect(statusCode).toBe(201);
+    const john = patients().find((p) => p.name === 'John') as Patient;
+    const notes = listNotesForPatient(harness.db, john.id);
+    expect(notes.every((n) => n.locale === 'en')).toBe(true);
+    expect(notes.map((n) => n.title).sort()).toEqual([
+      'Imported session, 2026-05-12',
+      'Imported session, 2026-06-09',
+      'Imported session, 2026-07-14',
+    ]);
+  });
+});
+
+/**
+ * The patient she picked on the preview screen is gone or archived by the time
+ * she presses the button — another tab, or a patient deleted between the two
+ * requests. That is her request being out of date, not the server breaking:
+ * both routes answer 400, in her language, and the run writes nothing.
+ */
+describe('an import patient she selected that is no longer active', () => {
+  const DEV_SPANISH = 'APUNTA_DEV_SPANISH';
+  let stale: string;
+
+  beforeEach(async () => {
+    const patient = await seedPatient(harness.app, 'Ana Torres');
+    await harness.app.inject({
+      method: 'PATCH',
+      url: `/api/patients/${patient.id}`,
+      payload: { archived: true },
+    });
+    const preview = await post('preview');
+    const key = preview.body.patients.find((p) => p.name === 'John')?.key ?? '';
+    stale = JSON.stringify({ [key]: patient.id });
+  });
+
+  afterEach(() => {
+    delete process.env[DEV_SPANISH];
+  });
+
+  it('400s the preview with the archived patient, and 400s a patient id that never existed', async () => {
+    const archived = await post('preview', { existingPatientIds: stale });
+    expect(archived.statusCode).toBe(400);
+    expect(archived.body.message).toBe(
+      'A patient you selected is no longer active. Go back and choose again.',
+    );
+
+    const unknown = await post('preview', {
+      existingPatientIds: JSON.stringify({ 'title:conv-john': 'p-nobody' }),
+    });
+    expect(unknown.statusCode).toBe(400);
+    expect(unknown.body.message).toBe(
+      'A patient you selected is no longer active. Go back and choose again.',
+    );
+  });
+
+  it('400s the run and writes nothing at all — not a patient, a note or a batch', async () => {
+    const { statusCode, body } = await post('run', { existingPatientIds: stale });
+
+    expect(statusCode).toBe(400);
+    expect(body.message).toBe('A patient you selected is no longer active. Go back and choose again.');
+    // The throw is inside the run's transaction, so the batch it had created
+    // went back with everything else.
+    expect(patients().map((p) => p.name)).toEqual(['Ana Torres']);
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM notes').get()).toEqual({ n: 0 });
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM transcripts').get()).toEqual({ n: 0 });
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM import_batches').get()).toEqual({ n: 0 });
+  });
+
+  it('says the same thing in Spanish on both routes, and still writes nothing', async () => {
+    process.env[DEV_SPANISH] = '1';
+    const stored = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/settings',
+      payload: { language: 'es-MX' },
+    });
+    expect(stored.statusCode).toBe(200);
+
+    const preview = await post('preview', { existingPatientIds: stale });
+    expect(preview.statusCode).toBe(400);
+    expect(preview.body.message).toBe(
+      'Un paciente que seleccionaste ya no está activo. Regresa y vuelve a elegir.',
+    );
+
+    const run = await post('run', { existingPatientIds: stale });
+    expect(run.statusCode).toBe(400);
+    expect(run.body.message).toBe(
+      'Un paciente que seleccionaste ya no está activo. Regresa y vuelve a elegir.',
+    );
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM notes').get()).toEqual({ n: 0 });
+    expect(harness.db.prepare('SELECT COUNT(*) AS n FROM import_batches').get()).toEqual({ n: 0 });
   });
 });
 

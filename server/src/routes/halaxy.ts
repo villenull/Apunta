@@ -50,8 +50,8 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
     const parsed = HalaxyImportRequestSchema.safeParse(request.body);
     if (!parsed.success) throw badRequest('errors.bad_request.halaxy_selection_invalid');
     if (parsed.data.patients.length === 0) throw badRequest('errors.bad_request.halaxy_no_patients');
-    const format = db.prepare('SELECT id FROM note_formats ORDER BY created_at, id LIMIT 1').get() as
-      { id: string } | undefined;
+    const format = db.prepare('SELECT id, locale FROM note_formats ORDER BY created_at, id LIMIT 1').get() as
+      { id: string; locale: Locale } | undefined;
     if (!format) throw badRequest('errors.bad_request.needs_format');
     const response = db.transaction((): HalaxyImportResponse => {
       const batchId = createImportBatch(db, 'halaxy');
@@ -85,7 +85,10 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
           const note = createNote(db, {
             patient_id: patient.id,
             format_id: format.id,
-            title: noteInput.title ?? `Imported session, ${noteInput.date}`,
+            // The format's language is the note's language (C-LANG@1 rule 3),
+            // and the fallback title is said in it too.
+            locale: format.locale,
+            title: noteInput.title ?? msg(format.locale, 'import.fallbackTitle', { date: noteInput.date }),
             content: noteInput.text,
             created_at: `${noteInput.date}T12:00:00.000Z`,
           });

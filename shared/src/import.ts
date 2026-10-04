@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 import { IdSchema, instantToLocalDay } from './common.js';
+import { DEFAULT_LOCALE, type Locale } from './i18n/locales.js';
+import { t } from './i18n/t.js';
 
 /**
  * Importing her Claude conversations (M11, `docs/agents/M11-claude-import.md`).
@@ -180,8 +182,19 @@ export const ImportUndoResponseSchema = z.object({
 });
 export type ImportUndoResponse = z.infer<typeof ImportUndoResponseSchema>;
 
-/** An imported note's title: the day it was recorded, so a patient's list reads as a history. */
-export function importedNoteTitle(recordedAt: string | null): string {
+/**
+ * An imported note's title: the day it was recorded, so a patient's list reads
+ * as a history.
+ *
+ * The sentence is a catalogue key, not a literal, and the day travels as
+ * `{date}` unformatted: a session's date is a fact about her record — the day
+ * she sat down with it — so it stays the plain `YYYY-MM-DD` the import stored
+ * rather than a date dressed up in the reader's language. English is
+ * byte-identical to what this returned before it was localized.
+ */
+export function importedNoteTitle(recordedAt: string | null, locale: Locale = DEFAULT_LOCALE): string {
   const day = recordedAt === null ? '' : instantToLocalDay(recordedAt);
-  return day === '' ? 'Imported session' : `Imported session, ${day}`;
+  return day === ''
+    ? t('import.fallbackTitleUndated', {}, locale)
+    : t('import.fallbackTitle', { date: day }, locale);
 }
