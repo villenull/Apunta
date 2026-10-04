@@ -1,4 +1,5 @@
 import { applyPendingRestore, maybeRunDailyBackupAsync, rollbackAppliedRestore } from './backup/index.js';
+import type { AppliedRestore } from './backup/restore.js';
 import { OllamaProcess } from './ai/ollama-process.js';
 import { buildApp } from './app.js';
 import { openBrowser } from './boot.js';
@@ -28,7 +29,7 @@ installEgressGuard();
 
 async function start(): Promise<void> {
   const config = loadConfig();
-  let restored = { applied: false } as { applied: boolean; safetyCopy?: string; removedSidecars?: string[] };
+  let restored: AppliedRestore = { applied: false };
   let opened: OpenedDatabase;
   let lock: DataFolderLock;
   try {
@@ -38,7 +39,7 @@ async function start(): Promise<void> {
     // rewriting one practice's records.
     ensureDataDir(config.dataDir);
     lock = acquireDataFolderLock(config.dataDir);
-    restored = applyPendingRestore(config.dataDir);
+    restored = applyPendingRestore(config.dataDir, config.sqliteBinding);
     // C-UPD@1's migration steps, in the one position C-OWN@1 rule 1 gives
     // them: the restore is applied, the database is inspected read-only and
     // snapshotted if anything is pending, and only then is anything migrated —
@@ -127,6 +128,28 @@ async function start(): Promise<void> {
   app.addHook('onClose', async () => {
     await runtime.stop();
   });
+
+  const recovery = restored.recoveredAfterCrash;
+  if (recovery !== undefined && (recovery.databases > 0 || recovery.sidecars > 0)) {
+    app.log.warn(
+      { databases: recovery.databases, sidecars: recovery.sidecars },
+      'a restore rollback was interrupted and this start put back what it had left behind: ' +
+        'the previous database, and any log file that belonged to it',
+    );
+  }
+
+  if ((recovery?.unattachedLogs ?? 0) > 0) {
+    // Counts and nothing else: a path here would name a practice's files, and
+    // this is the one case where the records are still only in a log nobody
+    // has opened. It is left whole and where it is on purpose, so this is a
+    // line to read, not a repair to announce.
+    app.log.warn(
+      { logs: recovery?.unattachedLogs },
+      'a write-ahead log under a pre-restore name could not be proven to belong to the database ' +
+        'now in use, so it was left where it was rather than replayed into a database that might ' +
+        'not be its own; the rows only it holds are still in it',
+    );
+  }
 
   if (restored.applied) {
     app.log.warn(

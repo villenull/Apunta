@@ -86,7 +86,7 @@ export function prepareDatabaseForStart(options: PrepareDatabaseOptions): Prepar
   // fails, and it logs it. This second call finds nothing pending — the first
   // one removed `pending-restore/` — so it is a no-op in production, and the
   // sequence below is a sequence that is correct on its own.
-  const restored = applyPendingRestore(options.dataDir);
+  const restored = applyPendingRestore(options.dataDir, options.nativeBinding);
 
   // A data folder with no `apunta.db` is a first run, not an inspect case: no
   // read-only open, no `newer_schema`, no `safety/` folder, no snapshot, and —
