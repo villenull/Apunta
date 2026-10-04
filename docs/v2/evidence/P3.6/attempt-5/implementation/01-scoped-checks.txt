@@ -1,0 +1,26 @@
+P3.6 attempt 5 — scoped checks (CODE/UNIT)
+
+working directory: /home/villenull/Projects/Apunta
+node: v24.19.0
+
+$ node --check scripts/v2/tauri-e2e-smoke.test.mjs
+exit: 0
+
+$ npx eslint scripts/v2/tauri-e2e-smoke.test.mjs
+exit: 0
+
+$ npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit: 0
+
+$ node --check docs/v2/evidence/P3.6/attempt-5/implementation/helper-tests.mjs
+exit: 0
+
+$ node docs/v2/evidence/P3.6/attempt-5/implementation/helper-tests.mjs   (full output in 02-helper-tests.txt)
+tauri-e2e-smoke: source the sandbox environment first: node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-….env && . /tmp/apunta-v2-….env (APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required)
+PASS D2 the lock holder must be this run's server pid, at the baseline and at the end
+PASS D2 the shell prints the same pid the lock names, so the two are comparable
+
+53/53 helper tests passed
+exit: 0

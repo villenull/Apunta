@@ -7,9 +7,9 @@
   ],
   "baseCommit": "62abb28",
   "attempt": 5,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 4 (AM-201) harness repair returned; independent source review reviews/P3.6-impl4-source.md CHANGES REQUESTED: D1 HIGH settings label never rendered (Drafting model needs >=2 LLM profiles), D2 MEDIUM narrowed ownership check cannot fail. F1-F5 CLEAR. Frozen test AppImage now stale under ruleBFreshness. Native V3 never run. | AM-207 owner allowed one fifth attempt bounded to D1+D2.",
-  "nextAllowedAction": "attempt-5 harness repair (D1, D2 only) -> fresh source review -> on CLEAR re-run V0 once -> native V3",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Attempt 5 (AM-207) returned; review reviews/P3.6-impl5-source.md CHANGES REQUESTED: D1 CLEAR; D2 identity check fails every healthy run (SQLite deletes -wal/-shm at graceful shutdown, no volatile exemption on lost); pre-existing vanished check fails the same healthy end state (lock release + WAL deletion). Native V3 never run.",
+  "nextAllowedAction": "owner-decision: attempt 5 exhausted under AM-207; no sixth attempt without explicit grant",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {

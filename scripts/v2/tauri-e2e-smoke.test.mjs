@@ -59,12 +59,22 @@
  * count it saw.
  *
  * **Containment, all five asserted, none weakened to pass:** no process from
- * the run remains; no second `apunta.lock`, `apunta.db`, `-wal` or `-shm`
- * (exactly those four names — the backup flow's own `backups/` directory is the
- * run's output, not a second owner, and is reported rather than failed on);
+ * the run remains; the data folder is still owned by **this run** — the four
+ * C-OWN@1 files (`apunta.lock`, `apunta.db`, `-wal`, `-shm`) are still the very
+ * files the first instance created, compared by device+inode, and `apunta.lock`
+ * names this run's own server pid and nonce at the baseline **and** at the end
+ * of the flows, because a second server cannot introduce a *new filename* into
+ * this folder and a name set would therefore be green whatever happened (the
+ * backup flow's own `backups/` directory is the run's output, not a second
+ * owner, and is reported rather than failed on);
  * 7879 is free afterwards; the observation channel is gone when the row ends
  * (zero occurrences of P3.4's marker path and gate string in the shipped
  * bundle); and `ollama` is still running, read from outside the run.
+ *
+ * `-wal` and `-shm` are recorded by identity but **not** asserted on it:
+ * SQLite creates and deletes both around a checkpoint and on close, so a new
+ * inode there is the database working, not a second owner. The lock's release on
+ * a clean shutdown is likewise not a failure; a *different* file at that name is.
  *
  * **The microphone.** The capture flow reuses P3.5's approved mechanism: a
  * fabricated recording is played into a virtual sink whose remap source is made
@@ -1659,11 +1669,222 @@ function fixtureAudio() {
 // --------------------------------------------------------------- helpers ----
 
 /** The four files C-OWN@1 owns, so a second server in this folder is visible. */
-function ownershipFiles() {
+function ownershipFiles(dir = sandboxEnv().dataDir) {
   return ['apunta.lock', 'apunta.db', 'apunta.db-wal', 'apunta.db-shm'].map((name) => ({
     name,
-    path: join(sandboxEnv().dataDir, name),
+    path: join(dir, name),
   }));
+}
+
+/**
+ * The two of the four whose **identity** is only recorded, never asserted.
+ *
+ * SQLite creates and deletes `apunta.db-wal` and `apunta.db-shm` around
+ * checkpoints and on close, so a new inode for either is the database working,
+ * not a second owner. Asserting their device+inode would be a false-positive
+ * path — the exact defect F7 was raised for, in a new place — so their identity
+ * is recorded (it is in the evidence) and the assertion is carried by the two
+ * files that do not move: the lock file and the database itself.
+ *
+ * `apunta.lock` is asserted with its release tolerated: C-OWN@1 rule 5 has the
+ * lock removed on clean shutdown, so the end state "gone" is legitimate and only
+ * a **different** file at that name is a failure.
+ */
+const VOLATILE_OWNED = new Set(['apunta.db-wal', 'apunta.db-shm']);
+
+/**
+ * Each C-OWN@1 file's **identity** — device and inode, as decimal strings — read
+ * with `fs.statSync` in bigint mode so a 64-bit inode is never rounded.
+ *
+ * Identity is the part a name set cannot see. All four names are in the baseline
+ * by construction (the first instance created them), so "did a second owner
+ * appear?" answered by *names* is `[]` before it starts and can never fail — the
+ * defect D2 records. A second owner does not introduce a new filename into this
+ * folder: it either fails to take the lock or writes the same four names. What
+ * it would have to do to be caught is **replace** one of them, and a replaced
+ * file is a different inode. That is what this snapshot records and what
+ * `ownershipIdentityDiff` compares.
+ */
+function ownershipIdentitySnapshot(dir = sandboxEnv().dataDir) {
+  return ownershipFiles(dir).map((file) => {
+    let dev = null;
+    let ino = null;
+    let size = null;
+    try {
+      const stats = statSync(file.path, { bigint: true });
+      dev = stats.dev.toString();
+      ino = stats.ino.toString();
+      size = stats.size.toString();
+    } catch {
+      // Absent at this moment: recorded as absent, which is a fact and not a
+      // guess about why.
+    }
+    return {
+      name: file.name,
+      present: dev !== null,
+      dev,
+      ino,
+      size,
+      /** `false` for the WAL pair: recorded, never asserted (see above). */
+      asserted: !VOLATILE_OWNED.has(file.name),
+    };
+  });
+}
+
+/**
+ * What the end-of-run identity says against the baseline.
+ *
+ * - `replaced`: an asserted file present at both ends with a **different**
+ *   device+inode. Something swapped the lock or the database out from under the
+ *   run. This is the failure mode the name set cannot see.
+ * - `appearedOwned`: one of the four names present at the end that was not in
+ *   the baseline. Cheap, kept, and reported — it is empty by construction in the
+ *   healthy case, which is why it is not the proof.
+ * - `lost`: an asserted file that was in the baseline and is gone at the end and
+ *   is **not** the lock. The database does not delete itself.
+ * - `released`: `apunta.lock` gone at the end, which is C-OWN@1 rule 5's clean
+ *   release and is not a failure.
+ * - `volatileChanged`: the WAL pair's identity moved. Recorded, never failed on.
+ */
+function ownershipIdentityDiff(baseline, after) {
+  const replaced = [];
+  const lost = [];
+  const released = [];
+  const volatileChanged = [];
+  const baselineNames = baseline.filter((file) => file.present).map((file) => file.name);
+  for (const before of baseline) {
+    if (!before.present) continue;
+    const now = after.find((file) => file.name === before.name);
+    if (now === undefined) continue;
+    if (!now.present) {
+      if (before.name === 'apunta.lock') released.push(before.name);
+      else lost.push(before.name);
+      continue;
+    }
+    if (!before.asserted) {
+      if (now.dev !== before.dev || now.ino !== before.ino) volatileChanged.push(before.name);
+      continue;
+    }
+    if (now.dev !== before.dev || now.ino !== before.ino) {
+      replaced.push(
+        `${before.name} (dev ${before.dev}, ino ${before.ino}) is now dev ${now.dev}, ino ${now.ino}`,
+      );
+    }
+  }
+  const appearedOwned = after
+    .filter((file) => file.present && !baselineNames.includes(file.name))
+    .map((file) => file.name);
+  const ok = replaced.length === 0 && lost.length === 0 && appearedOwned.length === 0;
+  const parts = [];
+  if (replaced.length > 0) parts.push(`replaced: ${replaced.join('; ')}`);
+  if (lost.length > 0) parts.push(`gone from the baseline: ${lost.join(', ')}`);
+  if (appearedOwned.length > 0)
+    parts.push(`a C-OWN@1 name appeared that the baseline did not have: ${appearedOwned.join(', ')}`);
+  if (released.length > 0) parts.push(`released on shutdown, as C-OWN@1 rule 5 says: ${released.join(', ')}`);
+  if (volatileChanged.length > 0) {
+    parts.push(
+      `the WAL pair was recreated by SQLite, recorded and not failed on: ${volatileChanged.join(', ')}`,
+    );
+  }
+  return {
+    ok,
+    replaced,
+    lost,
+    released,
+    volatileChanged,
+    appearedOwned,
+    why:
+      parts.length === 0
+        ? 'the lock and the database are the same files (device+inode) the baseline recorded'
+        : parts.join('; '),
+  };
+}
+
+/**
+ * Who `apunta.lock` says owns the folder, in the file's own shape.
+ *
+ * C-OWN@1 rule 2 writes `{ pid, processStart, appVersion, protocol: 1, nonce }`
+ * (`server/src/platform/data-lock.ts`, `acquireDataFolderLock`), and the `pid` is
+ * the **server's** — `acquireDataFolderLock` is called from the server process
+ * with `process.pid`, and the shell prints the same number in
+ * `apunta: spawned the bundled server as pid <N>`. So the lock holder and the
+ * harness's server pid are directly comparable, which is what makes the lock
+ * readable as this run's own.
+ *
+ * `null` is "no lock to read" — absent, empty, or not JSON — and is never
+ * treated as "fine".
+ */
+function readLockHolder(path = join(sandboxEnv().dataDir, 'apunta.lock')) {
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return null;
+  }
+  if (parsed === null || typeof parsed !== 'object') return null;
+  return {
+    pid: Number.isSafeInteger(parsed.pid) ? parsed.pid : null,
+    processStart: typeof parsed.processStart === 'string' ? parsed.processStart : null,
+    appVersion: typeof parsed.appVersion === 'string' ? parsed.appVersion : null,
+    protocol: Number.isSafeInteger(parsed.protocol) ? parsed.protocol : null,
+    nonce: typeof parsed.nonce === 'string' ? parsed.nonce : '',
+  };
+}
+
+/**
+ * Is the folder still locked by **this run's** server, in the holder recorded at
+ * the baseline?
+ *
+ * Two questions, and both have to hold:
+ *
+ * 1. the baseline holder is this run's server pid, so the folder this run drove
+ *    the app in is the folder the app locked;
+ * 2. the holder now is the same pid **and** the same nonce, so nobody took the
+ *    lock over in between. A different nonce is a takeover (C-OWN@1 rule 3's
+ *    stale branch, which renames a fresh lock over the old one) — which is the
+ *    second-owner case the name set cannot express.
+ *
+ * A holder that is simply gone while the server is still running is a failure,
+ * not a pass: the app had not been stopped yet when this is read.
+ */
+function lockHolderCheck(baseline, current, serverPid) {
+  if (serverPid === null || serverPid === undefined) {
+    return {
+      ok: false,
+      why: 'the shell never printed the bundled server pid, so the lock holder cannot be compared',
+    };
+  }
+  if (baseline === null) {
+    return { ok: false, why: 'apunta.lock held nothing readable at the baseline' };
+  }
+  if (baseline.pid !== serverPid) {
+    return {
+      ok: false,
+      why: `apunta.lock names pid ${String(baseline.pid)} but this run's bundled server is pid ${String(serverPid)}`,
+    };
+  }
+  if (current === null) {
+    return {
+      ok: false,
+      why: `apunta.lock is gone or unreadable while this run's server (pid ${String(serverPid)}) is still running`,
+    };
+  }
+  if (current.pid !== serverPid) {
+    return {
+      ok: false,
+      why: `apunta.lock is now held by pid ${String(current.pid)}, not this run's server pid ${String(serverPid)}`,
+    };
+  }
+  if (current.nonce !== baseline.nonce) {
+    return {
+      ok: false,
+      why: `apunta.lock was rewritten with a different nonce (${String(current.nonce)} against ${String(baseline.nonce)}), so the lock was taken over mid-run`,
+    };
+  }
+  return {
+    ok: true,
+    why: `apunta.lock still names this run's server pid ${String(serverPid)} and its own nonce`,
+  };
 }
 
 /**
@@ -1696,9 +1917,19 @@ function ownershipBaselineProof(names) {
  * What the post-run name set says against the baseline, split by what each part
  * means.
  *
- * `secondOwned` is the question the check's name claims: one of the four C-OWN@1
- * files (`apunta.lock`, `apunta.db`, `apunta.db-wal`, `apunta.db-shm`) appeared
- * **beside** the baseline, which is a second server owning this folder.
+ * `secondOwned` — one of the four C-OWN@1 files (`apunta.lock`, `apunta.db`,
+ * `apunta.db-wal`, `apunta.db-shm`) appeared **beside** the baseline.
+ *
+ * **What it is worth, stated honestly (D2):** all four names are in the baseline
+ * by construction — the first instance created them, and
+ * `ownershipBaselineProof` asserts that — so `secondOwned` is empty before the
+ * run starts and this half cannot fail. A second server does not put a *new
+ * filename* in this folder; it either fails to take the lock or writes the same
+ * four names. So this is a cheap re-assertion of the baseline, kept because
+ * removing a check is not this repair's move, and **not** the proof. The falsifiable
+ * halves are `ownershipIdentityDiff` (device+inode) and `lockHolderCheck` (the
+ * lock still names this run's server pid and nonce), and those are what the
+ * second-owner claim rests on now.
  *
  * `otherNew` is everything else that appeared — and it is **not** a failure,
  * because the run's own flows put things there on purpose: the backup flow writes
@@ -1878,6 +2109,9 @@ async function runSmoke() {
 
   let run = null;
   let baselineNames = null;
+  let baselineIdentity = null;
+  let baselineLock;
+  let serverPid = null;
   try {
     run = launchApp(appImage.path);
     const pid = run.child.pid;
@@ -1975,6 +2209,18 @@ async function runSmoke() {
         : `absent from the baseline name set: ${proof.missing.join(', ')}`,
     );
 
+    // The baseline's **identity**, which is what a second owner would have to
+    // change: a new filename is not how a second server shows up here (D2).
+    baselineIdentity = ownershipIdentitySnapshot();
+    baselineLock = readLockHolder();
+    serverPid = serverPidFromStderr(run.output);
+    const baselineHolder = lockHolderCheck(baselineLock, baselineLock, serverPid);
+    check(
+      "smoke the data folder is locked by this run's own server pid",
+      baselineHolder.ok,
+      baselineHolder.why,
+    );
+
     // The CSP is asserted over the app's own origin, from inside the harness.
     await assertCsp('smoke');
 
@@ -1992,6 +2238,19 @@ async function runSmoke() {
     await flowBrainstorm(ctx);
     await flowSettings(ctx);
     await flowBackup(ctx);
+
+    // The end of the flows, read **before** the stop: the folder must still be
+    // locked by this run's own server, with the nonce it wrote at the baseline.
+    // After the stop the lock is legitimately gone (C-OWN@1 rule 5), which is
+    // why this question is asked here and the identity one is asked after it.
+    if (baselineIdentity !== null) {
+      const stillHeld = lockHolderCheck(baselineLock, readLockHolder(), serverPid);
+      check(
+        "smoke the data folder is still locked by this run's server pid at the end of the flows",
+        stillHeld.ok,
+        stillHeld.why,
+      );
+    }
   } finally {
     // The app's own words, always: a row that fails on "no window appeared" is
     // unreadable without them.
@@ -2009,9 +2268,10 @@ async function runSmoke() {
     // The stop is pid-scoped, in the card's order: SIGTERM to the server pid the
     // shell printed, then SIGKILL on that same pid, then the child pid. Never
     // `pkill`, never a pattern (C-ISO@1 rule 7).
-    let serverPid = null;
-    if (run !== null) {
+    if (run !== null && serverPid === null) {
       serverPid = serverPidFromStderr(run.output);
+    }
+    if (run !== null) {
       if (serverPid !== null) {
         const stopped = await stopPid(serverPid, 'the bundled server');
         check(
@@ -2061,6 +2321,24 @@ async function runSmoke() {
           ? 'the baseline name set is intact'
           : `gone from the baseline: ${own.vanished.join(', ')}`,
       );
+
+      // The falsifiable half (D2): the four files' **identity**, and the lock
+      // holder. A second owner cannot introduce a new filename into this folder,
+      // so the name set above cannot see one; it would have to replace the lock
+      // or the database, and a replaced file has a different device+inode.
+      if (baselineIdentity !== null) {
+        const identity = ownershipIdentityDiff(baselineIdentity, ownershipIdentitySnapshot());
+        check(
+          'smoke the C-OWN@1 files are still the ones this run created (device+inode)',
+          identity.ok,
+          identity.why,
+        );
+      } else {
+        notRun(
+          'smoke the C-OWN@1 files are still the ones this run created (device+inode)',
+          'the app never reached ownership, so no baseline identity was recorded to compare against',
+        );
+      }
     } else {
       notRun(
         'smoke no second lock, database, -wal or -shm',
@@ -2127,7 +2405,11 @@ const UI_LABELS = {
   onboardingPane: {
     key: 'patients.identifierLabel',
     text: 'Identifier (optional)',
-    i18nLine: 2168,
+    // Re-pinned 2026-10-04 (attempt 5): S6.1's in-flight `spelling.loadFailed`
+    // added two lines above this key, moving it from 2168 to 2170. A pin
+    // correction only -- the assertion the helper test makes is unchanged, and a
+    // further move still fails that test loudly.
+    i18nLine: 2170,
     file: 'web/src/routes/AddPatient.tsx',
     line: 128,
   },
@@ -2203,15 +2485,177 @@ const UI_LABELS = {
     file: 'web/src/components/PatientWelcome.tsx',
     line: 67,
   },
-  /** F6: a heading inside the open Appearance section. `settings.appearance` is
-   * on the modal **twice** (the nav label at `Settings.tsx:181` and the section
-   * heading at `:455`); `settings.draftingModel` renders once. */
+  /** F6/D1: the modal's **own nav title**. Chosen for a stated reason, and the
+   * reason is in `renderPath` below rather than in a count of lines: nothing
+   * between the modal root and this `<h2>` can decide not to render it.
+   *
+   * The label this replaced (`settings.draftingModel`, `Settings.tsx:357`) was
+   * inside `LlmProfileSettings`, which returns `null` whenever the server
+   * publishes fewer than two LLM profiles (`Settings.tsx:326`) — and it publishes
+   * exactly one, `quick` (`server/src/ai/profiles.ts:17-19`, `:186`, `:214`), in
+   * fake and real mode alike, so that heading is never on screen. `settings.
+   * appearance` is no use either: the nav label (`:85`, rendered at `:169`) and
+   * the section heading (`:455`) are both on the modal at once, so grounding on
+   * it refuses a healthy screen.
+   *
+   * `doc.settings` is on screen exactly once in the state this flow drives: the
+   * rail's Settings entry (`PatientsColumn.tsx:438`) is inside `{open && (`
+   * (`:428`) and its `choose()` calls `setOpen(false)` **before** the action
+   * (`:403-408`), so the menu is closed by the time the modal is up; the
+   * `Dialog`'s own `title={t('common.settings')}` is passed with
+   * `showTitle={false}` (`Workspace.tsx:804`, `:806`; `Dialog.tsx:152-156`), so
+   * it becomes an `aria-label` (`Dialog.tsx:148`) and is not on the screen; and
+   * the only other visible `Settings` strings live on other routes
+   * (`About.tsx:42`, `Setup.tsx:122`, `Import.tsx`, `HalaxyImport.tsx`), none of
+   * which is mounted over the workspace.
+   */
   settingsPane: {
-    key: 'settings.draftingModel',
-    text: 'Drafting model',
-    i18nLine: 2406,
+    key: 'doc.settings',
+    text: 'Settings',
+    i18nLine: 1288,
     file: 'web/src/routes/Settings.tsx',
-    line: 357,
+    line: 168,
+    /** Every hop from the modal root to this label, and every gate on it. */
+    renderPath: [
+      {
+        file: 'web/src/components/PatientsColumn.tsx',
+        line: 405,
+        gate: 'setOpen(false)',
+        because:
+          'the rail menu entry closes its own menu before opening the modal, so the entry’s ' +
+          '"Settings" is off screen by the time the modal is up',
+      },
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        line: 608,
+        gate: '{sidebarCollapsed && (',
+        because:
+          'the rail is what the flow drives (Tab to the rail’s mission control, then Return), so the ' +
+          'rail is mounted; the expanded sidebar’s MissionControl carries the same menu and the same ' +
+          '`choose`, so either state reaches the same two lines',
+      },
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        line: 615,
+        gate: 'onOpenSettings={() => {',
+        because: 'the rail’s callback is the only writer of `settingsOpen`, and it writes `true`',
+      },
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        line: 755,
+        gate: '{settingsOpen && (',
+        because:
+          'the one condition on the whole modal, and it is true **because of the click this flow ' +
+          'drives** — not because of anything the environment happens to hold',
+      },
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        line: 756,
+        gate: '<Suspense fallback={null}>',
+        because:
+          '`SettingsModalPanel` is lazily imported (`Workspace.tsx:58-60`), so this is a real ' +
+          'suspense boundary: the label is absent for as long as the chunk takes and present after. ' +
+          'The flow waits for the label rather than for a fixed delay',
+      },
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        line: 800,
+        gate: 'function SettingsModal(',
+        because: 'its own body is a single unconditional return (`:802-813`), with no `if` in it',
+      },
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        line: 806,
+        gate: 'showTitle={false}',
+        because:
+          'this is what keeps the Dialog’s own `Settings` title off screen, so the modal nav title ' +
+          'is the only visible one (`Dialog.tsx:148` renders it as an aria-label instead)',
+      },
+      {
+        file: 'web/src/components/Dialog.tsx',
+        line: 152,
+        gate: '{showTitle && (',
+        because:
+          'the only conditional between the Dialog root and its children, and it gates the *other* ' +
+          'title; `{children}` at `:157` is unconditional',
+      },
+      {
+        file: 'web/src/components/Dialog.tsx',
+        line: 157,
+        gate: '{children}',
+        because: 'unconditional, and `open` defaults to true (`:38`) with no `open={false}` passed',
+      },
+      {
+        file: 'web/src/routes/Settings.tsx',
+        line: 161,
+        gate: 'export function SettingsModalPanel(',
+        because:
+          'its own body has no `if` and no early return at all (`:161-198`): one return at `:165`, ' +
+          'and the label is the second child inside it',
+      },
+      {
+        file: 'web/src/routes/Settings.tsx',
+        line: 167,
+        gate: '<nav className="settings-nav"',
+        because:
+          'the label sits inside the nav, which is **outside** `SettingsSections` — so neither the ' +
+          "open-section gate (`:210`, `show.includes('appearance')`) nor anything `SettingsSections` " +
+          'renders can decide whether it appears',
+      },
+    ],
+    /** Every statement at the component body's own indent that can gate a hop. */
+    bodyGates: [
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        component: 'export function Workspace(',
+        componentLine: 73,
+        target: 758,
+        gates: [
+          { line: 173, kind: 'bookkeeping', text: 'if (lastNotesPatientRef.current !== patientId) {' },
+          { line: 177, kind: 'bookkeeping', text: "if (notes.state.status === 'ready')" },
+          {
+            line: 514,
+            kind: 'guard',
+            text: 'if (serverUnavailable) {',
+            because:
+              'it returns a whole-app error screen (`Workspace.tsx:516-523`). If it fired, no flow ' +
+              'could be driven at all: the window would carry "Apunta cannot reach the server" and ' +
+              'none of the eleven screens would exist',
+          },
+          {
+            line: 528,
+            kind: 'guard',
+            text: "if (formats.state.status === 'ready' && formats.state.data.length === 0) {",
+            because:
+              'it redirects the whole app to onboarding (`Workspace.tsx:530`). The workspace is only ' +
+              'reached once a note format exists, and this flow runs nine flows after the onboarding ' +
+              'flow created one',
+          },
+          { line: 531, kind: 'return', text: 'return (' },
+        ],
+      },
+      {
+        file: 'web/src/routes/Workspace.tsx',
+        component: 'function SettingsModal(',
+        componentLine: 800,
+        target: 803,
+        gates: [{ line: 802, kind: 'return', text: 'return (' }],
+      },
+      {
+        file: 'web/src/components/Dialog.tsx',
+        component: 'export function Dialog({',
+        componentLine: 29,
+        target: 157,
+        gates: [{ line: 128, kind: 'return', text: 'return (' }],
+      },
+      {
+        file: 'web/src/routes/Settings.tsx',
+        component: 'export function SettingsModalPanel(',
+        componentLine: 161,
+        target: 168,
+        gates: [{ line: 165, kind: 'return', text: 'return (' }],
+      },
+    ],
   },
 };
 
@@ -2974,12 +3418,18 @@ async function flowSettings(ctx) {
   }
   await sleep(1500);
 
-  // The screen: a heading **inside** the open Appearance section
-  // (`settings.draftingModel`, `Settings.tsx:357`). The section's own name
-  // (`settings.appearance`) is on the modal twice — the nav label
-  // (`Settings.tsx:85`, rendered at `:181`) and the section heading
-  // (`Settings.tsx:455`) — so it is not a unique label and confirming the screen
-  // with it refused every healthy run.
+  // The screen: the modal's **own nav title**, `doc.settings` (`Settings.tsx:168`),
+  // which is inside the `<nav>` and therefore outside `SettingsSections` — so no
+  // section gate, and no early return inside a section, can decide whether it is
+  // on screen. `UI_LABELS.settingsPane.renderPath` carries every hop and every
+  // gate from the modal root to that `<h2>`, and the helper tests assert the
+  // whole path against the tree; the label this replaces
+  // (`settings.draftingModel`) lived in `LlmProfileSettings`, which returns
+  // `null` with fewer than two LLM profiles and the server publishes one, so it
+  // was never on screen and this flow recorded `NOT RUN` on every healthy run.
+  //
+  // It is unique in the state this flow drives: the rail menu that carried the
+  // other `Settings` is closed by its own `choose()` before the modal opens.
   const appearance = await waitForScreenLabel(window, UI_LABELS.settingsPane.text, 8000);
   if (!appearance.seen) {
     recordFlow(
@@ -3144,8 +3594,12 @@ export {
   choosePaneOpener,
   classifySourceOutputs,
   exitCodeFor,
+  lockHolderCheck,
   ownershipBaselineProof,
   ownershipContainment,
+  ownershipIdentityDiff,
+  ownershipIdentitySnapshot,
+  readLockHolder,
   stripTrailingPunctuation,
   scanBundleForObservationChannel,
   snapshotDataDirNames,

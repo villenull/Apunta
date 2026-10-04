@@ -1,0 +1,15 @@
+P3.6 attempt 5 — file hashes and line counts
+
+compared against the attempt-4 candidate recorded in
+docs/v2/evidence/P3.6/attempt-4/implementation/03-file-hashes.txt
+
+path                                                                lines  sha256
+scripts/v2/tauri-e2e-smoke.test.mjs                                  3628  1b1e151b87c96e26fd5bc866392bbeff7ba3f9a8f568b1df50f97faed2339b24
+docs/v2/evidence/P3.6/attempt-5/implementation/helper-tests.mjs      1142  287c4cbc36dfffb95a07be8ca021be2e0e17b0572d7e68f5f439a716f33f03ee
+
+attempt-4 candidate harness, for comparison:
+scripts/v2/tauri-e2e-smoke.test.mjs (attempt 4)                      3174  9637b7daa32072cbe48143cc6618581a046dd926cec47bab830d687d40452e9c
+
+files this attempt created or changed (git, explicit paths):
+ M scripts/v2/tauri-e2e-smoke.test.mjs
+?? docs/v2/evidence/P3.6/attempt-5/
