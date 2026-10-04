@@ -9,7 +9,7 @@
   "attempt": 6,
   "status": "IN PROGRESS",
   "lastCompletedStep": "Attempt 6 (AM-209) candidate sha256 1d4bbf88... independent source review reviews/P3.6-impl6-source.md CLEAR (0 defects in scope; O-1..O-4 observations outside AM-209)",
-  "nextAllowedAction": "V0 re-run once (AM-207/209) when the tree has no uncommitted Rule B inputs (S6.1 and bug #1 restore repair in flight), then native V3",
+  "nextAllowedAction": "V0 once then native V3 (runner dispatched 2026-10-04 at 640174a); BUILD lease + port 7879 held by the runner",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
