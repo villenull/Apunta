@@ -1,3 +1,15 @@
+## Attempt 2 allocated after a supervisor interruption; both lanes continue
+
+Builder's120s process-group timeout killed V0 midbundle after producer+compile.
+No attributable V0 success or build-fault exit; attempt1 BLOCKED preserved in
+checkpoint. Root allocated normal attempt2 under existing3-attempt budget,
+regenerated samebase62abb28/7879 dispatch; reviewed current-tree clarifications
+retained. Builder07590b43 authorized exactV0 once with detachedsetsid/resultfile,
+newattempt-2/build-preparation only, retainoldrawlogs. BUILDlease remains held.
+Authora28cfbfc continues same NEW harness candidate, noUI/runtime/restart.
+This is not an owner-budget exception, reset or silentretry. No attempt3 yet.
+Fresh shipping-source review still gates V3; no passing UI claims.
+
 ## Integration instructions CLEAR; code and test-build lanes running
 
 7ea185e freezes fresh P3.6-ir8: 10 CLEAR, 0 DEFECT/UNKNOWN, unchanged fields

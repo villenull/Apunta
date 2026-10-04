@@ -2975,3 +2975,11 @@ only (outsideRuleB), while builder07590b43 executes exactV0 testproducerbuild
 and approved dryplugins, own BUILD lease. No nativeUI/runtime yet; fresh
 shipping-source review gatesV3. Userpreview7811 preserved. ~112min localEOD
 budget explicitly allocated, no100percentclaim until actualoperationalproof.
+
+## 2026-10-04 04:13 UTC — supervisor interruption consumes normal attempt1
+
+Producer/compilecompleted, shell120s processgrouptimeout interruptedbundle.
+Root records firstV0BLOCKED/noattributableexit, allocatesnormalattempt2b9a9e82
+within3budget. Builder instructed detachedsetsid/resultfile exactV0once,new
+attempt2evidence/retainallold. Authorcontinuescodepreparation no nativeUI.
+Regenerateddispatchkeepsreviewedclarifications; no scope/threshold/waiver.
