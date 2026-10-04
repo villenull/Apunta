@@ -1757,8 +1757,12 @@ function ownershipIdentityDiff(baseline, after) {
     const now = after.find((file) => file.name === before.name);
     if (now === undefined) continue;
     if (!now.present) {
+      // The lock's clean release (C-OWN@1 rule 5) and the WAL pair's deletion by
+      // SQLite on close in WAL mode are what a graceful shutdown does to the
+      // baseline; only an **asserted** file — the database itself — going
+      // missing is a loss, which is what `lost` is documented to mean.
       if (before.name === 'apunta.lock') released.push(before.name);
-      else lost.push(before.name);
+      else if (before.asserted) lost.push(before.name);
       continue;
     }
     if (!before.asserted) {
@@ -1938,17 +1942,23 @@ function ownershipBaselineProof(names) {
  * failed this row on a healthy run. Those names are still reported, so nothing is
  * hidden by not failing on them.
  *
- * `vanished` is still over the **whole** baseline: nothing the first instance
+ * `vanished` is over the whole baseline **except** the two graceful-shutdown
+ * disappearances — the lock's clean release (C-OWN@1 rule 5) and the WAL pair's
+ * deletion by SQLite on close in WAL mode: nothing else the first instance
  * created may disappear behind it, whether it is one of the four or not.
  */
 function ownershipContainment(baseline, after) {
   const owned = ownershipFiles().map((file) => file.name);
   const appeared = after.filter((name) => !baseline.includes(name));
+  // The graceful-shutdown disappearances, by name: the lock (the first of the
+  // four C-OWN@1 files, released per C-OWN@1 rule 5) and the WAL pair (SQLite
+  // deletes both on close in WAL mode). Exactly these and nothing else.
+  const gracefulGone = new Set([...VOLATILE_OWNED, owned[0]]);
   return {
     owned,
     secondOwned: appeared.filter((name) => owned.includes(name)),
     otherNew: appeared.filter((name) => !owned.includes(name)),
-    vanished: baseline.filter((name) => !after.includes(name)),
+    vanished: baseline.filter((name) => !after.includes(name) && !gracefulGone.has(name)),
   };
 }
 

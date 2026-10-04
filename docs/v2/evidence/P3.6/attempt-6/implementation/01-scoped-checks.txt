@@ -1,0 +1,30 @@
+P3.6 attempt 6 — scoped checks (CODE/UNIT)
+
+working directory: /home/villenull/Projects/Apunta
+node: v24.19.0 (pinned: $HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin)
+
+$ export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH"
+
+$ node --check scripts/v2/tauri-e2e-smoke.test.mjs
+exit: 0
+
+$ npx eslint scripts/v2/tauri-e2e-smoke.test.mjs
+exit: 0
+
+$ npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit: 0
+
+$ node --check docs/v2/evidence/P3.6/attempt-6/implementation/helper-tests.mjs
+exit: 0
+
+$ node docs/v2/evidence/P3.6/attempt-6/implementation/helper-tests.mjs   (full output in 02-helper-tests.txt)
+tauri-e2e-smoke: source the sandbox environment first: node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-….env && . /tmp/apunta-v2-….env (APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required)
+PASS AM-209 a healthy shutdown end state PASSES both ownership checks
+PASS AM-209 a vanished apunta.db FAILS both ownership checks
+PASS AM-209 any other baseline entry vanishing FAILS the containment check
+PASS AM-209 mutation: reverting either exemption fails the healthy end state, so the exemptions are narrow
+
+57/57 helper tests passed
+exit: 0

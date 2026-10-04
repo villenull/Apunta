@@ -8,8 +8,8 @@
   "baseCommit": "62abb28",
   "attempt": 6,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 5 (AM-207) returned; review reviews/P3.6-impl5-source.md CHANGES REQUESTED: D1 CLEAR; D2 identity check fails every healthy run (SQLite deletes -wal/-shm at graceful shutdown, no volatile exemption on lost); pre-existing vanished check fails the same healthy end state (lock release + WAL deletion). Native V3 never run. | AM-209 owner allowed one sixth attempt bounded to the two shutdown exemptions.",
-  "nextAllowedAction": "attempt-6 harness repair (two exemptions only) -> fresh source review -> V0 once -> native V3",
+  "lastCompletedStep": "Attempt 6 (AM-209) candidate sha256 1d4bbf88... independent source review reviews/P3.6-impl6-source.md CLEAR (0 defects in scope; O-1..O-4 observations outside AM-209)",
+  "nextAllowedAction": "V0 re-run once (AM-207/209) when the tree has no uncommitted Rule B inputs (S6.1 and bug #1 restore repair in flight), then native V3",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {

@@ -1,0 +1,27 @@
+P3.6 attempt 6 — file hashes (CODE/UNIT)
+
+working directory: /home/villenull/Projects/Apunta
+
+$ sha256sum scripts/v2/tauri-e2e-smoke.test.mjs
+1d4bbf88bbc3977cbc0a2c26b9f5415bcdcdb629de45ebb9b9ff53d96724c6c3  scripts/v2/tauri-e2e-smoke.test.mjs
+
+$ wc -l scripts/v2/tauri-e2e-smoke.test.mjs
+3638 scripts/v2/tauri-e2e-smoke.test.mjs
+
+$ sha256sum docs/v2/evidence/P3.6/attempt-6/implementation/helper-tests.mjs
+5f6c9c8126c5a1778b57b8a395a8d3345f68ea5aeac06ca53e0182843fd94172  docs/v2/evidence/P3.6/attempt-6/implementation/helper-tests.mjs
+
+$ wc -l docs/v2/evidence/P3.6/attempt-6/implementation/helper-tests.mjs
+1278 docs/v2/evidence/P3.6/attempt-6/implementation/helper-tests.mjs
+
+Against the attempt-5 candidate:
+
+| File | Attempt 5 | Attempt 6 |
+| --- | --- | --- |
+| `scripts/v2/tauri-e2e-smoke.test.mjs` | 3628 lines, sha256 `1b1e151b87c96e26fd5bc866392bbeff7ba3f9a8f568b1df50f97faed2339b24` | 3638 lines, sha256 `1d4bbf88bbc3977cbc0a2c26b9f5415bcdcdb629de45ebb9b9ff53d96724c6c3` |
+| `docs/v2/evidence/P3.6/attempt-N/implementation/helper-tests.mjs` | 1142 lines, 53 tests | 1278 lines, 57 tests |
+
+The harness diff is exactly the two AM-209 changes (16 changed lines: the
+`lost`-path branch and its comment, the `vanished` exemption and its two
+comments). `git diff` on the harness is in the return note's summary and was
+reviewed line by line.
