@@ -10,16 +10,11 @@ vitest only; orchestrator runs full gates, independent review, then commits.
 
 | Worker | Model | Task | Write scope | Status |
 | --- | --- | --- | --- | --- |
-| 3806127e | space-bunny-free | #1 restore repair attempt 2 (last) for review d3f60a0f D1 HIGH crash-idempotent fold, D2 MEDIUM atomic rollback, D3–D5 LOW | backup/restore.ts(+test), db/safety.ts(+test), index.ts | RUNNING |
-| — | — | #2/#4, #5/#6, #7, #8/#9 | — | DONE, pushed, CI green |
-| — | — | CI flake transcribe preview | — | DONE f74e7df (test isolation; predates today) |
-| 67e6dc7d | space-bunny-free | P3.6 attempt 5 (AM-207) D1 settings label, D2 falsifiable ownership | scripts/v2/tauri-e2e-smoke.test.mjs, evidence/P3.6/attempt-5/** | RUNNING |
-| 1100bada | longcat-2.5-preview-free | P5.3/P5.4 card corrections R-01..R-10 (+AM-208) + check-plan contracts cell | cards/P5.3.md, cards/P5.4.md, P5.3-APPLIED-CHANGELOG.md | RUNNING |
-| 306f1349 | space-bunny-free | S6.1 production implementation (dispatch/S6.1.md, port 7884) | card May edit (web/package.json, package-lock, spelling/speller, shared/spelling, collect-licenses, THIRD-PARTY-LICENSES, catalogues) | RUNNING |
-
-Pending: wire sweepOrphanAudio at boot (AM-206) after #1 repair lands (index.ts).
-P3.6: after attempt-5 CLEAR, re-run V0 once (AM-207) then native V3.
-CONTRACTS.md has uncommitted P5.3 clause edits — commit with the P5.3 cards.
+| — | — | Bug queue #1–#9 (+restore LOWs, AM-206 boot sweep, CI flake) | — | ALL DONE and pushed (40d87e3, 15feac8 latest) |
+| — | — | S6.1 | — | committed 640174a; card BLOCKED on V4 only (Exhibit A U2/U3), all other rows PASS |
+| — | — | P3.6 harness | — | attempt 6 CLEAR (4565c69) |
+| f921026b | space-bunny-free | P3.6 V0 rebuild once + native V3 (AM-207/209) | evidence/P3.6/attempt-6/runtime/**, returns/P3.6-attempt6-runtime.md; BUILD lease + port 7879 | RUNNING |
+| 7e8c361c | space-bunny-free | P5.3 implementation (dispatch/P5.3.md, base 432c0ab, ports 7853/7855/7857/7875/7868/7871) | card May edit | RUNNING, ON HOLD read-only until P3.6 runtime returns (Rule B inputs must stay clean); release with "P5.3 hold released" |
 
 Full gates green at 99ecd87 (2270 tests, lint, typecheck) and pushed. Next after
 each card edit: independent instruction review, then dispatch implementation.
