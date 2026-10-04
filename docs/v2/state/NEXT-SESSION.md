@@ -1,3 +1,17 @@
+## P3.4 APPROVED; P3.6 attempt 1 instruction review active
+
+Owner AM-200 resolves conditional V0 NOT RUN versus coordinator approval rule
+for this recorded skip only; original NOT RUN, attempt5 binary provenance and
+old failed histories remain. Commit62abb28 approves P3.4; all P3.6 dependencies
+APPROVED. a3a82ae dispatches P3.6 attempt1/base62abb28/port7879 with current-tree
+clarifications, no fields/rows/Expected/threshold/scope changes. New reviewer
+63036bb0-e8b5-4181-9c3c-2f0fa8b79d08 confirmed RUNNING callback, exclusive
+P3.6-ir8 report/instruction-ir8 evidence only; no implementation/native lease.
+On CLEAR, freeze review and launch one implementer from the dispatch. All
+native/build/global-test/inference leases free; owner preview7811 stays up.
+Reserve independent shipping-source review before runtime and frozen evidence
+review afterward; preserve three-attempt budget, never waive a UI flow.
+
 ## Static completion independently CLEAR; conditional-skip decision pending
 
 20e69b7 freezes AM-199 V3 exit0 and full V4 exit0 (2235 JS tests, lint,

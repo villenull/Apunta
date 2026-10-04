@@ -2958,3 +2958,12 @@ conditionalV0 NOTRUN versus COORDINATOR§6 approvalprohibition; root verified
 bothtexts and requested ownerresolution without waiver/relabel/repeat. P36
 stillheld. Owner immediate preview started7811 synthetic/fakeAI/session2127,
 health/page200 and fabricatedJohnSmithseed; live data untouched.
+
+## 2026-10-04 01:04 UTC — owner closes conditional skip; integration dispatch ready
+
+AM-200 explicitownerdecision accepts lawful V0NOTRUN/provenance; P34APPROVED
+62abb28 with originalfailedreadings preserved. All P36depsready. a3a82ae
+saves currentdispatch+IR+checkpoint attempt1/base62abb28/7879. 63036bb0
+freshinstructionreview running, no runtime yet; elevenactualUIflows/virtual
+capture/nohook/test-vs-production provenance clarified withoutnewcriteria.
+Preview7811 unchanged; no live data or seventh native attempt.
