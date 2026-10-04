@@ -1,0 +1,34 @@
+PASS  BEFORE materialization changed only the guarded-fetch import depth
+PASS  BEFORE differs from AFTER only in import depth, fixture read, docstring and the disable header  (see 01-line-diff.txt)
+independent re-run (node_modules/.bin/tsx, cwd = repo root, synthetic fetch)
+  BEFORE                   exit=0 stdout=1601B stderr=0B
+  AFTER                    exit=0 stdout=1601B stderr=0B
+  BEFORE in an empty netns exit=0 stdout=1601B stderr=0B
+  AFTER  in an empty netns exit=0 stdout=1601B stderr=0B
+PASS  AFTER exit is 0  (got 0)
+PASS  BEFORE exit is 0  (got 0)
+PASS  AFTER stderr is 0 bytes  (0B)
+PASS  BEFORE stderr is 0 bytes  (0B)
+PASS  AFTER stdout is exactly 1601 B  (1601B)
+PASS  BEFORE stdout is exactly 1601 B  (1601B)
+PASS  BEFORE stdout is byte-identical to AFTER stdout
+PASS  AFTER stdout is byte-identical to the reviewer-recorded guard-probe-output.txt
+PASS  BEFORE stdout is byte-identical to the reviewer-recorded guard-probe-output.txt
+PASS  AFTER stdout is 14 lines  (14)
+PASS  last line is total fetchReached=4  (total fetchReached=4)
+PASS  first line is still the refused /api/pull case
+
+no-network proof: same bytes with no network namespace at all
+PASS  AFTER in an empty netns has exit 0  (got 0)
+PASS  AFTER in an empty netns has 0 B stderr  (0B)
+PASS  AFTER in an empty netns is byte-identical to the networked-namespace AFTER
+PASS  BEFORE in an empty netns is byte-identical to the networked-namespace BEFORE
+
+old output preserved: the three committed records agree with what I measured
+PASS  docs/v2/evidence/english-eod-model-probe-repair/results/after.stdout exists  (1601B)
+PASS  docs/v2/evidence/english-eod-model-probe-repair/results/before.stdout exists  (1601B)
+PASS  docs/v2/evidence/english-eod-model-probe-fixtures/fixtures-replay.txt exists  (1372B)
+PASS  committed results/after.stdout is byte-identical to my AFTER run
+PASS  committed results/before.stdout is byte-identical to my BEFORE run
+
+VERDICT: all checks passed

@@ -1,0 +1,31 @@
+root    /home/villenull/Projects/Apunta
+scratch build/eod-model-probe-fixtures (git-ignored, created before any write)
+
+fixture extraction
+PASS  guard-cases.json is an array
+PASS  guard-cases.json holds exactly 13 pairs  (13)
+PASS  the archived case table holds exactly 13 pairs  (13)
+PASS  the fixture equals the archived case table byte for byte, same order
+PASS  every pair is two non-empty strings
+PASS  all 7 external/malicious literals are preserved  (7)
+PASS  all 6 loopback cases are preserved  (6)
+
+source / rule scope
+PASS  the probe source names no http(s) URL at all
+PASS  the case table is data, read from the sibling fixture
+PASS  eslint is clean on the repaired probe  ({})
+PASS  the URL rule still fires on the archived case table (no exemption)  ({"no-restricted-syntax":7,"no-console":2})
+PASS  eslint.config.js is unchanged
+
+runtime replay (synthetic fetch only, no sockets, tsx, cwd = repo root)
+  exit=0 stdout=1601B stderr=0B
+PASS  probe exit code is 0  (got 0)
+PASS  probe stderr is empty
+PASS  probe stdout equals the reviewer-recorded output byte for byte
+PASS  probe stdout is 13 case lines plus the total  (14 lines)
+PASS  probe stdout still ends total fetchReached=4  (total fetchReached=4)
+
+egress jsonl content: never opened, copied or printed
+files outside the repository: none created, read, modified or deleted
+
+VERDICT: all checks passed

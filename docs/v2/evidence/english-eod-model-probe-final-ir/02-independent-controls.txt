@@ -1,0 +1,76 @@
+fixture fidelity re-derived from guard-probe-output.txt (not from the archive)
+PASS  the fixture holds 13 pairs  (13)
+PASS  all 13 labels appear in the recorded output, in fixture order
+PASS  every refused case shows exactly the fixture URL (query redacted by the adapter)
+PASS  every recorded line is ALLOWED or REFUSED, never both
+PASS  the recorded output has exactly 4 ALLOWED cases  (4)
+PASS  the recorded output has exactly 9 REFUSED cases
+PASS  fixture external (non-loopback) rows: 7
+PASS  fixture loopback rows: 6
+
+NC-A channel: stdout -> stderr, nothing else
+PASS  NC-A mutation applied to the channel
+PASS  NC-A stdout is 0 bytes  (0B)
+PASS  NC-A stderr is byte-identical to the baseline stdout
+PASS  NC-A exit is still 0
+
+NC-B data: one refused address flipped in the fixture, probe source untouched
+PASS  the fixture mutation applied
+PASS  NC-B probe source is byte-identical to the committed probe (modulo import depth)
+PASS  NC-B stdout differs from the baseline
+PASS  NC-B is 1581 bytes  (1581B)
+PASS  NC-B still has 14 lines  (14)
+PASS  NC-B first case is now ALLOWED  (loopback /api/pull         -> ALLOWED                                                      fetchReached=true)
+PASS  NC-B total moves from 4 to 5  (total fetchReached=5)
+PASS  NC-B stderr is still empty and exit 0
+PASS  restoring the fixture restores the baseline bytes exactly
+
+NC-C fail-closed: a fixture of the wrong shape must stop the probe
+PASS  NC-C empty-array: non-zero exit  (exit=1)
+PASS  NC-C empty-array: no case line is printed  (0B stdout)
+PASS  NC-C one-string-row: non-zero exit  (exit=1)
+PASS  NC-C one-string-row: no case line is printed  (0B stdout)
+PASS  NC-C short-pair: non-zero exit  (exit=1)
+PASS  NC-C short-pair: no case line is printed  (0B stdout)
+PASS  NC-C non-string-url: non-zero exit  (exit=1)
+PASS  NC-C non-string-url: no case line is printed  (0B stdout)
+PASS  NC-C not-an-array: non-zero exit  (exit=1)
+PASS  NC-C not-an-array: no case line is printed  (0B stdout)
+PASS  NC-C malformed JSON: non-zero exit  (exit=1)
+PASS  NC-C malformed JSON: no case line is printed
+PASS  NC-C missing fixture: non-zero exit  (exit=1)
+PASS  NC-C missing fixture: no case line is printed
+
+NC-D rule scope: the URL rule still fires on the archived case table
+PASS  the archive does carry an eslint-disable header
+PASS  archived case table as executable source: 7 no-restricted-syntax  ({"no-restricted-syntax":7,"no-console":2})
+PASS  with the header, the same file reports 0
+PASS  the archive with its own disable header reports 0 no-restricted-syntax
+PASS  NC-D is stable on a second lint of the same file
+PASS  the committed probe lints completely clean  ({})
+PASS  the probe source contains no http(s) URL literal
+PASS  the probe source contains no console call
+PASS  eslint.config.js unchanged across the repair commits
+PASS  the probe scratch log path is git-ignored  (.gitignore:55:build/	build/eod-model-probe-repair/guard-probe-egress.jsonl)
+PASS  the probe names no path outside the repo for its log
+  harness literals that look like a path outside the repo: none
+  '/tmp/opencode' appears only as the never-executed static marker: true
+PASS  neither harness reads or writes an absolute or parent-relative path
+PASS  the one absolute literal is the static OUTSIDE_MARKER, used only by the predicate that never executes it
+PASS  neither harness reads, copies or prints a *.jsonl
+PASS  neither harness deletes anything
+PASS  neither harness spawns a network-capable command other than git, npx tsx and eslint
+
+the repair claim: console.log(x) === process.stdout.write(format("%s\n", x))
+PASS  console.log(x) and process.stdout.write(format("%s\n", x)) emit identical bytes, % payloads included  (6/6 identical)
+PASS  format(x) omits the newline console.log adds; format('%s\n', x) is what makes the bytes match
+
+hygiene
+PASS  the probe scratch egress log exists (existence only, content never read)
+PASS  the scratch egress log is not tracked by git
+PASS  no acquisition egress log is tracked
+PASS  no tracked artifact of this repair is modified in the working tree  (clean)
+PASS  the probe commit is an ancestor of HEAD
+
+VERDICT: all checks passed
+head c3283ff9a7ea304b1608c269ae1a424c87339aa3

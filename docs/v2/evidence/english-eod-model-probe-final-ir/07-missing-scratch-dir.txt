@@ -1,0 +1,14 @@
+probe run with its log parent directory absent (scratch copy, committed probe otherwise untouched)
+exit=0 stdout=2361B stderr=0B
+recorded baseline is 1601 B and 4 allowed cases; this run is neither:
+
+loopback /api/pull         -> REFUSED (ENOENT: no such file or directory, open 'build/eod-model-probe-final-ir/absent-dir-not-created/guard-probe-egress.jsonl') fetchReached=false
+loopback /api/generate     -> REFUSED (ENOENT: no such file or directory, open 'build/eod-model-probe-final-ir/absent-dir-not-created/guard-probe-egress.jsonl') fetchReached=false
+loopback /api/chat         -> REFUSED (ENOENT: no such file or directory, open 'build/eod-model-probe-final-ir/absent-dir-not-created/guard-probe-egress.jsonl') fetchReached=false
+...
+total fetchReached=0
+
+
+Why: appendFileSync cannot create the parent, so every case throws ENOENT, the probe
+records it as REFUSED and still exits 0. replay.mjs mkdirs the scratch first, so the
+committed replay is unaffected; a standalone run without that directory is not.

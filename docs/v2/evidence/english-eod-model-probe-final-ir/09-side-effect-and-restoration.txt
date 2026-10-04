@@ -1,0 +1,71 @@
+side effect and restoration — reviewer run of the authors' harnesses
+
+1. What I ran, and what it touched
+-----------------------------------
+I ran the two committed harnesses once each, in place, from the repository root:
+
+  node docs/v2/evidence/english-eod-model-probe-repair/replay.mjs      exit 0
+  node docs/v2/evidence/english-eod-model-probe-fixtures/fixtures-replay.mjs  exit 0
+
+Both write their report into their own evidence directory, so the first one
+overwrote a tracked author output file:
+
+  docs/v2/evidence/english-eod-model-probe-repair/results/replay-report.txt
+
+This is a real side effect on an author artifact and it is disclosed here rather
+than tidied away: the harness prints `git rev-parse HEAD` as its last line, so
+every re-run rewrites that line. It is my error that I did not mirror the
+harness output path into ignored scratch first; the harness has no output-path
+flag, so running it at all touches the tracked file.
+
+2. The observed alteration, preserved in MY evidence only
+----------------------------------------------------------
+06-replay-report-drift.diff   the unified diff exactly as observed
+08-replay-report-as-observed.txt  the altered bytes, reconstructed from that
+                                  diff, kept inside my own evidence directory
+03-authors-replay.txt        the harness stdout from that run
+
+The alteration was one line and nothing else:
+
+  -head 1af73109f5e69d6806bc53075880c1b5f3f711fb
+  +head c3283ff9a7ea304b1608c269ae1a424c87339aa3
+
+All 33 substantive PASS lines, the counts, the byte totals and
+`VERDICT: all checks passed` were reproduced byte-identically. The drift is the
+volatile HEAD stamp only, because another agent committed while this review was
+running.
+
+3. Restoration, and how it was verified
+--------------------------------------
+Only that one file was restored, from the stable commit, with `git show` and a
+direct write. No `git checkout`, no `git reset`, no index operation, no other
+path touched:
+
+  git show e7889bc:docs/v2/evidence/english-eod-model-probe-repair/results/replay-report.txt \
+    > docs/v2/evidence/english-eod-model-probe-repair/results/replay-report.txt
+
+  baseline blob from e7889bc : 0fad4a0ac868cf885f73b9606f6295c8889a9113
+  worktree blob after restore: 0fad4a0ac868cf885f73b9606f6295c8889a9113
+  git diff --exit-code on that path: clean
+
+No history was rewritten and nothing was staged or committed.
+
+4. No other author file moved
+-----------------------------
+Every one of the 17 files added by e7889bc was compared by git blob hash,
+worktree against `e7889bc`:
+
+  guard-cases.json, guard-probe.ts, fixtures-replay.md, fixtures-replay.mjs,
+  fixtures-replay.txt, before-probe.ts.txt, probe-repair-replay.md, replay.mjs,
+  results/{before,after,NC1,NC2}.{stdout,stderr}, results/replay-report.txt
+
+All 17 identical. `git status --porcelain` shows no tracked modification; the only
+entry is my own untracked `docs/v2/evidence/english-eod-model-probe-final-ir/`.
+
+5. Nothing outside the repository
+---------------------------------
+`/tmp/opencode/guard-probe-egress.jsonl` was never read, written or deleted.
+Before and after this review it is byte-size 3657 with mtime 2026-10-03
+18:03:29 -0600, i.e. untouched since before the repair commit. All reviewer
+scratch is inside `build/eod-model-probe-final-ir/`, which `.gitignore:55` covers
+as `build/`.

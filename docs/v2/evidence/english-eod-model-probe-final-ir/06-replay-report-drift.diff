@@ -1,0 +1,10 @@
+diff --git i/docs/v2/evidence/english-eod-model-probe-repair/results/replay-report.txt w/docs/v2/evidence/english-eod-model-probe-repair/results/replay-report.txt
+index 0fad4a0..f2b44da 100644
+--- i/docs/v2/evidence/english-eod-model-probe-repair/results/replay-report.txt
++++ w/docs/v2/evidence/english-eod-model-probe-repair/results/replay-report.txt
+@@ -62,4 +62,4 @@ egress jsonl content: never opened, copied or printed by this harness
+ files outside the repository: none created, read, modified or deleted
+ 
+ VERDICT: all checks passed
+-head 1af73109f5e69d6806bc53075880c1b5f3f711fb
++head c3283ff9a7ea304b1608c269ae1a424c87339aa3
