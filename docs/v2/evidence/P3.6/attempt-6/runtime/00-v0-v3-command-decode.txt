@@ -1,0 +1,28 @@
+header row at dispatch line 442
+header cell count: 3  ["ID","Command (cwd: repo root)","Expected"]
+
+=== V0 ===
+dispatch line          444
+row cell count         3
+raw cell length        971
+raw cell sha256        8b90593953ed6764686079d124f8e36e45b77e33ab5e1e81caeb27f1c03b3144
+outer backticks        true
+decoded length         969
+decoded sha256         cdb77a6b26ea2ded0923fd17f85ba1a1ebae75c6ed956d29a19f46a6f54184aa
+file                   docs/v2/evidence/P3.6/attempt-6/runtime/v0-command-decoded.sh  sha256 8399eb0273cd9a4c890e1f3d766d80c3035cac9e17e8ea3f427fcedc04aa0ea6
+bash -n                exit 0
+--- decoded, exactly as it will be executed ---
+export PATH="$HOME/.cargo/bin:$PATH" && export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && export APUNTA_WHISPER_WORK_DIR="$HOME/.cache/apunta-v2/whisper-src" && node --version && test -x "${APUNTA_WHISPER_WORK_DIR:-/tmp/apunta-v2/whisper-src}/whisper.cpp/build-${APUNTA_WHISPER_BACKEND:-vulkan}/bin/whisper-cli" && test "${APUNTA_WHISPER_WORK_DIR:-$HOME/.cache/apunta-v2/whisper-src}" = "$HOME/.cache/apunta-v2/whisper-src" && node scripts/v2/sandbox.mjs env --port 7879 > /tmp/apunta-v2-p3.6-v0.env && . /tmp/apunta-v2-p3.6-v0.env && bash scripts/v2/package-linux-resources.sh && npm run tauri:build:test && ls -1 src-tauri/target/release/bundle/appimage/ && B=src-tauri/target/release/bundle/appimage && VER=$(node -p "require('./src-tauri/tauri.conf.json').version") && test -f "$B/Apunta (test)_${VER}_amd64.AppImage" && C=0 && for f in "$B"/'Apunta (test)_'*.AppImage; do if [ -e "$f" ]; then C=$((C+1)); fi; done && test "$C" -eq 1
+
+=== V3 ===
+dispatch line          447
+row cell count         3
+raw cell length        1498
+raw cell sha256        036d6a0b82ee65184754e41dc13ec846363d4047a88930b2feba03bff44ba814
+outer backticks        true
+decoded length         907
+decoded sha256         26e55096ec41d7b8b13325b5c519301dcb3b1122e93fd51eb446f6915f5be322
+file                   docs/v2/evidence/P3.6/attempt-6/runtime/v3-command-decoded.sh  sha256 2e6316556dd5c33f36d6e697a280f367a1aa5517eeeb49c534a26420f483b822
+bash -n                exit 0
+--- decoded, exactly as it will be executed ---
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && node scripts/v2/sandbox.mjs env --port 7879 > /tmp/apunta-v2-p3.6-v3.env && . /tmp/apunta-v2-p3.6-v3.env && test "$APUNTA_PORT" = "7879" && test "$APUNTA_NO_OPEN" = "1" && case "$APUNTA_DATA_DIR" in /tmp/apunta-v2/*) ;; *) echo "FAIL: APUNTA_DATA_DIR $APUNTA_DATA_DIR is outside the sandbox root"; exit 1;; esac && test "$APUNTA_DATA_DIR" != "$(node -e 'console.log(require("node:os").homedir())')" && ls -1 src-tauri/target/release/bundle/appimage/ && C=0 && for f in src-tauri/target/release/bundle/appimage/'Apunta (test)_'*.AppImage; do if [ -e "$f" ]; then C=$((C+1)); fi; done && test "$C" -eq 1 && if command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; else env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; fi

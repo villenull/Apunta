@@ -1,0 +1,68 @@
+# P3.6 attempt 6 runtime -- V3, native, run ONCE, decoded once
+# started (UTC): 2026-10-04T22:21:06Z
+# cwd: /home/villenull/Projects/Apunta
+# command file: docs/v2/evidence/P3.6/attempt-6/runtime/v3-command-decoded.sh  sha256 2e6316556dd5c33f36d6e697a280f367a1aa5517eeeb49c534a26420f483b822
+# binary under test: src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+#   sha256 5a21f2958ff3d9657b9bb7bf2a6821651e81f66d07a1da34d923545d9b06a561  size 194435576
+#   mtime 2026-10-04 16:20:48 -0600 (this run V0 output; the frozen one was e6dd3ecb..., 194214392)
+# detached: setsid, own process group, stdout+stderr below, exit code in 02-v3-run.txt.exit
+# ----------------------------------------------------------------------
+v24.19.0
+Apunta (test)_0.0.0_amd64.AppImage
+Apunta (test).AppDir
+  display: the inherited X display :99
+PASS smoke appimage: <repo>/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+FAIL smoke Rule B freshness: the source set has not moved since the dispatch base: 49 Rule B input(s) differ from 62abb28: package-lock.json, server/src/audio/retention.test.ts, server/src/audio/retention.ts, server/src/backup/restore.test.ts, server/src/backup/restore.ts, server/src/db/notes.test.ts, server/src/db/notes.ts, server/src/db/safety.ts, server/src/import/claude.test.ts, server/src/import/claude.ts, server/src/index.ts, server/src/routes/backup.test.ts, server/src/routes/backup.ts, server/src/routes/chat.test.ts, server/src/routes/chat.ts, server/src/routes/draft.test.ts, server/src/routes/draft.ts, server/src/routes/halaxy.test.ts, server/src/routes/halaxy.ts, server/src/routes/import.test.ts, server/src/routes/import.ts, server/src/routes/notes.test.ts, server/src/routes/notes.ts, server/src/routes/patients.test.ts, server/src/routes/patients.ts, server/src/routes/transcribe.test.ts, server/src/startup-maintenance.test.ts, server/src/startup-maintenance.ts, shared/src/i18n/en.ts, shared/src/i18n/es-MX.ts, shared/src/import.test.ts, shared/src/import.ts, shared/src/index.ts, shared/src/spelling.test.ts, shared/src/spelling.ts, web/package.json, web/src/App.test.tsx, web/src/components/NoteBody.test.tsx, web/src/components/RefineColumn.test.tsx, web/src/components/SpellLayer.test.tsx, web/src/components/SpellLayer.tsx, web/src/components/SpellingProvider.test.tsx, web/src/components/SpellingProvider.tsx, web/src/lib/recorder.test.ts, web/src/lib/recorder.ts, web/src/lib/speller.test.ts, web/src/lib/speller.ts, web/src/lib/spelling.test.ts, web/src/lib/spelling.ts
+PASS smoke the AppImage is newer than the newest Rule B input (fresh-build anchor)
+PASS smoke the app window is up, inside the display
+  window 608x456 at 16,12 on a 640x480 display
+  the app reports 608x456 physical on a 640x480 display at scale 1
+PASS smoke the app window is at scale 1
+FAIL smoke the frame-to-client measurement: the captures could not be compared
+NOT RUN onboarding: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN capture: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN draft: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN refine: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN publish+copy: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN patient list: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN plan: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN briefing: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN brainstorm: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN settings: the frame-to-client relationship could not be measured, so no click is grounded
+NOT RUN backup: the frame-to-client relationship could not be measured, so no click is grounded
+  --- the app's stderr (tail) ---
+  apunta: spawned the bundled server as pid 3738021
+  MESA-EGL: warning: DRI3 error: Could not get DRI3 device
+  MESA-EGL: warning: Ensure your X server supports DRI3 to get accelerated rendering
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791152470285,"pid":3738021,"hostname":"FBI-PC","msg":"Server listening at http://127.0.0.1:7879"}
+  apunta: the server is ready ({"type":"ready","port":7879,"nonce":"18db73ae7a1dd4cc-390977-6094d17df6a0","version":"0.0.0","protocol":1}), version 0.0.0
+  apunta: the main window will be 608x456 physical at 16,12 logical, on a 640x480 display at scale 1
+  apunta: the main window is open on http://127.0.0.1:7879
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791152470285,"pid":3738021,"hostname":"FBI-PC","dataDir":"<sandbox>/data","db":"<sandbox>/data/apunta.db","fakeAi":true,"msg":"Apunta on http://127.0.0.1:7879"}
+  stopped the bundled server (pid 3738021) with SIGTERM
+PASS smoke the bundled server is stopped by pid
+  stopped the shell (pid 3737975) with SIGTERM
+PASS smoke no server process from the run remains
+PASS smoke the shell is gone
+NOT RUN smoke no second lock, database, -wal or -shm: the app never reached ownership, so there is no post-first-instance baseline to compare against
+PASS smoke the port is released
+PASS smoke the observation channel is gone from the bundle
+PASS smoke ollama is still running
+
+--- the eleven flows ---
+  NOT RUN onboarding: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN capture: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN draft: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN refine: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN publish+copy: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN patient list: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN plan: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN briefing: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN brainstorm: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN settings: the frame-to-client relationship could not be measured, so no click is grounded
+  NOT RUN backup: the frame-to-client relationship could not be measured, so no click is grounded
+
+22/24 assertions passed, 12 NOT RUN
+# ----------------------------------------------------------------------
+# ended (UTC): 2026-10-04T22:21:11Z
+# V3 EXIT CODE: 1

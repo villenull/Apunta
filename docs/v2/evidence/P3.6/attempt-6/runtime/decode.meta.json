@@ -1,0 +1,35 @@
+{
+  "dispatch": "docs/v2/state/dispatch/P3.6.md",
+  "rows": {
+    "V0": {
+      "rowId": "V0",
+      "rowLine": 444,
+      "rowCellCount": 3,
+      "rawCellLength": 971,
+      "rawCellSha256": "8b90593953ed6764686079d124f8e36e45b77e33ab5e1e81caeb27f1c03b3144",
+      "trailingProseInCell": false,
+      "trailingProseBytes": 0,
+      "outerBackticksStripped": true,
+      "decodedLength": 969,
+      "decodedSha256": "cdb77a6b26ea2ded0923fd17f85ba1a1ebae75c6ed956d29a19f46a6f54184aa",
+      "decodedFile": "docs/v2/evidence/P3.6/attempt-6/runtime/v0-command-decoded.sh",
+      "decodedFileSha256": "8399eb0273cd9a4c890e1f3d766d80c3035cac9e17e8ea3f427fcedc04aa0ea6",
+      "bashNExit": 0
+    },
+    "V3": {
+      "rowId": "V3",
+      "rowLine": 447,
+      "rowCellCount": 3,
+      "rawCellLength": 1498,
+      "rawCellSha256": "036d6a0b82ee65184754e41dc13ec846363d4047a88930b2feba03bff44ba814",
+      "trailingProseInCell": true,
+      "trailingProseBytes": 589,
+      "outerBackticksStripped": true,
+      "decodedLength": 907,
+      "decodedSha256": "26e55096ec41d7b8b13325b5c519301dcb3b1122e93fd51eb446f6915f5be322",
+      "decodedFile": "docs/v2/evidence/P3.6/attempt-6/runtime/v3-command-decoded.sh",
+      "decodedFileSha256": "2e6316556dd5c33f36d6e697a280f367a1aa5517eeeb49c534a26420f483b822",
+      "bashNExit": 0
+    }
+  }
+}

@@ -1,0 +1,59 @@
+# P3.6 attempt 6 runtime -- V0, run once, decoded once
+# started (UTC): 2026-10-04T22:18:35Z
+# cwd: /home/villenull/Projects/Apunta
+# command file: docs/v2/evidence/P3.6/attempt-6/runtime/v0-command-decoded.sh  sha256 8399eb0273cd9a4c890e1f3d766d80c3035cac9e17e8ea3f427fcedc04aa0ea6
+# detached: setsid, own process group, stdout+stderr below, exit code in 01-v0-run.txt.exit
+# ----------------------------------------------------------------------
+v24.19.0
+
+== Recording the build environment
+
+== Copying the pinned Node tree (A01)
+copied /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64 -> /home/villenull/Projects/Apunta/build/linux-resources/node (v24.19.0)
+tarball sha256 recorded by P0.1: f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4
+
+== Building the server and the web app
+
+== Bundling the server (server/server.mjs)
+
+  build/linux-resources/server/server.mjs  6.9mb ⚠️
+
+⚡ Done in 169ms
+injected app version: 0.0.0
+
+== Copying the migrations
+
+== Copying the web build
+
+== Copying better-sqlite3
+
+== Building whisper-cli (A06)
+copied whisper-cli and 15 shared libraries into bin/ (RUNPATH \$ORIGIN:)
+
+== Copying the licences
+
+== Writing manifest.json
+manifest lists 4807 files
+
+== Done
+output: /home/villenull/Projects/Apunta/build/linux-resources
+node:   v24.19.0
+files:  4807
+
+> apunta@0.0.0 tauri:build:test
+> tauri build --features test-identity --config src-tauri/tauri.test.conf.json
+
+        Info Looking up installed tauri packages to check mismatched versions...
+   Compiling apunta v0.0.0 (/home/villenull/Projects/Apunta/src-tauri)
+    Finished `release` profile [optimized] target(s) in 28.67s
+       Built application at: /home/villenull/Projects/Apunta/src-tauri/target/release/apunta
+        Info Patching /home/villenull/Projects/Apunta/src-tauri/target/release/apunta with bundle type information: appimage
+    Bundling Apunta (test)_0.0.0_amd64.AppImage (/home/villenull/Projects/Apunta/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage)
+    Finished 1 bundle at:
+        /home/villenull/Projects/Apunta/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage (185.43 MiB)
+
+Apunta (test)_0.0.0_amd64.AppImage
+Apunta (test).AppDir
+# ----------------------------------------------------------------------
+# ended (UTC): 2026-10-04T22:20:48Z
+# V0 EXIT CODE: 0

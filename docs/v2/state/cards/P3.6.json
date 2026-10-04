@@ -7,17 +7,23 @@
   ],
   "baseCommit": "62abb28",
   "attempt": 6,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 6 (AM-209) candidate sha256 1d4bbf88... independent source review reviews/P3.6-impl6-source.md CLEAR (0 defects in scope; O-1..O-4 observations outside AM-209)",
-  "nextAllowedAction": "V0 once then native V3 (runner dispatched 2026-10-04 at 640174a); BUILD lease + port 7879 held by the runner",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Native V3 first run: FAIL on harness/environment defects (AE parse, pinned Rule B base, display size), not on the app; all flows NOT RUN",
+  "nextAllowedAction": "owner-decision: attempt 6 exhausted under AM-209; a seventh attempt needs explicit grant",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
     "V0": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P3.6/attempt-2/build-preparation/05-v0-run.txt",
-      "verification": "Exact card V0 decoded once under attempt2, producer/test-AppImage build/identity guard; freshhash e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a. Attempt1 interruption preserved."
+      "evidence": "docs/v2/evidence/P3.6/attempt-6/runtime/01-v0-run.txt",
+      "verification": "Re-run once under AM-207/209 at c674f0f; test AppImage sha256 5a21f2958ff3d9657b9bb7bf2a6821651e81f66d07a1da34d923545d9b06a561. Attempt-2 V0 PASS e6dd3ecb preserved as history."
+    },
+    "V3": {
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P3.6/attempt-6/runtime/02-v3-run.txt",
+      "verification": "22/24 assertions; all eleven flows NOT RUN. FAIL 1: ruleBFreshness git-history arm pinned to literal base 62abb28 (49 Rule B inputs changed since). FAIL 2: measureFrameClient parses ImageMagick 7.1.2 compare -metric AE stderr \"0 (0)\" with Number() -> NaN, so no click can be grounded. Also the card V3 xvfb-run -a pre-empts the harness 1400x1000 display (640x480)."
     }
   },
   "sandboxRuns": [],
