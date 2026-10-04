@@ -1,0 +1,12 @@
+== AM-190 step 2: four separate dry bundled-plugin inspections ==
+AppDir : src-tauri/target/release/bundle/appimage/Apunta (test).AppDir
+scanner: src-tauri/target/release/bundle/appimage/Apunta (test).AppDir/usr/lib/gstreamer1.0/gstreamer-1.0/gst-plugin-scanner
+test -x bundled scanner: exit 0
+
+gst-inspect-1.0 appsink -> true exit 0   registry: build/p36-build1/registry-appsink.bin (963277 bytes)
+gst-inspect-1.0 autoaudiosrc -> true exit 0   registry: build/p36-build1/registry-autoaudiosrc.bin (963277 bytes)
+gst-inspect-1.0 alsasrc -> true exit 0   registry: build/p36-build1/registry-alsasrc.bin (963277 bytes)
+gst-inspect-1.0 pulsesrc -> true exit 0   registry: build/p36-build1/registry-pulsesrc.bin (963277 bytes)
+
+GATE_EXIT=0
+no app launched, no audio device opened, no microphone touched, no capture, no network

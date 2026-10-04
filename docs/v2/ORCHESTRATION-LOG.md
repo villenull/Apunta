@@ -2983,3 +2983,11 @@ Root records firstV0BLOCKED/noattributableexit, allocatesnormalattempt2b9a9e82
 within3budget. Builder instructed detachedsetsid/resultfile exactV0once,new
 attempt2evidence/retainallold. Authorcontinuescodepreparation no nativeUI.
 Regenerateddispatchkeepsreviewedclarifications; no scope/threshold/waiver.
+
+## 2026-10-04 16:39 UTC — recover idle handoff and resume useful review
+
+Userflaggedtwoidleworkers. Savedreportsconfirmbothfinishedwithoutfinaldelivery
+callbacks: V0PASS/testartifacte6dd3ecb/plugin4PASS, harness1757linescodeunit0.
+Rootarchivedboth, froze9321861 SUBMITTEDattempt2, launcheda1073d6a freshsource
+reviewbeforeUI. EODtargetmissedadmitted; no100percentclaim. Ignoredrawlogs
+preservedbyteexact.log.txt/originalsretained. No unreviewedsourcepush.

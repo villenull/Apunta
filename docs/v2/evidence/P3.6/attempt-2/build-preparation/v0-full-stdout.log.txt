@@ -1,0 +1,67 @@
+
+== AM-190 scanner preparation (approved environment-proposal-repair2 step 1, own dir) ==
+source: /usr/lib/gstreamer-1.0/gst-plugin-scanner  mode 755 size 14432
+copy:   /home/villenull/Projects/Apunta/build/p36-build1/gst-helpers/gst-plugin-scanner  mode 755 size 14432
+host sha256: 743cea6660712f841711441d1858948cb19604d339aa00bb04c176c881c55ead
+copy sha256: 743cea6660712f841711441d1858948cb19604d339aa00bb04c176c881c55ead
+byte-identical: yes
+GSTREAMER_HELPERS_DIR exported before V0 so the bundler copies the scanner
+
+== V0 (byte-exact decoded command, executed once) ==
+V0 start (UTC): 2026-10-04T04:13:25Z
+v24.19.0
+
+== Recording the build environment
+
+== Copying the pinned Node tree (A01)
+copied /home/villenull/.local/share/apunta-node/node-v24.19.0-linux-x64 -> /home/villenull/Projects/Apunta/build/linux-resources/node (v24.19.0)
+tarball sha256 recorded by P0.1: f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4
+
+== Building the server and the web app
+
+== Bundling the server (server/server.mjs)
+
+  build/linux-resources/server/server.mjs  6.8mb ⚠️
+
+⚡ Done in 164ms
+injected app version: 0.0.0
+
+== Copying the migrations
+
+== Copying the web build
+
+== Copying better-sqlite3
+
+== Building whisper-cli (A06)
+copied whisper-cli and 15 shared libraries into bin/ (RUNPATH \$ORIGIN:)
+
+== Copying the licences
+
+== Writing manifest.json
+manifest lists 4804 files
+
+== Done
+output: /home/villenull/Projects/Apunta/build/linux-resources
+node:   v24.19.0
+files:  4804
+
+> apunta@0.0.0 tauri:build:test
+> tauri build --features test-identity --config src-tauri/tauri.test.conf.json
+
+        Info Looking up installed tauri packages to check mismatched versions...
+   Compiling apunta v0.0.0 (/home/villenull/Projects/Apunta/src-tauri)
+    Finished `release` profile [optimized] target(s) in 27.75s
+       Built application at: /home/villenull/Projects/Apunta/src-tauri/target/release/apunta
+        Info Patching /home/villenull/Projects/Apunta/src-tauri/target/release/apunta with bundle type information: appimage
+    Bundling Apunta (test)_0.0.0_amd64.AppImage (/home/villenull/Projects/Apunta/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage)
+    Finished 1 bundle at:
+        /home/villenull/Projects/Apunta/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage (185.22 MiB)
+
+Apunta (test)_0.0.0_amd64.AppImage
+Apunta (test).AppDir
+
+V0 end (UTC): 2026-10-04T04:15:39Z
+V0_EXIT_CODE=0
+elapsed seconds: 134
+supervisor pid: 3169428
+end (UTC): 2026-10-04T04:15:39Z

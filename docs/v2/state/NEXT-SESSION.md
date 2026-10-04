@@ -1,3 +1,24 @@
+## Idle handoff recovered; frozen integration source review now running
+
+At owner status request2026-10-04 16:36UTC bothworkers were idle and reports
+were already complete: buildV0PASS/plugin4PASS; harnesscode/unit ready, noUIrun.
+They were archived after checking savedreturns, not restarted or calledPASS
+on narration. The EOD2026-10-03 target was missed; do not claim completedproduct.
+9321861 freezes actualcandidate+build+checkpoint SUBMITTED/attempt2; no new
+attemptcounter or nativeclaim. Root recoveredignoredrawbuildlogs as byteexact
+.log.txt copies, originals retained. No source push until independentCLEAR.
+
+Reviewer a1073d6a-ae4c-4edb-ada5-a558ea486e85 confirmedRUNNING callback, writes
+only P3.6-impl2-source.md and attempt-2/source-review evidence. Code/unit and
+frozenbuildchecks only, NO nativeUI/audio/inference/build/live7717. OnceCLEAR,
+freeze shippingreview and launchV3 on already-built testimage, then V1→V4
+serialproductionbuild/extraction; V2/V5 staticrows alsodue. Ifdefects, usecard
+remaining normalattempt3 after findings, nohiddenrepair/retry/reset.
+All BUILD/native/audio/inference leases free; ownerpreview7811 intendedkeptup.
+No idleworkersleft. Do not archive active reviewer on narration-onlycallback;
+check onceactualstatus at event boundary, compare reportcompletion. EODmiss
+requires truthful delivered-versus-unprovenreport, not proceduralwaiver.
+
 ## Attempt 2 allocated after a supervisor interruption; both lanes continue
 
 Builder's120s process-group timeout killed V0 midbundle after producer+compile.

@@ -1,0 +1,2 @@
+GSTREAMER_HELPERS_DIR=/home/villenull/Projects/Apunta/build/p36-build1/gst-helpers
+build/p36-build1/run-v0.sh: line 30: $5: unbound variable
