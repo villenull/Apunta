@@ -2991,3 +2991,10 @@ callbacks: V0PASS/testartifacte6dd3ecb/plugin4PASS, harness1757linescodeunit0.
 Rootarchivedboth, froze9321861 SUBMITTEDattempt2, launcheda1073d6a freshsource
 reviewbeforeUI. EODtargetmissedadmitted; no100percentclaim. Ignoredrawlogs
 preservedbyteexact.log.txt/originalsretained. No unreviewedsourcepush.
+
+## 2026-10-04 16:48 UTC — source review rejects unsound harness before runtime
+
+FreshIR a1073d6a sixdefects/sevenrisks savedfcb63d3, archived. NoV3ran.
+Rootallocatesnormalfinalattempt3 c681994 and launches6c584826 boundedcode/unit
+repairwithcurrentfindings, preservedV0/history, sourceIRgatesnative. No
+fourth/reset/relaxation. OfflineOCRalreadyinstalled; no acquisition needed.

@@ -1,3 +1,23 @@
+## Attempt 2 source defects saved; final normal repair attempt 3 active
+
+fcb63d3 freezes a1073d6a CHANGES REQUESTED: six confirmeddefects D1-D6
+(self-proving API flows, ownershipbaseline beforelaunch, missingaudio signal
+cleanup, missing/wrongreleasebundle checks, NOTRUN→exit0, absentfreshness),
+plus sevenrisks. Reviewerarchived. NativeV3stillneverrun; no productapproval.
+Rootallocates finalnormalattempt3 c681994 underexisting3budget, samebase62abb28
+/7879, reviewedclarifications retained. FrozenV0PASS/e6dd3ecb staysuntouched,
+priorAttempt2Criteria preserved. No fourthattempt/reset/waiver authorized.
+
+Repairer6c584826-0a7a-42f9-8430-8df9e048b7f8 confirmedRUNNING callback, owns
+harnessonly + NEWattempt-3/implementation/appendreturn/updateanchor. CODE/UNIT
+no native/audio/build/inference, freshshipping-sourceIR beforeV3. Existing
+/usr/bin/tesseract permits offlinepane-specificlabel/uniquecontrol evidence
+withoutnewdep/injection. Mustfixactualflows/Copied-specific evidence, stream
+containment, zerowindowsNOTRUNallaffectedflows, entrypoint anddisplay reuse.
+No completedsourcepush before CLEAR. All build/native/inferenceleasesfree.
+Reportcompletion must be actualoutcomes, not narration-onlyfinal callbacks.
+EODmiss retained honestly; keepworking toward actualEnglishoperationalproof.
+
 ## Idle handoff recovered; frozen integration source review now running
 
 At owner status request2026-10-04 16:36UTC bothworkers were idle and reports
