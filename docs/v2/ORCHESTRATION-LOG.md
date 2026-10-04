@@ -2885,3 +2885,11 @@ proof cleanup; a873c5d8 independent review running. 97eb905e static proposal
 CLEAR archived; owner question waits lint CLEAR. e74efcc6 integration brief
 validation archived, corrections retained in completed review. P34 BLOCKED,
 P35 APPROVED, P36 dependency-held. Native lease free; no acceptance rerun.
+
+## 2026-10-04 00:04 UTC — speech cache verified; static exception asked
+
+04340fea archived, acquisition872bf01 one pinned file plus receipt. Independent
+0a1a66bb running callback; duplicate suspicion rejection resolved by actual
+list proving no reviewer existed. a873 proof lint CLEAR archived fbf5aea.
+Static V3/fullV4 bounded owner question submitted only after both review gates.
+P34 BLOCKED/6, P35 APPROVED/4, P36 dependency-held; no row rerun yet.

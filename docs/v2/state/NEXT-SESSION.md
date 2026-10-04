@@ -1,3 +1,27 @@
+## English model acquired; static completion owner decision pending
+
+04340fea finished, archival confirmed. Acquisition packet872bf01 records one
+existing-installer tiny.en download, exact77704715 bytes/SHA256921e4cf8…20b1f,
+receipt present, no Ollama pull/inference. Raw weights remain ignored cache.
+Independent worker0a1a66bb-7772-4468-9945-e790e48a3736 confirmed RUNNING callback,
+owns new english-eod-model-acquisition-ir report/evidence only; no network rerun.
+First launch was auto-review rejected as possibly duplicate; event-boundary
+list proved no reviewer existed; clarified launch succeeded, no duplicate work.
+
+Proof lint reviewer a873c5d8 returned CLEAR, archived successfully; fbf5aea
+preserves independent exact replay and baseline13-error reproduction, global
+eslint hygiene green. Raw .txt witness is unlintable, explicitly not clean.
+97eb905e static-completion proposal CLEAR already archived. Both required
+review gates satisfied: owner question submitted for only decodedV3 once plus
+fullV4 once inside6. Await explicit reply; no row currently authorized/run.
+P34 remains BLOCKED/6, P35 APPROVED/4, P36 NOT STARTED. No seventh/waiver/reset.
+
+Only acquisition review executes now. No other dependency-ready native task:
+P36 waits P34 and static completion awaits owner; no useful duplicate prep
+assigned to fill slots. Next ready actions: owner grant→record amendment and
+sole static runtime worker; receipt CLEAR→preserve cache handoff for real
+English speech workflow. All native/build/display/audio/inference leases free.
+
 ## Current execution — approved English acquisition and final static gates
 
 AM-198/A17 authorizes pinned tiny.en acquisition; worker
