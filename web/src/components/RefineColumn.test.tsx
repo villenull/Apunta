@@ -215,6 +215,7 @@ describe('dictating into the composer', () => {
       accepted: new Set(),
       addWord: vi.fn(),
       ignoreWord: vi.fn(),
+      error: null,
     };
     render(
       <SpellingContext.Provider value={spelling}>

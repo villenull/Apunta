@@ -970,10 +970,9 @@ describe('adding a patient and a typed note', () => {
     fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Sleep improved.' } });
     fireEvent.click(screen.getByTestId('process-note'));
 
-    expect(await screen.findByRole('alert')).toHaveProperty(
-      'textContent',
-      expect.stringContaining("can't reach the local AI"),
-    );
+    const captureError = await screen.findByTestId('capture-error');
+    expect(captureError.getAttribute('role')).toBe('alert');
+    expect(captureError).toHaveProperty('textContent', expect.stringContaining("can't reach the local AI"));
     expect((screen.getByTestId('summary-input') as HTMLTextAreaElement).value).toBe('Sleep improved.');
     expect(screen.getByTestId('process-note')).toHaveProperty('disabled', false);
   });

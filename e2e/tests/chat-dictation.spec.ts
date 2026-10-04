@@ -22,10 +22,17 @@ test.describe('dictating into the chat', () => {
     request,
     tr,
     checkScreen,
+    appLocale,
   }) => {
     const format = (await (
       await request.post('/api/formats', {
-        data: { name: uniqueName('E2E dictation format'), sections: ['Subjective', 'Plan'] },
+        data: {
+          name: uniqueName('E2E dictation format'),
+          // The note text is the project's own language, so the `es-MX` run's
+          // Spanish dictionary does not split English fixture words into
+          // isolated nodes that collide with English catalogue values.
+          sections: appLocale === 'es-MX' ? ['Subjetivo', 'Plan'] : ['Subjective', 'Plan'],
+        },
       })
     ).json()) as Created;
     const patient = (await (
@@ -36,7 +43,10 @@ test.describe('dictating into the chat', () => {
         data: {
           patient_id: patient.id,
           format_id: format.id,
-          content: 'Subjective: Patient reports improved sleep.\n\nPlan: Continue weekly sessions.',
+          content:
+            appLocale === 'es-MX'
+              ? 'Subjetivo: La sesión de café fue corta.\n\nPlan: Continuar semanalmente.'
+              : 'Subjective: Patient reports improved sleep.\n\nPlan: Continue weekly sessions.',
         },
       })
     ).json()) as Created;

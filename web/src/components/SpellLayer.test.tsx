@@ -13,6 +13,7 @@ const speller: Speller = {
 function renderInput(value: string, overrides: Partial<Spelling> = {}): void {
   const spelling: Spelling = {
     speller,
+    error: null,
     accepted: new Set(),
     addWord: vi.fn(),
     ignoreWord: vi.fn(),
@@ -44,5 +45,44 @@ describe('SpellLayer input', () => {
 
     fireEvent.click(screen.getByRole('menuitem', { name: 'Add to dictionary' }));
     expect(addWord).toHaveBeenCalledWith('Teh');
+  });
+});
+
+/**
+ * S6.1's one rendered alert: one per mounted spell surface, in that surface's
+ * own wrap (D4.4).
+ */
+describe('SpellLayer with a dictionary that could not load', () => {
+  it('says nothing when there is no error, and one alert per mounted surface when there is', () => {
+    const { unmount } = render(
+      <SpellingContext.Provider
+        value={{ speller: null, error: null, accepted: new Set(), addWord: vi.fn(), ignoreWord: vi.fn() }}
+      >
+        <SpellLayer as="input" aria-label="One" value="" onChange={() => {}} />
+      </SpellingContext.Provider>,
+    );
+    expect(screen.queryByRole('alert')).toBeNull();
+    unmount();
+
+    // A note page with the chat open mounts two surfaces, and either can fail.
+    render(
+      <SpellingContext.Provider
+        value={{
+          speller: null,
+          error: 'spelling.loadFailed',
+          accepted: new Set(),
+          addWord: vi.fn(),
+          ignoreWord: vi.fn(),
+        }}
+      >
+        <SpellLayer as="input" aria-label="One" value="" onChange={() => {}} />
+        <SpellLayer as="textarea" aria-label="Two" value="" onChange={() => {}} />
+      </SpellingContext.Provider>,
+    );
+    const alerts = screen.getAllByRole('alert');
+    expect(alerts).toHaveLength(2);
+    for (const alert of alerts) expect(alert.textContent).toBe('Spell check is unavailable');
+    // In the field's own wrap, never in the menu.
+    expect(screen.queryByTestId('spelling-menu')).toBeNull();
   });
 });

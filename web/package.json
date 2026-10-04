@@ -12,6 +12,7 @@
   "dependencies": {
     "@apunta/shared": "*",
     "dictionary-en": "^4.0.0",
+    "dictionary-es-mx": "2.0.0",
     "nspell": "^2.1.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

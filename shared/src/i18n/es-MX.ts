@@ -1812,6 +1812,9 @@ export const esMX = {
     text: 'Ortografía de {word}',
     kind: { word: 'text' },
   },
+  'spelling.loadFailed': {
+    text: 'La corrección ortográfica no está disponible',
+  },
   'patients.renameLabel': {
     text: 'Nombre de {name}',
     kind: { name: 'text' },

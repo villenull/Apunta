@@ -40,6 +40,7 @@ function renderBody(
     accepted: new Set(),
     addWord: vi.fn(),
     ignoreWord: vi.fn(),
+    error: null,
     ...overrides,
   };
   render(

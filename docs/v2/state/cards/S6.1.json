@@ -2,13 +2,161 @@
   "card": "S6.1",
   "planVersion": 2,
   "attempt": 1,
-  "sideEffectsDone": [],
-  "changedFiles": [],
-  "criteria": {},
-  "sandboxRuns": [],
+  "sideEffectsDone": [
+    {
+      "step": "Steps 1-2: the A11 acquisition of dictionary-es-mx@2.0.0",
+      "dateUtc": "2026-10-04T19:45:00Z",
+      "exitCode": 0,
+      "command": "npm install --workspace @apunta/web --save-exact --no-audit --no-fund dictionary-es-mx@2.0.0",
+      "notRepeatable": true,
+      "note": "The only non-repeatable acquisition in this card (A11, npm registry, the one pre-approved exception in docs/v2/ACQUISITION.md:98). Installed at 2.0.0 with --save-exact; the lockfile integrity equals S1.5 2.2's string byte for byte. A resumed session does not re-run it."
+    },
+    {
+      "step": "D8 / V4: the npm run licenses rewrite of THIRD-PARTY-LICENSES.md",
+      "dateUtc": "2026-10-04T20:21:00Z",
+      "exitCode": 0,
+      "command": "npm run licenses",
+      "notRepeatable": true,
+      "note": "Wrote 112 packages; exactly one added row (dictionary-es-mx 2.0.0, MPL-1.1 (offered as (GPL-3.0 OR LGPL-3.0 OR MPL-1.1))) and one changed generated summary line, both inside the npm-dependencies markers, and nothing outside them. Under AM-203 item 2(a) no notice section was written. A resumed session re-runs neither this nor the install."
+    }
+  ],
+  "changedFiles": [
+    "package-lock.json",
+    "scripts/collect-licenses.mjs",
+    "THIRD-PARTY-LICENSES.md",
+    "shared/src/spelling.ts",
+    "shared/src/spelling.test.ts",
+    "shared/src/index.ts",
+    "shared/src/i18n/en.ts",
+    "shared/src/i18n/es-MX.ts",
+    "web/package.json",
+    "web/src/lib/spelling.ts",
+    "web/src/lib/spelling.test.ts",
+    "web/src/lib/speller.ts",
+    "web/src/lib/speller.test.ts",
+    "web/src/components/SpellingProvider.tsx",
+    "web/src/components/SpellingProvider.test.tsx",
+    "web/src/components/SpellLayer.tsx",
+    "web/src/components/SpellLayer.test.tsx",
+    "e2e/playwright.config.ts",
+    "e2e/tests/spelling-es.spec.ts",
+    "e2e/tests/spelling-assets.spec.ts",
+    "docs/v2/evidence/S6.1/",
+    "docs/v2/state/returns/S6.1.md",
+    "docs/v2/state/cards/S6.1.json"
+  ],
+  "criteria": {
+    "V0": {
+      "status": "PASS",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V0-preflight.md",
+      "note": "The election row is on record and quoted verbatim. node docs/v2/tools/check-plan.mjs exited 1 on another card's in-flight P5.3/C-BRIDGE@1 edits: an environment note."
+    },
+    "V1": {
+      "status": "PASS",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V1-unit.md"
+    },
+    "V2": {
+      "status": "PASS",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V2-fields.md"
+    },
+    "V3": {
+      "status": "PASS",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V3-assets.md"
+    },
+    "V4": {
+      "status": "BLOCKED",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V4-licence.md",
+      "note": "BLOCKED, never PASS, while two Exhibit A fields are [unknown] (AM-203 item 2(a), Stop 2). Every licence, integrity and three-copies clause is green. Nothing with a blank was written into THIRD-PARTY-LICENSES.md. Next steps U2 and U3. npm run lint exits 1 only on another worker's untracked docs/v2/evidence/P3.6/ scripts; every lint step attributable to this card exits 0."
+    },
+    "V5": {
+      "status": "FAIL",
+      "exitCode": 1,
+      "evidence": "docs/v2/evidence/S6.1/V5-types-units.md",
+      "note": "npm run typecheck exits 0. npx vitest run --project shared --project web: 750 passed, 1 failed - web/src/App.test.tsx:973 asks for the first role=alert on the capture page, and D4.4's per-surface alert now exists there because jsdom can never load the dictionary. One-line fix (scope to capture-error) is in a file outside May edit: Stop 3, reported not made."
+    },
+    "V6": {
+      "status": "PASS",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V6-negative.md"
+    },
+    "V7": {
+      "status": "FAIL",
+      "exitCode": 1,
+      "evidence": "docs/v2/evidence/S6.1/V7-scope.md",
+      "note": "Parts 1 and 2 exactly as expected: every path is May-edit or a required output, and the protected set prints nothing. Part 3 is not empty because e2e/tests/brand.spec.ts rewrites the four committed P2.2 screenshots on any full npm run e2e, which the coordinator asked for. Not restored (Stop 9)."
+    },
+    "V8": {
+      "status": "PASS",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V8-checkpoint.md"
+    },
+    "V9": {
+      "status": "PASS",
+      "exitCode": 0,
+      "evidence": "docs/v2/evidence/S6.1/V9-asset-identity.md"
+    }
+  },
+  "sandboxRuns": [
+    {
+      "runId": "2026-10-04T20-31-53-814Z-c6dbcae3",
+      "ports": {
+        "en": 7884,
+        "es": 7885
+      },
+      "rows": [
+        "V2",
+        "V3"
+      ]
+    },
+    {
+      "runId": "2026-10-04T20-44-07-246Z-5b504311",
+      "ports": {
+        "en": 7886,
+        "es": 7887
+      },
+      "rows": [
+        "V6"
+      ]
+    },
+    {
+      "runId": "2026-10-04T20-47-33-106Z-dc6bc762",
+      "ports": {
+        "en": 7884,
+        "es": 7885
+      },
+      "rows": [
+        "global npm run e2e gate (requested by the coordinator)"
+      ]
+    },
+    {
+      "runId": "2026-10-04T20-49-08-331Z-96bc5ea3",
+      "ports": {
+        "en": 7884,
+        "es": 7885
+      },
+      "rows": [
+        "chat-dictation control run with this card's web/shared changes stashed"
+      ]
+    },
+    {
+      "runId": "2026-10-04T20-49-43-265Z-2b72280c",
+      "ports": {
+        "en": 7884,
+        "es": 7885
+      },
+      "rows": [
+        "chat-dictation run with this card's changes restored"
+      ]
+    }
+  ],
   "baseCommit": "c22b12b",
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "AM-203 applied to card and instruction-review corrections applied; production implementation dispatched",
-  "nextAllowedAction": "implementation return -> independent review; V4 stays BLOCKED while Exhibit A fields are [unknown]",
-  "updatedUtc": "2026-10-04T19:42:45.873117+00:00"
+  "status": "BLOCKED",
+  "lastCompletedStep": "Implementation committed after review S6.1-impl CHANGES REQUESTED, repair, and re-review S6.1-impl2 APPROVE. V0-V3, V5-V9 PASS (V5/V7 after AM-210/211); V4 BLOCKED by design (AM-203).",
+  "nextAllowedAction": "V4 only: source the two [unknown] Exhibit A fields (U2/U3) in a separately authorised research step; then V4 and card approval",
+  "updatedUtc": "2026-10-04T22:15:30.720647+00:00"
 }

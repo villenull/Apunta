@@ -1,8 +1,10 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 
 import { useSpelling } from '../hooks/useSpelling.js';
+import { useI18n } from '../lib/i18n.js';
 import type { Misspelling } from '../lib/spelling.js';
 import { spelledRuns, useSpellingMenu } from './SpellMarks.js';
+import { useSpellingContext } from './SpellingProvider.js';
 
 interface SpellLayerBase {
   readonly value: string;
@@ -54,6 +56,17 @@ export function SpellLayer(props: SpellLayerProps): React.JSX.Element {
   const wrap = useRef<HTMLDivElement>(null);
   const control = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const spelling = useSpelling(value, allowWords);
+  // One alert per mounted spell surface (S6.1, D4.4), in this field's own wrap
+  // and nowhere else: a note page with the chat open shows two, because the
+  // note body and the refine composer are two surfaces and either can fail.
+  const { error } = useSpellingContext();
+  const { t } = useI18n();
+  const alert =
+    error === null ? null : (
+      <p className="form-error" role="alert" data-testid="spelling-load-failed">
+        {t(error)}
+      </p>
+    );
   const backdrop = useMemo(
     () =>
       renderBackdrop
@@ -117,6 +130,7 @@ export function SpellLayer(props: SpellLayerProps): React.JSX.Element {
           onClick={inactive ? onClick : open}
           onContextMenu={inactive ? onContextMenu : open}
         />
+        {alert}
         {menu}
       </div>
     );
@@ -155,6 +169,7 @@ export function SpellLayer(props: SpellLayerProps): React.JSX.Element {
         onClick={inactive ? onClick : open}
         onContextMenu={inactive ? onContextMenu : open}
       />
+      {alert}
       {menu}
     </div>
   );

@@ -47,17 +47,31 @@ const FORBIDDEN = /\b(GPL|AGPL|LGPL|SSPL|CC-BY-NC|BUSL)\b/i;
  */
 const DUAL_LICENSED_CHOICES = new Map([['jszip', { offered: '(MIT OR GPL-3.0-or-later)', taken: 'MIT' }]]);
 
+/**
+ * Data objects shipped under a non-permissive arm of a multi-licence, elected
+ * by the owner and recorded in THIRD-PARTY-LICENSES.md and docs/decisions.md.
+ * Kept apart from DUAL_LICENSED_CHOICES on purpose: that map is for permissive
+ * arms, and a copyleft arm described as a permissive choice would make this
+ * guard say the opposite of what it is for.
+ *
+ * `dictionary-es-mx` — the Mexican Spanish Hunspell word list, data only
+ * (`index.aff` + `index.dic`), shipped unmodified under its own names.
+ */
+const DATA_LICENCE_CHOICES = new Map([
+  ['dictionary-es-mx', { offered: '(GPL-3.0 OR LGPL-3.0 OR MPL-1.1)', taken: 'MPL-1.1' }],
+]);
+
 /** `MIT OR Apache-2.0` is fine; a bare GPL, or an unrecorded dual, is not. */
 function isForbidden(name, license) {
   if (typeof license !== 'string') return false;
   if (!FORBIDDEN.test(license)) return false;
-  const choice = DUAL_LICENSED_CHOICES.get(name);
+  const choice = DUAL_LICENSED_CHOICES.get(name) ?? DATA_LICENCE_CHOICES.get(name);
   return choice === undefined || choice.offered !== license;
 }
 
 /** The licence as this file reports it: the chosen arm, said out loud. */
 function reportedLicense(name, license) {
-  const choice = DUAL_LICENSED_CHOICES.get(name);
+  const choice = DUAL_LICENSED_CHOICES.get(name) ?? DATA_LICENCE_CHOICES.get(name);
   if (choice !== undefined && choice.offered === license) {
     return `${choice.taken} (offered as ${choice.offered})`;
   }

@@ -96,8 +96,14 @@ export default defineConfig<AppOptions>({
     },
   },
   projects: [
-    // English, on a build that does not offer Spanish: the release shape.
-    { name: 'chromium', use: { ...devices['Desktop Chrome'], appLocale: 'en' } },
+    // English, on a build that does not offer Spanish: the release shape. The
+    // Spanish field spec is not collected here: `spelling-es.spec.ts` asserts
+    // a Spanish dictionary, which this project's build never offers (S6.1, D6).
+    {
+      name: 'chromium',
+      testIgnore: /spelling-es\.spec\.ts$/,
+      use: { ...devices['Desktop Chrome'], appLocale: 'en' },
+    },
     // The Language control's V2 and V3, alone on the Spanish server, first.
     {
       name: 'es-MX-language',
@@ -107,7 +113,10 @@ export default defineConfig<AppOptions>({
     // Every other spec again, in Spanish, once the control's specs are done.
     {
       name: 'es-MX',
-      testIgnore: languageControl,
+      // The English spelling spec is not applicable here: under D3 the
+      // dictionary follows the active UI language, so its English-dictionary
+      // assertions would be evaluated against Spanish (S6.1, D6).
+      testIgnore: [languageControl, /spelling\.spec\.ts$/],
       dependencies: ['es-MX-language'],
       use: { ...devices['Desktop Chrome'], baseURL: esBaseURL, appLocale: 'es-MX' },
     },

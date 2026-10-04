@@ -499,8 +499,12 @@ export type { AppliedRetraction, RetractionCorrection, RetractionCorrections } f
 export {
   MAX_SPELLING_WORD_CHARS,
   MAX_SPELLING_WORDS,
+  SPELLING_WORDS_ES_MX_SETTING,
   SPELLING_WORDS_SETTING,
+  SPELLING_WORDS_SETTINGS,
+  spellingWordsFor,
   spellingWordsFrom,
+  spellingWordsSettingFor,
 } from './spelling.js';
 
 export { planDocumentText } from './plan-document.js';

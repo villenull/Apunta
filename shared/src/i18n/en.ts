@@ -2147,6 +2147,8 @@ export const en = {
   'spelling.add': { text: 'Add to dictionary' },
   /** `SpellingMenu.tsx:63`. */
   'spelling.menuLabel': { text: 'Spelling of {word}', kind: { word: 'text' } },
+  /** `SpellLayer.tsx`, the alert a mounted spell surface shows (S6.1, D4.4). */
+  'spelling.loadFailed': { text: 'Spell check is unavailable' },
   /** `PatientRenameForm.tsx:36`. */
   'patients.renameLabel': { text: 'Name for {name}', kind: { name: 'text' } },
 

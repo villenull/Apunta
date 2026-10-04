@@ -23,8 +23,21 @@ export interface Misspelling {
   readonly word: string;
 }
 
-/** A word: letters, with apostrophes inside ("client's", "he’s"). */
-const WORD = /[A-Za-z]+(?:['’][A-Za-z]+)*/g;
+/**
+ * A word: English letters plus the Spanish ones the es-MX dictionary needs,
+ * and any combining marks a keyboard or an IME may leave attached — so a word
+ * typed as `sesio` + U+0301 is one token, not two.
+ *
+ * The ASCII letter range comes first and is unchanged, so for text carrying
+ * no Spanish letter and no combining mark (U+0300–U+036F) this pattern
+ * matches exactly what the old one matched, and `plainWord` is a no-op on such
+ * text: English tokenisation is provably unchanged. The precondition is those
+ * two classes, not the word "ASCII": the combining-mark range below is admitted
+ * too, and `'` and `’` are inside the pattern in both versions.
+ */
+const LETTER = '[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\\u0300-\\u036f]';
+// eslint-disable-next-line no-misleading-character-class -- the combining-mark range above is the point: a word typed with a stray U+0301 left attached must be one token, not two.
+const WORD = new RegExp(`${LETTER}+(?:['’]${LETTER}+)*`, 'g');
 
 /** Words the checker never looks at: acronyms, and casing that says "a name, a brand". */
 export function worthChecking(word: string): boolean {
@@ -35,7 +48,9 @@ export function worthChecking(word: string): boolean {
 }
 
 function plainWord(word: string): string {
-  return word.replace(/’/g, "'");
+  // NFC first, so a decomposed `sesión` and a precomposed one are the same
+  // word; then the curly apostrophe, which is not part of any word.
+  return word.normalize('NFC').replace(/’/g, "'");
 }
 
 export function findMisspellings(text: string, speller: Speller, allow: ReadonlySet<string>): Misspelling[] {
