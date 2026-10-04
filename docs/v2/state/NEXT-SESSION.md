@@ -10,14 +10,16 @@ vitest only; orchestrator runs full gates, independent review, then commits.
 
 | Worker | Model | Task | Write scope | Status |
 | --- | --- | --- | --- | --- |
-| 81a960e5 | mimo-v2.6-flash-free | #1 restore WAL | backup/restore.ts(+test), db/safety.ts(+test), index.ts | RUNNING |
-| — | — | #2/#4 import | — | DONE 56d1c3a (review fa683c4f CLEAR) |
-| — | — | #5/#6 note writes | — | DONE 99ecd87 (review dbd7945c CLEAR) |
-| — | — | #7 audio retention | — | DONE 97122a9 (review 2a43273d CLEAR); boot sweep adopted AM-206, wire into index.ts AFTER #1 returns |
-| — | — | #8/#9 recorder/backup | — | DONE 06a09b0 (review 913f9a79 CLEAR) |
-| ad831fad | space-bunny-free | P3.6 attempt 4 harness repair F1–F7 (AM-201) | scripts/v2/tauri-e2e-smoke.test.mjs, evidence/P3.6/attempt-4/implementation/** | RUNNING |
-| dcca3243 | space-bunny-free | P5.3/P5.4 card text + contract clauses (AM-202, AM-205) | cards/P5.3.md, cards/P5.4.md, CONTRACTS.md (2 clauses), state/P5.3-APPLIED-CHANGELOG.md | RUNNING |
-| 8be2a651 | longcat-2.5-preview-free | S6.1 card apply (AM-203) | cards/S6.1.md, state/S6.1-APPLIED-CHANGELOG.md | RUNNING |
+| 3806127e | space-bunny-free | #1 restore repair attempt 2 (last) for review d3f60a0f D1 HIGH crash-idempotent fold, D2 MEDIUM atomic rollback, D3–D5 LOW | backup/restore.ts(+test), db/safety.ts(+test), index.ts | RUNNING |
+| — | — | #2/#4, #5/#6, #7, #8/#9 | — | DONE, pushed, CI green |
+| — | — | CI flake transcribe preview | — | DONE f74e7df (test isolation; predates today) |
+| 67e6dc7d | space-bunny-free | P3.6 attempt 5 (AM-207) D1 settings label, D2 falsifiable ownership | scripts/v2/tauri-e2e-smoke.test.mjs, evidence/P3.6/attempt-5/** | RUNNING |
+| 1100bada | longcat-2.5-preview-free | P5.3/P5.4 card corrections R-01..R-10 (+AM-208) + check-plan contracts cell | cards/P5.3.md, cards/P5.4.md, P5.3-APPLIED-CHANGELOG.md | RUNNING |
+| 306f1349 | space-bunny-free | S6.1 production implementation (dispatch/S6.1.md, port 7884) | card May edit (web/package.json, package-lock, spelling/speller, shared/spelling, collect-licenses, THIRD-PARTY-LICENSES, catalogues) | RUNNING |
+
+Pending: wire sweepOrphanAudio at boot (AM-206) after #1 repair lands (index.ts).
+P3.6: after attempt-5 CLEAR, re-run V0 once (AM-207) then native V3.
+CONTRACTS.md has uncommitted P5.3 clause edits — commit with the P5.3 cards.
 
 Full gates green at 99ecd87 (2270 tests, lint, typecheck) and pushed. Next after
 each card edit: independent instruction review, then dispatch implementation.
