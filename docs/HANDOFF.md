@@ -501,7 +501,7 @@ these real-model failures. No candidate is clinically cleared.
 8. The hosted README still needs a real authenticated browser page check if
    repository visibility/access changes; the API-render substitute above must
    not be relabeled as hosted acceptance.
-9. Speech fidelity remains the open acceptance gap: installed tiny.en mishears "scratch that" and some words (see docket). A better Whisper model requires the owner's explicit model-acquisition authorization under hard rule 1; do not download without it.
+9. Speech: tiny.en stays (owner, 2026-10-04, AM-204). Drug-name accuracy is out of scope for the target use case; "scratch that" misrecognition is accepted until a real-use failure. No Whisper download is authorized.
 
 
 ## What is open
