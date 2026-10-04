@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   chmodSync,
   closeSync,
@@ -61,6 +62,9 @@ const MOVED_HOME_INFIX = '.moved-home-';
 
 /** Between `apunta.db` and the random part: where a replay rehearsal is run. */
 const SCRATCH_INFIX = '.replay-probe-';
+
+/** The whole prefix of a rollback's provenance record, before its stamp. */
+const MOVED_HOME_PREFIX = `${DB_ENTRY_NAME}${MOVED_HOME_INFIX}`;
 
 export class RestoreError extends Error {
   constructor(
@@ -576,6 +580,17 @@ function reconcileInterruptedRollback(
   live: string,
   nativeBinding: string | undefined,
 ): Recovery {
+  // A rehearsal killed between the copy and the cleanup leaves a full copy of
+  // the practice's database and its log under the scratch name, and nothing
+  // else will ever open it. This boot takes it away before anything looks at
+  // the folder. Wrapped, because a folder that cannot be removed is garbage
+  // left for the next boot, never a reason to fail one.
+  try {
+    rmSync(join(dataDir, `${DB_ENTRY_NAME}${SCRATCH_INFIX}`), { recursive: true, force: true });
+  } catch {
+    // Left behind; it is garbage either way.
+  }
+
   const { copies, logs } = preRestoreEntries(dataDir);
   let databases = 0;
   let sidecars = 0;
@@ -628,20 +643,29 @@ function reconcileInterruptedRollback(
 
   // A rollback's record has said what it had to say once the entries it named
   // are all home, and a record that outlived them would keep vouching for a
-  // stamp whose log may be a different database's by the next restore. One
-  // that still has an entry under it stays, so a boot that refused one can
-  // still attach it later.
-  for (const stamp of new Set(logs.map((log) => log.stamp))) {
-    const stillHere = SIDECAR_SUFFIXES.some((suffix) =>
-      existsSync(preRestoreEntryPath(dataDir, stamp, suffix)),
-    );
-    if (!stillHere) {
-      try {
-        rmSync(join(dataDir, `${DB_ENTRY_NAME}${MOVED_HOME_INFIX}${stamp}`), { force: true });
-      } catch {
-        // Spent anyway; leaving it costs nothing but a file this boot did not
-        // need to touch, and no boot is failed over it.
-      }
+  // stamp whose log may be a different database's by the next restore. Every
+  // record is swept, not only the stamps a stranded log named: a rollback cut
+  // between writing a record and moving the copy home leaves one with no log to
+  // point at, and that record would otherwise outlive its rollback forever. A
+  // record whose stamp still has a copy or a sidecar stays, so a boot that
+  // refused one can still attach it later.
+  let records: string[];
+  try {
+    records = readdirSync(dataDir).filter((name) => name.startsWith(MOVED_HOME_PREFIX));
+  } catch {
+    records = [];
+  }
+  for (const name of records) {
+    const stamp = name.slice(MOVED_HOME_PREFIX.length);
+    const stillHere =
+      existsSync(preRestoreEntryPath(dataDir, stamp)) ||
+      SIDECAR_SUFFIXES.some((suffix) => existsSync(preRestoreEntryPath(dataDir, stamp, suffix)));
+    if (stillHere) continue;
+    try {
+      rmSync(join(dataDir, name), { force: true });
+    } catch {
+      // Spent anyway; leaving it costs nothing but a file this boot did not
+      // need to touch, and no boot is failed over it.
     }
   }
 
@@ -717,7 +741,7 @@ function logBelongsToLiveDatabase(
 
 /** True when a rollback recorded that it moved this stamp's copy home. */
 function movedHomeIsRecorded(dataDir: string, stamp: string): boolean {
-  return existsSync(join(dataDir, `${DB_ENTRY_NAME}${MOVED_HOME_INFIX}${stamp}`));
+  return existsSync(join(dataDir, `${MOVED_HOME_PREFIX}${stamp}`));
 }
 
 /**
@@ -758,7 +782,7 @@ function logWouldNotDamageLive(
     copyFileSync(log, `${probe}-wal`);
     chmodSync(`${probe}-wal`, 0o600);
 
-    const before = readFileSync(probe);
+    const before = hashFileSync(probe);
     const handle =
       nativeBinding === undefined ? new BetterSqlite3(probe) : new BetterSqlite3(probe, { nativeBinding });
     let integrity: unknown;
@@ -772,12 +796,44 @@ function logWouldNotDamageLive(
     // A log SQLite ignored leaves the file byte for byte as it was, and an
     // ignored log would recover nothing, so there is nothing to gain by
     // attaching it. A log that *was* replayed is folded back into the file as
-    // the handle closes, so the two differ.
-    return !before.equals(readFileSync(probe));
+    // the handle closes, so the two differ. Fingerprints rather than whole
+    // buffers: this runs at boot over a copy of the practice's database, and
+    // holding that file in memory twice is a cost the rehearsal need not pay.
+    const after = hashFileSync(probe);
+    return before !== null && after !== null && before !== after;
   } catch {
     return false;
   } finally {
     rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+/** One mebibyte per read: a whole database never has to fit in memory to be fingerprinted. */
+const HASH_CHUNK_BYTES = 1024 * 1024;
+
+/**
+ * The SHA-256 of a file, read a chunk at a time, or null when it cannot be
+ * read. Streaming rather than `readFileSync` because the rehearsal this serves
+ * copies the practice's whole database and must not hold it in memory twice at
+ * boot. Never throws: an unreadable file is a reason to leave a log alone, not
+ * to fail a boot.
+ */
+function hashFileSync(path: string): string | null {
+  let fd: number | null = null;
+  try {
+    fd = openSync(path, 'r');
+    const hash = createHash('sha256');
+    const chunk = Buffer.alloc(HASH_CHUNK_BYTES);
+    for (;;) {
+      const read = readSync(fd, chunk, 0, chunk.length, null);
+      if (read === 0) break;
+      hash.update(chunk.subarray(0, read));
+    }
+    return hash.digest('hex');
+  } catch {
+    return null;
+  } finally {
+    if (fd !== null) closeSync(fd);
   }
 }
 
@@ -976,7 +1032,7 @@ function unusedSafetyCopyPath(dataDir: string, requested: string | null, now: Da
  * record that would be moved onto `apunta.db`.
  */
 function movedHomeRecordPath(dataDir: string, safetyCopy: string): string {
-  return join(dataDir, `${DB_ENTRY_NAME}${MOVED_HOME_INFIX}${stampOfCopy(safetyCopy)}`);
+  return join(dataDir, `${MOVED_HOME_PREFIX}${stampOfCopy(safetyCopy)}`);
 }
 
 /**

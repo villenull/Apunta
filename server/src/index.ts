@@ -9,6 +9,7 @@ import { openDatabase, type OpenedDatabase } from './db/index.js';
 import { prepareDatabaseForStart } from './db/safety.js';
 import { storageBootFailure } from './http/errors.js';
 import { serveBootError } from './boot-error.js';
+import { runStartupMaintenance } from './startup-maintenance.js';
 import {
   DATA_FOLDER_IN_USE_CODE,
   PORT_IN_USE_CODE,
@@ -157,6 +158,14 @@ async function start(): Promise<void> {
       'restored the database from a backup; the previous one was kept beside it',
     );
   }
+
+  // AM-206: one orphan-recording sweep, before the port is bound so it cannot
+  // race a request that is uploading a new recording. It is awaited so the
+  // sweep is finished before the first request, and every failure is caught
+  // inside, so it can delay the first request but never stop Apunta starting.
+  await runStartupMaintenance(db, config, (detail, message) => {
+    app.log.warn(detail, message);
+  });
 
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.once(signal, () => {

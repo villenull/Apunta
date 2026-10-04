@@ -10,8 +10,9 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
+import type * as Fs from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -24,7 +25,7 @@ import {
 } from '@apunta/shared';
 import BetterSqlite3 from 'better-sqlite3';
 import { strFromU8, unzipSync } from 'fflate';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadConfig, type AppConfig } from '../config.js';
 import { listFormats } from '../db/formats.js';
@@ -41,6 +42,23 @@ import {
   stageRestore,
   type RestoreStep,
 } from './restore.js';
+
+const fsReads = vi.hoisted(() => ({ readFileSync: [] as string[] }));
+
+/**
+ * `readFileSync` is wrapped rather than spied on: a Node builtin's namespace is
+ * not configurable, so `vi.spyOn` refuses it. Only the probe reads matter — the
+ * rehearsal used to read the whole copied database into memory twice, and this
+ * is how a test proves it no longer does.
+ */
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof Fs>();
+  const readFileSync = ((...args: unknown[]) => {
+    fsReads.readFileSync.push(String(args[0]));
+    return (actual.readFileSync as (...a: unknown[]) => unknown)(...args);
+  }) as typeof actual.readFileSync;
+  return { ...actual, readFileSync };
+});
 
 /**
  * C-SNAP@1 rule 2, seen from the far end: what a restore actually gets.
@@ -744,5 +762,75 @@ describe('a restore interrupted at each of its steps', () => {
     // ...and this restore's copy is a whole database of its own.
     expect(walRows(applied.safetyCopy ?? '')).toEqual(FIVE_ROWS);
     expect(integrityCheck(join(dir, DB_ENTRY_NAME))).toBe('ok');
+  });
+});
+
+/**
+ * The low-severity follow-ups from the restore fix's review. Each is a state a
+ * killed process can leave behind that the next boot has to clean up, plus the
+ * read the rehearsal does not need to pay for.
+ */
+describe('housekeeping a restore leaves for the next boot', () => {
+  it('sweeps a rollback record whose stamp has no copy or log left', () => {
+    const { dir } = stagedOverACrashedDatabase();
+    const applied = applyPendingRestore(dir, join(dir, 'no-such-binding.node'));
+    const copy = applied.safetyCopy ?? '';
+    const stamp = basename(copy).slice(`${DB_ENTRY_NAME}.before-restore-`.length);
+
+    // The window between a rollback writing its record and moving the copy
+    // home: the live database is gone, the copy is still here, and the record
+    // says the copy is going home. The next boot moves the copy home, and the
+    // record must go with it rather than outlive the rollback.
+    rmSync(join(dir, DB_ENTRY_NAME), { force: true });
+    rmSync(`${join(dir, DB_ENTRY_NAME)}-wal`, { force: true });
+    rmSync(`${join(dir, DB_ENTRY_NAME)}-shm`, { force: true });
+    const record = join(dir, `${DB_ENTRY_NAME}.moved-home-${stamp}`);
+    writeFileSync(record, '');
+
+    const booted = applyPendingRestore(dir);
+
+    expect(booted.recoveredAfterCrash?.databases).toBe(1);
+    expect(existsSync(record)).toBe(false);
+  });
+
+  it('keeps a rollback record while the copy it names is still there', () => {
+    const { dir } = stagedOverACrashedDatabase();
+    const stamp = '1999-01-01T00-00-00-000Z';
+    // An older copy the owner has not tidied yet: the record still has an
+    // entry under it, so a later boot may yet attach what is there.
+    writeFileSync(join(dir, `${DB_ENTRY_NAME}.before-restore-${stamp}`), 'an older safety copy');
+    const record = join(dir, `${DB_ENTRY_NAME}.moved-home-${stamp}`);
+    writeFileSync(record, '');
+
+    expect(applyPendingRestore(dir).applied).toBe(true);
+    expect(existsSync(record)).toBe(true);
+  });
+
+  it('removes a rehearsal scratch folder a killed process left behind', () => {
+    const scratch = join(fresh, `${DB_ENTRY_NAME}.replay-probe-`);
+    mkdirSync(scratch, { recursive: true });
+    writeFileSync(join(scratch, 'rehearsal.db'), 'a rehearsal that was killed mid-copy');
+
+    expect(applyPendingRestore(fresh)).toEqual({ applied: false });
+    expect(existsSync(scratch)).toBe(false);
+  });
+
+  it('fingerprints the rehearsal probe without reading the whole database into memory', () => {
+    const { dir } = stagedOverACrashedDatabase();
+    const applied = applyPendingRestore(dir, join(dir, 'no-such-binding.node'));
+    const copy = applied.safetyCopy ?? '';
+    // A rollback cut after the copy went home: the record survives and the log
+    // is stranded, which is the one shape that makes the next boot rehearse
+    // attaching it.
+    expect(() => rollbackAppliedRestore(dir, copy, crashAt('safety-copy-moved-back'))).toThrow('crashed');
+
+    fsReads.readFileSync.length = 0;
+    const booted = applyPendingRestore(dir);
+
+    // The rehearsal ran — both the log and its index were attached...
+    expect(booted.recoveredAfterCrash?.sidecars).toBe(2);
+    // ...and the probe was fingerprinted by streaming it, never by reading the
+    // whole copied database through `readFileSync`.
+    expect(fsReads.readFileSync.filter((path) => path.includes('replay-probe'))).toEqual([]);
   });
 });
