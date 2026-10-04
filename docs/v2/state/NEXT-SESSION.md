@@ -1,3 +1,24 @@
+## Post-closeout bug fixes running — 2026-10-04 (orchestrator 6da70224)
+
+Owner ordered 5+ parallel workers on POST-CLOSEOUT-BUG-QUEUE-2026-10-04.md and
+authorized `opencode/mimo-v2.6-flash-free` for exactly one worker, the hardest
+task (an explicit owner exception to the Go-only rule). Shared catalogue keys
+were pre-added by the orchestrator in d48c0cf so no worker edits en.ts/es-MX.ts.
+Owner decisions AM-201..AM-204 recorded in 8593e57 (P3.6 attempt 4 allowed, not
+yet dispatched; holds kept). Each worker: one attempt, uncommitted, targeted
+vitest only; orchestrator runs full gates, independent review, then commits.
+
+| Worker | Model | Bugs | Exclusive write scope | Status |
+| --- | --- | --- | --- | --- |
+| 81a960e5 | mimo-v2.6-flash-free | #1 restore WAL | backup/restore.ts(+test), db/safety.ts(+test), index.ts (binding thread) | RUNNING |
+| 4eb7ed90 | space-bunny-free | #5 refine revision, #6 persistDraft txn | db/notes.ts, routes/chat.ts, routes/draft.ts (+tests) | RUNNING |
+| 729dfd22 | space-bunny-free | #2 import locale, #4 stale patient 400 | routes/import.ts, routes/halaxy.ts, import/claude.ts, shared/src/import.ts (+tests) | RUNNING |
+| 9a3ee165 | longcat-2.5-preview-free | #7 audio retention | new audio/retention.ts, DELETE handlers in routes/notes.ts, routes/patients.ts (+tests); sweep not wired to boot | RUNNING |
+| c3618056 | longcat-2.5-preview-free | #8 recorder timeout, #9 backup path | web/src/lib/recorder.ts, routes/backup.ts (+tests) | RUNNING |
+
+#3 (Node 26/jsdom) is a duplicate of P0.5/AM-047: not dispatched. Gates run on
+pinned Node 24.19.0. Next: on each return verify, independent review, commit.
+
 ## Closeout — final review saved; P3.6 BLOCKED, bug fixes queued
 
 The final worker ebb4f00f completed and was archived after verifying its saved
