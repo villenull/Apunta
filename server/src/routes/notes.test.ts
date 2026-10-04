@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { NoteListResponseSchema, NoteSchema, type Note, type NoteFormat, type Patient } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -18,6 +21,14 @@ beforeEach(async () => {
 afterEach(async () => {
   await harness.close();
 });
+
+/** A synthetic kept recording on disk, as `keep_audio=true` would leave it. */
+function writeKeptAudio(filename: string): string {
+  mkdirSync(harness.config.audioDir, { recursive: true });
+  const path = join(harness.config.audioDir, filename);
+  writeFileSync(path, 'RIFF....WAVE');
+  return path;
+}
 
 describe('POST /api/notes', () => {
   it('creates a draft titled after its format', async () => {
@@ -300,6 +311,55 @@ describe('DELETE /api/notes/:id', () => {
     expect(
       harness.db.prepare('SELECT COUNT(*) AS count FROM chat_messages WHERE note_id = ?').get(note.id),
     ).toEqual({ count: 0 });
+  });
+
+  it('removes the note’s kept recording and leaves every other file alone', async () => {
+    const note = await seedNote(harness.app, patient.id, format.id);
+    createTranscript(harness.db, {
+      note_id: note.id,
+      source: 'audio',
+      raw_text: 'Synthetic sample transcript.',
+      audio_filename: 'note.wav',
+    });
+    const mine = writeKeptAudio('note.wav');
+
+    // A second note's recording and a crash-orphaned file must survive.
+    const other = await seedNote(harness.app, patient.id, format.id);
+    createTranscript(harness.db, {
+      note_id: other.id,
+      source: 'audio',
+      raw_text: 'Synthetic sample transcript.',
+      audio_filename: 'other.wav',
+    });
+    const theirs = writeKeptAudio('other.wav');
+    const orphan = writeKeptAudio('orphan.wav');
+
+    const response = await harness.app.inject({ method: 'DELETE', url: `/api/notes/${note.id}` });
+
+    expect(response.statusCode).toBe(204);
+    expect(existsSync(mine)).toBe(false);
+    expect(existsSync(theirs)).toBe(true);
+    expect(existsSync(orphan)).toBe(true);
+  });
+
+  it('still deletes the rows when a stored filename is not a safe basename', async () => {
+    const note = await seedNote(harness.app, patient.id, format.id);
+    createTranscript(harness.db, {
+      note_id: note.id,
+      source: 'audio',
+      raw_text: 'Synthetic sample transcript.',
+      audio_filename: '../escape.wav',
+    });
+    const outside = join(harness.dataDir, 'escape.wav');
+    writeFileSync(outside, 'RIFF....WAVE');
+
+    const response = await harness.app.inject({ method: 'DELETE', url: `/api/notes/${note.id}` });
+
+    expect(response.statusCode).toBe(204);
+    expect(existsSync(outside)).toBe(true);
+    expect(harness.db.prepare('SELECT COUNT(*) AS count FROM notes WHERE id = ?').get(note.id)).toEqual({
+      count: 0,
+    });
   });
 
   it('404s an unknown id', async () => {

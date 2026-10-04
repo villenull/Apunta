@@ -8,6 +8,7 @@ import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 
+import { audioDirFor, collectAudioFilenames, removeAudioFiles } from '../audio/retention.js';
 import { getPatientGroup } from '../db/patientGroups.js';
 import { createPatient, deletePatient, getPatient, listPatients, updatePatient } from '../db/patients.js';
 import { notFound } from '../http/errors.js';
@@ -74,10 +75,25 @@ export function registerPatientRoutes(app: FastifyInstance, db: Database): void 
     return updated;
   });
 
-  /** Cascades: the patient's notes, their transcripts and their refine and brainstorm chat go too. */
+  /**
+   * Cascades: the patient's notes, their transcripts and their refine and
+   * brainstorm chat go too, along with every kept recording those transcripts
+   * point at.
+   */
   app.delete('/api/patients/:id', async (request, reply) => {
     const { id } = parseParams(IdParamsSchema, request.params);
+    // Read the recordings before the cascade removes the rows that name them.
+    const filenames = collectAudioFilenames(db, { kind: 'patient', id });
     if (!deletePatient(db, id)) throw notFound('errors.not_found.patient');
+    // As for a note: the delete stands, and a file left behind is logged as a
+    // count only — never by a name that is opaque, possibly sensitive data.
+    const removal = await removeAudioFiles(audioDirFor(db), filenames);
+    if (removal.failed > 0 || removal.rejected > 0) {
+      request.log.warn(
+        { failed: removal.failed, rejected: removal.rejected },
+        'kept audio could not be removed after patient delete',
+      );
+    }
     return reply.code(204).send();
   });
 }

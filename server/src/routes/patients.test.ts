@@ -1,6 +1,10 @@
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { PatientListResponseSchema, PatientSchema, type Patient } from '@apunta/shared';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { createTranscript } from '../db/transcripts.js';
 import { createTestApp, seedFormat, seedNote, seedPatient, type TestApp } from '../test/harness.js';
 
 let harness: TestApp;
@@ -12,6 +16,14 @@ beforeEach(async () => {
 afterEach(async () => {
   await harness.close();
 });
+
+/** A synthetic kept recording on disk, as `keep_audio=true` would leave it. */
+function writeKeptAudio(filename: string): string {
+  mkdirSync(harness.config.audioDir, { recursive: true });
+  const path = join(harness.config.audioDir, filename);
+  writeFileSync(path, 'RIFF....WAVE');
+  return path;
+}
 
 describe('POST /api/patients', () => {
   it('creates a patient and answers 201 with a schema-valid body', async () => {
@@ -171,6 +183,45 @@ describe('DELETE /api/patients/:id', () => {
 
     const gonePatient = await harness.app.inject({ method: 'GET', url: `/api/patients/${patient.id}` });
     expect(gonePatient.statusCode).toBe(404);
+  });
+
+  it('removes every kept recording the patient’s notes reference, and no others', async () => {
+    const format = await seedFormat(harness.app);
+    const patient = await seedPatient(harness.app, 'John Smith');
+    const first = await seedNote(harness.app, patient.id, format.id);
+    const second = await seedNote(harness.app, patient.id, format.id);
+    createTranscript(harness.db, {
+      note_id: first.id,
+      source: 'audio',
+      raw_text: 'Synthetic sample transcript.',
+      audio_filename: 'first.wav',
+    });
+    createTranscript(harness.db, {
+      note_id: second.id,
+      source: 'audio',
+      raw_text: 'Synthetic sample transcript.',
+      audio_filename: 'second.wav',
+    });
+
+    const other = await seedPatient(harness.app, 'Maria Ruiz');
+    const otherNote = await seedNote(harness.app, other.id, format.id);
+    createTranscript(harness.db, {
+      note_id: otherNote.id,
+      source: 'audio',
+      raw_text: 'Synthetic sample transcript.',
+      audio_filename: 'other.wav',
+    });
+
+    const firstPath = writeKeptAudio('first.wav');
+    const secondPath = writeKeptAudio('second.wav');
+    const otherPath = writeKeptAudio('other.wav');
+
+    const response = await harness.app.inject({ method: 'DELETE', url: `/api/patients/${patient.id}` });
+
+    expect(response.statusCode).toBe(204);
+    expect(existsSync(firstPath)).toBe(false);
+    expect(existsSync(secondPath)).toBe(false);
+    expect(existsSync(otherPath)).toBe(true);
   });
 
   it('404s an unknown id', async () => {

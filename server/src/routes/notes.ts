@@ -7,6 +7,7 @@ import {
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
 
+import { audioDirFor, collectAudioFilenames, removeAudioFiles } from '../audio/retention.js';
 import { getFormat } from '../db/formats.js';
 import {
   createNote,
@@ -96,10 +97,23 @@ export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
     throw notFound('errors.not_found.note');
   });
 
-  /** Cascades to the note's transcripts and chat messages. */
+  /** Cascades to the note's transcripts and chat messages, and its kept recording. */
   app.delete('/api/notes/:id', async (request, reply) => {
     const { id } = parseParams(IdParamsSchema, request.params);
+    // Read the recordings the transcript rows point at before the cascade
+    // removes them; afterwards nothing says which files belonged to the note.
+    const filenames = collectAudioFilenames(db, { kind: 'notes', ids: [id] });
     if (!deleteNote(db, id)) throw notFound('errors.not_found.note');
+    // The rows are gone either way. A file that will not delete is a leak to
+    // report, never a reason to fail a delete that has already happened.
+    const removal = await removeAudioFiles(audioDirFor(db), filenames);
+    if (removal.failed > 0 || removal.rejected > 0) {
+      // Shape only: a filename is opaque and may carry no content into a log.
+      request.log.warn(
+        { failed: removal.failed, rejected: removal.rejected },
+        'kept audio could not be removed after note delete',
+      );
+    }
     return reply.code(204).send();
   });
 
