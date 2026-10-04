@@ -1,0 +1,15 @@
+P3.6 attempt 3 CODE/UNIT scoped checks
+date: 2026-10-04T11:09:10-06:00
+node: v24.19.0
+cwd: repo root
+
+$ node --check scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ npx eslint scripts/v2/tauri-e2e-smoke.test.mjs docs/v2/evidence/P3.6/attempt-3/implementation/helper-tests.mjs
+exit=0
+
+$ npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs docs/v2/evidence/P3.6/attempt-3/implementation/helper-tests.mjs
+Checking formatting...
+All matched files use Prettier code style!
+exit=0

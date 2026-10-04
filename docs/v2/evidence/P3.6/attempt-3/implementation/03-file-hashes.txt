@@ -1,0 +1,11 @@
+P3.6 attempt 3 file hashes
+date: 2026-10-04T11:09:10-06:00
+ca8bc468ae15717ca14cdacf6848736672877448ced7d760066f756d4018314e  scripts/v2/tauri-e2e-smoke.test.mjs
+e2254ce7cfa8c6664ebdc813d2b0c5ef9844d855928ed58c4d3f668f7cbcf979  docs/v2/evidence/P3.6/attempt-3/implementation/helper-tests.mjs
+  2789 scripts/v2/tauri-e2e-smoke.test.mjs
+   372 docs/v2/evidence/P3.6/attempt-3/implementation/helper-tests.mjs
+  3161 total
+
+baseline candidate 9321861, for comparison:
+7b7cd94801513be59d0e77a7ad036e767f5f1a4483e5bef94804fa15e90671f0  -
+1757

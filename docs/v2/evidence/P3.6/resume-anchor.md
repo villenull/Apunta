@@ -1,4 +1,4 @@
-# P3.6 resume anchor — attempt 2 (CODE/UNIT phase)
+# P3.6 resume anchor — attempts 2 and 3 (CODE/UNIT phases)
 
 This file is the first thing a fresh session reads. It records what is done,
 what is open, and what the next action is. Created and updated by every attempt.
@@ -8,11 +8,12 @@ what is open, and what the next action is. Created and updated by every attempt.
 | Field | Value |
 | --- | --- |
 | Card | P3.6 Linux AppImage integration |
-| Attempt | 2 of 3 (root-allocated after attempt 1's V0 was supervisor-killed mid-bundle) |
+| Attempt | **3 of 3** — the current one; attempt 2's phase is the source-reviewed candidate this file also records |
 | Base commit (dispatch `- Base commit:` header, read by hand per S1) | `62abb28` |
 | Dispatch | `docs/v2/state/dispatch/P3.6.md`, attempt 2 of 3, port 7879 |
 | Sandbox port | 7879 (never 7717, HS-1) |
-| HEAD when this phase ran | `b9a9e82` |
+| HEAD when attempt 3's phase ran | `c681994` |
+| Repaired harness (attempt 3) | `scripts/v2/tauri-e2e-smoke.test.mjs`, 2789 lines, sha256 `ca8bc468ae15717ca14cdacf6848736672877448ced7d760066f756d4018314e` (attempt 2's reviewed candidate was `7b7cd948…71f0`, 1757 lines) |
 
 ## Artefact provenance
 
@@ -33,7 +34,7 @@ bytes (P3.4's was `d7fb91513e8c68b0a2e74628e7643e3079a60946866110979cb1815022d23
 | V0 | **PASS** (exit 0) | `attempt-2/build-preparation/05-v0-run.txt` | producer + `tauri:build:test` + identity guard; build worker's lease |
 | V1 | **NOT RUN** | — | production build; not this phase |
 | V2 | **NOT RUN** (anchor holds) | `attempt-2/build-preparation/02-s1-anchors.txt` | `diff -r` icons empty; recorded as S1 anchor, not executed as a row |
-| V3 | **NOT RUN** | — | native UI; gated on source review of the harness |
+| V3 | **NOT RUN** | — | native UI. The harness was **repaired in attempt 3** against the source review's D1–D6/R1–R7 and is now awaiting a **fresh independent source IR**. `attempt-3/implementation/04-defect-repair-map.md` |
 | V4 | **NOT RUN** | — | AppImage extraction; not this phase |
 | V5 | **NOT RUN** | — | reads P3.3 evidence; not this phase |
 
@@ -52,6 +53,16 @@ set's input paths predates V0. The freshness predicate
 (`git diff --name-only 62abb28...HEAD -- <Rule B set>`) is therefore empty and a
 resumed session may not claim V0 was needed.
 
+**It is now executable, not prose.** `ruleBFreshness()` in the repaired harness
+runs both halves — that diff plus `git status --porcelain` over the same set,
+with the base `62abb28` copied out of the dispatch header by hand and three ASCII
+full stops — **and** the fresh-build anchor, a source walk over the same set
+compared with the AppImage's own mtime. V3 refuses to launch on a moved input or
+an older artefact. Attempt 3 ran the predicate against real git and read: both
+git calls exit 0, `moved` is empty, the newest Rule B input is
+`server/src/**`-side and not under `src-tauri/target/`
+(`attempt-3/implementation/02-helper-tests.txt`).
+
 ## Whisper candidate (A06, P3.4's S0 — precondition, not this card's work)
 
 | Field | Value |
@@ -67,7 +78,28 @@ Not run. V5 asserts P3.3's fatal-mode evidence
 (`docs/v2/evidence/P3.3/V4-fatal.md`) carries `Status: **PASS**` and both
 lifecycle-code lines; it reads committed files and starts nothing.
 
-## What this phase built (CODE/UNIT, outside Rule B)
+## What attempt 3 changed (CODE/UNIT, outside Rule B)
+
+The source review (`docs/v2/state/reviews/P3.6-impl2-source.md`) returned
+**CHANGES REQUESTED, 13 findings**. All thirteen are answered in the repaired
+harness: the six defects (D1 self-proving API facts, D2 an ownership baseline
+that guaranteed a FAIL, D3 no signal teardown, D4 a vacuous bundle scan, D5
+`NOT RUN` exiting 0, D6 no freshness predicate) and the seven risks (R1 cluster
+ambiguity, R2 the copy assertion, R3 the physical microphone, R4 zero windows,
+R5 import running `main()`, R6 undeclared tools, R7 a redundant `xvfb-run`).
+Scope of the repair in one line: **every flow now drives a real UI action and
+asserts a pane-only label read offline by `tesseract` plus the fact that action
+produced**, every click target is refused when it is not unique on screen, every
+one of the eleven flows is recorded on every path, and any `NOT RUN` exits 4.
+Map: `attempt-3/implementation/04-defect-repair-map.md`. Scoped checks and 20
+synthetic helper tests: `attempt-3/implementation/01-scoped-checks.txt`,
+`02-helper-tests.txt`.
+
+**No native call was made in attempt 3.** No AppImage, display, window, audio
+device, port, inference or build; the V0 AppImage was re-hashed, not rebuilt.
+D1 and D3 are repaired but unproven by any run.
+
+## What attempt 2 built (CODE/UNIT, outside Rule B)
 
 `scripts/v2/tauri-e2e-smoke.test.mjs` (new, 1757 lines) — the V3 harness. One
 mode `smoke` (any other argument exits 2). It resolves the test-identity AppImage
@@ -89,5 +121,10 @@ Implementation evidence: `attempt-2/implementation/`.
 
 ## nextAllowedAction
 
-Source-review `scripts/v2/tauri-e2e-smoke.test.mjs` against the V3 row, then run
-V3 (and V1, V4, V5) in the card's order under `sandbox.mjs env --port 7879`.
+A **fresh independent source review** of the repaired
+`scripts/v2/tauri-e2e-smoke.test.mjs` (sha256 `ca8bc468…314e`) against the V3 row
+and against attempt 2's review, D1–D6/R1–R7 — not the row itself. If it clears,
+run V3 (and V1, V4, V5) in the card's order under `sandbox.mjs env --port 7879`.
+This is attempt 3 of 3: a fourth is not this session's to take, so if the review
+returns further changes the honest record is the list of what remains, not a
+waived criterion.

@@ -41,11 +41,22 @@
  * produces, never assumed.
  *
  * **Facts, not pixels.** A screenshot is evidence and never the assertion. Each
- * flow also reads the fact that proves it — a format row, a note row with its
- * status, a plan, a backup manifest — over the loopback origin the shell is
- * confined to. The one exception is the Copied control, whose feedback is
- * on-screen state only; the harness asserts the screenshot and claims nothing
- * about the host clipboard.
+ * flow drives a **real UI action** and then reads **two** things that only exist
+ * once that action landed: a **pane-only label** read out of the screen by
+ * offline OCR (`tesseract`, already installed, no network, no page injection),
+ * and the **resulting application fact** over the loopback origin the shell is
+ * confined to. An API read that is true before the action (a list that already
+ * has a row, a `{ plan: null }` envelope, an always-200 `GET`) proves nothing
+ * about the screen and is never the assertion: every flow's fact must be
+ * produced by the action it drives. The Copied control's feedback is on-screen
+ * state only — the harness asserts the control's own label changed to
+ * `Copied` and claims nothing about the host clipboard.
+ *
+ * **Grounding is fail-closed.** Every click is issued at a measured coordinate:
+ * either the centre of a uniquely identified accent cluster, or the centre of a
+ * label phrase that OCR found **exactly once** on the screen. Zero matches or
+ * more than one match is not a guess — the flow records `NOT RUN` with the
+ * count it saw.
  *
  * **Containment, all five asserted, none weakened to pass:** no process from
  * the run remains; no second `apunta.lock`, `apunta.db`, `-wal` or `-shm`;
@@ -55,16 +66,22 @@
  *
  * **The microphone.** The capture flow reuses P3.5's approved mechanism: a
  * fabricated recording is played into a virtual sink whose remap source is made
- * the default capture device, and the owner's physical microphone is never read
- * — a stream on it is a stop, not a warning. The teardown restores the
- * remembered default and unloads both modules on every exit path.
+ * the default capture device, and the owner's physical microphone is never read.
+ * The teardown restores the remembered default and unloads both modules on
+ * every exit path, **including signals**: `SIGINT`, `SIGTERM` and `SIGHUP` are
+ * trapped and `exit` is trapped, each running the synchronous teardown, and the
+ * teardown is installed before the first module is loaded. While the app
+ * records, the harness resolves `pactl list short source-outputs` through the
+ * source table (P3.5's mechanism, including its `-` client column) and asserts
+ * no stream is attached to the owner's real microphone; an unresolvable row is
+ * a stop, not "not the microphone".
  *
  * No `pkill`, ever (C-ISO@1 rule 7): every process this file stops is one it
  * started, by pid.
  */
 
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -85,10 +102,55 @@ const P34_GATE_STRING = 'p3.4-observe';
 /** The window title the shell gives the app window (P3.3's read). */
 const APP_WINDOW_NAME = 'Apunta';
 
+/**
+ * The eleven flows, in the card's order. Every one is recorded in the summary
+ * on every path, including a path that returns before reaching it: a flow with
+ * no recorded outcome is `NOT RUN`, never a pass.
+ */
+const FLOWS = [
+  'onboarding',
+  'capture',
+  'draft',
+  'refine',
+  'publish+copy',
+  'patient list',
+  'plan',
+  'briefing',
+  'brainstorm',
+  'settings',
+  'backup',
+];
+
+/**
+ * Rule B's set, restated from the dispatch's Fixed decision, and the base commit
+ * copied out of the dispatch header **by hand** (step S1): the header's
+ * `- Base commit:` line, never a token in the card's prose. The separator is
+ * three ASCII full stops.
+ */
+const RULE_B_BASE = '62abb28';
+const RULE_B_PATHS = [
+  'server/src',
+  'shared/src',
+  'server/package.json',
+  'server/migrations',
+  'src-tauri',
+  'web/src',
+  'web/public',
+  'web/index.html',
+  'web/vite.config.ts',
+  'web/package.json',
+  'package.json',
+  'package-lock.json',
+];
+/** Rule B's exclusions: build outputs and generated sources are never inputs. */
+const RULE_B_EXCLUDED = ['src-tauri/target/', 'src-tauri/gen/'];
+
 /** The prototype's sample person (HS-8). Created through the API, in the sandbox. */
 const PATIENT_NAME = 'John Smith';
 
 const results = [];
+const flowOutcomes = new Map();
+const blockedResults = [];
 
 function pass(name, detail = '') {
   results.push({ name, ok: true });
@@ -110,36 +172,135 @@ function check(name, condition, detail) {
   return false;
 }
 
+/** A named precondition this machine does not meet. Never a pass, never silent. */
+function blocked(name, detail) {
+  blockedResults.push({ name, detail });
+  results.push({ name, ok: false, blocked: true });
+  process.stdout.write(`BLOCKED ${name}: ${detail}\n`);
+  process.exitCode = 3;
+}
+
 /** A flow that could not run, with its cause. Never a PASS. */
 function notRun(name, reason) {
   results.push({ name, ok: true, notRun: true });
   process.stdout.write(`NOT RUN ${name}: ${reason}\n`);
 }
 
-// ------------------------------------------------------------- preconditions
-
-/** The port `sandbox.mjs env` assigned. Never substituted. */
-const port = Number(process.env['APUNTA_PORT']);
-const dataDir = process.env['APUNTA_DATA_DIR'];
-const runId = process.env['APUNTA_TEST_RUN_ID'];
-
-if (!Number.isInteger(port) || !dataDir || !runId) {
-  process.stderr.write(
-    'tauri-e2e-smoke: source the sandbox environment first:\n' +
-      '  node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-…env && . /tmp/apunta-v2-…env\n' +
-      'APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required.\n',
-  );
-  process.exit(2);
+/**
+ * The recorded outcome of one of the eleven named flows.
+ *
+ * `PASS` is only reachable through `requireFlow`, which is called with the
+ * outcome of a real action plus the two facts that prove the screen was
+ * reached. Everything else is `FAIL` or `NOT RUN`.
+ */
+function recordFlow(flow, outcome, detail) {
+  flowOutcomes.set(flow, { outcome, detail });
 }
 
-// The whole app must be the fake-AI app (CLAUDE.md rule 3): the flows are
-// reproducible with zero AI tooling installed, and the draft/refine steps are
-// the fake provider's, not a real model's.
-if (process.env['APUNTA_FAKE_AI'] !== '1') {
-  process.stderr.write(
-    'tauri-e2e-smoke: APUNTA_FAKE_AI=1 is required so the flows run against the fake provider\n',
-  );
-  process.exit(2);
+function requireFlow(flow, what, condition, detail) {
+  if (condition) {
+    recordFlow(flow, 'PASS', what);
+    pass(`${flow} ${what}`, detail);
+    return true;
+  }
+  recordFlow(flow, 'FAIL', what);
+  fail(`${flow} ${what}`, detail);
+  return false;
+}
+
+/** Marks the remaining flows `NOT RUN` with one cause, on an early abort. */
+function notRunRemaining(flow, reason) {
+  for (const name of FLOWS) {
+    if (flowOutcomes.has(name)) continue;
+    recordFlow(name, 'NOT RUN', reason);
+    notRun(name, reason);
+  }
+}
+
+// ------------------------------------------------------------- preconditions
+
+/**
+ * The sandbox environment `sandbox.mjs env` exported, read lazily.
+ *
+ * Read lazily and not at import time so importing this module for a helper probe
+ * neither exits the process nor reads the environment as a side effect.
+ */
+function sandboxEnv() {
+  const port = Number(process.env['APUNTA_PORT']);
+  const dataDir = process.env['APUNTA_DATA_DIR'];
+  const runId = process.env['APUNTA_TEST_RUN_ID'];
+  if (!Number.isInteger(port) || !dataDir || !runId) {
+    throw new Error(
+      'source the sandbox environment first: node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-….env && . /tmp/apunta-v2-….env ' +
+        '(APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required)',
+    );
+  }
+  return { port, dataDir, runId };
+}
+
+/** The port the sandbox assigned. Never substituted. */
+function sandboxPort() {
+  return sandboxEnv().port;
+}
+
+/**
+ * The preconditions, checked in `main` and reported as named blocks.
+ *
+ * Each missing thing is named — the tool, the variable, the flag — so a machine
+ * that cannot run this row says which tool it lacks instead of failing later
+ * with a generic image-read failure.
+ */
+function preconditions() {
+  let env;
+  try {
+    env = sandboxEnv();
+  } catch (error) {
+    process.stderr.write(`tauri-e2e-smoke: ${String(error.message ?? error)}\n`);
+    return false;
+  }
+  if (env.port === 7717) {
+    process.stderr.write('tauri-e2e-smoke: APUNTA_PORT is 7717, the live instance (HS-1). Refusing.\n');
+    return false;
+  }
+  // The whole app must be the fake-AI app (CLAUDE.md rule 3): the flows are
+  // reproducible with zero AI tooling installed, and the draft/refine steps are
+  // the fake provider's, not a real model's.
+  if (process.env['APUNTA_FAKE_AI'] !== '1') {
+    process.stderr.write(
+      'tauri-e2e-smoke: APUNTA_FAKE_AI=1 is required so the flows run against the fake provider\n',
+    );
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Every binary this file shells out to, named.
+ *
+ * `xdotool` drives the UI, `import`/`identify`/`convert`/`compare` read the
+ * captures, `tesseract` reads the labels off them offline, `pactl` owns the
+ * virtual-audio containment and `paplay` plays the fixture into the virtual
+ * sink only. A missing one is a named `BLOCKED`, never a generic failure later.
+ */
+const REQUIRED_TOOLS = [
+  'xdotool',
+  'import',
+  'identify',
+  'convert',
+  'compare',
+  'tesseract',
+  'pactl',
+  'paplay',
+];
+
+function preflightTools() {
+  let allPresent = true;
+  for (const tool of REQUIRED_TOOLS) {
+    if (firstOnPath([tool]) !== undefined) continue;
+    blocked(`tool ${tool} is absent on this machine`, 'named preflight: install it or V3 is NOT RUN');
+    allPresent = false;
+  }
+  return allPresent;
 }
 
 /** `<sandbox>` for every run-folder path, so committed evidence carries no
@@ -266,14 +427,22 @@ function resolveAppImage() {
 /**
  * The display, chosen at run time and printed rather than left to the reader.
  *
- * `xvfb-run -a` when it is installed, the desktop session otherwise. The app
- * and every `xdotool` probe must share one display, so when a headless display
- * is needed the **harness itself** re-executes under `xvfb-run -a` and the app
- * is then launched directly.
+ * **An inherited `DISPLAY` is honoured.** V3's command already wraps this
+ * harness in `xvfb-run -a` when the binary is present, and that display is the
+ * one the card chose: re-wrapping it would discard it and start a second
+ * headless server for no reason. So the harness only supplies a display when it
+ * has none — `xvfb-run -a` when that binary is installed, the desktop session
+ * otherwise — and the app and every `xdotool` probe share whichever it ends up
+ * on.
  */
 function ensureDisplay() {
+  const inherited = process.env['DISPLAY'];
+  if (inherited !== undefined && inherited !== '') {
+    process.stdout.write(`  display: the inherited X display ${inherited}\n`);
+    return null;
+  }
   if (process.env['APUNTA_V2_SMOKE_HARNESS_XVFB'] === '1') {
-    process.stdout.write(`  display: the inherited X display ${String(process.env['DISPLAY'])}\n`);
+    process.stdout.write('  display: the xvfb-run this harness started\n');
     return null;
   }
   const xvfbRun = firstOnPath(['xvfb-run']);
@@ -319,10 +488,10 @@ function launchApp(appImage) {
       WAYLAND_DISPLAY: '',
       GDK_SCALE: '1',
       GDK_DPI_SCALE: '1',
-      XDG_CACHE_HOME: join(dataDir, '..', 'cache'),
-      XDG_CONFIG_HOME: join(dataDir, '..', 'config'),
-      XDG_DATA_HOME: join(dataDir, '..', 'xdg'),
-      HOME: join(dataDir, '..', 'home'),
+      XDG_CACHE_HOME: join(sandboxEnv().dataDir, '..', 'cache'),
+      XDG_CONFIG_HOME: join(sandboxEnv().dataDir, '..', 'config'),
+      XDG_DATA_HOME: join(sandboxEnv().dataDir, '..', 'xdg'),
+      HOME: join(sandboxEnv().dataDir, '..', 'home'),
       XDG_BACKEND: 'x11',
       GDK_BACKEND: 'x11',
     },
@@ -492,15 +661,10 @@ async function imageSize(file) {
   return { width: Number(match[1]), height: Number(match[2]) };
 }
 
-/** The floor for "this capture has real content in it", not a target. */
-const RENDER_MIN_COLOURS = 8;
-
-/** The number of distinct colours in a capture, or `null` if unreadable. */
-async function distinctColours(file) {
-  const counted = await spawnAsync('convert', [file, '-format', '%k', 'info:']);
-  const value = Number(String(counted.stdout).trim());
-  return Number.isInteger(value) ? value : null;
-}
+// A raw colour count is deliberately absent: "the screenshot holds N distinct
+// colours" is true of any rendered window, so it was never able to tell a
+// reached screen from an unreached one. Every visual assertion in this file is
+// a specific label or a control's own changed state, read by `tesseract`.
 
 /**
  * The frame-to-client relationship, **measured**, never assumed.
@@ -657,6 +821,180 @@ async function findClusters(screenshot, hex, { fuzz = 12, grid = 160 } = {}) {
 }
 
 /**
+ * The clickable clusters of one colour, largest first — and which of them may
+ * be clicked at all.
+ *
+ * A screen with two accent buttons of the same size has no "largest" one that is
+ * *the* target, so `pickPrimaryCluster` refuses: the top cluster must beat the
+ * runner-up by a real margin, or the answer is `null` and the caller records
+ * `NOT RUN`. Clicking the biggest accent on a screen that happens to have two
+ * is how a flow records a pass for the wrong control.
+ */
+const CLUSTER_MARGIN = 2;
+
+function pickPrimaryCluster(clusters, what) {
+  if (clusters.length === 0) return { cluster: null, why: 'no accent cluster was found in the screenshot' };
+  const [top, second] = clusters;
+  if (second !== undefined && top.cells < CLUSTER_MARGIN * second.cells) {
+    return {
+      cluster: null,
+      why:
+        `the screenshot holds ${String(clusters.length)} accent clusters and the largest (${String(top.cells)} cells) ` +
+        `is under ${String(CLUSTER_MARGIN)}x the runner-up (${String(second.cells)} cells), so ${what} is ambiguous ` +
+        'and no cluster is clicked',
+    };
+  }
+  return { cluster: top, why: `the largest accent cluster (${String(top.cells)} cells) is unambiguous` };
+}
+
+/**
+ * The words on a screenshot, read **offline** by `tesseract`.
+ *
+ * Nothing is injected into the page and nothing is fetched: this is OCR over a
+ * PNG the harness itself captured, which is how a pane-only label is located
+ * and asserted without an observation hook the unflagged build does not carry.
+ * Each word keeps its own rectangle, so a located label becomes a real measured
+ * coordinate rather than a guess.
+ */
+async function screenWords(file) {
+  const read = await spawnAsync('tesseract', [file, 'stdout', 'tsv'], { killAfterMs: 60_000 });
+  if (read.code !== 0) return null;
+  const words = [];
+  for (const line of read.stdout.split('\n')) {
+    const columns = line.split('\t');
+    if (columns.length < 12) continue;
+    const level = Number(columns[0]);
+    if (level !== 5) continue;
+    const left = Number(columns[6]);
+    const top = Number(columns[7]);
+    const width = Number(columns[8]);
+    const height = Number(columns[9]);
+    const confidence = Number(columns[10]);
+    const text = (columns[11] ?? '').trim();
+    if (text === '') continue;
+    if (![left, top, width, height, confidence].every((value) => Number.isInteger(value))) continue;
+    words.push({
+      text,
+      left,
+      top,
+      width,
+      height,
+      confidence,
+      line: Number(columns[4]),
+      order: Number(columns[5]),
+    });
+  }
+  if (words.length === 0) return null;
+  return words;
+}
+
+/**
+ * Every place `phrase` appears in the word list, as one box per occurrence.
+ *
+ * Words are compared case-insensitively and in reading order, and a match must
+ * cover the whole phrase. Two matches for the same phrase is **not** a choice
+ * this file gets to make: the caller fails closed on it.
+ */
+function findPhraseBoxes(words, phrase) {
+  const wanted = phrase
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((part) => part !== '');
+  const found = [];
+  for (let start = 0; start + wanted.length <= words.length; start += 1) {
+    const slice = words.slice(start, start + wanted.length);
+    const sameLine = slice.every((word) => word.line === slice[0].line);
+    if (!sameLine) continue;
+    const ordered = slice.every((word, index) => index === 0 || word.order === slice[index - 1].order + 1);
+    if (!ordered) continue;
+    if (!slice.every((word, index) => word.text.toLowerCase().replace(/[.,]$/, '') === wanted[index]))
+      continue;
+    const left = Math.min(...slice.map((word) => word.left));
+    const top = Math.min(...slice.map((word) => word.top));
+    const right = Math.max(...slice.map((word) => word.left + word.width));
+    const bottom = Math.max(...slice.map((word) => word.top + word.height));
+    found.push({ phrase, x: left, y: top, w: right - left, h: bottom - top });
+  }
+  return found;
+}
+
+/**
+ * The one place `phrase` is on screen, or `null` with the reason.
+ *
+ * Zero matches and two matches are both refused: a control is clicked only where
+ * its label identifies it uniquely, and a pane is confirmed only where its
+ * pane-only label identifies it uniquely.
+ */
+function groundPhrase(words, phrase) {
+  const boxes = findPhraseBoxes(words, phrase);
+  if (boxes.length === 0)
+    return { box: null, why: `the label ${JSON.stringify(phrase)} is not on the screen` };
+  if (boxes.length > 1) {
+    return {
+      box: null,
+      why:
+        `the label ${JSON.stringify(phrase)} appears ${String(boxes.length)} times on the screen, so its target is ` +
+        'ambiguous and nothing is clicked at it',
+    };
+  }
+  return { box: boxes[0], why: `the label ${JSON.stringify(phrase)} appears exactly once` };
+}
+
+/**
+ * Waits for a pane-only label to appear on a fresh capture of the window.
+ *
+ * Every wait re-captures and re-reads the screen, so what it returns is what
+ * the app is showing now, not a picture taken earlier.
+ */
+async function waitForScreenLabel(window, phrase, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let lastWhy = 'the window capture failed';
+  for (;;) {
+    const shot = await captureWindow(window.id);
+    if (shot !== null) {
+      const words = await screenWords(shot);
+      if (words === null) {
+        lastWhy = `tesseract read no words out of ${JSON.stringify(phrase === '' ? '' : phrase)}'s capture`;
+      } else {
+        const grounded = groundPhrase(words, phrase);
+        if (grounded.box !== null) return { seen: true, shot, box: grounded.box, words };
+        lastWhy = grounded.why;
+      }
+    }
+    if (Date.now() >= deadline) return { seen: false, shot, box: null, words: null, why: lastWhy };
+    await sleep(400);
+  }
+}
+
+/**
+ * Clicks the control whose label appears exactly once on screen, at the label's
+ * own measured centre. A refused grounding is the caller's `NOT RUN`.
+ */
+async function clickScreenLabel(window, offset, phrase, what) {
+  const shot = await captureWindow(window.id);
+  if (shot === null) return { clicked: false, why: 'the window capture failed' };
+  const words = await screenWords(shot);
+  if (words === null) return { clicked: false, why: 'tesseract read no words out of the window capture' };
+  const grounded = groundPhrase(words, phrase);
+  if (grounded.box === null) return { clicked: false, why: grounded.why };
+  const inside =
+    grounded.box.x >= 0 &&
+    grounded.box.y >= 0 &&
+    grounded.box.x + grounded.box.w <= window.width &&
+    grounded.box.y + grounded.box.h <= window.height;
+  if (!inside) {
+    return {
+      clicked: false,
+      why: `the measured label box ${JSON.stringify(grounded.box)} does not lie inside the ${String(window.width)}x${String(window.height)} window`,
+    };
+  }
+  const cx = window.x + offset.dx + Math.round(grounded.box.x + grounded.box.w / 2);
+  const cy = window.y + offset.dy + Math.round(grounded.box.y + grounded.box.h / 2);
+  const clicked = await clickNative(cx, cy, what);
+  return { clicked, why: grounded.why };
+}
+
+/**
  * A real pointer click at a native-coordinate point, focused first.
  *
  * `xdotool click` is an XTEST event delivered to the focused window, and
@@ -743,7 +1081,7 @@ async function typeText(text, what) {
 
 async function apiGet(path) {
   try {
-    const response = await fetch(`http://127.0.0.1:${String(port)}${path}`, {
+    const response = await fetch(`http://127.0.0.1:${String(sandboxPort())}${path}`, {
       signal: AbortSignal.timeout(5000),
     });
     const text = await response.text();
@@ -761,7 +1099,7 @@ async function apiGet(path) {
 
 async function apiPost(path, payload) {
   try {
-    const response = await fetch(`http://127.0.0.1:${String(port)}${path}`, {
+    const response = await fetch(`http://127.0.0.1:${String(sandboxPort())}${path}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload ?? {}),
@@ -826,7 +1164,7 @@ async function healthRunId() {
 async function waitForOwnership(timeoutMs, what) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
-    if ((await healthRunId()) === runId) return true;
+    if ((await healthRunId()) === sandboxEnv().runId) return true;
     if (Date.now() >= deadline) {
       fail(`${what}: ownership`, `testRunId never matched (last saw ${String(await healthRunId())})`);
       return false;
@@ -871,7 +1209,7 @@ const CSP_STYLE_SRC_ATTR = "style-src-attr 'unsafe-inline'";
 
 async function assertCsp(what) {
   try {
-    const response = await fetch(`http://127.0.0.1:${String(port)}/`, {
+    const response = await fetch(`http://127.0.0.1:${String(sandboxPort())}/`, {
       signal: AbortSignal.timeout(5000),
     });
     const contentType = response.headers.get('content-type') ?? '';
@@ -926,28 +1264,57 @@ async function assertCsp(what) {
 // ------------------------------------------------- observation containment --
 
 /**
- * Zero occurrences of P3.4's marker path and gate string in the shipped bundle.
+ * The observation channel is gone: zero occurrences of P3.4's marker path and
+ * gate string in the card's own `web/dist/assets/*.js`.
  *
- * The unflagged build has no observation hook; this is the assertion that says
- * so about the bundle the flows ran against, read from the build output the
- * producer wrote.
+ * **Fail-closed.** A missing assets directory, or one holding no `.js` file at
+ * all, is not "zero occurrences" — it is an unread bundle, and an unread bundle
+ * must never report the channel gone. This is the same refusal the security
+ * sibling makes when its `countInShippedWebDist` cannot find its directory.
  */
 function observationChannelGone() {
-  const assetsDir = join(repoRoot, 'build', 'linux-resources', 'web', 'dist', 'assets');
+  return scanBundleForObservationChannel(join(repoRoot, 'web', 'dist', 'assets'));
+}
+
+/**
+ * The scan itself, over any assets directory, so its refusal can be exercised
+ * without moving the real bundle: absent, scriptless or partly unreadable all
+ * report `unreadable` rather than "zero occurrences".
+ */
+function scanBundleForObservationChannel(assetsDir) {
+  if (!existsSync(assetsDir)) {
+    return {
+      occurrences: 0,
+      files: 0,
+      unreadable: `no ${sanitise(assetsDir)}: the shipped bundle cannot be read`,
+    };
+  }
   const candidates = [];
-  if (existsSync(assetsDir)) {
-    for (const entry of readdirSync(assetsDir)) {
-      if (entry.endsWith('.js')) candidates.push(join(assetsDir, entry));
-    }
+  for (const entry of readdirSync(assetsDir)) {
+    if (entry.endsWith('.js')) candidates.push(join(assetsDir, entry));
+  }
+  if (candidates.length === 0) {
+    return { occurrences: 0, files: 0, unreadable: `${sanitise(assetsDir)} holds no .js file to scan` };
   }
   let occurrences = 0;
+  let unread = 0;
   for (const file of candidates) {
     const text = readFileSyncSafe(file);
-    if (text === null) continue;
+    if (text === null) {
+      unread += 1;
+      continue;
+    }
     if (text.includes(P34_MARKER_PATH)) occurrences += 1;
     if (text.includes(P34_GATE_STRING)) occurrences += 1;
   }
-  return { occurrences, files: candidates.length };
+  if (unread > 0) {
+    return {
+      occurrences,
+      files: candidates.length,
+      unreadable: `${String(unread)} of ${String(candidates.length)} bundle scripts could not be read`,
+    };
+  }
+  return { occurrences, files: candidates.length, unreadable: null };
 }
 
 function readFileSyncSafe(path) {
@@ -971,6 +1338,168 @@ function readFileSyncSafe(path) {
  * The teardown restores the remembered default and unloads both modules on
  * every exit path, including signals.
  */
+/**
+ * `pactl list short sources` → a numeric source index → source-name table.
+ *
+ * P3.5's mechanism, reused rather than reinvented. The short source-outputs
+ * format prints a **source index**, not a name (pactl 17.0: `%u\t%u\t%s\t%s\t%s`),
+ * so a stream can only be classified after it is resolved through this table.
+ * A malformed row, a non-numeric or duplicated index, or an empty name is an
+ * error — never a silently skipped row, because skipping is how an unknown
+ * stream becomes "not the microphone".
+ */
+function parseSourceTable(text) {
+  const table = new Map();
+  for (const raw of text.split('\n')) {
+    if (raw.trim() === '') continue;
+    const columns = raw.trim().split(/\s+/);
+    if (columns.length < 2) throw new Error(`malformed pactl sources row: ${JSON.stringify(raw)}`);
+    const index = Number(columns[0]);
+    if (!Number.isInteger(index)) {
+      throw new Error(`non-numeric source index in pactl sources: ${JSON.stringify(raw)}`);
+    }
+    if (table.has(index)) {
+      throw new Error(`duplicate source index ${String(index)} in pactl sources: ${JSON.stringify(raw)}`);
+    }
+    const name = columns[1];
+    if (name === '') throw new Error(`empty source name in pactl sources: ${JSON.stringify(raw)}`);
+    table.set(index, name);
+  }
+  return table;
+}
+
+/**
+ * Resolve `pactl list short source-outputs` through the source table.
+ *
+ * Every row must resolve to a known source index. The third column is the
+ * client index, where only the literal `-` means "no client" (the dash a
+ * system-owned stream prints); any other value must still be a plain integer.
+ * An index that is not in the table is an error, not an "unrelated, so safe"
+ * row.
+ */
+function classifySourceOutputs(outputsText, sourcesText) {
+  const sources = parseSourceTable(sourcesText);
+  const all = [];
+  for (const raw of outputsText.split('\n')) {
+    if (raw.trim() === '') continue;
+    const columns = raw.trim().split(/\s+/);
+    if (columns.length < 3) throw new Error(`malformed pactl source-outputs row: ${JSON.stringify(raw)}`);
+    const streamId = Number(columns[0]);
+    const sourceId = Number(columns[1]);
+    const clientId = columns[2] === '-' ? null : Number(columns[2]);
+    if (
+      ![streamId, sourceId].every((value) => Number.isInteger(value)) ||
+      (clientId !== null && !Number.isInteger(clientId))
+    ) {
+      throw new Error(`non-numeric source-outputs column: ${JSON.stringify(raw)}`);
+    }
+    if (!sources.has(sourceId)) {
+      throw new Error(
+        `source-output ${String(streamId)} names source index ${String(sourceId)}, which is not in the pactl ` +
+          'sources table; the mapping is unknown and the row must not assume it is safe',
+      );
+    }
+    all.push({ streamId, sourceId, clientId, sourceName: sources.get(sourceId), raw: raw.trim() });
+  }
+  const virtual = all.filter((output) => output.sourceName === SOURCE_NAME);
+  const other = all.filter((output) => output.sourceName !== SOURCE_NAME);
+  return { all, virtual, other };
+}
+
+/**
+ * Both live `pactl` reads, resolved together, with the real names they printed.
+ *
+ * A failed command is a stop: the containment state is unknown, and an unknown
+ * state is never "safe". The physical microphone is named from the live table,
+ * not from an assumed prefix, so a host whose USB device is named differently
+ * is still covered.
+ */
+async function readCaptureStreams() {
+  const [outputs, sources] = await Promise.all([
+    pactl(['list', 'short', 'source-outputs']),
+    pactl(['list', 'short', 'sources']),
+  ]);
+  if (outputs.code !== 0) {
+    throw new Error(
+      `pactl list short source-outputs exited ${String(outputs.code)}: ${outputs.stderr.trim()}`,
+    );
+  }
+  if (sources.code !== 0) {
+    throw new Error(`pactl list short sources exited ${String(sources.code)}: ${sources.stderr.trim()}`);
+  }
+  const classified = classifySourceOutputs(outputs.stdout, sources.stdout);
+  const physical = classified.other.filter(
+    (output) => !output.sourceName.startsWith(`${SINK_NAME}.monitor`) && output.sourceName !== SOURCE_NAME,
+  );
+  return { ...classified, physical };
+}
+
+/**
+ * The owner's microphone is never read, asserted from the live source table.
+ *
+ * `containment.create` only ever reads the default source back; this is the
+ * other half of the claim — while the app records, no stream at all may be
+ * attached to a non-virtual capture device, and an unresolvable source-output
+ * row stops the flow instead of being counted as safe.
+ */
+async function assertNoPhysicalStream(step) {
+  try {
+    const streams = await readCaptureStreams();
+    if (streams.physical.length > 0) {
+      return check(
+        `${step} no stream on the owner's microphone`,
+        false,
+        `these source-outputs resolved to a non-virtual source: ${JSON.stringify(streams.physical.map((o) => o.raw))}`,
+      );
+    }
+    return check(
+      `${step} no stream on the owner's microphone`,
+      true,
+      `${String(streams.all.length)} source-outputs, all on ${SOURCE_NAME} or an unrelated sink monitor`,
+    );
+  } catch (error) {
+    return check(
+      `${step} no stream on the owner's microphone`,
+      false,
+      `the live source-outputs read could not be resolved, so containment is unknown: ${String(error?.message ?? error)}`,
+    );
+  }
+}
+
+/** Every pid this harness started, so an exit signal leaves none behind. */
+const startedPids = new Set();
+
+function rememberPid(pid) {
+  if (typeof pid === 'number') startedPids.add(pid);
+}
+
+/**
+ * The audio teardown on **every** exit path, including signals.
+ *
+ * Installed before the first module is loaded and idempotent, so a `SIGINT`
+ * during capture still restores the remembered default source and unloads both
+ * modules. The stray-pid sweep is P3.5's: every pid this file started is sent a
+ * `SIGTERM` from the `exit` handler, by pid and never by pattern.
+ */
+function installTraps() {
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+    process.on(signal, () => {
+      containment.teardownSync();
+      for (const pid of startedPids) {
+        try {
+          process.kill(pid, 'SIGTERM');
+        } catch {
+          // Already gone.
+        }
+      }
+      process.exit(signal === 'SIGINT' ? 130 : 143);
+    });
+  }
+  process.on('exit', () => {
+    containment.teardownSync();
+  });
+}
+
 const containment = {
   prevDefault: null,
   sinkId: null,
@@ -1089,6 +1618,7 @@ function startPlayback(file) {
   const child = spawn('paplay', ['--device=' + SINK_NAME, '--rate=16000', '--channels=1', file], {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  rememberPid(child.pid);
   let stderr = '';
   child.stderr.on('data', (chunk) => {
     stderr += chunk.toString('utf8');
@@ -1107,12 +1637,34 @@ function fixtureAudio() {
 function ownershipFiles() {
   return ['apunta.lock', 'apunta.db', 'apunta.db-wal', 'apunta.db-shm'].map((name) => ({
     name,
-    path: join(dataDir, name),
+    path: join(sandboxEnv().dataDir, name),
   }));
 }
 
-function snapshotOwnership() {
-  return ownershipFiles().map((file) => ({ ...file, present: existsSync(file.path) }));
+/**
+ * The data folder's own contents, as a sorted **name set**.
+ *
+ * The baseline is taken **after** the first instance is up and answering with
+ * this run's id, not before the launch: the app creates `apunta.lock` and
+ * `apunta.db` at startup, so a pre-launch snapshot flags this run's own first
+ * set and fails every healthy run. With the baseline after, "no second lock,
+ * database, -wal or -shm" becomes the question it claims to be — did anything
+ * appear **beside** the set the first instance created? — and the four names
+ * are additionally asserted present in the baseline as the proof that the first
+ * instance really did create them.
+ */
+function snapshotDataDirNames() {
+  const dir = sandboxEnv().dataDir;
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((name) => !['.', '..'].includes(name))
+    .sort();
+}
+
+function ownershipBaselineProof(names) {
+  const owned = ownershipFiles().map((file) => file.name);
+  const missing = owned.filter((name) => !names.includes(name));
+  return { owned, missing };
 }
 
 /** Saves a flow screenshot under the evidence directory, named by flow. */
@@ -1123,6 +1675,105 @@ function saveEvidenceScreenshot(windowId, flow) {
   try {
     copyFileSync(file, dest);
     return dest;
+  } catch {
+    return null;
+  }
+}
+
+// --------------------------------------------------------- Rule B freshness --
+
+/** A path Rule B names only as an *input* (never `src-tauri/target/**`). */
+function isRuleBInput(relative) {
+  if (RULE_B_EXCLUDED.some((prefix) => relative === prefix.slice(0, -1) || relative.startsWith(prefix))) {
+    return false;
+  }
+  return RULE_B_PATHS.some((set) => relative === set || relative.startsWith(`${set}/`));
+}
+
+/**
+ * The freshness predicate, executable.
+ *
+ * Two questions, both answered rather than asserted in prose:
+ *
+ * 1. **Has Rule B's set moved since the base commit?** `git diff --name-only
+ *    <base>...HEAD -- <set>` together with `git status --porcelain -- <set>`,
+ *    over the set the dispatch's Fixed decision restates. The base is the
+ *    literal hash copied out of the dispatch header (three ASCII full stops, not
+ *    a typographic ellipsis, and never an angle-bracket placeholder that would
+ *    match nothing and pass vacuously). Any path is a **fail**, because a moved
+ *    input means the bundle under test is stale.
+ * 2. **Is the artefact newer than the newest input under that set?** A source
+ *    walk over the same paths, comparing the AppImage's own mtime with the
+ *    newest input mtime. This is the recorded fresh-build anchor: an AppImage
+ *    older than a source file cannot have been built from it.
+ */
+async function ruleBFreshness(appImagePath) {
+  const diff = await spawnAsync(
+    'git',
+    ['diff', '--name-only', `${RULE_B_BASE}...HEAD`, '--', ...RULE_B_PATHS],
+    { cwd: repoRoot },
+  );
+  const status = await spawnAsync('git', ['status', '--porcelain', '--', ...RULE_B_PATHS], { cwd: repoRoot });
+  const committed = diff.code === 0 ? diff.stdout.split('\n').filter((line) => line.trim() !== '') : null;
+  const dirty = status.code === 0 ? status.stdout.split('\n').filter((line) => line.trim() !== '') : null;
+  const moved = [...(committed ?? []), ...(dirty ?? [])]
+    .map((line) => line.split(/\s+/).pop() ?? '')
+    .filter((relative) => isRuleBInput(relative));
+  const walk = newestRuleBInput();
+  const artifactMtime = existsSync(appImagePath) ? statSyncSafe(appImagePath) : null;
+  return {
+    base: RULE_B_BASE,
+    diffOk: diff.code === 0,
+    statusOk: status.code === 0,
+    diffError: diff.code === 0 ? null : diff.stderr.trim(),
+    statusError: status.code === 0 ? null : status.stderr.trim(),
+    moved,
+    newestInput: walk.newest,
+    newestInputPath: walk.newestPath,
+    artifactMtime,
+    artifactNewer: walk.newest === null || (artifactMtime !== null && artifactMtime >= walk.newest),
+  };
+}
+
+/**
+ * The source walk: the newest mtime under Rule B's **input** paths.
+ *
+ * Build outputs (`build/linux-resources/**`, `server/dist/**`, `web/dist/**`)
+ * and `src-tauri/target/**` are never inputs, so the newest build artefact does
+ * not make the source look newer than it is.
+ */
+function newestRuleBInput() {
+  let newest = null;
+  let newestPath = null;
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const full = join(dir, entry.name);
+      const relative = full.slice(repoRoot.length + 1);
+      if (!isRuleBInput(relative)) continue;
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      const mtime = statSyncSafe(full);
+      if (mtime !== null && (newest === null || mtime > newest)) {
+        newest = mtime;
+        newestPath = relative;
+      }
+    }
+  };
+  for (const set of RULE_B_PATHS) walk(join(repoRoot, set));
+  return { newest, newestPath };
+}
+
+function statSyncSafe(path) {
+  try {
+    return statSync(path).mtimeMs;
   } catch {
     return null;
   }
@@ -1141,28 +1792,59 @@ async function runSmoke() {
   const appImage = resolveAppImage();
   if (appImage.error !== undefined) {
     fail('smoke appimage', appImage.error);
+    notRunRemaining('onboarding', `the AppImage could not be resolved: ${appImage.error}`);
     return;
   }
   pass('smoke appimage', sanitise(appImage.path));
 
+  if (!preflightTools()) {
+    notRunRemaining('onboarding', 'a named tool this harness shells out to is absent on this machine');
+    return;
+  }
+
+  // Freshness before anything is launched: a stale bundle must not be driven and
+  // then reported as a pass. Both halves are answered, not asserted in prose.
+  const freshness = await ruleBFreshness(appImage.path);
+  check(
+    'smoke Rule B freshness: the source set has not moved since the dispatch base',
+    freshness.diffOk && freshness.statusOk && freshness.moved.length === 0,
+    !freshness.diffOk
+      ? `git diff --name-only ${freshness.base}...HEAD exited: ${String(freshness.diffError)}`
+      : !freshness.statusOk
+        ? `git status --porcelain exited: ${String(freshness.statusError)}`
+        : `${String(freshness.moved.length)} Rule B input(s) differ from ${freshness.base}: ${freshness.moved.join(', ')}`,
+  );
+  check(
+    'smoke the AppImage is newer than the newest Rule B input (fresh-build anchor)',
+    freshness.artifactNewer,
+    `AppImage mtime ${String(freshness.artifactMtime)} against newest Rule B input ${String(freshness.newestInput)} (${String(freshness.newestInputPath)})`,
+  );
+
   const ollamaBefore = await ollamaAlive();
-  const ownershipBefore = snapshotOwnership();
 
   let run = null;
+  let baselineNames = null;
   try {
     run = launchApp(appImage.path);
     const pid = run.child.pid;
 
     const home = await findAppWindow(pid, 60_000, 'the app window');
-    if (
-      !check(
-        'smoke the app window is up, inside the display',
-        home.found !== null,
-        `no window named exactly Apunta owned by pid ${String(pid)} and at least 400x300 inside the display within 60s while waiting for ${String(home.waitedFor)} (saw ${JSON.stringify(home.seen ?? [])})`,
-      )
-    ) {
+    if (home.found === null) {
+      // Zero windows on the display is NOT RUN for every flow, each with this
+      // cause -- never a pass, and never a bare FAIL that leaves the other ten
+      // flows unrecorded.
+      const cause =
+        `no window named exactly ${APP_WINDOW_NAME} owned by pid ${String(pid)} and at least 400x300 inside the ` +
+        `display within 60s while waiting for ${String(home.waitedFor)} (saw ${JSON.stringify(home.seen ?? [])})`;
+      notRun('smoke the app window is up, inside the display', cause);
+      notRunRemaining('onboarding', cause);
       return;
     }
+    check(
+      'smoke the app window is up, inside the display',
+      true,
+      `${String(home.found.width)}x${String(home.found.height)}`,
+    );
     const window = home.found;
     process.stdout.write(
       `  window ${String(window.width)}x${String(window.height)} at ${String(window.x)},${String(window.y)} on a ${String(home.display?.width)}x${String(home.display?.height)} display\n`,
@@ -1171,7 +1853,10 @@ async function runSmoke() {
     // The scale the app used, from the app's own line. At anything but 1 the
     // client rectangles below are CSS pixels and native coordinates are not.
     const geometry = await appGeometry(run.output, 'smoke');
-    if (geometry === null) return;
+    if (geometry === null) {
+      notRunRemaining('onboarding', 'the shell never printed its window geometry line');
+      return;
+    }
     process.stdout.write(
       `  the app reports ${String(geometry.physicalWidth)}x${String(geometry.physicalHeight)} physical on a ${String(geometry.displayWidth)}x${String(geometry.displayHeight)} display at scale ${String(geometry.scale)}\n`,
     );
@@ -1182,6 +1867,10 @@ async function runSmoke() {
         `the app reported scale ${String(geometry.scale)}`,
       )
     ) {
+      notRunRemaining(
+        'onboarding',
+        `the app reported scale ${String(geometry.scale)}, so native coordinates are not client pixels`,
+      );
       return;
     }
 
@@ -1190,11 +1879,16 @@ async function runSmoke() {
     const windowShot = await captureWindow(window.id);
     if (rootShot === null || windowShot === null) {
       fail('smoke the frame-to-client measurement', 'the display or window capture failed');
+      notRunRemaining('onboarding', 'the display or window capture failed, so no click could be grounded');
       return;
     }
     const frameClient = await measureFrameClient(windowShot, rootShot, window);
     if (frameClient === null) {
       fail('smoke the frame-to-client measurement', 'the captures could not be compared');
+      notRunRemaining(
+        'onboarding',
+        'the frame-to-client relationship could not be measured, so no click is grounded',
+      );
       return;
     }
     if (frameClient.dx === null) {
@@ -1211,8 +1905,21 @@ async function runSmoke() {
 
     const owned = await waitForOwnership(30_000, 'smoke the server');
     if (!check('smoke the server answers with this run id', owned, 'no ownership on the sandbox port')) {
+      notRunRemaining('onboarding', 'the bundled server never answered with this run id');
       return;
     }
+
+    // The ownership baseline is taken **here**: the first instance exists and has
+    // created its own files, so what follows can only be something extra.
+    baselineNames = snapshotDataDirNames();
+    const proof = ownershipBaselineProof(baselineNames);
+    check(
+      'smoke the first instance created the C-OWN@1 files (ownership baseline proof)',
+      proof.missing.length === 0,
+      proof.missing.length === 0
+        ? `baseline name set: ${JSON.stringify(baselineNames)}`
+        : `absent from the baseline name set: ${proof.missing.join(', ')}`,
+    );
 
     // The CSP is asserted over the app's own origin, from inside the harness.
     await assertCsp('smoke');
@@ -1279,22 +1986,41 @@ async function runSmoke() {
       );
     }
 
-    const after = snapshotOwnership();
-    const created = after.filter((file, index) => file.present && !ownershipBefore[index].present);
-    check(
-      'smoke no second lock, database, -wal or -shm',
-      created.length === 0,
-      `created: ${created.map((file) => file.name).join(', ')}`,
-    );
+    if (baselineNames !== null) {
+      const after = snapshotDataDirNames();
+      const extra = after.filter((name) => !baselineNames.includes(name));
+      const vanished = baselineNames.filter((name) => !after.includes(name));
+      check(
+        'smoke no second lock, database, -wal or -shm',
+        extra.length === 0,
+        extra.length === 0
+          ? `nothing appeared beside the ${String(baselineNames.length)}-name baseline (${JSON.stringify(baselineNames)})`
+          : `appeared beside the baseline: ${extra.join(', ')}`,
+      );
+      check(
+        'smoke the data folder was not emptied behind the baseline',
+        vanished.length === 0,
+        vanished.length === 0
+          ? 'the baseline name set is intact'
+          : `gone from the baseline: ${vanished.join(', ')}`,
+      );
+    } else {
+      notRun(
+        'smoke no second lock, database, -wal or -shm',
+        'the app never reached ownership, so there is no post-first-instance baseline to compare against',
+      );
+    }
 
-    const free = await isPortFree(port);
-    check('smoke the port is released', free, `127.0.0.1:${String(port)} is still bound`);
+    const free = await isPortFree(sandboxPort());
+    check('smoke the port is released', free, `127.0.0.1:${String(sandboxPort())} is still bound`);
 
     const channel = observationChannelGone();
     check(
       'smoke the observation channel is gone from the bundle',
-      channel.occurrences === 0,
-      `${String(channel.occurrences)} occurrences of P3.4's marker path or gate string across ${String(channel.files)} bundle scripts`,
+      channel.unreadable === null && channel.occurrences === 0,
+      channel.unreadable !== null
+        ? `the scan could not be completed, so the channel is NOT asserted gone: ${channel.unreadable}`
+        : `${String(channel.occurrences)} occurrences of P3.4's marker path or gate string across ${String(channel.files)} bundle scripts in web/dist/assets`,
     );
 
     const ollamaAfter = await ollamaAlive();
@@ -1308,41 +2034,86 @@ async function runSmoke() {
 
 // -------------------------------------------------------------- flows ------
 //
-// Each flow drives the app's own UI with real input, saves a screenshot as
-// evidence, and reads the fact that proves it over the app's own origin. A flow
-// that cannot be driven records NOT RUN with its cause; none is recorded PASS
-// on a picture alone.
+// Each flow drives a **real UI action** — a measured click at a uniquely
+// identified control, or the app's own keyboard — and then reads **two** things
+// that only exist once that action landed:
+//
+// 1. a **pane-only label**, read offline out of a fresh screenshot by
+//    `tesseract`, unique on screen (zero or several matches is a refusal), and
+// 2. the **resulting application fact** over the app's own origin.
+//
+// An API read that was already true before the action proves nothing about the
+// screen and is never the assertion. A flow whose action could not be grounded,
+// or whose pane never appeared, records `NOT RUN` with the count it saw.
+//
+// The labels below are quoted from `shared/src/i18n/en.ts` and the components
+// that render them, so each is a real string on a real pane rather than an
+// invented one.
+
+/** Confirms a pane by its pane-only label, or records why it is not confirmed. */
+async function confirmPane(window, flow, phrase, timeoutMs = 8000) {
+  const seen = await waitForScreenLabel(window, phrase, timeoutMs);
+  if (seen.seen) return true;
+  recordFlow(
+    flow,
+    'NOT RUN',
+    `the pane label ${JSON.stringify(phrase)} never appeared: ${seen.why ?? 'unknown'}`,
+  );
+  notRun(flow, `the pane label ${JSON.stringify(phrase)} never appeared: ${seen.why ?? 'unknown'}`);
+  return false;
+}
 
 /** The onboarding Continue button: the app creates its standard format itself. */
 async function flowOnboarding(ctx) {
   const { window } = ctx;
-  // The app starts on the onboarding screen when no format exists. The
-  // Continue button is the one primary action: find it by colour and click it.
   const shot = await captureWindow(window.id);
   if (shot === null) {
+    recordFlow('onboarding', 'NOT RUN', 'the window capture failed');
     notRun('onboarding', 'the window capture failed');
     return;
   }
-  const clusters = await findClusters(shot, ACCENT);
-  if (clusters.length === 0) {
+  // The onboarding screen is the one that asks for a note format
+  // (`format.addTitle`, `routes/OnboardingFormat.tsx:115`).
+  const onScreen = await waitForScreenLabel(window, 'Add your note format', 4000);
+  if (!onScreen.seen) {
+    recordFlow(
+      'onboarding',
+      'NOT RUN',
+      `the onboarding screen was not the first screen shown: ${onScreen.why ?? 'unknown'}`,
+    );
     notRun(
       'onboarding',
-      'no primary-action button was found in the screenshot, so the Continue click is not grounded',
+      `the onboarding screen was not the first screen shown: ${onScreen.why ?? 'unknown'}`,
     );
     return;
   }
-  const clicked = await clickCluster(window, ctx.offset, clusters[0], 'the onboarding Continue button');
-  if (!clicked) return;
 
-  // The app lands on /patients/new behind the add-patient modal; Escape is the
-  // app's own way out (a real XTEST key press, not a synthetic event).
-  await sleep(1500);
-  await pressKey(['Escape'], 'Escape to dismiss the add-patient dialog');
-  await sleep(1500);
+  // Continue is the only primary action on that screen, so it is the largest
+  // accent cluster — and only when it is unambiguously the largest.
+  const clusters = await findClusters(shot, ACCENT);
+  const picked = pickPrimaryCluster(clusters, 'the onboarding Continue button');
+  if (picked.cluster === null) {
+    recordFlow('onboarding', 'NOT RUN', picked.why);
+    notRun('onboarding', picked.why);
+    return;
+  }
+  const clicked = await clickCluster(window, ctx.offset, picked.cluster, 'the onboarding Continue button');
+  if (!clicked) {
+    recordFlow('onboarding', 'FAIL', 'the Continue click could not be issued');
+    return;
+  }
+  pass('onboarding the Continue click is grounded in a unique accent cluster', picked.why);
 
+  // The screen the action lands on: the add-patient screen (`patients.add`).
+  if (!(await confirmPane(window, 'onboarding', 'Add patient'))) return;
+
+  // The fact the action produces: the app created the standard format itself.
+  // Before Continue there is no format at all, so this is not a pre-existing
+  // truth — it is what the click made true.
   const formats = await formatsList();
-  check(
-    'onboarding the app created its standard format',
+  requireFlow(
+    'onboarding',
+    'the app created its standard format',
     formats !== null && formats.length > 0,
     formats === null ? 'GET /api/formats did not answer with a list' : `${String(formats.length)} formats`,
   );
@@ -1358,6 +2129,11 @@ async function flowCapture(ctx) {
   // the app's own path rather than by a harness-written state.
   const patient = await apiPost('/api/patients', { name: PATIENT_NAME, identifier: null });
   if (!patient.ok || patient.body === null) {
+    recordFlow(
+      'capture',
+      'NOT RUN',
+      `POST /api/patients answered ${String(patient.status)}, so there is no patient to capture for`,
+    );
     notRun(
       'capture',
       `POST /api/patients answered ${String(patient.status)}, so there is no patient to capture for`,
@@ -1374,6 +2150,7 @@ async function flowCapture(ctx) {
   try {
     created = await containment.create();
   } catch (error) {
+    recordFlow('capture', 'NOT RUN', `microphone containment: ${String(error?.message ?? error)}`);
     notRun('capture', `microphone containment: ${String(error?.message ?? error)}`);
     return;
   }
@@ -1387,6 +2164,7 @@ async function flowCapture(ctx) {
     if (!existsSync(fixture)) throw new Error(`no fixture at ${sanitise(fixture)}`);
     playback = startPlayback(fixture);
   } catch (error) {
+    recordFlow('capture', 'NOT RUN', `playback: ${String(error?.message ?? error)}`);
     notRun('capture', `playback: ${String(error?.message ?? error)}`);
     return;
   }
@@ -1398,39 +2176,55 @@ async function flowCapture(ctx) {
   await pressKey(['Tab'], 'Tab to the home note action');
   await pressKey(['Return'], 'Return to open the patient picker');
   await sleep(1200);
-  if (!(await typeText(PATIENT_NAME, 'the patient name into the home search'))) return;
+  if (!(await typeText(PATIENT_NAME, 'the patient name into the home search'))) {
+    recordFlow('capture', 'FAIL', 'the patient name could not be typed into the home search');
+    return;
+  }
   await sleep(800);
   await pressKey(['Return'], 'Return to choose the highlighted patient');
   await sleep(2000);
 
-  // The capture screen's record control is a large option tile. It is the first
-  // focusable control on the screen, so it is reached by the app's own keyboard.
+  // The capture screen is confirmed by its own label (`capture.listening`)
+  // before anything is recorded, so a screen that was never reached cannot
+  // produce a note.
+  if (!(await confirmPane(window, 'capture', 'Listening for words'))) return;
+
+  // The record control is a large option tile and the first focusable control on
+  // the screen, so it is reached by the app's own keyboard.
   await pressKey(['Tab'], 'Tab to the record control');
   await pressKey(['Return'], 'Return to start recording');
   await sleep(2500);
 
+  // While the app records, no stream may sit on the owner's microphone. The
+  // read resolves the source table, so a device with another name is still
+  // covered, and an unresolvable row stops the flow.
+  await assertNoPhysicalStream('capture while recording');
+
   // The stop-and-draft button is the primary action while recording: find it by
-  // colour and click it.
+  // colour and click it, refusing an ambiguous screen.
   const recording = await captureWindow(window.id);
   if (recording === null) {
-    notRun('capture', 'the window capture failed');
+    recordFlow('capture', 'NOT RUN', 'the window capture failed while recording');
+    notRun('capture', 'the window capture failed while recording');
     return;
   }
   const stopClusters = await findClusters(recording, ACCENT);
-  if (stopClusters.length === 0) {
-    notRun(
-      'capture',
-      'no primary-action button was found while recording, so the stop click is not grounded',
-    );
+  const stopPicked = pickPrimaryCluster(stopClusters, 'the stop-and-draft button');
+  if (stopPicked.cluster === null) {
+    recordFlow('capture', 'NOT RUN', stopPicked.why);
+    notRun('capture', stopPicked.why);
     return;
   }
-  const clicked = await clickCluster(window, ctx.offset, stopClusters[0], 'the stop-and-draft button');
-  if (!clicked) return;
+  if (!(await clickCluster(window, ctx.offset, stopPicked.cluster, 'the stop-and-draft button'))) {
+    recordFlow('capture', 'FAIL', 'the stop-and-draft click could not be issued');
+    return;
+  }
 
   // Stop the playback by pid (it is a 10 s fixture; the recording is shorter).
   if (playback !== null) await stopPid(playback.pid, 'the fixture playback');
 
-  // The fact: a note row exists for this patient, in draft status.
+  // The fact: a note row exists for this patient, in draft status. It did not
+  // before the record/stop clicks, so it is what they produced.
   const deadline = Date.now() + 30_000;
   let notes = null;
   for (;;) {
@@ -1442,85 +2236,114 @@ async function flowCapture(ctx) {
     if (Date.now() >= deadline) break;
     await sleep(500);
   }
-  check(
-    'capture a note row was created for the patient',
-    notes !== null && notes.length > 0,
+  const draftNote = notes?.find((note) => note.status === 'draft') ?? null;
+  requireFlow(
+    'capture',
+    'a draft note row was created for the patient by the record and stop clicks',
+    draftNote !== null,
     notes === null
       ? 'GET /api/patients/:id/notes did not answer with a list'
-      : `${String(notes.length)} notes`,
+      : `${String(notes.length)} notes, none in draft status`,
   );
   saveEvidenceScreenshot(window.id, 'capture');
+  ctx.patientId = patientId;
 }
 
-/** The draft flow: the drafted note is opened and its sections are present. */
+/** The draft flow: the drafted note's screen is opened and its sections are read. */
 async function flowDraft(ctx) {
   const { window } = ctx;
   const patients = await patientsList();
   if (patients === null || patients.length === 0) {
+    recordFlow('draft', 'NOT RUN', 'no patient exists, so there is no draft to open');
     notRun('draft', 'no patient exists, so there is no draft to open');
     return;
   }
   const notes = await notesFor(patients[0].id);
   if (notes === null || notes.length === 0) {
+    recordFlow('draft', 'NOT RUN', 'no note exists for the patient');
     notRun('draft', 'no note exists for the patient');
     return;
   }
-  const note = notes[0];
-  const full = await noteById(note.id);
-  if (full === null) {
-    notRun('draft', 'the note could not be read back');
+
+  // The real action: click the drafted note's own row in the notes column. The
+  // `Draft` chip (`note.draftChip`, `NotesColumn.tsx:185`) identifies it, and a
+  // screen with two draft rows is refused rather than guessed at.
+  const opened = await clickScreenLabel(window, ctx.offset, 'Draft', "the drafted note's row");
+  if (!opened.clicked) {
+    recordFlow('draft', 'NOT RUN', `the drafted note's row could not be grounded: ${opened.why}`);
+    notRun('draft', `the drafted note's row could not be grounded: ${opened.why}`);
     return;
   }
-  check(
-    'draft the drafted note carries its sections',
-    full.content !== undefined && full.content !== null && String(full.content).includes('Subjective'),
-    `note ${String(note.id)} content did not include the Subjective section`,
+  await sleep(1200);
+
+  // The screen itself: the draft screen carries the refine column
+  // (`refine.inputPlaceholder`), which no other screen renders.
+  if (!(await confirmPane(window, 'draft', 'Ask a question or give feedback'))) return;
+
+  const note = await noteById(notes[0].id);
+  requireFlow(
+    'draft',
+    'the opened draft note carries its sections',
+    note !== null &&
+      note.content !== undefined &&
+      note.content !== null &&
+      String(note.content).includes('Subjective'),
+    note === null
+      ? 'the note could not be read back'
+      : `note content ${String(note.content).includes('Subjective') ? 'carries' : 'does not carry'} the Subjective section`,
   );
   saveEvidenceScreenshot(window.id, 'draft');
+  ctx.noteId = notes[0].id;
 }
 
-/** The refine flow: the refine chat runs and the note is updated. */
+/** The refine flow: the refine chat is typed into and the note is updated. */
 async function flowRefine(ctx) {
   const { window } = ctx;
-  const patients = await patientsList();
-  if (patients === null || patients.length === 0) {
-    notRun('refine', 'no patient exists, so there is no note to refine');
+  if (ctx.noteId === undefined) {
+    recordFlow('refine', 'NOT RUN', 'no note was opened by the draft flow, so there is nothing to refine');
+    notRun('refine', 'no note was opened by the draft flow, so there is nothing to refine');
     return;
   }
-  const notes = await notesFor(patients[0].id);
-  if (notes === null || notes.length === 0) {
-    notRun('refine', 'no note exists for the patient');
-    return;
-  }
-  const note = notes[0];
-  const before = await noteById(note.id);
+  const before = await noteById(ctx.noteId);
 
-  // The refine entry is the chat column's composer. It is filled through the
-  // app's own keyboard and sent with Return; the send arrow is the accent
-  // button once the composer has text.
-  if (!(await typeText('Make it warmer', 'the refine message'))) return;
+  // The real action: the refine composer is filled through the app's own
+  // keyboard and sent with Return — the app's own send path, not a synthesised
+  // event.
+  if (!(await typeText('Make it warmer', 'the refine message'))) {
+    recordFlow('refine', 'FAIL', 'the refine message could not be typed');
+    return;
+  }
   await sleep(500);
   await pressKey(['Return'], 'Return to send the refine message');
-  await sleep(2000);
+  await sleep(2500);
 
-  const shot = await captureWindow(window.id);
-  if (shot === null) {
-    notRun('refine', 'the window capture failed');
-    return;
-  }
+  // The screen: the refine column is still the pane the message was sent from.
+  if (!(await confirmPane(window, 'refine', 'Ask a question or give feedback'))) return;
   saveEvidenceScreenshot(window.id, 'refine');
 
-  // The fact: the note was updated by the refine (its content or revision
-  // moved), read back over the app's own origin.
-  const after = await noteById(note.id);
-  const changed =
+  // The fact the send produces: the note moved. Before the send it was read and
+  // held, so this is a comparison against the pre-action state.
+  const deadline = Date.now() + 30_000;
+  let after;
+  for (;;) {
+    after = await noteById(ctx.noteId);
+    if (
+      after !== null &&
+      before !== null &&
+      (after.content !== before.content || after.updated_at !== before.updated_at)
+    ) {
+      break;
+    }
+    if (Date.now() >= deadline) break;
+    await sleep(500);
+  }
+  requireFlow(
+    'refine',
+    'the note was updated by the refine message',
     after !== null &&
-    before !== null &&
-    (after.content !== before.content || after.updated_at !== before.updated_at);
-  check(
-    'refine the note was updated by the refine',
-    changed,
-    after === null
+      before !== null &&
+      (after.content !== before.content || after.updated_at !== before.updated_at),
+    after === null || before === null
       ? 'the note could not be read back after the refine'
       : 'the note content and revision did not move after the refine message',
   );
@@ -1529,94 +2352,142 @@ async function flowRefine(ctx) {
 /** Publish and copy: the note is published, then the Copied control shows. */
 async function flowPublishAndCopy(ctx) {
   const { window } = ctx;
-  const patients = await patientsList();
-  if (patients === null || patients.length === 0) {
-    notRun('publish+copy', 'no patient exists, so there is no note to publish');
+  if (ctx.noteId === undefined) {
+    recordFlow(
+      'publish+copy',
+      'NOT RUN',
+      'no note was opened by the draft flow, so there is nothing to publish',
+    );
+    notRun('publish+copy', 'no note was opened by the draft flow, so there is nothing to publish');
     return;
   }
-  const notes = await notesFor(patients[0].id);
-  if (notes === null || notes.length === 0) {
-    notRun('publish+copy', 'no note exists for the patient');
+  const noteId = ctx.noteId;
+
+  // The real action, on the control's own label: `Finish & copy`
+  // (`note.finishAndCopy`, `NoteView.tsx:688`).
+  const publishedClick = await clickScreenLabel(window, ctx.offset, 'Finish & copy', 'the publish control');
+  if (!publishedClick.clicked) {
+    recordFlow('publish+copy', 'NOT RUN', `the publish control could not be grounded: ${publishedClick.why}`);
+    notRun('publish+copy', `the publish control could not be grounded: ${publishedClick.why}`);
     return;
   }
-  const note = notes[0];
+  await sleep(2500);
 
-  // Publish is the note's `btn-publish` control. It is not the brand accent by
-  // default, so it is reached by the app's own keyboard: the note action row is
-  // the last focusable row and publish is its last button.
-  await pressKey(['Tab'], 'Tab into the note action row');
-  await pressKey(['Return'], 'Return to publish the note');
-  await sleep(2000);
-
-  const published = await noteById(note.id);
-  check(
-    'publish the note is published',
-    published !== null && published.status === 'published',
-    published === null ? 'the note could not be read back' : `status was ${String(published.status)}`,
+  // The visual state the click produced: the control's own label changed to
+  // `Edit again` (`note.editAgain`). That is a control-specific string, not a
+  // colour count.
+  const editAgain = await waitForScreenLabel(window, 'Edit again', 8000);
+  const published = await noteById(noteId);
+  requireFlow(
+    'publish+copy',
+    'the note is published and the control shows Edit again',
+    editAgain.seen && published !== null && published.status === 'published',
+    !editAgain.seen
+      ? `the control did not change to Edit again: ${String(editAgain.why ?? 'unknown')}`
+      : published === null
+        ? 'the note could not be read back'
+        : `status was ${String(published.status)}`,
   );
 
-  // Copy: the Copied feedback is on-screen state only. The harness asserts the
-  // screenshot carries real rendered content (the control is on screen and
-  // painted) and claims nothing about the host clipboard.
-  await pressKey(['Tab'], 'Tab to the copy control');
-  await pressKey(['Return'], 'Return to copy the note');
-  await sleep(1000);
-  const copyShot = await captureWindow(window.id);
-  const copySaved = saveEvidenceScreenshot(window.id, 'publish-copy');
-  if (copyShot === null || copySaved === null) {
-    notRun('copy', 'the window capture or evidence save failed');
+  // Copy: the control's own label (`note.copy`) becomes `note.copied`. This is
+  // the Copied **state**, read off the screen; the host clipboard is not read
+  // and nothing is claimed about it.
+  const copyClick = await clickScreenLabel(window, ctx.offset, 'Copy', 'the copy control');
+  if (!copyClick.clicked) {
+    recordFlow('publish+copy', 'FAIL', `the copy control could not be grounded: ${copyClick.why}`);
     return;
   }
-  const copyColours = await distinctColours(copyShot);
-  check(
-    'copy the Copied control is shown',
-    copyColours !== null && copyColours >= RENDER_MIN_COLOURS,
-    `the saved screenshot held ${String(copyColours)} distinct colours; the host clipboard is not read`,
+  const copied = await waitForScreenLabel(window, 'Copied', 6000);
+  requireFlow(
+    'publish+copy',
+    'the copy control shows Copied',
+    copied.seen,
+    `the control's label never became Copied: ${String(copied.why ?? 'unknown')}`,
   );
+  saveEvidenceScreenshot(window.id, 'publish-copy');
 }
 
-/** The patient list: the workspace's own patient directory. */
+/** The patient list: the workspace's own patient directory, opened by a row click. */
 async function flowPatientList(ctx) {
   const { window } = ctx;
+  // The real action: click the fabricated patient's own row in the directory.
+  const opened = await clickScreenLabel(window, ctx.offset, PATIENT_NAME, "the patient's row");
+  if (!opened.clicked) {
+    recordFlow('patient list', 'NOT RUN', `the patient's row could not be grounded: ${opened.why}`);
+    notRun('patient list', `the patient's row could not be grounded: ${opened.why}`);
+    return;
+  }
+  await sleep(1200);
+
+  // The screen: the directory's own section labels (`patients.recents`,
+  // `PatientsColumn.tsx:1344`), which no other screen renders.
+  const recents = await waitForScreenLabel(window, 'Recents', 8000);
+  if (!recents.seen) {
+    recordFlow(
+      'patient list',
+      'NOT RUN',
+      `the patient directory was not shown: ${String(recents.why ?? 'unknown')}`,
+    );
+    notRun('patient list', `the patient directory was not shown: ${String(recents.why ?? 'unknown')}`);
+    return;
+  }
   const patients = await patientsList();
-  check(
-    'patient list the workspace lists the patient',
-    patients !== null && patients.length > 0,
+  requireFlow(
+    'patient list',
+    'the directory lists the patient whose row was clicked',
+    patients !== null && patients.some((patient) => patient.name === PATIENT_NAME),
     patients === null
       ? 'GET /api/patients did not answer with a list'
-      : `${String(patients.length)} patients`,
+      : `${String(patients.length)} patients, none named ${PATIENT_NAME}`,
   );
   saveEvidenceScreenshot(window.id, 'patient-list');
 }
 
-/** The plan view: the workspace's plan pane for the patient. */
+/** The plan view: the workspace's plan pane, with a plan the click created. */
 async function flowPlan(ctx) {
   const { window } = ctx;
   const patients = await patientsList();
   if (patients === null || patients.length === 0) {
+    recordFlow('plan', 'NOT RUN', 'no patient exists, so there is no plan to open');
     notRun('plan', 'no patient exists, so there is no plan to open');
     return;
   }
-  // The plan entry is the `open-plan` control in the notes column. It is a
-  // text button, not an accent button, so it is reached by the app's own
-  // keyboard: Tab through the column's controls to the plan control.
-  await pressKey(['Tab'], 'Tab to the plan control');
-  await pressKey(['Return'], 'Return to open the plan');
-  await sleep(1500);
-  const shot = await captureWindow(window.id);
-  if (shot === null) {
-    notRun('plan', 'the window capture failed');
+  // The real action, on the plan pane's own empty-state control
+  // (`plan.start`, `PlanView.tsx:348`): clicking it opens the pane **and** makes
+  // a plan exist, so the fact below is produced by the click rather than being
+  // an always-present envelope. The pane's switch button is refused on purpose:
+  // it shares its label (`plan.title`) with the pane heading, so it is not a
+  // unique target and this file does not click at an ambiguous label.
+  const started = await clickScreenLabel(window, ctx.offset, 'Start a plan', 'the start-a-plan control');
+  if (!started.clicked) {
+    recordFlow('plan', 'NOT RUN', `the plan pane could not be opened by a unique control: ${started.why}`);
+    notRun('plan', `the plan pane could not be opened by a unique control: ${started.why}`);
     return;
   }
-  saveEvidenceScreenshot(window.id, 'plan');
-  // The fact: the plan pane loaded this patient's plan (the endpoint answers
-  // for the patient, which it only does once the pane is open).
+  await sleep(2000);
+
+  // The screen: the plan's own goals heading (`plan.goals`), which only the plan
+  // pane renders.
+  const goals = await waitForScreenLabel(window, 'Goals', 8000);
+  if (!goals.seen) {
+    recordFlow('plan', 'NOT RUN', `the plan pane did not show: ${String(goals.why ?? 'unknown')}`);
+    notRun('plan', `the plan pane did not show: ${String(goals.why ?? 'unknown')}`);
+    return;
+  }
+
+  // The fact: a plan now exists. `GET …/plan` answers `{ plan: null, goals: [] }`
+  // when there is none, so the envelope alone proves nothing — the plan itself
+  // is the assertion.
   const plan = await planFor(patients[0].id);
-  check(
-    "plan the plan pane loaded the patient's plan",
-    plan !== null,
-    `GET /api/patients/:id/plan answered ${plan === null ? 'no plan object' : 'with a plan object'}`,
+  requireFlow(
+    'plan',
+    "the plan pane created the patient's plan",
+    plan !== null && plan.plan !== null && plan.plan !== undefined,
+    plan === null
+      ? 'GET /api/patients/:id/plan did not answer'
+      : `the envelope carried ${JSON.stringify(plan.plan)}`,
   );
+  saveEvidenceScreenshot(window.id, 'plan');
 }
 
 /** The briefing view: the workspace's prep pane for the patient. */
@@ -1624,24 +2495,36 @@ async function flowBriefing(ctx) {
   const { window } = ctx;
   const patients = await patientsList();
   if (patients === null || patients.length === 0) {
+    recordFlow('briefing', 'NOT RUN', 'no patient exists, so there is no briefing to open');
     notRun('briefing', 'no patient exists, so there is no briefing to open');
     return;
   }
-  await pressKey(['Tab'], 'Tab to the briefing control');
-  await pressKey(['Return'], 'Return to open the briefing');
-  await sleep(1500);
-  const shot = await captureWindow(window.id);
-  if (shot === null) {
-    notRun('briefing', 'the window capture failed');
+  // The real action, on the notes column's own switch control
+  // (`notes.prepareForSession`, `NotesColumn.tsx:118`), whose label differs from
+  // the pane's own heading so it is a unique target.
+  const opened = await clickScreenLabel(window, ctx.offset, 'Prepare for session', 'the briefing control');
+  if (!opened.clicked) {
+    recordFlow('briefing', 'NOT RUN', `the briefing control could not be grounded: ${opened.why}`);
+    notRun('briefing', `the briefing control could not be grounded: ${opened.why}`);
     return;
   }
-  saveEvidenceScreenshot(window.id, 'briefing');
+  await sleep(1500);
+
+  // The screen: the prep pane's own heading (`prep.title`, `PrepView.tsx:130`).
+  const heading = await waitForScreenLabel(window, 'Before this session', 8000);
+  if (!heading.seen) {
+    recordFlow('briefing', 'NOT RUN', `the briefing pane did not show: ${String(heading.why ?? 'unknown')}`);
+    notRun('briefing', `the briefing pane did not show: ${String(heading.why ?? 'unknown')}`);
+    return;
+  }
   const briefs = await briefsFor(patients[0].id);
-  check(
-    "briefing the briefing pane loaded the patient's briefs",
-    briefs !== null,
+  requireFlow(
+    'briefing',
+    "the briefing pane loaded the patient's briefs",
+    briefs !== null && Array.isArray(briefs.briefs),
     'GET /api/patients/:id/prep did not answer with a briefs object',
   );
+  saveEvidenceScreenshot(window.id, 'briefing');
 }
 
 /** The brainstorm view: the workspace's brainstorm pane for the patient. */
@@ -1649,47 +2532,103 @@ async function flowBrainstorm(ctx) {
   const { window } = ctx;
   const patients = await patientsList();
   if (patients === null || patients.length === 0) {
+    recordFlow('brainstorm', 'NOT RUN', 'no patient exists, so there is no brainstorm to open');
     notRun('brainstorm', 'no patient exists, so there is no brainstorm to open');
     return;
   }
-  await pressKey(['Tab'], 'Tab to the brainstorm control');
-  await pressKey(['Return'], 'Return to open the brainstorm');
-  await sleep(1500);
-  const shot = await captureWindow(window.id);
-  if (shot === null) {
-    notRun('brainstorm', 'the window capture failed');
+  // The real action, on the notes column's brainstorm switch (`brainstorm.title`,
+  // `NotesColumn.tsx:95`). The pane's own confirmation below is its empty-thread
+  // sentence, which is a different string.
+  const opened = await clickScreenLabel(window, ctx.offset, 'Brainstorm', 'the brainstorm control');
+  if (!opened.clicked) {
+    recordFlow('brainstorm', 'NOT RUN', `the brainstorm control could not be grounded: ${opened.why}`);
+    notRun('brainstorm', `the brainstorm control could not be grounded: ${opened.why}`);
     return;
   }
-  saveEvidenceScreenshot(window.id, 'brainstorm');
+  await sleep(1500);
+
+  // The screen: the brainstorm pane's own empty-thread sentence
+  // (`brainstorm.empty`, `BrainstormView.tsx:181`).
+  const thread = await waitForScreenLabel(window, 'Think out loud about', 8000);
+  if (!thread.seen) {
+    recordFlow(
+      'brainstorm',
+      'NOT RUN',
+      `the brainstorm pane did not show: ${String(thread.why ?? 'unknown')}`,
+    );
+    notRun('brainstorm', `the brainstorm pane did not show: ${String(thread.why ?? 'unknown')}`);
+    return;
+  }
   const read = await apiGet(`/api/patients/${encodeURIComponent(patients[0].id)}/brainstorm`);
-  check(
-    "brainstorm the brainstorm pane loaded the patient's thread",
+  requireFlow(
+    'brainstorm',
+    "the brainstorm pane loaded the patient's thread",
     read.ok,
     `GET /api/patients/:id/brainstorm answered ${String(read.status)}`,
   );
+  saveEvidenceScreenshot(window.id, 'brainstorm');
+}
+
+/** Opens the settings screen through the rail's own gear menu, by keyboard. */
+async function openSettings(ctx) {
+  const { window } = ctx;
+  // The rail's mission control is an icon-only button (`rail-mission-control`),
+  // so there is no label on screen to click; it is reached with the app's own
+  // keyboard and then **verified** by the menu item's own label appearing, which
+  // is clicked at its measured centre.
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    await pressKey(['Tab'], `Tab to the rail's mission control (attempt ${String(attempt)})`);
+    await pressKey(['Return'], 'Return to open the rail menu');
+    await sleep(600);
+    const shot = await captureWindow(window.id);
+    if (shot === null) continue;
+    const words = await screenWords(shot);
+    if (words === null) continue;
+    const grounded = groundPhrase(words, 'Settings');
+    if (grounded.box !== null) return true;
+  }
+  return false;
 }
 
 /** The settings screen: the workspace's own settings pane. */
 async function flowSettings(ctx) {
   const { window } = ctx;
-  // Settings is the app's own route, reached by the sidebar's settings control.
-  // The sidebar rail is a narrow icon column; its settings glyph is the last
-  // control, reached by keyboard from the focused window.
-  await pressKey(['Tab'], 'Tab to the settings control');
-  await pressKey(['Return'], 'Return to open settings');
-  await sleep(1500);
-  const shot = await captureWindow(window.id);
-  if (shot === null) {
-    notRun('settings', 'the window capture failed');
+  if (!(await openSettings(ctx))) {
+    const why =
+      'the rail menu never showed a Settings entry over six keyboard attempts, so the screen was not opened ' +
+      'and nothing is asserted about it';
+    recordFlow('settings', 'NOT RUN', why);
+    notRun('settings', why);
     return;
   }
-  saveEvidenceScreenshot(window.id, 'settings');
+  const opened = await clickScreenLabel(window, ctx.offset, 'Settings', 'the settings menu entry');
+  if (!opened.clicked) {
+    recordFlow('settings', 'NOT RUN', `the settings menu entry could not be grounded: ${opened.why}`);
+    notRun('settings', `the settings menu entry could not be grounded: ${opened.why}`);
+    return;
+  }
+  await sleep(1500);
+
+  // The screen: the settings pane's own section label (`settings.appearance`,
+  // `Settings.tsx:85`), which no other screen renders.
+  const appearance = await waitForScreenLabel(window, 'Appearance', 8000);
+  if (!appearance.seen) {
+    recordFlow(
+      'settings',
+      'NOT RUN',
+      `the settings screen did not show: ${String(appearance.why ?? 'unknown')}`,
+    );
+    notRun('settings', `the settings screen did not show: ${String(appearance.why ?? 'unknown')}`);
+    return;
+  }
   const status = await apiGet('/api/settings');
-  check(
-    'settings the settings screen is shown',
+  requireFlow(
+    'settings',
+    'the settings screen is shown and the app answers for it',
     status.ok,
     `GET /api/settings answered ${String(status.status)}`,
   );
+  saveEvidenceScreenshot(window.id, 'settings');
 }
 
 /** The backup flow: a backup is written through the app's own backup control. */
@@ -1697,21 +2636,36 @@ async function flowBackup(ctx) {
   const { window } = ctx;
   const before = await backupStatus();
   if (before === null) {
+    recordFlow('backup', 'NOT RUN', 'GET /api/backup did not answer, so there is no backup state to compare');
     notRun('backup', 'GET /api/backup did not answer, so there is no backup state to compare');
     return;
   }
-  // The backup-now control is the `backup-now` button in Settings' backup tab.
-  // It is a `btn-quick` (surface, not accent), so it is reached by keyboard.
-  await pressKey(['Tab'], 'Tab to the backup-now control');
-  await pressKey(['Return'], 'Return to run the backup');
+  // The settings pane's own backup tab (`settings.backup`, `Settings.tsx:87`).
+  const tab = await clickScreenLabel(window, ctx.offset, 'Backup', 'the settings backup tab');
+  if (!tab.clicked) {
+    recordFlow('backup', 'NOT RUN', `the backup tab could not be grounded: ${tab.why}`);
+    notRun('backup', `the backup tab could not be grounded: ${tab.why}`);
+    return;
+  }
+  await sleep(1000);
+
+  // The real action, on the card's own control (`backup.now`, `backup.now`).
+  const ran = await clickScreenLabel(window, ctx.offset, 'Back up now', 'the backup-now control');
+  if (!ran.clicked) {
+    recordFlow('backup', 'NOT RUN', `the backup-now control could not be grounded: ${ran.why}`);
+    notRun('backup', `the backup-now control could not be grounded: ${ran.why}`);
+    return;
+  }
   await sleep(3000);
+
+  // The fact the click produces: the backup manifest moved. `GET /api/backup`
+  // answered before the click and is compared against that reading.
   const after = await backupStatus();
-  const ran =
+  requireFlow(
+    'backup',
+    'a backup was written by the backup-now control',
     after !== null &&
-    (after.last_backup_at !== before.last_backup_at || after.last_backup_file !== before.last_backup_file);
-  check(
-    'backup a backup was written',
-    ran,
+      (after.last_backup_at !== before.last_backup_at || after.last_backup_file !== before.last_backup_file),
     after === null
       ? 'GET /api/backup did not answer after the click'
       : `last_backup_at stayed ${JSON.stringify(after.last_backup_at)}`,
@@ -1722,6 +2676,11 @@ async function flowBackup(ctx) {
 // ------------------------------------------------------------------ main ----
 
 async function main() {
+  // The audio teardown is installed before anything can be created, so a signal
+  // at any point afterwards still restores the default source and unloads both
+  // modules (C-ISO@1 rule 7).
+  installTraps();
+
   const reexec = ensureDisplay();
   if (reexec !== null) {
     return await new Promise((settle) => {
@@ -1739,19 +2698,92 @@ async function main() {
     return 2;
   }
 
+  if (!preconditions()) {
+    notRunRemaining('onboarding', 'a precondition this harness requires is not met');
+    return 2;
+  }
+
   await runSmoke();
+
+  // Every one of the eleven named flows is recorded, on every path. A flow with
+  // no recorded outcome is NOT RUN: it is never an absent row and never a pass.
+  for (const flow of FLOWS) {
+    if (!flowOutcomes.has(flow)) {
+      recordFlow(flow, 'NOT RUN', 'the run ended before this flow produced an outcome');
+      notRun(flow, 'the run ended before this flow produced an outcome');
+    }
+  }
 
   const failed = results.filter((r) => !r.ok);
   const notRunCount = results.filter((r) => r.notRun === true).length;
-  const blockedCount = results.filter((r) => r.blocked === true).length;
+  const blockedCount = blockedResults.length;
+  process.stdout.write('\n--- the eleven flows ---\n');
+  for (const flow of FLOWS) {
+    const outcome = flowOutcomes.get(flow);
+    process.stdout.write(`  ${outcome.outcome.padEnd(7)} ${flow}: ${outcome.detail}\n`);
+  }
   process.stdout.write(
     `\n${String(results.length - failed.length)}/${String(results.length)} assertions passed` +
       (notRunCount > 0 ? `, ${String(notRunCount)} NOT RUN` : '') +
       (blockedCount > 0 ? `, ${String(blockedCount)} BLOCKED` : '') +
       '\n',
   );
-  if (blockedCount > 0) return 3;
-  return failed.length > 0 ? 1 : 0;
+  // NOT RUN is never PASS: a run in which a flow could not be driven exits
+  // non-zero, so no caller can read exit 0 as "all eleven completed".
+  return exitCodeFor({ failed: failed.length, blocked: blockedCount, notRun: notRunCount });
 }
 
-process.exitCode = await main();
+/**
+ * The row's exit code, and nothing else decides it.
+ *
+ * `NOT RUN` is never `PASS`: a run in which a flow could not be driven exits 4,
+ * so no caller can read exit 0 as "all eleven completed". A blocked precondition
+ * (3) outranks a failure (1), and both outrank a NOT RUN (4).
+ */
+function exitCodeFor({ failed, blocked, notRun }) {
+  if (blocked > 0) return 3;
+  if (failed > 0) return 1;
+  if (notRun > 0) return 4;
+  return 0;
+}
+
+/**
+ * The entry-point guard.
+ *
+ * Importing this module for a helper probe runs no precondition, launches
+ * nothing and executes no `main()`; the helpers below are exported for exactly
+ * that, and each of them is pure or takes its own inputs.
+ */
+const isEntryPoint =
+  process.argv[1] !== undefined && resolve(process.argv[1]) === resolve(fileURLToPath(import.meta.url));
+
+if (isEntryPoint) {
+  process.exitCode = await main();
+}
+
+export {
+  classifySourceOutputs,
+  exitCodeFor,
+  ownershipBaselineProof,
+  scanBundleForObservationChannel,
+  snapshotDataDirNames,
+  findPhraseBoxes,
+  groundPhrase,
+  isRuleBInput,
+  main,
+  newestRuleBInput,
+  notRunRemaining,
+  observationChannelGone,
+  parseSourceTable,
+  pickPrimaryCluster,
+  preflightTools,
+  preconditions,
+  recordFlow,
+  requireFlow,
+  ruleBFreshness,
+  screenWords,
+  FLOWS,
+  RULE_B_BASE,
+  RULE_B_PATHS,
+  REQUIRED_TOOLS,
+};

@@ -7,9 +7,9 @@
   ],
   "baseCommit": "62abb28",
   "attempt": 3,
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt2 source review CHANGES REQUESTED D1-D6/R1-R7; no V3/native UI executed; frozenV0PASS retained",
-  "nextAllowedAction": "final-normal-code-repair-then-fresh-shipping-source-review",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Attempt3 code/unit repair returned: scopedchecks0 and20helpertestsPASS; candidate unreviewed, V3neverrun",
+  "nextAllowedAction": "fresh-attempt3-source-review-before-push-or-native-runtime",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
@@ -21,7 +21,7 @@
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-04T16:47:00Z",
+  "updatedUtc": "2026-10-04T18:15:00Z",
   "instructionReview": "docs/v2/state/reviews/P3.6-ir8.md",
   "implementationWorkerId": null,
   "buildWorkerId": null,

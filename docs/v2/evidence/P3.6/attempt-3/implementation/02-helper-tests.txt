@@ -1,0 +1,52 @@
+P3.6 attempt 3 CODE/UNIT helper tests (synthetic inputs; no app, no display, no audio, no port)
+date: 2026-10-04T11:09:10-06:00
+
+$ node docs/v2/evidence/P3.6/attempt-3/implementation/helper-tests.mjs
+tauri-e2e-smoke: source the sandbox environment first: node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-….env && . /tmp/apunta-v2-….env (APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required)
+PASS R5 importing the harness ran nothing (this process is alive to assert it)
+PASS R1 a single accent cluster is picked
+PASS R1 two comparable accent clusters are refused, not guessed
+PASS R1 no accent cluster at all is refused with a named reason
+PASS R1 one dominant cluster still wins over a small second one
+PASS R2 the Copied state is a control-specific label, not a colour count
+PASS D1 a pane-only label is grounded only when it is unique
+PASS D1 a phrase must match whole words in reading order, not substrings
+PASS R3 the live source table maps indices to names and rejects malformed rows
+PASS R3 a source-output resolves through the table, and the dash client column is "no client"
+PASS R3 a stream on a non-virtual source is surfaced, not dropped
+PASS R3 an unresolvable source index is an error, never "not the microphone"
+PASS D6 Rule B input paths are in the set and its build outputs are not
+PASS D6 the source walk finds a Rule B input and reports its mtime
+PASS D6 the freshness predicate runs against real git and answers both halves
+PASS D4 the observation scan refuses to pass on an unread bundle
+NOT RUN onboarding: zero windows found on the display
+NOT RUN capture: zero windows found on the display
+NOT RUN draft: zero windows found on the display
+NOT RUN refine: zero windows found on the display
+NOT RUN publish+copy: zero windows found on the display
+NOT RUN patient list: zero windows found on the display
+NOT RUN plan: zero windows found on the display
+NOT RUN briefing: zero windows found on the display
+NOT RUN brainstorm: zero windows found on the display
+NOT RUN settings: zero windows found on the display
+NOT RUN backup: zero windows found on the display
+PASS D5 an early abort records all eleven named flows as NOT RUN
+PASS D2 the ownership baseline is a name set taken after the first instance
+PASS D4 an absent or scriptless bundle is unreadable, never "zero occurrences"
+PASS D5 the exit code refuses to read a NOT RUN as a pass
+
+20/20 helper tests passed
+exit=0
+
+--- R5 before/after probe: importing the harness must run nothing ---
+
+$ node build/p36-attempt3/before-probe.mjs build/p36-attempt3/baseline-harness.mjs   # copy of 9321861
+tauri-e2e-smoke: source the sandbox environment first:
+  node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-…env && . /tmp/apunta-v2-…env
+APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required.
+exit=2 -- the baseline terminates the process at its import-time precondition (R5 DEFECT)
+
+$ node build/p36-attempt3/before-probe.mjs scripts/v2/tauri-e2e-smoke.test.mjs
+AFTER: /home/villenull/Projects/Apunta/scripts/v2/tauri-e2e-smoke.test.mjs imported and returned; this process is still alive
+AFTER: exported keys: FLOWS, REQUIRED_TOOLS, RULE_B_BASE, RULE_B_PATHS, classifySourceOutputs, exitCodeFor, findPhraseBoxes, groundPhrase, isRuleBInput, main, newestRuleBInput, notRunRemaining, observationChannelGone, ownershipBaselineProof, parseSourceTable, pickPrimaryCluster, preconditions, preflightTools, recordFlow, requireFlow, ruleBFreshness, scanBundleForObservationChannel, screenWords, snapshotDataDirNames
+exit=7 expected -- 7 is the probe's own marker: the import returned and the process is alive
