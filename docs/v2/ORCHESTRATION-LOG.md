@@ -2967,3 +2967,11 @@ saves currentdispatch+IR+checkpoint attempt1/base62abb28/7879. 63036bb0
 freshinstructionreview running, no runtime yet; elevenactualUIflows/virtual
 capture/nohook/test-vs-production provenance clarified withoutnewcriteria.
 Preview7811 unchanged; no live data or seventh native attempt.
+
+## 2026-10-04 04:07 UTC — useful integration lanes overlap safely
+
+IR8 CLEAR saved7ea185e/archived. Authora28cfbfc prepares NEWscripts/v2 harness
+only (outsideRuleB), while builder07590b43 executes exactV0 testproducerbuild
+and approved dryplugins, own BUILD lease. No nativeUI/runtime yet; fresh
+shipping-source review gatesV3. Userpreview7811 preserved. ~112min localEOD
+budget explicitly allocated, no100percentclaim until actualoperationalproof.

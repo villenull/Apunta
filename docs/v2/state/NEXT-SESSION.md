@@ -1,3 +1,24 @@
+## Integration instructions CLEAR; code and test-build lanes running
+
+7ea185e freezes fresh P3.6-ir8: 10 CLEAR, 0 DEFECT/UNKNOWN, unchanged fields
+and verification rows/Expected, all dependency/pin checks hold. Archived63036bb0.
+Author a28cfbfc-2dde-4226-bde3-42be5009bf3b owns NEW native smoke harness,
+implementation evidence and resume-anchor prep; CODE/UNIT only, no acceptance
+or UI/audio launch before fresh shipping-source review. NEW harness outside
+Rule B allows parallel build lane without changing bundled feature inputs.
+Builder07590b43-17e0-4f77-805c-e341ffd1d7ce owns only build-preparation evidence,
+V0 exact decoded test-build once plus approved four dry plugin inspections;
+exclusive BUILD lease, no V3/V1/V4/nativeUI yet. Root owns checkpoint/progress.
+No global build/tests/typecheck by codeauthor while producer writes outputs.
+
+Current04:07UTC=22:07local; ~112min to EOD. Aim code+build by22:35, code review
+10min, nativeflows20min, productionbuild15min, realworkflow15min, remaining
+regression/handover buffer. These are estimates, not PASS claims or authority
+to skip any actual criterion. No more preparatory review packets unless a
+concrete unresolved defect requires one. Preserve ownerpreview7811.
+On each completion freeze finished explicit paths, fresh independent source
+review, then resume S3 order V0→V3→V1→V4 with test/prod provenance distinct.
+
 ## P3.4 APPROVED; P3.6 attempt 1 instruction review active
 
 Owner AM-200 resolves conditional V0 NOT RUN versus coordinator approval rule

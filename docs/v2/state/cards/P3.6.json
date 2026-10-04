@@ -8,11 +8,14 @@
   "baseCommit": "62abb28",
   "attempt": 1,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Dependencies APPROVED; current dispatch and instruction-review brief generated with existing-scope clarifications",
-  "nextAllowedAction": "independent-instruction-review-before-implementation",
+  "lastCompletedStep": "Fresh instruction review10CLEAR/0DEFECT; code author and disjoint V0 build preparation dispatched",
+  "nextAllowedAction": "independent-harness-code-review-then-V3-on-built-test-image",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {},
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-04T01:03:00Z"
+  "updatedUtc": "2026-10-04T04:07:00Z",
+  "instructionReview": "docs/v2/state/reviews/P3.6-ir8.md",
+  "implementationWorkerId": "a28cfbfc-2dde-4226-bde3-42be5009bf3b",
+  "buildWorkerId": "07590b43-17e0-4f77-805c-e341ffd1d7ce"
 }
