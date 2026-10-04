@@ -2893,3 +2893,11 @@ P35 APPROVED, P36 dependency-held. Native lease free; no acceptance rerun.
 list proving no reviewer existed. a873 proof lint CLEAR archived fbf5aea.
 Static V3/fullV4 bounded owner question submitted only after both review gates.
 P34 BLOCKED/6, P35 APPROVED/4, P36 dependency-held; no row rerun yet.
+
+## 2026-10-04 00:08 UTC — verified receipt and real English STT sample
+
+0a1a66bb technical acquisition CLEAR archived; proof packet hygiene scope
+rejected pending35768b8c output/scratch-only repair. Raw egress export rejected
+automatically; safer task omits logs. a749eed7 runs one shipped-provider real
+English STT fixture, sole local STT inference lease. No live/native/Spanish
+work; static completion decision still pending. No idle agents retained.

@@ -1,3 +1,25 @@
+## Receipt CLEAR; English STT sample running while static grant waits
+
+0a1a66bb acquisition review completed technically CLEAR, archival confirmed.
+Receipt/bytes/checksum/installer control flow verified independently. Its proof
+packet needs hygiene correction before full integration: two console.log sites
+and unauthorized /tmp/opencode scratch write. Historical report left intact;
+root does not delete outside-project file. 35768b8c-93a6-4bc5-a5ac-be24d41a6264
+confirmed RUNNING callback, exclusive guard-probe.ts output/scratch repair and
+new english-eod-model-probe-repair evidence; offline exact replay only. Broader
+raw-log-copy launch was auto-review rejected for potential signed credentials;
+safer task excludes logs entirely. Root read-only schema check proved stored
+queryValues redacted, no raw log export attempted. Existing model unaffected.
+
+Fresh a749eed7-7a77-4dfb-bea7-82320ae1f840 confirmed RUNNING callback, owns
+NEW english-eod-real-stt evidence plus ignored invocation scratch. Sole local
+STT inference lease until return: shipped WhisperCppSttProvider, pinned tiny.en,
+actual bundled binary, one synthetic English fixture, fakeAI off. No Ollama
+inference/app/build/audio/Pulse/server/DB/network; no Spanish card or quality
+acceptance substituted. This readies speech independently of held P36 UI gate.
+Root retains checkpoints. StaticV3/fullV4 owner question still pending; no
+unauthorized row execution, P34BLOCKED/P35APPROVED/P36dependency-held.
+
 ## English model acquired; static completion owner decision pending
 
 04340fea finished, archival confirmed. Acquisition packet872bf01 records one
