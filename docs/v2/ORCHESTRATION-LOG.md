@@ -2916,3 +2916,10 @@ replay. Staticownerdecisionpending; no nativeacceptance row repetition.
 accepts necessary materialization/NC2 data adaptation conditionedindependent
 verification; 0429c174 freshIR confirmedrunning. No suppression/configchange.
 5afa8666 spokeninferenceactive callback; staticgrant stillpending, no rowrun.
+
+## 2026-10-04 00:22 UTC — spoken output real, limits retained
+
+5afa8666 archived/leasefree, 363c67f preserves realspokentranscript and drug
+phrase miss. HostNode26—not bundled24—disclosed; noclinicalquality PASS.
+ee832f2c frozenSTTaudit running callback, 0429probeIRrunning. Staticowner
+questionpending; P34BLOCKED/P35APPROVED/P36held. No repeatedinference/native.

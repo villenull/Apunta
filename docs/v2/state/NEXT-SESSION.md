@@ -1,3 +1,23 @@
+## Real spoken transcript observed; medication miss and host-runtime limit
+
+5afa8666 completed/archived, inference lease released. 363c67f saves one
+real shipped-provider spoken run on exactapprovedP35wav; name and negatedrisk
+survive, medication 'sertraline fifty milligrams daily' is garbled. No quality
+PASS/clinicaljudgement/card approval; rawsynthetictranscript preserved. Provider
+318ms vswrapper3s distinct. HostNodev26.8.2 used, so this is HOSTengine readiness,
+not pinned/bundledNode24.19 runtime proof. FullrealAppImage workflow stilldue.
+Fresh ee832f2c-4ab8-430a-ad2f-5993e693972b confirmed RUNNING callback, exclusive
+stt-readiness-ir report/new evidence only, frozenreadsaudit/noinference rerun.
+
+0429c174 offlineprobe fixture/replayIR remainsrunning callback; no newsource
+or guardwriter. All native/build/STT/Ollama/audio/display leases free now.
+Static V3/fullV4 owner permission stillpending; no unauthorized retries.
+P34BLOCKED/6, P35APPROVED/4, P36 dependency-held. Nextprimaryaction unchanged:
+explicitstaticgrant→onefullstaticcompletion→independentresults audit→P34decision
+then corrected eleven-flow P36 dispatch. Modelcache present/receiptverified.
+No claim tonight's English product is fullyworking before actualUI/persistence/
+export/recovery checks. No extra component inference justified now.
+
 ## Offline fixture repair saved; final independent fidelity review running
 
 2f59df7e completed and archival confirmed. e7889bc preserves13casepairs
