@@ -1,0 +1,16 @@
+# independent re-derivation 2026-10-04T00:25:19Z
+## input hashes
+d487a3930b2baac09c1f3206106e852caec8ed3a2a4f5f3d92d6f8f092d5820f  e2e/fixtures/audio/dictation-10s.wav
+79719c56b2ca0477cd0bde9647324efa4a60119d955e53b985ac599fdb5d0a5f  /tmp/apunta-v2/2026-10-03T22-37-12-589Z-2b44c153/audio-en/dictation-30s.wav
+921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f  build/eod-model-cache/models/ggml-tiny.en.bin
+3a9f516ded6dc6f619e96570ac326922c5718e5e6bca03a735e5d07bd60804de  build/linux-resources/bin/whisper-cli
+## sizes
+320044 e2e/fixtures/audio/dictation-10s.wav
+960044 /tmp/apunta-v2/2026-10-03T22-37-12-589Z-2b44c153/audio-en/dictation-30s.wav
+77704715 build/eod-model-cache/models/ggml-tiny.en.bin
+1064648 build/linux-resources/bin/whisper-cli
+## node/host
+v26.8.2
+8
+## HEAD
+c3283ff9a7ea304b1608c269ae1a424c87339aa3

@@ -1,0 +1,4 @@
+=== scratch vs committed diff (empty = identical) ===
+=== committed-copy import resolution ===
+docs/v2/server absent -> committed ../../server import does not resolve
+server/src/ai/whisper.ts present -> scratch ../../server resolves

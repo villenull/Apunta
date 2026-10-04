@@ -1,0 +1,11 @@
+=== prettier ===
+Checking formatting...
+All matched files use Prettier code style!
+prettier exit=0
+=== eslint ===
+eslint exit=0
+=== node --check ===
+OK docs/v2/evidence/english-eod-real-stt/real-stt.ts
+OK docs/v2/evidence/english-eod-real-stt/derive-command.ts
+OK docs/v2/evidence/english-eod-spoken-stt/real-stt.ts
+OK docs/v2/evidence/english-eod-spoken-stt/derive-command.ts

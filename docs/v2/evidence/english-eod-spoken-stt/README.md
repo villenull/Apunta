@@ -130,10 +130,10 @@ with the smallest English model is one sample.
 - **Exactly one inference.** One `transcribe()` call, one binary spawn. No
   retry, no fallback input, no "try preview mode as well". `03-derived-command.json`
   exists precisely so recording the command line could not require a second run.
-- **Ground truth read first, input hash verified before the call.** Had the file
-  been missing or its digest differed from the frozen P3.5
-  `79719c56b2ca0477c…`, the run would have stopped rather than substituted
-  anything. It matched, so the run happened.
+- **Ground truth read first; the observed input hash matched the frozen P3.5
+  `79719c56b2ca0477c…` before the call.** The preflight printed that hash for
+  comparison; the harness has no automatic digest-mismatch guard. The actual
+  input matched. No substitution occurred.
 - **The transcript is reported as it came out**, including the trailing
   truncation and the mangled medication, rather than edited into something that
   reads better.
