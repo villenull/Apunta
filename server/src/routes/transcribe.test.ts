@@ -428,7 +428,13 @@ describe('POST /api/transcribe over a real connection', () => {
     const modelPath = join(harness.dataDir, 'route-cancel-model.bin');
     writeFileSync(modelPath, 'synthetic model');
     const app = await buildApp({
-      config: harness.config,
+      // Its own audio directory: this request is aborted mid-flight, so the
+      // route's `finally` (`await discard`) can still be running when this test
+      // returns. Writing into the suite's shared `audioDir` let that late
+      // `rm` land during the next test and delete a file it had just
+      // snapshotted — the flake CI caught. A private directory keeps the
+      // un-awaited cleanup from touching anyone else's files.
+      config: { ...harness.config, audioDir: join(harness.dataDir, 'preview-abort-audio') },
       db: harness.db,
       logger: false,
       providers: {
