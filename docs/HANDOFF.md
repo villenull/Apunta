@@ -4,8 +4,10 @@ P3.4 native security is APPROVED under AM-200 (20/20 native assertions,
 independently CLEAR static checks, owner-accepted conditional rebuild skip with
 old failures and binary provenance preserved). P3.5 microphone capture and
 containment are APPROVED under AM-197, including tone and silence. Production
-AppImage integration P3.6 is in progress, not yet accepted: its current
-instruction review is CLEAR and the native harness/test build are being prepared.
+AppImage integration P3.6 is BLOCKED after its final attempt-3 source review:
+UI-label grounding and backup containment checks still need correction. No
+native V3 run or further repair attempt is authorized. The completed reviewed
+candidate and rejected findings are preserved for safe closeout.
 The existing English Whisper cache and qwen model have real component proof;
 medication transcription and refinement fact-loss limitations remain recorded.
 Full native speech-to-note/export/recovery completion has not been claimed.

@@ -1,0 +1,120 @@
+P3.6 attempt-3 source review — defect mechanisms (read-only evidence)
+======================================================================
+
+All line numbers are from the repaired scripts/v2/tauri-e2e-smoke.test.mjs
+(sha256 ca8bc468ae15717ca14cdacf6848736672877448ced7d760066f756d4018314e)
+unless prefixed with a file name. Every mechanism was confirmed against the
+current tree at e212301; nothing was launched.
+
+F1 — 'Add patient' is not pane-only (onboarding always NOT RUN)
+-----------------------------------------------------------------
+Harness: confirmPane(window, 'onboarding', 'Add patient') at :2108.
+Route:    OnboardingFormat.tsx:76 navigates to returnTo; returnTo defaults to
+          '/patients/new' (OnboardingFormat.tsx:30). App.tsx:117 maps
+          /patients/new -> AddPatient.
+Screen:   AddPatient.tsx:92 renders <h2>Add patient</h2> and :152 renders a
+          submit button labelled patients.add ('Add patient'). Both visible.
+Refusal:  groundPhrase (:928-941) refuses a label with >1 match, so the
+          confirmation fails and onboarding records NOT RUN on a healthy run.
+
+F2 — 'Ask a question or give feedback' mis-quoted (draft+refine always NOT RUN)
+-------------------------------------------------------------------------------
+Harness: confirmPane(..., 'Ask a question or give feedback') at :2281 (draft)
+          and :2321 (refine); findPhraseBoxes strips one trailing [.,] at :910.
+UI:       shared/src/i18n/en.ts:1046 'refine.inputPlaceholder' =
+          'Ask a question or give feedback...' (three ASCII periods), rendered
+          as the input placeholder at RefineColumn.tsx:284. The ariaLabel
+          (refine.inputLabel, no dots) is not visible.
+Match:    OCR reads 'feedback...' as one token; after the strip it is
+          'feedback..' which never equals 'feedback'. Both flows NOT RUN.
+
+F3 — 'Listening for words' mis-quoted (capture always NOT RUN)
+---------------------------------------------------------------
+Harness: confirmPane(window, 'capture', 'Listening for words') at :2190.
+UI:       shared/src/i18n/en.ts:998 'capture.listening' =
+          'Listening for words…' (U+2026; cat -A shows M-bM-^@M-&), rendered
+          at LiveRecording.tsx:74.
+Match:    The strip regex (:910) handles only [.,], not U+2026. If OCR reads
+          the ellipsis (as … or ...), the last word never equals 'words'.
+
+F4 — 'Start a plan' not on screen (plan always NOT RUN)
+------------------------------------------------------
+Harness: clickScreenLabel(..., 'Start a plan', ...) at :2461.
+UI:       plan.start ('Start a plan') is the plan pane's empty-state control
+          (PlanView.tsx:348), visible only when the plan pane is open.
+State:    The view defaults to 'notes' (Workspace.tsx:84-85). flowPatientList
+          clicks the patient's row, which navigates to /?patient=id
+          (Workspace.tsx:222-227), dropping the note param; the app is then on
+          PatientWelcome. Nothing in the flow sequence opens the plan pane, so
+          'Start a plan' is not on screen. The comment "clicking it opens the
+          pane" is wrong — the control is inside the pane.
+
+F5 — 'Prepare for session' and 'Brainstorm' each appear twice
+-------------------------------------------------------------
+Harness: clickScreenLabel(..., 'Prepare for session', ...) at :2505 and
+          clickScreenLabel(..., 'Brainstorm', ...) at :2542.
+UI:       After flowPatientList the has-notes PatientWelcome shows cards
+          'Brainstorm' (PatientWelcome.tsx:66) and 'Prepare for session'
+          (:78). The notes column is visible at the same time
+          (Workspace.tsx:625, shown when !atHome && !atDirectory &&
+          !firstNoteOnly; firstNoteOnly is false because the patient has a
+          draft note) with switches 'Brainstorm' (NotesColumn.tsx:100) and
+          'Prepare for session' (:122). App.test.tsx:185-201 confirms the
+          welcome and the notes column coexist.
+Refusal:  Each label appears twice; groundPhrase refuses; both flows NOT RUN.
+
+F6 — 'Appearance' appears twice on the settings modal (settings always NOT RUN)
+-------------------------------------------------------------------------------
+Harness: waitForScreenLabel(window, 'Appearance') at :2614.
+UI:       Settings.tsx:85 renders the tab label 'Appearance' (settings-nav-label
+          at :181) and :455 renders the open section's heading 'Appearance'
+          (h2.settings-title). Both visible when the appearance tab is open.
+Refusal:  Two matches refuse; the settings flow records NOT RUN.
+
+F7 — ownership containment fails on the backup's own 'backups/' directory
+-------------------------------------------------------------------------
+Harness: the check at :1993-1999 counts ANY name appearing beside the baseline
+          as a failure (extra.length === 0); the helper test demonstrates the
+          mechanism at helper-tests.mjs:320-323.
+Route:    flowBackup clicks 'Back up now' (:2653) -> POST /api/backup.
+Server:   the default backup dir is join(dataDir, 'backups')
+          (server/src/backup/store.ts:37-39); the sandbox configures no other
+          destination, so the backup writes APUNTA_DATA_DIR/backups/.
+Result:   After flowBackup, 'backups' appears beside the baseline and the
+          check 'smoke no second lock, database, -wal or -shm' FAILS on a
+          healthy run. The check's name (four C-OWN@1 files) does not match
+          its mechanism (any new name).
+
+Repairs verified CLEAR (re-checked against the tree)
+----------------------------------------------------
+D2 baseline after first instance (:1914, after waitForOwnership :1906);
+D3 installTraps first in main (:2682), SIGINT/SIGTERM/SIGHUP + exit (:1484-1501);
+D4 scanBundleForObservationChannel unreadable on absent/scriptless/unread
+   (:1284-1318), check requires unreadable === null (:2017-2024);
+D5 exitCodeFor 3/1/4/0 (:2743-2748), notRunRemaining + summary loop (:212-218,
+   :2710-2715);
+D6 ruleBFreshness git diff + status + mtime anchor (:1710-1736), base 62abb28
+   (:130), checked before launch (:1807-1821);
+R1 pickPrimaryCluster CLUSTER_MARGIN 2 (:833-848);
+R2 Copied label asserted, colour count removed (:2379-2406);
+R3 assertNoPhysicalStream via live source table (:1445-1467, :1380-1407);
+R4 every early abort records all eleven flows NOT RUN;
+R5 isEntryPoint guard (:2757-2762), 25 helpers exported;
+R6 REQUIRED_TOOLS preflight (:285-304);
+R7 ensureDisplay honours inherited DISPLAY (:438-470);
+identity glob (:409-425), measured frame-to-client (:682-700), scale read and
+   required 1 (:706-730), CSP pinned to csp.ts (:1200-1262), pid-scoped stop
+   (:360-378, :1958-1970) — all unchanged and still correct.
+
+Scoped checks re-run by this review (all exit 0)
+------------------------------------------------
+node --check scripts/v2/tauri-e2e-smoke.test.mjs
+npx eslint scripts/v2/tauri-e2e-smoke.test.mjs
+npx prettier --check scripts/v2/tauri-e2e-smoke.test.mjs
+node docs/v2/evidence/P3.6/attempt-3/implementation/helper-tests.mjs  (20/20)
+
+UNKNOWN (cannot be settled statically)
+--------------------------------------
+Whether OCR reads the ellipsis/dots in a way that matches; whether the
+keyboard-driven non-accorded controls land; whether a click hits the intended
+cluster; whether the flows' API facts move. No native V3 was run.

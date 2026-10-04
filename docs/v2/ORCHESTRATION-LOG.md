@@ -3006,3 +3006,14 @@ locally, cleanworkingtree. Userpushscope requiresindependentreview: pushed
 only reviewedprefixd435d3b, sourcecandidatesremainlocal. ebb4f00f freshsource
 reviewrunningcallback; no native/build/audio/inference active. Durableclose
 handoffstates nextactionsandnoautomaticcompletionpromise, attempt3budgetheld.
+
+## 2026-10-04 18:43 UTC — final worker complete; owner-requested closeout
+
+Final reviewer ebb4f00f genuinely idle with saved P3.6-impl3-source report and
+evidence; archived successfully. CHANGES REQUESTED retained verbatim; root
+records P3.6 BLOCKED at exhausted attempt3, no native V3, no new repair/runtime.
+Owner explicitly asked wait then commit/push: save completed rejected candidate
+and accurate checkpoints as archival work, not approval. External owner-Claude
+nine-bug report copied verbatim and prioritized for after closeout; no fix agent
+started. Restore/WAL is first; Node26 issue deduplicated as existing environment
+tracking. All previous acceptance/history intact; no product completion claim.

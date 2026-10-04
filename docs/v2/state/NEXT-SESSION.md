@@ -1,3 +1,32 @@
+## Closeout — final review saved; P3.6 BLOCKED, bug fixes queued
+
+The final worker ebb4f00f completed and was archived after verifying its saved
+report. `reviews/P3.6-impl3-source.md` requests changes: pane labels are absent,
+duplicated or punctuated differently, and backup output triggers an overbroad
+ownership check. The report headline says nine defects but enumerates F1–F7;
+retain it verbatim and use the numbered mechanisms, not that headline count.
+The original D1–D6/R1–R7 repair mechanisms and 20 helper checks were verified;
+that does not prove the native UI works. V3 has never run. V0's frozen test
+AppImage PASS and all attempt history remain intact. Attempt 3 is exhausted;
+no fourth attempt, reset, silent repair or product approval is authorized.
+
+Owner explicitly requested waiting for the last worker, then committing and
+pushing before closing this chat. Preserve the reviewed rejected candidate
+with its truthful BLOCKED checkpoint as archival work; this push does not
+approve source or authorize native runtime. The current closeout supersedes
+the older pending-review / hold-push instructions below. Verify remote HEAD
+and clean working tree after push; the commit containing this header is the
+closeout checkpoint. No root-owned worker remains active, and all acceptance
+leases are free. The separate owner-launched Claude reviewer is left alone.
+
+Owner's external nine-bug report is preserved verbatim in
+`reviews/project-bug-review-2026-10-04.md`; prioritized future work is in
+`POST-CLOSEOUT-BUG-QUEUE-2026-10-04.md`. Start with synthetic restore/WAL safety
+validation, then bounded packets under the free-model rule. Do not start fixes
+before this closeout. Node 26/jsdom is an existing tracked environment issue.
+P3.4 and P3.5 remain APPROVED; complete English native speech-to-note, export,
+recovery and production integration remain unverified. No 100% product claim.
+
 ## Safe-close checkpoint: final candidate saved locally; source review running
 
 Owner asked whether committed/pushed and safe to close. At check the repairer
