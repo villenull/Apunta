@@ -1,3 +1,27 @@
+## Spoken fixture correction active; preserve speechless control honestly
+
+a749eed7 completed/archived, lease released. Shipped realprovider/binary/model
+ran one tonefixture in916ms, nonempty repeated 'oh' transcript. This is engine
+execution only, NOT realdictation/qualityPASS. Its 'spoken fixture absent'
+claim was cwd-limited and false: root statverified exact P35approved file
+/tmp/apunta-v2/2026-10-03T22-37-12-589Z-2b44c153/audio-en/dictation-30s.wav,
+960044B/hash79719c56…d5d0a5f from frozen04-V1 evidence. File read-only.
+Fresh5afa8666-6332-400a-a256-ccf77146dfbb confirmed RUNNING callback holds sole
+STT inference lease for ONE shippedprovider invocation on that spokenfixture,
+NEW english-eod-spoken-stt evidence/ignoredscratch only. No audio committed,
+no live mic/app/server/DB/Ollama/network/Spanishcard acceptance.
+
+35768b8c completed/archived output/scratch repair exact replay but residual
+7URLliteral lint errors were outside its output-onlyscope. Fresh2f59df7e
+cfc8-463d-87f7-5ef93e4f52a7 confirmed RUNNING callback, extracts those offline
+casepairs byte-exact as JSONfixturedata; same synthetic fetch/cases/verdicts,
+no ruleoverride/suppression. Archival before-snapshot classified .ts.txt and
+replay onlyexecutes ignoredcopy. Scope newprobe fixture+reference+repairproof;
+historicalreview/adapter/source unchanged. No rawegresslog export allowed.
+New proofartifact integration and freshIR remain due; before final staticV4
+execution require current global hygiene clean, not only earlier frozenCLEAR.
+Staticowner question still pending; P34BLOCKED/6/P35APPROVED/4/P36held.
+
 ## Receipt CLEAR; English STT sample running while static grant waits
 
 0a1a66bb acquisition review completed technically CLEAR, archival confirmed.

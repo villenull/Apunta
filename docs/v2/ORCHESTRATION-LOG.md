@@ -2901,3 +2901,11 @@ rejected pending35768b8c output/scratch-only repair. Raw egress export rejected
 automatically; safer task omits logs. a749eed7 runs one shipped-provider real
 English STT fixture, sole local STT inference lease. No live/native/Spanish
 work; static completion decision still pending. No idle agents retained.
+
+## 2026-10-04 00:14 UTC — correct speech input, preserve tone limitation
+
+a749 engineproof completed/archived but tone has no groundtruth; actualspoken
+P35cachedfile located byrootexactpath. 5afa8666 runs ONE realspokenSTT, sole
+inferencelease. 35768 outputcleanup archived with7residualURLliteral lint;
+2f59df7e moves exact offlinecase data to fixture JSON withoutoverride, preserving
+replay. Staticownerdecisionpending; no nativeacceptance row repetition.
