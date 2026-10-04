@@ -1,0 +1,86 @@
+== 1. command extraction (independent parse of the card V4 row) ==
+V4 cells=3 segments=9
+  seg 0: export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:
+  seg 1: node --version
+  seg 2: node scripts/v2/sandbox.mjs env --port 7837 > /tmp/apunta-v2-p3.5-v4-ton
+  seg 3: . /tmp/apunta-v2-p3.5-v4-tone.env
+  seg 4: export APUNTA_ALLOW_AUDIO_TEST=1
+  seg 5: node scripts/v2/tauri-audio.test.mjs tone
+  seg 6: node scripts/v2/sandbox.mjs env --port 7839 > /tmp/apunta-v2-p3.5-v4-sil
+  seg 7: . /tmp/apunta-v2-p3.5-v4-silence.env
+  seg 8: node scripts/v2/tauri-audio.test.mjs silence
+PASSX  tone arm at segment 5 and silence arm at segment 8 (got 5/8)
+PASSX  silence arm = segments 6,7,8
+PASSX  seg6 verbatim
+PASSX  seg7 verbatim
+PASSX  seg8 verbatim
+PASSX  reconstructed completion command == proposal section 4 command, byte for byte
+PASSX  reconstructed completion command == author scratch completion-command.sh
+== 2. seven unsets == printEnv seven names (from source, not from the evidence) ==
+PASSX  printEnv writes exactly the seven names in order: APUNTA_DATA_DIR,APUNTA_PORT,APUNTA_NO_OPEN,APUNTA_TEST_RUN_ID,APUNTA_V2,APUNTA_CHECK_URL,APUNTA_E2E_PORT
+PASSX  completion command unsets exactly those seven, in order
+PASSX  no host-routing key is unset (checked 10 names)
+== 3. real resolveSandboxDataDir: env argument vs process.env ==
+platform default with clean env: /home/villenull/.local/share/apunta
+  A env-arg {} + process.env APUNTA_DATA_DIR leaked (the 22:40:18 shape): REFUSED -> refusing data folder /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data: it equals (or sits inside) the platform default /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data. Sandbox runs never touch the live data folder.
+  B env-arg {} + process.env clean (the env -u shape): ACCEPTED -> /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data
+  C real default asked as the data dir (negative control): REFUSED -> refusing data folder /home/villenull/.local/share/apunta: it equals (or sits inside) the platform default /home/villenull/.local/share/apunta. Sandbox runs never touch the live data folder.
+  D env-arg carries APUNTA_DATA_DIR, process.env clean (env arg supplies proposed dir): ACCEPTED -> /tmp/apunta-v2/00000000-0000-7000-8000-000000000000/data
+PASSX  A: leaked process.env value makes the guard refuse (root cause reproduced)
+PASSX  B: with the seven names absent the synthetic run folder is accepted
+PASSX  C: the real default folder is still refused (isolation did not slack the guard)
+PASSX  D: the env argument, not process.env, supplies the proposed data dir
+PASSX  no folder was created by any guard call
+== 4. checkpoint: counts, never-started arm, preserved histories ==
+sideEffectsDone: 14 entries = 9 capture objects + 5 strings; by attempt {"1":5,"3":2,"4":2}
+sandboxRuns: 9 entries; by attempt {"1":5,"3":2,"4":2}
+PASSX  attempt 4 holds exactly V3 + V4-tone
+PASSX  no sandboxRuns entry names V4-silence at any attempt
+PASSX  no capture record names V4-silence
+PASSX  9 capture objects and 9 anchors today; +1 each makes 10, attempt 4 goes 2 -> 3
+PASSX  five attempt-1 and two attempt-3 records retained
+PASSX  five + two anchors retained
+PASSX  priorAttempt1Criteria and priorAttempt3Criteria present
+PASSX  all four cleanup strings retained (4); the fifth string is the A10 acquisition record, also retained
+PASSX  checkpoint attempt=4 status=BLOCKED
+PASSX  V4 BLOCKED and V5 FAIL retained as recorded
+== 5. on-disk facts (sandbox scratch and /tmp only; no live data, no 7717) ==
+FAIL  silence env file exists and is 0 bytes
+PASSX  tone env file holds exactly the seven exports: APUNTA_DATA_DIR,APUNTA_PORT,APUNTA_NO_OPEN,APUNTA_TEST_RUN_ID,APUNTA_V2,APUNTA_CHECK_URL,APUNTA_E2E_PORT
+  attempt-4-era run folders: 2026-10-03T22-36-41-474Z-8a652f68 2026-10-03T22-37-12-589Z-2b44c153 2026-10-03T22-39-52-770Z-69fe0aa7 2026-10-03T22-40-18-947Z-72d61c98
+PASSX  exactly two capture runs (V3, V4-tone); no third run folder for 7839 (2)
+PASSX  no run folder exists newer than the V4-tone run; the silence arm created nothing
+  run 2026-10-03T22-36-41-474Z-8a652f68: no capture record (fixture run), skipped
+  run 2026-10-03T22-37-12-589Z-2b44c153: no capture record (fixture run), skipped
+PASSX  run 2026-10-03T22-39-52-770Z-69fe0aa7 record step=V3 (not V4-silence)
+PASSX  run 2026-10-03T22-40-18-947Z-72d61c98 record step=V4-tone (not V4-silence)
+== 6. V5 provenance checker, own extraction, read-only dry run ==
+PASSX  node -e program located in the V5 cell
+PASSX  own extraction is byte-equal to the author extracted program
+  real checkpoint (expect the recorded FAIL): exit=1
+    FAIL: no sandboxRuns entry names step V4-silence at attempt 4; a PREV_DEFAULT record with no matching capture run cannot be identified, so the baseline is unverifiable
+    
+  synthetic copy with ONE appended record + anchor (shape check only): exit=0
+    V5 ignoring 7 PREV_DEFAULT record(s) from earlier attempts; earlier history is kept, not deleted, and is excluded by the attempt 4 selection
+    V5 attempt 4: baseline records tied to the sandboxRuns entries for V3, V4-tone and V4-silence
+    V5 recorded PREV_DEFAULT: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+    V5 current default source: alsa_input.usb-UGREEN_Camera_2K_UGREEN_Camera_2K_SN0001-02.analog-stereo
+    
+PASSX  real checkpoint reproduces the recorded V5 FAIL (provenance)
+PASSX  with exactly one appended record + anchor the checker exits 0
+PASSX  real checkpoint untouched (read-only)
+== 7. syntax and static checks ==
+PASSX  bash -n completion-command.sh exit 0
+PASSX  node --check on this script (self, via separate process)
+PASSX  harness overrides HOME into the run folder
+PASSX  harness overrides XDG_DATA_HOME into the run folder
+PASSX  harness overrides XDG_CONFIG_HOME into the run folder
+PASSX  harness overrides XDG_CACHE_HOME into the run folder
+PASSX  harness child inherits process.env (host audio/display routing preserved)
+PASSX  harness does not touch PULSE_SERVER
+PASSX  harness still refuses without APUNTA_ALLOW_AUDIO_TEST=1
+PASSX  harness still refuses without the three sandbox keys
+== 8. scratch and tree state ==
+PASSX  scratch is git-ignored (.gitignore:55:build/	build/p35-silence-ir)
+PASSX  card re-read identical (untouched)
+PASSX  checkpoint re-read fine

@@ -1,0 +1,28 @@
+interpreter v24.19.0 (pinned), repo /home/villenull/Projects/Apunta
+scratch /home/villenull/Projects/Apunta/build/eod-proof-lint-ir (git-ignored: .gitignore:55:build/	build/eod-proof-lint-ir)
+
+== docs/v2/evidence/P3.5/attempt-4/final-completion-ir/verify.mjs   (inputs pinned at 92df606)
+   before: git 2a0f977  5541 bytes
+   after : working tree  5625 bytes
+  ok    before vs after  exit 0, 1444 stdout bytes, 0 stderr bytes, byte-identical (zero normalisation)
+  ok    negative control  mutated AFTER side differs (stdout) — the comparison is not vacuous
+  note  both sides reached the same last section: (no section heading)
+  ok    recorded output reproduced: the AFTER side equals docs/v2/evidence/P3.5/attempt-4/final-completion-ir/verify-output.txt byte for byte
+  note  stdout/stderr/exit captured under build/eod-proof-lint/replay/final-completion-ir/{before,after,control}/
+
+== docs/v2/evidence/P3.5/silence-completion-ir/verify.mjs   (inputs pinned at e7ace67)
+   before: git e7ace67  14222 bytes
+   after : working tree  15029 bytes
+  ok    before vs after  exit 0, 6266 stdout bytes, 0 stderr bytes, byte-identical (zero normalisation)
+  ok    negative control  mutated AFTER side differs (stdout) — the comparison is not vacuous
+  ok    write reference  OUT after this run: completion-command.sh synthetic-checkpoint.json synthetic-default-source v5-program-own-extraction.mjs.txt verify-output.txt verify.mjs
+  ok    write reference  the linted .mjs is NOT recreated; the .txt holds the committed witness's exact bytes
+  note  BEFORE side OUT: completion-command.sh synthetic-checkpoint.json synthetic-default-source v5-program-own-extraction.mjs verify-output.txt verify.mjs (this is the raw .mjs the rename removed)
+  note  both sides reached the same last section: == 8. scratch and tree state ==
+  note  recorded output NOT reproduced (1 line(s) differ from docs/v2/evidence/P3.5/silence-completion-ir/verify-output.txt).
+        Informational only, not a gate: that file was written on the author's machine
+        at that hour and live /tmp sandbox scratch has moved since. Both sides of this
+        replay still agree with each other, which is the property under test.
+  note  stdout/stderr/exit captured under build/eod-proof-lint/replay/silence-completion-ir/{before,after,control}/
+
+PASS: 0 problem(s).
