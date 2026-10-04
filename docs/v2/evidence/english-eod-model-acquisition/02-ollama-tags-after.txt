@@ -1,0 +1,7 @@
+# read-only /api/tags after the run (loopback metadata only; no pull, no inference)
+apunta-study-fable-therapy-9b-q4:latest 61c80fd0c58e 5.63GB 2026-09-28T07:41:28.22498398-06:00
+translategemma:4b c49d986b0764 3.30GB 2026-09-27T12:43:15.945463875-06:00
+gemma4:12b 4eb23ef187e2 7.56GB 2026-09-27T12:42:37.933885071-06:00
+apunta-study-qwen35-9b-q3:latest f1c58a78df15 4.67GB 2026-09-27T12:39:49.850178542-06:00
+apunta-study-qwen35-9b-q4:latest b5bed9c2bf10 5.68GB 2026-09-27T12:39:36.04972385-06:00
+qwen3.5:4b-q4_K_M 2a654d98e6fb 3.39GB 2026-09-26T01:16:26.132911223-06:00

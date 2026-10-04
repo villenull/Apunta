@@ -1,0 +1,10 @@
+node=v24.19.0
+tsx=/home/villenull/Projects/Apunta/node_modules/tsx/dist/cli.mjs
+base_commit=059521c9ee66420e4292e2ea83b6df32d1f3b76e
+date_utc=2026-10-03T23:59:05Z
+cache_ignored=.gitignore:55:build/build/eod-model-cache
+scratch_ignored=.gitignore:55:build/build/eod-model-acquisition
+commands:
+  export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH"
+  ./node_modules/.bin/tsx build/eod-model-acquisition/acquire.ts plan build/eod-model-cache build/eod-model-acquisition/egress-plan.jsonl
+  ./node_modules/.bin/tsx build/eod-model-acquisition/acquire.ts run  build/eod-model-cache build/eod-model-acquisition/egress-run.jsonl

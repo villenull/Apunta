@@ -1,0 +1,15 @@
+# sha256sum / sha1sum / stat of the acquired file
+size_bytes=77704715 mode=600 mtime=2026-10-03 17:58:40.990379934 -0600
+921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f  /home/villenull/Projects/Apunta/build/eod-model-cache/models/ggml-tiny.en.bin
+c78c86eb1a8faa21b369bcd33207cc90d64ae9df  /home/villenull/Projects/Apunta/build/eod-model-cache/models/ggml-tiny.en.bin
+# installer receipt
+{
+  "version": 1,
+  "filename": "ggml-tiny.en.bin",
+  "algorithm": "sha256",
+  "digest": "921e4cf8686fdd993dcd081a5da5b6c365bfde1162e72b08d75ac75289920b1f",
+  "sizeBytes": 77704715,
+  "mtimeMs": 1791071920990,
+  "dev": 58,
+  "ino": 12874748
+}

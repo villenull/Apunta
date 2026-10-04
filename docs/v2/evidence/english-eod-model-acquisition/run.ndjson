@@ -1,0 +1,14 @@
+{"event":"plan","memoryGib":null,"model":{"tag":"qwen3.5:4b-q4_K_M","publisher":"Alibaba (the Qwen team)","reason":"Apunta is set to use qwen3.5:4b-q4_K_M. That was chosen for this Mac rather than by Apunta.","licence":{"name":"Apache-2.0","url":"https://ollama.com/library/qwen3.5","verified":true}},"steps":[{"id":"speech_model","label":"The model that reads your recordings","needed":true,"approxBytes":78643200},{"id":"preview_model","label":"The model that shows your words as you speak","needed":false,"approxBytes":78643200},{"id":"writing_model","label":"The model that writes your notes","needed":false,"approxBytes":3435973837}],"disk":{"ok":true,"freeBytes":762723647488,"requiredBytes":78643200,"headroomBytes":5000000000,"shortfallBytes":0,"message":"78.6 MB to download, 763 GB free."},"ready":false}
+{"event":"step","id":"speech_model","status":"started","label":"The model that reads your recordings"}
+{"event":"progress","id":"speech_model","completedBytes":0,"totalBytes":77704715,"percent":0,"bytesPerSecond":null,"etaSeconds":null,"detail":"0 bytes of 77.7 MB"}
+{"event":"progress","id":"speech_model","completedBytes":304280,"totalBytes":77704715,"percent":0.3915849894050831,"bytesPerSecond":null,"etaSeconds":null,"detail":"304 KB of 77.7 MB"}
+{"event":"progress","id":"speech_model","completedBytes":5891224,"totalBytes":77704715,"percent":7.581552805386391,"bytesPerSecond":null,"etaSeconds":null,"detail":"5.9 MB of 77.7 MB"}
+{"event":"progress","id":"speech_model","completedBytes":23241880,"totalBytes":77704715,"percent":29.91051443918171,"bytesPerSecond":null,"etaSeconds":null,"detail":"23.2 MB of 77.7 MB"}
+{"event":"progress","id":"speech_model","completedBytes":54043829,"totalBytes":77704715,"percent":69.55025702108296,"bytesPerSecond":51667140.535372846,"etaSeconds":0.45794843211423825,"detail":"54.0 MB of 77.7 MB — almost done"}
+{"event":"progress","id":"speech_model","completedBytes":77704715,"totalBytes":77704715,"percent":100,"bytesPerSecond":63588146.481178395,"etaSeconds":0,"detail":"77.7 MB of 77.7 MB — almost done"}
+{"event":"step","id":"speech_model","status":"verifying","label":"Checking the download"}
+{"event":"step","id":"speech_model","status":"finished","label":"The model that reads your recordings"}
+{"event":"step","id":"preview_model","status":"skipped","label":"The model that shows your words as you speak"}
+{"event":"step","id":"writing_model","status":"skipped","label":"The model that writes your notes"}
+{"event":"message","text":"Apunta is ready."}
+{"event":"done","ok":true}
