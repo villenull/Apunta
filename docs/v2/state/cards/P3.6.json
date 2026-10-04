@@ -6,10 +6,10 @@
     "C-OWN@1"
   ],
   "baseCommit": "62abb28",
-  "attempt": 5,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Attempt 5 (AM-207) returned; review reviews/P3.6-impl5-source.md CHANGES REQUESTED: D1 CLEAR; D2 identity check fails every healthy run (SQLite deletes -wal/-shm at graceful shutdown, no volatile exemption on lost); pre-existing vanished check fails the same healthy end state (lock release + WAL deletion). Native V3 never run.",
-  "nextAllowedAction": "owner-decision: attempt 5 exhausted under AM-207; no sixth attempt without explicit grant",
+  "attempt": 6,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Attempt 5 (AM-207) returned; review reviews/P3.6-impl5-source.md CHANGES REQUESTED: D1 CLEAR; D2 identity check fails every healthy run (SQLite deletes -wal/-shm at graceful shutdown, no volatile exemption on lost); pre-existing vanished check fails the same healthy end state (lock release + WAL deletion). Native V3 never run. | AM-209 owner allowed one sixth attempt bounded to the two shutdown exemptions.",
+  "nextAllowedAction": "attempt-6 harness repair (two exemptions only) -> fresh source review -> V0 once -> native V3",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
