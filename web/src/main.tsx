@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { App } from './App.js';
 import { applyAnimations, applyTheme, readBootTheme } from './lib/appearance.js';
+import { startMaintenanceReporter } from './lib/maintenance.js';
 import { installAutoHideScrollbars } from './lib/scrollbars.js';
 import './styles/tokens.css';
 import './styles/app.css';
@@ -16,6 +17,15 @@ import './styles/choreography.css';
 applyAnimations(undefined);
 applyTheme(readBootTheme());
 installAutoHideScrollbars();
+
+// C-UPD@1's quiescence, armed here and only here: one plain module call at module
+// scope, outside the React tree. It registers no React state and holds no context,
+// so `<StrictMode>`'s double-render cannot double-arm it and there is no unmount
+// for it to hook — the module owns its own teardown (`pagehide`, and the guard
+// that stops a hot reload leaving two polls running). Every window registers,
+// including one with no editor, because a window that does not hold a request
+// open is invisible to the server.
+startMaintenanceReporter();
 
 // ---------------------------------------------------------------- the hook --
 

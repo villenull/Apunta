@@ -23,9 +23,11 @@ import {
 } from '../db/brainstorm.js';
 import { listNotesForPatient } from '../db/notes.js';
 import { getPatient } from '../db/patients.js';
+import { uuidv7 } from '../db/uuid.js';
 import { notFound } from '../http/errors.js';
 import { openSse } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
+import { begin, end } from '../jobs/registry.js';
 
 /**
  * Brainstorm — `GET/POST/DELETE /api/patients/:id/brainstorm` (M12).
@@ -132,101 +134,115 @@ export function registerBrainstormRoutes(app: FastifyInstance, db: Database, pro
   });
 
   app.post('/api/patients/:id/brainstorm', async (request, reply) => {
-    const { id } = parseParams(IdParamsSchema, request.params);
-    const input = parseBody(BrainstormRequestSchema, request.body);
-    const patient = requirePatient(db, id);
-
-    // Read the thread *before* writing this turn into it: the message being
-    // answered is passed to the provider on its own, not as history.
-    const history = recentTurns(db, id);
-    const assembled = assembleBrainstormContext(db, patient, input.message, history);
-
-    // Her words are persisted whatever happens next. A local model that is not
-    // running is a transient condition she will retry through; losing what she
-    // typed to it is not something she should have to notice.
-    const userMessage = createBrainstormMessage(db, {
-      patient_id: patient.id,
-      role: 'user',
-      text: input.message,
-    });
-
-    // Captured at the start of the brainstorm job and used by every sentence
-    // it writes: the frames the provider renders and the error event below
-    // (C-LANG@1 rule 4). A brainstorm creates no document, so this is the
-    // stored setting rather than any note's locale.
-    const locale = storedLanguage(db);
-
-    const stream = openSse(reply);
-    stream.send('message', { message: userMessage });
-    stream.send('context', { context: assembled.context });
-
-    let replyText = '';
-    let stats: LlmStats | null = null;
-    let sawDiscussed = false;
-
+    // C-UPD@1's registry. A brainstorm turn holds an open SSE stream while the
+    // model thinks and persists both messages, so a quiesce has to be able to name
+    // it rather than settle over a thread mid-answer. The `finally` releases it on
+    // every path, the error frame and an abandoned stream included.
+    const jobId = uuidv7();
+    begin('brainstorm', jobId);
     try {
-      const events = providers.llm.discussPatient(
-        {
-          patientName: patient.name,
-          notes: assembled.notes,
-          omittedNotes: assembled.omittedNotes,
-          history: assembled.history,
-          message: input.message,
-        },
-        locale,
-      );
+      const { id } = parseParams(IdParamsSchema, request.params);
+      const input = parseBody(BrainstormRequestSchema, request.body);
+      const patient = requirePatient(db, id);
 
-      for await (const event of events) {
-        // She closed the tab or switched patients: stop, and let the
-        // provider's cleanup abort the call to Ollama rather than leave it
-        // generating.
-        if (stream.closed) break;
+      // Read the thread *before* writing this turn into it: the message being
+      // answered is passed to the provider on its own, not as history.
+      const history = recentTurns(db, id);
+      const assembled = assembleBrainstormContext(db, patient, input.message, history);
 
-        if (event.type === 'status') {
-          stream.send('status', { stage: event.stage, message: event.message });
-        } else if (event.type === 'token') {
-          // The decoder emits `reply` for the streamable field; anything else
-          // would mean the shape changed under us, so ignore it rather than
-          // render a fragment of something unshaped into the bubble.
-          if (event.section === 'reply') stream.send('token', { text: event.text });
-        } else if (event.type === 'discussed') {
-          sawDiscussed = true;
-          replyText = event.reply;
-          stats = event.stats;
+      // Her words are persisted whatever happens next. A local model that is not
+      // running is a transient condition she will retry through; losing what she
+      // typed to it is not something she should have to notice.
+      const userMessage = createBrainstormMessage(db, {
+        patient_id: patient.id,
+        role: 'user',
+        text: input.message,
+      });
+
+      // Captured at the start of the brainstorm job and used by every sentence
+      // it writes: the frames the provider renders and the error event below
+      // (C-LANG@1 rule 4). A brainstorm creates no document, so this is the
+      // stored setting rather than any note's locale.
+      const locale = storedLanguage(db);
+
+      const stream = openSse(reply);
+      stream.send('message', { message: userMessage });
+      stream.send('context', { context: assembled.context });
+
+      let replyText = '';
+      let stats: LlmStats | null = null;
+      let sawDiscussed = false;
+
+      try {
+        const events = providers.llm.discussPatient(
+          {
+            patientName: patient.name,
+            notes: assembled.notes,
+            omittedNotes: assembled.omittedNotes,
+            history: assembled.history,
+            message: input.message,
+          },
+          locale,
+        );
+
+        for await (const event of events) {
+          // She closed the tab or switched patients: stop, and let the
+          // provider's cleanup abort the call to Ollama rather than leave it
+          // generating.
+          if (stream.closed) break;
+
+          if (event.type === 'status') {
+            stream.send('status', { stage: event.stage, message: event.message });
+          } else if (event.type === 'token') {
+            // The decoder emits `reply` for the streamable field; anything else
+            // would mean the shape changed under us, so ignore it rather than
+            // render a fragment of something unshaped into the bubble.
+            if (event.section === 'reply') stream.send('token', { text: event.text });
+          } else if (event.type === 'discussed') {
+            sawDiscussed = true;
+            replyText = event.reply;
+            stats = event.stats;
+          }
         }
+      } catch (error) {
+        const failure = toAiError(error).inLocale(locale);
+        logFailure(request, failure, 'brainstorm discussion failed');
+        stream.send('error', { code: failure.code, message: failure.message });
+        stream.end();
+        return;
       }
-    } catch (error) {
-      const failure = toAiError(error).inLocale(locale);
-      logFailure(request, failure, 'brainstorm discussion failed');
-      stream.send('error', { code: failure.code, message: failure.message });
-      stream.end();
-      return;
-    }
 
-    if (stream.closed) {
-      stream.end();
-      return;
-    }
-    if (!sawDiscussed) {
-      const failure = aiError('empty_response', 'discussPatient finished without producing a reply', locale);
-      logFailure(request, failure, 'brainstorm discussion failed');
-      stream.send('error', { code: failure.code, message: failure.message });
-      stream.end();
-      return;
-    }
+      if (stream.closed) {
+        stream.end();
+        return;
+      }
+      if (!sawDiscussed) {
+        const failure = aiError(
+          'empty_response',
+          'discussPatient finished without producing a reply',
+          locale,
+        );
+        logFailure(request, failure, 'brainstorm discussion failed');
+        stream.send('error', { code: failure.code, message: failure.message });
+        stream.end();
+        return;
+      }
 
-    if (stats) logStats(request, stats, 'brainstorm discussed');
+      if (stats) logStats(request, stats, 'brainstorm discussed');
 
-    // The reply is persisted and released. Nothing here writes anywhere else:
-    // this endpoint cannot revise a note, a plan, a briefing or a patient, by
-    // construction rather than by prompt.
-    const assistantMessage = createBrainstormMessage(db, {
-      patient_id: patient.id,
-      role: 'assistant',
-      text: replyText,
-    });
-    stream.send('message', { message: assistantMessage });
-    stream.end();
+      // The reply is persisted and released. Nothing here writes anywhere else:
+      // this endpoint cannot revise a note, a plan, a briefing or a patient, by
+      // construction rather than by prompt.
+      const assistantMessage = createBrainstormMessage(db, {
+        patient_id: patient.id,
+        role: 'assistant',
+        text: replyText,
+      });
+      stream.send('message', { message: assistantMessage });
+      stream.end();
+    } finally {
+      end(jobId);
+    }
   });
 
   /**

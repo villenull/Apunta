@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { JOB_KINDS, active, anyActive, begin, end, type ActiveJob } from './registry.js';
+import { JOB_KINDS, active, anyActive, begin, end, type ActiveJob, type JobKind } from './registry.js';
 
 afterEach(() => {
   // Nothing may leak between cases: a registry that kept a finished job would
@@ -70,9 +70,39 @@ describe('the active job registry', () => {
     }).toThrow(TypeError);
   });
 
+  it('registers and releases each server-observable kind, and never `recording`', () => {
+    // P5.3 wired the ten kinds that have a route. The one that does not is
+    // `recording`: the microphone is in the browser, so a recording is never a
+    // server job and travels on the client half of C-UPD@1's quiescence.
+    const serverObservable: JobKind[] = [
+      'transcription',
+      'draft',
+      'refine',
+      'plan',
+      'briefing',
+      'brainstorm',
+      'import',
+      'restore',
+      'backup',
+      'save',
+    ];
+    expect([...serverObservable].sort()).toEqual(JOB_KINDS.filter((k) => k !== 'recording').sort());
+
+    for (const kind of serverObservable) {
+      begin(kind, `${kind}-1`);
+      expect(active()).toContainEqual({ kind, id: `${kind}-1` });
+      end(`${kind}-1`);
+      expect(active()).toEqual([]);
+    }
+
+    // Nothing in `server/` registers a recording, and the kind stays in the
+    // vocabulary for the client half that reports it.
+    expect(JOB_KINDS).toContain('recording');
+  });
+
   it('names every kind the plan will adopt, and no others', () => {
-    // `draft` and `refine` are the only ones wired today; the rest are the
-    // vocabulary later cards call `begin` with.
+    // `draft` and `refine` were wired by S2.1 and the rest by P5.3; the union is
+    // the vocabulary every card calls `begin` with and is never widened here.
     expect(JOB_KINDS).toEqual([
       'recording',
       'transcription',

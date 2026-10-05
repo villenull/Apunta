@@ -387,6 +387,10 @@ snapshotting → installing → relaunching → health_check → done`.
 (recording, transcription, draft, refine, plan, briefing, brainstorm,
 imports, restore, backup, saves) to drain; the web client flushes the editor
 and reports `ok` or `conflict`. Any blocker → `quiesce_result{ok:false}`.
+**One write is exempt while maintenance is on:** the reporting window's own
+note save, `PATCH /api/notes/:id`, during the flush step that asked for it and
+only when it carries that quiesce's id and the window's identity; every other
+write is still refused.
 Window close uses the same check: close is deferred while a save is in
 flight; an active recording asks for confirmation; unsaved text is never
 discarded silently.

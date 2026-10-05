@@ -23,6 +23,7 @@ import { buildApp } from '../app.js';
 import { listNotesForPatient } from '../db/notes.js';
 import { putSettings } from '../db/settings.js';
 import { listTranscriptsForNote } from '../db/transcripts.js';
+import { active } from '../jobs/registry.js';
 import { createTestApp, seedFormat, seedPatient, type TestApp } from '../test/harness.js';
 
 /**
@@ -603,6 +604,29 @@ describe('POST /api/transcribe/dictation', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]?.fitted).toBe(true);
     expect(seen[0]?.preview).toBeUndefined();
+  });
+
+  it('registers a transcription job while it runs and releases it afterwards', async () => {
+    // C-UPD@1's registry, observed from inside the job rather than from outside:
+    // the provider double is the one place mid-request where the registry can be
+    // read, and a `finally` that did not run would show up here as a job that
+    // outlived the request — which is the failure that would make every later
+    // quiesce refuse.
+    const during: string[] = [];
+    const spy: SttProvider = {
+      async *transcribe(): AsyncIterable<SttEvent> {
+        during.push(...active().map((job) => job.kind));
+        yield { type: 'transcript', text: 'Add that he is sleeping better.' };
+      },
+      describe: () =>
+        Promise.resolve({ binaryPresent: true, modelPresent: true, binary: 'stub', model: 'stub' }),
+    };
+    await withStt(spy, async (app) => {
+      const { statusCode } = await dictate(app, wav(3));
+      expect(statusCode).toBe(200);
+      expect(during).toEqual(['transcription']);
+    });
+    expect(active()).toEqual([]);
   });
 
   it('answers no words when whisper heard none, and 400s a clip too long for a message', async () => {

@@ -208,6 +208,35 @@ export const en = {
     text: 'another backup is already running. Wait for it to finish, then try again.',
   },
 
+  /**
+   * C-UPD@1 Quiescence's refusal, `server/src/maintenance.ts`'s 503 — the one
+   * sentence every non-exempt request gets while the server is finishing
+   * something. Keyed by its own code because there is exactly one of them and
+   * there are no parameters to render.
+   */
+  'errors.maintenance': {
+    text: 'Apunta is finishing something and cannot take new work right now. Wait a moment and try again.',
+  },
+
+  /**
+   * The refusal a **retained** record produces (FD13, AM-215): a window closed
+   * without saying whether it was holding anything — a crash, a kill, a `dirty`
+   * word — so its unpersisted obligation keeps counting and every later quiesce
+   * is refused with `no_response`.
+   *
+   * A key of its own because the sentence has to tell the user something the
+   * generic `errors.maintenance` above cannot: what to do about it. Only
+   * restarting Apunta clears a retained record, because the records live in the
+   * server's memory and nothing else discharges them.
+   *
+   * C-UPD@1's failure table puts this on the updater's quiescing row — "notice
+   * says what to finish first" — and the shell's close path is the other reader.
+   * Both render it from `quiesce_result{ok:false, blockers:['no_response']}`.
+   */
+  'errors.quiesce.no_response': {
+    text: 'A window closed without reporting, so Apunta cannot be sure nothing was left unsaved. Restart Apunta to clear this.',
+  },
+
   /** `shared/src/note.ts`'s 409 on a note another window just wrote. */
   'errors.stale_write.note_changed': { text: 'This note changed in another window.' },
 

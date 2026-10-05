@@ -147,6 +147,15 @@ export const esMX = {
   'errors.backup_in_progress': {
     text: 'Ya hay otra copia de seguridad en curso. Espera a que termine e inténtalo de nuevo.',
   },
+  'errors.maintenance': {
+    text: 'Apunta está terminando algo y no puede aceptar trabajo nuevo en este momento. Espera un momento e inténtalo de nuevo.',
+  },
+  // FD13/AM-215: lo dice una ventana que cerró sin decir si algo quedó sin
+  // guardar, y solo reiniciar Apunta lo resuelve. La misma fila de la tabla de
+  // fallos de C-UPD@1 que avisa qué terminar primero.
+  'errors.quiesce.no_response': {
+    text: 'Una ventana se cerró sin avisar, así que Apunta no puede estar seguro de que no quedó nada sin guardar. Reinicia Apunta para_solver esto.',
+  },
   'errors.stale_write.note_changed': { text: 'Esta nota cambió en otra ventana.' },
 
   'errors.bad_request.body_invalid': { text: 'El cuerpo de la solicitud no es válido' },

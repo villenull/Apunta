@@ -26,6 +26,7 @@ import { logFailure, logStats, toAiError } from './ai.js';
 import type { AiProviders } from '../ai/types.js';
 import { getFormat } from '../db/formats.js';
 import { listNotesForPatient } from '../db/notes.js';
+import { uuidv7 } from '../db/uuid.js';
 import {
   activatePlan,
   createPlanGoal,
@@ -43,6 +44,7 @@ import {
 import { conflict, notFound } from '../http/errors.js';
 import { openSse } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams, parseQuery } from '../http/validate.js';
+import { begin, end } from '../jobs/registry.js';
 import { readRecentNotes, type NoteMaterial } from '../plan/pipeline.js';
 import { resolveClinician, resolveLookback, resolveReviewInterval } from '../plan/settings.js';
 import { requirePatient } from './patients.js';
@@ -323,140 +325,150 @@ export function registerPlanRoutes(app: FastifyInstance, db: Database, providers
    * accepted, and a goal it cannot cite is not offered at all.
    */
   app.post('/api/patients/:id/plan/suggest', async (request, reply) => {
-    const { id } = parseParams(IdParamsSchema, request.params);
-    requirePatient(db, id);
-
-    const cap = resolveLookback(db);
-    const notes = listNotesForPatient(db, id).slice(0, cap);
-    const existing = currentGoals(db, id);
-
-    // Captured at the start of the goal-drafting job (C-LANG@1 rule 4): the
-    // frames below and the error event are all rendered from this value.
-    const locale = storedLanguage(db);
-
-    const stream = openSse(reply);
-    stream.send('status', { stage: 'connecting', message: msg(locale, 'status.thinking') });
-
-    // Declared without a value: every path out of the `catch` below returns,
-    // so these are read only when the read actually finished.
-    let materials: readonly NoteMaterial[];
-    let lookback: BriefLookback;
-    let suggested: readonly SuggestedGoal[] = [];
-
+    // C-UPD@1's registry. The suggestion run holds an open SSE stream for as long
+    // as the model takes, so a quiesce has to be able to name it rather than
+    // settle over goals being drafted. The `finally` releases it on every path,
+    // the error frame and an abandoned stream included.
+    const jobId = uuidv7();
+    begin('plan', jobId);
     try {
-      const read = await readRecentNotes({
-        llm: providers.llm,
-        notes,
-        sectionsFor: (note) => getFormat(db, note.format_id)?.sections ?? [],
-        cap,
-        onProgress: (index, total) => {
-          stream.send('status', {
-            stage: 'reading-notes',
-            message: msg(locale, 'status.reading_note', { index, total }),
+      const { id } = parseParams(IdParamsSchema, request.params);
+      requirePatient(db, id);
+
+      const cap = resolveLookback(db);
+      const notes = listNotesForPatient(db, id).slice(0, cap);
+      const existing = currentGoals(db, id);
+
+      // Captured at the start of the goal-drafting job (C-LANG@1 rule 4): the
+      // frames below and the error event are all rendered from this value.
+      const locale = storedLanguage(db);
+
+      const stream = openSse(reply);
+      stream.send('status', { stage: 'connecting', message: msg(locale, 'status.thinking') });
+
+      // Declared without a value: every path out of the `catch` below returns,
+      // so these are read only when the read actually finished.
+      let materials: readonly NoteMaterial[];
+      let lookback: BriefLookback;
+      let suggested: readonly SuggestedGoal[] = [];
+
+      try {
+        const read = await readRecentNotes({
+          llm: providers.llm,
+          notes,
+          sectionsFor: (note) => getFormat(db, note.format_id)?.sections ?? [],
+          cap,
+          onProgress: (index, total) => {
+            stream.send('status', {
+              stage: 'reading-notes',
+              message: msg(locale, 'status.reading_note', { index, total }),
+            });
+          },
+          onStats: (stats) => {
+            logStats(request, stats, 'note summarised');
+          },
+          cancelled: () => stream.closed,
+        });
+        materials = read.materials;
+        lookback = read.lookback;
+
+        if (materials.length > 0 && !stream.closed) {
+          stream.send('status', { stage: 'drafting', message: msg(locale, 'status.drafting_goals') });
+          const plan = getCurrentPlan(db, id);
+          const result = await providers.llm.suggestPlanGoals({
+            diagnoses: (plan?.diagnoses ?? []).map(describeDiagnosis),
+            modality: plan?.modality ?? '',
+            frequency: plan?.frequency ?? '',
+            existingGoals: existing.map((goal) => goal.statement),
+            notes: materials.map((material) => ({
+              index: material.index,
+              date: instantToLocalDay(material.note.created_at),
+              excerpts: material.excerpts.map((excerpt) => excerpt.text),
+            })),
           });
-        },
-        onStats: (stats) => {
-          logStats(request, stats, 'note summarised');
-        },
-        cancelled: () => stream.closed,
-      });
-      materials = read.materials;
-      lookback = read.lookback;
-
-      if (materials.length > 0 && !stream.closed) {
-        stream.send('status', { stage: 'drafting', message: msg(locale, 'status.drafting_goals') });
-        const plan = getCurrentPlan(db, id);
-        const result = await providers.llm.suggestPlanGoals({
-          diagnoses: (plan?.diagnoses ?? []).map(describeDiagnosis),
-          modality: plan?.modality ?? '',
-          frequency: plan?.frequency ?? '',
-          existingGoals: existing.map((goal) => goal.statement),
-          notes: materials.map((material) => ({
-            index: material.index,
-            date: instantToLocalDay(material.note.created_at),
-            excerpts: material.excerpts.map((excerpt) => excerpt.text),
-          })),
-        });
-        suggested = result.value.goals;
-        logStats(request, result.stats, 'plan goals drafted');
+          suggested = result.value.goals;
+          logStats(request, result.stats, 'plan goals drafted');
+        }
+      } catch (error) {
+        const failure = toAiError(error).inLocale(locale);
+        logFailure(request, failure, 'plan suggestion failed');
+        stream.send('error', { code: failure.code, message: failure.message });
+        stream.end();
+        return;
       }
-    } catch (error) {
-      const failure = toAiError(error).inLocale(locale);
-      logFailure(request, failure, 'plan suggestion failed');
-      stream.send('error', { code: failure.code, message: failure.message });
-      stream.end();
-      return;
-    }
 
-    if (stream.closed) {
-      stream.end();
-      return;
-    }
-
-    // Nothing is persisted until there is something citable to persist, so a
-    // run that proposes nothing leaves no empty plan version behind.
-    const accepted: PlanGoal[] = [];
-    let dropped = 0;
-    let plan = getCurrentPlan(db, id);
-    const seen = new Set(existing.map((goal) => goal.statement.trim().toLowerCase()));
-
-    for (const goal of suggested) {
-      const statement = goal.statement.trim();
-      const evidence = resolveEvidence(goal, materials);
-      // A proposal with no citable evidence is not offered at all.
-      if (statement === '' || evidence.length === 0 || seen.has(statement.toLowerCase())) {
-        dropped += 1;
-        // Shape only — counts and the indices the model cited, never a word
-        // of the goal or the note. Without this, a run that drops everything
-        // is indistinguishable from a model that proposed nothing, which is
-        // exactly the hole a live run fell into (2026-08-30): the screen said
-        // "No suggestions waiting" after a minute of work on three goals.
-        logDroppedGoal(request, {
-          blank: statement === '',
-          duplicate: statement !== '' && seen.has(statement.toLowerCase()),
-          citations: goal.evidence.length,
-          resolved: evidence.length,
-          citedNotes: goal.evidence.map((citation) => citation.note),
-          citedExcerpts: goal.evidence.map((citation) => citation.excerpt),
-          offeredNotes: materials.map((material) => material.index),
-          excerptCounts: materials.map((material) => material.excerpts.length),
-        });
-        continue;
+      if (stream.closed) {
+        stream.end();
+        return;
       }
-      seen.add(statement.toLowerCase());
 
-      plan ??= createPlanVersion(db, {
-        patient_id: id,
-        review_interval_days: resolveReviewInterval(db),
-      });
+      // Nothing is persisted until there is something citable to persist, so a
+      // run that proposes nothing leaves no empty plan version behind.
+      const accepted: PlanGoal[] = [];
+      let dropped = 0;
+      let plan = getCurrentPlan(db, id);
+      const seen = new Set(existing.map((goal) => goal.statement.trim().toLowerCase()));
 
-      const persisted = createPlanGoal(db, {
-        plan_id: plan.id,
-        statement,
-        objectives: goal.objectives
-          .filter((objective) => objective.statement.trim() !== '')
-          .map((objective) => ({
-            statement: objective.statement.trim(),
-            measure: objective.measure.trim(),
-            baseline: objective.baseline.trim(),
-            // Hers to set. A note can say where he started; it cannot say
-            // where he should end up.
-            target_value: '',
-            target_date: null,
-            source: 'model_suggested' as const,
-          })),
-        interventions: goal.interventions.map((intervention) => intervention.trim()).filter(Boolean),
-        target_date: null,
-        status: 'proposed',
-        source: 'model_suggested',
-        evidence,
-      });
-      accepted.push(persisted);
-      stream.send('goal', { goal: persisted });
+      for (const goal of suggested) {
+        const statement = goal.statement.trim();
+        const evidence = resolveEvidence(goal, materials);
+        // A proposal with no citable evidence is not offered at all.
+        if (statement === '' || evidence.length === 0 || seen.has(statement.toLowerCase())) {
+          dropped += 1;
+          // Shape only — counts and the indices the model cited, never a word
+          // of the goal or the note. Without this, a run that drops everything
+          // is indistinguishable from a model that proposed nothing, which is
+          // exactly the hole a live run fell into (2026-08-30): the screen said
+          // "No suggestions waiting" after a minute of work on three goals.
+          logDroppedGoal(request, {
+            blank: statement === '',
+            duplicate: statement !== '' && seen.has(statement.toLowerCase()),
+            citations: goal.evidence.length,
+            resolved: evidence.length,
+            citedNotes: goal.evidence.map((citation) => citation.note),
+            citedExcerpts: goal.evidence.map((citation) => citation.excerpt),
+            offeredNotes: materials.map((material) => material.index),
+            excerptCounts: materials.map((material) => material.excerpts.length),
+          });
+          continue;
+        }
+        seen.add(statement.toLowerCase());
+
+        plan ??= createPlanVersion(db, {
+          patient_id: id,
+          review_interval_days: resolveReviewInterval(db),
+        });
+
+        const persisted = createPlanGoal(db, {
+          plan_id: plan.id,
+          statement,
+          objectives: goal.objectives
+            .filter((objective) => objective.statement.trim() !== '')
+            .map((objective) => ({
+              statement: objective.statement.trim(),
+              measure: objective.measure.trim(),
+              baseline: objective.baseline.trim(),
+              // Hers to set. A note can say where he started; it cannot say
+              // where he should end up.
+              target_value: '',
+              target_date: null,
+              source: 'model_suggested' as const,
+            })),
+          interventions: goal.interventions.map((intervention) => intervention.trim()).filter(Boolean),
+          target_date: null,
+          status: 'proposed',
+          source: 'model_suggested',
+          evidence,
+        });
+        accepted.push(persisted);
+        stream.send('goal', { goal: persisted });
+      }
+
+      stream.send('done', { goals: accepted, lookback, dropped });
+      stream.end();
+    } finally {
+      end(jobId);
     }
-
-    stream.send('done', { goals: accepted, lookback, dropped });
-    stream.end();
   });
 }
 

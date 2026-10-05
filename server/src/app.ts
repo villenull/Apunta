@@ -14,6 +14,8 @@ import { registerCsp } from './http/csp.js';
 import { registerErrorHandler } from './http/errors.js';
 import { msg, storedLanguage } from './http/locale.js';
 import { registerRequestGuard } from './http/request-guard.js';
+import { registerMaintenanceRefusal, type MaintenanceOptions } from './maintenance.js';
+import { registerMaintenanceRoutes } from './routes/app-quiesce.js';
 import { registerBackupRoutes } from './routes/backup.js';
 import { registerBrainstormRoutes } from './routes/brainstorm.js';
 import { registerImportRoutes } from './routes/import.js';
@@ -59,6 +61,14 @@ export interface BuildAppOptions {
    * only `describe()`, so it cannot do that on its own.
    */
   installedModels?: readonly string[] | null;
+  /**
+   * C-UPD@1's quiescence: the drain's clock and sleep seam, and the mode that
+   * says what releases a successful quiesce's maintenance state. Production
+   * passes nothing, which is a real 30-second drain and
+   * `APUNTA_SHELL=1`-derived mode; a suite passes a clock so the same boundary
+   * is driven in milliseconds (FD4).
+   */
+  maintenance?: MaintenanceOptions;
 }
 
 /**
@@ -74,6 +84,14 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
    * below can run ahead of it. The boot-error server registers the same guard.
    */
   registerRequestGuard(app, { port: config.port });
+
+  /**
+   * C-UPD@1's Quiescence, second and immediately after the guard above, so
+   * C-REQ@1 still runs first and is not relaxed for any path — the quiesce
+   * routes included. Nothing here reads the database; the locale its 503 is
+   * rendered in is registered further down, beside the routes.
+   */
+  registerMaintenanceRefusal(app, options.maintenance);
 
   /**
    * C-BRIDGE@1 rule 6, beside the guard above and after it: the CSP is an
@@ -134,6 +152,10 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   registerErrorHandler(app, { dataDir: config.dataDir, locale: () => storedLanguage(db) });
 
   registerHealthRoute(app, config, db, providers, options.installedModels);
+  registerMaintenanceRoutes(app, {
+    ...options.maintenance,
+    locale: () => storedLanguage(db),
+  });
   registerLicensesRoute(app, config);
   registerPatientRoutes(app, db);
   registerPatientGroupRoutes(app, db);

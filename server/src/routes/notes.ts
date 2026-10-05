@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { audioDirFor, collectAudioFilenames, removeAudioFiles } from '../audio/retention.js';
 import { getFormat } from '../db/formats.js';
+import { uuidv7 } from '../db/uuid.js';
 import {
   createNote,
   deleteNote,
@@ -19,6 +20,7 @@ import {
 } from '../db/notes.js';
 import { conflict, HttpError, notFound } from '../http/errors.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
+import { begin, end } from '../jobs/registry.js';
 import { requirePatient } from './patients.js';
 
 function requireNote(db: Database, id: string): Note {
@@ -80,21 +82,35 @@ export function registerNoteRoutes(app: FastifyInstance, db: Database): void {
     const patch = parseBody(UpdateNoteRequestSchema, request.body);
     const note = requireNote(db, id);
 
-    if (patch.revision !== note.revision) throw staleWrite(note);
-    if (note.status === 'published' && patch.content !== undefined) {
-      throw conflict('errors.conflict.note_published_lock');
+    /**
+     * C-UPD@1's registry, for the one write that carries unsaved text. A save is
+     * a job in the sense the contract means — C-LANG@1 rule 6 already blocks a
+     * language change on it, and a quiesce has to be able to say "a save is in
+     * flight" too. The job is the note; the `finally` releases it on every path,
+     * including the two refusals below, because `end` is idempotent and a stale
+     * "something is running" is the one thing this registry must never report.
+     */
+    const jobId = uuidv7();
+    begin('save', jobId);
+    try {
+      if (patch.revision !== note.revision) throw staleWrite(note);
+      if (note.status === 'published' && patch.content !== undefined) {
+        throw conflict('errors.conflict.note_published_lock');
+      }
+
+      const updated = updateNote(db, id, {
+        revision: patch.revision,
+        ...(patch.title === undefined ? {} : { title: patch.title }),
+        ...(patch.content === undefined ? {} : { content: patch.content }),
+      });
+      if (updated) return updated;
+
+      const latest = requireNote(db, id);
+      if (latest.revision !== patch.revision) throw staleWrite(latest);
+      throw notFound('errors.not_found.note');
+    } finally {
+      end(jobId);
     }
-
-    const updated = updateNote(db, id, {
-      revision: patch.revision,
-      ...(patch.title === undefined ? {} : { title: patch.title }),
-      ...(patch.content === undefined ? {} : { content: patch.content }),
-    });
-    if (updated) return updated;
-
-    const latest = requireNote(db, id);
-    if (latest.revision !== patch.revision) throw staleWrite(latest);
-    throw notFound('errors.not_found.note');
   });
 
   /** Cascades to the note's transcripts and chat messages, and its kept recording. */

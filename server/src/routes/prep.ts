@@ -16,9 +16,11 @@ import type { AiProviders } from '../ai/types.js';
 import { createSessionBrief, listSessionBriefs } from '../db/briefs.js';
 import { getFormat } from '../db/formats.js';
 import { getNote, listNotesForPatient } from '../db/notes.js';
+import { uuidv7 } from '../db/uuid.js';
 import { badRequest } from '../http/errors.js';
 import { openSse } from '../http/sse.js';
 import { IdParamsSchema, parseBody, parseParams } from '../http/validate.js';
+import { begin, end } from '../jobs/registry.js';
 import { readRecentNotes, type NoteMaterial } from '../plan/pipeline.js';
 import { resolveLookback } from '../plan/settings.js';
 import { requirePatient } from './patients.js';
@@ -52,74 +54,84 @@ export function registerPrepRoutes(app: FastifyInstance, db: Database, providers
   });
 
   app.post('/api/patients/:id/prep', async (request, reply) => {
-    const { id } = parseParams(IdParamsSchema, request.params);
-    requirePatient(db, id);
-
-    const cap = resolveLookback(db);
-    const notes = listNotesForPatient(db, id).slice(0, cap);
-
-    // Captured at the start of the briefing job (C-LANG@1 rule 4): the frames
-    // below and the error event are all rendered from this value.
-    const locale = storedLanguage(db);
-
-    const stream = openSse(reply);
-    stream.send('status', { stage: 'connecting', message: msg(locale, 'status.thinking') });
-
-    let lines: BriefLine[] = [];
-    // Assigned in the try; every path out of the catch returns.
-    let lookback: BriefLookback;
-
+    // C-UPD@1's registry. The briefing run holds an open SSE stream for as long
+    // as the model takes, so a quiesce has to be able to name it rather than settle
+    // over a briefing being written. The `finally` releases it on every path, the
+    // error frame and an abandoned stream included.
+    const jobId = uuidv7();
+    begin('briefing', jobId);
     try {
-      const read = await readRecentNotes({
-        llm: providers.llm,
-        notes,
-        sectionsFor: (note) => getFormat(db, note.format_id)?.sections ?? [],
-        cap,
-        onProgress: (index, total) => {
-          stream.send('status', {
-            stage: 'reading-notes',
-            message: msg(locale, 'status.reading_note', { index, total }),
-          });
-        },
-        onStats: (stats) => {
-          logStats(request, stats, 'note summarised');
-        },
-        cancelled: () => stream.closed,
-      });
-      lookback = read.lookback;
+      const { id } = parseParams(IdParamsSchema, request.params);
+      requirePatient(db, id);
 
-      if (read.materials.length > 0 && !stream.closed) {
-        stream.send('status', { stage: 'drafting', message: msg(locale, 'status.writing_briefing') });
-        const composed = await providers.llm.composeBrief({
-          notes: read.materials.map((material) => ({
-            index: material.index,
-            date: instantToLocalDay(material.note.created_at),
-            title: material.note.title,
-            points: material.points,
-          })),
+      const cap = resolveLookback(db);
+      const notes = listNotesForPatient(db, id).slice(0, cap);
+
+      // Captured at the start of the briefing job (C-LANG@1 rule 4): the frames
+      // below and the error event are all rendered from this value.
+      const locale = storedLanguage(db);
+
+      const stream = openSse(reply);
+      stream.send('status', { stage: 'connecting', message: msg(locale, 'status.thinking') });
+
+      let lines: BriefLine[] = [];
+      // Assigned in the try; every path out of the catch returns.
+      let lookback: BriefLookback;
+
+      try {
+        const read = await readRecentNotes({
+          llm: providers.llm,
+          notes,
+          sectionsFor: (note) => getFormat(db, note.format_id)?.sections ?? [],
+          cap,
+          onProgress: (index, total) => {
+            stream.send('status', {
+              stage: 'reading-notes',
+              message: msg(locale, 'status.reading_note', { index, total }),
+            });
+          },
+          onStats: (stats) => {
+            logStats(request, stats, 'note summarised');
+          },
+          cancelled: () => stream.closed,
         });
-        logStats(request, composed.stats, 'briefing composed');
-        lines = resolveLines(composed.value.lines, read.materials);
+        lookback = read.lookback;
+
+        if (read.materials.length > 0 && !stream.closed) {
+          stream.send('status', { stage: 'drafting', message: msg(locale, 'status.writing_briefing') });
+          const composed = await providers.llm.composeBrief({
+            notes: read.materials.map((material) => ({
+              index: material.index,
+              date: instantToLocalDay(material.note.created_at),
+              title: material.note.title,
+              points: material.points,
+            })),
+          });
+          logStats(request, composed.stats, 'briefing composed');
+          lines = resolveLines(composed.value.lines, read.materials);
+        }
+      } catch (error) {
+        const failure = toAiError(error).inLocale(locale);
+        logFailure(request, failure, 'session prep failed');
+        stream.send('error', { code: failure.code, message: failure.message });
+        stream.end();
+        return;
       }
-    } catch (error) {
-      const failure = toAiError(error).inLocale(locale);
-      logFailure(request, failure, 'session prep failed');
-      stream.send('error', { code: failure.code, message: failure.message });
-      stream.end();
-      return;
-    }
 
-    if (stream.closed) {
-      stream.end();
-      return;
-    }
+      if (stream.closed) {
+        stream.end();
+        return;
+      }
 
-    for (const line of lines) stream.send('line', { line });
-    stream.send('brief', {
-      generated_at: new Date().toISOString(),
-      content: { lines, lookback } satisfies SessionBriefContent,
-    });
-    stream.end();
+      for (const line of lines) stream.send('line', { line });
+      stream.send('brief', {
+        generated_at: new Date().toISOString(),
+        content: { lines, lookback } satisfies SessionBriefContent,
+      });
+      stream.end();
+    } finally {
+      end(jobId);
+    }
   });
 
   /**

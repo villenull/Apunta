@@ -14,9 +14,11 @@ import { ExtractError } from '../extract/types.js';
 import { createImportBatch, addBatchNote, addBatchPatient } from '../db/import-batches.js';
 import { createNote, setNotePublished } from '../db/notes.js';
 import { createPatient, listPatients } from '../db/patients.js';
+import { uuidv7 } from '../db/uuid.js';
 import { badRequest } from '../http/errors.js';
 import { msg, storedLanguage, type Locale } from '../http/locale.js';
 import { HalaxyParseError, parseHalaxyText } from '../import/halaxy/parser.js';
+import { begin, end } from '../jobs/registry.js';
 
 export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
   app.post('/api/import/halaxy/preview', async (request): Promise<HalaxyPreviewResponse> => {
@@ -47,67 +49,77 @@ export function registerHalaxyRoutes(app: FastifyInstance, db: Database): void {
     return { patients, rejected };
   });
   app.post('/api/import/halaxy', (request, reply): HalaxyImportResponse => {
-    const parsed = HalaxyImportRequestSchema.safeParse(request.body);
-    if (!parsed.success) throw badRequest('errors.bad_request.halaxy_selection_invalid');
-    if (parsed.data.patients.length === 0) throw badRequest('errors.bad_request.halaxy_no_patients');
-    const format = db.prepare('SELECT id, locale FROM note_formats ORDER BY created_at, id LIMIT 1').get() as
-      { id: string; locale: Locale } | undefined;
-    if (!format) throw badRequest('errors.bad_request.needs_format');
-    const response = db.transaction((): HalaxyImportResponse => {
-      const batchId = createImportBatch(db, 'halaxy');
-      const activePatients = listPatients(db).map(({ id, name }) => ({ id, name }));
-      const patients: HalaxyImportResponse['patients'] = [];
-      let noteCount = 0;
-      for (const planned of parsed.data.patients) {
-        const matches = activePatients.filter(
-          (patient) => normalizePatientName(patient.name) === normalizePatientName(planned.patientName),
-        );
-        const selected = planned.existingPatientId;
-        let patient;
-        let created = false;
-        if (selected !== undefined && selected !== null) {
-          patient = matches.find((candidate) => candidate.id === selected);
-        } else if (selected === null) {
-          patient = createPatient(db, { name: planned.patientName });
-          created = true;
-        } else if (matches.length === 1) {
-          patient = matches[0];
-        } else {
-          patient = createPatient(db, { name: planned.patientName });
-          created = true;
-        }
-        if (!patient) throw badRequest('errors.bad_request.halaxy_patient_unmatched');
-        if (created) {
-          addBatchPatient(db, batchId, patient.id);
-          activePatients.push(patient);
-        }
-        for (const noteInput of planned.notes) {
-          const note = createNote(db, {
+    // C-UPD@1's registry, for the import half only. The preview above parses
+    // the same PDFs and persists nothing, so it is deliberately not a job;
+    // this one writes patients, notes and a batch in one transaction.
+    const jobId = uuidv7();
+    begin('import', jobId);
+    try {
+      const parsed = HalaxyImportRequestSchema.safeParse(request.body);
+      if (!parsed.success) throw badRequest('errors.bad_request.halaxy_selection_invalid');
+      if (parsed.data.patients.length === 0) throw badRequest('errors.bad_request.halaxy_no_patients');
+      const format = db
+        .prepare('SELECT id, locale FROM note_formats ORDER BY created_at, id LIMIT 1')
+        .get() as { id: string; locale: Locale } | undefined;
+      if (!format) throw badRequest('errors.bad_request.needs_format');
+      const response = db.transaction((): HalaxyImportResponse => {
+        const batchId = createImportBatch(db, 'halaxy');
+        const activePatients = listPatients(db).map(({ id, name }) => ({ id, name }));
+        const patients: HalaxyImportResponse['patients'] = [];
+        let noteCount = 0;
+        for (const planned of parsed.data.patients) {
+          const matches = activePatients.filter(
+            (patient) => normalizePatientName(patient.name) === normalizePatientName(planned.patientName),
+          );
+          const selected = planned.existingPatientId;
+          let patient;
+          let created = false;
+          if (selected !== undefined && selected !== null) {
+            patient = matches.find((candidate) => candidate.id === selected);
+          } else if (selected === null) {
+            patient = createPatient(db, { name: planned.patientName });
+            created = true;
+          } else if (matches.length === 1) {
+            patient = matches[0];
+          } else {
+            patient = createPatient(db, { name: planned.patientName });
+            created = true;
+          }
+          if (!patient) throw badRequest('errors.bad_request.halaxy_patient_unmatched');
+          if (created) {
+            addBatchPatient(db, batchId, patient.id);
+            activePatients.push(patient);
+          }
+          for (const noteInput of planned.notes) {
+            const note = createNote(db, {
+              patient_id: patient.id,
+              format_id: format.id,
+              // The format's language is the note's language (C-LANG@1 rule 3),
+              // and the fallback title is said in it too.
+              locale: format.locale,
+              title: noteInput.title ?? msg(format.locale, 'import.fallbackTitle', { date: noteInput.date }),
+              content: noteInput.text,
+              created_at: `${noteInput.date}T12:00:00.000Z`,
+            });
+            setNotePublished(db, note.id, true, `${noteInput.date}T12:00:00.000Z`);
+            addBatchNote(db, batchId, note.id);
+            noteCount += 1;
+          }
+          patients.push({
+            fileName: planned.fileName,
+            patientName: planned.patientName,
             patient_id: patient.id,
-            format_id: format.id,
-            // The format's language is the note's language (C-LANG@1 rule 3),
-            // and the fallback title is said in it too.
-            locale: format.locale,
-            title: noteInput.title ?? msg(format.locale, 'import.fallbackTitle', { date: noteInput.date }),
-            content: noteInput.text,
-            created_at: `${noteInput.date}T12:00:00.000Z`,
+            notes: planned.notes.length,
           });
-          setNotePublished(db, note.id, true, `${noteInput.date}T12:00:00.000Z`);
-          addBatchNote(db, batchId, note.id);
-          noteCount += 1;
         }
-        patients.push({
-          fileName: planned.fileName,
-          patientName: planned.patientName,
-          patient_id: patient.id,
-          notes: planned.notes.length,
-        });
-      }
-      return { batch_id: batchId, patients, notes: noteCount };
-    })();
-    reply.code(201);
-    request.log.info({ patients: response.patients.length, notes: response.notes }, 'halaxy PDFs imported');
-    return response;
+        return { batch_id: batchId, patients, notes: noteCount };
+      })();
+      reply.code(201);
+      request.log.info({ patients: response.patients.length, notes: response.notes }, 'halaxy PDFs imported');
+      return response;
+    } finally {
+      end(jobId);
+    }
   });
 }
 

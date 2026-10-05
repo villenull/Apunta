@@ -31,6 +31,7 @@ import { badRequest, notFound, rawHttpError } from '../http/errors.js';
 import { msg, storedLanguage, type Locale } from '../http/locale.js';
 import { openSse, type SseStream } from '../http/sse.js';
 import { parseBody } from '../http/validate.js';
+import { begin, end } from '../jobs/registry.js';
 import { logFailure, toAiError } from './ai.js';
 import { persistDraft, streamDraft } from './draft.js';
 import { requirePatient } from './patients.js';
@@ -98,6 +99,12 @@ export function registerTranscribeRoute(
     // (C-LANG@1 rule 4). A preview creates nothing and persists nothing, so
     // this is the only sentence it can produce.
     const locale = storedLanguage(db);
+    // C-UPD@1's registry: whisper on a finished recording is seconds of work, and
+    // a quiesce has to be able to name it while it runs. The `finally` releases
+    // it on every path — the early return for a too-short clip, a provider that
+    // failed, a client that went away — because `end` is idempotent.
+    const jobId = uuidv7();
+    begin('transcription', jobId);
     const cancellation = requestCancellation(request, reply);
     try {
       // Not `readWavFormat`: that helper throws on a recording too short to
@@ -149,6 +156,7 @@ export function registerTranscribeRoute(
       // heuristic.
       return { text: collapseRepeats(text), seconds: wav.durationSeconds };
     } finally {
+      end(jobId);
       cancellation.cleanup();
       // Always, on every path: a preview never keeps its audio.
       await discard(upload.path);
@@ -173,6 +181,12 @@ export function registerTranscribeRoute(
     // in Spanish is a preview of words she has not sent yet, and the failure
     // that comes back is about the machine rather than the note.
     const locale = storedLanguage(db);
+    // C-UPD@1's registry: whisper on a finished recording is seconds of work, and
+    // a quiesce has to be able to name it while it runs. The `finally` releases
+    // it on every path — the early return for a too-short clip, a provider that
+    // failed, a client that went away — because `end` is idempotent.
+    const jobId = uuidv7();
+    begin('transcription', jobId);
     const cancellation = requestCancellation(request, reply);
     try {
       let wav: WavFormat;
@@ -223,6 +237,7 @@ export function registerTranscribeRoute(
       }
       return { text, seconds: wav.durationSeconds };
     } finally {
+      end(jobId);
       cancellation.cleanup();
       // As for the preview: nothing dictated into the chat is ever kept as audio.
       await discard(upload.path);
@@ -253,6 +268,12 @@ export function registerTranscribeRoute(
     const stream = openSse(reply);
     let audioPath: string | null = upload.path;
 
+    // C-UPD@1's registry, for the whole route: it transcribes the recording and
+    // then drafts the note from it (`streamDraft` registers the `draft` half), so
+    // this one covers the transcription and the drafting that follows it. The
+    // `finally` below releases it on every path, the error frame included.
+    const jobId = uuidv7();
+    begin('transcription', jobId);
     try {
       const wav = readWavFormat(upload);
       request.log.info(
@@ -307,6 +328,7 @@ export function registerTranscribeRoute(
       logFailure(request, failure, 'transcription failed');
       stream.send('error', { code: failure.code, message: failure.message });
     } finally {
+      end(jobId);
       // A recording that produced no note is referenced by nothing, so it is
       // deleted whatever `keep_audio` says. The browser still holds the Blob,
       // which is what makes "Try again" work without re-recording.

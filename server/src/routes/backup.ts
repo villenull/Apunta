@@ -26,9 +26,11 @@ import {
 import type { AppConfig } from '../config.js';
 import { migrationLevel } from '../db/index.js';
 import { putSettings } from '../db/settings.js';
+import { uuidv7 } from '../db/uuid.js';
 import { badRequest, HttpError, notFound, rawHttpError } from '../http/errors.js';
 import { storedLanguage } from '../http/locale.js';
 import { parseBody } from '../http/validate.js';
+import { begin, end } from '../jobs/registry.js';
 
 /**
  * Back up and restore (M7 deliverable 4).
@@ -63,6 +65,12 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
       throw badRequest('errors.bad_request.backup_path_not_absolute');
     }
 
+    // C-UPD@1's registry: a backup is minutes of writing a practice's whole
+    // archive, so a quiesce must be able to name it as a blocker rather than
+    // settle over it. The `finally` releases it on every path, the 409 below
+    // included — `end` is idempotent, which is what makes that safe.
+    const jobId = uuidv7();
+    begin('backup', jobId);
     try {
       const result = await runBackupAsync(db, config, {
         directory: input.directory,
@@ -92,6 +100,8 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
           : rawHttpError(400, 'bad_request', error.message);
       }
       throw error;
+    } finally {
+      end(jobId);
     }
   });
 
@@ -104,6 +114,12 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
     const input = parseBody(RestoreBackupRequestSchema, request.body);
     const archivePath = resolveArchivePath(db, config, input.file);
 
+    // C-UPD@1's registry, for the staging half of a restore. It writes the
+    // replacement archive beside the database, so it is work a quiesce has to be
+    // able to wait for; the swap itself happens at the next start, when no
+    // request is running at all.
+    const jobId = uuidv7();
+    begin('restore', jobId);
     try {
       const staged = stageRestore({
         archivePath,
@@ -125,6 +141,8 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
           : rawHttpError(400, 'bad_request', error.message);
       }
       throw error;
+    } finally {
+      end(jobId);
     }
   });
 

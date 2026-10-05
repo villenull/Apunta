@@ -21,6 +21,7 @@ import {
 import { copyText } from '../lib/clipboard.js';
 import { wasEdited } from '../lib/format.js';
 import { useI18n, useReportWork } from '../lib/i18n.js';
+import { setEditorUnpersisted } from '../lib/maintenance.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
 import { ChatIcon, CheckIcon, CopyIcon, PublishIcon, TrashIcon } from './icons.js';
 import { InterventionApproachSuggestion } from './InterventionApproachSuggestion.js';
@@ -350,11 +351,47 @@ export function NoteView({
     const onVisibilityChange = (): void => {
       if (document.visibilityState === 'hidden') flushKeepalive();
     };
+    /**
+     * C-UPD@1's close policy, the browser half (FD6): "unsaved text is never
+     * discarded silently". Nothing on this screen guards an unload today — the
+     * flush above is best effort and fires *after* the browser has already
+     * decided — and no draft of the body is stored anywhere in `web/src`, so
+     * this is the only thing standing between a close and text that was never
+     * sent.
+     *
+     * The condition is the editor holding text the server has not acknowledged:
+     * a pending debounce, a save in flight, or a save that failed. A note whose
+     * last edit is on disk closes without asking, which is what makes the guard
+     * worth having.
+     *
+     * The same three refs answer AM-215's question — is this window leaving
+     * anything behind? — and publish the answer as the guard fires, because this
+     * is the only place that knows: no draft of the body is stored anywhere in
+     * `web/src` and the refs never leave this component.
+     */
+    const onBeforeUnload = (event: BeforeUnloadEvent): void => {
+      const unsaved =
+        latestTextRef.current !== persistedContentRef.current ||
+        saveStateRef.current === 'saving' ||
+        saveStateRef.current === 'error';
+      setEditorUnpersisted(unsaved);
+      if (!unsaved) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
     window.addEventListener('pagehide', flushKeepalive);
+    window.addEventListener('beforeunload', onBeforeUnload);
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => {
       if (owner.__apuntaFlushBeforeRelease !== undefined) delete owner.__apuntaFlushBeforeRelease;
+      // The published answer goes with the editor that gave it. `onBeforeUnload`
+      // publishes only as it fires, so a guard that fired once and was then
+      // dismissed would otherwise leave `true` standing for the rest of the tab's
+      // life — and a later *clean* close of this window would be refused over an
+      // editor that is no longer on screen and whose text is on disk.
+      setEditorUnpersisted(false);
       window.removeEventListener('pagehide', flushKeepalive);
+      window.removeEventListener('beforeunload', onBeforeUnload);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       void flush().catch(() => undefined);
     };

@@ -37,12 +37,47 @@ const esDataDir =
 mkdirSync(esDataDir, { recursive: true });
 
 /**
+ * The quiescence project's own third server, for the reason the comment on
+ * `quiescence` above gives: maintenance mode is server-global, so this server
+ * exists so that server-global state cannot reach another spec file.
+ *
+ * `+ 2`, after the English port and the es-MX one, and read from the same two
+ * environment values the other two read — so under the sandbox wrapper the run
+ * folder supplies all three ports and all three data folders, and a run outside
+ * it still lands on three distinct ports.
+ */
+const quiescencePort = Number(process.env['APUNTA_E2E_QUIESCENCE_PORT'] ?? port + 2);
+const quiescenceBaseURL = `http://127.0.0.1:${String(quiescencePort)}`;
+const quiescenceDataDir =
+  process.env['APUNTA_E2E_QUIESCENCE_DATA_DIR'] ??
+  (process.env['APUNTA_DATA_DIR']
+    ? `${dataDir}-quiescence`
+    : mkdtempSync(join(tmpdir(), 'apunta-e2e-quiescence-')));
+mkdirSync(quiescenceDataDir, { recursive: true });
+
+/**
  * The Language control's own specs (V2, V3). They switch the one stored
  * language and hold a job open to be refused under, so they cannot share a
  * server with specs that run in parallel: the es-MX suite waits for them, on
  * the same server, and starts once they are done.
  */
 const languageControl = /language-control\.spec\.ts$/;
+
+/**
+ * C-UPD@1's quiescence specs, and the reason this project exists at all (AM-213).
+ *
+ * Maintenance mode is **server-global**: a quiesce refuses every write on its
+ * server, so a spec file that shares a server with specs running in parallel
+ * would refuse *their* writes too, and every one of those becomes a failure in a
+ * file that has nothing to do with quiescence. `test.describe.configure({ mode:
+ * 'serial' })` inside the spec orders its own rows and cannot order them against
+ * the other spec files sharing the server — so this file gets a server of its
+ * own, the same way `language-control.spec.ts` gets the es-MX one.
+ *
+ * It is excluded from the two default projects below, so it runs **here and
+ * nowhere else**, on its own port and its own data folder.
+ */
+const quiescence = /quiescence\.spec\.ts$/;
 
 /** What both servers are started with; each adds its port and data folder. */
 const serverEnv = {
@@ -99,9 +134,11 @@ export default defineConfig<AppOptions>({
     // English, on a build that does not offer Spanish: the release shape. The
     // Spanish field spec is not collected here: `spelling-es.spec.ts` asserts
     // a Spanish dictionary, which this project's build never offers (S6.1, D6).
+    // The quiescence spec is not collected here either — it runs in the
+    // `quiescence` project below, on its own server.
     {
       name: 'chromium',
-      testIgnore: /spelling-es\.spec\.ts$/,
+      testIgnore: [/spelling-es\.spec\.ts$/, quiescence],
       use: { ...devices['Desktop Chrome'], appLocale: 'en' },
     },
     // The Language control's V2 and V3, alone on the Spanish server, first.
@@ -116,9 +153,16 @@ export default defineConfig<AppOptions>({
       // The English spelling spec is not applicable here: under D3 the
       // dictionary follows the active UI language, so its English-dictionary
       // assertions would be evaluated against Spanish (S6.1, D6).
-      testIgnore: [languageControl, /spelling\.spec\.ts$/],
+      testIgnore: [languageControl, /spelling\.spec\.ts$/, quiescence],
       dependencies: ['es-MX-language'],
       use: { ...devices['Desktop Chrome'], baseURL: esBaseURL, appLocale: 'es-MX' },
+    },
+    // C-UPD@1's quiescence, alone on the third server (AM-213). It is collected
+    // here and nowhere else, so no other spec file can see maintenance mode.
+    {
+      name: 'quiescence',
+      testMatch: quiescence,
+      use: { ...devices['Desktop Chrome'], baseURL: quiescenceBaseURL, appLocale: 'en' },
     },
   ],
   webServer: [
@@ -147,6 +191,23 @@ export default defineConfig<AppOptions>({
       stderr: 'pipe',
       timeout: 60_000,
       env: { ...serverEnv, APUNTA_PORT: String(esPort), APUNTA_DATA_DIR: esDataDir, APUNTA_DEV_SPANISH: '1' },
+    },
+    {
+      // The quiescence project's server: same build, third port, third data
+      // folder, and no `APUNTA_DEV_SPANISH` — its specs are English (AM-213).
+      // Started third, from the build the first one made.
+      command: 'node server/dist/index.js',
+      cwd: repoRoot,
+      url: `${quiescenceBaseURL}/api/health`,
+      reuseExistingServer: process.env['APUNTA_V2'] === '1' ? false : !process.env['CI'],
+      stdout: 'pipe',
+      stderr: 'pipe',
+      timeout: 60_000,
+      env: {
+        ...serverEnv,
+        APUNTA_PORT: String(quiescencePort),
+        APUNTA_DATA_DIR: quiescenceDataDir,
+      },
     },
   ],
 });

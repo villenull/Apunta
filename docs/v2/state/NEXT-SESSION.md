@@ -1,3 +1,20 @@
+## Current owner-authorized UI batch — 2026-10-05
+
+Successor59a44bd8 owns orchestration. P5.3 final reviewer0c91401f genuinely idle,
+complete report captured and archive confirmed. Final review CHANGES REQUESTED:
+HIGH duplicate-tab fail-open, V8 exit1, low string/documentation/flag findings.
+P5.3 BLOCKED; no new repair or approval. Rejected candidate saved for owner
+closeout, not accepted. AM214 desktop rebuild remains queued until approvedP5.3.
+
+Owner authorizes three UI changes: no whole-view refresh entering/leaving View
+all; notes-column no patient heading, New note top, notes scroll independently,
+three tools always visible bottom, blank-area click deselects note to patient
+welcome; New note modal over blurred existing patient workspace with current
+capture options and existing unsaved-text/recording protections. UI authorization
+does not grant updater repairs, thresholds, release actions or live-data access.
+Preview http://127.0.0.1:7821/ has18fakepatients/113notes, fakeAI, terminal13eca557;
+keep it running and rebuild its isolated frontend after verified UI integration.
+
 ## Orchestrator recovery — 2026-10-05 (59a44bd8)
 
 This header supersedes the stale worker table and closeout instructions below.

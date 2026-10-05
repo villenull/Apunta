@@ -21,6 +21,7 @@ import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLiveRecording } from '../hooks/useLiveRecording.js';
 import { useI18n, useReportWork } from '../lib/i18n.js';
+import { setEditorUnpersisted, setRecordingActive } from '../lib/maintenance.js';
 import { formatTimer } from '../lib/recorder.js';
 
 /**
@@ -152,7 +153,13 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
 
   useEffect(() => {
     reportDirty(unfinished);
-  }, [reportDirty, unfinished]);
+    // C-UPD@1's quiescence: the microphone is in the browser, so a recording is
+    // the one blocker the server has no route to register. Published through the
+    // maintenance reporter's own flag, not through `useReportWork` — that
+    // counter belongs to the Language control and has one reader.
+    setRecordingActive(recording !== 'idle');
+    setEditorUnpersisted(unfinished);
+  }, [recording, reportDirty, unfinished]);
 
   useEffect(() => {
     function onBeforeUnload(event: BeforeUnloadEvent): void {

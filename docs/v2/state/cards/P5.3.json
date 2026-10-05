@@ -4,15 +4,62 @@
   "attempt": 1,
   "sideEffectsDone": [],
   "changedFiles": [],
-  "criteria": {},
+  "criteria": {
+    "V1": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V2": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V3": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V4": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V5": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V6": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V7": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V8": {
+      "status": "FAIL",
+      "exit": 1,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    },
+    "V9": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+    }
+  },
   "sandboxRuns": [],
   "baseCommit": "432c0ab",
-  "status": "SUBMITTED",
-  "lastCompletedStep": "Round-4 repair and owner-approved AM-217 Capture line present; independent final review resumed after orchestrator recovery",
-  "nextAllowedAction": "Collect P5.3-impl4 review; verify and preserve completed candidate; archive worker; commit and push for owner-requested closeout. No further repair dispatch authorized.",
+  "status": "BLOCKED",
+  "lastCompletedStep": "Final round-4 independent review CHANGES REQUESTED: HIGH duplicate-tab fail-open, V8 exit1 and low findings; reviewer idle and archived confirmed",
+  "nextAllowedAction": "Preserve rejected candidate for authorized closeout. No further P5.3 repair or approval granted; owner UI batch now authorized separately.",
   "updatedUtc": "2026-10-05T15:23:36.221882+00:00",
-  "reviewWorkerId": "0c91401f-65ed-491e-bfa9-a46d7a83480d",
+  "reviewWorkerId": null,
   "orchestratorId": "59a44bd8-3fc3-43e2-8337-cc96dd3db55d",
   "recoveryNote": "Legacy attempt field remains 1 despite four recorded repair rounds; history preserved, no reset or additional attempt authorized. Ports in original lastCompletedStep were stale; current card is authoritative.",
-  "interruptedReviewWorkerId": "9efccac9-4d1c-45f9-ad88-1f1bc4de564a"
+  "interruptedReviewWorkerId": "9efccac9-4d1c-45f9-ad88-1f1bc4de564a",
+  "implementationReview": "docs/v2/state/reviews/P5.3-impl4.md"
 }

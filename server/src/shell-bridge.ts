@@ -26,6 +26,12 @@
 import { writeSync } from 'node:fs';
 import type { Readable } from 'node:stream';
 
+// A **type-only** import, and the only one in this file: it is erased at compile
+// time, so this module still has no runtime dependency of any kind. That is not
+// tidiness — P3.3's own suite loads this file in a bare `node` process that
+// resolves nothing, and a value import would break it.
+import type { QuiesceResult } from './maintenance.js';
+
 /** C-BRIDGE@1 rule 1's `protocol` field. Bumped only on an incompatible change. */
 export const BRIDGE_PROTOCOL = 1;
 
@@ -57,7 +63,14 @@ export type OutboundMessage =
       readonly version: string;
       readonly protocol: number;
     }
-  | { readonly type: 'fatal'; readonly code: string };
+  | { readonly type: 'fatal'; readonly code: string }
+  /**
+   * C-BRIDGE@1 rule 2's quiesce answer. Exactly the two fields the contract
+   * fixes — the shell branches on `ok` and reads `blockers[]`, and a
+   * `quiesceId` is deliberately **not** here: it ties a client report to a
+   * quiesce inside the server, and nothing on the shell's side matches on it.
+   */
+  | { readonly type: 'quiesce_result'; readonly ok: boolean; readonly blockers: readonly string[] };
 
 export interface BridgeEnv {
   readonly APUNTA_SHELL?: string | undefined;
@@ -131,6 +144,44 @@ export function writeFatal(
 }
 
 /**
+ * The quiesce entry point, installed by `routes/app-quiesce.ts` when the app is
+ * built.
+ *
+ * It is injected rather than imported because of the note above: this file must
+ * stay importable on its own. What lands here is `quiesceFromBridge()` — the
+ * **same** function `POST /api/app/quiesce` calls — so the shell's close request
+ * and the HTTP trigger are one function with two callers, not two
+ * implementations that can drift.
+ */
+let quiesceHandler: (() => Promise<QuiesceResult>) | null = null;
+
+/** Called once, by the route module, with the app's quiesce entry point. */
+export function setQuiesceHandler(handler: () => Promise<QuiesceResult>): void {
+  quiesceHandler = handler;
+}
+
+/**
+ * C-BRIDGE@1 rule 2's `quiesce_result{ok, blockers[]}`, written through the same
+ * synchronous writer as `ready` and `fatal`, and under the same gate: nothing is
+ * written in browser mode, where there is no shell to read it.
+ */
+export function writeQuiesceResult(
+  result: QuiesceResult,
+  options: { readonly env: BridgeEnv; readonly write?: LineWriter },
+): boolean {
+  if (!shellIsListening(options.env)) return false;
+  const write = options.write ?? writeSyncToStdout;
+  write(
+    serialize({
+      type: 'quiesce_result',
+      ok: result.ok,
+      blockers: [...result.blockers],
+    }),
+  );
+  return true;
+}
+
+/**
  * One inbound line, or `null` when it is not a JSON object.
  *
  * `null` covers a blank line, a line that is not JSON, and JSON that is not an
@@ -152,13 +203,23 @@ export function parseBridgeLine(line: string): InboundMessage | { readonly type:
 }
 
 /**
- * C-BRIDGE@1 rule 2's inbound half: `shutdown` is acted on, and **every**
- * unknown type is logged and ignored. Nothing inbound can shut the server down
- * except the exact word, and nothing inbound is ever fatal.
+ * C-BRIDGE@1 rule 2's inbound half: `shutdown` and `quiesce` are acted on, and
+ * **every** unknown type is logged and ignored. Nothing inbound can shut the
+ * server down except the exact word, and nothing inbound is ever fatal.
+ *
+ * `onQuiesce` is optional because the dispatch of an inbound line is this
+ * function's only job: whoever reads the pipe decides what a quiesce means.
+ * `startStdinBridge` gives it the real one — the same entry point
+ * `POST /api/app/quiesce` calls — and a caller that only cares about shutdown
+ * passes nothing and hears a log line instead.
  */
 export function handleInboundLine(
   line: string,
-  handlers: { readonly onShutdown: () => void; readonly log?: (message: string) => void },
+  handlers: {
+    readonly onShutdown: () => void;
+    readonly onQuiesce?: () => void;
+    readonly log?: (message: string) => void;
+  },
 ): void {
   const log = handlers.log ?? (() => undefined);
   const parsed = parseBridgeLine(line);
@@ -168,6 +229,14 @@ export function handleInboundLine(
   }
   if (parsed.type === 'shutdown') {
     handlers.onShutdown();
+    return;
+  }
+  if (parsed.type === 'quiesce') {
+    if (handlers.onQuiesce === undefined) {
+      log('shell bridge: ignoring quiesce, because this reader has no quiesce handler');
+      return;
+    }
+    handlers.onQuiesce();
     return;
   }
   log(`shell bridge: ignoring unknown inbound type ${JSON.stringify(parsed.type)}`);
@@ -200,6 +269,17 @@ export function startStdinBridge(options: {
   readonly input?: Readable;
   readonly onShutdown: () => void;
   /**
+   * C-UPD@1's quiesce, from the shell's `quiesce{}` (C-BRIDGE@1 rule 2).
+   *
+   * Optional, and defaulted here rather than in `index.ts`: the default calls
+   * the **same exported entry point** `POST /api/app/quiesce` calls
+   * (`server/src/maintenance.ts`) and writes the one `quiesce_result` line
+   * through this module's own writer. One function, two callers — so the shell's
+   * close request and the HTTP trigger cannot drift apart, and neither is a
+   * test-only switch.
+   */
+  readonly onQuiesce?: () => void;
+  /**
    * The shell's end of the pipe closed without a `shutdown`. Absent means "do
    * nothing on end-of-file", which is the old behaviour and is what a caller
    * with no shell in front of it wants.
@@ -210,6 +290,33 @@ export function startStdinBridge(options: {
   if (!shellIsListening(options.env)) return false;
   const input = options.input ?? process.stdin;
   const log = options.log ?? (() => undefined);
+  const env = options.env;
+  /**
+   * The quiesce half. Asynchronous because the drain is, and fire-and-forget
+   * because a line reader cannot await: the answer travels back as its own
+   * `quiesce_result` line, which is the whole of C-BRIDGE@1 rule 2's contract
+   * for this message. A failure is a log line and never a crash — nothing
+   * inbound is ever fatal.
+   */
+  const onQuiesce =
+    options.onQuiesce ??
+    ((): void => {
+      const run = quiesceHandler;
+      if (run === null) {
+        // No app wired the entry point, so there is nothing to drain and nobody
+        // to ask. Fail closed, in the contract's own shape, rather than leaving
+        // the shell waiting for a line that will never come.
+        writeQuiesceResult({ ok: false, blockers: ['no_response'] }, { env });
+        return;
+      }
+      void run()
+        .then((result) => {
+          writeQuiesceResult(result, { env });
+        })
+        .catch((error: unknown) => {
+          log(`shell bridge: quiesce failed: ${error instanceof Error ? error.message : String(error)}`);
+        });
+    });
   let buffered = '';
   // `shutdown` and end-of-file can both arrive — a shell that wrote `shutdown` and
   // then closed its end is not two quits — so the shutdown callback is one-shot.
@@ -226,7 +333,7 @@ export function startStdinBridge(options: {
     while (newline !== -1) {
       const line = buffered.slice(0, newline);
       buffered = buffered.slice(newline + 1);
-      handleInboundLine(line, { onShutdown: stopOnce, log });
+      handleInboundLine(line, { onShutdown: stopOnce, onQuiesce, log });
       newline = buffered.indexOf('\n');
     }
   });
@@ -234,7 +341,7 @@ export function startStdinBridge(options: {
     // An unterminated tail is still read, because a `shutdown` written without
     // its newline is a shutdown.
     if (buffered !== '') {
-      handleInboundLine(buffered, { onShutdown: stopOnce, log });
+      handleInboundLine(buffered, { onShutdown: stopOnce, onQuiesce, log });
       buffered = '';
       return;
     }

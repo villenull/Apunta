@@ -13,8 +13,23 @@
  * touches a note.
  *
  * The kinds are the whole vocabulary the plan names, so a later card adopts one
- * by calling `begin` and not by editing a union. Only `draft` and `refine` are
- * wired today (`routes/draft.ts`, `routes/chat.ts`); S2.6 is the first reader.
+ * by calling `begin` and not by editing a union.
+ *
+ * **P5.3 wired the remaining kinds (2026-10-04).** Every kind except
+ * `recording` now has a call site, one per route that starts a long-running job
+ * or holds an open stream: `transcription` in `routes/transcribe.ts` (all three
+ * of its routes), `plan` in `routes/plans.ts`, `briefing` in `routes/prep.ts`,
+ * `brainstorm` in `routes/brainstorm.ts`, `import` in `routes/import.ts` and
+ * `routes/halaxy.ts`, `restore` and `backup` in `routes/backup.ts`, and `save`
+ * in `routes/notes.ts` — beside `draft` (`routes/draft.ts`) and `refine`
+ * (`routes/chat.ts`), which S2.1 wired. `recording` has **no** server site by
+ * construction: the microphone is in the browser, so a recording travels on the
+ * client half of C-UPD@1's quiescence and is never a registry job.
+ *
+ * `settings.ts` reads `anyActive()` for C-LANG@1 rule 6 and keeps working
+ * unchanged; P5.3 neither weakened nor widened that read. Nothing in this file
+ * changed but this comment: the union, `JobKind`, `begin`, `end`, `active` and
+ * `anyActive` are exactly as S2.1 left them.
  */
 export const JOB_KINDS = [
   'recording',

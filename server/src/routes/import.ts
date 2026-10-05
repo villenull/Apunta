@@ -25,6 +25,7 @@ import {
 import { createNote } from '../db/notes.js';
 import { createPatient, listPatients } from '../db/patients.js';
 import { createTranscript } from '../db/transcripts.js';
+import { uuidv7 } from '../db/uuid.js';
 import { badRequest, notFound } from '../http/errors.js';
 import {
   importedKeys,
@@ -35,6 +36,7 @@ import {
   type ImportPlan,
   type ReadExport,
 } from '../import/claude.js';
+import { begin, end } from '../jobs/registry.js';
 
 /**
  * Importing her Claude conversations (M11), automatically — the owner's
@@ -67,62 +69,73 @@ export function registerImportRoutes(app: FastifyInstance, db: Database): void {
   });
 
   app.post('/api/import/claude/run', async (request, reply): Promise<ClaudeImportReport> => {
-    const upload = await receiveExport(request);
-    const format = listFormats(db)[0];
-    if (!format) throw badRequest('errors.bad_request.needs_format');
+    // C-UPD@1's registry. A run reads a whole export and writes patients,
+    // notes and transcripts in one transaction, so it is the longest single
+    // write in the app and the one a quiesce most needs to be able to name.
+    // The id is minted here because there is nothing yet to identify it by:
+    // the batch does not exist until the transaction below runs.
+    const jobId = uuidv7();
+    begin('import', jobId);
+    try {
+      const upload = await receiveExport(request);
+      const format = listFormats(db)[0];
+      if (!format) throw badRequest('errors.bad_request.needs_format');
 
-    // Planned and written in one transaction, so what is skipped as already
-    // imported is judged against the database this run writes to.
-    const report = db.transaction((): ClaudeImportReport => {
-      const plan = planFor(db, upload);
-      if (plan.notes.length === 0) return { batch_id: null, ...plan.report };
+      // Planned and written in one transaction, so what is skipped as already
+      // imported is judged against the database this run writes to.
+      const report = db.transaction((): ClaudeImportReport => {
+        const plan = planFor(db, upload);
+        if (plan.notes.length === 0) return { batch_id: null, ...plan.report };
 
-      const batchId = createImportBatch(db, upload.options.source);
-      const patientIds = plan.report.patients.map((planned) => {
-        if (planned.patient_id !== null) return planned.patient_id;
-        const created = createPatient(db, { name: planned.name, nameGuessed: planned.name_guessed });
-        addBatchPatient(db, batchId, created.id);
-        return created.id;
-      });
-      for (const planned of plan.notes) {
-        const note = createNote(db, {
-          patient_id: patientIds[planned.patient] as string,
-          format_id: format.id,
-          // The format's language is the note's language (C-LANG@1 rule 3), so
-          // a refine on an imported note answers in the note's language.
-          locale: format.locale,
-          title: importedNoteTitle(planned.recordedAt, format.locale),
-          content: planned.body,
-          ...(planned.recordedAt === null ? {} : { created_at: planned.recordedAt }),
+        const batchId = createImportBatch(db, upload.options.source);
+        const patientIds = plan.report.patients.map((planned) => {
+          if (planned.patient_id !== null) return planned.patient_id;
+          const created = createPatient(db, { name: planned.name, nameGuessed: planned.name_guessed });
+          addBatchPatient(db, batchId, created.id);
+          return created.id;
         });
-        createTranscript(db, {
-          note_id: note.id,
-          source: 'import',
-          raw_text: `${planned.provenance}\n\n${planned.body}`,
-        });
-        addBatchNote(db, batchId, note.id);
-      }
-      return {
-        batch_id: batchId,
-        ...plan.report,
-        patients: plan.report.patients.map((planned, index) => ({
-          ...planned,
-          patient_id: patientIds[index] as string,
-        })),
-      };
-    })();
+        for (const planned of plan.notes) {
+          const note = createNote(db, {
+            patient_id: patientIds[planned.patient] as string,
+            format_id: format.id,
+            // The format's language is the note's language (C-LANG@1 rule 3), so
+            // a refine on an imported note answers in the note's language.
+            locale: format.locale,
+            title: importedNoteTitle(planned.recordedAt, format.locale),
+            content: planned.body,
+            ...(planned.recordedAt === null ? {} : { created_at: planned.recordedAt }),
+          });
+          createTranscript(db, {
+            note_id: note.id,
+            source: 'import',
+            raw_text: `${planned.provenance}\n\n${planned.body}`,
+          });
+          addBatchNote(db, batchId, note.id);
+        }
+        return {
+          batch_id: batchId,
+          ...plan.report,
+          patients: plan.report.patients.map((planned, index) => ({
+            ...planned,
+            patient_id: patientIds[index] as string,
+          })),
+        };
+      })();
 
-    request.log.info(
-      {
-        notes: report.notes,
-        patientsCreated: report.patients_to_create,
-        patients: report.patients.length,
-        skipped: report.skipped.length,
-      },
-      'claude conversations imported',
-    );
-    reply.code(report.batch_id === null ? 200 : 201);
-    return report;
+      request.log.info(
+        {
+          notes: report.notes,
+          patientsCreated: report.patients_to_create,
+          patients: report.patients.length,
+          skipped: report.skipped.length,
+        },
+        'claude conversations imported',
+      );
+      reply.code(report.batch_id === null ? 200 : 201);
+      return report;
+    } finally {
+      end(jobId);
+    }
   });
 
   app.get('/api/import/batches', (): ImportBatchListResponse => ({ batches: listImportBatches(db) }));

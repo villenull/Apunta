@@ -28,6 +28,12 @@ export const ApiErrorCodeSchema = z.enum([
   // C-SNAP@1 rule 3: a backup was already running and the second request waited
   // its 60 s. A 409 — the request was fine, it lost the wait.
   'backup_in_progress',
+  // C-UPD@1's Quiescence sentence: "The server enters maintenance mode: new
+  // jobs and writes get 503 `maintenance`". A 503 — the request was fine and
+  // the moment is wrong, like `backup_in_progress`, and the code is what the
+  // client branches on to say "wait a moment" instead of "try again later"
+  // (web/src/api/client.ts parses this body as an ordinary `ApiErrorSchema`).
+  'maintenance',
   'internal_error',
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCodeSchema>;

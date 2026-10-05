@@ -3045,3 +3045,24 @@ reappeared IDLE after cascade completion, so directly archived9efccac9 once;
 archive succeeded and final active-list verification retains only successor and
 fresh assigned reviewer. Recovery checkpoint committed250e2af; candidate stays
 uncommitted until final review. Completion notification armed.
+
+## 2026-10-05 — owner testing preview delivered
+
+Owner requested latest working link with15–20fakepatients and notes. Separate
+frontend build output build/owner-preview/web leaves global dist outputs alone;
+source server runs tsx/Node24 in sandbox7821, managed terminal13eca557. Existing
+practice seeder produces18patients/112notes; one extra fabricated note added to
+seed's intentionally empty AnaTorres, yielding113notes/minimum1perpatient.
+HTTP200, health unique sandboxrunid, fakeAI=true and18/113/min1 API assertions
+verified; browser renders Patients·Apunta and all18names/groups. Keep running.
+No acceptance claim; reviewer report has returned CHANGESREQUESTED/HIGH plus
+V8FAIL, completion narration was premature so no archive/approval yet.
+
+## 2026-10-05 — final review captured, UI batch authorized
+
+Owner flagged idle reviewer. Verified idle/complete impl4 report and evidence,
+archived0c91401f successfully; active list rootonly. P5.3 BLOCKED/HIGH duplicate
+identity flaw+V8FAIL; all old findings/evidence kept. No new updater repair.
+Owner now explicitly grants implementation of collected3UIchanges. Preserve
+completed rejected P5.3 candidate before new writers; independent UI IR then
+disjoint implementation, review, verification and preview refresh.
