@@ -185,6 +185,15 @@ test.describe('el corrector en Español', () => {
     const patient = (await (
       await request.post('/api/patients', { data: { name: SPANISH_DISPLAY_NAME } })
     ).json()) as Created;
+    // The Capture screen renders the typed-notes box only when the practice
+    // has at least one note format (`Capture.tsx:341-346`); with none it shows
+    // a "no formats" notice instead. The format is made here, through the API,
+    // so this case owns that precondition rather than depending on another
+    // spec having created one in this data folder first — the same
+    // order-dependence that made the dictionary-assets case flaky (402222b).
+    await request.post('/api/formats', {
+      data: { name: 'Nota de progreso (es-MX)', sections: ['Subjetivo', 'Plan'] },
+    });
 
     await page.goto(`/capture/${patient.id}`);
     const typed = page.getByTestId('summary-input');
