@@ -1,0 +1,293 @@
+# P3.6 attempt 7 (AM-212) -- helper tests, attempt 7 vs attempt 6 on the SAME tree
+# cwd: /home/villenull/Projects/Apunta
+# node: v24.19.0
+# date (UTC): 2026-10-05T00:52:51Z
+# All 15 tests this attempt added PASS. The seven failures below are the SAME seven
+# that attempt 6's untouched copy fails on this tree: they locate each label by line
+# number in shared/src/i18n/en.ts, which a parallel worker has 10 uncommitted lines
+# further along than when those numbers were recorded. Card Stop 7: reported, not fixed.
+
+# ATTEMPT 7 -- node docs/v2/evidence/P3.6/attempt-7/implementation/helper-tests.mjs
+tauri-e2e-smoke: source the sandbox environment first: node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-….env && . /tmp/apunta-v2-….env (APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required)
+PASS R5 importing the harness ran nothing (this process is alive to assert it)
+PASS R1 a single accent cluster is picked
+PASS R1 two comparable accent clusters are refused, not guessed
+PASS R1 no accent cluster at all is refused with a named reason
+PASS R1 one dominant cluster still wins over a small second one
+PASS R2 the Copied state is a control-specific label, not a colour count
+PASS D1 a pane-only label is grounded only when it is unique
+PASS D1 a phrase must match whole words in reading order, not substrings
+PASS R3 the live source table maps indices to names and rejects malformed rows
+PASS R3 a source-output resolves through the table, and the dash client column is "no client"
+PASS R3 a stream on a non-virtual source is surfaced, not dropped
+PASS R3 an unresolvable source index is an error, never "not the microphone"
+PASS D6 Rule B input paths are in the set and its build outputs are not
+PASS D6 the source walk finds a Rule B input and reports its mtime
+  note: Rule B has 76 in-flight change(s) in this working tree
+PASS D6 the freshness predicate runs against real git and answers both halves
+PASS D4 the observation scan refuses to pass on an unread bundle
+NOT RUN onboarding: zero windows found on the display
+NOT RUN capture: zero windows found on the display
+NOT RUN draft: zero windows found on the display
+NOT RUN refine: zero windows found on the display
+NOT RUN publish+copy: zero windows found on the display
+NOT RUN patient list: zero windows found on the display
+NOT RUN plan: zero windows found on the display
+NOT RUN briefing: zero windows found on the display
+NOT RUN brainstorm: zero windows found on the display
+NOT RUN settings: zero windows found on the display
+NOT RUN backup: zero windows found on the display
+PASS D5 an early abort records all eleven named flows as NOT RUN
+PASS D2 the ownership baseline is a name set taken after the first instance
+PASS D4 an absent or scriptless bundle is unreadable, never "zero occurrences"
+PASS D5 the exit code refuses to read a NOT RUN as a pass
+PASS F1 the add-patient screen carries its own title twice, so it is not the pane label
+FAIL F1 the add-patient label is the string AddPatient.tsx renders, and the title really is twice: The input did not match the regular expression /'patients.identifierLabel'/. Input:
+
+"  'common.adding': { text: 'Adding…' },"
+
+PASS F2 the refine placeholder is quoted in full and matches every way OCR reads the dots
+FAIL F2 the placeholder is the string RefineColumn renders, with its dots: The input did not match the regular expression /'refine.inputPlaceholder': \{ text: 'Ask a question or give feedback\.\.\.' \}/. Input:
+
+"  /** The sheet's close button, `RefineColumn.tsx:190`, and the launcher's aria-label, `NoteView.tsx:761`. */"
+
+PASS F3 the capture label is quoted with its U+2026 and matches ellipsis, dots and a bare word
+PASS F3 the strip takes a run of punctuation, and only trailing punctuation
+FAIL F3 the capture label is the string LiveRecording renders, and it renders once: The input did not match the regular expression /'capture.listening': \{ text: 'Listening for words…' \}/. Input:
+
+''
+
+PASS F4 the plan pane is opened first: `Start a plan` is not on that screen at all
+PASS F4 with the welcome not on screen the notes-column switch is the unique opener
+PASS F4 `Start a plan` is inside the pane, so the opener is a different control
+PASS F5 briefing and brainstorm open the same way, switch or welcome card
+PASS F5 a pane opener that is nowhere on screen is refused, with both reasons
+FAIL F4/F5 each opener label is the string its own file renders, once: The input did not match the regular expression /'plan\.title'/. Input:
+
+'   * status that wanted a display name would be a key with the stored value as'
+
+PASS F4/F5 the duplicated labels really are rendered in two different files
+PASS F6/D1 the modal nav title is the one unique `Settings` on the open settings screen
+FAIL F6/D1 the chosen label is the string the nav renders, and the other doc.settings is the title: The input did not match the regular expression /'doc\.settings': \{ text: 'Settings' \}/. Input:
+
+''
+
+PASS F6/D1 the label it replaced is unreachable, and that is why it was wrong
+PASS F6/D1 every hop on the render path is still in the source, with its reason
+PASS F6/D1 each hop body has exactly the declared gates, and every guard says why it cannot fire
+PASS F6/D1 the label sits in the nav, outside every section gate
+FAIL F6/D1 no other visible `Settings` string is mounted over the workspace: only common.settings and doc.settings render as `Settings`
++ actual - expected
+
+  [
++   1233,
++   1298
+-   1223,
+-   1288
+  ]
+
+PASS F7 the backup directory is the run's output, not a second owner
+PASS F7 the check is no weaker for the four names: one appearing is caught
+PASS F7 the containment helper reads the four names from the sandbox folder, not from a literal
+FAIL every grounded label in the harness exists in en.ts and renders where it is cited: publish
+PASS D2 the identity snapshot records device+inode for all four, and marks the WAL pair volatile
+PASS D2 an unchanged baseline with a new backups/ directory PASSES, and is not weakened by it
+PASS D2 a replaced C-OWN file FAILS the check (a new inode is the second owner)
+PASS D2 the WAL pair being recreated by SQLite is recorded, never failed on
+PASS D2 a vanished database FAILS, because a database does not delete itself
+PASS D2 the lock holder is read in C-OWN@1 rule 2's own shape
+PASS D2 the lock holder must be this run's server pid, at the baseline and at the end
+PASS D2 the shell prints the same pid the lock names, so the two are comparable
+PASS AM-209 a healthy shutdown end state PASSES both ownership checks
+PASS AM-209 a vanished apunta.db FAILS both ownership checks
+PASS AM-209 any other baseline entry vanishing FAILS the containment check
+PASS AM-209 mutation: reverting either exemption fails the healthy end state, so the exemptions are narrow
+PASS A1 parses the three forms ImageMagick prints, with and without a normalized pair
+PASS A1 fails closed on everything that is not the metric
+  the installed tool printed "0 (0)" for a perfect match\nPASS A1 the REAL installed ImageMagick output parses, and did not before the repair
+PASS A1 mutation: an IM6-only parser rejects IM7 output, so the widening is load-bearing
+PASS A1 the other identify parse site is unchanged and still fail-closed
+PASS A2 PASSES when no Rule B input moved after the commit the artefact was built from
+PASS A2 FAILS on a Rule B change committed after the build commit
+PASS A2 FAILS on a dirty Rule B input
+PASS A2 an artefact older than every commit FAILS closed, with a reason
+PASS A2 a missing artefact and a tree that is not a repository both FAIL closed
+PASS A2 an artefact older than its newest Rule B input still fails the fresh-build anchor
+PASS A2 the verdict turns each fail-closed case red and the clean case green, with no fallback branch
+PASS A2 mutation: dropping the unknown-build-commit guard makes that case PASS, so the guard is load-bearing
+PASS A2 the real repository resolves a real build commit for the real AppImage
+PASS A3 the V3 row passes the harness its own screen geometry, and does not pre-empt it
+
+65/72 helper tests passed
+  failed: F1 the add-patient label is the string AddPatient.tsx renders, and the title really is twice: The input did not match the regular expression /'patients.identifierLabel'/. Input:
+
+"  'common.adding': { text: 'Adding…' },"
+
+  failed: F2 the placeholder is the string RefineColumn renders, with its dots: The input did not match the regular expression /'refine.inputPlaceholder': \{ text: 'Ask a question or give feedback\.\.\.' \}/. Input:
+
+"  /** The sheet's close button, `RefineColumn.tsx:190`, and the launcher's aria-label, `NoteView.tsx:761`. */"
+
+  failed: F3 the capture label is the string LiveRecording renders, and it renders once: The input did not match the regular expression /'capture.listening': \{ text: 'Listening for words…' \}/. Input:
+
+''
+
+  failed: F4/F5 each opener label is the string its own file renders, once: The input did not match the regular expression /'plan\.title'/. Input:
+
+'   * status that wanted a display name would be a key with the stored value as'
+
+  failed: F6/D1 the chosen label is the string the nav renders, and the other doc.settings is the title: The input did not match the regular expression /'doc\.settings': \{ text: 'Settings' \}/. Input:
+
+''
+
+  failed: F6/D1 no other visible `Settings` string is mounted over the workspace: only common.settings and doc.settings render as `Settings`
++ actual - expected
+
+  [
++   1233,
++   1298
+-   1223,
+-   1288
+  ]
+
+  failed: every grounded label in the harness exists in en.ts and renders where it is cited: publish
+ATTEMPT-7 EXIT=1
+
+# ATTEMPT 6 (untouched file, run for comparison) -- node docs/v2/evidence/P3.6/attempt-6/implementation/helper-tests.mjs
+tauri-e2e-smoke: source the sandbox environment first: node scripts/v2/sandbox.mjs env --port 78xx > /tmp/apunta-v2-….env && . /tmp/apunta-v2-….env (APUNTA_DATA_DIR, APUNTA_PORT and APUNTA_TEST_RUN_ID are all required)
+PASS R5 importing the harness ran nothing (this process is alive to assert it)
+PASS R1 a single accent cluster is picked
+PASS R1 two comparable accent clusters are refused, not guessed
+PASS R1 no accent cluster at all is refused with a named reason
+PASS R1 one dominant cluster still wins over a small second one
+PASS R2 the Copied state is a control-specific label, not a colour count
+PASS D1 a pane-only label is grounded only when it is unique
+PASS D1 a phrase must match whole words in reading order, not substrings
+PASS R3 the live source table maps indices to names and rejects malformed rows
+PASS R3 a source-output resolves through the table, and the dash client column is "no client"
+PASS R3 a stream on a non-virtual source is surfaced, not dropped
+PASS R3 an unresolvable source index is an error, never "not the microphone"
+PASS D6 Rule B input paths are in the set and its build outputs are not
+PASS D6 the source walk finds a Rule B input and reports its mtime
+  note: Rule B has 76 in-flight change(s) in this working tree
+PASS D6 the freshness predicate runs against real git and answers both halves
+PASS D4 the observation scan refuses to pass on an unread bundle
+NOT RUN onboarding: zero windows found on the display
+NOT RUN capture: zero windows found on the display
+NOT RUN draft: zero windows found on the display
+NOT RUN refine: zero windows found on the display
+NOT RUN publish+copy: zero windows found on the display
+NOT RUN patient list: zero windows found on the display
+NOT RUN plan: zero windows found on the display
+NOT RUN briefing: zero windows found on the display
+NOT RUN brainstorm: zero windows found on the display
+NOT RUN settings: zero windows found on the display
+NOT RUN backup: zero windows found on the display
+PASS D5 an early abort records all eleven named flows as NOT RUN
+PASS D2 the ownership baseline is a name set taken after the first instance
+PASS D4 an absent or scriptless bundle is unreadable, never "zero occurrences"
+PASS D5 the exit code refuses to read a NOT RUN as a pass
+PASS F1 the add-patient screen carries its own title twice, so it is not the pane label
+FAIL F1 the add-patient label is the string AddPatient.tsx renders, and the title really is twice: The input did not match the regular expression /'patients.identifierLabel'/. Input:
+
+"  'common.adding': { text: 'Adding…' },"
+
+PASS F2 the refine placeholder is quoted in full and matches every way OCR reads the dots
+FAIL F2 the placeholder is the string RefineColumn renders, with its dots: The input did not match the regular expression /'refine.inputPlaceholder': \{ text: 'Ask a question or give feedback\.\.\.' \}/. Input:
+
+"  /** The sheet's close button, `RefineColumn.tsx:190`, and the launcher's aria-label, `NoteView.tsx:761`. */"
+
+PASS F3 the capture label is quoted with its U+2026 and matches ellipsis, dots and a bare word
+PASS F3 the strip takes a run of punctuation, and only trailing punctuation
+FAIL F3 the capture label is the string LiveRecording renders, and it renders once: The input did not match the regular expression /'capture.listening': \{ text: 'Listening for words…' \}/. Input:
+
+''
+
+PASS F4 the plan pane is opened first: `Start a plan` is not on that screen at all
+PASS F4 with the welcome not on screen the notes-column switch is the unique opener
+PASS F4 `Start a plan` is inside the pane, so the opener is a different control
+PASS F5 briefing and brainstorm open the same way, switch or welcome card
+PASS F5 a pane opener that is nowhere on screen is refused, with both reasons
+FAIL F4/F5 each opener label is the string its own file renders, once: The input did not match the regular expression /'plan\.title'/. Input:
+
+'   * status that wanted a display name would be a key with the stored value as'
+
+PASS F4/F5 the duplicated labels really are rendered in two different files
+PASS F6/D1 the modal nav title is the one unique `Settings` on the open settings screen
+FAIL F6/D1 the chosen label is the string the nav renders, and the other doc.settings is the title: The input did not match the regular expression /'doc\.settings': \{ text: 'Settings' \}/. Input:
+
+''
+
+PASS F6/D1 the label it replaced is unreachable, and that is why it was wrong
+PASS F6/D1 every hop on the render path is still in the source, with its reason
+PASS F6/D1 each hop body has exactly the declared gates, and every guard says why it cannot fire
+PASS F6/D1 the label sits in the nav, outside every section gate
+FAIL F6/D1 no other visible `Settings` string is mounted over the workspace: only common.settings and doc.settings render as `Settings`
++ actual - expected
+
+  [
++   1233,
++   1298
+-   1223,
+-   1288
+  ]
+
+PASS F7 the backup directory is the run's output, not a second owner
+PASS F7 the check is no weaker for the four names: one appearing is caught
+PASS F7 the containment helper reads the four names from the sandbox folder, not from a literal
+FAIL every grounded label in the harness exists in en.ts and renders where it is cited: publish
+PASS D2 the identity snapshot records device+inode for all four, and marks the WAL pair volatile
+PASS D2 an unchanged baseline with a new backups/ directory PASSES, and is not weakened by it
+PASS D2 a replaced C-OWN file FAILS the check (a new inode is the second owner)
+PASS D2 the WAL pair being recreated by SQLite is recorded, never failed on
+PASS D2 a vanished database FAILS, because a database does not delete itself
+PASS D2 the lock holder is read in C-OWN@1 rule 2's own shape
+PASS D2 the lock holder must be this run's server pid, at the baseline and at the end
+PASS D2 the shell prints the same pid the lock names, so the two are comparable
+PASS AM-209 a healthy shutdown end state PASSES both ownership checks
+PASS AM-209 a vanished apunta.db FAILS both ownership checks
+PASS AM-209 any other baseline entry vanishing FAILS the containment check
+PASS AM-209 mutation: reverting either exemption fails the healthy end state, so the exemptions are narrow
+
+50/57 helper tests passed
+  failed: F1 the add-patient label is the string AddPatient.tsx renders, and the title really is twice: The input did not match the regular expression /'patients.identifierLabel'/. Input:
+
+"  'common.adding': { text: 'Adding…' },"
+
+  failed: F2 the placeholder is the string RefineColumn renders, with its dots: The input did not match the regular expression /'refine.inputPlaceholder': \{ text: 'Ask a question or give feedback\.\.\.' \}/. Input:
+
+"  /** The sheet's close button, `RefineColumn.tsx:190`, and the launcher's aria-label, `NoteView.tsx:761`. */"
+
+  failed: F3 the capture label is the string LiveRecording renders, and it renders once: The input did not match the regular expression /'capture.listening': \{ text: 'Listening for words…' \}/. Input:
+
+''
+
+  failed: F4/F5 each opener label is the string its own file renders, once: The input did not match the regular expression /'plan\.title'/. Input:
+
+'   * status that wanted a display name would be a key with the stored value as'
+
+  failed: F6/D1 the chosen label is the string the nav renders, and the other doc.settings is the title: The input did not match the regular expression /'doc\.settings': \{ text: 'Settings' \}/. Input:
+
+''
+
+  failed: F6/D1 no other visible `Settings` string is mounted over the workspace: only common.settings and doc.settings render as `Settings`
++ actual - expected
+
+  [
++   1233,
++   1298
+-   1223,
+-   1288
+  ]
+
+  failed: every grounded label in the harness exists in en.ts and renders where it is cited: publish
+ATTEMPT-6 EXIT=1
+
+# why the F-series tests are red: the line numbers they pin, against the file as it stands.
+$ grep -n "'plan.title'\|'patients.identifierLabel'\|'capture.listening'\|'doc.settings'\|'refine.inputPlaceholder'" shared/src/i18n/en.ts
+1020:  'capture.listening': { text: 'Listening for words…' },
+1068:  'refine.inputPlaceholder': { text: 'Ask a question or give feedback...' },
+1298:  'doc.settings': { text: 'Settings' },
+1845:  'plan.title': { text: 'Treatment plan' },
+2180:  'patients.identifierLabel': { text: 'Identifier (optional)' },
+$ git diff --numstat -- shared/src/i18n/en.ts   # the parallel worker's in-flight edit
+10	0	shared/src/i18n/en.ts

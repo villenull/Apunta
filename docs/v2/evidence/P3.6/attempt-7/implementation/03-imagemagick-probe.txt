@@ -1,0 +1,40 @@
+# P3.6 attempt 7 (AM-212, A1) -- read-only probe of the installed ImageMagick's real
+# 'compare -metric AE' / 'identify -format' output, on two synthetic PNGs.
+# cwd: /home/villenull/Projects/Apunta/build/p36-a7   date (UTC): 2026-10-05T00:50:27Z
+# NOTHING here is an AppImage, a build output or a source file: the four PNGs are
+# generated in this scratch folder and the commands are read-only on them.
+
+$ compare --version | head -2
+Version: ImageMagick 7.1.2-31 Q16-HDRI x86_64 8309dc92a:20260903 https://imagemagick.org
+Copyright: (C) 1999 ImageMagick Studio LLC
+
+$ magick -size 8x8 xc:red a.png ; magick a.png b.png   # a.png, b.png: byte-identical
+
+$ compare -metric AE a.png b.png null:   # stderr, byte-exact (od -c)
+0000000   0       (   0   )
+0000005
+exit=0
+
+$ magick a.png -fill blue -draw "point 2,2" c.png ; compare -metric AE a.png c.png null:
+0000000   0   .   6   6   6   6   6   7       (   0   .   0   1   0   4
+0000020   1   6   7   )
+0000024
+exit=1
+
+$ magick a.png -fill blue -draw "point 1,1 point 5,5 point 7,2 point 0,0" d.png   # 4 of 64 px differ
+2.66667 (0.0416667)
+$ compare -metric AE a.png b.png null:   # stdout only (nothing on stdout)
+0000000
+(empty above: the metric is stderr-only, which is why it is read from stderr)
+
+# the shipped documentation beside the tool:
+$ grep -n "28.0142" /usr/share/doc/ImageMagick-7/www/compare/index.html
+28.0142 (0.233452)
+0 (0) @ 417,44 [0]
+
+$ identify -format "%w %h" a.png   # the other parse site in the harness
+0000000   8       8
+0000003
+$ identify -format "%w %h" a.png d.png    # two files: no separator between them
+0000000   8       8   8       8
+0000006

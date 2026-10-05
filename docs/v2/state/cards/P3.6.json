@@ -8,8 +8,8 @@
   "baseCommit": "62abb28",
   "attempt": 7,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Native V3 first run: FAIL on harness/environment defects (AE parse, pinned Rule B base, display size), not on the app; all flows NOT RUN | AM-212 owner allowed one seventh attempt bounded to A1-A3.",
-  "nextAllowedAction": "attempt-7 repair (A1 AE parse, A2 freshness base, A3 display) -> fresh source review -> native V3",
+  "lastCompletedStep": "Attempt 7 (AM-212) candidate sha256 ddd3c03e... independent source review reviews/P3.6-impl7-source.md CLEAR (0 defects; 6 LOW observations outside bound)",
+  "nextAllowedAction": "native V3 once P5.3 is committed and Rule B inputs are clean; re-run V0 first only if Rule B inputs changed since the tested AppImage (74cc340) \u2014 owner to confirm the rebuild",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {

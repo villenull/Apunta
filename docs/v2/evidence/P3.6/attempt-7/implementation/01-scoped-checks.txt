@@ -1,0 +1,29 @@
+# P3.6 attempt 7 (AM-212) -- scoped verification, attempt-7 CODE/UNIT pass
+# cwd: /home/villenull/Projects/Apunta
+# node: v24.19.0
+# date (UTC): 2026-10-05T00:52:25Z
+# harness sha256: ddd3c03eba1f0d97393937a1b7b3a957f61113ffb79c65366f8db2fb048ea0e2
+# card sha256:    37950fadd7422107794204e1a0fbe8445abc6759067315a42203bbfe3579ddcc
+# helper-tests sha256: 99208302770584661831757428e522df55ba5091bf821128b96a5ce757972dca
+
+$ node --check scripts/v2/tauri-e2e-smoke.test.mjs
+exit=0
+
+$ node --check docs/v2/evidence/P3.6/attempt-7/implementation/helper-tests.mjs
+exit=0
+
+$ npx prettier --check <every file this pass wrote>
+Checking formatting...
+All matched files use Prettier code style!
+exit=0
+
+$ npx eslint scripts/v2/tauri-e2e-smoke.test.mjs docs/v2/evidence/P3.6/attempt-7/implementation/helper-tests.mjs
+exit=0
+
+$ node docs/v2/tools/check-plan.mjs
+Plan consistent: 71 cards, 12 parent reviews, 14 contracts, R01-R20 covered, no cycles.
+exit=0
+
+# The helper tests themselves are in 02-helper-tests.txt (attempt 7 and attempt 6,
+# back to back on this tree, exit 1 on both: the same seven F-series failures
+# caused by the parallel worker's in-flight shared/src/i18n/en.ts edit).

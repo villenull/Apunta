@@ -138,6 +138,18 @@ const FLOWS = [
  * copied out of the dispatch header **by hand** (step S1): the header's
  * `- Base commit:` line, never a token in the card's prose. The separator is
  * three ASCII full stops.
+ *
+ * **Recorded, reported, and no longer the thing the history arm compares
+ * against.** The base is where the dispatch was cut; the artefact under test was
+ * built later, so a Rule B input committed between the two says the *dispatch*
+ * moved, not that the *bundle* is stale. Comparing against the base failed the
+ * row on a bundle V0 had built from the very tree the row was testing
+ * (`docs/v2/state/returns/P3.6-attempt6-runtime.md` §3: 49 inputs differ from
+ * `62abb28`, none of them in the artefact). The arm now compares against
+ * `resolveBuildCommit`'s answer — the commit the AppImage was built **from** —
+ * and this constant is carried so the row can name what it did *not* compare
+ * against. It is never a fallback: a fallback to it would pass vacuously, which
+ * is the failure class Rule B exists to catch.
  */
 const RULE_B_BASE = '62abb28';
 const RULE_B_PATHS = [
@@ -679,6 +691,53 @@ async function imageSize(file) {
 // a specific label or a control's own changed state, read by `tesseract`.
 
 /**
+ * The metric `compare` printed, as a number, or `null`.
+ *
+ * `compare` writes the metric to **stderr** and the form depends on the
+ * version, which is why this parses instead of calling `Number` on the whole
+ * string. Verified against the tool installed on this machine
+ * (ImageMagick 7.1.2-31 Q16-HDRI, `/usr/bin/compare`) and against the
+ * documentation shipped beside it (`/usr/share/doc/ImageMagick-7/www/compare/`):
+ *
+ * - **IM6** printed the metric alone — `1234`.
+ * - **IM7** prints the metric and the normalized metric in parentheses beside
+ *   it, which is what `docs/v2/state/returns/P3.6-attempt6-runtime.md` observed
+ *   on this machine: `0 (0)` for a perfect match, and `2.66667 (0.0416667)` for
+ *   four differing pixels of an 8x8 pair. The shipped page shows the same shape
+ *   for every metric (`28.0142 (0.233452)`), so this is the tool's printed form
+ *   rather than one image's accident.
+ * - The first number is printed with `%g` semantics and **may be in scientific
+ *   notation**, so both forms are accepted.
+ *
+ * Two consequences worth stating, because both are load-bearing:
+ *
+ * - **The metric is not required to be an integer.** IM7's `AE` is a floating
+ *   measurement (`0.666667` for a single differing pixel here), so requiring an
+ *   integer rejected a real comparison; only finiteness and a non-negative
+ *   value are required.
+ * - **Anything else is `null`, never a guess.** An empty stderr, a warning line
+ *   that is not the metric, a truncated value and outright garbage all fail
+ *   closed, and the caller returns `null` — which stops the run rather than
+ *   grounding a click on an unmeasured frame. Only the **last** non-empty line
+ *   is read, because that is where the tool puts the metric; any preceding line
+ *   is a diagnostic and cannot turn a parseable metric into an unparseable one.
+ */
+function parseCompareMetric(text) {
+  const lines = String(text ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+  if (lines.length === 0) return null;
+  const number = '[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?';
+  const match = new RegExp(`^(${number})(?:\\s+\\((${number})\\))?$`).exec(lines[lines.length - 1]);
+  if (match === null) return null;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value < 0) return null;
+  if (match[2] !== undefined && !Number.isFinite(Number(match[2]))) return null;
+  return value;
+}
+
+/**
  * The frame-to-client relationship, **measured**, never assumed.
  *
  * The window capture and the display capture are two photographs of the same
@@ -703,10 +762,12 @@ async function measureFrameClient(windowShot, rootShot, window) {
     crop,
   ]);
   if (cropped.code !== 0 || !existsSync(crop)) return null;
-  // Absolute error: the count of differing pixels. 0 means identical.
+  // Absolute error: how far the two captures differ. 0 means identical. The
+  // parsed form is `parseCompareMetric`'s, and its `null` is what stops the run:
+  // an unparsed metric is an unmeasured frame, never an assumed zero.
   const compared = await spawnAsync('compare', ['-metric', 'AE', crop, windowShot, 'null:']);
-  const differing = Number(String(compared.stderr).trim());
-  if (!Number.isInteger(differing)) return null;
+  const differing = parseCompareMetric(compared.stderr);
+  if (differing === null) return null;
   if (differing !== 0) return { dx: null, dy: null, differing, size };
   return { dx: 0, dy: 0, differing: 0, size };
 }
@@ -1986,41 +2047,138 @@ function isRuleBInput(relative) {
 }
 
 /**
+ * The commit the artefact under test was **built from**, or `null` with the
+ * reason it could not be established.
+ *
+ * **Where the commit comes from, and why it is not the dispatch base.** The
+ * history arm has to answer "has Rule B's set moved since the bundle in front of
+ * me was built", so the commit it needs is the one the artefact was built from.
+ * The dispatch header's base is a different question — where the dispatch was
+ * cut — and 49 Rule B inputs committed between the two made the row red on a
+ * bundle V0 had built from the very tree under test
+ * (`docs/v2/state/returns/P3.6-attempt6-runtime.md` §3, §5 A2).
+ *
+ * **What V0 already produces is enough, and nothing new had to be written for
+ * it.** The bundler sets the AppImage's mtime to the moment it wrote the file
+ * (recorded in `docs/v2/evidence/P3.6/attempt-6/runtime/01-v0-run.txt`: the
+ * artefact at 2026-10-04 16:20:48 -0600, the run ending at 22:20:48Z), and
+ * `git log -1 --before=<that moment> HEAD` is the newest commit that existed at
+ * it. On this repository that resolves the AppImage to `74cc340`, which is
+ * exactly the commit the attempt-6 run recorded as HEAD when V0 finished. So the
+ * two inputs are the artefact V0 already builds and the repository it already
+ * builds in: no sidecar, no new row, no env var, and no edit to V0's or V3's
+ * command.
+ *
+ * **Fail-closed in every direction, and never a fallback.** An unreadable
+ * artefact, a git that cannot answer, a commit older than the repository's first
+ * commit, and a resolved commit that is not an ancestor of `HEAD` all return
+ * `commit: null` with a reason, and the row then **fails** — a Rule B change
+ * after an unknown build point is not "no evidence of staleness", it is no
+ * evidence at all, and substituting the dispatch base for the unknown would
+ * reproduce the vacuous pass Rule B exists to prevent.
+ */
+async function resolveBuildCommit(appImagePath, { cwd = repoRoot } = {}) {
+  const mtime = appImagePath !== undefined && existsSync(appImagePath) ? statSyncSafe(appImagePath) : null;
+  if (mtime === null) {
+    return {
+      commit: null,
+      mtime: null,
+      when: null,
+      error: `the artefact has no readable mtime, so its build commit cannot be established: ${sanitise(String(appImagePath))}`,
+    };
+  }
+  const when = new Date(mtime).toISOString();
+  const tip = await spawnAsync('git', ['rev-parse', '--verify', 'HEAD'], { cwd });
+  if (tip.code !== 0) {
+    return {
+      commit: null,
+      mtime,
+      when,
+      error: `git rev-parse --verify HEAD exited ${String(tip.code)}: ${tip.stderr.trim()}`,
+    };
+  }
+  const log = await spawnAsync('git', ['log', '-1', '--format=%H', `--before=${when}`, 'HEAD'], { cwd });
+  if (log.code !== 0) {
+    return {
+      commit: null,
+      mtime,
+      when,
+      error: `git log -1 --before=${when} exited ${String(log.code)}: ${log.stderr.trim()}`,
+    };
+  }
+  const commit = log.stdout.trim();
+  if (!/^[0-9a-f]{40}$/.test(commit)) {
+    return {
+      commit: null,
+      mtime,
+      when,
+      error: `git log -1 --before=${when} answered ${JSON.stringify(log.stdout.trim())}, which is not a commit hash`,
+    };
+  }
+  const ancestor = await spawnAsync('git', ['merge-base', '--is-ancestor', commit, tip.stdout.trim()], {
+    cwd,
+  });
+  if (ancestor.code !== 0) {
+    return {
+      commit: null,
+      mtime,
+      when,
+      error: `${commit.slice(0, 7)} (the newest commit at or before the artefact's mtime) is not an ancestor of HEAD, so it cannot be the commit this tree was built from`,
+    };
+  }
+  return { commit, mtime, when, error: null };
+}
+
+/**
  * The freshness predicate, executable.
  *
  * Two questions, both answered rather than asserted in prose:
  *
- * 1. **Has Rule B's set moved since the base commit?** `git diff --name-only
- *    <base>...HEAD -- <set>` together with `git status --porcelain -- <set>`,
- *    over the set the dispatch's Fixed decision restates. The base is the
- *    literal hash copied out of the dispatch header (three ASCII full stops, not
- *    a typographic ellipsis, and never an angle-bracket placeholder that would
- *    match nothing and pass vacuously). Any path is a **fail**, because a moved
- *    input means the bundle under test is stale.
+ * 1. **Has Rule B's set moved since the commit the artefact was built from?**
+ *    `git diff --name-only <build commit>...HEAD -- <set>` together with
+ *    `git status --porcelain -- <set>`, over the set the dispatch's Fixed
+ *    decision restates. The compared commit is `resolveBuildCommit`'s answer,
+ *    never `RULE_B_BASE` (see above), the separator between it and `HEAD` is
+ *    three ASCII full stops and not a typographic ellipsis, and it is never an
+ *    angle-bracket placeholder that would match nothing and pass vacuously.
+ *    Any path is a **fail**, because a moved input means the bundle under test is
+ *    stale. The other two arms are untouched: a **dirty** Rule B input is
+ *    reported by the status arm whatever the build commit is, and an artefact
+ *    **older than its newest input** is the second arm below.
  * 2. **Is the artefact newer than the newest input under that set?** A source
  *    walk over the same paths, comparing the AppImage's own mtime with the
  *    newest input mtime. This is the recorded fresh-build anchor: an AppImage
  *    older than a source file cannot have been built from it.
+ *
+ * `cwd` and `root` exist so the helper tests can drive this exact predicate over
+ * a throwaway git repository built from the real Rule B path names; both default
+ * to this repository, so the row itself is unchanged.
  */
-async function ruleBFreshness(appImagePath) {
-  const diff = await spawnAsync(
-    'git',
-    ['diff', '--name-only', `${RULE_B_BASE}...HEAD`, '--', ...RULE_B_PATHS],
-    { cwd: repoRoot },
-  );
-  const status = await spawnAsync('git', ['status', '--porcelain', '--', ...RULE_B_PATHS], { cwd: repoRoot });
-  const committed = diff.code === 0 ? diff.stdout.split('\n').filter((line) => line.trim() !== '') : null;
-  const dirty = status.code === 0 ? status.stdout.split('\n').filter((line) => line.trim() !== '') : null;
-  const moved = [...(committed ?? []), ...(dirty ?? [])]
+async function ruleBFreshness(appImagePath, { cwd = repoRoot, root = repoRoot } = {}) {
+  const build = await resolveBuildCommit(appImagePath, { cwd });
+  const diff =
+    build.commit === null
+      ? null
+      : await spawnAsync('git', ['diff', '--name-only', `${build.commit}...HEAD`, '--', ...RULE_B_PATHS], {
+          cwd,
+        });
+  const status = await spawnAsync('git', ['status', '--porcelain', '--', ...RULE_B_PATHS], { cwd });
+  const committed =
+    diff !== null && diff.code === 0 ? diff.stdout.split('\n').filter((line) => line.trim() !== '') : [];
+  const dirty = status.code === 0 ? status.stdout.split('\n').filter((line) => line.trim() !== '') : [];
+  const moved = [...committed, ...dirty]
     .map((line) => line.split(/\s+/).pop() ?? '')
-    .filter((relative) => isRuleBInput(relative));
-  const walk = newestRuleBInput();
+    .filter((r) => isRuleBInput(r));
+  const walk = newestRuleBInput(root);
   const artifactMtime = existsSync(appImagePath) ? statSyncSafe(appImagePath) : null;
   return {
     base: RULE_B_BASE,
-    diffOk: diff.code === 0,
+    buildCommit: build.commit,
+    buildCommitWhen: build.when,
+    buildCommitError: build.error,
+    diffOk: diff !== null && diff.code === 0,
     statusOk: status.code === 0,
-    diffError: diff.code === 0 ? null : diff.stderr.trim(),
+    diffError: build.commit === null ? build.error : diff.code === 0 ? null : diff.stderr.trim(),
     statusError: status.code === 0 ? null : status.stderr.trim(),
     moved,
     newestInput: walk.newest,
@@ -2031,13 +2189,51 @@ async function ruleBFreshness(appImagePath) {
 }
 
 /**
+ * The history arm's own verdict: `{ ok, detail }`, from the predicate's output.
+ *
+ * Split out of `runSmoke` so the fail-closed cases are assertable without a run:
+ * an unestablished build commit, a diff or status git refused, and any moved
+ * Rule B input each produce `ok: false` with the reason, and **there is no
+ * branch anywhere that turns an unknown build commit into a pass.**
+ */
+function ruleBHistoryVerdict(freshness) {
+  const short = (commit) =>
+    typeof commit === 'string' && commit !== '' ? commit.slice(0, 7) : String(commit);
+  if (freshness.buildCommit === null || freshness.buildCommit === undefined) {
+    return {
+      ok: false,
+      detail: `the commit the AppImage was built from could not be established, so the history arm cannot run and no input can be called unmoved: ${String(freshness.buildCommitError)} (the dispatch base ${short(freshness.base)} is recorded, and is deliberately not substituted for an unknown build commit)`,
+    };
+  }
+  if (!freshness.diffOk) {
+    return {
+      ok: false,
+      detail: `git diff --name-only ${short(freshness.buildCommit)}...HEAD exited: ${String(freshness.diffError)}`,
+    };
+  }
+  if (!freshness.statusOk) {
+    return { ok: false, detail: `git status --porcelain exited: ${String(freshness.statusError)}` };
+  }
+  if (freshness.moved.length !== 0) {
+    return {
+      ok: false,
+      detail: `${String(freshness.moved.length)} Rule B input(s) moved after the build commit ${short(freshness.buildCommit)} (built ${String(freshness.buildCommitWhen)}): ${freshness.moved.join(', ')}`,
+    };
+  }
+  return {
+    ok: true,
+    detail: `no Rule B input moved after the build commit ${short(freshness.buildCommit)} (built ${String(freshness.buildCommitWhen)}); the dispatch base ${short(freshness.base)} is recorded, not compared`,
+  };
+}
+
+/**
  * The source walk: the newest mtime under Rule B's **input** paths.
  *
  * Build outputs (`build/linux-resources/**`, `server/dist/**`, `web/dist/**`)
  * and `src-tauri/target/**` are never inputs, so the newest build artefact does
  * not make the source look newer than it is.
  */
-function newestRuleBInput() {
+function newestRuleBInput(root = repoRoot) {
   let newest = null;
   let newestPath = null;
   const walk = (dir) => {
@@ -2049,7 +2245,7 @@ function newestRuleBInput() {
     }
     for (const entry of entries) {
       const full = join(dir, entry.name);
-      const relative = full.slice(repoRoot.length + 1);
+      const relative = full.slice(root.length + 1);
       if (!isRuleBInput(relative)) continue;
       if (entry.isDirectory()) {
         walk(full);
@@ -2062,7 +2258,7 @@ function newestRuleBInput() {
       }
     }
   };
-  for (const set of RULE_B_PATHS) walk(join(repoRoot, set));
+  for (const set of RULE_B_PATHS) walk(join(root, set));
   return { newest, newestPath };
 }
 
@@ -2100,14 +2296,11 @@ async function runSmoke() {
   // Freshness before anything is launched: a stale bundle must not be driven and
   // then reported as a pass. Both halves are answered, not asserted in prose.
   const freshness = await ruleBFreshness(appImage.path);
+  const history = ruleBHistoryVerdict(freshness);
   check(
-    'smoke Rule B freshness: the source set has not moved since the dispatch base',
-    freshness.diffOk && freshness.statusOk && freshness.moved.length === 0,
-    !freshness.diffOk
-      ? `git diff --name-only ${freshness.base}...HEAD exited: ${String(freshness.diffError)}`
-      : !freshness.statusOk
-        ? `git status --porcelain exited: ${String(freshness.statusError)}`
-        : `${String(freshness.moved.length)} Rule B input(s) differ from ${freshness.base}: ${freshness.moved.join(', ')}`,
+    'smoke Rule B freshness: the source set has not moved since the commit the AppImage was built from',
+    history.ok,
+    history.detail,
   );
   check(
     'smoke the AppImage is newer than the newest Rule B input (fresh-build anchor)',
@@ -3615,17 +3808,21 @@ export {
   snapshotDataDirNames,
   findPhraseBoxes,
   groundPhrase,
+  imageSize,
   isRuleBInput,
   main,
   newestRuleBInput,
   notRunRemaining,
   observationChannelGone,
+  parseCompareMetric,
   parseSourceTable,
   pickPrimaryCluster,
   preflightTools,
   preconditions,
   recordFlow,
   requireFlow,
+  resolveBuildCommit,
+  ruleBHistoryVerdict,
   ruleBFreshness,
   screenWords,
   FLOWS,

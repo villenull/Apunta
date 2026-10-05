@@ -1,0 +1,45 @@
+# P3.6 attempt 7 (AM-212, A3) -- the card's V3 row command, before and after
+# date (UTC): 2026-10-05T00:50:44Z
+# ONLY the V3 row's command changed; the diff over the whole card is 1 line replaced,
+# and inside it only the xvfb-run branch (see the byte-level diff at the end).
+
+## before (docs/v2/cards/P3.6.md at 5033cd9), the launch clause:
+if command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; else env APUNTA_FAKE_AI=1 node scripts/v2/taur
+
+## after (working tree), the same clause:
+if command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a -s "-screen 0 1400x1000x24" env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; else env APUNTA_FAKE_AI=1 node scripts
+
+## the decoded command (the backtick span of the V3 cell, verbatim), AFTER:
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && node scripts/v2/sandbox.mjs env --port 7879 > /tmp/apunta-v2-p3.6-v3.env && . /tmp/apunta-v2-p3.6-v3.env && test "$APUNTA_PORT" = "7879" && test "$APUNTA_NO_OPEN" = "1" && case "$APUNTA_DATA_DIR" in /tmp/apunta-v2/*) ;; *) echo "FAIL: APUNTA_DATA_DIR $APUNTA_DATA_DIR is outside the sandbox root"; exit 1;; esac && test "$APUNTA_DATA_DIR" != "$(node -e 'console.log(require("node:os").homedir())')" && ls -1 src-tauri/target/release/bundle/appimage/ && C=0 && for f in src-tauri/target/release/bundle/appimage/'Apunta (test)_'*.AppImage; do if [ -e "$f" ]; then C=$((C+1)); fi; done && test "$C" -eq 1 && if command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a -s "-screen 0 1400x1000x24" env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; else env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; fi
+
+## the same decode over the BEFORE card, for the sha256 comparison:
+export PATH="$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH" && node --version && node scripts/v2/sandbox.mjs env --port 7879 > /tmp/apunta-v2-p3.6-v3.env && . /tmp/apunta-v2-p3.6-v3.env && test "$APUNTA_PORT" = "7879" && test "$APUNTA_NO_OPEN" = "1" && case "$APUNTA_DATA_DIR" in /tmp/apunta-v2/*) ;; *) echo "FAIL: APUNTA_DATA_DIR $APUNTA_DATA_DIR is outside the sandbox root"; exit 1;; esac && test "$APUNTA_DATA_DIR" != "$(node -e 'console.log(require("node:os").homedir())')" && ls -1 src-tauri/target/release/bundle/appimage/ && C=0 && for f in src-tauri/target/release/bundle/appimage/'Apunta (test)_'*.AppImage; do if [ -e "$f" ]; then C=$((C+1)); fi; done && test "$C" -eq 1 && if command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; else env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; fi
+
+## sha256 of each decoded command (the whole-row difference, not just the clause):
+2e6316556dd5c33f36d6e697a280f367a1aa5517eeeb49c534a26420f483b822  /tmp/opencode/v3-before.sh
+49b059f789f6d1a7a0dc654b78fbb9896462b2589c186deaa32f1d8673007298  /tmp/opencode/v3-after.sh
+
+## the character-level difference between the two decoded commands:
+8,10c8,10
+< 1 && if command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a env APUNTA_FAKE_AI=1 node scripts/v2/t
+< auri-e2e-smoke.test.mjs smoke; else env APUNTA_FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs sm
+< oke; fi
+---
+> 1 && if command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a -s "-screen 0 1400x1000x24" env APUNTA
+> _FAKE_AI=1 node scripts/v2/tauri-e2e-smoke.test.mjs smoke; else env APUNTA_FAKE_AI=1 node scripts/v2
+> /tauri-e2e-smoke.test.mjs smoke; fi
+(diff exit=1)
+
+$ bash -n /tmp/opencode/v3-after.sh
+exit=0
+
+## the harness agrees on one geometry (scripts/v2/tauri-e2e-smoke.test.mjs:470):
+482:      '-screen 0 1400x1000x24',
+
+## numstat over the card (whole file):
+1	1	docs/v2/cards/P3.6.md
+
+## corroboration: the BEFORE decode above is byte-identical to the codec output the attempt-6
+## runtime worker recorded for this very row (docs/v2/evidence/P3.6/attempt-6/runtime/02-v3-run.txt:4):
+v3-command-decoded.sh  sha256 2e6316556dd5c33f36d6e697a280f367a1aa5517eeeb49c534a26420f483b822
+2e6316556dd5c33f36d6e697a280f367a1aa5517eeeb49c534a26420f483b822  docs/v2/evidence/P3.6/attempt-6/runtime/v3-command-decoded.sh

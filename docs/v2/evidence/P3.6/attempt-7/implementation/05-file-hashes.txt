@@ -1,0 +1,62 @@
+# P3.6 attempt 7 (AM-212) -- file hashes of everything this pass wrote
+# date (UTC): 2026-10-05T00:52:33Z
+# HEAD: 5033cd92d169351fec94a0d0a5f2057c7ee7dca6
+
+## the two files in May edit:
+ddd3c03eba1f0d97393937a1b7b3a957f61113ffb79c65366f8db2fb048ea0e2  scripts/v2/tauri-e2e-smoke.test.mjs
+37950fadd7422107794204e1a0fbe8445abc6759067315a42203bbfe3579ddcc  docs/v2/cards/P3.6.md
+
+## line counts (at 5033cd9 -> working tree):
+harness: 3638 -> 3835
+card:    569 -> 569
+
+## numstat, this pass, every file it touched:
+1	1	docs/v2/cards/P3.6.md
+231	34	scripts/v2/tauri-e2e-smoke.test.mjs
+
+## this pass's evidence:
+10a02f95c0f3974d04346a96217ed5df33e6420180c103e523754fe4c0990ee1  docs/v2/evidence/P3.6/attempt-7/implementation/00-readme.md
+93258a209ee3292e13367bb3a140bcbaa2388da3afca229a70270a8589d8c226  docs/v2/evidence/P3.6/attempt-7/implementation/01-scoped-checks.txt
+992b4e56f541187409ce33dd8868c9adb8c97d3c6643034722495ebb96a58289  docs/v2/evidence/P3.6/attempt-7/implementation/02-helper-tests.txt
+cb6da21ac3e2cd7ac49ba707987f079ebae2a9ebba744e50cabfd59a3a4092ca  docs/v2/evidence/P3.6/attempt-7/implementation/03-imagemagick-probe.txt
+d0c4b7ec73f1eb4866d648aa754219f39e5fc61d2d9c86a528fdbaaf545a2532  docs/v2/evidence/P3.6/attempt-7/implementation/04-v3-command-diff.txt
+3c406716ee001f592f6ec163ee20da60d5d64177879f76624998fd737e94bfa3  docs/v2/evidence/P3.6/attempt-7/implementation/05-file-hashes.txt
+139b9e091435d8f150bb9f4ca6587a0f630dc87bb6bb0949ffe289ac93d28495  docs/v2/evidence/P3.6/attempt-7/implementation/06-return-note.md
+99208302770584661831757428e522df55ba5091bf821128b96a5ce757972dca  docs/v2/evidence/P3.6/attempt-7/implementation/helper-tests.mjs
+
+## the helper tests: attempt 6's copy against attempt 7's, to show the F-series body is carried:
+attempt 6: 1278 lines, 57 tests
+attempt 7: 1766 lines, 72 tests
+
+## the harness regions A1 and A2 changed, by line number:
+725:function parseCompareMetric(text) {
+769:  const differing = parseCompareMetric(compared.stderr);
+2080:async function resolveBuildCommit(appImagePath, { cwd = repoRoot } = {}) {
+2157:async function ruleBFreshness(appImagePath, { cwd = repoRoot, root = repoRoot } = {}) {
+2199:function ruleBHistoryVerdict(freshness) {
+2236:function newestRuleBInput(root = repoRoot) {
+2301:    'smoke Rule B freshness: the source set has not moved since the commit the AppImage was built from',
+
+## the scratch probe folder A1 used (not committed, not a build output):
+total 36
+drwxr-xr-x 1 villenull villenull   98 Oct  4 18:42 .
+drwxr-xr-x 1 villenull villenull 5254 Oct  4 18:41 ..
+-rw-r--r-- 1 villenull villenull  309 Oct  4 18:42 a2.png
+-rw-r--r-- 1 villenull villenull  296 Oct  4 18:42 a8.png
+-rw-r--r-- 1 villenull villenull  296 Oct  4 18:41 a.png
+-rw-r--r-- 1 villenull villenull  309 Oct  4 18:42 b2.png
+-rw-r--r-- 1 villenull villenull  296 Oct  4 18:42 b8.png
+-rw-r--r-- 1 villenull villenull  296 Oct  4 18:41 b.png
+-rw-r--r-- 1 villenull villenull  303 Oct  4 18:41 c.png
+-rw-r--r-- 1 villenull villenull  308 Oct  4 18:41 d.png
+-rw-r--r-- 1 villenull villenull  309 Oct  4 18:42 t.png
+
+## note on this file's own line in the list above
+A file cannot hash its own final bytes -- the same point
+`scripts/v2/package-linux-resources.sh` makes about `manifest.json`. The
+`05-file-hashes.txt` line above is therefore from the run before this file was
+last appended to; the authoritative value is:
+
+    sha256sum docs/v2/evidence/P3.6/attempt-7/implementation/05-file-hashes.txt
+
+and every other file in the list is current.
