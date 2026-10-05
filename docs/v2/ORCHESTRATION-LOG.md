@@ -3017,3 +3017,25 @@ and accurate checkpoints as archival work, not approval. External owner-Claude
 nine-bug report copied verbatim and prioritized for after closeout; no fix agent
 started. Restore/WAL is first; Node26 issue deduplicated as existing environment
 tracking. All previous acceptance/history intact; no product completion claim.
+
+## 2026-10-05 — owner-directed successor recovery
+
+59a44bd8 recovered predecessor 6da70224 latest conversation, owner closeout
+instruction, dirty P5.3 candidate, AM-214/217, and current checkpoints. Global
+agent list has only predecessor, successor, and final reviewer9efccac9. Direct
+reviewer status IDLE despite list RUNNING; no test process or saved impl4 report.
+Resumed existing independent assignment with successor completion callback and
+explicit owner label, exclusive report/evidence scope and TEST/BUILD lease.
+P5.3 SUBMITTED; stale attempt1 versus four repair rounds preserved, no new repair.
+P3.6 runtime queued after reviewed committed inputs; AM214 already grants one
+rebuild. Prior orchestrator idle/session-limited; archival pending confirmation.
+One useful unfinished assignment only; source/build conflict prevents dependent
+runtime, owner closeout precedes new batch. No heartbeat authorized or created.
+
+Predecessor archive returned success; active list confirmed predecessor and
+its child reviewer absent. Parent archival cascades: inherited reviewer was
+interrupted during remaining V7 loop, no report/attributable exit recovered.
+Confirmed no test process remained. Fresh0c91401f final independent reviewer
+launched GoLongCat/high with callback and same exclusive report/evidence scope,
+TEST/BUILD lease. No product repair or acceptance budget reset. Old partial
+review kept as history. No configured profiles; verified provider/model used.

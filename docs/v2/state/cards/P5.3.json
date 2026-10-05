@@ -7,8 +7,12 @@
   "criteria": {},
   "sandboxRuns": [],
   "baseCommit": "432c0ab",
-  "status": "IN PROGRESS",
-  "lastCompletedStep": "Dispatched production implementation (dispatch/P5.3.md, ports 7901-7914)",
-  "nextAllowedAction": "implementation return -> independent review",
-  "updatedUtc": "2026-10-04T22:15:58.315745+00:00"
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Round-4 repair and owner-approved AM-217 Capture line present; independent final review resumed after orchestrator recovery",
+  "nextAllowedAction": "Collect P5.3-impl4 review; verify and preserve completed candidate; archive worker; commit and push for owner-requested closeout. No further repair dispatch authorized.",
+  "updatedUtc": "2026-10-05T15:23:36.221882+00:00",
+  "reviewWorkerId": "0c91401f-65ed-491e-bfa9-a46d7a83480d",
+  "orchestratorId": "59a44bd8-3fc3-43e2-8337-cc96dd3db55d",
+  "recoveryNote": "Legacy attempt field remains 1 despite four recorded repair rounds; history preserved, no reset or additional attempt authorized. Ports in original lastCompletedStep were stale; current card is authoritative.",
+  "interruptedReviewWorkerId": "9efccac9-4d1c-45f9-ad88-1f1bc4de564a"
 }

@@ -1,3 +1,50 @@
+## Orchestrator recovery — 2026-10-05 (59a44bd8)
+
+This header supersedes the stale worker table and closeout instructions below.
+Owner explicitly transferred orchestration from session-limited orchestrator
+`6da70224-95f4-4f44-8071-9da45035b4cc` to
+`59a44bd8-3fc3-43e2-8337-cc96dd3db55d`. Recovered the predecessor's latest
+100 conversation entries and current repository checkpoints. Latest owner
+instruction there: when the final reviewer finishes, commit and push everything
+completed, then confirm safe chat closure. Preserve that closeout priority;
+AM-214's once-only desktop rebuild/native attempt remains authorized afterwards.
+
+Only retained worker: `0c91401f-65ed-491e-bfa9-a46d7a83480d`, fresh independent
+P5.3 final review, LongCat Go Free, high thinking, confirmed launch RUNNING with
+completion notification to this orchestrator. Owns ONLY new `reviews/P5.3-impl4.md`
+and `evidence/P5.3/impl4-review.md`; TEST/BUILD lease until its review commands end.
+No application writer is active. Do not duplicate tests/builds while it works.
+
+Predecessor archival succeeded and unexpectedly cascaded to inherited reviewer
+`9efccac9-4d1c-45f9-ad88-1f1bc4de564a`. Both are absent from active list. The old
+reviewer's final activity reported one fresh V7 PASS then launched remaining
+nine; no attributable completion or impl4 report exists. No playwright/vitest
+process remained after closure. This interrupted REVIEW, not another product
+repair attempt. Preserve that incomplete history; the fresh reviewer independently
+finishes acceptance without inventing exits. No extraneous workers remain.
+
+P5.3 has substantial uncommitted implementation plus evidence/returns/three
+reviews. AM-213/215/216/217 and prior decisions govern it. AM-217's approved
+Capture line is included. Historical checkpoint says attempt 1, but four repair
+rounds exist: retain that discrepancy and all history; do not reset the counter,
+invent a grant, or launch another repair. Final review gates approval. P5.4
+carry-overs (release verb, refusal notice, conflict code) remain AM-216.
+
+P3.6 attempt 7 harness source review is CLEAR, previous native V3 failed and
+remains history. AM-214 already authorizes exactly one V0 rebuild after reviewed,
+committed P5.3, then native V3 once. Existing checkpoint's request to reconfirm
+the rebuild is obsolete. No native/build/audio/inference running at recovery.
+S6.1 remains BLOCKED solely on missing licence attribution fields; completed
+bug queue and spell-check repairs are committed/pushed through 93d4010.
+
+Next: validate impl4 report and relevant diff, capture all completed evidence,
+archive finished reviewer and confirm, run only necessary remaining checks,
+commit explicit paths and normal push, verify clean tree and remote HEAD, report
+safe closure. On FAIL preserve candidate/review and truthful blocked state for
+closeout; no further repair or acceptance waiver. No heartbeat created. Other
+projects had no active agents in the global recovery list. Preview 7811 is
+intended retained; never touch 7717/live data or production release actions.
+
 ## Post-closeout bug fixes running — 2026-10-04 (orchestrator 6da70224)
 
 Owner ordered 5+ parallel workers on POST-CLOSEOUT-BUG-QUEUE-2026-10-04.md and
