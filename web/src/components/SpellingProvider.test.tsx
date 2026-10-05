@@ -34,9 +34,15 @@ describe('SpellingProvider', () => {
 
     render(
       <StrictMode>
-        <SpellingProvider load={load}>
-          <SpellingProbe />
-        </SpellingProvider>
+        {/* The snapshot is what names the language, so the real app always has
+            one; the provider now waits for it before loading (S6.1, V3). */}
+        <SettingsContext.Provider
+          value={{ state: stateWith(ENGLISH), reload: () => {}, update: () => Promise.resolve() }}
+        >
+          <SpellingProvider load={load}>
+            <SpellingProbe />
+          </SpellingProvider>
+        </SettingsContext.Provider>
       </StrictMode>,
     );
 
@@ -286,6 +292,30 @@ describe('the language switch after a dictionary has loaded (D4.3, V1f)', () => 
 
     await waitFor(() => expect(asked).toEqual(['es-MX', 'en']));
     await waitFor(() => expect(screen.getByTestId('active-speller').textContent).toBe('english'));
+  });
+
+  it('loads only the settled language when a surface mounts before settings arrive (V3)', async () => {
+    // A fresh note page can mount its spell surface before the settings
+    // snapshot lands, while the UI locale is still the English default. Only
+    // the language the snapshot settles on may be fetched.
+    const { asked, load } = recordingLoader();
+    const loading: SettingsState = { status: 'loading' };
+    const { rerender } = render(
+      <SettingsContext.Provider value={{ state: loading, reload: () => {}, update: () => Promise.resolve() }}>
+        <I18nProvider>
+          <SpellingProvider load={load}>
+            <ActiveSpellerProbe />
+          </SpellingProvider>
+        </I18nProvider>
+      </SettingsContext.Provider>,
+    );
+    await act(async () => {});
+    expect(asked).toEqual([]);
+
+    rerender(tree('es-MX', load));
+
+    await waitFor(() => expect(screen.getByTestId('active-speller').textContent).toBe('spanish'));
+    expect(asked).toEqual(['es-MX']);
   });
 });
 

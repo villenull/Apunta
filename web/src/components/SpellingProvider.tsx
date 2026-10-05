@@ -82,6 +82,16 @@ export function SpellingProvider({
   const spellerRef = useRef<Speller | null>(null);
   const loadingRef = useRef(false);
   /**
+   * Whether the settings snapshot has arrived. The active UI language is a
+   * setting, so until it lands the locale on screen is the English default and
+   * not necessarily hers: starting a load then fetches a dictionary the
+   * language switch immediately discards (S6.1, V3 — a Spanish tab fetched the
+   * English pair, then the Spanish one, four requests where there must be two).
+   * Read through a ref so `ensureLoaded` keeps one identity and a surface's
+   * mount effect cannot double-fire it.
+   */
+  const settingsSettledRef = useRef(settingsState.status !== 'loading');
+  /**
    * Whether a spell surface has ever asked for a dictionary in this tab. It is
    * what tells a language change that there is something to re-ask for: the
    * provider is mounted long before any surface is, and it must not start a
@@ -101,6 +111,7 @@ export function SpellingProvider({
   addedRef.current = added;
   spellerRef.current = speller;
   localeRef.current = locale;
+  settingsSettledRef.current = settingsState.status !== 'loading';
 
   useEffect(() => {
     mountedRef.current = true;
@@ -110,6 +121,11 @@ export function SpellingProvider({
   }, []);
   const ensureLoaded = useCallback(() => {
     requestedRef.current = true;
+    // The language is not known yet: the surface has asked, and the load
+    // starts the moment the snapshot lands (the effect below), for the
+    // language that snapshot selects. Fetching the English default first is
+    // the wasted pair — and the flash — this gate exists to prevent.
+    if (!settingsSettledRef.current) return;
     if (loadingRef.current || spellerRef.current !== null) return;
     loadingRef.current = true;
     loadIdRef.current += 1;
@@ -156,6 +172,19 @@ export function SpellingProvider({
     // asks once, when it mounts.
     if (requestedRef.current) ensureLoaded();
   }, [locale, ensureLoaded]);
+
+  /**
+   * The snapshot has landed: a surface that mounted while settings were still
+   * loading starts its one load now, for the language the snapshot selects.
+   * `useSpelling` asks only once, on mount, so without this the tab would wait
+   * forever. It sits after the language effect so that, when the snapshot also
+   * moves the language, the language effect owns the load and this one is a
+   * no-op rather than a second fetch.
+   */
+  useEffect(() => {
+    if (settingsState.status === 'loading') return;
+    if (requestedRef.current) ensureLoaded();
+  }, [settingsState.status, ensureLoaded]);
 
   useEffect(() => {
     if (settingsState.status !== 'ready') return;
