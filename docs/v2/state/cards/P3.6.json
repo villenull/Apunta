@@ -6,10 +6,10 @@
     "C-OWN@1"
   ],
   "baseCommit": "62abb28",
-  "attempt": 6,
-  "status": "BLOCKED",
-  "lastCompletedStep": "Native V3 first run: FAIL on harness/environment defects (AE parse, pinned Rule B base, display size), not on the app; all flows NOT RUN",
-  "nextAllowedAction": "owner-decision: attempt 6 exhausted under AM-209; a seventh attempt needs explicit grant",
+  "attempt": 7,
+  "status": "IN PROGRESS",
+  "lastCompletedStep": "Native V3 first run: FAIL on harness/environment defects (AE parse, pinned Rule B base, display size), not on the app; all flows NOT RUN | AM-212 owner allowed one seventh attempt bounded to A1-A3.",
+  "nextAllowedAction": "attempt-7 repair (A1 AE parse, A2 freshness base, A3 display) -> fresh source review -> native V3",
   "sideEffectsDone": [],
   "changedFiles": [],
   "criteria": {
