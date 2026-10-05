@@ -61,25 +61,34 @@ test('no dictionary asset is requested until a spell surface mounts', async ({
     if (url.pathname.endsWith('.aff') || url.pathname.endsWith('.dic')) requested.push(request_.url());
   });
 
-  // (a) The negative half: the landing page has no spell surface on it, so the
-  // dictionary must stay out of the network entirely — this is what keeps the
-  // pair out of the initial route chunk.
-  await page.goto('/');
-  await expect(page.getByTestId('patient-list')).toBeVisible();
-  await page.waitForTimeout(500);
-  expect(requested).toEqual([]);
-
-  // A note with a body, which is the surface that mounts the spell layer.
+  // `/` has to be the workspace — the patient list and the empty editor — for
+  // the negative half below to mean anything. With no note format defined it is
+  // not: `Workspace.tsx` redirects `/` to `/onboarding/format`, which has no
+  // `patient-list`. So the format and a patient are made here, through the API
+  // and not the page, and this case owns its own precondition instead of
+  // depending on another spec having created a format in this data folder
+  // first — which is exactly what made it order-dependent, and flaky in the
+  // `chromium` project, where no `language-control` dependency runs before it.
   const patient = (await (
     await request.post('/api/patients', { data: { name: SPANISH_DISPLAY_NAME } })
   ).json()) as Created;
-  // A note with no format has no sections and therefore no body, and the body
-  // is the surface whose mount is the positive half of this case.
   const format = (await (
     await request.post('/api/formats', {
       data: { name: 'Nota de progreso (assets)', sections: ['Subjetivo', 'Plan'] },
     })
   ).json()) as Created;
+
+  // (a) The negative half: the workspace at `/` has no spell surface on it, so
+  // the dictionary must stay out of the network entirely — this is what keeps
+  // the pair out of the initial route chunk.
+  await page.goto('/');
+  await expect(page.getByTestId('patient-list')).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(requested).toEqual([]);
+
+  // A note with a body, which is the surface that mounts the spell layer. A
+  // note with no format has no sections and therefore no body, and the body is
+  // the surface whose mount is the positive half of this case.
   const note = (await (
     await request.post('/api/notes', {
       data: {
