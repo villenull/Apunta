@@ -1,6 +1,6 @@
 import type { PatientListItem } from '@apunta/shared';
 import { useId, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 
 import { useI18n } from '../lib/i18n.js';
 import { BrandWordmark } from './BrandWordmark.js';
@@ -43,11 +43,19 @@ const MAX_MATCHES = 8;
  * inline element, the class `check-ui-strings.mjs` deliberately does not
  * report — so it is one key with the typed name as a `{name}` parameter and the
  * line renders as a single string.
+ *
+ * **Write a note** opens capture as a window over the workspace (owner,
+ * 2026-10-05). The home screen is the one entry point that is not already
+ * showing the chosen patient, so the background it hands over selects them:
+ * `/?patient=<id>` on the home pathname, rather than the bare `/` she is looking
+ * at. Without that the note window would open over the launcher instead of over
+ * her patient.
  */
 type HomeAction = 'note' | 'draft' | 'plan';
 
 export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useI18n();
   const listId = useId();
   const [query, setQuery] = useState('');
@@ -68,11 +76,20 @@ export function HomeLauncher({ patients, onSelect }: HomeLauncherProps): React.J
     void navigate(`/patients/new?name=${encodeURIComponent(query.trim())}`);
   }
 
-  /** Where each action lands. `capture` is a screen of its own; the rest are
-   *  the main pane's own modes, which are already in the query string. */
+  /** Where each action lands. `capture` is a window over the workspace; the rest
+   *  are the main pane's own modes, which are already in the query string. */
   function start(picked: HomeAction, patientId: string): void {
     if (picked === 'note') {
-      void navigate(`/capture/${encodeURIComponent(patientId)}`);
+      void navigate(`/capture/${encodeURIComponent(patientId)}`, {
+        state: {
+          backgroundLocation: {
+            pathname: location.pathname,
+            search: `?patient=${encodeURIComponent(patientId)}`,
+            hash: location.hash,
+            state: null,
+          },
+        },
+      });
       return;
     }
     if (picked === 'plan') {

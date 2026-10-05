@@ -159,9 +159,47 @@ export function Workspace(): React.JSX.Element {
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
   const formats = useLoader(loadFormats);
 
+  /*
+   * Which request the list now on screen came from.
+   *
+   * The loader keeps the previous answer on screen while a new patient loads,
+   * so `notes.state` cannot say whether the notes it holds are current: the
+   * empty list on screen a moment after a patient changed belongs to nobody.
+   * What can say it is the request itself — its number, and the patient it
+   * asked about.
+   *
+   * This used to be the **array** each request answered with, compared by
+   * identity, which broke on any local edit: `update` replaces the list with a
+   * new array that no request ever answered with (a save, a refine-chat
+   * rewrite, a delete), and from then on the refetch of an id handed back by
+   * capture was skipped for the rest of that patient's visit, leaving the main
+   * pane on the patient welcome. A request number is untouched by a local
+   * edit, and the patient it asked about is what stops a late answer for the
+   * patient she just left from standing in for this one's list.
+   *
+   * It is emptied as each request starts, so "the newest answer" means the one
+   * still being waited for when the check runs; and an aborted or superseded
+   * request records nothing at all.
+   */
+  const notesRequestRef = useRef(0);
+  const notesAnswerRef = useRef<{ request: number; patient: string | null } | null>(null);
   const loadNotes = useCallback(
-    (signal: AbortSignal) =>
-      patientId === null ? Promise.resolve<Note[]>([]) : listNotes(patientId, signal),
+    (signal: AbortSignal) => {
+      notesRequestRef.current += 1;
+      const request = notesRequestRef.current;
+      const asked = patientId;
+      // Nothing on hand answers for this request until it does.
+      notesAnswerRef.current = null;
+      const answer = asked === null ? Promise.resolve<Note[]>([]) : listNotes(asked, signal);
+      return answer.then((data) => {
+        // An aborted request, and one a newer request has overtaken, describe a
+        // list nobody is looking at: neither may claim to be the answer.
+        if (!signal.aborted && notesRequestRef.current === request) {
+          notesAnswerRef.current = { request, patient: asked };
+        }
+        return data;
+      });
+    },
     [patientId],
   );
   const notes = useLoader(loadNotes);
@@ -200,6 +238,78 @@ export function Workspace(): React.JSX.Element {
       window.removeEventListener('apunta:became-primary', refreshNotesOnPrimary);
     };
   }, [notes.reload]);
+
+  /*
+   * A note the workspace has never seen.
+   *
+   * Capture ends by handing the note it just made back in the query string
+   * (`/?patient=…&note=…`), which the loader above cannot notice: it fetches
+   * by patient, and its callback only changes with the patient. So an id that
+   * is not in the list it holds asks for the list once — quietly, through
+   * `refresh`, so the column and any open editor stay on screen.
+   *
+   * Once per id, and forgotten when the patient changes: an id that genuinely
+   * does not exist (deleted on another tab) must cost one request, not one per
+   * render. This is a reload of the notes only — never the patients, and never
+   * a remount of the column.
+   */
+  const refetchedForPatientRef = useRef<string | null>(null);
+  const refetchedNoteRef = useRef<string | null>(null);
+  if (refetchedForPatientRef.current !== patientId) {
+    refetchedForPatientRef.current = patientId;
+    refetchedNoteRef.current = null;
+  }
+  useEffect(() => {
+    // Only the newest answer can say "is that note in it": while this patient's
+    // notes are still loading, the list on screen is the last one read.
+    if (noteId === null || notes.state.status !== 'ready') return;
+    const answer = notesAnswerRef.current;
+    if (answer === null) return;
+    // And it has to be an answer about *this* patient. A late one for the
+    // patient she has just left describes a list that is not on screen.
+    if (answer.patient !== patientId) return;
+    if (notes.state.data.some((candidate) => candidate.id === noteId)) return;
+    if (refetchedNoteRef.current === noteId) return;
+    refetchedNoteRef.current = noteId;
+    notes.refresh();
+  }, [noteId, patientId, notes.state, notes.refresh]);
+
+  /*
+   * What is open right now, readable from a callback that is about to await.
+   * A deselect flushes before it clears, and she can navigate in the middle of
+   * that flush; only the identity this request started from may be cleared, so
+   * the newest navigation always wins.
+   */
+  const navigationRef = useRef({ patient: patientId, note: noteId, view });
+  navigationRef.current = { patient: patientId, note: noteId, view };
+
+  /**
+   * Blank space in the notes column: back to the patient welcome, keeping the
+   * patient (owner, 2026-10-05).
+   *
+   * The note stays mounted until this resolves, so its pending save is not lost
+   * to the cleanup that swallows a failed flush. A save that fails — or a
+   * conflict she has not chosen between — rejects the flush, and then nothing
+   * is cleared: the editor and the query stay exactly where they were and the
+   * reason is said out loud, because an app holding clinical records must never
+   * look as though it saved something it did not.
+   */
+  const handleDeselect = useCallback(async () => {
+    const from = navigationRef.current;
+    if (from.patient === null) return;
+    if (from.note === null && from.view === 'notes') return;
+    const hook = (window as unknown as { __apuntaFlushBeforeRelease?: () => Promise<unknown> })
+      .__apuntaFlushBeforeRelease;
+    try {
+      if (typeof hook === 'function') await hook();
+    } catch (thrown) {
+      setActionError(thrown instanceof Error ? thrown.message : errorMessage(thrown));
+      return;
+    }
+    const now = navigationRef.current;
+    if (now.patient !== from.patient || now.note !== from.note || now.view !== from.view) return;
+    setParams({ patient: from.patient });
+  }, [setParams]);
 
   const patient =
     patients.state.status === 'ready'
@@ -452,7 +562,10 @@ export function Workspace(): React.JSX.Element {
       narrowPane === 'patients'
         ? "[data-testid='patient-search']"
         : narrowPane === 'notes'
-          ? "[data-testid='notes-header']"
+          ? // The notes column's heading is gone (owner, 2026-10-05) and with it
+            // the focus target that sat in it: New note is the first thing in
+            // the column now, and it is what she is there to press.
+            "[data-testid='notes-new-note']"
           : '.main-back';
     window.requestAnimationFrame(() => {
       document.querySelector<HTMLElement>(targetSelector)?.focus();
@@ -482,10 +595,14 @@ export function Workspace(): React.JSX.Element {
 
   // Ctrl+B (⌘B on a Mac) shows and hides the sidebar from anywhere, as in
   // Claude. The note editor is plain text, so the chord has no bold to steal.
+  // While a window is open over the practice the sidebar behind it is inert and
+  // out of sight, so the chord waits rather than collapsing a column she
+  // cannot see — `App.tsx` marks the wrapper while the overlay is up.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
       if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
       if (event.key !== 'b' && event.key !== 'B') return;
+      if (document.getElementById('apunta-content')?.dataset['captureOverlay'] === 'true') return;
       event.preventDefault();
       toggleSidebar();
     }
@@ -633,6 +750,9 @@ export function Workspace(): React.JSX.Element {
             onRetry={notes.reload}
             onBackToPatients={() => {
               setParams({});
+            }}
+            onDeselect={() => {
+              void handleDeselect();
             }}
           />
         )}

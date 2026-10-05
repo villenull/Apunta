@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router';
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Navigate, Route, Routes, matchPath, useLocation, type Location } from 'react-router';
 
 import { SettingsProvider, useSettingsContext } from './components/SettingsProvider.js';
 import { SpellingProvider } from './components/SpellingProvider.js';
@@ -54,6 +54,98 @@ export function App(): React.JSX.Element {
   );
 }
 
+/**
+ * The one route that opens **over** the workspace rather than replacing it
+ * (owner, 2026-10-05: capture as a window, like Add patient). Its path is
+ * matched here rather than read from `useParams` because `AppRoutes` sits at
+ * `path="*"` — nothing below it has a route of its own to match against.
+ */
+const CAPTURE_PATH = '/capture/:patientId';
+
+/**
+ * Every route except the capture overlay, as a single fragment.
+ *
+ * `<Routes>` accepts `<Route>` and `<Fragment>` children and nothing else, so
+ * the list cannot live in a component of its own; it is written once here and
+ * rendered under whichever location is the background.
+ *
+ * `/` and `/patients` are the same screen in two panes: both hand back one
+ * `<Workspace />`, and which pane the main column shows is decided by the
+ * pathname, not by a second mount.
+ */
+const baseRoutes = (
+  <>
+    {/*
+      "View all" (owner preview, 2026-09-26): the full Active /
+      Archived list, shown in the workspace's main pane so the sidebar
+      stays put — the same shape as Claude's Recents page.
+    */}
+    <Route path="/" element={<Workspace />} />
+    <Route path="/patients" element={<Workspace />} />
+    <Route path="/patients/new" element={<AddPatient />} />
+    <Route path="/settings" element={<Settings />} />
+    <Route path="/import" element={<Import />} />
+    <Route path="/import/halaxy" element={<HalaxyImport />} />
+    <Route path="/setup" element={<Setup />} />
+    <Route path="/about" element={<About />} />
+    <Route path="/licenses" element={<Licenses />} />
+    <Route path="/onboarding/format" element={<OnboardingFormat />} />
+    <Route path="/onboarding/preview" element={<OnboardingPreview />} />
+    <Route path="*" element={<Navigate to="/" replace />} />
+  </>
+);
+
+/** A carried background that is really a Location, and not another overlay. */
+function isBackgroundLocation(value: unknown): value is Location {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as { pathname?: unknown };
+  return (
+    typeof candidate.pathname === 'string' &&
+    candidate.pathname.startsWith('/') &&
+    matchPath(CAPTURE_PATH, candidate.pathname) === null
+  );
+}
+
+/**
+ * Where the workspace behind an open capture window is, in two cases only.
+ *
+ * Every entry point into `/capture/:id` carries `state.backgroundLocation`, the
+ * Location it was opened from — the notes column, the patient welcome, the home
+ * launcher. A **deep link** carries nothing, so the background is synthesised:
+ * home with that patient chosen, which is the workspace she would have been in.
+ *
+ * `null` means there is no overlay, and `AppRoutes` renders the actual location
+ * as an ordinary screen.
+ */
+function useBackgroundLocation(location: Location): Location | null {
+  const carried = (location.state as { backgroundLocation?: unknown } | null)?.backgroundLocation;
+  const patientId = matchPath(CAPTURE_PATH, location.pathname)?.params['patientId'] ?? null;
+  return useMemo(() => {
+    if (isBackgroundLocation(carried)) return carried;
+    if (patientId === null) return null;
+    return {
+      pathname: '/',
+      search: `?patient=${encodeURIComponent(patientId)}`,
+      hash: '',
+      state: null,
+      key: `apunta-capture-bg-${patientId}`,
+    };
+  }, [carried, patientId]);
+}
+
+/**
+ * The transition wrapper's key.
+ *
+ * It keys on the **effective** location, so opening and closing the capture
+ * window never re-keys anything, and `/` and `/patients` share one key because
+ * they are the same mounted workspace showing a different pane — going to
+ * "View all" and picking somebody out of it must not redraw the sidebar, reload
+ * her patients or lose the note she had open.
+ */
+function routeFamilyKey(pathname: string): string {
+  return pathname === '/' || pathname === '/patients' ? 'workspace' : pathname;
+}
+
 function AppRoutes(): React.JSX.Element {
   const { t } = useI18n();
   const location = useLocation();
@@ -66,6 +158,7 @@ function AppRoutes(): React.JSX.Element {
   // throughout that one interval either way.
   const blocked = primary.phase === 'secondary' || primary.phase === 'unsupported';
   const contentRef = useRef<HTMLDivElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
 
   /*
    * The practice's appearance — accent, text size, animations — painted once
@@ -92,39 +185,70 @@ function AppRoutes(): React.JSX.Element {
     }
   }, [blocked]);
 
+  /*
+   * The capture window, as a real background/overlay pair. `<Routes
+   * location={…}>` puts the workspace in the LocationContext of the location
+   * the capture was opened from, so it keeps the patient, the note and every
+   * piece of state it already had — no reload, no blank column. The overlay
+   * renders in the *actual* location, beside the background rather than
+   * inside it, so inerting the practice behind it cannot inert the window she
+   * is typing in (nor the leave-confirmation inside it).
+   */
+  const background = useBackgroundLocation(location);
+  const overlayOpen = background !== null;
+
+  /*
+   * A **layout** effect, and that is the whole point of it: the capture
+   * window returns the keyboard to the control that opened it from `Dialog`'s
+   * effect cleanup, and React runs passive cleanups before passive setups —
+   * so clearing `inert` from a passive effect let that `focus()` land on an
+   * element still inside an inert subtree, where focusing does nothing, and
+   * focus fell to the document body. Clearing it in the layout phase puts it
+   * before every passive effect in the commit, so the practice behind the
+   * window is editable again by the time the keyboard is handed back.
+   *
+   * The window's own restriction is untouched: it is applied on the same
+   * commit the overlay opens, only earlier, and the overlay is a sibling of
+   * this node, so neither the capture panel nor the leave-confirmation inside
+   * it is ever inerted.
+   */
+  useLayoutEffect(() => {
+    const node = backgroundRef.current;
+    if (node === null) return;
+    try {
+      (node as unknown as { inert: boolean }).inert = overlayOpen;
+    } catch {
+      // Engines without `inert` still get the modal's own scrim and trap.
+    }
+  }, [overlayOpen]);
+
   return (
     <>
       {/*
-       * Key only the route transition wrapper, not either long-lived provider.
-       * Query-string changes (patient and note selection) remain unanimated.
-       */}
+        Key only the route transition wrapper, not either long-lived provider.
+        Query-string changes (patient and note selection) remain unanimated.
+      */}
       <div
         id="apunta-content"
         ref={contentRef}
-        key={location.pathname}
+        key={routeFamilyKey((background ?? location).pathname)}
         className="route-transition"
         tabIndex={-1}
+        // Read by the workspace so its own document-level shortcuts (Ctrl+B)
+        // stay out of the way while a window is open over the practice.
+        data-capture-overlay={overlayOpen ? 'true' : undefined}
       >
         <Suspense fallback={<p className="state-note">{t('common.loading')}</p>}>
-          <Routes>
-            <Route path="/" element={<Workspace />} />
-            {/*
-              "View all" (owner preview, 2026-09-26): the full Active /
-              Archived list, shown in the workspace's main pane so the sidebar
-              stays put — the same shape as Claude's Recents page.
-            */}
-            <Route path="/patients" element={<Workspace />} />
-            <Route path="/patients/new" element={<AddPatient />} />
-            <Route path="/capture/:patientId" element={<Capture />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/import" element={<Import />} />
-            <Route path="/import/halaxy" element={<HalaxyImport />} />
-            <Route path="/setup" element={<Setup />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/licenses" element={<Licenses />} />
-            <Route path="/onboarding/format" element={<OnboardingFormat />} />
-            <Route path="/onboarding/preview" element={<OnboardingPreview />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+          {/*
+            Both halves are always rendered, in the same positions, so opening
+            the overlay reconciles rather than remounts: the workspace's DOM
+            node, its open editor and its fetched lists all survive.
+          */}
+          <div className="route-background" ref={backgroundRef} data-testid="route-background">
+            <Routes location={background ?? location}>{baseRoutes}</Routes>
+          </div>
+          <Routes location={location}>
+            <Route path={CAPTURE_PATH} element={<Capture />} />
           </Routes>
         </Suspense>
       </div>

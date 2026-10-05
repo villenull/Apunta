@@ -3066,3 +3066,57 @@ identity flaw+V8FAIL; all old findings/evidence kept. No new updater repair.
 Owner now explicitly grants implementation of collected3UIchanges. Preserve
 completed rejected P5.3 candidate before new writers; independent UI IR then
 disjoint implementation, review, verification and preview refresh.
+
+UI instruction review a6375103 launched GoLongCat/high, owns only new UI IR.
+Premature completion notification observed: direct state still RUNNING, report
+not yet saved. Additional safe flush/background-routing requirements delivered.
+Implementation briefs prepared under ignored build/ui-batch-2026-10-05; first
+writers dispatch after IR assessment, no code writer active yet. Parent/child
+archive cascade accounted for; root won't archive active reviewer. Existing
+preview7821 remains running. P5.3 preservation commit364ee9f pushed successfully.
+
+## 2026-10-05 — idle instruction reviewer reconciled; implementations dispatched
+
+Owner noticed idle IR. Direct status confirms idle, saved report found; adopted
+specific corrections, recorded dispositions, archiveda6375103 and confirmed.
+Root added capture.closeLabel bilingual and capture-modal to single blur selector,
+shared build exit0, finished shared edits before writers. WorkerA7e40e3a2 owns
+App/App.test/Workspace/NotesColumn/NotesColumn.test/new notesCSS/returnA. WorkerB
+owns Capture/Capture.test/PatientWelcome/HomeLauncher/new captureCSS/returnB.
+Both GoSpaceBunny/high, same workspace, async completion notifications. Targeted
+vitest only, no global build/e2e, root final independent review and integration.
+No P5.3 repair authorized; user preview remains old build until verified batch.
+
+Modal workerB0f5ff625 genuinely idle with full saved return; scope/diff inspected,
+Capture22testsPASS author evidence, no acceptance yet. Archive succeeded and
+active list confirmed B absent. A7e40e3a2 receives cross-scope integration notes;
+B files stable, no root commits while A writes. Favicon owner request durably
+queued TODO only. Final independent review after A stable includes root shared
+edits, modal lifecycle, preservation/unsaved protections, footer/blank behavior.
+
+A narration-only completion says "Now NotesColumn tests"; direct state RUNNING,
+no returnA yet, no permissions, so kept active. Root independently reran stable
+B Capture suite: exit0/22passed. Final independent review brief prepared in
+ignored build; no code acceptance or preview refresh until A returned+reviewed.
+
+## 2026-10-05 — A idle result accepted for review, global checks begin
+
+Owner flagged idleA. Direct stateIDLE/fullsavedreturn verified. Archived7e40e3a2
+success; active list rootonly. A author97targeted/592webtests/typecheckclean;
+root has B22rerun. Final GoLongCat/high independent reviewer dispatched code-only,
+ROOT global TEST/BUILD lease (no competing writer). A3local-update/new-note edge
+and retained-editor/Capture shared flags explicitly sent for scrutiny; no PASS
+assumption. Root global gates + focused browser next, candidate still uncommitted.
+
+2026-10-05 UI review: final reviewer idle report NOT CLEAR, archived confirmed. Root F1 reproduced save→capture stale list. Baseline2445unit+tsc+lint+build passed; e2e33pass1skip. Fresh C bd62ce5b bounded repair1 dispatched RUNNING, callbacks armed, App/Workspace/two component styles/test/return only. Root F3 comment corrected before dispatch. Global check lease held by root, no concurrent builds.
+
+2026-10-05 C confirmed idle and archived after saved scoped return. Fresh independent reviewer5d8a7883 launched RUNNING callbacks armed. Root unit/typecheck/lint/build+Chromium repair verification command42446 running; global resource root only. Owner7821 health verified fakeAI/testRunId, remains online.
+
+2026-10-05 final review5d8a7883 stalled after three upstream EndpointUnavailable retries; narrow activity inspected, no report/code writer, archived interruption confirmed root-only list. Fresh independent review fallback SpaceBunny allowed free; not another repair. Root full2450+tsc/lint/build and real30note browser+scoped e2e33pass1skip all exit0. Preview promotion awaits review.
+
+2026-10-05 UI acceptance: c7232b47 genuinely idle, saved CLEAR reports captured,
+124targeted tests+tsc/eslint0, archived confirmed root-only list. Root all checks
+PASS, owner7821 frontend refreshed preserving data.19patients/115fake notes/min1,
+one fabricated note added to owner-created empty test patient, no reseed.
+Owner actual-Chromium modal/focus verified exit0; candidate7823 terminal closed.
+All UI work complete, favicon remainsTODO; P5.3BLOCKED/AM214held unchanged.

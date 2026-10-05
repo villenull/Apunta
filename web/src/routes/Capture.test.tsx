@@ -7,14 +7,17 @@ import {
   t,
   WAV_CONTENT_TYPE,
 } from '@apunta/shared';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider } from 'react-router';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { createMemoryRouter, RouterProvider, type InitialEntry } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { App } from '../App.js';
+import { SettingsProvider } from '../components/SettingsProvider.js';
+import { SpellingProvider } from '../components/SpellingProvider.js';
+import { I18nProvider } from '../lib/i18n.js';
 import type * as RecorderModule from '../lib/recorder.js';
 import { RecorderError, type RecorderHandlers } from '../lib/recorder.js';
 import { installFakeApi, makeFormat, makePatient } from '../test/fakeApi.js';
+import { Capture } from './Capture.js';
 
 /**
  * The record path's failure states, which the Playwright run cannot reach.
@@ -79,9 +82,40 @@ const john = makePatient('John Smith');
 type TestRouter = Parameters<typeof RouterProvider>[0]['router'];
 let activeRouter: TestRouter | null = null;
 
-function renderCapture(initialEntries: string[] = [`/capture/${john.id}`]): void {
-  activeRouter = createMemoryRouter([{ path: '*', element: <App /> }], { initialEntries });
-  render(<RouterProvider router={activeRouter} />);
+/** Stands in for the workspace `AppRoutes` keeps mounted behind the window. */
+function WorkspaceStub(): React.JSX.Element {
+  return <div data-testid="workspace-stub" />;
+}
+
+/**
+ * `Capture` on its own, with the routes it navigates to.
+ *
+ * The background half of the window belongs to `AppRoutes` — the workspace is
+ * mounted there, from the `backgroundLocation` the entry points put in the
+ * navigation state — so this file renders the route by itself and asserts what
+ * the modal does and where it sends her. Nothing here expects a workspace
+ * behind the window, and the providers are the three `App` puts above the
+ * router, which is where `SpellLayer` and the catalogues come from.
+ */
+function renderCapture(initialEntries: InitialEntry[] = [`/capture/${john.id}`]): TestRouter {
+  activeRouter = createMemoryRouter(
+    [
+      { path: '/', element: <WorkspaceStub /> },
+      { path: '/onboarding/format', element: <p data-testid="format-onboarding" /> },
+      { path: '/capture/:patientId', element: <Capture /> },
+    ],
+    { initialEntries },
+  );
+  render(
+    <SettingsProvider>
+      <I18nProvider>
+        <SpellingProvider>
+          <RouterProvider router={activeRouter} />
+        </SpellingProvider>
+      </I18nProvider>
+    </SettingsProvider>,
+  );
+  return activeRouter;
 }
 
 async function startRecording(): Promise<void> {
@@ -124,8 +158,15 @@ describe('recording on the capture screen', () => {
     expect(preview.textContent).toContain('Subjective');
     expect(preview.textContent).not.toContain('{"');
 
-    // And then it lands on the note the recording produced.
-    expect(await screen.findByTestId('note-body')).toBeDefined();
+    // And then it lands on the note the recording produced: the workspace is
+    // handed that patient's workspace route with the new note selected, which is
+    // the contract `AppRoutes` refreshes on.
+    await waitFor(() => {
+      expect(activeRouter?.state.location.search).toContain('note=');
+    });
+    expect(activeRouter?.state.location.pathname).toBe('/');
+    expect(api.state.notes).toHaveLength(1);
+    expect(activeRouter?.state.location.search).toContain(`note=${api.state.notes[0]?.id}`);
     const leaveAfterSave = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(leaveAfterSave);
     expect(leaveAfterSave.defaultPrevented).toBe(false);
@@ -319,28 +360,30 @@ describe('recording on the capture screen', () => {
 
 describe('unfinished capture navigation protection', () => {
   it('keeps typed and recording work on Stay, then discards it on approval', async () => {
-    installFakeApi({ formats: [progressNote], patients: [john] });
+    const api = installFakeApi({ formats: [progressNote], patients: [john] });
     renderCapture();
     await startRecording();
     fireEvent.change(screen.getByTestId('summary-input'), {
       target: { value: 'Keep this alongside the recording.' },
     });
 
-    const back = screen.getByRole('link', { name: 'Patients' });
-    fireEvent.click(back);
+    fireEvent.click(screen.getByTestId('capture-close'));
     expect(await screen.findByRole('dialog', { name: 'Leave this unfinished note?' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Stay' }));
     expect(screen.getByTestId('record-panel')).toBeTruthy();
     expect(screen.getByTestId('summary-input')).toHaveProperty('value', 'Keep this alongside the recording.');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Leave this unfinished note?' })).toBeNull();
 
-    fireEvent.click(back);
+    fireEvent.click(screen.getByTestId('capture-close'));
     fireEvent.click(await screen.findByRole('button', { name: 'Discard and leave' }));
     await waitFor(() => {
-      expect(screen.queryByTestId('capture-heading')).toBeNull();
+      expect(screen.queryByTestId('capture-modal')).toBeNull();
     });
-    expect(screen.getAllByText('Patients').length).toBeGreaterThan(0);
+    // The window is gone and the practice is back, with the recording never
+    // having been uploaded.
+    expect(api.calls).not.toContain('POST /api/transcribe');
+    expect(screen.getByTestId('workspace-stub')).toBeTruthy();
   });
   it('guards browser unload while typed work is pending', async () => {
     installFakeApi({ formats: [progressNote], patients: [john] });
@@ -355,6 +398,183 @@ describe('unfinished capture navigation protection', () => {
     const pendingLeave = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(pendingLeave);
     expect(pendingLeave.defaultPrevented).toBe(true);
+  });
+});
+
+/**
+ * Capture as a window over the practice (owner, 2026-10-05) rather than a
+ * screen of its own: the same fields and options, a × instead of a Back link,
+ * Escape as the same door, and every protection the screen had — the leave
+ * confirmation, the browser's own Back, the unload guard.
+ *
+ * What is mounted *behind* the window belongs to `AppRoutes` and to
+ * `App.test.tsx`; this block is about the window itself.
+ */
+describe('the new-note window', () => {
+  it('is a named dialog with the editor focused, and no Back link', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderCapture();
+
+    const modal = (await screen.findByTestId('capture-modal')) as HTMLElement;
+    expect(modal.getAttribute('role')).toBe('dialog');
+    // Named for what it is — `Dialog`'s `aria-label`, since the heading is
+    // rendered as its own row rather than as the panel's title element.
+    expect(screen.getByRole('dialog', { name: `New note for ${john.name}` })).toBeTruthy();
+    expect(within(modal).getByLabelText('Close new note')).toBeTruthy();
+    // The Back link the screen carried is gone; the × is the way out.
+    expect(modal.querySelector('.back')).toBeNull();
+
+    // The caret lands in the summary, not on the × that precedes it.
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByTestId('summary-input'));
+    });
+  });
+
+  it('keeps every field and option the screen had', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderCapture();
+
+    const modal = await screen.findByTestId('capture-modal');
+    expect(within(modal).getByLabelText('Note format')).toBeTruthy();
+    expect(within(modal).getByText('Progress note')).toBeTruthy();
+    expect(within(modal).getByText('Record audio')).toBeTruthy();
+    expect(within(modal).getByText('Type notes')).toBeTruthy();
+    expect(within(modal).getByLabelText('Session summary')).toBeTruthy();
+    // Nothing to send yet, so the button is there and disabled — the same
+    // button, the same rule.
+    expect(screen.getByTestId('process-note')).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'A quiet week.' } });
+    expect(screen.getByTestId('process-note')).toHaveProperty('disabled', false);
+  });
+
+  it('closes on the × and on Escape, landing on the patient workspace', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    const router = renderCapture();
+    await screen.findByTestId('capture-modal');
+
+    fireEvent.click(screen.getByTestId('capture-close'));
+    await waitFor(() => {
+      expect(screen.queryByTestId('capture-modal')).toBeNull();
+    });
+    // A URL typed straight into the address bar has no in-app history to pop,
+    // so it leaves for the patient's own workspace — and with a replace, so
+    // Back cannot walk back into a window that is already closed.
+    expect(router?.state.location.pathname).toBe('/');
+    expect(router?.state.location.search).toBe(`?patient=${john.id}`);
+    expect(screen.getByTestId('workspace-stub')).toBeTruthy();
+
+    // And the keyboard way out is the same door.
+    renderCapture();
+    await screen.findByTestId('capture-modal');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByTestId('capture-modal')).toBeNull();
+    });
+  });
+
+  /**
+   * Opened from inside the app, the × pops the capture entry rather than pushing
+   * the workspace over it — otherwise Back would reopen the window.
+   *
+   * `history.state.idx` is react-router's own depth counter, read the way
+   * `AddPatient` reads it, and a memory router keeps it in its own history
+   * rather than the browser's; so the browser side of that fact is stubbed for
+   * this test and restored after it. The assertion that tells the two closes
+   * apart is the search string: popping lands on the entry the window was
+   * opened from, where the fallback would replace with `?patient=…`.
+   */
+  it('pops back to the route it was opened over when there is in-app history', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    const descriptor = Object.getOwnPropertyDescriptor(window.history, 'state');
+    Object.defineProperty(window.history, 'state', { configurable: true, value: { idx: 2 } });
+    try {
+      const router = renderCapture([
+        { pathname: '/', search: '', hash: '', state: null, key: 'home' },
+        {
+          pathname: `/capture/${john.id}`,
+          search: '',
+          hash: '',
+          state: { backgroundLocation: { pathname: '/', search: '', hash: '', state: null, key: 'home' } },
+          key: 'capture',
+        },
+      ]);
+      await screen.findByTestId('capture-modal');
+
+      fireEvent.click(screen.getByTestId('capture-close'));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('capture-modal')).toBeNull();
+      });
+      expect(router.state.location.pathname).toBe('/');
+      expect(router.state.location.search).toBe('');
+      expect(screen.getByTestId('workspace-stub')).toBeTruthy();
+    } finally {
+      if (descriptor === undefined) {
+        Reflect.deleteProperty(window.history, 'state');
+      } else {
+        Object.defineProperty(window.history, 'state', descriptor);
+      }
+    }
+  });
+
+  /**
+   * C1: two live `Dialog`s would each handle Escape, so one keypress would both
+   * raise the confirmation and cancel it. The window closes while the
+   * confirmation is up, and the confirmation is a sibling of it — never inside
+   * the panel that is hidden.
+   */
+  it('shows one modal at a time: Escape on the confirmation stays, it does not close', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    renderCapture();
+    await screen.findByTestId('summary-input');
+    fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Half-written.' } });
+
+    fireEvent.click(screen.getByTestId('capture-close'));
+    const confirm = await screen.findByRole('dialog', { name: 'Leave this unfinished note?' });
+
+    // Two role=dialog elements, and the capture panel is the hidden one.
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(2);
+    expect(screen.getByTestId('capture-modal').getAttribute('aria-hidden')).toBe('true');
+    expect(confirm.contains(screen.getByTestId('capture-modal'))).toBe(false);
+
+    // One Escape, handled by the confirmation: back to work, nothing lost.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Leave this unfinished note?' })).toBeNull();
+    });
+    expect(screen.getByTestId('capture-modal').getAttribute('aria-hidden')).toBe('false');
+    expect(screen.getByTestId('summary-input')).toHaveProperty('value', 'Half-written.');
+  });
+
+  it('keeps the browser Back guarded, and Forward brings the window back', async () => {
+    installFakeApi({ formats: [progressNote], patients: [john] });
+    const router = renderCapture(['/', `/capture/${john.id}`]);
+    await screen.findByTestId('summary-input');
+    fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Still writing.' } });
+
+    // Back with work in hand raises the same confirmation the × does. The
+    // navigation itself is not awaited: a blocked navigation stays pending
+    // until she answers, so the call is fired inside a synchronous `act` and
+    // the assertion waits for the confirmation to appear.
+    act(() => {
+      void router?.navigate(-1);
+    });
+    expect(await screen.findByRole('dialog', { name: 'Leave this unfinished note?' })).toBeTruthy();
+    expect(screen.getByTestId('summary-input')).toHaveProperty('value', 'Still writing.');
+
+    // Discard it, and Back completes: the workspace, not the window.
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard and leave' }));
+    await waitFor(() => {
+      expect(router?.state.location.pathname).toBe('/');
+    });
+    expect(screen.queryByTestId('capture-modal')).toBeNull();
+
+    // Forward reopens the window, still empty, because nothing was kept.
+    act(() => {
+      void router?.navigate(1);
+    });
+    expect(await screen.findByTestId('capture-modal')).toBeTruthy();
+    expect(screen.getByTestId('summary-input')).toHaveProperty('value', '');
   });
 });
 

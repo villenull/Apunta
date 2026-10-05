@@ -1,0 +1,62 @@
+/*
+ * The notes column's layout (owner, 2026-10-05).
+ *
+ * The column used to be a header with the patient's name in it, one scrolling
+ * body holding everything, and nothing pinned. Now it is three bands:
+ *
+ *   1. **New note** at the top, beside the narrow-window way back to Patients;
+ *   2. the notes alone, and only the notes, in the band that scrolls;
+ *   3. the three tools in a footer that stays put however long the list is.
+ *
+ * The point is that the notes are the only thing in the column that moves, so
+ * the click target for empty space is the empty space: it is wide, it is where
+ * her cursor already is when she has read the last note, and it never scrolls
+ * out from under her. `min-height: 0` on the middle band is what lets it
+ * actually scroll inside the flex column instead of stretching the column and
+ * pushing the footer off the bottom of the window.
+ *
+ * `.col`, `.col-header`, `.col-body`, `.col-actions`, `.new-note-btn` and
+ * `.notes-list-heading` are the workspace's own rules and are not repeated
+ * here; this file only says how the three bands stack.
+ */
+
+/*
+ * Every rule below is compounded with the class `app.css` already puts on the
+ * same element. This file reaches the bundle through `App.tsx`, which is
+ * imported before `app.css`, so at equal specificity the workspace's own rule
+ * is the later one and wins — which is how `.notes-col-new`'s `margin: 0` and
+ * `.notes-col-body`'s `flex: 1 1 auto` were both being overridden in the built
+ * stylesheet. Compounding makes the stated values hold whatever the import
+ * order is.
+ */
+
+/* The top band. It is still a `.col-header`, so the rule under it and its
+   height come from the workspace; only the row inside is this file's. */
+.col-header-title.notes-col-head-row {
+  flex: 1;
+  gap: var(--space-4);
+}
+
+/* "New note" fills the rest of the band once the narrow back control has taken
+   its room, and keeps the row height the sidebar's own rows have. */
+.new-note-btn.notes-col-new {
+  margin: 0;
+  min-width: 0;
+  padding-inline: var(--space-4);
+}
+
+/* The scrolling band, and the surface a blank click lands on. */
+.col-body.notes-col-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* The tools, pinned below the notes with its own rule so the boundary stays
+   legible when the list scrolls under it. */
+.notes-col-footer {
+  flex-shrink: 0;
+  padding-block: var(--space-2);
+  border-top: 1px solid var(--divider);
+  background: var(--col-notes-bg);
+}

@@ -5154,7 +5154,8 @@ body.is-resizing-sidebar {
    different amounts. */
 .modal-backdrop:has(.settings-modal),
 .modal-backdrop:has(.add-patient-modal),
-.modal-backdrop:has(.language-modal) {
+.modal-backdrop:has(.language-modal),
+.modal-backdrop:has(.capture-modal) {
   background: var(--scrim);
   backdrop-filter: blur(var(--scrim-blur));
 }

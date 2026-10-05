@@ -250,3 +250,30 @@ empty state (the "No notes yet…" line again and a big Create first note).
   written, and with notes but none open, column 3 shows the four cards rather
   than opening the latest note. On a narrow screen the merged no-notes view
   keeps a "Patients" back link, which the notes column used to carry.
+
+## 2026-10-05 — navigation, notes column, capture modal (built and verified)
+
+Owner explicitly said "implement these for now" after collecting these requests:
+
+- Enter View all and select a patient there without whole-view refresh, sidebar
+  remount, repeated patient-list load, or route transition replay.
+- Remove patient-name heading from notes column. New note is the first row,
+  notes follow in their own scroll area, and Brainstorm/Treatment plan/Prepare
+  for session stay visible in a separate bottom cell. Click blank column space
+  to deselect a note and return to patient welcome without leaving the patient;
+  flush pending note edits first and keep unresolved conflicts visible.
+- New note opens as a dialog like Add patient over the existing blurred patient
+  workspace, preserving the current capture fields/options. Close/Escape/back
+  retains existing unfinished-note and recording confirmation protection.
+
+Work order, interfaces, scopes and verification:
+`state/UI-BATCH-2026-10-05.md`. Independent final review CLEAR after bounded
+repair; preview7821 now serves the updated UI with19fabricatedpatients/115notes,
+minimum1noteeach, simulatedAI. All workers archived.
+
+## Queued next — browser favicon
+
+Owner request after this UI batch was dispatched: replace the old A shown in
+Chrome/browser tabs with the current Apunta A logo. TODO only; not part of the
+three changes currently implementing. Reuse existing approved brand asset;
+no image generation, new logo design or asset acquisition needed.

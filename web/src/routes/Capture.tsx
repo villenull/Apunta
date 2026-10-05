@@ -1,6 +1,15 @@
 import { WARN_RECORDING_SECONDS } from '@apunta/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useBlocker, useNavigate, useParams, type Blocker, type BlockerFunction } from 'react-router';
+import {
+  Link,
+  useBlocker,
+  useLocation,
+  useNavigate,
+  useParams,
+  type Blocker,
+  type BlockerFunction,
+  type Location,
+} from 'react-router';
 
 import {
   errorMessage,
@@ -11,18 +20,19 @@ import {
   transcribeRecording,
   type GenerateHandlers,
 } from '../api/index.js';
-import { KeyboardIcon, MicIcon } from '../components/icons.js';
+import { CloseIcon, KeyboardIcon, MicIcon } from '../components/icons.js';
 import { ConfirmDialog } from '../components/ConfirmDialog.js';
+import { Dialog } from '../components/Dialog.js';
 import { LiveRecording } from '../components/LiveRecording.js';
 import { SpellLayer } from '../components/SpellLayer.js';
 import { ThinkingDots } from '../components/ThinkingDots.js';
-import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLiveRecording } from '../hooks/useLiveRecording.js';
 import { useI18n, useReportWork } from '../lib/i18n.js';
 import { setEditorUnpersisted, setRecordingActive } from '../lib/maintenance.js';
 import { formatTimer } from '../lib/recorder.js';
+import '../styles/capture-modal.css';
 
 /**
  * `prototype/capture.html` — the format, and how the session gets in.
@@ -43,6 +53,16 @@ import { formatTimer } from '../lib/recorder.js';
  * The recording itself is 16 kHz mono WAV written in the tab
  * (`lib/recorder.ts`). The Web Speech API is never involved — it can send
  * audio to Google, which is the hardest rule in this project.
+ *
+ * It is a **window over the practice, not a screen of its own** (owner,
+ * 2026-10-05), the way adding a patient already is: the workspace stays
+ * mounted behind, dimmed and blurred, and the way out is the × rather than a
+ * Back link. That is why this route renders a `Dialog` and nothing else —
+ * `AppRoutes` owns the background half (`<Routes location={background}>`) and
+ * hands it the `backgroundLocation` every entry point puts in the navigation
+ * state. Direct `/capture/:id` still works: `AppRoutes` synthesises a `/`
+ * background for it, and `close()` below falls back to the patient's own
+ * workspace rather than guessing.
  */
 
 export function Capture(): React.JSX.Element {
@@ -67,11 +87,42 @@ interface CaptureScreenProps {
   readonly reportDirty: (dirty: boolean) => void;
 }
 
+/**
+ * The route this window was opened over, if it was opened from inside the app.
+ *
+ * Every entry point (`NotesColumn`, `PatientWelcome`, `HomeLauncher`) puts a
+ * `Location`-shaped `backgroundLocation` in the navigation state, and
+ * `AppRoutes` reads it to keep the workspace mounted behind. This reader is the
+ * close half of that contract: it accepts only something that actually looks
+ * like a route, so a malformed state cannot send the × out of the app, and it
+ * rejects another capture route — a background that is itself a capture means
+ * the entry point handed over nothing worth going back to.
+ */
+function readBackgroundLocation(state: unknown): Location | null {
+  if (typeof state !== 'object' || state === null) return null;
+  const candidate = (state as { readonly backgroundLocation?: unknown }).backgroundLocation;
+  if (typeof candidate !== 'object' || candidate === null) return null;
+  const { pathname, search, hash } = candidate as Partial<Location>;
+  if (typeof pathname !== 'string' || pathname.length === 0) return null;
+  if (pathname.startsWith('/capture/')) return null;
+  return {
+    pathname,
+    search: typeof search === 'string' ? search : '',
+    hash: typeof hash === 'string' ? hash : '',
+    state: null,
+    key: '',
+  };
+}
+
 function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.Element {
   const { t } = useI18n();
   useDocumentTitle(t('doc.newNote'));
   const { patientId = '' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const background = readBackgroundLocation(location.state);
+  /** The editor, which is where the caret belongs when the window opens. */
+  const summaryRef = useRef<HTMLTextAreaElement>(null);
 
   const loadPatient = useCallback((signal: AbortSignal) => getPatient(patientId, signal), [patientId]);
   const patient = useLoader(loadPatient);
@@ -89,6 +140,8 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
 
   const [notice, setNotice] = useState<string | null>(null);
   const unfinishedRef = useRef(false);
+  /** What the dirty effect above last published, so unmount can retract it. */
+  const publishedRef = useRef({ recording: false, editor: false });
   /**
    * The finished WAV, held until the note is saved.
    *
@@ -142,9 +195,18 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
 
   // Leaving the screen mid-draft must stop the model; the microphone is the
   // hook's to close.
+  //
+  // The window can now close over a workspace that stays mounted, and those two
+  // published flags describe *this* window's quiescence. Retracting only what
+  // this window published — tracked in `publishedRef` — keeps a modal closing
+  // over a workspace that is merely sitting there from claiming a recording or
+  // unsaved text that the note editor behind it still owns.
   useEffect(
     () => () => {
       abortRef.current?.abort();
+      const published = publishedRef.current;
+      if (published.recording) setRecordingActive(false);
+      if (published.editor) setEditorUnpersisted(false);
     },
     [],
   );
@@ -157,6 +219,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
     // the one blocker the server has no route to register. Published through the
     // maintenance reporter's own flag, not through `useReportWork` — that
     // counter belongs to the Language control and has one reader.
+    publishedRef.current = { recording: recording !== 'idle', editor: unfinished };
     setRecordingActive(recording !== 'idle');
     setEditorUnpersisted(unfinished);
   }, [recording, reportDirty, unfinished]);
@@ -191,6 +254,30 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
 
   function stayOnCapture(): void {
     if (blocker.state === 'blocked') blocker.reset();
+  }
+
+  /**
+   * Out through the × or Escape, which are the same door.
+   *
+   * Opened from inside the app, that is one step back in *her* history: the
+   * capture entry has to be popped, not pushed over, or Back reopens it. So it
+   * needs both halves to be true — a validated `backgroundLocation` from the
+   * entry point, and `history.state.idx` showing there is in-app history to go
+   * back to (react-router's own depth counter, as `AddPatient` reads it). A URL
+   * typed straight into the address bar has neither, even though the browser's
+   * own back stack is full of other sites, and it leaves for the patient's
+   * workspace with a replace so nothing of this window is left behind.
+   *
+   * The blocker is not bypassed anywhere in here: this is an ordinary
+   * navigation, so unfinished work still raises the leave confirmation.
+   */
+  function close(): void {
+    const depth = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (background !== null && depth > 0) {
+      void navigate(-1);
+      return;
+    }
+    void navigate(`/?patient=${patientId}`, { replace: true });
   }
 
   const draftHandlers = (): GenerateHandlers => ({
@@ -289,210 +376,250 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
 
   // A patient the server no longer knows — deleted from another tab, most
   // likely — gets no microphone: a recording made here could never be saved
-  // (seen live 2026-09-04, a full dictation lost to a stale tab).
-  if (patient.state.status === 'error') {
-    return (
-      <Screen back={{ to: '/', label: t('common.patients') }}>
-        <h2 className="heading-tight capture-heading" data-testid="capture-heading">
-          {t('capture.newNote')}
-        </h2>
-        <p className="form-error" role="alert" data-testid="capture-missing-patient">
-          {patient.state.message} {t('capture.missingPatient')}{' '}
-          <Link to="/">{t('capture.backToPatients')}</Link>
-        </p>
-      </Screen>
-    );
-  }
+  // (seen live 2026-09-04, a full dictation lost to a stale tab). It is said
+  // inside this same window rather than on a screen of its own, so a patient
+  // who has gone away cannot put a second full page over the practice.
+  const missingPatientNotice =
+    patient.state.status === 'error' ? (
+      <p className="form-error" role="alert" data-testid="capture-missing-patient">
+        {patient.state.message} {t('capture.missingPatient')}{' '}
+        <Link to="/">{t('capture.backToPatients')}</Link>
+      </p>
+    ) : null;
 
   return (
-    <Screen back={{ to: `/?patient=${patientId}`, label: t('common.patients') }}>
-      <h2 className="heading-tight capture-heading" data-testid="capture-heading">
-        {heading}
-      </h2>
-      <div className="field field-narrow lede">
-        <label className="label" htmlFor="note-format">
-          {t('capture.formatLabel')}
-        </label>
-        <select
-          id="note-format"
-          value={formatId}
-          disabled={available.length === 0 || busy}
-          onChange={(event) => {
-            setChosenFormatId(event.target.value);
-          }}
-        >
-          {formats.state.status === 'loading' && <option value="">{t('common.loading')}</option>}
-          {available.map((candidate) => (
-            <option key={candidate.id} value={candidate.id}>
-              {candidate.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {formats.state.status === 'error' && (
-        <p className="form-error" role="alert">
-          {formats.state.message}{' '}
-          <button type="button" className="btn small btn-quick" onClick={formats.reload}>
-            {t('common.tryAgain')}
+    <>
+      {/*
+        The one modal surface. `open={false}` while the leave confirmation is
+        up is what keeps Escape from having two handlers: `Dialog` ignores keys
+        and `aria-hidden`s its panel while closed, and the confirmation below is
+        a sibling of this panel rather than a child of it, so it is never inside
+        the hidden ancestor.
+      */}
+      <Dialog
+        title={heading}
+        onClose={close}
+        open={blocker.state !== 'blocked'}
+        showTitle={false}
+        className="modal card capture-modal"
+        testId="capture-modal"
+        backdropTestId="capture-backdrop"
+        initialFocusRef={summaryRef}
+      >
+        <div className="capture-modal-head">
+          <h2 className="heading-tight capture-heading" data-testid="capture-heading">
+            {heading}
+          </h2>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label={t('capture.closeLabel')}
+            data-testid="capture-close"
+            onClick={close}
+          >
+            <CloseIcon className="icon icon-sm" />
           </button>
-        </p>
-      )}
+        </div>
 
-      {formats.state.status === 'ready' && available.length === 0 ? (
-        <p className="muted">
-          {t('capture.noFormats')} <Link to="/onboarding/format">{t('capture.addOneFirst')}</Link>{' '}
-          {t('capture.noFormatsTail')}
-        </p>
-      ) : (
-        <>
-          {/* Split by the `<strong>` the screen needs, so two keys rather than
-              one with the emphasis deleted; the English reads as it did. */}
-          <p className="capture-source" data-testid="capture-source">
-            <strong>{t('capture.sourceRecording')}</strong> {t('capture.sourceTail')}
-          </p>
-
-          <div className="stack">
-            {recording === 'recording' ? (
-              <LiveRecording
-                level={live.level}
-                seconds={seconds}
-                previewCommitted={live.committedPreview}
-                previewTentative={live.tentativePreview}
-                previewNote={t('dictation.previewNoteCapture')}
+        {missingPatientNotice ?? (
+          <>
+            <div className="field field-narrow lede">
+              <label className="label" htmlFor="note-format">
+                {t('capture.formatLabel')}
+              </label>
+              <select
+                id="note-format"
+                value={formatId}
+                disabled={available.length === 0 || busy}
+                onChange={(event) => {
+                  setChosenFormatId(event.target.value);
+                }}
               >
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  data-testid="record-stop"
-                  onClick={() => {
-                    void stopRecording();
-                  }}
-                >
-                  {t('capture.stopAndDraft')}
+                {formats.state.status === 'loading' && <option value="">{t('common.loading')}</option>}
+                {available.map((candidate) => (
+                  <option key={candidate.id} value={candidate.id}>
+                    {candidate.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {formats.state.status === 'error' && (
+              <p className="form-error" role="alert">
+                {formats.state.message}{' '}
+                <button type="button" className="btn small btn-quick" onClick={formats.reload}>
+                  {t('common.tryAgain')}
                 </button>
-              </LiveRecording>
-            ) : recording === 'starting' ? (
-              <div className="record-ui capture-stage" data-testid="record-stage">
-                <p className="capture-stage-status" role="status">
-                  {t('capture.openingMicrophone')}
+              </p>
+            )}
+
+            {formats.state.status === 'ready' && available.length === 0 ? (
+              <p className="muted">
+                {t('capture.noFormats')} <Link to="/onboarding/format">{t('capture.addOneFirst')}</Link>{' '}
+                {t('capture.noFormatsTail')}
+              </p>
+            ) : (
+              <>
+                {/* Split by the `<strong>` the screen needs, so two keys rather than
+              one with the emphasis deleted; the English reads as it did. */}
+                <p className="capture-source" data-testid="capture-source">
+                  <strong>{t('capture.sourceRecording')}</strong> {t('capture.sourceTail')}
                 </p>
-                <p className="small muted">{t('capture.allowMicrophone')}</p>
-              </div>
-            ) : busy ? (
-              <div className="capture-stage draft-progress" data-testid="draft-progress">
-                <p className="capture-stage-status draft-status" role="status" data-testid="draft-status">
-                  <span data-testid="draft-status-label">{status ?? t('capture.preparingDraft')}</span>{' '}
-                  <ThinkingDots ariaLabel={status ?? t('capture.preparingDraftShort')} />
-                </p>
-                {drafting && (
-                  <div className="draft-preview capture-stage-preview" data-testid="draft-preview">
-                    {sections.map((section) => (
-                      <p key={section}>
-                        <span className="draft-section">{section}:</span> {draft[section] ?? ''}
+
+                <div className="stack">
+                  {recording === 'recording' ? (
+                    <LiveRecording
+                      level={live.level}
+                      seconds={seconds}
+                      previewCommitted={live.committedPreview}
+                      previewTentative={live.tentativePreview}
+                      previewNote={t('dictation.previewNoteCapture')}
+                    >
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        data-testid="record-stop"
+                        onClick={() => {
+                          void stopRecording();
+                        }}
+                      >
+                        {t('capture.stopAndDraft')}
+                      </button>
+                    </LiveRecording>
+                  ) : recording === 'starting' ? (
+                    <div className="record-ui capture-stage" data-testid="record-stage">
+                      <p className="capture-stage-status" role="status">
+                        {t('capture.openingMicrophone')}
                       </p>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : wav !== null ? (
-              <div className="record-ui capture-stage" data-testid="record-done">
-                <p className="capture-stage-status" role="status">
-                  {t('capture.recordingReady')}
-                </p>
-                {/* `Mac` is a keep-as-is token inside a translatable sentence, so
+                      <p className="small muted">{t('capture.allowMicrophone')}</p>
+                    </div>
+                  ) : busy ? (
+                    <div className="capture-stage draft-progress" data-testid="draft-progress">
+                      <p
+                        className="capture-stage-status draft-status"
+                        role="status"
+                        data-testid="draft-status"
+                      >
+                        <span data-testid="draft-status-label">{status ?? t('capture.preparingDraft')}</span>{' '}
+                        <ThinkingDots ariaLabel={status ?? t('capture.preparingDraftShort')} />
+                      </p>
+                      {drafting && (
+                        <div className="draft-preview capture-stage-preview" data-testid="draft-preview">
+                          {sections.map((section) => (
+                            <p key={section}>
+                              <span className="draft-section">{section}:</span> {draft[section] ?? ''}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : wav !== null ? (
+                    <div className="record-ui capture-stage" data-testid="record-done">
+                      <p className="capture-stage-status" role="status">
+                        {t('capture.recordingReady')}
+                      </p>
+                      {/* `Mac` is a keep-as-is token inside a translatable sentence, so
                     it is written out verbatim in both catalogue values, never
                     allowlisted and never split off into a key (Fixed
                     decision 2). */}
-                <p className="muted record-label">{t('capture.recorded', { timer: formatTimer(seconds) })}</p>
-                <div className="row gap-12 record-actions">
+                      <p className="muted record-label">
+                        {t('capture.recorded', { timer: formatTimer(seconds) })}
+                      </p>
+                      <div className="row gap-12 record-actions">
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          data-testid="record-retry"
+                          onClick={() => {
+                            void process();
+                          }}
+                        >
+                          {t('capture.draftFromRecording')}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn"
+                          data-testid="record-discard"
+                          onClick={discardRecording}
+                        >
+                          {t('capture.discardRecording')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : !busy ? (
+                    <button
+                      type="button"
+                      className="btn-option capture-source-option"
+                      data-testid="record-start"
+                      onClick={() => {
+                        void startRecording();
+                      }}
+                    >
+                      <MicIcon />
+                      <div className="capture-source-copy">
+                        <div className="opt-title">{t('capture.recordAudio')}</div>
+                        <div className="opt-sub">{t('capture.recordAudioHelp')}</div>
+                      </div>
+                    </button>
+                  ) : null}
+
+                  <div className="capture-typed" data-testid="type-ui">
+                    <div className="row gap-12 capture-typed-head">
+                      <KeyboardIcon />
+                      <div className="capture-source-copy">
+                        <div className="opt-title">{t('capture.typeNotes')}</div>
+                        <div className="opt-sub">{t('capture.typeNotesHelp')}</div>
+                      </div>
+                    </div>
+                    <SpellLayer
+                      as="textarea"
+                      // `Dialog`'s `initialFocusRef` is what puts the caret here: as a
+                      // window the × precedes this field in the panel, and `Dialog`
+                      // focuses the first focusable it finds unless it is told.
+                      ref={summaryRef}
+                      className="capture-editor"
+                      placeholder={t('capture.summaryPlaceholder')}
+                      aria-label={t('capture.summaryLabel')}
+                      data-testid="summary-input"
+                      value={text}
+                      readOnly={busy}
+                      onChange={setText}
+                      allowWords={patient.state.status === 'ready' ? [patient.state.data.name] : []}
+                    />
+                  </div>
+                </div>
+
+                {notice !== null && (
+                  <p className="small muted" role="status" data-testid="record-notice">
+                    {notice}
+                  </p>
+                )}
+
+                {error !== null && (
+                  <p className="form-error" role="alert" data-testid="capture-error">
+                    {error}
+                  </p>
+                )}
+
+                {recording === 'idle' && !busy && (
                   <button
                     type="button"
-                    className="btn btn-primary"
-                    data-testid="record-retry"
+                    className="btn btn-primary btn-block form-actions"
+                    data-testid="process-note"
+                    disabled={!canProcess}
                     onClick={() => {
                       void process();
                     }}
                   >
-                    {t('capture.draftFromRecording')}
+                    {t('capture.createDraft')}
                   </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    data-testid="record-discard"
-                    onClick={discardRecording}
-                  >
-                    {t('capture.discardRecording')}
-                  </button>
-                </div>
-              </div>
-            ) : !busy ? (
-              <button
-                type="button"
-                className="btn-option capture-source-option"
-                data-testid="record-start"
-                onClick={() => {
-                  void startRecording();
-                }}
-              >
-                <MicIcon />
-                <div className="capture-source-copy">
-                  <div className="opt-title">{t('capture.recordAudio')}</div>
-                  <div className="opt-sub">{t('capture.recordAudioHelp')}</div>
-                </div>
-              </button>
-            ) : null}
+                )}
+              </>
+            )}
+          </>
+        )}
+      </Dialog>
 
-            <div className="capture-typed" data-testid="type-ui">
-              <div className="row gap-12 capture-typed-head">
-                <KeyboardIcon />
-                <div className="capture-source-copy">
-                  <div className="opt-title">{t('capture.typeNotes')}</div>
-                  <div className="opt-sub">{t('capture.typeNotesHelp')}</div>
-                </div>
-              </div>
-              <SpellLayer
-                as="textarea"
-                className="capture-editor"
-                placeholder={t('capture.summaryPlaceholder')}
-                aria-label={t('capture.summaryLabel')}
-                data-testid="summary-input"
-                value={text}
-                readOnly={busy}
-                onChange={setText}
-                allowWords={patient.state.status === 'ready' ? [patient.state.data.name] : []}
-                autoFocus
-              />
-            </div>
-          </div>
-
-          {notice !== null && (
-            <p className="small muted" role="status" data-testid="record-notice">
-              {notice}
-            </p>
-          )}
-
-          {error !== null && (
-            <p className="form-error" role="alert" data-testid="capture-error">
-              {error}
-            </p>
-          )}
-
-          {recording === 'idle' && !busy && (
-            <button
-              type="button"
-              className="btn btn-primary btn-block form-actions"
-              data-testid="process-note"
-              disabled={!canProcess}
-              onClick={() => {
-                void process();
-              }}
-            >
-              {t('capture.createDraft')}
-            </button>
-          )}
-        </>
-      )}
       {blocker.state === 'blocked' && (
         <ConfirmDialog
           title={t('capture.leaveTitle')}
@@ -508,6 +635,6 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
           }
         />
       )}
-    </Screen>
+    </>
   );
 }

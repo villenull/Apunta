@@ -1,5 +1,5 @@
 import type { PatientListItem } from '@apunta/shared';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import { firstName } from '../lib/format.js';
 import { useI18n } from '../lib/i18n.js';
@@ -18,6 +18,11 @@ import { ChatIcon, CheckIcon, ExamplesIcon, PencilIcon, PlusIcon } from './icons
  * **Notes, none open:** four cards, each with a line that says what it is for,
  * so someone who has never used the app does not have to guess what
  * "Brainstorm" or "Prepare for session" means.
+ *
+ * Both note links open `/capture/:id` as a window over *this* workspace, so they
+ * carry the location they were opened from in the navigation state
+ * (`backgroundLocation`); `AppRoutes` reads it and keeps this page mounted
+ * behind the modal, and `Capture` uses it as the way back out.
  */
 export interface PatientWelcomeProps {
   readonly patient: PatientListItem;
@@ -27,6 +32,9 @@ export interface PatientWelcomeProps {
 
 export function PatientWelcome({ patient, hasNotes, onOpenView }: PatientWelcomeProps): React.JSX.Element {
   const { t } = useI18n();
+  // The workspace's own location, which is the background the modal needs.
+  const location = useLocation();
+  const captureState = { backgroundLocation: location };
   const capture = `/capture/${patient.id}`;
   const name = firstName(patient.name);
 
@@ -39,7 +47,12 @@ export function PatientWelcome({ patient, hasNotes, onOpenView }: PatientWelcome
           </h1>
           <p className="patient-welcome-lede">{t('workspace.welcomeFirst', { name })}</p>
           <div className="patient-welcome-cta-row">
-            <Link to={capture} className="btn btn-primary patient-welcome-cta" data-testid="write-first-note">
+            <Link
+              to={capture}
+              state={captureState}
+              className="btn btn-primary patient-welcome-cta"
+              data-testid="write-first-note"
+            >
               <PlusIcon className="icon icon-sm" />
               {t('workspace.writeFirst')}
             </Link>
@@ -102,7 +115,7 @@ export function PatientWelcome({ patient, hasNotes, onOpenView }: PatientWelcome
             return (
               <li key={card.id}>
                 {card.id === 'note' ? (
-                  <Link to={capture} className="home-action" data-testid="welcome-note">
+                  <Link to={capture} state={captureState} className="home-action" data-testid="welcome-note">
                     {body}
                   </Link>
                 ) : (

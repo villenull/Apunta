@@ -12,8 +12,20 @@ three tools always visible bottom, blank-area click deselects note to patient
 welcome; New note modal over blurred existing patient workspace with current
 capture options and existing unsaved-text/recording protections. UI authorization
 does not grant updater repairs, thresholds, release actions or live-data access.
-Preview http://127.0.0.1:7821/ has18fakepatients/113notes, fakeAI, terminal13eca557;
-keep it running and rebuild its isolated frontend after verified UI integration.
+Preview http://127.0.0.1:7821/ now has19fakepatients/115notes, fakeAI, terminal13eca557;
+keep it running. Its frontend contains the accepted UI batch.
+
+Current UI batch COMPLETE and independently CLEAR (impl2), all workers archived
+and confirmed root-only active list. Root2450unit/171files+typecheck/lint/build,
+scoped Chromium/esMX33pass1skip, actual30note browser checks all exit0. Preview
+http://127.0.0.1:7821/ now serves accepted latest UI.19fabricatedpatients/115notes,
+min1each, simulatedAI; owner-created extra test patient was given1fake note,
+no reseed or overwrite. Keep terminal13eca557 running; candidate7823 closed.
+No remaining authorized UI work. Favicon request remains TODO, not implemented.
+P5.3 remains BLOCKED with preserved failed final review; no further updater repair
+grant and no release waiver. AM214 desktop rebuild remains held. See work order
+UI-BATCH-2026-10-05.md and evidence/UI-BATCH-2026-10-05/root-verification.md.
+This supersedes historical worker tables below.
 
 ## Orchestrator recovery — 2026-10-05 (59a44bd8)
 

@@ -2342,6 +2342,8 @@ export const esMX = {
     text: 'Ningún texto de licencia coincide con «{filter}».',
     kind: { filter: 'text' },
   },
+  'capture.closeLabel': { text: 'Cerrar nueva nota' },
+
   'capture.newNote': {
     text: 'Nueva nota',
   },

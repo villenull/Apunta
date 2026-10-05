@@ -1,3 +1,18 @@
+# Current orchestration — 2026-10-05
+
+Main is authoritative. Owner preview http://127.0.0.1:7821/ now serves the latest
+accepted UI: stable View all navigation, revised notes column with fixed tools
+and blank-space deselection, new-note modal over the blurred patient view.
+Independent review CLEAR;2450unit tests, typecheck/lint/build, scoped bilingual
+e2e and real-Chromium verification pass. All workers archived.
+19fabricatedpatients/115fabricatednotes, min1each, simulatedAI; leave it running.
+Work order: docs/v2/state/UI-BATCH-2026-10-05.md; next state:
+docs/v2/state/NEXT-SESSION.md. Favicon replacement is queued only.
+P5.3 remains BLOCKED after failed independent review; source/evidence committed
+for preservation, not acceptance. AM214 desktop rebuild held until P5.3 approval;
+no further updater repair authorized. No live data access.
+This header supersedes the older current-status sections below.
+
 # Current English desktop acceptance — 2026-10-03 evening
 
 P3.4 native security is APPROVED under AM-200 (20/20 native assertions,

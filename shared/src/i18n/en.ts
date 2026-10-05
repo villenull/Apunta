@@ -2642,6 +2642,8 @@ export const en = {
    * `patient.state.message` and the `Back to patients` link.
    */
 
+  'capture.closeLabel': { text: 'Close new note' },
+
   /** `Capture.tsx:283`, and the heading while the patient is unknown. */
   'capture.newNote': { text: 'New note' },
   /** `Capture.tsx:271`, the heading once the patient is known. */

@@ -1,10 +1,11 @@
 import type { Note, PatientListItem } from '@apunta/shared';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 
 import type { LoadState } from '../hooks/useLoader.js';
-import { firstName, notePreview } from '../lib/format.js';
+import { notePreview } from '../lib/format.js';
 import { useI18n, type Translate } from '../lib/i18n.js';
 import { BackIcon, ChatIcon, DocumentIcon, ExamplesIcon, PlusIcon } from './icons.js';
+import '../styles/notes-column.css';
 
 export interface NotesColumnProps {
   patient: PatientListItem | null;
@@ -16,6 +17,8 @@ export interface NotesColumnProps {
   onOpenView: (view: 'plan' | 'prep' | 'brainstorm') => void;
   onRetry: () => void;
   onBackToPatients: () => void;
+  /** Blank space in the column: clear the note and the view, keep the patient. */
+  onDeselect: () => void;
 }
 
 /**
@@ -38,7 +41,28 @@ function noteDay(t: Translate, iso: string): string {
   return today ? t('notes.today') : t('notes.date', { day: iso });
 }
 
-/** Middle column of `prototype/patients.html`. */
+/**
+ * Anything the owner can press inside the column. A click that lands on one of
+ * these is not a click on the column's empty space, so it must not clear the
+ * selection — and neither is a click on the *label* above the notes, which is
+ * the same empty space with a word in it.
+ */
+const PRESSABLE =
+  'button, a, input, textarea, select, [role="button"], [role="link"], [contenteditable="true"]';
+
+/**
+ * Middle column of the workspace (owner, 2026-10-05).
+ *
+ * The patient's name is gone from its own header: the sidebar row she just
+ * clicked already says who she is with, and the column repeated it one screen
+ * away. What is left is three bands — **New note** at the top, the notes alone
+ * in the middle, and the three tools in a footer that does not scroll away — so
+ * the notes are the only thing in the column that moves.
+ *
+ * Clicking the empty part of the middle band goes back to the patient's welcome
+ * while keeping the patient (the workspace's own `onDeselect`, which flushes
+ * the open note first).
+ */
 export function NotesColumn({
   patient,
   notes,
@@ -48,81 +72,59 @@ export function NotesColumn({
   onOpenView,
   onRetry,
   onBackToPatients,
+  onDeselect,
 }: NotesColumnProps): React.JSX.Element {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const location = useLocation();
+  /**
+   * Capture opens as a window over this workspace, so the navigation carries
+   * the location it was opened from: `App.tsx` renders this column, still
+   * mounted and still on this patient, behind the window.
+   */
+  const openCapture = (): void => {
+    if (patient === null) return;
+    void navigate(`/capture/${patient.id}`, { state: { backgroundLocation: location } });
+  };
+
+  const onBlankSpace = (event: React.MouseEvent<HTMLDivElement>): void => {
+    if ((event.target as HTMLElement).closest(PRESSABLE) !== null) return;
+    onDeselect();
+  };
+
   return (
-    <div className="col col-notes">
-      <div className={patient ? 'col-header notes-header-patient' : 'col-header'}>
-        <div className="col-header-title">
+    <div className="col col-notes" data-testid="notes-column">
+      {/* The narrow-window way back to the patients stays: this column is the
+          whole screen on a phone, and without it she cannot leave. */}
+      <div className="col-header notes-col-head" data-testid="notes-head">
+        <div className="col-header-title notes-col-head-row">
           <button type="button" className="narrow-back" onClick={onBackToPatients}>
             <BackIcon className="icon icon-xs" />
             <span>{t('common.patients')}</span>
           </button>
-          <h3 data-testid="notes-header" tabIndex={-1}>
-            {patient ? firstName(patient.name) : t('notes.title')}
-          </h3>
+          {patient && (
+            <button
+              type="button"
+              className="new-note-btn notes-col-new"
+              data-testid="notes-new-note"
+              onClick={openCapture}
+            >
+              {/* The plus in a filled circle, as the sidebar's "New patient" and
+                  Claude's "New chat" (owner, 2026-09-28): a quiet row, not a
+                  dashed box competing with everything under it. */}
+              <span className="new-note-icon" aria-hidden="true">
+                <PlusIcon className="icon" />
+              </span>
+              {t('notes.new')}
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="col-body" data-testid="note-list">
-        {patient && (
-          <button
-            type="button"
-            className="new-note-btn"
-            onClick={() => {
-              void navigate(`/capture/${patient.id}`);
-            }}
-          >
-            {/* The plus in a filled circle, as the sidebar's "New patient" and
-                Claude's "New chat" (owner, 2026-09-28): a quiet row, not a
-                dashed box competing with everything under it. */}
-            <span className="new-note-icon" aria-hidden="true">
-              <PlusIcon className="icon" />
-            </span>
-            {t('notes.new')}
-          </button>
-        )}
-        {/* The work around a session, next to the notes that follow one.
-            Two separate objects: the plan is a record she authors, the
-            briefing is a reading aid generated on demand. */}
-        {patient && (
-          <div className="col-actions">
-            <button
-              type="button"
-              className={view === 'brainstorm' ? 'col-action-btn active' : 'col-action-btn'}
-              data-testid="open-brainstorm"
-              onClick={() => {
-                onOpenView('brainstorm');
-              }}
-            >
-              <ChatIcon className="icon icon-sm" />
-              {t('brainstorm.title')}
-            </button>
-            <button
-              type="button"
-              className={view === 'plan' ? 'col-action-btn active' : 'col-action-btn'}
-              data-testid="open-plan"
-              onClick={() => {
-                onOpenView('plan');
-              }}
-            >
-              <DocumentIcon className="icon icon-sm" />
-              {t('plan.title')}
-            </button>
-            <button
-              type="button"
-              className={view === 'prep' ? 'col-action-btn active' : 'col-action-btn'}
-              data-testid="open-prep"
-              onClick={() => {
-                onOpenView('prep');
-              }}
-            >
-              <ExamplesIcon className="icon icon-sm" />
-              {t('notes.prepareForSession')}
-            </button>
-          </div>
-        )}
+      {/* The only band that scrolls. The click surface is this element, so the
+          empty space below a short list counts as empty space rather than as a
+          click on the last row. */}
+      <div className="col-body notes-col-body" data-testid="note-list" onClick={onBlankSpace}>
         {patient && (
           <NoteList
             patient={patient}
@@ -133,11 +135,55 @@ export function NotesColumn({
           />
         )}
       </div>
+
+      {/* The work around a session, next to the notes that follow one. Two
+          separate objects: the plan is a record she authors, the briefing is a
+          reading aid generated on demand. */}
+      {patient && (
+        <div className="col-actions notes-col-footer" data-testid="notes-tools">
+          <button
+            type="button"
+            className={view === 'brainstorm' ? 'col-action-btn active' : 'col-action-btn'}
+            data-testid="open-brainstorm"
+            onClick={() => {
+              onOpenView('brainstorm');
+            }}
+          >
+            <ChatIcon className="icon icon-sm" />
+            {t('brainstorm.title')}
+          </button>
+          <button
+            type="button"
+            className={view === 'plan' ? 'col-action-btn active' : 'col-action-btn'}
+            data-testid="open-plan"
+            onClick={() => {
+              onOpenView('plan');
+            }}
+          >
+            <DocumentIcon className="icon icon-sm" />
+            {t('plan.title')}
+          </button>
+          <button
+            type="button"
+            className={view === 'prep' ? 'col-action-btn active' : 'col-action-btn'}
+            data-testid="open-prep"
+            onClick={() => {
+              onOpenView('prep');
+            }}
+          >
+            <ExamplesIcon className="icon icon-sm" />
+            {t('notes.prepareForSession')}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-type NoteListProps = Omit<NotesColumnProps, 'patient' | 'onBackToPatients' | 'view' | 'onOpenView'> & {
+type NoteListProps = Omit<
+  NotesColumnProps,
+  'patient' | 'onBackToPatients' | 'view' | 'onOpenView' | 'onDeselect'
+> & {
   patient: PatientListItem;
 };
 

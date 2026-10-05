@@ -1,0 +1,49 @@
+/*
+ * The new-note window (owner, 2026-10-05): capture as a little window over the
+ * practice, the way adding a patient already is, so the workspace stays mounted
+ * behind it. `.capture-modal` is named in the one shared scrim rule in
+ * `app.css` — the dimming and the blur are written there once, for every window
+ * that sits over the workspace, and are deliberately not repeated here.
+ */
+
+/*
+ * `.modal.capture-modal`, not `.capture-modal`: `app.css` is imported after
+ * this file reaches the bundle (it comes in through `App.tsx`), so an
+ * equal-specificity rule there is the later one and wins. Compounding with the
+ * class `app.css` gives the panel keeps the values this file states whatever
+ * the import order is — the built stylesheet really did render this window at
+ * `.modal`'s 460px.
+ */
+.modal.capture-modal {
+  /* Wider and taller than the add-patient window: this one carries the format
+     chooser, the recorder and the editor. */
+  max-width: 560px;
+  /* A short window scrolls its own content rather than growing past the
+     viewport, so Create draft and the × stay reachable at any height. */
+  max-height: calc(100vh - 2 * var(--space-24));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/*
+ * The title row: what it is on the left, the way out on the right — the same
+ * row the add-patient window has, so the two windows open the same way.
+ */
+.capture-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-bottom: var(--space-20);
+}
+
+.capture-modal-head .heading-tight {
+  margin-bottom: 0;
+}
+
+/* The × wears no box, as the add-patient window's and the language chooser's
+   do: the glyph is the control. */
+.capture-modal-head .icon-btn {
+  border-color: transparent;
+  background: transparent;
+}

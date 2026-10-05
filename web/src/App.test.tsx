@@ -1,5 +1,5 @@
 import type { ChatMessage, Note } from '@apunta/shared';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -113,7 +113,12 @@ describe('workspace', () => {
     expect(within(results).queryByText('Maria Ruiz')).toBeNull();
 
     fireEvent.click(within(results).getByText('John Smith'));
-    expect((await screen.findByTestId('notes-header')).textContent).toBe('John');
+    // The column no longer repeats her name (owner, 2026-10-05) — the sidebar
+    // row she just picked says it — so what proves the selection is the
+    // column itself: it only exists for a patient, and "New note" is its first
+    // control now.
+    expect((await screen.findByTestId('notes-new-note')).textContent).toContain('New note');
+    expect(screen.queryByTestId('notes-header')).toBeNull();
   });
 
   it('offers New with what she typed when nobody matches', async () => {
@@ -196,7 +201,10 @@ describe('workspace', () => {
       'Prepare for session',
     ]);
     for (const card of cards) expect(card.querySelector('.patient-welcome-hint')?.textContent).not.toBe('');
-    expect(screen.getByTestId('notes-header').textContent).toBe('John');
+    expect(screen.getByTestId('notes-new-note')).toBeDefined();
+    // The patient's name left the column's header (owner, 2026-10-05); the
+    // notes themselves still carry the "Notes" label they always had.
+    expect(screen.queryByTestId('notes-header')).toBeNull();
     expect(screen.getByTestId('note-list').textContent).toContain('Notes');
   });
 
@@ -204,7 +212,8 @@ describe('workspace', () => {
     renderApp();
 
     fireEvent.click((await screen.findAllByText('John Smith'))[0] as HTMLElement);
-    expect((await screen.findByTestId('notes-header')).textContent).toBe('John');
+    expect(await screen.findByTestId('notes-new-note')).toBeDefined();
+    expect(screen.queryByTestId('notes-header')).toBeNull();
     // The note row's date line carries a Draft chip beside the date now; the
     // published note below it has the date alone.
     const draftRow = (await screen.findByText('Draft')).closest('.note-date-row');
@@ -344,6 +353,508 @@ describe('workspace', () => {
     expect(within(page).getByTestId('directory-new').getAttribute('href')).toBe('/patients/new');
     fireEvent.click(screen.getByTestId('directory-select'));
     expect(await screen.findByText("Select isn't part of this preview yet.")).toBeDefined();
+  });
+});
+
+/**
+ * "View all" is a pane of the workspace, not another screen (owner,
+ * 2026-10-05).
+ *
+ * Two things have to hold and neither shows up in a diff of the components: the
+ * **same DOM node** survives going to the directory and picking somebody out of
+ * it, and **no request goes out again** on the way. The wrapper used to be
+ * keyed on the pathname, so every move re-mounted the workspace — the sidebar
+ * came back with its scroll and its filters where they were, the patients were
+ * re-read, and the note she had open was gone.
+ */
+describe('the directory and a patient are one mounted workspace', () => {
+  let api: ReturnType<typeof installFakeApi>;
+
+  const patientsPath = 'GET /api/patients';
+  const johnNotesPath = `GET /api/patients/${john.id}/notes`;
+
+  function callsTo(call: string): number {
+    return api.calls.filter((entry) => entry === call).length;
+  }
+
+  beforeEach(() => {
+    api = installFakeApi({
+      formats: [progressNote],
+      patients: [john, maria],
+      notes: [johnsDraft, johnsIntake],
+    });
+  });
+
+  it('keeps the same node through the directory and back, and re-reads nothing', async () => {
+    renderApp('/');
+    await screen.findAllByText('John Smith');
+    const shell = document.querySelector('.app-shell');
+    await waitFor(() => {
+      expect(callsTo(patientsPath)).toBe(1);
+    });
+
+    fireEvent.click(screen.getByTestId('view-all-patients'));
+    await screen.findByTestId('patient-directory');
+    expect(document.querySelector('.app-shell')).toBe(shell);
+    expect(callsTo(patientsPath)).toBe(1);
+
+    // Picking somebody out of the directory is a change of patient, not a
+    // change of screen.
+    fireEvent.click(screen.getAllByText('John Smith')[0] as HTMLElement);
+    await screen.findByTestId('notes-new-note');
+    expect(document.querySelector('.app-shell')).toBe(shell);
+    expect(callsTo(patientsPath)).toBe(1);
+    // His notes are read once, here, for the first time.
+    expect(callsTo(johnNotesPath)).toBe(1);
+
+    // And the whole way back, still the same node and still no second read of
+    // either list.
+    fireEvent.click(screen.getByTestId('view-all-patients'));
+    await screen.findByTestId('patient-directory');
+    expect(document.querySelector('.app-shell')).toBe(shell);
+    expect(callsTo(patientsPath)).toBe(1);
+    expect(callsTo(johnNotesPath)).toBe(1);
+  });
+
+  it('keeps the note she had open when she goes to the directory and comes back', async () => {
+    renderApp(`/?patient=${john.id}&note=${johnsIntake.id}`);
+    await screen.findByTestId('note-body');
+    const shell = document.querySelector('.app-shell');
+
+    fireEvent.click(screen.getByTestId('view-all-patients'));
+    await screen.findByTestId('patient-directory');
+    await act(async () => {
+      await activeRouter?.navigate(`/?patient=${john.id}&note=${johnsIntake.id}`);
+    });
+
+    expect((await screen.findByTestId('note-title')).textContent).toBe('Intake note');
+    // Same node throughout: the round trip did not remount the workspace.
+    expect(document.querySelector('.app-shell')).toBe(shell);
+    // He is a different selection when she comes back, so his notes are read
+    // again — once — while the sidebar's patients are not read at all.
+    expect(callsTo(patientsPath)).toBe(1);
+    expect(callsTo(johnNotesPath)).toBe(2);
+  });
+});
+
+/**
+ * Capture as a window over the practice (owner, 2026-10-05), the shape Add
+ * patient already had.
+ *
+ * `App.tsx` renders the workspace under the background location and the capture
+ * screen in the real one, as siblings: so the workspace stays mounted (and its
+ * editor, its sidebar and its lists stay exactly as they were), and the window
+ * itself is **outside** the inerted background, which is what stops the Tab
+ * order from reaching the practice behind it without reaching the textarea she
+ * is typing in.
+ */
+describe('the capture window over the workspace', () => {
+  beforeEach(() => {
+    installFakeApi({
+      formats: [progressNote],
+      patients: [john, maria],
+      notes: [johnsDraft, johnsIntake],
+    });
+  });
+
+  it('leaves the practice mounted behind it, and inert', async () => {
+    renderApp(`/?patient=${john.id}&note=${johnsIntake.id}`);
+    await screen.findByTestId('note-body');
+    const shell = document.querySelector('.app-shell');
+
+    fireEvent.click(screen.getByTestId('notes-new-note'));
+
+    expect(await screen.findByTestId('summary-input')).toBeDefined();
+    expect(activeRouter?.state.location.pathname).toBe(`/capture/${john.id}`);
+    expect(document.querySelector('.app-shell')).toBe(shell);
+    expect(screen.getByTestId(`patient-row-${john.id}`)).toBeDefined();
+
+    // The practice behind the window leaves the tab order...
+    const background = screen.getByTestId('route-background');
+    expect((background as unknown as { inert?: boolean }).inert).toBe(true);
+    // ...and the window is a sibling of it, not something inside it, so
+    // inerting the background cannot take the window down with it.
+    expect(background.contains(screen.getByTestId('summary-input'))).toBe(false);
+  });
+
+  it('closes and reopens with Back and Forward, without disturbing the note', async () => {
+    renderApp(`/?patient=${john.id}&note=${johnsIntake.id}`);
+    await screen.findByTestId('note-body');
+    const shell = document.querySelector('.app-shell');
+
+    fireEvent.click(screen.getByTestId('notes-new-note'));
+    await screen.findByTestId('summary-input');
+
+    await act(async () => {
+      await activeRouter?.navigate(-1);
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('summary-input')).toBeNull();
+    });
+    expect(document.querySelector('.app-shell')).toBe(shell);
+    expect((screen.getByTestId('route-background') as unknown as { inert?: boolean }).inert).toBe(false);
+    expect(screen.getByTestId('note-body')).toBeDefined();
+
+    await act(async () => {
+      await activeRouter?.navigate(1);
+    });
+    expect(await screen.findByTestId('summary-input')).toBeDefined();
+    expect(document.querySelector('.app-shell')).toBe(shell);
+  });
+
+  /**
+   * The keyboard has to come back with the window, not stay on the document.
+   *
+   * `Dialog` returns focus to whatever was focused when it opened, from its own
+   * effect cleanup, and `App` takes the practice out of the tab order while the
+   * window is up. If that second change lands *after* the first — a passive
+   * effect behind a passive cleanup — the `focus()` is called on an element
+   * inside an inert subtree, where focusing does nothing, and the browser drops
+   * the keyboard on `<body>` (root's Chromium probe: `tag: "BODY"`).
+   *
+   * jsdom does not model `inert`, so this asserts the ordering itself: the
+   * moment the opener is focused, the background must already be editable
+   * again. That is the invariant the browser result depends on.
+   */
+  it('takes the practice out of the tab order before the keyboard goes back to the opener', async () => {
+    renderApp(`/?patient=${john.id}`);
+    const opener = (await screen.findByTestId('notes-new-note')) as HTMLButtonElement;
+    // A real click focuses the button in a browser; jsdom does not, and the
+    // opener is captured from `document.activeElement` when the window opens.
+    opener.focus();
+    expect(document.activeElement).toBe(opener);
+
+    fireEvent.click(opener);
+    await screen.findByTestId('summary-input');
+    const background = screen.getByTestId('route-background');
+    expect((background as unknown as { inert?: boolean }).inert).toBe(true);
+
+    // Recorded at the moment the restore runs, not after.
+    const inertWhenRestored: Array<boolean | undefined> = [];
+    const record = (): void => {
+      inertWhenRestored.push((background as unknown as { inert?: boolean }).inert);
+    };
+    opener.addEventListener('focus', record);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByTestId('summary-input')).toBeNull();
+    });
+
+    expect(inertWhenRestored).not.toHaveLength(0);
+    expect(inertWhenRestored.every((inert) => inert === false)).toBe(true);
+    expect(document.activeElement).toBe(opener);
+    expect((background as unknown as { inert?: boolean }).inert).toBe(false);
+  });
+
+  it('builds a background for a deep link to it, with that patient already chosen', async () => {
+    renderApp(`/capture/${john.id}`);
+
+    expect(await screen.findByTestId('summary-input')).toBeDefined();
+    // No history behind it to carry, so the workspace is synthesised: home,
+    // with the patient the capture is for. Without that the window would be a
+    // full-screen page with no practice behind it.
+    expect(screen.getByTestId('notes-new-note')).toBeDefined();
+    expect(screen.getByTestId(`patient-row-${john.id}`)).toBeDefined();
+  });
+});
+
+/**
+ * The note capture makes, handed back as `?note=`.
+ *
+ * The workspace's notes loader fetches by patient and its callback only changes
+ * with the patient, so a fresh id in the query string is invisible to it. It
+ * asks for the list once when the id is not in it — quietly, so the column and
+ * any open editor stay on screen, and without re-reading the patients or
+ * remounting the sidebar. An id that genuinely does not exist must cost that
+ * one request and no more, or a deleted note would loop forever.
+ */
+describe('a note handed back from capture', () => {
+  const johnNotesPath = `GET /api/patients/${john.id}/notes`;
+
+  function callsTo(api: ReturnType<typeof installFakeApi>, call: string): number {
+    return api.calls.filter((entry) => entry === call).length;
+  }
+
+  it('reads the list once for an id it has not seen, and selects the note', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [johnsDraft] });
+    const fresh = makeNote(john.id, { title: 'Fresh draft' });
+    /*
+     * The first read of his notes is held open, so the draft lands on the
+     * server *after* that read has answered: the state this reproduces is the
+     * real one, where the list is fetched before the note exists.
+     */
+    const originalFetch = globalThis.fetch;
+    let held = false;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (path: string, init: RequestInit = {}) => {
+        const response = await originalFetch(path, init);
+        if (path === `/api/patients/${john.id}/notes` && !held) {
+          held = true;
+          await gate;
+        }
+        return response;
+      }),
+    );
+
+    renderApp(`/?patient=${john.id}&note=${fresh.id}`);
+    await waitFor(() => {
+      expect(held).toBe(true);
+    });
+    api.state.notes = [...api.state.notes, fresh];
+    release();
+
+    expect((await screen.findByTestId('note-title')).textContent).toBe('Fresh draft');
+    expect(callsTo(api, johnNotesPath)).toBe(2);
+    // Only the notes were re-read: the sidebar's patients were not.
+    expect(callsTo(api, 'GET /api/patients')).toBe(1);
+    // And it stops at one re-read rather than asking again on every render.
+    await new Promise((resolve) => window.setTimeout(resolve, 60));
+    expect(callsTo(api, johnNotesPath)).toBe(2);
+  });
+
+  it('asks once for an id that never turns up, rather than on every render', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [johnsDraft] });
+    // A note deleted from another tab: the selection cannot be resolved, and
+    // the workspace must not fall into reading the list forever.
+    renderApp(`/?patient=${john.id}&note=${makeNote(john.id).id}`);
+
+    expect(await screen.findByTestId('empty-no-note')).toBeDefined();
+    await waitFor(() => {
+      expect(callsTo(api, johnNotesPath)).toBe(2);
+    });
+    await new Promise((resolve) => window.setTimeout(resolve, 60));
+    expect(callsTo(api, johnNotesPath)).toBe(2);
+  });
+
+  /**
+   * The real browser run failed here, and the unit test above could not see it:
+   * finishing the note she has open first replaces the list on screen through
+   * `update`, so the refetch used to be skipped and the pane stayed on the
+   * patient welcome with the new id in the URL and the note saved on the
+   * server. What decides the refetch is the request the list came from, not the
+   * array's identity — which is what this walks through end to end: save,
+   * New note, Create draft.
+   */
+  it('selects a draft made after the open note was saved, rather than leaving the welcome', async () => {
+    const api = installFakeApi({
+      formats: [progressNote],
+      patients: [john],
+      notes: [johnsDraft, johnsIntake],
+    });
+    renderApp(`/?patient=${john.id}&note=${johnsDraft.id}`);
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    // Finish the note that is open (a draft, so the save is the ordinary
+    // debounced one). This is the local `update` that used to poison the guard
+    // for the rest of the visit.
+    fireEvent.change(body, { target: { value: 'Objective: saved before the next note.' } });
+    await waitFor(() => {
+      expect(api.state.notes.find((note) => note.id === johnsDraft.id)?.content).toContain(
+        'saved before the next note',
+      );
+    });
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 20));
+    });
+
+    fireEvent.click(screen.getByTestId('notes-new-note'));
+    await screen.findByTestId('summary-input');
+    fireEvent.change(screen.getByTestId('summary-input'), {
+      target: { value: 'Sleep better this week.' },
+    });
+    fireEvent.click(screen.getByTestId('process-note'));
+
+    // The window closes on the new id, and only once it has can the assertions
+    // below mean anything: the editor of the note she had open is mounted
+    // behind the window the whole time.
+    const made = api.state.notes.find((note) => note.id !== johnsDraft.id && note.id !== johnsIntake.id);
+    expect(made).toBeDefined();
+    await waitFor(() => {
+      expect(screen.queryByTestId('summary-input')).toBeNull();
+    });
+    expect(activeRouter?.state.location.search).toBe(`?patient=${john.id}&note=${made?.id ?? ''}`);
+
+    // The draft it just made is the note on screen, and it is the real one.
+    expect(await screen.findByTestId('note-title')).toHaveProperty('textContent', 'Progress note');
+    expect((await screen.findByTestId('note-body')) as HTMLTextAreaElement).toHaveProperty(
+      'value',
+      draftContent(progressNote.sections, 'Sleep better this week.'),
+    );
+    // One extra read of his notes — the refetch — and no re-read of the
+    // patients, so the sidebar never redrew.
+    expect(callsTo(api, johnNotesPath)).toBe(2);
+    expect(callsTo(api, 'GET /api/patients')).toBe(1);
+  });
+
+  /**
+   * An answer for the patient she has just left must not stand in for this
+   * patient's list. The old patient's read is held open and released *after*
+   * the switch, so it lands while the new patient's own read is still in
+   * flight: it may not claim to be the answer, and the new patient's list is
+   * then read once for itself and once for the id that is not in it.
+   */
+  it('does not take a late answer for the previous patient as this one', async () => {
+    const mariaNote = makeNote(maria.id, { title: 'Maria note' });
+    const api = installFakeApi({
+      formats: [progressNote],
+      patients: [john, maria],
+      notes: [johnsDraft, johnsIntake, mariaNote],
+    });
+    const mariaNotesPath = `GET /api/patients/${maria.id}/notes`;
+    const originalFetch = globalThis.fetch;
+    const gates = new Map<string, Promise<void>>();
+    const openers = new Map<string, () => void>();
+    function hold(path: string): void {
+      const promise = new Promise<void>((resolve) => {
+        openers.set(path, resolve);
+      });
+      gates.set(path, promise);
+    }
+    hold(`/api/patients/${john.id}/notes`);
+    hold(`/api/patients/${maria.id}/notes`);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (path: string, init: RequestInit = {}) => {
+        const response = await originalFetch(path, init);
+        const gate = gates.get(path);
+        if (gate !== undefined) {
+          gates.delete(path);
+          await gate;
+        }
+        return response;
+      }),
+    );
+
+    renderApp(`/?patient=${john.id}`);
+    await waitFor(() => {
+      expect(api.calls.filter((entry) => entry === `GET /api/patients/${john.id}/notes`)).toHaveLength(1);
+    });
+
+    // Straight to somebody else, asking for an id that is not hers.
+    await act(async () => {
+      await activeRouter?.navigate(`/?patient=${maria.id}&note=${makeNote(maria.id).id}`);
+    });
+    await waitFor(() => {
+      expect(callsTo(api, mariaNotesPath)).toBe(1);
+    });
+
+    // His answer arrives now, describing a list that is not on screen.
+    openers.get(`/api/patients/${john.id}/notes`)?.();
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 20));
+    });
+    expect(callsTo(api, mariaNotesPath)).toBe(1);
+
+    // Hers answers, and the id still is not in it: one refetch, then quiet.
+    openers.get(`/api/patients/${maria.id}/notes`)?.();
+    expect(await screen.findByTestId('empty-no-note')).toBeDefined();
+    await waitFor(() => {
+      expect(callsTo(api, mariaNotesPath)).toBe(2);
+    });
+    await new Promise((resolve) => window.setTimeout(resolve, 60));
+    expect(callsTo(api, mariaNotesPath)).toBe(2);
+  });
+});
+
+/**
+ * Blank space in the notes column clears the note and the view and keeps the
+ * patient (owner, 2026-10-05).
+ *
+ * The editor stays mounted until that flush resolves, because its own cleanup
+ * swallows a failed save: a note with an unsaved edit, or a conflict she has
+ * not chosen between, would otherwise disappear with nothing said. A refused
+ * flush therefore keeps the editor, keeps the query, and says why — the same
+ * rule the primary-window handoff follows.
+ */
+describe('clearing the selection from blank space in the notes column', () => {
+  beforeEach(() => {
+    installFakeApi({
+      formats: [progressNote],
+      patients: [john, maria],
+      notes: [johnsDraft, johnsIntake],
+    });
+  });
+
+  it('returns to the patient welcome and keeps the patient, the sidebar and the app', async () => {
+    renderApp(`/?patient=${john.id}&note=${johnsIntake.id}`);
+    await screen.findByTestId('note-body');
+
+    fireEvent.click(screen.getByTestId('note-list'));
+
+    expect(await screen.findByTestId('empty-no-note')).toBeDefined();
+    expect(activeRouter?.state.location.search).toBe(`?patient=${john.id}`);
+    expect(screen.getByTestId(`patient-row-${john.id}`)).toBeDefined();
+  });
+
+  it('saves what is still pending before it clears, rather than dropping it', async () => {
+    const api = installFakeApi({
+      formats: [progressNote],
+      patients: [john, maria],
+      notes: [johnsDraft, johnsIntake],
+    });
+    renderApp(`/?patient=${john.id}&note=${johnsDraft.id}`);
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    // Typed a moment ago and still inside the 400ms debounce, then straight to
+    // blank space: the flush has to reach the server before the editor goes.
+    fireEvent.change(body, { target: { value: 'Subjective: typed a moment ago.' } });
+    fireEvent.click(screen.getByTestId('note-list'));
+
+    await waitFor(() => {
+      expect(api.state.notes.find((note) => note.id === johnsDraft.id)?.content).toBe(
+        'Subjective: typed a moment ago.',
+      );
+    });
+    expect(await screen.findByTestId('empty-no-note')).toBeDefined();
+  });
+
+  it('keeps the editor and says why when the pending save conflicts', async () => {
+    const updatePath = `/api/notes/${johnsIntake.id}`;
+    const originalFetch = globalThis.fetch;
+    /*
+     * Another window edited the same note first, which is the conflict the
+     * editor reports as unresolved: the save is refused, and the editor asks
+     * the server for the other window's version so she can choose. Both halves
+     * are answered here, because the fake API has no `GET /api/notes/:id` of
+     * its own and would answer the refetch with a stale-write error instead.
+     */
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (path: string, init: RequestInit = {}) => {
+        if (path === updatePath && init.method === 'PATCH') {
+          return new Response(JSON.stringify({ error: 'conflict', message: 'Edited elsewhere.' }), {
+            status: 409,
+            headers: { 'content-type': 'application/json' },
+          });
+        }
+        if (path === updatePath) {
+          return new Response(JSON.stringify(johnsIntake), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          });
+        }
+        return originalFetch(path, init);
+      }),
+    );
+    renderApp(`/?patient=${john.id}&note=${johnsIntake.id}`);
+    const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
+
+    fireEvent.change(body, { target: { value: 'Subjective: a conflicting edit.' } });
+    fireEvent.click(screen.getByTestId('note-list'));
+
+    // The editor says a conflict is unresolved, in its own words, and the
+    // workspace adds its own — the deselect gave up rather than clearing.
+    expect(await screen.findByTestId('note-conflict')).toBeDefined();
+    expect((await screen.findByTestId('toast-error')).textContent).toContain('Unresolved conflict');
+    // Nothing was cleared: the editor and the selection are still hers.
+    expect(screen.getByTestId('note-body')).toBeDefined();
+    expect(activeRouter?.state.location.search).toBe(`?patient=${john.id}&note=${johnsIntake.id}`);
   });
 });
 
@@ -883,10 +1394,11 @@ describe('the add-patient window', () => {
     // The scrim rule Settings already had, now naming this panel too — one
     // rule for "a modal over the workspace", not a second copy of the blur.
     // One rule for every window that sits over the workspace — Settings, adding
-    // a patient, and the language chooser — rather than one copy of the blur
-    // each, which is how three windows end up blurring three different amounts.
+    // a patient, the language chooser and the new-note window (owner,
+    // 2026-10-05) — rather than one copy of the blur each, which is how three
+    // windows end up blurring three different amounts.
     const shared = appCss.match(
-      /\.modal-backdrop:has\(\.settings-modal\),\s*\.modal-backdrop:has\(\.add-patient-modal\),\s*\.modal-backdrop:has\(\.language-modal\)\s*\{[^}]*\}/,
+      /\.modal-backdrop:has\(\.settings-modal\),\s*\.modal-backdrop:has\(\.add-patient-modal\),\s*\.modal-backdrop:has\(\.language-modal\),\s*\.modal-backdrop:has\(\.capture-modal\)\s*\{[^}]*\}/,
     );
     expect(shared?.[0]).toContain('background: var(--scrim)');
     expect(shared?.[0]).toContain('backdrop-filter: blur(var(--scrim-blur))');
@@ -897,6 +1409,49 @@ describe('the add-patient window', () => {
     const close = appCss.match(/\.add-patient-head \.icon-btn\s*\{[^}]*\}/);
     expect(close?.[0]).toContain('border-color: transparent');
     expect(close?.[0]).toContain('background: transparent');
+  });
+});
+
+/**
+ * The two stylesheets this batch added, and the import order that was quietly
+ * undoing them.
+ *
+ * Both reach the bundle through `App.tsx`, which `main.tsx` imports **before**
+ * `app.css`, so at equal specificity the workspace's own rule is the later one
+ * and wins. The built stylesheet really did render the new-note window at
+ * `.modal`'s 460px instead of the 560px it declares, and dropped
+ * `.notes-col-new`'s `margin: 0` and `.notes-col-body`'s `flex: 1 1 auto`.
+ *
+ * jsdom has no cascade, so this is the same source-level check as the scrim
+ * above: each rule that overrides something in `app.css` is compounded with the
+ * class `app.css` gives the same element, which makes the stated value win
+ * whatever the order is.
+ */
+describe('the batch stylesheets against the workspace cascade', () => {
+  const appCss = readFileSync(join(import.meta.dirname, 'styles', 'app.css'), 'utf8');
+  const captureCss = readFileSync(join(import.meta.dirname, 'styles', 'capture-modal.css'), 'utf8');
+  const notesCss = readFileSync(join(import.meta.dirname, 'styles', 'notes-column.css'), 'utf8');
+
+  it('compounds every new-note rule that overrides the shared .modal', () => {
+    // The rule it has to beat, and what it declares instead.
+    expect(appCss).toMatch(/\.modal\s*\{[^}]*max-width: 460px/);
+    const panel = captureCss.match(/\.modal\.capture-modal\s*\{[^}]*\}/);
+    expect(panel?.[0]).toContain('max-width: 560px');
+    // Its own scrolling, which `.modal` never claimed.
+    expect(panel?.[0]).toContain('max-height: calc(100vh - 2 * var(--space-24))');
+    expect(panel?.[0]).toContain('overflow-y: auto');
+    // And the blur is still only in `app.css` — restating it here would be the
+    // second copy the shared scrim rule exists to prevent.
+    expect(captureCss).not.toContain('backdrop-filter');
+  });
+
+  it('compounds every notes-column rule that overrides a .col rule', () => {
+    expect(appCss).toMatch(/\.new-note-btn\s*\{[^}]*margin: 0 0 var\(--space-2\)/);
+    expect(notesCss).toMatch(/\.new-note-btn\.notes-col-new\s*\{[^}]*margin: 0;/);
+    expect(appCss).toMatch(/\.col-body\s*\{[^}]*flex: 1;/);
+    expect(notesCss).toMatch(/\.col-body\.notes-col-body\s*\{[^}]*flex: 1 1 auto;/);
+    // The top band sits in `.col-header-title`, which sets its own gap.
+    expect(notesCss).toMatch(/\.col-header-title\.notes-col-head-row\s*\{[^}]*gap: var\(--space-4\)/);
   });
 });
 
