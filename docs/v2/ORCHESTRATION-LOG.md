@@ -3039,3 +3039,9 @@ Confirmed no test process remained. Fresh0c91401f final independent reviewer
 launched GoLongCat/high with callback and same exclusive report/evidence scope,
 TEST/BUILD lease. No product repair or acceptance budget reset. Old partial
 review kept as history. No configured profiles; verified provider/model used.
+
+Before yield, fresh reviewer0c91401f confirmed RUNNING/no permissions. Old child
+reappeared IDLE after cascade completion, so directly archived9efccac9 once;
+archive succeeded and final active-list verification retains only successor and
+fresh assigned reviewer. Recovery checkpoint committed250e2af; candidate stays
+uncommitted until final review. Completion notification armed.
