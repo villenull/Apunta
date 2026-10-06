@@ -19,6 +19,8 @@ which fail identically at e9698c2 — `window.localStorage` in this Node).
 - Refine chat: ~1.5×/1.3× larger, no title bar (round close), one-line
   auto-growing composer with inline mic + return arrow (teal once text exists);
   dictation starts on the mic with provisional words inline in the box (no panel).
+- Chrome tab favicon now uses the current Fraunces outlined A from BrandMark,
+  replacing the old Kalam mark; the icon URL is versioned to refresh caches.
 Owner preview for this batch: http://127.0.0.1:7831/ (sample data, fake AI).
 
 # Current orchestration — 2026-10-05
