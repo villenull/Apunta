@@ -1,0 +1,89 @@
+  display: the inherited X display :0
+PASS smoke appimage: <repo>/src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage
+FAIL smoke Rule B freshness: the source set has not moved since the commit the AppImage was built from: 56 Rule B input(s) moved after the build commit 450d59c (built 2026-10-06T22:19:26.470Z): package.json, server/src/app.ts, server/src/backup/index.ts, server/src/backup/restore.test.ts, server/src/backup/restore.ts, server/src/index.ts, server/src/maintenance.test.ts, server/src/maintenance.ts, server/src/recovery-app.test.ts, server/src/recovery-app.ts, server/src/routes/app-quiesce.test.ts, server/src/routes/app-quiesce.ts, server/src/routes/app-update.test.ts, server/src/routes/app-update.ts, server/src/shell-bridge.test.ts, server/src/shell-bridge.ts, server/src/update-boot.integration.test.ts, server/src/update-boot.test.ts, server/src/update-boot.ts, server/src/update-journal.test.ts, server/src/update-journal.ts, server/src/update-snapshot.test.ts, server/src/update-snapshot.ts, shared/src/errors.ts, shared/src/i18n/en.ts, shared/src/i18n/es-MX.ts, shared/src/index.ts, shared/src/update.ts, src-tauri/Cargo.lock, src-tauri/Cargo.toml, src-tauri/src/bridge.rs, src-tauri/src/fetch.rs, src-tauri/src/main.rs, src-tauri/src/updater.rs, web/src/App.tsx, web/src/api/index.ts, web/src/api/update.ts, web/src/components/CloseConfirm.test.tsx, web/src/components/CloseConfirm.tsx, web/src/components/RecoveryView.test.tsx, web/src/components/RecoveryView.tsx, web/src/components/UpdateNotice.test.tsx, web/src/components/UpdateNotice.tsx, web/src/components/UpdateSettings.test.tsx, web/src/components/UpdateSettings.tsx, web/src/components/WorkspaceFreeze.tsx, web/src/hooks/useUpdateStatus.ts, web/src/lib/maintenance.test.ts, web/src/lib/maintenance.ts, web/src/main.tsx, web/src/routes/Capture.test.tsx, web/src/routes/Capture.tsx, web/src/routes/Settings.test.tsx, web/src/routes/Settings.tsx, web/src/styles/app.css, web/src/test/updateFetch.ts
+PASS smoke the AppImage is newer than the newest Rule B input (fresh-build anchor)
+PASS smoke the app window is up, inside the display
+  window 1280x860 at 1080,290 on a 3440x1440 display
+  the app reports 1280x860 physical on a 3440x1440 display at scale 1
+PASS smoke the app window is at scale 1
+PASS smoke the frame-to-client relationship is measured, not assumed: the window capture and the display crop agree on 1280x860 pixels, so the client origin is the window origin
+PASS smoke the server answers with this run id
+PASS smoke the first instance created the C-OWN@1 files (ownership baseline proof)
+PASS smoke the data folder is locked by this run's own server pid
+PASS smoke CSP: 8 directives, nonce present
+PASS click the onboarding Continue button (cluster inside the window)
+PASS click the onboarding Continue button
+PASS onboarding the Continue click is grounded in a unique accent cluster: the largest accent cluster (24673 cells) is unambiguous
+NOT RUN onboarding: the pane label "Identifier (optional)" never appeared: the label "Identifier (optional)" is not on the screen
+PASS capture the virtual source is the default, read back: apunta_p35_mic
+PASS press Tab to the home note action
+PASS press Return to open the patient picker
+PASS type the patient name into the home search
+PASS press Return to choose the highlighted patient
+NOT RUN capture: the pane label "Start with a recording" never appeared: the label "Start with a recording" is not on the screen
+NOT RUN draft: no note exists for the patient
+NOT RUN refine: no note was opened by the draft flow, so there is nothing to refine
+NOT RUN publish+copy: no note was opened by the draft flow, so there is nothing to publish
+NOT RUN patient list: the patient's row could not be grounded: the label "John Smith" is not on the screen
+NOT RUN plan: the plan pane could not be opened by a unique control: Treatment plan: the label "Treatment plan" is not on the screen; Set goals and track progress.: the label "Set goals and track progress." is not on the screen
+NOT RUN briefing: the briefing control could not be grounded: Prepare for session: the label "Prepare for session" is not on the screen; A short summary before you see them.: the label "A short summary before you see them." is not on the screen
+NOT RUN brainstorm: the brainstorm control could not be grounded: Brainstorm: the label "Brainstorm" is not on the screen; Think through the case out loud with the assistant.: the label "Think through the case out loud with the assistant." is not on the screen
+PASS press Tab to the rail's mission control (attempt 1)
+PASS press Return to open the rail menu
+PASS click the settings menu entry
+NOT RUN settings: the settings screen did not show: the label "Theme" is not on the screen
+PASS click the settings backup tab
+NOT RUN backup: the backup-now control could not be grounded: the label "Back up now" is not on the screen
+PASS smoke the data folder is still locked by this run's server pid at the end of the flows
+  --- the app's stderr (tail) ---
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325851241,"pid":1374663,"hostname":"FBI-PC","reqId":"req-26","res":{"statusCode":200},"responseTime":0.272436999999627,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325852244,"pid":1374663,"hostname":"FBI-PC","reqId":"req-27","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325852245,"pid":1374663,"hostname":"FBI-PC","reqId":"req-27","res":{"statusCode":200},"responseTime":1.6140240000022459,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325853166,"pid":1374663,"hostname":"FBI-PC","reqId":"req-28","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325853167,"pid":1374663,"hostname":"FBI-PC","reqId":"req-28","res":{"statusCode":200},"responseTime":1.4237060000014026,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325853246,"pid":1374663,"hostname":"FBI-PC","reqId":"req-29","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325853246,"pid":1374663,"hostname":"FBI-PC","reqId":"req-29","res":{"statusCode":200},"responseTime":0.5616139999983716,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325854247,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2a","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325854247,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2a","res":{"statusCode":200},"responseTime":0.2646470000036061,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325855248,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2b","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325855249,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2b","res":{"statusCode":200},"responseTime":0.26979800000117393,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325856050,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2c","req":{"method":"GET","url":"/api/backup","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33902},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325856051,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2c","res":{"statusCode":200},"responseTime":0.9021310000025551,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325856170,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2d","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325856170,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2d","res":{"statusCode":200},"responseTime":0.2445880000013858,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325856250,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2e","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325856250,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2e","res":{"statusCode":200},"responseTime":0.5064149999961955,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325857251,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2f","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325857251,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2f","res":{"statusCode":200},"responseTime":0.3028769999946235,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325858253,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2g","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325858256,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2g","res":{"statusCode":200},"responseTime":0.7656029999998282,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325859175,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2h","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325859175,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2h","res":{"statusCode":200},"responseTime":0.261848000001919,"msg":"request completed"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325859256,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2i","req":{"method":"GET","url":"/api/app/update","host":"127.0.0.1:7874","remoteAddress":"127.0.0.1","remotePort":33962},"msg":"incoming request"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791325859257,"pid":1374663,"hostname":"FBI-PC","reqId":"req-2i","res":{"statusCode":200},"responseTime":1.084210000000894,"msg":"request completed"}
+  stopped the bundled server (pid 1374663) with SIGKILL
+PASS smoke the bundled server is stopped by pid
+  stopped the shell (pid 1374595) with SIGTERM
+PASS smoke no server process from the run remains
+PASS smoke the shell is gone
+PASS smoke no second lock, database, -wal or -shm
+PASS smoke the data folder was not emptied behind the baseline
+PASS smoke the C-OWN@1 files are still the ones this run created (device+inode)
+PASS smoke the port is released
+PASS smoke the observation channel is gone from the bundle
+PASS smoke ollama is still running
+
+--- the eleven flows ---
+  NOT RUN onboarding: the pane label "Identifier (optional)" never appeared: the label "Identifier (optional)" is not on the screen
+  NOT RUN capture: the pane label "Start with a recording" never appeared: the label "Start with a recording" is not on the screen
+  NOT RUN draft: no note exists for the patient
+  NOT RUN refine: no note was opened by the draft flow, so there is nothing to refine
+  NOT RUN publish+copy: no note was opened by the draft flow, so there is nothing to publish
+  NOT RUN patient list: the patient's row could not be grounded: the label "John Smith" is not on the screen
+  NOT RUN plan: the plan pane could not be opened by a unique control: Treatment plan: the label "Treatment plan" is not on the screen; Set goals and track progress.: the label "Set goals and track progress." is not on the screen
+  NOT RUN briefing: the briefing control could not be grounded: Prepare for session: the label "Prepare for session" is not on the screen; A short summary before you see them.: the label "A short summary before you see them." is not on the screen
+  NOT RUN brainstorm: the brainstorm control could not be grounded: Brainstorm: the label "Brainstorm" is not on the screen; Think through the case out loud with the assistant.: the label "Think through the case out loud with the assistant." is not on the screen
+  NOT RUN settings: the settings screen did not show: the label "Theme" is not on the screen
+  NOT RUN backup: the backup-now control could not be grounded: the label "Back up now" is not on the screen
+
+42/43 assertions passed, 11 NOT RUN

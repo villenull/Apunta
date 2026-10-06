@@ -837,6 +837,12 @@ async function findClusters(screenshot, hex, { fuzz = 12, grid = 160 } = {}) {
     'black',
     '-opaque',
     hex,
+    // The two-colour mask is a bilevel image, and ImageMagick 7.1.2 prints a
+    // bilevel pixel as a single `gray(…)` component. Forced back to sRGB the
+    // grid read below keeps its `(r,g,b)` form on every ImageMagick that can
+    // run this harness, so the parse never silently sees an empty screen.
+    '-colorspace',
+    'sRGB',
     mask,
   ]);
   if (masked.code !== 0 || !existsSync(mask)) return [];
@@ -853,7 +859,10 @@ async function findClusters(screenshot, hex, { fuzz = 12, grid = 160 } = {}) {
   if (cells.code !== 0) return [];
   const gridCells = [];
   for (const line of cells.stdout.split('\n')) {
-    const match = /^(\d+),(\d+):\s*\((\d+),\d+,\d+\)/.exec(line.trim());
+    // Both forms are accepted: `(r,g,b)` (sRGB) and the single-component
+    // `(v)` a bilevel image prints. A colour whose first component is on is
+    // the accent cell either way, and an unreadable line is still dropped.
+    const match = /^(\d+),(\d+):\s*\((\d+)(?:,\d+,\d+)?\)/.exec(line.trim());
     if (match === null) continue;
     gridCells.push({ gx: Number(match[1]), gy: Number(match[2]), on: Number(match[3]) > 127 });
   }
