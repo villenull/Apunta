@@ -104,9 +104,9 @@ step "Building the server and the web app"
 (cd "$REPO_ROOT" && npm run build:shared >/dev/null && npm run build >/dev/null)
 
 step "Bundling the server (server/server.mjs)"
-APP_VERSION="$(
+APP_VERSION="${APUNTA_BUNDLE_VERSION:-$(
   node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync("server/package.json","utf8")).version ?? "")'
-)"
+)}"
 if [ -z "$APP_VERSION" ]; then
   die "server/package.json carries no version to inject"
 fi
