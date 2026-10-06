@@ -1,3 +1,39 @@
+# P5.4 updater landed, verification incomplete — 2026-10-06 evening
+
+**Built and pushed** (`dc81dbf`, `b630daf`, `d603496`, `4634403`, `d3f134a` on
+`main`): the whole updater — native state machine and verified install, the
+server's mirror/relay, the renderer's notice, Settings card, freeze and
+recovery screen, the release inspector, and the privacy wording in README,
+INSTALL (EN+ES) and CLAUDE.md hard rule 1.
+
+**Gates that passed locally:** lint, typecheck, 180 test files / 2594
+unit+integration tests, build, the full English/Spanish/quiescence e2e run
+(117 passed, 6 existing skips, no retries), `cargo test` (99, then 101 with
+`test-updater`), `cargo clippy -D warnings`, and the native smoke harness:
+**39/40 containment assertions passed** (shutdown, lock inode identity, port
+release, no orphan, observation channel gone, ollama still up).
+
+**Two real defects the quiescence spec caught, both fixed and covered:** the
+bootstrap `status?tab&doc` read racing the window's own parked `wait` (one
+document registering twice must reuse the record, not mint a second that
+forces a false `no_response`), and a held browser-mode window being answered
+with `settled{held:true}` — that left it between polls when it left, so the
+departure was never seen and maintenance leaked. Browser mode now keeps the
+wait parked while the hold is on.
+
+**Open, and not claimed done:**
+
+- **The production signing key is still absent** (AM-222).
+  `check-release-config.mjs` reports `BLOCKED` and never substitutes a test
+  key. No production updater release exists.
+- **Independent review did not happen.** Both review attempts hit a provider
+  quota limit; by owner decision this round committed after verification with
+  review deferred. Treat the updater as unapproved until it is reviewed.
+- **The eleven native flows are `NOT RUN`** — the pre-existing P3.6 harness
+  defect (HEAD's own recorded run had all eleven `NOT RUN`), not a P5.4
+  regression. The Rule B freshness FAIL in that run is expected: the work was
+  uncommitted when the AppImage was built.
+
 # Direction change — 2026-10-06 afternoon (current)
 
 Owner: the release-blocker round was too slow and produced nothing user-facing.
