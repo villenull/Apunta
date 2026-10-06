@@ -4,6 +4,9 @@
 what is built, what is open and who it waits on, and how to run the live
 instance. Keep it current in the same commit as the change.
 
+**Setting Apunta up on a freshly installed PC?** Follow `docs/RECOVERY.md`
+"Rebuild this Linux PC from zero" end to end.
+
 Local-first therapy-notes app: React SPA in a browser tab, Fastify server on
 127.0.0.1, SQLite storage, all AI local (Ollama LLM + whisper.cpp STT).
 Master plan: `docs/PLAN.md`. Design reference: `prototype/` (do not modify).
@@ -133,7 +136,7 @@ v2: the owner merged `feature/v2` into `main` on 2026-09-29 and retired the bran
 
 ## How the owner wants to be worked with
 
-Three standing preferences, recorded here so they survive a cleared session.
+Four standing preferences, recorded here so they survive a cleared session.
 
 - **Lean process (owner decision 2026-10-06).** Implement, run real tests and
   one independent review, then commit. No per-check evidence files, attempt
@@ -144,6 +147,9 @@ Three standing preferences, recorded here so they survive a cleared session.
   The updater (P5.4) is parked until the owner supplies the production signing
   key; user-facing work comes first.
 
+- **Check CI after every push** (`gh run list --limit 3`) and wait for the
+  run on the pushed commit before building on it. A red run is a blocking
+  finding for the commit that caused it; report it plainly.
 - **Every question goes through the multiple-choice tool**, never as free text
   in chat. 2–4 concrete options, **exactly one marked "(Recommended)" and
   listed first**, with a short reason. Batch related questions into one

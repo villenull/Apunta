@@ -1,6 +1,226 @@
 # Recreate the current Apunta reference setup
 
-## New PC: what to tell your agent
+## Rebuild this Linux PC from zero (snapshot 2026-10-06)
+
+This is the current entry point. It was captured from the reference PC on
+2026-10-06 at commit `80d7ac5`, where the owner runs Apunta as the desktop
+AppImage. Everything below can be downloaded again; nothing in it is patient
+data. The older browser-mode recipe further down (2026-09-24, `~/apunta-live`)
+is kept for reference and is no longer how Apunta runs on this PC.
+
+### What to tell the new agent
+
+On the freshly installed PC, sign in to GitHub (`gh auth login`), clone the
+repository and start Claude Code in it:
+
+```sh
+gh repo clone villenull/Apunta ~/Projects/Apunta
+cd ~/Projects/Apunta && claude
+```
+
+Then say:
+
+```
+Get Apunta up and running on this PC exactly as before. Read CLAUDE.md,
+then follow docs/RECOVERY.md "Rebuild this Linux PC from zero" end to end.
+I authorize the downloads it lists.
+```
+
+The agent needs `sudo` for system packages and the Ollama service; it will
+ask you to run those lines yourself with `! sudo …`.
+
+### Before wiping: what Git does not hold
+
+Check each of these and copy what you want to keep to a USB drive or another
+machine. **Git holds none of it.**
+
+- **Notes and patients.** On 2026-10-06 there was no Apunta database on this
+  PC at all: `~/.local/share/apunta/` did not exist and no `apunta.db` or
+  `apunta-backup-*.zip` was anywhere under the home folder. If you have notes
+  in Apunta somewhere else, back them up from there (Settings › Backup) before
+  you wipe. A backup restores through Settings › Backup › Restore.
+- **Your Claude data export and your Halaxy PDFs.** Agents never open them.
+  Keep your own copies.
+- **Sign-ins.** GitHub (`gh`), Claude Code and opencode
+  (`~/.local/share/opencode/auth.json`) are logins, not files to copy: sign in
+  again afterwards. opencode is what runs the free-model subagents
+  (CLAUDE.md); its config is `~/.config/opencode/opencode.json`
+  (`"autoupdate": false`, `"permission": "allow"`, build agent
+  `opencode-go/space-bunny-free`, variant `medium`).
+- **Optional, to save download time:** the Ollama models in
+  `~/.ollama/models` (29 GB). Only `qwen3.5:4b-q4_K_M` (3.4 GB) is needed by
+  Apunta; the rest are past experiments (see "Optional extras" below).
+- **Not needed:** `~/.local/share/apunta-node`, `~/.local/share/apunta-piper`,
+  `~/.cache/apunta-v2`, `~/Applications/Apunta.AppImage` and the repo's
+  `build/` folder are all rebuilt by the steps below. The git-ignored
+  `docs/v2/evidence/**/*.log` files are old test logs and are not needed.
+- **There is no production signing key yet** (AM-222), so there is nothing to
+  back up for the updater.
+
+### The reference PC
+
+| Item | Value on 2026-10-06 |
+| --- | --- |
+| OS | Omarchy (Arch Linux), Hyprland; kernel 7.2 |
+| GPU | AMD Radeon RX 9070 XT (gfx1201) |
+| Shell Node | mise, Node 26.8.2 (also `claude`, `codex`, `gh`, `opencode` via mise) |
+| Build/runtime Node | 24.19.0, pinned, at `~/.local/share/apunta-node/` (the repo's `engines` is `>=24.19.0 <25`) |
+| Rust | rustup, stable (1.99.0), in `~/.cargo/bin` |
+| Ollama | Arch packages `ollama` + `ollama-rocm` 0.33.3, system service on `127.0.0.1:11434` |
+| Writing model | `qwen3.5:4b-q4_K_M`, ID `2a654d98e6fb` |
+| Speech | whisper.cpp 1.9.3-dev, commit `371b5a75`, **Vulkan** build, bundled in the AppImage; model `ggml-tiny.en.bin` |
+| App | `~/Applications/Apunta.AppImage` (production identity: port 7717, data in `~/.local/share/apunta`) |
+
+The machine-readable version is `config/recovery/current-linux.json`;
+`node scripts/recover-current-linux.mjs verify` checks it.
+
+### Steps
+
+**1. System packages** (owner runs with `sudo`):
+
+```sh
+sudo pacman -S --needed base-devel git cmake clang patchelf fuse2 \
+  webkit2gtk-4.1 gst-plugins-base gst-plugins-good xdg-desktop-portal-gtk \
+  vulkan-headers vulkan-radeon shaderc \
+  ollama ollama-rocm \
+  tesseract tesseract-data-eng imagemagick xdotool xorg-server-xvfb ffmpeg
+```
+
+The first three lines build and run the app. `ollama-rocm` runs the writing
+model on the GPU. The last line is only for the native desktop smoke tests
+(`scripts/v2/tauri-*.test.mjs`).
+
+**2. Ollama as a service, running as you and bound to localhost:**
+
+```sh
+sudo mkdir -p /etc/systemd/system/ollama.service.d
+sudo tee /etc/systemd/system/ollama.service.d/override.conf <<'EOF'
+[Service]
+User=<you>
+Group=<you>
+WorkingDirectory=/home/<you>
+Environment="HOME=/home/<you>"
+Environment="OLLAMA_MODELS=/home/<you>/.ollama/models"
+ProtectHome=no
+EOF
+sudo systemctl daemon-reload && sudo systemctl enable --now ollama
+```
+
+This is the reference PC's drop-in verbatim, with the user name replaced. It
+listens on `127.0.0.1:11434` by default. Hard rule 1 wants no cloud routing,
+so also consider `Environment="OLLAMA_NO_CLOUD=1"`; the reference PC did not
+have it set on 2026-10-06.
+
+**3. Developer tools:**
+
+```sh
+curl https://mise.run | sh                       # then restart the shell
+mise use -g node@26.8.2 gh@latest opencode@latest claude@latest
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+```
+
+**4. The pinned Node 24.19.0 (A01)** — the build refuses any other Node:
+
+```sh
+mkdir -p ~/.local/share/apunta-node && cd ~/.local/share/apunta-node
+curl -fLO https://nodejs.org/dist/v24.19.0/node-v24.19.0-linux-x64.tar.gz
+echo "f625d97cd707df4ff96254916fbc5ff014f09c09effe5a1e0ca8f6d41a8789d4  node-v24.19.0-linux-x64.tar.gz" | sha256sum -c
+tar xzf node-v24.19.0-linux-x64.tar.gz && rm node-v24.19.0-linux-x64.tar.gz
+```
+
+**5. Install, build and test the repository** (every later step uses this
+environment):
+
+```sh
+cd ~/Projects/Apunta
+export PATH="$HOME/.cargo/bin:$HOME/.local/share/apunta-node/node-v24.19.0-linux-x64/bin:$PATH"
+export APUNTA_WHISPER_WORK_DIR="$HOME/.cache/apunta-v2/whisper-src"
+npm ci
+npx playwright install chromium
+npm run lint && npm run typecheck && npm test && npm run build && npm run e2e
+```
+
+**6. Build whisper and the runtime folder (A06).** This clones whisper.cpp at
+its pinned commit into `~/.cache/apunta-v2/whisper-src` and builds it with
+Vulkan:
+
+```sh
+bash scripts/v2/package-linux-resources.sh
+mkdir -p ~/.local/bin
+ln -sf "$PWD/build/linux-resources/bin/whisper-cli" ~/.local/bin/whisper-cli
+```
+
+The symlink is for browser mode (`npm start`) and the verifier; the
+AppImage carries its own copy.
+
+**7. Models, into the production data folder.** Preview first, then run:
+
+```sh
+npm run setup --workspace @apunta/installer -- plan \
+  --data-dir ~/.local/share/apunta --ollama-url http://127.0.0.1:11434 \
+  --model qwen3.5:4b-q4_K_M
+npm run setup --workspace @apunta/installer -- run \
+  --data-dir ~/.local/share/apunta --ollama-url http://127.0.0.1:11434 \
+  --model qwen3.5:4b-q4_K_M
+```
+
+This pulls `qwen3.5:4b-q4_K_M` through Ollama and downloads
+`ggml-tiny.en.bin` (77,704,715 bytes, SHA-256 `921e4cf8…920b1f`) into
+`~/.local/share/apunta/models/`, checksum-verified. If you copied
+`~/.ollama/models` off the old PC, put it back first and the pull is skipped.
+
+**8. Apply the owner's note formats and verify:**
+
+```sh
+node scripts/recover-current-linux.mjs apply-config --data-dir ~/.local/share/apunta
+node scripts/recover-current-linux.mjs verify --data-dir ~/.local/share/apunta
+```
+
+`apply-config` refuses a database that already holds patients or notes, so it
+can only run on the fresh folder. Run it **before** restoring a backup. If
+you restore a backup, the backup's own formats win and this step is moot.
+
+`verify` compares against the reference PC. A different Ollama package
+version or binary SHA-256 (Arch moves on) and a different `whisper-cli`
+SHA-256 (your compiler differs) are expected: note them and carry on. A
+different model ID `2a654d98e6fb`, weights blob, or `ggml-tiny.en.bin`
+checksum is a stop.
+
+**9. Build and install the desktop app:**
+
+```sh
+bash scripts/v2/package-linux-resources.sh   # always right before tauri:build
+npm run tauri:build
+mkdir -p ~/Applications
+cp src-tauri/target/release/bundle/appimage/Apunta_0.0.0_amd64.AppImage ~/Applications/Apunta.AppImage
+```
+
+`tauri build` has no `beforeBuildCommand`: it copies whatever
+`build/linux-resources/` holds, so the producer must run first every time.
+
+**10. Done when** `~/Applications/Apunta.AppImage` opens, Settings shows the
+local AI as ready, the Progress note (Location, Client presentation, Risk
+review, Discussion, Intervention, Out of session actions, Note for next
+session) is the default format, and a typed John Smith note drafts through the
+real model. Then restore your backup, if you have one, in Settings › Backup ›
+Restore.
+
+### Optional extras (not needed to run Apunta)
+
+- **Other Ollama models on the reference PC:** `gemma4:12b`,
+  `translategemma:4b`, and three `apunta-study-*` builds from
+  `tools/model-lab`. All were measurement-only comparisons; Apunta does not
+  use them.
+- **Piper TTS (A09/A10)**, dev only, for regenerating the synthetic spoken
+  fixtures: a Python venv at `~/.local/share/apunta-piper/venv` with
+  `piper-tts`, and voices `en_US-ljspeech-medium` and `es_MX-ald-medium` in
+  `~/.local/share/apunta-piper/voices/` (from `rhasspy/piper-voices` on
+  Hugging Face).
+- **Claude Code preferences.** The project's own hook is committed
+  (`.claude/settings.json`). The owner's working rules are in CLAUDE.md, so a
+  new session has them without the old `~/.claude` memory.
+
+## Older browser-mode recipe (2026-09-24)
 
 Short version — this alone is enough on a fresh clone:
 

@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-09-24T04:33:51Z",
-  "capturedFromCommit": "c6eb4f40134ee831a69c39c20481cbbd5cced74b",
+  "capturedAt": "2026-10-06T23:30:00Z",
+  "capturedFromCommit": "80d7ac5",
   "scope": "Sanitized behavior-affecting configuration for the current Linux reference instance; no patients, notes, transcripts, chat, vocabulary values, backup paths, secrets, or export content.",
   "repository": {
     "branch": "main",
@@ -8,7 +8,7 @@
     "observedNode": "26.8.2",
     "observedNpm": "11.19.1",
     "packageLockVersion": 3,
-    "packageLockSha256": "c83a1cdde816ee24cee1808148d6965ce595893de55c04d4b8781fbe4fd1eee2"
+    "packageLockSha256": "72b6b7bacf74da2f28138e861c5557d9332e74b11059e0bb7987276f69ada2ab"
   },
   "app": {
     "port": 7717,
@@ -35,8 +35,8 @@
   "writingModel": {
     "effectiveTag": "qwen3.5:4b-q4_K_M",
     "selection": "Linux intentionally falls back to SMALL_MODEL because machineMemoryGib is macOS-only; the live database has no llm_model override. Recovery pins the same tag explicitly so another OS or RAM size cannot select a different tier.",
-    "ollamaVersion": "0.34.2",
-    "ollamaBinarySha256": "ca9f4d3b7538196fab8bad3842bff3aa1352a80bfaaf95391ef7dda28880928b",
+    "ollamaVersion": "0.33.3",
+    "ollamaBinarySha256": "24c737c63625e4b870859dea9d61b97d910c19a5d882adfb5b6def3306230277",
     "ollamaListId": "2a654d98e6fb",
     "weightsBlobSha256": "81fb60c7daa80fc1123380b98970b320ae233409f0f71a72ed7b9b0d62f40490",
     "weightsBlobBytes": 3389971840,
@@ -49,8 +49,15 @@
     "license": "Apache-2.0",
     "observedLaunch": {
       "command": "ollama serve",
-      "serviceManager": "none",
-      "environmentOverrides": [],
+      "serviceManager": "systemd system unit ollama.service (Arch packages ollama + ollama-rocm 0.33.3-1) with a drop-in at /etc/systemd/system/ollama.service.d/override.conf",
+      "environmentOverrides": [
+        "User=villenull",
+        "Group=villenull",
+        "WorkingDirectory=/home/villenull",
+        "HOME=/home/villenull",
+        "OLLAMA_MODELS=/home/villenull/.ollama/models",
+        "ProtectHome=no"
+      ],
       "residentModelAtCapture": null
     },
     "provider": {
@@ -66,8 +73,8 @@
   },
   "speech": {
     "whisperCppVersion": "1.9.3-dev",
-    "observedBackend": "CPU shared libraries on the Linux reference machine; no GPU backend was established by this audit.",
-    "binarySha256": "39963aa8395951e0be54862ec614a87acf11ccb04d7ffec52c90c5a65d96dbfb",
+    "observedBackend": "Vulkan (RADV, RX 9070 XT). whisper-cli is built from source at whisper.cpp commit 371b5a7561823ab2bb32142d2751e35e7534727b by scripts/v2/package-linux-resources.sh and bundled in the AppImage; for browser mode and verify it is put on PATH as a symlink to build/linux-resources/bin/whisper-cli (RUNPATH $ORIGIN finds its libraries).",
+    "binarySha256": "3a9f516ded6dc6f619e96570ac326922c5718e5e6bca03a735e5d07bd60804de",
     "modelFilename": "ggml-tiny.en.bin",
     "modelBytes": 77704715,
     "modelSha1": "c78c86eb1a8faa21b369bcd33207cc90d64ae9df",

@@ -1,3 +1,12 @@
+# Rebuilding the PC from zero — 2026-10-06 night
+
+The rebuild recipe for this Linux PC is `docs/RECOVERY.md` "Rebuild this Linux
+PC from zero": system packages, the Ollama service drop-in, the pinned Node,
+whisper's Vulkan build, the two models, the owner's formats and the AppImage.
+`config/recovery/current-linux.json` was re-captured from this PC (Ollama
+0.33.3, the Vulkan `whisper-cli`, the current lockfile) and `verify` passes
+against it. At capture there was no Apunta database on this PC.
+
 # P5.4 updater landed, verification incomplete — 2026-10-06 evening
 
 **Built and pushed.** Ten commits on `main`, `450d59c` → `f19e3f7`:
