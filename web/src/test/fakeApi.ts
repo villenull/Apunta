@@ -716,25 +716,6 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         });
       }
 
-      if (path === '/api/formats/flatten-skill' && method === 'POST') {
-        const form = init.body instanceof FormData ? init.body : new FormData();
-        const file = form.get('file');
-        if (!(file instanceof File)) return apiError(400, 'bad_request', 'Choose a SKILL.md file.');
-        const source = await file.text();
-        return json({
-          instructions: source.replace(/^---\n[\s\S]*?\n---\n/, '').trim(),
-          removed: {
-            frontmatter: source.startsWith('---'),
-            commandBlocks: 0,
-            toolLines: 1,
-            mechanics: 0,
-            emptiedHeadings: 0,
-          },
-          referencedFiles: ['references/FORMS.md'],
-          approxTokens: Math.ceil(source.length / 3.5),
-        });
-      }
-
       const formatMatch = /^\/api\/formats\/([^/]+)$/.exec(path);
       if (formatMatch && method === 'PATCH') {
         const formatId = formatMatch[1] ?? '';

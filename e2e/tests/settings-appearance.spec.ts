@@ -152,3 +152,51 @@ test('settings appearance: moves and selects the theme with the arrow keys', asy
     releaseAppearanceLock();
   }
 });
+
+/**
+ * About, which replaced Advanced (owner, 2026-10-05): the mark, one line with
+ * the version, and the single word that leaves the app.
+ *
+ * The wording claims are the point. The line is a sentence with a version in
+ * it, so the whole line must not read as a link — a version that underlines and
+ * turns teal looks like a button to a page she has not chosen. Hence: the
+ * anchor is the word, and it is the only anchor on the pane.
+ */
+test('settings about: names the version and links only the word Github', async ({
+  page,
+  request,
+  tr,
+  checkScreen,
+}) => {
+  // Order-independent: a run that reaches this test first still has a note
+  // format, so the workspace — and Settings over it — is a real screen.
+  await request.post('/api/formats', {
+    data: { name: uniqueName('E2E settings about format'), sections: ['Subjective', 'Plan'] },
+  });
+
+  await page.goto('/');
+  await openSettings(page);
+  await page.getByTestId('settings-tab-about').click();
+
+  const about = page.getByTestId('settings-about');
+  await expect(about).toBeVisible();
+  // The mark and the version, in the catalogue's own words.
+  await expect(about.locator('.settings-about-mark')).toBeVisible();
+  await expect(page.getByTestId('settings-about-line')).toHaveText(
+    tr('settings.aboutLine', { github: 'Github' }),
+  );
+  await checkScreen(page, 'Settings, About');
+
+  // One link on the pane, and it is the word rather than the sentence.
+  await expect(about.locator('a')).toHaveCount(1);
+  const link = page.getByTestId('settings-about-github');
+  await expect(link).toHaveText('Github');
+  // It is a browser tab she opened, not a request the app made.
+  await expect(link).toHaveAttribute('href', 'https://github.com/villenull/Apunta');
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+
+  // The version is text beside the link, so the line reads as more than the
+  // one word that leaves the app.
+  await expect(page.getByTestId('settings-about-line')).not.toHaveText('Github');
+});

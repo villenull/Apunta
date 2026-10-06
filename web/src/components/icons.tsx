@@ -538,23 +538,6 @@ export function DownloadIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
-/** Settings → Advanced: three rows, each with a knob to move. */
-export function SlidersIcon({ className }: IconProps): React.JSX.Element {
-  return (
-    <StrokeIcon className={className}>
-      <path
-        d="M3.5 7h5M13.5 7h7M3.5 12h9.5M16.5 12h4M3.5 17h4.5M13 17h7.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <circle cx="11" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="15.5" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="10.5" cy="17" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-    </StrokeIcon>
-  );
-}
-
 /**
  * The GitHub mark, drawn inline (no external asset, hard rule 1). Filled
  * rather than stroked: the mark is a silhouette, so it has no outline to

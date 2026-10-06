@@ -16,8 +16,7 @@ import { useI18n } from '../lib/i18n.js';
  * that stays dismissed after that would be lying.
  *
  * Owner decision 2026-10-05: the Setup, About and Licenses screens are gone, so
- * the banner no longer links anywhere. Settings › Advanced is where the local
- * AI is configured, and the sentence points there in words.
+ * the banner no longer links anywhere.
  */
 export function AiBanner(): React.JSX.Element | null {
   const { t } = useI18n();

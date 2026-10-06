@@ -909,6 +909,12 @@ export const esMX = {
   'common.archive': {
     text: 'Archivar',
   },
+  'common.deleted': {
+    text: 'Eliminado.',
+  },
+  'common.saved': {
+    text: 'Guardado',
+  },
   'common.undo': {
     text: 'Deshacer',
   },
@@ -1061,11 +1067,26 @@ export const esMX = {
   'backup.passphrase': {
     text: 'Frase de contraseña',
   },
-  'backup.passphraseWarning': {
-    text: 'Si pierdes esta frase de contraseña, nadie podrá abrir la copia de seguridad.',
+  'backup.passphraseHint': {
+    text: 'Solo hace falta para una copia que hayas cifrado con una frase de contraseña.',
   },
-  'backup.backUp': {
-    text: 'Hacer una copia de seguridad',
+  'backup.changeLocation': {
+    text: 'Cambiar la ubicación de la copia',
+  },
+  'backup.saveFolder': {
+    text: 'Guardar y hacer la copia ahí',
+  },
+  'backup.confirmTitle': {
+    text: '¿Estás segura?',
+  },
+  'backup.confirmBackupBody': {
+    text: 'Esto copia todas tus notas en un archivo dentro de la carpeta de copias y lo vuelve a leer para comprobarlo. En esta computadora no cambia nada.',
+  },
+  'backup.confirmRestoreBody': {
+    text: 'Esto recupera las notas de la copia que elijas. Tus notas actuales se guardan como copia de seguridad, y Apunta te pide salir y volver a abrirlo para terminar.',
+  },
+  'backup.archiveLabel': {
+    text: 'Archivo de copia de seguridad',
   },
   'backup.restoreReady': {
     text: 'La restauración del {day} está lista. Sal de Apunta y vuelve a abrirlo para terminarla; tus notas actuales quedan guardadas en {path}.',
@@ -1828,93 +1849,6 @@ export const esMX = {
   'patients.identifierPlaceholder': {
     text: 'Referencia interna, número de expediente, etc.',
   },
-  'format.instructions': {
-    text: 'Instrucciones',
-  },
-  'format.instructionsHelp': {
-    text: 'Lo que se le dice al modelo local sobre cómo escribir este formato. Pega aquí instrucciones de skill en texto plano; déjalo en blanco para usar el valor predeterminado integrado. La receta para convertir una skill de Claude en texto plano está en',
-  },
-  'format.instructionsHelpTail': {
-    text: 'dentro de la carpeta de Apunta.',
-  },
-  'format.instructionsPlaceholder': {
-    text: 'Déjalo en blanco para usar el valor predeterminado integrado.',
-  },
-  'format.tokensLarge': {
-    text: '≈{tokens} tokens: los modelos pequeños empiezan a desviarse a partir de unos {budget}.',
-    kind: { tokens: 'number', budget: 'number' },
-  },
-  'format.tokensOk': {
-    text: '≈{tokens} tokens: cómodo.',
-    kind: { tokens: 'number' },
-  },
-  'format.readingSkill': {
-    text: 'Leyendo la skill…',
-  },
-  'format.importFromSkill': {
-    text: 'Importar desde un archivo de skill',
-  },
-  'format.skillFileLead': {
-    text: 'Un',
-  },
-  'format.skillFileAnd': {
-    text: 'o un',
-  },
-  'format.skillFileTail': {
-    text: 'de la carpeta de la skill. No se guarda nada hasta que presiones guardar.',
-  },
-  'format.reportFrontmatter': {
-    text: 'frontmatter eliminado',
-  },
-  'format.reportCommandBlocks': {
-    text: '{count} bloque de comandos eliminado',
-    plural: {
-      one: '{count} bloque de comandos eliminado',
-      many: '{count} bloques de comandos eliminados',
-      other: '{count} bloques de comandos eliminados',
-    },
-    kind: { count: 'number' },
-  },
-  'format.reportToolLines': {
-    text: '{count} línea de herramienta eliminada',
-    plural: {
-      one: '{count} línea de herramienta eliminada',
-      many: '{count} líneas de herramienta eliminadas',
-      other: '{count} líneas de herramienta eliminadas',
-    },
-    kind: { count: 'number' },
-  },
-  'format.reportClaudeLines': {
-    text: '{count} línea específica de Claude eliminada',
-    plural: {
-      one: '{count} línea específica de Claude eliminada',
-      many: '{count} líneas específicas de Claude eliminadas',
-      other: '{count} líneas específicas de Claude eliminadas',
-    },
-    kind: { count: 'number' },
-  },
-  'format.reportEmptiedHeadings': {
-    text: '{count} encabezado vaciado eliminado',
-    plural: {
-      one: '{count} encabezado vaciado eliminado',
-      many: '{count} encabezados vaciados eliminados',
-      other: '{count} encabezados vaciados eliminados',
-    },
-    kind: { count: 'number' },
-  },
-  'format.reportNothing': {
-    text: 'no hubo nada que eliminar',
-  },
-  'format.reportReadFirst': {
-    text: 'Léelo antes de guardar: estas reglas borran de más en algunas skills.',
-  },
-  'format.referencedFiles': {
-    text: 'Esta skill se refiere a {files}, a los que Apunta no puede leer. Si esos archivos traen definiciones de secciones o terminología, pega ese texto.',
-    kind: { files: 'text' },
-  },
-  'format.instructionsWarning': {
-    text: 'Este texto se guarda y se envía a la IA con cada nota que escribes. Antes de guardar, comprueba que no contenga datos reales de clientes.',
-  },
   'format.addTitle': {
     text: 'Agrega tu formato de nota',
   },
@@ -2079,8 +2013,8 @@ export const esMX = {
   'settings.import': {
     text: 'Importar',
   },
-  'settings.advanced': {
-    text: 'Avanzado',
+  'settings.about': {
+    text: 'Acerca de',
   },
   'settings.sectionsLabel': {
     text: 'Secciones de Ajustes',
@@ -2094,14 +2028,12 @@ export const esMX = {
   'settings.addFormat': {
     text: 'Agregar otro formato',
   },
-  'settings.app': {
-    text: 'Aplicación',
+  'settings.aboutLine': {
+    text: 'v0.1 | Más sobre nosotros en {github}',
+    kind: { github: 'text' },
   },
-  'settings.readMore': {
-    text: 'Más información sobre Apunta',
-  },
-  'settings.onGithub': {
-    text: 'Apunta en GitHub',
+  'settings.deleteFormat': {
+    text: 'Eliminar',
   },
   'settings.loadingAi': {
     text: 'Cargando los ajustes de IA…',

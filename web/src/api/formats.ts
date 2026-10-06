@@ -2,12 +2,10 @@ import {
   DetectFormatResponseSchema,
   NoteFormatListResponseSchema,
   NoteFormatSchema,
-  SkillFlattenResponseSchema,
   type CreateNoteFormatRequest,
   type DetectFormatResponse,
   type DetectKind,
   type NoteFormat,
-  type SkillFlattenResponse,
   type UpdateNoteFormatRequest,
 } from '@apunta/shared';
 
@@ -64,19 +62,6 @@ export async function detectFormat(
     form.append('files', file, `upload-${String(index + 1)}`);
   });
   return requestJson('/api/formats/detect', DetectFormatResponseSchema, {
-    method: 'POST',
-    body: form,
-    ...(signal ? { signal } : {}),
-  });
-}
-
-/** Flatten a `SKILL.md` (or a `.zip` of the folder) for review. Saves nothing. */
-export async function flattenSkill(file: File, signal?: AbortSignal): Promise<SkillFlattenResponse> {
-  const form = new FormData();
-  // The server sniffs the bytes, so the name carries nothing — and a constant
-  // is one less thing that could carry a client's name off the machine.
-  form.append('file', file, 'skill-upload');
-  return requestJson('/api/formats/flatten-skill', SkillFlattenResponseSchema, {
     method: 'POST',
     body: form,
     ...(signal ? { signal } : {}),

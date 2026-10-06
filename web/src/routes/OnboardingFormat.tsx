@@ -7,6 +7,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useI18n } from '../lib/i18n.js';
 import { FormatEditor } from './FormatEditor.js';
 import { SettingsModalPanel } from './Settings.js';
+import { useSettingsClose } from './settingsClose.js';
 
 /**
  * The first-run format question, on its own screen: the workspace sends
@@ -21,6 +22,12 @@ export function OnboardingFormat(): React.JSX.Element {
   useDocumentTitle(t('doc.noteFormat'));
   const navigate = useNavigate();
   const [restoreOpen, setRestoreOpen] = useState(false);
+  // Escape on the dialog and the panel's own close button are one action, and
+  // that action asks the format editor whether the server has what is on
+  // screen before the panel unmounts.
+  const { closeRef, close } = useSettingsClose(() => {
+    setRestoreOpen(false);
+  });
 
   return (
     <>
@@ -70,20 +77,13 @@ export function OnboardingFormat(): React.JSX.Element {
       {restoreOpen && (
         <Dialog
           title={t('common.settings')}
-          onClose={() => {
-            setRestoreOpen(false);
-          }}
+          onClose={close}
           showTitle={false}
           className="modal card settings-modal"
           testId="settings-modal"
           backdropTestId="settings-backdrop"
         >
-          <SettingsModalPanel
-            initialSection="backup"
-            onClose={() => {
-              setRestoreOpen(false);
-            }}
-          />
+          <SettingsModalPanel initialSection="backup" onClose={close} closeRef={closeRef} />
         </Dialog>
       )}
     </>

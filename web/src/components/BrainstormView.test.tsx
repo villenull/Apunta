@@ -313,7 +313,7 @@ describe('BrainstormView composer', () => {
     expect(mic.getAttribute('aria-label')).toBe('Dictate a message');
     expect(mic.querySelector('svg')).not.toBeNull();
     const send = screen.getByTestId('brainstorm-send');
-    // Grey until the box holds words: the arrow is one glyph on the box's own
+    // Grey while the box is empty: the arrow is one glyph on the box's own
     // ground, not a filled button.
     expect(send.className).toBe('chat-icon-btn btn-send');
     expect(send.getAttribute('aria-label')).toBe('Send');
@@ -329,6 +329,27 @@ describe('BrainstormView composer', () => {
 
     fireEvent.change(screen.getByTestId('brainstorm-input'), { target: { value: 'A question' } });
     expect(send.className).toBe('chat-icon-btn btn-send is-ready');
+  });
+
+  /**
+   * One character is what arms the arrow, a space included — but a space is
+   * not a message, so pressing the armed arrow still posts nothing. The empty
+   * box is the neighbouring case and is covered below.
+   */
+  it('arms the arrow on a single character and sends no whitespace from it', async () => {
+    const patient = makePatient('John Smith');
+    const api = installFakeApi({ patients: [patient], brainstorm: [] });
+
+    render(<BrainstormView patient={patient} />);
+    await screen.findByTestId('brainstorm-empty');
+
+    const send = screen.getByTestId('brainstorm-send') as HTMLButtonElement;
+    fireEvent.change(screen.getByTestId('brainstorm-input'), { target: { value: ' ' } });
+    expect(send.disabled).toBe(false);
+    fireEvent.click(send);
+    await waitFor(() => {
+      expect(api.state.brainstorm).toHaveLength(0);
+    });
   });
 
   it('keeps the return arrow live with an empty box, and an empty send does nothing', async () => {

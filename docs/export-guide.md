@@ -20,17 +20,24 @@ and account permission still need an explicit answer.
 
 Use this path only when the notes are already in Apunta on this Mac.
 
-1. Open Apunta and choose **Settings → Back up and restore**.
-2. Leave the destination alone for a local copy, or choose an **encrypted
-   external disk** if the archive must survive a lost Mac. Do not choose
-   Desktop, Documents, iCloud Drive, Dropbox, Google Drive, or OneDrive.
-3. If the archive file itself will leave the Mac, enter a passphrase of at
-   least 12 characters and save it in the password manager. A forgotten
-   passphrase cannot be recovered.
-4. Choose **Back up now** and wait for the success message saying the archive
-   was checked and is intact. Do not close Apunta while it is working.
-5. Open the folder named in the backup card. The file is named like
-   `apunta-backup-2026-09-08.zip`. Keep the whole zip; do not rename files
+1. Open Apunta and choose **Settings → Backup**. Settings is a modal over the
+   workspace; there is no `/settings` page.
+2. Leave the destination alone for a local copy, or use **Change backup
+   location** to choose an **encrypted external disk** if the archive must
+   survive a lost Mac. Do not choose Desktop, Documents, iCloud Drive,
+   Dropbox, Google Drive, or OneDrive. The field opens prefilled with the saved
+   folder, so cancelling and reopening puts the saved one back.
+3. **A new backup is not encrypted in the app and takes no passphrase.** Since
+   2026-10-05 the passphrase field is gone: a secret typed into a settings
+   field gets lost, and a lost passphrase is a backup nobody can open. Use an
+   encrypted disk the OS unlocks instead. An archive encrypted before this
+   change still restores — Apunta asks for its passphrase in the restore
+   dialog.
+4. Choose **Back up now** and confirm when asked, then wait for the success
+   message saying the archive was checked and is intact. Do not close Apunta
+   while it is working.
+5. Open the folder shown on the Backup page. The file is named like
+   `apunta-backup-2026-10-05.zip`. Keep the whole zip; do not rename files
    inside it.
 6. To read the notes, make a copy of the zip and extract that copy in Finder.
    Open `RESTORE.txt` first. The readable notes are in `notes`, one folder per
@@ -40,8 +47,10 @@ Use this path only when the notes are already in Apunta on this Mac.
    plan version. `data.json` and `apunta.db` are complete machine/restore
    copies; do not edit them.
 8. Keep the original zip until a note count and a few note contents have been
-   checked. Once a year, test a copy through Apunta’s **Restore** action; a
-   backup that has never been restored is only a guess.
+   checked. Once a year, test a copy through Apunta’s **Settings → Backup →
+   Restore**: it names the archive it is about to bring back and asks you to
+   confirm before it writes anything. A backup that has never been restored is
+   only a guess.
 
 The Apunta archive is a local backup/readable export, not a direct upload to
 Halaxy or another records system. It includes Apunta’s drafts, transcripts,
@@ -51,9 +60,11 @@ does not claim to be the authoritative clinical-record export.
 ### If the archive is encrypted
 
 Finder can show `RESTORE.txt`, but the notes are inside the encrypted payload.
-Use Apunta’s Restore action and the saved passphrase, or ask a technically
-trusted person to follow the `decrypt.mjs` instructions inside `RESTORE.txt`.
-Do not email the zip and passphrase together.
+Use **Settings → Backup → Restore**, type the saved passphrase in the restore
+dialog, and follow what `RESTORE.txt` says next; or ask a technically trusted
+person to follow the `decrypt.mjs` instructions inside `RESTORE.txt`. The file
+itself says `Settings > Backup > Restore`. Do not email the zip and passphrase
+together.
 
 ## Export from Claude or Halaxy (source confirmation required)
 

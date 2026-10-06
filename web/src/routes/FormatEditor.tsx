@@ -1,6 +1,5 @@
 import { MAX_DETECT_FILES, STANDARD_PROGRESS_FORMAT } from '@apunta/shared';
-import { useState } from 'react';
-
+import { useEffect, useRef, useState } from 'react';
 import { createStandardFormat, detectFormat, errorMessage } from '../api/index.js';
 import { DocumentIcon, ExamplesIcon, PencilIcon, TemplateIcon, UploadIcon } from '../components/icons.js';
 import { useI18n, useReportWork } from '../lib/i18n.js';
@@ -16,10 +15,19 @@ export interface FormatEditorProps {
    * nothing, so "Add another format" never overwrites the format she uses.
    */
   initialChoice?: Choice | null;
-  /** The typed or detected draft moves on to the confirm-and-save step. */
+  /**
+   * The draft to preview before anything is saved: typed sections straight
+   * away, and a detected format as soon as the server has read the upload.
+   */
   onPreview: (draft: FormatDraft) => void;
   /** The standard format saved itself; the host reloads whatever it lists. */
   onSaved: () => void;
+  /**
+   * Whether the format on the server still matches what is on screen. Fired
+   * `true` only once the create has resolved, and `false` if it is edited
+   * afterwards — never before it lands.
+   */
+  onSavedStateChange?: (saved: boolean) => void;
 }
 
 /**
@@ -41,6 +49,7 @@ export function FormatEditor({
   initialChoice = 'standard',
   onPreview,
   onSaved,
+  onSavedStateChange,
 }: FormatEditorProps): React.JSX.Element {
   const { t } = useI18n();
   const [choice, setChoice] = useState<Choice | null>(initialChoice);
@@ -48,9 +57,22 @@ export function FormatEditor({
   const [sectionsText, setSectionsText] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
+  // A create in flight, kept outside the render closure: two clicks in the
+  // same tick both read `busy` as false before React re-renders, which would
+  // ask the server for the standard format twice.
+  const creatingRef = useRef(false);
   // Reading a format file holds the Language control (C-LANG@1 rule 6).
   useReportWork(busy);
   const [error, setError] = useState<string | null>(null);
+  // The standard format is saved by one click and lands in the list, so the
+  // indicator is only ever true after that request resolves. The host passes
+  // this callback fresh on every render, so it is read through a ref: keying
+  // the effect on it would report `false` again after the `true`, undoing it.
+  const savedStateChangeRef = useRef(onSavedStateChange);
+  savedStateChangeRef.current = onSavedStateChange;
+  useEffect(() => {
+    savedStateChangeRef.current?.(false);
+  }, []);
 
   function choose(next: Choice): void {
     setChoice(next);
@@ -80,13 +102,17 @@ export function FormatEditor({
   }
 
   async function handleStandard(): Promise<void> {
+    if (creatingRef.current) return;
+    creatingRef.current = true;
     setBusy(true);
     setError(null);
     try {
       await createStandardFormat();
+      savedStateChangeRef.current?.(true);
       onSaved();
     } catch (thrown) {
       setError(errorMessage(thrown));
+      creatingRef.current = false;
       setBusy(false);
     }
   }

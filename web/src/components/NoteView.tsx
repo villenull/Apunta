@@ -7,7 +7,7 @@ import {
   type NoteFormat,
   type PatientListItem,
 } from '@apunta/shared';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   ApiRequestError,
@@ -92,7 +92,7 @@ export interface NoteViewProps {
  * so typing is not a round trip per keystroke; the key is what resets it when
  * the user switches notes, and what flushes an unsaved edit on the way out.
  */
-export function NoteView({
+function NoteViewImpl({
   patient,
   note,
   format,
@@ -853,3 +853,25 @@ export function NoteView({
     </div>
   );
 }
+
+/*
+ * Memoized on its props, with no comparator of its own.
+ *
+ * Switching from one note of a patient to another is two renders of the
+ * workspace: the click updates the query string, and react-router commits the
+ * new location on the pass after — so for one frame the editor is asked to
+ * render with exactly the props it already has, and then unmounts under a new
+ * key. It was not free: `NoteView` runs the whole editor, its refine column and
+ * its section editor body, and every prop Workspace hands it (the note from the
+ * list on screen, that patient's row, the format row, the two callbacks) holds
+ * its identity across that pass — measured, not assumed — so shallow equality
+ * already says "nothing changed".
+ *
+ * A custom comparator would have to restate that by hand and would then own the
+ * risk of skipping a change it failed to enumerate. Shallow equality compares
+ * every prop by identity, so a real change — a note another window revised, a
+ * different patient or format, a new callback — still renders. Nothing here
+ * reads the workspace's state directly, so there is nothing a shallow compare
+ * can miss.
+ */
+export const NoteView = memo(NoteViewImpl);

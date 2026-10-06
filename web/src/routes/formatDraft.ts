@@ -17,8 +17,6 @@ export interface FormatDraft {
   source?: FormatSource;
   /** Detection read only the head of an uploaded file; the screen says so. */
   truncated?: boolean;
-  /** Set when editing: the format's saved drafting instructions. */
-  instructions?: string;
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -41,6 +39,5 @@ export function asFormatDraft(value: unknown): FormatDraft | null {
     ...(typeof draft['formatId'] === 'string' ? { formatId: draft['formatId'] } : {}),
     ...(source.success ? { source: source.data } : {}),
     ...(draft['truncated'] === true ? { truncated: true } : {}),
-    ...(typeof draft['instructions'] === 'string' ? { instructions: draft['instructions'] } : {}),
   };
 }

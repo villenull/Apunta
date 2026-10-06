@@ -132,7 +132,7 @@ export function classifyBackupDestination(
     path,
     warning:
       'This folder is outside the Apunta data folder, so FileVault is not necessarily ' +
-      'protecting it. Use an encrypted disk, or set a passphrase below.',
+      'protecting it. Put it on an encrypted disk instead.',
   };
 }
 

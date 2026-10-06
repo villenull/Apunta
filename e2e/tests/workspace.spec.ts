@@ -542,12 +542,16 @@ test.describe('settings', () => {
     await expect(row).toContainText('Subjective, Plan');
 
     await row.getByTestId('edit-format').click();
-    await expect(page.getByRole('heading', { name: tr('format.editTitle') })).toBeVisible();
-    await page.getByRole('button', { name: tr('format.addSection') }).click();
+    // The name is the heading and it is editable, and there is no Save: an
+    // existing format writes itself (owner, 2026-10-05).
+    await expect(page.getByLabel(tr('format.nameLabel'))).toHaveValue(name);
+    await expect(page.getByTestId('save-format')).toHaveCount(0);
+    await page.getByTestId('add-section').click();
     await page.getByLabel(tr('format.sectionNamePlaceholder')).fill('Assessment');
     await page.getByRole('button', { name: tr('common.add'), exact: true }).click();
-    await page.getByTestId('save-format').click();
 
+    await expect(page.getByTestId('settings-format-saved')).toHaveText(tr('common.saved'));
+    await page.getByTestId('settings-pane-back').click();
     await expect(page.getByTestId('format-list').locator('.patient-row', { hasText: name })).toContainText(
       'Subjective, Plan, Assessment',
     );

@@ -1,27 +1,98 @@
-# Owner UI feedback batch — 2026-10-05 (later)
+# Owner UI feedback batch — 2026-10-05 (current)
 
-Built and gated (lint, typecheck, build, e2e both projects green; unit suite
-green except the 20 `appearance.test.ts` / `SidebarViewMenu.test.tsx` failures,
-which fail identically at e9698c2 — `window.localStorage` in this Node).
-- Settings is modal-only: format edit/add open in the modal pane
-  (`FormatEditor.tsx`, `FormatDraftEditor.tsx`); `/onboarding/*` is first-run
-  only. Advanced is always open, ends with one "Read more about Apunta" row
-  linking to https://github.com/villenull/Apunta (decisions.md 2026-10-05,
-  allow-listed in `scripts/check-no-external-urls.mjs`).
-- Setup, About, Licenses screens and `GET /api/licenses` removed; AiBanner has
-  no Setup link. Import is a modal (`ImportModal.tsx`, `ClaudeImport.tsx`,
-  `HalaxyImport.tsx`) that reloads the sidebar after import/undo. Routes
-  `/settings`, `/setup`, `/about`, `/licenses`, `/import*` are gone.
-- Notes column: tools on top, "Notes" heading, New note, list; rows show format
-  (muted) above a bold date. Note header compacted; refine launcher icon-only.
-- Font-size setting now scales the patients column (`--row-font`/`--main-font`
-  alias `--text-base`).
-- Refine chat: ~1.5×/1.3× larger, no title bar (round close), one-line
-  auto-growing composer with inline mic + return arrow (teal once text exists);
-  dictation starts on the mic with provisional words inline in the box (no panel).
-- Chrome tab favicon now uses the current Fraunces outlined A from BrandMark,
-  replacing the old Kalam mark; the icon URL is versioned to refresh caches.
-Owner preview for this batch: http://127.0.0.1:7831/ (sample data, fake AI).
+**Gate status:** lint, typecheck, build and all 2469 unit/integration tests
+passed on Node 24.19.0. Full English/Spanish/quiescence end-to-end run:
+119 passed, 6 existing skips, one worker and no retries. A four-worker run
+exposed a quiescence maintenance-release race; serial CI-equivalent verification
+passed without changing updater behavior. Real Chromium smoke verified format
+autosave and retained instructions, equal section/Add-section dimensions,
+centered About and Github hover, backup directory/confirmations, note switching,
+and teal chat arrows after one character. CI has not been checked in this session.
+
+Backup, Settings and the note editor:
+- Backup is one page, `Settings → Backup` (`BackupSection` in
+  `BackupCard.tsx`); the Advanced tab is gone and the backup folder, the
+  archives, the restore-tested nudge and the retention count live on it. The
+  three guarding controls — **Back up now**, **Change backup location**,
+  **Restore** — are a row of their own, and the first and third ask first
+  (`ConfirmDialog`), because one writes minutes of work and one replaces what
+  is here. Changing the location prefills the saved folder, so cancelling and
+  reopening puts the saved one back. Restoring names the archive it is about to
+  bring back.
+- **A new backup takes no passphrase.** The field is gone from the page; the
+  research prefers an encrypted disk the OS unlocks to a secret typed into a
+  settings field, and a lost passphrase is a backup nobody can open. Archives
+  encrypted *before* this change still restore: the passphrase is asked for in
+  the restore dialog, where the only person who needs it is the one restoring,
+  and the request carries one only when one is given. The server's daily
+  automatic backup is untouched. `RESTORE.txt` now says
+  `Settings > Backup > Restore`, and the cloud-folder warning says to put the
+  archive on an encrypted disk instead.
+- Advanced became **About**: the Fraunces `BrandMark`, `v0.1`, and one line
+  where only the word **Github** is the link to
+  https://github.com/villenull/Apunta (`target="_blank"`,
+  `rel="noopener noreferrer"`). It supersedes the 2026-10-05 row that put the
+  repository link at the foot of Advanced as a "Read more about Apunta" row.
+  Only the word is the anchor because a whole underlined sentence reads as a
+  button to a page she has not chosen, and the line also carries the version.
+  It is still the only URL in the UI, still allow-listed in
+  `scripts/check-no-external-urls.mjs`, and still not a runtime network call.
+- Editing a note format **saves itself**: no Save and no Cancel, typing
+  debounced 600 ms, a section added/renamed/moved/removed saved at once, and a
+  **Saved** marker beside the pane's back arrow that appears only once the
+  server holds exactly what is on screen and goes off the moment she types
+  again. The name is the heading itself, an input rather than a labelled field.
+  Settings navigation — pane back, tab switch, the pane's close button and the
+  modal's Escape — asks `FormatDraftEditorHandle.flush()` first and leaves only
+  when the write landed; a refusal (`false`) keeps her in the editor with the
+  reason on screen. The close guard is shared through `settingsClose.ts`.
+  The **create** flow keeps its button: a format not yet on the server
+  has nothing to fall behind, and it asks her to check what was detected first.
+- Format rows gain **Delete** beside Edit (`DELETE /api/formats/:id`): the row
+  disappears because the list was read again, a refusal — a format a note still
+  points at, or the server down — leaves it exactly where it was and says why,
+  and the landed delete says "Deleted."
+- The **Instructions panel is removed** from the format editor
+  (`InstructionsPanel.tsx` deleted). Instructions already stored on a format
+  are preserved: the autosave patch carries no `instructions` key, and
+  `PUT /api/formats/:id` only writes a key that was sent
+  (`server/src/routes/formats.ts`). `POST /api/formats/flatten-skill` is
+  **kept on the server on purpose** — the web wrapper `flattenSkill()` is gone,
+  the route, its schema and its tests stay.
+
+Notes and chats:
+- **A patient's notes list can no longer stand in for another's.** The notes
+  on screen and the notes of the selected patient are two different things in
+  the frame where the selection has already moved, so state cannot say which is
+  which and the request now can: `notesPatientRef` records the patient an
+  answer is for, `lastNotesRef` keeps the previous list **with the patient it
+  belongs to**, and `patientHasNoNotes` / the note-is-in-this-list effect read
+  only this patient's own list. Before, the patient she had just left stayed in
+  the column for a whole request — live clickable rows under the new selection,
+  and a deep-linked `?note=` of hers opened and then vanished.
+- **`NoteView` is memoized on its props, with no comparator of its own**
+  (`memo(NoteViewImpl)`). Switching between two notes of one patient renders
+  the workspace twice — the click updates the query string, react-router
+  commits the location on the pass after — and for that one frame every prop
+  already held its identity (measured), so shallow equality says "nothing
+  changed" and the whole editor does not re-render. A hand-written comparator
+  would have to enumerate the props by hand and would own the risk of skipping
+  one; `NoteView` reads no workspace state directly, so a shallow compare
+  cannot miss a real change.
+- **One character lights the send arrow in both chats** (refine and
+  Brainstorm), spaces included: `hasText` is `value.length > 0`, counted on
+  `value` only, so a recording's provisional tail does not light it. Whether
+  the arrow may be *pressed* is still answered separately in
+  `ComposerButtons`, and an empty box is still sendable.
+- Earlier in the same batch: Settings is modal-only, Import is a modal that
+  reloads the sidebar, the notes column has its tools on top over a "Notes"
+  heading and a New note row, font size scales the patients column, the refine
+  chat lost its title bar and gained an inline mic, and the Chrome favicon is
+  the current Fraunces outlined A.
+
+Owner preview for this batch: http://127.0.0.1:7831/ — a fresh database, 15
+fictional patients and 150 notes, fake AI. Synthetic data only; no real patient
+data has been opened.
 
 # Current orchestration — 2026-10-05
 

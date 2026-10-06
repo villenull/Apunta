@@ -33,7 +33,7 @@ import { PlanView } from '../components/PlanView.js';
 import { PrepView } from '../components/PrepView.js';
 import { Toast } from '../components/Toast.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
-import { useLoader } from '../hooks/useLoader.js';
+import { useLoader, type LoadState } from '../hooks/useLoader.js';
 import { usePatientRecency } from '../hooks/usePatientRecency.js';
 import { usePatientGroups } from '../hooks/usePatientGroups.js';
 import { usePinnedPatients } from '../hooks/usePinnedPatients.js';
@@ -47,6 +47,7 @@ import {
   writeSidebarCollapsed,
   writeSidebarWidth,
 } from '../lib/patientPins.js';
+import { useSettingsClose } from './settingsClose.js';
 
 /*
  * Settings, opened over the workspace rather than as its own screen (owner
@@ -70,6 +71,9 @@ const ImportModal = lazy(async () => ({
 
 /** A stable empty list, so the loaders below never see a new array identity. */
 const NO_PATIENTS: PatientListItem[] = [];
+
+/** The same for notes: a stable empty list, never a fresh array identity. */
+const NO_NOTES: Note[] = [];
 
 /**
  * The workspace — `prototype/patients.html`. Three columns: patients, that
@@ -194,6 +198,24 @@ export function Workspace(): React.JSX.Element {
    */
   const notesRequestRef = useRef(0);
   const notesAnswerRef = useRef<{ request: number; patient: string | null } | null>(null);
+  /*
+   * The patient the list now on screen answers for.
+   *
+   * The render in which the selection has *already* moved still holds the
+   * previous patient's ready list, so "the notes on screen" and "the notes of
+   * the patient selected" are two different things and the state cannot say
+   * which is which. The request can: the patient it asked about, recorded when
+   * the answer lands and never cleared, because it describes the list on
+   * screen for as long as that list is there.
+   *
+   * Reading the two as one put the patient she had just left in the notes
+   * column for the whole of the next request — rows live and clickable under
+   * the new selection — mounted or unmounted that column off their note count,
+   * and, where the query still named one of their notes (Back after a deep
+   * link, any `?note=` link), opened their note in the editor, which then
+   * vanished when the right list answered.
+   */
+  const notesPatientRef = useRef<string | null>(null);
   const loadNotes = useCallback(
     (signal: AbortSignal) => {
       notesRequestRef.current += 1;
@@ -207,6 +229,9 @@ export function Workspace(): React.JSX.Element {
         // list nobody is looking at: neither may claim to be the answer.
         if (!signal.aborted && notesRequestRef.current === request) {
           notesAnswerRef.current = { request, patient: asked };
+          // And which patient's notes that answer is, for as long as it is the
+          // list on screen — see `notesPatientRef` above.
+          notesPatientRef.current = asked;
         }
         return data;
       });
@@ -214,23 +239,41 @@ export function Workspace(): React.JSX.Element {
     [patientId],
   );
   const notes = useLoader(loadNotes);
-  // A visibility refresh must not briefly unmount the editor: its cleanup
-  // flushes local edits, and a conflicted edit must wait for an explicit
-  // Keep mine / Take theirs choice.
-  const lastNotesPatientRef = useRef<string | null>(null);
-  const lastNotesRef = useRef<Note[]>([]);
-  if (lastNotesPatientRef.current !== patientId) {
-    lastNotesPatientRef.current = patientId;
-    lastNotesRef.current = [];
-  }
-  if (notes.state.status === 'ready') lastNotesRef.current = notes.state.data;
-  const visibleNotes = notes.state.status === 'ready' ? notes.state.data : lastNotesRef.current;
+  /*
+   * This patient's notes, when the list on screen is theirs — and null while
+   * their own list is still in flight, which is also the frame in which the
+   * selection has moved and the list still on screen belongs to somebody else.
+   */
+  const readyNotes: Note[] | null =
+    notes.state.status === 'ready' && notesPatientRef.current === patientId ? notes.state.data : null;
+  /*
+   * Their last list, kept on screen while a reload or a quiet refresh runs
+   * behind it: a visibility refresh must not briefly unmount the editor, whose
+   * cleanup flushes local edits, and a conflicted edit must wait for an
+   * explicit Keep mine / Take theirs choice. It is kept **with** the patient it
+   * belongs to, so one patient's answer can never stand in for another's — and
+   * so `patientHasNoNotes` below is never read off somebody else's list, which
+   * is what used to mount and unmount the notes column under a selection it
+   * had nothing to do with.
+   */
+  const lastNotesRef = useRef<{ patient: string | null; notes: Note[] }>({
+    patient: null,
+    notes: NO_NOTES,
+  });
+  if (readyNotes !== null) lastNotesRef.current = { patient: patientId, notes: readyNotes };
+  const keptNotes = lastNotesRef.current.patient === patientId ? lastNotesRef.current.notes : NO_NOTES;
+  const visibleNotes = readyNotes ?? keptNotes;
 
   const note = visibleNotes.find((candidate) => candidate.id === noteId) ?? null;
-  const notesForColumn =
-    notes.state.status === 'loading' && lastNotesRef.current.length > 0
-      ? { status: 'ready' as const, data: lastNotesRef.current }
-      : notes.state;
+  // What the column shows: this patient's notes when they are on screen, the
+  // last of theirs while one is in flight, a failure as it stands, and
+  // "Loading…" otherwise — never a list that answers for somebody else.
+  const notesForColumn: LoadState<Note[]> =
+    notes.state.status === 'error'
+      ? notes.state
+      : readyNotes !== null || keptNotes.length > 0
+        ? { status: 'ready', data: visibleNotes }
+        : { status: 'loading' };
   useEffect(() => {
     const refreshNotesWhenVisible = (): void => {
       if (document.visibilityState === 'visible') notes.reload();
@@ -271,19 +314,20 @@ export function Workspace(): React.JSX.Element {
     refetchedNoteRef.current = null;
   }
   useEffect(() => {
-    // Only the newest answer can say "is that note in it": while this patient's
-    // notes are still loading, the list on screen is the last one read.
-    if (noteId === null || notes.state.status !== 'ready') return;
+    // Only this patient's own list can say "is that note in it": while it is
+    // still loading, or while the list on screen answers for somebody else,
+    // nothing on hand describes this patient's notes at all.
+    if (noteId === null || readyNotes === null) return;
     const answer = notesAnswerRef.current;
     if (answer === null) return;
     // And it has to be an answer about *this* patient. A late one for the
     // patient she has just left describes a list that is not on screen.
     if (answer.patient !== patientId) return;
-    if (notes.state.data.some((candidate) => candidate.id === noteId)) return;
+    if (readyNotes.some((candidate) => candidate.id === noteId)) return;
     if (refetchedNoteRef.current === noteId) return;
     refetchedNoteRef.current = noteId;
     notes.refresh();
-  }, [noteId, patientId, notes.state, notes.refresh]);
+  }, [noteId, patientId, readyNotes, notes.refresh]);
 
   /*
    * What is open right now, readable from a callback that is about to await.
@@ -553,7 +597,7 @@ export function Workspace(): React.JSX.Element {
    * none: while they load the column stays, so nothing jumps for a patient who
    * does have notes. The plan, briefing and brainstorm keep the column.
    */
-  const patientHasNoNotes = notes.state.status === 'ready' && notes.state.data.length === 0;
+  const patientHasNoNotes = readyNotes !== null && readyNotes.length === 0;
   const firstNoteOnly = patient !== null && patientHasNoNotes && view === 'notes';
   const atHome =
     !atDirectory && patient === null && (patientId === null || patients.state.status !== 'loading');
@@ -951,16 +995,20 @@ export function Workspace(): React.JSX.Element {
  */
 function SettingsModal({ onClose }: { onClose: () => void }): React.JSX.Element {
   const { t } = useI18n();
+  // Escape on the dialog and the panel's own close button are one action, and
+  // that action asks the format editor whether the server has what is on
+  // screen before the panel unmounts (`useSettingsClose`).
+  const { closeRef, close } = useSettingsClose(onClose);
   return (
     <Dialog
       title={t('common.settings')}
-      onClose={onClose}
+      onClose={close}
       showTitle={false}
       className="modal card settings-modal"
       testId="settings-modal"
       backdropTestId="settings-backdrop"
     >
-      <SettingsModalPanel onClose={onClose} />
+      <SettingsModalPanel onClose={close} closeRef={closeRef} />
     </Dialog>
   );
 }

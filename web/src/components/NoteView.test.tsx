@@ -1,8 +1,32 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createElement, type ComponentProps } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { installFakeApi, makeFormat, makeNote, makePatient } from '../test/fakeApi.js';
+import type * as NoteBodyModule from './NoteBody.js';
 import { NoteView } from './NoteView.js';
+
+/*
+ * Renders of the body, counted at the module boundary.
+ *
+ * `NoteBody` sits inside `NoteView`'s memo boundary and is what puts the text
+ * on screen, so its renders are the editor's real work. A spy on the namespace
+ * could not do this: the import is an ES module binding, which `vi.spyOn`
+ * cannot replace — the mock factory below delegates to the real component and
+ * only counts, so every other test in this file still renders the real editor.
+ */
+const bodyRenders = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock('./NoteBody.js', async () => {
+  const actual = await vi.importActual<typeof NoteBodyModule>('./NoteBody.js');
+  return {
+    ...actual,
+    NoteBody: (props: ComponentProps<typeof actual.NoteBody>) => {
+      bodyRenders.count += 1;
+      return createElement(actual.NoteBody, props);
+    },
+  };
+});
 
 const patient = makePatient('John Smith');
 const format = makeFormat('Progress note', ['Subjective', 'Plan']);
@@ -22,6 +46,17 @@ function renderNote() {
   );
   return { api, note };
 }
+
+/*
+ * `NoteView` seeds its refine panel's open state from
+ * `localStorage['apunta-chat-open']`, and the store is shared by every test in
+ * the file: opening the panel in one test would leave the next one's
+ * launcher labelled "Close Refine note" with the panel already mounted. Each
+ * test starts from a fresh install, where the panel is closed.
+ */
+beforeEach(() => {
+  window.localStorage?.removeItem('apunta-chat-open');
+});
 
 afterEach(() => {
   cleanup();
@@ -391,5 +426,113 @@ describe('intervention approach suggestion', () => {
     expect(screen.getByTestId('approach-suggestion-approach').textContent).toBe(
       'CBT (Cognitive Behavioral Therapy)',
     );
+  });
+});
+
+/**
+ * The editor is memoized on its props (see `NoteView.tsx`), so the contract is
+ * two-sided and both sides are worth a test: a re-render with the same props
+ * must not reach the editor, and a genuine change must still get through.
+ *
+ * `NoteBody` sits inside the memo boundary and is what renders the text, so
+ * counting *its* renders counts the editor's real work — a wrapper around
+ * `NoteView` itself would have been memoized away and seen nothing.
+ */
+describe('memoization', () => {
+  it('does not re-render the editor when its props are unchanged', async () => {
+    const note = makeNote(patient.id, { content: 'Subjective: X' });
+    installFakeApi({ patients: [patient], formats: [format], notes: [note] });
+    const onNoteChanged = (): void => undefined;
+    const onNoteDeleted = (): void => undefined;
+    const view = render(
+      <NoteView
+        patient={patient}
+        note={note}
+        format={format}
+        onNoteChanged={onNoteChanged}
+        onNoteDeleted={onNoteDeleted}
+      />,
+    );
+
+    bodyRenders.count = 0;
+    // Re-rendered by the parent with the very same props — the pass the
+    // workspace makes on the way to committing a note switch.
+    view.rerender(
+      <NoteView
+        patient={patient}
+        note={note}
+        format={format}
+        onNoteChanged={onNoteChanged}
+        onNoteDeleted={onNoteDeleted}
+      />,
+    );
+    expect(bodyRenders.count).toBe(0);
+
+    // The editor's own state still drives it: this is not a frozen view.
+    fireEvent.change(screen.getByTestId('note-body'), { target: { value: 'Subjective: Y' } });
+    expect((screen.getByTestId('note-body') as HTMLTextAreaElement).value).toBe('Subjective: Y');
+  });
+
+  it('still renders a note another window revised', async () => {
+    const note = makeNote(patient.id, { content: 'Subjective: Original' });
+    installFakeApi({ patients: [patient], formats: [format], notes: [note] });
+    const onNoteChanged = (): void => undefined;
+    const onNoteDeleted = (): void => undefined;
+    const view = render(
+      <NoteView
+        patient={patient}
+        note={note}
+        format={format}
+        onNoteChanged={onNoteChanged}
+        onNoteDeleted={onNoteDeleted}
+      />,
+    );
+
+    bodyRenders.count = 0;
+    const remote = { ...note, content: 'Subjective: Revised elsewhere', revision: note.revision + 1 };
+    view.rerender(
+      <NoteView
+        patient={patient}
+        note={remote}
+        format={format}
+        onNoteChanged={onNoteChanged}
+        onNoteDeleted={onNoteDeleted}
+      />,
+    );
+    await waitFor(() => {
+      expect((screen.getByTestId('note-body') as HTMLTextAreaElement).value).toBe(remote.content);
+    });
+    expect(bodyRenders.count).toBeGreaterThan(0);
+  });
+
+  it('still renders a changed format and a changed patient', () => {
+    const other = makePatient('Maria Ruiz');
+    const note = makeNote(patient.id, { content: 'Subjective: X' });
+    installFakeApi({ patients: [patient, other], formats: [format], notes: [note] });
+    const onNoteChanged = (): void => undefined;
+    const onNoteDeleted = (): void => undefined;
+    const view = render(
+      <NoteView
+        patient={patient}
+        note={note}
+        format={format}
+        onNoteChanged={onNoteChanged}
+        onNoteDeleted={onNoteDeleted}
+      />,
+    );
+
+    bodyRenders.count = 0;
+    // Two new object identities, the two the workspace can hand over without
+    // the note changing: the patient's row and their format's row.
+    view.rerender(
+      <NoteView
+        patient={other}
+        note={note}
+        format={noteFormat}
+        onNoteChanged={onNoteChanged}
+        onNoteDeleted={onNoteDeleted}
+      />,
+    );
+    expect(bodyRenders.count).toBeGreaterThan(0);
   });
 });

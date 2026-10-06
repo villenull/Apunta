@@ -288,19 +288,65 @@ describe('dictating into the composer', () => {
   });
 
   /**
-   * The composer's chrome (owner, 2026-10-05): the return arrow is a grey
-   * glyph inside the box until the box holds words, and takes the accent then.
+   * One character is what arms the arrow, a space included — but a space is
+   * not a message, so pressing the armed arrow still posts nothing.
    */
-  it('takes the accent on the return arrow only while the box holds words', () => {
-    installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
+  it('arms the arrow on a single character and sends no whitespace from it', async () => {
+    const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
     renderChat();
 
+    const send = screen.getByTestId('chat-send') as HTMLButtonElement;
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: ' ' } });
+    expect(send.disabled).toBe(false);
+    fireEvent.click(send);
+    await waitFor(() => {
+      expect(api.state.messages).toHaveLength(0);
+    });
+  });
+
+  /**
+   * The words a recording paints into the box are a view of the microphone,
+   * not a message: pressing the arrow while she is still speaking must post
+   * nothing, and after the transcript lands, that alone is what goes.
+   */
+  it('never posts the provisional words, and posts exactly the transcript after', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const api = installFakeApi(
+      { formats: [progressNote], patients: [john], notes: [draft] },
+      { previewText: 'add that he is sleeping', dictationText: 'Add that he is sleeping better.' },
+    );
+    renderChat();
     const send = screen.getByTestId('chat-send');
-    expect(send.className).toBe('chat-icon-btn btn-send');
-    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: '   ' } });
-    expect(send.className).toBe('chat-icon-btn btn-send');
-    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Tighten this' } });
-    expect(send.className).toBe('chat-icon-btn btn-send is-ready');
+
+    fireEvent.click(screen.getByTestId('chat-mic'));
+    await waitFor(() => {
+      expect(screen.getByTestId('chat-mic').getAttribute('aria-pressed')).toBe('true');
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(PREVIEW_FIRST_MS + 100);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect((screen.getByTestId('chat-input') as HTMLTextAreaElement).value).toBe('add that he is sleeping');
+    });
+    fireEvent.click(send);
+    await waitFor(() => {
+      expect(api.state.messages).toHaveLength(0);
+    });
+
+    fireEvent.click(screen.getByTestId('chat-mic'));
+    await waitFor(() => {
+      expect((screen.getByTestId('chat-input') as HTMLTextAreaElement).value).toBe(
+        'Add that he is sleeping better.',
+      );
+    });
+    fireEvent.click(send);
+    await waitFor(() => {
+      expect(
+        api.state.messages.filter((message) => message.role === 'user').map((message) => message.text),
+      ).toEqual(['Add that he is sleeping better.']);
+    });
+    vi.useRealTimers();
   });
 });
 

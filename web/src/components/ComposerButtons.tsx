@@ -17,9 +17,10 @@ export interface ComposerButtonsProps {
   /** `chat` gives `chat-mic`, `chat-send`…; each composer keeps its own test ids. */
   testIdPrefix: string;
   /**
-   * The box holds something other than whitespace: the return arrow wears the
-   * accent instead of the quiet grey (owner, 2026-10-05). An empty box is
-   * still sendable — she can send whitespace on purpose — so this only paints.
+   * The box holds at least one character, spaces included (owner,
+   * 2026-10-05): the return arrow wears the accent instead of the quiet grey.
+   * An empty box is still sendable — she can send whitespace on purpose — so
+   * this only paints.
    */
   readonly hasText: boolean;
 }

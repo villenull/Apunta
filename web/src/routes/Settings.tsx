@@ -14,9 +14,9 @@ import {
   type FontSize,
   type Theme,
 } from '@apunta/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { errorMessage, listFormats } from '../api/index.js';
+import { deleteFormat, errorMessage, listFormats } from '../api/index.js';
 import {
   animationsEnabled,
   fontFamilyOrDefault,
@@ -27,25 +27,26 @@ import {
   fontSizeOrDefault,
   themeOrDefault,
 } from '../lib/appearance.js';
-import { BackupAdvanced, BackupCard, useBackup } from '../components/BackupCard.js';
+import { BackupSection, useBackup } from '../components/BackupCard.js';
+import { BrandMark } from '../components/BrandMark.js';
 import { useSettingsContext } from '../components/SettingsProvider.js';
 import {
   BackIcon,
   CloseIcon,
   DatabaseIcon,
   DocumentIcon,
-  GitHubIcon,
+  HelpIcon,
   MonitorIcon,
   MoonIcon,
   PlusIcon,
-  SlidersIcon,
   SunIcon,
 } from '../components/icons.js';
 import { useLoader } from '../hooks/useLoader.js';
 import { useI18n, type Translate } from '../lib/i18n.js';
 import type { FormatDraft } from './formatDraft.js';
-import { FormatDraftEditor } from './FormatDraftEditor.js';
+import { FormatDraftEditor, type FormatDraftEditorHandle } from './FormatDraftEditor.js';
 import { FormatEditor } from './FormatEditor.js';
+import type { SettingsCloseRef } from './settingsClose.js';
 
 /**
  * The repository: the one link that leaves the app (owner, 2026-10-05,
@@ -56,9 +57,21 @@ import { FormatEditor } from './FormatEditor.js';
 const REPOSITORY_URL = 'https://github.com/villenull/Apunta';
 
 /**
- * `prototype/settings.html`, redesigned (owner, 2026-09-21): only what she
- * uses on the main screen — Appearance, Note formats, Backup — and everything
- * else under **Advanced**. Controls carry a label and no explanation; a line
+ * The one word in the About line that is a link. It is a proper noun in both
+ * languages, so it is spelled the same here as it is in the catalogue, and the
+ * line is split on this exact string (`aboutLine`) to put the anchor around
+ * it and nothing else.
+ */
+const GITHUB_LABEL = 'Github';
+
+/**
+ * `prototype/settings.html`, redesigned (owner, 2026-09-21): Appearance, Note
+ * formats, Backup and About — the four things she opens Settings for, and
+ * nothing else. Advanced is gone (owner, 2026-10-05): everything that was in
+ * it is either essential or a page she never came back to. The backup folder,
+ * passphrase, archives and restore-verification nudge moved to the Backup tab,
+ * where the card that guards her data already is; the one row that leaves the
+ * app became the About pane. Controls carry a label and no explanation; a line
  * of text appears only when leaving it out could cost her data (a stale or
  * failed backup, a sync-watched folder, a passphrase that cannot be
  * recovered). The reasons live in the code and in `docs/decisions.md`.
@@ -84,16 +97,16 @@ function sections(t: Translate) {
     { id: 'appearance', label: t('settings.appearance'), icon: <SunIcon className="icon icon-sm" /> },
     { id: 'format', label: t('settings.format'), icon: <DocumentIcon className="icon icon-sm" /> },
     { id: 'backup', label: t('settings.backup'), icon: <DatabaseIcon className="icon icon-sm" /> },
-    { id: 'advanced', label: t('settings.advanced'), icon: <SlidersIcon className="icon icon-sm" /> },
+    { id: 'about', label: t('settings.about'), icon: <HelpIcon className="icon icon-sm" /> },
   ] as const;
 }
 
 type SectionId = ReturnType<typeof sections>[number]['id'];
 
 /**
- * Everything the settings body needs: the formats, the backup card, which
- * section is open, what the Format pane is showing, and the way to get from
- * the restore link to the archives.
+ * Everything the settings body needs: the formats, the backup section, which
+ * section is open, what the Format pane is showing, and whether the format in
+ * the editor is on the server.
  */
 function useSettingsStore(initialSection: SectionId = 'appearance') {
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
@@ -101,43 +114,114 @@ function useSettingsStore(initialSection: SectionId = 'appearance') {
   const backup = useBackup();
   const [section, setSection] = useState<SectionId>(initialSection);
   const [formatView, setFormatView] = useState<FormatView>(FORMAT_LIST);
-  // "Restore an old backup" is answered by the archives, which live under
-  // Advanced, so the store changes tab and scrolls once they are on the page.
-  const [wantArchives, setWantArchives] = useState(false);
+  /**
+   * "Saved" beside the back arrow means one thing only: the format in the
+   * editor is on the server. It is set from the editor's own answer and never
+   * from the click that started the save, and it is cleared the moment she
+   * types again — a status that survives the edit that made it untrue is worse
+   * than no status (owner, 2026-10-05).
+   */
+  const [formatSaved, setFormatSaved] = useState(false);
+  /**
+   * The editor writes as she types, and the pane does not get to decide when
+   * it has: every way out of the editor asks it first, and moves on only when
+   * it says the server holds what is on screen (`FormatDraftEditorHandle`).
+   */
+  const editor = useRef<FormatDraftEditorHandle>(null);
+  /**
+   * Whether the format on screen is one the server already has. Only then is
+   * there an edit worth writing: a format still being drafted has nothing on
+   * the server to fall behind, and its own Save button is the answer, so the
+   * create flow is left exactly as it was.
+   */
+  const hasSavedFormat = useCallback(
+    () => formatView.kind === 'draft' && formatView.draft.formatId !== undefined,
+    [formatView],
+  );
+  /**
+   * Ask the editor to write what is on screen and report whether it did.
+   * `false` means the editor is still mounted and is already saying why, so
+   * nothing here repeats it — the caller stays exactly where it is.
+   */
+  const flushEditor = useCallback(async (): Promise<boolean> => {
+    if (!hasSavedFormat()) return true;
+    return (await editor.current?.flush()) ?? true;
+  }, [hasSavedFormat]);
   /**
    * The nav picks the section, and the section is all it picks: the format
    * editor is a sub-view of the Format pane, so leaving that pane leaves the
    * sub-view too, and the back control goes with it (owner, 2026-10-05).
+   *
+   * It does not get to leave with an edit unwritten, though: the editor is
+   * asked first and the switch happens on its answer, so switching sections
+   * mid-edit cannot drop what she typed (owner, 2026-10-05).
    */
-  const goToSection = useCallback((next: SectionId) => {
-    setSection(next);
-    setFormatView(FORMAT_LIST);
-  }, []);
-  const goToArchives = useCallback(() => {
-    goToSection('advanced');
-    setWantArchives(true);
-  }, [goToSection]);
-  useEffect(() => {
-    if (!wantArchives) return;
-    const archives = document.getElementById('backup-archives');
-    // Not on the page yet: wait for the section change, which is in the
-    // dependency list below.
-    if (archives === null) return;
-    setWantArchives(false);
-    archives.scrollIntoView({ block: 'start' });
-  }, [wantArchives, section]);
+  const goToSection = useCallback(
+    async (next: SectionId): Promise<void> => {
+      if (!(await flushEditor())) return;
+      setSection(next);
+      setFormatView(FORMAT_LIST);
+      setFormatSaved(false);
+    },
+    [flushEditor],
+  );
 
   /**
-   * Leaving the format editor, saved or not: the list is what the pane goes
-   * back to, and it is re-read either way, because a standard format saved
-   * itself behind the editor.
+   * Leaving the format editor: back to the list, and the list is re-read
+   * because a standard format saved itself behind the editor.
+   *
+   * The re-read is the last step, not the first: it runs only once the editor
+   * says the server holds what is on screen, so the name in the list is the
+   * name she last typed rather than the one she started from (owner,
+   * 2026-10-05).
    */
   function backToFormatList(): void {
     setFormatView(FORMAT_LIST);
+    setFormatSaved(false);
     formats.reload();
   }
 
-  return { formats, backup, section, goToSection, formatView, setFormatView, backToFormatList, goToArchives };
+  /**
+   * The back arrow, the nav and the close control all want the same thing: out
+   * of the editor, with the screen written first. One place decides it, so no
+   * way out can quietly skip the write.
+   */
+  const leaveEditor = useCallback(async (): Promise<void> => {
+    if (!(await flushEditor())) return;
+    backToFormatList();
+  }, [flushEditor, formats]);
+
+  /**
+   * The pane's own close button. Like Escape on the dialog that holds it, it
+   * goes through the editor first — and on a refusal it stays open with the
+   * editor saying why, rather than closing over the edit.
+   */
+  const closeThroughEditor = useCallback(
+    (onClose: () => void): (() => void) => {
+      return () => {
+        void flushEditor().then((may) => {
+          if (may) onClose();
+        });
+      };
+    },
+    [flushEditor],
+  );
+
+  return {
+    formats,
+    backup,
+    section,
+    goToSection,
+    formatView,
+    editor,
+    flushEditor,
+    setFormatView,
+    setFormatSaved,
+    formatSaved,
+    backToFormatList,
+    leaveEditor,
+    closeThroughEditor,
+  };
 }
 
 type SettingsStore = ReturnType<typeof useSettingsStore>;
@@ -166,14 +250,30 @@ const FORMAT_LIST: FormatView = { kind: 'list' };
 export function SettingsModalPanel({
   onClose,
   initialSection,
+  closeRef,
 }: {
   onClose: () => void;
   initialSection?: SectionId;
+  /**
+   * How a host modal asks before it unmounts this panel. Optional: a host that
+   * has no other way out (a route, a test) closes on the button alone.
+   */
+  closeRef?: SettingsCloseRef;
 }): React.JSX.Element {
   const { t } = useI18n();
   const store = useSettingsStore(initialSection);
   const editingFormat = store.formatView.kind !== 'list';
+  const close = store.closeThroughEditor(onClose);
 
+  // The panel's answer to "may I go?", kept fresh so Escape asked a moment ago
+  // is answered by the editor as it is now, and withdrawn when the panel does.
+  useEffect(() => {
+    if (closeRef === undefined) return;
+    closeRef.current = { close: store.flushEditor };
+    return () => {
+      closeRef.current = null;
+    };
+  }, [closeRef, store.flushEditor]);
   return (
     <div className="settings-shell">
       <nav className="settings-nav" aria-label={t('settings.sectionsLabel')}>
@@ -186,7 +286,7 @@ export function SettingsModalPanel({
             aria-current={store.section === item.id ? 'page' : undefined}
             data-testid={`settings-tab-${item.id}`}
             onClick={() => {
-              store.goToSection(item.id);
+              void store.goToSection(item.id);
             }}
           >
             {item.icon}
@@ -199,17 +299,38 @@ export function SettingsModalPanel({
           {/* Editing a format replaces the pane's content, so the pane needs a
               way back before it closes the modal (owner, 2026-10-05). */}
           {editingFormat && (
-            <button
-              type="button"
-              className="icon-btn"
-              data-testid="settings-pane-back"
-              aria-label={t('common.back')}
-              onClick={store.backToFormatList}
-            >
-              <BackIcon className="icon icon-sm" />
-            </button>
+            <>
+              {/* "Saved" only once the server has the format, and it goes away
+                  the moment she edits again — the status has to mean the thing
+                  it says (owner, 2026-10-05). */}
+              {store.formatSaved && (
+                <span className="small settings-pane-saved" data-testid="settings-format-saved">
+                  {t('common.saved')}
+                </span>
+              )}
+              <button
+                type="button"
+                className="icon-btn"
+                data-testid="settings-pane-back"
+                aria-label={t('common.back')}
+                onClick={() => {
+                  void store.leaveEditor();
+                }}
+              >
+                <BackIcon className="icon icon-sm" />
+              </button>
+            </>
           )}
-          <button type="button" className="icon-btn" aria-label={t('settings.closeLabel')} onClick={onClose}>
+          {/* Same contract as the pane's back arrow and as the dialog's Escape:
+              nothing closes over an edit the server has not taken. */}
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label={t('settings.closeLabel')}
+            onClick={() => {
+              void close();
+            }}
+          >
             <CloseIcon className="icon icon-sm" />
           </button>
         </div>
@@ -233,45 +354,63 @@ function SettingsSections({ store }: { store: SettingsStore }): React.JSX.Elemen
         </>
       )}
       {store.section === 'format' && <FormatSection store={store} />}
-      {store.section === 'backup' && (
-        <BackupCard
-          backup={store.backup}
-          onRestore={() => {
-            store.goToArchives();
-          }}
-        />
-      )}
-      {store.section === 'advanced' && (
-        <section className="card settings-card settings-advanced" data-testid="settings-advanced">
-          <h2 className="settings-title">{t('settings.advanced')}</h2>
-          <div id="backup-archives">
-            <BackupAdvanced backup={store.backup} />
-          </div>
-          <div className="settings-group">
-            <h3 className="settings-subtitle">{t('settings.app')}</h3>
-            {/*
-              One row, and it is the only link that leaves the app (owner,
-              2026-10-05): Setup, About and Licenses were three pages she
-              opened once and never again, and the code for all three was
-              more than the row is. The repository says the same three things
-              and stays true when they change.
-            */}
-            <a
-              className="patient-row settings-repo-row"
-              href={REPOSITORY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-testid="settings-repository"
-            >
-              <span>{t('settings.readMore')}</span>
-              <span className="icon-btn settings-repo-mark" role="img" aria-label={t('settings.onGithub')}>
-                <GitHubIcon className="icon icon-sm" />
-              </span>
-            </a>
-          </div>
-        </section>
-      )}
+      {store.section === 'backup' && <BackupSection backup={store.backup} />}
+      {store.section === 'about' && <AboutSection t={t} />}
     </div>
+  );
+}
+
+/**
+ * About: the mark, the version, and the one link that leaves the app (owner,
+ * 2026-10-05). Advanced held three pages she opened once and never came back
+ * to — Setup, About and Licenses — and the code for all three was more than
+ * this is. The repository says the same three things and stays true when they
+ * change, so the link goes where the app's name is rather than on a row of
+ * its own.
+ *
+ * Only the word "Github" is the link. A sentence whose whole line underlines
+ * and turns teal reads as a button to a page she has not chosen yet, and the
+ * line also carries the version, which is not a link to anything.
+ */
+function AboutSection({ t }: { t: Translate }): React.JSX.Element {
+  return (
+    <section className="card settings-card settings-about" data-testid="settings-about">
+      <BrandMark className="settings-about-mark" />
+      <p className="settings-about-line" data-testid="settings-about-line">
+        {aboutLine(t)}
+      </p>
+    </section>
+  );
+}
+
+/**
+ * The About line with "Github" as the link and everything around it as text.
+ *
+ * The sentence is one catalogue entry with a `{github}` placeholder, because
+ * the two languages do not put the word in the same place — "More about us on
+ * Github" is not "Más sobre nosotros en Github" in the same order, and asking a
+ * translator to hand back a sentence in two halves would be worse. So the
+ * line is rendered with the word filled in, and then split on it: the piece
+ * before and the piece after stay text and the word itself becomes the link.
+ * `t` returns a string, so this is the only way to get a node inside a
+ * sentence without cutting it into fragments.
+ */
+function aboutLine(t: Translate): React.JSX.Element {
+  const [before, after] = t('settings.aboutLine', { github: GITHUB_LABEL }).split(GITHUB_LABEL);
+  return (
+    <>
+      {before}
+      <a
+        className="settings-about-link"
+        href={REPOSITORY_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="settings-about-github"
+      >
+        {GITHUB_LABEL}
+      </a>
+      {after}
+    </>
   );
 }
 
@@ -281,10 +420,43 @@ function SettingsSections({ store }: { store: SettingsStore }): React.JSX.Elemen
  * and editing one is the same name-and-sections form — with this host deciding
  * that "saved" means "back to the list", not "back to wherever the first-run
  * flow would have gone".
+ *
+ * Editing a format has no Save button and no Cancel: it saves as she types and
+ * the back arrow is the only way out (owner, 2026-10-05). That is exactly why
+ * the pane bar has to be able to say "Saved" — with nothing to press, the
+ * status beside the arrow is the only place the answer can live, and it must
+ * only appear once the server has the format.
  */
 function FormatSection({ store }: { store: SettingsStore }): React.JSX.Element {
   const { t } = useI18n();
   const view = store.formatView;
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleted, setDeleted] = useState(false);
+
+  /**
+   * Delete goes through the same list she is looking at: the row disappears
+   * because the list was read again, never because the pane forgot it. A
+   * refusal — a format a note still points at, or the server being down —
+   * leaves the row exactly where it was and says why, because a row that
+   * vanishes with no word is the one outcome she could not recover from.
+   */
+  function remove(id: string): void {
+    setDeletingId(id);
+    setDeleteError(null);
+    setDeleted(false);
+    void deleteFormat(id).then(
+      () => {
+        setDeletingId(null);
+        setDeleted(true);
+        store.formats.reload();
+      },
+      (thrown: unknown) => {
+        setDeletingId(null);
+        setDeleteError(errorMessage(thrown));
+      },
+    );
+  }
 
   if (view.kind === 'choose') {
     return (
@@ -298,6 +470,7 @@ function FormatSection({ store }: { store: SettingsStore }): React.JSX.Element {
           onPreview={(draft) => {
             store.setFormatView({ kind: 'draft', draft });
           }}
+          onSavedStateChange={store.setFormatSaved}
           onSaved={store.backToFormatList}
         />
       </>
@@ -307,7 +480,9 @@ function FormatSection({ store }: { store: SettingsStore }): React.JSX.Element {
   if (view.kind === 'draft') {
     return (
       <FormatDraftEditor
+        ref={store.editor}
         draft={view.draft}
+        onSavedStateChange={store.setFormatSaved}
         onSaved={store.backToFormatList}
         onCancel={store.backToFormatList}
       />
@@ -317,6 +492,16 @@ function FormatSection({ store }: { store: SettingsStore }): React.JSX.Element {
   return (
     <section className="card settings-card" data-testid="format-list">
       <h2 className="settings-title">{t('settings.formats')}</h2>
+      {deleted && (
+        <p className="small state-note" role="status" data-testid="format-deleted">
+          {t('common.deleted')}
+        </p>
+      )}
+      {deleteError !== null && (
+        <p className="form-error" role="alert" data-testid="format-delete-error">
+          {deleteError}
+        </p>
+      )}
       {store.formats.state.status === 'loading' && <p className="small state-note">{t('common.loading')}</p>}
       {store.formats.state.status === 'error' && (
         <p className="small state-note error-state" role="alert">
@@ -333,25 +518,40 @@ function FormatSection({ store }: { store: SettingsStore }): React.JSX.Element {
               <p className="format-name">{format.name}</p>
               <p className="small note-meta">{format.sections.join(', ')}</p>
             </div>
-            <button
-              type="button"
-              className="small settings-row-action"
-              data-testid="edit-format"
-              onClick={() => {
-                store.setFormatView({
-                  kind: 'draft',
-                  draft: {
-                    name: format.name,
-                    sections: format.sections,
-                    formatId: format.id,
-                    source: format.source,
-                    instructions: format.instructions,
-                  },
-                });
-              }}
-            >
-              {t('common.edit')}
-            </button>
+            <span className="settings-list-actions">
+              <button
+                type="button"
+                className="small settings-row-action"
+                data-testid="edit-format"
+                onClick={() => {
+                  store.setFormatView({
+                    kind: 'draft',
+                    draft: {
+                      name: format.name,
+                      sections: format.sections,
+                      formatId: format.id,
+                      source: format.source,
+                    },
+                  });
+                }}
+              >
+                {t('common.edit')}
+              </button>
+              {/* Right of Edit and no further away than that: the two act on
+                  the same row, and a destructive action that needs a hunt to
+                  find is not the one she asked for (owner, 2026-10-05). */}
+              <button
+                type="button"
+                className="small settings-row-action-danger"
+                data-testid="delete-format"
+                disabled={deletingId !== null}
+                onClick={() => {
+                  remove(format.id);
+                }}
+              >
+                {t('settings.deleteFormat')}
+              </button>
+            </span>
           </div>
         ))}
       {/* The card's last row, not a button floating between cards. */}

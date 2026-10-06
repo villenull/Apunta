@@ -55,7 +55,18 @@ async function openSettings(section?: string): Promise<HTMLElement> {
   fireEvent.click(await screen.findByTestId('mission-settings'));
   const modal = await screen.findByTestId('settings-modal');
   if (section !== undefined) {
-    fireEvent.click(within(modal).getByTestId(`settings-tab-${section}`));
+    const tab = within(modal).getByTestId(`settings-tab-${section}`);
+    fireEvent.click(tab);
+    // The switch is guarded (Settings asks the editor to write first and moves
+    // on its answer), so the pane lands a tick after the click, not with it.
+    // Waiting on the tab's own `aria-current` is the switch's promise kept, and
+    // it says which section won — so callers can go straight on to what they
+    // came for, exactly as a person does.
+    await waitFor(() => {
+      if (tab.getAttribute('aria-current') !== 'page') {
+        throw new Error(`settings did not switch to "${section}"`);
+      }
+    });
   }
   return modal;
 }
@@ -337,7 +348,7 @@ describe('workspace', () => {
     // Import is no longer a section (owner, 2026-09-27): it is a first-level row
     // in "More", so it is absent here and asserted in
     // `PatientsColumn.test.tsx`, where the row now lives.
-    for (const section of ['appearance', 'format', 'backup', 'advanced']) {
+    for (const section of ['appearance', 'format', 'backup', 'about']) {
       const tab = within(modal).getByTestId(`settings-tab-${section}`);
       expect(tab.querySelector('svg'), section).not.toBeNull();
     }
@@ -1225,7 +1236,7 @@ describe('the format editor', () => {
     fireEvent.click(await screen.findByTestId('edit-format'));
   }
 
-  it('renames a section, reorders it, and saves', async () => {
+  it('renames a section, reorders it, and both land without a save button', async () => {
     await openEditor();
 
     const chips = await screen.findByTestId('section-chips');
@@ -1237,17 +1248,17 @@ describe('the format editor', () => {
 
     // Up/down rather than drag: one click, and it is the whole keyboard story.
     fireEvent.click(within(chips).getByRole('button', { name: 'Move Plan up' }));
-    fireEvent.click(screen.getByTestId('save-format'));
 
+    // This format already exists, so there is no save to press (owner,
+    // 2026-10-05): each edit writes itself.
+    expect(screen.queryByTestId('save-format')).toBeNull();
     await waitFor(() => {
       expect(editorApi.state.formats[0]?.sections).toEqual(['Plan', 'Presenting concern']);
     });
 
-    // Saving is what brings the list back, with the change on it — and the
-    // app has not moved: Settings is a modal, not a screen (owner,
-    // 2026-10-05).
-    const list = await screen.findByTestId('format-list');
-    expect(list.textContent).toContain('Plan, Presenting concern');
+    // Autosaving does not navigate: the editor is still open, and the app has
+    // not moved either — Settings is a modal, not a screen (owner, 2026-10-05).
+    expect(screen.queryByTestId('format-list')).toBeNull();
     expect(activeRouter?.state.location.pathname).toBe('/');
   });
 
@@ -1262,47 +1273,6 @@ describe('the format editor', () => {
     fireEvent.keyDown(within(chips).getByLabelText('New name for Subjective'), { key: 'Enter' });
 
     expect((await screen.findByRole('alert')).textContent).toContain('already a section');
-  });
-
-  it('says that section edits only affect future drafts', async () => {
-    await openEditor();
-
-    expect(
-      await screen.findByText(/keep the sections they were written with/, { exact: false }),
-    ).toBeDefined();
-  });
-
-  it('imports a skill file into the instructions and warns about its references', async () => {
-    await openEditor();
-
-    const panel = await screen.findByTestId('instructions-panel');
-    upload(within(panel).getByTestId('skill-file-input'), [
-      new File(['---\nname: x\n---\n\nUse "client", not "patient".\n'], 'SKILL.md', {
-        type: 'text/markdown',
-      }),
-    ]);
-
-    await waitFor(() => {
-      expect(within(panel).getByLabelText('Instructions')).toHaveProperty(
-        'value',
-        'Use "client", not "patient".',
-      );
-    });
-    expect(within(panel).getByTestId('import-references').textContent).toContain('references/FORMS.md');
-    expect(within(panel).getByTestId('import-report').textContent).toContain('frontmatter removed');
-
-    fireEvent.click(screen.getByTestId('save-format'));
-    await waitFor(() => {
-      expect(editorApi.state.formats[0]?.instructions).toBe('Use "client", not "patient".');
-    });
-  });
-
-  it('leaves instructions blank to mean "use the built-in default"', async () => {
-    await openEditor();
-
-    const panel = await screen.findByTestId('instructions-panel');
-    expect(within(panel).getByLabelText('Instructions')).toHaveProperty('value', '');
-    expect(panel.textContent).toContain('leave blank to use the built-in default');
   });
 });
 
@@ -1892,7 +1862,6 @@ describe('settings', () => {
     // The editor is in the pane, not on a screen of its own: the nav, the
     // modal and the URL behind it all stay where they were (owner,
     // 2026-10-05).
-    expect(await screen.findByText('Edit note format')).toBeDefined();
     expect(screen.getByLabelText('Format name')).toHaveProperty('value', 'Progress note');
     expect(activeRouter?.state.location.pathname).toBe('/');
     expect(screen.getByTestId('settings-pane-back')).not.toBeNull();
@@ -1918,28 +1887,6 @@ describe('settings', () => {
   });
 
   /**
-   * Advanced is a plain open section now (owner, 2026-10-05), and the one
-   * row under App is the repository: Setup, About and Licenses were three
-   * pages she opened once, and the code for all three was more than the row.
-   */
-  it('shows Advanced open, with the one row that leaves the app', async () => {
-    installFakeApi({ formats: [progressNote] });
-    const modal = await openSettings('advanced');
-
-    const advanced = within(modal).getByTestId('settings-advanced');
-    // Nothing to click open: the backup folder is on the page already.
-    expect(await screen.findByTestId('backup-advanced')).not.toBeNull();
-
-    const repository = within(modal).getByTestId('settings-repository');
-    expect(repository.getAttribute('href')).toBe('https://github.com/villenull/Apunta');
-    expect(repository.getAttribute('target')).toBe('_blank');
-    expect(repository.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(repository.textContent).toContain('Read more about Apunta');
-    expect(within(repository).getByLabelText('Apunta on GitHub')).not.toBeNull();
-    expect(advanced.querySelector('summary')).toBeNull();
-  });
-
-  /**
    * The accent is the Apunta teal, always (owner, 2026-09-28). The picker is
    * gone, so a colour an older build stored must not be painted: there would
    * be no way to change it back.
@@ -1961,7 +1908,7 @@ describe('settings', () => {
     installFakeApi({ formats: [progressNote] });
     const modal = await openSettings();
 
-    const tabs = ['appearance', 'format', 'backup', 'advanced'];
+    const tabs = ['appearance', 'format', 'backup', 'about'];
     const nav = within(modal).getByLabelText('Settings sections');
     expect(
       [...nav.querySelectorAll('.settings-nav-item')].map((item) => item.getAttribute('data-testid')),

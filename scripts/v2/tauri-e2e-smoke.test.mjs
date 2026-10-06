@@ -3676,16 +3676,30 @@ async function flowBackup(ctx) {
   }
   await sleep(1000);
 
-  // The real action, on the card's own control (`backup.now`, `backup.now`).
-  const ran = await clickScreenLabel(
+  // The real action, on the page's own control (`backup.now`). It asks first,
+  // and the dialog's own accept button carries the same label, so the second
+  // click below is the answer rather than the action.
+  const asked = await clickScreenLabel(
     window,
     ctx.offset,
     FLOW_LABELS.backupNow.text,
     'the backup-now control',
   );
-  if (!ran.clicked) {
-    recordFlow('backup', 'NOT RUN', `the backup-now control could not be grounded: ${ran.why}`);
-    notRun('backup', `the backup-now control could not be grounded: ${ran.why}`);
+  if (!asked.clicked) {
+    recordFlow('backup', 'NOT RUN', `the backup-now control could not be grounded: ${asked.why}`);
+    notRun('backup', `the backup-now control could not be grounded: ${asked.why}`);
+    return;
+  }
+  await sleep(1000);
+  const confirmed = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.backupNow.text,
+    "the backup confirmation's accept button",
+  );
+  if (!confirmed.clicked) {
+    recordFlow('backup', 'NOT RUN', `the backup confirmation could not be grounded: ${confirmed.why}`);
+    notRun('backup', `the backup confirmation could not be grounded: ${confirmed.why}`);
     return;
   }
   await sleep(3000);

@@ -1281,6 +1281,17 @@ export const en = {
   /** The workspace's delete dialog, `Workspace.tsx:503`. */
   'common.archive': { text: 'Archive' },
 
+  /** The format row's own confirmation, once the delete has landed. */
+  'common.deleted': { text: 'Deleted.' },
+
+  /**
+   * The format editor's own answer, beside its back arrow. No full stop: it
+   * sits in a bar of controls where a sentence would be the wrong shape, and
+   * `settings.savedDot` keeps the punctuated form for a row that reads as
+   * text.
+   */
+  'common.saved': { text: 'Saved' },
+
   /** Both import histories, `ImportBatchList.tsx:47`. */
   'common.undo': { text: 'Undo' },
 
@@ -1356,14 +1367,13 @@ export const en = {
   'ai.bannerTail': { text: 'Everything except drafting a new note still works.' },
 
   /*
-   * `web/src/components/BackupCard.tsx` — the one-line card and the Advanced
-   * half. Four of these are the class `check-ui-strings.mjs` cannot see
+   * `web/src/components/BackupCard.tsx` — the card, and the archives list
+   * beside it. Four of these are the class `check-ui-strings.mjs` cannot see
    * (Fixed decision 5): the stale warning it already had as `backup.stale`,
-   * `BackupCard.tsx:158`'s relative time, `:315-318`'s retention line, and
-   * `:393`'s tested-on date. `BackupCard.test.tsx` pins the last two.
+   * the relative time, the retention line, and the tested-on date.
    */
 
-  /** The card's and the Advanced half's heading, `BackupCard.tsx:142` and `:225`. */
+  /** The card's and the archives list's heading. */
   'backup.title': { text: 'Backup' },
 
   /** The card's restore control and each archive's, `BackupCard.tsx:173` and `:368`. */
@@ -1450,15 +1460,50 @@ export const en = {
    */
   'backup.folderPlaceholder': { text: '/Volumes/Backup/Apunta' },
 
-  /** The passphrase field's label, `BackupCard.tsx:255`. */
+  /**
+   * The passphrase label, now only in the restore dialog: the page's own
+   * passphrase field is gone (owner, 2026-10-05), but an archive encrypted
+   * before it went still opens, so the field that asks for it stays.
+   */
   'backup.passphrase': { text: 'Passphrase' },
-  /** `BackupCard.tsx:268`. */
-  'backup.passphraseWarning': {
-    text: 'Lose this passphrase and the backup cannot be opened by anyone.',
+
+  /** Under that field: she meets it only for an archive that needs one. */
+  'backup.passphraseHint': {
+    text: 'Only needed for a backup you encrypted with a passphrase.',
   },
 
-  /** The Advanced half's own button, `BackupCard.tsx:283`. */
-  'backup.backUp': { text: 'Back up' },
+  /**
+   * The row's second action: the folder is read-only text until she asks for
+   * the editor, so this is the only way in.
+   */
+  'backup.changeLocation': { text: 'Change backup location' },
+
+  /** The editor's confirm, which also runs the backup she was changing for. */
+  'backup.saveFolder': { text: 'Save and back up there' },
+
+  /** Both confirmations' title, so a dialog about backup opens on backup. */
+  'backup.confirmTitle': { text: 'Are you sure?' },
+
+  /**
+   * The backup confirmation's body. It has to say what the button does to her
+   * data — every note copied and checked — and what it does not: change
+   * anything on this computer.
+   */
+  'backup.confirmBackupBody': {
+    text: 'This copies every note into an archive in your backup folder and reads it back to check it. Nothing on this computer changes.',
+  },
+
+  /**
+   * The restore confirmation's body, which has three promises in one
+   * paragraph: what comes back, that her current notes stay as a safety copy,
+   * and that Apunta asks her to restart to finish.
+   */
+  'backup.confirmRestoreBody': {
+    text: 'This brings back the notes in the backup you pick. Your current notes are kept as a safety copy, and Apunta asks you to quit and open it again to finish.',
+  },
+
+  /** The restore dialog's archive picker. */
+  'backup.archiveLabel': { text: 'Backup file' },
 
   /**
    * `BackupCard.tsx:297`, with the manifest's own day (`instantToLocalDay`, a
@@ -2167,83 +2212,6 @@ export const en = {
   'patients.identifierPlaceholder': { text: 'Internal reference, chart number, etc.' },
 
   /*
-   * `web/src/components/InstructionsPanel.tsx` — the drafting instructions for
-   * one format, and the "Import from skill file" affordance.
-   */
-
-  /** `InstructionsPanel.tsx:52` and `:61`. */
-  'format.instructions': { text: 'Instructions' },
-  /** `InstructionsPanel.tsx:53-55`, before the `<code>` file name. */
-  'format.instructionsHelp': {
-    text: 'What the local model is told about writing this format. Paste flattened skill instructions here; leave blank to use the built-in default. The recipe for flattening a Claude skill is in',
-  },
-  /** `InstructionsPanel.tsx:56`, after it. `docs/skill-porting.md` is a path. */
-  'format.instructionsHelpTail': { text: 'in the Apunta folder.' },
-  /** `InstructionsPanel.tsx:66`. */
-  'format.instructionsPlaceholder': { text: 'Leave blank to use the built-in default.' },
-  /** `InstructionsPanel.tsx:75`. */
-  'format.tokensLarge': {
-    text: '≈{tokens} tokens — small models start to drift past about {budget}.',
-    kind: { tokens: 'number', budget: 'number' },
-  },
-  /** `InstructionsPanel.tsx:76`. */
-  'format.tokensOk': { text: '≈{tokens} tokens — comfortable.', kind: { tokens: 'number' } },
-  /** `InstructionsPanel.tsx:81`. */
-  'format.readingSkill': { text: 'Reading the skill…' },
-  /** `InstructionsPanel.tsx:81`. */
-  'format.importFromSkill': { text: 'Import from skill file' },
-  /**
-   * `InstructionsPanel.tsx:94-96`, the sentence that sits either side of two
-   * `<code>` file names. Three keys because the sentence is split by the
-   * elements themselves, and §3.6's fragments are what a language has to
-   * choose: `A` opens it, `, or a` joins the two file names, and the tail
-   * carries the promise.
-   */
-  'format.skillFileLead': { text: 'A' },
-  'format.skillFileAnd': { text: ', or a' },
-  'format.skillFileTail': { text: 'of the skill folder. Nothing is saved until you press save.' },
-
-  /** The import report's own list, `InstructionsPanel.tsx:103-118`. */
-  'format.reportFrontmatter': { text: 'frontmatter removed' },
-  'format.reportCommandBlocks': {
-    text: '{count} command block dropped',
-    plural: { one: '{count} command block dropped', other: '{count} command blocks dropped' },
-    kind: { count: 'number' },
-  },
-  'format.reportToolLines': {
-    text: '{count} tool line dropped',
-    plural: { one: '{count} tool line dropped', other: '{count} tool lines dropped' },
-    kind: { count: 'number' },
-  },
-  'format.reportClaudeLines': {
-    text: '{count} Claude-specific line dropped',
-    plural: {
-      one: '{count} Claude-specific line dropped',
-      other: '{count} Claude-specific lines dropped',
-    },
-    kind: { count: 'number' },
-  },
-  'format.reportEmptiedHeadings': {
-    text: '{count} emptied heading dropped',
-    plural: { one: '{count} emptied heading dropped', other: '{count} emptied headings dropped' },
-    kind: { count: 'number' },
-  },
-  'format.reportNothing': { text: 'nothing needed removing' },
-  /** `InstructionsPanel.tsx:120`. */
-  'format.reportReadFirst': {
-    text: 'Read it through before you save — these rules over-delete on some skills.',
-  },
-  /** `InstructionsPanel.tsx:124-125`; `{files}` is the flattener's own list. */
-  'format.referencedFiles': {
-    text: 'This skill refers to {files}, which Apunta cannot read. If those files hold section definitions or terminology, paste that text in yourself.',
-    kind: { files: 'text' },
-  },
-  /** `InstructionsPanel.tsx:130-131`. */
-  'format.instructionsWarning': {
-    text: "This text is saved and is sent to the AI with every note you write. Check it doesn't contain real client details before you save.",
-  },
-
-  /*
    * Onboarding: `OnboardingFormat.tsx` chooses how a format is defined, and
    * `OnboardingPreview.tsx` confirms it. The three errors the first sets are
    * module-level `setError(…)` calls the literal checker cannot see, and they
@@ -2383,8 +2351,13 @@ export const en = {
   'settings.backup': { text: 'Backup' },
   /** `Settings.tsx:71`. */
   'settings.import': { text: 'Import' },
-  /** `Settings.tsx:72` and `:275`. */
-  'settings.advanced': { text: 'Advanced' },
+  /**
+   * The nav label and the pane's own heading, `Settings.tsx:72` and the About
+   * pane. It replaced Advanced (owner, 2026-10-05): the pane is the repository
+   * and nothing else, and a heading that names a difficulty is not what the
+   * row under it ever was.
+   */
+  'settings.about': { text: 'About' },
   /** `Settings.tsx:147`, the modal nav's spoken name. */
   'settings.sectionsLabel': { text: 'Settings sections' },
   /** `Settings.tsx:167`. */
@@ -2393,12 +2366,24 @@ export const en = {
   'settings.formats': { text: 'Note formats' },
   /** `Settings.tsx:241`. */
   'settings.addFormat': { text: 'Add another format' },
-  /** `Settings.tsx:280`. */
-  'settings.app': { text: 'App' },
-  /** The one row that leaves the app, replacing Setup / About / Licenses. */
-  'settings.readMore': { text: 'Read more about Apunta' },
-  /** The GitHub mark on that row, named for where it goes. */
-  'settings.onGithub': { text: 'Apunta on GitHub' },
+  /**
+   * The one centred line under the About mark. `{github}` is the only
+   * clickable word, so the sentence is one key with the word as a parameter
+   * rather than a word key the caller splices a stem onto — the split is the
+   * caller's, and it reads the placeholder out of the translated string, so
+   * the two halves keep each catalogue's own word order.
+   */
+  'settings.aboutLine': {
+    text: 'v0.1 | More about us on {github}',
+    kind: { github: 'text' },
+  },
+  /*
+   * The delete action on a format row, beside its Edit. It acts at once
+   * (owner, 2026-10-05): a format is a shape she can write again, and the
+   * notes that used it keep their own sections, so a dialog would only be
+   * asking her to confirm a loss that is not one.
+   */
+  'settings.deleteFormat': { text: 'Delete' },
   /** `Settings.tsx:297`. */
   'settings.loadingAi': { text: 'Loading AI settings…' },
   /** `Settings.tsx:344` and `:345`. */

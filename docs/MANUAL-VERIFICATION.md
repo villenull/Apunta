@@ -121,7 +121,15 @@ looks for (a repetition loop under constrained decoding) is intermittent.
 
 ---
 
-## 4. Back up and restore
+## 4. Backup (Settings → Backup)
+
+Backup is one Settings page since 2026-10-05 (`Settings → Backup`); the
+Advanced tab is gone and the folder, archives, restore-tested nudge and
+retention count live on that page. **Back up now** and **Restore** each ask for
+confirmation first, and cancelling changes nothing. A new backup takes **no
+passphrase** — use an encrypted disk the OS unlocks; an archive encrypted
+before this change is restored through the passphrase field in the restore
+dialog.
 
 The archive format is tested here — a seeded practice is backed up, restored
 into a fresh data directory, and one note compared character for character.
@@ -129,17 +137,20 @@ What is **not** tested is any of it on a real practice on a real disk.
 
 | Check | ☐ | Notes |
 | --- | --- | --- |
-| Settings → Back up now writes a file, and says it was checked | ☐ | |
+| Settings → Backup → **Back up now** confirms, then writes a file, and says it was checked | ☐ | |
+| **Change backup location** opens prefilled with the saved folder; saving applies it and cancelling restores the saved one | ☐ | |
 | The archive opens in Finder and `notes/` is readable in TextEdit | ☐ | This is the "Apunta is gone in 2035" path |
 | `plans/` holds one document per plan version | ☐ | |
 | `shasum -a 256 apunta.db` matches the fingerprint in `manifest.json` | ☐ | |
-| Choosing `~/Documents` as the destination shows the iCloud warning | ☐ | Depends on §1 items 2 and 3 |
-| An encrypted backup opens with the passphrase | ☑ Linux, 2026-09-01 — the Mac pass is what this row is still for | |
+| Changing the location to `~/Documents` shows the iCloud warning | ☐ | Depends on §1 items 2 and 3. The warning now says to put the archive on an encrypted disk instead |
+| An archive encrypted before 2026-10-05 restores with the passphrase asked for in the restore dialog | ☑ Linux, 2026-09-01 — the Mac pass is what this row is still for | New backups are not encrypted in-app and take no passphrase |
 | The standalone `decrypt.mjs` in RESTORE.txt decrypts it on **this** Mac | ☑ Linux, 2026-09-01 — copied out of a real archive by hand exactly as the file instructs, decrypted, and the resulting database matched its manifest fingerprint. The readable `notes/<patient>/<date>.txt` files were all there, which is the "Apunta is gone in 2035" path working. **Still unconfirmed on macOS**, whose `unzip` is what this row exists for. A wrong passphrase used to answer with a Node crypto stack trace and now says so in English | `node decrypt.mjs <backup>.zip "<passphrase>"` |
 | The daily automatic backup happens on the first launch of a day | ☐ | Settings shows the time |
 
-**Then do the restore by hand, once, on a spare copy.** Follow RESTORE.txt
-path 2, into a copy of the data folder rather than the real one:
+**Then do the restore by hand, once, on a spare copy.** In Apunta, Settings →
+Backup → **Restore** names the archive it is about to bring back and confirms
+before writing anything. On the command line, follow RESTORE.txt path 2 into a
+copy of the data folder rather than the real one:
 
 ```sh
 cp -R ~/Library/Application\ Support/Apunta /tmp/apunta-restore-test
@@ -149,7 +160,7 @@ APUNTA_DATA_DIR=/tmp/apunta-restore-test npm start
 | Check | ☐ |
 | --- | --- |
 | The notes come back | ☐ |
-| Settings → "I have done this" records it | ☐ |
+| Settings → Backup records that a restore has been verified | ☐ |
 
 A backup that has never been restored is a hypothesis.
 
@@ -358,12 +369,17 @@ The recipe, repeatable on any machine with the repo:
    app since 2026-09-22). Before that date this step was **Describe it
    myself** plus pasting the instructions by hand.
 3. The next screen asks for a patient. **Do not add one** — the pack must
-   carry zero patients. Go to `/settings` instead.
-4. Check it: Settings → Note formats → **Edit** shows the seven sections and
-   the instructions already filled in, starting "You are drafting a clinical
-   note for a licensed therapist". Nothing to paste. (The instructions
-   replace the built-in defaults entirely; they carry their own
-   anti-fabrication core.)
+   carry zero patients. Open **Settings** (a modal over the workspace, not a
+   route) instead; the `/settings` route is gone.
+4. Check it: Settings → Note formats → **Edit** shows the format name as the
+   heading itself and the seven sections below it, with a **Saved** marker
+   beside the back arrow once the server holds them. There is no Save button
+   and **no Instructions panel any more** (2026-10-05): the instructions stay
+   stored on the format and are still written onto it by first run, starting
+   "You are drafting a clinical note for a licensed therapist". Nothing to
+   paste. (The instructions replace the built-in defaults entirely; they carry
+   their own anti-fabrication core.) Confirm them with
+   `GET /api/formats` rather than on screen.
 5. Pin the model. There is no Settings field for it, deliberately, so:
    `curl -X PUT 127.0.0.1:7717/api/settings -H "content-type: application/json"
    -d '{"llm_model":"qwen3.5:4b-q4_K_M"}'`
@@ -371,8 +387,8 @@ The recipe, repeatable on any machine with the repo:
    existing deployments, but this pack intentionally leaves it unset. The
    removed Settings → Recording editor is not being restored, and no owner
    vocabulary-list step is pending.
-7. Settings → Back up and restore → **Back up now**. The zip appears in
-   `<data dir>/backups/apunta-backup-<date>.zip`; its `manifest.json` must
+7. Settings → Backup → **Back up now**, and confirm when asked. The zip appears
+   in `<data dir>/backups/apunta-backup-<date>.zip`; its `manifest.json` must
    say `"patients": 0` and `"note_formats": 1`. If you back up more than
    once, the app records `last_backup_*` bookkeeping settings; empty them
    (`PUT /api/settings` with `""` values, which the app reads as "never")
@@ -380,9 +396,9 @@ The recipe, repeatable on any machine with the repo:
 
 The pack produced this way (manifest db sha256 `2b7c9249…`, 2026-08-27,
 instruction revision 3 — the measured 40.0% configuration) is at
-`~/Apunta-config-pack/apunta-config-pack.zip` on the partner's machine. On her Mac: Settings → Back up and restore → restore from that
-file, quit and reopen. `whisper_binary` is deliberately not in the pack —
-each machine sets its own; the bundled app needs none.
+`~/Apunta-config-pack/apunta-config-pack.zip` on the partner's machine. On her Mac: Settings → Backup → **Restore**, pick that
+file, confirm, then quit and reopen. `whisper_binary` is deliberately not in
+the pack — each machine sets its own; the bundled app needs none.
 
 | Check | ☐ | Notes |
 | --- | --- | --- |

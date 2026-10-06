@@ -53,6 +53,11 @@ async function openSettings(): Promise<void> {
 
 type FetchFn = (path: string, init?: RequestInit) => Promise<Response>;
 
+/** A JSON response for the stubs below, in the shape the client parses. */
+function json(value: unknown, status = 200): Response {
+  return new Response(JSON.stringify(value), { status, headers: { 'content-type': 'application/json' } });
+}
+
 interface PendingPut {
   readonly body: Settings;
   readonly resolve: (response: Response) => void;
@@ -393,8 +398,8 @@ describe('the drafting model radio group', () => {
     fireEvent.click(within(modal).getByTestId('settings-tab-format'));
     expect((await screen.findByTestId('format-list')).textContent).toContain(t('settings.formats'));
 
-    fireEvent.click(within(modal).getByTestId('settings-tab-advanced'));
-    expect((await screen.findByTestId('settings-advanced')).textContent).toContain(t('settings.advanced'));
+    fireEvent.click(within(modal).getByTestId('settings-tab-about'));
+    expect(await screen.findByTestId('settings-about')).not.toBeNull();
 
     // The theme and size controls live on the Appearance section, which the
     // modal shows one at a time, so go back to it before reading them.
@@ -447,14 +452,272 @@ describe('leaving the format editor', () => {
     await screen.findByLabelText('Format name');
     expect(screen.queryByTestId('settings-pane-back')).not.toBeNull();
 
-    fireEvent.click(within(modal).getByTestId('settings-tab-advanced'));
-    await screen.findByTestId('settings-advanced');
+    fireEvent.click(within(modal).getByTestId('settings-tab-about'));
+    await screen.findByTestId('settings-about');
     expect(screen.queryByTestId('settings-pane-back')).toBeNull();
 
     // Coming back lands on the list, not on the editor she left.
     fireEvent.click(within(modal).getByTestId('settings-tab-format'));
     expect((await screen.findByTestId('format-list')).textContent).toContain(t('settings.formats'));
     expect(screen.queryByTestId('settings-pane-back')).toBeNull();
+  });
+});
+
+/**
+ * Editing a format saves itself, so there is no Save button to press and the
+ * only place the answer can be is the bar beside the back arrow (owner,
+ * 2026-10-05). "Saved" has to mean the server has the format — not that she
+ * typed — and it has to go away the moment the next edit starts, or it is
+ * telling her about something that is no longer true.
+ */
+describe('the format editor’s own save status', () => {
+  it('says Saved only once the format is on the server, and unsays it on the next edit', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    const list = await screen.findByTestId('format-list');
+    fireEvent.click(within(list).getByTestId('edit-format'));
+
+    const name = await screen.findByLabelText('Format name');
+    // Nothing to press, and nothing claimed: the format on the server is the
+    // one she started from.
+    expect(screen.queryByTestId('save-format')).toBeNull();
+    expect(screen.queryByTestId('settings-format-saved')).toBeNull();
+
+    fireEvent.change(name, { target: { value: 'Progress note v2' } });
+    await screen.findByTestId('settings-format-saved', {}, { timeout: 3000 });
+
+    fireEvent.change(name, { target: { value: 'Progress note v3' } });
+    await waitFor(() => {
+      expect(screen.queryByTestId('settings-format-saved')).toBeNull();
+    });
+  });
+});
+
+/**
+ * `PATCH /api/formats/:id` failing is the one exit the pane has to refuse: a
+ * save that was refused has not saved anything, so every way out of the editor
+ * — the back arrow, the nav, the close button, and Escape on the dialog over
+ * the top — has to ask the editor first and stay put when the answer is no
+ * (owner, 2026-10-05). Unmounting instead would take the edit with it, and the
+ * refusal is the one case where the editor's screen is the only copy she has.
+ *
+ * The refused write is stubbed per case for the same reason the delete case
+ * stubs its own: `fakeApi` has no answer for it.
+ */
+describe('leaving the format editor when the server refuses the save', () => {
+  /** Answer every format PATCH with the server's own failure shape. */
+  function refuseFormatPatches(message: string): void {
+    const inner = globalThis.fetch as unknown as FetchFn;
+    globalThis.fetch = ((path: string, init?: RequestInit) => {
+      if (path.startsWith('/api/formats/') && init?.method === 'PATCH') {
+        return Promise.resolve(json({ error: 'internal_error', message }, 500));
+      }
+      return inner(path, init);
+    }) as typeof fetch;
+  }
+
+  /** Settings open on the format editor, mid-edit, with saves refused. */
+  async function openRefusedEditor(): Promise<HTMLElement> {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    refuseFormatPatches('The format could not be saved.');
+    await openSettings();
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    fireEvent.click(within(await screen.findByTestId('format-list')).getByTestId('edit-format'));
+    fireEvent.change(await screen.findByLabelText('Format name'), {
+      target: { value: 'Progress note v2' },
+    });
+    return modal;
+  }
+
+  /** The refusal, once the editor has shown it. */
+  async function expectRefusal(): Promise<void> {
+    expect((await screen.findByTestId('format-error')).textContent).toContain(
+      'The format could not be saved.',
+    );
+  }
+
+  it('stays in the editor on the back arrow, with the refusal on screen', async () => {
+    const modal = await openRefusedEditor();
+
+    fireEvent.click(within(modal).getByTestId('settings-pane-back'));
+    await expectRefusal();
+    expect(screen.queryByTestId('format-list')).toBeNull();
+    // Her edit is still there: the refusal cost her the exit, not the text.
+    expect((screen.getByLabelText('Format name') as HTMLInputElement).value).toBe('Progress note v2');
+  });
+
+  it('stays in the editor when another section is chosen', async () => {
+    const modal = await openRefusedEditor();
+
+    fireEvent.click(within(modal).getByTestId('settings-tab-about'));
+    await expectRefusal();
+    expect(screen.queryByTestId('settings-about')).toBeNull();
+    expect(screen.queryByTestId('format-list')).toBeNull();
+  });
+
+  it('stays open on the close button, and on Escape', async () => {
+    const modal = await openRefusedEditor();
+
+    fireEvent.click(within(modal).getByRole('button', { name: 'Close settings' }));
+    await expectRefusal();
+    expect(screen.queryByTestId('settings-modal')).not.toBeNull();
+
+    // Escape on the dialog is a different path to the same unmount — the one
+    // that used to go around the panel entirely.
+    await act(async () => {
+      fireEvent.keyDown(document, { key: 'Escape' });
+    });
+    await expectRefusal();
+    expect(screen.queryByTestId('settings-modal')).not.toBeNull();
+  });
+});
+
+/**
+ * The other half of the same contract: when the write lands, the exit happens
+ * and the list is re-read **after** it, so the row shows the name she last
+ * typed rather than the one the panel was opened on.
+ */
+describe('leaving the format editor after a save lands', () => {
+  it('reads the list again on the way out, showing the name she typed', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...STORED } });
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    fireEvent.click(within(await screen.findByTestId('format-list')).getByTestId('edit-format'));
+    fireEvent.change(await screen.findByLabelText('Format name'), {
+      target: { value: 'Progress note v2' },
+    });
+
+    // Straight out, inside the debounce: the pane waits for the write rather
+    // than racing it.
+    fireEvent.click(within(modal).getByTestId('settings-pane-back'));
+
+    const list = await screen.findByTestId('format-list');
+    await waitFor(() => {
+      expect(list.textContent).toContain('Progress note v2');
+    });
+    expect(api.state.formats.map((item) => item.name)).toEqual(['Progress note v2']);
+  });
+
+  it('closes the modal once the write has landed', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    fireEvent.click(within(await screen.findByTestId('format-list')).getByTestId('edit-format'));
+    fireEvent.change(await screen.findByLabelText('Format name'), {
+      target: { value: 'Progress note v2' },
+    });
+
+    await act(async () => {
+      fireEvent.keyDown(document, { key: 'Escape' });
+    });
+    await waitFor(() => {
+      expect(screen.queryByTestId('settings-modal')).toBeNull();
+    });
+  });
+});
+
+/**
+ * About (owner, 2026-10-05): the mark, the version, and the one link that
+ * leaves the app. What is worth pinning is the destination and that the word
+ * is the whole of the link — the layout around it is the smoke check's job.
+ */
+describe('the About section', () => {
+  it('links only the word Github, and only to the repository', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-about'));
+    const about = await screen.findByTestId('settings-about');
+
+    const link = within(about).getByTestId('settings-about-github');
+    expect(link.getAttribute('href')).toBe('https://github.com/villenull/Apunta');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    // The word is the link and not a sentence around it: the version and the
+    // rest of the line stay text.
+    expect(link.textContent).toBe('Github');
+    expect(about.querySelectorAll('a')).toHaveLength(1);
+  });
+});
+
+/**
+ * Delete sits on the row, right of Edit, and goes through the server's own
+ * delete (owner, 2026-10-05). Two things have to be true: a delete that lands
+ * leaves the list shorter, and one the server refuses leaves the row exactly
+ * where it was and says why — a row that vanishes without a word is the
+ * outcome she could not recover from.
+ *
+ * The delete is stubbed per case rather than taught to `fakeApi`, because the
+ * refusal is the half worth writing down and it is the only one the fake has
+ * no answer for.
+ */
+describe('deleting a format from the list', () => {
+  /**
+   * Answer `DELETE /api/formats/:id` ourselves: either take the format out of
+   * the fake's list and answer 204, or refuse with the message the real server
+   * sends when notes still point at the format
+   * (`server/src/routes/formats.ts:101`).
+   */
+  function stubFormatDelete(api: FakeApi, refusal: string | null): void {
+    const inner = globalThis.fetch as unknown as FetchFn;
+    globalThis.fetch = ((path: string, init?: RequestInit) => {
+      if (path.startsWith('/api/formats/') && init?.method === 'DELETE') {
+        if (refusal !== null) {
+          return Promise.resolve(json({ error: 'conflict.format_in_use', message: refusal }, 409));
+        }
+        const id = path.slice('/api/formats/'.length);
+        api.state.formats = api.state.formats.filter((item) => item.id !== id);
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      return inner(path, init);
+    }) as typeof fetch;
+  }
+
+  it('drops the row when the delete lands', async () => {
+    const api = installFakeApi({
+      formats: [format, makeFormat('SOAP note', ['Subjective'])],
+      settings: { ...STORED },
+    });
+    stubFormatDelete(api, null);
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    const list = await screen.findByTestId('format-list');
+
+    const row = within(list).getByText('SOAP note').closest('.settings-list-row') as HTMLElement;
+    fireEvent.click(within(row).getByTestId('delete-format'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('SOAP note')).toBeNull();
+    });
+    expect(api.state.formats.map((item) => item.name)).toEqual(['Progress note']);
+    expect(await screen.findByTestId('format-deleted')).not.toBeNull();
+  });
+
+  it('keeps the row and says why when the server refuses', async () => {
+    const api = installFakeApi({ formats: [format], settings: { ...STORED } });
+    stubFormatDelete(api, 'Two notes still use this format.');
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    const list = await screen.findByTestId('format-list');
+    fireEvent.click(within(list).getByTestId('delete-format'));
+
+    const error = await screen.findByTestId('format-delete-error');
+    expect(error.textContent).toContain('Two notes still use this format.');
+    expect(api.state.formats.map((item) => item.name)).toEqual(['Progress note']);
+    expect(screen.queryByTestId('format-deleted')).toBeNull();
   });
 });
 

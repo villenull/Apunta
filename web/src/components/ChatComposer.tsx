@@ -76,7 +76,10 @@ export function ChatComposer({
       }
     },
   };
-  const hasText = shown.trim() !== '';
+  // One character lights the arrow, spaces included, and only `value` counts:
+  // a recording's provisional tail is a view of the microphone, not input.
+  // Whether the arrow may be *pressed* is answered in `ComposerButtons`.
+  const hasText = value.length > 0;
 
   return (
     <div className={className === undefined ? 'chat-input-row' : `chat-input-row ${className}`}>

@@ -66,7 +66,6 @@ export {
   createStandardFormat,
   deleteFormat,
   detectFormat,
-  flattenSkill,
   listFormats,
   updateFormat,
 } from './formats.js';
