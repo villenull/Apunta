@@ -213,19 +213,41 @@ P5.5. **Consumers:** Tauri shell, server, web update notice.
    health-poll trust.
 2. Further messages are JSON lines. Server to shell: `ready`, `fatal{code}`,
    `update_request{action:"check"|"download"|"install"}`,
-   `quiesce_result{ok, blockers[]}`. Shell to server (stdin):
-   `update_status{state, version?, code?}`, `quiesce{}`, `shutdown{}`.
-   Unknown message types are logged and ignored.
+   `quiesce_result{ok, blockers[]}`, `snapshot_result{id, ok, code?}`,
+   `close_decision{confirm}`, `startup_context{mode:"normal"|"recovery",
+   updateId?, targetVersion?, previousVersion?}`,
+   `health_result{id, ok, code?}`,
+   `recovery_request{id, action:"restart"|"reinstall_previous"}`.
+   Shell to server (stdin): `update_status{state, version?, code?}`,
+   `quiesce{}`, `snapshot_request{id}`, `maintenance_release{}`,
+   `health_confirm{id}`, `shutdown{}`.
+   Snapshot request/result ids are opaque decimal **strings**, matched exactly;
+   they are not JSON numbers, quiesce ids or an implicit quiescence reply.
+   The preceding snapshotting status supplies the target version. A successful
+   snapshot acknowledgment requires the safety snapshot and its recovery
+   metadata to be durably recorded. Unknown message types are logged and ignored.
+   `startup_context` follows ownership acquisition and precedes database startup
+   and `ready`. Health confirmation is accepted only for the claimed update,
+   after the shell validates its own child's ready nonce, protocol and target
+   version. Its positive acknowledgment follows durable journal completion.
+   Native close intent is explicit: status codes `close_requested`,
+   `close_refused` and `close_cancelled`, not an inference from `idle`.
+   A confirmed renderer decision follows explicit local recording cancellation
+   and triggers a fresh canonical check; cancellation leaves the app running.
 3. The web page talks only to the server over HTTP. Update endpoints
    (`GET /api/app/update`, `POST /api/app/update/{check,download,install}`)
    exist only when the server was started by the shell; in browser mode
-   they return 404. **Quiescence is not an updater endpoint.** The
+   they return 404. `POST /api/app/close/decision` is also shell-only and
+   carries the explicit renderer decision; its confirmation never grants
+   permission to skip quiescence. **Quiescence is not an updater endpoint.** The
    `/api/app/quiesce*` routes are a **server-mode** route group: they exist in
    both modes and are available in browser mode, and C-REQ@1's request guard is
    unchanged for them. What differs by mode is only what releases a successful
    quiesce's maintenance state: in **shell mode** maintenance stays on through
-   the snapshot and is released by the shell's next transition; in **browser
-   mode** it is held while at least one window is registered and the last
+   the snapshot and install until shutdown. Only an explicit
+   `maintenance_release{}` on abandonment, refusal or failure releases it;
+   successful install never releases writes before relaunch. In **browser mode**
+   it is held while at least one window is registered and the last
    unregistration releases it, so no browser-mode state persists until restart.
 4. **No Tauri IPC from web content.** No capabilities for any webview
    origin, `withGlobalTauri: false`, no custom `invoke_handler` commands.
@@ -385,23 +407,39 @@ snapshotting → installing → relaunching → health_check → done`.
 **Quiescence.** The server enters maintenance mode: new jobs and writes get
 503 `maintenance`; it waits up to 30 s for its registry of active jobs
 (recording, transcription, draft, refine, plan, briefing, brainstorm,
-imports, restore, backup, saves) to drain; the web client flushes the editor
-and reports `ok` or `conflict`. Any blocker → `quiesce_result{ok:false}`.
+imports, restore, backup, saves) to drain; the web client freezes its workspace
+before acknowledging the flush, flushes the editor and reports `ok` or its
+client blockers: `conflict`, `save_error`, `recording` or `unsaved_text`.
+The hold ends only on authoritative release or replacement-server
+registration, never on an expired wait or inferred idle updater state.
+Unfinished typed Capture text or an unpersisted recording result is an
+independent obligation reported as `unsaved_text`: saving a note cannot clear
+it, and a generic flush never discards it. Any blocker → `quiesce_result{ok:false}`.
 **One write is exempt while maintenance is on:** the reporting window's own
 note save, `PATCH /api/notes/:id`, during the flush step that asked for it and
 only when it carries that quiesce's id and the window's identity; every other
 write is still refused.
 Window close uses the same check: close is deferred while a save is in
-flight; an active recording asks for confirmation; unsaved text is never
-discarded silently.
+flight; an active recording asks for confirmation **after a refused native
+close**, not during a generic quiesce or update. Only explicit confirmation may
+discard the reporting window's own recording, followed by a fresh canonical
+close check. Unsaved typed text and another window's work are never discarded
+silently. Rust acts on the canonical boolean; it does not classify blockers.
+Native close has three shell transitions: `ok:true` closes; `ok:false` keeps the
+window open and reports `close_refused`; a renderer `close_decision{confirm:true}`
+starts a fresh canonical check, while `confirm:false` reports `close_cancelled`.
+The renderer, which owns the blocker vocabulary, says what to finish (save in
+flight, conflict, unsaved text) and offers discard confirmation only for its own
+active recording.
 **Quiescence is a server-mode route, not an updater endpoint.** The
 `/api/app/quiesce*` routes exist in shell mode and in browser mode alike and are
 available in both, behind C-REQ@1's unchanged request guard (C-BRIDGE@1 rule 3).
-In shell mode a successful quiesce leaves maintenance on through the snapshot,
-released by the shell's next transition; in browser mode it is held while at
-least one window is registered and the last unregistration releases it.
+In shell mode a successful quiesce leaves maintenance on through snapshot,
+install and shutdown. An explicit release is required on abandonment or failure,
+never on successful install. In browser mode it is held while at least one
+window is registered and the last unregistration releases it.
 
-**Migration** (every start, not only after updates):
+**Migration** (every normal start, not only after updates):
 1. Acquire the lock (C-OWN). Apply a pending restore if any.
 2. Open read-only and read the schema version. If it is **newer** than the
    code knows → refuse with `newer_schema`; never downgrade.
@@ -412,6 +450,40 @@ least one window is registered and the last unregistration releases it.
    roll back, stop with `migration_failed`, keep the snapshot.
 5. Keep the last 3 safety snapshots; delete older ones only after a
    successful migration.
+
+**Recovery startup.** A pending update is distinct from an already attempted or
+failed health check: the first legitimate updated boot still runs the normal
+migration sequence. A failed health attempt selects an actual recovery server
+and view before normal startup. Recovery does not open the user SQLite database,
+run migrations, sweep audio, schedule backups or start clinical writers.
+It may restore a known safety snapshot only on explicit user action, and offers
+reinstalling `Apunta.previous.AppImage`. Relaunch health must come from the new
+shell's own child's nonce/protocol/version-validated ready line, never an HTTP
+poll or a marker that merely asserts success without executing that path.
+The journal is server-owned: `<dataDir>/update-journal.json`, durable atomic
+replacement, with distinct `pending`, `health_attempted` and `recovery` phases.
+The first normal update boot requires the matching private handoff id and target
+build version, claims its one attempt before database opening, and awaits the
+explicit health acknowledgment above. An already attempted journal, wrong
+handoff or wrong version selects recovery, not another normal-start writer.
+The shell does not read clinical folders to inspect this journal.
+
+The old shell gracefully stops its owned server and releases its single-instance
+guard before launching the replacement. It supervises the actual replacement
+process until that shell reports nonce-bound native readiness after validating
+its own server. Recovery readiness is distinct from successful normal health.
+A failed normal health attempt starts one explicit recovery server/view, not a
+normal-mode retry; the previous image remains available if execution itself
+cannot start. No file marker substitutes for the executed owned-child handshake.
+
+**Verified payload.** Download and signature verification precede quiescence;
+keep one verified byte buffer and pass it by reference to installation only
+after successful quiescence and the explicit snapshot acknowledgment.
+Do not use an SDK operation that combines download and installation across
+these required state boundaries. Validate the initial HTTPS URL and every
+redirect against the approved hosts; test-only loopback transport stays behind
+`test-updater`. AM-225 permits pinned direct reqwest 0.13.5 for that policy,
+without new package acquisition or a privacy/release-key waiver.
 
 **Test keys and endpoints.** Local update tests use a throwaway key created
 inside the sandbox run folder and an endpoint on `127.0.0.1:7890–7899`,
