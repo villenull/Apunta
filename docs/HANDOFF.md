@@ -34,6 +34,12 @@ wait parked while the hold is on.
   regression. The Rule B freshness FAIL in that run is expected: the work was
   uncommitted when the AppImage was built.
 
+- **CI has not run since 2026-10-06 morning.** Every run from `8d2dfd8`
+  onward fails in seconds with "the job was not started because recent
+  account payments have failed or your spending limit needs to be
+  increased" — a GitHub billing block, not a code failure. The local gates
+  above are the only evidence for these commits until the owner clears it.
+
 # Direction change — 2026-10-06 afternoon (current)
 
 Owner: the release-blocker round was too slow and produced nothing user-facing.
