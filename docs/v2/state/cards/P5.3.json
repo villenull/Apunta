@@ -13,58 +13,99 @@
     "V1": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V2": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V3": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V4": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V5": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V6": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V7": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V8": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     },
     "V9": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl5.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5-review.md"
     }
   },
-  "sandboxRuns": ["2026-10-06T14-42-44-621Z-47d59157"],
+  "sandboxRuns": [
+    {
+      "runId": "2026-10-06T14-42-44-621Z-47d59157",
+      "ports": { "en": 7853, "es": 7854, "quiescence": 7855 },
+      "rows": ["implementation gates", "production-controller smoke"]
+    },
+    {
+      "runId": "2026-10-06T16-31-55-087Z-a06ecbbc",
+      "ports": { "en": 7853, "es": 7854, "quiescence": 7855 },
+      "rows": ["independent V2"]
+    },
+    {
+      "runId": "2026-10-06T16-32-19-083Z-f40683e0",
+      "ports": { "en": 7855, "es": 7856, "quiescence": 7857 },
+      "rows": ["independent V3"]
+    },
+    {
+      "runId": "2026-10-06T16-32-38-836Z-9065e504",
+      "ports": { "en": 7866, "es": 7867, "quiescence": 7868 },
+      "rows": ["independent V4"]
+    },
+    {
+      "runId": "2026-10-06T16-33-27-948Z-ae68bef9",
+      "ports": { "en": 7875, "es": 7876, "quiescence": 7877 },
+      "rows": ["independent V6"]
+    },
+    {
+      "runId": "2026-10-06T16-33-43-644Z-c3146789",
+      "ports": { "en": 7853, "es": 7854, "quiescence": 7855 },
+      "rows": ["independent V7"]
+    },
+    {
+      "runId": "2026-10-06T16-34-00-676Z-36d55018",
+      "ports": { "en": 7853, "es": 7854, "quiescence": 7855 },
+      "rows": ["independent V8, default parallel, no retries"]
+    },
+    {
+      "runId": "2026-10-06T16-35-42-187Z-2730c755",
+      "ports": { "en": 7871, "es": 7872, "quiescence": 7873 },
+      "rows": ["independent V9"]
+    }
+  ],
   "baseCommit": "432c0ab",
-  "status": "SUBMITTED",
-  "lastCompletedStep": "Fifth repair source review CLEAR; typecheck, 2461 tests, lint, build and full CI-shaped browser suite passed; historical duplicate-crash smoke refuses no_response",
-  "nextAllowedAction": "Candidate fd1b159 is committed. AM-223's keyed tooling reconciliation generated the attempt-5 review dispatch. Obtain independent V1-V9 acceptance, including default-parallel V8 with no retries, on stable inputs before approval.",
-  "updatedUtc": "2026-10-06T16:19:58Z",
-  "reviewWorkerId": null,
+  "status": "APPROVED",
+  "lastCompletedStep": "Independent implementation review PASS on V1-V9: 111 named cases, 2461 full tests, clean lint/typecheck, and default-parallel V8 with four workers, 117 passed, six historical skips and zero flaky tests. Historical fail-open smoke also refuses no_response.",
+  "nextAllowedAction": "P3.6 may perform AM-214's once-only V0/native V3 after clean Rule B inputs. P5.4 still waits for P3.R approval; preserve AM-216 carry-overs and the genuine production-key block.",
+  "updatedUtc": "2026-10-06T17:11:46Z",
+  "reviewWorkerId": "ses_eedf88c77ffe98O5a4aDt6WZRP",
   "orchestratorId": "59a44bd8-3fc3-43e2-8337-cc96dd3db55d",
   "recoveryNote": "Legacy attempt field was 1 despite four recorded repair rounds. Corrected monotonically to 5 for AM-218's further repair; all prior failure evidence and reviews remain unchanged.",
   "interruptedReviewWorkerId": "9efccac9-4d1c-45f9-ad88-1f1bc4de564a",
-  "implementationReview": "docs/v2/state/reviews/P5.3-impl4.md"
+  "implementationReview": "docs/v2/state/reviews/P5.3-impl5.md"
 }

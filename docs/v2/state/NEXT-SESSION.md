@@ -9,23 +9,25 @@ favicon. Preserve the latest UI rather than replaying stale backlog entries.
 Free Big Pickle uses installed OpenCode with explicit
 `--agent build --model opencode/big-pickle`; its direct API path rejected the
 client under the provider's OpenCode-only free-tier restriction. No paid substitution.
-P5.3's fifth repair is SUBMITTED: source review CLEAR, 2,461 tests and 117
-browser tests passed (six existing skips, no retries, inherited CI configuration).
-The production-controller duplicate-crash smoke now refuses `no_response`.
-Commit this candidate and dispatch independent V1-V9 acceptance before approval.
+P5.3's fifth repair is APPROVED after independent V1–V9 acceptance: 2,461 tests
+and 117 browser tests passed (six historical skips, four default workers,
+zero retries). The actual duplicate-crash smoke refuses `no_response`.
+Reports: `reviews/P5.3-impl5.md` and `evidence/P5.3/impl5-review.md`.
 
-Active workers: S6.1 complete notice implementation under AM-220; independent
-P3.6 harness compatibility review; P5.4 full contract reconciliation under
-AM-221. They skip runtime/build/test/lint/formatting and do not commit.
-Coordinator owns shared state; runtime checks wait for stable relevant inputs.
+S6.1's first independent source review verified the fields and licence bytes
+but returned five factual corrections; re-review follows reconciliation.
+P3.6 harness source review is CLEAR. Coordinator owns shared state and commits;
+all runtime/build checks are serialized against stable relevant inputs.
 
 P5.3's legacy counter was corrected monotonically from 1 to 5, retaining the
 four historical repair rounds and failed review. P3.6 retains attempt 7 and
 AM-214's once-only V0 rebuild/native V3 after P5.3 is reviewed and committed.
 P3.R cannot approve before every child passes. P5.4 implementation cannot
-start until P5.3 and P3.R are approved. S6.1's source/adoption gate is resolved
-by AM-220; V4 and independent review still remain. AM-222 keeps the genuine
-production updater-key gate blocked, without a fake key or acceptance waiver.
+start until P5.3 and P3.R are approved. S6.1's adopted source fields are resolved
+by AM-220; V4 and independent acceptance remain. AM-224 permits one fresh local
+generation, preserving the historical stale-block failure and not repeating
+acquisition. AM-222 keeps the genuine production updater-key gate blocked,
+without a fake key or acceptance waiver.
 
 No live data/export access, port 7717, production signing/release action,
 acceptance waiver, new network authorization or Mac work is granted.

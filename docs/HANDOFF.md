@@ -8,15 +8,16 @@ waivers, release/signing, live-data access or Mac work.
 
 The free Big Pickle workers run through installed OpenCode with an explicit
 build agent; direct API access was rejected by the provider's OpenCode-only
-restriction. No paid-model substitution. P5.3's fifth repair is SUBMITTED:
-independent source review CLEAR, 2,461 tests and 117 browser tests passed
-(six existing skips, no retries), and the historical duplicate-crash smoke
-now refuses `no_response`. Independent committed-candidate acceptance remains.
+restriction. No paid-model substitution. P5.3's fifth repair is APPROVED:
+independent V1–V9 acceptance passed, including 2,461 tests and 117 browser tests
+(six historical skips, four default workers, no retries). The actual
+duplicate-crash smoke refuses `no_response`. Approval reports:
+`docs/v2/state/reviews/P5.3-impl5.md` and `docs/v2/evidence/P5.3/impl5-review.md`.
 
-The notice implementation and updater reconciliation design are finished.
-Active free-model reviewers: P5.3 committed-candidate V1–V9 acceptance,
-S6.1 notice provenance, and P3.6 harness compatibility. Runtime acceptance
-is serialized; source-only reviewers do not run checks. No worker commits.
+The first independent S6.1 source review verified the adopted fields and full
+licence bytes but found five factual errors; corrections are being reconciled
+before re-review. P3.6 harness source review is CLEAR; native runtime acceptance
+remains. Runtime/build acceptance is serialized. No worker commits.
 AM-222 keeps the genuine production updater-key acceptance gate blocked.
 
 Candidate `386e3ea` CI failed only formatting in the two dispatcher files.
@@ -25,9 +26,10 @@ https://github.com/villenull/Apunta/actions/runs/37496627136.
 P3.6's final compatibility harness is independently source-CLEAR
 (`state/reviews/P3.6-compat-source.md`); native acceptance remains held.
 
-P3.6's bounded rebuild/native run waits for reviewed and committed P5.3.
-P3.R waits for all desktop children. P5.4 implementation waits for P5.3 and
-P3.R approval. S6.1's sourced fields are adopted; V4 and independent review remain.
+P3.6's bounded rebuild/native run follows committed P5.3 approval and clean,
+committed licence inputs. P3.R waits for all desktop children. P5.4 implementation
+waits for P3.R approval. S6.1 V4 and independent acceptance remain; AM-224 permits
+one fresh local licence generation without repeating acquisition.
 Current checkpoints and next actions: `docs/v2/state/NEXT-SESSION.md`.
 
 # Owner UI feedback, second batch — 2026-10-06 (current)
