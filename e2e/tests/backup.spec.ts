@@ -16,12 +16,8 @@ import { expect, test, uniqueName } from '../support/fixtures';
  * that are about *this* feature: that a file appears, and that the copy is
  * honest.
  *
- * Everything is on the Backup section since the Settings redesign (owner,
- * 2026-10-05): the folder, the archives, the restore-verification question and
- * the size of what is kept moved off Advanced, which is gone. The three
- * controls that guard her data — Back up now, Change backup location, Restore —
- * are a row of their own at the top of that section, and the first and the
- * last ask before they act.
+ * The page keeps only the last-backup summary and the clickable destination.
+ * Archive selection and pending-restore controls live in the restore dialog.
  */
 
 /**
@@ -62,13 +58,7 @@ interface Created {
 }
 
 test.describe('back up and restore', () => {
-  test('writes an archive that exists by the time it answers', async ({
-    page,
-    request,
-    tr,
-    trRe,
-    checkScreen,
-  }) => {
+  test('writes an archive that exists by the time it answers', async ({ page, request, tr, checkScreen }) => {
     const patient = (await (
       await request.post('/api/patients', { data: { name: uniqueName('E2E Backup') } })
     ).json()) as Created;
@@ -80,13 +70,15 @@ test.describe('back up and restore', () => {
 
     await page.getByTestId('backup-now').click();
     await checkScreen(page, 'Settings, Backup, asking to back up');
+    const written = page.waitForResponse(
+      (response) => response.request().method() === 'POST' && response.url().endsWith('/api/backup'),
+    );
     await page.getByTestId('confirm-accept').click();
 
-    await expect(page.getByTestId('backup-action-message')).toContainText(trRe('backup.done'));
+    const result = CreateBackupResponseSchema.parse(await (await written).json());
+    const status = (await (await request.get('/api/backup')).json()) as { backups: { path: string }[] };
+    expect(status.backups.some((archive) => archive.path === result.file.path)).toBe(true);
     await checkScreen(page, 'Settings after a backup');
-    // The archive is on the same section as the button that wrote it, and the
-    // last-backup line stops saying there has never been one.
-    await expect(page.getByTestId('backup-list')).toContainText('apunta-backup-');
     await expect(page.getByTestId('backup-last')).not.toContainText(tr('backup.noneYet'));
     await checkScreen(page, 'Settings, Backup, after an archive exists');
   });
@@ -127,36 +119,23 @@ test.describe('back up and restore', () => {
     expect(writes).toEqual([]);
   });
 
-  /**
-   * The folder is the one line of this section she has to be able to read,
-   * "Change backup location" opens an editor for it rather than replacing the
-   * path with a field she could save by accident, and a backup that has never
-   * been restored says so once rather than never.
-   */
-  test('shows the folder it is backing up to, and edits it in an editor', async ({
-    page,
-    tr,
-    checkScreen,
-  }) => {
+  test('browsing and cancelling leaves the backup location unchanged', async ({ page, tr, checkScreen }) => {
     await page.goto('/');
     await openSettings(page, 'backup');
 
     const directory = page.getByTestId('backup-directory');
-    await expect(directory).toContainText('backups');
-    // A backup nobody has ever restored is a hypothesis, and it is asked once.
-    await expect(page.getByTestId('backup-verify-nudge')).toContainText(tr('backup.neverTested'));
+    const savedDirectory = await directory.textContent();
     await checkScreen(page, 'Settings, Backup');
 
-    await page.getByTestId('backup-change-location').click();
-    const editor = page.getByTestId('backup-location-editor');
+    await directory.click();
+    const editor = page.getByTestId('backup-folder-picker');
     await expect(editor).toBeVisible();
-    // It is her folder in the field, not an empty one she would have to retype.
-    await expect(editor.locator('input')).toHaveValue((await directory.textContent()) ?? '');
+    await expect(page.getByTestId('backup-picker-path')).toBeVisible();
 
     // And calling the editor off leaves the folder where it was.
     await editor.getByRole('button', { name: tr('common.cancel') }).click();
     await expect(editor).toHaveCount(0);
-    await expect(directory).toContainText('backups');
+    await expect(directory).toHaveText(savedDirectory ?? '');
   });
 
   /**
@@ -191,14 +170,13 @@ test.describe('back up and restore', () => {
 
     await page.goto('/');
     await openSettings(page, 'backup');
-    await expect(page.getByTestId('backup-list')).toContainText(file.filename);
 
     await page.getByTestId('backup-restore').click();
     const dialog = areYouSure(page);
     // The dialog names the archive it is about to bring back: a bare Restore
     // that did not say which one would leave her guessing.
     await expect(dialog).toContainText(trRe('backup.confirmRestoreBody'));
-    await page.getByTestId('backup-restore-file').selectOption(file.filename);
+    await page.getByTestId('backup-restore-file').selectOption(file.path);
     await page.getByTestId('backup-restore-passphrase').fill(passphrase);
     await checkScreen(page, 'Settings, Backup, the restore confirmation');
 
@@ -206,27 +184,17 @@ test.describe('back up and restore', () => {
 
     // The right passphrase opens the archive, and the restore stages rather
     // than pretending it has already happened.
-    await expect(page.getByTestId('backup-action-message')).toContainText(trRe('backup.restoreReady'));
-    await expect(page.getByTestId('backup-action-message')).toContainText('before-restore');
-    await expect(page.getByTestId('backup-pending')).toBeVisible();
+    const result = page.getByTestId('backup-restore-result');
+    await expect(result).toContainText(trRe('backup.restoreReady'));
+    await expect(result).toContainText('before-restore');
     await checkScreen(page, 'Settings with a restore staged');
-
-    // …and it can be called off before the restart, leaving nothing changed.
-    await page.getByRole('button', { name: tr('backup.cancelPending') }).click();
-    await expect(page.getByTestId('backup-action-message')).toContainText(tr('backup.restoreCancelled'));
-    await expect(page.getByTestId('backup-pending')).toHaveCount(0);
-  });
-
-  test('shows what keeping everything has grown into, and offers no way to delete it', async ({
-    page,
-    trRe,
-  }) => {
-    await page.goto('/');
-    await openSettings(page, 'backup');
-
-    await expect(page.getByTestId('retention-summary')).toContainText(trRe('backup.stored'));
-    // Keeping everything is a decision she has seen the size of, and this
-    // section has no control that would throw any of it away.
-    await expect(page.getByTestId('backup-card').getByRole('button', { name: /delete/i })).toHaveCount(0);
+    await result.getByRole('button', { name: tr('common.dismiss') }).click();
+    await page.getByTestId('backup-restore').click();
+    await areYouSure(page)
+      .getByRole('button', { name: tr('backup.cancelPending') })
+      .click();
+    await expect(areYouSure(page)).toHaveCount(0);
+    const status = (await (await request.get('/api/backup')).json()) as { pending_restore: boolean };
+    expect(status.pending_restore).toBe(false);
   });
 });

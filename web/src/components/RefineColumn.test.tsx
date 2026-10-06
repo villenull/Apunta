@@ -488,7 +488,6 @@ describe('refine dialog semantics', () => {
     expect(document.querySelector('.chat-header')).toBeNull();
     expect(screen.getByRole('dialog', { name: 'Refine note' })).toBeDefined();
     const button = screen.getByTestId('chat-close');
-    expect(button.className).toBe('chat-close');
     expect(button.getAttribute('aria-label')).toBe(t('refine.closeLabel', {}, 'en'));
     fireEvent.click(button);
     expect(close).toHaveBeenCalledOnce();

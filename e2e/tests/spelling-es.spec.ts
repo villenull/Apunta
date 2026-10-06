@@ -95,28 +95,24 @@ async function expectExactMarks(field: Locator, text: string): Promise<void> {
  * reaches the editor. A real click rather than a dispatched one, because the
  * dispatched form does not reach the handler on a single-line input at all.
  *
- * The click is repeated while the menu is not about this word. The menu opens
- * for whatever mark list the editor held when the click landed, and the check
- * is debounced and, on a note, round-trips through a save — so one click can
- * land before the list is the one this row is about. The menu's own
- * `aria-label` names the word it is for, which is what makes a menu left over
- * from an earlier value a failure rather than a pass.
+ * Backdrop spans slice the current text even while the debounced check still
+ * holds the previous word. Poll the menu's own word and click again after the
+ * check settles, rather than spending four clicks before the debounce fires.
  */
 async function openMenuFor(field: Locator, word: string): Promise<Locator> {
   const menu = menuOf(field);
   await expect(marksOf(field)).toHaveText([word]);
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    await field.evaluate((element: HTMLInputElement | HTMLTextAreaElement, at: number) => {
-      element.focus();
-      element.setSelectionRange(at, at);
-    }, 1);
-    await field.click();
-    if ((await menu.count()) > 0 && (await menu.getAttribute('aria-label')) === menuLabel(word)) {
-      await expect(menu).toBeVisible();
-      return menu;
-    }
-  }
-  await expect(menu).toHaveAttribute('aria-label', menuLabel(word));
+  await expect
+    .poll(async () => {
+      await field.evaluate((element: HTMLInputElement | HTMLTextAreaElement, at: number) => {
+        element.focus();
+        element.setSelectionRange(at, at);
+      }, 1);
+      await field.click();
+      return (await menu.count()) > 0 ? await menu.getAttribute('aria-label') : null;
+    })
+    .toBe(menuLabel(word));
+  await expect(menu).toBeVisible();
   return menu;
 }
 

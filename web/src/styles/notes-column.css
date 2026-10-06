@@ -4,11 +4,18 @@
  * The column reads top to bottom in the order she works in:
  *
  *   1. the three tools — Brainstorm, Treatment plan, Prepare for session —
- *      pinned at the top with a single rule under them;
+ *      pinned at the top and *enclosed in one group*, filled with the
+ *      selected patient's own grey so the three read as a single control with
+ *      three faces rather than three adjacent rows;
  *   2. the "Notes" heading and the "New note" row, pinned too and with **no**
  *      rule under them: the heading is what groups the two, and an edge there
  *      read as a boxed cell;
  *   3. the notes alone, and only the notes, in the band that scrolls.
+ *
+ * There is no horizontal rule anywhere in the column (owner, 2026-10-05): the
+ * divider that used to sit between "Prepare for session" and "Notes" is gone,
+ * because the group above it now carries the edge and a second one under it
+ * read as two boxes stacked.
  *
  * The point is that the notes are the only thing in the column that moves, so
  * the click target for empty space is the empty space: it is wide, it is where
@@ -32,21 +39,50 @@
  * order is.
  */
 
-/* The tools, at the top of the column. One rule under them and none below the
-   "New note" row further down, so the column has exactly one edge in it. */
+/* The tools, at the top of the column: the narrow-window way back, then the
+   group. The divider that used to sit under them is gone (owner, 2026-10-05);
+   `none` rather than nothing, so nothing upstream can put one back. */
 .col-actions.notes-col-tools {
   flex-shrink: 0;
   padding-block: var(--space-2);
-  border-bottom: 1px solid var(--divider);
+  border-bottom: none;
   background: var(--col-notes-bg);
+}
+
+/* Selected-patient gray from the dark reference; white labels need that contrast in either theme. */
+.notes-col-tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: #343434;
+}
+
+.notes-col-tool-group .col-action-btn,
+.notes-col-tool-group .col-action-btn:hover,
+.notes-col-tool-group .col-action-btn.active {
+  color: var(--on-accent);
+  background: transparent;
+}
+
+/* The open tool is the group's own fill, so weight is what says it — the same
+   cue the open patient row uses. */
+.notes-col-tool-group .col-action-btn.active {
+  font-weight: 500;
+}
+
+.notes-col-tool-group .col-action-btn:hover {
+  background: rgb(0 0 0 / 0.15);
 }
 
 /* The way back to the patients rides along as the band's first row. It is
    `display: none` above the narrow breakpoint, where it costs the column
-   nothing; below it, it lines up with the tool labels. */
+   nothing; below it, it takes the group's own inset so its word lines up with
+   the tool labels beside it. */
 .narrow-back.notes-col-back {
   align-self: flex-start;
-  padding-inline-start: calc(var(--space-4) + 2px);
+  padding-inline-start: calc(var(--space-2) + var(--space-4) + 2px);
 }
 
 /* The "Notes" heading and the row that starts one: pinned above the list, with

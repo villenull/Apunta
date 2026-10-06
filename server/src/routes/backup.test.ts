@@ -1,4 +1,12 @@
-import { copyFileSync, existsSync, readFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import {
@@ -42,14 +50,87 @@ afterEach(async () => {
   await harness.close();
 });
 
+describe('backup destination selection', () => {
+  it('lists directories only and falls back to an existing parent for the initial picker', async () => {
+    const directory = join(harness.dataDir, 'choices');
+    mkdirSync(join(directory, 'folder'), { recursive: true });
+    writeFileSync(join(directory, 'private-note.txt'), 'Synthetic John Smith fixture');
+    const listing = await harness.app.inject({
+      method: 'GET',
+      url: `/api/backup/folders?path=${encodeURIComponent(directory)}`,
+    });
+    expect(listing.statusCode).toBe(200);
+    expect(listing.json()).toMatchObject({
+      path: directory,
+      parent: harness.dataDir,
+      directories: [{ name: 'folder', path: join(directory, 'folder') }],
+    });
+    const initial = await harness.app.inject({ method: 'GET', url: '/api/backup/folders' });
+    expect(initial.json<{ path: string }>().path).toBe(harness.dataDir);
+  });
+
+  it('persists the selected destination without taking a backup or changing its timestamp', async () => {
+    const directory = join(harness.dataDir, 'chosen');
+    mkdirSync(directory);
+    const selected = await harness.app.inject({
+      method: 'PUT',
+      url: '/api/backup/location',
+      payload: { directory },
+    });
+    expect(selected.statusCode).toBe(200);
+    const status = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(status.directory).toBe(directory);
+    expect(status.last_backup_at).toBeNull();
+    expect(readdirSync(directory)).toEqual([]);
+    rmSync(directory, { recursive: true });
+    const absent = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(absent.directory).toBe(directory);
+  });
+
+  it('refuses relative paths and regular files without changing the destination', async () => {
+    const file = join(harness.dataDir, 'not-a-folder.txt');
+    writeFileSync(file, 'Synthetic fixture');
+    for (const directory of ['relative', file, join(harness.dataDir, 'missing')]) {
+      const selected = await harness.app.inject({
+        method: 'PUT',
+        url: '/api/backup/location',
+        payload: { directory },
+      });
+      expect(selected.statusCode).toBe(400);
+      const listing = await harness.app.inject({
+        method: 'GET',
+        url: `/api/backup/folders?path=${encodeURIComponent(directory)}`,
+      });
+      expect(listing.statusCode).toBe(400);
+    }
+    const status = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(status.directory).toBe(join(harness.config.installDir, 'Apunta backups'));
+  });
+
+  it('keeps a renamed legacy archive available after the default location changes', async () => {
+    const legacy = join(harness.dataDir, 'backups');
+    const created = await harness.app.inject({
+      method: 'POST',
+      url: '/api/backup',
+      payload: { directory: legacy },
+    });
+    const archive = created.json<CreateBackupResponse>().file;
+    const renamed = join(legacy, 'older-copy.zip');
+    copyFileSync(archive.path, renamed);
+    const status = (await harness.app.inject({ method: 'GET', url: '/api/backup' })).json<BackupStatus>();
+    expect(status.backups.some((file) => file.path === renamed)).toBe(true);
+    expect(resolveArchivePath(harness.db, harness.config, renamed)).toBe(renamed);
+  });
+});
+
 describe('GET /api/backup', () => {
   it('reports where backups go, that there are none, and what the practice holds', async () => {
     const response = await harness.app.inject({ method: 'GET', url: '/api/backup' });
     expect(response.statusCode).toBe(200);
 
     const body = response.json<BackupStatus & { pending_restore: boolean }>();
-    expect(body.directory).toBe(join(harness.dataDir, 'backups'));
-    expect(body.destination.risk).toBe('data-dir');
+    expect(body.directory).toBe(join(harness.config.installDir, 'Apunta backups'));
+    expect(body.destination.risk).toBe('install-dir');
     expect(body.last_backup_at).toBeNull();
     // No backup at all counts as stale — the state the research ranks first.
     expect(body.stale).toBe(true);

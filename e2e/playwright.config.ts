@@ -178,7 +178,12 @@ export default defineConfig<AppOptions>({
       stdout: 'pipe',
       stderr: 'pipe',
       timeout: 60_000,
-      env: { ...serverEnv, APUNTA_PORT: String(port), APUNTA_DATA_DIR: dataDir },
+      env: {
+        ...serverEnv,
+        APUNTA_PORT: String(port),
+        APUNTA_DATA_DIR: dataDir,
+        APUNTA_INSTALL_DIR: join(dataDir, 'installation'),
+      },
     },
     {
       // Started after the first, from the build the first one made — the two
@@ -190,7 +195,13 @@ export default defineConfig<AppOptions>({
       stdout: 'pipe',
       stderr: 'pipe',
       timeout: 60_000,
-      env: { ...serverEnv, APUNTA_PORT: String(esPort), APUNTA_DATA_DIR: esDataDir, APUNTA_DEV_SPANISH: '1' },
+      env: {
+        ...serverEnv,
+        APUNTA_PORT: String(esPort),
+        APUNTA_DATA_DIR: esDataDir,
+        APUNTA_INSTALL_DIR: join(esDataDir, 'installation'),
+        APUNTA_DEV_SPANISH: '1',
+      },
     },
     {
       // The quiescence project's server: same build, third port, third data
@@ -207,6 +218,7 @@ export default defineConfig<AppOptions>({
         ...serverEnv,
         APUNTA_PORT: String(quiescencePort),
         APUNTA_DATA_DIR: quiescenceDataDir,
+        APUNTA_INSTALL_DIR: join(quiescenceDataDir, 'installation'),
       },
     },
   ],

@@ -423,25 +423,29 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
 
         {missingPatientNotice ?? (
           <>
-            <div className="field field-narrow lede">
+            <div className="field capture-format lede">
               <label className="label" htmlFor="note-format">
                 {t('capture.formatLabel')}
               </label>
-              <select
-                id="note-format"
-                value={formatId}
-                disabled={available.length === 0 || busy}
-                onChange={(event) => {
-                  setChosenFormatId(event.target.value);
-                }}
-              >
-                {formats.state.status === 'loading' && <option value="">{t('common.loading')}</option>}
-                {available.map((candidate) => (
-                  <option key={candidate.id} value={candidate.id}>
-                    {candidate.name}
-                  </option>
-                ))}
-              </select>
+              {/* The wrapper is what carries the chevron: a `<select>` takes no
+                  pseudo-element, and the native arrow cannot be inset. */}
+              <div className="capture-select">
+                <select
+                  id="note-format"
+                  value={formatId}
+                  disabled={available.length === 0 || busy}
+                  onChange={(event) => {
+                    setChosenFormatId(event.target.value);
+                  }}
+                >
+                  {formats.state.status === 'loading' && <option value="">{t('common.loading')}</option>}
+                  {available.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {formats.state.status === 'error' && (
@@ -556,20 +560,14 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                       }}
                     >
                       <MicIcon />
-                      <div className="capture-source-copy">
-                        <div className="opt-title">{t('capture.recordAudio')}</div>
-                        <div className="opt-sub">{t('capture.recordAudioHelp')}</div>
-                      </div>
+                      <span className="capture-source-label">{t('capture.recordAudio')}</span>
                     </button>
                   ) : null}
 
                   <div className="capture-typed" data-testid="type-ui">
                     <div className="row gap-12 capture-typed-head">
                       <KeyboardIcon />
-                      <div className="capture-source-copy">
-                        <div className="opt-title">{t('capture.typeNotes')}</div>
-                        <div className="opt-sub">{t('capture.typeNotesHelp')}</div>
-                      </div>
+                      <span className="capture-source-label">{t('capture.typeNotes')}</span>
                     </div>
                     <SpellLayer
                       as="textarea"

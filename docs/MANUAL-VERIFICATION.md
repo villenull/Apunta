@@ -123,13 +123,14 @@ looks for (a repetition loop under constrained decoding) is intermittent.
 
 ## 4. Backup (Settings → Backup)
 
-Backup is one Settings page since 2026-10-05 (`Settings → Backup`); the
-Advanced tab is gone and the folder, archives, restore-tested nudge and
-retention count live on that page. **Back up now** and **Restore** each ask for
-confirmation first, and cancelling changes nothing. A new backup takes **no
-passphrase** — use an encrypted disk the OS unlocks; an archive encrypted
-before this change is restored through the passphrase field in the restore
-dialog.
+Backup shows a short explanation, **Last backup** with **Back up now** and
+**Restore**, and a clickable **Current backup location** path. The default is
+`<installation location>/Apunta backups`; an explicitly selected folder is
+preserved, including when its disk is temporarily absent. Clicking the path
+opens a local directory navigator; selecting a folder does not write a backup.
+Both backup and restore confirm first. New backups take no passphrase; legacy
+encrypted archives ask for theirs in the restore dialog. Archive selection and
+pending-restore cancellation live in that dialog, not on the page.
 
 The archive format is tested here — a seeded practice is backed up, restored
 into a fresh data directory, and one note compared character for character.
@@ -137,12 +138,12 @@ What is **not** tested is any of it on a real practice on a real disk.
 
 | Check | ☐ | Notes |
 | --- | --- | --- |
-| Settings → Backup → **Back up now** confirms, then writes a file, and says it was checked | ☐ | |
-| **Change backup location** opens prefilled with the saved folder; saving applies it and cancelling restores the saved one | ☐ | |
+| Settings → Backup → **Back up now** confirms in an opaque dialog, writes a file, and updates Last backup | ☐ | |
+| Clicking the current path opens the folder navigator; selecting persists without a backup, cancelling changes nothing | ☐ | |
 | The archive opens in Finder and `notes/` is readable in TextEdit | ☐ | This is the "Apunta is gone in 2035" path |
 | `plans/` holds one document per plan version | ☐ | |
 | `shasum -a 256 apunta.db` matches the fingerprint in `manifest.json` | ☐ | |
-| Changing the location to `~/Documents` shows the iCloud warning | ☐ | Depends on §1 items 2 and 3. The warning now says to put the archive on an encrypted disk instead |
+| An unwritable selected destination reports a write failure rather than silently switching folders | ☐ | |
 | An archive encrypted before 2026-10-05 restores with the passphrase asked for in the restore dialog | ☑ Linux, 2026-09-01 — the Mac pass is what this row is still for | New backups are not encrypted in-app and take no passphrase |
 | The standalone `decrypt.mjs` in RESTORE.txt decrypts it on **this** Mac | ☑ Linux, 2026-09-01 — copied out of a real archive by hand exactly as the file instructs, decrypted, and the resulting database matched its manifest fingerprint. The readable `notes/<patient>/<date>.txt` files were all there, which is the "Apunta is gone in 2035" path working. **Still unconfirmed on macOS**, whose `unzip` is what this row exists for. A wrong passphrase used to answer with a Node crypto stack trace and now says so in English | `node decrypt.mjs <backup>.zip "<passphrase>"` |
 | The daily automatic backup happens on the first launch of a day | ☐ | Settings shows the time |
@@ -160,7 +161,7 @@ APUNTA_DATA_DIR=/tmp/apunta-restore-test npm start
 | Check | ☐ |
 | --- | --- |
 | The notes come back | ☐ |
-| Settings → Backup records that a restore has been verified | ☐ |
+| The staged restore can be cancelled from the Restore dialog before restarting | ☐ |
 
 A backup that has never been restored is a hypothesis.
 
@@ -388,7 +389,7 @@ The recipe, repeatable on any machine with the repo:
    removed Settings → Recording editor is not being restored, and no owner
    vocabulary-list step is pending.
 7. Settings → Backup → **Back up now**, and confirm when asked. The zip appears
-   in `<data dir>/backups/apunta-backup-<date>.zip`; its `manifest.json` must
+   in the displayed backup folder as `apunta-backup-<date>.zip`; its `manifest.json` must
    say `"patients": 0` and `"note_formats": 1`. If you back up more than
    once, the app records `last_backup_*` bookkeeping settings; empty them
    (`PUT /api/settings` with `""` values, which the app reads as "never")

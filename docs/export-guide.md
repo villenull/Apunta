@@ -22,20 +22,19 @@ Use this path only when the notes are already in Apunta on this Mac.
 
 1. Open Apunta and choose **Settings → Backup**. Settings is a modal over the
    workspace; there is no `/settings` page.
-2. Leave the destination alone for a local copy, or use **Change backup
-   location** to choose an **encrypted external disk** if the archive must
-   survive a lost Mac. Do not choose Desktop, Documents, iCloud Drive,
-   Dropbox, Google Drive, or OneDrive. The field opens prefilled with the saved
-   folder, so cancelling and reopening puts the saved one back.
+2. The default is **Apunta backups** inside the app's installation location.
+   Click the full path under **Current backup location** to open the local
+   folder navigator and choose another folder. Selecting a folder saves the
+   destination without creating a backup; cancelling leaves it unchanged.
 3. **A new backup is not encrypted in the app and takes no passphrase.** Since
    2026-10-05 the passphrase field is gone: a secret typed into a settings
    field gets lost, and a lost passphrase is a backup nobody can open. Use an
    encrypted disk the OS unlocks instead. An archive encrypted before this
    change still restores — Apunta asks for its passphrase in the restore
    dialog.
-4. Choose **Back up now** and confirm when asked, then wait for the success
-   message saying the archive was checked and is intact. Do not close Apunta
-   while it is working.
+4. Choose **Back up now** and confirm when asked. Wait until the button is
+   available again and **Last backup** updates. Do not close Apunta while it is
+   working. If the write fails, the page displays the error.
 5. Open the folder shown on the Backup page. The file is named like
    `apunta-backup-2026-10-05.zip`. Keep the whole zip; do not rename files
    inside it.

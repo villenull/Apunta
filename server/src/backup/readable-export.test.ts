@@ -18,7 +18,11 @@ let db: Database;
 
 beforeEach(() => {
   dataDir = mkdtempSync(join(tmpdir(), 'apunta-readable-export-'));
-  config = loadConfig({ APUNTA_DATA_DIR: dataDir, APUNTA_FAKE_AI: '1' });
+  config = loadConfig({
+    APUNTA_DATA_DIR: dataDir,
+    APUNTA_INSTALL_DIR: join(dataDir, 'installation'),
+    APUNTA_FAKE_AI: '1',
+  });
   ({ db } = openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir }));
 });
 

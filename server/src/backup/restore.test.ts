@@ -78,7 +78,11 @@ let db: Database;
 let fresh: string;
 
 function open(dir: string): { config: AppConfig; db: Database } {
-  const loaded = loadConfig({ APUNTA_DATA_DIR: dir, APUNTA_FAKE_AI: '1' });
+  const loaded = loadConfig({
+    APUNTA_DATA_DIR: dir,
+    APUNTA_INSTALL_DIR: join(dir, 'installation'),
+    APUNTA_FAKE_AI: '1',
+  });
   const { db: opened } = openDatabase({ file: loaded.dbFile, migrationsDir: loaded.migrationsDir });
   return { config: loaded, db: opened };
 }

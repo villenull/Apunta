@@ -23,6 +23,7 @@ export interface ConfirmDialogProps {
   readonly body: React.ReactNode;
   /** The destructive button's label, e.g. "Delete John Smith". */
   readonly confirmLabel: string;
+  readonly confirmDisabled?: boolean;
   /** The other button; the catalogue's `common.cancel` when a caller says nothing. */
   readonly cancelLabel?: string;
   readonly onConfirm: () => void;
@@ -32,6 +33,7 @@ export function ConfirmDialog({
   title,
   body,
   confirmLabel,
+  confirmDisabled = false,
   cancelLabel,
   onConfirm,
   onCancel,
@@ -46,7 +48,13 @@ export function ConfirmDialog({
         <button type="button" className="btn" ref={cancelRef} onClick={onCancel}>
           {cancelLabel ?? t('common.cancel')}
         </button>
-        <button type="button" className="btn btn-danger" data-testid="confirm-accept" onClick={onConfirm}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          data-testid="confirm-accept"
+          disabled={confirmDisabled}
+          onClick={onConfirm}
+        >
           {confirmLabel}
         </button>
       </div>

@@ -1,4 +1,64 @@
-# Owner UI feedback batch — 2026-10-05 (current)
+# Owner UI feedback, second batch — 2026-10-06 (current)
+
+All 16 requested changes are implemented. This section supersedes the first
+batch's backup layout and composer spacing below.
+
+- About uses the full home-screen wordmark, centered above the version/Github row.
+- Backup defaults to `<installation location>/Apunta backups`, independent of
+  FileVault. Checkout runs use the repository root; AppImage uses its containing
+  directory; the Mac shell supplies the app's containing directory through
+  `APUNTA_INSTALL_DIR`. Existing selected paths remain selected, and legacy
+  data-directory archives remain available to restore.
+- Backup shows only its heading, three small explanatory sentences, Last backup,
+  Back up now/Restore, and the full current path as a button. That button opens a
+  real local-filesystem folder navigator; selecting saves the location without
+  creating an archive or changing the last-backup timestamp. Archive selection,
+  encrypted-archive passphrases and pending-restore cancellation live inside
+  Restore, not on the page. Warnings, archive lists, restore-tested nudges,
+  retention statistics and the separate change-location control are gone.
+- Settings' broad card styling no longer makes nested confirmations transparent.
+- Refine and Brainstorm have gray user bubbles and unboxed AI replies. The send
+  arrow itself inherits the teal button color after one typed character; actual
+  sending still rejects whitespace-only input. Single- and multiline text,
+  microphone and send controls share a vertical center, with halved vertical
+  padding. The refine close control is a plain gray X with teal hover.
+- Brainstorm/plan/prepare share a gray rounded box with white text/icons in both
+  themes. The Prepare/Notes divider and the empty-section warning banner are
+  removed; in-note empty/unclear markers remain.
+- Capture's format dropdown matches Record audio's width with an inset arrow.
+  Record audio is shorter; it and Type notes show only their icon and label.
+  Typed-note entry remains available.
+
+**Observed Chromium smoke:** full wordmark alignment; opaque backup and restore
+dialogs; directory navigation, cancellation and selection without a backup;
+default-installation archive creation (101862 bytes, synthetic data); exact
+single/multiline composer centers; teal arrow SVG; gray-to-teal plain X; actual
+refine and Brainstorm replies; shared tool styling; matched capture widths and
+shortened icon/label buttons. Fake AI only, no real patient data. macOS launch
+environment is updated but has not run on a Mac.
+
+Three free-model workers handled chats, capture/tools and backup. The backup
+worker's provider became unavailable after partial edits; the coordinator
+completed that slice inline without substituting a paid model.
+
+The no-retry end-to-end run exposed an existing Spanish spelling-helper race:
+backdrop text updated before its debounced check, so four immediate clicks could
+leave the previous word's menu open. The helper now polls the actual menu word
+while clicking; assertions and production spelling behavior are unchanged.
+
+**Live preview:** http://127.0.0.1:7831, fake AI, synthetic practice only.
+Data: `/tmp/apunta-v2/2026-10-06T03-06-27-698Z-a13c784b/data`.
+Installation: `/tmp/apunta-v2/2026-10-06T03-06-27-698Z-a13c784b/installation`.
+Run with Node 24.19.0; the machine's default Node 26 is unsuitable for this
+checkout's native SQLite module.
+
+**Local gates:** lint, typecheck, build, 170 test files / 2459 unit/integration
+tests passed on Node 24.19.0. Full English/Spanish/quiescence end-to-end run:
+117 passed, 6 existing skips, one worker, no retries. Chromium also verified
+white tool labels against the same gray group in light mode. CI is checked
+against the pushed commit rather than inferred from local gates.
+
+# Owner UI feedback batch — 2026-10-05 (superseded by second batch above)
 
 **Gate status:** lint, typecheck, build and all 2469 unit/integration tests
 passed on Node 24.19.0. Full English/Spanish/quiescence end-to-end run:
@@ -81,9 +141,9 @@ Notes and chats:
   cannot miss a real change.
 - **One character lights the send arrow in both chats** (refine and
   Brainstorm), spaces included: `hasText` is `value.length > 0`, counted on
-  `value` only, so a recording's provisional tail does not light it. Whether
-  the arrow may be *pressed* is still answered separately in
-  `ComposerButtons`, and an empty box is still sendable.
+  `value` only, so a recording's provisional tail does not light it. Send
+  readiness is answered separately in `ComposerButtons`; send handlers still
+  reject empty or whitespace-only input.
 - Earlier in the same batch: Settings is modal-only, Import is a modal that
   reloads the sidebar, the notes column has its tools on top over a "Notes"
   heading and a New note row, font size scales the patients column, the refine

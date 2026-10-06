@@ -108,6 +108,11 @@ export function NotesColumn({
        * first row: on a phone this column is the whole screen, and without it
        * she cannot leave. Two separate objects: the plan is a record she
        * authors, the briefing is a reading aid generated on demand.
+       *
+       * The three tools sit in ONE group rather than as three adjacent rows
+       * (owner, 2026-10-05): they are one thing she reaches for around a
+       * session, so they wear the open patient row's own fill and read as a
+       * single control with three faces.
        */}
       {patient && (
         <div className="col-actions notes-col-tools" data-testid="notes-tools">
@@ -115,39 +120,41 @@ export function NotesColumn({
             <BackIcon className="icon icon-xs" />
             <span>{t('common.patients')}</span>
           </button>
-          <button
-            type="button"
-            className={view === 'brainstorm' ? 'col-action-btn active' : 'col-action-btn'}
-            data-testid="open-brainstorm"
-            onClick={() => {
-              onOpenView('brainstorm');
-            }}
-          >
-            <ChatIcon className="icon icon-sm" />
-            {t('brainstorm.title')}
-          </button>
-          <button
-            type="button"
-            className={view === 'plan' ? 'col-action-btn active' : 'col-action-btn'}
-            data-testid="open-plan"
-            onClick={() => {
-              onOpenView('plan');
-            }}
-          >
-            <DocumentIcon className="icon icon-sm" />
-            {t('plan.title')}
-          </button>
-          <button
-            type="button"
-            className={view === 'prep' ? 'col-action-btn active' : 'col-action-btn'}
-            data-testid="open-prep"
-            onClick={() => {
-              onOpenView('prep');
-            }}
-          >
-            <ExamplesIcon className="icon icon-sm" />
-            {t('notes.prepareForSession')}
-          </button>
+          <div className="notes-col-tool-group" data-testid="notes-tool-group">
+            <button
+              type="button"
+              className={view === 'brainstorm' ? 'col-action-btn active' : 'col-action-btn'}
+              data-testid="open-brainstorm"
+              onClick={() => {
+                onOpenView('brainstorm');
+              }}
+            >
+              <ChatIcon className="icon icon-sm" />
+              {t('brainstorm.title')}
+            </button>
+            <button
+              type="button"
+              className={view === 'plan' ? 'col-action-btn active' : 'col-action-btn'}
+              data-testid="open-plan"
+              onClick={() => {
+                onOpenView('plan');
+              }}
+            >
+              <DocumentIcon className="icon icon-sm" />
+              {t('plan.title')}
+            </button>
+            <button
+              type="button"
+              className={view === 'prep' ? 'col-action-btn active' : 'col-action-btn'}
+              data-testid="open-prep"
+              onClick={() => {
+                onOpenView('prep');
+              }}
+            >
+              <ExamplesIcon className="icon icon-sm" />
+              {t('notes.prepareForSession')}
+            </button>
+          </div>
         </div>
       )}
 

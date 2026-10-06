@@ -94,6 +94,7 @@ enum Paths {
         var environment = ProcessInfo.processInfo.environment
         environment["APUNTA_PORT"] = String(port)
         environment["APUNTA_DATA_DIR"] = dataDirectory.path
+        environment["APUNTA_INSTALL_DIR"] = Bundle.main.bundleURL.deletingLastPathComponent().path
         environment["APUNTA_OLLAMA_BIN"] = ollamaBinary.path
         environment["APUNTA_WHISPER_BIN"] = whisperBinary.path
         environment["APUNTA_SQLITE_BINDING"] = sqliteBinding.path

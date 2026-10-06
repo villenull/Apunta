@@ -1762,12 +1762,13 @@ describe('refine chat', () => {
   });
 });
 
-/**
- * The two things in a note body that must be visible without interrupting her
- * (design questions 5 and 11). Neither gates anything.
+/*
+ * The two things a note body marks, and neither of them is a banner (owner,
+ * 2026-10-05: the "Nothing recorded in … — add or leave blank." notice above
+ * the editor is gone). Neither gates anything.
  */
 describe('editor markers', () => {
-  it('names an empty section and marks its header, without blocking anything', async () => {
+  it('marks an empty section in the text, without blocking anything', async () => {
     const note = makeNote(john.id, {
       format_id: progressNote.id,
       content: 'Subjective: Improved sleep.\n\nObjective:\n\nAssessment: Progressing.\n\nPlan: Weekly.',
@@ -1775,36 +1776,15 @@ describe('editor markers', () => {
     installFakeApi({ formats: [progressNote], patients: [john], notes: [note] });
     renderApp(`/?patient=${john.id}&note=${note.id}`);
 
-    expect((await screen.findByTestId('empty-sections')).textContent).toBe(
-      'Nothing recorded in Objective — add or leave blank.',
-    );
+    await screen.findByTestId('note-body');
     const marks = within(screen.getByTestId('note-highlights')).getAllByText('Objective:');
     expect(marks[0]?.className).toContain('marker-empty-section');
+    // The blank is visible where it is, and there is no notice above the
+    // editor naming it: nothing sits between her and the note.
+    expect(screen.queryByTestId('empty-sections')).toBeNull();
     // Copy is not gated on it: her blanks are deliberate.
     expect(screen.getByTestId('copy-button')).toHaveProperty('disabled', false);
     expect(screen.getByTestId('publish-button')).toHaveProperty('disabled', false);
-  });
-
-  it('keeps the empty-sections notice readable in dark mode', () => {
-    /*
-     * The notice is accent-ink text on an accent tint: ~7.3:1 in light
-     * mode, but the dark theme remixes the tint against the dark surface
-     * while the ink stays darkened, landing at ~1.6:1 — blue-on-blue. So
-     * the notice uses `--tint-ink`: the accent ink in light mode, a
-     * lightened accent in dark mode (~5.2:1). This pins the token contract
-     * rather than pixels — jsdom never resolves `color-mix`, and the web
-     * vitest project stubs CSS imports, so the stylesheets are read here
-     * as source text.
-     */
-    const appCss = readFileSync(join(import.meta.dirname, 'styles', 'app.css'), 'utf8');
-    const tokensCss = readFileSync(join(import.meta.dirname, 'styles', 'tokens.css'), 'utf8');
-    const noticeRule = appCss.match(/\.empty-sections-note\s*\{[^}]*\}/);
-    expect(noticeRule?.[0]).toContain('color: var(--tint-ink)');
-    expect(noticeRule?.[0]).not.toContain('var(--accent-ink)');
-    expect(tokensCss).toMatch(/:root\s*\{[^}]*--tint-ink:\s*var\(--accent-ink\)/);
-    expect(tokensCss).toMatch(
-      /:root\[data-theme='dark'\][^]*?--tint-ink:\s*color-mix\(in srgb,\s*var\(--accent\)/,
-    );
   });
 
   it('marks the unclear-dictation flag distinctly and never warns about it', async () => {

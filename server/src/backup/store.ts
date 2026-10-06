@@ -1,12 +1,13 @@
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { accessSync, constants, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 
 import {
+  BACKUP_DIR_SETTING,
   BACKUP_DIRNAME,
   BACKUP_STALE_DAYS,
-  BACKUP_DIR_SETTING,
   ENCRYPTED_PAYLOAD_NAME,
+  INSTALL_BACKUP_DIRNAME,
   KEEP_DAILY_BACKUPS,
   KEEP_MONTHLY_BACKUPS,
   LAST_BACKUP_AT_SETTING,
@@ -15,39 +16,102 @@ import {
   backupFilenameDate,
   classifyBackupDestination,
   type BackupFile,
+  type BackupFolder,
+  type BackupFolderListing,
   type DestinationAdvice,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import { unzipSync } from 'fflate';
 import { readFileSync } from 'node:fs';
 
-import { getSetting } from '../db/settings.js';
+import { getSetting, putSettings } from '../db/settings.js';
 
 /**
  * Where archives live, which ones survive, and when the next one is due.
  *
- * The default destination is inside the data dir. That sounds circular — the
- * copy is on the same disk as the original — and it is not, because the
- * failure it defends against most often is *logical* (a bad delete, a bad
- * migration), and because Time Machine promotes it to an off-machine copy for
- * free. What the UI must not do is imply that it is enough on its own
- * (`docs/research/data-at-rest-2026-08.md` §5.4).
+ * The default destination is a `backups` folder inside the directory Apunta is
+ * installed in (`AppConfig.installDir`), beside the app rather than in the
+ * platform's hidden data directory: the owner asked for it that way
+ * (2026-10-05), and a folder she can see next to the app is one she can find
+ * again without reading this file. An explicitly chosen folder always wins,
+ * so changing the default never moves a practice that has already chosen one.
  */
 
-export function defaultBackupDir(dataDir: string): string {
+/** Inside the data dir — the pre-2026-10-05 default, still read from. */
+export function legacyBackupDir(dataDir: string): string {
   return join(dataDir, BACKUP_DIRNAME);
 }
 
-/** The configured destination, or the default. Never a relative path. */
-export function resolveBackupDir(db: Database, dataDir: string): string {
-  const configured = getSetting<unknown>(db, BACKUP_DIR_SETTING);
-  return typeof configured === 'string' && configured.trim().startsWith('/')
-    ? configured.trim()
-    : defaultBackupDir(dataDir);
+/** The default destination: `<installDir>/Apunta backups`. */
+export function defaultBackupDir(installDir: string): string {
+  return join(installDir, INSTALL_BACKUP_DIRNAME);
 }
 
-export function describeDestination(directory: string, dataDir: string): DestinationAdvice {
-  return classifyBackupDestination(directory, dataDir, homedir());
+/** An explicit destination stays selected even if its disk is temporarily absent. */
+export function resolveBackupDir(db: Database, config: BackupLocationConfig): string {
+  const configured = getSetting<unknown>(db, BACKUP_DIR_SETTING);
+  if (typeof configured !== 'string') return defaultBackupDir(config.installDir);
+  const trimmed = configured.trim();
+  if (!isAbsolute(trimmed)) return defaultBackupDir(config.installDir);
+  return trimmed;
+}
+
+/** What `resolveBackupDir` needs; the whole config satisfies it. */
+export interface BackupLocationConfig {
+  readonly dataDir: string;
+  readonly installDir: string;
+}
+
+export function describeDestination(directory: string, config: BackupLocationConfig): DestinationAdvice {
+  return classifyBackupDestination(directory, config.dataDir, homedir(), config.installDir);
+}
+
+/**
+ * Remember a folder as the destination, without writing an archive.
+ *
+ * Choosing where a backup goes is not the same act as taking one, so this
+ * touches one setting row and nothing else: no archive, no `last_backup_at`,
+ * no pruning. It is what lets the folder picker be safe to wander around in.
+ */
+export function rememberBackupDir(db: Database, directory: string): string {
+  putSettings(db, { [BACKUP_DIR_SETTING]: directory });
+  return directory;
+}
+
+/** Directory names only; selecting a folder never reads file contents. */
+export function listFolders(path: string): BackupFolderListing {
+  const resolved = path;
+  const directories: BackupFolder[] = [];
+  for (const entry of readdirSync(resolved, { withFileTypes: true })) {
+    if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+    if (entry.isSymbolicLink() && !isDirectory(join(resolved, entry.name))) continue;
+    directories.push({ name: entry.name, path: join(resolved, entry.name) });
+  }
+  directories.sort((a, b) => a.name.localeCompare(b.name));
+  const parent = dirname(resolved);
+  return {
+    path: resolved,
+    parent: parent === resolved ? null : parent,
+    directories,
+    writable: isWritable(resolved),
+  };
+}
+
+function isDirectory(path: string): boolean {
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function isWritable(path: string): boolean {
+  try {
+    accessSync(path, constants.W_OK | constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Every Apunta archive in a folder, newest first. Anything else there is ignored. */

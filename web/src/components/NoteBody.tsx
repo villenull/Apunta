@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef } from 'react';
 
-import { useI18n, type Translate } from '../lib/i18n.js';
+import { useI18n } from '../lib/i18n.js';
 import type { Misspelling } from '../lib/spelling.js';
-import { emptySections, markNoteText } from '../lib/markers.js';
+import { markNoteText } from '../lib/markers.js';
 import { SpellLayer } from './SpellLayer.js';
 import { SpelledSegment } from './SpellMarks.js';
 
@@ -26,13 +26,17 @@ export interface NoteBodyProps {
 
 /**
  * The note body: a textarea over a backdrop that highlights the two things
- * worth catching her eye, and an indicator naming any empty section.
+ * worth catching her eye — a section left blank, and a word she said
+ * uncertainly.
  *
- * Neither one blocks anything. The practice owner's blanks are deliberate and
- * she declined a copy-time warning about unclear markers with the slip-through
+ * Neither one blocks anything, and neither one is a banner any more (owner,
+ * 2026-10-05: the "Nothing recorded in … — add or leave blank." notice that
+ * used to sit above the editor is gone). Her blanks are deliberate and she
+ * declined a copy-time warning about unclear markers with the slip-through
  * risk stated (`docs/feedback/2026-08-22-owner-answers.md`, questions 5 and
- * 11), so both are visible-not-blocking by design: nothing here gates copy or
- * publish, and nothing interrupts her.
+ * 11), so both marks are visible-not-blocking by design: nothing here gates
+ * copy or publish, and nothing interrupts her. Each mark sits in the text it
+ * belongs to, which is the only place a reader looks for it.
  *
  * The highlights are a separate layer because the editor has to stay a
  * `<textarea>` for `selectionStart/End`. The two layers share their
@@ -55,9 +59,8 @@ export function NoteBody({
   allowWords = [],
   ref,
 }: NoteBodyProps): React.JSX.Element {
-  const segments = useMemo(() => markNoteText(value, sections), [value, sections]);
-  const blanks = useMemo(() => emptySections(value, sections), [value, sections]);
   const { t } = useI18n();
+  const segments = useMemo(() => markNoteText(value, sections), [value, sections]);
   const backdropCache = useRef<{
     readonly misspellings: readonly Misspelling[];
     readonly segments: readonly { readonly kind: string; readonly text: string }[];
@@ -128,12 +131,6 @@ export function NoteBody({
 
   return (
     <div className="note-editor-body">
-      {blanks.length > 0 && (
-        <p className="empty-sections-note" data-testid="empty-sections">
-          {t('notes.emptySections', { sections: joinNames(blanks, t) })}
-        </p>
-      )}
-
       <SpellLayer
         as="textarea"
         ref={ref}
@@ -158,17 +155,4 @@ export function NoteBody({
       />
     </div>
   );
-}
-
-/**
- * "Objective", "Objective and Plan", "Objective, Assessment and Plan".
- *
- * The conjunction is a catalogue key rather than a literal, because it is the
- * one word in the list a language has to choose (`and` / `y`, `und` / `y`).
- * The names themselves are the format's own section names and arrive as data,
- * so they are passed through untouched.
- */
-function joinNames(names: readonly string[], t: Translate): string {
-  if (names.length <= 1) return names[0] ?? '';
-  return t('common.listLast', { items: names.slice(0, -1).join(', '), last: String(names.at(-1)) });
 }

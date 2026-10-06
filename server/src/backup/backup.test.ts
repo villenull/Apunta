@@ -60,7 +60,11 @@ let config: AppConfig;
 let db: Database;
 
 function open(dir: string): { config: AppConfig; db: Database } {
-  const loaded = loadConfig({ APUNTA_DATA_DIR: dir, APUNTA_FAKE_AI: '1' });
+  const loaded = loadConfig({
+    APUNTA_DATA_DIR: dir,
+    APUNTA_INSTALL_DIR: join(dir, 'installation'),
+    APUNTA_FAKE_AI: '1',
+  });
   const { db: opened } = openDatabase({ file: loaded.dbFile, migrationsDir: loaded.migrationsDir });
   return { config: loaded, db: opened };
 }
@@ -705,7 +709,7 @@ describe('runBackup', () => {
   it('records the run, and records a failure rather than leaving a stale success', () => {
     const first = runBackup(db, config, { now: new Date('2026-08-24T09:00:00.000Z') });
     expect(first.file.filename).toBe('apunta-backup-2026-08-24.zip');
-    expect(first.destination.risk).toBe('data-dir');
+    expect(first.destination.risk).toBe('install-dir');
     expect(first.destination.warning).toBe('');
 
     const settings = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[];

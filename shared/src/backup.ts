@@ -22,16 +22,65 @@ import { instantToLocalDay } from './common.js';
  *
  * An **encrypted** archive rearranges that: everything above goes into an
  * inner zip which is encrypted whole, and only `RESTORE.txt` and
- * `encryption.json` stay readable on the outside. Instructions locked inside
- * the thing you cannot open are not instructions (§5.5).
+ * `encryption.json` stay readable on the outside.
  */
 
-/** Inside the data dir. Default destination — FileVault and Time Machine already cover it. */
+/** Legacy archives remain available for restore after changing the default. */
 export const BACKUP_DIRNAME = 'backups';
+
+/** Default folder inside the app's installation location. */
+export const INSTALL_BACKUP_DIRNAME = 'Apunta backups';
 
 /** `apunta-backup-2026-08-24.zip`, plus `-2` … for a second run the same day. */
 export const BACKUP_FILE_PREFIX = 'apunta-backup-';
 export const BACKUP_FILE_SUFFIX = '.zip';
+
+/** One directory in a listing: its name and where it is. Never its contents. */
+export const BackupFolderSchema = z.object({
+  name: z.string(),
+  path: z.string(),
+});
+export type BackupFolder = z.infer<typeof BackupFolderSchema>;
+
+/**
+ * What `GET /api/backup/folders` answers: the folder asked about, where "up"
+ * goes from it, and its subdirectories.
+ *
+ * `parent` is `null` at the filesystem root, which is the only place a folder
+ * navigator has no way further up — the picker disables its Up button there
+ * rather than looping at the root.
+ */
+export const BackupFolderListingSchema = z.object({
+  path: z.string(),
+  parent: z.string().nullable(),
+  /** Subdirectories only, sorted by name. */
+  directories: z.array(BackupFolderSchema),
+  /** False when Apunta could not write here, so the picker can say so. */
+  writable: z.boolean(),
+});
+export type BackupFolderListing = z.infer<typeof BackupFolderListingSchema>;
+
+/** `GET /api/backup/folders?path=…` — the one folder it may be asked about. */
+export const ListBackupFoldersQuerySchema = z.object({
+  path: z.string().min(1).max(1024).optional(),
+});
+export type ListBackupFoldersQuery = z.infer<typeof ListBackupFoldersQuerySchema>;
+
+/**
+ * `PUT /api/backup/location` — the folder to remember as the destination.
+ *
+ * Choosing a folder is not backing up: no archive is written and no
+ * `last_backup_at` moves, which is what makes the picker safe to wander in.
+ */
+export const SetBackupLocationRequestSchema = z.object({
+  directory: z.string().min(1).max(1024),
+});
+export type SetBackupLocationRequest = z.infer<typeof SetBackupLocationRequestSchema>;
+
+export const SetBackupLocationResponseSchema = z.object({
+  directory: z.string(),
+});
+export type SetBackupLocationResponse = z.infer<typeof SetBackupLocationResponseSchema>;
 
 export const MANIFEST_FILENAME = 'manifest.json';
 export const RESTORE_FILENAME = 'RESTORE.txt';
@@ -50,7 +99,7 @@ export const PENDING_RESTORE_DIRNAME = 'pending-restore';
 export const KEEP_DAILY_BACKUPS = 14;
 export const KEEP_MONTHLY_BACKUPS = 12;
 
-/** Older than this and Settings says so in colour. */
+/** Age threshold retained in the backup status API. */
 export const BACKUP_STALE_DAYS = 7;
 
 /** Settings keys. Flat key → JSON store, so none of these needs a migration. */
@@ -83,7 +132,16 @@ export const SYNC_ROOT_RELATIVE_PATHS = [
   'iCloud Drive',
 ] as const;
 
-export const DestinationRiskSchema = z.enum(['data-dir', 'external', 'sync']);
+/**
+ * Where the archive goes, in the four cases that mean different things.
+ *
+ * `install-dir` is the default since 2026-10-05: the folder the app itself is
+ * installed in, which is neither the data directory nor somewhere a sync
+ * service is watching. It carries no warning, because the page stopped
+ * showing destination prose at all — the field stays so the API can still say
+ * what it resolved and a test can hold each branch.
+ */
+export const DestinationRiskSchema = z.enum(['data-dir', 'install-dir', 'external', 'sync']);
 export type DestinationRisk = z.infer<typeof DestinationRiskSchema>;
 
 export const DestinationAdviceSchema = z.object({
@@ -98,18 +156,26 @@ export type DestinationAdvice = z.infer<typeof DestinationAdviceSchema>;
 /**
  * Where a backup is about to be written, and what is wrong with it.
  *
- * Deliberately a pure function of three strings so the browser can render the
- * same warning before the request is sent and a test can drive every branch
- * without a home directory. Path comparison is prefix-on-segment-boundary,
- * lowercased — macOS filesystems are case-insensitive by default, and
- * `~/documents` would otherwise slip past.
+ * Deliberately a pure function of strings so a test can drive every branch
+ * without a home directory or an installed app. Path comparison is
+ * prefix-on-segment-boundary, lowercased — macOS filesystems are
+ * case-insensitive by default, and `~/documents` would otherwise slip past.
+ *
+ * `installDir` is the folder the app is installed in, and a destination
+ * inside it is `install-dir`. It is checked before the data directory because
+ * a checkout that holds both — `server/` inside the repository it was cloned
+ * into — is a real layout on this project's own Linux install.
  */
 export function classifyBackupDestination(
   destination: string,
   dataDir: string,
   home: string,
+  installDir?: string,
 ): DestinationAdvice {
   const path = stripTrailingSlash(destination);
+  if (installDir !== undefined && installDir !== '' && isWithin(path, stripTrailingSlash(installDir))) {
+    return { risk: 'install-dir', path, warning: '' };
+  }
   if (isWithin(path, join(stripTrailingSlash(dataDir), BACKUP_DIRNAME)) || isWithin(path, dataDir)) {
     return { risk: 'data-dir', path, warning: '' };
   }
@@ -249,14 +315,10 @@ export const MIN_BACKUP_PASSPHRASE = 12;
 export const CreateBackupRequestSchema = z.object({
   /**
    * Absolute path of a folder to write into. Omitted means the configured
-   * destination (`backup_dir`, or `<dataDir>/backups`).
+   * destination (`backup_dir`, or `<installation location>/Apunta backups`).
    */
   directory: z.string().min(1).max(1024).optional(),
-  /**
-   * Encrypts the archive body. Required for nothing — the default destination
-   * sits under FileVault — but the only honest answer for an archive that
-   * leaves the machine.
-   */
+  /** Optional archive encryption for API callers; the UI creates unencrypted backups. */
   passphrase: z.string().min(MIN_BACKUP_PASSPHRASE).max(512).optional(),
   /** Remember `directory` as the destination for future backups. */
   remember: z.boolean().optional(),

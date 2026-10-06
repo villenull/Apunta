@@ -52,6 +52,7 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<TestA
      */
     APUNTA_PORT: '80',
     APUNTA_DATA_DIR: dataDir,
+    APUNTA_INSTALL_DIR: join(dataDir, 'installation'),
     APUNTA_FAKE_AI: '1',
     // Pacing is a demo concern; an integration suite should not pay for it.
     APUNTA_FAKE_STREAM_DELAY_MS: '0',

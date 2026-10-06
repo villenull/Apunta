@@ -116,17 +116,14 @@ If someone prepared Apunta for you, they will have given you a file ending in
 format and how you like your notes written, and nothing else: no patients, no
 notes. Use it instead of clicking **Continue** above.
 
-Apunta only restores from files kept in its own backups folder, so the file
-has to be put there first. It is a folder macOS normally hides, so:
+Choose the folder containing the zip, then restore it:
 
-1. On that first screen, click **Restore it instead** at the bottom. Apunta
-   shows you the exact folder it uses, under **Backups go to**. Select that
-   line and copy it.
-2. Open **Finder**. In the menu bar choose **Go → Go to Folder…**, paste what
-   you copied, and press Return. A folder opens — it may be empty.
-3. Drag the **.zip** file you were given into it.
-4. Go back to Apunta and reload the page. The file is now listed under
-   **Archives**, with a **Restore** button beside it. Click that.
+1. On that first screen, click **Restore it instead** at the bottom.
+2. Under **Current backup location**, click the full path. A local folder
+   navigator opens. Navigate to the folder containing the **.zip** you were
+   given and choose **Use this folder**.
+3. Click **Restore**, select the file in the confirmation dialog, and confirm.
+   If the archive was encrypted, enter its passphrase there.
 
 Apunta will ask you to quit and open it again. When it comes back, your
 format is there and you can start at section 4.

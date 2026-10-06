@@ -1,23 +1,29 @@
-import { isAbsolute, join, win32 } from 'node:path';
-
+import { accessSync, constants, existsSync, statSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve, win32 } from 'node:path';
 import {
   CreateBackupRequestSchema,
   LAST_VERIFIED_RESTORE_SETTING,
+  ListBackupFoldersQuerySchema,
   RestoreBackupRequestSchema,
+  SetBackupLocationRequestSchema,
   backupFilenameDate,
+  type BackupFolderListing,
   type BackupStatusResponse,
   type CreateBackupResponse,
   type RestoreBackupResponse,
+  type SetBackupLocationResponse,
   type VerifiedRestoreResponse,
 } from '@apunta/shared';
 import type { Database } from 'better-sqlite3';
 import type { FastifyInstance } from 'fastify';
-
 import {
   BackupError,
   backupStatus,
   cancelPendingRestore,
   hasPendingRestore,
+  listFolders,
+  legacyBackupDir,
+  rememberBackupDir,
   resolveBackupDir,
   RestoreError,
   runBackupAsync,
@@ -29,7 +35,7 @@ import { putSettings } from '../db/settings.js';
 import { uuidv7 } from '../db/uuid.js';
 import { badRequest, HttpError, notFound, rawHttpError } from '../http/errors.js';
 import { storedLanguage } from '../http/locale.js';
-import { parseBody } from '../http/validate.js';
+import { parseBody, parseQuery } from '../http/validate.js';
 import { begin, end } from '../jobs/registry.js';
 
 /**
@@ -56,6 +62,56 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
       ...backupStatus(db, config, new Date(), storedLanguage(db)),
       pending_restore: hasPendingRestore(config.dataDir),
     };
+  });
+
+  /**
+   * One folder's subdirectories, for the picker in Settings → Backup.
+   *
+   * A browser has no native folder chooser without a bridge, so this walks the
+   * filesystem for it — **names of directories only**. No file names, no sizes,
+   * no contents: a listing must never be a way to read what is on this disk.
+   * A path that is not a directory, or is not there, is a 400 rather than an
+   * empty list, because "this folder does not exist" and "this folder is
+   * empty" are different answers and the picker needs to tell them apart.
+   */
+  app.get('/api/backup/folders', async (request): Promise<BackupFolderListing> => {
+    const input = parseQuery(ListBackupFoldersQuerySchema, request.query);
+    let path = input.path ?? resolveBackupDir(db, config);
+    if (!isAbsolute(path)) throw badRequest('errors.bad_request.backup_path_not_absolute');
+    path = resolve(path);
+    if (input.path === undefined) {
+      while (!existsSync(path) && dirname(path) !== path) path = dirname(path);
+    }
+    try {
+      if (!statSync(path).isDirectory()) throw new Error('Not a directory');
+      return listFolders(path);
+    } catch {
+      throw badRequest('errors.bad_request.backup_folder_not_found', { path });
+    }
+  });
+
+  /**
+   * Remember a folder as the destination, without writing an archive.
+   *
+   * One setting row and nothing else: no archive, no `last_backup_at`, no
+   * pruning — which is what makes it safe to browse and pick, and what lets
+   * "Change where backups go" and "Back up now" stay two separate acts.
+   *
+   * The folder has to exist already. Creating it here would mean a typo in a
+   * path produced a new folder nobody asked for; the backup itself still
+   * creates its own folder, because by then the path is one Apunta chose.
+   */
+  app.put('/api/backup/location', async (request): Promise<SetBackupLocationResponse> => {
+    const { directory } = parseBody(SetBackupLocationRequestSchema, request.body);
+    if (!isAbsolute(directory)) throw badRequest('errors.bad_request.backup_path_not_absolute');
+    const path = resolve(directory);
+    try {
+      if (!statSync(path).isDirectory()) throw new Error('Not a directory');
+      accessSync(path, constants.W_OK | constants.X_OK);
+    } catch {
+      throw badRequest('errors.bad_request.backup_folder_not_found', { path });
+    }
+    return { directory: rememberBackupDir(db, path) };
   });
 
   /** Back up now. The archive is written before this answers, so a 200 means it exists. */
@@ -195,7 +251,12 @@ export function registerBackupRoutes(app: FastifyInstance, config: AppConfig, db
 export function resolveArchivePath(db: Database, config: AppConfig, file: string): string {
   if (isAbsolute(file) || win32.isAbsolute(file)) {
     const name = win32.basename(file);
-    if (backupFilenameDate(name) === null) {
+    const localFolder =
+      isAbsolute(file) &&
+      [resolveBackupDir(db, config), legacyBackupDir(config.dataDir)].some(
+        (directory) => resolve(directory) === dirname(resolve(file)),
+      );
+    if (backupFilenameDate(name) === null && !(localFolder && name.toLowerCase().endsWith('.zip'))) {
       throw badRequest('errors.bad_request.backup_filename_invalid', { name });
     }
     return file;
@@ -203,5 +264,5 @@ export function resolveArchivePath(db: Database, config: AppConfig, file: string
   if (win32.basename(file) !== file || !file.toLowerCase().endsWith('.zip')) {
     throw notFound('errors.not_found.backup_file', { file });
   }
-  return join(resolveBackupDir(db, config.dataDir), file);
+  return join(resolveBackupDir(db, config), file);
 }

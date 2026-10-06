@@ -26,10 +26,12 @@ import {
   lastBackupAt,
   lastBackupFile,
   listRestorableBackups,
+  legacyBackupDir,
   pruneBackups,
   resolveBackupDir,
 } from './store.js';
 
+export type { BackupLocationConfig } from './store.js';
 export { snapshotDatabase, type SnapshotMethod };
 export { BackupError, createBackup, createBackupAsync, type BackupOperation } from './archive.js';
 export { encryptPayload, decryptPayload, sha256 } from './crypto.js';
@@ -51,9 +53,12 @@ export {
   describeDestination,
   isDueToday,
   isStale,
+  legacyBackupDir,
   listBackups,
+  listFolders,
   listRestorableBackups,
   pruneBackups,
+  rememberBackupDir,
   resolveBackupDir,
   selectPrunable,
 } from './store.js';
@@ -92,8 +97,8 @@ export function runBackup(
   options: RunBackupOptions = {},
 ): CreateBackupResponse {
   const now = options.now ?? new Date();
-  const directory = options.directory ?? resolveBackupDir(db, config.dataDir);
-  const destination = describeDestination(directory, config.dataDir);
+  const directory = options.directory ?? resolveBackupDir(db, config);
+  const destination = describeDestination(directory, config);
 
   try {
     return withBackupLockSync(() => {
@@ -143,8 +148,8 @@ export async function runBackupAsync(
   options: RunBackupOptions = {},
 ): Promise<CreateBackupResponse> {
   const now = options.now ?? new Date();
-  const directory = options.directory ?? resolveBackupDir(db, config.dataDir);
-  const destination = describeDestination(directory, config.dataDir);
+  const directory = options.directory ?? resolveBackupDir(db, config);
+  const destination = describeDestination(directory, config);
 
   try {
     return await withBackupLock(async () => {
@@ -222,7 +227,7 @@ export function backupStatus(
   now: Date = new Date(),
   locale: Locale = 'en',
 ): BackupStatus {
-  const directory = resolveBackupDir(db, config.dataDir);
+  const directory = resolveBackupDir(db, config);
   const lastAt = lastBackupAt(db);
   const oldest = db.prepare('SELECT MIN(created_at) AS oldest FROM notes').get() as {
     oldest: string | null;
@@ -230,7 +235,7 @@ export function backupStatus(
 
   return {
     directory,
-    destination: describeDestination(directory, config.dataDir),
+    destination: describeDestination(directory, config),
     last_backup_at: lastAt,
     last_backup_file: lastBackupFile(db),
     // Read through `getSetting` rather than `store.ts`'s `lastBackupError`,
@@ -240,7 +245,10 @@ export function backupStatus(
     last_backup_error: renderBackupError(getSetting<unknown>(db, LAST_BACKUP_ERROR_SETTING), locale),
     stale: isStale(lastAt, now),
     last_verified_restore: readString(db, LAST_VERIFIED_RESTORE_SETTING),
-    backups: listRestorableBackups(directory),
+    backups:
+      directory === legacyBackupDir(config.dataDir)
+        ? listRestorableBackups(directory)
+        : [...listRestorableBackups(directory), ...listRestorableBackups(legacyBackupDir(config.dataDir))],
     counts: tableCounts(db),
     oldest_note_at: oldest.oldest,
     db_bytes: databaseBytes(db),
@@ -251,11 +259,8 @@ export function backupStatus(
  * What a failed backup stores, from this card on: a catalogue key, the
  * parameters it renders, and the ISO stamp.
  *
- * It replaces a string that was two things joined by an em dash, which could be
- * neither re-rendered nor re-translated: the wire field is still a string
- * (`shared/src/backup.ts:221`) and `BackupCard.tsx:210` still shows it inside
- * `backup.failed`, so `GET /api/backup` renders this object in the request's
- * language and the browser is unchanged.
+ * GET /api/backup renders stored failures in the request's language while
+ * keeping its last_backup_error wire field a string.
  *
  * `{detail}` is the failure's own words — a `BackupError`'s message, which
  * names a path or a parser's complaint and is data rather than copy this card

@@ -354,11 +354,13 @@ test.describe('the workspace', () => {
   });
 
   /**
-   * An empty section and an unclear-dictation marker are both visible and
-   * neither blocks anything — the owner declined a gate on each (design
-   * questions 5 and 11).
+   * An empty section and an unclear-dictation marker are both marked in the
+   * text and neither blocks anything — the owner declined a gate on each
+   * (design questions 5 and 11), and the "Nothing recorded in …" notice above
+   * the editor is gone (owner, 2026-10-05), so there is nothing to gate in the
+   * first place.
    */
-  test('marks a blank section and an unclear flag without gating copy', async ({ page, request, tr }) => {
+  test('marks a blank section and an unclear flag without gating copy', async ({ page, request }) => {
     const format = (await (
       await request.post('/api/formats', {
         data: { name: uniqueName('E2E marker format'), sections: ['Subjective', 'Objective', 'Plan'] },
@@ -383,11 +385,9 @@ test.describe('the workspace', () => {
 
     await page.goto(`/?patient=${patient.id}&note=${note.id}`);
 
-    // `Objective` is the format's own section name — data joined into the
-    // sentence by `common.listLast` when there is more than one.
-    await expect(page.getByTestId('empty-sections')).toHaveText(
-      tr('notes.emptySections', { sections: 'Objective' }),
-    );
+    // The blank is marked where it is, in the text: the header it belongs to,
+    // and nothing at all above the editor.
+    await expect(page.getByTestId('empty-sections')).toHaveCount(0);
     await expect(page.locator('.marker-unclear')).toHaveText('[unclear in dictation]');
     await expect(page.locator('.marker-empty-section')).toHaveText('Objective:');
 

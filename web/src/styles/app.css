@@ -728,16 +728,6 @@
   overflow-wrap: normal;
 }
 
-.empty-sections-note {
-  flex-shrink: 0;
-  font-size: var(--text-sm);
-  color: var(--tint-ink);
-  background: var(--accent-tint);
-  border-radius: var(--radius);
-  padding: var(--space-3) var(--space-5);
-  margin-bottom: 14px;
-}
-
 /*
  * A suggested intervention approach beside the draft. It is a note beside the
  * note — quoted evidence and an exact approach label with an explicit choice —
@@ -846,10 +836,14 @@
 
 /*
  * Titleless (owner-proxy, 2026-08-30), and barless too (owner, 2026-10-05):
- * the sheet's only chrome is a small circular close floating over the
- * thread's top-right corner, so the whole card belongs to the conversation.
- * The panel keeps its accessible name through the Dialog's aria-label, so a
- * screen reader loses nothing with the visible heading gone.
+ * the sheet's only chrome is a small close floating over the thread's
+ * top-right corner, so the whole card belongs to the conversation. The panel
+ * keeps its accessible name through the Dialog's aria-label, so a screen
+ * reader loses nothing with the visible heading gone.
+ *
+ * No plate and no circle behind it either (owner, 2026-10-05): a grey glyph
+ * that turns teal under the pointer, drawn straight on the conversation,
+ * which is the way Claude's own close reads.
  */
 .chat-close {
   position: absolute;
@@ -862,16 +856,23 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 0.5px solid var(--border);
-  border-radius: var(--radius-circle);
-  background: var(--surface);
-  color: var(--text-secondary);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .chat-close:hover {
-  color: var(--text-primary);
-  background: var(--surface-muted);
+  color: var(--accent);
+  background: transparent;
+}
+
+/* The same glyph rule the composer's buttons carry (`:hover` above): `.icon`
+   sets a colour on the `<svg>` itself, and that beats the button's, so the
+   close would sit in its quiet grey however the button was coloured. */
+.chat-close .icon {
+  color: inherit;
 }
 
 .chat-thread {
@@ -894,6 +895,12 @@
   margin-left: auto;
 }
 
+/*
+ * A reply is the conversation itself and wears no box at all (owner,
+ * 2026-10-05): same ground as the thread, same left edge, no padding to
+ * push it in. Her own message is the only one that is a bubble — a grey box,
+ * as Claude draws it, never the accent fill that read as a button.
+ */
 .chat-bubble {
   padding: var(--space-9px) var(--space-6);
   border-radius: var(--radius-bubble);
@@ -904,16 +911,18 @@
   white-space: pre-wrap;
 }
 
-.chat-msg.user .chat-bubble {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-bottom-right-radius: var(--radius-mark);
+.chat-msg.ai .chat-bubble {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  border: 0;
+  color: inherit;
 }
 
-.chat-msg.ai .chat-bubble {
-  background: var(--surface-muted);
-  border: 0.5px solid var(--border);
-  border-bottom-left-radius: var(--radius-mark);
+.chat-msg.user .chat-bubble {
+  background: var(--row-selected-bg);
+  color: var(--text-primary);
+  border-bottom-right-radius: var(--radius-mark);
 }
 
 .chat-quote {
@@ -982,15 +991,19 @@
  * that separated the thread from the composer is gone with it — the thread
  * and the box are one surface now, and the box's own border is the only edge
  * she sees.
+ *
+ * Everything inside it is centred on one axis, not hung off the bottom
+ * (owner, 2026-10-05): a single line and eight look the same, and the
+ * microphone and the arrow ride the middle of the text.
  */
 .chat-input-row {
   margin: 0 var(--space-6) var(--space-6);
-  padding: var(--space-4);
+  padding: var(--space-2) var(--space-4);
   border: 0.5px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--surface-muted);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: var(--space-2);
   flex-shrink: 0;
 }
@@ -1001,14 +1014,19 @@
  * lines; past that the box scrolls rather than eating the conversation. The
  * height itself is set from the content (AutoGrowTextarea, SpellLayer's
  * `autoGrow`), so `min-height` only has to clear the base rule's 90px.
+ *
+ * Half the old vertical padding (owner, 2026-10-05): with the glyphs centred
+ * in the box, the taller cushion read as a box that was mostly air. The row's
+ * own padding carries the rest.
  */
 .chat-input-row textarea {
+  display: block;
   flex: 1;
   resize: none;
   min-height: 0;
   max-height: calc(8lh + var(--space-8));
   overflow-y: auto;
-  padding: var(--space-4) var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border: 0;
   background: transparent;
   font-size: var(--text-base);
@@ -1034,7 +1052,7 @@
 /* The spelling backdrop sits under the box's text, so it carries the same
    padding and metrics or the underlines drift off the words. */
 .chat-input-row .spell-backdrop {
-  padding: var(--space-4) var(--space-3);
+  padding: var(--space-2) var(--space-3);
   font-size: var(--text-base);
   line-height: normal;
 }
@@ -1043,10 +1061,10 @@
  * The two controls inside the box's right edge: glyphs on the box's own
  * ground, no button of their own (owner, 2026-10-05). The return arrow takes
  * the accent as soon as the box holds words, and the microphone pulses in it
- * while it listens.
+ * while it listens. Both ride the text's middle, not its last line (owner,
+ * 2026-10-05), so neither carries an `align-self` of its own.
  */
 .chat-input-row .chat-icon-btn {
-  align-self: flex-end;
   flex-shrink: 0;
   width: 30px;
   height: 30px;
@@ -1056,6 +1074,17 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
+}
+
+/*
+ * The glyph inside a composer button wears the button's own colour, and this
+ * is the rule that makes it so (owner, 2026-10-05). `.icon` declares a colour
+ * on the `<svg>` itself, and a colour set on the element beats one inherited
+ * from the button — so before this, the arrow stayed grey with a word in the
+ * box however ready the class list said it was.
+ */
+.chat-input-row .chat-icon-btn .icon {
+  color: inherit;
 }
 
 .chat-input-row .chat-icon-btn:hover:not(:disabled) {
@@ -1535,10 +1564,6 @@ select:focus {
   color: var(--text-muted);
 }
 
-.field-narrow {
-  max-width: 260px;
-}
-
 .card-rows {
   padding: var(--space-4) var(--gutter-x);
 }
@@ -1808,24 +1833,12 @@ select:disabled {
 }
 
 .capture-typed-head {
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 10px;
 }
 
 .capture-typed textarea {
   min-height: 130px;
-}
-
-/* .opt-title/.opt-sub are scoped to .btn-option in the prototype's CSS. */
-.capture-typed .opt-title {
-  font-weight: 500;
-  font-size: var(--text-base);
-}
-
-.capture-typed .opt-sub {
-  font-size: var(--text-md);
-  color: var(--text-secondary);
-  margin-top: 2px;
 }
 
 /*
@@ -2498,40 +2511,39 @@ select:disabled {
   color: var(--tint-ink);
 }
 
-/* The backup card in Settings: the same rows, plus the archive list. */
-
-.backup-list {
-  list-style: none;
-  margin: 0;
-  padding: var(--space-0);
-}
-
-.backup-list li {
+/* Backup page: summary row, destination, and a directory-only picker. */
+.backup-summary-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: var(--space-4) var(--space-0);
-  border-bottom: 0.5px solid var(--border);
-  font-size: var(--text-md);
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-block: var(--space-7);
 }
 
-.backup-list li:last-child {
-  border-bottom: none;
-}
-
-.backup-warning {
+.backup-summary-row > p {
   margin: 0;
-  padding: var(--space-5) var(--space-6);
-  border-radius: var(--radius);
-  background: var(--danger-tint);
-  border: 0.5px solid var(--danger);
-  color: var(--text-primary);
-  font-size: var(--text-md);
 }
 
-.backup-stale {
-  color: var(--danger);
+.backup-location-path {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.backup-folder-list {
+  list-style: none;
+  padding: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.backup-folder-entry {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 /* ------------------------------------------------ polish pass (M7 d5) */
@@ -3757,11 +3769,7 @@ select:disabled {
 }
 
 .settings-about-mark {
-  /*
-   * `BrandMark` carries its own inline `height: 0.8em; width: auto`, so its
-   * size is set in `em` — the font-size here is what makes the mark big.
-   */
-  font-size: 112px;
+  max-width: 100%;
 }
 
 .settings-about-line {
@@ -3955,10 +3963,6 @@ select:disabled {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.capture-source-copy {
-  color: var(--text-secondary);
 }
 
 .capture-stage {
@@ -5734,7 +5738,7 @@ body.is-resizing-sidebar {
  * a pane that holds one of them it is only a second edge. The hairlines between
  * rows do the work instead.
  */
-.settings-pane-body .card {
+.settings-pane-body .settings > .card {
   padding: 0;
   border: none;
   border-radius: 0;

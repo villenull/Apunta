@@ -149,6 +149,8 @@ export interface AppConfig {
   /** Built SPA. Served in production; absent during `npm run dev`. */
   readonly webDistDir: string;
   readonly version: string;
+  /** Checkout root or packaged installation location; overridden by APUNTA_INSTALL_DIR. */
+  readonly installDir: string;
 }
 
 /**
@@ -189,6 +191,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sqliteBinding: nonEmpty(env['APUNTA_SQLITE_BINDING']),
     webDistDir: nonEmpty(env['APUNTA_WEB_DIST']) ?? join(repoRoot, 'web', 'dist'),
     version: readPackageVersion() ?? '0.0.0',
+    installDir: resolve(
+      nonEmpty(env['APUNTA_INSTALL_DIR']) ?? (env['APPIMAGE'] ? dirname(env['APPIMAGE']) : repoRoot),
+    ),
   };
 }
 

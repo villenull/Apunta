@@ -47,3 +47,69 @@
   border-color: transparent;
   background: transparent;
 }
+
+/*
+ * The format chooser, the recorder row and the typed box are one column of
+ * choices, so they share a width (owner, 2026-10-05). The chooser was a 260px
+ * `.field-narrow` — the only thing in the window narrower than everything under
+ * it — and a dropdown that stops short of the row below it reads as a
+ * different kind of control. `.field-narrow` is the class that said otherwise,
+ * so `capture-format` replaces it here rather than fighting it.
+ */
+.field.capture-format {
+  max-width: none;
+}
+
+/*
+ * The chevron, drawn by the stylesheet rather than left to the OS. The native
+ * arrow is drawn in the padding box, so `padding-right` alone cannot inset it
+ * (owner, 2026-10-05) — and a `<select>` takes no pseudo-element, so the
+ * glyph is an absolutely-positioned child of a wrapper that owns the inset.
+ * It is a rotated square's two borders rather than an image: no request, no
+ * baked-in colour, and `--text-secondary` follows the theme.
+ */
+.capture-select {
+  position: relative;
+}
+
+.capture-select select {
+  appearance: none;
+  padding-right: var(--space-32);
+}
+
+.capture-select::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: var(--space-5);
+  width: 7px;
+  height: 7px;
+  margin-top: -5px;
+  border-right: 1.5px solid var(--text-secondary);
+  border-bottom: 1.5px solid var(--text-secondary);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+/*
+ * "Record audio" is one line now (owner, 2026-10-05): the mark and the word,
+ * with the sentence that used to sit under them gone, so the row is the height
+ * of a button rather than of a card. `.btn-option` still frames it as a card
+ * because it has to sit beside the typed box, but it is vertically centred and
+ * padded like a control.
+ */
+.btn-option.capture-source-option {
+  align-items: center;
+  padding: var(--space-6);
+}
+
+/*
+ * The one label both rows carry, in the type the rest of the window's controls
+ * are set in. It was `.opt-title` inside a `.capture-source-copy` wrapper that
+ * existed only to hold a title and a sentence; one line needs neither.
+ */
+.capture-source-label {
+  font-weight: 500;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}

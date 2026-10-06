@@ -28,7 +28,7 @@ import {
   themeOrDefault,
 } from '../lib/appearance.js';
 import { BackupSection, useBackup } from '../components/BackupCard.js';
-import { BrandMark } from '../components/BrandMark.js';
+import { BrandWordmark } from '../components/BrandWordmark.js';
 import { useSettingsContext } from '../components/SettingsProvider.js';
 import {
   BackIcon,
@@ -375,7 +375,7 @@ function SettingsSections({ store }: { store: SettingsStore }): React.JSX.Elemen
 function AboutSection({ t }: { t: Translate }): React.JSX.Element {
   return (
     <section className="card settings-card settings-about" data-testid="settings-about">
-      <BrandMark className="settings-about-mark" />
+      <BrandWordmark className="settings-about-mark" height={48} />
       <p className="settings-about-line" data-testid="settings-about-line">
         {aboutLine(t)}
       </p>

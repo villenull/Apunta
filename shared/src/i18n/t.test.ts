@@ -35,7 +35,6 @@ const SEED: readonly MessageKey[] = [
   'notes.today',
   'notes.date',
   'note.updatedAt',
-  'backup.stale',
   'brainstorm.empty',
   'errors.language_unavailable',
 ];
@@ -43,8 +42,8 @@ const SEED: readonly MessageKey[] = [
 /** Every key, in catalogue order — the set the invariants below iterate. */
 const KEYS: readonly MessageKey[] = Object.keys(en) as MessageKey[];
 
-/** The two keys that take a number, and therefore a plural map. */
-const COUNTED: readonly MessageKey[] = ['notes.count', 'backup.stale'];
+/** Seed keys with a number and a plural map. */
+const COUNTED: readonly MessageKey[] = ['notes.count'];
 
 /** `DATE_FORMAT` of `web/src/lib/format.ts:20-24` — the oracle's option set. */
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
@@ -159,11 +158,6 @@ function unioned(entry: Message): string[] {
 /** `noteCountLabel`, `format.ts:59-61`; `plural`, `plural.ts:2-4`. */
 function noteCountLabel(count: number): string {
   return `${String(count)} note${count === 1 ? '' : 's'}`;
-}
-
-/** `BackupCard.tsx:180` with `BACKUP_STALE_DAYS`. */
-function staleWarning(days: number): string {
-  return `No backup for over ${String(days)} day${days === 1 ? '' : 's'}.`;
 }
 
 /** `firstName`, `format.ts:16-18`, applied to the prototype's sample patient. */
@@ -376,17 +370,6 @@ describe('plurals', () => {
       `Usando las ${grouped(1_000_000, 'es-MX')} notas más recientes de ${grouped(2_000_000, 'es-MX')}`,
     );
   });
-
-  it('pluralises the stale-backup sentence the way the warning reads today', () => {
-    expect(t('backup.stale', { days: 7 }, 'en')).toBe(staleWarning(7));
-    expect(t('backup.stale', { days: 1 }, 'en')).toBe(staleWarning(1));
-    expect(t('backup.stale', { days: 1 }, 'es-MX')).toBe('No hay copias de seguridad de hace más de 1 día.');
-    // `many` and `other` are the same sentence in Spanish, and both are there.
-    expect(t('backup.stale', { days: 7 }, 'es-MX')).toBe('No hay copias de seguridad de hace más de 7 días.');
-    expect(t('backup.stale', { days: 1_000_000 }, 'es-MX')).toBe(
-      `No hay copias de seguridad de hace más de ${grouped(1_000_000, 'es-MX')} días.`,
-    );
-  });
 });
 
 describe('dates and numbers', () => {
@@ -431,11 +414,6 @@ describe('dates and numbers', () => {
       const n = grouped(1234, locale);
       const noun = locale === 'en' ? 'notes' : 'notas';
       expect(t('notes.count', { count: 1234 }, locale)).toBe(`${n} ${noun}`);
-      expect(t('backup.stale', { days: 1234 }, locale)).toBe(
-        locale === 'en'
-          ? `No backup for over ${n} days.`
-          : `No hay copias de seguridad de hace más de ${n} días.`,
-      );
     }
   });
 });
@@ -454,8 +432,6 @@ describe('the English the app already shows', () => {
     expect(t('note.updatedAt', { at: INSTANT }, 'en')).toBe(
       new Intl.DateTimeFormat('en', DATE_OPTIONS).format(new Date(INSTANT)),
     );
-    // `BackupCard.tsx:180` with `BACKUP_STALE_DAYS`.
-    expect(t('backup.stale', { days: 7 }, 'en')).toBe(staleWarning(7));
     // `BrainstormView.tsx:175-178` with `firstName` on the sample patient.
     expect(t('brainstorm.empty', { name: firstName('John Smith') }, 'en')).toBe(
       'Think out loud about John — this conversation is never written into their notes.',
@@ -522,7 +498,6 @@ describe("Fixed decision 7's fallbacks", () => {
     expect(t('notes.count', {}, 'es-MX')).toBe(missing);
     expect(t('notes.count', { count: 'three' }, 'es-MX')).toBe(missing);
     expect(t('notes.count', { count: 'three' }, 'en')).toBe(missing);
-    expect(t('backup.stale', {}, 'es-MX')).toBe('No backup for over  days.');
   });
 
   it('throws on a key no catalogue has', () => {

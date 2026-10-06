@@ -101,21 +101,6 @@ export const esMX = {
   },
 
   /**
-   * The stale-backup warning. "copia de seguridad" is S1.4 §3.3's rendering
-   * of *backup*, and the plural marks land on *días* alone; `many` and
-   * `other` are the same sentence, because in Spanish they are.
-   */
-  'backup.stale': {
-    text: 'No hay copias de seguridad de hace más de {days} día.',
-    plural: {
-      one: 'No hay copias de seguridad de hace más de {days} día.',
-      many: 'No hay copias de seguridad de hace más de {days} días.',
-      other: 'No hay copias de seguridad de hace más de {days} días.',
-    },
-    kind: { days: 'number' },
-  },
-
-  /**
    * The brainstorm thread's empty state. A colon rather than the English
    * em dash, which S1.4 §2.5 advises against in Spanish, and `tú` nowhere in
    * it because the app never has the clinician addressed directly here.
@@ -170,6 +155,10 @@ export const esMX = {
   'errors.bad_request.backup_filename_invalid': {
     text: '{name} no es un nombre de archivo de copia de seguridad de Apunta (apunta-backup-YYYY-MM-DD.zip).',
     kind: { name: 'text' },
+  },
+  'errors.bad_request.backup_folder_not_found': {
+    text: 'No hay ninguna carpeta en {path}.',
+    kind: { path: 'text' },
   },
   'errors.bad_request.format_detect_kind': {
     text: 'Dile a Apunta si son una plantilla vacía o notas completadas.',
@@ -730,12 +719,6 @@ export const esMX = {
   /** `NoteBody.tsx:151`. */
   'note.body': { text: 'Cuerpo de la nota' },
 
-  /** `NoteBody.tsx:133`. `{sections}` son los nombres de sección del formato. */
-  'notes.emptySections': {
-    text: 'No hay nada registrado en {sections}: agrega lo que quieras o déjalo en blanco.',
-    kind: { sections: 'text' },
-  },
-
   /** `NoteView.tsx:643`. */
   'note.saveSaved': { text: 'Guardada' },
 
@@ -982,6 +965,12 @@ export const esMX = {
   'backup.title': {
     text: 'Copia de seguridad',
   },
+  'backup.explain': {
+    text: 'Las copias de seguridad guardan tu práctica para recuperar tus notas si algo se pierde o se daña. Apunta crea una copia diaria automáticamente; usa Hacer una copia ahora para guardar una adicional. Restaurar recupera una copia guardada después de que confirmes.',
+  },
+  'backup.locationLabel': {
+    text: 'Ubicación actual de las copias de seguridad',
+  },
   'backup.restore': {
     text: 'Restaurar',
   },
@@ -1034,47 +1023,26 @@ export const esMX = {
   'backup.now': {
     text: 'Hacer una copia ahora',
   },
-  'backup.failed': {
-    text: 'La última copia de seguridad falló: {detail}',
-    kind: { detail: 'text' },
-  },
   'backup.restoreWaiting': {
     text: 'Hay una restauración pendiente: sal de Apunta y vuelve a abrirlo para terminarla.',
   },
-  'backup.restoreCancelled': {
-    text: 'Restauración cancelada. No cambió nada.',
+  'backup.chooseFolder': {
+    text: 'Elige dónde se guardan las copias de seguridad',
   },
-  'backup.done': {
-    text: 'Copia guardada: {notes} notas, {bytes}, revisada e íntegra.',
-    kind: { notes: 'text', bytes: 'text' },
+  'backup.folderUp': {
+    text: 'Subir un nivel',
   },
-  'backup.pruned': {
-    text: 'se eliminaron {count} más antiguas.',
-    kind: { count: 'text' },
+  'backup.useFolder': {
+    text: 'Usar esta carpeta',
   },
-  'backup.folder': {
-    text: 'Carpeta',
-  },
-  'backup.sameDisk': {
-    text: 'Estas copias de seguridad están en el mismo disco que tus notas; una memoria USB es más segura.',
-  },
-  'backup.changeFolder': {
-    text: 'Cambiar la carpeta',
-  },
-  'backup.folderPlaceholder': {
-    text: '/Volumes/Backup/Apunta',
+  'backup.folderNotWritable': {
+    text: 'Apunta no puede escribir en esa carpeta.',
   },
   'backup.passphrase': {
     text: 'Frase de contraseña',
   },
   'backup.passphraseHint': {
     text: 'Solo hace falta para una copia que hayas cifrado con una frase de contraseña.',
-  },
-  'backup.changeLocation': {
-    text: 'Cambiar la ubicación de la copia',
-  },
-  'backup.saveFolder': {
-    text: 'Guardar y hacer la copia ahí',
   },
   'backup.confirmTitle': {
     text: '¿Estás segura?',
@@ -1092,32 +1060,8 @@ export const esMX = {
     text: 'La restauración del {day} está lista. Sal de Apunta y vuelve a abrirlo para terminarla; tus notas actuales quedan guardadas en {path}.',
     kind: { day: 'text', path: 'text' },
   },
-  'backup.noted': {
-    text: 'Anotado.',
-  },
-  'backup.stored': {
-    text: 'Guardadas: {notes} notas de {patients} pacientes{range}, {transcripts} transcripciones, {bytes}',
-    kind: { notes: 'text', patients: 'text', range: 'text', transcripts: 'text', bytes: 'text' },
-  },
-  'backup.storedRange': {
-    text: ', desde el {day}',
-    kind: { day: 'text' },
-  },
-  'backup.encrypted': {
-    text: ', cifrada',
-  },
   'backup.noArchives': {
-    text: 'Aún no hay archivos. Deja un archivo de copia de seguridad en la carpeta de arriba para restaurarlo.',
-  },
-  'backup.neverTested': {
-    text: 'Restauración nunca probada: abre un archivo y sigue su RESTORE.txt.',
-  },
-  'backup.markTested': {
-    text: 'Ya lo hice',
-  },
-  'backup.tested': {
-    text: 'Restauración probada por última vez el {day}.',
-    kind: { day: 'text' },
+    text: 'Aún no hay copias en esta carpeta. Copia una aquí para restaurarla.',
   },
   'notes.new': {
     text: 'Nueva nota',
@@ -2167,14 +2111,8 @@ export const esMX = {
   'capture.recordAudio': {
     text: 'Grabar audio',
   },
-  'capture.recordAudioHelp': {
-    text: 'Empieza aquí: narra tus notas; agrega notas escritas antes o durante la grabación',
-  },
   'capture.typeNotes': {
     text: 'Escribir notas',
-  },
-  'capture.typeNotesHelp': {
-    text: 'Escribe notas antes o durante la grabación, o solo escríbelas sin grabar',
   },
   'capture.summaryPlaceholder': {
     text: 'Escribe el resumen de tu sesión…',

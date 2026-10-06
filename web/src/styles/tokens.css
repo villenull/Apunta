@@ -272,10 +272,10 @@
   --on-accent: #ffffff;
   --accent-ink: var(--accent-hover);
   /*
-   * Text that sits on an accent-tinted background (the empty-sections
-   * notice, badges, selected rows). In light mode this is the accent ink,
-   * exactly as before; dark mode overrides it below with a lightened
-   * accent, because the darkened ink on the dark tint is ~1.6:1.
+   * Text that sits on an accent-tinted background (badges, selected rows,
+   * tinted notes). In light mode this is the accent ink, exactly as before;
+   * dark mode overrides it below with a lightened accent, because the darkened
+   * ink on the dark tint is ~1.6:1.
    */
   --tint-ink: var(--accent-ink);
   --danger: #b54b3a;

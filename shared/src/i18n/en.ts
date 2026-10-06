@@ -127,20 +127,6 @@ export const en = {
   },
 
   /**
-   * The stale-backup warning, `BackupCard.tsx:180` with
-   * `BACKUP_STALE_DAYS`. A number, so a large value groups; the sentence is
-   * otherwise the one the app shows.
-   */
-  'backup.stale': {
-    text: 'No backup for over {days} day.',
-    plural: {
-      one: 'No backup for over {days} day.',
-      other: 'No backup for over {days} days.',
-    },
-    kind: { days: 'number' },
-  },
-
-  /**
    * The brainstorm thread's empty state, `BrainstormView.tsx:175-178`, with
    * `firstName` (`format.ts:16-18`): "Think out loud about John — this
    * conversation is never written into their notes."
@@ -266,6 +252,16 @@ export const en = {
   'errors.bad_request.backup_filename_invalid': {
     text: '{name} is not an Apunta backup filename (apunta-backup-YYYY-MM-DD.zip).',
     kind: { name: 'text' },
+  },
+
+  /**
+   * `routes/backup.ts` — the folder the picker was asked to open, or the one
+   * it was asked to keep. `{path}` is the path exactly as given: data, not
+   * copy, and it is written out verbatim in both catalogues.
+   */
+  'errors.bad_request.backup_folder_not_found': {
+    text: 'There is no folder at {path}.',
+    kind: { path: 'text' },
   },
 
   /** `routes/formats-detect.ts:45` — the `kind` field, read by hand. */
@@ -1105,15 +1101,6 @@ export const en = {
   /** The note editor's spoken name, `NoteBody.tsx:151`. */
   'note.body': { text: 'Note body' },
 
-  /**
-   * The blanks indicator, `NoteBody.tsx:133`. `{sections}` is the format's own
-   * section names, joined by `common.listLast` — data, joined, not translated.
-   */
-  'notes.emptySections': {
-    text: 'Nothing recorded in {sections} — add or leave blank.',
-    kind: { sections: 'text' },
-  },
-
   /** The save state, quiet, `NoteView.tsx:643`. */
   'note.saveSaved': { text: 'Saved' },
 
@@ -1367,14 +1354,25 @@ export const en = {
   'ai.bannerTail': { text: 'Everything except drafting a new note still works.' },
 
   /*
-   * `web/src/components/BackupCard.tsx` — the card, and the archives list
-   * beside it. Four of these are the class `check-ui-strings.mjs` cannot see
-   * (Fixed decision 5): the stale warning it already had as `backup.stale`,
-   * the relative time, the retention line, and the tested-on date.
+   * `web/src/components/BackupCard.tsx` — the Backup page: one heading, a
+   * short explanation, the "Last backup" row with its two buttons, and the
+   * folder the archives go to.
    */
 
-  /** The card's and the archives list's heading. */
+  /** The page's heading, and the section's name in the Settings nav. */
   'backup.title': { text: 'Backup' },
+
+  /**
+   * The two sentences under the heading, in the page's own small type. What a
+   * backup is, where it goes, and that restoring asks before it replaces
+   * anything — the three things she would otherwise have to ask.
+   */
+  'backup.explain': {
+    text: 'Backups keep a copy of your practice so you can recover your notes if something is lost or damaged. Apunta makes a daily backup automatically; use Back up now to save an extra copy. Restore brings back a saved copy after you confirm.',
+  },
+
+  /** The row that opens the folder picker, above the full path. */
+  'backup.locationLabel': { text: 'Current backup location' },
 
   /** The card's restore control and each archive's, `BackupCard.tsx:173` and `:368`. */
   'backup.restore': { text: 'Restore' },
@@ -1425,45 +1423,24 @@ export const en = {
   /** The card's own button, `BackupCard.tsx:170`. */
   'backup.now': { text: 'Back up now' },
 
-  /** `BackupCard.tsx:185`, with the server's own failure text as data. */
-  'backup.failed': { text: 'The last backup failed: {detail}', kind: { detail: 'text' } },
-
   /** `BackupCard.tsx:195`, before the Cancel it control. */
   'backup.restoreWaiting': { text: 'A restore is waiting: quit Apunta and open it again to finish.' },
 
-  /** `BackupCard.tsx:203`. */
-  'backup.restoreCancelled': { text: 'Restore canceled. Nothing changed.' },
-
   /**
-   * `BackupCard.tsx:106`, with `{pruned}` appended when the server pruned
-   * older archives. `{notes}` and `{bytes}` are `String(...)` exactly as the
-   * card wrote them, so a count of 1,000 is not regrouped.
+   * The folder navigator, opened from the current path button.
    */
-  'backup.done': {
-    text: 'Backed up: {notes} notes, {bytes}, checked and intact.',
-    kind: { notes: 'text', bytes: 'text' },
-  },
-  /** `BackupCard.tsx:105`, joined to `backup.done` with one space. */
-  'backup.pruned': { text: '{count} older removed.', kind: { count: 'text' } },
-
-  /** The folder row's label, `BackupCard.tsx:228`. */
-  'backup.folder': { text: 'Folder' },
-  /** `BackupCard.tsx:235`. */
-  'backup.sameDisk': { text: 'These backups are on the same disk as your notes; a USB drive is safer.' },
-  /** The folder field's label, `BackupCard.tsx:241`. */
-  'backup.changeFolder': { text: 'Change folder' },
-  /**
-   * `BackupCard.tsx:246`. A path, so it is a keep-as-is token inside a
-   * translatable value (Fixed decision 2): written out verbatim in both
-   * catalogues, never allowlisted — the allowlist matches whole strings, and
-   * this is a `placeholder` attribute rather than one.
-   */
-  'backup.folderPlaceholder': { text: '/Volumes/Backup/Apunta' },
+  'backup.chooseFolder': { text: 'Choose where backups are saved' },
+  /** One level up; disabled at the filesystem root, where there is none. */
+  'backup.folderUp': { text: 'Up one level' },
+  /** Confirms the folder on screen — it is remembered, not backed up to yet. */
+  'backup.useFolder': { text: 'Use this folder' },
+  /** Under the listing, when the folder is there but cannot be written to. */
+  'backup.folderNotWritable': { text: 'Apunta cannot write to that folder.' },
 
   /**
-   * The passphrase label, now only in the restore dialog: the page's own
-   * passphrase field is gone (owner, 2026-10-05), but an archive encrypted
-   * before it went still opens, so the field that asks for it stays.
+   * The passphrase label, only in the restore dialog: a new backup takes no
+   * passphrase (owner, 2026-10-05), but an archive encrypted before it went
+   * still opens, so the field that asks for one stays.
    */
   'backup.passphrase': { text: 'Passphrase' },
 
@@ -1471,15 +1448,6 @@ export const en = {
   'backup.passphraseHint': {
     text: 'Only needed for a backup you encrypted with a passphrase.',
   },
-
-  /**
-   * The row's second action: the folder is read-only text until she asks for
-   * the editor, so this is the only way in.
-   */
-  'backup.changeLocation': { text: 'Change backup location' },
-
-  /** The editor's confirm, which also runs the backup she was changing for. */
-  'backup.saveFolder': { text: 'Save and back up there' },
 
   /** Both confirmations' title, so a dialog about backup opens on backup. */
   'backup.confirmTitle': { text: 'Are you sure?' },
@@ -1514,49 +1482,13 @@ export const en = {
     kind: { day: 'text', path: 'text' },
   },
 
-  /** `BackupCard.tsx:309`. */
-  'backup.noted': { text: 'Noted.' },
-
   /**
-   * `BackupCard.tsx:315-319`: one key with four parameters, plus the
-   * conditional range as a fifth. `{notes}`, `{patients}` and `{transcripts}`
-   * are `String(...)` as the card wrote them — the sentence reads
-   * `847 notes for 12 patients` whatever the count, and making that a plural
-   * would change the English at 1.
+   * Shown instead of the archive picker when the folder holds no archive at
+   * all: an archive copied in from a memory stick is invisible until it is
+   * there, so the one sentence that says where to put it is what keeps the
+   * door open (day-one rehearsal, 2026-08-30).
    */
-  'backup.stored': {
-    text: 'Stored: {notes} notes for {patients} patients{range}, {transcripts} transcripts, {bytes}',
-    kind: { notes: 'text', patients: 'text', range: 'text', transcripts: 'text', bytes: 'text' },
-  },
-  /**
-   * `BackupCard.tsx:318`, or empty when there is no oldest note. `{day}` is
-   * `instantToLocalDay`'s raw `YYYY-MM-DD`, so it is a stored value under
-   * Fixed decision 4 — a `date` parameter would print the day for anyone west
-   * of Greenwich, and `BackupCard.test.tsx:170` pins the raw string.
-   */
-  'backup.storedRange': { text: ', going back to {day}', kind: { day: 'text' } },
-
-  /** `BackupCard.tsx:357`, after the archive's size. */
-  'backup.encrypted': { text: ', encrypted' },
-
-  /** The archives list's empty state, `BackupCard.tsx:343`. */
-  'backup.noArchives': { text: 'No archives yet. Put a backup file in the folder above to restore it.' },
-
-  /** `BackupCard.tsx:399`, before the I have done this control. */
-  'backup.neverTested': { text: 'Restore never tested: open an archive and follow its RESTORE.txt.' },
-  /** `BackupCard.tsx:401`. `RESTORE.txt` is a file name, kept as-is. */
-  'backup.markTested': { text: 'I have done this' },
-
-  /**
-   * `BackupCard.tsx:393` — the other of the two blind spots a test pins.
-   *
-   * `instantToLocalDay` composes no English at all: it returns a raw
-   * `YYYY-MM-DD`, which is what the screen shows today and what
-   * `BackupCard.test.tsx:170` asserts. So `{day}` is a stored value and the
-   * parameter is `text`, not `dateOnly`; declaring it `dateOnly` would print
-   * `Aug 1, 2026` and break that test (Fixed decision 3).
-   */
-  'backup.tested': { text: 'Restore last tested {day}.', kind: { day: 'text' } },
+  'backup.noArchives': { text: 'No backups in this folder yet. Copy one here to restore it.' },
 
   /*
    * The notes column, the patient lists, and the workspace around them.
@@ -2489,14 +2421,8 @@ export const en = {
   'capture.discardRecording': { text: 'Discard recording' },
   /** `Capture.tsx:423`. */
   'capture.recordAudio': { text: 'Record audio' },
-  /** `Capture.tsx:425`. */
-  'capture.recordAudioHelp': {
-    text: 'Start here — narrate your notes; add typed notes before or while recording',
-  },
   /** `Capture.tsx:435`. */
   'capture.typeNotes': { text: 'Type notes' },
-  /** `Capture.tsx:436`. */
-  'capture.typeNotesHelp': { text: 'Type notes before or while recording, or use typing alone' },
   /** `Capture.tsx:442`. */
   'capture.summaryPlaceholder': { text: 'Type your session summary...' },
   /** `Capture.tsx:443`. */

@@ -24,7 +24,8 @@ export {
   cancelRestore,
   createBackup,
   fetchBackupStatus,
-  markRestoreVerified,
+  listBackupFolders,
+  setBackupLocation,
   restoreBackup,
 } from './backup.js';
 
