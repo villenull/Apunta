@@ -26,8 +26,10 @@ then follow docs/RECOVERY.md "Rebuild this Linux PC from zero" end to end.
 I authorize the downloads it lists.
 ```
 
-The agent needs `sudo` for system packages and the Ollama service; it will
-ask you to run those lines yourself with `! sudo …`.
+The agent needs root for system packages and the Ollama service. It runs
+those lines with `pkexec`, which makes polkit show a password prompt on your
+screen (Omarchy's shell provides the prompt). It does not use `sudo`, which
+would wait for a password in a terminal the agent cannot type into.
 
 ### Before wiping: what Git does not hold
 
@@ -76,10 +78,10 @@ The machine-readable version is `config/recovery/current-linux.json`;
 
 ### Steps
 
-**1. System packages** (owner runs with `sudo`):
+**1. System packages** (root, through `pkexec`):
 
 ```sh
-sudo pacman -S --needed base-devel git cmake clang patchelf fuse2 \
+pkexec pacman -S --needed --noconfirm base-devel git cmake clang patchelf fuse2 \
   webkit2gtk-4.1 gst-plugins-base gst-plugins-good xdg-desktop-portal-gtk \
   vulkan-headers vulkan-radeon shaderc \
   ollama ollama-rocm \
@@ -93,8 +95,8 @@ model on the GPU. The last line is only for the native desktop smoke tests
 **2. Ollama as a service, running as you and bound to localhost:**
 
 ```sh
-sudo mkdir -p /etc/systemd/system/ollama.service.d
-sudo tee /etc/systemd/system/ollama.service.d/override.conf <<'EOF'
+pkexec mkdir -p /etc/systemd/system/ollama.service.d
+pkexec tee /etc/systemd/system/ollama.service.d/override.conf <<'EOF'
 [Service]
 User=<you>
 Group=<you>
@@ -103,7 +105,7 @@ Environment="HOME=/home/<you>"
 Environment="OLLAMA_MODELS=/home/<you>/.ollama/models"
 ProtectHome=no
 EOF
-sudo systemctl daemon-reload && sudo systemctl enable --now ollama
+pkexec sh -c 'systemctl daemon-reload && systemctl enable --now ollama'
 ```
 
 This is the reference PC's drop-in verbatim, with the user name replaced. It
