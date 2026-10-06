@@ -52,6 +52,9 @@ export type InboundMessage =
       readonly code?: string;
     }
   | { readonly type: 'quiesce' }
+  | { readonly type: 'snapshot_request'; readonly id: string }
+  | { readonly type: 'maintenance_release' }
+  | { readonly type: 'health_confirm'; readonly id: string }
   | { readonly type: 'shutdown' };
 
 /** An outbound line, in the shape C-BRIDGE@1 rules 1 and 2 fix. */
@@ -70,7 +73,23 @@ export type OutboundMessage =
    * `quiesceId` is deliberately **not** here: it ties a client report to a
    * quiesce inside the server, and nothing on the shell's side matches on it.
    */
-  | { readonly type: 'quiesce_result'; readonly ok: boolean; readonly blockers: readonly string[] };
+  | { readonly type: 'quiesce_result'; readonly ok: boolean; readonly blockers: readonly string[] }
+  | { readonly type: 'update_request'; readonly action: 'check' | 'download' | 'install' }
+  | { readonly type: 'snapshot_result'; readonly id: string; readonly ok: boolean; readonly code?: string }
+  | { readonly type: 'close_decision'; readonly confirm: boolean }
+  | {
+      readonly type: 'startup_context';
+      readonly mode: 'normal' | 'recovery';
+      readonly updateId?: string;
+      readonly targetVersion?: string;
+      readonly previousVersion?: string;
+    }
+  | { readonly type: 'health_result'; readonly id: string; readonly ok: boolean; readonly code?: string }
+  | {
+      readonly type: 'recovery_request';
+      readonly id: string;
+      readonly action: 'restart' | 'reinstall_previous';
+    };
 
 export interface BridgeEnv {
   readonly APUNTA_SHELL?: string | undefined;
@@ -181,6 +200,114 @@ export function writeQuiesceResult(
   return true;
 }
 
+/** What a shell-mode snapshot request answers with (`snapshot_result`'s body). */
+export interface SnapshotOutcome {
+  readonly ok: boolean;
+  readonly code?: string;
+}
+
+/** What a health confirmation answers with (`health_result`'s body). */
+export interface HealthOutcome {
+  readonly ok: boolean;
+  readonly code?: string;
+}
+
+/** The shell's `update_status`, as the update route's store receives it. */
+export interface UpdateStatusMessage {
+  readonly state: string;
+  readonly version?: string;
+  readonly code?: string;
+}
+
+/**
+ * Injected like the quiesce handler, for the same reason: this file has no
+ * runtime imports. `routes/app-update.ts` installs the first three when the app
+ * is built; the boot code installs the health handler, which is the one that
+ * has to work before there is an app (recovery mode has none of the normal one).
+ */
+let updateStatusHandler: ((status: UpdateStatusMessage) => void) | null = null;
+let snapshotHandler: ((id: string) => Promise<SnapshotOutcome>) | null = null;
+let maintenanceReleaseHandler: (() => void) | null = null;
+let healthConfirmHandler: ((id: string) => HealthOutcome) | null = null;
+
+export function setUpdateStatusHandler(handler: ((status: UpdateStatusMessage) => void) | null): void {
+  updateStatusHandler = handler;
+}
+
+export function setSnapshotHandler(handler: ((id: string) => Promise<SnapshotOutcome>) | null): void {
+  snapshotHandler = handler;
+}
+
+export function setMaintenanceReleaseHandler(handler: (() => void) | null): void {
+  maintenanceReleaseHandler = handler;
+}
+
+export function setHealthConfirmHandler(handler: ((id: string) => HealthOutcome) | null): void {
+  healthConfirmHandler = handler;
+}
+
+interface WriteOptions {
+  readonly env: BridgeEnv;
+  readonly write?: LineWriter;
+}
+
+function writeLine(message: OutboundMessage, options: WriteOptions): boolean {
+  if (!shellIsListening(options.env)) return false;
+  (options.write ?? writeSyncToStdout)(serialize(message));
+  return true;
+}
+
+/** `update_request{action}`: the page asked, the shell does the work. */
+export function writeUpdateRequest(action: 'check' | 'download' | 'install', options: WriteOptions): boolean {
+  return writeLine({ type: 'update_request', action }, options);
+}
+
+/** `snapshot_result{id, ok, code?}`, answering exactly one `snapshot_request`. */
+export function writeSnapshotResult(id: string, outcome: SnapshotOutcome, options: WriteOptions): boolean {
+  return writeLine(
+    outcome.code === undefined
+      ? { type: 'snapshot_result', id, ok: outcome.ok }
+      : { type: 'snapshot_result', id, ok: outcome.ok, code: outcome.code },
+    options,
+  );
+}
+
+/** `close_decision{confirm}`: the renderer's explicit word after a refused close. */
+export function writeCloseDecision(confirm: boolean, options: WriteOptions): boolean {
+  return writeLine({ type: 'close_decision', confirm }, options);
+}
+
+/** `startup_context`, after ownership and before `ready`. */
+export function writeStartupContext(
+  context: {
+    readonly mode: 'normal' | 'recovery';
+    readonly updateId?: string;
+    readonly targetVersion?: string;
+    readonly previousVersion?: string;
+  },
+  options: WriteOptions,
+): boolean {
+  return writeLine({ type: 'startup_context', ...context }, options);
+}
+
+/** `health_result{id, ok, code?}`, answering exactly one `health_confirm`. */
+export function writeHealthResult(id: string, outcome: HealthOutcome, options: WriteOptions): boolean {
+  return writeLine(
+    outcome.code === undefined
+      ? { type: 'health_result', id, ok: outcome.ok }
+      : { type: 'health_result', id, ok: outcome.ok, code: outcome.code },
+    options,
+  );
+}
+
+/** `recovery_request{id, action}`: recovery mode asking the shell to restart or reinstall. */
+export function writeRecoveryRequest(
+  request: { readonly id: string; readonly action: 'restart' | 'reinstall_previous' },
+  options: WriteOptions,
+): boolean {
+  return writeLine({ type: 'recovery_request', id: request.id, action: request.action }, options);
+}
+
 /**
  * One inbound line, or `null` when it is not a JSON object.
  *
@@ -218,6 +345,10 @@ export function handleInboundLine(
   handlers: {
     readonly onShutdown: () => void;
     readonly onQuiesce?: () => void;
+    readonly onUpdateStatus?: (status: UpdateStatusMessage) => void;
+    readonly onSnapshotRequest?: (id: string) => void;
+    readonly onMaintenanceRelease?: () => void;
+    readonly onHealthConfirm?: (id: string) => void;
     readonly log?: (message: string) => void;
   },
 ): void {
@@ -237,6 +368,34 @@ export function handleInboundLine(
       return;
     }
     handlers.onQuiesce();
+    return;
+  }
+  const fields = parsed as Record<string, unknown>;
+  if (parsed.type === 'update_status') {
+    const state = fields['state'];
+    if (typeof state !== 'string') {
+      log('shell bridge: ignoring an update_status without a state');
+      return;
+    }
+    const status: { state: string; version?: string; code?: string } = { state };
+    if (typeof fields['version'] === 'string') status.version = fields['version'];
+    if (typeof fields['code'] === 'string') status.code = fields['code'];
+    handlers.onUpdateStatus?.(status);
+    return;
+  }
+  if (parsed.type === 'maintenance_release') {
+    handlers.onMaintenanceRelease?.();
+    return;
+  }
+  if (parsed.type === 'snapshot_request' || parsed.type === 'health_confirm') {
+    // Ids are opaque strings matched exactly; a number or a missing id is not one.
+    const id = fields['id'];
+    if (typeof id !== 'string' || id === '') {
+      log(`shell bridge: ignoring ${parsed.type} without a string id`);
+      return;
+    }
+    if (parsed.type === 'snapshot_request') handlers.onSnapshotRequest?.(id);
+    else handlers.onHealthConfirm?.(id);
     return;
   }
   log(`shell bridge: ignoring unknown inbound type ${JSON.stringify(parsed.type)}`);
@@ -286,11 +445,14 @@ export function startStdinBridge(options: {
    */
   readonly onParentGone?: () => void;
   readonly log?: (message: string) => void;
+  /** Where answers are written. Production passes nothing (fd 1). */
+  readonly write?: LineWriter;
 }): boolean {
   if (!shellIsListening(options.env)) return false;
   const input = options.input ?? process.stdin;
   const log = options.log ?? (() => undefined);
   const env = options.env;
+  const writeOptions: WriteOptions = options.write === undefined ? { env } : { env, write: options.write };
   /**
    * The quiesce half. Asynchronous because the drain is, and fire-and-forget
    * because a line reader cannot await: the answer travels back as its own
@@ -311,12 +473,51 @@ export function startStdinBridge(options: {
       }
       void run()
         .then((result) => {
-          writeQuiesceResult(result, { env });
+          writeQuiesceResult(result, writeOptions);
         })
         .catch((error: unknown) => {
           log(`shell bridge: quiesce failed: ${error instanceof Error ? error.message : String(error)}`);
         });
     });
+  /**
+   * `snapshot_request{id}` is answered only by `snapshot_result` with the same
+   * id, and never by a quiesce reply. Fail closed when nothing is wired.
+   */
+  const onSnapshotRequest = (id: string): void => {
+    const run = snapshotHandler;
+    if (run === null) {
+      writeSnapshotResult(id, { ok: false, code: 'snapshot_failed' }, writeOptions);
+      return;
+    }
+    void run(id)
+      .then((outcome) => {
+        writeSnapshotResult(id, outcome, writeOptions);
+      })
+      .catch((error: unknown) => {
+        log(`shell bridge: snapshot failed: ${error instanceof Error ? error.message : String(error)}`);
+        writeSnapshotResult(id, { ok: false, code: 'snapshot_failed' }, writeOptions);
+      });
+  };
+  const onHealthConfirm = (id: string): void => {
+    let outcome: HealthOutcome = { ok: false, code: 'unknown_update' };
+    try {
+      outcome = healthConfirmHandler?.(id) ?? outcome;
+    } catch (error) {
+      log(
+        `shell bridge: health confirmation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      outcome = { ok: false, code: 'health_failed' };
+    }
+    writeHealthResult(id, outcome, writeOptions);
+  };
+  const dispatch = {
+    onQuiesce,
+    onSnapshotRequest,
+    onHealthConfirm,
+    onUpdateStatus: (status: UpdateStatusMessage): void => updateStatusHandler?.(status),
+    onMaintenanceRelease: (): void => maintenanceReleaseHandler?.(),
+    log,
+  };
   let buffered = '';
   // `shutdown` and end-of-file can both arrive — a shell that wrote `shutdown` and
   // then closed its end is not two quits — so the shutdown callback is one-shot.
@@ -333,7 +534,7 @@ export function startStdinBridge(options: {
     while (newline !== -1) {
       const line = buffered.slice(0, newline);
       buffered = buffered.slice(newline + 1);
-      handleInboundLine(line, { onShutdown: stopOnce, onQuiesce, log });
+      handleInboundLine(line, { onShutdown: stopOnce, ...dispatch });
       newline = buffered.indexOf('\n');
     }
   });
@@ -341,7 +542,7 @@ export function startStdinBridge(options: {
     // An unterminated tail is still read, because a `shutdown` written without
     // its newline is a shutdown.
     if (buffered !== '') {
-      handleInboundLine(buffered, { onShutdown: stopOnce, onQuiesce, log });
+      handleInboundLine(buffered, { onShutdown: stopOnce, ...dispatch });
       buffered = '';
       return;
     }

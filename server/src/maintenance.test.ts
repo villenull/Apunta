@@ -1081,12 +1081,13 @@ describe("the window's last word (AM-215)", () => {
 
 describe('a duplicated tab identity', () => {
   it('never makes a live window invisible to the quiesce', async () => {
-    // Chromium's *Duplicate Tab* copies `sessionStorage`, so two windows really
-    // can arrive with one id. The first is holding a wait.
+    // Chromium's *Duplicate Tab* copies `sessionStorage` — the tab id — but the
+    // `doc` nonce is minted once per page load and is never copied, so the copy
+    // arrives with its own. The first is holding a wait.
     const { clock, asked } = answeringClock('tab-shared');
     const local = await harness(clock);
     const first = window('tab-shared');
-    const second = window('tab-shared');
+    const second = window('tab-shared', docOf('tab-shared', 'next'));
     expect((await statusOf(local.app)).windows).toBe(2);
 
     const running = trigger(local.app);
@@ -1211,14 +1212,15 @@ describe('a duplicated tab identity', () => {
   });
 
   it('a clean claim under a duplicated identity acts on neither copy', async () => {
-    // Chromium's *Duplicate Tab* copies `sessionStorage`, so two windows really
-    // can hold unpersisted text under one identity. The dirty one was here first
-    // and the clean copy was made from it, and a clean claim says nothing about
-    // which of them is speaking.
+    // Chromium's *Duplicate Tab* copies `sessionStorage` — the tab id — and the
+    // copy is a **new document**, so it mints its own `doc` nonce. Two windows
+    // really can hold unpersisted text under one identity: the dirty one was here
+    // first and the clean copy was made from it, and a clean claim says nothing
+    // about which of them is speaking.
     const clock = stillClock();
     const local = await harness(clock);
     const dirty = window('tab-shared');
-    const clean = window('tab-shared');
+    const clean = window('tab-shared', docOf('tab-shared', 'next'));
 
     // The clean copy says its word, with both sockets still open. **Nothing** is
     // released and nothing is deleted: either choice would be a guess, and the
@@ -1251,6 +1253,18 @@ describe('a duplicated tab identity', () => {
     const first = maintenance.registerWindow('tab-rearm', docOf('tab-rearm'));
     const second = maintenance.registerWindow('tab-rearm', docOf('tab-rearm'));
     expect(second).toBe(first);
+  });
+
+  it('reuses the parked record when the same document registers while its own wait is open', async () => {
+    await harness(stillClock());
+    const maintenance = currentMaintenance();
+    // The bootstrap status read carries the same tab **and** the same `doc` as
+    // the wait this window already holds — one document, registering twice. A
+    // second record here would sit unanswered and force a false `no_response` on
+    // a window that is about to report cleanly.
+    const first = window('tab-bootstrap');
+    const again = maintenance.registerWindow('tab-bootstrap', docOf('tab-bootstrap'));
+    expect(again).toBe(first.id);
   });
 });
 
@@ -1321,6 +1335,158 @@ describe('which mode releases a successful quiesce (C-BRIDGE@1 rule 3)', () => {
     } finally {
       if (previous !== undefined) process.env.APUNTA_SHELL = previous;
     }
+  });
+});
+
+describe('settled outcomes and the authoritative release (C-UPD@1 hold)', () => {
+  /** Shell mode for the length of one case, derived the way production derives it. */
+  async function inShellMode(run: () => Promise<void>): Promise<void> {
+    const previous = process.env.APUNTA_SHELL;
+    process.env.APUNTA_SHELL = '1';
+    try {
+      await run();
+    } finally {
+      if (previous === undefined) delete process.env.APUNTA_SHELL;
+      else process.env.APUNTA_SHELL = previous;
+    }
+  }
+
+  /** Waits for the trigger's request to have actually begun a run. */
+  async function started(app: FastifyInstance): Promise<void> {
+    while (!(await statusOf(app)).quiescing) await new Promise((done) => setTimeout(done, 1));
+  }
+
+  const PENDING = Symbol('pending');
+  async function isPending(wait: Promise<WaitOutcome>): Promise<boolean> {
+    return (await Promise.race([wait, Promise.resolve(PENDING)])) === PENDING;
+  }
+
+  it('tells a parked window settled{held:true}, then keeps telling every re-arm until the release', async () => {
+    await inShellMode(async () => {
+      const local = await harness(stillClock());
+      const maintenance = currentMaintenance();
+      const w = window('tab-1');
+      const running = trigger(local.app);
+      await report(local.app, 'tab-1', (await w.asked).quiesceId, true);
+      // Answered, so the window's re-arm parks until the run ends.
+      const parked = maintenance.holdFor(w.id);
+      expect((await running).ok).toBe(true);
+      expect(await parked).toMatchObject({ request: 'settled', ok: true, held: true, blockers: [] });
+
+      // The client re-arms after every answer: still held, so every one hears it.
+      for (let rearm = 0; rearm < 3; rearm += 1) {
+        expect(await maintenance.holdFor(w.id)).toMatchObject({ request: 'settled', held: true });
+      }
+
+      maintenance.releaseHeld();
+      expect((await statusOf(local.app)).maintenance).toBe(false);
+      // The release is heard once, and then the wait parks again.
+      expect(await maintenance.holdFor(w.id)).toMatchObject({ request: 'settled', held: false });
+      expect(await isPending(maintenance.holdFor(w.id))).toBe(true);
+    });
+  });
+
+  it('answers a parked hold settled{held:false} on release', async () => {
+    await inShellMode(async () => {
+      const local = await harness(stillClock());
+      const maintenance = currentMaintenance();
+      const w = window('tab-1');
+      const running = trigger(local.app);
+      await report(local.app, 'tab-1', (await w.asked).quiesceId, true);
+      await running;
+      const late = window('tab-2');
+      expect(await late.asked).toMatchObject({ request: 'settled', held: true });
+      maintenance.releaseHeld();
+      expect(await maintenance.holdFor(late.id)).toMatchObject({ request: 'settled', held: false });
+    });
+  });
+
+  it('never drops a held maintenance because a later run failed', async () => {
+    await inShellMode(async () => {
+      const local = await harness(stillClock());
+      const maintenance = currentMaintenance();
+      const w = window('tab-1');
+      const first = trigger(local.app);
+      await report(local.app, 'tab-1', (await w.asked).quiesceId, true);
+      expect((await first).ok).toBe(true);
+      expect(await maintenance.holdFor(w.id)).toMatchObject({ held: true });
+
+      const second = trigger(local.app);
+      await started(local.app);
+      const asked = await maintenance.holdFor(w.id);
+      expect(asked.request).toBe('flush');
+      await report(local.app, 'tab-1', asked.quiesceId, false, ['unsaved_text']);
+      expect(await second).toMatchObject({ ok: false, blockers: ['unsaved_text'] });
+
+      // The refusal does not open writes into a snapshot window.
+      expect((await statusOf(local.app)).maintenance).toBe(true);
+      expect(await maintenance.holdFor(w.id)).toMatchObject({
+        request: 'settled',
+        ok: false,
+        held: true,
+        blockers: ['unsaved_text'],
+      });
+      maintenance.releaseHeld();
+      expect((await statusOf(local.app)).maintenance).toBe(false);
+    });
+  });
+
+  it('releases a refused first run at once, with held:false', async () => {
+    await inShellMode(async () => {
+      const local = await harness(stillClock());
+      const maintenance = currentMaintenance();
+      const w = window('tab-1');
+      const running = trigger(local.app);
+      await report(local.app, 'tab-1', (await w.asked).quiesceId, false, ['unsaved_text']);
+      expect(await running).toMatchObject({ ok: false, blockers: ['unsaved_text'] });
+      expect((await statusOf(local.app)).maintenance).toBe(false);
+      expect(await maintenance.holdFor(w.id)).toMatchObject({
+        request: 'settled',
+        ok: false,
+        held: false,
+        blockers: ['unsaved_text'],
+      });
+    });
+  });
+
+  it('replaces an owed word with a flush when a new quiesce starts', async () => {
+    await inShellMode(async () => {
+      const local = await harness(stillClock());
+      const maintenance = currentMaintenance();
+      const w = window('tab-1');
+      const first = trigger(local.app);
+      await report(local.app, 'tab-1', (await w.asked).quiesceId, true);
+      await first;
+      const second = trigger(local.app);
+      await started(local.app);
+      expect((await maintenance.holdFor(w.id)).request).toBe('flush');
+      maintenance.releaseHeld();
+      await report(local.app, 'tab-1', (await maintenance.holdFor(w.id)).quiesceId, true);
+      await second;
+    });
+  });
+
+  it('exempts the updater notice read and the close decision from the maintenance refusal', async () => {
+    await inShellMode(async () => {
+      const local = await harness(stillClock());
+      const w = window('tab-1');
+      const running = trigger(local.app);
+      await report(local.app, 'tab-1', (await w.asked).quiesceId, true);
+      await running;
+      expect((await statusOf(local.app)).maintenance).toBe(true);
+      // Not 503: the routes are absent in this harness (404), which is the point —
+      // only the refusal hook is under test here.
+      const read = await local.app.inject({ method: 'GET', url: '/api/app/update' });
+      const decision = await local.app.inject({
+        method: 'POST',
+        url: '/api/app/close/decision',
+        payload: { confirm: false },
+      });
+      const write = await local.app.inject({ method: 'PUT', url: '/api/settings', payload: {} });
+      expect(read.statusCode).not.toBe(503);
+      expect(decision.statusCode).not.toBe(503);
+      expect(write.statusCode).toBe(503);
+    });
   });
 });
 

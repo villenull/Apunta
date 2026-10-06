@@ -38,6 +38,7 @@ import { noteEntries } from './readable.js';
 import {
   applyPendingRestore,
   hasPendingRestore,
+  restoreFromSnapshot,
   rollbackAppliedRestore,
   stageRestore,
   type RestoreStep,
@@ -836,5 +837,131 @@ describe('housekeeping a restore leaves for the next boot', () => {
     // ...and the probe was fingerprinted by streaming it, never by reading the
     // whole copied database through `readFileSync`.
     expect(fsReads.readFileSync.filter((path) => path.includes('replay-probe'))).toEqual([]);
+  });
+});
+
+/**
+ * Recovery mode's one restore (C-UPD@1 "Recovery startup"): a plain safety
+ * snapshot from `<dataDir>/safety/` in place of the live database, through the
+ * same apply as an archive restore.
+ */
+describe('restoring a pre-update safety snapshot', () => {
+  const SNAPSHOT = 'pre-update-1.0.0-1.1.0-20261006T120000Z.db';
+  const noteCount = (file: string, title: string): number => {
+    const handle = new BetterSqlite3(file, { readonly: true });
+    try {
+      return (handle.prepare('SELECT COUNT(*) AS n FROM notes WHERE title = ?').get(title) as { n: number })
+        .n;
+    } finally {
+      handle.close();
+    }
+  };
+
+  /** A snapshot of the seeded practice, then one more note that only the live file has. */
+  function snapshotThenLateNote(): string {
+    mkdirSync(join(dataDir, 'safety'), { recursive: true });
+    const snapshot = join(dataDir, 'safety', SNAPSHOT);
+    db.exec(`VACUUM INTO '${snapshot.replaceAll("'", "''")}'`);
+    const john = listPatients(db).find((patient) => patient.name === 'John Smith');
+    createNote(db, {
+      patient_id: john?.id ?? '',
+      format_id: listFormats(db)[0]?.id ?? '',
+      title: LATE_NOTE_TITLE,
+      content: 'Written after the pre-update snapshot.',
+    });
+    db.close();
+    return snapshot;
+  }
+
+  it('swaps the snapshot in, keeps the replaced database as a safety copy, and leaves the snapshot where it was', () => {
+    const snapshot = snapshotThenLateNote();
+    const before = readFileSync(snapshot);
+
+    const applied = restoreFromSnapshot({
+      dataDir,
+      snapshotPath: snapshot,
+      now: new Date('2026-10-06T12:30:00Z'),
+    });
+
+    const live = join(dataDir, DB_ENTRY_NAME);
+    expect(applied.applied).toBe(true);
+    expect(noteCount(live, LATE_NOTE_TITLE)).toBe(0);
+    const handle = new BetterSqlite3(live, { readonly: true });
+    expect((handle.prepare('SELECT COUNT(*) AS n FROM notes').get() as { n: number }).n).toBe(4);
+    handle.close();
+    // What was replaced is still there, whole, with the late note in it.
+    expect(applied.safetyCopy).toBeDefined();
+    expect(noteCount(applied.safetyCopy ?? '', LATE_NOTE_TITLE)).toBe(1);
+    // The snapshot is evidence: copied, not consumed.
+    expect(readFileSync(snapshot).equals(before)).toBe(true);
+    expect(hasPendingRestore(dataDir)).toBe(false);
+    expect(existsSync(join(dataDir, PENDING_RESTORE_DIRNAME))).toBe(false);
+    expect(existsSync(`${live}-wal`)).toBe(false);
+    expect(integrityCheck(live)).toBe('ok');
+  });
+
+  it('refuses a snapshot that is not where the update recorded it, and changes nothing', () => {
+    db.close();
+    const live = join(dataDir, DB_ENTRY_NAME);
+    const before = readFileSync(live);
+
+    expect(() =>
+      restoreFromSnapshot({ dataDir, snapshotPath: join(dataDir, 'safety', SNAPSHOT) }),
+    ).toThrowError(expect.objectContaining({ name: 'RestoreError', code: 'snapshot_missing' }) as Error);
+    expect(readFileSync(live).equals(before)).toBe(true);
+    expect(existsSync(join(dataDir, PENDING_RESTORE_DIRNAME))).toBe(false);
+  });
+
+  it('refuses a path outside <dataDir>/safety/, even to a real database', () => {
+    db.close();
+    const outside = join(fresh, 'elsewhere.db');
+    copyFileSync(join(dataDir, DB_ENTRY_NAME), outside);
+    const inDataDir = join(dataDir, 'copy.db');
+    copyFileSync(outside, inDataDir);
+
+    for (const snapshotPath of [outside, inDataDir, join(dataDir, 'safety', '..', 'copy.db')]) {
+      expect(() => restoreFromSnapshot({ dataDir, snapshotPath })).toThrowError(
+        expect.objectContaining({ code: 'snapshot_missing' }) as Error,
+      );
+    }
+  });
+
+  it('refuses a damaged snapshot before touching the live database', () => {
+    db.close();
+    mkdirSync(join(dataDir, 'safety'), { recursive: true });
+    const snapshot = join(dataDir, 'safety', SNAPSHOT);
+    writeFileSync(snapshot, 'SQLite format 3\0 but really not');
+    const live = join(dataDir, DB_ENTRY_NAME);
+    const before = readFileSync(live);
+
+    expect(() => restoreFromSnapshot({ dataDir, snapshotPath: snapshot })).toThrowError(
+      expect.objectContaining({ code: 'snapshot_corrupt' }) as Error,
+    );
+    expect(readFileSync(live).equals(before)).toBe(true);
+    expect(existsSync(join(dataDir, PENDING_RESTORE_DIRNAME))).toBe(false);
+  });
+
+  it('restores into a folder whose live database is already gone', () => {
+    const snapshot = snapshotThenLateNote();
+    rmSync(join(dataDir, DB_ENTRY_NAME), { force: true });
+    rmSync(join(dataDir, `${DB_ENTRY_NAME}-wal`), { force: true });
+    rmSync(join(dataDir, `${DB_ENTRY_NAME}-shm`), { force: true });
+
+    expect(restoreFromSnapshot({ dataDir, snapshotPath: snapshot }).applied).toBe(true);
+    expect(noteCount(join(dataDir, DB_ENTRY_NAME), LATE_NOTE_TITLE)).toBe(0);
+  });
+
+  it('survives the process dying inside the apply: the next boot finishes it from the staged copy', () => {
+    const snapshot = snapshotThenLateNote();
+
+    expect(() =>
+      restoreFromSnapshot({ dataDir, snapshotPath: snapshot, crashAt: crashAt('live-database-moved-aside') }),
+    ).toThrow('crashed');
+    // The ordinary boot-time apply picks the staged snapshot up again.
+    const booted = applyPendingRestore(dataDir);
+
+    expect(booted.applied).toBe(true);
+    expect(noteCount(join(dataDir, DB_ENTRY_NAME), LATE_NOTE_TITLE)).toBe(0);
+    expect(noteCount(booted.safetyCopy ?? '', LATE_NOTE_TITLE)).toBe(1);
   });
 });

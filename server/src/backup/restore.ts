@@ -70,7 +70,13 @@ export class RestoreError extends Error {
   constructor(
     message: string,
     readonly code:
-      'not_an_archive' | 'passphrase_required' | 'passphrase_wrong' | 'schema_too_new' | 'corrupt_archive',
+      | 'not_an_archive'
+      | 'passphrase_required'
+      | 'passphrase_wrong'
+      | 'schema_too_new'
+      | 'corrupt_archive'
+      | 'snapshot_missing'
+      | 'snapshot_corrupt',
   ) {
     super(message);
     this.name = 'RestoreError';
@@ -337,6 +343,86 @@ export function applyPendingRestore(
   crashAt?.('pending-folder-cleared');
 
   return withRecovery({ applied: true, safetyCopy, removedSidecars }, recovered);
+}
+
+export interface RestoreFromSnapshotOptions {
+  readonly dataDir: string;
+  /** The journal's `snapshotPath`: a plain database file under `<dataDir>/safety/`. */
+  readonly snapshotPath: string;
+  readonly nativeBinding?: string | undefined;
+  readonly now?: Date | undefined;
+  readonly crashAt?: ((step: RestoreStep) => void) | undefined;
+}
+
+/**
+ * Recovery mode's one explicit restore (C-UPD@1 "Recovery startup"): puts a
+ * known pre-update safety snapshot in place of the live database.
+ *
+ * It is `applyPendingRestore` with a different source, not a second swap
+ * implementation: the snapshot is *copied* (never moved — it stays as the
+ * owner's evidence) into the pending-restore folder, and the ordinary apply
+ * folds the live write-ahead log into the safety copy of the current database,
+ * moves it aside and puts the snapshot in its name. The result is checked, and
+ * a database that does not open cleanly is rolled back before this returns, so
+ * a failed restore leaves exactly the database it found.
+ *
+ * Only a file directly inside `<dataDir>/safety/` is accepted: the journal is a
+ * file on disk, and a path read from it must not name anything else.
+ */
+export function restoreFromSnapshot(
+  options: RestoreFromSnapshotOptions,
+): AppliedRestore & { readonly applied: true } {
+  const { dataDir } = options;
+  const snapshot = resolve(options.snapshotPath);
+  if (dirname(snapshot) !== resolve(join(dataDir, 'safety')) || !existsSync(snapshot)) {
+    throw new RestoreError('the safety snapshot is not where the update recorded it', 'snapshot_missing');
+  }
+  const integrity = checkedIntegrity(snapshot);
+  if (integrity !== 'ok') {
+    throw new RestoreError(
+      `the safety snapshot does not open cleanly (${integrity}); nothing was changed`,
+      'snapshot_corrupt',
+    );
+  }
+
+  const pendingDir = join(dataDir, PENDING_RESTORE_DIRNAME);
+  rmSync(pendingDir, { recursive: true, force: true });
+  mkdirSync(pendingDir, { recursive: true, mode: 0o700 });
+  try {
+    copyFileSync(snapshot, join(pendingDir, DB_ENTRY_NAME));
+    chmodSync(join(pendingDir, DB_ENTRY_NAME), 0o600);
+    writeFileSync(
+      join(pendingDir, MANIFEST_FILENAME),
+      JSON.stringify({ safety_copy: safetyCopyPath(dataDir, options.now ?? new Date()), snapshot }),
+      { mode: 0o600 },
+    );
+  } catch (error) {
+    rmSync(pendingDir, { recursive: true, force: true });
+    throw error;
+  }
+
+  const applied = applyPendingRestore(dataDir, options.nativeBinding, options.crashAt);
+  if (!applied.applied || applied.safetyCopy === undefined) {
+    throw new RestoreError('the safety snapshot was not applied', 'snapshot_missing');
+  }
+  const restored = checkedIntegrity(join(dataDir, DB_ENTRY_NAME));
+  if (restored !== 'ok') {
+    rollbackAppliedRestore(dataDir, applied.safetyCopy, options.crashAt);
+    throw new RestoreError(
+      `the restored database does not open cleanly (${restored}); the previous file was put back`,
+      'snapshot_corrupt',
+    );
+  }
+  return { ...applied, applied: true };
+}
+
+/** `integrityCheck` throws on a file that is not a database; for a snapshot that is just another way of being damaged. */
+function checkedIntegrity(file: string): string {
+  try {
+    return integrityCheck(file);
+  } catch (error) {
+    return describe(error);
+  }
 }
 
 /** The recovery counts are only carried when there is something to report, so a boot that found nothing to fix returns exactly `{ applied: false }`. */

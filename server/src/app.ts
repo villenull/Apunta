@@ -16,6 +16,8 @@ import { msg, storedLanguage } from './http/locale.js';
 import { registerRequestGuard } from './http/request-guard.js';
 import { registerMaintenanceRefusal, type MaintenanceOptions } from './maintenance.js';
 import { registerMaintenanceRoutes } from './routes/app-quiesce.js';
+import { registerUpdateRoutes, type UpdateRoutesOptions } from './routes/app-update.js';
+import { shellIsListening } from './shell-bridge.js';
 import { registerBackupRoutes } from './routes/backup.js';
 import { registerBrainstormRoutes } from './routes/brainstorm.js';
 import { registerImportRoutes } from './routes/import.js';
@@ -68,6 +70,11 @@ export interface BuildAppOptions {
    * is driven in milliseconds (FD4).
    */
   maintenance?: MaintenanceOptions;
+  /**
+   * P5.4's updater routes: shell mode only, so a test passes `shell: true` and a
+   * `write` that collects the lines instead of the real stdout.
+   */
+  update?: UpdateRoutesOptions;
 }
 
 /**
@@ -98,6 +105,12 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
    * the guard, and no route body has to change.
    */
   registerCsp(app);
+
+  const nativeShell = options.update?.shell ?? shellIsListening(process.env);
+  app.addHook('onSend', async (_request, reply, payload) => {
+    reply.header('x-apunta-mode', nativeShell ? 'shell' : 'browser');
+    return payload;
+  });
 
   const ownsDb = options.db === undefined;
   const db = options.db ?? openDatabase({ file: config.dbFile, migrationsDir: config.migrationsDir }).db;
@@ -155,6 +168,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     ...options.maintenance,
     locale: () => storedLanguage(db),
   });
+  // After the quiesce routes: it wraps the quiesce entry point they install.
+  registerUpdateRoutes(app, db, config, options.update);
   registerPatientRoutes(app, db);
   registerPatientGroupRoutes(app, db);
   registerNoteRoutes(app, db);

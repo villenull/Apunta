@@ -10,9 +10,19 @@ import {
   BRIDGE_PROTOCOL,
   handleInboundLine,
   parseBridgeLine,
+  setHealthConfirmHandler,
+  setMaintenanceReleaseHandler,
+  setSnapshotHandler,
+  setUpdateStatusHandler,
   startStdinBridge,
+  writeCloseDecision,
   writeFatal,
+  writeHealthResult,
   writeReady,
+  writeRecoveryRequest,
+  writeSnapshotResult,
+  writeStartupContext,
+  writeUpdateRequest,
 } from './shell-bridge.js';
 
 /**
@@ -386,5 +396,98 @@ describe('the shell disappearing (stdin end-of-file)', () => {
     await tick();
     expect(started).toBe(false);
     expect(shutdowns).toBe(0);
+  });
+});
+
+describe('the updater messages (C-BRIDGE@1 rule 2)', () => {
+  it('writes each outbound line in the contract shape, and only under APUNTA_SHELL=1', () => {
+    const sink = collector();
+    const options = { env: SHELL_ENV, write: sink.write };
+    writeUpdateRequest('install', options);
+    writeSnapshotResult('7', { ok: false, code: 'not_quiesced' }, options);
+    writeSnapshotResult('8', { ok: true }, options);
+    writeCloseDecision(true, options);
+    writeStartupContext({ mode: 'recovery', updateId: 'u1', targetVersion: '2.0.0' }, options);
+    writeHealthResult('u1', { ok: true }, options);
+    writeRecoveryRequest({ id: 'r1', action: 'reinstall_previous' }, options);
+    expect(sink.lines.map((line) => JSON.parse(line) as unknown)).toEqual([
+      { type: 'update_request', action: 'install' },
+      { type: 'snapshot_result', id: '7', ok: false, code: 'not_quiesced' },
+      { type: 'snapshot_result', id: '8', ok: true },
+      { type: 'close_decision', confirm: true },
+      { type: 'startup_context', mode: 'recovery', updateId: 'u1', targetVersion: '2.0.0' },
+      { type: 'health_result', id: 'u1', ok: true },
+      { type: 'recovery_request', id: 'r1', action: 'reinstall_previous' },
+    ]);
+    expect(sink.lines.every((line) => line.endsWith('\n') && line.indexOf('\n') === line.length - 1)).toBe(
+      true,
+    );
+
+    const quiet = collector();
+    expect(writeUpdateRequest('check', { env: {}, write: quiet.write })).toBe(false);
+    expect(quiet.lines).toEqual([]);
+  });
+
+  it('dispatches each inbound type, and ignores ids that are not strings', async () => {
+    const statuses: unknown[] = [];
+    const releases: number[] = [];
+    const snapshots: string[] = [];
+    setUpdateStatusHandler((status) => statuses.push(status));
+    setMaintenanceReleaseHandler(() => releases.push(1));
+    setSnapshotHandler((id) => {
+      snapshots.push(id);
+      return Promise.resolve({ ok: true });
+    });
+    setHealthConfirmHandler((id) => (id === 'known' ? { ok: true } : { ok: false, code: 'unknown_update' }));
+    const sink = collector();
+    const input = new PassThrough();
+    startStdinBridge({ env: SHELL_ENV, input, onShutdown: () => undefined, write: sink.write });
+    for (const message of [
+      { type: 'update_status', state: 'available', version: '2.0.0' },
+      { type: 'update_status', state: 'idle', code: 'offline' },
+      { type: 'update_status' },
+      { type: 'maintenance_release' },
+      { type: 'snapshot_request', id: '5' },
+      { type: 'snapshot_request', id: 5 },
+      { type: 'health_confirm', id: 'known' },
+      { type: 'health_confirm', id: 'other' },
+    ]) {
+      input.write(`${JSON.stringify(message)}\n`);
+    }
+    await tick();
+    try {
+      expect(statuses).toEqual([
+        { state: 'available', version: '2.0.0' },
+        { state: 'idle', code: 'offline' },
+      ]);
+      expect(releases).toEqual([1]);
+      expect(snapshots).toEqual(['5']);
+      expect(sink.lines.map((line) => JSON.parse(line) as unknown)).toEqual([
+        { type: 'health_result', id: 'known', ok: true },
+        { type: 'health_result', id: 'other', ok: false, code: 'unknown_update' },
+        { type: 'snapshot_result', id: '5', ok: true },
+      ]);
+    } finally {
+      setUpdateStatusHandler(null);
+      setMaintenanceReleaseHandler(null);
+      setSnapshotHandler(null);
+      setHealthConfirmHandler(null);
+      input.destroy();
+    }
+  });
+
+  it('fails closed when nothing is wired: snapshot_failed and unknown_update', async () => {
+    setSnapshotHandler(null);
+    setHealthConfirmHandler(null);
+    const sink = collector();
+    const input = new PassThrough();
+    startStdinBridge({ env: SHELL_ENV, input, onShutdown: () => undefined, write: sink.write });
+    input.write('{"type":"snapshot_request","id":"1"}\n{"type":"health_confirm","id":"2"}\n');
+    await tick();
+    input.destroy();
+    expect(sink.lines.map((line) => JSON.parse(line) as unknown)).toEqual([
+      { type: 'snapshot_result', id: '1', ok: false, code: 'snapshot_failed' },
+      { type: 'health_result', id: '2', ok: false, code: 'unknown_update' },
+    ]);
   });
 });

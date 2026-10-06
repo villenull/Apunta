@@ -187,5 +187,11 @@ export function registerMaintenanceRoutes(app: FastifyInstance, options: Mainten
     };
   });
 
-  app.get('/api/app/quiesce/status', () => maintenance.status());
+  app.get('/api/app/quiesce/status', (request) => {
+    const query = parseQuery(WaitQuerySchema, request.query);
+    // Bootstrap/reconnect registers before observing the hold; no editable
+    // workspace can appear between a status read and its registration.
+    if (query.doc !== undefined) maintenance.registerWindow(query.tab ?? null, query.doc);
+    return maintenance.status();
+  });
 }

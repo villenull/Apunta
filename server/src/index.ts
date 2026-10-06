@@ -3,20 +3,26 @@ import type { AppliedRestore } from './backup/restore.js';
 import { OllamaProcess } from './ai/ollama-process.js';
 import { buildApp } from './app.js';
 import { openBrowser } from './boot.js';
-import { appUrl, ensureDataDir, loadConfig } from './config.js';
+import { appUrl, ensureDataDir, loadConfig, type AppConfig } from './config.js';
 import { installEgressGuard } from './egress-guard.js';
 import { openDatabase, type OpenedDatabase } from './db/index.js';
 import { prepareDatabaseForStart } from './db/safety.js';
 import { storageBootFailure } from './http/errors.js';
 import { serveBootError } from './boot-error.js';
 import { runStartupMaintenance } from './startup-maintenance.js';
+import { releaseHeldMaintenance } from './maintenance.js';
 import {
   DATA_FOLDER_IN_USE_CODE,
   PORT_IN_USE_CODE,
+  setHealthConfirmHandler,
+  shellIsListening,
   startStdinBridge,
   writeFatal,
   writeReady,
+  writeStartupContext,
 } from './shell-bridge.js';
+import { buildRecoveryApp } from './recovery-app.js';
+import { NORMAL_BOOT, chooseBoot, confirmHealth, type ChosenBoot } from './update-boot.js';
 import {
   DATA_FOLDER_IN_USE,
   DataFolderInUseError,
@@ -28,11 +34,59 @@ import {
 // down to loopback. See egress-guard.ts.
 installEgressGuard();
 
+/**
+ * The recovery start (C-UPD@1 "Recovery startup"): the lock is held, the user's
+ * database has not been opened, and the journal said the updated version did
+ * not confirm its health. The shell still gets its `ready` line and its stdin
+ * bridge — it must be able to show the window and to close it — but nothing
+ * here can write a note.
+ */
+async function startRecovery(config: AppConfig, lock: DataFolderLock, chosen: ChosenBoot): Promise<void> {
+  const decision = chosen.decision;
+  const app = await buildRecoveryApp({ config, journal: decision.journal });
+  app.addHook('onClose', () => {
+    lock.release();
+  });
+  app.log.warn(
+    { reason: decision.mode === 'recovery' ? decision.reason : undefined },
+    'starting in recovery mode; the database is not opened',
+  );
+
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.once(signal, () => {
+      void app.close().then(() => process.exit(0));
+    });
+  }
+
+  try {
+    await app.listen({ host: config.host, port: config.port });
+    writeReady({ env: process.env, port: config.port, version: config.version });
+    startStdinBridge({
+      env: process.env,
+      onShutdown: () => {
+        void app.close().then(() => process.exit(0));
+      },
+      onParentGone: () => {
+        void app.close().then(() => process.exit(0));
+      },
+      log: (message) => app.log.warn({ shellBridge: true }, message),
+    });
+    openBrowser({ url: appUrl(config), disabled: process.env['APUNTA_NO_OPEN'] === '1' });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException | undefined)?.code === 'EADDRINUSE') {
+      writeFatal(PORT_IN_USE_CODE, { env: process.env });
+    }
+    app.log.error(error);
+    process.exit(1);
+  }
+}
+
 async function start(): Promise<void> {
   const config = loadConfig();
   let restored: AppliedRestore = { applied: false };
-  let opened: OpenedDatabase;
+  let opened: OpenedDatabase | undefined;
   let lock: DataFolderLock;
+  let chosen: ChosenBoot;
   try {
     // C-OWN@1 rule 1's order: the folder exists, then it is owned, and only
     // then does anything touch the database — a restore, a snapshot,
@@ -40,24 +94,47 @@ async function start(): Promise<void> {
     // rewriting one practice's records.
     ensureDataDir(config.dataDir);
     lock = acquireDataFolderLock(config.dataDir);
-    restored = applyPendingRestore(config.dataDir, config.sqliteBinding);
-    // C-UPD@1's migration steps, in the one position C-OWN@1 rule 1 gives
-    // them: the restore is applied, the database is inspected read-only and
-    // snapshotted if anything is pending, and only then is anything migrated —
-    // all of it before the handle below opens the file for writing. A refusal
-    // here is a `MigrationSafetyError` and reaches the boot-error page through
-    // the same catch as every other storage failure.
-    prepareDatabaseForStart({
-      dataDir: config.dataDir,
-      dbFile: config.dbFile,
-      migrationsDir: config.migrationsDir,
-      nativeBinding: config.sqliteBinding,
+    // C-UPD@1 "Recovery startup": the journal decides, before anything reads or
+    // writes the user's database, whether this is a normal start or an actual
+    // recovery server. `startup_context` follows ownership and precedes both the
+    // database and `ready`. The journal is a shell-mode concern; a browser-mode
+    // start never has one.
+    chosen = shellIsListening(process.env)
+      ? chooseBoot({
+          dataDir: config.dataDir,
+          version: config.version,
+          env: process.env,
+          onError: (message, error) => {
+            console.error(message, error);
+          },
+        })
+      : NORMAL_BOOT;
+    writeStartupContext(chosen.context, { env: process.env });
+    setHealthConfirmHandler((id) => {
+      const result = confirmHealth(config.dataDir, id);
+      if (result.ok) releaseHeldMaintenance();
+      return result;
     });
-    opened = openDatabase({
-      file: config.dbFile,
-      migrationsDir: config.migrationsDir,
-      nativeBinding: config.sqliteBinding,
-    });
+    if (chosen.decision.mode === 'normal') {
+      restored = applyPendingRestore(config.dataDir, config.sqliteBinding);
+      // C-UPD@1's migration steps, in the one position C-OWN@1 rule 1 gives
+      // them: the restore is applied, the database is inspected read-only and
+      // snapshotted if anything is pending, and only then is anything migrated —
+      // all of it before the handle below opens the file for writing. A refusal
+      // here is a `MigrationSafetyError` and reaches the boot-error page through
+      // the same catch as every other storage failure.
+      prepareDatabaseForStart({
+        dataDir: config.dataDir,
+        dbFile: config.dbFile,
+        migrationsDir: config.migrationsDir,
+        nativeBinding: config.sqliteBinding,
+      });
+      opened = openDatabase({
+        file: config.dbFile,
+        migrationsDir: config.migrationsDir,
+        nativeBinding: config.sqliteBinding,
+      });
+    }
   } catch (error) {
     // The one boot failure that is not a storage failure and gets no
     // boot-error page: another Apunta already owns this folder. Serving a
@@ -95,8 +172,19 @@ async function start(): Promise<void> {
     return;
   }
 
+  if (opened === undefined) {
+    await startRecovery(config, lock, chosen);
+    return;
+  }
+
   const { db } = opened;
-  const app = await buildApp({ config, db });
+  const app = await buildApp({
+    config,
+    db,
+    ...(chosen.decision.mode === 'normal' && 'claim' in chosen.decision
+      ? { maintenance: { initialHold: chosen.decision.journal.updateId } }
+      : {}),
+  });
   app.addHook('onClose', () => {
     db.close();
     // C-OWN@1 rule 5, on the one hook every clean exit already goes through:

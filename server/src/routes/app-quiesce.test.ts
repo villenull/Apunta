@@ -389,8 +389,12 @@ describe('POST /api/app/quiesce/close (AM-215)', () => {
     // the server with nothing left to release it.
     expect((await readStatus(local.url)).maintenance).toBe(true);
 
-    // The reporter re-arms the moment it has reported, so the window holds a wait
-    // again — this is the poll that a `pagehide` abort would actually close.
+    // The reporter re-arms the moment it has reported. The run has already ended,
+    // so that first re-arm is handed the `settled` word it missed (still held)
+    // rather than parking; the next one parks, and is the poll that a `pagehide`
+    // abort would actually close.
+    const missed = (await (await openWait(local.url, 'tab-leaving').done).json()) as { request: string };
+    expect(missed).toMatchObject({ request: 'settled', held: true });
     const rearmed = openWait(local.url, 'tab-leaving');
     await until(local.url, (status) => status.windows === 1);
 

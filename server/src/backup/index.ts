@@ -44,6 +44,7 @@ export {
   cancelPendingRestore,
   hasPendingRestore,
   readArchive,
+  restoreFromSnapshot,
   RestoreError,
   rollbackAppliedRestore,
   stageRestore,

@@ -95,7 +95,8 @@ const DRAIN_POLL_MS = 250;
  * a window that did not answer, reused for a retained disconnected record's
  * unresolved obligation (FD13) so the same fact is never given a second name.
  */
-export type QuiesceBlocker = JobKind | 'conflict' | 'save_error' | 'recording' | 'no_response';
+export type QuiesceBlocker =
+  JobKind | 'conflict' | 'save_error' | 'recording' | 'unsaved_text' | 'no_response';
 
 /** What `quiesce_result{ok, blockers[]}` carries (C-BRIDGE@1 rule 2). */
 export interface QuiesceResult {
@@ -113,7 +114,7 @@ export interface QuiesceOutcome extends QuiesceResult {
 }
 
 /** The blockers a client report may claim (FD8's closed list). */
-const CLIENT_BLOCKERS: readonly string[] = ['conflict', 'save_error', 'recording'];
+const CLIENT_BLOCKERS: readonly string[] = ['conflict', 'save_error', 'recording', 'unsaved_text'];
 
 /** The refusals this process has counted, for the 409 path (FD2(c)). */
 let refusedReports = 0;
@@ -121,8 +122,25 @@ let refusedReports = 0;
 /** The wait's answer, and the only two shapes this channel sends (FD1). */
 export type WaitOutcome =
   | { readonly request: 'flush'; readonly quiesceId: string }
-  /** The budget ended without asking, or this window was superseded: re-arm. */
-  | { readonly request: 'expired'; readonly quiesceId: string };
+  /**
+   * The budget ended without asking, or this window was superseded: re-arm. Never
+   * a release signal — a client that is frozen stays frozen on it.
+   */
+  | { readonly request: 'expired'; readonly quiesceId: string }
+  /**
+   * A quiesce this window took part in has ended, and whether the server is
+   * still holding maintenance. `held:false` is the only authoritative word that
+   * lets a frozen window thaw. Delivered through a parked wait, or **owed** to a
+   * window that was between two waits, so a re-arm after the run's end still
+   * hears it instead of parking forever.
+   */
+  | {
+      readonly request: 'settled';
+      readonly quiesceId: string;
+      readonly ok: boolean;
+      readonly held: boolean;
+      readonly blockers: readonly QuiesceBlocker[];
+    };
 
 /**
  * What became of a client report (FD2(c)).
@@ -180,6 +198,8 @@ interface WindowRecord {
    * a new document's word to give and not the old one's.
    */
   cleanClaimed: boolean;
+  /** A `settled` this window has not yet been handed (it was not parked when it happened). */
+  owed: WaitOutcome | null;
 }
 
 /** The quiesce in flight, and what it has asked and been told. */
@@ -227,6 +247,8 @@ export interface MaintenanceOptions {
    * database.
    */
   readonly locale?: () => Locale;
+  /** A claimed startup holds clinical reads/writes until its durable health acknowledgment. */
+  readonly initialHold?: string;
   /**
    * Whether a shell is in front of this server. It changes only what releases a
    * *successful* quiesce's maintenance state (C-BRIDGE@1 rule 3): shell mode
@@ -282,6 +304,12 @@ export interface MaintenanceController {
     readonly ok: boolean;
     readonly blockers: readonly string[];
   }): ReportOutcome;
+  /**
+   * The shell's `maintenance_release{}`: the only thing that ends a successful
+   * quiesce's hold in shell mode. Every live window is told `settled{held:false}`.
+   * A run in flight is left alone (its own end will say what is held).
+   */
+  releaseHeld(): void;
   /** Start a quiesce, or join the one in flight (FD5, FD12). */
   quiesce(): Promise<QuiesceOutcome>;
   /**
@@ -312,7 +340,7 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
 
   /** Every window this process has heard from, live or retained (FD13). */
   const windows = new Map<string, WindowRecord>();
-  let maintenance = false;
+  let maintenance = options.initialHold !== undefined;
   let quiescing = false;
   let inflight: Promise<QuiesceOutcome> | null = null;
   let localeReader: (() => Locale) | undefined = options.locale;
@@ -321,7 +349,10 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
    * held until the last window unregisters, and this is what says there is one
    * to release.
    */
-  let heldBySuccess = false;
+  let heldBySuccess = options.initialHold !== undefined;
+  /** What the last run decided, so a later release can say which quiesce it ends. */
+  let lastSettled: { quiesceId: string; ok: boolean; blockers: QuiesceBlocker[] } | null =
+    options.initialHold === undefined ? null : { quiesceId: options.initialHold, ok: true, blockers: [] };
   let current: Inflight | null = null;
 
   function liveWindows(): WindowRecord[] {
@@ -466,7 +497,18 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
       answered: new Set(),
     };
     current = quiesce;
+    // A settled owed by an earlier run is stale the moment a new one starts. The
+    // window it was owed to, when the hold is still on, is frozen and merely
+    // between two polls (a held window re-arms every half second), so it is **asked**: its next poll is
+    // answered with the flush, and a quiesce never settles over it unasked.
+    for (const record of windows.values()) {
+      const frozen = record.owed?.request === 'settled' && record.owed.held;
+      if (shellMode && frozen && record.disconnectedAt === null) quiesce.expected.add(record.id);
+      record.owed = null;
+    }
     let settled = false;
+    let finalOk = false;
+    let finalBlockers: QuiesceBlocker[] = ['no_response'];
     try {
       // Both phases run at once, each with `deadline - elapsed`, and neither
       // extends the budget (FD3). Asking the windows *after* the drain would let
@@ -485,28 +527,59 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
             );
       if (blockers.length > 0) {
         // Back into normal service on every failure path, so the next request is
-        // not a 503 until restart (FD5).
-        maintenance = false;
-        heldBySuccess = false;
+        // not a 503 until restart (FD5) — **unless an earlier success is still
+        // holding maintenance** (shell mode: through snapshot and install). A
+        // failed run must never open writes into a snapshot window; only an
+        // explicit release or the browser-mode unregistration ends that hold.
+        if (!heldBySuccess) maintenance = false;
       } else {
         // A success holds maintenance: in shell mode through the snapshot, in
         // browser mode until the last window unregisters (FD1, FD5).
         heldBySuccess = true;
       }
       settled = true;
-      return { quiesceId: id, ok: blockers.length === 0, blockers };
+      finalOk = blockers.length === 0;
+      finalBlockers = blockers;
+      return { quiesceId: id, ok: finalOk, blockers };
     } finally {
       // **The failure path includes a throw.** A drain or a window phase that
       // rejects must not leave every write 503 until restart (FD5), which is
       // what "on every failure path … in a `finally`" means; the flag is set
       // only once an answer has been decided, so a success still holds.
-      if (!settled) {
-        maintenance = false;
-        heldBySuccess = false;
-      }
+      if (!settled && !heldBySuccess) maintenance = false;
+      const held = maintenance;
+      lastSettled = { quiesceId: id, ok: finalOk, blockers: finalBlockers };
       // Nothing is left hanging past the budget: every wait still open is
-      // answered, so no request outlives the quiesce (FD3).
-      for (const record of windows.values()) releaseWait(record, { request: 'expired', quiesceId: id });
+      // answered, so no request outlives the quiesce (FD3). A window that took
+      // part hears the authoritative `settled`; a window that is between two
+      // waits is owed it; anyone else only has its wait expired.
+      for (const record of windows.values()) {
+        if (quiesce.expected.has(record.id)) {
+          const outcome: WaitOutcome = {
+            request: 'settled',
+            quiesceId: id,
+            ok: finalOk,
+            held,
+            blockers: finalBlockers,
+          };
+          const parked = record.release !== null;
+          // **A held browser-mode window keeps its wait parked.** Browser mode
+          // releases on the last unregistration (FD1), so the window stays frozen
+          // until it goes — and its departure is only ever observed through this
+          // socket. Answering it here would leave the window between two waits
+          // when it leaves, and the clean word its `pagehide` beacon banks would
+          // never be discharged. A failed run (`held:false`) and every shell-mode
+          // word are still delivered: shell mode re-arms every half second and
+          // must keep hearing that the hold is on.
+          if (parked && (!held || shellMode)) releaseWait(record, outcome);
+          // Not parked, or a shell-mode re-arm: the window is between two waits
+          // and is owed the word, so a re-arm after the run's end still hears it.
+          if ((held ? shellMode || !parked : !parked) && record.disconnectedAt === null)
+            record.owed = outcome;
+        } else {
+          releaseWait(record, { request: 'expired', quiesceId: id });
+        }
+      }
       current = null;
       quiescing = false;
     }
@@ -637,15 +710,26 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
             return same.id;
           }
         } else {
-          // **A duplicated tab identity.** Chromium's *Duplicate Tab* copies
-          // `sessionStorage`, so two windows really can arrive with one id. The
-          // record that is holding a live wait is a window the server can see
-          // and a quiesce has to be able to ask, so it is neither released nor
-          // deleted here: deleting it would make the first window invisible
-          // while it still held unpersisted text, which is the one direction
-          // FD13 is fail-closed about. This registration gets its own record
-          // below, under the same tab id, and the window that arrives with a
-          // live wait is the one that gets asked.
+          // **A live wait under this tab id.** Chromium's *Duplicate Tab* copies
+          // `sessionStorage`, so two windows really can arrive with one id — but
+          // the `doc` nonce is minted once per page load and never copied, so a
+          // registration whose tab **and** `doc` both match a parked record is
+          // the same document registering again: the bootstrap status read
+          // racing this window's own `wait`. That record is reused rather than
+          // duplicated, because a second record would sit unanswered and force a
+          // false `no_response` on a window that is about to report cleanly.
+          //
+          // A genuinely different document — a reload, or Duplicate Tab — carries
+          // its own nonce and falls through: the parked record is neither
+          // released nor deleted, because deleting it would make the first window
+          // invisible while it still held unpersisted text, which is the one
+          // direction FD13 is fail-closed about. This registration gets its own
+          // record below, under the same tab id, and the window that arrives with
+          // a live wait is the one that gets asked.
+          const parkedSame = doc === null ? undefined : held.find((record) => record.doc === doc);
+          if (parkedSame !== undefined) {
+            return parkedSame.id;
+          }
         }
         for (const [id, record] of [...windows]) {
           if (record.tabId !== tabId || record.release !== null) continue;
@@ -661,6 +745,7 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
         disconnectedAt: null,
         resolved: false,
         cleanClaimed: false,
+        owed: maintenance && lastSettled !== null ? { request: 'settled', ...lastSettled, held: true } : null,
       });
       return id;
     },
@@ -673,8 +758,21 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
         // quiesce is running — so no window ever sits on a request nobody is ever
         // going to answer, and a window with unsaved text always gets asked
         // whether it arrived early or late.
+        record.owed = null;
         quiesce.expected.add(record.id);
         return Promise.resolve({ request: 'flush', quiesceId: quiesce.id });
+      }
+      if (quiesce === null && record.owed !== null) {
+        // The run ended while this window was between two waits: hand it the
+        // word it missed, once, instead of parking it on a request that nothing
+        // will ever answer.
+        // In shell mode a `held:true` word stays owed (every re-arm hears it again
+        // until the explicit release); a release, and any word in browser mode —
+        // where the last registered window's unregistration is what releases, so a
+        // window must be able to park — is heard once.
+        const owed = record.owed;
+        if (owed.request === 'settled' && (!owed.held || !shellMode)) record.owed = null;
+        return Promise.resolve(owed);
       }
       return new Promise<WaitOutcome>((resolve) => {
         record.release = (outcome: WaitOutcome): void => {
@@ -815,6 +913,25 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
         inflight = null;
       });
     },
+    releaseHeld(): void {
+      heldBySuccess = false;
+      // A run in flight owns `maintenance` and will settle every window itself.
+      if (quiescing) return;
+      maintenance = false;
+      const quiesceId = lastSettled?.quiesceId ?? '';
+      for (const record of windows.values()) {
+        if (record.disconnectedAt !== null) continue;
+        const outcome: WaitOutcome = {
+          request: 'settled',
+          quiesceId,
+          ok: lastSettled?.ok ?? false,
+          held: false,
+          blockers: lastSettled?.blockers ?? [],
+        };
+        if (record.release !== null) releaseWait(record, outcome);
+        else record.owed = outcome;
+      }
+    },
     status() {
       return {
         quiescing,
@@ -869,6 +986,11 @@ const EXEMPT_READS: readonly string[] = [
   // never observe a precondition.
   '/api/app/quiesce/wait',
   '/api/app/quiesce/status',
+  '/api/app/recovery',
+  // The update notice and the close dialog read the updater's state while a
+  // quiesce holds maintenance; refusing it would blank the very notice that
+  // explains the hold. Shell mode only (the route is absent in browser mode).
+  '/api/app/update',
 ];
 
 /**
@@ -889,6 +1011,12 @@ const EXEMPT_WRITES: readonly { readonly method: string; readonly path: string }
   { method: 'POST', path: '/api/app/quiesce/report' },
   { method: 'POST', path: '/api/app/quiesce' },
   { method: 'POST', path: '/api/app/quiesce/close' },
+  // The renderer's explicit close decision must reach the shell while an
+  // earlier quiesce still holds maintenance; a 503 here would strand the dialog.
+  { method: 'POST', path: '/api/app/close/decision' },
+  // Only the DB-free recovery server registers these explicit recovery actions.
+  { method: 'POST', path: '/api/app/recovery/restore' },
+  { method: 'POST', path: '/api/app/recovery/reinstall-previous' },
 ];
 
 /** `/api/notes/:id` against `/api/notes/abc`, and never `/api/notes/abc/chat`. */
@@ -958,4 +1086,9 @@ export async function quiesceFromBridge(): Promise<QuiesceResult> {
   // shape, and the shell matches on nothing else.
   const { ok, blockers } = await installed.quiesce();
   return { ok, blockers };
+}
+
+/** The shell's `maintenance_release{}`: same controller, same single entry point. */
+export function releaseHeldMaintenance(): void {
+  installed?.releaseHeld();
 }
