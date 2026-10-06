@@ -19,9 +19,11 @@ S6.1 notice provenance, and P3.6 harness compatibility. Runtime acceptance
 is serialized; source-only reviewers do not run checks. No worker commits.
 AM-222 keeps the genuine production updater-key acceptance gate blocked.
 
-Candidate `386e3ea` CI failed only formatting in the two dispatcher files:
-https://github.com/villenull/Apunta/actions/runs/37494991485.
-The actual formatter repaired those files; fresh CI remains required.
+Candidate `386e3ea` CI failed only formatting in the two dispatcher files.
+The formatting repair `df2ef35` passed CI:
+https://github.com/villenull/Apunta/actions/runs/37496627136.
+P3.6's final compatibility harness is independently source-CLEAR
+(`state/reviews/P3.6-compat-source.md`); native acceptance remains held.
 
 P3.6's bounded rebuild/native run waits for reviewed and committed P5.3.
 P3.R waits for all desktop children. P5.4 implementation waits for P5.3 and

@@ -8,10 +8,10 @@
   "baseCommit": "62abb28",
   "attempt": 7,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Attempt 7 (AM-212) candidate sha256 ddd3c03e... independent source review reviews/P3.6-impl7-source.md CLEAR (0 defects; 6 LOW observations outside bound)",
-  "nextAllowedAction": "native V3 once P5.3 is committed and Rule B inputs are clean; re-run V0 first only if Rule B inputs changed since the tested AppImage (74cc340) \u2014 owner to confirm the rebuild",
+  "lastCompletedStep": "Current-UI compatibility delta independently source-CLEAR; final harness SHA256 4b6b00406eb1f7d5d9597c5441579e03c0efe4dbc668c7a399d5cd4f10a6c42f. No runtime acceptance claimed.",
+  "nextAllowedAction": "After P5.3 is independently approved and committed and Rule B inputs are clean, run AM-214 V0 once and native V3 once, followed by all remaining P3.6 criteria and independent review. No extra native attempt or rebuild.",
   "sideEffectsDone": [],
-  "changedFiles": [],
+  "changedFiles": ["scripts/v2/tauri-e2e-smoke.test.mjs"],
   "criteria": {
     "V0": {
       "status": "PASS",
@@ -27,7 +27,7 @@
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-04T18:43:00Z",
+  "updatedUtc": "2026-10-06T16:59:48Z",
   "instructionReview": "docs/v2/state/reviews/P3.6-ir8.md",
   "implementationWorkerId": null,
   "buildWorkerId": null,
@@ -47,5 +47,5 @@
       "verification": "Exact card V0 decoded once under attempt2, producer/test-AppImage build/identity guard; freshhash e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a. Attempt1 interruption preserved."
     }
   },
-  "sourceReview": "docs/v2/state/reviews/P3.6-impl3-source.md"
+  "sourceReview": "docs/v2/state/reviews/P3.6-compat-source.md"
 }

@@ -2863,9 +2863,8 @@ const UI_LABELS = {
 };
 
 /**
- * The label every remaining flow grounds its control on, with its source: the
- * labels the repair did **not** have to change, kept here so the whole set of
- * grounded strings is in one place and the helper tests can check all of them.
+ * Visible strings grounded by the remaining native flows. Source locations are
+ * provenance, not runtime validation; the native observations prove each action.
  */
 const FLOW_LABELS = {
   onboardingFormat: {
@@ -2932,6 +2931,53 @@ const FLOW_LABELS = {
     text: 'Back up now',
     file: 'web/src/components/BackupCard.tsx',
     line: 197,
+  },
+  /** The confirmation's own heading (`backup.confirmTitle`). The accept button
+   * carries the same `Back up now` as the page button still mounted behind the
+   * dialog, so two boxes of one label are on screen together and the heading is
+   * what identifies the confirmation instead. */
+  backupConfirm: {
+    key: 'backup.confirmTitle',
+    text: 'Are you sure?',
+    file: 'web/src/components/BackupCard.tsx',
+    line: 138,
+  },
+  /** The settings pane's own first row (`settings.theme`), rendered only inside
+   * the open appearance section. `Appearance` is on the modal **twice** (the nav
+   * label at `Settings.tsx:97` and the section heading at `:727`), so the pane
+   * is confirmed by a label that renders once and only in the pane body. */
+  settingsTheme: {
+    key: 'settings.theme',
+    text: 'Theme',
+    file: 'web/src/routes/Settings.tsx',
+    line: 737,
+  },
+  /** The capture window's own lede (`capture.sourceRecording`), on screen while
+   * the window is up and nothing is recording yet. The label this flow used to
+   * confirm with (`capture.listening`) is the **recording** state's preview line
+   * and is not on screen before the record control is pressed. */
+  captureScreen: {
+    key: 'capture.sourceRecording',
+    text: 'Start with a recording',
+    file: 'web/src/routes/Capture.tsx',
+    line: 470,
+  },
+  /** The record tile's own label (`capture.recordAudio`), rendered once, and the
+   * control that starts the recording. */
+  captureStart: {
+    key: 'capture.recordAudio',
+    text: 'Record audio',
+    file: 'web/src/routes/Capture.tsx',
+    line: 563,
+  },
+  /** `LiveRecording`'s own status line (`capture.recordingSession`), rendered
+   * once for as long as the fixture is being captured. Unlike
+   * `capture.listening` it does not disappear the moment the preview fills. */
+  captureRecording: {
+    key: 'capture.recordingSession',
+    text: 'Recording session',
+    file: 'web/src/components/LiveRecording.tsx',
+    line: 49,
   },
 };
 
@@ -3149,19 +3195,38 @@ async function flowCapture(ctx) {
   await pressKey(['Return'], 'Return to choose the highlighted patient');
   await sleep(2000);
 
-  // The capture screen is confirmed by its own label (`capture.listening`,
-  // `shared/src/i18n/en.ts:1010`, quoted with its U+2026) before anything is
-  // recorded, so a screen that was never reached cannot produce a note. The
-  // waiting line renders it inside a `<span>` (`LiveRecording.tsx:74`) once; the
-  // second reference on that line is the thinking dots' **aria** label, which is
-  // not on the screen.
-  if (!(await confirmPane(window, 'capture', UI_LABELS.captureListening.text))) return;
+  // The capture window is confirmed by a label of its **own** body before
+  // anything is recorded, so a window that was never reached cannot produce a
+  // note: `capture.sourceRecording` (`Capture.tsx:470`) is the lede over the
+  // record tile and renders once. The label this used to confirm with
+  // (`capture.listening`, `LiveRecording.tsx:73`) is the **recording** state's
+  // empty-preview line — `LiveRecording` is rendered only under
+  // `recording === 'recording'` (`Capture.tsx:474`) — so before the record
+  // control is pressed it is not on the screen at all, and this confirmation
+  // could never succeed.
+  if (!(await confirmPane(window, 'capture', FLOW_LABELS.captureScreen.text))) return;
 
-  // The record control is a large option tile and the first focusable control on
-  // the screen, so it is reached by the app's own keyboard.
-  await pressKey(['Tab'], 'Tab to the record control');
-  await pressKey(['Return'], 'Return to start recording');
+  // The real action: the record tile's own label, grounded and clicked at its
+  // measured centre. The keyboard path this replaced — Tab, then Return —
+  // aimed at "the first focusable control on the screen", which stopped being
+  // true when the capture window became a modal whose `initialFocusRef` puts
+  // the caret in the summary textarea (`Capture`'s `summaryRef`): the `Create
+  // draft` button behind the tile is disabled while nothing has been typed or
+  // recorded, so one Tab wraps to the panel's own close
+  // control and Return would have closed the window rather than record.
+  const start = await clickScreenLabel(window, ctx.offset, FLOW_LABELS.captureStart.text, 'the record tile');
+  if (!start.clicked) {
+    recordFlow('capture', 'NOT RUN', `the record tile could not be grounded: ${start.why}`);
+    notRun('capture', `the record tile could not be grounded: ${start.why}`);
+    return;
+  }
   await sleep(2500);
+
+  // The recording state itself, by the label `LiveRecording` carries for as
+  // long as it records (`capture.recordingSession`, `LiveRecording.tsx:49`),
+  // which does not depend on the preview being still empty the way
+  // `capture.listening` does. Nothing is asserted from the click alone.
+  if (!(await confirmPane(window, 'capture', FLOW_LABELS.captureRecording.text))) return;
 
   // While the app records, no stream may sit on the owner's microphone. The
   // read resolves the source table, so a device with another name is still
@@ -3234,7 +3299,7 @@ async function flowDraft(ctx) {
   }
 
   // The real action: click the drafted note's own row in the notes column. The
-  // `Draft` chip (`note.draftChip`, `NotesColumn.tsx:185`) identifies it, and a
+  // `Draft` chip (`note.draftChip`, `NotesColumn.tsx:255`) identifies it, and a
   // screen with two draft rows is refused rather than guessed at.
   const opened = await clickScreenLabel(
     window,
@@ -3249,11 +3314,17 @@ async function flowDraft(ctx) {
   }
   await sleep(1200);
 
-  // The screen itself: the draft screen carries the refine column, whose
-  // composer placeholder (`refine.inputPlaceholder`,
-  // `shared/src/i18n/en.ts:1058`, `RefineColumn.tsx:284`) no other screen
-  // renders. It is quoted with its three ASCII dots.
-  if (!(await confirmPane(window, 'draft', UI_LABELS.refinePlaceholder.text))) return;
+  // The screen itself: the draft screen carries the note view's own publish
+  // control, whose label (`note.finishAndCopy`, `NoteView.tsx:731`) no other
+  // screen renders. The refine composer's placeholder this used to confirm with
+  // (`refine.inputPlaceholder`) lives in the refine panel, which the note view
+  // keeps **closed** until something asks for it — `chatOpen` starts from
+  // `localStorage['apunta-chat-open'] === '1'` (`NoteView.tsx:119`), which a
+  // fresh sandbox is not, and a closed `Dialog` is `display: none`
+  // (`Dialog.tsx:137`, `styles/app.css:2581`) — so that label was not on screen
+  // when this ran and the flow could not be confirmed. The refine flow opens
+  // the panel itself; this flow only has to prove which screen it reached.
+  if (!(await confirmPane(window, 'draft', FLOW_LABELS.publish.text))) return;
 
   const note = await noteById(notes[0].id);
   requireFlow(
@@ -3281,6 +3352,49 @@ async function flowRefine(ctx) {
   }
   const before = await noteById(ctx.noteId);
 
+  // The composer's panel starts **closed** on a fresh sandbox: `chatOpen` is
+  // read from `localStorage['apunta-chat-open'] === '1'`
+  // (`NoteView.tsx:119`), which is absent here, and a closed `Dialog` carries
+  // the `is-dialog-closed` class that is `display: none`
+  // (`Dialog.tsx:137` → `styles/app.css:2581`) — so `refine.inputPlaceholder`
+  // was not on screen when this flow tried to type into it. Its only opener is
+  // the icon-only launcher disc: `aria-label`/`title` only (`NoteView.tsx:800`),
+  // never a word on the screen, so there is nothing to ground a click on by
+  // label.
+  //
+  // The disc is therefore found the way every other unlabelled control here is
+  // found — by its measured colour. `.chat-fab` is the one `background:
+  // var(--accent)` surface mounted while a draft is open (`styles/app.css:465`):
+  // the publish control behind it is `.btn-publish` on `--surface`
+  // (`styles/app.css:827-829`), the notes column's tools are transparent until
+  // hover, and the only other accent-filled controls (`.btn-primary`) are the
+  // practice-empty and onboarding ones, not this screen. So the disc is the
+  // largest accent cluster, and `pickPrimaryCluster` refuses it rather than
+  // clicking when it is not unambiguous. Opening the panel does not touch the
+  // note, so `before` above is still the pre-send state.
+  const up = await waitForScreenLabel(window, UI_LABELS.refinePlaceholder.text, 1500);
+  if (!up.seen) {
+    const shot = await captureWindow(window.id);
+    if (shot === null) {
+      const why = 'the window capture failed while looking for the refine launcher';
+      recordFlow('refine', 'NOT RUN', why);
+      notRun('refine', why);
+      return;
+    }
+    const clusters = await findClusters(shot, ACCENT);
+    const picked = pickPrimaryCluster(clusters, 'the refine launcher disc');
+    if (picked.cluster === null) {
+      recordFlow('refine', 'NOT RUN', picked.why);
+      notRun('refine', picked.why);
+      return;
+    }
+    if (!(await clickCluster(window, ctx.offset, picked.cluster, 'the refine launcher disc'))) {
+      recordFlow('refine', 'FAIL', 'the refine launcher click could not be issued');
+      return;
+    }
+    await sleep(1200);
+    if (!(await confirmPane(window, 'refine', UI_LABELS.refinePlaceholder.text))) return;
+  }
   // The real action: the refine composer is filled through the app's own
   // keyboard and sent with Return — the app's own send path, not a synthesised
   // event.
@@ -3621,19 +3735,22 @@ async function flowSettings(ctx) {
   }
   await sleep(1500);
 
-  // The screen: the modal's **own nav title**, `doc.settings` (`Settings.tsx:168`),
-  // which is inside the `<nav>` and therefore outside `SettingsSections` — so no
-  // section gate, and no early return inside a section, can decide whether it is
-  // on screen. `UI_LABELS.settingsPane.renderPath` carries every hop and every
-  // gate from the modal root to that `<h2>`, and the helper tests assert the
-  // whole path against the tree; the label this replaces
-  // (`settings.draftingModel`) lived in `LlmProfileSettings`, which returns
-  // `null` with fewer than two LLM profiles and the server publishes one, so it
-  // was never on screen and this flow recorded `NOT RUN` on every healthy run.
+  // The screen: a label of the pane's **own body**, `settings.theme`
+  // (`Settings.tsx:737`) — the appearance section's first row, rendered once
+  // and only inside the open pane. It is the section the modal opens on
+  // (`useSettingsStore('appearance')`, `Settings.tsx:111`), so no click is
+  // needed to reach it.
   //
-  // It is unique in the state this flow drives: the rail menu that carried the
-  // other `Settings` is closed by its own `choose()` before the modal opens.
-  const appearance = await waitForScreenLabel(window, UI_LABELS.settingsPane.text, 8000);
+  // The nav heading this used to confirm with (`doc.settings`,
+  // `Settings.tsx:280`) is the modal's **nav** title, not a pane landmark, and
+  // the two candidate nav-section words are no help either: `Appearance` is on
+  // the screen **twice** (the nav label at `Settings.tsx:97` and the section
+  // heading at `:727`), so it identifies the same modal twice over rather than
+  // its body, and `Settings` is the nav title the click above just opened. The
+  // rail menu that carried the other `Settings` is closed by its own
+  // `choose()` before the modal opens, which is what the previous label relied
+  // on.
+  const appearance = await waitForScreenLabel(window, FLOW_LABELS.settingsTheme.text, 8000);
   if (!appearance.seen) {
     recordFlow(
       'settings',
@@ -3676,9 +3793,13 @@ async function flowBackup(ctx) {
   }
   await sleep(1000);
 
-  // The real action, on the page's own control (`backup.now`). It asks first,
-  // and the dialog's own accept button carries the same label, so the second
-  // click below is the answer rather than the action.
+  // The real action, on the page's own control (`backup.now`). It asks first:
+  // a `ConfirmDialog` mounts over the page with the page button still behind
+  // it, and the dialog's **accept** button carries the same `Back up now`
+  // label as the page button (the label is the page control's own at
+  // `BackupCard.tsx:104` and the dialog's answer at `BackupCard.tsx:140`).
+  // Those two boxes of one label are what the replaced second click below
+  // refused to choose between, which is why this flow could not be confirmed.
   const asked = await clickScreenLabel(
     window,
     ctx.offset,
@@ -3691,17 +3812,19 @@ async function flowBackup(ctx) {
     return;
   }
   await sleep(1000);
-  const confirmed = await clickScreenLabel(
-    window,
-    ctx.offset,
-    FLOW_LABELS.backupNow.text,
-    "the backup confirmation's accept button",
-  );
-  if (!confirmed.clicked) {
-    recordFlow('backup', 'NOT RUN', `the backup confirmation could not be grounded: ${confirmed.why}`);
-    notRun('backup', `the backup confirmation could not be grounded: ${confirmed.why}`);
-    return;
-  }
+
+  // The confirmation is identified by the one string only it carries, the
+  // dialog's own heading (`backup.confirmTitle`, `BackupCard.tsx:138`), which
+  // is unique to the dialog. The dialog lands focus on its **cancel** control
+  // (`ConfirmDialog` passes it as the dialog's `initialFocusRef`,
+  // `ConfirmDialog.tsx:45`), and the keep
+  // (accept) control is the next one in the tab order — so one Tab and Return
+  // accept it through the app's own keyboard path, with no coordinates at all.
+  // (`groundPhrase` still refuses a second `Back up now` because with the dialog
+  // up there are two of them.)
+  if (!(await confirmPane(window, 'backup', FLOW_LABELS.backupConfirm.text))) return;
+  await pressKey(['Tab'], 'Tab to the backup keep control');
+  await pressKey(['Return'], 'Return to keep this backup');
   await sleep(3000);
 
   // The fact the click produces: the backup manifest moved. `GET /api/backup`
