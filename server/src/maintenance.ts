@@ -191,14 +191,23 @@ interface Inflight {
   /** What each of them reported. */
   readonly reported: Map<string, readonly QuiesceBlocker[]>;
   /**
-   * The windows that have already answered **cleanly** in this quiesce, by tab
-   * identity.
+   * The windows that have already answered **cleanly** in this quiesce, by the
+   * record's own identity — never by the shared tab identity.
    *
    * This is what makes the reporter's transport loop safe: it re-arms its poll
    * the moment it has reported, so a naive reading would ask the same window
    * again for as long as the quiesce ran, and a window that arrived mid-quiesce
    * would never stop being asked. One clean answer per window per quiesce is the
    * whole protocol; a re-arm after it is transport, not a second obligation.
+   *
+   * The key is `record.id`, not the tab id, because a tab identity is a *slot*
+   * rather than a window: an ordinary same-tab re-arm reuses the one record, so
+   * the transport-loop property holds, while Chromium's *Duplicate Tab* copies
+   * `sessionStorage` and lands two live records under one tab id. Keying the set
+   * by that id would let one copy's clean answer stand in for the other's — a
+   * clean report from one duplicate would hide the retained, dirty copy's
+   * obligation (FD13/AM-215) and mark a second live copy as answered when it had
+   * never been asked. `record.id` is per record, so it cannot conflate the two.
    */
   readonly answered: Set<string>;
 }
@@ -423,7 +432,7 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
       if (quiesce.expected.has(record.id)) continue;
       // The window that reported and re-armed: answered already, so its new
       // request is the transport carrying the next quiesce, not an unanswered one.
-      if (quiesce.answered.has(windowKey(record))) continue;
+      if (quiesce.answered.has(record.id)) continue;
       // Anything else here holds text nobody has accounted for: a registration
       // that has not been asked yet, or a retained disconnected record with an
       // undischarged obligation (FD13(b)). Both block, and neither is `ok`.
@@ -572,14 +581,8 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
   }
 
   /**
-   * A window's identity within one quiesce: its tab, or its own connection id
-   * when it has no tab to be recognised by.
+   * Answer a held wait, if it is still holding one.
    */
-  function windowKey(record: WindowRecord): string {
-    return record.tabId ?? record.id;
-  }
-
-  /** Answer a held wait, if it is still holding one. */
   function releaseWait(record: WindowRecord, outcome: WaitOutcome): void {
     const release = record.release;
     record.release = null;
@@ -665,7 +668,7 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
       const record = windows.get(windowId);
       if (record === undefined) return Promise.resolve({ request: 'expired', quiesceId: '' });
       const quiesce = current;
-      if (quiesce !== null && !quiesce.answered.has(windowKey(record))) {
+      if (quiesce !== null && !quiesce.answered.has(record.id)) {
         // Asked at once — at entry, or the moment a window arrives while a
         // quiesce is running — so no window ever sits on a request nobody is ever
         // going to answer, and a window with unsaved text always gets asked
@@ -795,7 +798,7 @@ export function createMaintenance(options: MaintenanceOptions = {}): Maintenance
       const blockers = placeable(input) ? claimedBlockers(input.blockers) : ['no_response' as const];
       if (blockers.length === 0) {
         record.resolved = true;
-        quiesce?.answered.add(windowKey(record));
+        quiesce?.answered.add(record.id);
       }
       // An unplaceable claim is recorded as `no_response`, never as an empty
       // answer: the window has not said it holds nothing, so its FD13 obligation

@@ -1,3 +1,28 @@
+# Release-blocker resumption — 2026-10-06 (current)
+
+Owner authorized advancing P5.3, S6.1, P3.6/P3.R and P5.4 with subagents,
+parallel where independent (AM-218). Both UI batches below are complete and
+`e62c94f` passed CI: https://github.com/villenull/Apunta/actions/runs/37422148250.
+Preserve that UI. This authorization resumes repair work, not acceptance
+waivers, release/signing, live-data access or Mac work.
+
+The free Big Pickle workers run through installed OpenCode with an explicit
+build agent; direct API access was rejected by the provider's OpenCode-only
+restriction. No paid-model substitution. P5.3's fifth repair is SUBMITTED:
+independent source review CLEAR, 2,461 tests and 117 browser tests passed
+(six existing skips, no retries), and the historical duplicate-crash smoke
+now refuses `no_response`. Independent committed-candidate acceptance remains.
+
+Three workers are active: S6.1 complete notice implementation after AM-220;
+independent P3.6 harness compatibility review; P5.4 contract reconciliation
+after AM-221. They skip runtime/build/test/lint/formatting and do not commit.
+AM-222 keeps the genuine production updater-key acceptance gate blocked.
+
+P3.6's bounded rebuild/native run waits for reviewed and committed P5.3.
+P3.R waits for all desktop children. P5.4 implementation waits for P5.3 and
+P3.R approval. S6.1's sourced fields are adopted; V4 and independent review remain.
+Current checkpoints and next actions: `docs/v2/state/NEXT-SESSION.md`.
+
 # Owner UI feedback, second batch — 2026-10-06 (current)
 
 All 16 requested changes are implemented. This section supersedes the first

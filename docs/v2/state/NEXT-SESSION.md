@@ -1,3 +1,35 @@
+## Current parallel blocker resumption — 2026-10-06
+
+AM-218 records the owner's instruction to advance P5.3, S6.1, P3.6/P3.R
+and P5.4 with subagents, parallel where independent. This supersedes the
+historical repair hold below, not acceptance gates or owner-only actions.
+Current base is `e62c94f`; both owner UI batches are complete, including the
+favicon. Preserve the latest UI rather than replaying stale backlog entries.
+
+Free Big Pickle uses installed OpenCode with explicit
+`--agent build --model opencode/big-pickle`; its direct API path rejected the
+client under the provider's OpenCode-only free-tier restriction. No paid substitution.
+P5.3's fifth repair is SUBMITTED: source review CLEAR, 2,461 tests and 117
+browser tests passed (six existing skips, no retries, inherited CI configuration).
+The production-controller duplicate-crash smoke now refuses `no_response`.
+Commit this candidate and dispatch independent V1-V9 acceptance before approval.
+
+Active workers: S6.1 complete notice implementation under AM-220; independent
+P3.6 harness compatibility review; P5.4 full contract reconciliation under
+AM-221. They skip runtime/build/test/lint/formatting and do not commit.
+Coordinator owns shared state; runtime checks wait for stable relevant inputs.
+
+P5.3's legacy counter was corrected monotonically from 1 to 5, retaining the
+four historical repair rounds and failed review. P3.6 retains attempt 7 and
+AM-214's once-only V0 rebuild/native V3 after P5.3 is reviewed and committed.
+P3.R cannot approve before every child passes. P5.4 implementation cannot
+start until P5.3 and P3.R are approved. S6.1's source/adoption gate is resolved
+by AM-220; V4 and independent review still remain. AM-222 keeps the genuine
+production updater-key gate blocked, without a fake key or acceptance waiver.
+
+No live data/export access, port 7717, production signing/release action,
+acceptance waiver, new network authorization or Mac work is granted.
+
 ## Current owner-authorized UI batch — 2026-10-05
 
 Successor59a44bd8 owns orchestration. P5.3 final reviewer0c91401f genuinely idle,

@@ -1104,6 +1104,93 @@ describe('a duplicated tab identity', () => {
     expect(await running).toMatchObject({ ok: false, blockers: ['no_response'] });
   });
 
+  it('a clean report from one copy settles nothing over the other copy’s retained obligation', async () => {
+    // The data-loss direction: the `answered` set is keyed by the record's own
+    // identity, never by the shared tab id — a tab identity is a *slot* that
+    // Chromium's *Duplicate Tab* copies, so one copy's clean answer must not
+    // stand in for the other's unpersisted something. A and B share tab `T` with
+    // their own `doc`s; B's socket goes dirty; A reports `ok`. The quiesce must
+    // be refused `no_response`, never settled over B's lost text.
+    const clock = stillClock();
+    const local = await harness(clock);
+    const maintenance = currentMaintenance();
+
+    const clean = window('tab-shared', docOf('tab-shared'));
+    const dirty = window('tab-shared', docOf('tab-shared', 'next'));
+    expect((await statusOf(local.app)).windows).toBe(2);
+
+    // The dirty copy's socket goes away without saying anything: the record is
+    // retained, `resolved` false — the obligation FD13 keeps.
+    maintenance.disconnect(dirty.id);
+    expect((await statusOf(local.app)).windows).toBe(1);
+
+    // The clean copy is asked and reports the ordinary clean word.
+    const running = trigger(local.app);
+    expect((await clean.asked).request).toBe('flush');
+    await report(local.app, 'tab-shared', (await clean.asked).quiesceId, true, [], docOf('tab-shared'));
+
+    // Its clean word clears its own record and nothing else: the retained copy
+    // is not the one that said `ok`, so it still blocks.
+    expect(await running).toMatchObject({ ok: false, blockers: ['no_response'] });
+  });
+
+  it('asks a duplicate that arrives mid-quiesce, rather than skipping it as answered', async () => {
+    // The reverse observable shape of the same fix: with the set keyed by the
+    // shared tab id, a second document arriving under an already-answered tab id
+    // while the quiesce runs would be **never asked** — `holdFor` sees the id in
+    // `answered` and quietly holds — and the quiesce would settle `ok:true` over
+    // a window nobody ever asked about. Keyed by the record, the newcomer is
+    // asked at once; it never answers, so the quiesce is refused.
+    const base = virtualClock();
+    const newcomer: { asked: Promise<WaitOutcome> | null } = { asked: null };
+    let staged: (() => void) | null = null;
+    const clock: Clock = {
+      now: base.now,
+      sleeps: base.sleeps,
+      elapsed: () => base.elapsed(),
+      sleep: async (ms: number) => {
+        staged?.();
+        staged = null;
+        await base.sleep(ms);
+      },
+    };
+    const local = await harness(clock);
+    const maintenance = currentMaintenance();
+    const a = window('tab-shared');
+
+    const running = trigger(local.app);
+    expect((await a.asked).request).toBe('flush');
+    const quiesceId = (await a.asked).quiesceId;
+
+    // Staged for the first sleep after the quiesce is in flight: the first copy
+    // answers clean and re-arms its poll (the transport loop), then a second
+    // document — Duplicate Tab, own `doc` — registers under the same tab id
+    // while the quiesce is still running.
+    staged = () => {
+      expect(
+        maintenance.report({
+          quiesceId,
+          tabId: 'tab-shared',
+          doc: docOf('tab-shared'),
+          ok: true,
+          blockers: [],
+        }),
+      ).toBe('accepted');
+      void maintenance.holdFor(a.id);
+      const id = maintenance.registerWindow('tab-shared', docOf('tab-shared', 'next'));
+      newcomer.asked = maintenance.holdFor(id);
+    };
+
+    // The newcomer was asked (`flush`, not a silent hold), and because it never
+    // answers the quiesce is refused — never settled while a live window was
+    // never asked.
+    const answer = await running;
+    expect(await newcomer.asked).toMatchObject({
+      request: 'flush',
+    });
+    expect(answer).toMatchObject({ ok: false, blockers: ['no_response'] });
+  });
+
   it("spends a claim banked on a connected record when that window's own socket closes", async () => {
     const clock = stillClock();
     const local = await harness(clock);

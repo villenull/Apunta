@@ -139,7 +139,7 @@ export const esMX = {
   // guardar, y solo reiniciar Apunta lo resuelve. La misma fila de la tabla de
   // fallos de C-UPD@1 que avisa qué terminar primero.
   'errors.quiesce.no_response': {
-    text: 'Una ventana se cerró sin avisar, así que Apunta no puede estar seguro de que no quedó nada sin guardar. Reinicia Apunta para_solver esto.',
+    text: 'Una ventana se cerró sin avisar, así que Apunta no puede estar seguro de que no quedó nada sin guardar. Reinicia Apunta para resolver esto.',
   },
   'errors.stale_write.note_changed': { text: 'Esta nota cambió en otra ventana.' },
 

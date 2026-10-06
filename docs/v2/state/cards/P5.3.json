@@ -1,65 +1,70 @@
 {
   "card": "P5.3",
   "planVersion": 2,
-  "attempt": 1,
+  "attempt": 5,
   "sideEffectsDone": [],
-  "changedFiles": [],
+  "changedFiles": [
+    "server/src/maintenance.ts",
+    "server/src/maintenance.test.ts",
+    "e2e/tests/quiescence.spec.ts",
+    "shared/src/i18n/es-MX.ts"
+  ],
   "criteria": {
     "V1": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V2": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V3": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V4": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V5": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V6": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V7": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V8": {
-      "status": "FAIL",
-      "exit": 1,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     },
     "V9": {
       "status": "PASS",
       "exit": 0,
-      "evidence": "docs/v2/evidence/P5.3/impl4-review.md"
+      "evidence": "docs/v2/evidence/P5.3/impl5.md"
     }
   },
-  "sandboxRuns": [],
+  "sandboxRuns": ["2026-10-06T14-42-44-621Z-47d59157"],
   "baseCommit": "432c0ab",
-  "status": "BLOCKED",
-  "lastCompletedStep": "Final round-4 independent review CHANGES REQUESTED: HIGH duplicate-tab fail-open, V8 exit1 and low findings; reviewer idle and archived confirmed",
-  "nextAllowedAction": "Preserve rejected candidate for authorized closeout. No further P5.3 repair or approval granted; owner UI batch now authorized separately.",
-  "updatedUtc": "2026-10-05T15:23:36.221882+00:00",
+  "status": "SUBMITTED",
+  "lastCompletedStep": "Fifth repair source review CLEAR; typecheck, 2461 tests, lint, build and full CI-shaped browser suite passed; historical duplicate-crash smoke refuses no_response",
+  "nextAllowedAction": "Commit the coherent P5.3 candidate, then obtain a separate implementation review re-running V1-V9, including default-parallel V8 with no retries, against that final commit. Do not approve from implementation evidence.",
+  "updatedUtc": "2026-10-06T16:11:09Z",
   "reviewWorkerId": null,
   "orchestratorId": "59a44bd8-3fc3-43e2-8337-cc96dd3db55d",
-  "recoveryNote": "Legacy attempt field remains 1 despite four recorded repair rounds; history preserved, no reset or additional attempt authorized. Ports in original lastCompletedStep were stale; current card is authoritative.",
+  "recoveryNote": "Legacy attempt field was 1 despite four recorded repair rounds. Corrected monotonically to 5 for AM-218's further repair; all prior failure evidence and reviews remain unchanged.",
   "interruptedReviewWorkerId": "9efccac9-4d1c-45f9-ad88-1f1bc4de564a",
   "implementationReview": "docs/v2/state/reviews/P5.3-impl4.md"
 }

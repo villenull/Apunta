@@ -434,7 +434,16 @@ test.describe('C-UPD@1 quiescence', () => {
 
     // The bounded release, asserted rather than assumed: the last unregistration
     // lets the next write through.
-    await page.close();
+    //
+    // It leaves by the measured road (impl3-repair §G) rather than a bare
+    // `close()`: a bare close does not always reach the server as a socket close,
+    // and FD1's release is the *last unregistration* — so the poll below would
+    // wait out its fifteen seconds on a window the server still believes is
+    // there. Navigating out of the app runs the real `pagehide` (`/api/health`
+    // is an exempt read, so the held maintenance does not stop it), then the tab
+    // is closed.
+    await page.goto('/api/health').catch(() => undefined);
+    await page.close().catch(() => undefined);
     await expect
       .poll(async () => (await readStatus(request)).maintenance, {
         message: 'maintenance is released when the last window unregisters',
@@ -489,7 +498,16 @@ test.describe('C-UPD@1 quiescence', () => {
 
     // The bounded release, asserted rather than assumed, and it is what leaves
     // the next row a server in normal service.
-    await page.close();
+    //
+    // It leaves by the measured road (impl3-repair §G) rather than a bare
+    // `close()`: the held wait was already resolved by the quiesce's `finally`,
+    // and a bare close does not always reach the server as a socket close — so
+    // without a real `pagehide` (`/api/health` is an exempt read, so the held
+    // maintenance does not stop the navigation) the server never observes the
+    // last unregistration and the release poll below waits out its fifteen
+    // seconds on a window nobody is behind.
+    await page.goto('/api/health').catch(() => undefined);
+    await page.close().catch(() => undefined);
     await expect
       .poll(async () => (await readStatus(request)).maintenance, {
         message: 'maintenance is released when the last window unregisters',
@@ -706,12 +724,19 @@ test.describe('C-UPD@1 quiescence', () => {
 
       // The first window is closed by a therapist, and says as it goes that it is
       // leaving nothing behind. That is the whole of AM-215: an ordinary clean
-      // close must not strand the server.
-      await first.close();
+      // close must not strand the server. Each window leaves by the measured road
+      // (impl3-repair §G) rather than a bare `close()` — a bare close does not
+      // always reach the server as a socket close, and a close that is not seen
+      // is not an unregistration — so each navigates out of the app first
+      // (`/api/health` is an exempt read, so the held maintenance does not stop
+      // it) and is then closed.
+      await first.goto('/api/health').catch(() => undefined);
+      await first.close().catch(() => undefined);
       // Still held — the second window is registered, so FD1's release is the
       // last unregistration and not this one.
       expect((await readStatus(request)).maintenance).toBe(true);
-      await second.close();
+      await second.goto('/api/health').catch(() => undefined);
+      await second.close().catch(() => undefined);
       await expect
         .poll(async () => (await readStatus(request)).maintenance, {
           message: 'maintenance is released when the last window closes cleanly',
@@ -729,7 +754,8 @@ test.describe('C-UPD@1 quiescence', () => {
       await expect(later.getByTestId('patient-list')).toBeVisible();
       await untilStatus(request, (status) => status.windows >= 1, 'the later tab is registered');
       expect(await quiesce(request)).toMatchObject({ ok: true, blockers: [] });
-      await later.close();
+      await later.goto('/api/health').catch(() => undefined);
+      await later.close().catch(() => undefined);
       await expect
         .poll(async () => (await readStatus(request)).maintenance, {
           message: 'maintenance is released again',
