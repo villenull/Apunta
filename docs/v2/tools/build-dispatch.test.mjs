@@ -408,7 +408,6 @@ test('T4c: --attempt 6 with no exception is refused', () => {
   assert.match(r.stderr, /--attempt-exception/);
 });
 
-
 test('extra: attempts 1-3 unchanged', () => {
   for (const a of [1, 2, 3]) {
     const r = runAttempt('T1', a);
@@ -557,11 +556,7 @@ test('AM-223 repair grants are keyed by card, amendment and attempt in every dis
         [id, attempt, 'AM-999'],
         [id, attempt + 1, amendment],
       ]) {
-        const refused = runAttempt(wrongId, wrongAttempt, [
-          '--attempt-exception',
-          wrongAmendment,
-          ...mode,
-        ]);
+        const refused = runAttempt(wrongId, wrongAttempt, ['--attempt-exception', wrongAmendment, ...mode]);
         assert.equal(refused.status, 2, refused.stdout + refused.stderr);
       }
     }
@@ -626,4 +621,3 @@ test('extra: dependency gate still exits 3 after the grant (no PASS on exit 3)',
   ]);
   assert.equal(r.status, 3, r.stdout + r.stderr);
 });
-

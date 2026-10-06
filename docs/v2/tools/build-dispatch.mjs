@@ -181,10 +181,7 @@ function main() {
     if (attempt === 7 && !seventhRepair)
       fail(2, '--attempt 7 is refused: only P3.6 with AM-212 or AM-214 may carry it; no attempt 8');
   } else if (attempt >= 8) {
-    fail(
-      2,
-      `--attempt ${attempt} is beyond any authorised budget; no attempt 8`,
-    );
+    fail(2, `--attempt ${attempt} is beyond any authorised budget; no attempt 8`);
   } else if (!(attempt >= 1 && attempt <= 3)) {
     fail(2, '--attempt must be 1, 2 or 3');
   }

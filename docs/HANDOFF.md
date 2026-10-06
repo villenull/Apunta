@@ -13,10 +13,15 @@ independent source review CLEAR, 2,461 tests and 117 browser tests passed
 (six existing skips, no retries), and the historical duplicate-crash smoke
 now refuses `no_response`. Independent committed-candidate acceptance remains.
 
-Three workers are active: S6.1 complete notice implementation after AM-220;
-independent P3.6 harness compatibility review; P5.4 contract reconciliation
-after AM-221. They skip runtime/build/test/lint/formatting and do not commit.
+The notice implementation and updater reconciliation design are finished.
+Active free-model reviewers: P5.3 committed-candidate V1–V9 acceptance,
+S6.1 notice provenance, and P3.6 harness compatibility. Runtime acceptance
+is serialized; source-only reviewers do not run checks. No worker commits.
 AM-222 keeps the genuine production updater-key acceptance gate blocked.
+
+Candidate `386e3ea` CI failed only formatting in the two dispatcher files:
+https://github.com/villenull/Apunta/actions/runs/37494991485.
+The actual formatter repaired those files; fresh CI remains required.
 
 P3.6's bounded rebuild/native run waits for reviewed and committed P5.3.
 P3.R waits for all desktop children. P5.4 implementation waits for P5.3 and
