@@ -1,44 +1,109 @@
 # P5.4 updater landed, verification incomplete — 2026-10-06 evening
 
-**Built and pushed** (`dc81dbf`, `b630daf`, `d603496`, `4634403`, `d3f134a` on
-`main`): the whole updater — native state machine and verified install, the
-server's mirror/relay, the renderer's notice, Settings card, freeze and
-recovery screen, the release inspector, and the privacy wording in README,
-INSTALL (EN+ES) and CLAUDE.md hard rule 1.
+**Built and pushed.** Ten commits on `main`, `450d59c` → `f19e3f7`:
 
-**Gates that passed locally:** lint, typecheck, 180 test files / 2594
-unit+integration tests, build, the full English/Spanish/quiescence e2e run
-(117 passed, 6 existing skips, no retries), `cargo test` (99, then 101 with
-`test-updater`), `cargo clippy -D warnings`, and the native smoke harness:
-**39/40 containment assertions passed** (shutdown, lock inode identity, port
-release, no orphan, observation channel gone, ollama still up).
+| Commit | What |
+| --- | --- |
+| `dc81dbf` | Hard rule 1's second exception; `shared/src/update.ts`; catalogues |
+| `b630daf` | Server: quiesce, journal, snapshot, recovery, mirror/relay |
+| `d603496` | Native: state machine, verified install, recovery relaunch |
+| `4634403` | Renderer: notice, Settings card, freeze, recovery view |
+| `d3f134a` | `check-release-config.mjs`; `APUNTA_BUNDLE_VERSION` stamping |
+| `ccc03d4`, `2a1bad0` | Handoff; the CI billing blocker |
+| `8b6f6dc` | Native smoke: accent clusters on ImageMagick 7's bilevel output |
+| `f19e3f7` | P5.4 in the ledger; P3.6 attempt-8 V3 result |
 
-**Two real defects the quiescence spec caught, both fixed and covered:** the
-bootstrap `status?tab&doc` read racing the window's own parked `wait` (one
-document registering twice must reuse the record, not mint a second that
-forces a false `no_response`), and a held browser-mode window being answered
-with `settled{held:true}` — that left it between polls when it left, so the
-departure was never seen and maintenance leaked. Browser mode now keeps the
-wait parked while the hold is on.
+## Local gates (the only evidence — see CI below)
 
-**Open, and not claimed done:**
+lint, typecheck, 180 test files / **2594 unit+integration tests**, build, the
+full English/Spanish/quiescence e2e run (**117 passed**, 6 existing skips, no
+retries), `cargo test` (**99**, then **101** with `--features test-updater`),
+`cargo clippy --all-targets --features test-updater -- -D warnings`, and the
+native smoke harness at **42/43 containment assertions** (shutdown, lock inode
+identity, port release, no orphan, observation channel gone, ollama still up).
+
+Browser mode was also verified against a live sandbox instance: the quiesce
+status route answers `x-apunta-mode: browser`, the updater route 404s there, and
+the console is clean.
+
+## Three defects, all found by running things
+
+**1. The quiescence registration race** (`b630daf`). The bootstrap
+`status?tab&doc` read carries the same tab **and** the same `doc` nonce as the
+window's own parked `wait`. That is one document registering twice — but
+`registerWindow` treated any live-wait holder with the same tab id as Chromium's
+*Duplicate Tab* and minted a second record, which nothing ever answered, forcing
+a false `no_response`. *Duplicate Tab* copies the tab id but mints a new `doc`,
+so same-tab-and-same-doc now reuses the parked record.
+
+**2. The maintenance leak** (`b630daf`). A held browser-mode window was answered
+with `settled{held:true}`, so the client slept `REARM_DELAY_MS` before re-arming
+and held **no socket** when it left. Its departure is only ever observed through
+that socket, so the clean word its `pagehide` beacon banked was never
+discharged and maintenance stayed held forever. Browser mode releases on the
+last unregistration (FD1), so a held window now keeps its wait parked; a failed
+run and every shell-mode word are still delivered.
+
+**3. The native smoke's cluster grounding** (`8b6f6dc`). `findClusters` masks
+the screenshot to two colours and reads a coarse grid back as text, but required
+an `(r,g,b)` triplet. ImageMagick 7.1.2-31 prints a bilevel image's pixel as a
+single `gray(…)` component, so every grid line was skipped, no cluster was ever
+found, and onboarding stopped at "no accent cluster was found in the
+screenshot". The mask is now forced back to sRGB and the parse accepts both
+forms. Same class as the decimal-confidence fix in `450d59c`: the harness
+assumed a textual detail of its tools.
+
+**How 1 and 2 were separated from noise:** the failing row was bisected against
+a stashed baseline (`git stash push -u`, rebuild, run). The baseline passed
+10/10 quiescence rows and the branch failed, so the regression was mine, not the
+harness's. Both are covered by unit cases in `server/src/maintenance.test.ts`,
+including a new one for the bootstrap re-registration.
+
+Measured effect of fix 3: 39/40 assertions with onboarding `NOT RUN` before;
+42/43 with the click issued and the flow advancing to the next screen after.
+
+## Decisions taken with the owner this session
+
+- **Independent review deferred.** Both review attempts hit a provider quota
+  limit; the owner directed committing after verification with review deferred.
+  P5.4 is recorded `CHANGES REQUESTED`, never APPROVED. Treat the updater as
+  unapproved until it is reviewed.
+- **The About source link is preserved.** P5.4's V4 demanded zero `github.com`
+  strings in `server/`, `web/` and `shared/`, but `Settings.tsx` already has an
+  explicitly approved, user-clicked link to the public repository. The owner
+  clarified that the invariant is **no outbound application calls**, not the
+  absence of the text: the link stays and V4 is satisfied by the server egress
+  guard plus the native updater's host-confinement tests. A link the user
+  chooses to click is not an outbound call by the app.
+- **Subagents ran on `opencode-go/longcat-2.5-preview-free`**, per the owner's
+  standing instruction to re-check the allowed free lineup each session.
+
+## Open, and not claimed done
 
 - **The production signing key is still absent** (AM-222).
-  `check-release-config.mjs` reports `BLOCKED` and never substitutes a test
-  key. No production updater release exists.
-- **Independent review did not happen.** Both review attempts hit a provider
-  quota limit; by owner decision this round committed after verification with
-  review deferred. Treat the updater as unapproved until it is reviewed.
-- **The eleven native flows are `NOT RUN`** — the pre-existing P3.6 harness
-  defect (HEAD's own recorded run had all eleven `NOT RUN`), not a P5.4
-  regression. The Rule B freshness FAIL in that run is expected: the work was
-  uncommitted when the AppImage was built.
+  `check-release-config.mjs` reports `BLOCKED` and never substitutes a test key.
+  No production updater release exists.
+- **Independent review did not happen** (see above).
+- **CI has not run since 2026-10-06 morning.** Every run from `8d2dfd8` onward
+  fails in seconds with "the job was not started because recent account payments
+  have failed or your spending limit needs to be increased" — a GitHub billing
+  block, not a code failure. The local gates above are the only evidence for
+  these commits until the owner clears it.
+- **The eleven native flows are still `NOT RUN`** on further harness grounding
+  (a layer beyond fix 3: the add-patient dialog's and the pane openers' OCR
+  labels are not read). The Rule B freshness FAIL in that run is expected: the
+  work was uncommitted when the AppImage was built. P3.6 is attempt 8, V3
+  `FAIL` at 42/43, and no runtime acceptance is claimed.
 
-- **CI has not run since 2026-10-06 morning.** Every run from `8d2dfd8`
-  onward fails in seconds with "the job was not started because recent
-  account payments have failed or your spending limit needs to be
-  increased" — a GitHub billing block, not a code failure. The local gates
-  above are the only evidence for these commits until the owner clears it.
+## Two things a next session should know
+
+- **A `git checkout -- <file>` destroyed `server/src/maintenance.ts` mid-session**
+  (175 lines of P5.4 work). It was recovered in full from the dangling stash
+  commit `7d3855f` (`git show 7d3855f:server/src/maintenance.ts`). That dangling
+  commit still exists; prune it if you want the object gone. Prefer a file copy
+  over `git checkout` on a file with uncommitted work.
+- **The harness's `NOT RUN` exit is 4, not 0.** A `NOT RUN` row is a refusal,
+  never a pass, and the smoke's own exit code follows that.
 
 # Direction change — 2026-10-06 afternoon (current)
 
