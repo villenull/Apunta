@@ -152,46 +152,38 @@ function main() {
    * authorising one corrective attempt (AM-049), so it is reachable *only* by
    * naming the amendment that authorised it, and the generated dispatch says so.
    *
-   * Attempt 5 is the same keyed exception, once more and for one named card: the
-   * owner authorised exactly one further attempt for P3.4 (AM-189), so reaching it
-   * needs both `--attempt 5` and an `--attempt-exception` that passes the
-   * `AM-nnn` shape, and the card must be the one the amendment named. Every
-   * other card is refused at attempt 5 even with a well-formed amendment.
-   *
-   * Attempt 6 is the same keyed exception a third time, for the same single card:
-   * the owner authorised exactly one further, final attempt for P3.4 (AM-nnn),
-   * after the attempt-5 measurement-instrument defect was corrected and
-   * independently reviewed, so reaching it needs both `--attempt 6` and an
-   * `--attempt-exception` that passes the `AM-nnn` shape, and the card must be the
-   * one the amendment named. Every other card is refused at attempt 6 even with a
-   * well-formed amendment, and attempt 7 is refused for every card including that
-   * one — a keyed exception, not a raised ceiling. The dispatch says which
-   * amendment carried it, so the authority for the attempt is in the file the
-   * implementer is held to.
+   * P3.4 retains its historical fifth/sixth-attempt exceptions. AM-223
+   * reconciles two later recorded grants without raising the general ceiling:
+   * P5.3 attempt 5 requires AM-218; P3.6 attempt 7 requires AM-212 or AM-214.
+   * Every other card/amendment combination still fails closed.
    */
   const exception = opt('--attempt-exception');
   const FIFTH_ATTEMPT_CARD = 'P3.4'; // AM-189; changes only with another owner amendment
   const SIXTH_ATTEMPT_CARD = 'P3.4'; // AM-nnn (proposed); the only card with a sixth-attempt exception
-  if (attempt === 4 || attempt === 5 || attempt === 6) {
+  const fifthRepair = id === 'P5.3' && exception === 'AM-218';
+  const seventhRepair = id === 'P3.6' && (exception === 'AM-212' || exception === 'AM-214');
+  if (attempt === 4 || attempt === 5 || attempt === 6 || attempt === 7) {
     if (exception === undefined || !/^AM-\d{3}$/.test(exception))
       fail(
         2,
         `--attempt ${String(attempt)} requires --attempt-exception <AM-nnn> naming the owner amendment that authorised it`,
       );
-    if (attempt === 5 && id !== FIFTH_ATTEMPT_CARD)
+    if (attempt === 5 && id !== FIFTH_ATTEMPT_CARD && !fifthRepair)
       fail(
         2,
-        `--attempt 5 is refused: only ${FIFTH_ATTEMPT_CARD} may carry it, by naming the owner amendment in --attempt-exception; ${id} is not that card, and there is no attempt 6 for any card`,
+        `--attempt 5 is refused: only ${FIFTH_ATTEMPT_CARD} may carry it, except P5.3 with AM-218; ${id} has no attempt 6 under this grant`,
       );
     if (attempt === 6 && id !== SIXTH_ATTEMPT_CARD)
       fail(
         2,
-        `--attempt 6 is refused: only ${SIXTH_ATTEMPT_CARD} may carry it, by naming the owner amendment in --attempt-exception; ${id} is not that card, and there is no attempt 7 for any card`,
+        `--attempt 6 is refused: only ${SIXTH_ATTEMPT_CARD} may carry it; ${id} has no attempt 7 under this grant`,
       );
-  } else if (attempt >= 7) {
+    if (attempt === 7 && !seventhRepair)
+      fail(2, '--attempt 7 is refused: only P3.6 with AM-212 or AM-214 may carry it; no attempt 8');
+  } else if (attempt >= 8) {
     fail(
       2,
-      `--attempt must be 1, 2, 3, 4, 5 or 6 with --attempt-exception; ${attempt} is beyond any authorised budget`,
+      `--attempt ${attempt} is beyond any authorised budget; no attempt 8`,
     );
   } else if (!(attempt >= 1 && attempt <= 3)) {
     fail(2, '--attempt must be 1, 2 or 3');
@@ -388,7 +380,11 @@ function main() {
             ? '3, plus three corrective attempts the owner authorised by ' +
               exception +
               ' — there is no attempt 7'
-            : '3'
+            : attempt === 7
+              ? '3, plus four corrective attempts the owner authorised by ' +
+                exception +
+                ' — there is no attempt 8'
+              : '3'
     }. Checkpoint: \`docs/v2/state/cards/${id}.json\`.`,
     '- Do not pull, merge, rebase or reset. This file was generated at ' +
       (generatedAt ? `\`${generatedAt}\`` : 'an unrecorded commit') +
