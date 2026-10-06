@@ -147,8 +147,9 @@ export default tseslint.config(
     // app does**, in a short-lived process the shell spawns for setup, never
     // in the Fastify server and never while a note exists. The server's egress
     // guard is untouched and still rejects every non-loopback host. Setup-time
-    // model acquisition is the single carve-out CLAUDE.md hard rule 1 names;
-    // "check for updates" and anything else is still forbidden.
+    // model acquisition is the first carve-out CLAUDE.md hard rule 1 names;
+    // the second is the desktop shell's signed update check, which lives in
+    // `src-tauri/` and never in JavaScript. Anything else is still forbidden.
     //
     // Mentioning a URL is not the same as being able to reach one, so the real
     // constraint is `ALLOWED_DOWNLOAD_HOSTS` in that file: `assertAllowedHost`

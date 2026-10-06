@@ -128,10 +128,23 @@ blank template, examples or typed names. Change formats later in Settings.
 
 - The running app talks only to `127.0.0.1` / `localhost`.
 - Writing and transcription use models stored on the Mac.
-- There is no account, analytics, crash reporting or update check.
-- The one network exception is explicit first-run model acquisition. The
-  installer downloads pinned model files from its allow-list, verifies their
-  checksums, and is not part of the running server or browser app.
+- There is no account, analytics or crash reporting.
+- Two network exceptions, both outside the running server and browser app:
+  explicit first-run model acquisition (the installer downloads pinned model
+  files from its allow-list and verifies their checksums), and the desktop
+  app's update check (below).
+- **Update check (desktop app only).** The check contacts `github.com` and the
+  release-asset host it redirects to. It sends the request metadata any HTTPS
+  request carries (IP address, TLS, user agent, and the target, architecture and
+  version in the URL) and no note content, no patient data and no app-generated
+  identifier. It can be turned off in Settings › About, and the app works
+  offline. *(Español: la búsqueda de actualizaciones, solo en la app de
+  escritorio, se conecta con `github.com` y con el servidor de archivos al que
+  este redirige. Envía los metadatos que lleva cualquier solicitud HTTPS
+  —dirección IP, TLS, agente de usuario y el sistema, la arquitectura y la
+  versión en la URL— y ningún contenido de notas, ningún dato de pacientes ni
+  ningún identificador generado por la app. Se puede desactivar en Ajustes ›
+  Acerca de, y la app funciona sin conexión.)*
 - Apunta has no password of its own. Lock the screen, use a separate macOS
   account on a shared Mac, and enable FileVault before real notes go in.
 - Backups can contain patient data. Keep them encrypted and do not put them in

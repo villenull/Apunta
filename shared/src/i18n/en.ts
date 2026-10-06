@@ -2309,6 +2309,117 @@ export const en = {
     text: 'v0.1 | More about us on {github}',
     kind: { github: 'text' },
   },
+  'update.available': {
+    text: 'Version {version} is available.',
+  },
+  'update.download': {
+    text: 'Download',
+  },
+  'update.downloading': {
+    text: 'Downloading version {version}…',
+  },
+  'update.verified': {
+    text: 'Version {version} is downloaded and ready. Installing restarts Apunta.',
+  },
+  'update.install': {
+    text: 'Install and restart',
+  },
+  'update.preparing': {
+    text: 'Preparing the update. Please leave Apunta open.',
+  },
+  'update.installing': {
+    text: 'Installing the update…',
+  },
+  'update.relaunching': {
+    text: 'Apunta is restarting…',
+  },
+  'update.healthCheck': {
+    text: 'Checking the new version…',
+  },
+  'update.done': {
+    text: 'Apunta was updated to version {version}.',
+  },
+  'update.dismiss': {
+    text: 'Dismiss',
+  },
+  'update.rejected': {
+    text: 'The update was rejected because it could not be verified. Nothing was changed.',
+  },
+  'update.quiesceRefused': {
+    text: 'The update is waiting for you to finish what you are doing: save or close open notes and stop any recording, then try again.',
+  },
+  'update.snapshotFailed': {
+    text: 'A safety copy of your notes could not be made, so nothing was installed.',
+  },
+  'update.installFailed': {
+    text: 'The update could not be installed. This version keeps running.',
+  },
+  'update.offline': {
+    text: 'Could not reach the update server. Check your connection and try again.',
+  },
+  'update.notConfigured': {
+    text: 'Updates are not set up in this build.',
+  },
+  'update.settingsTitle': {
+    text: 'Updates',
+  },
+  'update.autoCheck': {
+    text: 'Check for updates automatically',
+  },
+  'update.checkNow': {
+    text: 'Check for updates',
+  },
+  'update.checking': {
+    text: 'Checking for updates…',
+  },
+  'update.upToDate': {
+    text: 'No update is available.',
+  },
+  'update.privacy': {
+    text: 'Checking for updates contacts the project’s release host and the file host it redirects to. It sends only what any secure web request carries (your IP address, your system type and the app version) and no notes, no patient data and no identifier. You can turn it off here, and Apunta works fully offline.',
+  },
+  'recovery.title': {
+    text: 'Apunta did not start normally after an update',
+  },
+  'recovery.body': {
+    text: 'To protect your notes, Apunta is in recovery mode and nothing can be changed. You can restore the safety copy made just before the update, or go back to the previous version.',
+  },
+  'recovery.details': {
+    text: 'Update from version {from} to version {to}.',
+  },
+  'recovery.restore': {
+    text: 'Restore the safety copy',
+  },
+  'recovery.restoreHelp': {
+    text: 'Replaces your notes with the copy made just before the update. Anything written after that copy is lost.',
+  },
+  'recovery.restoreConfirm': {
+    text: 'Yes, restore it',
+  },
+  'recovery.cancel': {
+    text: 'Cancel',
+  },
+  'recovery.reinstall': {
+    text: 'Reinstall the previous version',
+  },
+  'recovery.reinstallHelp': {
+    text: 'Restores the pre-update safety copy before reinstalling the previous version. Anything written after that copy is lost.',
+  },
+  'recovery.reinstallConfirm': {
+    text: 'Yes, restore the safety copy and reinstall',
+  },
+  'recovery.reinstallUnavailable': {
+    text: 'The previous version is not available on this computer.',
+  },
+  'recovery.restored': {
+    text: 'The safety copy was restored.',
+  },
+  'recovery.reinstalling': {
+    text: 'Reinstalling the previous version. Apunta will restart.',
+  },
+  'recovery.failed': {
+    text: 'That did not work: {message}',
+  },
   /*
    * The delete action on a format row, beside its Edit. It acts at once
    * (owner, 2026-10-05): a format is a shape she can write again, and the
@@ -2748,4 +2859,38 @@ export const en = {
     plural: { one: ', {count} new patient', other: ', {count} new patients' },
     kind: { count: 'number' },
   },
+
+  /*
+   * The window-close check and the quiesce freeze (C-UPD@1), `CloseConfirm.tsx`
+   * and `WorkspaceFreeze.tsx`. The blocker names are the server's vocabulary;
+   * the shell never classifies them, so this is the only place they get words.
+   */
+  'workspaceFreeze.message': {
+    text: 'Apunta is getting ready to update. Editing is paused for a moment.',
+  },
+  'closeConfirm.title': { text: 'Apunta cannot close yet' },
+  'closeConfirm.intro': { text: 'Finish these first, then close again:' },
+  'closeConfirm.blocker.save_error': { text: 'A note has changes that could not be saved.' },
+  'closeConfirm.blocker.conflict': { text: 'A note was changed in another window and needs your decision.' },
+  'closeConfirm.blocker.unsaved_text': {
+    text: 'The new note has typed text or a recording that has not been saved.',
+  },
+  'closeConfirm.blocker.recording': { text: 'A recording is still running.' },
+  'closeConfirm.blocker.save': { text: 'A save is still in progress.' },
+  'closeConfirm.blocker.transcription': { text: 'A recording is still being transcribed.' },
+  'closeConfirm.blocker.draft': { text: 'A draft note is still being written.' },
+  'closeConfirm.blocker.refine': { text: 'A note is still being refined.' },
+  'closeConfirm.blocker.plan': { text: 'A treatment plan is still being prepared.' },
+  'closeConfirm.blocker.briefing': { text: 'A session briefing is still being prepared.' },
+  'closeConfirm.blocker.brainstorm': { text: 'A brainstorm is still running.' },
+  'closeConfirm.blocker.import': { text: 'An import is still running.' },
+  'closeConfirm.blocker.restore': { text: 'A restore is still running.' },
+  'closeConfirm.blocker.backup': { text: 'A backup is still running.' },
+  'closeConfirm.blocker.no_response': {
+    text: 'A window closed without reporting, so Apunta cannot be sure nothing was left unsaved. Restart Apunta to clear this.',
+  },
+  'closeConfirm.blocker.other': { text: 'Something is still in progress.' },
+  'closeConfirm.keepOpen': { text: 'Keep Apunta open' },
+  'closeConfirm.checkAgain': { text: 'Check again and close' },
+  'closeConfirm.discardRecording': { text: 'Discard the recording and close' },
 } as const satisfies Record<string, Message>;

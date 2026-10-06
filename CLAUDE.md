@@ -27,10 +27,12 @@ under the first-pass message in the note's chat.
 1. **Privacy is the product.** No outbound network calls at runtime, ever —
    only `127.0.0.1`/`localhost`. Never use the browser SpeechRecognition /
    Web Speech API (it can send audio to Google). No telemetry, no crash
-   reporting, no update check, no CDN assets at runtime (bundle everything),
-   no external fonts.
+   reporting, no CDN assets at runtime (bundle everything), no external fonts.
+   A link the user chooses to click is not an outbound call by the app:
+   Settings › About names the public repository and opens it in the user's
+   browser.
 
-   **One exception, and it is the only one: model acquisition.** The installer
+   **The first exception: model acquisition.** The installer
    / first-run component — never the server, never the browser tab — may
    download model weights, provided it (a) runs only when the user explicitly
    starts it, (b) contacts only hosts on the pinned allow-list in
@@ -40,8 +42,20 @@ under the first-pass message in the note's chat.
    checksum, and (e) does not run again once the models are there. The
    server's egress guard is not relaxed for this and never should be: the
    downloader is a separate short-lived process, and a test asserts that
-   nothing in `server/`, `web/` or `shared/` imports it. Anything else that
-   wants the network is forbidden, including "check for updates".
+   nothing in `server/`, `web/` or `shared/` imports it.
+
+   **The second exception: the desktop updater.** The Tauri shell — never the
+   server, never the browser tab — may check for and download a signed update
+   (P5.4, C-UPD@1), provided it (a) contacts only the pinned release endpoint
+   and the redirect hosts on its allow-list in `src-tauri/` (`github.com`,
+   `release-assets.githubusercontent.com`),
+   (b) sends no note content, no patient data and no app-generated identifier
+   beyond the request metadata any HTTPS request carries, (c) verifies the
+   signature against the production public key before keeping a byte, (d)
+   can be turned off by the user and is silent when offline, and (e) is inert
+   without a configured key. The server's egress guard stays unchanged: no
+   route, page or shared module may make an outbound call, and the guard's
+   tests hold that. Anything else that wants the network is forbidden.
 2. Real patient text never goes in fixtures, tests, or commits. Use the
    prototype's sample data (John Smith etc.).
 3. `APUNTA_FAKE_AI=1` must always keep the entire app runnable and

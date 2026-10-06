@@ -1976,6 +1976,117 @@ export const esMX = {
     text: 'v0.1 | Más sobre nosotros en {github}',
     kind: { github: 'text' },
   },
+  'update.available': {
+    text: 'La versión {version} está disponible.',
+  },
+  'update.download': {
+    text: 'Descargar',
+  },
+  'update.downloading': {
+    text: 'Descargando la versión {version}…',
+  },
+  'update.verified': {
+    text: 'La versión {version} está descargada y lista. Al instalarla, Apunta se reinicia.',
+  },
+  'update.install': {
+    text: 'Instalar y reiniciar',
+  },
+  'update.preparing': {
+    text: 'Preparando la actualización. Deja Apunta abierto.',
+  },
+  'update.installing': {
+    text: 'Instalando la actualización…',
+  },
+  'update.relaunching': {
+    text: 'Apunta se está reiniciando…',
+  },
+  'update.healthCheck': {
+    text: 'Revisando la versión nueva…',
+  },
+  'update.done': {
+    text: 'Apunta se actualizó a la versión {version}.',
+  },
+  'update.dismiss': {
+    text: 'Descartar',
+  },
+  'update.rejected': {
+    text: 'Se rechazó la actualización porque no se pudo verificar. No se cambió nada.',
+  },
+  'update.quiesceRefused': {
+    text: 'La actualización espera a que termines lo que estás haciendo: guarda o cierra las notas abiertas y detén cualquier grabación, y vuelve a intentarlo.',
+  },
+  'update.snapshotFailed': {
+    text: 'No se pudo hacer una copia de seguridad de tus notas, así que no se instaló nada.',
+  },
+  'update.installFailed': {
+    text: 'No se pudo instalar la actualización. Esta versión sigue funcionando.',
+  },
+  'update.offline': {
+    text: 'No se pudo conectar con el servidor de actualizaciones. Revisa tu conexión e inténtalo de nuevo.',
+  },
+  'update.notConfigured': {
+    text: 'Esta versión no tiene actualizaciones configuradas.',
+  },
+  'update.settingsTitle': {
+    text: 'Actualizaciones',
+  },
+  'update.autoCheck': {
+    text: 'Buscar actualizaciones automáticamente',
+  },
+  'update.checkNow': {
+    text: 'Buscar actualizaciones',
+  },
+  'update.checking': {
+    text: 'Buscando actualizaciones…',
+  },
+  'update.upToDate': {
+    text: 'No hay ninguna actualización disponible.',
+  },
+  'update.privacy': {
+    text: 'Buscar actualizaciones se conecta con el servidor de versiones del proyecto y con el servidor de archivos al que este redirige. Solo envía lo que lleva cualquier solicitud web segura (tu dirección IP, tu tipo de sistema y la versión de la app), sin notas, sin datos de pacientes y sin ningún identificador. Puedes desactivarlo aquí, y Apunta funciona por completo sin conexión.',
+  },
+  'recovery.title': {
+    text: 'Apunta no inició con normalidad después de una actualización',
+  },
+  'recovery.body': {
+    text: 'Para proteger tus notas, Apunta está en modo de recuperación y no se puede cambiar nada. Puedes restaurar la copia de seguridad hecha justo antes de la actualización o volver a la versión anterior.',
+  },
+  'recovery.details': {
+    text: 'Actualización de la versión {from} a la versión {to}.',
+  },
+  'recovery.restore': {
+    text: 'Restaurar la copia de seguridad',
+  },
+  'recovery.restoreHelp': {
+    text: 'Reemplaza tus notas con la copia hecha justo antes de la actualización. Lo que se haya escrito después de esa copia se pierde.',
+  },
+  'recovery.restoreConfirm': {
+    text: 'Sí, restaurarla',
+  },
+  'recovery.cancel': {
+    text: 'Cancelar',
+  },
+  'recovery.reinstall': {
+    text: 'Reinstalar la versión anterior',
+  },
+  'recovery.reinstallHelp': {
+    text: 'Restaura la copia de seguridad previa a la actualización antes de reinstalar la versión anterior. Lo que se haya escrito después de esa copia se pierde.',
+  },
+  'recovery.reinstallConfirm': {
+    text: 'Sí, restaurar la copia de seguridad y reinstalar',
+  },
+  'recovery.reinstallUnavailable': {
+    text: 'La versión anterior no está disponible en esta computadora.',
+  },
+  'recovery.restored': {
+    text: 'Se restauró la copia de seguridad.',
+  },
+  'recovery.reinstalling': {
+    text: 'Reinstalando la versión anterior. Apunta se reiniciará.',
+  },
+  'recovery.failed': {
+    text: 'No funcionó: {message}',
+  },
   'settings.deleteFormat': {
     text: 'Eliminar',
   },
@@ -2466,4 +2577,35 @@ export const esMX = {
     },
     kind: { count: 'number' },
   },
+
+  'workspaceFreeze.message': {
+    text: 'Apunta se está preparando para actualizarse. La edición está en pausa un momento.',
+  },
+  'closeConfirm.title': { text: 'Apunta todavía no puede cerrarse' },
+  'closeConfirm.intro': { text: 'Termina esto primero y vuelve a cerrar:' },
+  'closeConfirm.blocker.save_error': { text: 'Una nota tiene cambios que no se pudieron guardar.' },
+  'closeConfirm.blocker.conflict': {
+    text: 'Una nota se cambió en otra ventana y necesita que decidas qué hacer.',
+  },
+  'closeConfirm.blocker.unsaved_text': {
+    text: 'La nota nueva tiene texto escrito o una grabación que no se han guardado.',
+  },
+  'closeConfirm.blocker.recording': { text: 'Todavía hay una grabación en curso.' },
+  'closeConfirm.blocker.save': { text: 'Todavía hay un guardado en curso.' },
+  'closeConfirm.blocker.transcription': { text: 'Todavía se está transcribiendo una grabación.' },
+  'closeConfirm.blocker.draft': { text: 'Todavía se está escribiendo un borrador de nota.' },
+  'closeConfirm.blocker.refine': { text: 'Todavía se está refinando una nota.' },
+  'closeConfirm.blocker.plan': { text: 'Todavía se está preparando un plan de tratamiento.' },
+  'closeConfirm.blocker.briefing': { text: 'Todavía se está preparando un resumen de sesión.' },
+  'closeConfirm.blocker.brainstorm': { text: 'Todavía hay una lluvia de ideas en curso.' },
+  'closeConfirm.blocker.import': { text: 'Todavía hay una importación en curso.' },
+  'closeConfirm.blocker.restore': { text: 'Todavía hay una restauración en curso.' },
+  'closeConfirm.blocker.backup': { text: 'Todavía hay una copia de seguridad en curso.' },
+  'closeConfirm.blocker.no_response': {
+    text: 'Una ventana se cerró sin avisar, así que Apunta no puede estar seguro de que no quedó nada sin guardar. Reinicia Apunta para quitar este aviso.',
+  },
+  'closeConfirm.blocker.other': { text: 'Todavía hay algo en curso.' },
+  'closeConfirm.keepOpen': { text: 'Mantener Apunta abierto' },
+  'closeConfirm.checkAgain': { text: 'Revisar de nuevo y cerrar' },
+  'closeConfirm.discardRecording': { text: 'Descartar la grabación y cerrar' },
 } satisfies Record<MessageKey, Message>;

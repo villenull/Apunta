@@ -592,3 +592,30 @@ export type { SectionRole, SectionRoleId } from './section-roles.js';
 export { captureJobContext } from './job-context.js';
 export type { JobContext, JobContextInput } from './job-context.js';
 export { platformDataDir } from './platform-paths.js';
+
+export {
+  CloseDecisionRequestSchema,
+  CloseStateSchema,
+  RecoveryPhaseSchema,
+  RecoveryStatusSchema,
+  UPDATE_ACTIONS,
+  UPDATE_CODES,
+  UPDATE_STATES,
+  UpdateActionSchema,
+  UpdateCodeSchema,
+  UpdateAutoCheckRequestSchema,
+  UpdateStateSchema,
+  UpdateStatusResponseSchema,
+} from './update.js';
+export type {
+  CloseDecisionRequest,
+  CloseState,
+  RecoveryPhase,
+  RecoveryStatus,
+  StartupContext,
+  UpdateAction,
+  UpdateCode,
+  UpdateAutoCheckRequest,
+  UpdateState,
+  UpdateStatusResponse,
+} from './update.js';

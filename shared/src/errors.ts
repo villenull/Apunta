@@ -28,6 +28,10 @@ export const ApiErrorCodeSchema = z.enum([
   // C-SNAP@1 rule 3: a backup was already running and the second request waited
   // its 60 s. A 409 — the request was fine, it lost the wait.
   'backup_in_progress',
+  // P5.4: an updater or close-decision request that arrived in a state that
+  // cannot take it (a check while downloading, a close decision when no close
+  // was refused). A 409, like `backup_in_progress`.
+  'invalid_state',
   // C-UPD@1's Quiescence sentence: "The server enters maintenance mode: new
   // jobs and writes get 503 `maintenance`". A 503 — the request was fine and
   // the moment is wrong, like `backup_in_progress`, and the code is what the

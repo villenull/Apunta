@@ -7,7 +7,8 @@ you this file wants to know.
 
 **What you need:** a Mac with an Apple chip (M1 or later), macOS 14 or newer,
 about 15 GB of free space, and an internet connection for the first hour.
-After that, Apunta never uses the internet again.
+After that, Apunta uses the internet only if you leave the optional update
+check on (see section 6).
 
 ---
 
@@ -189,10 +190,39 @@ description.
 
 ## 6. Updates
 
-Apunta does not check for updates, on purpose. Checking would mean contacting a
-server, and the whole point of this app is that it never does. When there is a
-new version you will be given a new **Apunta.dmg**; install it the same way,
-over the top. Your notes are in a separate folder and are not touched.
+The desktop app can check for a new version. This is the only thing in Apunta,
+besides the first-hour model download, that uses the internet, so here is
+exactly what it does:
+
+- It contacts `github.com` and the release-asset host it redirects to.
+- It sends what any HTTPS request carries (your IP address, TLS, a user agent,
+  and the system, architecture and version in the address). It sends **no note
+  content, no patient data and no identifier** made by Apunta.
+- It checks about 30 seconds after Apunta opens, and again when you press
+  **Check for updates** in Settings › About. You can turn the automatic check
+  off there. If you are offline, nothing happens and nothing is shown.
+- Nothing installs by itself. You press **Download**, then **Install and
+  restart**. Apunta first waits for you to finish what you are doing, makes a
+  safety copy of your notes, installs, and restarts. If the new version does
+  not start properly, Apunta opens in a recovery screen that lets you restore
+  that safety copy or go back to the previous version, which is kept beside the
+  new one.
+
+Español: la búsqueda de actualizaciones se conecta con `github.com` y con el
+servidor de archivos al que este redirige. Envía lo que lleva cualquier
+solicitud HTTPS (tu dirección IP, TLS, un agente de usuario, y el sistema, la
+arquitectura y la versión en la dirección) y **ningún contenido de notas,
+ningún dato de pacientes ni ningún identificador** creado por Apunta. Se puede
+desactivar en Ajustes › Acerca de, y la app funciona sin conexión. Nada se
+instala solo: tú eliges **Descargar** y después **Instalar y reiniciar**. Antes
+de instalar, Apunta espera a que termines lo que estás haciendo y guarda una
+copia de seguridad de tus notas; si la versión nueva no inicia bien, abre una
+pantalla de recuperación para restaurar esa copia o volver a la versión
+anterior.
+
+The macOS build has no updater yet: you are given a new **Apunta.dmg** and
+install it over the top. Your notes are in a separate folder and are not
+touched.
 
 ---
 
