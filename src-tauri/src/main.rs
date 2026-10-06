@@ -27,18 +27,20 @@
 //! file is the wiring, kept as thin as the contract allows.
 
 mod bridge;
+mod fetch;
 mod launch;
 mod lifecycle;
 mod permissions;
 mod quit;
 mod signals;
+mod updater;
 
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
 use std::sync::mpsc::{self, Receiver};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
@@ -97,16 +99,78 @@ struct Spawned {
     /// The one-shot quit state shared by the window, the runtime and the signal
     /// watchdog. See `quit.rs`.
     gate: QuitGate,
+    /// Whether the child is still running. A close request with no server to
+    /// ask goes straight to the ladder instead of waiting for a reply that
+    /// cannot come.
+    alive: AtomicBool,
+    control: Control,
 }
+
+/// The updater and native-close side of the shell: the pure machine from
+/// `updater.rs` plus what its effects need to hold between steps.
+struct Control {
+    machine: Mutex<updater::Machine>,
+    settings: Option<fetch::Settings>,
+    /// The release the last check announced.
+    announced: Mutex<Option<Arc<tauri_plugin_updater::Update>>>,
+    /// The verified bytes of that release, kept until install or rejection.
+    verified: Mutex<Option<Vec<u8>>>,
+    /// What to start once the quit ladder has finished, if anything.
+    relaunch: Mutex<Option<Relaunch>>,
+    health_boot: AtomicBool,
+    recovering: AtomicBool,
+    watching: AtomicBool,
+    health_target: Mutex<Option<String>>,
+    health_ready: Mutex<Option<(u16, String)>>,
+    context_id: Mutex<Option<String>>,
+    previous_version: Mutex<Option<String>>,
+    recovery_target: Mutex<Option<String>>,
+}
+
+/// A pending relaunch: the update id the new shell hands its server, if any.
+struct Relaunch {
+    handoff: Option<String>,
+    version: Option<String>,
+}
+
+impl Default for Control {
+    fn default() -> Self {
+        let settings = fetch::settings();
+        // Only has to differ between shell runs: the first snapshot id of a run
+        // must never equal one an earlier run's journal holds.
+        let seed = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|elapsed| elapsed.as_millis() as u64)
+            .unwrap_or(0);
+        Control {
+            machine: Mutex::new(updater::Machine::new(settings.is_some(), seed)),
+            settings,
+            announced: Mutex::new(None),
+            verified: Mutex::new(None),
+            relaunch: Mutex::new(None),
+            health_boot: AtomicBool::new(false),
+            recovering: AtomicBool::new(false),
+            watching: AtomicBool::new(false),
+            health_target: Mutex::new(None),
+            health_ready: Mutex::new(None),
+            context_id: Mutex::new(None),
+            previous_version: Mutex::new(None),
+            recovery_target: Mutex::new(None),
+        }
+    }
+}
+
+/// A close check that gets no reply in this long is a refusal. The server's
+/// own drain budget is 30 s; this adds the margin.
+const CLOSE_REPLY_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(45);
 
 fn main() {
     let env = Env::from_process();
     // A session logout, a `kill`, or Ctrl-C in a terminal must take the same path
     // a window close does, or the server this shell started is orphaned.
     signals::install_terminate_handlers();
-    let app = tauri::Builder::default()
-        .manage(Spawned::default())
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+    let mut builder = tauri::Builder::default().manage(Spawned::default()).plugin(
+        tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             // The second launch focuses the window rather than starting a second
             // server. Data ownership is C-OWN@1's, not this plugin's.
             if let Some(window) = app.get_webview_window("main") {
@@ -114,19 +178,52 @@ fn main() {
                 let _ = window.unminimize();
                 let _ = window.set_focus();
             }
-        }))
+        }),
+    );
+    // The updater is registered only when the build carries a key: without one
+    // the shell is "not configured" and nothing here can reach the network.
+    if let Some(settings) = fetch::settings() {
+        builder = builder.plugin(
+            tauri_plugin_updater::Builder::new()
+                .pubkey(settings.pubkey)
+                .build(),
+        );
+    }
+    let app = builder
         .setup(move |app| {
             // Every refusal — identity, missing test environment, live port,
             // missing bundle — stops here, before anything is spawned and
             // before any database is touched.
-            if let Err(error) = boot(app.handle(), &env) {
+            if let Err(error) = boot(
+                app.handle(),
+                &env,
+                env.get("APUNTA_UPDATE_RECOVERY") == Some("1"),
+            ) {
                 eprintln!("apunta: refusing to start: {error}");
                 app.handle().exit(REFUSAL_EXIT_CODE);
                 return Err(Box::new(error));
             }
             Ok(())
         })
-        .build(tauri::generate_context!())
+        .build({
+            let mut context = tauri::generate_context!();
+            if let Some(settings) = fetch::settings() {
+                let transport = if cfg!(feature = "test-updater") {
+                    ",\"dangerousInsecureTransportProtocol\":true"
+                } else {
+                    ""
+                };
+                let config = format!(
+                    "{{\"pubkey\":{}{transport}}}",
+                    bridge::json_string(&settings.pubkey)
+                );
+                context.config_mut().plugins.0.insert(
+                    "updater".into(),
+                    config.parse().expect("owned updater configuration"),
+                );
+            }
+            context
+        })
         .expect("apunta: the Tauri context is generated at build time");
 
     // The second door: the runtime's own exit request, which arrives once the
@@ -190,14 +287,293 @@ fn begin_quit(handle: &tauri::AppHandle, door: &str) {
     std::thread::spawn(move || {
         quit_ladder(pgid, stdin);
         handle.state::<Spawned>().gate.finish();
+        start_relaunch(&handle);
         // After `finish`, `in_progress` is false, so the `ExitRequested` this
         // raises is allowed through rather than prevented.
         handle.exit(0);
     });
 }
 
+/// Starts the app again when the quit that just finished was an update's or a
+/// recovery's relaunch. Runs after the ladder, so the server is down, the data
+/// lock is released and the new shell finds no live owner.
+fn start_relaunch(handle: &tauri::AppHandle) {
+    let state = handle.state::<Spawned>();
+    let plan = state
+        .control
+        .relaunch
+        .lock()
+        .ok()
+        .and_then(|mut slot| slot.take());
+    let Some(plan) = plan else {
+        return;
+    };
+    let Some(target) = fetch::relaunch_target() else {
+        eprintln!("apunta: no executable to relaunch");
+        return;
+    };
+    tauri_plugin_single_instance::destroy(handle);
+    let expected = plan
+        .version
+        .or_else(|| {
+            state
+                .control
+                .announced
+                .lock()
+                .ok()
+                .and_then(|slot| slot.as_ref().map(|update| update.version.clone()))
+        })
+        .unwrap_or_else(|| handle.package_info().version.to_string());
+    let nonce = new_nonce();
+    if let Err(error) = fetch::supervise(&target, plan.handoff.as_deref(), &nonce, &expected, false)
+    {
+        eprintln!("apunta: replacement failed: {error}; starting read-only recovery");
+        let previous = target.with_file_name(fetch::PREVIOUS_NAME);
+        let recovery = if previous.is_file() { previous } else { target };
+        let recovery_version = if recovery
+            .file_name()
+            .is_some_and(|name| name == fetch::PREVIOUS_NAME)
+        {
+            state
+                .control
+                .previous_version
+                .lock()
+                .ok()
+                .and_then(|version| version.clone())
+                .unwrap_or_else(|| handle.package_info().version.to_string())
+        } else {
+            expected
+        };
+        if let Err(error) = fetch::supervise(&recovery, None, &new_nonce(), &recovery_version, true)
+        {
+            eprintln!(
+                "apunta: recovery could not start: {error}; previous image remains available"
+            );
+        }
+    }
+}
+
+/// Called once for a failed normal health attempt; never retries normal boot.
+fn enter_recovery(handle: &tauri::AppHandle) {
+    let state = handle.state::<Spawned>();
+    if state.control.recovering.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    state.control.health_boot.store(false, Ordering::SeqCst);
+    let pgid = state.pgid.swap(0, Ordering::SeqCst);
+    let stdin = state.stdin.lock().ok().and_then(|mut slot| slot.take());
+    show_splash(handle);
+    if let Some(window) = handle.get_webview_window("main") {
+        let _ = window.destroy();
+    }
+    let handle = handle.clone();
+    std::thread::spawn(move || {
+        quit_ladder(pgid, stdin);
+        if let Err(error) = boot(&handle, &Env::from_process(), true) {
+            eprintln!("apunta: recovery start failed: {error}");
+            show_error(&handle, "recovery_failed");
+        }
+    });
+}
+
+static NATIVE_READY_SENT: AtomicBool = AtomicBool::new(false);
+
+fn acknowledge_native_ready(port: u16, version: &str, recovery: bool) {
+    if let Ok(nonce) = std::env::var("APUNTA_NATIVE_HANDOFF") {
+        if !NATIVE_READY_SENT.swap(true, Ordering::SeqCst) {
+            let _ = std::io::stdout()
+                .write_all(bridge::native_ready_line(&nonce, port, version, recovery).as_bytes());
+            let _ = std::io::stdout().flush();
+        }
+    }
+}
+/// Feeds the updater machine one input and performs what it asks for.
+fn dispatch(handle: &tauri::AppHandle, input: updater::Input) {
+    let state = handle.state::<Spawned>();
+    let effects = {
+        let mut machine = state
+            .control
+            .machine
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        machine.step(input)
+    };
+    for effect in effects {
+        perform(handle, effect);
+    }
+}
+
+/// Writes one line to the child's stdin, if it still has one.
+fn write_to_child(handle: &tauri::AppHandle, line: &str) {
+    let state = handle.state::<Spawned>();
+    let Ok(mut slot) = state.stdin.lock() else {
+        return;
+    };
+    if let Some(stdin) = slot.as_mut() {
+        if let Err(error) = stdin
+            .write_all(line.as_bytes())
+            .and_then(|()| stdin.flush())
+        {
+            eprintln!("apunta: a bridge line could not be written: {error}");
+        }
+    }
+}
+
+/// Carries out one thing the updater machine asked for.
+fn perform(handle: &tauri::AppHandle, effect: updater::Effect) {
+    use updater::{Effect, Input};
+    match effect {
+        Effect::Status(status) => write_to_child(
+            handle,
+            &bridge::update_status_line(
+                status.state.word(),
+                status.version.as_deref(),
+                status.code,
+            ),
+        ),
+        Effect::WriteQuiesce => write_to_child(handle, bridge::quiesce_line()),
+        Effect::WriteSnapshotRequest(id) => {
+            write_to_child(handle, &bridge::snapshot_request_line(&id))
+        }
+        Effect::WriteRelease => write_to_child(handle, bridge::maintenance_release_line()),
+        Effect::WriteHealthConfirm(id) => write_to_child(handle, &bridge::health_confirm_line(&id)),
+        Effect::Check => {
+            let handle = handle.clone();
+            tauri::async_runtime::spawn(async move {
+                let state = handle.state::<Spawned>();
+                let control = &state.control;
+                let result = match control.settings.as_ref() {
+                    Some(settings) => match fetch::check(&handle, settings).await {
+                        Ok(Some(update)) => {
+                            let version = update.version.clone();
+                            if let Ok(mut slot) = control.announced.lock() {
+                                *slot = Some(Arc::new(update));
+                            }
+                            Ok(Some(version))
+                        }
+                        Ok(None) => Ok(None),
+                        Err(failure) => Err(failure),
+                    },
+                    None => Err(updater::CheckFailure::Offline),
+                };
+                dispatch(&handle, Input::Checked(result));
+            });
+        }
+        Effect::Download => {
+            let handle = handle.clone();
+            tauri::async_runtime::spawn(async move {
+                let state = handle.state::<Spawned>();
+                let control = &state.control;
+                let announced = control.announced.lock().ok().and_then(|slot| slot.clone());
+                let result = match announced {
+                    Some(update) => fetch::download(&update).await.map(|bytes| {
+                        if let Ok(mut slot) = control.verified.lock() {
+                            *slot = Some(bytes);
+                        }
+                    }),
+                    None => Err(updater::DownloadFailure::Offline),
+                };
+                dispatch(&handle, Input::Downloaded(result));
+            });
+        }
+        Effect::Discard => {
+            let state = handle.state::<Spawned>();
+            let control = &state.control;
+            if let Ok(mut slot) = control.verified.lock() {
+                *slot = None;
+            }
+            if let Ok(mut slot) = control.announced.lock() {
+                *slot = None;
+            };
+        }
+        Effect::Install => {
+            let handle = handle.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let state = handle.state::<Spawned>();
+                let control = &state.control;
+                let mut rollback_failed = false;
+                let result = {
+                    let update = control.announced.lock().ok();
+                    let bytes = control.verified.lock().ok();
+                    match (
+                        update.as_ref().and_then(|slot| slot.as_ref()),
+                        bytes.as_ref().and_then(|slot| slot.as_ref()),
+                    ) {
+                        (Some(update), Some(bytes)) => {
+                            fetch::install(update, bytes).map_err(|error| {
+                                rollback_failed =
+                                    matches!(&error, fetch::InstallError::Rollback(_));
+                                eprintln!("apunta: {error}");
+                            })
+                        }
+                        _ => Err(()),
+                    }
+                };
+                if rollback_failed {
+                    enter_recovery(&handle);
+                } else {
+                    if result.is_ok() {
+                        if let Ok(mut bytes) = control.verified.lock() {
+                            *bytes = None;
+                        }
+                    }
+                    dispatch(&handle, Input::Installed(result));
+                }
+            });
+        }
+        Effect::Relaunch { handoff } => {
+            let state = handle.state::<Spawned>();
+            let (handoff, version) = if state.control.recovering.load(Ordering::SeqCst) {
+                (
+                    state
+                        .control
+                        .context_id
+                        .lock()
+                        .ok()
+                        .and_then(|id| id.clone()),
+                    state
+                        .control
+                        .recovery_target
+                        .lock()
+                        .ok()
+                        .and_then(|version| version.clone()),
+                )
+            } else {
+                (handoff, None)
+            };
+            if let Ok(mut slot) = state.control.relaunch.lock() {
+                *slot = Some(Relaunch { handoff, version });
+            }
+            begin_quit(handle, "the relaunch");
+        }
+        Effect::ReinstallPrevious => {
+            let handle = handle.clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                let restored = fetch::appimage_path()
+                    .ok_or_else(|| "not running from an AppImage".to_string())
+                    .and_then(|path| fetch::restore_previous(&path).map_err(|e| e.to_string()));
+                match restored {
+                    Ok(()) => dispatch(&handle, Input::PreviousRestored),
+                    Err(error) => {
+                        eprintln!("apunta: the previous version could not be restored: {error}");
+                        dispatch(&handle, Input::RecoveryFailed);
+                    }
+                }
+            });
+        }
+        Effect::CloseApp => begin_quit(handle, "the window close"),
+        Effect::ArmCloseTimeout(generation) => {
+            let handle = handle.clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(CLOSE_REPLY_TIMEOUT);
+                dispatch(&handle, Input::CloseTimeout(generation));
+            });
+        }
+    }
+}
+
 /// Resolves the launch, spawns the child and wires the windows.
-fn boot(handle: &tauri::AppHandle, env: &Env) -> Result<(), Refusal> {
+fn boot(handle: &tauri::AppHandle, env: &Env, recovery: bool) -> Result<(), Refusal> {
     // E10: a build whose identity and feature disagree is refused, so a
     // forgotten `--config` cannot produce something that could focus or signal
     // the production app.
@@ -218,11 +594,19 @@ fn boot(handle: &tauri::AppHandle, env: &Env) -> Result<(), Refusal> {
     let nonce = new_nonce();
     let (tx, rx) = mpsc::channel::<Event>();
 
-    let mut spawned = spawn(&config, &nonce)?;
+    let mut spawned = spawn(&config, &nonce, recovery)?;
     eprintln!("apunta: spawned the bundled server as pid {}", spawned.id());
     // Recorded before anything else, so even a launch that fails on the next line
     // leaves the shell able to signal what it started.
     let state = handle.state::<Spawned>();
+    state.control.health_boot.store(
+        !recovery && env.get(fetch::HANDOFF_ENV).is_some(),
+        Ordering::SeqCst,
+    );
+    if recovery {
+        state.control.recovering.store(true, Ordering::SeqCst);
+    }
+    state.alive.store(true, Ordering::SeqCst);
     state.pgid.store(spawned.id() as i32, Ordering::SeqCst);
     if let Ok(mut slot) = state.stdin.lock() {
         *slot = spawned.stdin.take();
@@ -264,14 +648,16 @@ fn boot(handle: &tauri::AppHandle, env: &Env) -> Result<(), Refusal> {
     // The signal watchdog: the third door into the same gate. It does nothing but
     // hand over to `begin_quit`, exactly like the other two, so a `SIGTERM`
     // arriving while the window is closing cannot start a second ladder.
-    let watchdog = handle.clone();
-    std::thread::spawn(move || loop {
-        if signals::terminate_requested() {
-            begin_quit(&watchdog, "a termination signal");
-            return;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(100));
-    });
+    if !state.control.watching.swap(true, Ordering::SeqCst) {
+        let watchdog = handle.clone();
+        std::thread::spawn(move || loop {
+            if signals::terminate_requested() {
+                begin_quit(&watchdog, "a termination signal");
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        });
+    }
 
     Ok(())
 }
@@ -286,26 +672,102 @@ fn drive(handle: tauri::AppHandle, rx: Receiver<Event>) {
     // Whether a `ready` or `fatal` line already settled the launch. The child
     // reporting its exit while this is false is the early-exit case.
     let mut settled = false;
+    let started = Instant::now();
 
-    for event in rx.iter() {
+    loop {
+        let health_boot = handle
+            .state::<Spawned>()
+            .control
+            .health_boot
+            .load(Ordering::SeqCst);
+        if health_boot && started.elapsed() >= std::time::Duration::from_secs(45) {
+            enter_recovery(&handle);
+            return;
+        }
+        let wait = if health_boot {
+            std::time::Duration::from_secs(45).saturating_sub(started.elapsed())
+        } else {
+            std::time::Duration::from_secs(45)
+        };
+        let event = match rx.recv_timeout(wait) {
+            Ok(event) => event,
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                if handle
+                    .state::<Spawned>()
+                    .control
+                    .health_boot
+                    .load(Ordering::SeqCst)
+                {
+                    enter_recovery(&handle);
+                    return;
+                }
+                continue;
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+        };
         match event {
             Event::Bridge(Ok(Message::Ready { port, version, .. }), line) => {
+                let state = handle.state::<Spawned>();
+                if state.control.health_boot.load(Ordering::SeqCst) {
+                    let matches = state
+                        .control
+                        .health_target
+                        .lock()
+                        .ok()
+                        .is_some_and(|target| target.as_deref() == Some(version.as_str()));
+                    if !matches {
+                        enter_recovery(&handle);
+                        return;
+                    }
+                    *state
+                        .control
+                        .health_ready
+                        .lock()
+                        .expect("health ready lock") = Some((port, version.clone()));
+                    dispatch(&handle, updater::Input::Ready { version });
+                    continue;
+                }
+                dispatch(
+                    &handle,
+                    updater::Input::Ready {
+                        version: version.clone(),
+                    },
+                );
                 eprintln!("apunta: the server is ready ({line}), version {version}");
                 // C-BRIDGE@1 rule 1: the only navigation in the lifecycle, and
                 // it happens here and nowhere else.
                 if show_main(&handle, port) {
                     close_window(&handle, "splash");
                     settled = true;
+                    acknowledge_native_ready(
+                        port,
+                        &version,
+                        state.control.recovering.load(Ordering::SeqCst),
+                    );
                 } else {
                     // The window would not open. C-BRIDGE@1 rule 7's shape applies:
                     // an error screen, not a splash that never resolves.
                     show_error(&handle, "the_window_would_not_open");
                     close_window(&handle, "splash");
                     settled = true;
+                    acknowledge_native_ready(
+                        port,
+                        &version,
+                        state.control.recovering.load(Ordering::SeqCst),
+                    );
                     break;
                 }
             }
             Event::Bridge(Ok(Message::Fatal { code }), line) => {
+                if handle
+                    .state::<Spawned>()
+                    .control
+                    .health_boot
+                    .load(Ordering::SeqCst)
+                {
+                    enter_recovery(&handle);
+                    return;
+                }
                 // The code travels only as this line: never parsed out of the
                 // log line that also arrived, never read from an exit status,
                 // never matched on a substring.
@@ -316,6 +778,131 @@ fn drive(handle: tauri::AppHandle, rx: Receiver<Event>) {
                 settled = true;
                 break;
             }
+            Event::Bridge(Ok(Message::QuiesceResult { ok }), _) => {
+                dispatch(&handle, updater::Input::Quiesced(ok));
+            }
+            Event::Bridge(Ok(Message::SnapshotResult { id, ok, .. }), _) => {
+                dispatch(&handle, updater::Input::Snapshot { id, ok });
+            }
+            Event::Bridge(Ok(Message::UpdateRequest { action }), _) => {
+                dispatch(&handle, updater::Input::Request(action));
+            }
+            Event::Bridge(Ok(Message::CloseDecision { confirm }), _) => {
+                dispatch(&handle, updater::Input::CloseDecision(confirm));
+            }
+            Event::Bridge(
+                Ok(Message::StartupContext {
+                    mode,
+                    update_id,
+                    target_version,
+                    previous_version,
+                }),
+                _,
+            ) => {
+                let state = handle.state::<Spawned>();
+                state
+                    .control
+                    .recovering
+                    .store(mode == bridge::StartupMode::Recovery, Ordering::SeqCst);
+                state.control.health_boot.store(
+                    mode == bridge::StartupMode::Normal && update_id.is_some(),
+                    Ordering::SeqCst,
+                );
+                *state.control.context_id.lock().expect("context id lock") = update_id.clone();
+                *state
+                    .control
+                    .previous_version
+                    .lock()
+                    .expect("previous version lock") = previous_version;
+                *state
+                    .control
+                    .health_target
+                    .lock()
+                    .expect("health target lock") = target_version.clone();
+                dispatch(
+                    &handle,
+                    updater::Input::Startup {
+                        mode,
+                        update_id,
+                        target_version,
+                    },
+                );
+            }
+            Event::Bridge(Ok(Message::HealthResult { id, ok, .. }), _) => {
+                let state = handle.state::<Spawned>();
+                if !state.control.health_boot.load(Ordering::SeqCst)
+                    || !state
+                        .control
+                        .context_id
+                        .lock()
+                        .ok()
+                        .is_some_and(|expected| expected.as_deref() == Some(id.as_str()))
+                {
+                    continue;
+                }
+                dispatch(&handle, updater::Input::Health { id, ok });
+                let done = state.control.machine.lock().expect("machine lock").state()
+                    == updater::State::Done;
+                if done {
+                    state.control.health_boot.store(false, Ordering::SeqCst);
+                    if let Some((port, version)) = state
+                        .control
+                        .health_ready
+                        .lock()
+                        .expect("health ready lock")
+                        .take()
+                    {
+                        if !show_main(&handle, port) {
+                            // Health was durably confirmed. Keep that owned
+                            // server behind an error screen, rather than roll
+                            // back after its migration journal was cleared.
+                            show_error(&handle, "the_window_would_not_open");
+                        }
+                        close_window(&handle, "splash");
+                        settled = true;
+                        acknowledge_native_ready(port, &version, false);
+                    }
+                } else if !ok {
+                    enter_recovery(&handle);
+                    return;
+                }
+            }
+            Event::Bridge(Ok(Message::RecoveryRequest { id, action }), _) => {
+                let state = handle.state::<Spawned>();
+                if !state.control.recovering.load(Ordering::SeqCst)
+                    || !state
+                        .control
+                        .context_id
+                        .lock()
+                        .ok()
+                        .is_some_and(|expected| expected.as_deref() == Some(id.as_str()))
+                {
+                    continue;
+                }
+                let target = match action {
+                    bridge::RecoveryAction::Restart => state
+                        .control
+                        .health_target
+                        .lock()
+                        .ok()
+                        .and_then(|version| version.clone()),
+                    bridge::RecoveryAction::ReinstallPrevious => state
+                        .control
+                        .previous_version
+                        .lock()
+                        .ok()
+                        .and_then(|version| version.clone()),
+                };
+                if target.is_none() {
+                    continue;
+                }
+                *state
+                    .control
+                    .recovery_target
+                    .lock()
+                    .expect("recovery target lock") = target;
+                dispatch(&handle, updater::Input::Recovery(action));
+            }
             Event::Bridge(Ok(Message::Other { kind }), _) => {
                 eprintln!("apunta: ignoring an unknown outbound bridge type {kind:?}");
             }
@@ -325,6 +912,19 @@ fn drive(handle: tauri::AppHandle, rx: Receiver<Event>) {
                 eprintln!("apunta: ignoring a bridge line ({rejection:?}): {line}");
             }
             Event::ChildGone(status) => {
+                handle
+                    .state::<Spawned>()
+                    .alive
+                    .store(false, Ordering::SeqCst);
+                if handle
+                    .state::<Spawned>()
+                    .control
+                    .health_boot
+                    .load(Ordering::SeqCst)
+                {
+                    enter_recovery(&handle);
+                    return;
+                }
                 // Early exit before `ready`. C-BRIDGE@1 rule 7 wants an error
                 // screen rather than a spinner, and the word is the shell's own
                 // because no code arrived — an exit status is not a bridge line.
@@ -395,7 +995,7 @@ fn early_exit_code(status: Option<i32>) -> String {
 /// `std::process`, not the shell plugin (DECISIONS E7). The group is the point:
 /// the ladder signals the group, and a group this shell created contains only
 /// processes this shell spawned.
-fn spawn(config: &launch::LaunchConfig, nonce: &str) -> Result<Child, Refusal> {
+fn spawn(config: &launch::LaunchConfig, nonce: &str, recovery: bool) -> Result<Child, Refusal> {
     let mut command = Command::new(&config.node_bin);
     command
         .arg(&config.server_entry)
@@ -410,6 +1010,7 @@ fn spawn(config: &launch::LaunchConfig, nonce: &str) -> Result<Child, Refusal> {
         .env("APUNTA_V2", "1")
         .env("APUNTA_SHELL", if config.shell { "1" } else { "0" })
         .env("APUNTA_SHELL_NONCE", nonce)
+        .env("APUNTA_UPDATE_RECOVERY", if recovery { "1" } else { "0" })
         // P3.1's four overrides, each pointing into the bundle.
         .env("APUNTA_SQLITE_BINDING", &config.paths.sqlite_binding)
         .env("APUNTA_LICENSES_FILE", &config.paths.licenses_file)
@@ -420,6 +1021,12 @@ fn spawn(config: &launch::LaunchConfig, nonce: &str) -> Result<Child, Refusal> {
         // stderr is this process's stderr: a log line stays a log line and can
         // never be confused with a bridge line.
         .stderr(Stdio::inherit());
+    // The update id a relaunched shell was started with is the server's private
+    // handoff (C-UPD@1 recovery startup). Passed explicitly, and only when set:
+    // an ordinary launch never carries one.
+    if let Some(handoff) = std::env::var_os(fetch::HANDOFF_ENV) {
+        command.env(fetch::HANDOFF_ENV, handoff);
+    }
     // The child's own process group, so a signal reaches the whole tree it
     // spawned (whisper, the bundled runtime) and nothing else.
     #[cfg(unix)]
@@ -435,6 +1042,9 @@ fn spawn(config: &launch::LaunchConfig, nonce: &str) -> Result<Child, Refusal> {
 
 /// The splash: the A mark, no text.
 fn show_splash(handle: &tauri::AppHandle) {
+    if handle.get_webview_window("splash").is_some() {
+        return;
+    }
     // The splash carries its own title, distinct from both other windows, so a
     // reader can tell "still starting" from "showed the app" and from "showed the
     // error screen" without guessing. It is a title, not a visible string: the
@@ -519,11 +1129,12 @@ fn show_main(handle: &tauri::AppHandle, port: u16) -> bool {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     // Prevent first, on this thread: `api` is not `Send`, and more
                     // importantly this is the point of the door — the window must
-                    // outlive the request until the ladder has finished.
+                    // outlive the request until the ladder has finished, and until
+                    // the server has answered the close check.
                     api.prevent_close();
                     let close_handle = close_handle.clone();
                     tauri::async_runtime::spawn_blocking(move || {
-                        begin_quit(&close_handle, "the window close");
+                        request_close(&close_handle);
                     });
                 }
             });
@@ -635,6 +1246,22 @@ fn show_error(handle: &tauri::AppHandle, code: &str) {
     if let Err(error) = built {
         eprintln!("apunta: the error window could not be opened: {error}");
     }
+}
+
+/// The window's close door. The server decides: `quiesce{}` goes out, and only
+/// an `ok:true` reply closes (see `updater.rs`). With no server left to ask —
+/// it exited, or never started — there is nothing to protect and the ladder
+/// runs at once.
+fn request_close(handle: &tauri::AppHandle) {
+    let state = handle.state::<Spawned>();
+    if state.gate.in_progress() {
+        return;
+    }
+    if !state.alive.load(Ordering::SeqCst) {
+        begin_quit(handle, "the window close");
+        return;
+    }
+    dispatch(handle, updater::Input::CloseRequested);
 }
 
 fn close_window(handle: &tauri::AppHandle, label: &str) {

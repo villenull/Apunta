@@ -13,9 +13,20 @@ publish = false
 [dependencies]
 tauri = { version = "=2.12.1", features = [] }
 tauri-plugin-single-instance = "=2.5.2"
-# Wired by P5.4, which owns the update code. The crate is A05's and the shell
-# registers nothing here: no endpoint, no public key, no capability.
+# Wired by P5.4. The shell registers the plugin only when the build carries an
+# updater public key (`APUNTA_UPDATER_PUBKEY`); no capability is granted to any
+# webview origin, so the plugin's commands are unreachable from web content.
 tauri-plugin-updater = "=2.13.1"
+# AM-225: a direct dependency, pinned to the version the plugin already locks,
+# solely to replace the plugin's redirect policy with the approved-host list
+# (`fetch::redirect_policy`). No TLS or other feature is added here; the plugin
+# selects them.
+reqwest = { version = "=0.13.5", default-features = false }
+
+[dev-dependencies]
+# Already locked by the updater SDK. Standalone redirect tests initialise the
+# same ring provider that the SDK sets before its requests; no runtime addition.
+rustls = { version = "=0.23.45", default-features = false, features = ["ring"] }
 
 [build-dependencies]
 tauri-build = { version = "=2.7.1", features = [] }
@@ -28,6 +39,11 @@ tauri-build = { version = "=2.7.1", features = [] }
 # disagree, so a forgotten `--config` is a refusal and not a silent overlap.
 default = []
 test-identity = []
+# P5.4's test updater: reads APUNTA_UPDATER_TEST_ENDPOINT (loopback, ports
+# 7890-7899 only) and APUNTA_UPDATER_TEST_PUBKEY at runtime and contacts nothing
+# else. A release build never enables it; `scripts/v2/check-release-config.mjs`
+# fails a binary that contains its strings.
+test-updater = ["test-identity"]
 
 [profile.release]
 panic = "abort"

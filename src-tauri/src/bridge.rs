@@ -36,8 +36,61 @@ pub enum Message {
     /// C-BRIDGE@1 rule 2 and rule 7. An unrecognised code is carried verbatim
     /// and still shows the error screen.
     Fatal { code: String },
+    /// `quiesce_result{ok, blockers[]}` (C-BRIDGE@1 rule 2). Only the boolean is
+    /// read: the shell keeps no copy of the blocker vocabulary and never
+    /// classifies a blocker (P5.4, fixed decisions).
+    QuiesceResult { ok: bool },
+    /// `snapshot_result{id, ok, code?}`. `id` is an opaque decimal string,
+    /// matched exactly against the request's.
+    SnapshotResult {
+        id: String,
+        ok: bool,
+        code: Option<String>,
+    },
+    /// `update_request{action}`: the server asks the shell to move the updater.
+    UpdateRequest { action: UpdateAction },
+    /// `close_decision{confirm}`: the owner's explicit answer to a refused close.
+    CloseDecision { confirm: bool },
+    /// `startup_context{mode, updateId?, targetVersion?, previousVersion?}`,
+    /// written by the server before `ready`.
+    StartupContext {
+        mode: StartupMode,
+        update_id: Option<String>,
+        target_version: Option<String>,
+        previous_version: Option<String>,
+    },
+    /// `health_result{id, ok, code?}`: the acknowledgment of `health_confirm`.
+    HealthResult {
+        id: String,
+        ok: bool,
+        code: Option<String>,
+    },
+    /// `recovery_request{id, action}`: the recovery view asks for a relaunch.
+    RecoveryRequest { id: String, action: RecoveryAction },
     /// A message this shell does not act on. Logged and ignored, per rule 2.
     Other { kind: String },
+}
+
+/// The `action` of `update_request`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UpdateAction {
+    Check,
+    Download,
+    Install,
+}
+
+/// The `mode` of `startup_context`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StartupMode {
+    Normal,
+    Recovery,
+}
+
+/// The `action` of `recovery_request`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecoveryAction {
+    Restart,
+    ReinstallPrevious,
 }
 
 /// One line that could not be read at all.
@@ -111,6 +164,85 @@ pub fn parse_line(line: &str, expected_nonce: &str) -> Result<Message, Rejection
             // 1), so the code needs no second proof of origin.
             Ok(Message::Fatal { code })
         }
+        "quiesce_result" => {
+            let Some(ok) = bool_field(trimmed, "ok") else {
+                return Err(Rejection::Malformed { field: "ok" });
+            };
+            Ok(Message::QuiesceResult { ok })
+        }
+        "snapshot_result" => {
+            let Some(id) = string_field(trimmed, "id") else {
+                return Err(Rejection::Malformed { field: "id" });
+            };
+            let Some(ok) = bool_field(trimmed, "ok") else {
+                return Err(Rejection::Malformed { field: "ok" });
+            };
+            Ok(Message::SnapshotResult {
+                id,
+                ok,
+                code: string_field(trimmed, "code"),
+            })
+        }
+        "update_request" => match string_field(trimmed, "action").as_deref() {
+            Some("check") => Ok(Message::UpdateRequest {
+                action: UpdateAction::Check,
+            }),
+            Some("download") => Ok(Message::UpdateRequest {
+                action: UpdateAction::Download,
+            }),
+            Some("install") => Ok(Message::UpdateRequest {
+                action: UpdateAction::Install,
+            }),
+            _ => Err(Rejection::Malformed { field: "action" }),
+        },
+        "close_decision" => {
+            let Some(confirm) = bool_field(trimmed, "confirm") else {
+                return Err(Rejection::Malformed { field: "confirm" });
+            };
+            Ok(Message::CloseDecision { confirm })
+        }
+        "startup_context" => {
+            let mode = match string_field(trimmed, "mode").as_deref() {
+                Some("normal") => StartupMode::Normal,
+                Some("recovery") => StartupMode::Recovery,
+                _ => return Err(Rejection::Malformed { field: "mode" }),
+            };
+            Ok(Message::StartupContext {
+                mode,
+                update_id: string_field(trimmed, "updateId"),
+                target_version: string_field(trimmed, "targetVersion"),
+                previous_version: string_field(trimmed, "previousVersion"),
+            })
+        }
+        "health_result" => {
+            let Some(id) = string_field(trimmed, "id") else {
+                return Err(Rejection::Malformed { field: "id" });
+            };
+            let Some(ok) = bool_field(trimmed, "ok") else {
+                return Err(Rejection::Malformed { field: "ok" });
+            };
+            Ok(Message::HealthResult {
+                id,
+                ok,
+                code: string_field(trimmed, "code"),
+            })
+        }
+        "recovery_request" => {
+            let Some(id) = string_field(trimmed, "id") else {
+                return Err(Rejection::Malformed { field: "id" });
+            };
+            match string_field(trimmed, "action").as_deref() {
+                Some("restart") => Ok(Message::RecoveryRequest {
+                    id,
+                    action: RecoveryAction::Restart,
+                }),
+                Some("reinstall_previous") => Ok(Message::RecoveryRequest {
+                    id,
+                    action: RecoveryAction::ReinstallPrevious,
+                }),
+                _ => Err(Rejection::Malformed { field: "action" }),
+            }
+        }
         _ => Ok(Message::Other { kind }),
     }
 }
@@ -121,6 +253,74 @@ pub fn parse_line(line: &str, expected_nonce: &str) -> Result<Message, Rejection
 /// the server.
 pub fn shutdown_line() -> &'static str {
     "{\"type\":\"shutdown\"}\n"
+}
+
+/// `quiesce{}`, written to the child's stdin. The same message and the same
+/// server entry point as `POST /api/app/quiesce`.
+pub fn quiesce_line() -> &'static str {
+    "{\"type\":\"quiesce\"}\n"
+}
+
+/// `maintenance_release{}`: the only thing that drops maintenance a successful
+/// quiesce is holding in shell mode.
+pub fn maintenance_release_line() -> &'static str {
+    "{\"type\":\"maintenance_release\"}\n"
+}
+
+/// `snapshot_request{id}`.
+pub fn snapshot_request_line(id: &str) -> String {
+    format!(
+        "{{\"type\":\"snapshot_request\",\"id\":{}}}\n",
+        json_string(id)
+    )
+}
+
+/// `health_confirm{id}`.
+pub fn health_confirm_line(id: &str) -> String {
+    format!(
+        "{{\"type\":\"health_confirm\",\"id\":{}}}\n",
+        json_string(id)
+    )
+}
+
+/// `update_status{state, version?, code?}`.
+pub fn update_status_line(state: &str, version: Option<&str>, code: Option<&str>) -> String {
+    let mut line = format!(
+        "{{\"type\":\"update_status\",\"state\":{}",
+        json_string(state)
+    );
+    if let Some(version) = version {
+        line.push_str(&format!(",\"version\":{}", json_string(version)));
+    }
+    if let Some(code) = code {
+        line.push_str(&format!(",\"code\":{}", json_string(code)));
+    }
+    line.push_str("}\n");
+    line
+}
+
+/// Replacement-shell acknowledgment, emitted only after its owned server is ready.
+pub fn native_ready_line(nonce: &str, port: u16, version: &str, recovery: bool) -> String {
+    format!("{{\"type\":\"ready\",\"nonce\":{},\"port\":{port},\"version\":{},\"protocol\":{PROTOCOL},\"recovery\":{recovery}}}\n", json_string(nonce), json_string(version))
+}
+
+/// A JSON string literal, escaping what JSON requires.
+pub fn json_string(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() + 2);
+    out.push('"');
+    for ch in value.chars() {
+        match ch {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
 }
 
 /// A conservative string-field reader: it finds `"name"` followed by `:` and a
@@ -192,6 +392,28 @@ fn number_field(line: &str, name: &str) -> Option<u64> {
             continue;
         }
         return digits.parse().ok();
+    }
+    None
+}
+
+/// The same, for a boolean field.
+fn bool_field(line: &str, name: &str) -> Option<bool> {
+    let needle = format!("\"{name}\"");
+    let mut from = 0usize;
+    while let Some(offset) = line[from..].find(&needle) {
+        let key_at = from + offset;
+        from = key_at + needle.len();
+        let rest = line[from..].trim_start();
+        let Some(after_colon) = rest.strip_prefix(':') else {
+            continue;
+        };
+        let value = after_colon.trim_start();
+        if value.starts_with("true") {
+            return Some(true);
+        }
+        if value.starts_with("false") {
+            return Some(false);
+        }
     }
     None
 }
@@ -321,14 +543,134 @@ mod tests {
     #[test]
     fn an_unknown_type_is_reported_rather_than_treated_as_fatal() {
         assert_eq!(
-            parse_line(
-                r#"{"type":"quiesce_result","ok":true,"blockers":[]}"#,
-                NONCE
-            ),
+            parse_line(r#"{"type":"something_new","ok":true}"#, NONCE),
             Ok(Message::Other {
-                kind: "quiesce_result".to_string()
+                kind: "something_new".to_string()
             })
         );
+    }
+
+    #[test]
+    fn quiesce_result_reads_only_the_boolean() {
+        for (line, expected) in [
+            (r#"{"type":"quiesce_result","ok":true,"blockers":[]}"#, true),
+            (
+                r#"{"type":"quiesce_result","ok":false,"blockers":["recording","unsaved_text","never_heard_of_it"]}"#,
+                false,
+            ),
+        ] {
+            assert_eq!(
+                parse_line(line, NONCE),
+                Ok(Message::QuiesceResult { ok: expected })
+            );
+        }
+        assert_eq!(
+            parse_line(r#"{"type":"quiesce_result","blockers":[]}"#, NONCE),
+            Err(Rejection::Malformed { field: "ok" })
+        );
+    }
+
+    #[test]
+    fn snapshot_and_health_ids_are_strings_matched_exactly() {
+        assert_eq!(
+            parse_line(
+                r#"{"type":"snapshot_result","id":"0042","ok":false,"code":"snapshot_failed"}"#,
+                NONCE
+            ),
+            Ok(Message::SnapshotResult {
+                id: "0042".to_string(),
+                ok: false,
+                code: Some("snapshot_failed".to_string())
+            })
+        );
+        // A JSON number is not an id.
+        assert_eq!(
+            parse_line(r#"{"type":"snapshot_result","id":42,"ok":true}"#, NONCE),
+            Err(Rejection::Malformed { field: "id" })
+        );
+        assert_eq!(
+            parse_line(r#"{"type":"health_result","id":"7","ok":true}"#, NONCE),
+            Ok(Message::HealthResult {
+                id: "7".to_string(),
+                ok: true,
+                code: None
+            })
+        );
+    }
+
+    #[test]
+    fn update_request_close_decision_startup_context_and_recovery_request_parse() {
+        assert_eq!(
+            parse_line(r#"{"type":"update_request","action":"install"}"#, NONCE),
+            Ok(Message::UpdateRequest {
+                action: UpdateAction::Install
+            })
+        );
+        assert_eq!(
+            parse_line(r#"{"type":"update_request","action":"reinstall"}"#, NONCE),
+            Err(Rejection::Malformed { field: "action" })
+        );
+        assert_eq!(
+            parse_line(r#"{"type":"close_decision","confirm":false}"#, NONCE),
+            Ok(Message::CloseDecision { confirm: false })
+        );
+        assert_eq!(
+            parse_line(
+                r#"{"type":"startup_context","mode":"normal","updateId":"9","targetVersion":"1.2.0","previousVersion":"1.1.0"}"#,
+                NONCE
+            ),
+            Ok(Message::StartupContext {
+                mode: StartupMode::Normal,
+                update_id: Some("9".to_string()),
+                target_version: Some("1.2.0".to_string()),
+                previous_version: Some("1.1.0".to_string()),
+            })
+        );
+        assert_eq!(
+            parse_line(r#"{"type":"startup_context","mode":"recovery"}"#, NONCE),
+            Ok(Message::StartupContext {
+                mode: StartupMode::Recovery,
+                update_id: None,
+                target_version: None,
+                previous_version: None,
+            })
+        );
+        assert_eq!(
+            parse_line(
+                r#"{"type":"recovery_request","id":"3","action":"reinstall_previous"}"#,
+                NONCE
+            ),
+            Ok(Message::RecoveryRequest {
+                id: "3".to_string(),
+                action: RecoveryAction::ReinstallPrevious
+            })
+        );
+    }
+
+    #[test]
+    fn outbound_lines_are_the_shapes_the_contract_spells() {
+        assert_eq!(quiesce_line(), "{\"type\":\"quiesce\"}\n");
+        assert_eq!(
+            maintenance_release_line(),
+            "{\"type\":\"maintenance_release\"}\n"
+        );
+        assert_eq!(
+            snapshot_request_line("17"),
+            "{\"type\":\"snapshot_request\",\"id\":\"17\"}\n"
+        );
+        assert_eq!(
+            health_confirm_line("17"),
+            "{\"type\":\"health_confirm\",\"id\":\"17\"}\n"
+        );
+        assert_eq!(
+            update_status_line("idle", None, Some("offline")),
+            "{\"type\":\"update_status\",\"state\":\"idle\",\"code\":\"offline\"}\n"
+        );
+        assert_eq!(
+            update_status_line("available", Some("1.2.0"), None),
+            "{\"type\":\"update_status\",\"state\":\"available\",\"version\":\"1.2.0\"}\n"
+        );
+        assert_eq!(json_string("a\"b\\c\n"), "\"a\\\"b\\\\c\\n\"");
     }
 
     #[test]
