@@ -14,6 +14,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsProvider } from '../components/SettingsProvider.js';
 import { SpellingProvider } from '../components/SpellingProvider.js';
 import { I18nProvider } from '../lib/i18n.js';
+import {
+  discardOwnRecording,
+  isRecordingActive,
+  isUnsavedText,
+  startMaintenanceReporter,
+  stopMaintenanceReporter,
+} from '../lib/maintenance.js';
 import type * as RecorderModule from '../lib/recorder.js';
 import { RecorderError, type RecorderHandlers } from '../lib/recorder.js';
 import { installFakeApi, makeFormat, makePatient } from '../test/fakeApi.js';
@@ -398,6 +405,93 @@ describe('unfinished capture navigation protection', () => {
     const pendingLeave = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(pendingLeave);
     expect(pendingLeave.defaultPrevented).toBe(true);
+  });
+
+  describe('quiescence (C-UPD@1 unsaved_text)', () => {
+    /**
+     * Drive one flush through the real reporter: the wait answers `flush` once and
+     * then hangs, and the report it sends comes back here.
+     */
+    async function flushOnce(): Promise<{ ok: boolean; blockers: string[] }> {
+      const realFetch = globalThis.fetch;
+      const reports: { ok: boolean; blockers: string[] }[] = [];
+      let waits = 0;
+      vi.stubGlobal('fetch', (path: string, init: RequestInit = {}) => {
+        if (path.startsWith('/api/app/quiesce/wait')) {
+          waits += 1;
+          if (waits === 1) {
+            return Promise.resolve(
+              new Response(JSON.stringify({ request: 'flush', quiesceId: 'quiesce-1' }), { status: 200 }),
+            );
+          }
+          return new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+          });
+        }
+        if (path.startsWith('/api/app/quiesce/report')) {
+          reports.push(JSON.parse(String(init.body)) as { ok: boolean; blockers: string[] });
+          return Promise.resolve(new Response('{}', { status: 200 }));
+        }
+        return realFetch(path, init);
+      });
+      startMaintenanceReporter();
+      await waitFor(() => {
+        expect(reports).toHaveLength(1);
+      });
+      return reports[0] as { ok: boolean; blockers: string[] };
+    }
+
+    afterEach(() => {
+      stopMaintenanceReporter();
+    });
+
+    it('reports typed text as unsaved_text, and clears the obligation when the text is gone', async () => {
+      installFakeApi({ formats: [progressNote], patients: [john] });
+      renderCapture();
+      await screen.findByTestId('summary-input');
+      fireEvent.change(screen.getByTestId('summary-input'), { target: { value: 'Typed, not yet a note.' } });
+      await waitFor(() => {
+        expect(isUnsavedText()).toBe(true);
+      });
+
+      expect(await flushOnce()).toMatchObject({ ok: false, blockers: ['unsaved_text'] });
+
+      // Whitespace is not text.
+      fireEvent.change(screen.getByTestId('summary-input'), { target: { value: '   ' } });
+      await waitFor(() => {
+        expect(isUnsavedText()).toBe(false);
+      });
+    });
+
+    it('reports a finished recording nobody has saved as unsaved_text, and retracts it on unmount', async () => {
+      installFakeApi(
+        { formats: [progressNote], patients: [john] },
+        { transcribeError: { code: 'whisper_missing', message: 'no whisper here' } },
+      );
+      renderCapture();
+      await startRecording();
+      fireEvent.click(screen.getByTestId('record-stop'));
+      await screen.findByTestId('record-discard');
+
+      expect(await flushOnce()).toMatchObject({ ok: false, blockers: ['unsaved_text'] });
+
+      cleanup();
+      expect(isUnsavedText()).toBe(false);
+    });
+
+    it("hands the close dialog this window's own recording to discard, and only while it runs", async () => {
+      installFakeApi({ formats: [progressNote], patients: [john] });
+      renderCapture();
+      await startRecording();
+      expect(isRecordingActive()).toBe(true);
+
+      expect(discardOwnRecording()).toBe(true);
+      await waitFor(() => {
+        expect(screen.queryByTestId('record-panel')).toBeNull();
+      });
+      expect(isRecordingActive()).toBe(false);
+      expect(discardOwnRecording()).toBe(false);
+    });
   });
 });
 

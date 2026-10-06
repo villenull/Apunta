@@ -1,13 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  discardOwnRecording,
   isCleanToClose,
   isRecordingActive,
+  isUnsavedText,
+  isWorkspaceFrozen,
   maintenanceTabId,
   setEditorUnpersisted,
+  setOwnRecordingDiscard,
   setRecordingActive,
+  setUnsavedText,
   startMaintenanceReporter,
   stopMaintenanceReporter,
+  subscribeWorkspaceFrozen,
 } from './maintenance.js';
 
 /**
@@ -169,11 +175,21 @@ beforeEach(() => {
   stubBeacon();
 });
 
-afterEach(() => {
+afterEach(async () => {
   stopMaintenanceReporter();
   setRecordingActive(false);
   setEditorUnpersisted(false);
+  setUnsavedText(false);
+  setOwnRecordingDiscard(null);
   delete (window as unknown as { __apuntaFlushBeforeRelease?: unknown }).__apuntaFlushBeforeRelease;
+  // The freeze is module state that only an authoritative release lifts, so
+  // the next case starts from a window that has been released.
+  if (isWorkspaceFrozen()) {
+    answer = { request: 'settled', quiesceId: 'cleanup', held: false };
+    startMaintenanceReporter();
+    await settle();
+    stopMaintenanceReporter();
+  }
   vi.unstubAllGlobals();
 });
 
@@ -694,5 +710,133 @@ describe('a back/forward-cache hide is not a close', () => {
     expect(polls.length).toBeGreaterThan(before);
     // And it is a registration again, under the same tab identity.
     expect(polls.at(-1)?.url).toContain(encodeURIComponent(maintenanceTabId() as string));
+  });
+});
+
+describe('unsaved_text (C-UPD@1)', () => {
+  it('is a blocker of its own beside recording', async () => {
+    setUnsavedText(true);
+    expect(isUnsavedText()).toBe(true);
+    setRecordingActive(true);
+    answer = FLUSH;
+    startMaintenanceReporter();
+    await settle();
+    await settle();
+
+    expect(reports[0]?.body).toEqual({
+      quiesceId: 'quiesce-1',
+      ok: false,
+      blockers: ['recording', 'unsaved_text'],
+    });
+  });
+
+  it('is not cleared by a flush that succeeds', async () => {
+    (window as unknown as { __apuntaFlushBeforeRelease?: unknown }).__apuntaFlushBeforeRelease =
+      async (): Promise<void> => {};
+    setUnsavedText(true);
+    answer = FLUSH;
+    startMaintenanceReporter();
+    await settle();
+    await settle();
+
+    expect(reports[0]?.body).toEqual({ quiesceId: 'quiesce-1', ok: false, blockers: ['unsaved_text'] });
+    expect(isUnsavedText()).toBe(true);
+  });
+});
+
+describe('the workspace freeze (C-UPD@1)', () => {
+  const SETTLED_HELD = { request: 'settled', quiesceId: 'quiesce-1', ok: true, held: true, blockers: [] };
+  const SETTLED_RELEASED = {
+    request: 'settled',
+    quiesceId: 'quiesce-1',
+    ok: false,
+    held: false,
+    blockers: [],
+  };
+
+  it('freezes before the flush runs and before the report goes out', async () => {
+    const seen: boolean[] = [];
+    (window as unknown as { __apuntaFlushBeforeRelease?: unknown }).__apuntaFlushBeforeRelease =
+      async (): Promise<void> => {
+        seen.push(isWorkspaceFrozen());
+      };
+    expect(isWorkspaceFrozen()).toBe(false);
+    const changes: boolean[] = [];
+    const unsubscribe = subscribeWorkspaceFrozen(() => changes.push(isWorkspaceFrozen()));
+    answer = FLUSH;
+    startMaintenanceReporter();
+    await settle();
+    await settle();
+    unsubscribe();
+
+    expect(seen).toEqual([true]);
+    expect(changes).toEqual([true]);
+    expect(reports).toHaveLength(1);
+    expect(isWorkspaceFrozen()).toBe(true);
+  });
+
+  it('stays frozen across an expired wait and a settled outcome that is still held', async () => {
+    answer = FLUSH;
+    startMaintenanceReporter();
+    await settle();
+    await settle();
+    expect(isWorkspaceFrozen()).toBe(true);
+
+    lastPoll()?.resolve({ request: 'expired', quiesceId: 'quiesce-1' });
+    await settle();
+    expect(isWorkspaceFrozen()).toBe(true);
+
+    lastPoll()?.resolve(SETTLED_HELD);
+    await settle();
+    expect(isWorkspaceFrozen()).toBe(true);
+    // A held outcome the server keeps owing must not turn into a hot loop of
+    // immediate re-polls: the re-arm waits.
+    const armed = polls.length;
+    await settle();
+    expect(polls.length).toBe(armed);
+  });
+
+  it('lifts only on settled with held false', async () => {
+    answer = FLUSH;
+    startMaintenanceReporter();
+    await settle();
+    await settle();
+    expect(isWorkspaceFrozen()).toBe(true);
+
+    lastPoll()?.resolve(SETTLED_RELEASED);
+    await settle();
+    expect(isWorkspaceFrozen()).toBe(false);
+  });
+
+  it('is lifted by a release that arrives for a window that was not asked to flush', async () => {
+    answer = FLUSH;
+    startMaintenanceReporter();
+    await settle();
+    await settle();
+    lastPoll()?.resolve({ ...SETTLED_RELEASED, request: 'settled' });
+    await settle();
+    expect(isWorkspaceFrozen()).toBe(false);
+  });
+});
+
+describe("discarding this window's own recording", () => {
+  it('runs the registered discard only while a recording is active, and clears the flag at once', () => {
+    let discarded = 0;
+    setOwnRecordingDiscard(() => {
+      discarded += 1;
+    });
+    expect(discardOwnRecording()).toBe(false);
+    expect(discarded).toBe(0);
+
+    setRecordingActive(true);
+    expect(discardOwnRecording()).toBe(true);
+    expect(discarded).toBe(1);
+    expect(isRecordingActive()).toBe(false);
+  });
+
+  it('does nothing when no discard is registered', () => {
+    setRecordingActive(true);
+    expect(discardOwnRecording()).toBe(false);
+    expect(isRecordingActive()).toBe(true);
   });
 });

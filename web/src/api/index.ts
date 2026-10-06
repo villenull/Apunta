@@ -89,3 +89,14 @@ export type { SuggestHandlers } from './plan.js';
 
 export { listBriefings, prepareBriefing, saveBriefing } from './prep.js';
 export type { PrepHandlers } from './prep.js';
+
+export {
+  fetchAppMode,
+  fetchRecoveryStatus,
+  fetchUpdateStatus,
+  reinstallPreviousVersion,
+  requestUpdateAction,
+  restoreSafetyCopy,
+  setAutoCheck,
+  updaterMayBeAvailable,
+} from './update.js';

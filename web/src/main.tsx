@@ -2,8 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { App } from './App.js';
+import { probeRecovery, RecoveryView } from './components/RecoveryView.js';
 import { applyAnimations, applyTheme, readBootTheme } from './lib/appearance.js';
-import { startMaintenanceReporter } from './lib/maintenance.js';
+import { refreshWorkspaceHold, startMaintenanceReporter } from './lib/maintenance.js';
 import { installAutoHideScrollbars } from './lib/scrollbars.js';
 import './styles/tokens.css';
 import './styles/app.css';
@@ -415,8 +416,24 @@ if (import.meta.env.VITE_APUNTA_TEST_IDENTITY === '1') {
 const container = document.getElementById('root');
 if (!container) throw new Error('#root is missing from index.html');
 
-createRoot(container).render(
-  <StrictMode>
-    <RouterProvider router={createBrowserRouter([{ path: '*', element: <App /> }])} />
-  </StrictMode>,
-);
+const root = createRoot(container);
+
+// C-UPD@1 recovery startup: a server that booted into recovery mode serves no
+// database and none of the settings the providers behind <App /> load, so ask
+// first and mount the bare recovery view instead of the workspace.
+void probeRecovery().then(async (recovery) => {
+  if (recovery !== null) {
+    root.render(
+      <StrictMode>
+        <RecoveryView status={recovery.status} />
+      </StrictMode>,
+    );
+    return;
+  }
+  await refreshWorkspaceHold();
+  root.render(
+    <StrictMode>
+      <RouterProvider router={createBrowserRouter([{ path: '*', element: <App /> }])} />
+    </StrictMode>,
+  );
+});

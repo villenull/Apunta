@@ -30,7 +30,7 @@ import { useLoader } from '../hooks/useLoader.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useLiveRecording } from '../hooks/useLiveRecording.js';
 import { useI18n, useReportWork } from '../lib/i18n.js';
-import { setEditorUnpersisted, setRecordingActive } from '../lib/maintenance.js';
+import { setOwnRecordingDiscard, setRecordingActive, setUnsavedText } from '../lib/maintenance.js';
 import { formatTimer } from '../lib/recorder.js';
 import '../styles/capture-modal.css';
 
@@ -141,7 +141,7 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
   const [notice, setNotice] = useState<string | null>(null);
   const unfinishedRef = useRef(false);
   /** What the dirty effect above last published, so unmount can retract it. */
-  const publishedRef = useRef({ recording: false, editor: false });
+  const publishedRef = useRef({ recording: false, unsavedText: false });
   /**
    * The finished WAV, held until the note is saved.
    *
@@ -206,11 +206,13 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
       abortRef.current?.abort();
       const published = publishedRef.current;
       if (published.recording) setRecordingActive(false);
-      if (published.editor) setEditorUnpersisted(false);
+      if (published.unsavedText) setUnsavedText(false);
+      setOwnRecordingDiscard(null);
     },
     [],
   );
   const unfinished = text.trim().length > 0 || recording !== 'idle' || wav !== null || busy;
+  const hasUnsavedText = text.trim().length > 0 || wav !== null;
   unfinishedRef.current = unfinished;
 
   useEffect(() => {
@@ -219,10 +221,25 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
     // the one blocker the server has no route to register. Published through the
     // maintenance reporter's own flag, not through `useReportWork` — that
     // counter belongs to the Language control and has one reader.
-    publishedRef.current = { recording: recording !== 'idle', editor: unfinished };
+    publishedRef.current = {
+      recording: recording !== 'idle',
+      unsavedText: hasUnsavedText,
+    };
     setRecordingActive(recording !== 'idle');
-    setEditorUnpersisted(unfinished);
-  }, [recording, reportDirty, unfinished]);
+    // C-UPD@1: typed text or a finished recording nobody has saved is the
+    // `unsaved_text` obligation. A draft in flight is not: the server's own job
+    // registry already reports that.
+    setUnsavedText(hasUnsavedText);
+  }, [hasUnsavedText, recording, reportDirty, unfinished]);
+
+  // The close dialog's one discard: this window's own microphone, and only that.
+  const discardRecordingRef = useRef(discardRecording);
+  discardRecordingRef.current = discardRecording;
+  useEffect(() => {
+    setOwnRecordingDiscard(() => {
+      discardRecordingRef.current();
+    });
+  }, []);
 
   useEffect(() => {
     function onBeforeUnload(event: BeforeUnloadEvent): void {
@@ -581,7 +598,12 @@ function CaptureScreen({ blocker, reportDirty }: CaptureScreenProps): React.JSX.
                       data-testid="summary-input"
                       value={text}
                       readOnly={busy}
-                      onChange={setText}
+                      onChange={(value) => {
+                        const unsaved = value.trim().length > 0 || wav !== null;
+                        publishedRef.current.unsavedText = unsaved;
+                        setUnsavedText(unsaved);
+                        setText(value);
+                      }}
                       allowWords={patient.state.status === 'ready' ? [patient.state.data.name] : []}
                     />
                   </div>

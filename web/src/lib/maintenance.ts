@@ -52,12 +52,18 @@
 import { t } from '@apunta/shared';
 
 /** The blockers a report may carry (FD8). `ok: true` requires an empty list. */
-export type MaintenanceBlocker = 'conflict' | 'save_error' | 'recording';
+export type MaintenanceBlocker = 'conflict' | 'save_error' | 'recording' | 'unsaved_text';
 
 export interface MaintenanceWaitAnswer {
-  /** `flush` asks this window to flush now; `expired` means re-arm. */
-  readonly request: 'flush' | 'expired';
+  /**
+   * `flush` asks this window to flush now; `expired` means re-arm and says
+   * nothing about the hold; `settled` is the server's authoritative word on
+   * the quiesce this window took part in (C-UPD@1).
+   */
+  readonly request: 'flush' | 'expired' | 'settled';
   readonly quiesceId: string;
+  /** `settled` only: whether maintenance is still held. Only `false` lifts the freeze. */
+  readonly held?: boolean;
 }
 
 /** Where the per-tab identity lives, in this tab's own storage. */
@@ -91,6 +97,7 @@ interface PollRegistration {
   readonly controller: AbortController;
   /** This module instance's own token, so only the current one re-arms. */
   readonly owner: object;
+  readonly stop?: () => void;
 }
 
 interface PollHost {
@@ -141,8 +148,20 @@ let recordingActive = false;
  * and every later clean close of that window would be refused — over nothing.
  */
 let editorUnpersisted = false;
+/**
+ * Whether this window holds typed Capture text or an unpersisted recording
+ * result: C-UPD@1's `unsaved_text`, an obligation of its own that saving a
+ * note cannot clear and a generic flush never discards.
+ */
+let unsavedText = false;
+/** Discards this window's own live recording; registered by `Capture.tsx`. */
+let ownRecordingDiscard: (() => void) | null = null;
+/** Whether the workspace is frozen for a quiesce that has not been released. */
+let frozen = false;
+const frozenListeners = new Set<() => void>();
 let poll: AbortController | null = null;
 let running = false;
+let needsRegistrationState = false;
 
 /** The stored failure counter, for the tests that watch the poll's lifecycle. */
 function sessionStore(): Storage | null {
@@ -209,7 +228,89 @@ export function setEditorUnpersisted(unpersisted: boolean): void {
 
 /** Whether this window would report itself clean if it went away right now. */
 export function isCleanToClose(): boolean {
-  return !editorUnpersisted && !recordingActive;
+  return !editorUnpersisted && !recordingActive && !unsavedText;
+}
+
+/** Publish whether this window holds typed Capture text or an unpersisted result. */
+export function setUnsavedText(unsaved: boolean): void {
+  unsavedText = unsaved;
+}
+
+export function isUnsavedText(): boolean {
+  return unsavedText;
+}
+
+/** Register (or, with `null`, retract) the callback that discards this window's own recording. */
+export function setOwnRecordingDiscard(discard: (() => void) | null): void {
+  ownRecordingDiscard = discard;
+}
+
+/**
+ * Discard this window's own running recording, and nobody else's: the flag it
+ * reads is the one only this window's `Capture.tsx` publishes. Returns whether
+ * a recording was discarded. The flag is cleared here, synchronously, so the
+ * fresh close check that follows never reads the recording it just ended.
+ */
+export function discardOwnRecording(): boolean {
+  if (!recordingActive || ownRecordingDiscard === null) return false;
+  ownRecordingDiscard();
+  recordingActive = false;
+  return true;
+}
+
+const FREEZE_EVENTS = [
+  'pointerdown',
+  'click',
+  'keydown',
+  'keypress',
+  'beforeinput',
+  'paste',
+  'drop',
+] as const;
+
+function blockWorkspaceInput(event: Event): void {
+  if (!frozen) return;
+  if (event.target instanceof Element && event.target.closest('.close-confirm, .recovery-view') !== null)
+    return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}
+
+function setFrozen(next: boolean): void {
+  if (frozen === next) return;
+  frozen = next;
+  for (const listener of [...frozenListeners]) listener();
+}
+
+/** Read the server's current hold before mounting a new workspace, or reconnecting. */
+export async function refreshWorkspaceHold(signal?: AbortSignal): Promise<void> {
+  const response = await fetch(
+    waitPath().replace('/wait?', '/status?'),
+    signal === undefined ? {} : { signal },
+  );
+  if (!response.ok) throw new Error('Maintenance status is unavailable');
+  const status: unknown = await response.json();
+  if (
+    typeof status !== 'object' ||
+    status === null ||
+    !('maintenance' in status) ||
+    typeof status.maintenance !== 'boolean'
+  )
+    throw new Error('Invalid maintenance status');
+  setFrozen(status.maintenance);
+}
+
+/** Whether a quiesce has frozen this window's workspace and not yet released it. */
+export function isWorkspaceFrozen(): boolean {
+  return frozen;
+}
+
+/** Subscribe to freeze changes; returns the unsubscribe. For `useSyncExternalStore`. */
+export function subscribeWorkspaceFrozen(listener: () => void): () => void {
+  frozenListeners.add(listener);
+  return () => {
+    frozenListeners.delete(listener);
+  };
 }
 
 /**
@@ -247,6 +348,7 @@ async function flushAndReport(quiesceId: string): Promise<void> {
     }
   }
   if (isRecordingActive()) blockers.push('recording');
+  if (isUnsavedText()) blockers.push('unsaved_text');
   try {
     await fetch(`${reportPath()}`, {
       method: 'POST',
@@ -457,10 +559,15 @@ function sendCloseReport(): void {
 
 function answer(value: unknown): MaintenanceWaitAnswer | null {
   if (typeof value !== 'object' || value === null) return null;
-  const candidate = value as { request?: unknown; quiesceId?: unknown };
-  if (candidate.request !== 'flush' && candidate.request !== 'expired') return null;
+  const candidate = value as { request?: unknown; quiesceId?: unknown; held?: unknown };
   if (typeof candidate.quiesceId !== 'string') return null;
-  return { request: candidate.request, quiesceId: candidate.quiesceId };
+  if (candidate.request === 'flush' || candidate.request === 'expired') {
+    return { request: candidate.request, quiesceId: candidate.quiesceId };
+  }
+  if (candidate.request === 'settled' && typeof candidate.held === 'boolean') {
+    return { request: 'settled', quiesceId: candidate.quiesceId, held: candidate.held };
+  }
+  return null;
 }
 
 /**
@@ -473,21 +580,36 @@ async function once(): Promise<void> {
   if (!running) return;
   const controller = new AbortController();
   poll = controller;
-  pollHost()[POLL_HOST_KEY] = { controller, owner: OWNER };
+  pollHost()[POLL_HOST_KEY] = { controller, owner: OWNER, stop: stopMaintenanceReporter };
   let rearm = 0;
   try {
+    if (frozen && needsRegistrationState) {
+      await refreshWorkspaceHold(controller.signal);
+      needsRegistrationState = false;
+    }
     const response = await fetch(waitPath(), { signal: controller.signal });
     if (response.ok) {
       const parsed = answer(await response.json());
       if (parsed?.request === 'flush') {
+        // Freeze before acknowledging: nothing typed after this point can
+        // escape the flush. Only an authoritative `settled{held:false}` lifts it.
+        setFrozen(true);
         await flushAndReport(parsed.quiesceId);
         // The report is sent; this poll's job is done.
         controller.abort();
+      } else if (parsed?.request === 'settled') {
+        setFrozen(parsed.held === true);
+        // A held word remains owed until an explicit release.
+        if (parsed.held === true) rearm = REARM_DELAY_MS;
       }
+    } else {
+      needsRegistrationState = frozen;
+      rearm = REARM_DELAY_MS;
     }
   } catch {
     // Aborted, offline, or a body that was not the answer. Both are ordinary:
     // the window re-arms and the server has simply not asked it anything.
+    if (running && !controller.signal.aborted) needsRegistrationState = frozen;
     rearm = REARM_DELAY_MS;
   } finally {
     if (poll === controller) {
@@ -518,8 +640,11 @@ export function startMaintenanceReporter(): void {
   if (running) return;
   // Whatever a previous instance of this module left behind goes first, so this
   // window never holds two open polls at once.
-  pollHost()[POLL_HOST_KEY]?.controller.abort();
+  const previous = pollHost()[POLL_HOST_KEY];
+  if (previous?.stop !== undefined) previous.stop();
+  else previous?.controller.abort();
   running = true;
+  for (const type of FREEZE_EVENTS) window.addEventListener(type, blockWorkspaceInput, true);
   window.addEventListener('pagehide', onPageHide);
   window.addEventListener('pageshow', onPageShow);
   void once();
@@ -588,6 +713,7 @@ export function stopMaintenanceReporter(): void {
   running = false;
   poll?.abort();
   poll = null;
+  for (const type of FREEZE_EVENTS) window.removeEventListener(type, blockWorkspaceInput, true);
   window.removeEventListener('pagehide', onPageHide);
   window.removeEventListener('pageshow', onPageShow);
 }

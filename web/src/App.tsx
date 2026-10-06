@@ -1,8 +1,11 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes, matchPath, useLocation, type Location } from 'react-router';
 
+import { CloseConfirm } from './components/CloseConfirm.js';
 import { SettingsProvider, useSettingsContext } from './components/SettingsProvider.js';
 import { SpellingProvider } from './components/SpellingProvider.js';
+import { UpdateNotice } from './components/UpdateNotice.js';
+import { WorkspaceFreeze } from './components/WorkspaceFreeze.js';
 
 import { applyAppearance } from './lib/appearance.js';
 import { I18nProvider, useI18n } from './lib/i18n.js';
@@ -238,6 +241,9 @@ function AppRoutes(): React.JSX.Element {
           </Routes>
         </Suspense>
       </div>
+      <UpdateNotice />
+      <WorkspaceFreeze />
+      <CloseConfirm t={t} />
       <PrimaryBlocker
         phase={primary.phase}
         pending={primary.pending}

@@ -647,6 +647,39 @@ describe('the About section', () => {
     expect(link.textContent).toBe('Github');
     expect(about.querySelectorAll('a')).toHaveLength(1);
   });
+
+  it('shows no Updates controls in a browser tab, where the updater route is a 404', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-about'));
+    await screen.findByTestId('settings-about');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByTestId('update-settings')).toBeNull();
+  });
+
+  it('shows the Updates controls and the privacy statement when the shell reports an updater', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    const inner = globalThis.fetch as unknown as FetchFn;
+    vi.stubGlobal('fetch', (path: string, init?: RequestInit): Promise<Response> => {
+      if (path === '/api/app/update') {
+        return Promise.resolve(
+          json({ state: 'idle', autoCheck: true, close: { state: 'none', blockers: [] } }),
+        );
+      }
+      return inner(path, init);
+    });
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-about'));
+    const card = await screen.findByTestId('update-settings');
+    expect((within(card).getByTestId('update-autocheck') as HTMLInputElement).checked).toBe(true);
+    expect(within(card).getByTestId('update-privacy').textContent).toBe(t('update.privacy'));
+  });
 });
 
 /**

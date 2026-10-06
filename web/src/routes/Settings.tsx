@@ -28,6 +28,7 @@ import {
   themeOrDefault,
 } from '../lib/appearance.js';
 import { BackupSection, useBackup } from '../components/BackupCard.js';
+import { UpdateSettings } from '../components/UpdateSettings.js';
 import { BrandWordmark } from '../components/BrandWordmark.js';
 import { useSettingsContext } from '../components/SettingsProvider.js';
 import {
@@ -379,6 +380,7 @@ function AboutSection({ t }: { t: Translate }): React.JSX.Element {
       <p className="settings-about-line" data-testid="settings-about-line">
         {aboutLine(t)}
       </p>
+      <UpdateSettings />
     </section>
   );
 }
