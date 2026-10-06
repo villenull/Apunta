@@ -469,14 +469,6 @@ export const en = {
     text: '{file} is not a backup file in the backup folder.',
     kind: { file: 'text' },
   },
-  /**
-   * `routes/licenses.ts:35` — the About page's 404. A `reply.send` rather than
-   * a `notFound()` call, so the route-file table does not reach it; the code on
-   * the wire is still `not_found` and only the words come from here.
-   */
-  'errors.not_found.licenses_file': {
-    text: 'The license file was not found in this build of Apunta.',
-  },
 
   /* --- errors.conflict --- */
 
@@ -564,7 +556,7 @@ export const en = {
    */
 
   /** The banner inside `ai.ollama_unreachable`, and its own string today. */
-  'ai.unreachable_banner': { text: "Apunta can't reach the local AI — see Setup" },
+  'ai.unreachable_banner': { text: "Apunta can't reach the local AI" },
   /** `ai/errors.ts:39`. */
   'ai.ollama_unreachable': {
     text: '{banner}. Ollama does not appear to be running on this machine.',
@@ -572,7 +564,7 @@ export const en = {
   },
   /** `ai/errors.ts:43`. */
   'ai.model_missing': {
-    text: "Apunta's AI model isn't installed yet — see Setup, which says how to get it.",
+    text: "Apunta's AI model isn't installed yet. Choose a model in Settings to install it.",
   },
   /** `ai/errors.ts:45`. */
   'ai.non_gguf_model': {
@@ -597,7 +589,9 @@ export const en = {
   /** `ai/errors.ts:54`. */
   'ai.output_truncated': { text: 'The AI ran out of room mid-note. Try again, or shorten the summary.' },
   /** `ai/errors.ts:55`. */
-  'ai.empty_response': { text: 'The AI returned nothing. Try again — if it keeps happening, check Setup.' },
+  'ai.empty_response': {
+    text: 'The AI returned nothing. Try again — if it keeps happening, check Settings.',
+  },
   /** `ai/errors.ts:57`. */
   'ai.invalid_output': {
     text: "The AI returned something that wasn't a note. Try again — if it keeps happening, the model may not be following the note format.",
@@ -611,14 +605,14 @@ export const en = {
     text: 'The AI took too long to answer. It may still be loading the model — try again in a moment.',
   },
   /** `ai/errors.ts:61`. */
-  'ai.ollama_error': { text: 'The local AI reported an error. Check Setup, then try again.' },
+  'ai.ollama_error': { text: 'The local AI reported an error. Check Settings, then try again.' },
   /** `ai/errors.ts:66`. */
   'ai.whisper_missing': {
-    text: "Apunta can't find whisper on this machine, so it can't transcribe the recording. See Setup, or set the whisper path in Settings.",
+    text: "Apunta can't find whisper on this machine, so it can't transcribe the recording. Set the whisper path in Settings.",
   },
   /** `ai/errors.ts:68`. */
   'ai.whisper_model_missing': {
-    text: "Apunta's transcription model isn't installed yet — see Setup, which says how to get it.",
+    text: "Apunta's transcription model isn't installed yet. Choose a transcription model in Settings to install it.",
   },
   /** `ai/errors.ts:70`. */
   'ai.audio_unsupported': {
@@ -630,7 +624,7 @@ export const en = {
   },
   /** `ai/errors.ts:73`. */
   'ai.transcription_failed': {
-    text: 'Transcribing the recording failed. Try again — if it keeps happening, check Setup.',
+    text: 'Transcribing the recording failed. Try again — if it keeps happening, check Settings.',
   },
   /** `ai/errors.ts:75`. */
   'ai.transcription_timeout': {
@@ -1038,21 +1032,13 @@ export const en = {
    */
   'capture.listening': { text: 'Listening for words…' },
 
-  /**
-   * What the provisional words are, `ComposerButtons.tsx:22`. The capture
-   * screen's own variant of this line is S2.4's, in its own file.
-   */
-  'dictation.previewNote': {
-    text: 'Everything so far, roughly. Your message is written from the finished recording.',
-  },
-
-  /** The dictation panel's stop control, `ComposerButtons.tsx:32`. */
+  /** The composer's microphone while it is recording, `ComposerButtons.tsx:49`. */
   'dictation.stop': { text: 'Stop dictating' },
 
-  /** The composer's microphone, idle, `ComposerButtons.tsx:71`. */
+  /** The composer's microphone, idle, `ComposerButtons.tsx:49`. */
   'dictation.mic': { text: 'Dictate a message' },
 
-  /** The same microphone while whisper has the clip, `ComposerButtons.tsx:87`. */
+  /** The same microphone while whisper has the clip, `ComposerButtons.tsx:65`. */
   'dictation.transcribing': { text: 'Transcribing' },
 
   /** The suggestion's spoken name, `InterventionApproachSuggestion.tsx:35`. */
@@ -1207,8 +1193,8 @@ export const en = {
    * Every entry names the line that carried the string at commit `dac687b`, so
    * a reviewer can tell a moved sentence from a rewritten one, and each English
    * value is that line's text character for character (Fixed decision 7). The
-   * namespaces are the screens: `settings.`, `setup.`, `about.`, `licenses.`,
-   * `backup.`, `plan.`, `prep.`, `import.`, `halaxy.`, `format.`, `capture.`,
+   * namespaces are the screens: `settings.`, `backup.`, `plan.`, `prep.`,
+   * `import.`, `halaxy.`, `format.`, `capture.`,
    * `spelling.`, `brainstorm.`, `directory.`, `workspace.`, `app.` — plus
    * `common.` for the handful of strings more than one screen writes, `doc.`
    * for the browser tab's own name, and `count.` for a countable noun on its
@@ -1230,25 +1216,21 @@ export const en = {
    * **A sentence split around an inline element.** The literal checker cannot
    * see one of these, and where the element is a link, a button or a `<strong>`
    * the app needs, the two halves are two keys rather than one key with the
-   * element deleted. The `about.` block is the worked example and says so at
-   * each seam.
+   * element deleted. `ai.bannerTail` is the worked example and says so at its
+   * seam.
    */
 
   /**
-   * `Loading…`, on its own: the formats list (`Settings.tsx:198`), the licences
-   * (`Licenses.tsx:89`), the backup card (`BackupCard.tsx:143`), the brainstorm
-   * thread (`BrainstormView.tsx:166`) and the route's own `Suspense` fallback
-   * (`App.tsx:101`).
+   * `Loading…`, on its own: the formats list (`Settings.tsx:198`), the backup
+   * card (`BackupCard.tsx:143`), the brainstorm thread (`BrainstormView.tsx:166`)
+   * and the route's own `Suspense` fallback (`App.tsx:101`).
    */
   'common.loading': { text: 'Loading…' },
 
-  /** `AiBanner.tsx:52`, `Setup.tsx:63` and `Setup.tsx:108`. */
+  /** `AiBanner.tsx`, the banner's retry button. */
   'common.checkAgain': { text: 'Check again' },
 
-  /** The `/setup` link, `AiBanner.tsx:43`, `About.tsx:100`, `Settings.tsx:282`. */
-  'common.setup': { text: 'Setup' },
-
-  /** `About.tsx:55`, `Settings.tsx:531`, `Workspace.tsx:531`, and the back labels. */
+  /** `PatientsColumn.tsx:438`, `Workspace.tsx:924`, and the back labels. */
   'common.settings': { text: 'Settings' },
 
   /** The `Screen` back label, `AddPatient.tsx:40` and `OnboardingPreview.tsx:115`. */
@@ -1263,10 +1245,7 @@ export const en = {
   /** The same two fields' spoken name, `PatientDirectory.tsx:81` and `PatientsColumn.tsx:116`. */
   'common.searchPatients': { text: 'Search patients' },
 
-  /** The licence copy control, `Licenses.tsx:114`, and the setup command, `Setup.tsx:198`. */
-  'common.copy': { text: 'Copy' },
-
-  /** The same control once it has worked, `Licenses.tsx:114` and `Setup.tsx:198`. */
+  /** `PlanView.tsx:245`. */
   'common.copied': { text: 'Copied' },
 
   /** An empty plan field, and the participation default, `PlanDetails.tsx:231` and `:24`. */
@@ -1313,14 +1292,8 @@ export const en = {
    * workspace says `Patients`.
    */
 
-  /** `Settings.tsx:129` and `About.tsx:15`. */
+  /** `Settings.tsx:129`. */
   'doc.settings': { text: 'Settings' },
-  /** `Setup.tsx:33`. */
-  'doc.setup': { text: 'Setup' },
-  /** `About.tsx:15`. */
-  'doc.about': { text: 'About' },
-  /** `Licenses.tsx:53`. */
-  'doc.licences': { text: 'Licenses' },
   /** `Workspace.tsx:86`. */
   'doc.patients': { text: 'Patients' },
   /** `AddPatient.tsx:11`. */
@@ -1369,18 +1342,18 @@ export const en = {
   'app.primary.takeover': { text: 'Make this the primary window' },
 
   /*
-   * The AI banner, `AiBanner.tsx`. The sentence is split by a `<Link>` and a
-   * `<button>`, both of which the screen needs, so it is keyed at the element
-   * boundary: what leads into the link, the link, what follows, and the button.
-   * `{model}` is the stored model name, or empty when the server named none.
+   * The AI banner, `AiBanner.tsx`. The sentence is split by a `<button>`, which
+   * the screen needs, so it is keyed at the element boundary: what leads into
+   * the button, what follows, and the button itself. `{model}` is the stored
+   * model name, or empty when the server named none.
    */
 
-  /** `AiBanner.tsx:35`. */
-  'ai.modelMissing': { text: "Apunta can't find the AI model{model} — see", kind: { model: 'text' } },
-  /** `AiBanner.tsx:36`. */
-  'ai.unreachable': { text: "Apunta can't reach the local AI — see" },
-  /** `AiBanner.tsx:45`, after the `Setup` link. */
-  'ai.bannerTail': { text: '. Everything except drafting a new note still works.' },
+  /** `AiBanner.tsx`, the leading clause before the retry button. */
+  'ai.modelMissing': { text: "Apunta can't find the AI model{model}.", kind: { model: 'text' } },
+  /** `AiBanner.tsx`, the leading clause before the retry button. */
+  'ai.unreachable': { text: "Apunta can't reach the local AI." },
+  /** `AiBanner.tsx`, after the leading clause and before the button. */
+  'ai.bannerTail': { text: 'Everything except drafting a new note still works.' },
 
   /*
    * `web/src/components/BackupCard.tsx` — the one-line card and the Advanced
@@ -1678,13 +1651,6 @@ export const en = {
   'patients.renameShort': { text: 'Rename' },
   'patients.restore': { text: 'Restore' },
   'patients.delete': { text: 'Delete' },
-  /**
-   * `Setup.tsx:122`'s trailing clause. The paragraph is
-   * `{t('setup.backingUpLead')} <Link>…</Link> has it.`, and the link cannot
-   * live in a slot: `MessageParams` is `Record<string, string | number>` and
-   * `t()` returns `string`, so a React node cannot be passed through one.
-   */
-  'setup.backingUpTail': { text: 'has it.' },
   /** `PatientDirectory.tsx:128`. */
   'patients.new': { text: 'New patient' },
   /** `PatientDirectory.tsx:160` and `PatientsColumn.tsx:284`. */
@@ -2429,8 +2395,10 @@ export const en = {
   'settings.addFormat': { text: 'Add another format' },
   /** `Settings.tsx:280`. */
   'settings.app': { text: 'App' },
-  /** `Settings.tsx:283`. */
-  'settings.about': { text: 'About' },
+  /** The one row that leaves the app, replacing Setup / About / Licenses. */
+  'settings.readMore': { text: 'Read more about Apunta' },
+  /** The GitHub mark on that row, named for where it goes. */
+  'settings.onGithub': { text: 'Apunta on GitHub' },
   /** `Settings.tsx:297`. */
   'settings.loadingAi': { text: 'Loading AI settings…' },
   /** `Settings.tsx:344` and `:345`. */
@@ -2471,165 +2439,6 @@ export const en = {
   'settings.themeSystem': { text: 'System' },
   'settings.themeLight': { text: 'Light' },
   'settings.themeDark': { text: 'Dark' },
-
-  /*
-   * `web/src/routes/About.tsx` — the local-only guarantee in plain language.
-   *
-   * This file is where the split-sentence shape is most visible, and every
-   * seam is deliberate: the sentence is broken by a `<strong>`, a `<Link>` or a
-   * `<code>`, and each of those is something the screen needs, so the halves
-   * are keys and the element stays. English is unchanged, which is what
-   * `setup.spec.ts`'s two About assertions and `check-ui-strings.mjs`'s
-   * `TOTAL 0` both rest on.
-   */
-
-  /** `About.tsx:22`. */
-  'about.title': { text: 'About Apunta' },
-  /** `About.tsx:25`. */
-  'about.localOnlyHeading': { text: 'Nothing you write here goes onto the internet' },
-  /** `About.tsx:27-28`. */
-  'about.localOnlyBody': {
-    text: 'Apunta runs on this computer. It is a web page served by a program on the same computer, and the app makes no outbound network connections. There is no account and no remote copy.',
-  },
-  /** `About.tsx:31-33`. */
-  'about.modelsLocalBody': {
-    text: "The writing model and transcription model run locally too. Your recording is read by a program on this computer and is never uploaded. Apunta does not use the browser's built-in speech recognition, because that can send audio to a third party.",
-  },
-  /** `About.tsx:36`. */
-  'about.noTelemetryBody': {
-    text: 'There is no analytics, crash reporting, update check, or anonymous usage data.',
-  },
-
-  /** `About.tsx:41`. */
-  'about.whereHeading': { text: 'Where your notes actually are' },
-  /** `About.tsx:43`, before the path is known. */
-  'about.dbPath': { text: 'One folder on this computer, holding one file:' },
-  /** `About.tsx:43-44`, the same line while the path is still loading. */
-  'about.dbPathLoading': { text: 'One folder on this computer, holding one file: loading…' },
-  /** `About.tsx:52-54`. */
-  'about.recordsBody': {
-    text: 'That file is your drafting history. It is not your clinical record — the record lives in whatever system you paste the finished note into. It is still worth backing up, because the rough notes, the transcripts and the refine and brainstorm conversations exist nowhere else.',
-  },
-  /** `About.tsx:55`, after the `Settings` link. */
-  'about.recordsBackupTail': { text: 'has “Backup”.' },
-
-  /** `About.tsx:60`. */
-  'about.threatsHeading': { text: 'The two things this does not protect you from' },
-  /** `About.tsx:62`, inside the `<strong>`. */
-  'about.threatPerson': { text: 'Someone at your unlocked computer.' },
-  /** `About.tsx:62-64`, after it. */
-  'about.threatPersonBody': {
-    text: 'Apunta has no password of its own. Anyone sitting at this computer while you are logged in can open it and read everything. Locking the screen when you walk away is the real answer.',
-  },
-  /** `About.tsx:67`, inside the `<strong>`. */
-  'about.threatStolen': { text: 'A stolen computer with an unencrypted disk.' },
-  /** `About.tsx:67-68`, after it. */
-  'about.threatStolenBody': {
-    text: 'Disk encryption protects a lost computer from disclosure. Its status is shown below only when the operating system can report it.',
-  },
-
-  /**
-   * `About.tsx:110-132`, the four states the operating system can report. The
-   * prefix and the bold verdict are one key each, and each state has its own
-   * tail; `{detail}` is the server's own explanation, passed as data.
-   */
-  'about.diskEncryption': { text: 'Disk encryption:' },
-  'about.diskNotChecked': { text: 'not checked' },
-  'about.diskReady': { text: 'ready' },
-  'about.diskNotReady': { text: 'not ready' },
-  'about.diskTailOs': { text: 'on this operating system. {detail}', kind: { detail: 'text' } },
-  'about.diskTailDetail': { text: '. {detail}', kind: { detail: 'text' } },
-  'about.diskTailOff': {
-    text: '. Turn it on in System Settings → Privacy & Security → FileVault before real notes go in, and keep the recovery key somewhere other than this computer.',
-  },
-  'about.diskTailUnknown': {
-    text: ". Apunta could not read its status; check it yourself in the operating system's security settings. {detail}",
-    kind: { detail: 'text' },
-  },
-
-  /** `About.tsx:74`. */
-  'about.aiHeading': { text: 'What it does with the AI' },
-  /** `About.tsx:76-79`. */
-  'about.aiBody': {
-    text: 'When you create a draft, the model receives what you dictated or typed and the shape of your note format. Refine and brainstorm can also include relevant prior notes when they are used as background. It is asked to write only what is in front of it. It still makes mistakes, so every draft is yours to read before you publish it.',
-  },
-  /** `About.tsx:82`. */
-  'about.aiUnclearBody': {
-    text: 'Where the recording was unclear, the draft says so in the text rather than guessing.',
-  },
-
-  /** `About.tsx:87` and `Licenses.tsx:80`. */
-  'about.builtFromHeading': { text: 'What Apunta is built from' },
-  /** `About.tsx:89-91`, before the licences link. */
-  'about.builtFromBody': {
-    text: 'The AI that writes and the program that reads your recordings were written by other people and are included inside Apunta. Their licenses ask that the notice travels with the app:',
-  },
-  /** `About.tsx:91`, the link's own text. */
-  'about.licensesLink': { text: 'the licenses are here' },
-  /** `About.tsx:94-95`. */
-  'about.modelsSeparateBody': {
-    text: 'The AI models themselves are not part of Apunta. They are installed on this computer under their own terms, and Apunta does not pass them on.',
-  },
-  /** `About.tsx:100`, before the `Setup` link. */
-  'about.missingPieces': { text: 'Missing pieces and what to run:' },
-
-  /*
-   * `web/src/routes/Setup.tsx`. The rows' own `label`, `detail`, `note` and
-   * `fix` come from `web/src/lib/setup.ts`, which is read-only for this card,
-   * so the four `STATE_LABEL` values are this screen's own and the rest is
-   * reported rather than moved.
-   */
-
-  /** `Setup.tsx:51`. */
-  'setup.title': { text: 'Setup' },
-  /** `Setup.tsx:53-54`. */
-  'setup.lede': {
-    text: 'Apunta runs on this computer. These are the pieces it needs, and what to do about any that are missing.',
-  },
-  /** `Setup.tsx:57`. */
-  'setup.checking': { text: 'Checking…' },
-  /** `Setup.tsx:113`. */
-  'setup.allAtOnce': { text: 'Or do all of it at once' },
-  /** `Setup.tsx:115-116`. */
-  'setup.terminalHelp': {
-    text: 'From a Terminal window in the Apunta folder. It installs what is missing, downloads the models, and is safe to run again as many times as you like.',
-  },
-  /** `Setup.tsx:123`, before the `Settings` link. */
-  'setup.backingUpLead': {
-    text: 'Backing up is a separate question, and the one most worth getting right —',
-  },
-  /** `STATE_LABEL` of `Setup.tsx:161-167`, the four states. */
-  'setup.stateOk': { text: 'Ready' },
-  'setup.stateMissing': { text: 'Missing' },
-  'setup.stateUnknown': { text: 'Not checked' },
-
-  /*
-   * `web/src/routes/Licenses.tsx`. The legal text stays verbatim; only the
-   * index, the filter and the empty state are keys. `Overview` is the heading
-   * this screen gives the file's preamble, and it is a `title` property, which
-   * is one of the four attributes the checker reads.
-   */
-
-  /** `Licenses.tsx:32`. */
-  'licenses.overview': { text: 'Overview' },
-  /** `Licenses.tsx:80`. */
-  'licenses.builtFrom': { text: 'What Apunta is built from' },
-  /** `Licenses.tsx:84-85`. */
-  'licenses.lede': {
-    text: 'Apunta includes programs written by other people, and their licenses ask that this notice travels with the app. Nothing here needs anything from you — it is here because it should be.',
-  },
-  /** `Licenses.tsx:98`. */
-  'licenses.panelLabel': { text: 'Third-party licenses' },
-  /** `Licenses.tsx:101`. */
-  'licenses.filterLabel': { text: 'Filter licenses' },
-  /** `Licenses.tsx:111`. */
-  'licenses.filterPlaceholder': { text: 'Filter by component or text' },
-  /** `Licenses.tsx:114`. */
-  'licenses.copyPlain': { text: 'Copy plain text' },
-  /** `Licenses.tsx:117`. */
-  'licenses.componentsLabel': { text: 'License components' },
-  /** `Licenses.tsx:126`. */
-  'licenses.noMatch': { text: 'No license text matches “{filter}”.', kind: { filter: 'text' } },
 
   /*
    * `web/src/routes/Capture.tsx`.
@@ -2860,6 +2669,9 @@ export const en = {
   'import.undo': { text: 'Undo this import' },
   /** `Import.tsx:170` and `HalaxyImport.tsx:151`. */
   'import.goToPatients': { text: 'Go to patients' },
+
+  /** The × on the import window; `ImportModal.tsx:32`. */
+  'import.closeLabel': { text: 'Close import' },
 
   /** `Import.tsx:185` and `HalaxyImport.tsx:165`. */
   'import.readyTitle': { text: 'Ready to import' },

@@ -33,10 +33,13 @@ export interface Dictation {
 }
 
 /**
- * Dictating into a chat composer (owner-proxy, 2026-09-07): the capture
- * screen's recorder, dot and growing transcript, a clip instead of a
+ * Dictating into a chat composer (owner-proxy, 2026-09-07; owner, 2026-10-05):
+ * the capture screen's recorder and growing transcript, a clip instead of a
  * session, and the words land in the box for her to read and edit before
- * anything is sent. Shared by the refine chat and Brainstorm, so the two
+ * anything is sent. The provisional words ride in the box itself — there is no
+ * panel or dialog between the microphone and the text (see `ChatComposer`) —
+ * and `clearPreview` takes them away again if the finished transcript turns
+ * out to be nothing. Shared by the refine chat and Brainstorm, so the two
  * microphones cannot drift apart. Whisper runs on the server as always;
  * nothing here touches a browser speech API.
  */
@@ -82,12 +85,18 @@ export function useDictation(options: DictationOptions): Dictation {
       const heard = (await dictateClip(clip, controller.signal)).text.trim();
       if (controller.signal.aborted) return;
       if (heard === '') {
+        // The provisional words were a rough hearing of a clip whisper then
+        // gave nothing for; leaving them in the box would put words she never
+        // said into the message.
+        live.clearPreview();
         optionsRef.current.onError(NOTHING_HEARD_MESSAGE);
       } else {
         optionsRef.current.onHeard(heard);
+        live.clearPreview();
       }
     } catch (thrown) {
       if (controller.signal.aborted) return;
+      live.clearPreview();
       optionsRef.current.onError(errorMessage(thrown));
     } finally {
       if (abortRef.current === controller) abortRef.current = null;

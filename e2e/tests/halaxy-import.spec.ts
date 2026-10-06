@@ -24,13 +24,17 @@ test.describe('importing from Halaxy', () => {
       data: { name: 'Halaxy e2e format', sections: [tr('import.sessionTitle')] },
     });
     // Reached from the workspace's "More" menu, where Import now lives as a
-    // first-level row (owner, 2026-09-27) rather than a section of Settings.
+    // first-level row (owner, 2026-09-27) rather than a section of Settings,
+    // and opened as a window over the workspace rather than a page of its own
+    // (owner, 2026-10-05).
     await page.goto('/');
     await page.getByTestId('mission-control').click();
     await page.getByTestId('mission-import').click();
-    // The one row in "More" leads to the Claude screen, and Halaxy is one link
-    // away from there (owner, 2026-09-27).
+    await expect(page.getByTestId('import-modal')).toBeVisible();
+    // The one row in "More" leads to the Claude importer, and Halaxy is one
+    // switch away inside the same window.
     await page.getByTestId('import-switch-halaxy').click();
+    await expect(page.getByTestId('import-modal')).toBeVisible();
     await expect(page.getByRole('heading', { name: tr('doc.importHalaxy') })).toBeVisible();
     await checkScreen(page, 'Import from Halaxy');
 
@@ -61,7 +65,11 @@ test.describe('importing from Halaxy', () => {
       tr('halaxy.doneLine', { notes: noteCount(2), patients: patientCount(1) }),
     );
     await checkScreen(page, 'the Halaxy import report');
+    // The report's "Go to patients" link is the workspace behind: it closes the
+    // window as it navigates, so she is not left with the report over a page
+    // she was told she had left.
     await page.getByRole('link', { name: tr('import.goToPatients') }).click();
+    await expect(page.getByTestId('import-modal')).toBeHidden();
     await expect(page.getByTestId('patient-list')).toContainText(patientName);
     await page.waitForTimeout(500);
     const patientNameElement = page
@@ -91,12 +99,20 @@ test.describe('importing from Halaxy', () => {
     // and the count cross-check below used to fail with Expected 1, Received 2 —
     // which is the check working: with the sibling's row gone from the API and
     // still on screen, the index would have clicked somebody else's batch.
+    // Reopened the same way she opened it the first time — from "More", not by
+    // a URL. Each importer mounts its own batch history, so the Claude panel
+    // reads the list once and the Halaxy panel once more; the snapshot below is
+    // armed **after** Claude's rows are on screen, so it is the answer the
+    // Halaxy rows were rendered from and not the one beside them in time.
+    await page.getByTestId('mission-control').click();
+    await page.getByTestId('mission-import').click();
+    await expect(page.getByTestId('import-batches')).toBeVisible();
     const listAnswer = page.waitForResponse((response) => {
       if (response.request().method() !== 'GET') return false;
       const url = new URL(response.url());
       return url.pathname === '/api/import/batches' && url.search === '';
     });
-    await page.goto('/import/halaxy');
+    await page.getByTestId('import-switch-halaxy').click();
     const { batches } = (await (await listAnswer).json()) as { batches: { id: string }[] };
     await expect(page.getByTestId('halaxy-batches')).toBeVisible();
     await checkScreen(page, 'Import from Halaxy, with an earlier import');

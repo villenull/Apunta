@@ -1,7 +1,20 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import type { Page } from '@playwright/test';
+
 import { acquireAppearanceLock, expect, releaseAppearanceLock, test, uniqueName } from '../support/fixtures';
+
+/**
+ * Settings is a modal over the workspace (owner, 2026-10-05): there is no
+ * `/settings` page, so the cases below open it from "More" and pick a tab.
+ */
+async function openSettings(page: Page, section: string): Promise<void> {
+  await page.getByTestId('mission-control').click();
+  await page.getByTestId('mission-settings').click();
+  await expect(page.getByTestId('settings-modal')).toBeVisible();
+  await page.getByTestId(`settings-tab-${section}`).click();
+}
 
 /** Committed next to the specs, so a reviewer can eyeball the layout. */
 const SCREENSHOT = join(import.meta.dirname, '..', 'screenshots', 'workspace-1280x800.png');
@@ -437,9 +450,8 @@ test.describe('the workspace', () => {
 test.describe('when the local AI is not there', () => {
   /**
    * The server runs in fake-AI mode here, which always reports a healthy
-   * model, so the unhealthy answer is faked at the network boundary — the same
-   * technique the first-run spec uses, and for the same reason: other specs are
-   * mid-flow against this database.
+   * model, so the unhealthy answer is faked at the network boundary — for the
+   * same reason other specs do it: they are mid-flow against this database.
    */
   test('shows a dismissible banner and leaves the rest of the app working', async ({
     page,
@@ -462,9 +474,9 @@ test.describe('when the local AI is not there', () => {
     await page.goto('/');
 
     const banner = page.getByTestId('ai-banner');
-    // The banner is the opening clause, a link, and a tail — three pieces the
-    // component joins, so the joined shape is asserted rather than the single
-    // `ai.unreachable_banner` key, which nothing renders.
+    // The banner is the opening clause, a tail and the retry button — three
+    // pieces the component joins, so the joined shape is asserted rather than
+    // the single `ai.unreachable_banner` key, which nothing renders.
     await expect(banner).toContainText(
       new RegExp(`${trRe('ai.unreachable').source}[\\s\\S]*${trRe('ai.bannerTail').source}`),
     );
@@ -524,11 +536,12 @@ test.describe('settings', () => {
     const name = uniqueName('E2E adjustable format');
     await request.post('/api/formats', { data: { name, sections: ['Subjective', 'Plan'] } });
 
-    await page.goto('/settings');
+    await page.goto('/');
+    await openSettings(page, 'format');
     const row = page.getByTestId('format-list').locator('.patient-row', { hasText: name });
     await expect(row).toContainText('Subjective, Plan');
 
-    await row.getByRole('link', { name: 'Edit' }).click();
+    await row.getByTestId('edit-format').click();
     await expect(page.getByRole('heading', { name: tr('format.editTitle') })).toBeVisible();
     await page.getByRole('button', { name: tr('format.addSection') }).click();
     await page.getByLabel(tr('format.sectionNamePlaceholder')).fill('Assessment');
@@ -551,7 +564,8 @@ test.describe('settings', () => {
    * assertion that reads what the click wrote.
    */
   test('autosaves an appearance change and shows Saved in the card header', async ({ page, tr }) => {
-    await page.goto('/settings');
+    await page.goto('/');
+    await openSettings(page, 'appearance');
     const card = page.getByTestId('appearance-settings');
     await expect(card.getByTestId('appearance-saved')).toHaveCount(0);
 

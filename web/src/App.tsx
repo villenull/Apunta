@@ -14,20 +14,12 @@ import { Workspace } from './routes/Workspace.js';
 // Non-workspace screens are runtime-loaded so the landing view stays eager.
 // (Dynamic `import()` here is React's route code-splitting, not a runtime module choice.)
 
-const About = lazy(async () => ({ default: (await import('./routes/About.js')).About }));
-const Licenses = lazy(async () => ({ default: (await import('./routes/Licenses.js')).Licenses }));
 const OnboardingFormat = lazy(async () => ({
   default: (await import('./routes/OnboardingFormat.js')).OnboardingFormat,
 }));
 const OnboardingPreview = lazy(async () => ({
   default: (await import('./routes/OnboardingPreview.js')).OnboardingPreview,
 }));
-const Import = lazy(async () => ({ default: (await import('./routes/Import.js')).Import }));
-const HalaxyImport = lazy(async () => ({
-  default: (await import('./routes/HalaxyImport.js')).HalaxyImport,
-}));
-const Settings = lazy(async () => ({ default: (await import('./routes/Settings.js')).Settings }));
-const Setup = lazy(async () => ({ default: (await import('./routes/Setup.js')).Setup }));
 
 /**
  * Every screen in the app. There is no login route — the app opens straight
@@ -83,12 +75,6 @@ const baseRoutes = (
     <Route path="/" element={<Workspace />} />
     <Route path="/patients" element={<Workspace />} />
     <Route path="/patients/new" element={<AddPatient />} />
-    <Route path="/settings" element={<Settings />} />
-    <Route path="/import" element={<Import />} />
-    <Route path="/import/halaxy" element={<HalaxyImport />} />
-    <Route path="/setup" element={<Setup />} />
-    <Route path="/about" element={<About />} />
-    <Route path="/licenses" element={<Licenses />} />
     <Route path="/onboarding/format" element={<OnboardingFormat />} />
     <Route path="/onboarding/preview" element={<OnboardingPreview />} />
     <Route path="*" element={<Navigate to="/" replace />} />

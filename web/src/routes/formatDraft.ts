@@ -1,8 +1,8 @@
 import { FormatSourceSchema, type FormatSource } from '@apunta/shared';
 
 /**
- * What `/onboarding/format` hands to `/onboarding/preview` (and what Settings
- * hands it when editing an existing format).
+ * What `/onboarding/format` hands to `/onboarding/preview`: the name and the
+ * sections, either typed out or detected from an uploaded file.
  *
  * It travels in the router's location state rather than the query string: a
  * section list is not a URL, and the preview screen is a confirmation step,
@@ -11,8 +11,6 @@ import { FormatSourceSchema, type FormatSource } from '@apunta/shared';
 export interface FormatDraft {
   name: string;
   sections: string[];
-  /** Where to go once the format is saved. */
-  returnTo: string;
   /** Set when editing an existing format instead of creating one. */
   formatId?: string;
   /** How the sections were arrived at, recorded on the saved format. */
@@ -33,7 +31,6 @@ export function asFormatDraft(value: unknown): FormatDraft | null {
   const draft = value as Record<string, unknown>;
   if (typeof draft['name'] !== 'string') return null;
   if (!isStringArray(draft['sections'])) return null;
-  if (typeof draft['returnTo'] !== 'string') return null;
   if (draft['formatId'] !== undefined && typeof draft['formatId'] !== 'string') return null;
 
   const source = FormatSourceSchema.safeParse(draft['source']);
@@ -41,7 +38,6 @@ export function asFormatDraft(value: unknown): FormatDraft | null {
   return {
     name: draft['name'],
     sections: draft['sections'],
-    returnTo: draft['returnTo'],
     ...(typeof draft['formatId'] === 'string' ? { formatId: draft['formatId'] } : {}),
     ...(source.success ? { source: source.data } : {}),
     ...(draft['truncated'] === true ? { truncated: true } : {}),

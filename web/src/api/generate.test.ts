@@ -84,7 +84,7 @@ describe('generateNote', () => {
     stubStream(
       frame('error', {
         code: 'ollama_unreachable',
-        message: "Apunta can't reach the local AI — see Setup.",
+        message: "Apunta can't reach the local AI.",
       }),
     );
 
@@ -92,7 +92,7 @@ describe('generateNote', () => {
     expect(thrown).toBeInstanceOf(GenerateError);
     expect(thrown).toMatchObject({
       code: 'ollama_unreachable',
-      message: "Apunta can't reach the local AI — see Setup.",
+      message: "Apunta can't reach the local AI.",
     });
   });
 

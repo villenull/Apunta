@@ -8,12 +8,11 @@ import { ThinkingDots } from './ThinkingDots.js';
 /**
  * A recording in progress, as the capture screen shows it: the dot that
  * breathes with her voice, the timer, and the provisional words growing as a
- * block. The refine chat's microphone renders the same panel, so dictating a
- * message looks exactly like dictating a note (owner-proxy, 2026-09-07).
+ * block. Only the capture screen renders it — a chat composer writes its
+ * provisional words into its own box instead (owner, 2026-10-05).
  *
- * The caller supplies the stop control as children — "Stop and process" on
- * the capture screen, "Stop dictating" in the chat — because what stopping
- * leads to is the one thing the two have not got in common.
+ * The caller supplies the stop control as children, because what stopping
+ * leads to is the one thing the surfaces around a recording do not share.
  */
 export function LiveRecording({
   level,

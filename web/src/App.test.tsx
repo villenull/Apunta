@@ -14,6 +14,7 @@ import {
   makeFormat,
   makeNote,
   makePatient,
+  type FakeApi,
 } from './test/fakeApi.js';
 
 /**
@@ -41,6 +42,22 @@ let activeRouter: TestRouter | null = null;
 function renderApp(path: string | { pathname: string; state: unknown } = '/'): void {
   activeRouter = createMemoryRouter([{ path: '*', element: <App /> }], { initialEntries: [path] });
   render(<RouterProvider router={activeRouter} />);
+}
+
+/**
+ * Settings is a modal over the workspace (owner, 2026-10-05) — there is no
+ * `/settings` page any more — so the cases below open it the way a person
+ * does: More → Settings, and then the section they mean.
+ */
+async function openSettings(section?: string): Promise<HTMLElement> {
+  renderApp('/');
+  fireEvent.click(await screen.findByTestId('mission-control'));
+  fireEvent.click(await screen.findByTestId('mission-settings'));
+  const modal = await screen.findByTestId('settings-modal');
+  if (section !== undefined) {
+    fireEvent.click(within(modal).getByTestId(`settings-tab-${section}`));
+  }
+  return modal;
 }
 
 /**
@@ -203,9 +220,10 @@ describe('workspace', () => {
     for (const card of cards) expect(card.querySelector('.patient-welcome-hint')?.textContent).not.toBe('');
     expect(screen.getByTestId('notes-new-note')).toBeDefined();
     // The patient's name left the column's header (owner, 2026-10-05); the
-    // notes themselves still carry the "Notes" label they always had.
+    // notes still carry the "Notes" label they always had, in the pinned band
+    // above the list rather than inside it.
     expect(screen.queryByTestId('notes-header')).toBeNull();
-    expect(screen.getByTestId('note-list').textContent).toContain('Notes');
+    expect(screen.getByTestId('notes-head').textContent).toContain('Notes');
   });
 
   it('opens a note, and marks drafts with a date and a Draft label', async () => {
@@ -919,8 +937,16 @@ describe('the work around a session', () => {
   it('opens a brainstorm above the treatment plan, with nothing written anywhere', async () => {
     renderApp(`/?patient=${john.id}`);
 
-    const actions = (await screen.findByTestId('open-brainstorm')).parentElement;
-    expect(actions?.firstElementChild?.getAttribute('data-testid')).toBe('open-brainstorm');
+    /**
+     * The column's band of tools is its own container now (the "narrow way
+     * back" rides along as its first row), so "Brainstorm comes first" is a
+     * claim about the first *tool* in it, not about its first child.
+     */
+    const tools = await screen.findByTestId('notes-tools');
+    const toolIds = within(tools)
+      .getAllByTestId(/^open-/)
+      .map((button) => button.getAttribute('data-testid'));
+    expect(toolIds).toEqual(['open-brainstorm', 'open-plan', 'open-prep']);
 
     fireEvent.click(screen.getByTestId('open-brainstorm'));
 
@@ -1098,15 +1124,6 @@ describe('first run', () => {
     expect(api.state.formats[0]?.instructions).not.toBe('');
   });
 
-  it('preselects nothing when adding another format from Settings', async () => {
-    installFakeApi({ formats: [] });
-    renderApp({ pathname: '/onboarding/format', state: { name: '', sections: [], returnTo: '/settings' } });
-
-    const option = await screen.findByTestId('option-standard');
-    expect(option.className).not.toContain('selected');
-    expect(screen.getByTestId('format-continue')).toHaveProperty('disabled', true);
-  });
-
   it('creates a format from the manual path and lands on add patient', async () => {
     const api = installFakeApi({ formats: [], patients: [] });
     renderApp('/onboarding/format');
@@ -1199,17 +1216,17 @@ describe('first run', () => {
 });
 
 describe('the format editor', () => {
-  let editorApi: ReturnType<typeof installFakeApi>;
+  let editorApi: FakeApi;
 
-  function openEditor(): void {
+  /** Format › Edit, opened inside the settings modal where it lives now. */
+  async function openEditor(): Promise<void> {
     editorApi = installFakeApi({ formats: [makeFormat('Progress note', ['Subjective', 'Plan'])] });
-    renderApp('/settings');
+    await openSettings('format');
+    fireEvent.click(await screen.findByTestId('edit-format'));
   }
 
   it('renames a section, reorders it, and saves', async () => {
-    openEditor();
-
-    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+    await openEditor();
 
     const chips = await screen.findByTestId('section-chips');
     fireEvent.click(within(chips).getByRole('button', { name: 'Rename Subjective' }));
@@ -1225,11 +1242,17 @@ describe('the format editor', () => {
     await waitFor(() => {
       expect(editorApi.state.formats[0]?.sections).toEqual(['Plan', 'Presenting concern']);
     });
+
+    // Saving is what brings the list back, with the change on it — and the
+    // app has not moved: Settings is a modal, not a screen (owner,
+    // 2026-10-05).
+    const list = await screen.findByTestId('format-list');
+    expect(list.textContent).toContain('Plan, Presenting concern');
+    expect(activeRouter?.state.location.pathname).toBe('/');
   });
 
   it('refuses a rename that collides with another section', async () => {
-    openEditor();
-    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+    await openEditor();
 
     const chips = await screen.findByTestId('section-chips');
     fireEvent.click(within(chips).getByRole('button', { name: 'Rename Subjective' }));
@@ -1242,8 +1265,7 @@ describe('the format editor', () => {
   });
 
   it('says that section edits only affect future drafts', async () => {
-    openEditor();
-    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+    await openEditor();
 
     expect(
       await screen.findByText(/keep the sections they were written with/, { exact: false }),
@@ -1251,8 +1273,7 @@ describe('the format editor', () => {
   });
 
   it('imports a skill file into the instructions and warns about its references', async () => {
-    openEditor();
-    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+    await openEditor();
 
     const panel = await screen.findByTestId('instructions-panel');
     upload(within(panel).getByTestId('skill-file-input'), [
@@ -1277,8 +1298,7 @@ describe('the format editor', () => {
   });
 
   it('leaves instructions blank to mean "use the built-in default"', async () => {
-    openEditor();
-    fireEvent.click(await screen.findByRole('link', { name: 'Edit' }));
+    await openEditor();
 
     const panel = await screen.findByTestId('instructions-panel');
     expect(within(panel).getByLabelText('Instructions')).toHaveProperty('value', '');
@@ -1390,15 +1410,14 @@ describe('the add-patient window', () => {
    */
   it('dims and blurs the page behind it, and keeps the × a bare glyph', () => {
     const appCss = readFileSync(join(import.meta.dirname, 'styles', 'app.css'), 'utf8');
-
-    // The scrim rule Settings already had, now naming this panel too — one
-    // rule for "a modal over the workspace", not a second copy of the blur.
+    // The scrim rule Settings already had, now naming every other window too —
+    // one rule for "a modal over the workspace", not a second copy of the blur.
     // One rule for every window that sits over the workspace — Settings, adding
-    // a patient, the language chooser and the new-note window (owner,
-    // 2026-10-05) — rather than one copy of the blur each, which is how three
-    // windows end up blurring three different amounts.
+    // a patient, the language chooser, the new-note window and the import
+    // window (owner, 2026-10-05) — rather than one copy of the blur each, which
+    // is how five windows end up blurring five different amounts.
     const shared = appCss.match(
-      /\.modal-backdrop:has\(\.settings-modal\),\s*\.modal-backdrop:has\(\.add-patient-modal\),\s*\.modal-backdrop:has\(\.language-modal\),\s*\.modal-backdrop:has\(\.capture-modal\)\s*\{[^}]*\}/,
+      /\.modal-backdrop:has\(\.settings-modal\),\s*\.modal-backdrop:has\(\.add-patient-modal\),\s*\.modal-backdrop:has\(\.language-modal\),\s*\.modal-backdrop:has\(\.capture-modal\),\s*\.modal-backdrop:has\(\.import-modal\)\s*\{[^}]*\}/,
     );
     expect(shared?.[0]).toContain('background: var(--scrim)');
     expect(shared?.[0]).toContain('backdrop-filter: blur(var(--scrim-blur))');
@@ -1450,8 +1469,9 @@ describe('the batch stylesheets against the workspace cascade', () => {
     expect(notesCss).toMatch(/\.new-note-btn\.notes-col-new\s*\{[^}]*margin: 0;/);
     expect(appCss).toMatch(/\.col-body\s*\{[^}]*flex: 1;/);
     expect(notesCss).toMatch(/\.col-body\.notes-col-body\s*\{[^}]*flex: 1 1 auto;/);
-    // The top band sits in `.col-header-title`, which sets its own gap.
-    expect(notesCss).toMatch(/\.col-header-title\.notes-col-head-row\s*\{[^}]*gap: var\(--space-4\)/);
+    // The narrow way back, whose base padding is `.narrow-back`'s.
+    expect(appCss).toMatch(/\.narrow-back\s*\{[^}]*padding: var\(--space-2\) var\(--space-0\)/);
+    expect(notesCss).toMatch(/\.narrow-back\.notes-col-back\s*\{[^}]*padding-inline-start:/);
   });
 });
 
@@ -1515,7 +1535,7 @@ describe('adding a patient and a typed note', () => {
       {
         generateError: {
           code: 'ollama_unreachable',
-          message: "Apunta can't reach the local AI — see Setup.",
+          message: "Apunta can't reach the local AI.",
         },
       },
     );
@@ -1759,7 +1779,7 @@ describe('refine chat', () => {
     const note = makeNote(john.id, { format_id: progressNote.id, content: NOTE_TEXT });
     installFakeApi(
       { formats: [progressNote], patients: [john], notes: [note] },
-      { chatError: { code: 'ollama_unreachable', message: "Apunta can't reach the local AI — see Setup." } },
+      { chatError: { code: 'ollama_unreachable', message: "Apunta can't reach the local AI." } },
     );
     renderApp(`/?patient=${john.id}&note=${note.id}`);
     const body = (await screen.findByTestId('note-body')) as HTMLTextAreaElement;
@@ -1860,17 +1880,63 @@ describe('first run, with nothing set up yet', () => {
 });
 
 describe('settings', () => {
-  it('lists formats with their sections and links each one to the editor', async () => {
+  it('lists formats with their sections, and edits one in the pane', async () => {
     installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
+    const modal = await openSettings('format');
 
-    expect(await screen.findByText('Note formats')).toBeDefined();
-    expect(screen.getByText('Subjective, Objective, Assessment, Plan')).toBeDefined();
+    const formats = within(modal).getByTestId('format-list');
+    expect(formats.textContent).toContain('Subjective, Objective, Assessment, Plan');
 
-    fireEvent.click(screen.getByText('Edit'));
+    fireEvent.click(within(formats).getByTestId('edit-format'));
 
+    // The editor is in the pane, not on a screen of its own: the nav, the
+    // modal and the URL behind it all stay where they were (owner,
+    // 2026-10-05).
     expect(await screen.findByText('Edit note format')).toBeDefined();
     expect(screen.getByLabelText('Format name')).toHaveProperty('value', 'Progress note');
+    expect(activeRouter?.state.location.pathname).toBe('/');
+    expect(screen.getByTestId('settings-pane-back')).not.toBeNull();
+
+    fireEvent.click(screen.getByTestId('settings-pane-back'));
+    expect(await screen.findByTestId('format-list')).toBeDefined();
+  });
+
+  it('asks how to add a format in the pane, and saves the standard one there', async () => {
+    const api = installFakeApi({ formats: [progressNote] });
+    await openSettings('format');
+
+    fireEvent.click(screen.getByTestId('add-format'));
+
+    fireEvent.click(await screen.findByTestId('option-standard'));
+    fireEvent.click(screen.getByTestId('format-continue'));
+
+    // Back to the list, with the format she just added on it.
+    const formats = await screen.findByTestId('format-list');
+    expect(formats.textContent).toContain('Progress note');
+    expect(api.state.formats).toHaveLength(2);
+    expect(activeRouter?.state.location.pathname).toBe('/');
+  });
+
+  /**
+   * Advanced is a plain open section now (owner, 2026-10-05), and the one
+   * row under App is the repository: Setup, About and Licenses were three
+   * pages she opened once, and the code for all three was more than the row.
+   */
+  it('shows Advanced open, with the one row that leaves the app', async () => {
+    installFakeApi({ formats: [progressNote] });
+    const modal = await openSettings('advanced');
+
+    const advanced = within(modal).getByTestId('settings-advanced');
+    // Nothing to click open: the backup folder is on the page already.
+    expect(await screen.findByTestId('backup-advanced')).not.toBeNull();
+
+    const repository = within(modal).getByTestId('settings-repository');
+    expect(repository.getAttribute('href')).toBe('https://github.com/villenull/Apunta');
+    expect(repository.getAttribute('target')).toBe('_blank');
+    expect(repository.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(repository.textContent).toContain('Read more about Apunta');
+    expect(within(repository).getByLabelText('Apunta on GitHub')).not.toBeNull();
+    expect(advanced.querySelector('summary')).toBeNull();
   });
 
   /**
@@ -1880,7 +1946,7 @@ describe('settings', () => {
    */
   it('paints the Apunta teal whatever accent an older build stored', async () => {
     installFakeApi({ formats: [progressNote], settings: { accent_color: '#8b2f6b' } });
-    renderApp('/settings');
+    await openSettings();
 
     await screen.findByTestId('appearance-settings');
     expect(screen.queryByLabelText('Colour')).toBeNull();
@@ -1891,26 +1957,26 @@ describe('settings', () => {
     document.documentElement.style.removeProperty('--accent');
   });
 
-  it('orders the screen Appearance, Note formats, Backup, then Advanced', async () => {
+  it('offers the four sections in order, one at a time', async () => {
     installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
+    const modal = await openSettings();
 
-    const appearance = await screen.findByTestId('appearance-settings');
-    const formats = screen.getByTestId('format-list');
-    const backup = screen.getByTestId('backup-card');
-    const follows = (a: Node, b: Node): boolean =>
-      (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-    expect(follows(appearance, formats)).toBe(true);
-    expect(follows(formats, backup)).toBe(true);
+    const tabs = ['appearance', 'format', 'backup', 'advanced'];
+    const nav = within(modal).getByLabelText('Settings sections');
+    expect(
+      [...nav.querySelectorAll('.settings-nav-item')].map((item) => item.getAttribute('data-testid')),
+    ).toEqual(tabs.map((id) => `settings-tab-${id}`));
     // And Import is not here any more: it moved to "More" (owner,
     // 2026-09-27), so the section and its two links are **gone** rather than
     // left behind as a second door to the same screens. Two doors is how two
     // places end up disagreeing about where importing lives.
-    expect(screen.queryByTestId('settings-import')).toBeNull();
-    expect(screen.queryByTestId('settings-import-halaxy')).toBeNull();
-    expect(screen.queryByTestId('settings-tab-import')).toBeNull();
+    expect(within(modal).queryByTestId('settings-import')).toBeNull();
+    expect(within(modal).queryByTestId('settings-import-halaxy')).toBeNull();
+    expect(within(modal).queryByTestId('settings-tab-import')).toBeNull();
 
     // "Add another format" is the format card's last row.
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    const formats = await screen.findByTestId('format-list');
     const add = within(formats).getByTestId('add-format');
     expect(add.textContent).toContain('Add another format');
     expect(formats.lastElementChild).toBe(add);
@@ -1918,7 +1984,7 @@ describe('settings', () => {
 
   it('saves a text size immediately by scaling one root token', async () => {
     const api = installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
+    await openSettings();
 
     const large = await screen.findByTestId('font-size-large');
     expect(screen.getByTestId('font-size-default').getAttribute('aria-checked')).toBe('true');
@@ -1944,7 +2010,7 @@ describe('settings', () => {
 
   it('turns animations off app-wide and remembers it immediately', async () => {
     const api = installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
+    await openSettings();
 
     const toggle = (await screen.findByTestId('animations-toggle')) as HTMLInputElement;
     expect(toggle.checked).toBe(true);
@@ -1961,7 +2027,7 @@ describe('settings', () => {
 
   it('saves a theme immediately, defaulting to dark', async () => {
     const api = installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
+    await openSettings();
 
     const dark = await screen.findByTestId('theme-dark');
     expect(dark.getAttribute('aria-checked')).toBe('true');
@@ -1985,7 +2051,7 @@ describe('settings', () => {
    */
   it('offers the three themes as one named switcher, and saves the system one', async () => {
     const api = installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
+    await openSettings();
 
     const group = (await screen.findByTestId('theme-system')).closest('.theme-switch');
     expect(group).not.toBeNull();
@@ -2035,7 +2101,7 @@ describe('settings', () => {
       vi.fn((query: string) => ({ matches: query === '(prefers-reduced-motion: reduce)', media: query })),
     );
     installFakeApi({ formats: [progressNote] });
-    renderApp('/settings');
+    await openSettings();
 
     const toggle = (await screen.findByTestId('animations-toggle')) as HTMLInputElement;
     expect(toggle.checked).toBe(false);

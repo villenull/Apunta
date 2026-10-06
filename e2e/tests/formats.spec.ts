@@ -45,6 +45,24 @@ function drop(collected: string[], line: string): void {
   collected.splice(0, collected.length, ...remaining);
 }
 
+/**
+ * Settings is a modal over the workspace (owner, 2026-10-05) — there is no
+ * `/settings` page, and the format editor is inside its pane — so the cases
+ * below open it the way she does: More → Settings, then the Format tab.
+ */
+async function openFormatSettings(page: Page): Promise<void> {
+  await page.getByTestId('mission-control').click();
+  await page.getByTestId('mission-settings').click();
+  await expect(page.getByTestId('settings-modal')).toBeVisible();
+  await page.getByTestId('settings-tab-format').click();
+  await expect(page.getByTestId('format-list')).toBeVisible();
+}
+
+/** The row for one format in the list the Format pane shows. */
+function formatRow(page: Page, name: string) {
+  return page.getByTestId('format-list').locator('.patient-row').filter({ hasText: name });
+}
+
 test.describe('her standard progress note', () => {
   /**
    * The seven section names the server stores for her standard format, as the
@@ -245,17 +263,22 @@ test.describe('editing a format from Settings', () => {
     const formatName = uniqueName('E2E editable note');
 
     // Create it through the Settings entry point, so saving returns there.
-    await page.goto('/settings');
-    await page.getByRole('link', { name: tr('settings.addFormat') }).click();
+    await page.goto('/');
+    await openFormatSettings(page);
+    await page.getByTestId('add-format').click();
     await page.getByText(tr('format.manualTitle')).click();
     await page.getByLabel(tr('format.nameLabel')).fill(formatName);
-    await page.getByLabel(tr('format.sectionsLabel')).fill('Subjective, Objective, Assessment, Plan');
+    // `exact`: the settings modal's own nav is labelled "Settings sections",
+    // which `getByLabel` otherwise matches as a substring.
+    await page
+      .getByLabel(tr('format.sectionsLabel'), { exact: true })
+      .fill('Subjective, Objective, Assessment, Plan');
     await page.getByTestId('format-continue').click();
     await page.getByTestId('save-format').click();
 
-    const row = page.getByTestId('format-list').locator('.patient-row').filter({ hasText: formatName });
+    const row = formatRow(page, formatName);
     await expect(row).toBeVisible();
-    await row.getByRole('link', { name: tr('common.edit') }).click();
+    await row.getByTestId('edit-format').click();
 
     await expect(page.getByRole('heading', { name: tr('format.editTitle') })).toBeVisible();
     // The packet's rule, said out loud on the screen she is editing.
@@ -277,27 +300,23 @@ test.describe('editing a format from Settings', () => {
 
     // Back on Settings, and both changes survived a round trip to the server.
     await expect(row).toContainText('Observations');
-    await row.getByRole('link', { name: tr('common.edit') }).click();
+    await row.getByTestId('edit-format').click();
     await expect(page.getByLabel(tr('format.instructions'))).toHaveValue(instructions);
   });
 
   test('imports a skill file into the instructions and warns about its references', async ({ page, tr }) => {
     const formatName = uniqueName('E2E skill note');
 
-    await page.goto('/settings');
-    await page.getByRole('link', { name: tr('settings.addFormat') }).click();
+    await page.goto('/');
+    await openFormatSettings(page);
+    await page.getByTestId('add-format').click();
     await page.getByText(tr('format.manualTitle')).click();
     await page.getByLabel(tr('format.nameLabel')).fill(formatName);
-    await page.getByLabel(tr('format.sectionsLabel')).fill('Subjective, Plan');
+    await page.getByLabel(tr('format.sectionsLabel'), { exact: true }).fill('Subjective, Plan');
     await page.getByTestId('format-continue').click();
     await page.getByTestId('save-format').click();
 
-    await page
-      .getByTestId('format-list')
-      .locator('.patient-row')
-      .filter({ hasText: formatName })
-      .getByRole('link', { name: tr('common.edit') })
-      .click();
+    await formatRow(page, formatName).getByTestId('edit-format').click();
 
     await page
       .getByTestId('skill-file-input')

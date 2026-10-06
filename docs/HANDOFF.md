@@ -1,3 +1,26 @@
+# Owner UI feedback batch — 2026-10-05 (later)
+
+Built and gated (lint, typecheck, build, e2e both projects green; unit suite
+green except the 20 `appearance.test.ts` / `SidebarViewMenu.test.tsx` failures,
+which fail identically at e9698c2 — `window.localStorage` in this Node).
+- Settings is modal-only: format edit/add open in the modal pane
+  (`FormatEditor.tsx`, `FormatDraftEditor.tsx`); `/onboarding/*` is first-run
+  only. Advanced is always open, ends with one "Read more about Apunta" row
+  linking to https://github.com/villenull/Apunta (decisions.md 2026-10-05,
+  allow-listed in `scripts/check-no-external-urls.mjs`).
+- Setup, About, Licenses screens and `GET /api/licenses` removed; AiBanner has
+  no Setup link. Import is a modal (`ImportModal.tsx`, `ClaudeImport.tsx`,
+  `HalaxyImport.tsx`) that reloads the sidebar after import/undo. Routes
+  `/settings`, `/setup`, `/about`, `/licenses`, `/import*` are gone.
+- Notes column: tools on top, "Notes" heading, New note, list; rows show format
+  (muted) above a bold date. Note header compacted; refine launcher icon-only.
+- Font-size setting now scales the patients column (`--row-font`/`--main-font`
+  alias `--text-base`).
+- Refine chat: ~1.5×/1.3× larger, no title bar (round close), one-line
+  auto-growing composer with inline mic + return arrow (teal once text exists);
+  dictation starts on the mic with provisional words inline in the box (no panel).
+Owner preview for this batch: http://127.0.0.1:7831/ (sample data, fake AI).
+
 # Current orchestration — 2026-10-05
 
 Main is authoritative. Owner preview http://127.0.0.1:7821/ now serves the latest
@@ -193,24 +216,29 @@ Beyond the packets, the live-testing weeks (2026-08-27 → 09-07) added:
   timestamps and a punctuated lead-in prompt.
 - **Her seven-section format measured** (`npm run check:format`) and the
   refine chat measured adversarially (`npm run check:refine`).
-- **Dictating into the refine chat** (2026-09-07): a microphone in the
-  composer. While it listens the chat shows the capture screen's own
-  recording panel — the dot that breathes with her voice, the timer, the
-  provisional words growing as a block — because both now render
-  `components/LiveRecording.tsx` on top of `hooks/useLiveRecording.ts`,
-  which owns the recorder and the preview loop for both screens. On stop,
-  `POST /api/transcribe/dictation` runs the note model with the context
-  fitted to the clip and hands the words back into the box for her to edit;
-  nothing is sent until she presses the arrow. The send arrow is full accent
-  with a white glyph.
+- **Dictating into the refine chat** (2026-09-07; revised 2026-10-05, owner):
+  a microphone in the composer. Pressing it starts recording there and then —
+  no dialog, no panel — and the microphone itself carries the state (pressed,
+  "Stop dictating", pulsing, with the timer). The provisional words land in the
+  box itself, after anything she had typed, and are read-only until she stops;
+  on stop the provisional tail is replaced by the final transcript. The hook
+  behind it is still `hooks/useLiveRecording.ts`, which owns the recorder and
+  the preview loop, but `components/LiveRecording.tsx` — the capture screen's
+  panel — is now only the capture screen's. `POST
+  /api/transcribe/dictation` runs the note model with the context fitted to the
+  clip and hands the words back into the box for her to edit; nothing is sent
+  until she presses the arrow. Errors (nothing heard, whisper down, microphone
+  refused) surface on the composer's own error line, as they always did.
 - **Settings, reordered then redesigned labels-only** (2026-09-21, owner):
   Appearance (Colour, Font size, Animations switch — no hint text, the label
   alone suffices), then Note formats (with "Add another format" as the
   card's last row), then a one-line Backup card ("Last backup: … · Back up
   now · Restore", speaking up only when stale or failing), then Import from
   Claude as a link row, then a folded-shut Advanced disclosure holding the
-  backup folder/passphrase/archives/restore-tested/retention and
-  Setup/About/Licences. Text appears only where omitting it risks her data.
+  backup folder/passphrase/archives/restore-tested/retention and one
+  **Read more about Apunta** row linking to the repository (the Setup, About
+  and Licenses screens were removed 2026-10-05). Text appears only where
+  omitting it risks her data.
   Appearance has the accent colour, **text size** (Small / Default / Large / Extra
   large: one `--font-scale` token multiplies every `font-size` in the
   stylesheets) and **animations** on/off (a `no-motion` root class; unset

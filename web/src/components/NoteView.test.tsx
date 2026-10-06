@@ -64,6 +64,22 @@ describe('refine outcomes', () => {
   });
 });
 
+describe('the refine launcher', () => {
+  /**
+   * The launcher is icon-only: the glyph carries it, the name lives in the
+   * accessible name and the tooltip. A visible "Refine note" next to the icon
+   * would come back with the next design pass, so it is pinned here.
+   */
+  it('is an icon-only button named Refine note', () => {
+    renderNote();
+
+    const fab = screen.getByRole('button', { name: 'Refine note' });
+    expect(fab).toBe(screen.getByTestId('chat-fab'));
+    expect(fab.textContent).toBe('');
+    expect(fab.getAttribute('title')).toBe('Refine note');
+  });
+});
+
 describe('autosave ordering', () => {
   it('persists an undo made before an older save response arrives', async () => {
     const { api, note } = renderNote();

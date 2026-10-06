@@ -82,8 +82,8 @@ test('Language: not offered on a build without the dev switch', async ({ page, r
   await request.post('/api/formats', {
     data: { name: uniqueName('E2E language format'), sections: ['Subjective', 'Plan'] },
   });
-  await page.goto('/settings');
-  await expect(page.getByTestId('appearance-settings')).toBeVisible();
+  await page.goto('/');
+  await openSettingsModal(page);
   await expect(page.getByTestId('language-settings')).toHaveCount(0);
   await expect(page.getByText(tr('settings.language'))).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
@@ -458,15 +458,15 @@ test.describe('the Language control on the Spanish server', () => {
     await openLanguageDialog(page);
     await expect(page.getByTestId('language-option-es-MX')).toHaveAttribute('aria-checked', 'true');
     await expect(root).toHaveAttribute('lang', 'es-MX');
-    // After a round trip through the dialog, the Settings screen agrees: its
+    // After a round trip through the dialog, the Settings modal agrees: its
     // own words are in Spanish (it no longer has a language control to read).
     await page.getByTestId('language-close').click();
-    await page.goto('/settings');
+    await openSettingsModal(page);
     await expect(page.getByTestId('appearance-settings')).toContainText(
       t('settings.appearance', {}, 'es-MX'),
     );
     await expect(root).toHaveAttribute('lang', 'es-MX');
-    await page.goBack();
+    await page.getByLabel(t('settings.closeLabel', {}, 'es-MX')).click();
     await openLanguageDialog(page);
     await expect(page.getByTestId('language-option-es-MX')).toHaveAttribute('aria-checked', 'true');
 

@@ -160,8 +160,9 @@ your Dock by dragging it there once.
 
 - The menu-bar icon is there and not greyed out.
 - The tab shows your patient list rather than an error.
-- Inside Apunta, the **Setup** page shows every row green. It is the honest
-  answer to "is anything missing?".
+- Inside Apunta, a green tab with your patient list in it, and no banner along
+  the top saying the local AI is unreachable. The banner is the honest answer to
+  "is anything missing?".
 
 ---
 
@@ -175,8 +176,9 @@ and open it again.
 **The browser tab says it cannot connect.** Apunta is not running. Open it from
 Applications.
 
-**A draft never appears.** Open the **Setup** page inside Apunta. It checks
-every part and names the one that is missing.
+**A draft never appears.** A banner along the top of Apunta names the part that
+is missing — usually the local AI is not running. Start Ollama and press
+**Check again** on the banner.
 
 **It says the model is missing after it worked before.** Something deleted the
 downloads. Quit Apunta and open it again; the setup window comes back and
@@ -264,5 +266,5 @@ Locking the screen when you walk away is the real answer.
 **A stolen Mac with the disk unencrypted.** FileVault is macOS's disk
 encryption and it is what makes a lost laptop a lost laptop rather than a
 disclosure of every note you have written. It is not on by default on every
-Mac. Apunta's **Setup** page tells you whether it is on, and refuses to call
-itself private while it is off.
+Mac. Apunta reports FileVault's state through its own health check, and refuses
+to call itself private while it is off.

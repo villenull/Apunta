@@ -3,14 +3,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { HalaxyImport } from './HalaxyImport.js';
-import { Import } from './Import.js';
+import { ClaudeImportPanel } from './ClaudeImport.js';
+import { HalaxyImportPanel } from './HalaxyImport.js';
+import { ImportModal } from './ImportModal.js';
 import { installFakeApi } from '../test/fakeApi.js';
 
 /**
- * The automatic import screen: settings, a glance at who would be imported,
- * one button, a report with an undo. Names come from the prototype's sample
- * practice.
+ * The import window: settings, a glance at who would be imported, one button,
+ * a report with an undo. Names come from the prototype's sample practice.
  */
 const REPORT: ClaudeImportReport = {
   batch_id: null,
@@ -61,12 +61,37 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function renderImport(): void {
+/**
+ * The window itself, opened the way the workspace opens it: over the page,
+ * with the × and Escape as the ways out.
+ */
+function renderModal(onClose = vi.fn()): { onClose: () => void } {
   render(
-    <MemoryRouter initialEntries={['/import']}>
-      <Import />
+    <MemoryRouter>
+      <ImportModal onClose={onClose} onImported={vi.fn()} />
     </MemoryRouter>,
   );
+  return { onClose };
+}
+
+/** The Claude importer as it is mounted inside the window. */
+function renderImport(onImported = vi.fn()): () => void {
+  render(
+    <MemoryRouter>
+      <ClaudeImportPanel onSwitchToHalaxy={vi.fn()} onClose={vi.fn()} onImported={onImported} />
+    </MemoryRouter>,
+  );
+  return onImported;
+}
+
+/** The Halaxy importer as it is mounted inside the window. */
+function renderHalaxy(onImported = vi.fn()): () => void {
+  render(
+    <MemoryRouter>
+      <HalaxyImportPanel onSwitchToClaude={vi.fn()} onClose={vi.fn()} onImported={onImported} />
+    </MemoryRouter>,
+  );
+  return onImported;
 }
 
 async function chooseAndCheck(names = ''): Promise<void> {
@@ -209,6 +234,25 @@ describe('the import screen', () => {
     expect(api.state.batches).toHaveLength(0);
   });
 
+  /**
+   * The window sits over a workspace that stays mounted (owner, 2026-10-05), so
+   * a run or an undo changes the list behind it and nothing would ever tell that
+   * list to read itself again — it used to be a page of its own, so leaving it
+   * remounted it. This is that signal, on both halves of a run.
+   */
+  it('reports a run and an undo to the workspace behind, so its list reads itself again', async () => {
+    installFakeApi({}, { importReport: REPORT });
+    const onImported = renderImport();
+    await chooseAndCheck();
+    fireEvent.click(screen.getByTestId('import-run'));
+    await screen.findByTestId('import-done');
+    expect(onImported).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByTestId('import-undo'));
+    await screen.findByTestId('import-undone');
+    expect(onImported).toHaveBeenCalledTimes(2);
+  });
+
   it('says what went wrong with a file that is not an export', async () => {
     installFakeApi();
     const realFetch = globalThis.fetch;
@@ -234,41 +278,91 @@ describe('the import screen', () => {
 });
 
 /**
- * Import is a first-level row in the workspace's "More" menu now (owner,
- * 2026-09-27) rather than a section of Settings, and that move left Halaxy with
- * no link to it anywhere: a route with no way in, reached by nothing. This is
- * the regression that cost the e2e suite a green run, and it is invisible in a
- * unit test of either screen alone — each renders fine, and the gap is between
- * them.
+ * Import is a first-level row in the workspace's "More" menu (owner,
+ * 2026-09-27) rather than a section of Settings, and the "More" row has always
+ * served **both** importers — so Halaxy has no door of its own to be behind.
+ * This is the regression that cost the e2e suite a green run, and it is
+ * invisible in a unit test of either panel alone: each renders fine, and the
+ * gap is between them. The switch is now state inside one window (owner,
+ * 2026-10-05) rather than a link between two screens.
  */
 describe('the other importer is still reachable', () => {
-  it('offers Halaxy from the Claude import screen, and back again', async () => {
+  it('offers Halaxy from the Claude panel, and back again, without leaving the window', async () => {
     installFakeApi();
-    render(
-      <MemoryRouter>
-        <Import />
-      </MemoryRouter>,
-    );
-    await waitFor(() => {
-      expect(screen.getByTestId('import-switch-halaxy')).toBeDefined();
-    });
-    const link = screen.getByTestId('import-switch-halaxy');
-    expect(link.getAttribute('href')).toBe('/import/halaxy');
-    expect(link.textContent).toBe(t('import.switchToHalaxy'));
+    renderModal();
+
+    // The Claude side first, and the switch is a control rather than a link:
+    // there is no second screen to navigate to any more.
+    expect(await screen.findByTestId('import-file')).toBeDefined();
+    expect(screen.getByTestId('import-switch-halaxy').textContent).toBe(t('import.switchToHalaxy'));
+    expect(screen.getByTestId('import-switch-halaxy').tagName).toBe('BUTTON');
+
+    fireEvent.click(screen.getByTestId('import-switch-halaxy'));
+
+    expect(await screen.findByTestId('halaxy-files')).toBeDefined();
+    expect(screen.queryByTestId('import-file')).toBeNull();
+    expect(screen.getByTestId('import-switch-claude').textContent).toBe(t('import.switchToClaude'));
+
+    fireEvent.click(screen.getByTestId('import-switch-claude'));
+
+    expect(await screen.findByTestId('import-file')).toBeDefined();
+    expect(screen.queryByTestId('halaxy-files')).toBeNull();
   });
 
-  it('offers Claude from the Halaxy screen, so neither is a dead end', async () => {
+  it('leaves each importer one switch, so neither is a dead end', async () => {
     installFakeApi();
-    render(
-      <MemoryRouter>
-        <HalaxyImport />
-      </MemoryRouter>,
-    );
+    renderHalaxy();
+
+    const back = await screen.findByTestId('import-switch-claude');
+    expect(back.tagName).toBe('BUTTON');
+    expect(screen.getByTestId('halaxy-files')).toBeDefined();
+  });
+});
+
+/**
+ * The window itself (owner, 2026-10-05): importing is a panel over the
+ * workspace, not a page, so the × and Escape are the ways out and Escape
+ * arrives from `Dialog` rather than from anything here.
+ */
+describe('the import window', () => {
+  it('is a dialog over a backdrop, and the × closes it', async () => {
+    installFakeApi();
+    const { onClose } = renderModal();
+
+    const dialog = await screen.findByTestId('import-modal');
+    expect(dialog.getAttribute('role')).toBe('dialog');
+    expect(screen.getByTestId('import-backdrop')).toBeDefined();
+    expect(screen.getByLabelText(t('import.closeLabel'))).toBeDefined();
+
+    fireEvent.click(screen.getByTestId('import-close'));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes on Escape, the way every other window does', async () => {
+    installFakeApi();
+    const { onClose } = renderModal();
+    await screen.findByTestId('import-file');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
     await waitFor(() => {
-      expect(screen.getByTestId('import-switch-claude')).toBeDefined();
+      expect(onClose).toHaveBeenCalled();
     });
-    const link = screen.getByTestId('import-switch-claude');
-    expect(link.getAttribute('href')).toBe('/import');
-    expect(link.textContent).toBe(t('import.switchToClaude'));
+  });
+
+  it('closes when the report sends her to the patients, since that is the workspace behind', async () => {
+    installFakeApi({}, { importReport: REPORT });
+    const { onClose } = renderModal();
+    await chooseAndCheck();
+    fireEvent.click(screen.getByTestId('import-run'));
+    await screen.findByTestId('import-done');
+
+    // Still a link to the patients — the URL is the workspace's — but the
+    // window has to come with her, or she lands in the workspace behind a
+    // window she was told she had left.
+    fireEvent.click(screen.getByRole('link', { name: t('import.goToPatients') }));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

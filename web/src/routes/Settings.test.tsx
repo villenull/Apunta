@@ -34,9 +34,21 @@ const STORED: Settings = {
   llm_profile: 'quick',
 };
 
-function renderApp(path = '/settings'): void {
-  activeRouter = createMemoryRouter([{ path: '*', element: <App /> }], { initialEntries: [path] });
+function renderApp(): void {
+  activeRouter = createMemoryRouter([{ path: '*', element: <App /> }], { initialEntries: ['/'] });
   render(<RouterProvider router={activeRouter} />);
+}
+
+/**
+ * Settings is a modal over the workspace (owner, 2026-10-05) — there is no
+ * `/settings` page any more — so the cases below open it the way a person
+ * does: More → Settings, on the section they mean (Appearance, the first).
+ */
+async function openSettings(): Promise<void> {
+  renderApp();
+  fireEvent.click(await screen.findByTestId('mission-control'));
+  fireEvent.click(await screen.findByTestId('mission-settings'));
+  await screen.findByTestId('appearance-settings');
 }
 
 type FetchFn = (path: string, init?: RequestInit) => Promise<Response>;
@@ -126,7 +138,7 @@ describe('settings appearance controls', () => {
   it('shows and paints the chosen theme before the save settles', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...STORED } });
     const puts = holdSettingsPuts(api);
-    renderApp();
+    await openSettings();
     const light = await screen.findByTestId('theme-light');
     const dark = screen.getByTestId('theme-dark');
     await waitFor(() => {
@@ -154,7 +166,7 @@ describe('settings appearance controls', () => {
   it('returns to Dark, repaints dark and shows the error when the save fails', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...STORED } });
     const puts = holdSettingsPuts(api);
-    renderApp();
+    await openSettings();
     const light = await screen.findByTestId('theme-light');
     const dark = screen.getByTestId('theme-dark');
     await waitFor(() => {
@@ -195,7 +207,7 @@ describe('settings appearance controls', () => {
 describe('the theme radio group', () => {
   it('is one tab stop, on the selected option', async () => {
     installFakeApi({ formats: [format], settings: { ...STORED } });
-    renderApp();
+    await openSettings();
     const group = await screen.findByRole('radiogroup', { name: 'Theme' });
     const system = screen.getByTestId('theme-system');
     const light = screen.getByTestId('theme-light');
@@ -223,7 +235,7 @@ describe('the theme radio group', () => {
   it('wraps ArrowRight from Dark to System, painting the resolved theme', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...STORED } });
     const puts = holdSettingsPuts(api);
-    renderApp();
+    await openSettings();
     const system = await screen.findByTestId('theme-system');
     const dark = screen.getByTestId('theme-dark');
     await waitFor(() => {
@@ -263,7 +275,7 @@ describe('the theme radio group', () => {
 
   it('moves ArrowLeft from Dark to Light', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...STORED } });
-    renderApp();
+    await openSettings();
     const light = await screen.findByTestId('theme-light');
     const dark = screen.getByTestId('theme-dark');
     await waitFor(() => {
@@ -288,7 +300,7 @@ describe('the theme radio group', () => {
 
   it('jumps Home to System and End to Dark', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...STORED } });
-    renderApp();
+    await openSettings();
     const system = await screen.findByTestId('theme-system');
     const dark = screen.getByTestId('theme-dark');
     await waitFor(() => {
@@ -329,7 +341,7 @@ describe('the theme radio group', () => {
 describe('the drafting model radio group', () => {
   it('moves and selects with the arrow keys, and tabs into the selected option', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...STORED } });
-    renderApp();
+    await openSettings();
     const quick = await screen.findByTestId('llm-profile-quick');
     const thorough = screen.getByTestId('llm-profile-thorough');
 
@@ -372,12 +384,22 @@ describe('the drafting model radio group', () => {
    */
   it('names its sections, sizes and themes from the catalogue, by the stored value', async () => {
     installFakeApi({ formats: [format], settings: { ...STORED } });
-    renderApp();
+    await openSettings();
 
-    expect((await screen.findByTestId('format-list')).textContent).toContain(t('settings.formats'));
-    expect(screen.getByTestId('settings-advanced').textContent).toContain(t('settings.advanced'));
+    const modal = await screen.findByTestId('settings-modal');
     expect(screen.getByTestId('appearance-settings').textContent).toContain(t('settings.appearance'));
     expect(screen.getByTestId('llm-profile-settings').textContent).toContain(t('settings.draftingModel'));
+
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    expect((await screen.findByTestId('format-list')).textContent).toContain(t('settings.formats'));
+
+    fireEvent.click(within(modal).getByTestId('settings-tab-advanced'));
+    expect((await screen.findByTestId('settings-advanced')).textContent).toContain(t('settings.advanced'));
+
+    // The theme and size controls live on the Appearance section, which the
+    // modal shows one at a time, so go back to it before reading them.
+    fireEvent.click(within(modal).getByTestId('settings-tab-appearance'));
+    await screen.findByTestId('appearance-settings');
 
     for (const theme of ['system', 'light', 'dark'] as const) {
       const key =
@@ -407,6 +429,36 @@ describe('the drafting model radio group', () => {
 });
 
 /**
+ * The format editor is a sub-view of the Format pane, so the back control
+ * belongs to it and not to the pane (owner, 2026-10-05). Switching section
+ * from the nav leaves the sub-view: the control would otherwise sit in the
+ * bar of a section that has no editor to go back from.
+ */
+describe('leaving the format editor', () => {
+  it('drops the editor and its back control when another section is chosen', async () => {
+    installFakeApi({ formats: [format], settings: { ...STORED } });
+    await openSettings();
+
+    const modal = await screen.findByTestId('settings-modal');
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    const list = await screen.findByTestId('format-list');
+    fireEvent.click(within(list).getByTestId('edit-format'));
+
+    await screen.findByLabelText('Format name');
+    expect(screen.queryByTestId('settings-pane-back')).not.toBeNull();
+
+    fireEvent.click(within(modal).getByTestId('settings-tab-advanced'));
+    await screen.findByTestId('settings-advanced');
+    expect(screen.queryByTestId('settings-pane-back')).toBeNull();
+
+    // Coming back lands on the list, not on the editor she left.
+    fireEvent.click(within(modal).getByTestId('settings-tab-format'));
+    expect((await screen.findByTestId('format-list')).textContent).toContain(t('settings.formats'));
+    expect(screen.queryByTestId('settings-pane-back')).toBeNull();
+  });
+});
+
+/**
  * Language / Idioma lives in More → Language only (owner, 2026-09-28). The
  * Settings row is gone, and these are its cases moved onto the one control that
  * is left: applied without a reload, disabled with its reason while work is in
@@ -417,7 +469,7 @@ describe('the Language dialog, the one place the language is chosen', () => {
   const OFFERED: Settings = { ...STORED, spanish_available: true, language: 'en' };
 
   async function openDialog(): Promise<HTMLElement> {
-    renderApp('/');
+    renderApp();
     fireEvent.click(await screen.findByTestId('mission-control'));
     fireEvent.click(screen.getByTestId('mission-language'));
     return screen.findByTestId('language-dialog');
@@ -425,8 +477,7 @@ describe('the Language dialog, the one place the language is chosen', () => {
 
   it('is not in Settings any more, on any build', async () => {
     installFakeApi({ formats: [format], settings: { ...OFFERED } });
-    renderApp();
-    await screen.findByTestId('appearance-settings');
+    await openSettings();
     expect(screen.queryByTestId('language-settings')).toBeNull();
     expect(screen.queryByText(t('settings.language'))).toBeNull();
   });
@@ -537,7 +588,7 @@ describe('the Language dialog, the one place the language is chosen', () => {
 describe('the Font dropdown', () => {
   it('offers Inter as the named default, then System and Serif', async () => {
     installFakeApi({ formats: [format], settings: { ...STORED } });
-    renderApp();
+    await openSettings();
     const select = (await screen.findByTestId('font-family')) as HTMLSelectElement;
     expect([...select.options].map((option) => option.textContent)).toEqual([
       'Inter (Default)',
@@ -549,7 +600,7 @@ describe('the Font dropdown', () => {
 
   it('saves a choice at once and paints it on both font tokens', async () => {
     const api = installFakeApi({ formats: [format], settings: { ...STORED } });
-    renderApp();
+    await openSettings();
     const select = (await screen.findByTestId('font-family')) as HTMLSelectElement;
 
     fireEvent.change(select, { target: { value: 'serif' } });
@@ -569,7 +620,7 @@ describe('the Font dropdown', () => {
 
   it('has no colour picker: the accent is the Apunta teal', async () => {
     installFakeApi({ formats: [format], settings: { ...STORED, accent_color: '#8b2f6b' } });
-    renderApp();
+    await openSettings();
     await screen.findByTestId('appearance-settings');
     expect(document.querySelector('input[type="color"]')).toBeNull();
     expect(screen.queryByTestId('reset-accent')).toBeNull();

@@ -56,20 +56,33 @@ test.describe('dictating into the chat', () => {
 
     const mic = page.getByTestId('chat-mic');
     await expect(mic).toHaveAttribute('aria-label', tr('dictation.mic'));
+    await expect(mic).toHaveAttribute('aria-pressed', 'false');
+    // The microphone is inside the composer's own box, immediately left of the
+    // return arrow, and dictation starts from it: no dialog opens anywhere.
+    await expect(mic.locator('xpath=..')).toHaveClass(/chat-input-row/);
+    await expect(page.getByRole('dialog')).toHaveCount(1);
     await mic.click();
     await expect(mic).toHaveAttribute('aria-label', tr('dictation.stop'));
-    // The capture screen's panel, inside the chat: the dot, the timer and the
-    // provisional words as whisper hears them.
-    await expect(page.getByTestId('record-panel')).toBeVisible();
-    await expect(page.getByTestId('record-preview-text')).toContainText('John Smith');
+    await expect(mic).toHaveAttribute('aria-pressed', 'true');
+    // The words go into the box itself as whisper hears them: no panel above
+    // the composer and no second dialog anywhere.
+    await expect(page.getByTestId('record-panel')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await expect(page.getByTestId('chat-input')).toHaveValue(/John Smith/);
+    // Provisional words, not the message: the box is read-only and the arrow
+    // waits rather than posting a half-heard sentence.
+    await expect(page.getByTestId('chat-input')).toHaveAttribute('readonly', '');
+    await expect(page.getByTestId('chat-send')).toBeDisabled();
     await checkScreen(page, 'the refine chat while dictating');
     // Let the fake microphone play for a second or two so there is a clip to send.
-    await expect(page.getByTestId('record-timer')).toHaveText(/00:0[2-9]/);
-    await page.getByTestId('record-stop').click();
+    await expect(page.getByTestId('chat-mic-timer')).toHaveText(/00:0[2-9]/);
+    // Pressing the same microphone again stops and transcribes.
+    await mic.click();
 
     const input = page.getByTestId('chat-input');
     await expect(input).toHaveValue(/John Smith/);
-    await expect(mic).toHaveAttribute('aria-label', tr('dictation.mic'));
+    await expect(input).not.toHaveAttribute('readonly', '');
+    await expect(page.getByTestId('chat-send')).toBeEnabled();
     // Nothing went to the model: the thread still shows only its empty-state line.
     await expect(page.getByTestId('chat-thread')).not.toContainText('John Smith');
   });

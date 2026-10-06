@@ -55,13 +55,19 @@ const PRESSABLE =
  *
  * The patient's name is gone from its own header: the sidebar row she just
  * clicked already says who she is with, and the column repeated it one screen
- * away. What is left is three bands — **New note** at the top, the notes alone
- * in the middle, and the three tools in a footer that does not scroll away — so
+ * away. The column now reads top to bottom in the order she works in — the
+ * three tools (Brainstorm, Treatment plan, Prepare for session) she opens a
+ * session with, then the "Notes" heading and the row that starts one, then the
+ * notes themselves — with only the notes scrolling and the tools pinned, so
  * the notes are the only thing in the column that moves.
  *
- * Clicking the empty part of the middle band goes back to the patient's welcome
+ * There is no rule between "New note" and the list under it: the heading is
+ * what groups them, and a second edge there read as a boxed cell.
+ *
+ * Clicking the empty part of the notes band goes back to the patient's welcome
  * while keeping the patient (the workspace's own `onDeselect`, which flushes
- * the open note first).
+ * the open note first). The heading band carries the same handler: it is the
+ * same empty space with a word in it.
  */
 export function NotesColumn({
   patient,
@@ -94,53 +100,21 @@ export function NotesColumn({
 
   return (
     <div className="col col-notes" data-testid="notes-column">
-      {/* The narrow-window way back to the patients stays: this column is the
-          whole screen on a phone, and without it she cannot leave. */}
-      <div className="col-header notes-col-head" data-testid="notes-head">
-        <div className="col-header-title notes-col-head-row">
-          <button type="button" className="narrow-back" onClick={onBackToPatients}>
+      {/*
+       * The work around a session, at the top of the column (owner,
+       * 2026-10-05), and the work she does *about* the notes rather than
+       * through them, so it does not scroll away under a long list. The
+       * narrow-window way back to the patients rides along as the band's
+       * first row: on a phone this column is the whole screen, and without it
+       * she cannot leave. Two separate objects: the plan is a record she
+       * authors, the briefing is a reading aid generated on demand.
+       */}
+      {patient && (
+        <div className="col-actions notes-col-tools" data-testid="notes-tools">
+          <button type="button" className="narrow-back notes-col-back" onClick={onBackToPatients}>
             <BackIcon className="icon icon-xs" />
             <span>{t('common.patients')}</span>
           </button>
-          {patient && (
-            <button
-              type="button"
-              className="new-note-btn notes-col-new"
-              data-testid="notes-new-note"
-              onClick={openCapture}
-            >
-              {/* The plus in a filled circle, as the sidebar's "New patient" and
-                  Claude's "New chat" (owner, 2026-09-28): a quiet row, not a
-                  dashed box competing with everything under it. */}
-              <span className="new-note-icon" aria-hidden="true">
-                <PlusIcon className="icon" />
-              </span>
-              {t('notes.new')}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* The only band that scrolls. The click surface is this element, so the
-          empty space below a short list counts as empty space rather than as a
-          click on the last row. */}
-      <div className="col-body notes-col-body" data-testid="note-list" onClick={onBlankSpace}>
-        {patient && (
-          <NoteList
-            patient={patient}
-            notes={notes}
-            activeNoteId={activeNoteId}
-            onSelect={onSelect}
-            onRetry={onRetry}
-          />
-        )}
-      </div>
-
-      {/* The work around a session, next to the notes that follow one. Two
-          separate objects: the plan is a record she authors, the briefing is a
-          reading aid generated on demand. */}
-      {patient && (
-        <div className="col-actions notes-col-footer" data-testid="notes-tools">
           <button
             type="button"
             className={view === 'brainstorm' ? 'col-action-btn active' : 'col-action-btn'}
@@ -176,6 +150,45 @@ export function NotesColumn({
           </button>
         </div>
       )}
+
+      {/* The notes' own heading, and the row that starts one. Pinned above the
+          list rather than inside it, and with no rule under either of them. */}
+      {patient && (
+        <div className="notes-col-start" data-testid="notes-head" onClick={onBlankSpace}>
+          <div className="notes-list-heading" role="presentation">
+            {t('notes.title')}
+          </div>
+          {/* The plus in a filled circle, as the sidebar's "New patient" and
+              Claude's "New chat" (owner, 2026-09-28): a quiet row, not a
+              dashed box competing with everything under it. */}
+          <button
+            type="button"
+            className="new-note-btn notes-col-new"
+            data-testid="notes-new-note"
+            onClick={openCapture}
+          >
+            <span className="new-note-icon" aria-hidden="true">
+              <PlusIcon className="icon" />
+            </span>
+            {t('notes.new')}
+          </button>
+        </div>
+      )}
+
+      {/* The only band that scrolls. The click surface is this element, so the
+          empty space below a short list counts as empty space rather than as a
+          click on the last row. */}
+      <div className="col-body notes-col-body" data-testid="note-list" onClick={onBlankSpace}>
+        {patient && (
+          <NoteList
+            patient={patient}
+            notes={notes}
+            activeNoteId={activeNoteId}
+            onSelect={onSelect}
+            onRetry={onRetry}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -214,9 +227,6 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
 
   return (
     <>
-      <div className="notes-list-heading" role="presentation">
-        {t('notes.title')}
-      </div>
       {notes.data.map((note) => (
         <button
           key={note.id}
@@ -226,11 +236,17 @@ function NoteList({ patient, notes, activeNoteId, onSelect, onRetry }: NoteListP
             onSelect(note.id);
           }}
         >
+          {/*
+           * Format first, date second (owner, 2026-10-05): the format name is
+           * what tells two notes apart and the date is what she scans for, so
+           * the date is the line that carries the weight and the format is the
+           * quiet one above it.
+           */}
+          <div className="note-format">{note.title}</div>
           <div className="note-date-row">
             <span className="note-date">{noteDay(t, note.created_at)}</span>
             {note.status === 'draft' && <span className="draft-chip">{t('note.draftChip')}</span>}
           </div>
-          <div className="note-title">{note.title}</div>
           <div className="note-preview">{notePreview(note.content)}</div>
         </button>
       ))}

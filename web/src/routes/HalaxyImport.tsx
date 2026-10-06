@@ -1,25 +1,37 @@
-import {
-  type HalaxyImportResponse,
-  type HalaxyPreviewPatient,
-  type HalaxyPreviewResponse,
-} from '@apunta/shared';
-import { useState } from 'react';
+import type { HalaxyImportResponse, HalaxyPreviewPatient, HalaxyPreviewResponse } from '@apunta/shared';
+import { useId, useState } from 'react';
 import { Link } from 'react-router';
 import { errorMessage, previewHalaxyImport, runHalaxyImport } from '../api/index.js';
 import { ImportBatchList } from '../components/ImportBatchList.js';
 import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
-import { Screen } from '../components/TopBar.js';
-import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
 import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 /**
  * Halaxy's practitioner export is one text PDF per patient. The preview is
  * deliberately reviewable: names can be corrected and individual sessions
  * can be left out before one undoable batch is written.
+ *
+ * This is the body of the import window (owner, 2026-10-05), so it carries no
+ * page chrome: the × and the blurred page behind it belong to `ImportModal`,
+ * and the other importer is a switch inside the window.
  */
-export function HalaxyImport(): React.JSX.Element {
+export function HalaxyImportPanel({
+  onSwitchToClaude,
+  onClose,
+  onImported,
+}: {
+  /** The other importer, in this window rather than on another screen. */
+  onSwitchToClaude: () => void;
+  /** "Go to patients" closes the window over the workspace it returns to. */
+  onClose: () => void;
+  /**
+   * The window sits over a workspace that stays mounted, so nothing behind it
+   * would notice a run or an undo on its own. This is how the list behind knows
+   * to read itself again — the page behind is never remounted any more.
+   */
+  onImported: () => void;
+}): React.JSX.Element {
   const { t } = useI18n();
-  useDocumentTitle(t('doc.importHalaxy'));
   const [files, setFiles] = useState<readonly File[]>([]);
   const [summary, setSummary] = useState<HalaxyPreviewResponse | null>(null);
   const [names, setNames] = useState<Readonly<Record<string, string>>>({});
@@ -81,6 +93,7 @@ export function HalaxyImport(): React.JSX.Element {
       });
       const response = await runHalaxyImport({ patients });
       setReport(response);
+      onImported();
       reload();
     } catch (thrown) {
       setError(errorMessage(thrown));
@@ -94,6 +107,7 @@ export function HalaxyImport(): React.JSX.Element {
     setError(null);
     try {
       await undo(id);
+      onImported();
     } catch (thrown) {
       setError(errorMessage(thrown));
     }
@@ -107,7 +121,7 @@ export function HalaxyImport(): React.JSX.Element {
 
   if (report !== null) {
     return (
-      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+      <>
         <h2 className="heading-tight">{undone === null ? t('import.doneTitle') : t('import.undoneTitle')}</h2>
         {undone !== null ? (
           <p className="lede" data-testid="halaxy-undone">
@@ -144,7 +158,7 @@ export function HalaxyImport(): React.JSX.Element {
                 disabled={busy}
                 data-testid="halaxy-undo"
                 onClick={() => {
-                  void undo(report.batch_id as string);
+                  void handleUndo(report.batch_id as string);
                 }}
               >
                 {t('import.undo')}
@@ -153,10 +167,10 @@ export function HalaxyImport(): React.JSX.Element {
           </>
         )}
         {errorLine}
-        <Link to="/" className="btn">
+        <Link to="/" className="btn" onClick={onClose}>
           {t('import.goToPatients')}
         </Link>
-      </Screen>
+      </>
     );
   }
 
@@ -167,7 +181,7 @@ export function HalaxyImport(): React.JSX.Element {
       0,
     );
     return (
-      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+      <>
         <h2 className="heading-tight">{t('import.readyTitle')}</h2>
         <p className="lede" data-testid="halaxy-summary">
           {t('halaxy.summaryLine', {
@@ -228,24 +242,30 @@ export function HalaxyImport(): React.JSX.Element {
             {t('import.chooseDifferent')}
           </button>
         </div>
-      </Screen>
+      </>
     );
   }
 
   return (
-    <Screen back={{ to: '/', label: t('common.patients') }}>
+    <>
       <h2 className="heading-tight">{t('doc.importHalaxy')}</h2>
       <p className="muted lede">{t('halaxy.lede')}</p>
-      {/* The other importer, since the row in "More" that brought her here
-          serves both and this screen used to be linked only from Settings. */}
+      {/* The other importer: it lives in this window too, so neither is a dead
+          end and neither is a second screen to have to come back from. */}
       <p className="small">
-        <Link to="/import" data-testid="import-switch-claude">
+        <button
+          type="button"
+          className="link-button"
+          data-testid="import-switch-claude"
+          onClick={onSwitchToClaude}
+        >
           {t('import.switchToClaude')}
-        </Link>
+        </button>
       </p>
       <div className="card card-rows lede">
         <p className="small note-meta">{t('halaxy.localOnly')}</p>
         <input
+          className="field-input import-file-input"
           type="file"
           accept=".pdf,application/pdf"
           multiple
@@ -260,7 +280,7 @@ export function HalaxyImport(): React.JSX.Element {
         {errorLine}
         <button
           type="button"
-          className="btn btn-block"
+          className="btn btn-primary btn-block"
           disabled={files.length === 0 || busy}
           data-testid="halaxy-check"
           onClick={() => {
@@ -279,7 +299,7 @@ export function HalaxyImport(): React.JSX.Element {
         testId="halaxy-batches"
         formatDate={(iso) => formatBatchDate(t, iso)}
       />
-    </Screen>
+    </>
   );
 }
 
@@ -301,17 +321,21 @@ function PatientReview({
   onToggle: (key: string, checked: boolean) => void;
 }): React.JSX.Element {
   const { t } = useI18n();
+  const nameId = useId();
   return (
     <section className="card card-rows lede" data-testid="halaxy-patient">
-      <label className="field-label import-patient-name">
-        {t('import.patientName')}
+      <div className="field">
+        <label className="label" htmlFor={nameId}>
+          {t('import.patientName')}
+        </label>
         <input
           className="field-input"
+          id={nameId}
           value={name}
           data-testid="halaxy-patient-name"
           onChange={(event) => onName(event.target.value)}
         />
-      </label>
+      </div>
       {patient.existingPatients.length > 0 && (
         <div className="import-patient-choice">
           <span className="import-patient-choice-label">{t('import.whereTo')}</span>

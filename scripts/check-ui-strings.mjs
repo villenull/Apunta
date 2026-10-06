@@ -125,14 +125,15 @@ function decode(text) {
  * sibling element, so *every* row-menu word qualified. Five user-visible
  * English strings shipped through it untranslated for the whole of S2.1-S2.5 —
  * `Pin`, `Rename`, `Restore`, `Delete` and `Archive` in `PatientMenu.tsx`, plus
- * the trailing `has it.` in `Setup.tsx`, whose only neighbour was a `<Link>`.
- * All five now read from the catalogues and the exemption is gone rather than
- * narrowed, because a narrowed exemption is the same hole with a length limit.
+ * one trailing clause whose only neighbour was a `<Link>`. All five now read
+ * from the catalogues and the exemption is gone rather than narrowed, because a
+ * narrowed exemption is the same hole with a length limit.
  *
- * The escape a fragment actually needs is two keys. `Setup.tsx:122` is
- * `t('setup.backingUpLead')`, a `<Link>`, then `t('setup.backingUpTail')` —
- * a slot cannot carry the link, because `MessageParams` admits only
- * `string | number` and `t()` returns `string`.
+ * The escape a fragment actually needs is two keys: a key for the clause that
+ * leads into the element and a key for the clause that follows it. A slot cannot
+ * carry the element, because `MessageParams` admits only `string | number` and
+ * `t()` returns `string`. `AiBanner.tsx`'s `ai.unreachable` / `ai.bannerTail`
+ * pair is the current worked example.
  */
 
 /** The string of a literal node, decoded, or `null` when it is not visible text. */

@@ -137,8 +137,10 @@ blank template, examples or typed names. Change formats later in Settings.
 - Backups can contain patient data. Keep them encrypted and do not put them in
   iCloud-synced Desktop or Documents folders.
 
-See the in-app About page and [`docs/INSTALL.md`](docs/INSTALL.md) for the
-plain-language limits and the backup/restore procedure.
+See [`docs/INSTALL.md`](docs/INSTALL.md) for the plain-language limits and the
+backup/restore procedure. The app's own Settings › Advanced has one row,
+**Read more about Apunta**, that opens this repository — licence notices live in
+[`THIRD-PARTY-LICENSES.md`](THIRD-PARTY-LICENSES.md) there.
 
 ## Getting started
 

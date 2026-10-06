@@ -24,7 +24,6 @@ import { registerFormatDetectRoutes } from './routes/formats-detect.js';
 import { registerFormatRoutes } from './routes/formats.js';
 import { registerGenerateRoute } from './routes/generate.js';
 import { registerHealthRoute } from './routes/health.js';
-import { registerLicensesRoute } from './routes/licenses.js';
 import { registerNoteRoutes } from './routes/notes.js';
 import { registerPatientGroupRoutes } from './routes/patientGroups.js';
 import { registerPatientRoutes } from './routes/patients.js';
@@ -156,7 +155,6 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
     ...options.maintenance,
     locale: () => storedLanguage(db),
   });
-  registerLicensesRoute(app, config);
   registerPatientRoutes(app, db);
   registerPatientGroupRoutes(app, db);
   registerNoteRoutes(app, db);

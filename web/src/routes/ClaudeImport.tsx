@@ -6,14 +6,12 @@ import {
   type ImportNoteSource,
   type ImportSkipReason,
 } from '@apunta/shared';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Link } from 'react-router';
 
 import { errorMessage, previewClaudeImport, runClaudeImport } from '../api/index.js';
 import { ImportBatchList } from '../components/ImportBatchList.js';
 import { ImportPreviewRow } from '../components/ImportPreviewRow.js';
-import { Screen } from '../components/TopBar.js';
-import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useImportBatch } from '../hooks/useImportBatch.js';
 import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
 
@@ -21,12 +19,17 @@ import { useI18n, useReportWork, type Translate } from '../lib/i18n.js';
  * Importing her Claude conversations (M11), automatically — the owner's
  * choice on 2026-09-21, over per-note review.
  *
- * Three steps on one screen: the export and three settings; a glance at who
+ * Three steps in one window: the export and three settings; a glance at who
  * would be imported, each patient with a tick she can take off; one button,
  * then a report with an undo. No note text is shown before the import — the
  * notes arrive as drafts, marked as imported, and she reads them where she
  * reads every other note. No title or text of a skipped conversation is
  * shown at all: a reason, a date and a count.
+ *
+ * This is the body of the import window (owner, 2026-10-05), so it carries no
+ * page chrome of its own: the × and the blurred page behind it belong to
+ * `ImportModal`, and the other importer is a switch inside the window rather
+ * than a link to a second screen.
  */
 
 /**
@@ -68,9 +71,23 @@ function nameSource(t: Translate, source: ImportNameSource): string {
   }
 }
 
-export function Import(): React.JSX.Element {
+export function ClaudeImportPanel({
+  onSwitchToHalaxy,
+  onClose,
+  onImported,
+}: {
+  /** The other importer, in this window rather than on another screen. */
+  onSwitchToHalaxy: () => void;
+  /** "Go to patients" closes the window over the workspace it returns to. */
+  onClose: () => void;
+  /**
+   * The window sits over a workspace that stays mounted, so nothing behind it
+   * would notice a run or an undo on its own. This is how the list behind knows
+   * to read itself again — the page behind is never remounted any more.
+   */
+  onImported: () => void;
+}): React.JSX.Element {
   const { t } = useI18n();
-  useDocumentTitle(t('doc.importClaude'));
   const [file, setFile] = useState<File | null>(null);
   const [cutoff, setCutoff] = useState(DEFAULT_IMPORT_CUTOFF);
   const [names, setNames] = useState('');
@@ -84,6 +101,12 @@ export function Import(): React.JSX.Element {
   useReportWork(busy);
   const [error, setError] = useState<string | null>(null);
   const { batches, undone, undoing, reload, undo } = useImportBatch();
+  // The export form's labels hang off their own inputs, the way the other
+  // forms in the app are built (`.field` + `.label`, as adding a patient is):
+  // inside a window the label is a caption above the control, not the control's
+  // own wrapper.
+  const cutoffId = useId();
+  const namesId = useId();
 
   async function check(): Promise<void> {
     if (file === null || busy) return;
@@ -126,6 +149,7 @@ export function Import(): React.JSX.Element {
           ...(Object.keys(existingPatientIds).length > 0 ? { existingPatientIds } : {}),
         }),
       );
+      onImported();
       reload();
     } catch (thrown) {
       setError(errorMessage(thrown));
@@ -139,6 +163,7 @@ export function Import(): React.JSX.Element {
     setError(null);
     try {
       await undo(id);
+      onImported();
     } catch (thrown) {
       setError(errorMessage(thrown));
     }
@@ -152,7 +177,7 @@ export function Import(): React.JSX.Element {
 
   if (report !== null) {
     return (
-      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+      <>
         <h2 className="heading-tight">{undone === null ? t('import.doneTitle') : t('import.undoneTitle')}</h2>
         {undone !== null ? (
           <p className="lede" data-testid="import-undone">
@@ -187,7 +212,7 @@ export function Import(): React.JSX.Element {
                 disabled={busy}
                 data-testid="import-undo"
                 onClick={() => {
-                  void undo(report.batch_id as string);
+                  void handleUndo(report.batch_id as string);
                 }}
               >
                 {t('import.undo')}
@@ -197,10 +222,10 @@ export function Import(): React.JSX.Element {
         )}
         <Skipped report={report} />
         {errorLine}
-        <Link to="/" className="btn">
+        <Link to="/" className="btn" onClick={onClose}>
           {t('import.goToPatients')}
         </Link>
-      </Screen>
+      </>
     );
   }
 
@@ -212,7 +237,7 @@ export function Import(): React.JSX.Element {
     const toCreate = kept.filter((patient) => chosenPatientId(patient) === null).length;
     const ambiguous = summary.skipped.filter((s) => s.reason === 'ambiguous').length;
     return (
-      <Screen back={{ to: '/settings', label: t('common.settings') }}>
+      <>
         <h2 className="heading-tight">{t('import.readyTitle')}</h2>
         <p className="lede" data-testid="import-summary">
           {t('import.summaryLine', {
@@ -320,24 +345,30 @@ export function Import(): React.JSX.Element {
             {t('import.changeSettings')}
           </button>
         </div>
-      </Screen>
+      </>
     );
   }
 
   return (
-    <Screen back={{ to: '/', label: t('common.patients') }}>
+    <>
       <h2 className="heading-tight">{t('doc.importClaude')}</h2>
       <p className="muted lede">{t('import.claudeLede')}</p>
-      {/* The other importer, for the same reason as on the Halaxy screen. */}
+      {/* The other importer, for the same reason as on the Halaxy panel: it
+          lives in this window too, so neither is a dead end. */}
       <p className="small">
-        <Link to="/import/halaxy" data-testid="import-switch-halaxy">
+        <button
+          type="button"
+          className="link-button"
+          data-testid="import-switch-halaxy"
+          onClick={onSwitchToHalaxy}
+        >
           {t('import.switchToHalaxy')}
-        </Link>
+        </button>
       </p>
       <div className="card card-rows lede">
         <p className="small note-meta">{t('import.exportHelp')}</p>
         <input
-          className="field-input"
+          className="field-input import-file-input"
           type="file"
           accept=".zip,.json,application/zip,application/json"
           data-testid="import-file"
@@ -346,10 +377,13 @@ export function Import(): React.JSX.Element {
             setFile(event.target.files?.[0] ?? null);
           }}
         />
-        <label className="field-label">
-          {t('import.patientsSince')}
+        <div className="field">
+          <label className="label" htmlFor={cutoffId}>
+            {t('import.patientsSince')}
+          </label>
           <input
             className="field-input"
+            id={cutoffId}
             type="date"
             value={cutoff}
             data-testid="import-cutoff"
@@ -357,11 +391,14 @@ export function Import(): React.JSX.Element {
               setCutoff(event.target.value);
             }}
           />
-        </label>
-        <label className="field-label">
-          {t('import.namesHelp')}
+        </div>
+        <div className="field">
+          <label className="label" htmlFor={namesId}>
+            {t('import.namesHelp')}
+          </label>
           <textarea
             className="field-input"
+            id={namesId}
             rows={5}
             value={names}
             data-testid="import-names"
@@ -369,8 +406,8 @@ export function Import(): React.JSX.Element {
               setNames(event.target.value);
             }}
           />
-        </label>
-        <fieldset className="small note-meta">
+        </div>
+        <fieldset className="import-radio-group">
           <legend>{t('import.eachNoteIs')}</legend>
           <label className="row gap-8">
             <input
@@ -398,7 +435,7 @@ export function Import(): React.JSX.Element {
         {errorLine}
         <button
           type="button"
-          className="btn btn-block"
+          className="btn btn-primary btn-block"
           disabled={file === null || cutoff === '' || busy}
           data-testid="import-check"
           onClick={() => {
@@ -419,7 +456,7 @@ export function Import(): React.JSX.Element {
         showPatients
         formatDate={(iso) => formatBatchDate(t, iso)}
       />
-    </Screen>
+    </>
   );
 }
 

@@ -1,18 +1,13 @@
 import { t } from '@apunta/shared';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { AiBanner } from './AiBanner.js';
 import { installFakeApi } from '../test/fakeApi.js';
 
-/** The banner links to `/setup`, so it needs a router around it. */
+/** The banner is plain text and one button, so it needs no router. */
 function renderBanner(): void {
-  render(
-    <MemoryRouter>
-      <AiBanner />
-    </MemoryRouter>,
-  );
+  render(<AiBanner />);
 }
 
 afterEach(() => {
@@ -35,7 +30,7 @@ describe('AiBanner', () => {
     renderBanner();
     expect(await screen.findByTestId('ai-banner')).toHaveProperty(
       'textContent',
-      expect.stringContaining("Apunta can't reach the local AI — see Setup"),
+      expect.stringContaining("Apunta can't reach the local AI"),
     );
   });
 
@@ -60,10 +55,10 @@ describe('AiBanner', () => {
   });
 
   /**
-   * S2.4: the banner's one sentence is split by the `Setup` link and the retry
-   * button, both of which the screen needs, so it is keyed at the element
-   * boundary rather than merged. This pins each of those three pieces to its
-   * own key's English, and the stored model name to a parameter.
+   * S2.4: the banner's one sentence is split by the retry button, which the
+   * screen needs, so it is keyed at the element boundary rather than merged.
+   * This pins each piece to its own key's English, and the stored model name to
+   * a parameter.
    */
   it('builds its sentence from the catalogue, with the model as a parameter', async () => {
     installFakeApi(
@@ -74,18 +69,9 @@ describe('AiBanner', () => {
 
     const banner = await screen.findByTestId('ai-banner');
     expect(banner.textContent).toContain(t('ai.modelMissing', { model: ' (gemma4:12b-it-qat)' }));
-    expect(banner.textContent).toContain(t('common.setup'));
     expect(banner.textContent).toContain(t('ai.bannerTail'));
     expect(banner.textContent).toContain(t('common.checkAgain'));
-    expect(t('ai.modelMissing', { model: '' }, 'en')).toBe("Apunta can't find the AI model — see");
-  });
-
-  it('points at the setup screen rather than at nothing', async () => {
-    installFakeApi({}, { health: { ollama: { reachable: false, model: null, modelPresent: false } } });
-    renderBanner();
-
-    // M3 shipped the words "see Setup" with nowhere to go; M7 built the screen.
-    expect(await screen.findByTestId('ai-banner-setup')).toHaveProperty('pathname', '/setup');
+    expect(t('ai.modelMissing', { model: '' }, 'en')).toBe("Apunta can't find the AI model.");
   });
 
   it('can be dismissed', async () => {

@@ -47,8 +47,10 @@ test.describe('brainstorm', () => {
 
     await page.goto(`/?patient=${patient.id}`);
 
-    // Above the treatment plan, beside the notes.
-    await expect(page.locator('.col-actions > button').first()).toHaveAttribute(
+    // Above the treatment plan, in the column's pinned tools band. The first
+    // button in the band is the narrow-window way back to the patients, so the
+    // tools are the ones the app marks as such.
+    await expect(page.getByTestId('notes-tools').locator('button.col-action-btn').first()).toHaveAttribute(
       'data-testid',
       'open-brainstorm',
     );

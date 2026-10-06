@@ -75,8 +75,9 @@ export function runtimeEnvironment(
  * The bundled runtime as a supervised child.
  *
  * Not a restart-on-crash supervisor: a runtime that dies repeatedly should
- * surface as a red row on `/setup`, not as a loop nobody can see. What this
- * guarantees is the other direction — that it does not outlive the server.
+ * surface as the AI banner saying it is unreachable, not as a loop nobody can
+ * see. What this guarantees is the other direction — that it does not outlive
+ * the server.
  */
 export class OllamaProcess {
   private child: ChildProcess | null = null;

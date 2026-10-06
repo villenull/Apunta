@@ -146,14 +146,6 @@ export interface AppConfig {
    * layout is the answer.
    */
   readonly sqliteBinding: string | undefined;
-  /**
-   * `THIRD-PARTY-LICENSES.md`, served to the About page.
-   *
-   * Shipping other people's binaries carries obligations, and a licence file
-   * only in the repository is not shipped. `APUNTA_LICENSES_FILE` points the
-   * packaged app at its own copy in `Contents/Resources/`.
-   */
-  readonly licensesFile: string;
   /** Built SPA. Served in production; absent during `npm run dev`. */
   readonly webDistDir: string;
   readonly version: string;
@@ -195,7 +187,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     ollamaBin: nonEmpty(env['APUNTA_OLLAMA_BIN']),
     whisperBin: nonEmpty(env['APUNTA_WHISPER_BIN']),
     sqliteBinding: nonEmpty(env['APUNTA_SQLITE_BINDING']),
-    licensesFile: nonEmpty(env['APUNTA_LICENSES_FILE']) ?? join(repoRoot, 'THIRD-PARTY-LICENSES.md'),
     webDistDir: nonEmpty(env['APUNTA_WEB_DIST']) ?? join(repoRoot, 'web', 'dist'),
     version: readPackageVersion() ?? '0.0.0',
   };

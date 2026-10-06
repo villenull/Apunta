@@ -9,6 +9,7 @@ import { useI18n, useReportWork } from '../lib/i18n.js';
 import { ChatComposer } from './ChatComposer.js';
 import { Dialog } from './Dialog.js';
 import { ThinkingDots } from './ThinkingDots.js';
+import { CloseIcon } from './icons.js';
 
 export { NOTHING_HEARD_MESSAGE } from '../hooks/useDictation.js';
 
@@ -181,25 +182,20 @@ export function RefineColumn({
       showTitle={false}
       testId="chat-panel"
     >
-      <div className="chat-header row between">
-        <h2 className="chat-header-title" id="refine-note-title">
-          {t('refine.title')}
-        </h2>
-        {onClose !== undefined && (
-          <button
-            type="button"
-            className="btn small btn-compact-icon"
-            aria-label={t('refine.closeLabel')}
-            data-testid="chat-close"
-            onClick={() => {
-              dictation.cancel();
-              onClose();
-            }}
-          >
-            ×
-          </button>
-        )}
-      </div>
+      {onClose !== undefined && (
+        <button
+          type="button"
+          className="chat-close"
+          aria-label={t('refine.closeLabel')}
+          data-testid="chat-close"
+          onClick={() => {
+            dictation.cancel();
+            onClose();
+          }}
+        >
+          <CloseIcon className="icon icon-sm" />
+        </button>
+      )}
 
       <div className="chat-thread" ref={threadRef} data-testid="chat-thread">
         {thread.state.status === 'loading' && <p className="state-note">{t('refine.loadingConversation')}</p>}

@@ -141,8 +141,14 @@
   --field-radius: 8px;
   --field-inset: 8px;
   --row-h: 32px;
-  --row-font: 14px;
-  --main-font: 14px;
+  /* The row and open-space type are the body size, so they are the body size
+     *token* rather than a second `14px`: Settings › Appearance › Text size
+     multiplies `--font-scale` into `--text-base`, and a literal here sat
+     outside it — which is why the patients column was the one place in the app
+     that did not grow. Aliasing keeps the default at 14px and the two numbers
+     from drifting apart. */
+  --row-font: var(--text-base);
+  --main-font: var(--text-base);
   --menu-w: 240px;
   --menu-item-h: 32px;
   /*

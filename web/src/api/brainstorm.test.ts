@@ -106,7 +106,7 @@ describe('sendBrainstormMessage', () => {
         frame('context', { context }) +
         frame('error', {
           code: 'ollama_unreachable',
-          message: "Apunta can't reach the local AI — see Setup.",
+          message: "Apunta can't reach the local AI.",
         }),
     );
 

@@ -93,7 +93,7 @@ describe('sendChatMessage', () => {
       frame('message', { message: userTurn }) +
         frame('error', {
           code: 'ollama_unreachable',
-          message: "Apunta can't reach the local AI — see Setup.",
+          message: "Apunta can't reach the local AI.",
         }),
     );
 

@@ -49,7 +49,7 @@ know.
 
 | # | Question | Command | Result | Why it matters |
 | --- | --- | --- | --- | --- |
-| 1 | Is FileVault on? | `fdesetup status` | ☐ | The whole at-rest story. Without it, anyone who takes the laptop reads every note without knowing a password. `/api/health` and `/setup` now report this; **confirm the app's answer matches the command's.** |
+| 1 | Is FileVault on? | `fdesetup status` | ☐ | The whole at-rest story. Without it, anyone who takes the laptop reads every note without knowing a password. `/api/health` reports this; **confirm the app's answer matches the command's.** |
 | 2 | Is Desktop & Documents iCloud sync on? | System Settings → Apple Account → iCloud → Drive; or check whether `~/Library/Mobile Documents/com~apple~CloudDocs/Desktop` exists | ☐ | If it is, a backup saved to Desktop or Documents is uploaded to Apple. The app warns about those folders on that assumption. |
 | 3 | Is "Optimize Mac Storage" on? | Same panel | ☐ | With it on, macOS can evict an unopened backup to a 0-byte placeholder, and Time Machine then backs up the placeholder. A backup that appears to exist and is empty when needed. |
 | 4 | Is the Time Machine destination encrypted? | `tmutil destinationinfo` | ☐ | It cannot be changed later without erasing and re-adding the disk. If it is not encrypted, that disk is an unlocked filing cabinet holding every note. |
@@ -116,10 +116,7 @@ looks for (a repetition loop under constrained decoding) is intermittent.
 | Check | ☐ | Notes |
 | --- | --- | --- |
 | `npm start` opens a browser tab by itself | ☐ | `open` on darwin, after the server is listening |
-| `/setup` shows every row green | ☐ | Ollama, writing model, whisper, speech model, FileVault |
-| `/setup` says "You're fully local — nothing leaves this Mac." | ☐ | It must **not** say this while FileVault is off |
-| Turning FileVault off and re-checking turns that row red | ☐ | Only if you are willing to; the wording matters more than the test |
-| `/about` shows the real database path | ☐ | |
+| No AI banner along the top of the tab | ☐ | Ollama reachable, writing model present, whisper present, speech model present |
 | Recording a note works end to end | ☐ | The whisper half has never run either |
 
 ---
@@ -290,7 +287,6 @@ that **Try again** works.
 | Cancelled by pressing Stop | ☐ | Nothing lost; the next run continues |
 | A corrupted download | ☐ | Truncate the `.part` file in `models/` by hand. It should refuse, delete it, and start clean |
 | A tag that no longer exists | ☐ | Only if `ollama pull` 404s. The message says retrying will not help, which is true |
-| The Setup page inside the app names no Terminal command | ☐ | Delete a model file and relaunch, then open Setup: every red row says to quit and reopen Apunta, and the "Or do all of it at once" card is absent. (On a source checkout the script is still offered — `bundled` in `/api/health` is what decides, and only the app shell sets `APUNTA_OLLAMA_BIN`) |
 
 ### 7.5 Quit, relaunch, and no orphans
 
@@ -308,7 +304,6 @@ that **Try again** works.
 | The running app talks to nothing but loopback | ☐ | With Apunta open and idle: `lsof -nP -i -a -p $(pgrep -f 'Apunta.app/Contents/MacOS/Apunta')` |
 | The AI runtime talks to nothing but loopback once the models are down | ☐ | Same, for `pgrep -f Contents/Helpers/ollama` |
 | No log file anywhere in the data folder | ☐ | `find "$HOME/Library/Application Support/Apunta" -name '*.log'` |
-| About → the licences are here shows the licence file | ☐ | Proves the notice travelled with the app |
 
 ### 7.7 Uninstall
 

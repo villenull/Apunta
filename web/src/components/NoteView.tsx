@@ -798,6 +798,7 @@ export function NoteView({
         type="button"
         className="chat-fab"
         aria-label={chatOpen ? t('refine.closeLabel') : t('refine.title')}
+        title={chatOpen ? t('refine.closeLabel') : t('refine.title')}
         aria-expanded={chatOpen}
         data-testid="chat-fab"
         onClick={() => {
@@ -809,7 +810,6 @@ export function NoteView({
       >
         {/* While a refine runs behind a closed panel, the launcher thinks. */}
         {refining ? <ThinkingDots ariaLabel={t('note.updatingShort')} /> : <ChatIcon className="icon" />}
-        <span className="chat-fab-label">{t('refine.title')}</span>
       </button>
 
       <RefineColumn

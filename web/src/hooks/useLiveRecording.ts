@@ -62,6 +62,13 @@ export interface LiveRecording {
   readonly stop: () => Promise<Blob | null>;
   /** Throw the recording away. */
   readonly cancel: () => void;
+  /**
+   * Forget the provisional words without touching the recorder. A chat
+   * composer uses it when the finished transcript turns out to be nothing, so
+   * the words whisper only half heard do not stay in the box pretending to be
+   * part of it.
+   */
+  readonly clearPreview: () => void;
 }
 export interface PreviewRequest {
   readonly kind: 'commit' | 'tail';
@@ -434,6 +441,14 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     return wav;
   }, []);
 
+  const clearPreview = useCallback((): void => {
+    previewAbort.current?.abort();
+    previewAbort.current = null;
+    committed.current = { text: '', at: 0, tail: '' };
+    setCommittedPreview('');
+    setTentativePreview('');
+  }, []);
+
   const cancel = useCallback((): void => {
     previewAbort.current?.abort();
     previewAbort.current = null;
@@ -445,7 +460,17 @@ export function useLiveRecording(options: LiveRecordingOptions): LiveRecording {
     setPhase('idle');
   }, []);
 
-  return { phase, seconds, level, committedPreview, tentativePreview, start, stop, cancel };
+  return {
+    phase,
+    seconds,
+    level,
+    committedPreview,
+    tentativePreview,
+    start,
+    stop,
+    cancel,
+    clearPreview,
+  };
 }
 
 /** Peaks under this are the room, not her: the same floor the recorder uses to find a pause. */

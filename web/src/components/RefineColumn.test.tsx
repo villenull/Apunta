@@ -121,6 +121,38 @@ describe('dictating into the composer', () => {
     ).toBeNull();
   });
 
+  /**
+   * Dictation starts where she pressed it (owner, 2026-10-05): no dialog
+   * opens, the microphone itself carries the recording state — pressed, named
+   * "Stop dictating", pulsing — and the words land in the box as she talks.
+   */
+  it('starts dictation from the button itself, with no dialog in the way', async () => {
+    installFakeApi(
+      { formats: [progressNote], patients: [john], notes: [draft] },
+      { dictationText: 'he is sleeping better' },
+    );
+    renderChat();
+
+    const mic = screen.getByTestId('chat-mic');
+    expect(mic.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(mic);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('chat-mic').getAttribute('aria-pressed')).toBe('true');
+    });
+    const listening = screen.getByTestId('chat-mic');
+    expect(listening.getAttribute('aria-label')).toBe('Stop dictating');
+    expect(listening.className).toBe('chat-icon-btn btn-mic is-recording');
+    // The sheet is the only dialog on screen, and it was there before.
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+
+    fireEvent.click(screen.getByTestId('chat-mic'));
+    await waitFor(() => {
+      expect((screen.getByTestId('chat-input') as HTMLTextAreaElement).value).toBe('he is sleeping better');
+    });
+    expect(screen.getByTestId('chat-mic').getAttribute('aria-pressed')).toBe('false');
+  });
+
   it('says so when whisper heard no words, and leaves the box alone', async () => {
     installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] }, { dictationText: '   ' });
     renderChat();
@@ -142,7 +174,7 @@ describe('dictating into the composer', () => {
         dictationError: {
           status: 503,
           code: 'ai_unavailable',
-          message: 'Speech-to-text is not installed. See Setup.',
+          message: 'Speech-to-text is not installed. Set the whisper path in Settings.',
         },
       },
     );
@@ -154,7 +186,7 @@ describe('dictating into the composer', () => {
     });
     fireEvent.click(screen.getByTestId('chat-mic'));
 
-    await screen.findByText('Speech-to-text is not installed. See Setup.');
+    await screen.findByText('Speech-to-text is not installed. Set the whisper path in Settings.');
     expect(screen.getByTestId('chat-mic').getAttribute('aria-label')).toBe('Dictate a message');
   });
 
@@ -169,24 +201,32 @@ describe('dictating into the composer', () => {
     expect(screen.getByTestId('chat-mic').getAttribute('aria-label')).toBe('Dictate a message');
   });
 
-  it('shows the capture screen’s panel while listening: the dot, the timer and the growing words', async () => {
+  /**
+   * Dictating has no panel and no dialog (owner, 2026-10-05): the microphone
+   * itself carries the state and the provisional words land in the box itself,
+   * after anything she had typed.
+   */
+  it('writes the provisional words into the box as she talks, and no panel', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     installFakeApi(
       { formats: [progressNote], patients: [john], notes: [draft] },
       { previewText: 'add that he is sleeping', dictationText: 'Add that he is sleeping better.' },
     );
     renderChat();
+    const input = screen.getByTestId('chat-input') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'Also,' } });
 
     fireEvent.click(screen.getByTestId('chat-mic'));
-    await screen.findByTestId('record-panel');
-    expect(screen.getByTestId('record-preview').textContent).toContain('Listening');
-
-    const dot = screen.getByTestId('record-dot');
-    expect(dot.style.getPropertyValue('--level')).toBe('0');
-    act(() => {
-      handlers.onLevel?.(0.2);
+    await waitFor(() => {
+      expect(screen.getByTestId('chat-mic').getAttribute('aria-pressed')).toBe('true');
     });
-    expect(Number(dot.style.getPropertyValue('--level'))).toBeGreaterThan(0.5);
+    // No panel above the composer, and no second dialog anywhere.
+    expect(screen.queryByTestId('record-panel')).toBeNull();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    // Nothing has been heard yet, so the box holds only what she typed — and
+    // typing is held while the microphone is open.
+    expect(input.value).toBe('Also,');
+    expect(input.readOnly).toBe(true);
 
     // The first refresh is on a timer; drive it rather than waiting for it.
     await act(async () => {
@@ -194,16 +234,18 @@ describe('dictating into the composer', () => {
       await Promise.resolve();
     });
     await waitFor(() => {
-      expect(screen.getByTestId('record-preview-text').textContent).toContain('add that he is sleeping');
-    });
-    expect(screen.getByTestId('record-preview').textContent).toContain('written from the finished recording');
-
-    fireEvent.click(screen.getByTestId('record-stop'));
-    await waitFor(() => {
-      expect((screen.getByTestId('chat-input') as HTMLInputElement).value).toBe(
-        'Add that he is sleeping better.',
+      expect((screen.getByTestId('chat-input') as HTMLTextAreaElement).value).toBe(
+        'Also, add that he is sleeping',
       );
     });
+
+    fireEvent.click(screen.getByTestId('chat-mic'));
+    await waitFor(() => {
+      expect((screen.getByTestId('chat-input') as HTMLTextAreaElement).value).toBe(
+        'Also, Add that he is sleeping better.',
+      );
+    });
+    expect((screen.getByTestId('chat-input') as HTMLTextAreaElement).readOnly).toBe(false);
     expect(screen.queryByTestId('record-panel')).toBeNull();
     vi.useRealTimers();
   });
@@ -233,7 +275,7 @@ describe('dictating into the composer', () => {
     expect(await screen.findByRole('menuitem', { name: 'The' })).toBeDefined();
   });
 
-  it('keeps the send arrow live with an empty box, and an empty send does nothing', async () => {
+  it('keeps the return arrow live with an empty box, and an empty send does nothing', async () => {
     const api = installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
     renderChat();
 
@@ -243,6 +285,22 @@ describe('dictating into the composer', () => {
     await waitFor(() => {
       expect(api.state.messages).toHaveLength(0);
     });
+  });
+
+  /**
+   * The composer's chrome (owner, 2026-10-05): the return arrow is a grey
+   * glyph inside the box until the box holds words, and takes the accent then.
+   */
+  it('takes the accent on the return arrow only while the box holds words', () => {
+    installFakeApi({ formats: [progressNote], patients: [john], notes: [draft] });
+    renderChat();
+
+    const send = screen.getByTestId('chat-send');
+    expect(send.className).toBe('chat-icon-btn btn-send');
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: '   ' } });
+    expect(send.className).toBe('chat-icon-btn btn-send');
+    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Tighten this' } });
+    expect(send.className).toBe('chat-icon-btn btn-send is-ready');
   });
 });
 
@@ -361,6 +419,33 @@ describe('refine dialog semantics', () => {
     renderChat();
     expect(screen.getByRole('dialog', { name: 'Refine note' })).toBeDefined();
     expect(document.querySelector('.modal-backdrop')).toBeNull();
+  });
+
+  /**
+   * The bar and its heading are gone (owner, 2026-10-05): the card is all
+   * conversation, with a small circular close floating over its corner. The
+   * accessible name survives on the dialog itself, which is what a screen
+   * reader announces when the card opens.
+   */
+  it('shows no title bar, and closes from the round button over the corner', () => {
+    const close = vi.fn();
+    render(
+      <RefineColumn
+        note={draft}
+        refQuote={null}
+        onClearRefQuote={() => {}}
+        onNoteUpdated={() => {}}
+        onClose={close}
+      />,
+    );
+
+    expect(document.querySelector('.chat-header')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Refine note' })).toBeDefined();
+    const button = screen.getByTestId('chat-close');
+    expect(button.className).toBe('chat-close');
+    expect(button.getAttribute('aria-label')).toBe(t('refine.closeLabel', {}, 'en'));
+    fireEvent.click(button);
+    expect(close).toHaveBeenCalledOnce();
   });
 });
 

@@ -249,7 +249,7 @@ describe('BrainstormView', () => {
       {
         brainstormError: {
           code: 'ollama_unreachable',
-          message: "Apunta can't reach the local AI — see Setup.",
+          message: "Apunta can't reach the local AI.",
         },
       },
     );
@@ -301,7 +301,7 @@ describe('BrainstormView', () => {
 });
 
 describe('BrainstormView composer', () => {
-  it('wears the refine chat’s microphone and send arrow', async () => {
+  it('wears the refine chat’s microphone and return arrow, inside the box', async () => {
     const patient = makePatient('John Smith');
     installFakeApi({ patients: [patient], brainstorm: [] });
 
@@ -309,14 +309,16 @@ describe('BrainstormView composer', () => {
     await screen.findByTestId('brainstorm-empty');
 
     const mic = screen.getByTestId('brainstorm-mic');
-    expect(mic.className).toBe('btn btn-mic');
+    expect(mic.className).toBe('chat-icon-btn btn-mic');
     expect(mic.getAttribute('aria-label')).toBe('Dictate a message');
     expect(mic.querySelector('svg')).not.toBeNull();
     const send = screen.getByTestId('brainstorm-send');
-    expect(send.className).toBe('btn btn-primary btn-send');
+    // Grey until the box holds words: the arrow is one glyph on the box's own
+    // ground, not a filled button.
+    expect(send.className).toBe('chat-icon-btn btn-send');
     expect(send.getAttribute('aria-label')).toBe('Send');
     expect(send.querySelector('svg')).not.toBeNull();
-    // The microphone comes between the box and the arrow.
+    // The microphone sits immediately left of the arrow, both inside the box.
     const row = send.parentElement;
     expect(row?.className).toContain('chat-input-row');
     expect([...(row?.children ?? [])].map((child) => child.getAttribute('data-testid'))).toEqual([
@@ -324,9 +326,12 @@ describe('BrainstormView composer', () => {
       'brainstorm-mic',
       'brainstorm-send',
     ]);
+
+    fireEvent.change(screen.getByTestId('brainstorm-input'), { target: { value: 'A question' } });
+    expect(send.className).toBe('chat-icon-btn btn-send is-ready');
   });
 
-  it('keeps the send arrow live with an empty box, and an empty send does nothing', async () => {
+  it('keeps the return arrow live with an empty box, and an empty send does nothing', async () => {
     const patient = makePatient('John Smith');
     const api = installFakeApi({ patients: [patient], brainstorm: [] });
 
@@ -371,8 +376,12 @@ describe('BrainstormView composer', () => {
     await waitFor(() => {
       expect(screen.getByTestId('brainstorm-mic').getAttribute('aria-label')).toBe('Stop dictating');
     });
-    expect(screen.getByTestId('brainstorm-mic').className).toBe('btn btn-mic is-recording');
-    expect(screen.getByTestId('record-panel')).toBeDefined();
+    expect(screen.getByTestId('brainstorm-mic').className).toBe('chat-icon-btn btn-mic is-recording');
+    // No panel above the composer: the words go into the box itself.
+    expect(screen.queryByTestId('record-panel')).toBeNull();
+    // The words in the box are provisional, so the arrow waits for the
+    // transcript rather than posting them half heard.
+    expect((screen.getByTestId('brainstorm-send') as HTMLButtonElement).disabled).toBe(true);
     handlers.onProgress?.(7);
     await waitFor(() => {
       expect(screen.getByTestId('brainstorm-mic-timer').textContent).toBe('00:07');
@@ -384,6 +393,7 @@ describe('BrainstormView composer', () => {
     });
     expect(screen.getByTestId('brainstorm-mic').getAttribute('aria-label')).toBe('Dictate a message');
     expect(screen.queryByTestId('record-panel')).toBeNull();
+    expect((screen.getByTestId('brainstorm-send') as HTMLButtonElement).disabled).toBe(false);
     expect(api.state.brainstorm).toHaveLength(0);
 
     // Enter still sends, dictated words and all.
@@ -409,7 +419,7 @@ describe('BrainstormView composer', () => {
     expect((screen.getByTestId('brainstorm-input') as HTMLTextAreaElement).value).toBe('');
   });
 
-  it('turns the arrow into a Stop square while a reply streams, and holds the microphone', async () => {
+  it('turns the return arrow into a Stop square while a reply streams, and holds the microphone', async () => {
     const patient = makePatient('John Smith');
     vi.stubGlobal(
       'fetch',
@@ -427,7 +437,7 @@ describe('BrainstormView composer', () => {
     fireEvent.click(screen.getByTestId('brainstorm-send'));
 
     const stop = await screen.findByTestId('brainstorm-stop');
-    expect(stop.className).toBe('btn btn-primary btn-send');
+    expect(stop.className).toBe('chat-icon-btn btn-send is-stop');
     expect(stop.getAttribute('aria-label')).toBe('Stop');
     expect(screen.queryByTestId('brainstorm-send')).toBeNull();
     expect((screen.getByTestId('brainstorm-mic') as HTMLButtonElement).disabled).toBe(true);

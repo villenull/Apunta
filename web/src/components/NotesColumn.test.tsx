@@ -17,10 +17,10 @@ import { NotesColumn, type NotesColumnProps } from './NotesColumn.js';
  *    that name must not change by one glyph — which is the easy thing to break
  *    and the reason it is asserted rather than assumed.
  *
- * The lower half of the file covers the column's new shape (owner,
- * 2026-10-05): the patient's heading gone, "New note" at the top, the notes
- * alone scrolling, the three tools pinned in a footer, and blank space — only
- * blank space — clearing the selection.
+ * The lower half of the file covers the column's shape (owner, 2026-10-05):
+ * the patient's heading gone, the column ordered the way she works in — the
+ * three tools at the top, then "Notes", then "New note", then the notes alone
+ * scrolling — and blank space clearing the selection.
  */
 
 afterEach(cleanup);
@@ -93,37 +93,59 @@ describe('NotesColumn session buttons', () => {
 });
 
 describe('NotesColumn shape', () => {
-  it('drops the patient heading and puts New note at the top of the column', () => {
+  it('drops the patient heading and orders the column the way she works in', () => {
     renderColumn({ notes: { status: 'ready', data: [firstNote] } });
     const column = screen.getByTestId('notes-column');
-    const head = screen.getByTestId('notes-head');
 
     // The sidebar row already says who is open (owner, 2026-10-05), so the
     // column does not repeat the name one screen away.
     expect(screen.queryByTestId('notes-header')).toBeNull();
     expect(column.textContent).not.toContain('John');
-    // New note is first of the three bands — above the notes, and nothing of
-    // hers to press before it.
+
+    // Top to bottom: the tools she opens a session with, then the notes'
+    // own heading, then the row that starts one, then the notes.
+    const tools = screen.getByTestId('notes-tools');
+    const head = screen.getByTestId('notes-head');
+    const list = screen.getByTestId('note-list');
+    expect(tools.compareDocumentPosition(head) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(head.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    // The heading and "New note" share one band, with the heading above the row.
     expect(head.contains(screen.getByTestId('notes-new-note'))).toBe(true);
+    expect(screen.getByText('Notes').className).toContain('notes-list-heading');
     expect(
-      head.compareDocumentPosition(screen.getByTestId('note-list')) & Node.DOCUMENT_POSITION_FOLLOWING,
+      screen.getByText('Notes').compareDocumentPosition(screen.getByTestId('notes-new-note')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(screen.getByTestId('notes-new-note').textContent).toContain('New note');
   });
 
-  it('scrolls the notes alone and pins the tools in a footer below them', () => {
+  it('scrolls the notes alone, with the tools above them and off the scroll', () => {
     renderColumn({ notes: { status: 'ready', data: [firstNote, secondNote] } });
     const scroll = screen.getByTestId('note-list');
     const tools = screen.getByTestId('notes-tools');
 
-    // The scroll band holds the notes and nothing else: not New note (top),
-    // not the tools (footer).
+    // The scroll band holds the notes and nothing else: not the tools, not the
+    // heading and New note above them.
     expect(within(scroll).getAllByRole('button')).toHaveLength(2);
     expect(scroll.contains(tools)).toBe(false);
-    expect(scroll.contains(screen.getByTestId('notes-new-note'))).toBe(false);
-    // And the footer comes after the band it is pinned below.
-    expect(scroll.compareDocumentPosition(tools) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(scroll.contains(screen.getByTestId('notes-head'))).toBe(false);
+    // The tools are the top of the column, so they come before the band they
+    // sit over.
+    expect(tools.compareDocumentPosition(scroll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(tools.querySelectorAll('.col-action-btn')).toHaveLength(3);
+  });
+
+  it('puts the format name above the date in a note row, date carrying the row', () => {
+    renderColumn({ notes: { status: 'ready', data: [firstNote] } });
+    const row = screen.getByText('Progress note').closest('button') as HTMLElement;
+
+    // Owner, 2026-10-05: the format is the quiet line, the date is the one she
+    // scans a list for.
+    const format = row.querySelector('.note-format') as HTMLElement;
+    const date = row.querySelector('.note-date') as HTMLElement;
+    expect(format.compareDocumentPosition(date) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(date.textContent).not.toBe('');
   });
 
   it('keeps the narrow-window way back to the patients', () => {
@@ -157,7 +179,7 @@ describe('NotesColumn shape', () => {
     // of a row rather than the row's own edge.
     const row = screen.getByText('Intake note').closest('button') as HTMLElement;
     fireEvent.click(row);
-    fireEvent.click(row.querySelector('.note-title') as HTMLElement);
+    fireEvent.click(row.querySelector('.note-format') as HTMLElement);
     fireEvent.click(screen.getByTestId('open-plan'));
     fireEvent.click(screen.getByTestId('notes-new-note'));
     expect(onDeselect).not.toHaveBeenCalled();

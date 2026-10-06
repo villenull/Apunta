@@ -135,6 +135,11 @@ const ALLOWED = [
   // CoreFoundation all parse plists with a built-in DTD and never fetch this;
   // Apple's own templates emit it verbatim.
   /^http:\/\/www\.apple\.com\/DTDs\/PropertyList-1\.0\.dtd$/,
+  // Settings › Advanced: "Read more about Apunta" (owner, 2026-10-05,
+  // docs/decisions.md). A link she clicks, opened by her browser in a new tab
+  // with rel="noopener noreferrer"; the app never requests it. Exact string, so
+  // no other github.com path rides along.
+  /^https:\/\/github\.com\/villenull\/Apunta$/,
 ];
 
 /**

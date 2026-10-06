@@ -308,9 +308,10 @@
   height: 12px;
 }
 
-/* The heading over the notes, the sidebar's section-heading type. */
+/* The heading over the notes, the sidebar's section-heading type. It sits at
+   the top of the column's second band now, so it needs no drop above it. */
 .notes-list-heading {
-  margin: var(--space-20) 0 var(--space-2);
+  margin: 0 0 var(--space-2);
   padding: 0 var(--space-4);
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -347,14 +348,21 @@
   opacity: 1;
 }
 
-.note-item .note-title {
-  font-size: var(--text-md);
-  font-weight: 500;
+/*
+ * The format name, quiet, above the date that carries the row (owner,
+ * 2026-10-05): the date is the line she scans a list for, so it is the one in
+ * the primary ink and the larger weight, and the format name is the small
+ * muted line above it.
+ */
+.note-item .note-format {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 .note-item .note-date {
-  font-size: var(--text-sm);
-  color: var(--text-muted);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .note-date-row {
@@ -459,10 +467,12 @@
   right: 20px;
   bottom: 20px;
   z-index: 80;
-  width: auto;
-  min-width: 52px;
-  height: 52px;
-  border-radius: var(--radius-fab);
+  /* Icon-only (F9): the disc grew to hold a chat glyph about twice its
+     former size, and the word went to the aria-label/title. */
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border-radius: 50%;
   border: 0;
   background: var(--accent);
   color: var(--on-accent);
@@ -479,8 +489,8 @@
 }
 
 .chat-fab .icon {
-  width: 22px;
-  height: 22px;
+  width: 44px;
+  height: 44px;
   /* `.icon` sets a grey; on the accent disc the icon is the button's own
      colour, so it pops and stays legible whatever the accent becomes. */
   color: inherit;
@@ -507,8 +517,12 @@
   right: 16px;
   bottom: 16px;
   z-index: 81;
-  width: min(380px, calc(100% - 32px));
-  height: min(60vh, 520px);
+  /* Owner, 2026-10-05: about one and a half times the old 380 × 520 card, for
+     the long instruction she types into it. Both `min()`s are viewport clamps
+     with the card's own 16px margin, so a small window shrinks the card
+     rather than pushing it off-screen. */
+  width: min(570px, calc(100% - 32px));
+  height: min(78vh, 676px);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -525,7 +539,7 @@
 }
 
 .note-editor-header {
-  padding: var(--space-8) var(--gutter-x);
+  padding: var(--space-5) var(--gutter-x);
   border-bottom: 0.5px solid var(--border);
   flex-shrink: 0;
   gap: 12px;
@@ -542,6 +556,20 @@
 .note-actions {
   margin-left: auto;
   flex-shrink: 0;
+}
+
+/*
+ * F8: the open note's header is a bar, not a card. Its own padding and the
+ * three actions inside it are tighter than buttons elsewhere — they keep
+ * their labels, their icons and a ~34px click target. Scoped to this bar, so
+ * no other button in the app moves.
+ */
+.note-editor-header .note-actions .btn-compact {
+  padding: var(--space-4) var(--space-5);
+}
+
+.note-editor-header .note-actions .btn-compact-icon {
+  padding: var(--space-4);
 }
 
 .note-editor-body {
@@ -817,23 +845,44 @@
 }
 
 /*
- * Titleless (owner-proxy, 2026-08-30), so this is a thin bar carrying the
- * close control alone — right-aligned, and shallow, because the space a
- * heading used to justify now belongs to the conversation.
+ * Titleless (owner-proxy, 2026-08-30), and barless too (owner, 2026-10-05):
+ * the sheet's only chrome is a small circular close floating over the
+ * thread's top-right corner, so the whole card belongs to the conversation.
+ * The panel keeps its accessible name through the Dialog's aria-label, so a
+ * screen reader loses nothing with the visible heading gone.
  */
-.chat-header {
-  padding: var(--space-5) var(--space-6);
-  border-bottom: 0.5px solid var(--border);
-  flex-shrink: 0;
+.chat-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-circle);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.chat-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-muted);
 }
 
 .chat-thread {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-18) var(--space-20);
+  /*
+   * The close control floats over this corner, so the first message starts
+   * below it: 40px of top padding clears the button's 10px inset plus its
+   * 28px, and her bubbles are right-aligned, so no message ever sits under it.
+   */
+  padding: var(--space-40) var(--space-20) var(--space-18);
 }
 
 .chat-msg {
@@ -922,67 +971,138 @@
 
   padding: var(--space-0);
 }
-.chat-input-row .spell-input-wrap {
+.chat-input-row .spell-wrap {
   flex: 1;
+  min-width: 0;
 }
 
+/*
+ * The composer is one box (owner, 2026-10-05): the text, the microphone and
+ * the return arrow all inside it, as Claude's reply box draws them. The rule
+ * that separated the thread from the composer is gone with it — the thread
+ * and the box are one surface now, and the box's own border is the only edge
+ * she sees.
+ */
 .chat-input-row {
-  padding: var(--space-6) var(--space-7);
-  border-top: 0.5px solid var(--border);
+  margin: 0 var(--space-6) var(--space-6);
+  padding: var(--space-4);
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
   display: flex;
-  gap: 8px;
+  align-items: flex-end;
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
-.chat-input-row input {
-  flex: 1;
-}
-
-/* Brainstorm's composer is a textarea, not an input: Enter sends and
-   Shift+Enter breaks the line. Same row, same height behaviour. */
+/*
+ * A textarea, not an input: Enter sends and Shift+Enter breaks the line. One
+ * line to begin with and exactly as tall as what she has typed, up to eight
+ * lines; past that the box scrolls rather than eating the conversation. The
+ * height itself is set from the content (AutoGrowTextarea, SpellLayer's
+ * `autoGrow`), so `min-height` only has to clear the base rule's 90px.
+ */
 .chat-input-row textarea {
   flex: 1;
   resize: none;
-  min-height: 44px;
+  min-height: 0;
+  max-height: calc(8lh + var(--space-8));
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-3);
+  border: 0;
+  background: transparent;
   font-size: var(--text-base);
+  /* One box, one focus ring: the outer row draws it (`:focus-within` below),
+     so the control itself must not draw a second one inside it. */
+  outline: none;
+  box-shadow: none;
 }
 
-/* The send arrow: the darker accent and a white glyph, never dimmed for an
-   empty box — grey-on-faint-green was the one complaint about this row
-   (owner-proxy, 2026-09-07). */
-.chat-input-row .btn-send {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-  color: var(--on-accent);
-  padding: var(--space-5) var(--space-6);
+.chat-input-row textarea:focus,
+.chat-input-row textarea:focus-visible {
+  outline: none;
+  border-color: transparent;
+  box-shadow: none;
 }
 
-.chat-input-row .btn-send:hover {
-  background: color-mix(in srgb, var(--accent) 60%, #000);
-  border-color: color-mix(in srgb, var(--accent) 60%, #000);
+/* The composer's focus lives on its outer box. */
+.chat-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
 }
 
-/* The microphone between the box and the arrow: quiet until pressed, then a
-   red dot and a timer while it listens, the thinking dots while whisper
-   works. */
-.chat-input-row .btn-mic {
-  padding: var(--space-5) var(--space-6);
-  gap: 6px;
+/* The spelling backdrop sits under the box's text, so it carries the same
+   padding and metrics or the underlines drift off the words. */
+.chat-input-row .spell-backdrop {
+  padding: var(--space-4) var(--space-3);
+  font-size: var(--text-base);
+  line-height: normal;
+}
+
+/*
+ * The two controls inside the box's right edge: glyphs on the box's own
+ * ground, no button of their own (owner, 2026-10-05). The return arrow takes
+ * the accent as soon as the box holds words, and the microphone pulses in it
+ * while it listens.
+ */
+.chat-input-row .chat-icon-btn {
+  align-self: flex-end;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.chat-input-row .chat-icon-btn:hover:not(:disabled) {
+  background: var(--surface);
   color: var(--text-secondary);
 }
 
+.chat-input-row .btn-send.is-ready,
+.chat-input-row .btn-send.is-stop {
+  color: var(--accent);
+}
+
+.chat-input-row .btn-send.is-ready:hover:not(:disabled),
+.chat-input-row .btn-send.is-stop:hover:not(:disabled) {
+  color: var(--accent-hover);
+}
+
+/* While it listens the microphone widens just enough to carry its timer, and
+   pulses — the dot and the count are the whole state, and no dialog opens. */
+.chat-input-row .btn-mic {
+  gap: 5px;
+}
+
 .chat-input-row .btn-mic.is-recording {
-  color: var(--danger);
-  border-color: var(--danger);
-  background: var(--danger-tint);
+  width: auto;
+  padding: 0 var(--space-4);
+  color: var(--accent);
+  animation: chat-mic-live 1.2s ease-in-out infinite;
 }
 
 .chat-mic-dot {
   width: 8px;
   height: 8px;
+  flex-shrink: 0;
   border-radius: var(--radius-circle);
-  background: var(--danger);
+  background: var(--accent);
   animation: chat-mic-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chat-mic-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .chat-mic-timer {
@@ -1001,52 +1121,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chat-mic-dot {
+  .chat-mic-dot,
+  .chat-input-row .btn-mic.is-recording {
     animation: none;
   }
-}
-
-/* The recording panel inside the floating chat card: the capture screen's,
-   scaled to a card a third the width. Brainstorm's composer dictates through
-   the same panel, so it wears the same scale. */
-.chat-col .record-ui,
-.brainstorm-view .record-ui {
-  flex-shrink: 0;
-  margin: 0 14px 8px;
-  padding: var(--space-7) var(--space-6) var(--space-6);
-}
-
-.chat-col .record-dot,
-.brainstorm-view .record-dot {
-  width: 44px;
-  height: 44px;
-  margin-bottom: 8px;
-}
-
-.chat-col .record-mic,
-.brainstorm-view .record-mic {
-  width: 18px;
-  height: 18px;
-}
-
-.chat-col .timer,
-.brainstorm-view .timer {
-  font-size: var(--text-lg);
-}
-
-.chat-col .record-preview,
-.brainstorm-view .record-preview {
-  max-width: none;
-}
-
-.chat-col .record-preview-text,
-.brainstorm-view .record-preview-text {
-  max-height: 6em;
-}
-
-.chat-col .record-ui .btn,
-.brainstorm-view .record-ui .btn {
-  margin-top: 10px;
 }
 
 /* --------------------------------------------------------- forms + cards */
@@ -1509,6 +1587,7 @@ select:focus {
 .btn:disabled,
 .btn-option:disabled,
 .icon-btn:disabled,
+.chat-icon-btn:disabled,
 input:disabled,
 textarea:disabled,
 select:disabled {
@@ -2827,10 +2906,6 @@ select:disabled {
   font-size: var(--text-sm);
   font-weight: 600;
 }
-.import-patient-name .field-input {
-  font-size: var(--text-base);
-  font-weight: 400;
-}
 
 .field-input {
   width: 100%;
@@ -3565,61 +3640,65 @@ select:disabled {
   margin-top: 10px;
 }
 
-/* "Add another format": the format card's last row, in the accent. */
+/* "Add another format": the format card's last row, in the accent. It is a
+   button now — the pane edits formats instead of leaving for a screen. */
 .format-add-row {
   justify-content: flex-start;
   gap: 8px;
+  width: 100%;
+  border: none;
+  background: none;
   color: var(--accent);
+  font-family: inherit;
   font-size: var(--text-base);
   font-weight: 500;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .format-add-row:hover {
   color: var(--accent-ink);
 }
 
-.settings-link-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+/*
+ * "Edit" on a format row: a link's weight and colour, in a button — the pane
+ * edits in place, so there is no longer a link to follow.
+ */
+.settings-row-action {
+  border: none;
+  background: none;
+  padding: var(--space-0);
+  color: var(--accent);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.settings-row-action:hover {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+/* Advanced is a plain open section now: there is no disclosure to click. */
+.settings-advanced > .settings-title {
+  margin: 0;
+}
+
+/*
+ * The one row that leaves the app (owner, 2026-10-05): the label reads as a
+ * row, the GitHub mark on the right says where it goes, and the whole row is
+ * the link so there is nothing small to hit.
+ */
+.settings-repo-row {
   color: inherit;
+  font-size: var(--text-base);
   text-decoration: none;
 }
 
-/* A link row's label, not a card heading: the same words as before, set like
-   the other rows in a list so the modal's Import pane has no stray serif. */
-.settings-link-label {
-  font-size: var(--text-base);
-  color: var(--text-primary);
-}
-
-.settings-link-row:hover .settings-link-label {
+.settings-repo-row:hover {
   color: var(--accent-ink);
 }
 
-.settings-advanced > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0;
-  cursor: pointer;
-  list-style: none;
-}
-
-.settings-advanced > summary::-webkit-details-marker {
-  display: none;
-}
-
-.settings-advanced > summary::after {
-  content: '›';
-  font-family: var(--font-sans);
-  color: var(--text-secondary);
-  transition: transform var(--motion-fast) var(--motion-ease);
-}
-
-.settings-advanced[open] > summary::after {
-  transform: rotate(90deg);
+.settings-repo-mark {
+  flex: 0 0 auto;
 }
 
 .settings-group {
@@ -3642,12 +3721,6 @@ select:disabled {
   font-size: var(--text-md);
   color: var(--text-secondary);
   overflow-wrap: anywhere;
-}
-
-.settings-links {
-  display: flex;
-  gap: 16px;
-  font-size: var(--text-base);
 }
 
 /* The restore door on the first-run screen: present, not competing. */
@@ -3794,19 +3867,6 @@ select:disabled {
   color: var(--text-secondary);
 }
 
-.chat-fab-label {
-  margin-left: 6px;
-  font-size: var(--text-md);
-  font-weight: 600;
-}
-
-.chat-header-title {
-  color: var(--text-primary);
-  font-family: var(--font-serif);
-  font-size: var(--text-lg);
-  font-weight: 600;
-}
-
 .note-save-status {
   color: var(--text-secondary);
   white-space: nowrap;
@@ -3901,12 +3961,6 @@ select:disabled {
     bottom: 12px;
   }
 }
-
-@media (min-width: 901px) {
-  .chat-fab-label {
-    display: inline;
-  }
-}
 /* Capture status copy stays solid; only its ThinkingDots indicator moves. */
 .capture-stage,
 .capture-stage-status,
@@ -3926,7 +3980,7 @@ select:disabled {
  */
 @media (min-width: 901px) {
   .note-editor-header {
-    min-height: 86px;
+    min-height: 62px;
   }
 }
 
@@ -4663,9 +4717,11 @@ select:disabled {
   color: var(--text-primary);
 }
 
-/* The A sits in a 24px em box, so its 0.8em height lands near 19px. */
+/* The A sits in a 24px em box, so its 0.8em height lands near 19px — scaled
+   like every other type size, so the collapsed rail answers the text-size
+   setting the same way the open column does. */
 .rail-brand {
-  font-size: 24px;
+  font-size: calc(24px * var(--font-scale));
   /* Both glyphs share one cell, so the panel glyph *replaces* the A under the
      pointer instead of being pushed along beside it. */
   display: grid;
@@ -5148,14 +5204,16 @@ body.is-resizing-sidebar {
 
 /* A modal over the workspace: the page behind is dimmed and blurred, and the
    panel is centred on top of it (owner, 2026-09-26, after Claude's). Settings
-   was the first; adding a patient the second, and the language chooser the
-   third (2026-09-27) — so the rule is shared rather than each panel carrying a
-   copy of the scrim, which is how three windows end up blurring three
-   different amounts. */
+   was the first; adding a patient the second, the language chooser the third
+   (2026-09-27), the new-note window the fourth and the import window the fifth
+   (2026-10-05) — so the rule is shared rather than each panel carrying a copy
+   of the scrim, which is how five windows end up blurring five different
+   amounts. */
 .modal-backdrop:has(.settings-modal),
 .modal-backdrop:has(.add-patient-modal),
 .modal-backdrop:has(.language-modal),
-.modal-backdrop:has(.capture-modal) {
+.modal-backdrop:has(.capture-modal),
+.modal-backdrop:has(.import-modal) {
   background: var(--scrim);
   backdrop-filter: blur(var(--scrim-blur));
 }
@@ -5193,6 +5251,122 @@ body.is-resizing-sidebar {
   background: var(--row-hover-bg);
   color: var(--text-primary);
   border-color: transparent;
+}
+
+/*
+ * The import window: Settings' size and surface, with one scrolling column —
+ * an export form and a batch history in a fixed-height panel have nowhere to
+ * go but a scroll. The × sits in a bar of its own at the top right, as in
+ * Settings, rather than in a title row that each importer's own heading would
+ * have to make room for.
+ */
+.import-modal {
+  width: var(--modal-w);
+  max-width: calc(100vw - 2 * var(--space-24));
+  max-height: calc(100vh - 2 * var(--space-24));
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: var(--modal-radius);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+}
+
+.import-modal-bar {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  padding: var(--space-8) var(--space-18) 0;
+}
+
+/* The close control is a bare glyph, as Settings' is and as adding a patient's
+   is. */
+.import-modal-bar .icon-btn {
+  border-color: transparent;
+  background: transparent;
+}
+
+.import-modal-bar .icon-btn:hover {
+  background: var(--row-hover-bg);
+  color: var(--text-primary);
+  border-color: transparent;
+}
+
+.import-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-18);
+  padding: var(--space-8) var(--space-20) var(--space-20);
+}
+
+/*
+ * The export forms inside the window, in the app's own form vocabulary — the
+ * same `.field` + `.label` + `.field-input` + `.btn` shape adding a patient
+ * uses, so nothing in here reads as a bare browser control. Scoped to
+ * `.import-modal`: the form rules above are shared by every other screen and
+ * none of them may move.
+ */
+
+/*
+ * The file picker is the one control the browser draws for itself. Its own
+ * button takes the app's button shape rather than the platform's, and the
+ * chosen file's name sits beside it on the input's own surface.
+ */
+.import-modal .import-file-input {
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  color: var(--text-primary);
+}
+
+.import-modal .import-file-input::file-selector-button {
+  margin-right: var(--space-5);
+  padding: var(--space-3) var(--space-6);
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.import-modal .import-file-input::file-selector-button:hover {
+  background: var(--row-hover-bg);
+}
+
+.import-modal .import-file-input:disabled::file-selector-button {
+  cursor: not-allowed;
+}
+
+/*
+ * The radio group is a caption and two choices, not a box inside the card: the
+ * fieldset's own grey border and its default legend padding are dropped, and
+ * the legend is set as the `.label` its siblings use.
+ */
+.import-modal .import-radio-group {
+  border: 0;
+  margin: 0 0 var(--space-18);
+  padding: 0;
+}
+
+/* The choices are stacked by their own margin rather than by making the
+   fieldset a flex column: WebKit drops the legend out of a flex fieldset. */
+.import-modal .import-radio-group > label + label {
+  margin-top: var(--space-4);
+}
+
+.import-modal .import-radio-group legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 /*

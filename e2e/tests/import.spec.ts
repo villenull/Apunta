@@ -148,11 +148,15 @@ test.describe('importing from Claude', () => {
     const notes = (count: number): string => tr('count.note', { count });
     const patients = (count: number): string => tr('count.patient', { count });
     // Import is a first-level row in the workspace's "More" menu, not a section
-    // of Settings (owner, 2026-09-27). The import screens themselves are
-    // untouched — only where she starts them moved.
+    // of Settings (owner, 2026-09-27), and it opens as a window over the
+    // workspace rather than a page of its own (owner, 2026-10-05) — so the URL
+    // never leaves `/` and the page behind stays on screen, blurred.
     await page.goto('/');
     await page.getByTestId('mission-control').click();
     await page.getByTestId('mission-import').click();
+    await expect(page.getByTestId('import-modal')).toBeVisible();
+    await expect(page.getByTestId('import-backdrop')).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { name: tr('doc.importClaude') })).toBeVisible();
     await expect(page.getByTestId('import-cutoff')).toHaveValue('2026-07-01');
     await checkScreen(page, 'Import from Claude');
@@ -179,5 +183,11 @@ test.describe('importing from Claude', () => {
       tr('import.undoneLine', { notes: notes(5), patients: patients(2) }),
     );
     await checkScreen(page, 'the Claude import, undone');
+
+    // Escape closes the window and leaves her in the workspace she opened it
+    // from, on the URL she was already on (owner, 2026-10-05).
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('import-modal')).toBeHidden();
+    await expect(page).toHaveURL(/\/$/);
   });
 });

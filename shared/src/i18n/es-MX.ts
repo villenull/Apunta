@@ -320,9 +320,6 @@ export const esMX = {
     text: '{file} no es un archivo de copia de seguridad en la carpeta de copias.',
     kind: { file: 'text' },
   },
-  'errors.not_found.licenses_file': {
-    text: 'No se encontró el archivo de licencias en esta compilación de Apunta.',
-  },
 
   'errors.conflict.group_name_taken': {
     text: 'Ya tienes un grupo con ese nombre.',
@@ -369,16 +366,16 @@ export const esMX = {
     kind: { detail: 'text', file: 'text' },
   },
 
-  /* Los veinte fallos de IA. `configuración inicial` en minúscula dentro de la frase. */
+  /* Los veinte fallos de IA. `ajustes` en minúscula dentro de la frase. */
   'ai.unreachable_banner': {
-    text: 'Apunta no puede acceder a la IA local: ve a Configuración inicial',
+    text: 'Apunta no puede acceder a la IA local',
   },
   'ai.ollama_unreachable': {
     text: '{banner}. Ollama no parece estar ejecutándose en esta computadora.',
     kind: { banner: 'text' },
   },
   'ai.model_missing': {
-    text: 'El modelo de IA de Apunta todavía no está instalado: ve a Configuración inicial, que te explica cómo obtenerlo.',
+    text: 'El modelo de IA de Apunta todavía no está instalado. Elige un modelo en Ajustes para instalarlo.',
   },
   'ai.non_gguf_model': {
     text: 'El modelo configurado no es una compilación GGUF, y Apunta no puede hacer que siga el formato de nota de forma confiable. Elige un modelo GGUF en Ajustes.',
@@ -399,7 +396,7 @@ export const esMX = {
     text: 'A la IA se le acabó el espacio a media nota. Inténtalo de nuevo o acorta el resumen.',
   },
   'ai.empty_response': {
-    text: 'La IA no devolvió nada. Inténtalo de nuevo; si sigue pasando, revisa Configuración inicial.',
+    text: 'La IA no devolvió nada. Inténtalo de nuevo; si sigue pasando, revisa Ajustes.',
   },
   'ai.invalid_output': {
     text: 'La IA devolvió algo que no era una nota. Inténtalo de nuevo; si sigue pasando, puede que el modelo no esté siguiendo el formato de nota.',
@@ -411,13 +408,13 @@ export const esMX = {
     text: 'La IA tardó demasiado en responder. Puede que todavía esté cargando el modelo: inténtalo de nuevo en un momento.',
   },
   'ai.ollama_error': {
-    text: 'La IA local reportó un error. Revisa Configuración inicial e inténtalo de nuevo.',
+    text: 'La IA local reportó un error. Revisa Ajustes e inténtalo de nuevo.',
   },
   'ai.whisper_missing': {
-    text: 'Apunta no encuentra whisper en esta computadora, así que no puede transcribir la grabación. Ve a Configuración inicial o ajusta la ruta de whisper en Ajustes.',
+    text: 'Apunta no encuentra whisper en esta computadora, así que no puede transcribir la grabación. Ajusta la ruta de whisper en Ajustes.',
   },
   'ai.whisper_model_missing': {
-    text: 'El modelo de transcripción de Apunta todavía no está instalado: ve a Configuración inicial, que te explica cómo obtenerlo.',
+    text: 'El modelo de transcripción de Apunta todavía no está instalado. Elige un modelo de transcripción en Ajustes para instalarlo.',
   },
   'ai.audio_unsupported': {
     text: 'Esa grabación está en un formato que Apunta no puede transcribir. Grábala de nuevo desde esta pantalla.',
@@ -426,7 +423,7 @@ export const esMX = {
     text: 'No se pudo leer la grabación; puede que se haya cortado a media guardar. Grábala de nuevo.',
   },
   'ai.transcription_failed': {
-    text: 'Falló la transcripción de la grabación. Inténtalo de nuevo; si sigue pasando, revisa Configuración inicial.',
+    text: 'Falló la transcripción de la grabación. Inténtalo de nuevo; si sigue pasando, revisa Ajustes.',
   },
   'ai.transcription_timeout': {
     text: 'La transcripción tardó demasiado y se detuvo. Una grabación más corta sí va a funcionar; una muy larga puede necesitar una computadora más rápida.',
@@ -666,18 +663,13 @@ export const esMX = {
   /** `LiveRecording.tsx:74`, dos veces: lo que se ve y lo que se anuncia. */
   'capture.listening': { text: 'Escuchando palabras…' },
 
-  /** `ComposerButtons.tsx:22`. */
-  'dictation.previewNote': {
-    text: 'Todo lo dicho hasta ahora, más o menos. Tu mensaje se escribe a partir de la grabación terminada.',
-  },
-
-  /** `ComposerButtons.tsx:32`. */
+  /** `ComposerButtons.tsx:49`. */
   'dictation.stop': { text: 'Dejar de dictar' },
 
-  /** `ComposerButtons.tsx:71`. */
+  /** `ComposerButtons.tsx:49`. */
   'dictation.mic': { text: 'Dictar un mensaje' },
 
-  /** `ComposerButtons.tsx:87`. */
+  /** `ComposerButtons.tsx:65`. */
   'dictation.transcribing': { text: 'Transcribiendo' },
 
   /** `InterventionApproachSuggestion.tsx:35`. */
@@ -866,9 +858,6 @@ export const esMX = {
   'common.checkAgain': {
     text: 'Revisar de nuevo',
   },
-  'common.setup': {
-    text: 'Configuración inicial',
-  },
   'common.settings': {
     text: 'Ajustes',
   },
@@ -883,9 +872,6 @@ export const esMX = {
   },
   'common.searchPatients': {
     text: 'Buscar pacientes',
-  },
-  'common.copy': {
-    text: 'Copiar',
   },
   'common.copied': {
     text: 'Copiado',
@@ -928,15 +914,6 @@ export const esMX = {
   },
   'doc.settings': {
     text: 'Ajustes',
-  },
-  'doc.setup': {
-    text: 'Configuración inicial',
-  },
-  'doc.about': {
-    text: 'Acerca de',
-  },
-  'doc.licences': {
-    text: 'Licencias',
   },
   'doc.patients': {
     text: 'Pacientes',
@@ -987,14 +964,14 @@ export const esMX = {
     text: 'Hacer esta ventana la principal',
   },
   'ai.modelMissing': {
-    text: 'Apunta no encuentra el modelo de IA{model} — mira',
+    text: 'Apunta no encuentra el modelo de IA{model}.',
     kind: { model: 'text' },
   },
   'ai.unreachable': {
-    text: 'Apunta no puede alcanzar la IA local — mira',
+    text: 'Apunta no puede alcanzar la IA local.',
   },
   'ai.bannerTail': {
-    text: '. Todo excepto redactar una nota nueva sigue funcionando.',
+    text: 'Todo excepto redactar una nota nueva sigue funcionando.',
   },
   'backup.title': {
     text: 'Copia de seguridad',
@@ -1235,9 +1212,6 @@ export const esMX = {
   },
   'patients.delete': {
     text: 'Eliminar',
-  },
-  'setup.backingUpTail': {
-    text: 'ya lo tiene.',
   },
   'patients.new': {
     text: 'Nuevo paciente',
@@ -2123,8 +2097,11 @@ export const esMX = {
   'settings.app': {
     text: 'Aplicación',
   },
-  'settings.about': {
-    text: 'Acerca de',
+  'settings.readMore': {
+    text: 'Más información sobre Apunta',
+  },
+  'settings.onGithub': {
+    text: 'Apunta en GitHub',
   },
   'settings.loadingAi': {
     text: 'Cargando los ajustes de IA…',
@@ -2190,157 +2167,6 @@ export const esMX = {
   },
   'settings.themeDark': {
     text: 'Oscuro',
-  },
-  'about.title': {
-    text: 'Acerca de Apunta',
-  },
-  'about.localOnlyHeading': {
-    text: 'Nada de lo que escribes aquí sale a internet',
-  },
-  'about.localOnlyBody': {
-    text: 'Apunta se ejecuta en esta computadora. Es una página web que sirve un programa de la misma computadora, y la aplicación no hace ninguna conexión de red saliente. No hay cuenta ni copia remota.',
-  },
-  'about.modelsLocalBody': {
-    text: 'El modelo de redacción y el de transcripción también se ejecutan localmente. Un programa de esta computadora lee tu grabación y nunca la sube. Apunta no usa el reconocimiento de voz integrado del navegador, porque ese puede enviar el audio a un tercero.',
-  },
-  'about.noTelemetryBody': {
-    text: 'No hay analíticas, informes de fallos, comprobación de actualizaciones ni datos de uso anónimos.',
-  },
-  'about.whereHeading': {
-    text: 'Dónde están realmente tus notas',
-  },
-  'about.dbPath': {
-    text: 'Una carpeta en esta computadora, con un solo archivo:',
-  },
-  'about.dbPathLoading': {
-    text: 'Una carpeta en esta computadora, con un solo archivo: cargando…',
-  },
-  'about.recordsBody': {
-    text: 'Ese archivo es tu historial de redacción. No es tu expediente clínico: el expediente vive en el sistema donde pegues la nota terminada. Aun así vale la pena hacer una copia de seguridad, porque las notas preliminares, las transcripciones y las conversaciones de refinado y de lluvia de ideas no existen en ningún otro lado.',
-  },
-  'about.recordsBackupTail': {
-    text: 'tiene «Copia de seguridad».',
-  },
-  'about.threatsHeading': {
-    text: 'Las dos cosas de las que esto no te protege',
-  },
-  'about.threatPerson': {
-    text: 'Alguien en tu computadora sin bloquear.',
-  },
-  'about.threatPersonBody': {
-    text: 'Apunta no tiene contraseña propia. Cualquiera que esté sentado en esta computadora mientras tú has iniciado sesión puede abrirlo y leerlo todo. La respuesta real es bloquear la pantalla cuando te alejas.',
-  },
-  'about.threatStolen': {
-    text: 'Una computadora robada con el disco sin cifrar.',
-  },
-  'about.threatStolenBody': {
-    text: 'El cifrado de disco protege a una computadora perdida de quedar al descubierto. Su estado se muestra abajo solo cuando el sistema operativo puede informarlo.',
-  },
-  'about.diskEncryption': {
-    text: 'Cifrado de disco:',
-  },
-  'about.diskNotChecked': {
-    text: 'no comprobado',
-  },
-  'about.diskReady': {
-    text: 'listo',
-  },
-  'about.diskNotReady': {
-    text: 'no listo',
-  },
-  'about.diskTailOs': {
-    text: 'en este sistema operativo. {detail}',
-    kind: { detail: 'text' },
-  },
-  'about.diskTailDetail': {
-    text: '. {detail}',
-    kind: { detail: 'text' },
-  },
-  'about.diskTailOff': {
-    text: '. Actívalo en Ajustes del sistema → Privacidad y seguridad → FileVault antes de guardar notas reales, y guarda la clave de recuperación en un lugar distinto de esta computadora.',
-  },
-  'about.diskTailUnknown': {
-    text: '. Apunta no pudo leer su estado; compruébalo tú mismo en los ajustes de seguridad del sistema operativo. {detail}',
-    kind: { detail: 'text' },
-  },
-  'about.aiHeading': {
-    text: 'Qué hace con la IA',
-  },
-  'about.aiBody': {
-    text: 'Cuando creas un borrador, el modelo recibe lo que dictaste o escribiste y la forma de tu formato de nota. Refinar y la lluvia de ideas también pueden incluir notas anteriores pertinentes cuando se usan como contexto. Se le pide escribir solo lo que tiene delante. Todavía comete errores, así que cada borrador es tuyo para leer antes de publicarlo.',
-  },
-  'about.aiUnclearBody': {
-    text: 'Donde la grabación no estaba clara, el borrador lo dice en el texto en lugar de adivinar.',
-  },
-  'about.builtFromHeading': {
-    text: 'Con qué está hecho Apunta',
-  },
-  'about.builtFromBody': {
-    text: 'La IA que redacta y el programa que lee tus grabaciones los escribieron otras personas y vienen incluidos dentro de Apunta. Sus licencias piden que este aviso viaje con la aplicación:',
-  },
-  'about.licensesLink': {
-    text: 'las licencias están aquí',
-  },
-  'about.modelsSeparateBody': {
-    text: 'Los modelos de IA en sí no forman parte de Apunta. Se instalan en esta computadora bajo sus propios términos, y Apunta no los reparte.',
-  },
-  'about.missingPieces': {
-    text: 'Lo que falta y qué ejecutar:',
-  },
-  'setup.title': {
-    text: 'Configuración inicial',
-  },
-  'setup.lede': {
-    text: 'Apunta se ejecuta en esta computadora. Estas son las piezas que necesita y qué hacer con las que falten.',
-  },
-  'setup.checking': {
-    text: 'Comprobando…',
-  },
-  'setup.allAtOnce': {
-    text: 'O hazlo todo de una vez',
-  },
-  'setup.terminalHelp': {
-    text: 'Desde una ventana de Terminal en la carpeta de Apunta. Instala lo que falte, descarga los modelos y se puede volver a ejecutar tantas veces como quieras.',
-  },
-  'setup.backingUpLead': {
-    text: 'Hacer una copia de seguridad es otra pregunta, y la que más vale la pena dejar bien:',
-  },
-  'setup.stateOk': {
-    text: 'Listo',
-  },
-  'setup.stateMissing': {
-    text: 'Falta',
-  },
-  'setup.stateUnknown': {
-    text: 'No comprobado',
-  },
-  'licenses.overview': {
-    text: 'Resumen',
-  },
-  'licenses.builtFrom': {
-    text: 'Con qué está hecho Apunta',
-  },
-  'licenses.lede': {
-    text: 'Apunta incluye programas escritos por otras personas, y sus licencias piden que este aviso viaje con la aplicación. Nada de lo que hay aquí te pide nada: está porque debería estar.',
-  },
-  'licenses.panelLabel': {
-    text: 'Licencias de terceros',
-  },
-  'licenses.filterLabel': {
-    text: 'Filtrar licencias',
-  },
-  'licenses.filterPlaceholder': {
-    text: 'Filtrar por componente o por texto',
-  },
-  'licenses.copyPlain': {
-    text: 'Copiar como texto plano',
-  },
-  'licenses.componentsLabel': {
-    text: 'Componentes con licencia',
-  },
-  'licenses.noMatch': {
-    text: 'Ningún texto de licencia coincide con «{filter}».',
-    kind: { filter: 'text' },
   },
   'capture.closeLabel': { text: 'Cerrar nueva nota' },
 
@@ -2588,6 +2414,9 @@ export const esMX = {
   },
   'import.goToPatients': {
     text: 'Ir a pacientes',
+  },
+  'import.closeLabel': {
+    text: 'Cerrar «Importar»',
   },
   'import.readyTitle': {
     text: 'Listo para importar',

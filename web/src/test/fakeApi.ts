@@ -313,7 +313,7 @@ const HEALTHY: HealthResponse = {
   },
   // The fake stack runs on whatever CI runs on, so disk encryption is a
   // question about a Mac that is not here. `not_applicable` is the honest
-  // answer and the one that keeps the setup checklist green in fake mode.
+  // answer and the one that keeps the health payload honest in fake mode.
   fileVault: { state: 'not_applicable', detail: 'disk encryption is not checked on linux' },
 };
 
@@ -338,7 +338,7 @@ function apiError(status: number, code: string, message: string, details?: unkno
 }
 
 export interface FakeApiOptions {
-  /** Overrides for `GET /api/health` — the AI banner and /setup read this. */
+  /** Overrides for `GET /api/health` — the AI banner reads this. */
   health?: Partial<HealthResponse>;
   /**
    * Make `GET /api/patient-groups` fail (F5). The point of the option is that a

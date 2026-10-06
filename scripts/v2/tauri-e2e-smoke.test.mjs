@@ -2608,11 +2608,11 @@ const UI_LABELS = {
   onboardingPane: {
     key: 'patients.identifierLabel',
     text: 'Identifier (optional)',
-    // Re-pinned 2026-10-04 (attempt 5): S6.1's in-flight `spelling.loadFailed`
-    // added two lines above this key, moving it from 2168 to 2170. A pin
-    // correction only -- the assertion the helper test makes is unchanged, and a
-    // further move still fails that test loudly.
-    i18nLine: 2170,
+    // Re-pinned 2026-10-05: the Setup/About/Licences screens were removed and
+    // their catalogue blocks with them, moving every pin above the deleted
+    // `about.` block. A pin correction only -- the assertion the helper test
+    // makes is unchanged, and a further move still fails that test loudly.
+    i18nLine: 2172,
     file: 'web/src/routes/AddPatient.tsx',
     line: 128,
   },
@@ -2620,7 +2620,7 @@ const UI_LABELS = {
   captureListening: {
     key: 'capture.listening',
     text: 'Listening for words…',
-    i18nLine: 1010,
+    i18nLine: 1031,
     file: 'web/src/components/LiveRecording.tsx',
     line: 74,
   },
@@ -2628,7 +2628,7 @@ const UI_LABELS = {
   refinePlaceholder: {
     key: 'refine.inputPlaceholder',
     text: 'Ask a question or give feedback...',
-    i18nLine: 1058,
+    i18nLine: 1079,
     file: 'web/src/components/RefineColumn.tsx',
     line: 284,
   },
@@ -2636,7 +2636,7 @@ const UI_LABELS = {
   planStart: {
     key: 'plan.start',
     text: 'Start a plan',
-    i18nLine: 1907,
+    i18nLine: 1909,
     file: 'web/src/components/PlanView.tsx',
     line: 348,
   },
@@ -2644,7 +2644,7 @@ const UI_LABELS = {
   planSwitch: {
     key: 'plan.title',
     text: 'Treatment plan',
-    i18nLine: 1835,
+    i18nLine: 1837,
     file: 'web/src/components/NotesColumn.tsx',
     line: 111,
   },
@@ -2652,7 +2652,7 @@ const UI_LABELS = {
   planCardHint: {
     key: 'workspace.cardPlanHint',
     text: 'Set goals and track progress.',
-    i18nLine: 1752,
+    i18nLine: 1754,
     file: 'web/src/components/PatientWelcome.tsx',
     line: 73,
   },
@@ -2660,7 +2660,7 @@ const UI_LABELS = {
   prepSwitch: {
     key: 'notes.prepareForSession',
     text: 'Prepare for session',
-    i18nLine: 1527,
+    i18nLine: 1536,
     file: 'web/src/components/NotesColumn.tsx',
     line: 122,
   },
@@ -2668,7 +2668,7 @@ const UI_LABELS = {
   prepCardHint: {
     key: 'workspace.cardPrepHint',
     text: 'A short summary before you see them.',
-    i18nLine: 1753,
+    i18nLine: 1755,
     file: 'web/src/components/PatientWelcome.tsx',
     line: 79,
   },
@@ -2676,7 +2676,7 @@ const UI_LABELS = {
   brainstormSwitch: {
     key: 'brainstorm.title',
     text: 'Brainstorm',
-    i18nLine: 1762,
+    i18nLine: 1764,
     file: 'web/src/components/NotesColumn.tsx',
     line: 100,
   },
@@ -2684,7 +2684,7 @@ const UI_LABELS = {
   brainstormCardHint: {
     key: 'workspace.cardBrainstormHint',
     text: 'Think through the case out loud with the assistant.',
-    i18nLine: 1751,
+    i18nLine: 1753,
     file: 'web/src/components/PatientWelcome.tsx',
     line: 67,
   },
@@ -2709,13 +2709,13 @@ const UI_LABELS = {
    * `showTitle={false}` (`Workspace.tsx:804`, `:806`; `Dialog.tsx:152-156`), so
    * it becomes an `aria-label` (`Dialog.tsx:148`) and is not on the screen; and
    * the only other visible `Settings` strings live on other routes
-   * (`About.tsx:42`, `Setup.tsx:122`, `Import.tsx`, `HalaxyImport.tsx`), none of
-   * which is mounted over the workspace.
+   * (`Import.tsx`, `HalaxyImport.tsx`), none of which is mounted over the
+   * workspace.
    */
   settingsPane: {
     key: 'doc.settings',
     text: 'Settings',
-    i18nLine: 1288,
+    i18nLine: 1303,
     file: 'web/src/routes/Settings.tsx',
     line: 168,
     /** Every hop from the modal root to this label, and every gate on it. */

@@ -473,6 +473,69 @@ function drag(type: string, element: Element, init: { clientX?: number; clientY?
  */
 const APP_CSS = readFileSync(resolve(import.meta.dirname, '../styles/app.css'), 'utf8');
 
+const TOKENS_CSS = readFileSync(resolve(import.meta.dirname, '../styles/tokens.css'), 'utf8');
+
+/** Every custom property `app.css` and `tokens.css` declare, first one winning. */
+const TOKENS: Record<string, string> = {};
+for (const sheet of [TOKENS_CSS, APP_CSS]) {
+  for (const [, name, value] of sheet.matchAll(/(--[a-z-]+):\s*([^;]+);/g)) {
+    if (name === undefined || value === undefined) continue;
+    TOKENS[name] ??= value.trim();
+  }
+}
+
+/** Follow `var(--x)` aliases across sheets to the length that finally answers. */
+function resolveSize(expression: string, seen: Set<string> = new Set()): string {
+  let out = expression;
+  for (const [, name] of expression.matchAll(/var\((--[a-z-]+)\)/g)) {
+    if (name === undefined || seen.has(name)) continue;
+    seen.add(name);
+    const target = TOKENS[name];
+    if (target !== undefined) {
+      out += ` ${resolveSize(target, seen)}`;
+    }
+  }
+  return out;
+}
+
+function resolvedFontSizes(...sheets: readonly string[]): string[] {
+  return sheets.flatMap((css) =>
+    [...css.matchAll(/(^|[;{])\s*font-size:\s*([^;}]+)/g)].map((match) =>
+      resolveSize((match[2] ?? '').trim()),
+    ),
+  );
+}
+
+/**
+ * Settings › Appearance › Text size sets one variable, `--font-scale`, and
+ * every size meant to answer it is a `calc()` of that variable — directly, or
+ * through a token that is. This column used to size its rows, its search field,
+ * its menus and its footer from `--row-font`, which was a bare `14px`: the one
+ * place in the app the setting never reached, and the whole of the bug.
+ *
+ * jsdom applies no CSS, so nothing here can measure a rendered glyph. What can
+ * be asserted is the mechanism: that no `font-size` in the stylesheets names a
+ * length `--font-scale` does not touch. That is the regression worth pinning —
+ * a literal slipping back into one of these rules, which is how the bug arrived
+ * and how it would return.
+ */
+describe('the text-size setting reaches this column', () => {
+  it('resolves every font-size in the stylesheets through --font-scale', () => {
+    const unscaled = resolvedFontSizes(APP_CSS, TOKENS_CSS).filter(
+      (value) => !value.includes('--font-scale'),
+    );
+
+    expect(unscaled).toEqual([]);
+  });
+
+  it('keeps the default size at 14px, whatever the mechanism', () => {
+    // The alias must not have moved the resting size: at scale 1 every one of
+    // these is what it was before, and that is what the owner sees on open.
+    expect(resolvedFontSizes(APP_CSS).filter((value) => value.includes('14px'))).not.toHaveLength(0);
+    expect(TOKENS_CSS).toMatch(/--row-font:\s*var\(--text-base\)/);
+  });
+});
+
 describe('the fold triangle sits next to its name', () => {
   it('is not pushed to the far end of the row', () => {
     const chevron = APP_CSS.match(/\.sidebar-section-chevron\s*\{([^}]*)\}/);

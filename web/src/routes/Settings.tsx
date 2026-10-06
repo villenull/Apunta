@@ -15,7 +15,6 @@ import {
   type Theme,
 } from '@apunta/shared';
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router';
 
 import { errorMessage, listFormats } from '../api/index.js';
 import {
@@ -31,49 +30,49 @@ import {
 import { BackupAdvanced, BackupCard, useBackup } from '../components/BackupCard.js';
 import { useSettingsContext } from '../components/SettingsProvider.js';
 import {
+  BackIcon,
   CloseIcon,
   DatabaseIcon,
   DocumentIcon,
+  GitHubIcon,
   MonitorIcon,
   MoonIcon,
   PlusIcon,
   SlidersIcon,
   SunIcon,
 } from '../components/icons.js';
-import { Screen } from '../components/TopBar.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useI18n, type Translate } from '../lib/i18n.js';
 import type { FormatDraft } from './formatDraft.js';
+import { FormatDraftEditor } from './FormatDraftEditor.js';
+import { FormatEditor } from './FormatEditor.js';
+
+/**
+ * The repository: the one link that leaves the app (owner, 2026-10-05,
+ * docs/decisions.md). She clicks it and her browser opens it in a new tab; the
+ * app itself never requests it, so the egress rule is not crossed.
+ */
+// eslint-disable-next-line no-restricted-syntax -- user-clicked link, allow-listed in scripts/check-no-external-urls.mjs
+const REPOSITORY_URL = 'https://github.com/villenull/Apunta';
 
 /**
  * `prototype/settings.html`, redesigned (owner, 2026-09-21): only what she
- * uses on the main screen — Appearance, Note formats, Backup, Import — and
- * everything else under one closed **Advanced** disclosure. Controls carry a
- * label and no explanation; a line of text appears only when leaving it out
- * could cost her data (a stale or failed backup, a sync-watched folder, a
- * passphrase that cannot be recovered). The reasons live in the code and in
- * `docs/decisions.md`.
+ * uses on the main screen — Appearance, Note formats, Backup — and everything
+ * else under **Advanced**. Controls carry a label and no explanation; a line
+ * of text appears only when leaving it out could cost her data (a stale or
+ * failed backup, a sync-watched folder, a passphrase that cannot be
+ * recovered). The reasons live in the code and in `docs/decisions.md`.
  *
- * "Edit" reuses the onboarding confirm screen as the format editor: it is
- * already the name-plus-sections form, and M6 grows it further.
+ * Every section is edited inside the modal (owner, 2026-10-05): including
+ * the format editor, which is the same component the first-run flow asks its
+ * questions with. Nothing in Settings navigates away any more.
  */
 
 /**
- * The five sections, in Apunta's order and in the shape the owner's reference
+ * The four sections, in Apunta's order and in the shape the owner's reference
  * gives them (owner, 2026-09-26, after Claude's settings): a tab per section
  * down the left of the modal, that one section on the right, each tab with the
- * icon Claude puts beside it. The standalone `/settings` screen shows the same
- * five in the same order one after another, which is the same thing without the
- * nav — so the two cannot drift.
- */
-/**
- * The five sections, in Apunta's order and in the shape the owner's reference
- * gives them (owner, 2026-09-26, after Claude's settings): a tab per section
- * down the left of the modal, that one section on the right, each tab with the
- * icon Claude puts beside it. The standalone `/settings` screen shows the same
- * five in the same order one after another, which is the same thing without the
- * nav — so the two cannot drift.
+ * icon Claude puts beside it.
  *
  * The labels are catalogue keys rather than the English they used to be, which
  * the literal checker could not see: `label` is a `PropertyAssignment`, and
@@ -91,76 +90,89 @@ function sections(t: Translate) {
 
 type SectionId = ReturnType<typeof sections>[number]['id'];
 
-export function Settings(): React.JSX.Element {
-  const { t } = useI18n();
-  return (
-    <Screen back={{ to: '/', label: t('common.patients') }}>
-      <SettingsPanel />
-    </Screen>
-  );
-}
-
 /**
- * Everything both hosts of the settings body need: the formats, the backup
- * card, which section is open, and the way to get to the archives from the
- * restore link. One store, so the modal and the screen cannot disagree about
- * what is loaded or what is open.
+ * Everything the settings body needs: the formats, the backup card, which
+ * section is open, what the Format pane is showing, and the way to get from
+ * the restore link to the archives.
  */
-function useSettingsStore() {
+function useSettingsStore(initialSection: SectionId = 'appearance') {
   const loadFormats = useCallback((signal: AbortSignal) => listFormats(signal), []);
   const formats = useLoader(loadFormats);
   const backup = useBackup();
-  const [section, setSection] = useState<SectionId>('appearance');
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [section, setSection] = useState<SectionId>(initialSection);
+  const [formatView, setFormatView] = useState<FormatView>(FORMAT_LIST);
   // "Restore an old backup" is answered by the archives, which live under
-  // Advanced. On the screen that means opening the disclosure; in the modal it
-  // also means changing tab — so the store asks for both and scrolls once the
-  // archives are actually on the page.
+  // Advanced, so the store changes tab and scrolls once they are on the page.
   const [wantArchives, setWantArchives] = useState(false);
-  const goToArchives = useCallback(() => {
-    setAdvancedOpen(true);
-    setSection('advanced');
-    setWantArchives(true);
+  /**
+   * The nav picks the section, and the section is all it picks: the format
+   * editor is a sub-view of the Format pane, so leaving that pane leaves the
+   * sub-view too, and the back control goes with it (owner, 2026-10-05).
+   */
+  const goToSection = useCallback((next: SectionId) => {
+    setSection(next);
+    setFormatView(FORMAT_LIST);
   }, []);
+  const goToArchives = useCallback(() => {
+    goToSection('advanced');
+    setWantArchives(true);
+  }, [goToSection]);
   useEffect(() => {
     if (!wantArchives) return;
     const archives = document.getElementById('backup-archives');
-    // Not on the page yet (the modal is a tab behind): wait for the section
-    // change, which is in the dependency list below.
+    // Not on the page yet: wait for the section change, which is in the
+    // dependency list below.
     if (archives === null) return;
     setWantArchives(false);
     archives.scrollIntoView({ block: 'start' });
   }, [wantArchives, section]);
 
-  const newFormat: FormatDraft = { name: '', sections: [], returnTo: '/settings' };
+  /**
+   * Leaving the format editor, saved or not: the list is what the pane goes
+   * back to, and it is re-read either way, because a standard format saved
+   * itself behind the editor.
+   */
+  function backToFormatList(): void {
+    setFormatView(FORMAT_LIST);
+    formats.reload();
+  }
 
-  return { formats, backup, section, setSection, advancedOpen, setAdvancedOpen, goToArchives, newFormat };
+  return { formats, backup, section, goToSection, formatView, setFormatView, backToFormatList, goToArchives };
 }
 
 type SettingsStore = ReturnType<typeof useSettingsStore>;
 
 /**
- * The settings body on its own, without the screen around it: every section,
- * in order, as one scrolling column.
+ * What the Format pane is showing: her formats, the "how do I add one"
+ * question, or the editor for the draft that question produced.
  */
-export function SettingsPanel(): React.JSX.Element {
-  const { t } = useI18n();
-  useDocumentTitle(t('doc.settings'));
-  const store = useSettingsStore();
+type FormatView =
+  | { readonly kind: 'list' }
+  | { readonly kind: 'choose' }
+  | { readonly kind: 'draft'; readonly draft: FormatDraft };
 
-  return <SettingsSections store={store} show={sections(t).map((item) => item.id)} />;
-}
+const FORMAT_LIST: FormatView = { kind: 'list' };
 
 /**
- * The same body in Claude's shape (owner, 2026-09-26): the sections down the
- * left as a nav, the open one on the right, and the close control at the top
- * right of the panel. No search field over the nav — Apunta has five sections
- * and none of them is long enough to need one, and a search box that filters
- * two of five rows is worse than no search box.
+ * The settings body in Claude's shape (owner, 2026-09-26): the sections down
+ * the left as a nav, the open one on the right, and the close control at the
+ * top right of the panel. No search field over the nav — Apunta has four
+ * sections and none of them is long enough to need one, and a search box that
+ * filters two of four rows is worse than no search box.
+ *
+ * `initialSection` is for the first-run restore door, which opens Settings on
+ * the one section the person who clicked it came for.
  */
-export function SettingsModalPanel({ onClose }: { onClose: () => void }): React.JSX.Element {
+export function SettingsModalPanel({
+  onClose,
+  initialSection,
+}: {
+  onClose: () => void;
+  initialSection?: SectionId;
+}): React.JSX.Element {
   const { t } = useI18n();
-  const store = useSettingsStore();
+  const store = useSettingsStore(initialSection);
+  const editingFormat = store.formatView.kind !== 'list';
 
   return (
     <div className="settings-shell">
@@ -174,7 +186,7 @@ export function SettingsModalPanel({ onClose }: { onClose: () => void }): React.
             aria-current={store.section === item.id ? 'page' : undefined}
             data-testid={`settings-tab-${item.id}`}
             onClick={() => {
-              store.setSection(item.id);
+              store.goToSection(item.id);
             }}
           >
             {item.icon}
@@ -184,89 +196,44 @@ export function SettingsModalPanel({ onClose }: { onClose: () => void }): React.
       </nav>
       <div className="settings-pane">
         <div className="settings-pane-bar">
+          {/* Editing a format replaces the pane's content, so the pane needs a
+              way back before it closes the modal (owner, 2026-10-05). */}
+          {editingFormat && (
+            <button
+              type="button"
+              className="icon-btn"
+              data-testid="settings-pane-back"
+              aria-label={t('common.back')}
+              onClick={store.backToFormatList}
+            >
+              <BackIcon className="icon icon-sm" />
+            </button>
+          )}
           <button type="button" className="icon-btn" aria-label={t('settings.closeLabel')} onClick={onClose}>
             <CloseIcon className="icon icon-sm" />
           </button>
         </div>
         <div className="settings-pane-body">
-          <SettingsSections store={store} show={[store.section]} />
+          <SettingsSections store={store} />
         </div>
       </div>
     </div>
   );
 }
 
-/** The sections themselves, in the order asked for. */
-function SettingsSections({
-  store,
-  show,
-}: {
-  store: SettingsStore;
-  show: readonly SectionId[];
-}): React.JSX.Element {
+/** The one section the modal has open, in Apunta's order. */
+function SettingsSections({ store }: { store: SettingsStore }): React.JSX.Element {
   const { t } = useI18n();
   return (
     <div className="settings">
-      {show.includes('appearance') && (
+      {store.section === 'appearance' && (
         <>
           <AppearanceSettings />
           <LlmProfileSettings />
         </>
       )}
-      {show.includes('format') && (
-        <section className="card settings-card" data-testid="format-list">
-          <h2 className="settings-title">{t('settings.formats')}</h2>
-          {store.formats.state.status === 'loading' && (
-            <p className="small state-note">{t('common.loading')}</p>
-          )}
-          {store.formats.state.status === 'error' && (
-            <p className="small state-note error-state" role="alert">
-              {store.formats.state.message}{' '}
-              <button type="button" className="btn small btn-quick" onClick={store.formats.reload}>
-                {t('common.tryAgain')}
-              </button>
-            </p>
-          )}
-          {store.formats.state.status === 'ready' &&
-            store.formats.state.data.map((format) => (
-              <div className="patient-row settings-list-row" key={format.id}>
-                <div>
-                  <p className="format-name">{format.name}</p>
-                  <p className="small note-meta">{format.sections.join(', ')}</p>
-                </div>
-                <Link
-                  to="/onboarding/preview"
-                  className="small note-meta"
-                  state={
-                    {
-                      name: format.name,
-                      sections: format.sections,
-                      returnTo: '/settings',
-                      formatId: format.id,
-                      source: format.source,
-                      instructions: format.instructions,
-                    } satisfies FormatDraft
-                  }
-                >
-                  {t('common.edit')}
-                </Link>
-              </div>
-            ))}
-          {/* The card's last row, not a button floating between cards. */}
-          {store.formats.state.status === 'ready' && (
-            <Link
-              to="/onboarding/format"
-              state={store.newFormat}
-              className="patient-row settings-list-row format-add-row"
-              data-testid="add-format"
-            >
-              <PlusIcon className="icon icon-sm" />
-              {t('settings.addFormat')}
-            </Link>
-          )}
-        </section>
-      )}
-      {show.includes('backup') && (
+      {store.section === 'format' && <FormatSection store={store} />}
+      {store.section === 'backup' && (
         <BackupCard
           backup={store.backup}
           onRestore={() => {
@@ -274,32 +241,137 @@ function SettingsSections({
           }}
         />
       )}
-      {show.includes('advanced') && (
-        <details
-          className="card settings-card settings-advanced"
-          data-testid="settings-advanced"
-          open={store.advancedOpen}
-          onToggle={(event) => {
-            store.setAdvancedOpen(event.currentTarget.open);
-          }}
-        >
-          <summary className="settings-title">{t('settings.advanced')}</summary>
+      {store.section === 'advanced' && (
+        <section className="card settings-card settings-advanced" data-testid="settings-advanced">
+          <h2 className="settings-title">{t('settings.advanced')}</h2>
           <div id="backup-archives">
             <BackupAdvanced backup={store.backup} />
           </div>
           <div className="settings-group">
             <h3 className="settings-subtitle">{t('settings.app')}</h3>
-            <nav className="settings-links">
-              <Link to="/setup">{t('common.setup')}</Link>
-              <Link to="/about">{t('settings.about')}</Link>
-              <Link to="/licenses">{t('doc.licences')}</Link>
-            </nav>
+            {/*
+              One row, and it is the only link that leaves the app (owner,
+              2026-10-05): Setup, About and Licenses were three pages she
+              opened once and never again, and the code for all three was
+              more than the row is. The repository says the same three things
+              and stays true when they change.
+            */}
+            <a
+              className="patient-row settings-repo-row"
+              href={REPOSITORY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="settings-repository"
+            >
+              <span>{t('settings.readMore')}</span>
+              <span className="icon-btn settings-repo-mark" role="img" aria-label={t('settings.onGithub')}>
+                <GitHubIcon className="icon icon-sm" />
+              </span>
+            </a>
           </div>
-        </details>
+        </section>
       )}
     </div>
   );
 }
+
+/**
+ * Format: her formats, and the editor in the same pane. The editor is the
+ * onboarding one — adding a format asks exactly the question first run asks,
+ * and editing one is the same name-and-sections form — with this host deciding
+ * that "saved" means "back to the list", not "back to wherever the first-run
+ * flow would have gone".
+ */
+function FormatSection({ store }: { store: SettingsStore }): React.JSX.Element {
+  const { t } = useI18n();
+  const view = store.formatView;
+
+  if (view.kind === 'choose') {
+    return (
+      <>
+        <h2 className="settings-title">{t('format.addTitle')}</h2>
+        <p className="muted lede">{t('format.addLede')}</p>
+        <FormatEditor
+          // She already has a format here, most likely this one, so nothing
+          // is preselected.
+          initialChoice={null}
+          onPreview={(draft) => {
+            store.setFormatView({ kind: 'draft', draft });
+          }}
+          onSaved={store.backToFormatList}
+        />
+      </>
+    );
+  }
+
+  if (view.kind === 'draft') {
+    return (
+      <FormatDraftEditor
+        draft={view.draft}
+        onSaved={store.backToFormatList}
+        onCancel={store.backToFormatList}
+      />
+    );
+  }
+
+  return (
+    <section className="card settings-card" data-testid="format-list">
+      <h2 className="settings-title">{t('settings.formats')}</h2>
+      {store.formats.state.status === 'loading' && <p className="small state-note">{t('common.loading')}</p>}
+      {store.formats.state.status === 'error' && (
+        <p className="small state-note error-state" role="alert">
+          {store.formats.state.message}{' '}
+          <button type="button" className="btn small btn-quick" onClick={store.formats.reload}>
+            {t('common.tryAgain')}
+          </button>
+        </p>
+      )}
+      {store.formats.state.status === 'ready' &&
+        store.formats.state.data.map((format) => (
+          <div className="patient-row settings-list-row" key={format.id}>
+            <div>
+              <p className="format-name">{format.name}</p>
+              <p className="small note-meta">{format.sections.join(', ')}</p>
+            </div>
+            <button
+              type="button"
+              className="small settings-row-action"
+              data-testid="edit-format"
+              onClick={() => {
+                store.setFormatView({
+                  kind: 'draft',
+                  draft: {
+                    name: format.name,
+                    sections: format.sections,
+                    formatId: format.id,
+                    source: format.source,
+                    instructions: format.instructions,
+                  },
+                });
+              }}
+            >
+              {t('common.edit')}
+            </button>
+          </div>
+        ))}
+      {/* The card's last row, not a button floating between cards. */}
+      {store.formats.state.status === 'ready' && (
+        <button
+          type="button"
+          className="patient-row settings-list-row format-add-row"
+          data-testid="add-format"
+          onClick={() => {
+            store.setFormatView({ kind: 'choose' });
+          }}
+        >
+          <PlusIcon className="icon icon-sm" />
+          {t('settings.addFormat')}
+        </button>
+      )}
+    </section>
+  );
+}
+
 function LlmProfileSettings(): React.JSX.Element | null {
   const { t } = useI18n();
   const settings = useSettingsContext();

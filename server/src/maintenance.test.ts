@@ -330,10 +330,9 @@ describe('maintenance mode and the refusal hook (FD9)', () => {
     await report(local.app, 'tab-1', asked.quiesceId, true);
     expect((await running).ok).toBe(true);
 
-    // Every route on FD9's list — all eighteen `GET`s in `server/src/routes/`.
+    // Every route on FD9's list — all seventeen `GET`s in `server/src/routes/`.
     for (const url of [
       '/api/health',
-      '/api/licenses',
       '/api/settings',
       '/api/patients',
       `/api/patients/${fixture.patient}`,

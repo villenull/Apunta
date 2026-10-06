@@ -1,10 +1,13 @@
+import type { Page } from '@playwright/test';
+
 import { acquireAppearanceLock, expect, releaseAppearanceLock, test, uniqueName } from '../support/fixtures';
 
 /**
  * C-SETTINGS@1, the Normal example, in the real app against the real server.
  *
- * Dark → choose Light → Home → back to Settings **without a reload** → Light
- * selected, page light, provider value light; after a reload, still light.
+ * Dark → choose Light → close Settings → open it again **without a reload** →
+ * Light selected, page light, provider value light; after a reload, still
+ * light.
  *
  * The point is the segment and the page disagreeing with each other. The
  * provider loads once and controls save into their own state, so leaving
@@ -17,6 +20,13 @@ import { acquireAppearanceLock, expect, releaseAppearanceLock, test, uniqueName 
  * not what is being asserted: it is that the control and the provider cannot
  * disagree about a value the server already accepted.
  */
+
+/** Settings is a modal over the workspace (owner, 2026-10-05). */
+async function openSettings(page: Page): Promise<void> {
+  await page.getByTestId('mission-control').click();
+  await page.getByTestId('mission-settings').click();
+  await expect(page.getByTestId('appearance-settings')).toBeVisible();
+}
 
 test('settings appearance: keeps the chosen theme after leaving Settings and coming back, no reload', async ({
   page,
@@ -32,13 +42,14 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
   try {
     // Deterministic starting point: Dark, whatever a sibling spec left behind.
     await request.put('/api/settings', { data: { theme: 'dark' } });
-    // A first run with no note format redirects `/` to onboarding, and "navigate
-    // to Home" has to be Home.
+    // A first run with no note format redirects `/` to onboarding, and the
+    // workspace — which Settings is a modal over — has to be real.
     await request.post('/api/formats', {
       data: { name: uniqueName('E2E settings appearance format'), sections: ['Subjective', 'Plan'] },
     });
 
-    await page.goto('/settings');
+    await page.goto('/');
+    await openSettings(page);
     const light = page.getByTestId('theme-light');
     const dark = page.getByTestId('theme-dark');
     const root = page.locator('html');
@@ -50,15 +61,13 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
     await expect(light).toHaveAttribute('aria-checked', 'true');
     await expect(root).toHaveAttribute('data-theme', 'light');
 
-    // Home, then back to Settings. Both are in-app: the first is the card's own
-    // back link, the second is the browser's history, so no document is loaded
-    // and the provider survives it.
-    await page.getByRole('link', { name: tr('common.patients') }).click();
-    await expect(page.getByTestId('home')).toBeVisible();
+    // Close it, then open it again. Both are in-app: the first is the panel's
+    // own ×, the second is "More" → Settings, so no document is loaded and the
+    // provider survives it.
+    await page.getByLabel(tr('settings.closeLabel')).click();
+    await expect(page.getByTestId('settings-modal')).toHaveCount(0);
     await checkScreen(page, 'Home');
-    await page.goBack();
-    await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.getByTestId('appearance-settings')).toBeVisible();
+    await openSettings(page);
 
     // The selected segment is derived from the provider, so this pair *is*
     // "provider value light" with the page painted from it.
@@ -66,7 +75,9 @@ test('settings appearance: keeps the chosen theme after leaving Settings and com
     await expect(root).toHaveAttribute('data-theme', 'light');
 
     // And after a reload it is still light: the server was told, and told once.
+    // The reload takes the modal with it, so it is opened again.
     await page.reload();
+    await openSettings(page);
     await expect(light).toHaveAttribute('aria-checked', 'true');
     await expect(root).toHaveAttribute('data-theme', 'light');
   } finally {
@@ -95,12 +106,13 @@ test('settings appearance: moves and selects the theme with the arrow keys', asy
     // Deterministic starting point: Dark, whatever a sibling spec left behind.
     await request.put('/api/settings', { data: { theme: 'dark' } });
     // Order-independent: a run that reaches this test first still has a note
-    // format, so `/settings` is a real screen.
+    // format, so the workspace — and Settings over it — is a real screen.
     await request.post('/api/formats', {
       data: { name: uniqueName('E2E settings appearance keyboard format'), sections: ['Subjective', 'Plan'] },
     });
 
-    await page.goto('/settings');
+    await page.goto('/');
+    await openSettings(page);
     const system = page.getByTestId('theme-system');
     const light = page.getByTestId('theme-light');
     const dark = page.getByTestId('theme-dark');

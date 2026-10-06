@@ -130,16 +130,35 @@ export function englishMatches(text: string): readonly EnglishForm[] {
   return ENGLISH_FORMS.filter((form) => form.regex.test(normalised));
 }
 
-/** Every visible text node and visible `placeholder` on the page, whitespace-collapsed. */
+/**
+ * Every visible text node and visible `placeholder` on the page, whitespace-collapsed.
+ *
+ * Skipped, and only because of what it *is*: a text node inside the
+ * `aria-hidden` mirror of an editable field's own value — `SpellLayer`'s
+ * backdrop, which draws the field's text so the spelling marks have something
+ * to sit on. That is user content copied into the DOM, and reading a field's
+ * value is not what this check is for (see "what it cannot see" above):
+ * dictating an English transcript into a Spanish composer must not be reported
+ * as an English leak. The wrap's own `input`/`textarea` is what makes the
+ * identification, so chrome that merely sits in an `aria-hidden` subtree — an
+ * icon, a decorative mark — is still read.
+ */
 async function visibleStrings(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const seen: string[] = [];
     const shown = (element: Element): boolean =>
       element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+    const mirror = (element: Element): boolean => {
+      const hidden = element.closest('[aria-hidden="true"]');
+      if (hidden === null) return false;
+      const wrap = hidden.parentElement;
+      return wrap !== null && wrap.querySelector('input, textarea') !== null;
+    };
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
       const parent = node.parentElement;
       if (parent === null || parent.closest('script, style, noscript, template') !== null) continue;
+      if (mirror(parent)) continue;
       const text = (node.textContent ?? '').replace(/\s+/g, ' ').trim();
       if (text === '') continue;
       // An `<option>` is never "visible" on its own; its `<select>` is what shows.

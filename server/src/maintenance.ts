@@ -832,7 +832,7 @@ function kindsOf(jobs: readonly { kind: JobKind }[]): QuiesceBlocker[] {
 }
 
 /**
- * The exempt reads (FD9), one commented entry per route. **All eighteen `GET`
+ * The exempt reads (FD9), one commented entry per route. **All seventeen `GET`
  * routes in `server/src/routes/` are here**, and no `GET` handler writes to the
  * database, so the set is reads only and C-UPD@1's "new jobs and writes get 503"
  * is honoured literally. It is a list and not a delegated rule on purpose: a
@@ -841,8 +841,6 @@ function kindsOf(jobs: readonly { kind: JobKind }[]): QuiesceBlocker[] {
 const EXEMPT_READS: readonly string[] = [
   // The shell's liveness, and a V4 idle assertion.
   '/api/health',
-  // The About screen's read.
-  '/api/licenses',
   // The shell's language check.
   '/api/settings',
   // The app stays readable while quiescing: the lists it is already showing.

@@ -1,23 +1,25 @@
 /*
  * The notes column's layout (owner, 2026-10-05).
  *
- * The column used to be a header with the patient's name in it, one scrolling
- * body holding everything, and nothing pinned. Now it is three bands:
+ * The column reads top to bottom in the order she works in:
  *
- *   1. **New note** at the top, beside the narrow-window way back to Patients;
- *   2. the notes alone, and only the notes, in the band that scrolls;
- *   3. the three tools in a footer that stays put however long the list is.
+ *   1. the three tools — Brainstorm, Treatment plan, Prepare for session —
+ *      pinned at the top with a single rule under them;
+ *   2. the "Notes" heading and the "New note" row, pinned too and with **no**
+ *      rule under them: the heading is what groups the two, and an edge there
+ *      read as a boxed cell;
+ *   3. the notes alone, and only the notes, in the band that scrolls.
  *
  * The point is that the notes are the only thing in the column that moves, so
  * the click target for empty space is the empty space: it is wide, it is where
  * her cursor already is when she has read the last note, and it never scrolls
- * out from under her. `min-height: 0` on the middle band is what lets it
+ * out from under her. `min-height: 0` on the scrolling band is what lets it
  * actually scroll inside the flex column instead of stretching the column and
- * pushing the footer off the bottom of the window.
+ * pushing the tools off the top of the window.
  *
- * `.col`, `.col-header`, `.col-body`, `.col-actions`, `.new-note-btn` and
- * `.notes-list-heading` are the workspace's own rules and are not repeated
- * here; this file only says how the three bands stack.
+ * `.col`, `.col-actions`, `.col-action-btn`, `.col-body`, `.new-note-btn`,
+ * `.narrow-back` and `.notes-list-heading` are the workspace's own rules and are
+ * not repeated here; this file only says how the bands stack.
  */
 
 /*
@@ -30,15 +32,33 @@
  * order is.
  */
 
-/* The top band. It is still a `.col-header`, so the rule under it and its
-   height come from the workspace; only the row inside is this file's. */
-.col-header-title.notes-col-head-row {
-  flex: 1;
-  gap: var(--space-4);
+/* The tools, at the top of the column. One rule under them and none below the
+   "New note" row further down, so the column has exactly one edge in it. */
+.col-actions.notes-col-tools {
+  flex-shrink: 0;
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--divider);
+  background: var(--col-notes-bg);
 }
 
-/* "New note" fills the rest of the band once the narrow back control has taken
-   its room, and keeps the row height the sidebar's own rows have. */
+/* The way back to the patients rides along as the band's first row. It is
+   `display: none` above the narrow breakpoint, where it costs the column
+   nothing; below it, it lines up with the tool labels. */
+.narrow-back.notes-col-back {
+  align-self: flex-start;
+  padding-inline-start: calc(var(--space-4) + 2px);
+}
+
+/* The "Notes" heading and the row that starts one: pinned above the list, with
+   nothing to separate them from it. It carries the same blank-click surface as
+   the scrolling band, so it needs the column's own padding rather than
+   `.col-body`'s. */
+.notes-col-start {
+  flex-shrink: 0;
+}
+
+/* "New note" keeps the row height the sidebar's own rows have, and the inset
+   the tool labels beside it carry. */
 .new-note-btn.notes-col-new {
   margin: 0;
   min-width: 0;
@@ -50,13 +70,4 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-}
-
-/* The tools, pinned below the notes with its own rule so the boundary stays
-   legible when the list scrolls under it. */
-.notes-col-footer {
-  flex-shrink: 0;
-  padding-block: var(--space-2);
-  border-top: 1px solid var(--divider);
-  background: var(--col-notes-bg);
 }

@@ -57,14 +57,13 @@ export const HealthResponseSchema = z.object({
      * C-MODEL@1's `{ tag, source, present }`, **additively** and **optional**.
      *
      * `HealthResponse` is `z.infer` of this object, so a required key would
-     * break the two typed literals in `web/**` (`web/src/lib/setup.test.ts`
-     * and `web/src/test/fakeApi.ts`) — and the setup UI is Must-not-edit in
-     * this card. The route always emits all three, so the response it sends is
-     * never the short shape; only the *type* admits it.
+     * break the typed literal in `web/src/test/fakeApi.ts`. The route always
+     * emits all three, so the response it sends is never the short shape; only
+     * the *type* admits it.
      *
      * `model` and `modelPresent` keep their `describe()`-derived values, which
-     * is what the setup screen still reads. Collapsing the two pairs into one
-     * is a later card.
+     * is what the AI banner still reads. Collapsing the two pairs into one is a
+     * later card.
      */
     .extend({
       tag: z.string().optional(),

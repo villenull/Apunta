@@ -59,6 +59,15 @@ const SettingsModalPanel = lazy(async () => ({
   default: (await import('./Settings.js')).SettingsModalPanel,
 }));
 
+/*
+ * Import, likewise a window over the workspace rather than a screen of its own
+ * (owner, 2026-10-05) — the "More" row opens it and she never leaves the page
+ * she was on. Code-split for the same reason Settings is.
+ */
+const ImportModal = lazy(async () => ({
+  default: (await import('./ImportModal.js')).ImportModal,
+}));
+
 /** A stable empty list, so the loaders below never see a new array identity. */
 const NO_PATIENTS: PatientListItem[] = [];
 
@@ -87,6 +96,8 @@ export function Workspace(): React.JSX.Element {
   const [previewNote, setPreviewNote] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PatientListItem | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // The import window, for the reason Settings is one (owner, 2026-10-05).
+  const [importOpen, setImportOpen] = useState(false);
   // The language chooser (owner, 2026-09-27): a window over the workspace, not
   // a settings row, because every word changes underneath it.
   const [languageOpen, setLanguageOpen] = useState(false);
@@ -706,10 +717,11 @@ export function Workspace(): React.JSX.Element {
             setLanguageOpen(true);
           }}
           onOpenImport={() => {
-            // A first-level row in "More" (owner, 2026-09-27), so
-            // importing is where she expects it and not two levels into
-            // Settings. The import screens themselves are untouched.
-            navigate('/import');
+            // A first-level row in "More" (owner, 2026-09-27), so importing is
+            // where she expects it and not two levels into Settings — and a
+            // window over the workspace rather than a page of its own (owner,
+            // 2026-10-05), the same shape Settings has.
+            setImportOpen(true);
           }}
           edge={
             <SidebarResizer
@@ -877,6 +889,26 @@ export function Workspace(): React.JSX.Element {
           <SettingsModal
             onClose={() => {
               setSettingsOpen(false);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/*
+        An import or an undo changes the list behind this window, and the
+        workspace stays mounted under it, so nothing else would ask for it
+        again: the modal reports the run and the list reads itself. The notes of
+        a patient she is already looking at are not re-read — a run writes whole
+        patients, and the list is what the window is really about.
+      */}
+      {importOpen && (
+        <Suspense fallback={null}>
+          <ImportModal
+            onClose={() => {
+              setImportOpen(false);
+            }}
+            onImported={() => {
+              patients.reload();
             }}
           />
         </Suspense>

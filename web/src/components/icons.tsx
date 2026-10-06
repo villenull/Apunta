@@ -230,11 +230,24 @@ export function CheckIcon({ className }: IconProps): React.JSX.Element {
   );
 }
 
-export function SendIcon({ className }: IconProps): React.JSX.Element {
+/**
+ * The return arrow in the composer's corner, as Claude's reply box draws it:
+ * a turn that runs left and then up. It replaced the send arrow in the chat
+ * composers (owner, 2026-10-05); Enter still sends, the glyph just says
+ * "reply" rather than "post".
+ */
+export function ReturnIcon({ className }: IconProps): React.JSX.Element {
   return (
     <StrokeIcon className={className}>
       <path
-        d="M5 12h14M13 6l6 6-6 6"
+        d="M9.5 6.5L4.5 11.5l5 5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.5 11.5h9a5.5 5.5 0 0 0 5.5-5.5v-2"
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
@@ -539,5 +552,24 @@ export function SlidersIcon({ className }: IconProps): React.JSX.Element {
       <circle cx="15.5" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.5" />
       <circle cx="10.5" cy="17" r="2.5" stroke="currentColor" strokeWidth="1.5" />
     </StrokeIcon>
+  );
+}
+
+/**
+ * The GitHub mark, drawn inline (no external asset, hard rule 1). Filled
+ * rather than stroked: the mark is a silhouette, so it has no outline to
+ * follow with `currentColor`.
+ */
+export function GitHubIcon({ className }: IconProps): React.JSX.Element {
+  return (
+    <svg
+      className={className ?? 'icon'}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M12 1.5a10.5 10.5 0 0 0-3.32 20.46c.53.1.72-.23.72-.5v-1.9c-2.92.63-3.54-1.25-3.54-1.25-.48-1.22-1.17-1.54-1.17-1.54-.96-.65.07-.64.07-.64 1.06.08 1.62 1.09 1.62 1.09.94 1.6 2.47 1.14 3.07.87.1-.68.37-1.14.67-1.4-2.33-.27-4.78-1.17-4.78-5.2 0-1.15.41-2.08 1.08-2.82-.11-.27-.47-1.34.1-2.79 0 0 .88-.28 2.88 1.08a9.9 9.9 0 0 1 5.24 0c2-1.36 2.88-1.08 2.88-1.08.57 1.45.21 2.52.1 2.79.67.74 1.08 1.67 1.08 2.82 0 4.04-2.46 4.93-4.8 5.19.38.33.71.97.71 1.96v2.9c0 .28.19.61.73.5A10.5 10.5 0 0 0 12 1.5Z" />
+    </svg>
   );
 }
