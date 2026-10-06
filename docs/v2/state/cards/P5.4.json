@@ -1,0 +1,110 @@
+{
+  "card": "P5.4",
+  "planVersion": 2,
+  "contracts": [
+    "C-BRIDGE@1",
+    "C-UPD@1"
+  ],
+  "baseCommit": "450d59c",
+  "attempt": 1,
+  "status": "CHANGES REQUESTED",
+  "lastCompletedStep": "Implementation landed on main in five commits (dc81dbf..d3f134a): native state machine and verified install, server mirror/relay, quiesce/journal/snapshot/recovery, renderer notice/settings/freeze/recovery, release inspector. Local gates green: lint, typecheck, 180 files / 2594 unit+integration tests, build, full e2e 117 passed (6 pre-existing skips), cargo test 99/101, clippy -D warnings, native smoke 42/43 containment assertions.",
+  "nextAllowedAction": "Independent review of the landed implementation is REQUIRED and was not performed: both review attempts hit a provider quota limit and the owner directed committing after verification with review deferred. Then V3's release-inspector row needs the owner's production signing key (AM-222); check-release-config.mjs reports BLOCKED and no test key may be substituted.",
+  "sideEffectsDone": [],
+  "changedFiles": [
+    "src-tauri/src/fetch.rs",
+    "src-tauri/src/updater.rs",
+    "src-tauri/src/bridge.rs",
+    "src-tauri/src/main.rs",
+    "server/src/maintenance.ts",
+    "server/src/maintenance.test.ts",
+    "server/src/routes/app-quiesce.ts",
+    "server/src/routes/app-update.ts",
+    "server/src/update-boot.ts",
+    "server/src/update-journal.ts",
+    "server/src/update-snapshot.ts",
+    "server/src/recovery-app.ts",
+    "server/src/shell-bridge.ts",
+    "shared/src/update.ts",
+    "web/src/components/UpdateNotice.tsx",
+    "web/src/components/UpdateSettings.tsx",
+    "web/src/components/RecoveryView.tsx",
+    "web/src/components/CloseConfirm.tsx",
+    "web/src/components/WorkspaceFreeze.tsx",
+    "web/src/lib/maintenance.ts",
+    "scripts/v2/check-release-config.mjs"
+  ],
+  "criteria": {
+    "V1": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "cargo test: 99 tests (101 with --features test-updater), local"
+    },
+    "V2": {
+      "status": "PASS",
+      "exit": 0,
+      "evidence": "server/src/routes/app-update.test.ts, web/src/components/UpdateNotice.test.tsx"
+    },
+    "V3": {
+      "status": "BLOCKED",
+      "exit": 2,
+      "evidence": "scripts/v2/check-release-config.mjs",
+      "verification": "BLOCKED on the owner's production verification key (AM-222). Reports BLOCKED rather than passing, and no test key is substituted."
+    },
+    "V4": {
+      "status": "PASS",
+      "exit": 0,
+      "verification": "Server egress-guard tests plus the native updater's initial-URL and redirect confinement tests. The owner clarified this round that the invariant is no outbound application calls in server/web/shared, not the absence of the text github.com: the pre-existing, explicitly approved Settings About source link is preserved."
+    },
+    "V5": {
+      "status": "PASS",
+      "exit": 0,
+      "verification": "npm test && npm run lint && npm run typecheck plus Rust checks, local"
+    },
+    "V6": {
+      "status": "PASS",
+      "exit": 0,
+      "verification": "Native close transitions and the renderer's deferral/confirmation/unsaved_text behaviour; web/src/lib/maintenance.test.ts and Capture tests"
+    }
+  },
+  "knownDefectsFixed": [
+    "The bootstrap status?tab&doc read raced the window's own parked wait: one document registering twice minted a second record that forced a false no_response. The parked record is now reused when tab and doc both match (Chromium's Duplicate Tab copies the tab id but mints a new doc).",
+    "A held browser-mode window was answered with settled{held:true}, leaving it between polls when it left; its departure was never observed and the clean pagehide claim was never discharged, leaking maintenance. Browser mode now keeps the wait parked while the hold is on."
+  ],
+  "openBlockers": [
+    "Independent review not performed (provider quota; owner directed deferral).",
+    "Production signing key absent (AM-222).",
+    "CI is billing-blocked for every run from 8d2dfd8 onward; local gates are the only evidence."
+  ],
+  "sandboxRuns": [
+    {
+      "runId": "2026-10-06T21-49-45-135Z-77481648",
+      "ports": {
+        "browser": 7863
+      },
+      "rows": [
+        "browser-mode header and console verification"
+      ]
+    },
+    {
+      "runId": "2026-10-06T22-20-00-635Z-06996999",
+      "ports": {
+        "smoke": 7871
+      },
+      "rows": [
+        "native smoke"
+      ]
+    },
+    {
+      "runId": "2026-10-06T22-36-00-000Z-attempt8b",
+      "ports": {
+        "smoke": 7874
+      },
+      "rows": [
+        "P3.6 attempt-8 V3 (post-fix)"
+      ]
+    }
+  ],
+  "updatedUtc": "2026-10-06T22:45:00Z",
+  "implementationReview": null
+}

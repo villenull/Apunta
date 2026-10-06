@@ -6,12 +6,14 @@
     "C-OWN@1"
   ],
   "baseCommit": "62abb28",
-  "attempt": 7,
+  "attempt": 8,
   "status": "IN PROGRESS",
-  "lastCompletedStep": "Current-UI compatibility delta independently source-CLEAR; final harness SHA256 4b6b00406eb1f7d5d9597c5441579e03c0efe4dbc668c7a399d5cd4f10a6c42f. No runtime acceptance claimed.",
+  "lastCompletedStep": "Attempt 8 re-ran V3 against the current UI with P5.4 landed. The bilevel-mask cluster defect is fixed and committed (8b6f6dc) with its run; 42/43 assertions pass. No runtime acceptance claimed: all eleven flows remain NOT RUN.",
   "nextAllowedAction": "After P5.3 is independently approved and committed and Rule B inputs are clean, run AM-214 V0 once and native V3 once, followed by all remaining P3.6 criteria and independent review. No extra native attempt or rebuild.",
   "sideEffectsDone": [],
-  "changedFiles": ["scripts/v2/tauri-e2e-smoke.test.mjs"],
+  "changedFiles": [
+    "scripts/v2/tauri-e2e-smoke.test.mjs"
+  ],
   "criteria": {
     "V0": {
       "status": "PASS",
@@ -22,12 +24,12 @@
     "V3": {
       "status": "FAIL",
       "exit": 1,
-      "evidence": "docs/v2/evidence/P3.6/attempt-6/runtime/02-v3-run.txt",
-      "verification": "22/24 assertions; all eleven flows NOT RUN. FAIL 1: ruleBFreshness git-history arm pinned to literal base 62abb28 (49 Rule B inputs changed since). FAIL 2: measureFrameClient parses ImageMagick 7.1.2 compare -metric AE stderr \"0 (0)\" with Number() -> NaN, so no click can be grounded. Also the card V3 xvfb-run -a pre-empts the harness 1400x1000 display (640x480)."
+      "evidence": "docs/v2/evidence/P3.6/attempt-8/runtime/02-v3-run.txt",
+      "verification": "Attempt 8 (2026-10-06 evening, current UI + P5.4 landed): 42/43 assertions passed, all eleven flows NOT RUN. One harness defect fixed this attempt: findClusters required an (r,g,b) triplet, but ImageMagick 7.1.2-31 prints a bilevel mask's pixel as a single gray(...) component, so no accent cluster was ever found and onboarding stopped before its click (39/40 before, 42/43 after). Grounding now advances to the add-patient dialog and stops on the next layer: the dialog's OCR labels are not read. Attempt-6's two failures (Rule B literal base, Number() on the compare metric) remain fixed. Rule B freshness still FAILs because the P5.4 work was uncommitted when the AppImage was built; expected, not a defect."
     }
   },
   "sandboxRuns": [],
-  "updatedUtc": "2026-10-06T16:59:48Z",
+  "updatedUtc": "2026-10-06T22:40:00Z",
   "instructionReview": "docs/v2/state/reviews/P3.6-ir8.md",
   "implementationWorkerId": null,
   "buildWorkerId": null,
