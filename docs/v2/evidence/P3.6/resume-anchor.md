@@ -1,4 +1,4 @@
-# P3.6 resume anchor — attempts 2 and 3 (CODE/UNIT phases)
+# P3.6 resume anchor — attempt 7 runtime (AM-214)
 
 This file is the first thing a fresh session reads. It records what is done,
 what is open, and what the next action is. Created and updated by every attempt.
@@ -8,123 +8,126 @@ what is open, and what the next action is. Created and updated by every attempt.
 | Field | Value |
 | --- | --- |
 | Card | P3.6 Linux AppImage integration |
-| Attempt | **3 of 3** — the current one; attempt 2's phase is the source-reviewed candidate this file also records |
-| Base commit (dispatch `- Base commit:` header, read by hand per S1) | `62abb28` |
-| Dispatch | `docs/v2/state/dispatch/P3.6.md`, attempt 2 of 3, port 7879 |
+| Attempt | **7 of 3**, under AM-214 (owner-approved corrective attempts; a further one is not this session's to take) |
+| Base commit (dispatch `- Base commit:` header, read by hand per S1) | `e62c94f239d634faa966636836c468d7b9cd9131` |
+| Dispatch | `docs/v2/state/dispatch/P3.6-review.md`, port 7879 |
 | Sandbox port | 7879 (never 7717, HS-1) |
-| HEAD when attempt 3's phase ran | `c681994` |
-| Repaired harness (attempt 3) | `scripts/v2/tauri-e2e-smoke.test.mjs`, 2789 lines, sha256 `ca8bc468ae15717ca14cdacf6848736672877448ced7d760066f756d4018314e` (attempt 2's reviewed candidate was `7b7cd948…71f0`, 1757 lines) |
+| HEAD for every row this attempt | `f93e27d3cd9931dbc3e5b4726a1ac635d7c660e9` |
+| Harness | `scripts/v2/tauri-e2e-smoke.test.mjs`, **3972 lines**, sha256 `4b6b00406eb1f7d5d9597c5441579e03c0efe4dbc668c7a399d5cd4f10a6c42f` — the source-CLEAR candidate, unmodified this attempt |
+| Gate before this run | `docs/v2/state/reviews/P3.6-compat-source.md` (final source CLEAR) + `docs/v2/state/reviews/P3.6-impl7-source.md` (AM-212 A1–A3 CLEAR) |
+
+## Row-by-row status (this attempt — actual, measured)
+
+| Row | Status | Exit | Evidence | Note |
+| --- | --- | --- | --- | --- |
+| V0 | **PASS** | 0 | `V0-review-impl7.md` | 19:09:52–19:12:18Z, 146 s; producer + `tauri:build:test`; test image `aebc698e…4fb24`, 194439672 B; ran **once** |
+| V1 | **PASS** | 0 | `V1-review-impl7.md` | 19:17:20–19:19:42Z, 142 s; producer **before** `npm run tauri:build`; production image `39cc92a3…f1d0`, 194439672 B; ran **once**, after V3 per S3 |
+| V2 | **PASS** | 0 | `V2-review-impl7.md` | `diff -r` empty, 17 vs 17 members |
+| V3 | **FAIL** | **4** | `V3-review-impl7.md` | 19:14:00–19:14:36Z, 36 s; ran **once**; **48/48 assertions, all eleven flows `NOT RUN`**; Stop 5 open |
+| V4 | **PASS** | 0 | `V4-review-impl7.md` | `--appimage-extract`; licences 253144 B identical to the repo copy; both icons non-empty inside the image |
+| V5 | **PASS** | 0 | `V5-review-impl7.md` | `V4-fatal.md` lines 3, 27, 34 match; P3.3's row set has not drifted |
+
+Consolidated record, clocks, command and log sha256s: `impl7-review.md`.
+Review and verdict: `docs/v2/state/reviews/P3.6-impl7.md` — **FAIL**.
+
+## Flows — which completed, in order, by name
+
+**None.** All eleven are `NOT RUN`, none `PASS`:
+
+onboarding, capture, draft, refine, publish+copy, patient list, plan, briefing,
+brainstorm, settings, backup.
+
+**Cause (Stop condition 5): a screen was reached but could not be read.**
+Reproduced against this run's own window capture with the shipped module's own
+exported `screenWords()`:
+
+- `tauri-e2e-smoke.test.mjs:948` requires `Number.isInteger(confidence)`;
+- tesseract **5.5.3** prints the TSV `conf` column with six decimals
+  (`92.934593`);
+- 98 level-5 word rows in the capture, **0** survive, `screenWords` returns
+  `null`, and `:1047` / `:1086` render that as the recorded causes;
+- with only that test relaxed to `Number.isFinite`, the same capture yields
+  **95** words and `groundPhrase(..., "Add your note format")` returns
+  `exactly once` with box `{x:412, y:109, w:192, h:20}`.
+
+The capture pipeline, `tesseract`, `groundPhrase` and the fail-closed uniqueness
+rule all work; **the integer test on a float column is the whole defect.**
+It was **not** repaired — AM-214 grants review and evidence writes only, and
+Stop 5 forbids an edit made to open a channel. **Whether it is the only defect
+is unknown, and the row is spent: it may not be repeated to find out.**
+
+Native screenshot actually produced by the run, copied beside this file:
+`impl7-v3-window-2097190.png`, sha256 `16ee9ca415cf9385b913db84708f23ae977893e32a417dd18f8b1712388783d3`,
+1280x860, 885 colours — the onboarding screen the run never got past.
+
+## What this attempt proved working (attempt 6's three FAILs)
+
+| Attempt 6 finding | This attempt |
+| --- | --- |
+| A1 — `compare -metric AE` printed `0 (0)`, `Number()` → NaN | **green**: `PASS … the window capture and the display crop agree on 1280x860 pixels` |
+| A2 — freshness pinned to the dispatch base `62abb28` | **green**: `PASS smoke Rule B freshness: the source set has not moved since the commit the AppImage was built from`, plus the fresh-build anchor |
+| A3 — display size | **green**: `xvfb-run -a -s "-screen 0 1400x1000x24"` branch taken, window measured on a **1400x1000** display |
+
+CSP (8 directives with nonce) and all five containment assertions also passed,
+and teardown was pid-scoped throughout.
 
 ## Artefact provenance
 
 | Artefact | Status | Path | sha256 | size | mtime |
 | --- | --- | --- | --- | --- | --- |
-| Test AppImage (V0 output) | **BUILT, exit 0** | `src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage` | `e6dd3ecb13f615f01223ded8be2be9e7154b49434dcd01b4e34ae170e109f39a` | 194214392 | 2026-10-03 22:15:39 -0600 |
-| Production AppImage (V1 output) | **NOT BUILT** | — | — | — | — |
+| Test AppImage (V0) | built, exit 0 — **then removed by V1's `tauri build`** | `src-tauri/target/release/bundle/appimage/Apunta (test)_0.0.0_amd64.AppImage` | `aebc698eac3aeccbc238df95f431d2ea56e88bdd13a2b897570d04012c64fb24` | 194439672 | 2026-10-06 13:12:18 -0600 |
+| Production AppImage (V1) | **present** | `src-tauri/target/release/bundle/appimage/Apunta_0.0.0_amd64.AppImage` | `39cc92a38e96eecad720783aabd8e9343666ba5a980da86652898dbfadc9f1d0` | 194439672 | 2026-10-06 13:19:42 -0600 |
 
-The test image is a **new artefact**, not P3.4's leftover: same name, different
-bytes (P3.4's was `d7fb91513e8c68b0a2e74628e7643e3079a60946866110979cb1815022d234df`,
-194202104 bytes). V0 ran exactly once under `setsid`, exit 0, 134 s. Evidence:
-`attempt-2/build-preparation/05-v0-run.txt`, `v0-full-stdout.log`.
-
-## Row-by-row status (actual, measured — not the card's approval)
-
-| Row | Status | Evidence | Note |
-| --- | --- | --- | --- |
-| V0 | **PASS** (exit 0) | `attempt-2/build-preparation/05-v0-run.txt` | producer + `tauri:build:test` + identity guard; build worker's lease |
-| V1 | **NOT RUN** | — | production build; not this phase |
-| V2 | **NOT RUN** (anchor holds) | `attempt-2/build-preparation/02-s1-anchors.txt` | `diff -r` icons empty; recorded as S1 anchor, not executed as a row |
-| V3 | **NOT RUN** | — | native UI. The harness was **repaired in attempt 3** against the source review's D1–D6/R1–R7 and is now awaiting a **fresh independent source IR**. `attempt-3/implementation/04-defect-repair-map.md` |
-| V4 | **NOT RUN** | — | AppImage extraction; not this phase |
-| V5 | **NOT RUN** | — | reads P3.3 evidence; not this phase |
-
-## Flows — which completed, in order, by name
-
-**None.** V3 has not run. The harness is authored and passes scoped static
-checks (nodecheck, eslint, prettier) but has not driven the app. A flow is
-recorded here only when V3 runs and reads its fact.
+**A resumed session must run V0 before V3: there is no test image on disk any
+more.** `tauri build` removed it instead of leaving it beside the production
+identity — the clean-or-add behaviour AM-149 records as unresolved. Each row
+counts its own identity pattern, so no assertion in this attempt was affected.
 
 ## Rule B drift
 
-Rule B's set has **not** moved since V0 last ran. `git status --porcelain` over
-the set is empty; the only newer files are under `src-tauri/target/` (build
-outputs, which Rule B names as outputs, never inputs). Newest mtime under the
-set's input paths predates V0. The freshness predicate
-(`git diff --name-only 62abb28...HEAD -- <Rule B set>`) is therefore empty and a
-resumed session may not claim V0 was needed.
+**None.** `git status --porcelain` over the Rule B set was empty before every
+build, and no input under the set carries an mtime newer than the artefact it
+would invalidate (only `src-tauri/target/**`, which Rule B names as output). The
+harness's own predicate agreed and the run continued to launch.
 
-**It is now executable, not prose.** `ruleBFreshness()` in the repaired harness
-runs both halves — that diff plus `git status --porcelain` over the same set,
-with the base `62abb28` copied out of the dispatch header by hand and three ASCII
-full stops — **and** the fresh-build anchor, a source walk over the same set
-compared with the AppImage's own mtime. V3 refuses to launch on a moved input or
-an older artefact. Attempt 3 ran the predicate against real git and read: both
-git calls exit 0, `moved` is empty, the newest Rule B input is
-`server/src/**`-side and not under `src-tauri/target/`
-(`attempt-3/implementation/02-helper-tests.txt`).
+## Stop 8 — the four pinned tuples, re-read at HEAD
 
-## Whisper candidate (A06, P3.4's S0 — precondition, not this card's work)
+| Pin | Result |
+| --- | --- |
+| P3.4's Rule B bullet @ `5dcabae` | byte-identical to HEAD |
+| P3.4's V3 invariant row @ `04d071e` | byte-identical to HEAD (630 chars); the four-word loop quoted in this card's May edit is inside it |
+| `server/src/http/csp.ts` @ `d56af1d` | byte-identical to HEAD (5767 bytes) |
+| P3.3's row set @ `321b4fa` | byte-identical to HEAD (26124 bytes) |
+
+**No drift.** Also exercised as rows: V3 asserted the CSP header live (8
+directives), V5 asserted P3.3's fatal-mode evidence.
+
+## Whisper candidate (A06 — precondition, not this card's work)
 
 | Field | Value |
 | --- | --- |
 | Path | `~/.cache/apunta-v2/whisper-src/whisper.cpp/build-vulkan/bin/whisper-cli` |
-| mode | `-rwxr-xr-x` (executable) |
+| mode | `-rwxr-xr-x` |
 | size | 1064648 bytes |
 | mtime | 2026-10-02 13:00:05 -0600 |
 
-## V5 outcome
+Present before V0 and untouched after; `V0`/`V1`'s `test -x` passed and the
+producer reported `copied whisper-cli and 15 shared libraries`. **Nothing was
+acquired, cloned, fetched or downloaded by this attempt.**
 
-Not run. V5 asserts P3.3's fatal-mode evidence
-(`docs/v2/evidence/P3.3/V4-fatal.md`) carries `Status: **PASS**` and both
-lifecycle-code lines; it reads committed files and starts nothing.
+## What is open
 
-## What attempt 3 changed (CODE/UNIT, outside Rule B)
-
-The source review (`docs/v2/state/reviews/P3.6-impl2-source.md`) returned
-**CHANGES REQUESTED, 13 findings**. All thirteen are answered in the repaired
-harness: the six defects (D1 self-proving API facts, D2 an ownership baseline
-that guaranteed a FAIL, D3 no signal teardown, D4 a vacuous bundle scan, D5
-`NOT RUN` exiting 0, D6 no freshness predicate) and the seven risks (R1 cluster
-ambiguity, R2 the copy assertion, R3 the physical microphone, R4 zero windows,
-R5 import running `main()`, R6 undeclared tools, R7 a redundant `xvfb-run`).
-Scope of the repair in one line: **every flow now drives a real UI action and
-asserts a pane-only label read offline by `tesseract` plus the fact that action
-produced**, every click target is refused when it is not unique on screen, every
-one of the eleven flows is recorded on every path, and any `NOT RUN` exits 4.
-Map: `attempt-3/implementation/04-defect-repair-map.md`. Scoped checks and 20
-synthetic helper tests: `attempt-3/implementation/01-scoped-checks.txt`,
-`02-helper-tests.txt`.
-
-**No native call was made in attempt 3.** No AppImage, display, window, audio
-device, port, inference or build; the V0 AppImage was re-hashed, not rebuilt.
-D1 and D3 are repaired but unproven by any run.
-
-## What attempt 2 built (CODE/UNIT, outside Rule B)
-
-`scripts/v2/tauri-e2e-smoke.test.mjs` (new, 1757 lines) — the V3 harness. One
-mode `smoke` (any other argument exits 2). It resolves the test-identity AppImage
-glob once, captures both pipes, launches under a private headless env
-(`GDK_SCALE=1`, `GDK_DPI_SCALE=1`, `GDK_BACKEND=x11`, unset `WAYLAND_DISPLAY`),
-**measures** the frame-to-client relationship from two captures (no guessed
-decoration offset), reads the scale off the app's own line and requires 1, drives
-the eleven flows with screenshot-grounded colour-cluster clicks plus the app's
-own keyboard, asserts the CSP over the app's origin, asserts all five
-containment facts, and stops the child by pid (server pid from the shell's own
-line, then the child). No listeners, no `pkill`, no observation hook, no
-producer wrapper, no source edit.
-
-Scoped static checks (this phase, all green): `node --check`, `eslint`,
-`prettier --check`. No build, no global tests, no typecheck, no native UI, no
-audio — those belong to the runtime phase after source review.
-
-Implementation evidence: `attempt-2/implementation/`.
+1. **V3 `FAIL`, Stop condition 5.** All eleven flows `NOT RUN`. The blocking
+   defect is identified and reproduced; repairing it means a coordinator
+   amendment to `scripts/v2/tauri-e2e-smoke.test.mjs:948` and a fresh bounded
+   native run. **This reviewer did none of that and claims no approval.**
+2. **P3.R must not be declared.** The coordinator records P3.6's approval (or its
+   refusal) first; the parent review follows that.
 
 ## nextAllowedAction
 
-A **fresh independent source review** of the repaired
-`scripts/v2/tauri-e2e-smoke.test.mjs` (sha256 `ca8bc468…314e`) against the V3 row
-and against attempt 2's review, D1–D6/R1–R7 — not the row itself. If it clears,
-run V3 (and V1, V4, V5) in the card's order under `sandbox.mjs env --port 7879`.
-This is attempt 3 of 3: a fourth is not this session's to take, so if the review
-returns further changes the honest record is the list of what remains, not a
-waived criterion.
+**Coordinator's decision, not an implementer's.** Either (a) authorise a
+one-line harness amendment for the confidence column and a fresh bounded native
+run of V3 — V0 would have to re-run first, because V1 removed the test image —
+or (b) record P3.6 on the evidence as it stands. Nothing in this attempt may be
+repeated: every row is spent.

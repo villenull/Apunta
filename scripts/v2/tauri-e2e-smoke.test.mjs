@@ -945,7 +945,10 @@ async function screenWords(file) {
     const confidence = Number(columns[10]);
     const text = (columns[11] ?? '').trim();
     if (text === '') continue;
-    if (![left, top, width, height, confidence].every((value) => Number.isInteger(value))) continue;
+    // Tesseract 5.5 prints `conf` with decimals (`92.934593`); the box is still
+    // whole pixels. An unparseable column is still dropped (fail closed).
+    if (![left, top, width, height].every((value) => Number.isInteger(value))) continue;
+    if (!Number.isFinite(confidence)) continue;
     words.push({
       text,
       left,

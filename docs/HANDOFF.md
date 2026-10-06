@@ -1,38 +1,27 @@
-# Release-blocker resumption — 2026-10-06 (current)
+# Direction change — 2026-10-06 afternoon (current)
 
-Owner authorized advancing P5.3, S6.1, P3.6/P3.R and P5.4 with subagents,
-parallel where independent (AM-218). Both UI batches below are complete and
-`e62c94f` passed CI: https://github.com/villenull/Apunta/actions/runs/37422148250.
-Preserve that UI. This authorization resumes repair work, not acceptance
-waivers, release/signing, live-data access or Mac work.
+Owner: the release-blocker round was too slow and produced nothing user-facing.
+Decisions (recorded in CLAUDE.md "How the owner wants to be worked with"):
+**lean process** from now on, **user-facing work first**, the **updater (P5.4)
+parked** until the owner supplies the production signing key (AM-222).
 
-The free Big Pickle workers run through installed OpenCode with an explicit
-build agent; direct API access was rejected by the provider's OpenCode-only
-restriction. No paid-model substitution. P5.3's fifth repair is APPROVED:
-independent V1–V9 acceptance passed, including 2,461 tests and 117 browser tests
-(six historical skips, four default workers, no retries). The actual
-duplicate-crash smoke refuses `no_response`. Approval reports:
-`docs/v2/state/reviews/P5.3-impl5.md` and `docs/v2/evidence/P5.3/impl5-review.md`.
+**Desktop app handed over.** The production AppImage built by today's native
+review (V1) is at `~/Applications/Apunta.AppImage`, SHA-256 `39cc92a3…f1d0`,
+194 MB; its licences and icons were verified inside the image (V4). It uses
+the production identity: port 7717 and `~/.local/share/apunta`, real AI. Not
+signed, no updater.
 
-S6.1 is APPROVED after independent V0–V9 acceptance: five spelling surfaces,
-37 focused tests, 820 shared/web tests, asset identity and completed notice/full
-licence verified. AM-224's one local generation is consumed; no acquisition
-repeated. Review: `docs/v2/state/reviews/S6.1-impl1-am224.md`.
-AM-222 keeps the genuine production updater-key acceptance gate blocked.
+**Native flows (P3.6 V3).** The independent run passed V0, V1, V2, V4, V5 and
+48/48 V3 assertions, but all eleven flows were `NOT RUN`: the harness dropped
+every OCR word because tesseract 5.5.3 prints decimal confidence
+(`scripts/v2/tauri-e2e-smoke.test.mjs`, now `Number.isFinite`). See the
+result of the lean re-run below. Review: `docs/v2/state/reviews/P3.6-impl7.md`.
 
-Candidate `386e3ea` CI failed only formatting in the two dispatcher files.
-The formatting repair `df2ef35` passed CI:
-https://github.com/villenull/Apunta/actions/runs/37496627136.
-P5.3 approval `d5b0d52` also passed CI:
-https://github.com/villenull/Apunta/actions/runs/37504266251.
-P3.6's final compatibility harness is independently source-CLEAR
-(`state/reviews/P3.6-compat-source.md`); native acceptance remains held.
-
-P3.6's bounded rebuild/native run follows committed P5.3 approval and clean,
-committed licence inputs. P3.R waits for all desktop children. P5.4 implementation
-waits for P3.R approval. AM-225 permits direct pinned reqwest 0.13.5, already
-locked and cached, solely for strict updater redirect-host enforcement.
-Current checkpoints and next actions: `docs/v2/state/NEXT-SESSION.md`.
+Done earlier today: P5.3 shutdown safety APPROVED (CI 37504266251); S6.1 Spanish
+dictionary attribution APPROVED (`dc86b54`); P5.4's contracts reconciled
+(`8d2dfd8`, AM-227) so the updater can resume from a settled design
+(`docs/v2/state/reviews/P5.4-backend-design.md`).
+Subagents this round ran on Sonnet 5.5 by owner instruction (AM-226).
 
 # Owner UI feedback, second batch — 2026-10-06 (current)
 

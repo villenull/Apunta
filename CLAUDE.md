@@ -119,7 +119,16 @@ v2: the owner merged `feature/v2` into `main` on 2026-09-29 and retired the bran
 
 ## How the owner wants to be worked with
 
-Two standing preferences, recorded here so they survive a cleared session.
+Three standing preferences, recorded here so they survive a cleared session.
+
+- **Lean process (owner decision 2026-10-06).** Implement, run real tests and
+  one independent review, then commit. No per-check evidence files, attempt
+  counters, dispatch documents or amendment records for routine decisions, and
+  no repeated review rounds over small text changes. A small change (a notice, a
+  copy edit, a config value) is written directly and checked once. The hard
+  rules above (privacy, no real patient text, fake-AI runnable) stay absolute.
+  The updater (P5.4) is parked until the owner supplies the production signing
+  key; user-facing work comes first.
 
 - **Every question goes through the multiple-choice tool**, never as free text
   in chat. 2–4 concrete options, **exactly one marked "(Recommended)" and
