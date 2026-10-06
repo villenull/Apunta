@@ -63,3 +63,41 @@ The install is the one non-repeatable acquisition in this card and is recorded
 in `docs/v2/state/cards/S6.1.json` under `sideEffectsDone` with its exit code.
 A resumed session re-runs neither this install nor the `npm run licenses`
 rewrite.
+
+---
+
+## Superseded 2026-10-06 — AM-220; the three rows above are closed
+
+Appended, not edited: every row above stands as the blocked pass wrote it, and
+this section records what happened to them rather than rewriting them.
+
+| Row above | State since 2026-10-06 | Evidence |
+| --- | --- | --- |
+| *Portions created by …* (U2, line 52) | **closed** | `docs/v2/state/S6.1-NOTICE-PROVENANCE.md` §7.3: the `es_MX` affix file's own header at rla-es v2.8 — `Copyright 2004-2020, Santiago Bosio y otros.` — plus a census of all 70 inputs the build reads. The claim that "no `es_MX`-specific copyright line exists upstream" was **wrong**, and the reason is now on record there (§3.2, §4). Adopted by AM-220 and written into the shipped file at `THIRD-PARTY-LICENSES.md` lines 851–852. |
+| *Contributor(s)* (U3, line 53) | **facts closed, decision taken** | §7.4 measures the normalisation exactly: two deletions of a single trailing space, nothing else, in commit `122fb1a8d238ff5734e36911c61b8e206055b21b` (Titus Wormer, 2023-11-03). AM-220 treats that conservatively as a Modification and adopts the package's own `contributors`; written at line 854 as `Titus Wormer, Thomas Beverley`. |
+| The tarball shasum (line 54) | **closed** | SHA-1 of `dictionary-es-mx-2.0.0.tgz` fetched by the separately authorised research pass (provenance §7.1 row 9) is `30fb094031481fff76cf0fd40bcfd9163149bc00`, equal to S1.5 §2.2's string; SHA-256 of the same bytes is `89f26b9821ab0ebbca319c52ca875a87d8e2abbb56cae0f06c0940d51b5e54cd`. It was a read of the same pinned URL for research, **not a re-run of the A11 install** — the install above was not repeated. Whether that satisfies this row's suggested "single re-fetch under an amended A11 row" is the coordinator's call to record; the value itself is no longer unknown. |
+
+The licence-file row (line 45) was already correct about the installed tree and
+is not changed: provenance §7.2 additionally established that the **published
+tarball** carries `license` too, byte-identical to the installed file, which was
+the separate `[unknown]` §4.3 of the provenance file had held open.
+
+The closing paragraph above — "the shipped `THIRD-PARTY-LICENSES.md` carries no
+notice section … and V4 is `BLOCKED` until U2 and U3 are sourced" — described
+this file's state before AM-220 and **no longer describes it**: the notice
+section exists, it carries no `{{OWNER: …}}` placeholder and no blank field, and
+the complete elected licence text is bundled beside it. V4's verdict is the
+coordinator's to record by running V4; nothing here claims it.
+
+## Naming precision after independent notice review — 2026-10-06
+
+The older “never renamed” wording describes neither the actual build names
+nor the corrected source-availability statement. The installed package keeps
+`index.aff` and `index.dic`; Vite emits separate content-hashed `.aff`/`.dic`
+assets with identical bytes. The shipped notice now identifies both macOS and
+Linux AppImage asset paths and both SHA-256 digests. Normalization provenance
+and the original acquisition ledger remain unchanged.
+
+AM-224 authorizes one separate network-free licence-generation invocation
+during resumed V4. The original acquisition is still non-repeatable, and
+the historical stale-block failure is not recreated or overwritten.

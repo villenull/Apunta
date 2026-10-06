@@ -14,22 +14,24 @@ independent V1–V9 acceptance passed, including 2,461 tests and 117 browser tes
 duplicate-crash smoke refuses `no_response`. Approval reports:
 `docs/v2/state/reviews/P5.3-impl5.md` and `docs/v2/evidence/P5.3/impl5-review.md`.
 
-The first independent S6.1 source review verified the adopted fields and full
-licence bytes but found five factual errors; corrections are being reconciled
-before re-review. P3.6 harness source review is CLEAR; native runtime acceptance
-remains. Runtime/build acceptance is serialized. No worker commits.
+S6.1 is APPROVED after independent V0–V9 acceptance: five spelling surfaces,
+37 focused tests, 820 shared/web tests, asset identity and completed notice/full
+licence verified. AM-224's one local generation is consumed; no acquisition
+repeated. Review: `docs/v2/state/reviews/S6.1-impl1-am224.md`.
 AM-222 keeps the genuine production updater-key acceptance gate blocked.
 
 Candidate `386e3ea` CI failed only formatting in the two dispatcher files.
 The formatting repair `df2ef35` passed CI:
 https://github.com/villenull/Apunta/actions/runs/37496627136.
+P5.3 approval `d5b0d52` also passed CI:
+https://github.com/villenull/Apunta/actions/runs/37504266251.
 P3.6's final compatibility harness is independently source-CLEAR
 (`state/reviews/P3.6-compat-source.md`); native acceptance remains held.
 
 P3.6's bounded rebuild/native run follows committed P5.3 approval and clean,
 committed licence inputs. P3.R waits for all desktop children. P5.4 implementation
-waits for P3.R approval. S6.1 V4 and independent acceptance remain; AM-224 permits
-one fresh local licence generation without repeating acquisition.
+waits for P3.R approval. AM-225 permits direct pinned reqwest 0.13.5, already
+locked and cached, solely for strict updater redirect-host enforcement.
 Current checkpoints and next actions: `docs/v2/state/NEXT-SESSION.md`.
 
 # Owner UI feedback, second batch — 2026-10-06 (current)

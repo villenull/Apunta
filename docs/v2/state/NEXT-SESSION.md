@@ -14,20 +14,20 @@ and 117 browser tests passed (six historical skips, four default workers,
 zero retries). The actual duplicate-crash smoke refuses `no_response`.
 Reports: `reviews/P5.3-impl5.md` and `evidence/P5.3/impl5-review.md`.
 
-S6.1's first independent source review verified the fields and licence bytes
-but returned five factual corrections; re-review follows reconciliation.
-P3.6 harness source review is CLEAR. Coordinator owns shared state and commits;
-all runtime/build checks are serialized against stable relevant inputs.
+S6.1 is APPROVED after independent V0–V9 acceptance; AM-224's single fresh
+generation is consumed without acquisition. Review:
+`reviews/S6.1-impl1-am224.md`. P3.6 harness source review is CLEAR.
+Commit approved licence inputs before the bounded native run.
 
 P5.3's legacy counter was corrected monotonically from 1 to 5, retaining the
 four historical repair rounds and failed review. P3.6 retains attempt 7 and
 AM-214's once-only V0 rebuild/native V3 after P5.3 is reviewed and committed.
 P3.R cannot approve before every child passes. P5.4 implementation cannot
-start until P5.3 and P3.R are approved. S6.1's adopted source fields are resolved
-by AM-220; V4 and independent acceptance remain. AM-224 permits one fresh local
-generation, preserving the historical stale-block failure and not repeating
-acquisition. AM-222 keeps the genuine production updater-key gate blocked,
-without a fake key or acceptance waiver.
+start until P5.3 and P3.R are approved. S6.1's AM-220 notice and all V0–V9
+criteria passed independently. Do not repeat AM-224 generation or acquisition.
+AM-225 permits direct pinned reqwest 0.13.5 solely for redirect-host enforcement;
+no new package acquisition. AM-222 keeps the genuine production updater-key
+gate blocked without a fake key or acceptance waiver.
 
 No live data/export access, port 7717, production signing/release action,
 acceptance waiver, new network authorization or Mac work is granted.
