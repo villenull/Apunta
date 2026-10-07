@@ -13,6 +13,7 @@ import {
 import { instructionsFor } from './default-instructions.js';
 import { renderClinicalKnowledgeGuide } from './clinical-knowledge/integration.js';
 import { hasRetraction } from './retractions.js';
+import { hasRiskReview } from './risk-review.js';
 import type {
   BrainstormRequest,
   ComposeBriefRequest,
@@ -272,8 +273,6 @@ export function restatedFigureReminderFor(source: string): string[] {
  * the two failures need opposite instructions: with a section, the danger is
  * the default word; without one, the danger is silence.
  */
-const RISK_TERM = /\b(?:self[-\s]?harm|suicid\w*|homicid\w*|hurt(?:ing)?|risk|safety plan|SI|HI)\b/i;
-const RISK_REVIEW_VERB = /\b(?:denie[sd]|denies|asked|no (?:thoughts|history|plan|intent)|said no)\b/i;
 const RISK_SECTION = /^(?:risk|risk review|risk assessment|safety|safety review)$/i;
 
 export const RISK_REVIEW_REMINDER =
@@ -283,7 +282,7 @@ export const RISK_CONTENT_REMINDER =
   'She asked about risk in this session and the answer is in the dictation. This format has no section for risk, so it goes in the section it fits best; it never disappears from the note.';
 
 export function riskReviewReminderFor(source: string, sections: readonly string[]): string[] {
-  if (!RISK_TERM.test(source) || !RISK_REVIEW_VERB.test(source)) return [];
+  if (!hasRiskReview(source)) return [];
   return sections.some((section) => RISK_SECTION.test(section.trim()))
     ? [RISK_REVIEW_REMINDER]
     : [RISK_CONTENT_REMINDER];
@@ -317,6 +316,28 @@ export function buildExtractRetractionsPrompt(transcript: string): ChatPrompt {
     'Reply with a single JSON object of the form {"corrections": [{"withdrawn": "...", "replacement": "..."}]} and nothing else.',
   ].join('\n');
   return { system, user: transcript };
+}
+
+/**
+ * The quoting call after a draft that lost a risk review she carried out
+ * (`risk-review.ts`). The model only points at her words; the server finds
+ * each quote in the source, widens it to whole sentences, and puts those in
+ * the note as dictated. The example's notes are not any patient's, and only
+ * text found in the source is ever used, so it cannot leak.
+ */
+export function buildExtractRiskReviewPrompt(source: string): ChatPrompt {
+  const system = [
+    'A therapist dictated or typed her notes from a session. At some point she asked the client about risk: suicide, self-harm, or harming anyone else. Find every place where she reports that review: what she asked and what the client answered, including denials and anything the client said that worried her.',
+    'Quote each one exactly as she wrote it, copied verbatim and unchanged, the whole sentence. Never paraphrase, shorten or correct it. If she did not review risk, return an empty list.',
+    '',
+    'Example notes: "Slept badly this week. Asked about self-harm, she said no, nothing like that. Also asked if she ever thinks about ending her life and she said sometimes at night, but she\'d never act on it. Weekly from here."',
+    'Example answer: {"quotes": ["Asked about self-harm, she said no, nothing like that.", "Also asked if she ever thinks about ending her life and she said sometimes at night, but she\'d never act on it."]}',
+    '',
+    '## Output format',
+    '',
+    'Reply with a single JSON object of the form {"quotes": ["..."]} and nothing else.',
+  ].join('\n');
+  return { system, user: source };
 }
 
 /**

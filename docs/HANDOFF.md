@@ -1,3 +1,27 @@
+# Risk-review repair — 2026-10-06 late
+
+The two genuine safety drops the 2026-09-23 round left open (`10`, `19`: a
+four-section intake whose risk review vanished) now have the server-side step
+that round called for. `server/src/ai/risk-review.ts`, called from
+`OllamaProvider.generateNote`, makes one extra call only after an English draft
+that names no risk at all, from a source that shows a review. The model only
+points at quotes; the server widens each to her whole sentences and inserts
+them labelled `Risk review, as dictated: "…"`. Results on the full corpus with
+the 4B:
+
+- safety facts 85% → 95%;
+- fabrication unchanged at 15%, the same nine pre-existing runs;
+- the owner corpus is identical before and after.
+
+Model-written risk sentences were tried first and dropped. The independent
+review broke their polarity check three rounds running, so the owner chose her
+verbatim words. That review ran on a Sonnet 5 subagent: the owner asked for
+5.5, but the Agent tool only offers "sonnet". Evidence:
+`docs/eval-reports/2026-10-06-risk-review-repair.md`. Not built: a chat notice
+for the inserted text, which would be a web change. CI is still blocked by
+GitHub billing (a failed payment or a spending cap, not code), so local gates
+are the only evidence.
+
 # Rebuilding the PC from zero — 2026-10-06 night
 
 The rebuild recipe for this Linux PC is `docs/RECOVERY.md` "Rebuild this Linux

@@ -802,6 +802,84 @@ describe('OllamaProvider.generateNote — spoken retractions', () => {
   });
 });
 
+describe('OllamaProvider.generateNote — a lost risk review', () => {
+  const INTAKE = ['Presenting problem', 'History', 'Formulation', 'Plan'];
+  const TYPED =
+    'Low mood for five years. Risk: I asked directly and she denied any thoughts of killing herself and denied any plan. Biweekly to start.';
+  const DROPPED: Sections = {
+    'Presenting problem': 'She presents with low mood of five years.',
+    History: '',
+    Formulation: '',
+    Plan: 'Biweekly sessions.',
+  };
+  const QUOTES = {
+    quotes: [
+      'she denied any thoughts of killing herself',
+      // Not in the source: offered, never used.
+      'she reported suicidal intent',
+    ],
+  };
+  const request = { instructions: '', formatName: 'Intake note', sections: INTAKE, typedNotes: TYPED };
+
+  it('asks for quotes after a draft with no risk content, and files her own sentences', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [{ content: JSON.stringify(DROPPED) }, { content: JSON.stringify(QUOTES) }],
+    });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
+    );
+
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.body).toMatchObject({ stream: false });
+    expect((calls[1]?.body as { format: { properties: object } }).format.properties).toHaveProperty('quotes');
+    const sections = (events.at(-1) as { type: 'sections'; sections: Sections }).sections;
+    expect(sections['Presenting problem']).toBe(
+      'She presents with low mood of five years.\n\nRisk review, as dictated: "Risk: I asked directly and she denied any thoughts of killing herself and denied any plan."',
+    );
+    expect(JSON.stringify(sections)).not.toContain('suicidal intent');
+    expect(sections.Formulation).toBe('');
+  });
+
+  it('makes no second call when the draft already carries the review', async () => {
+    const carried = { ...DROPPED, History: 'She denied thoughts of killing herself.' };
+    const { fetchImpl, calls } = stub({ chats: [{ content: JSON.stringify(carried) }] });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
+    );
+    expect(calls).toHaveLength(1);
+    expect(events.at(-1)).toMatchObject({ type: 'sections', sections: carried });
+  });
+
+  it('makes no second call for a source without a risk review', async () => {
+    const { fetchImpl, calls } = stub({ chats: [{ content: JSON.stringify(DROPPED) }] });
+    await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote({
+        ...request,
+        typedNotes: 'Low mood for five years. Biweekly to start.',
+      }),
+    );
+    expect(calls).toHaveLength(1);
+  });
+
+  it('makes no second call for a Spanish note, whose sentences it would write in English', async () => {
+    const { fetchImpl, calls } = stub({ chats: [{ content: JSON.stringify(DROPPED) }] });
+    await drain(new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request, 'es-MX'));
+    expect(calls).toHaveLength(1);
+  });
+
+  it.each([
+    ['nonsense', { content: 'not json' }],
+    ['a truncated answer', { content: '{"quotes":[', doneReason: 'length' }],
+    ['an HTTP failure', { status: 500, body: 'boom' }],
+  ])('keeps the draft as written when the quoting call answers %s', async (_label, reply) => {
+    const { fetchImpl } = stub({ chats: [{ content: JSON.stringify(DROPPED) }, reply] });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
+    );
+    expect(events.at(-1)).toMatchObject({ type: 'sections', sections: DROPPED });
+  });
+});
+
 describe('OllamaProvider.preloadDraft', () => {
   it('uses the resolved model and keeps the request rate-limited', async () => {
     let now = 0;

@@ -41,6 +41,7 @@ import {
   buildComposeBriefPrompt,
   buildDetectFormatPrompt,
   buildExtractRetractionsPrompt,
+  buildExtractRiskReviewPrompt,
   buildGeneratePrompt,
   buildRefinePrompt,
   buildSuggestPlanPrompt,
@@ -49,6 +50,13 @@ import {
   type ChatPrompt,
 } from './prompts.js';
 import { applyRetractions, hasRetraction } from './retractions.js';
+import {
+  riskQuotesJsonSchema,
+  RiskQuotesSchema,
+  riskReviewLost,
+  riskSentencesFromQuotes,
+  withRiskReview,
+} from './risk-review.js';
 import type {
   BrainstormRequest,
   ComposeBriefRequest,
@@ -100,6 +108,7 @@ export const NUM_PREDICT = 3072;
  */
 export const NUM_PREDICT_DETECT = 256;
 export const NUM_PREDICT_RETRACTIONS = 768;
+export const NUM_PREDICT_RISK_REVIEW = 768;
 export const NUM_PREDICT_SUMMARY = 768;
 export const NUM_PREDICT_PLAN = 1536;
 export const NUM_PREDICT_BRIEF = 1024;
@@ -408,7 +417,16 @@ export class OllamaProvider implements LlmProvider {
       validate,
     });
 
-    yield { type: 'sections', sections: value, stats };
+    // A risk review she carried out that the draft lost entirely is put back in
+    // her own words (`risk-review.ts`). The model points, the server quotes her.
+    let sections = value;
+    const source = `${drafted.typedNotes ?? ''}\n${drafted.transcript ?? ''}`;
+    if (locale === 'en' && riskReviewLost(source, value)) {
+      const sentences = riskSentencesFromQuotes(source, await this.extractRiskReview(model, source));
+      sections = withRiskReview(value, request.sections, sentences);
+    }
+
+    yield { type: 'sections', sections, stats };
   }
 
   async *refineNote(request: RefineNoteRequest, locale: Locale = DEFAULT_LOCALE): AsyncIterable<LlmEvent> {
@@ -670,6 +688,44 @@ export class OllamaProvider implements LlmProvider {
       const validated = RetractionCorrectionsSchema.safeParse(JSON.parse(text));
       return validated.success ? validated.data.corrections : [];
     } catch {
+      return [];
+    }
+  }
+
+  /**
+   * The quoting call after a draft that lost its risk review.
+   *
+   * Never fatal: the note is already drafted, and losing it to a failure in a
+   * repair would be worse than the omission. Anything that is not the shape
+   * asked for — including a truncated answer or a transport failure — leaves
+   * the draft as the model wrote it.
+   */
+  private async extractRiskReview(model: string, source: string): Promise<string[]> {
+    try {
+      const prompt = buildExtractRiskReviewPrompt(source);
+      this.assertFits(prompt.system, prompt.user);
+      const think = (await this.supportsThinking(model)) ? false : undefined;
+      const response = await this.postChat(model, {
+        messages: [
+          { role: 'system', content: prompt.system },
+          { role: 'user', content: prompt.user },
+        ],
+        format: riskQuotesJsonSchema(),
+        think,
+        stream: false,
+        seed: 0,
+        numPredict: NUM_PREDICT_RISK_REVIEW,
+      });
+      const chunk = (await response.json()) as ChatChunk;
+      if (chunk.done_reason === 'length') return [];
+      const { text } = stripCodeFence(chunk.message?.content ?? '');
+      const validated = RiskQuotesSchema.safeParse(JSON.parse(text));
+      return validated.success ? validated.data.quotes : [];
+    } catch (error) {
+      this.log('risk review extraction failed', {
+        model,
+        code: error instanceof AiError ? error.code : 'unknown',
+      });
       return [];
     }
   }

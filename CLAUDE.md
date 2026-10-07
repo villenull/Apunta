@@ -24,6 +24,10 @@ transcript before drafting by the server, on a quote the model supplies and
 only where the transcript bears it out (`server/src/ai/retractions.ts`,
 `docs/eval-reports/2026-09-06-retraction-pass.md`); what was cut is listed
 under the first-pass message in the note's chat.
+A **risk review the draft lost entirely** is put back in her own words: the
+model points at quotes, the server widens each to her whole sentences and
+inserts them labelled "as dictated" (`server/src/ai/risk-review.ts`,
+`docs/eval-reports/2026-10-06-risk-review-repair.md`).
 
 ## Hard rules
 
