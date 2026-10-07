@@ -1131,7 +1131,27 @@ function visualRows(words) {
       if (!kept.some((other) => same(other) && shared(other) > 0.5 * Math.min(word.width, other.width)))
         kept.push(word);
     }
-    return kept.sort((a, b) => a.left - b.left);
+    // A word tesseract split in two ("R" + "ecents") is rejoined: fragments
+    // 2 px apart or less are one word; a real space here is about 4 px.
+    const joined = [];
+    for (const word of kept.sort((a, b) => a.left - b.left)) {
+      const last = joined[joined.length - 1];
+      // Side by side only: a box that overlaps the one before is tesseract
+      // drawing one word too wide ("Back" spanning "Back up now"), not a split.
+      const gap = last === undefined ? Infinity : word.left - (last.left + last.width);
+      if (last !== undefined && gap >= -1 && gap <= 2) {
+        joined[joined.length - 1] = {
+          ...last,
+          text: last.text + word.text,
+          width: Math.max(last.left + last.width, word.left + word.width) - last.left,
+          top: Math.min(last.top, word.top),
+          height: Math.max(last.top + last.height, word.top + word.height) - Math.min(last.top, word.top),
+        };
+      } else {
+        joined.push(word);
+      }
+    }
+    return joined;
   });
 }
 

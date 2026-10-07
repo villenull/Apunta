@@ -1,3 +1,21 @@
+# Desktop flow harness green — 2026-10-07
+
+`node scripts/v2/tauri-e2e-smoke.test.mjs smoke` (P3.6 V3) now passes, with
+all eleven native flows and **64/64 assertions, exit 0**, in two consecutive
+runs on a fresh test AppImage. The runs used a virtual screen (`xvfb-run` is
+installed since the PC rebuild), so they no longer touch the owner's display.
+Everything that kept the flows `NOT RUN` was in the harness, not the app; the
+details are in commit `1698142` and the one after it:
+
+- the accent mask was read inverted, so every colour-grounded click hit the
+  middle of the window;
+- `xdotool windowfocus` was given a name it ignores, so no key ever reached
+  the page;
+- OCR missed small and teal labels;
+- several steps assumed the layout from before the UI batch.
+
+The fake AI gained one tone edit that works on any format.
+
 # Updater key and on-demand CI — 2026-10-07
 
 - **The server's draft changes are now told to her.** When it puts back her
