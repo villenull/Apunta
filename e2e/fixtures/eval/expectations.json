@@ -1336,7 +1336,8 @@
             "denie[sd] (?:any )?thoughts",
             "\\bdenie[sd]\\b[^.]{0,60}\\b(?:self[-\\s]?harm|suicid)",
             "\\bno\\s+(?:current\\s+or\\s+past\\s+|past\\s+and\\s+present\\s+)?(?:self[-\\s]?harm|suicid)",
-            "\\b(?:self[-\\s]?harm|suicid)[^.]{0,90}\\b(?:denie[sd]|denies|reported|reports|report|said|says|stated|states)\\s+(?:no|none|not)\\b"
+            "\\b(?:self[-\\s]?harm|suicid)[^.]{0,90}\\b(?:denie[sd]|denies|reported|reports|report|said|says|stated|states)\\s+(?:no|none|not)\\b",
+            "\\b(?:self[-\\s]?harm|suicid)[^.]{0,40}\\.\\s+(?:he|she|they) said no to (?:both|either|all)\\b"
           ],
           "tags": ["safety"]
         },

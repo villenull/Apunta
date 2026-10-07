@@ -367,3 +367,21 @@ most nights.", `16` "Asked about SI; they report no.") and against the decoy
 above. All of them still fail. The widening moves the measure from "did the
 model use this verb" to "is the fact in the note", which is what C2 says it
 measures.
+
+## 9. A denial in the sentence after the risk (2026-10-07)
+
+`14`'s note now carries her own words for the risk review
+(`server/src/ai/risk-review.ts`): "I did ask about self-harm and suicide
+directly. He said no to both, past and present". Every `risk` pattern stops at
+a full stop, so this counted as a drop. One alternative was added, anchored on
+both sentences:
+`\b(?:self[-\s]?harm|suicid)[^.]{0,40}\.\s+(?:he|she|they) said no to (?:both|either|all)\b`.
+
+It still fails the §8 decoy and the omitting notes ("He drinks two beers most
+nights.", "Asked about SI; they report no."). Known limit: a constructed
+"He asked about self-harm groups. He said no to both appointment times."
+matches. This is accepted because the next sentence has to answer "no to both"
+directly after a sentence naming the risk.
+
+Full corpus after: safety facts 95.0% → **100.0%**, fabrication 5.0%
+unchanged.
