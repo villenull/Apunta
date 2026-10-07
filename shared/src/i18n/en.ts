@@ -911,6 +911,36 @@ export const en = {
   },
 
   /**
+   * The server's own changes to a draft after the model wrote it, appended to
+   * the first-pass opening like the retraction notice (`ai/repair-notice.ts`).
+   * One paragraph starting with the fixed opening, so the chat can keep it out
+   * of what the model sees. `{section}` is a section name as she wrote it.
+   */
+  'chat.repairNotice.opening': {
+    text: 'Apunta checked the draft against your notes',
+  },
+  'chat.repairNotice.riskReview': {
+    text: 'it added the risk review you dictated to {section}, in your own words, because the draft had left it out',
+    kind: { section: 'text' },
+  },
+  'chat.repairNotice.notGathered': {
+    text: 'it replaced “{removed}” with “Background not yet gathered.”, because you said you had not gathered that',
+    kind: { removed: 'text' },
+  },
+  'chat.repairNotice.reworded': {
+    text: 'it reworded {section} to take out “{words}”, which is not in your notes',
+    kind: { section: 'text', words: 'text' },
+  },
+  'chat.repairNotice.list': {
+    text: '{first}; and {last}',
+    kind: { first: 'text', last: 'text' },
+  },
+  'chat.repairNotice.sentence': {
+    text: '{opening}: {list}.',
+    kind: { opening: 'text', list: 'text' },
+  },
+
+  /**
    * `settings.last_backup_error` as it is stored from this card on: an ISO
    * `at` plus the failure's own words. The wire field stays a string
    * (`shared/src/backup.ts:221`) rendered by `GET /api/backup` in the request's

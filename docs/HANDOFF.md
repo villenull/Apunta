@@ -1,5 +1,13 @@
 # Updater key and on-demand CI — 2026-10-07
 
+- **The server's draft changes are now told to her.** When it puts back her
+  risk review, replaces an invented "no family history" with "Background not
+  yet gathered.", or rewords out a diagnostic word, the note's opening chat
+  turn says so in one paragraph ("Apunta checked the draft against your
+  notes: …", `server/src/ai/repair-notice.ts`). The chat strips that paragraph
+  from what the model sees, like the other server notices. Not yet seen in the
+  running app, because the fake AI never triggers a repair.
+
 - **The production updater key exists.** The owner generated the pair. The
   public half is committed as `src-tauri/updater.pub`, and
   `npm run tauri:build` compiles it in via `APUNTA_UPDATER_PUBKEY`. The

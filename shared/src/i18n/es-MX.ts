@@ -576,6 +576,31 @@ export const esMX = {
     kind: { opening: 'text', list: 'text' },
   },
 
+  /* Los cambios del servidor al borrador, en un solo párrafo. */
+  'chat.repairNotice.opening': {
+    text: 'Apunta revisó el borrador con tus notas',
+  },
+  'chat.repairNotice.riskReview': {
+    text: 'agregó a {section} la revisión de riesgo que dictaste, con tus propias palabras, porque el borrador la había omitido',
+    kind: { section: 'text' },
+  },
+  'chat.repairNotice.notGathered': {
+    text: 'reemplazó «{removed}» por «Background not yet gathered.», porque dijiste que no habías recabado esos antecedentes',
+    kind: { removed: 'text' },
+  },
+  'chat.repairNotice.reworded': {
+    text: 'reformuló {section} para quitar «{words}», que no está en tus notas',
+    kind: { section: 'text', words: 'text' },
+  },
+  'chat.repairNotice.list': {
+    text: '{first}; y {last}',
+    kind: { first: 'text', last: 'text' },
+  },
+  'chat.repairNotice.sentence': {
+    text: '{opening}: {list}.',
+    kind: { opening: 'text', list: 'text' },
+  },
+
   'backup.failure': { text: '{at} — {detail}', kind: { at: 'date', detail: 'text' } },
 
   /* La página de error de arranque, en los dos idiomas. */

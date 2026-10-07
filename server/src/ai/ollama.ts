@@ -61,6 +61,7 @@ import { applyRetractions, hasRetraction } from './retractions.js';
 import {
   riskQuotesJsonSchema,
   RiskQuotesSchema,
+  riskHomeSection,
   riskReviewLost,
   riskSentencesFromQuotes,
   withRiskReview,
@@ -79,6 +80,7 @@ import type {
   SummariseNoteRequest,
   SuggestPlanGoalsRequest,
 } from './types.js';
+import { hasRepairs, type DraftRepairs } from './types.js';
 
 /**
  * The real LLM provider: Ollama over `POST /api/chat`, with the response shape
@@ -430,17 +432,24 @@ export class OllamaProvider implements LlmProvider {
     // her own words (`risk-review.ts`). The model points, the server quotes her.
     let sections = value;
     const source = `${drafted.typedNotes ?? ''}\n${drafted.transcript ?? ''}`;
+    let reworded: DraftRepairs['reworded'] = [];
+    let notGathered: readonly string[] = [];
+    let riskReview: string | null = null;
     if (locale === 'en') {
       // A diagnostic word she never used is rewritten out of its section
       // (`diagnostic-words.ts`), and background she says she never gathered,
       // written up as a negative finding, is taken out (`not-obtained.ts`).
-      sections = await this.withoutNovelDiagnosticWords(model, source, sections);
-      sections = removeInventedNegatives(source, sections).sections;
+      ({ sections, reworded } = await this.withoutNovelDiagnosticWords(model, source, sections));
+      ({ sections, removed: notGathered } = removeInventedNegatives(source, sections));
     }
     if (locale === 'en' && riskReviewLost(source, sections)) {
       const sentences = riskSentencesFromQuotes(source, await this.extractRiskReview(model, source));
-      sections = withRiskReview(sections, request.sections, sentences);
+      const restored = withRiskReview(sections, request.sections, sentences);
+      if (restored !== sections) riskReview = riskHomeSection(request.sections) ?? null;
+      sections = restored;
     }
+    const repairs: DraftRepairs = { riskReview, notGathered, reworded };
+    if (hasRepairs(repairs)) yield { type: 'repairs', repairs };
 
     yield { type: 'sections', sections, stats };
   }
@@ -755,15 +764,19 @@ export class OllamaProvider implements LlmProvider {
     model: string,
     source: string,
     sections: Sections,
-  ): Promise<Sections> {
+  ): Promise<{ sections: Sections; reworded: DraftRepairs['reworded'] }> {
     let out = sections;
+    const reworded: { section: string; words: string[] }[] = [];
     for (const [name, body] of Object.entries(sections)) {
       const words = novelDiagnosticWords(body, source);
       if (words.length === 0) continue;
       const rewrite = await this.rewriteWithoutWords(model, body, words);
-      if (rewrite !== null && acceptsRewrite(body, rewrite, source)) out = { ...out, [name]: rewrite.trim() };
+      if (rewrite !== null && acceptsRewrite(body, rewrite, source)) {
+        out = { ...out, [name]: rewrite.trim() };
+        reworded.push({ section: name, words });
+      }
     }
-    return out;
+    return { sections: out, reworded };
   }
 
   private async rewriteWithoutWords(

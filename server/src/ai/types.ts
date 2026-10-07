@@ -113,6 +113,22 @@ export interface LlmStats {
   readonly attempts: number;
 }
 
+/** The server's own changes to a draft (`risk-review.ts`, `not-obtained.ts`, `diagnostic-words.ts`). */
+export interface DraftRepairs {
+  /** The section her own risk-review sentences were added to, or null. */
+  readonly riskReview: string | null;
+  /** Drafted sentences replaced by `NOT_GATHERED_NOTE`, verbatim. */
+  readonly notGathered: readonly string[];
+  /** Sections rewritten without diagnostic words she never used. */
+  readonly reworded: readonly { readonly section: string; readonly words: readonly string[] }[];
+}
+
+export const NO_REPAIRS: DraftRepairs = { riskReview: null, notGathered: [], reworded: [] };
+
+export function hasRepairs(repairs: DraftRepairs): boolean {
+  return repairs.riskReview !== null || repairs.notGathered.length > 0 || repairs.reworded.length > 0;
+}
+
 export type LlmEvent =
   /** Progress, so a cold model load does not look like a hang. */
   | { readonly type: 'status'; readonly stage: GenerateStage; readonly message: string }
@@ -127,6 +143,12 @@ export type LlmEvent =
    * (`retractions.ts`); `offered` is how many the model listed, for the log.
    */
   | { readonly type: 'retractions'; readonly applied: readonly AppliedRetraction[]; readonly offered: number }
+  /**
+   * What the provider changed in the draft after the model wrote it, so she can
+   * be told in the note's chat (`routes/draft.ts`). Sent before `sections`, and
+   * only when something changed.
+   */
+  | { readonly type: 'repairs'; readonly repairs: DraftRepairs }
   | {
       readonly type: 'refined';
       readonly reply: string;

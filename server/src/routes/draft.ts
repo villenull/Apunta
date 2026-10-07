@@ -11,6 +11,7 @@ import type { SseStream } from '../http/sse.js';
 
 import { aiError, type AiError } from '../ai/errors.js';
 import { preserveExplicitAbsences } from '../ai/fact-guard.js';
+import { repairNotice } from '../ai/repair-notice.js';
 import { retractionNotice } from '../ai/retractions.js';
 import { logFailure, logStats, toAiError } from './ai.js';
 import {
@@ -18,7 +19,14 @@ import {
   renderClinicalKnowledgeGuide,
   sectionForRole,
 } from '../ai/clinical-knowledge/integration.js';
-import type { AiProviders, DraftSource, LlmStats } from '../ai/types.js';
+import {
+  hasRepairs,
+  NO_REPAIRS,
+  type AiProviders,
+  type DraftRepairs,
+  type DraftSource,
+  type LlmStats,
+} from '../ai/types.js';
 import { msg, type Locale } from '../http/locale.js';
 import { fitDraftingPriorNotes } from '../ai/prior-notes.js';
 import { createChatMessage } from '../db/chat-messages.js';
@@ -43,6 +51,8 @@ export interface DraftOutcome {
   readonly stats: LlmStats | null;
   /** Spoken retractions the provider cut from the transcript before drafting. */
   readonly retractions: readonly AppliedRetraction[];
+  /** What the provider changed in the draft after the model wrote it. */
+  readonly repairs: DraftRepairs;
   /** Set when the draft failed; the `error` event has already been sent. */
   readonly failure: AiError | null;
 }
@@ -92,6 +102,7 @@ export async function streamDraft(params: {
     let sections: Sections | null = null;
     let stats: LlmStats | null = null;
     let retractions: readonly AppliedRetraction[] = [];
+    let repairs: DraftRepairs = NO_REPAIRS;
     const discussionSection = sectionForRole(format.sections, 'discussion');
     try {
       const priorNotes = fitDraftingPriorNotes(listNotesForPatient(db, patientId));
@@ -147,26 +158,37 @@ export async function streamDraft(params: {
           retractions = event.applied;
           // Counts only: what was cut is patient material.
           request.log.info({ applied: event.applied.length, offered: event.offered }, 'retractions applied');
+        } else if (event.type === 'repairs') {
+          repairs = event.repairs;
+          // Counts only: the sentences are patient material.
+          request.log.info(
+            {
+              riskReview: event.repairs.riskReview !== null,
+              notGathered: event.repairs.notGathered.length,
+              reworded: event.repairs.reworded.length,
+            },
+            'draft repaired',
+          );
         }
       }
     } catch (error) {
       const failure = toAiError(error).inLocale(locale);
       logFailure(request, failure, 'note drafting failed');
       stream.send('error', { code: failure.code, message: failure.message });
-      return { sections: null, stats: null, retractions: [], failure };
+      return { sections: null, stats: null, retractions: [], repairs: NO_REPAIRS, failure };
     }
 
-    if (stream.closed) return { sections, stats, retractions, failure: null };
+    if (stream.closed) return { sections, stats, retractions, repairs, failure: null };
 
     if (sections === null) {
       const failure = aiError('empty_response', 'the provider finished without producing a note', locale);
       logFailure(request, failure, 'note drafting failed');
       stream.send('error', { code: failure.code, message: failure.message });
-      return { sections: null, stats: null, retractions: [], failure };
+      return { sections: null, stats: null, retractions: [], repairs: NO_REPAIRS, failure };
     }
 
     if (stats) logStats(request, stats, 'note drafted');
-    return { sections, stats, retractions, failure: null };
+    return { sections, stats, retractions, repairs, failure: null };
   } finally {
     end(jobId);
   }
@@ -228,6 +250,7 @@ export function persistDraft(
   format: NoteFormat,
   sections: Sections,
   retractions: readonly AppliedRetraction[] = [],
+  repairs: DraftRepairs = NO_REPAIRS,
 ): Note {
   return db.transaction((): Note => {
     const note = createNote(db, {
@@ -262,12 +285,12 @@ export function persistDraft(
     // note and shown under every later draft of it, and a refine answers in the
     // note's language (C-LANG@1 rule 4). A note is written in its format's
     // language (`createNote` above), which is the locale to render this in.
-    const opening = (() => {
-      const firstPass = msg(format.locale, 'chat.firstPass');
-      return retractions.length === 0
-        ? firstPass
-        : `${firstPass}\n\n${retractionNotice(retractions, format.locale)}`;
-    })();
+    // The server's own changes to the draft are told to her the same way.
+    const opening = [
+      msg(format.locale, 'chat.firstPass'),
+      ...(retractions.length === 0 ? [] : [retractionNotice(retractions, format.locale)]),
+      ...(hasRepairs(repairs) ? [repairNotice(repairs, format.locale)] : []),
+    ].join('\n\n');
     createChatMessage(db, {
       note_id: note.id,
       role: 'assistant',

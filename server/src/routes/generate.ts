@@ -40,7 +40,7 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
 
     const stream = openSse(reply);
 
-    const { sections, retractions } = await streamDraft({
+    const { sections, retractions, repairs } = await streamDraft({
       providers,
       db,
       patientId: input.patient_id,
@@ -56,7 +56,7 @@ export function registerGenerateRoute(app: FastifyInstance, db: Database, provid
     }
 
     stream.send('status', { stage: 'saving', message: msg(locale, 'status.saving_draft') });
-    const note = persistDraft(db, input, format, sections, retractions);
+    const note = persistDraft(db, input, format, sections, retractions, repairs);
 
     stream.send('note', {
       note,

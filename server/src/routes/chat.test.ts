@@ -557,6 +557,16 @@ describe('POST /api/notes/:id/chat — refining a draft', () => {
         `${reply}\n\nApunta kept your other notes out of this revision. Plan was kept as it was.`,
       ),
     ).toBe(reply);
+    expect(
+      withoutServerSentences(
+        `${reply}\n\nApunta checked the draft against your notes: it reworded Subjective to take out “compulsions”, which is not in your notes.`,
+      ),
+    ).toBe(reply);
+    expect(
+      withoutServerSentences(
+        `${reply}\n\nApunta revisó el borrador con tus notas: reformuló Subjetivo para quitar «compulsiones», que no está en tus notas.`,
+      ),
+    ).toBe(reply);
     expect(withoutServerSentences(reply)).toBe(reply);
     // A model sentence that merely mentions Apunta is not a server sentence.
     expect(withoutServerSentences('Apunta already has that in the Plan section.')).toBe(

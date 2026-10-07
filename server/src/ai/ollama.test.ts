@@ -837,6 +837,9 @@ describe('OllamaProvider.generateNote — a lost risk review', () => {
       'She presents with low mood of five years.\n\nRisk review, as dictated: "Risk: I asked directly and she denied any thoughts of killing herself and denied any plan."',
     );
     expect(JSON.stringify(sections)).not.toContain('suicidal intent');
+    expect(events.find((event) => event.type === 'repairs')).toMatchObject({
+      repairs: { riskReview: 'Presenting problem', notGathered: [], reworded: [] },
+    });
     expect(sections.Formulation).toBe('');
   });
 
@@ -848,6 +851,7 @@ describe('OllamaProvider.generateNote — a lost risk review', () => {
     );
     expect(calls).toHaveLength(1);
     expect(events.at(-1)).toMatchObject({ type: 'sections', sections: carried });
+    expect(events.some((event) => event.type === 'repairs')).toBe(false);
   });
 
   it('makes no second call for a source without a risk review', async () => {

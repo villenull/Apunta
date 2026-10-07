@@ -80,6 +80,30 @@ describe('persistDraft', () => {
     expect(messages.map((row) => row.role)).toEqual(['assistant']);
   });
 
+  it('tells her in the opening turn what the server changed in the draft', () => {
+    const note = persistDraft(harness.db, draftInput(patient.id), format, SAMPLE_SECTIONS, [], {
+      riskReview: 'Subjective',
+      notGathered: ['Patient reported no family history.'],
+      reworded: [{ section: 'Assessment', words: ['compulsions'] }],
+    });
+    const [opening] = harness.db.prepare('SELECT text FROM chat_messages WHERE note_id = ?').all(note.id) as {
+      text: string;
+    }[];
+    expect(opening?.text).toContain(
+      'Apunta checked the draft against your notes: it added the risk review you dictated to Subjective',
+    );
+    expect(opening?.text).toContain('it reworded Assessment to take out “compulsions”');
+    expect(opening?.text).toContain('it replaced “Patient reported no family history.”');
+  });
+
+  it('adds no notice when the server changed nothing', () => {
+    const note = persistDraft(harness.db, draftInput(patient.id), format, SAMPLE_SECTIONS);
+    const [opening] = harness.db.prepare('SELECT text FROM chat_messages WHERE note_id = ?').all(note.id) as {
+      text: string;
+    }[];
+    expect(opening?.text).not.toContain('Apunta checked the draft');
+  });
+
   it('leaves no note and no transcript when the opening turn cannot be written', () => {
     const before = {
       notes: countRows('notes'),

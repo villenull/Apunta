@@ -624,6 +624,7 @@ const SERVER_SENTENCE_KEYS = [
   'chat.factNotice.opening',
   'chat.priorNoteNotice.opening',
   'chat.retractionNotice.opening',
+  'chat.repairNotice.opening',
   'chat.unchangedNotice',
   'chat.alreadyThereNotice',
   'chat.questionLeftAlone',

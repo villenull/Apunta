@@ -284,7 +284,7 @@ export function registerTranscribeRoute(
       const transcript = await runTranscription(providers, db, stream, upload.path, wav, locale);
       if (transcript === null || stream.closed) return;
 
-      const { sections, retractions } = await streamDraft({
+      const { sections, retractions, repairs } = await streamDraft({
         providers,
         db,
         patientId: input.patient_id,
@@ -319,6 +319,7 @@ export function registerTranscribeRoute(
         format,
         sections,
         retractions,
+        repairs,
       );
       audioPath = null;
 
