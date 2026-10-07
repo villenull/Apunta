@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** P5.4: inspect the actual release ELF and production configuration. No network. */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -48,7 +48,6 @@ try {
     errors.push('The configuration carries a non-production application identity.');
   const forbidden = [
     ['127.0.0.1:78', 'test loopback endpoint'],
-    ['dangerousInsecureTransportProtocol', 'insecure transport configuration'],
     ['APUNTA_UPDATER_TEST_', 'test-updater environment hook'],
     ['app.apunta.desktop.test', 'test application identity'],
   ];
@@ -58,7 +57,20 @@ try {
     if (rawConfig.includes(needle) || binary.includes(Buffer.from(needle)))
       errors.push(`The release contains ${label}.`);
   }
-  const publicKey = process.env.APUNTA_UPDATER_PUBKEY?.trim() || config.plugins?.updater?.pubkey?.trim();
+  // The setting's bare name is in every build: Tauri's config deserializer lists
+  // it among its field names. What a test-updater build adds (main.rs) is the
+  // setting switched on, so the binary is searched for that, and the
+  // configuration for any mention at all.
+  if (
+    rawConfig.includes('dangerousInsecureTransportProtocol') ||
+    binary.includes(Buffer.from('"dangerousInsecureTransportProtocol":true'))
+  )
+    errors.push('The release contains insecure transport configuration.');
+  // The committed production key (src-tauri/updater.pub), unless overridden.
+  const keyFile = resolve(root, 'src-tauri/updater.pub');
+  const committedKey = existsSync(keyFile) ? readFileSync(keyFile, 'utf8').trim() : '';
+  const publicKey =
+    process.env.APUNTA_UPDATER_PUBKEY?.trim() || config.plugins?.updater?.pubkey?.trim() || committedKey;
   if (!publicKey) {
     blocked.push(
       'The owner has not supplied a production verification key. No production updater release is verified.',

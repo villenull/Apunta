@@ -56,8 +56,13 @@ machine. **Git holds none of it.**
   `~/.cache/apunta-v2`, `~/Applications/Apunta.AppImage` and the repo's
   `build/` folder are all rebuilt by the steps below. The git-ignored
   `docs/v2/evidence/**/*.log` files are old test logs and are not needed.
-- **There is no production signing key yet** (AM-222), so there is nothing to
-  back up for the updater.
+- **The updater's private signing key** (created 2026-10-06):
+  `~/.apunta-signing/apunta-updater.key` and its password. Git holds only the
+  public half (`src-tauri/updater.pub`). Without the private key and its
+  password, no installed copy can ever be updated again. Keep both off this
+  PC (password manager or encrypted drive), restore the file to
+  `~/.apunta-signing/` with `chmod 700` on the folder, and never put it in the
+  repository.
 
 ### The reference PC
 
