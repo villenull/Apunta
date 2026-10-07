@@ -1,0 +1,2 @@
+/* Texto del permiso de micrófono (P6.1). */
+"NSMicrophoneUsageDescription" = "Apunta graba tu dictado en esta Mac. El audio nunca sale de ella.";

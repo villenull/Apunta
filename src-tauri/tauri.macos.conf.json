@@ -1,0 +1,19 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "targets": ["app", "dmg"],
+    "resources": {
+      "../build/linux-resources/": null,
+      "../build/macos-resources/": "macos-resources/"
+    },
+    "macOS": {
+      "minimumSystemVersion": "14.0",
+      "signingIdentity": "-",
+      "infoPlist": "Info.plist",
+      "files": {
+        "Resources/en.lproj/InfoPlist.strings": "./macos/en.lproj/InfoPlist.strings",
+        "Resources/es.lproj/InfoPlist.strings": "./macos/es.lproj/InfoPlist.strings"
+      }
+    }
+  }
+}

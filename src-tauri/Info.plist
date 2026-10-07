@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Merged by Tauri into the macOS app's Info.plist (P6.1). Recording happens
+	  inside the app's own web view, so macOS asks for the microphone on the
+	  app's behalf and shows this text; the Spanish text is in
+	  macos/es.lproj/InfoPlist.strings. Ignored on Linux.
+	-->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Apunta records your dictation on this Mac. The audio never leaves it.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>es</string>
+	</array>
+</dict>
+</plist>

@@ -1,5 +1,12 @@
 #!/bin/bash
 #
+# SUPERSEDED (P6.1, 2026-10-07). This builds the v1 Swift-shell app, which the
+# Tauri desktop app replaced. The Mac build is now:
+#   bash scripts/v2/package-macos-resources.sh && npm run tauri:build
+# (docs/v2/MAC-FIRST-RUN.md). Kept for reference; it has never run on a Mac,
+# and its server bundle lacks the require banner Linux needed, so it would
+# most likely fail at boot.
+#
 # Apunta — build Apunta.app and Apunta.dmg. macOS only.
 #
 #   npm run package:mac                  # build everything

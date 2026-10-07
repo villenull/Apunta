@@ -59,7 +59,13 @@ const REFUSAL_EXIT_CODE: i32 = 1;
 const TEST_IDENTITY: bool = cfg!(feature = "test-identity");
 
 /// The resource folder `tauri.conf.json` maps P3.1's runtime bundle into.
+/// The bundled runtime's folder inside the app's resources, per platform: the
+/// platform config maps `build/<platform>-resources/` to it (`tauri.conf.json`,
+/// `tauri.macos.conf.json`).
+#[cfg(not(target_os = "macos"))]
 const BUNDLE_RESOURCE_DIR: &str = "linux-resources";
+#[cfg(target_os = "macos")]
+const BUNDLE_RESOURCE_DIR: &str = "macos-resources";
 
 /// The splash window's title. Distinct from `Apunta` (the app window) and from
 /// `Apunta — <code>` (the error screen), so "the splash is gone" is readable from

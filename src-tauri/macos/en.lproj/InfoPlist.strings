@@ -1,0 +1,2 @@
+/* Microphone permission text (P6.1). */
+"NSMicrophoneUsageDescription" = "Apunta records your dictation on this Mac. The audio never leaves it.";

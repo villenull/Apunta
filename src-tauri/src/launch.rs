@@ -94,6 +94,13 @@ pub enum Refusal {
     SpawnFailed { path: PathBuf, detail: String },
 }
 
+/// The platform's word in the packaging names: `build/<it>-resources/`,
+/// `scripts/v2/package-<it>-resources.sh`.
+#[cfg(not(target_os = "macos"))]
+const PLATFORM: &str = "linux";
+#[cfg(target_os = "macos")]
+const PLATFORM: &str = "macos";
+
 impl std::fmt::Display for Refusal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -114,8 +121,8 @@ impl std::fmt::Display for Refusal {
             ),
             Self::MissingBundle { path } => write!(
                 f,
-                "the bundled runtime is not at {}: build/linux-resources must exist \
-                 (scripts/v2/package-linux-resources.sh). The shell spawns the bundled server and \
+                "the bundled runtime is not at {}: build/{PLATFORM}-resources must exist \
+                 (scripts/v2/package-{PLATFORM}-resources.sh). The shell spawns the bundled server and \
                  never the checkout's.",
                 path.display()
             ),
