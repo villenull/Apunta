@@ -1,3 +1,23 @@
+# Updater key and on-demand CI — 2026-10-07
+
+- **The production updater key exists.** The owner generated the pair. The
+  public half is committed as `src-tauri/updater.pub`, and
+  `npm run tauri:build` compiles it in via `APUNTA_UPDATER_PUBKEY`. The
+  private key and its password stay in `~/.apunta-signing/` and with the
+  owner, never in the repo; `docs/RECOVERY.md` lists them for backup.
+  `npm run check:release` passes on a production build. Its insecure-transport
+  test was a false alarm, because the bare setting name is in every Tauri
+  binary; the check now looks for the setting switched on, and a test-updater
+  build still fails it on all five counts.
+- **Still not live.** Updates come from GitHub Releases of a private
+  repository, so nothing can download until the owner makes it public (D3).
+  No signed release or release workflow exists yet.
+- **CI is on demand** (`.github/workflows/ci.yml`, `workflow_dispatch` only).
+  The owner will not pay for Actions, and the 2,000 free monthly minutes ran
+  out in six days at about 16 minutes a run. Start one run per finished piece
+  of work with `gh workflow run CI --ref main`, never for docs-only commits.
+  This month's allowance is spent until the billing date resets it.
+
 # Fabrication runs — 2026-10-06 night
 
 Eval fabrication on the 4B went from 15% to **5%** in two server-side steps,

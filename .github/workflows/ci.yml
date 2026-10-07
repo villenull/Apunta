@@ -1,9 +1,11 @@
 name: CI
 
+# On demand only (owner decision 2026-10-07): a run costs about 16 of the
+# private repository's 2,000 free monthly minutes, and running on every push
+# spent a month's allowance in six days. Start it once per finished piece of
+# work, never for a docs-only commit: `gh workflow run CI --ref main`.
 on:
-  push:
-    branches: ['**']
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

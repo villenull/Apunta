@@ -148,12 +148,17 @@ Four standing preferences, recorded here so they survive a cleared session.
   no repeated review rounds over small text changes. A small change (a notice, a
   copy edit, a config value) is written directly and checked once. The hard
   rules above (privacy, no real patient text, fake-AI runnable) stay absolute.
-  The updater (P5.4) is parked until the owner supplies the production signing
-  key; user-facing work comes first.
+  The updater (P5.4) has its production key (2026-10-07,
+  `src-tauri/updater.pub`; the private half stays with the owner) but cannot
+  download until the repository is public (D3); user-facing work comes first.
 
-- **Check CI after every push** (`gh run list --limit 3`) and wait for the
-  run on the pushed commit before building on it. A red run is a blocking
-  finding for the commit that caused it; report it plainly.
+- **CI runs on demand, not on every push** (owner decision 2026-10-07: the
+  private repo's 2,000 free monthly minutes ran out in six days at ~16 minutes a
+  run, and the owner will not pay for more). When a piece of work is finished
+  and pushed, start one run with `gh workflow run CI --ref main`, then wait for
+  it (`gh run list --limit 3`) before building on it. Never start one for a
+  docs-only commit. A red run is a blocking finding for the commit that caused
+  it; report it plainly.
 - **Every question goes through the multiple-choice tool**, never as free text
   in chat. 2–4 concrete options, **exactly one marked "(Recommended)" and
   listed first**, with a short reason. Batch related questions into one
