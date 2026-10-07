@@ -75,6 +75,13 @@ Its review of this version found two boundary problems, both fixed with tests:
   in. Now a covered sentence is kept only if it names a risk itself, or if it
   directly answers the risk sentence before it ("He said no to both").
 
+Its last check, made after the first push, found two more and both are fixed in
+a follow-up commit. A wrap onto a capitalised word ("…suicide but\nI confirmed
+she has no plan") was still cut, so a single line break now ends a sentence
+only before a list marker or a heading ("Plan:"). And a second, unrelated quote
+landing on the sentence after a risk sentence could chain in through a stray
+"no". Now a risk-free sentence joins only when the same quote runs on into it.
+
 The same review also caught a bare "injury" being counted as self-harm. A
 sprained ankle in a draft would have made it look as if the review were
 already there. Now "injury" counts only inside a quoted review.

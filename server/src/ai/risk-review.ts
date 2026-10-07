@@ -135,13 +135,13 @@ function wordsOf(text: string): Span[] {
  * the next word, or the end of the text, so "11.30pm" stays whole, and never
  * after a title, "a.m."/"p.m.", "e.g." or an initial: "She told Dr. Jones she
  * has thoughts of killing herself but would never act on it" is one sentence. A
- * line break ends one only as a blank line, or before a line that starts a new
- * one (a capital or a list marker); a soft-wrapped "…thoughts of suicide\nbut
- * has no current plan" stays together. Getting this wrong cuts a qualifying
+ * line break ends one only as a blank line, or before a list marker or a heading
+ * ("Plan:"); a soft wrap stays together, whether the next line starts "but has
+ * no current plan" or "I confirmed she has no plan". Getting this wrong cuts a qualifying
  * clause off a risk statement, so it errs toward longer sentences.
  */
 const SENTENCE_END =
-  /(?<!\b(?:Dr|Mr|Mrs|Ms|Mx|St|Prof|Sr|Jr|vs|etc|approx|[ap]\.m|e\.g|i\.e|[A-Z]))[.!?]+["'”’)]*(?=\s+["'“‘(]?[A-Za-z]|\s*$)|\n[ \t]*\n|\n(?=[ \t]*(?:[A-Z]|[-*•]|\d+[.)]))/g;
+  /(?<!\b(?:Dr|Mr|Mrs|Ms|Mx|St|Prof|Sr|Jr|vs|etc|approx|[ap]\.m|e\.g|i\.e|[A-Z]))[.!?]+["'”’)]*(?=\s+["'“‘(]?[A-Za-z]|\s*$)|\n[ \t]*\n|\n(?=[ \t]*(?:[A-Z][A-Za-z ]{0,24}:|[-*•]|\d+[.)]))/g;
 
 /** Her sentences, with where each sits in the source. */
 function sentencesOf(source: string): Span[] {
@@ -162,8 +162,8 @@ function sentencesOf(source: string): Span[] {
 }
 
 /**
- * A sentence with no risk in it joins the review only when it answers the risk
- * sentence right before it: "I did ask about self-harm and suicide directly. He
+ * A sentence with no risk in it joins the review only when the same quote runs
+ * on into it from a risk sentence and it answers that sentence: "I did ask about self-harm and suicide directly. He
  * said no to both." A quote that drifts on into "She mentioned she cried at her
  * sister's wedding" does not take that sentence with it.
  */
@@ -202,9 +202,13 @@ export function riskSentencesFromQuotes(source: string, quotes: readonly string[
       const covering = sentences
         .map((sentence, index) => ({ sentence, index }))
         .filter(({ sentence }) => sentence.start < to && sentence.end > from);
+      // Only this quote's own run: a second quote that happens to land on the
+      // next sentence does not make that sentence an answer.
+      let previousKept = false;
       for (const { sentence, index } of covering) {
-        if (dimensionsOf(sentence.text, true).size > 0) chosen.add(index);
-        else if (chosen.has(index - 1) && ANSWER.test(sentence.text)) chosen.add(index);
+        previousKept =
+          dimensionsOf(sentence.text, true).size > 0 || (previousKept && ANSWER.test(sentence.text));
+        if (previousKept) chosen.add(index);
       }
     }
   }

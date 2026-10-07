@@ -159,6 +159,10 @@ Four standing preferences, recorded here so they survive a cleared session.
   listed first**, with a short reason. Batch related questions into one
   interview. Do not ask about anything the repository, an existing decision, or
   this file already answers — resolve that yourself.
+- **Claude subagents run only on Sonnet 5.5, never Sonnet 5** (owner decision
+  2026-10-06). The Agent tool's `sonnet` alias resolves to Sonnet 5 and cannot
+  select 5.5, so do not launch a Sonnet subagent until 5.5 can be chosen
+  explicitly; ask the owner instead.
 - **Every spawned subagent runs on a free model, chosen per task** (owner
   decision 2026-09-29, replacing the earlier Space-Bunny-only rule). Allowed:
   every `opencode-go/` model with "free" in its id, confirmed $0 on

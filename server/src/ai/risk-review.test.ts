@@ -102,6 +102,24 @@ describe('riskSentencesFromQuotes', () => {
     expect(riskSentencesFromQuotes(listed, ['denied SI'])).toEqual(['Risk: denied SI']);
   });
 
+  it('keeps a wrap onto a capital together, and still splits at a heading', () => {
+    const wrapped = 'She reports thoughts of suicide but\nI confirmed she has no plan.';
+    expect(riskSentencesFromQuotes(wrapped, ['reports thoughts of suicide but'])).toEqual([
+      'She reports thoughts of suicide but I confirmed she has no plan.',
+    ]);
+  });
+
+  it('does not chain an unrelated sentence a second quote points at', () => {
+    const source =
+      'She denied thoughts of suicide. She said she has no particular plans for the holidays this year.';
+    expect(
+      riskSentencesFromQuotes(source, [
+        'denied thoughts of suicide',
+        'she has no particular plans for the holidays this year',
+      ]),
+    ).toEqual(['She denied thoughts of suicide.']);
+  });
+
   it('does not take an unrelated sentence the quote drifts into', () => {
     const source =
       "She denied thoughts of self-harm. She mentioned she cried at her sister's wedding last month.";
