@@ -341,6 +341,30 @@ export function buildExtractRiskReviewPrompt(source: string): ChatPrompt {
 }
 
 /**
+ * The rewrite after a drafted section used a diagnostic word she never said
+ * (`diagnostic-words.ts`). Measured on eval fixture `19`: "hand-washing
+ * compulsions" came back as "hand-washing" with the rest of the section
+ * unchanged. The server keeps the rewrite only if the words are gone and every
+ * number, date, medication and risk statement survived, so the example cannot
+ * leak: a line from it would add tokens the section did not have.
+ */
+export function buildRewriteWithoutWordsPrompt(text: string, words: readonly string[]): ChatPrompt {
+  const quoted = words.map((word) => `"${word}"`).join(', ');
+  const system = [
+    `This text from a clinical note uses ${quoted}, ${words.length === 1 ? 'a diagnostic word' : 'diagnostic words'} the therapist never used. Rewrite the text without ${words.length === 1 ? 'that word' : 'those words'} or any other diagnostic or clinical label: describe the behaviour plainly, in words the text already uses.`,
+    'Change nothing else. Keep every other sentence, number, date, name, medication and quotation exactly as it is, and add nothing.',
+    '',
+    'Example text: "He described checking rituals at the front door, up to ten times each night."',
+    'Example answer: {"text": "He described checking the front door, up to ten times each night."}',
+    '',
+    '## Output format',
+    '',
+    'Reply with a single JSON object of the form {"text": "..."} and nothing else.',
+  ].join('\n');
+  return { system, user: text };
+}
+
+/**
  * The refine prompt (M4 wires the UI).
  *
  * It reuses the format's instructions unchanged — `rationale.md` anticipates

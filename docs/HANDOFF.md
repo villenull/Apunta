@@ -1,3 +1,21 @@
+# Fabrication runs — 2026-10-06 night
+
+Eval fabrication on the 4B went from 15% to **5%** in two server-side steps,
+both in `OllamaProvider.generateNote` for English notes:
+
+- **`server/src/ai/not-obtained.ts`.** "I don't have family history"
+  (ungathered) written up as "reported no family history" is replaced by
+  "Background not yet gathered." (fixture `09`).
+- **`server/src/ai/diagnostic-words.ts`.** A diagnostic word she never used
+  ("compulsions") is rewritten out of its section. The rewrite is kept only if
+  every number, date, medication and risk statement survived (fixture `19`).
+
+The remaining 5% is fixture `10` ("initially stated three years before
+correcting herself"), which the owner chose to keep as a true record. Owner
+corpus unchanged. No independent review: the owner now allows only Sonnet 5.5
+subagents, and the Agent tool cannot select 5.5. Evidence:
+`docs/eval-reports/2026-10-06-fabrication-runs.md`.
+
 # Risk-review repair — 2026-10-06 late
 
 The two genuine safety drops the 2026-09-23 round left open (`10`, `19`: a

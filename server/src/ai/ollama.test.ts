@@ -880,6 +880,46 @@ describe('OllamaProvider.generateNote — a lost risk review', () => {
   });
 });
 
+describe('OllamaProvider.generateNote — a diagnostic word she never used', () => {
+  const typed = 'She washes her hands until they crack, 30 times a day. Weekly from here.';
+  const drafted: Sections = {
+    Subjective: 'Patient presents with hand-washing compulsions, 30 times a day.',
+    Objective: '',
+    Assessment: '',
+    Plan: 'Weekly sessions.',
+  };
+  const request = { instructions: '', formatName: 'Progress note', sections: SOAP, typedNotes: typed };
+
+  it('rewrites only that section, and keeps the rewrite when nothing else changed', async () => {
+    const { fetchImpl, calls } = stub({
+      chats: [
+        { content: JSON.stringify(drafted) },
+        { content: JSON.stringify({ text: 'Patient presents with hand-washing, 30 times a day.' }) },
+      ],
+    });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
+    );
+    expect(calls).toHaveLength(2);
+    expect(events.at(-1)).toMatchObject({
+      type: 'sections',
+      sections: { ...drafted, Subjective: 'Patient presents with hand-washing, 30 times a day.' },
+    });
+  });
+
+  it.each([
+    ['dropped a number', { content: JSON.stringify({ text: 'Patient presents with hand-washing, often.' }) }],
+    ['answered nonsense', { content: 'not json' }],
+    ['failed', { status: 500, body: 'boom' }],
+  ])('keeps the section as drafted when the rewrite %s', async (_label, reply) => {
+    const { fetchImpl } = stub({ chats: [{ content: JSON.stringify(drafted) }, reply] });
+    const events = await drain(
+      new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
+    );
+    expect(events.at(-1)).toMatchObject({ type: 'sections', sections: drafted });
+  });
+});
+
 describe('OllamaProvider.preloadDraft', () => {
   it('uses the resolved model and keeps the request rate-limited', async () => {
     let now = 0;

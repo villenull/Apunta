@@ -42,3 +42,46 @@ Result: `09` fabricated 3/3 → 0/3, and its capture of the "not yet gathered"
 fact is kept. Full corpus fabrication 15.0% → **10.0%** (6/60). Salient facts
 86.2% and safety facts 95.0% are unchanged, and the owner corpus is identical
 (0% fabrication, 100% safety facts).
+
+## `19`: a diagnostic word she never used
+
+She described washing until her hands crack, 30–35 times a day. The draft said
+"hand-washing compulsions". The word sits in a sentence that also carries the
+counts and the onset, so cutting the sentence would lose facts.
+
+`server/src/ai/diagnostic-words.ts`, run before the `09` step:
+
+- **Detection.** It finds diagnostic words in a drafted section that her notes
+  never use. Examples are compulsions, obsessive, OCD, agoraphobia, panic
+  disorder, PTSD, and any "… disorder" phrase she did not say exactly. A word
+  is hers if its stem appears in her notes: "agoraphobic avoidance" licenses
+  "agoraphobia".
+- **Rewrite.** One call asks the model to rewrite only that section without
+  the words.
+- **Check.** The server keeps the rewrite only if all of these hold:
+  - the words are gone, and no new diagnostic word arrived;
+  - every number, day, month, medication and risk statement is unchanged;
+  - the length is within a quarter of the original.
+
+  Anything else keeps the draft as written.
+
+Result: "Patient presents with hand-washing, reporting washing until her hands
+crack approximately thirty to thirty-five times a day since winter…". `19`
+fabricated 3/3 → 0/3. Full corpus fabrication 10.0% → **5.0%** (3/60), salient
+facts 86.6%, safety facts 95.0%, hedges 88.9% → 100%. The owner corpus is
+identical.
+
+## `10`: left as it is, by owner decision
+
+The client said "three years", then revised it to five, and the draft says
+"five years, though she initially stated three years before correcting
+herself". That is a true record of the session, and the revised figure leads.
+The owner chose to keep it. The fixture's ban on "three years" is stricter
+than the note needs here, and these three runs are the whole remaining 5%.
+
+## Run-to-run variation
+
+Seed 0 and temperature 0 did not make the 4B fully repeatable across these
+runs. `10`'s draft once moved a sentence from Formulation to Presenting
+problem between two invocations, with no change touching it. The fabrication
+result was the same both times.

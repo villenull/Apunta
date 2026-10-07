@@ -42,6 +42,7 @@ import {
   buildDetectFormatPrompt,
   buildExtractRetractionsPrompt,
   buildExtractRiskReviewPrompt,
+  buildRewriteWithoutWordsPrompt,
   buildGeneratePrompt,
   buildRefinePrompt,
   buildSuggestPlanPrompt,
@@ -49,6 +50,12 @@ import {
   orderSections,
   type ChatPrompt,
 } from './prompts.js';
+import {
+  acceptsRewrite,
+  novelDiagnosticWords,
+  rewriteJsonSchema,
+  RewriteSchema,
+} from './diagnostic-words.js';
 import { removeInventedNegatives } from './not-obtained.js';
 import { applyRetractions, hasRetraction } from './retractions.js';
 import {
@@ -110,6 +117,7 @@ export const NUM_PREDICT = 3072;
 export const NUM_PREDICT_DETECT = 256;
 export const NUM_PREDICT_RETRACTIONS = 768;
 export const NUM_PREDICT_RISK_REVIEW = 768;
+export const NUM_PREDICT_REWRITE = 1536;
 export const NUM_PREDICT_SUMMARY = 768;
 export const NUM_PREDICT_PLAN = 1536;
 export const NUM_PREDICT_BRIEF = 1024;
@@ -422,9 +430,13 @@ export class OllamaProvider implements LlmProvider {
     // her own words (`risk-review.ts`). The model points, the server quotes her.
     let sections = value;
     const source = `${drafted.typedNotes ?? ''}\n${drafted.transcript ?? ''}`;
-    // Background she says she never gathered, written up as a negative finding
-    // ("reported no family history"), is taken out (`not-obtained.ts`).
-    if (locale === 'en') sections = removeInventedNegatives(source, sections).sections;
+    if (locale === 'en') {
+      // A diagnostic word she never used is rewritten out of its section
+      // (`diagnostic-words.ts`), and background she says she never gathered,
+      // written up as a negative finding, is taken out (`not-obtained.ts`).
+      sections = await this.withoutNovelDiagnosticWords(model, source, sections);
+      sections = removeInventedNegatives(source, sections).sections;
+    }
     if (locale === 'en' && riskReviewLost(source, sections)) {
       const sentences = riskSentencesFromQuotes(source, await this.extractRiskReview(model, source));
       sections = withRiskReview(sections, request.sections, sentences);
@@ -731,6 +743,60 @@ export class OllamaProvider implements LlmProvider {
         code: error instanceof AiError ? error.code : 'unknown',
       });
       return [];
+    }
+  }
+
+  /**
+   * Each section with a diagnostic word her notes never use, rewritten without
+   * it — kept only when `acceptsRewrite` says nothing else changed. Never
+   * fatal: any failure keeps the section as drafted.
+   */
+  private async withoutNovelDiagnosticWords(
+    model: string,
+    source: string,
+    sections: Sections,
+  ): Promise<Sections> {
+    let out = sections;
+    for (const [name, body] of Object.entries(sections)) {
+      const words = novelDiagnosticWords(body, source);
+      if (words.length === 0) continue;
+      const rewrite = await this.rewriteWithoutWords(model, body, words);
+      if (rewrite !== null && acceptsRewrite(body, rewrite, source)) out = { ...out, [name]: rewrite.trim() };
+    }
+    return out;
+  }
+
+  private async rewriteWithoutWords(
+    model: string,
+    text: string,
+    words: readonly string[],
+  ): Promise<string | null> {
+    try {
+      const prompt = buildRewriteWithoutWordsPrompt(text, words);
+      this.assertFits(prompt.system, prompt.user);
+      const think = (await this.supportsThinking(model)) ? false : undefined;
+      const response = await this.postChat(model, {
+        messages: [
+          { role: 'system', content: prompt.system },
+          { role: 'user', content: prompt.user },
+        ],
+        format: rewriteJsonSchema(),
+        think,
+        stream: false,
+        seed: 0,
+        numPredict: NUM_PREDICT_REWRITE,
+      });
+      const chunk = (await response.json()) as ChatChunk;
+      if (chunk.done_reason === 'length') return null;
+      const { text: content } = stripCodeFence(chunk.message?.content ?? '');
+      const validated = RewriteSchema.safeParse(JSON.parse(content));
+      return validated.success ? validated.data.text : null;
+    } catch (error) {
+      this.log('diagnostic-word rewrite failed', {
+        model,
+        code: error instanceof AiError ? error.code : 'unknown',
+      });
+      return null;
     }
   }
 
