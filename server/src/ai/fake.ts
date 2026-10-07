@@ -460,6 +460,22 @@ export function fakeRefine(
     const body = `${(current[key] ?? '').trim()} Also noted improved appetite this week.`.trim();
     return { reply: 'Added that to the Subjective section.', updatedSections: set('subjective', body) };
   }
+  // A tone request that edits whatever format the note has: every rule above
+  // names a SOAP section, so on the owner's standard format (what first-run
+  // onboarding creates) no request changed the note at all, and the native
+  // smoke's refine flow had nothing to observe. No fact is added or removed.
+  if (/warmer|warmth/i.test(message)) {
+    const key = sections.find((section) => (current[section] ?? '').trim() !== '');
+    if (key !== undefined) {
+      return {
+        reply: `Softened the tone of the ${key} section.`,
+        updatedSections: {
+          ...current,
+          [key]: `${(current[key] ?? '').trim()} The session felt warm and collaborative.`,
+        },
+      };
+    }
+  }
   if (message.includes('?')) {
     return {
       reply:

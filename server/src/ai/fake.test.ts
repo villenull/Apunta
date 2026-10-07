@@ -452,3 +452,18 @@ describe('FakeLlmProvider.generateNote — spoken retractions', () => {
     expect(subjective).not.toContain('scratch that');
   });
 });
+
+describe('fakeRefine — a tone request on any format', () => {
+  it('edits the first section with text, whatever the sections are called', () => {
+    const sections = ['Location', 'Client presentation'];
+    const result = fakeRefine(
+      'Make it warmer',
+      { Location: '', 'Client presentation': 'Engaged.' },
+      sections,
+    );
+    expect(result.updatedSections?.['Client presentation']).toBe(
+      'Engaged. The session felt warm and collaborative.',
+    );
+    expect(result.updatedSections?.Location).toBe('');
+  });
+});

@@ -113,6 +113,17 @@ const P34_GATE_STRING = 'p3.4-observe';
 
 /** The window title the shell gives the app window (P3.3's read). */
 const APP_WINDOW_NAME = 'Apunta';
+/**
+ * The app window's X id, once measured. `xdotool windowfocus` takes a window
+ * id, not a name: given `Apunta` it exits 0 having focused nothing, so under
+ * xvfb (no window manager) every key went nowhere and every keyboard-driven
+ * flow failed silently (found 2026-10-07). Set as soon as the window is found.
+ */
+let focusWindowId = null;
+
+function focusTarget() {
+  return focusWindowId === null ? APP_WINDOW_NAME : String(focusWindowId);
+}
 
 /**
  * The eleven flows, in the card's order. Every one is recorded in the summary
@@ -219,6 +230,8 @@ function notRun(name, reason) {
  */
 function recordFlow(flow, outcome, detail) {
   flowOutcomes.set(flow, { outcome, detail });
+  // The screen at a refusal is the only evidence of why; the last capture is it.
+  if (outcome !== 'PASS' && focusWindowId !== null) saveEvidenceScreenshot(focusWindowId, `${flow}-not-run`);
 }
 
 function requireFlow(flow, what, condition, detail) {
@@ -860,11 +873,16 @@ async function findClusters(screenshot, hex, { fuzz = 12, grid = 160 } = {}) {
   const gridCells = [];
   for (const line of cells.stdout.split('\n')) {
     // Both forms are accepted: `(r,g,b)` (sRGB) and the single-component
-    // `(v)` a bilevel image prints. A colour whose first component is on is
-    // the accent cell either way, and an unreadable line is still dropped.
+    // `(v)` a bilevel image prints. A dark first component is the accent cell
+    // either way, and an unreadable line is still dropped.
     const match = /^(\d+),(\d+):\s*\((\d+)(?:,\d+,\d+)?\)/.exec(line.trim());
     if (match === null) continue;
-    gridCells.push({ gx: Number(match[1]), gy: Number(match[2]), on: Number(match[3]) > 127 });
+    // The mask paints the accent **black** and everything else white, so an
+    // accent cell is a dark one. This read `> 127` until 2026-10-07, which made
+    // every "accent cluster" the background: the onboarding run's "largest
+    // accent cluster (24962 cells)" was 97.5% of the 160x160 grid, and its
+    // centre — the middle of the window — is where both misclicks landed.
+    gridCells.push({ gx: Number(match[1]), gy: Number(match[2]), on: Number(match[3]) < 128 });
   }
   const seen = new Set();
   const clusters = [];
@@ -896,6 +914,9 @@ async function findClusters(screenshot, hex, { fuzz = 12, grid = 160 } = {}) {
       w: Math.round((maxX - minX + 1) * cellW),
       h: Math.round((maxY - minY + 1) * cellH),
       cells: component.length,
+      // How much of its box the cluster fills: a button or a disc is solid, an
+      // input's focus outline is a thin ring around a large empty box.
+      fill: component.length / ((maxX - minX + 1) * (maxY - minY + 1)),
     });
   }
   clusters.sort((a, b) => b.cells - a.cells);
@@ -939,6 +960,35 @@ function pickPrimaryCluster(clusters, what) {
  * coordinate rather than a guess.
  */
 async function screenWords(file) {
+  // The plain read is taken at 2x: at 1x tesseract misread the dialog's small
+  // labels ("Identifier (optionai)") and refused flows over a single letter.
+  const enlarged = join(scratchDir(), 'ocr-2x.png');
+  const enlarge = await spawnAsync('magick', [file, '-resize', '200%', enlarged], { killAfterMs: 30_000 });
+  const plain = enlarge.code === 0 ? await readWords(enlarged, 2, 0) : await readWords(file, 1, 0);
+  if (plain === null) return null;
+  // Light text on an accent-coloured button ("Continue") and the small orange
+  // "Draft" chip are what tesseract reads poorly off this app's dark captures.
+  // Two thresholded, inverted 3x copies read them — white on teal at 65%, the
+  // chip at 40% — but each loses words the plain read gets. So all three reads
+  // are kept, each tagged with its `source`, and a phrase is matched within one
+  // read at a time (`findPhraseBoxes`); a phrase found by several reads in the
+  // same place is still one occurrence.
+  const words = [...plain];
+  for (const [index, threshold] of ['65%', '40%'].entries()) {
+    const prepared = join(scratchDir(), `ocr-threshold-${String(index)}.png`);
+    const prep = await spawnAsync(
+      'magick',
+      [file, '-colorspace', 'Gray', '-resize', '300%', '-threshold', threshold, '-negate', prepared],
+      { killAfterMs: 30_000 },
+    );
+    if (prep.code !== 0) continue;
+    words.push(...((await readWords(prepared, 3, index + 1)) ?? []));
+  }
+  return words;
+}
+
+/** One tesseract read, with boxes divided back by `scale`, every word tagged with `source`. */
+async function readWords(file, scale, source) {
   const read = await spawnAsync('tesseract', [file, 'stdout', 'tsv'], { killAfterMs: 60_000 });
   if (read.code !== 0) return null;
   const words = [];
@@ -960,13 +1010,12 @@ async function screenWords(file) {
     if (!Number.isFinite(confidence)) continue;
     words.push({
       text,
-      left,
-      top,
-      width,
-      height,
+      left: Math.round(left / scale),
+      top: Math.round(top / scale),
+      width: Math.round(width / scale),
+      height: Math.round(height / scale),
       confidence,
-      line: Number(columns[4]),
-      order: Number(columns[5]),
+      source,
     });
   }
   if (words.length === 0) return null;
@@ -986,7 +1035,10 @@ async function screenWords(file) {
  * quoted phrase's own dots identically, so the label stays quoted in full.
  */
 function stripTrailingPunctuation(text) {
-  return text.replace(/[.,\u2026]+$/u, '');
+  // Brackets and quotes go from both ends as well: a status chip's rounded
+  // border is read as a bracket ("(Draft"), and both sides of the comparison are
+  // normalised the same way, so "Identifier (optional)" still matches itself.
+  return text.replace(/^[([{"'\u201c\u2018]+/u, '').replace(/[.,\u2026)\]}"'\u201d\u2019]+$/u, '');
 }
 
 /**
@@ -1003,21 +1055,84 @@ function findPhraseBoxes(words, phrase) {
     .filter((part) => part !== '')
     .map((part) => stripTrailingPunctuation(part));
   const found = [];
-  for (let start = 0; start + wanted.length <= words.length; start += 1) {
-    const slice = words.slice(start, start + wanted.length);
-    const sameLine = slice.every((word) => word.line === slice[0].line);
-    if (!sameLine) continue;
-    const ordered = slice.every((word, index) => index === 0 || word.order === slice[index - 1].order + 1);
-    if (!ordered) continue;
-    if (!slice.every((word, index) => stripTrailingPunctuation(word.text.toLowerCase()) === wanted[index]))
-      continue;
-    const left = Math.min(...slice.map((word) => word.left));
-    const top = Math.min(...slice.map((word) => word.top));
-    const right = Math.max(...slice.map((word) => word.left + word.width));
-    const bottom = Math.max(...slice.map((word) => word.top + word.height));
-    found.push({ phrase, x: left, y: top, w: right - left, h: bottom - top });
+  const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  for (const source of [...new Set(words.map((word) => word.source))]) {
+    for (const row of visualRows(words.filter((word) => word.source === source))) {
+      for (let start = 0; start + wanted.length <= row.length; start += 1) {
+        const slice = row.slice(start, start + wanted.length);
+        // Neighbours in a phrase sit close together: a gap wider than three
+        // letter-heights is two separate things on one row, not one label.
+        const close = slice.every(
+          (word, index) =>
+            index === 0 ||
+            word.left - (slice[index - 1].left + slice[index - 1].width) <= 3 * Math.max(word.height, 8),
+        );
+        if (!close) continue;
+        if (
+          !slice.every((word, index) => stripTrailingPunctuation(word.text.toLowerCase()) === wanted[index])
+        )
+          continue;
+        const left = Math.min(...slice.map((word) => word.left));
+        const top = Math.min(...slice.map((word) => word.top));
+        const right = Math.max(...slice.map((word) => word.left + word.width));
+        const bottom = Math.max(...slice.map((word) => word.top + word.height));
+        const box = { phrase, x: left, y: top, w: right - left, h: bottom - top };
+        if (!found.some((seen) => overlaps(seen, box))) found.push(box);
+      }
+      // OCR sometimes runs a short label into one word ("Editagain"); the whole
+      // phrase without its spaces, as one word, is the same label.
+      if (wanted.length > 1) {
+        for (const word of row) {
+          if (stripTrailingPunctuation(word.text.toLowerCase()) !== wanted.join('')) continue;
+          const box = { phrase, x: word.left, y: word.top, w: word.width, h: word.height };
+          if (!found.some((seen) => overlaps(seen, box))) found.push(box);
+        }
+      }
+    }
   }
   return found;
+}
+
+/**
+ * Words grouped by where they sit on screen, each row left to right. Tesseract
+ * splits one visual row across "lines" when a baseline wavers (a button row's
+ * "Fini" / "inish & copy"), so rows are rebuilt from the boxes: a word joins a
+ * row when its vertical centre falls inside the band of the row's first word.
+ */
+function visualRows(words) {
+  const rows = [];
+  for (const word of [...words].sort((a, b) => a.top - b.top)) {
+    const centre = word.top + word.height / 2;
+    const row = rows.find((candidate) => centre >= candidate.top && centre <= candidate.bottom);
+    // The band stays the first word's: grown with every word, one tall box
+    // merged neighbouring text lines into one row (found 2026-10-07).
+    if (row) {
+      row.words.push(word);
+    } else {
+      rows.push({ top: word.top, bottom: word.top + word.height, words: [word] });
+    }
+  }
+  // A row read twice over ("Finish" and "inish" stacked) keeps one of two words
+  // that share most of their width: the longer, which is the fuller reading of
+  // the same spot, and between equals the one tesseract was surer of.
+  return rows.map((row) => {
+    const kept = [];
+    const fuller = (a, b) => b.text.length - a.text.length || b.confidence - a.confidence;
+    for (const word of row.words.sort(fuller)) {
+      const shared = (other) =>
+        Math.min(word.left + word.width, other.left + other.width) - Math.max(word.left, other.left);
+      // Only readings of the same word compete: a box tesseract drew too wide
+      // ("Back" spanning "Back up now") must not swallow its neighbours.
+      const same = (other) => {
+        const a = stripTrailingPunctuation(word.text.toLowerCase());
+        const b = stripTrailingPunctuation(other.text.toLowerCase());
+        return a !== '' && b !== '' && (a.includes(b) || b.includes(a));
+      };
+      if (!kept.some((other) => same(other) && shared(other) > 0.5 * Math.min(word.width, other.width)))
+        kept.push(word);
+    }
+    return kept.sort((a, b) => a.left - b.left);
+  });
 }
 
 /**
@@ -1068,6 +1183,20 @@ async function waitForScreenLabel(window, phrase, timeoutMs) {
   }
 }
 
+/** Whether `phrase` has left the screen within `timeoutMs` (a failed capture never counts as gone). */
+async function waitForScreenLabelGone(window, phrase, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const shot = await captureWindow(window.id);
+    if (shot !== null) {
+      const words = await screenWords(shot);
+      if (words !== null && findPhraseBoxes(words, phrase).length === 0) return true;
+    }
+    if (Date.now() >= deadline) return false;
+    await sleep(400);
+  }
+}
+
 /**
  * Clicks a label whose box was already grounded, at the box's own measured
  * centre. A box that does not lie inside the window is refused rather than
@@ -1103,6 +1232,63 @@ async function clickScreenLabel(window, offset, phrase, what) {
 }
 
 /**
+ * Clicks the one occurrence of `phrase` on the same screen row as `anchor` (its
+ * vertical centre inside the anchor's band), as a control beside its row label.
+ * Both are measured off the screen; zero or several such is a refusal.
+ */
+async function clickOnRowOf(window, offset, phrase, anchor, what) {
+  const shot = await captureWindow(window.id);
+  if (shot === null) return { clicked: false, why: 'the window capture failed' };
+  const words = await screenWords(shot);
+  if (words === null) return { clicked: false, why: 'tesseract read no words out of the window capture' };
+  const row = groundPhrase(words, anchor);
+  if (row.box === null) return { clicked: false, why: `the row label: ${row.why}` };
+  const onRow = findPhraseBoxes(words, phrase).filter((box) => {
+    const centre = box.y + box.h / 2;
+    return centre >= row.box.y - 4 && centre <= row.box.y + row.box.h + 4;
+  });
+  if (onRow.length !== 1) {
+    return {
+      clicked: false,
+      why: `${String(onRow.length)} occurrences of ${JSON.stringify(phrase)} on the ${JSON.stringify(anchor)} row`,
+    };
+  }
+  const result = await clickGroundedBox(window, offset, onRow[0], what);
+  return {
+    clicked: result.clicked,
+    why: `the one ${JSON.stringify(phrase)} on the ${JSON.stringify(anchor)} row`,
+  };
+}
+
+/**
+ * Clicks the one occurrence of `phrase` that sits below `heading`, left-aligned
+ * with it (within 24 px), as a list row under its section heading does. Both are
+ * measured off the screen; zero or several such rows is a refusal.
+ */
+async function clickRowUnder(window, offset, phrase, heading, what) {
+  const shot = await captureWindow(window.id);
+  if (shot === null) return { clicked: false, why: 'the window capture failed' };
+  const words = await screenWords(shot);
+  if (words === null) return { clicked: false, why: 'tesseract read no words out of the window capture' };
+  const anchor = groundPhrase(words, heading);
+  if (anchor.box === null) return { clicked: false, why: `the heading: ${anchor.why}` };
+  const rows = findPhraseBoxes(words, phrase).filter(
+    (box) => box.y > anchor.box.y && Math.abs(box.x - anchor.box.x) <= 24,
+  );
+  if (rows.length !== 1) {
+    return {
+      clicked: false,
+      why: `${String(rows.length)} occurrences of ${JSON.stringify(phrase)} sit under ${JSON.stringify(heading)}`,
+    };
+  }
+  const result = await clickGroundedBox(window, offset, rows[0], what);
+  return {
+    clicked: result.clicked,
+    why: `the one ${JSON.stringify(phrase)} under ${JSON.stringify(heading)}`,
+  };
+}
+
+/**
  * A real pointer click at a native-coordinate point, focused first.
  *
  * `xdotool click` is an XTEST event delivered to the focused window, and
@@ -1110,7 +1296,7 @@ async function clickScreenLabel(window, offset, phrase, what) {
  * explicitly and the pointer is moved to absolute native coordinates first.
  */
 async function clickNative(nativeX, nativeY, what) {
-  const focused = await spawnAsync('xdotool', ['windowfocus', '--sync', APP_WINDOW_NAME]);
+  const focused = await spawnAsync('xdotool', ['windowfocus', '--sync', focusTarget()]);
   if (focused.code !== 0) {
     fail(`click ${what}`, `xdotool windowfocus exited ${String(focused.code)}: ${focused.stderr.trim()}`);
     return false;
@@ -1157,7 +1343,7 @@ async function clickCluster(window, offset, cluster, what) {
 
 /** A real XTEST key press, the app's own way to leave a modal or move focus. */
 async function pressKey(keys, what) {
-  const focused = await spawnAsync('xdotool', ['windowfocus', '--sync', APP_WINDOW_NAME]);
+  const focused = await spawnAsync('xdotool', ['windowfocus', '--sync', focusTarget()]);
   const pressed = await spawnAsync('xdotool', ['key', '--clearmodifiers', ...keys]);
   return check(
     `press ${what}`,
@@ -1171,7 +1357,7 @@ async function typeText(text, what) {
   const typed = await spawnAsync('xdotool', [
     'windowfocus',
     '--sync',
-    APP_WINDOW_NAME,
+    focusTarget(),
     'type',
     '--clearmodifiers',
     '--delay',
@@ -2349,6 +2535,7 @@ async function runSmoke() {
       `${String(home.found.width)}x${String(home.found.height)}`,
     );
     const window = home.found;
+    focusWindowId = window.id;
     process.stdout.write(
       `  window ${String(window.width)}x${String(window.height)} at ${String(window.x)},${String(window.y)} on a ${String(home.display?.width)}x${String(home.display?.height)} display\n`,
     );
@@ -2879,6 +3066,39 @@ const UI_LABELS = {
  * provenance, not runtime validation; the native observations prove each action.
  */
 const FLOW_LABELS = {
+  // The refine panel is confirmed by the note's opening chat turn, which only
+  // the panel shows. Its composer placeholder renders clipped at the bottom of
+  // the box in the WebKitGTK shell, so OCR could not read it (2026-10-07).
+  refineOpening: {
+    key: 'chat.firstPass',
+    text: "Here's a first pass based on your dictation.",
+    file: 'server/src/routes/draft.ts',
+    line: 290,
+  },
+  backupLastRow: {
+    key: 'backup.lastAt',
+    text: 'Last backup:',
+    file: 'web/src/components/BackupCard.tsx',
+    line: 91,
+  },
+  railMore: {
+    key: 'patients.missionControl',
+    text: 'More',
+    file: 'web/src/components/PatientsColumn.tsx',
+    line: 426,
+  },
+  homeNoteAction: {
+    key: 'home.actionNote',
+    text: 'Write a note',
+    file: 'web/src/components/HomeLauncher.tsx',
+    line: 129,
+  },
+  onboardingContinue: {
+    key: 'common.continue',
+    text: 'Continue',
+    file: 'web/src/routes/FormatEditor.tsx',
+    line: 269,
+  },
   onboardingFormat: {
     key: 'format.addTitle',
     text: 'Add your note format',
@@ -2913,7 +3133,14 @@ const FLOW_LABELS = {
     file: 'web/src/components/PatientsColumn.tsx',
     line: 1348,
   },
-  planGoals: { key: 'plan.goals', text: 'Goals', file: 'web/src/components/PlanView.tsx', line: 376 },
+  // "Goals" also matched the "goals" in "Draft goals from recent notes", so the
+  // pane is confirmed by its suggestions heading, which renders once.
+  planGoals: {
+    key: 'plan.suggestedHeading',
+    text: 'Suggested from your notes',
+    file: 'web/src/components/PlanView.tsx',
+    line: 426,
+  },
   prepHeading: {
     key: 'prep.title',
     text: 'Before this session',
@@ -2985,6 +3212,12 @@ const FLOW_LABELS = {
   /** `LiveRecording`'s own status line (`capture.recordingSession`), rendered
    * once for as long as the fixture is being captured. Unlike
    * `capture.listening` it does not disappear the moment the preview fills. */
+  captureStopAndDraft: {
+    key: 'capture.stopAndDraft',
+    text: 'Stop and create draft',
+    file: 'web/src/routes/Capture.tsx',
+    line: 507,
+  },
   captureRecording: {
     key: 'capture.recordingSession',
     text: 'Recording session',
@@ -3020,6 +3253,9 @@ const PANE_OPENERS = {
 async function confirmPane(window, flow, phrase, timeoutMs = 8000) {
   const seen = await waitForScreenLabel(window, phrase, timeoutMs);
   if (seen.seen) return true;
+  // What the screen showed instead is the only evidence of why: without it a
+  // refusal leaves nothing but the last flow's capture to diagnose from.
+  saveEvidenceScreenshot(window.id, `${flow}-not-run`);
   recordFlow(
     flow,
     'NOT RUN',
@@ -3107,21 +3343,23 @@ async function flowOnboarding(ctx) {
     return;
   }
 
-  // Continue is the only primary action on that screen, so it is the largest
-  // accent cluster — and only when it is unambiguously the largest.
-  const clusters = await findClusters(shot, ACCENT);
-  const picked = pickPrimaryCluster(clusters, 'the onboarding Continue button');
-  if (picked.cluster === null) {
-    recordFlow('onboarding', 'NOT RUN', picked.why);
-    notRun('onboarding', picked.why);
+  // Continue is clicked at its own label, found exactly once on the screen.
+  // Grounding it as "the largest accent cluster" stopped working with the
+  // owner-approved UI batch: the selected format tile has an accent border too,
+  // and the measured cluster's centre landed on the tile between them, selecting
+  // "Upload a few example notes" and disabling Continue (2026-10-07).
+  const clicked = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.onboardingContinue.text,
+    'the onboarding Continue button',
+  );
+  if (!clicked.clicked) {
+    recordFlow('onboarding', 'NOT RUN', clicked.why);
+    notRun('onboarding', clicked.why);
     return;
   }
-  const clicked = await clickCluster(window, ctx.offset, picked.cluster, 'the onboarding Continue button');
-  if (!clicked) {
-    recordFlow('onboarding', 'FAIL', 'the Continue click could not be issued');
-    return;
-  }
-  pass('onboarding the Continue click is grounded in a unique accent cluster', picked.why);
+  pass('onboarding the Continue click is grounded in its unique label', clicked.why);
 
   // The screen the action lands on: the add-patient dialog. Its own title
   // (`patients.add`) is on that screen **twice** — the dialog's h2
@@ -3192,12 +3430,51 @@ async function flowCapture(ctx) {
     return;
   }
 
+  // Onboarding ends on the add-patient dialog it confirmed; this flow's patient
+  // comes from the API instead, so the dialog is closed first with Escape, and
+  // the keys below are only sent once its identifier label is gone — otherwise
+  // they type into the dialog (found 2026-10-07).
+  // Under xvfb there is no window manager to give the page keyboard focus, so
+  // a key sent before any click reaches the window and not the page. Clicking
+  // the dialog's own identifier label focuses its field, inside the page.
+  const focused = await clickScreenLabel(
+    window,
+    ctx.offset,
+    UI_LABELS.onboardingPane.text,
+    'the add-patient identifier label (to focus the page)',
+  );
+  if (!focused.clicked) {
+    recordFlow('capture', 'NOT RUN', `the add-patient dialog could not be focused: ${focused.why}`);
+    notRun('capture', `the add-patient dialog could not be focused: ${focused.why}`);
+    return;
+  }
+  await pressKey(['Escape'], 'Escape to close the add-patient dialog');
+  const dialogGone = await waitForScreenLabelGone(window, UI_LABELS.onboardingPane.text, 4000);
+  if (!dialogGone) {
+    saveEvidenceScreenshot(window.id, 'capture-not-run');
+    recordFlow('capture', 'NOT RUN', 'the add-patient dialog was still open after Escape');
+    notRun('capture', 'the add-patient dialog was still open after Escape');
+    return;
+  }
+
   // Reach the capture screen through the home screen's own keyboard path: the
   // "note" action card is the first focusable control on the home screen, the
   // patient picker's search field is auto-focused, and Return chooses the
   // highlighted patient. No coordinates are involved.
-  await pressKey(['Tab'], 'Tab to the home note action');
-  await pressKey(['Return'], 'Return to open the patient picker');
+  // The note action is clicked at its own label: since the owner-approved UI
+  // batch the sidebar comes first in the tab order, so the Tab this used to
+  // send landed on the rail's wordmark instead (found 2026-10-07).
+  const openedPicker = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.homeNoteAction.text,
+    'the home note action',
+  );
+  if (!openedPicker.clicked) {
+    recordFlow('capture', 'NOT RUN', `the home note action could not be grounded: ${openedPicker.why}`);
+    notRun('capture', `the home note action could not be grounded: ${openedPicker.why}`);
+    return;
+  }
   await sleep(1200);
   if (!(await typeText(PATIENT_NAME, 'the patient name into the home search'))) {
     recordFlow('capture', 'FAIL', 'the patient name could not be typed into the home search');
@@ -3245,23 +3522,18 @@ async function flowCapture(ctx) {
   // covered, and an unresolvable row stops the flow.
   await assertNoPhysicalStream('capture while recording');
 
-  // The stop-and-draft button is the primary action while recording: find it by
-  // colour and click it, refusing an ambiguous screen.
-  const recording = await captureWindow(window.id);
-  if (recording === null) {
-    recordFlow('capture', 'NOT RUN', 'the window capture failed while recording');
-    notRun('capture', 'the window capture failed while recording');
-    return;
-  }
-  const stopClusters = await findClusters(recording, ACCENT);
-  const stopPicked = pickPrimaryCluster(stopClusters, 'the stop-and-draft button');
-  if (stopPicked.cluster === null) {
-    recordFlow('capture', 'NOT RUN', stopPicked.why);
-    notRun('capture', stopPicked.why);
-    return;
-  }
-  if (!(await clickCluster(window, ctx.offset, stopPicked.cluster, 'the stop-and-draft button'))) {
-    recordFlow('capture', 'FAIL', 'the stop-and-draft click could not be issued');
+  // The stop-and-draft button is clicked at its own label, found exactly once.
+  // Found by colour, it is one of several accent patches since the
+  // owner-approved UI batch, the same misfire Continue had (2026-10-07).
+  const stopped = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.captureStopAndDraft.text,
+    'the stop-and-draft button',
+  );
+  if (!stopped.clicked) {
+    recordFlow('capture', 'NOT RUN', `the stop-and-draft button could not be grounded: ${stopped.why}`);
+    notRun('capture', `the stop-and-draft button could not be grounded: ${stopped.why}`);
     return;
   }
 
@@ -3287,7 +3559,7 @@ async function flowCapture(ctx) {
     'a draft note row was created for the patient by the record and stop clicks',
     draftNote !== null,
     notes === null
-      ? 'GET /api/patients/:id/notes did not answer with a list'
+      ? 'no note appeared for the patient within 30s'
       : `${String(notes.length)} notes, none in draft status`,
   );
   saveEvidenceScreenshot(window.id, 'capture');
@@ -3338,17 +3610,23 @@ async function flowDraft(ctx) {
   // the panel itself; this flow only has to prove which screen it reached.
   if (!(await confirmPane(window, 'draft', FLOW_LABELS.publish.text))) return;
 
+  // The section is the first of the format onboarding created — the owner's
+  // standard progress note since the owner-approved UI batch, not SOAP, so a
+  // fixed "Subjective" no longer described the note (2026-10-07).
   const note = await noteById(notes[0].id);
+  const formats = await formatsList();
+  const firstSection = formats?.[0]?.sections?.[0] ?? null;
+  const carries =
+    note !== null && firstSection !== null && String(note.content ?? '').includes(String(firstSection));
   requireFlow(
     'draft',
     'the opened draft note carries its sections',
-    note !== null &&
-      note.content !== undefined &&
-      note.content !== null &&
-      String(note.content).includes('Subjective'),
+    carries,
     note === null
       ? 'the note could not be read back'
-      : `note content ${String(note.content).includes('Subjective') ? 'carries' : 'does not carry'} the Subjective section`,
+      : firstSection === null
+        ? 'the format could not be read back'
+        : `note content ${carries ? 'carries' : 'does not carry'} the ${String(firstSection)} section`,
   );
   saveEvidenceScreenshot(window.id, 'draft');
   ctx.noteId = notes[0].id;
@@ -3384,7 +3662,7 @@ async function flowRefine(ctx) {
   // largest accent cluster, and `pickPrimaryCluster` refuses it rather than
   // clicking when it is not unambiguous. Opening the panel does not touch the
   // note, so `before` above is still the pre-send state.
-  const up = await waitForScreenLabel(window, UI_LABELS.refinePlaceholder.text, 1500);
+  const up = await waitForScreenLabel(window, FLOW_LABELS.refineOpening.text, 1500);
   if (!up.seen) {
     const shot = await captureWindow(window.id);
     if (shot === null) {
@@ -3393,7 +3671,10 @@ async function flowRefine(ctx) {
       notRun('refine', why);
       return;
     }
-    const clusters = await findClusters(shot, ACCENT);
+    // Only solid clusters: the note editor's accent focus outline is larger than
+    // the disc, and taking the largest cluster clicked into the editor
+    // (2026-10-07). A filled disc covers about π/4 of its box; a ring far less.
+    const clusters = (await findClusters(shot, ACCENT)).filter((cluster) => cluster.fill >= 0.6);
     const picked = pickPrimaryCluster(clusters, 'the refine launcher disc');
     if (picked.cluster === null) {
       recordFlow('refine', 'NOT RUN', picked.why);
@@ -3405,7 +3686,7 @@ async function flowRefine(ctx) {
       return;
     }
     await sleep(1200);
-    if (!(await confirmPane(window, 'refine', UI_LABELS.refinePlaceholder.text))) return;
+    if (!(await confirmPane(window, 'refine', FLOW_LABELS.refineOpening.text))) return;
   }
   // The real action: the refine composer is filled through the app's own
   // keyboard and sent with Return — the app's own send path, not a synthesised
@@ -3419,7 +3700,7 @@ async function flowRefine(ctx) {
   await sleep(2500);
 
   // The screen: the refine column is still the pane the message was sent from.
-  if (!(await confirmPane(window, 'refine', UI_LABELS.refinePlaceholder.text))) return;
+  if (!(await confirmPane(window, 'refine', FLOW_LABELS.refineOpening.text))) return;
   saveEvidenceScreenshot(window.id, 'refine');
 
   // The fact the send produces: the note moved. Before the send it was read and
@@ -3517,7 +3798,16 @@ async function flowPublishAndCopy(ctx) {
 async function flowPatientList(ctx) {
   const { window } = ctx;
   // The real action: click the fabricated patient's own row in the directory.
-  const opened = await clickScreenLabel(window, ctx.offset, FLOW_LABELS.patientRow.text, "the patient's row");
+  // The name is on screen twice once a note is open — the directory row and the
+  // note's header — so the row is the one occurrence under the directory's own
+  // "Recents" heading, in its column; anything else is still refused.
+  const opened = await clickRowUnder(
+    window,
+    ctx.offset,
+    FLOW_LABELS.patientRow.text,
+    FLOW_LABELS.recents.text,
+    "the patient's row",
+  );
   if (!opened.clicked) {
     recordFlow('patient list', 'NOT RUN', `the patient's row could not be grounded: ${opened.why}`);
     notRun('patient list', `the patient's row could not be grounded: ${opened.why}`);
@@ -3705,22 +3995,19 @@ async function flowBrainstorm(ctx) {
 /** Opens the settings screen through the rail's own gear menu, by keyboard. */
 async function openSettings(ctx) {
   const { window } = ctx;
-  // The rail's mission control is an icon-only button (`rail-mission-control`),
-  // so there is no label on screen to click; it is reached with the app's own
-  // keyboard and then **verified** by the menu item's own label appearing, which
-  // is clicked at its measured centre.
-  for (let attempt = 1; attempt <= 6; attempt += 1) {
-    await pressKey(['Tab'], `Tab to the rail's mission control (attempt ${String(attempt)})`);
-    await pressKey(['Return'], 'Return to open the rail menu');
-    await sleep(600);
-    const shot = await captureWindow(window.id);
-    if (shot === null) continue;
-    const words = await screenWords(shot);
-    if (words === null) continue;
-    const grounded = groundPhrase(words, FLOW_LABELS.settingsMenu.text);
-    if (grounded.box !== null) return true;
-  }
-  return false;
+  // The rail's menu button now carries its label ("More", bottom left) since
+  // the owner-approved UI batch, so it is clicked there; the Tab walk this used
+  // to make never reached it once the sidebar grew more stops (2026-10-07).
+  // Success is still **verified** by the menu's own Settings entry appearing.
+  const opened = await clickScreenLabel(
+    window,
+    ctx.offset,
+    FLOW_LABELS.railMore.text,
+    "the rail's More menu",
+  );
+  if (!opened.clicked) return false;
+  const menu = await waitForScreenLabel(window, FLOW_LABELS.settingsMenu.text, 4000);
+  return menu.seen;
 }
 
 /** The settings screen: the workspace's own settings pane. */
@@ -3728,8 +4015,8 @@ async function flowSettings(ctx) {
   const { window } = ctx;
   if (!(await openSettings(ctx))) {
     const why =
-      'the rail menu never showed a Settings entry over six keyboard attempts, so the screen was not opened ' +
-      'and nothing is asserted about it';
+      "the rail's More menu did not open onto a Settings entry, so the screen was not opened and nothing is " +
+      'asserted about it';
     recordFlow('settings', 'NOT RUN', why);
     notRun('settings', why);
     return;
@@ -3812,10 +4099,14 @@ async function flowBackup(ctx) {
   // `BackupCard.tsx:104` and the dialog's answer at `BackupCard.tsx:140`).
   // Those two boxes of one label are what the replaced second click below
   // refused to choose between, which is why this flow could not be confirmed.
-  const asked = await clickScreenLabel(
+  // "Back up now" is also in the card's own explanation ("use Back up now to
+  // save an extra copy"), so the button is the occurrence on the "Last backup:"
+  // row it shares with Restore; the sentence was clicked instead (2026-10-07).
+  const asked = await clickOnRowOf(
     window,
     ctx.offset,
     FLOW_LABELS.backupNow.text,
+    FLOW_LABELS.backupLastRow.text,
     'the backup-now control',
   );
   if (!asked.clicked) {
