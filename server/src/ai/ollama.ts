@@ -49,6 +49,7 @@ import {
   orderSections,
   type ChatPrompt,
 } from './prompts.js';
+import { removeInventedNegatives } from './not-obtained.js';
 import { applyRetractions, hasRetraction } from './retractions.js';
 import {
   riskQuotesJsonSchema,
@@ -421,9 +422,12 @@ export class OllamaProvider implements LlmProvider {
     // her own words (`risk-review.ts`). The model points, the server quotes her.
     let sections = value;
     const source = `${drafted.typedNotes ?? ''}\n${drafted.transcript ?? ''}`;
-    if (locale === 'en' && riskReviewLost(source, value)) {
+    // Background she says she never gathered, written up as a negative finding
+    // ("reported no family history"), is taken out (`not-obtained.ts`).
+    if (locale === 'en') sections = removeInventedNegatives(source, sections).sections;
+    if (locale === 'en' && riskReviewLost(source, sections)) {
       const sentences = riskSentencesFromQuotes(source, await this.extractRiskReview(model, source));
-      sections = withRiskReview(value, request.sections, sentences);
+      sections = withRiskReview(sections, request.sections, sentences);
     }
 
     yield { type: 'sections', sections, stats };
