@@ -1,3 +1,19 @@
+# Spanish checks, corrected figures, Mac prep — 2026-10-07 evening
+
+- **The draft checks now run on Spanish notes too.** These are the lost risk
+  review, ungathered background and diagnostic words. Each check now keys off
+  the note's own language (`noteLocale`, the format's), not the interface's.
+  Held-out Spanish safety facts went 72.7% → 90.9% (SOAP/intake) and 90.9% →
+  95.5% (owner format), with fabrication unchanged.
+- **Corrected figures** (`server/src/ai/superseded.ts`, owner decision: keep
+  only the revised one). A clause restating the old figure is removed from a
+  sentence that also has the new one; an old figure standing alone is
+  reported in the chat, not rewritten. English fabrication 5% → **0%**.
+  Evidence: `docs/eval-reports/2026-10-07-spanish-checks-and-corrected-figures.md`.
+- **Mac (P6.1), configured and not run:** `ee4c3ae`, and
+  `docs/v2/MAC-FIRST-RUN.md` is the first run. The Node download (A18) needs
+  owner approval.
+
 # Desktop flow harness green — 2026-10-07
 
 `node scripts/v2/tauri-e2e-smoke.test.mjs smoke` (P3.6 V3) now passes, with

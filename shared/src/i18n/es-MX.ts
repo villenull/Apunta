@@ -585,12 +585,20 @@ export const esMX = {
     kind: { section: 'text' },
   },
   'chat.repairNotice.notGathered': {
-    text: 'reemplazó «{removed}» por «Background not yet gathered.», porque dijiste que no habías recabado esos antecedentes',
+    text: 'reemplazó «{removed}» por «Antecedentes aún no recabados.», porque dijiste que no habías recabado esos antecedentes',
     kind: { removed: 'text' },
   },
   'chat.repairNotice.reworded': {
     text: 'reformuló {section} para quitar «{words}», que no está en tus notas',
     kind: { section: 'text', words: 'text' },
+  },
+  'chat.repairNotice.superseded': {
+    text: 'quitó «{removed}», porque corregiste ese dato',
+    kind: { removed: 'text' },
+  },
+  'chat.repairNotice.stale': {
+    text: 'el borrador todavía dice «{withdrawn}», que corregiste, así que revisa esa oración',
+    kind: { withdrawn: 'text' },
   },
   'chat.repairNotice.list': {
     text: '{first}; y {last}',

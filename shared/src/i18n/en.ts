@@ -931,6 +931,14 @@ export const en = {
     text: 'it reworded {section} to take out “{words}”, which is not in your notes',
     kind: { section: 'text', words: 'text' },
   },
+  'chat.repairNotice.superseded': {
+    text: 'it took out “{removed}”, because you corrected that figure',
+    kind: { removed: 'text' },
+  },
+  'chat.repairNotice.stale': {
+    text: 'the draft still says “{withdrawn}”, which you corrected, so please check that sentence',
+    kind: { withdrawn: 'text' },
+  },
   'chat.repairNotice.list': {
     text: '{first}; and {last}',
     kind: { first: 'text', last: 'text' },

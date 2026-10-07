@@ -144,6 +144,7 @@ export async function runEval(options: RunOptions): Promise<RunResult> {
             options.instructions,
             options.priorNoteCount ?? 0,
             lexicon,
+            locale,
           ),
         );
       }
@@ -199,10 +200,11 @@ async function scoreOneRun(
   override: InstructionsOverride | undefined,
   priorNoteCount: number,
   lexicon: readonly LexiconTerm[],
+  locale: EvalLocale = 'en',
 ): Promise<NoteScore> {
   const began = Date.now();
   try {
-    const { sections, stats } = await generateOnce(provider, fixture, override, priorNoteCount);
+    const { sections, stats } = await generateOnce(provider, fixture, override, priorNoteCount, locale);
     return scoreNote(fixture, sections, {
       // Call site 1 of 3. The locale-scoped terms are supplied here; without
       // this field an `es-MX` provider run would fall through to the English
@@ -223,8 +225,12 @@ async function generateOnce(
   fixture: Fixture,
   override: InstructionsOverride | undefined,
   priorNoteCount: number,
+  locale: EvalLocale,
 ): Promise<{ sections: Record<string, string>; stats: LlmStats }> {
+  // The run's locale is the note's language, so the server's own checks on the
+  // draft read it the way they would for a note in that format.
   const stream = provider.generateNote({
+    noteLocale: locale,
     instructions: instructionsFor(fixture, override),
     sections: fixture.sections,
     formatName: formatNameFor(fixture),

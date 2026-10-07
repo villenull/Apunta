@@ -40,6 +40,11 @@ export interface GenerateNoteRequest extends DraftSource {
    * examples. They are continuity context only, never evidence for this session.
    */
   readonly priorNotes?: readonly PriorNoteInput[] | undefined;
+  /**
+   * The language the note is written in (its format's), which the server's own
+   * checks on the draft read. Falls back to the request's interface locale.
+   */
+  readonly noteLocale?: Locale | undefined;
 }
 
 export interface ChatTurn {
@@ -121,12 +126,28 @@ export interface DraftRepairs {
   readonly notGathered: readonly string[];
   /** Sections rewritten without diagnostic words she never used. */
   readonly reworded: readonly { readonly section: string; readonly words: readonly string[] }[];
+  /** Clauses taken out because they restated a figure she corrected. */
+  readonly superseded: readonly string[];
+  /** Corrected figures the draft still states on their own, for her to fix. */
+  readonly stale: readonly string[];
 }
 
-export const NO_REPAIRS: DraftRepairs = { riskReview: null, notGathered: [], reworded: [] };
+export const NO_REPAIRS: DraftRepairs = {
+  riskReview: null,
+  notGathered: [],
+  reworded: [],
+  superseded: [],
+  stale: [],
+};
 
 export function hasRepairs(repairs: DraftRepairs): boolean {
-  return repairs.riskReview !== null || repairs.notGathered.length > 0 || repairs.reworded.length > 0;
+  return (
+    repairs.riskReview !== null ||
+    repairs.notGathered.length > 0 ||
+    repairs.reworded.length > 0 ||
+    repairs.superseded.length > 0 ||
+    repairs.stale.length > 0
+  );
 }
 
 export type LlmEvent =

@@ -40,6 +40,7 @@ import {
   buildBrainstormPrompt,
   buildComposeBriefPrompt,
   buildDetectFormatPrompt,
+  buildExtractCorrectionsPrompt,
   buildExtractRetractionsPrompt,
   buildExtractRiskReviewPrompt,
   buildRewriteWithoutWordsPrompt,
@@ -57,6 +58,7 @@ import {
   RewriteSchema,
 } from './diagnostic-words.js';
 import { removeInventedNegatives } from './not-obtained.js';
+import { hasCorrectionCue, removeSuperseded, verifiedSupersessions } from './superseded.js';
 import { applyRetractions, hasRetraction } from './retractions.js';
 import {
   riskQuotesJsonSchema,
@@ -432,23 +434,42 @@ export class OllamaProvider implements LlmProvider {
     // her own words (`risk-review.ts`). The model points, the server quotes her.
     let sections = value;
     const source = `${drafted.typedNotes ?? ''}\n${drafted.transcript ?? ''}`;
-    let reworded: DraftRepairs['reworded'] = [];
-    let notGathered: readonly string[] = [];
     let riskReview: string | null = null;
-    if (locale === 'en') {
-      // A diagnostic word she never used is rewritten out of its section
-      // (`diagnostic-words.ts`), and background she says she never gathered,
-      // written up as a negative finding, is taken out (`not-obtained.ts`).
-      ({ sections, reworded } = await this.withoutNovelDiagnosticWords(model, source, sections));
-      ({ sections, removed: notGathered } = removeInventedNegatives(source, sections));
+    // The note's own language, not the interface's: a Spanish interface can
+    // draft an English format, and the checks read the note.
+    const noteLocale = request.noteLocale ?? locale;
+    // A diagnostic word she never used is rewritten out of its section
+    // (`diagnostic-words.ts`), and background she says she never gathered,
+    // written up as a negative finding, is taken out (`not-obtained.ts`).
+    const diagnostic = await this.withoutNovelDiagnosticWords(model, source, sections, noteLocale);
+    sections = diagnostic.sections;
+    const reworded = diagnostic.reworded;
+    const gathering = removeInventedNegatives(source, sections, noteLocale);
+    sections = gathering.sections;
+    const notGathered = gathering.removed;
+    // A figure she corrected, restated beside its correction, is taken out
+    // (`superseded.ts`); one standing alone is reported, not rewritten.
+    let superseded: readonly string[] = [];
+    let stale: readonly string[] = [];
+    if (hasCorrectionCue(source, noteLocale)) {
+      const pairs = verifiedSupersessions(
+        source,
+        await this.extractCorrections(model, source, noteLocale),
+        noteLocale,
+      );
+      ({ sections, removed: superseded, stale } = removeSuperseded(sections, pairs));
     }
-    if (locale === 'en' && riskReviewLost(source, sections)) {
-      const sentences = riskSentencesFromQuotes(source, await this.extractRiskReview(model, source));
-      const restored = withRiskReview(sections, request.sections, sentences);
+    if (riskReviewLost(source, sections, noteLocale)) {
+      const sentences = riskSentencesFromQuotes(
+        source,
+        await this.extractRiskReview(model, source, noteLocale),
+        noteLocale,
+      );
+      const restored = withRiskReview(sections, request.sections, sentences, noteLocale);
       if (restored !== sections) riskReview = riskHomeSection(request.sections) ?? null;
       sections = restored;
     }
-    const repairs: DraftRepairs = { riskReview, notGathered, reworded };
+    const repairs: DraftRepairs = { riskReview, notGathered, reworded, superseded, stale };
     if (hasRepairs(repairs)) yield { type: 'repairs', repairs };
 
     yield { type: 'sections', sections, stats };
@@ -725,9 +746,9 @@ export class OllamaProvider implements LlmProvider {
    * asked for — including a truncated answer or a transport failure — leaves
    * the draft as the model wrote it.
    */
-  private async extractRiskReview(model: string, source: string): Promise<string[]> {
+  private async extractRiskReview(model: string, source: string, locale: Locale): Promise<string[]> {
     try {
-      const prompt = buildExtractRiskReviewPrompt(source);
+      const prompt = buildExtractRiskReviewPrompt(source, locale);
       this.assertFits(prompt.system, prompt.user);
       const think = (await this.supportsThinking(model)) ? false : undefined;
       const response = await this.postChat(model, {
@@ -756,6 +777,44 @@ export class OllamaProvider implements LlmProvider {
   }
 
   /**
+   * The quoting call for corrected figures. Never fatal, like the other repairs:
+   * any failure means no pairs, and the draft stays as the model wrote it.
+   */
+  private async extractCorrections(
+    model: string,
+    source: string,
+    locale: Locale,
+  ): Promise<RetractionCorrection[]> {
+    try {
+      const prompt = buildExtractCorrectionsPrompt(source, locale);
+      this.assertFits(prompt.system, prompt.user);
+      const think = (await this.supportsThinking(model)) ? false : undefined;
+      const response = await this.postChat(model, {
+        messages: [
+          { role: 'system', content: prompt.system },
+          { role: 'user', content: prompt.user },
+        ],
+        format: retractionCorrectionsJsonSchema(),
+        think,
+        stream: false,
+        seed: 0,
+        numPredict: NUM_PREDICT_RETRACTIONS,
+      });
+      const chunk = (await response.json()) as ChatChunk;
+      if (chunk.done_reason === 'length') return [];
+      const { text } = stripCodeFence(chunk.message?.content ?? '');
+      const validated = RetractionCorrectionsSchema.safeParse(JSON.parse(text));
+      return validated.success ? validated.data.corrections : [];
+    } catch (error) {
+      this.log('correction extraction failed', {
+        model,
+        code: error instanceof AiError ? error.code : 'unknown',
+      });
+      return [];
+    }
+  }
+
+  /**
    * Each section with a diagnostic word her notes never use, rewritten without
    * it — kept only when `acceptsRewrite` says nothing else changed. Never
    * fatal: any failure keeps the section as drafted.
@@ -764,13 +823,14 @@ export class OllamaProvider implements LlmProvider {
     model: string,
     source: string,
     sections: Sections,
+    locale: Locale,
   ): Promise<{ sections: Sections; reworded: DraftRepairs['reworded'] }> {
     let out = sections;
     const reworded: { section: string; words: string[] }[] = [];
     for (const [name, body] of Object.entries(sections)) {
       const words = novelDiagnosticWords(body, source);
       if (words.length === 0) continue;
-      const rewrite = await this.rewriteWithoutWords(model, body, words);
+      const rewrite = await this.rewriteWithoutWords(model, body, words, locale);
       if (rewrite !== null && acceptsRewrite(body, rewrite, source)) {
         out = { ...out, [name]: rewrite.trim() };
         reworded.push({ section: name, words });
@@ -783,9 +843,10 @@ export class OllamaProvider implements LlmProvider {
     model: string,
     text: string,
     words: readonly string[],
+    locale: Locale,
   ): Promise<string | null> {
     try {
-      const prompt = buildRewriteWithoutWordsPrompt(text, words);
+      const prompt = buildRewriteWithoutWordsPrompt(text, words, locale);
       this.assertFits(prompt.system, prompt.user);
       const think = (await this.supportsThinking(model)) ? false : undefined;
       const response = await this.postChat(model, {

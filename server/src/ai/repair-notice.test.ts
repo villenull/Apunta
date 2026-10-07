@@ -12,6 +12,7 @@ describe('repairNotice', () => {
 
   it('lists several, joining the last with "and", and Spanish with "y"', () => {
     const repairs = {
+      ...NO_REPAIRS,
       riskReview: 'History',
       notGathered: ['No medical conditions.'],
       reworded: [{ section: 'Formulation', words: ['compulsions', 'OCD'] }],

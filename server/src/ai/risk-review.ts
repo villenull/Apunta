@@ -1,4 +1,10 @@
-import { sectionRole, type JsonSchemaObject, type SectionRoleId, type Sections } from '@apunta/shared';
+import {
+  sectionRole,
+  type JsonSchemaObject,
+  type Locale,
+  type SectionRoleId,
+  type Sections,
+} from '@apunta/shared';
 import { z } from 'zod';
 
 /**
@@ -23,68 +29,137 @@ import { z } from 'zod';
  * (`docs/eval-reports/2026-10-06-risk-review-repair.md`). A partial review in
  * the draft is left alone; this is for the review that vanished.
  *
- * English only: the gate and the prompt read English, so a
- * Spanish note never reaches the call.
+ * English and Mexican Spanish, each with its own words for the gate, the
+ * dimensions and the labels (`LANGUAGES`); the note's own language picks them.
  */
-
-/** A review she carried out: a risk word and a review verb, anywhere in the source. */
-const RISK_TERM = /\b(?:self[-\s]?harm|suicid\w*|homicid\w*|hurt(?:ing)?|risk|safety plan|SI|HI)\b/i;
-const RISK_REVIEW_VERB = /\b(?:denie[sd]|denies|asked|no (?:thoughts|history|plan|intent)|said no)\b/i;
-
-/** Does this source show a risk review? The same gate the drafting reminder uses. */
-export function hasRiskReview(source: string): boolean {
-  return RISK_TERM.test(source) && RISK_REVIEW_VERB.test(source);
-}
 
 /**
  * The three things a risk review is about. A sentence carries a dimension when
- * it names it; SI and HI only in capitals, because "si" and "hi" are words.
+ * it names it; SI and HI only in capitals, because "si" and "hi" are words
+ * (and "sí" is "yes").
  */
 type RiskDimension = 'suicide' | 'self_harm' | 'others';
 
+/**
+ * A whole-word pattern that also works on accented words. JavaScript's `\b`
+ * only knows ASCII letters, so "aquí" would have no boundary after the "í".
+ */
+function words(pattern: string, flags = 'i'): RegExp {
+  return new RegExp(`(?<![\\p{L}\\p{N}_])(?:${pattern})(?![\\p{L}\\p{N}_])`, `${flags}u`);
+}
+
+interface RiskLanguage {
+  /** A review she carried out: a risk word and a review verb, anywhere in the source. */
+  readonly term: RegExp;
+  readonly verb: RegExp;
+  readonly dimensions: readonly (readonly [RiskDimension, RegExp])[];
+  /**
+   * A bare "injury" is self-harm only inside a review the model quoted: "she
+   * said no when I asked whether the hand-washing had ever gone to the point
+   * of injury". In a draft it is far more often a sprained ankle, and counting
+   * it there would excuse a draft that lost its review.
+   */
+  readonly quotedInjury: RegExp;
+  /**
+   * A sentence with no risk in it joins the review only when the same quote
+   * runs on into it from a risk sentence and it answers that sentence: "I did
+   * ask about self-harm and suicide directly. He said no to both." A quote that
+   * drifts on into "She mentioned she cried at her sister's wedding" does not
+   * take that sentence with it.
+   */
+  readonly answer: RegExp;
+  /** The label in the format's risk section, and in any other section. */
+  readonly labels: { readonly inRisk: string; readonly elsewhere: string };
+  /** What a section says when it says nothing. */
+  readonly empty: RegExp;
+}
+
 const PERSON_SELF = '(?:him|her|them|my|your|one)sel(?:f|ves)';
 
-const DIMENSIONS: readonly (readonly [RiskDimension, RegExp])[] = [
-  [
-    'suicide',
-    new RegExp(
-      `\\b(?:suicid\\w*|kill(?:ing)?\\s+${PERSON_SELF}|end(?:ing)?\\s+(?:it all|(?:his|her|their|my)\\s+(?:own\\s+)?life)|not (?:waking|wake) up|not want(?:ing)? to be (?:here|alive|around)|want(?:s|ed)? to die|better off dead)\\b`,
-      'i',
+const LANGUAGES: Readonly<Record<Locale, RiskLanguage>> = {
+  en: {
+    term: /\b(?:self[-\s]?harm|suicid\w*|homicid\w*|hurt(?:ing)?|risk|safety plan|SI|HI)\b/i,
+    verb: /\b(?:denie[sd]|denies|asked|no (?:thoughts|history|plan|intent)|said no)\b/i,
+    dimensions: [
+      [
+        'suicide',
+        words(
+          `suicid\\w*|kill(?:ing)?\\s+${PERSON_SELF}|end(?:ing)?\\s+(?:it all|(?:his|her|their|my)\\s+(?:own\\s+)?life)|not (?:waking|wake) up|not want(?:ing)? to be (?:here|alive|around)|want(?:s|ed)? to die|better off dead`,
+        ),
+      ],
+      ['suicide', words('SI', '')],
+      [
+        'self_harm',
+        words(
+          `self[-\\s]?harm\\w*|self[-\\s]?injur\\w*|(?:hurt(?:ing)?|harm(?:ing)?|cut(?:ting)?)\\s+${PERSON_SELF}`,
+        ),
+      ],
+      [
+        'others',
+        words(
+          'homicid\\w*|(?:hurt|harm)(?:ing)?\\s+(?:anyone|anybody|someone|somebody|others|other people)|hit (?:anyone|anybody|someone|somebody)|violen\\w*',
+        ),
+      ],
+      ['others', words('HI', '')],
+    ],
+    quotedInjury: words('injur(?:y|ies|ed|ing)'),
+    answer: words('no|yes|den(?:y|ies|ied)|none|never|neither|nothing'),
+    labels: { inRisk: 'As dictated', elsewhere: 'Risk review, as dictated' },
+    empty: /^(?:none|n\/a|nil|not discussed)?\.?$/i,
+  },
+  'es-MX': {
+    term: words(
+      'suicid\\w*|autolesi\\w*|lastimar\\w*|hacerse da[ñn]o|quitarse la vida|matarse|homicid\\w*|riesgo|ideaci[óo]n|plan de seguridad|SI|HI',
     ),
-  ],
-  ['suicide', /\bSI\b/],
-  [
-    'self_harm',
-    new RegExp(
-      `\\b(?:self[-\\s]?harm\\w*|self[-\\s]?injur\\w*|(?:hurt(?:ing)?|harm(?:ing)?|cut(?:ting)?)\\s+${PERSON_SELF})\\b`,
-      'i',
+    verb: words(
+      'neg[óo]|niega|negaron|negando|pregunt[éeó]|le pregunt\\w*|dijo que no|refiere que no|no hay|sin (?:ideaci[óo]n|plan|intenci[óo]n)|ningun[oa]?|nunca',
     ),
-  ],
-  [
-    'others',
-    /\b(?:homicid\w*|(?:hurt|harm)(?:ing)?\s+(?:anyone|anybody|someone|somebody|others|other people)|hit (?:anyone|anybody|someone|somebody)|violen\w*)\b/i,
-  ],
-  ['others', /\bHI\b/],
-];
+    dimensions: [
+      [
+        'suicide',
+        words(
+          'suicid\\w*|quitarse la vida|matarse|morirse|no despertar(?:se)?|ya no (?:quiere|quer[íi]a|quisiera) (?:vivir|estar aqu[íi]|despertar)|deseos? de (?:morir|muerte)|mejor muert[oa]',
+        ),
+      ],
+      ['suicide', words('SI', '')],
+      [
+        'self_harm',
+        words(
+          'autolesi\\w*|lastimarse|hacerse da[ñn]o|cortarse|herirse|da[ñn]arse|lastimar(?:se)? a s[íi] mism[oa]',
+        ),
+      ],
+      [
+        'others',
+        words(
+          'homicid\\w*|lastimar a (?:alguien|otros|otras personas|nadie)|hacer(?:le)? da[ñn]o a (?:alguien|otros|otras personas|nadie)|violen\\w*|agredir\\w*',
+        ),
+      ],
+      ['others', words('HI', '')],
+    ],
+    quotedInjury: words('lesi[óo]n(?:es)?|herida(?:s)?'),
+    answer: words('no|s[íi]|neg[óo]|niega|nunca|ningun[oa]|nada|tampoco|ninguno de los dos'),
+    labels: { inRisk: 'Según lo dictado', elsewhere: 'Revisión de riesgo, según lo dictado' },
+    empty: /^(?:ninguno|ninguna|nada|no aplica|n\/a|no se abord[óo])?\.?$/iu,
+  },
+};
 
-/**
- * A bare "injury" is self-harm only inside a review the model quoted: "she said
- * no when I asked whether the hand-washing had ever gone to the point of
- * injury". In a draft it is far more often a sprained ankle, and counting it
- * there would excuse a draft that lost its review.
- */
-const QUOTED_INJURY = /\binjur(?:y|ies|ed|ing)\b/i;
+/** Does this source show a risk review? The same gate the drafting reminder uses. */
+export function hasRiskReview(source: string, locale: Locale = 'en'): boolean {
+  const language = LANGUAGES[locale];
+  return language.term.test(source) && language.verb.test(source);
+}
 
-function dimensionsOf(text: string, quoted = false): Set<RiskDimension> {
+function dimensionsOf(text: string, locale: Locale, quoted = false): Set<RiskDimension> {
+  const language = LANGUAGES[locale];
   const found = new Set<RiskDimension>();
-  for (const [dimension, re] of DIMENSIONS) if (re.test(text)) found.add(dimension);
-  if (quoted && QUOTED_INJURY.test(text)) found.add('self_harm');
+  for (const [dimension, re] of language.dimensions) if (re.test(text)) found.add(dimension);
+  if (quoted && language.quotedInjury.test(text)) found.add('self_harm');
   return found;
 }
 
 /** Does the drafted note say anything at all about risk? */
-export function draftCarriesRisk(sections: Sections): boolean {
-  return Object.values(sections).some((body) => dimensionsOf(body).size > 0);
+export function draftCarriesRisk(sections: Sections, locale: Locale = 'en'): boolean {
+  return Object.values(sections).some((body) => dimensionsOf(body, locale).size > 0);
 }
 
 /**
@@ -92,8 +167,12 @@ export function draftCarriesRisk(sections: Sections): boolean {
  * dimension too, not only pass the reminder's broader gate: "her back hurt, I
  * asked about work" passes that gate, and is not worth a model call.
  */
-export function riskReviewLost(source: string, sections: Sections): boolean {
-  return hasRiskReview(source) && dimensionsOf(source).size > 0 && !draftCarriesRisk(sections);
+export function riskReviewLost(source: string, sections: Sections, locale: Locale = 'en'): boolean {
+  return (
+    hasRiskReview(source, locale) &&
+    dimensionsOf(source, locale).size > 0 &&
+    !draftCarriesRisk(sections, locale)
+  );
 }
 
 /** The places the model says she reports the review, quoted. */
@@ -120,7 +199,8 @@ interface Span {
   readonly end: number;
 }
 
-const WORD = /[A-Za-z0-9]+(?:['’][A-Za-z]+)?/g;
+/** A word in either language: accented letters are letters ("decisión"). */
+const WORD = /[\p{L}\p{N}]+(?:['’]\p{L}+)?/gu;
 
 function wordsOf(text: string): Span[] {
   return [...text.matchAll(WORD)].map((match) => ({
@@ -141,7 +221,7 @@ function wordsOf(text: string): Span[] {
  * clause off a risk statement, so it errs toward longer sentences.
  */
 const SENTENCE_END =
-  /(?<!\b(?:Dr|Mr|Mrs|Ms|Mx|St|Prof|Sr|Jr|vs|etc|approx|[ap]\.m|e\.g|i\.e|[A-Z]))[.!?]+["'”’)]*(?=\s+["'“‘(]?[A-Za-z]|\s*$)|\n[ \t]*\n|\n(?=[ \t]*(?:[A-Z][A-Za-z ]{0,24}:|[-*•]|\d+[.)]))/g;
+  /(?<!\b(?:Dr|Dra|Mr|Mrs|Ms|Mx|St|Prof|Sr|Sra|Srta|Jr|Lic|Psic|Ing|Ud|Uds|vs|etc|approx|aprox|[ap]\.m|e\.g|i\.e|\p{Lu}))[.!?]+["'”’)»]*(?=\s+["'“‘(«¿¡]?\p{L}|\s*$)|\n[ \t]*\n|\n(?=[ \t]*(?:\p{Lu}[\p{L} ]{0,24}:|[-*•]|\d+[.)]))/gu;
 
 /** Her sentences, with where each sits in the source. */
 function sentencesOf(source: string): Span[] {
@@ -160,14 +240,6 @@ function sentencesOf(source: string): Span[] {
   }
   return sentences;
 }
-
-/**
- * A sentence with no risk in it joins the review only when the same quote runs
- * on into it from a risk sentence and it answers that sentence: "I did ask about self-harm and suicide directly. He
- * said no to both." A quote that drifts on into "She mentioned she cried at her
- * sister's wedding" does not take that sentence with it.
- */
-const ANSWER = /\b(?:no|yes|den(?:y|ies|ied)|none|never|neither|nothing)\b/i;
 
 /** Where `quote` sits in the source, as character offsets, matching words alone. */
 function locate(sourceWords: readonly Span[], quote: string): Array<[number, number]> {
@@ -191,9 +263,15 @@ function locate(sourceWords: readonly Span[], quote: string): Array<[number, num
  * the opposite ("she has thoughts of killing herself" out of "she denied she
  * has thoughts of killing herself"). Of the sentences a quote covers, those
  * that name a risk are kept, and a risk-free one only when it answers the risk
- * sentence before it (`ANSWER`). Nothing the server returns is anything but her text.
+ * sentence before it (the language's `answer`). Nothing the server returns is
+ * anything but her text.
  */
-export function riskSentencesFromQuotes(source: string, quotes: readonly string[]): string[] {
+export function riskSentencesFromQuotes(
+  source: string,
+  quotes: readonly string[],
+  locale: Locale = 'en',
+): string[] {
+  const language = LANGUAGES[locale];
   const sourceWords = wordsOf(source);
   const sentences = sentencesOf(source);
   const chosen = new Set<number>();
@@ -207,7 +285,8 @@ export function riskSentencesFromQuotes(source: string, quotes: readonly string[
       let previousKept = false;
       for (const { sentence, index } of covering) {
         previousKept =
-          dimensionsOf(sentence.text, true).size > 0 || (previousKept && ANSWER.test(sentence.text));
+          dimensionsOf(sentence.text, locale, true).size > 0 ||
+          (previousKept && language.answer.test(sentence.text));
         if (previousKept) chosen.add(index);
       }
     }
@@ -246,9 +325,6 @@ export function riskHomeSection(sections: readonly string[]): string | undefined
   return sections.find((section) => !NEVER_HOME.has(sectionRole(section))) ?? sections[0];
 }
 
-/** What a section says when it says nothing. */
-const EMPTY_SECTION = /^(?:none|n\/a|nil|not discussed)?\.?$/i;
-
 /**
  * The draft with her sentences added, quoted and labelled as hers: the whole
  * body of an empty or "None." section, or a new paragraph after what is there.
@@ -258,12 +334,14 @@ export function withRiskReview(
   sections: Sections,
   order: readonly string[],
   sentences: readonly string[],
+  locale: Locale = 'en',
 ): Sections {
   const home = riskHomeSection(order);
   if (home === undefined || sentences.length === 0) return sections;
-  const label = sectionRole(home) === 'risk' ? 'As dictated' : 'Risk review, as dictated';
+  const language = LANGUAGES[locale];
+  const label = sectionRole(home) === 'risk' ? language.labels.inRisk : language.labels.elsewhere;
   const review = `${label}: "${sentences.join(' ')}"`;
   const current = (sections[home] ?? '').trim();
-  const body = EMPTY_SECTION.test(current) ? review : `${current}\n\n${review}`;
+  const body = language.empty.test(current) ? review : `${current}\n\n${review}`;
   return { ...sections, [home]: body };
 }

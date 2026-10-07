@@ -19,6 +19,8 @@ export function repairNotice(repairs: DraftRepairs, locale: Locale = DEFAULT_LOC
       msg(locale, 'chat.repairNotice.reworded', { section, words: words.join('”, “') }),
     ),
     ...repairs.notGathered.map((removed) => msg(locale, 'chat.repairNotice.notGathered', { removed })),
+    ...repairs.superseded.map((removed) => msg(locale, 'chat.repairNotice.superseded', { removed })),
+    ...repairs.stale.map((withdrawn) => msg(locale, 'chat.repairNotice.stale', { withdrawn })),
   ];
   const list =
     items.length <= 1

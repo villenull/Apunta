@@ -7,6 +7,7 @@ import {
   MAX_SUGGESTED_OBJECTIVES,
   MAX_SUMMARY_EXCERPTS,
   MAX_SUMMARY_POINTS,
+  type Locale,
   type Sections,
 } from '@apunta/shared';
 
@@ -325,7 +326,8 @@ export function buildExtractRetractionsPrompt(transcript: string): ChatPrompt {
  * the note as dictated. The example's notes are not any patient's, and only
  * text found in the source is ever used, so it cannot leak.
  */
-export function buildExtractRiskReviewPrompt(source: string): ChatPrompt {
+export function buildExtractRiskReviewPrompt(source: string, locale: Locale = 'en'): ChatPrompt {
+  if (locale === 'es-MX') return { system: RISK_REVIEW_QUOTES_ES, user: source };
   const system = [
     'A therapist dictated or typed her notes from a session. At some point she asked the client about risk: suicide, self-harm, or harming anyone else. Find every place where she reports that review: what she asked and what the client answered, including denials and anything the client said that worried her.',
     'Quote each one exactly as she wrote it, copied verbatim and unchanged, the whole sentence. Never paraphrase, shorten or correct it. If she did not review risk, return an empty list.',
@@ -340,6 +342,51 @@ export function buildExtractRiskReviewPrompt(source: string): ChatPrompt {
   return { system, user: source };
 }
 
+/** The same question in Mexican Spanish, for a note written in Spanish. */
+const RISK_REVIEW_QUOTES_ES = [
+  'Una terapeuta dictó o escribió sus notas de una sesión. En algún momento le preguntó al cliente por riesgo: suicidio, autolesiones o hacerle daño a alguien más. Encuentra cada lugar donde ella reporta esa revisión: lo que preguntó y lo que el cliente respondió, incluidas las negativas y cualquier cosa que el cliente dijo que le preocupó.',
+  'Cita cada uno exactamente como ella lo escribió, copiado palabra por palabra y sin cambios, la oración completa. Nunca parafrasees, acortes ni corrijas. Si no revisó riesgo, regresa una lista vacía.',
+  '',
+  'Ejemplo de notas: "Durmió mal esta semana. Le pregunté por autolesiones y dijo que no, nada de eso. También le pregunté si alguna vez piensa en quitarse la vida y dijo que a veces en la noche, pero que nunca haría nada. Semanal a partir de ahora."',
+  'Ejemplo de respuesta: {"quotes": ["Le pregunté por autolesiones y dijo que no, nada de eso.", "También le pregunté si alguna vez piensa en quitarse la vida y dijo que a veces en la noche, pero que nunca haría nada."]}',
+  '',
+  '## Formato de salida',
+  '',
+  'Responde con un solo objeto JSON de la forma {"quotes": ["..."]} y nada más.',
+].join('\n');
+
+/**
+ * The quoting call for corrected figures (`superseded.ts`): the old figure and
+ * the one it was corrected to, both verbatim. Only pairs the server finds in
+ * her notes, in order, with a correction cue, are ever used, so the examples
+ * cannot leak.
+ */
+export function buildExtractCorrectionsPrompt(source: string, locale: Locale = 'en'): ChatPrompt {
+  const system =
+    locale === 'es-MX'
+      ? [
+          'Una terapeuta dictó o escribió sus notas de una sesión. A veces un dato se corrige: ella misma se corrige ("tres veces al día, digo, dos") o el cliente da un número y luego otro ("dijo dos años, o sea, más bien cuatro"). Enumera cada corrección: el dato que quedó superado y el que lo reemplazó, ambos citados palabra por palabra de las notas. Nunca parafrasees. Si nada se corrigió, regresa una lista vacía.',
+          '',
+          'Ejemplo de notas: "Toma el medicamento tres veces al día, digo, dos. Dijo que lleva un mes así, o sea, más bien seis semanas."',
+          'Ejemplo de respuesta: {"corrections": [{"withdrawn": "tres veces al día", "replacement": "dos"}, {"withdrawn": "un mes", "replacement": "seis semanas"}]}',
+          '',
+          '## Formato de salida',
+          '',
+          'Responde con un solo objeto JSON de la forma {"corrections": [{"withdrawn": "...", "replacement": "..."}]} y nada más.',
+        ].join('\n')
+      : [
+          'A therapist dictated or typed her notes from a session. Sometimes a figure gets corrected: she corrects herself ("three times a day, I mean twice"), or the client gives one number and then revises it ("she said two years, then corrected herself: more like four"). List every correction: the figure that was superseded and the one that replaced it, both quoted verbatim from the notes. Never paraphrase. If nothing was corrected, return an empty list.',
+          '',
+          'Example notes: "Takes it three times a day, I mean twice. She said it has been a month, actually more like six weeks."',
+          'Example answer: {"corrections": [{"withdrawn": "three times a day", "replacement": "twice"}, {"withdrawn": "a month", "replacement": "six weeks"}]}',
+          '',
+          '## Output format',
+          '',
+          'Reply with a single JSON object of the form {"corrections": [{"withdrawn": "...", "replacement": "..."}]} and nothing else.',
+        ].join('\n');
+  return { system, user: source };
+}
+
 /**
  * The rewrite after a drafted section used a diagnostic word she never said
  * (`diagnostic-words.ts`). Measured on eval fixture `19`: "hand-washing
@@ -348,8 +395,26 @@ export function buildExtractRiskReviewPrompt(source: string): ChatPrompt {
  * number, date, medication and risk statement survived, so the example cannot
  * leak: a line from it would add tokens the section did not have.
  */
-export function buildRewriteWithoutWordsPrompt(text: string, words: readonly string[]): ChatPrompt {
+export function buildRewriteWithoutWordsPrompt(
+  text: string,
+  words: readonly string[],
+  locale: Locale = 'en',
+): ChatPrompt {
   const quoted = words.map((word) => `"${word}"`).join(', ');
+  if (locale === 'es-MX') {
+    const system = [
+      `Este texto de una nota clínica usa ${quoted}, ${words.length === 1 ? 'una palabra diagnóstica' : 'palabras diagnósticas'} que la terapeuta nunca usó. Reescribe el texto sin ${words.length === 1 ? 'esa palabra' : 'esas palabras'} ni ninguna otra etiqueta diagnóstica o clínica: describe la conducta de forma sencilla, con palabras que el texto ya usa.`,
+      'No cambies nada más. Conserva exactamente cada otra oración, número, fecha, nombre, medicamento y cita, y no agregues nada.',
+      '',
+      'Ejemplo de texto: "Describió rituales de revisión en la puerta de entrada, hasta diez veces cada noche."',
+      'Ejemplo de respuesta: {"text": "Describió revisar la puerta de entrada, hasta diez veces cada noche."}',
+      '',
+      '## Formato de salida',
+      '',
+      'Responde con un solo objeto JSON de la forma {"text": "..."} y nada más.',
+    ].join('\n');
+    return { system, user: text };
+  }
   const system = [
     `This text from a clinical note uses ${quoted}, ${words.length === 1 ? 'a diagnostic word' : 'diagnostic words'} the therapist never used. Rewrite the text without ${words.length === 1 ? 'that word' : 'those words'} or any other diagnostic or clinical label: describe the behaviour plainly, in words the text already uses.`,
     'Change nothing else. Keep every other sentence, number, date, name, medication and quotation exactly as it is, and add nothing.',

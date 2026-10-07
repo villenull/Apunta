@@ -1,6 +1,7 @@
 import { STANDARD_PROGRESS_FORMAT, textToSections, type NoteFormat, type Patient } from '@apunta/shared';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { NO_REPAIRS } from '../ai/types.js';
 import { listNotesForPatient } from '../db/notes.js';
 import { createTestApp, seedFormat, seedPatient, type TestApp } from '../test/harness.js';
 import { persistDraft } from './draft.js';
@@ -82,6 +83,7 @@ describe('persistDraft', () => {
 
   it('tells her in the opening turn what the server changed in the draft', () => {
     const note = persistDraft(harness.db, draftInput(patient.id), format, SAMPLE_SECTIONS, [], {
+      ...NO_REPAIRS,
       riskReview: 'Subjective',
       notGathered: ['Patient reported no family history.'],
       reworded: [{ section: 'Assessment', words: ['compulsions'] }],

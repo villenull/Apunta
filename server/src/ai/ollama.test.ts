@@ -743,7 +743,9 @@ describe('OllamaProvider.generateNote — spoken retractions', () => {
       new OllamaProvider({ resolveModel: () => MODEL, fetchImpl }).generateNote(request),
     );
 
-    expect(calls).toHaveLength(2);
+    // The third call is the corrected-figure pass (`superseded.ts`): what is
+    // left of the transcript still says "more like six", a correction cue.
+    expect(calls).toHaveLength(3);
     expect(calls[0]?.body).toMatchObject({ stream: false });
     expect((calls[0]?.body.options as { num_predict: number }).num_predict).toBe(NUM_PREDICT_RETRACTIONS);
     expect((calls[0]?.body as { format: { properties: object } }).format.properties).toHaveProperty(

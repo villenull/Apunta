@@ -22,7 +22,9 @@ import { factTokens, medicationTokens } from './fact-guard.js';
  * appears anywhere in her notes: "agoraphobic avoidance" in the dictation
  * licenses "agoraphobic" in the note.
  *
- * English only.
+ * English and Mexican Spanish: each word list names its own language's
+ * diagnostic vocabulary, and both run on every note, because a label in either
+ * language is one she did not use if her notes never say it.
  */
 
 /**
@@ -48,6 +50,21 @@ const DIAGNOSTIC_TERMS: readonly (readonly [RegExp, RegExp | 'exact'])[] = [
   [/\bhypomani\w*|\bmanic\b|\bmania\b/gi, /\bhypomani|\bmanic\b|\bmania\b/i],
   [/\bsomati[sz]ation\b/gi, /\bsomati[sz]ation/i],
   [/\b[a-z]+ disorder\b/gi, 'exact'],
+  // Mexican Spanish. The stems above already cover compulsión/compulsivo,
+  // obsesivo, agorafobia, bipolar, esquizo-, anorexia, bulimia and distimia.
+  [/(?<![\p{L}])TOC(?![\p{L}])/gu, /(?<![\p{L}])TOC(?![\p{L}])/u],
+  [/(?<![\p{L}])TEPT(?![\p{L}])|estr[ée]s postraum[áa]tico/giu, /TEPT|postraum[áa]tico/iu],
+  [
+    /(?<![\p{L}])TAG(?![\p{L}])|ansiedad generalizada/giu,
+    /(?<![\p{L}])TAG(?![\p{L}])|ansiedad generalizada/iu,
+  ],
+  [/depresi[óo]n mayor|(?<![\p{L}])TDM(?![\p{L}])/giu, /depresi[óo]n mayor|(?<![\p{L}])TDM(?![\p{L}])/iu],
+  [/(?<![\p{L}])TLP(?![\p{L}])|personalidad l[íi]mite/giu, /(?<![\p{L}])TLP(?![\p{L}])|l[íi]mite/iu],
+  [/(?<![\p{L}])TDAH(?![\p{L}])|d[ée]ficit de atenci[óo]n/giu, /TDAH|d[ée]ficit de atenci[óo]n/iu],
+  [/psicosis|psic[óo]tic[oa]s?/giu, /psicosis|psic[óo]tic/iu],
+  [/hipoman[íi]\p{L}*|(?<![\p{L}])man[íi]a(?![\p{L}])|man[íi]ac[oa]s?/giu, /hipoman|man[íi]a|man[íi]ac/iu],
+  [/somatizaci[óo]n/giu, /somatizaci[óo]n/iu],
+  [/trastorno (?:de |del )?\p{L}+/giu, 'exact'],
 ];
 
 /** The diagnostic words in `text` that her notes never use, as written in `text`. */

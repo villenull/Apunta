@@ -114,6 +114,7 @@ export async function streamDraft(params: {
           clinicalGuidance: renderClinicalKnowledgeGuide(format.name, format.sections),
           typedNotes: source.typedNotes,
           transcript: source.transcript,
+          noteLocale: format.locale,
           ...(priorNotes.length === 0 ? {} : { priorNotes }),
         },
         locale,
