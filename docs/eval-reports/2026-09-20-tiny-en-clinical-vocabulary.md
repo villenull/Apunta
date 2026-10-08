@@ -1,7 +1,7 @@
 # tiny.en on clinical vocabulary: first real transcripts
 
 Date: 2026-09-20
-Host: `FBI-PC`, Linux x86_64, 8 online CPUs, Radeon RX 9070 XT (Navi 48)
+Host: `<host>`, Linux x86_64, 8 online CPUs, Radeon RX 9070 XT (Navi 48)
 Stack: whisper.cpp `whisper-cli` 1.9.3-dev, CPU build, at
 `~/.local/bin/whisper-cli`; Ollama 0.34.2 on ROCm;
 `ggml-tiny.en.bin` SHA-256

@@ -11,11 +11,11 @@ Nothing here changes a line of the app.
 ## Done, and working (2026-09-01)
 
 Set up on the partner's PC and verified end to end. The tailnet is
-`villenull.github`; the machine is `fbi-pc.tail48f824.ts.net`, and the app is
+`villenull.github`; the machine is `<machine>.<tailnet>.ts.net`, and the app is
 published to the tailnet only:
 
 ```sh
-tailscale serve --bg 7717      # https://fbi-pc.tail48f824.ts.net/ -> 127.0.0.1:7717
+tailscale serve --bg 7717      # https://<machine>.<tailnet>.ts.net/ -> 127.0.0.1:7717
 tailscale serve status
 tailscale serve --https=443 off   # to stop sharing
 ```
