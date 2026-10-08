@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { fetchHealth } from '../api/index.js';
 import { useLoader } from '../hooks/useLoader.js';
-import { useSetupStatus } from '../hooks/useSetupStatus.js';
 import { useI18n } from '../lib/i18n.js';
-import { AiSetupDialog } from './AiSetupDialog.js';
+import { setupCanFix, useAiSetup } from './AiSetup.js';
 
 /**
  * "Apunta can't reach the local AI" (M3 deliverable 8).
@@ -19,56 +18,30 @@ import { AiSetupDialog } from './AiSetupDialog.js';
  *
  * Owner decision 2026-10-05: the Setup, About and Licenses screens are gone, so
  * the banner no longer links anywhere — except to first-run setup, in the
- * desktop app, when a model is missing (2026-10-08). There it opens setup by
- * itself once per launch, and offers it again from the banner.
+ * desktop app, when a model is missing (2026-10-08). `AiSetup.tsx` opens
+ * setup by itself once per launch; the banner offers it again.
  */
 export function AiBanner(): React.JSX.Element | null {
   const { t } = useI18n();
   const loadHealth = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
   const health = useLoader(loadHealth);
   const [dismissed, setDismissed] = useState(false);
-  // One read, no polling: it only answers "is there a shell that can set up?".
-  const setup = useSetupStatus(false);
-  const [setupOpen, setSetupOpen] = useState(false);
-  const autoOpened = useRef(false);
+  const setup = useAiSetup();
+  const { reload } = health;
 
-  const data = health.state.status === 'ready' ? health.state.data : null;
-  /*
-   * What first-run setup can fix: the writing model missing from a runtime that
-   * answers, or the speech model missing. Fake mode has neither and needs
-   * neither.
-   */
-  const needsSetup =
-    data !== null &&
-    !data.fakeAi &&
-    ((data.ollama.reachable && !data.ollama.modelPresent) || !data.whisper.modelPresent);
-  const canSetUp = setup.status !== null;
-
-  // The first launch of the desktop app: open setup once, by itself. Nothing is
-  // downloaded until she presses its button.
+  // Setup finished somewhere else in the app: what this banner says may be stale.
   useEffect(() => {
-    if (needsSetup && canSetUp && !autoOpened.current) {
-      autoOpened.current = true;
-      setSetupOpen(true);
-    }
-  }, [needsSetup, canSetUp]);
-
-  const dialog = setupOpen ? (
-    <AiSetupDialog
-      onClose={() => {
-        setSetupOpen(false);
-        health.reload();
-      }}
-      onReady={health.reload}
-    />
-  ) : null;
+    if (setup.finished > 0) reload();
+  }, [setup.finished, reload]);
 
   // A health call that has not answered, or failed outright, says nothing
   // about the model — and a banner that flashes on every load would be noise.
-  if (data === null) return dialog;
+  if (dismissed || health.state.status !== 'ready') return null;
+
+  const data = health.state.data;
   const { ollama, whisper } = data;
-  const healthy = ollama.reachable && ollama.modelPresent && (data.fakeAi || whisper.modelPresent);
-  if (dismissed || healthy) return dialog;
+  if (ollama.reachable && ollama.modelPresent && (data.fakeAi || whisper.modelPresent)) return null;
+  const offerSetup = setup.available && setupCanFix(data);
 
   /*
    * The banner's one sentence, keyed at the element it is split by rather than
@@ -77,54 +50,48 @@ export function AiBanner(): React.JSX.Element | null {
    * does. `{model}` is the stored model name, or empty when the server named
    * none.
    */
-  const message =
-    needsSetup && canSetUp
-      ? t('ai.setupNeeded')
-      : !ollama.reachable
-        ? t('ai.unreachable')
-        : !ollama.modelPresent
-          ? t('ai.modelMissing', { model: ollama.model === null ? '' : ` (${ollama.model})` })
-          : t('ai.speechModelMissing');
+  const message = offerSetup
+    ? t('ai.setupNeeded')
+    : !ollama.reachable
+      ? t('ai.unreachable')
+      : !ollama.modelPresent
+        ? t('ai.modelMissing', { model: ollama.model === null ? '' : ` (${ollama.model})` })
+        : t('ai.speechModelMissing');
 
   return (
-    <>
-      <div className="ai-banner" role="status" data-testid="ai-banner">
-        <p>
-          {message} {t('ai.bannerTail')}{' '}
-          {needsSetup && canSetUp ? (
-            <button
-              type="button"
-              className="btn small btn-primary"
-              onClick={() => {
-                setSetupOpen(true);
-              }}
-              data-testid="ai-banner-setup"
-            >
-              {t('ai.setUp')}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn small btn-quick"
-              onClick={health.reload}
-              data-testid="ai-banner-retry"
-            >
-              {t('common.checkAgain')}
-            </button>
-          )}
-        </p>
-        <button
-          type="button"
-          className="ai-banner-dismiss"
-          aria-label={t('common.dismiss')}
-          onClick={() => {
-            setDismissed(true);
-          }}
-        >
-          ×
-        </button>
-      </div>
-      {dialog}
-    </>
+    <div className="ai-banner" role="status" data-testid="ai-banner">
+      <p>
+        {message} {t('ai.bannerTail')}{' '}
+        {offerSetup ? (
+          <button
+            type="button"
+            className="btn small btn-primary"
+            onClick={setup.open}
+            data-testid="ai-banner-setup"
+          >
+            {t('ai.setUp')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn small btn-quick"
+            onClick={health.reload}
+            data-testid="ai-banner-retry"
+          >
+            {t('common.checkAgain')}
+          </button>
+        )}
+      </p>
+      <button
+        type="button"
+        className="ai-banner-dismiss"
+        aria-label={t('common.dismiss')}
+        onClick={() => {
+          setDismissed(true);
+        }}
+      >
+        ×
+      </button>
+    </div>
   );
 }

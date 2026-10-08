@@ -4,7 +4,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { installFakeApi } from '../test/fakeApi.js';
 import { AiBanner } from './AiBanner.js';
+import { AiSetupProvider } from './AiSetup.js';
 import { formatBytes } from './AiSetupDialog.js';
+
+/** The provider owns the window, as `App.tsx` mounts it; the banner offers it again. */
+function renderApp(): void {
+  render(
+    <AiSetupProvider>
+      <AiBanner />
+    </AiSetupProvider>,
+  );
+}
 
 afterEach(() => {
   cleanup();
@@ -88,7 +98,7 @@ describe('first-run setup', () => {
   it('opens by itself on a first launch, lists what it will download, and downloads nothing yet', async () => {
     const { setup, actions } = shellSetup({ state: 'idle', steps: [] });
     installFakeApi({}, { health: FIRST_LAUNCH, setup });
-    render(<AiBanner />);
+    renderApp();
 
     const dialog = await screen.findByTestId('ai-setup-dialog');
     await screen.findByTestId('ai-setup-steps');
@@ -112,7 +122,7 @@ describe('first-run setup', () => {
   it('downloads only on her press, shows progress, and stops on request', async () => {
     const { setup, actions } = shellSetup({ state: 'idle', steps: [] });
     installFakeApi({}, { health: FIRST_LAUNCH, setup });
-    render(<AiBanner />);
+    renderApp();
     await screen.findByTestId('ai-setup-steps');
     fireEvent.click(screen.getByTestId('ai-setup-start'));
     await waitFor(() => {
@@ -159,7 +169,7 @@ describe('first-run setup', () => {
       actions.push(action);
     };
     installFakeApi({}, { health: FIRST_LAUNCH, setup });
-    render(<AiBanner />);
+    renderApp();
     expect((await screen.findByTestId('ai-setup-failed')).textContent).toContain(
       'The download stopped. Check the internet connection',
     );
@@ -174,7 +184,7 @@ describe('first-run setup', () => {
     });
     setup.onAction = () => undefined;
     installFakeApi({}, { health: FIRST_LAUNCH, setup });
-    render(<AiBanner />);
+    renderApp();
     expect((await screen.findByTestId('ai-setup-no-room')).textContent).toContain(
       'needs 2.5 GB more free space',
     );
@@ -185,10 +195,11 @@ describe('first-run setup', () => {
     const { setup } = shellSetup({ state: 'done', plan: PLAN, steps: [] });
     setup.onAction = () => undefined;
     const api = installFakeApi({}, { health: FIRST_LAUNCH, setup });
-    render(<AiBanner />);
+    renderApp();
     await screen.findByTestId('ai-setup-ready');
     await waitFor(() => {
-      expect(api.calls.filter((call) => call === 'GET /api/health').length).toBeGreaterThan(1);
+      // Once each for the provider and the banner, then again for both when setup finished.
+      expect(api.calls.filter((call) => call === 'GET /api/health').length).toBeGreaterThanOrEqual(4);
     });
     fireEvent.click(screen.getByTestId('ai-setup-close'));
     await waitFor(() => {
@@ -206,7 +217,7 @@ describe('first-run setup', () => {
         },
       },
     );
-    render(<AiBanner />);
+    renderApp();
     const banner = await screen.findByTestId('ai-banner');
     expect(banner.textContent).toContain("Apunta can't find its speech model.");
     expect(screen.queryByTestId('ai-banner-setup')).toBeNull();

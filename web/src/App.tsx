@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes, matchPath, useLocation, type Location } from 'react-router';
 
+import { AiSetupProvider } from './components/AiSetup.js';
 import { CloseConfirm } from './components/CloseConfirm.js';
 import { SettingsProvider, useSettingsContext } from './components/SettingsProvider.js';
 import { SpellingProvider } from './components/SpellingProvider.js';
@@ -212,7 +213,7 @@ function AppRoutes(): React.JSX.Element {
   }, [overlayOpen]);
 
   return (
-    <>
+    <AiSetupProvider>
       {/*
         Key only the route transition wrapper, not either long-lived provider.
         Query-string changes (patient and note selection) remain unanimated.
@@ -251,7 +252,7 @@ function AppRoutes(): React.JSX.Element {
         onCancel={primary.cancelTakeover}
         onDecline={primary.declineTakeover}
       />
-    </>
+    </AiSetupProvider>
   );
 }
 
