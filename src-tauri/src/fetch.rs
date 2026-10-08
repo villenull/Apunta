@@ -230,58 +230,169 @@ pub fn appimage_path() -> Option<PathBuf> {
     Some(actual)
 }
 
-/// Copies `appimage` to `Apunta.previous.AppImage` beside it, atomically, and
-/// returns the kept path. The permission bits are kept: `fs::copy` does.
-pub fn keep_previous(appimage: &Path) -> std::io::Result<PathBuf> {
-    let dir = appimage.parent().ok_or_else(|| {
-        std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "the AppImage has no folder",
-        )
-    })?;
-    let kept = dir.join(PREVIOUS_NAME);
-    let staging = dir.join(format!("{PREVIOUS_NAME}.partial"));
-    let result = std::fs::copy(appimage, &staging)
-        .and_then(|_| std::fs::File::open(&staging)?.sync_all())
-        .and_then(|_| std::fs::rename(&staging, &kept))
-        .and_then(|_| std::fs::File::open(dir)?.sync_all());
-    if result.is_err() {
-        let _ = std::fs::remove_file(&staging);
-    }
-    result.map(|()| kept)
+/// The kept previous version's name for a Mac app bundle, beside it.
+pub const PREVIOUS_BUNDLE_NAME: &str = "Apunta.previous.app";
+
+/// Whether this path is a Mac app bundle (`Apunta.app`), not an AppImage.
+fn is_bundle(path: &Path) -> bool {
+    path.extension().is_some_and(|extension| extension == "app")
 }
 
-/// Puts the kept previous AppImage back in place of `appimage`, atomically.
-pub fn restore_previous(appimage: &Path) -> std::io::Result<()> {
-    let dir = appimage.parent().ok_or_else(|| {
-        std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "the AppImage has no folder",
-        )
+/// The `.app` bundle an executable runs from: the nearest ancestor named
+/// `*.app` whose `Contents/MacOS` holds it. Pure, so it is tested on Linux.
+pub fn bundle_of(executable: &Path) -> Option<PathBuf> {
+    executable
+        .ancestors()
+        .skip(1)
+        .find(|candidate| {
+            is_bundle(candidate) && executable.starts_with(candidate.join("Contents").join("MacOS"))
+        })
+        .map(Path::to_path_buf)
+}
+
+/// The installed app the updater replaces: the AppImage on Linux, the `.app`
+/// bundle on a Mac. `None` means there is nothing safe to replace.
+pub fn installed_path() -> Option<PathBuf> {
+    #[cfg(target_os = "macos")]
+    {
+        std::env::current_exe().ok().and_then(|exe| bundle_of(&exe))
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        appimage_path()
+    }
+}
+
+/// Where the previous version of `installed` is kept: beside it, under the
+/// AppImage or bundle name.
+pub fn previous_path(installed: &Path) -> Option<PathBuf> {
+    let dir = installed.parent()?;
+    Some(dir.join(if is_bundle(installed) {
+        PREVIOUS_BUNDLE_NAME
+    } else {
+        PREVIOUS_NAME
+    }))
+}
+
+/// The program to run from the kept previous version, for recovery: the same
+/// executable inside `Apunta.previous.app` on a Mac, the kept AppImage on Linux.
+pub fn previous_executable(target: &Path) -> Option<PathBuf> {
+    match bundle_of(target) {
+        Some(bundle) => {
+            let inside = target.strip_prefix(&bundle).ok()?;
+            Some(previous_path(&bundle)?.join(inside))
+        }
+        None => Some(target.with_file_name(PREVIOUS_NAME)),
+    }
+}
+
+/// Copies a folder tree, keeping symlinks as symlinks and permissions as they
+/// are: a Mac bundle carries framework symlinks and executable bits.
+fn copy_tree(from: &Path, to: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(to)?;
+    std::fs::set_permissions(to, std::fs::metadata(from)?.permissions())?;
+    for entry in std::fs::read_dir(from)? {
+        let entry = entry?;
+        let source = entry.path();
+        let target = to.join(entry.file_name());
+        let kind = entry.file_type()?;
+        if kind.is_symlink() {
+            #[cfg(unix)]
+            std::os::unix::fs::symlink(std::fs::read_link(&source)?, &target)?;
+        } else if kind.is_dir() {
+            copy_tree(&source, &target)?;
+        } else {
+            std::fs::copy(&source, &target)?;
+        }
+    }
+    Ok(())
+}
+
+/// Copies `from` to `to` through a staging name beside `to`, then renames it
+/// into place; a file is synced first. A failed copy leaves `to` untouched.
+fn copy_into_place(from: &Path, to: &Path, staging: &Path) -> std::io::Result<()> {
+    let dir = to.parent().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, "the app has no folder")
     })?;
-    let kept = dir.join(PREVIOUS_NAME);
-    if !kept.is_file() {
+    if from.is_dir() {
+        let _ = std::fs::remove_dir_all(staging);
+        let result = copy_tree(from, staging).and_then(|()| {
+            // A folder cannot be renamed over a folder: the old one moves aside
+            // first and goes only once the new one is in place.
+            let aside = staging.with_extension("old");
+            let _ = std::fs::remove_dir_all(&aside);
+            let had = to.exists();
+            if had {
+                std::fs::rename(to, &aside)?;
+            }
+            match std::fs::rename(staging, to) {
+                Ok(()) => {
+                    if had {
+                        let _ = std::fs::remove_dir_all(&aside);
+                    }
+                    Ok(())
+                }
+                Err(error) => {
+                    if had {
+                        let _ = std::fs::rename(&aside, to);
+                    }
+                    Err(error)
+                }
+            }
+        });
+        if result.is_err() {
+            let _ = std::fs::remove_dir_all(staging);
+        }
+        result.and_then(|()| std::fs::File::open(dir)?.sync_all())
+    } else {
+        let result = std::fs::copy(from, staging)
+            .and_then(|_| std::fs::File::open(staging)?.sync_all())
+            .and_then(|_| std::fs::rename(staging, to))
+            .and_then(|_| std::fs::File::open(dir)?.sync_all());
+        if result.is_err() {
+            let _ = std::fs::remove_file(staging);
+        }
+        result
+    }
+}
+
+/// Copies the installed app (an AppImage, or a Mac `.app` folder) to its
+/// previous name beside it, atomically, and returns the kept path.
+pub fn keep_previous(installed: &Path) -> std::io::Result<PathBuf> {
+    let kept = previous_path(installed).ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, "the app has no folder")
+    })?;
+    let staging = kept.with_file_name(format!(
+        "{}.partial",
+        kept.file_name().unwrap_or_default().to_string_lossy()
+    ));
+    copy_into_place(installed, &kept, &staging).map(|()| kept)
+}
+
+/// Puts the kept previous version back in place of `installed`, atomically.
+pub fn restore_previous(installed: &Path) -> std::io::Result<()> {
+    let kept = previous_path(installed).ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, "the app has no folder")
+    })?;
+    if !kept.exists() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
-            "there is no previous AppImage to reinstall",
+            "there is no previous version to reinstall",
         ));
     }
-    let staging = dir.join(format!("{PREVIOUS_NAME}.restoring"));
-    let result = std::fs::copy(&kept, &staging)
-        .and_then(|_| std::fs::File::open(&staging)?.sync_all())
-        .and_then(|_| std::fs::rename(&staging, appimage))
-        .and_then(|_| std::fs::File::open(dir)?.sync_all());
-    if result.is_err() {
-        let _ = std::fs::remove_file(&staging);
-    }
-    result
+    let staging = kept.with_file_name(format!(
+        "{}.restoring",
+        kept.file_name().unwrap_or_default().to_string_lossy()
+    ));
+    copy_into_place(&kept, installed, &staging)
 }
 
 /// Why an install did not happen.
 #[derive(Debug)]
 pub enum InstallError {
-    /// Not running from an AppImage, so there is nothing safe to replace.
-    NotAnAppImage,
+    /// Not running from an installed app (an AppImage, or a Mac `.app`), so
+    /// there is nothing safe to replace.
+    NotInstalled,
     /// The previous version could not be kept, so nothing was replaced.
     KeepPrevious(std::io::Error),
     /// The plugin's install failed; the old AppImage is back in place.
@@ -293,7 +404,12 @@ pub enum InstallError {
 impl std::fmt::Display for InstallError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            InstallError::NotAnAppImage => write!(f, "not running from an AppImage"),
+            InstallError::NotInstalled => {
+                write!(
+                    f,
+                    "not running from an installed app (an AppImage or a Mac .app)"
+                )
+            }
             InstallError::KeepPrevious(error) => {
                 write!(f, "the previous version could not be kept: {error}")
             }
@@ -308,32 +424,38 @@ impl std::fmt::Display for InstallError {
 /// Keeps the previous AppImage, then runs `install`. The order is the point:
 /// a failed copy means nothing is replaced.
 pub fn install_sequence(
-    appimage: Option<&Path>,
+    installed: Option<&Path>,
     install: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), InstallError> {
-    let appimage = appimage.ok_or(InstallError::NotAnAppImage)?;
-    keep_previous(appimage).map_err(InstallError::KeepPrevious)?;
+    let installed = installed.ok_or(InstallError::NotInstalled)?;
+    keep_previous(installed).map_err(InstallError::KeepPrevious)?;
     let result = install().and_then(|()| {
-        std::fs::File::open(appimage)
-            .and_then(|file| file.sync_all())
-            .and_then(|_| {
-                std::fs::File::open(appimage.parent().expect("kept image parent"))?.sync_all()
-            })
-            .map_err(|error| error.to_string())
+        // A file is synced itself; a Mac bundle is a folder the plugin swapped
+        // in, so its parent folder is what records the swap.
+        let file = if installed.is_dir() {
+            Ok(())
+        } else {
+            std::fs::File::open(installed).and_then(|file| file.sync_all())
+        };
+        file.and_then(|()| {
+            std::fs::File::open(installed.parent().expect("kept app parent"))?.sync_all()
+        })
+        .map_err(|error| error.to_string())
     });
     match result {
         Ok(()) => Ok(()),
         Err(message) => {
-            restore_previous(appimage).map_err(InstallError::Rollback)?;
+            restore_previous(installed).map_err(InstallError::Rollback)?;
             Err(InstallError::Install(message))
         }
     }
 }
 
-/// Installs the verified bytes over the running AppImage.
+/// Installs the verified bytes over the running app: the AppImage on Linux,
+/// the `.app` bundle on a Mac (the plugin unpacks the `.app.tar.gz` there).
 pub fn install(update: &Update, bytes: &[u8]) -> Result<(), InstallError> {
-    let appimage = appimage_path();
-    install_sequence(appimage.as_deref(), || {
+    let installed = installed_path();
+    install_sequence(installed.as_deref(), || {
         update.install(bytes).map_err(|error| error.to_string())
     })
 }
@@ -602,7 +724,7 @@ mod tests {
             ran = true;
             Ok(())
         });
-        assert!(matches!(result, Err(InstallError::NotAnAppImage)));
+        assert!(matches!(result, Err(InstallError::NotInstalled)));
         assert!(!ran);
     }
 
@@ -649,6 +771,98 @@ mod tests {
         let error = restore_previous(&appimage).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::NotFound);
         assert_eq!(std::fs::read(&appimage).unwrap(), b"current");
+    }
+
+    /// A small Mac-shaped bundle: a nested executable with its exec bit, and a
+    /// framework symlink, the two things a naive copy loses.
+    #[cfg(unix)]
+    fn fake_bundle(dir: &Path, marker: &str) -> PathBuf {
+        use std::os::unix::fs::PermissionsExt;
+        let bundle = dir.join("Apunta.app");
+        let macos = bundle.join("Contents").join("MacOS");
+        std::fs::create_dir_all(&macos).unwrap();
+        let exe = macos.join("apunta");
+        std::fs::write(&exe, marker).unwrap();
+        std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::os::unix::fs::symlink("MacOS/apunta", bundle.join("Contents").join("Current"))
+            .unwrap();
+        bundle
+    }
+
+    #[test]
+    fn bundle_of_finds_the_app_from_its_executable() {
+        let exe = Path::new("/Applications/Apunta.app/Contents/MacOS/apunta");
+        assert_eq!(
+            bundle_of(exe),
+            Some(PathBuf::from("/Applications/Apunta.app"))
+        );
+        assert_eq!(bundle_of(Path::new("/opt/apunta/apunta")), None);
+        // A folder that merely ends in .app, without the bundle layout, is not one.
+        assert_eq!(bundle_of(Path::new("/srv/data.app/bin/apunta")), None);
+    }
+
+    #[test]
+    fn the_previous_executable_sits_inside_the_previous_bundle_on_a_mac() {
+        assert_eq!(
+            previous_executable(Path::new("/Applications/Apunta.app/Contents/MacOS/apunta")),
+            Some(PathBuf::from(
+                "/Applications/Apunta.previous.app/Contents/MacOS/apunta"
+            ))
+        );
+        assert_eq!(
+            previous_executable(Path::new("/home/x/Applications/Apunta.AppImage")),
+            Some(PathBuf::from(
+                "/home/x/Applications/Apunta.previous.AppImage"
+            ))
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_mac_bundle_is_kept_and_restored_whole() {
+        use std::os::unix::fs::PermissionsExt;
+        let scratch = Scratch::new();
+        let bundle = fake_bundle(&scratch.0, "v1");
+        let kept = keep_previous(&bundle).unwrap();
+        assert_eq!(kept, scratch.0.join(PREVIOUS_BUNDLE_NAME));
+        let kept_exe = kept.join("Contents").join("MacOS").join("apunta");
+        assert_eq!(std::fs::read(&kept_exe).unwrap(), b"v1");
+        assert_eq!(
+            std::fs::metadata(&kept_exe).unwrap().permissions().mode() & 0o777,
+            0o755
+        );
+        assert!(
+            std::fs::symlink_metadata(kept.join("Contents").join("Current"))
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
+
+        // The install replaced the bundle; restoring brings v1 back, whole.
+        std::fs::write(bundle.join("Contents").join("MacOS").join("apunta"), "v2").unwrap();
+        restore_previous(&bundle).unwrap();
+        assert_eq!(
+            std::fs::read(bundle.join("Contents").join("MacOS").join("apunta")).unwrap(),
+            b"v1"
+        );
+        assert!(kept.is_dir(), "the kept copy stays for a second recovery");
+        assert!(!scratch.0.join("Apunta.previous.app.restoring").exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_failed_bundle_install_puts_the_old_bundle_back() {
+        let scratch = Scratch::new();
+        let bundle = fake_bundle(&scratch.0, "v1");
+        let result = install_sequence(Some(&bundle), || {
+            std::fs::write(bundle.join("Contents").join("MacOS").join("apunta"), "half").unwrap();
+            Err("the plugin failed".to_string())
+        });
+        assert!(matches!(result, Err(InstallError::Install(_))));
+        assert_eq!(
+            std::fs::read(bundle.join("Contents").join("MacOS").join("apunta")).unwrap(),
+            b"v1"
+        );
     }
 
     #[cfg(unix)]

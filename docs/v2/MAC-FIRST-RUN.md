@@ -93,6 +93,31 @@ The `.app` it contains is also left at
 8. **Signing.** Run `codesign -dv --verbose=2 /Applications/Apunta.app`. It
    should show `Signature=adhoc`.
 
+## Updating (after the first run works)
+
+Mac updating replaces `Apunta.app` in place. It keeps `Apunta.previous.app`
+beside it to roll back to, and restarts the new version. Testing it needs two
+signed releases:
+
+1. **Build a signed release.** This needs the owner's private key and its
+   password (never put them in the repository):
+
+   ```bash
+   TAURI_SIGNING_PRIVATE_KEY_PATH=~/.apunta-signing/apunta-updater.key npm run tauri:build:release
+   ```
+
+   It asks for the password, or reads it from
+   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Besides the `.dmg` it produces
+   `bundle/macos/Apunta.app.tar.gz` and `Apunta.app.tar.gz.sig`, which are the
+   update and its signature.
+2. **Publish two versions.** Publish one as a GitHub release, with a
+   `latest.json` whose `platforms` has a `darwin-aarch64` entry naming the
+   `.tar.gz` URL and the contents of the `.sig`. Install it. Then raise the
+   version and publish a second.
+3. **Install the update.** The installed app should offer the update, install
+   it, and restart on the new version, with `Apunta.previous.app` left beside
+   it in Applications.
+
 ## Known risks, in the order they are likely to bite
 
 - **The Mac-only Rust branch has never been compiled.** It only switches two
@@ -109,7 +134,11 @@ The `.app` it contains is also left at
   start with a code-signing or library-validation error, record the exact
   message.
 - **The updater.** No Mac release exists, so it finds nothing to install. That
-  is expected.
+  is expected. Once one does, the Mac-only lines (finding the `.app` from the
+  running program) have never been compiled. Keep-previous and rollback on a
+  bundle were tested on Linux with a stand-in `.app` folder. macOS may also
+  refuse to replace an app in `/Applications` for a user who is not an admin.
+  If installing fails with a permission error, record it.
 
 Send back what each step printed, and screenshots of anything unexpected. Use
 made-up patients only.

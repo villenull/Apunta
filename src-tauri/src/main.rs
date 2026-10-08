@@ -334,12 +334,12 @@ fn start_relaunch(handle: &tauri::AppHandle) {
     if let Err(error) = fetch::supervise(&target, plan.handoff.as_deref(), &nonce, &expected, false)
     {
         eprintln!("apunta: replacement failed: {error}; starting read-only recovery");
-        let previous = target.with_file_name(fetch::PREVIOUS_NAME);
-        let recovery = if previous.is_file() { previous } else { target };
-        let recovery_version = if recovery
-            .file_name()
-            .is_some_and(|name| name == fetch::PREVIOUS_NAME)
-        {
+        // The kept previous version: `Apunta.previous.AppImage` on Linux, the
+        // same program inside `Apunta.previous.app` on a Mac.
+        let previous = fetch::previous_executable(&target).filter(|path| path.is_file());
+        let is_previous = previous.is_some();
+        let recovery = previous.unwrap_or(target);
+        let recovery_version = if is_previous {
             state
                 .control
                 .previous_version
@@ -555,8 +555,8 @@ fn perform(handle: &tauri::AppHandle, effect: updater::Effect) {
         Effect::ReinstallPrevious => {
             let handle = handle.clone();
             tauri::async_runtime::spawn_blocking(move || {
-                let restored = fetch::appimage_path()
-                    .ok_or_else(|| "not running from an AppImage".to_string())
+                let restored = fetch::installed_path()
+                    .ok_or_else(|| "not running from an installed app".to_string())
                     .and_then(|path| fetch::restore_previous(&path).map_err(|e| e.to_string()));
                 match restored {
                     Ok(()) => dispatch(&handle, Input::PreviousRestored),
