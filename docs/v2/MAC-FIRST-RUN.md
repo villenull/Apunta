@@ -32,7 +32,7 @@ You need:
 2. Homebrew, then `brew install cmake git`.
 3. Rust: `rustup` from rustup.rs, with the default Apple-silicon toolchain.
 4. **Node 24.19.0 for Apple silicon**, row A18 in `docs/v2/ACQUISITION.md`.
-   This one download needs the owner's approval first.
+   The owner approved this download on 2026-10-08.
    1. Download `node-v24.19.0-darwin-arm64.tar.gz` from
       https://nodejs.org/dist/v24.19.0/.
    2. Check `shasum -a 256` prints
