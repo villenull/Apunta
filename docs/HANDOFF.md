@@ -1,3 +1,18 @@
+# Public repository — 2026-10-08
+
+- **The repository is public** (owner decision). Before the switch, the README
+  images were regenerated from the current app (`scripts/readme-media.mjs`),
+  the README text was updated, and the audit's tailnet name, hostname and PDF
+  author were scrubbed from the current files. History was kept, per the
+  owner's choice, so older commits still carry those values and the author
+  email.
+- **CI is free on a public repository.** It stays on demand by the standing
+  rule until the owner says otherwise.
+- **The owner has backed up the updater's private key and password** off
+  this PC.
+- **Fixed while making the screenshots:** the chat box was cut off when it
+  opened empty (`9150185`).
+
 # Spanish checks, corrected figures, Mac prep — 2026-10-07 evening
 
 - **The draft checks now run on Spanish notes too.** These are the lost risk
