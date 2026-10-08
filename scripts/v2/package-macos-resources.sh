@@ -11,6 +11,7 @@
 #
 #   node/                      the pinned Node tree (darwin-arm64), copied
 #   server/server.mjs          the esbuild bundle, app version injected
+#   installer/setup.mjs        first-run setup, run by the shell on her Start
 #   migrations/
 #   web/dist/
 #   native/better_sqlite3.node copied from better-sqlite3's NAPI prebuild
@@ -135,6 +136,11 @@ DEFINE="--define:__APUNTA_VERSION__=$(node -e 'process.stdout.write(JSON.stringi
 run mkdir -p "$OUT/server"
 run bash -c "cd '$REPO_ROOT' && npx --yes esbuild server/dist/index.js --bundle --platform=node --format=esm --target=node24 --external:better-sqlite3 '$DEFINE' '--banner:js=$BANNER' --outfile='$OUT/server/server.mjs' >/dev/null"
 printf 'app version: %s\n' "$APP_VERSION"
+
+step "Bundling first-run setup (installer/setup.mjs)"
+# Identical to Linux: the model downloader the shell runs on her Start.
+run mkdir -p "$OUT/installer"
+run bash -c "cd '$REPO_ROOT' && npx --yes esbuild installer/dist/main.js --bundle --platform=node --format=esm --target=node24 '--banner:js=$BANNER' --outfile='$OUT/installer/setup.mjs' >/dev/null"
 
 step "Copying the migrations and the web build"
 run mkdir -p "$OUT/migrations" "$OUT/web"

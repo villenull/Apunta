@@ -49,6 +49,8 @@ pub enum Message {
     },
     /// `update_request{action}`: the server asks the shell to move the updater.
     UpdateRequest { action: UpdateAction },
+    /// `setup_request{action}`: the page asked for first-run setup (`setup.rs`).
+    SetupRequest { action: SetupAction },
     /// `close_decision{confirm}`: the owner's explicit answer to a refused close.
     CloseDecision { confirm: bool },
     /// `startup_context{mode, updateId?, targetVersion?, previousVersion?}`,
@@ -77,6 +79,14 @@ pub enum UpdateAction {
     Check,
     Download,
     Install,
+}
+
+/// The `action` of `setup_request`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SetupAction {
+    Plan,
+    Run,
+    Cancel,
 }
 
 /// The `mode` of `startup_context`.
@@ -192,6 +202,18 @@ pub fn parse_line(line: &str, expected_nonce: &str) -> Result<Message, Rejection
             }),
             Some("install") => Ok(Message::UpdateRequest {
                 action: UpdateAction::Install,
+            }),
+            _ => Err(Rejection::Malformed { field: "action" }),
+        },
+        "setup_request" => match string_field(trimmed, "action").as_deref() {
+            Some("plan") => Ok(Message::SetupRequest {
+                action: SetupAction::Plan,
+            }),
+            Some("run") => Ok(Message::SetupRequest {
+                action: SetupAction::Run,
+            }),
+            Some("cancel") => Ok(Message::SetupRequest {
+                action: SetupAction::Cancel,
             }),
             _ => Err(Rejection::Malformed { field: "action" }),
         },
@@ -595,6 +617,27 @@ mod tests {
                 ok: true,
                 code: None
             })
+        );
+    }
+
+    #[test]
+    fn setup_request_parses_its_three_actions_and_refuses_any_other() {
+        for (raw, action) in [
+            ("plan", SetupAction::Plan),
+            ("run", SetupAction::Run),
+            ("cancel", SetupAction::Cancel),
+        ] {
+            assert_eq!(
+                parse_line(
+                    &format!(r#"{{"type":"setup_request","action":"{raw}"}}"#),
+                    NONCE
+                ),
+                Ok(Message::SetupRequest { action })
+            );
+        }
+        assert_eq!(
+            parse_line(r#"{"type":"setup_request","action":"install"}"#, NONCE),
+            Err(Rejection::Malformed { field: "action" })
         );
     }
 

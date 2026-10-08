@@ -34,6 +34,24 @@ pub struct LaunchConfig {
     pub shell: bool,
     /// P3.1's four bundle-path overrides.
     pub paths: ChildPaths,
+    /// The bundled AI runtime's address, when the bundle carries one (the Mac
+    /// app). The server starts the runtime there and the installer pulls into
+    /// it; without a bundled runtime both use the system Ollama's default.
+    pub ollama_url: Option<String>,
+}
+
+/// The bundled runtime's port. Not Ollama's own 11434, so an Ollama she
+/// installed herself keeps its port and its models, and the two never answer
+/// for each other. A sandbox port gets its own, so two shells never share one.
+pub const BUNDLED_OLLAMA_PORT: u16 = 11435;
+
+pub fn bundled_ollama_url(server_port: u16) -> String {
+    let port = if server_port == LIVE_PORT {
+        BUNDLED_OLLAMA_PORT
+    } else {
+        server_port.saturating_add(1000)
+    };
+    format!("http://127.0.0.1:{port}")
 }
 
 /// P3.1's launch contract: the four `APUNTA_*` overrides that point into the
@@ -50,6 +68,9 @@ pub struct ChildPaths {
     pub licenses_file: PathBuf,
     pub web_dist: PathBuf,
     pub whisper_bin: PathBuf,
+    /// `bin/ollama`, the AI runtime. Only the Mac bundle carries it: on Linux the
+    /// system's Ollama service is used, as before.
+    pub ollama_bin: Option<PathBuf>,
 }
 
 impl ChildPaths {
@@ -61,6 +82,7 @@ impl ChildPaths {
             licenses_file: bundle.join("THIRD-PARTY-LICENSES.md"),
             web_dist: bundle.join("web").join("dist"),
             whisper_bin: bundle.join("bin").join("whisper-cli"),
+            ollama_bin: Some(bundle.join("bin").join("ollama")).filter(|path| path.is_file()),
         };
         let all_present = paths.sqlite_binding.is_file()
             && paths.licenses_file.is_file()
@@ -214,6 +236,7 @@ pub fn resolve(bundle: &Path, env: &Env, test_identity: bool) -> Result<LaunchCo
         port,
         data_dir,
         shell: true,
+        ollama_url: paths.ollama_bin.as_ref().map(|_| bundled_ollama_url(port)),
         paths,
     })
 }
@@ -447,6 +470,30 @@ mod tests {
                 dir.display()
             );
         }
+    }
+
+    #[test]
+    fn a_bundled_runtime_gets_its_own_port_and_no_runtime_means_the_system_one() {
+        let env = Env::from_pairs(&[
+            ("APUNTA_PORT", "7831"),
+            ("APUNTA_DATA_DIR", "/tmp/apunta-v2/x/data"),
+        ]);
+        let without = bundle("no-runtime");
+        let _ = std::fs::remove_file(without.join("bin").join("ollama"));
+        let config = resolve(&without, &env, true).expect("resolves");
+        assert!(config.paths.ollama_bin.is_none());
+        assert!(config.ollama_url.is_none());
+
+        let with = bundle("runtime");
+        std::fs::write(with.join("bin").join("ollama"), "").unwrap();
+        let config = resolve(&with, &env, true).expect("resolves");
+        assert_eq!(
+            config.paths.ollama_bin,
+            Some(with.join("bin").join("ollama"))
+        );
+        assert_eq!(config.ollama_url.as_deref(), Some("http://127.0.0.1:8831"));
+
+        assert_eq!(bundled_ollama_url(LIVE_PORT), "http://127.0.0.1:11435");
     }
 
     #[test]

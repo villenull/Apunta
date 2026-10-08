@@ -32,6 +32,7 @@ mod launch;
 mod lifecycle;
 mod permissions;
 mod quit;
+mod setup;
 mod signals;
 mod updater;
 
@@ -110,6 +111,10 @@ struct Spawned {
     /// cannot come.
     alive: AtomicBool,
     control: Control,
+    /// First-run setup: the installer, when one is running (`setup.rs`).
+    setup: setup::Runner,
+    /// What starting the installer needs, captured at boot.
+    setup_launch: Mutex<Option<setup::Launch>>,
 }
 
 /// The updater and native-close side of the shell: the pure machine from
@@ -409,6 +414,34 @@ fn dispatch(handle: &tauri::AppHandle, input: updater::Input) {
     }
 }
 
+/// The page asked for first-run setup, through the server. Stop signals the
+/// running installer; plan and run start one. A start that cannot happen is
+/// still answered, with an exit line, so the page is never left waiting.
+fn run_setup(handle: &tauri::AppHandle, action: bridge::SetupAction) {
+    let state = handle.state::<Spawned>();
+    if action == bridge::SetupAction::Cancel {
+        if !state.setup.stop() {
+            eprintln!("apunta: setup stop asked, but no setup is running");
+        }
+        return;
+    }
+    let launch = state.setup_launch.lock().ok().and_then(|slot| slot.clone());
+    let group = state.pgid.load(Ordering::SeqCst);
+    let writer = handle.clone();
+    let started = match launch {
+        Some(launch) => state.setup.start(&launch, action, group, move |line| {
+            write_to_child(&writer, line);
+        }),
+        None => Err("no launch configuration".to_string()),
+    };
+    if let Err(reason) = started {
+        eprintln!("apunta: setup did not start: {reason}");
+        if !state.setup.is_running() {
+            write_to_child(handle, &setup::exit_line(None));
+        }
+    }
+}
+
 /// Writes one line to the child's stdin, if it still has one.
 fn write_to_child(handle: &tauri::AppHandle, line: &str) {
     let state = handle.state::<Spawned>();
@@ -599,6 +632,16 @@ fn boot(handle: &tauri::AppHandle, env: &Env, recovery: bool) -> Result<(), Refu
 
     let nonce = new_nonce();
     let (tx, rx) = mpsc::channel::<Event>();
+
+    if let Ok(mut slot) = handle.state::<Spawned>().setup_launch.lock() {
+        *slot = Some(setup::Launch {
+            node_bin: config.node_bin.clone(),
+            script: setup::script_path(&bundle),
+            data_dir: config.data_dir.clone(),
+            child_path: config.child_path.clone(),
+            ollama_url: config.ollama_url.clone(),
+        });
+    }
 
     let mut spawned = spawn(&config, &nonce, recovery)?;
     eprintln!("apunta: spawned the bundled server as pid {}", spawned.id());
@@ -792,6 +835,9 @@ fn drive(handle: tauri::AppHandle, rx: Receiver<Event>) {
             }
             Event::Bridge(Ok(Message::UpdateRequest { action }), _) => {
                 dispatch(&handle, updater::Input::Request(action));
+            }
+            Event::Bridge(Ok(Message::SetupRequest { action }), _) => {
+                run_setup(&handle, action);
             }
             Event::Bridge(Ok(Message::CloseDecision { confirm }), _) => {
                 dispatch(&handle, updater::Input::CloseDecision(confirm));
@@ -1027,6 +1073,14 @@ fn spawn(config: &launch::LaunchConfig, nonce: &str, recovery: bool) -> Result<C
         // stderr is this process's stderr: a log line stays a log line and can
         // never be confused with a bridge line.
         .stderr(Stdio::inherit());
+    // The bundled AI runtime (the Mac app). The server starts it on a port of its
+    // own, with its weights in the data folder (`server/src/ai/ollama-process.ts`);
+    // without one, the system's Ollama is used as before.
+    if let (Some(bin), Some(url)) = (&config.paths.ollama_bin, &config.ollama_url) {
+        command
+            .env("APUNTA_OLLAMA_BIN", bin)
+            .env("APUNTA_OLLAMA_URL", url);
+    }
     // The update id a relaunched shell was started with is the server's private
     // handoff (C-UPD@1 recovery startup). Passed explicitly, and only when set:
     // an ordinary launch never carries one.

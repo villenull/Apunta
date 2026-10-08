@@ -14,6 +14,7 @@
 #
 #   node/                      the A01 tree, copied, never downloaded again
 #   server/server.mjs          the esbuild bundle, app version injected
+#   installer/setup.mjs        first-run setup, run by the shell on her Start
 #   migrations/                config.ts:165 resolves <folder>/migrations
 #   web/dist/                  config.ts:173 via APUNTA_WEB_DIST
 #   native/better_sqlite3.node copied from better-sqlite3's NAPI prebuild
@@ -145,6 +146,17 @@ BANNER='import{createRequire as __apuntaCreateRequire}from"node:module";const re
   "--banner:js=$BANNER" \
   --outfile="$OUT/server/server.mjs" >/dev/null)
 printf 'injected app version: %s\n' "$APP_VERSION"
+
+step "Bundling first-run setup (installer/setup.mjs)"
+# The model downloader. The shell runs it as its own short-lived process when
+# she presses Start on the setup screen; the server never imports it
+# (CLAUDE.md hard rule 1, installer/src/containment.test.ts). Same banner, for
+# the same reason as the server's.
+mkdir -p "$OUT/installer"
+(cd "$REPO_ROOT" && npx --yes esbuild installer/dist/main.js \
+  --bundle --platform=node --format=esm --target=node24 \
+  "--banner:js=$BANNER" \
+  --outfile="$OUT/installer/setup.mjs" >/dev/null)
 
 step "Copying the migrations"
 # `migrations/`, not `server/migrations/`: config.ts:165 resolves
