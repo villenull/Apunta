@@ -34,11 +34,11 @@ NOT RUN backup: the frame-to-client relationship could not be measured, so no cl
   apunta: spawned the bundled server as pid 3738021
   MESA-EGL: warning: DRI3 error: Could not get DRI3 device
   MESA-EGL: warning: Ensure your X server supports DRI3 to get accelerated rendering
-  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791152470285,"pid":3738021,"hostname":"FBI-PC","msg":"Server listening at http://127.0.0.1:7879"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791152470285,"pid":3738021,"hostname":"<host>","msg":"Server listening at http://127.0.0.1:7879"}
   apunta: the server is ready ({"type":"ready","port":7879,"nonce":"18db73ae7a1dd4cc-390977-6094d17df6a0","version":"0.0.0","protocol":1}), version 0.0.0
   apunta: the main window will be 608x456 physical at 16,12 logical, on a 640x480 display at scale 1
   apunta: the main window is open on http://127.0.0.1:7879
-  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791152470285,"pid":3738021,"hostname":"FBI-PC","dataDir":"<sandbox>/data","db":"<sandbox>/data/apunta.db","fakeAi":true,"msg":"Apunta on http://127.0.0.1:7879"}
+  apunta: ignoring a bridge line (Unreadable): {"level":30,"time":1791152470285,"pid":3738021,"hostname":"<host>","dataDir":"<sandbox>/data","db":"<sandbox>/data/apunta.db","fakeAi":true,"msg":"Apunta on http://127.0.0.1:7879"}
   stopped the bundled server (pid 3738021) with SIGTERM
 PASS smoke the bundled server is stopped by pid
   stopped the shell (pid 3737975) with SIGTERM

@@ -10,7 +10,7 @@ Status: PASS
 did not happen. Inherited test re-run in full; csp.ts and csp.test.ts untouched by this session.
 
 --- row log (tail) ---
-{"level":30,"time":1791059427341,"pid":2488624,"hostname":"FBI-PC","reqId":"req-9","res":{"statusCode":503},"responseTime":0.06726000000003296,"msg":"request completed"}
+{"level":30,"time":1791059427341,"pid":2488624,"hostname":"<host>","reqId":"req-9","res":{"statusCode":503},"responseTime":0.06726000000003296,"msg":"request completed"}
 
  Test Files  1 passed (1)
       Tests  12 passed (12)
