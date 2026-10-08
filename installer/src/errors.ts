@@ -12,17 +12,10 @@
  * becomes `unexpected`, which is still a sentence.
  */
 
-export const SETUP_ERROR_CODES = [
-  'not_enough_disk',
-  'download_failed',
-  'checksum_mismatch',
-  'cancelled',
-  'runtime_unreachable',
-  'model_pull_failed',
-  'unexpected',
-] as const;
+import type { SetupErrorCode } from '@apunta/shared';
 
-export type SetupErrorCode = (typeof SETUP_ERROR_CODES)[number];
+export { SETUP_ERROR_CODES } from '@apunta/shared';
+export type { SetupErrorCode } from '@apunta/shared';
 
 export interface SetupFailure {
   readonly code: SetupErrorCode;
@@ -36,7 +29,7 @@ export interface SetupFailure {
 
 const FAILURES: Readonly<Record<SetupErrorCode, Omit<SetupFailure, 'code'>>> = {
   not_enough_disk: {
-    title: 'This Mac needs more free space',
+    title: 'This computer needs more free space',
     detail:
       'Nothing was downloaded. Free up some room and try again — emptying the Trash is usually the ' +
       'quickest place to start.',
@@ -68,7 +61,7 @@ const FAILURES: Readonly<Record<SetupErrorCode, Omit<SetupFailure, 'code'>>> = {
     title: 'Apunta could not start its own AI engine',
     detail:
       'The part of Apunta that runs the writing model did not answer. Trying again usually fixes ' +
-      'it. If it keeps happening, restarting the Mac is the next thing to try.',
+      'it. If it keeps happening, restarting the computer is the next thing to try.',
     retryable: true,
   },
   model_pull_failed: {

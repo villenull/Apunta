@@ -16,6 +16,7 @@ import { msg, storedLanguage } from './http/locale.js';
 import { registerRequestGuard } from './http/request-guard.js';
 import { registerMaintenanceRefusal, type MaintenanceOptions } from './maintenance.js';
 import { registerMaintenanceRoutes } from './routes/app-quiesce.js';
+import { registerSetupRoutes } from './routes/app-setup.js';
 import { registerUpdateRoutes, type UpdateRoutesOptions } from './routes/app-update.js';
 import { shellIsListening } from './shell-bridge.js';
 import { registerBackupRoutes } from './routes/backup.js';
@@ -170,6 +171,8 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   });
   // After the quiesce routes: it wraps the quiesce entry point they install.
   registerUpdateRoutes(app, db, config, options.update);
+  // Same gate and writer as the updater: both are shell-only relays.
+  registerSetupRoutes(app, options.update);
   registerPatientRoutes(app, db);
   registerPatientGroupRoutes(app, db);
   registerNoteRoutes(app, db);

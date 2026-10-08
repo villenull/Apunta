@@ -45,7 +45,7 @@ describe('buildPlan', () => {
   it('lets an explicit setting beat the promoted default', () => {
     const plan = planFor({ memoryGib: 8, modelOverride: 'gemma4:12b-it-qat' });
     expect(plan.model.tag).toBe('gemma4:12b-it-qat');
-    expect(plan.model.reason).toContain('chosen for this Mac rather than by Apunta');
+    expect(plan.model.reason).toContain('chosen for this computer rather than by Apunta');
   });
 
   it('treats a blank override as no override', () => {
@@ -135,7 +135,7 @@ describe('explainChoice', () => {
       const reason = explainChoice(tag, 'promoted');
       expect(reason).toContain(tag);
       expect(reason).toMatch(/same .*every machine/i);
-      expect(reason).toMatch(/not .*from this Mac/i);
+      expect(reason).toMatch(/not .*from this computer/i);
     }
   });
 
@@ -146,7 +146,7 @@ describe('explainChoice', () => {
   it('names an override and says it was chosen for the machine', () => {
     const reason = explainChoice('gemma4:12b-it-qat', 'override');
     expect(reason).toContain('gemma4:12b-it-qat');
-    expect(reason).toContain('chosen for this Mac rather than by Apunta');
+    expect(reason).toContain('chosen for this computer rather than by Apunta');
   });
 
   /**

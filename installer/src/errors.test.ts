@@ -34,10 +34,10 @@ describe('describeFailure', () => {
 
   it('lets a specific failure replace the general sentence', () => {
     const failure = describeFailure(
-      setupError('not_enough_disk', 'internal', 'This Mac has 3.0 GB free and needs 13.0 GB.'),
+      setupError('not_enough_disk', 'internal', 'This computer has 3.0 GB free and needs 13.0 GB.'),
     );
-    expect(failure.detail).toBe('This Mac has 3.0 GB free and needs 13.0 GB.');
-    expect(failure.title).toBe('This Mac needs more free space');
+    expect(failure.detail).toBe('This computer has 3.0 GB free and needs 13.0 GB.');
+    expect(failure.title).toBe('This computer needs more free space');
   });
 });
 

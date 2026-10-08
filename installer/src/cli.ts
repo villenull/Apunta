@@ -99,11 +99,15 @@ export function assertLoopback(raw: string): void {
   }
   const host = parsed.hostname.replace(/^\[|\]$/g, '');
   if (host !== '127.0.0.1' && host !== 'localhost' && host !== '::1') {
-    throw new UsageError(`the AI runtime must be on this Mac, not ${parsed.hostname}`);
+    throw new UsageError(`the AI runtime must be on this computer, not ${parsed.hostname}`);
   }
 }
 
-export function environmentFor(options: CliOptions, emit: (event: SetupEvent) => void): SetupEnvironment {
+export function environmentFor(
+  options: CliOptions,
+  emit: (event: SetupEvent) => void,
+  signal?: AbortSignal,
+): SetupEnvironment {
   return {
     dataDir: options.dataDir,
     modelsDir: join(options.dataDir, 'models'),
@@ -111,6 +115,7 @@ export function environmentFor(options: CliOptions, emit: (event: SetupEvent) =>
     memoryGib: machineMemoryGib(),
     modelOverride: options.modelOverride,
     emit,
+    signal,
     ...(options.runtimeWaitMs === null ? {} : { runtimeWaitMs: options.runtimeWaitMs }),
   };
 }
@@ -128,7 +133,16 @@ export async function main(argv: readonly string[]): Promise<number> {
     process.stdout.write(encodeEvent(event));
   };
 
-  const environment = environmentFor(options, emit);
+  // The shell's Stop is a SIGTERM. Aborting turns it into the installer's own
+  // `failed{cancelled}` line, and a partial download keeps its bytes for a
+  // later Start to resume from.
+  const controller = new AbortController();
+  const stop = (): void => {
+    controller.abort();
+  };
+  process.once('SIGTERM', stop);
+  process.once('SIGINT', stop);
+  const environment = environmentFor(options, emit, controller.signal);
 
   if (options.command === 'plan') {
     const { plan } = await makePlan(environment);

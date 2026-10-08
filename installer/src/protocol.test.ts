@@ -8,7 +8,7 @@ const PLAN: SetupEvent = {
   model: {
     tag: 'gemma4:12b-it-qat',
     publisher: 'Google',
-    reason: 'because this Mac has 32 GB',
+    reason: 'because this computer has 32 GB',
     licence: { name: 'Gemma Terms of Use', url: 'https://ollama.com/library/gemma4', verified: false },
   },
   steps: [

@@ -55,6 +55,10 @@ export type InboundMessage =
   | { readonly type: 'snapshot_request'; readonly id: string }
   | { readonly type: 'maintenance_release' }
   | { readonly type: 'health_confirm'; readonly id: string }
+  /** One line the installer printed, wrapped by the shell and not yet validated. */
+  | { readonly type: 'setup_event'; readonly event: unknown }
+  /** The installer process ended; `code` is null when a signal ended it. */
+  | { readonly type: 'setup_exit'; readonly code: number | null }
   | { readonly type: 'shutdown' };
 
 /** An outbound line, in the shape C-BRIDGE@1 rules 1 and 2 fix. */
@@ -75,6 +79,7 @@ export type OutboundMessage =
    */
   | { readonly type: 'quiesce_result'; readonly ok: boolean; readonly blockers: readonly string[] }
   | { readonly type: 'update_request'; readonly action: 'check' | 'download' | 'install' }
+  | { readonly type: 'setup_request'; readonly action: 'plan' | 'run' | 'cancel' }
   | { readonly type: 'snapshot_result'; readonly id: string; readonly ok: boolean; readonly code?: string }
   | { readonly type: 'close_decision'; readonly confirm: boolean }
   | {
@@ -229,6 +234,8 @@ let updateStatusHandler: ((status: UpdateStatusMessage) => void) | null = null;
 let snapshotHandler: ((id: string) => Promise<SnapshotOutcome>) | null = null;
 let maintenanceReleaseHandler: (() => void) | null = null;
 let healthConfirmHandler: ((id: string) => HealthOutcome) | null = null;
+let setupEventHandler: ((event: unknown) => void) | null = null;
+let setupExitHandler: ((code: number | null) => void) | null = null;
 
 export function setUpdateStatusHandler(handler: ((status: UpdateStatusMessage) => void) | null): void {
   updateStatusHandler = handler;
@@ -240,6 +247,17 @@ export function setSnapshotHandler(handler: ((id: string) => Promise<SnapshotOut
 
 export function setMaintenanceReleaseHandler(handler: (() => void) | null): void {
   maintenanceReleaseHandler = handler;
+}
+
+/** Installed by `routes/app-setup.ts`, which validates each event before keeping it. */
+export function setSetupHandlers(
+  handlers: {
+    readonly onEvent: (event: unknown) => void;
+    readonly onExit: (code: number | null) => void;
+  } | null,
+): void {
+  setupEventHandler = handlers?.onEvent ?? null;
+  setupExitHandler = handlers?.onExit ?? null;
 }
 
 export function setHealthConfirmHandler(handler: ((id: string) => HealthOutcome) | null): void {
@@ -260,6 +278,15 @@ function writeLine(message: OutboundMessage, options: WriteOptions): boolean {
 /** `update_request{action}`: the page asked, the shell does the work. */
 export function writeUpdateRequest(action: 'check' | 'download' | 'install', options: WriteOptions): boolean {
   return writeLine({ type: 'update_request', action }, options);
+}
+
+/**
+ * `setup_request{action}`: the page asked for first-run setup, and the shell
+ * runs the installer — a separate, short-lived process. The server itself never
+ * downloads anything (CLAUDE.md hard rule 1).
+ */
+export function writeSetupRequest(action: 'plan' | 'run' | 'cancel', options: WriteOptions): boolean {
+  return writeLine({ type: 'setup_request', action }, options);
 }
 
 /** `snapshot_result{id, ok, code?}`, answering exactly one `snapshot_request`. */
@@ -349,6 +376,8 @@ export function handleInboundLine(
     readonly onSnapshotRequest?: (id: string) => void;
     readonly onMaintenanceRelease?: () => void;
     readonly onHealthConfirm?: (id: string) => void;
+    readonly onSetupEvent?: (event: unknown) => void;
+    readonly onSetupExit?: (code: number | null) => void;
     readonly log?: (message: string) => void;
   },
 ): void {
@@ -381,6 +410,24 @@ export function handleInboundLine(
     if (typeof fields['version'] === 'string') status.version = fields['version'];
     if (typeof fields['code'] === 'string') status.code = fields['code'];
     handlers.onUpdateStatus?.(status);
+    return;
+  }
+  if (parsed.type === 'setup_event') {
+    const event = fields['event'];
+    if (event === null || typeof event !== 'object' || Array.isArray(event)) {
+      log('shell bridge: ignoring a setup_event without an event object');
+      return;
+    }
+    handlers.onSetupEvent?.(event);
+    return;
+  }
+  if (parsed.type === 'setup_exit') {
+    const code = fields['code'];
+    if (code !== null && !Number.isInteger(code)) {
+      log('shell bridge: ignoring a setup_exit without an integer or null code');
+      return;
+    }
+    handlers.onSetupExit?.(code as number | null);
     return;
   }
   if (parsed.type === 'maintenance_release') {
@@ -516,6 +563,8 @@ export function startStdinBridge(options: {
     onHealthConfirm,
     onUpdateStatus: (status: UpdateStatusMessage): void => updateStatusHandler?.(status),
     onMaintenanceRelease: (): void => maintenanceReleaseHandler?.(),
+    onSetupEvent: (event: unknown): void => setupEventHandler?.(event),
+    onSetupExit: (code: number | null): void => setupExitHandler?.(code),
     log,
   };
   let buffered = '';

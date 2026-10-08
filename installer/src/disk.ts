@@ -55,7 +55,7 @@ export function checkDiskSpace(input: DiskCheckInput): DiskCheck {
   const message = ok
     ? `${formatBytes(input.requiredBytes)} to download, ${formatBytes(input.freeBytes)} free.`
     : `Apunta needs about ${formatBytes(input.requiredBytes)} for its models, plus ` +
-      `${formatBytes(headroomBytes)} of room for macOS to keep working. This Mac has ` +
+      `${formatBytes(headroomBytes)} of room for the system to keep working. This computer has ` +
       `${formatBytes(input.freeBytes)} free, so about ${formatBytes(shortfallBytes)} has to be ` +
       'cleared first. Emptying the Trash is usually the quickest place to start.';
 

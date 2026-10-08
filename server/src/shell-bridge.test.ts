@@ -20,6 +20,7 @@ import {
   writeHealthResult,
   writeReady,
   writeRecoveryRequest,
+  writeSetupRequest,
   writeSnapshotResult,
   writeStartupContext,
   writeUpdateRequest,
@@ -489,5 +490,39 @@ describe('the updater messages (C-BRIDGE@1 rule 2)', () => {
       { type: 'snapshot_result', id: '1', ok: false, code: 'snapshot_failed' },
       { type: 'health_result', id: '2', ok: false, code: 'unknown_update' },
     ]);
+  });
+});
+
+describe('the setup messages', () => {
+  it('writes setup_request only when a shell is listening', () => {
+    const lines: string[] = [];
+    const write = (line: string): void => {
+      lines.push(line);
+    };
+    expect(writeSetupRequest('run', { env: {}, write })).toBe(false);
+    expect(writeSetupRequest('run', { env: { APUNTA_SHELL: '1' }, write })).toBe(true);
+    expect(lines).toEqual(['{"type":"setup_request","action":"run"}\n']);
+  });
+
+  it('hands on a setup_event object and a setup_exit code, and drops malformed ones', () => {
+    const events: unknown[] = [];
+    const exits: (number | null)[] = [];
+    const logged: string[] = [];
+    const handlers = {
+      onShutdown: () => undefined,
+      onSetupEvent: (event: unknown) => events.push(event),
+      onSetupExit: (code: number | null) => exits.push(code),
+      log: (message: string) => logged.push(message),
+    };
+    handleInboundLine('{"type":"setup_event","event":{"event":"done","ok":true}}', handlers);
+    handleInboundLine('{"type":"setup_event","event":"done"}', handlers);
+    handleInboundLine('{"type":"setup_event","event":[1]}', handlers);
+    handleInboundLine('{"type":"setup_exit","code":0}', handlers);
+    handleInboundLine('{"type":"setup_exit","code":null}', handlers);
+    handleInboundLine('{"type":"setup_exit","code":"1"}', handlers);
+    handleInboundLine('{"type":"setup_exit"}', handlers);
+    expect(events).toEqual([{ event: 'done', ok: true }]);
+    expect(exits).toEqual([0, null]);
+    expect(logged).toHaveLength(4);
   });
 });

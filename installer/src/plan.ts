@@ -45,11 +45,11 @@ export interface PlanInput {
  */
 export function explainChoice(tag: string, source: EffectiveModelSource): string {
   if (source === 'override') {
-    return `Apunta is set to use ${tag}. That was chosen for this Mac rather than by Apunta.`;
+    return `Apunta is set to use ${tag}. That was chosen for this computer rather than by Apunta.`;
   }
   return (
     `Apunta uses the same writing model on every machine, and on this one that is ${tag}. It was ` +
-    'not chosen from this Mac’s memory, so it is the same choice here as anywhere else.'
+    'not chosen from this computer’s memory, so it is the same choice here as anywhere else.'
   );
 }
 
@@ -143,7 +143,7 @@ export function buildPlan(input: PlanInput): PlanEvent {
 export function describeWeightsProvenance(model: ChosenModel): string {
   return (
     `Apunta will download ${model.tag}, published by ${model.publisher}. Apunta does not host or ` +
-    'copy these models — this Mac downloads it from its publisher, under the publisher’s terms, ' +
+    'copy these models — this computer downloads it from its publisher, under the publisher’s terms, ' +
     `which are here: ${model.licence.url}`
   );
 }

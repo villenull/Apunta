@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertLoopback, defaultDataDir, parseArgs, UsageError } from './cli.js';
+import { assertLoopback, defaultDataDir, environmentFor, parseArgs, UsageError } from './cli.js';
 import { machineMemoryGib } from './machine.js';
 
 describe('parseArgs', () => {
@@ -37,7 +37,7 @@ describe('parseArgs', () => {
    * is the guard. A non-loopback runtime would be handed the prompt — the
    * therapist's account of a session.
    */
-  it('refuses a runtime that is not on this Mac', () => {
+  it('refuses a runtime that is not on this computer', () => {
     expect(() => parseArgs(['run', '--ollama-url', 'http://example.com:11434'], {}, 'darwin')).toThrow(
       UsageError,
     );
@@ -110,5 +110,15 @@ describe('machineMemoryGib', () => {
     ).toBeNull();
     expect(machineMemoryGib({ platformName: 'darwin', exec: () => 'not a number' })).toBeNull();
     expect(machineMemoryGib({ platformName: 'darwin', exec: () => '0' })).toBeNull();
+  });
+});
+
+describe('environmentFor', () => {
+  it('carries the stop signal, so a SIGTERM from the shell becomes a cancelled run', () => {
+    const controller = new AbortController();
+    const options = parseArgs(['run', '--data-dir', '/tmp/x'], {}, 'linux');
+    const environment = environmentFor(options, () => undefined, controller.signal);
+    expect(environment.signal).toBe(controller.signal);
+    expect(environment.modelsDir).toBe('/tmp/x/models');
   });
 });
