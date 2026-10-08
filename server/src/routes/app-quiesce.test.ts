@@ -171,6 +171,23 @@ async function report(
 }
 
 describe('GET /api/app/quiesce/wait', () => {
+  /**
+   * A window's held wait is an in-flight request that never ends by itself, and
+   * `app.close()` waits for in-flight requests. Before this, one open window kept
+   * the server alive through the shell's `shutdown` and its SIGTERM, until the
+   * quit ladder's SIGKILL.
+   */
+  it('does not hold the server open when it closes', async () => {
+    const local = await listen(stillClock());
+    const waiting = openWait(local.url, 'tab-a');
+    await until(local.url, (status) => status.windows === 1);
+
+    const closed = local.app.close().then(() => 'closed');
+    const timeout = new Promise((done) => setTimeout(() => done('still open'), 3000));
+    expect(await Promise.race([closed, timeout])).toBe('closed');
+    expect(((await (await waiting.done).json()) as { request: string }).request).toBe('expired');
+  });
+
   it('registers the window, answers it at entry, and carries its report', async () => {
     const local = await listen(stillClock());
     const waiting = openWait(local.url, 'tab-a');

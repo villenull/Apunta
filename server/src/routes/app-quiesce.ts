@@ -127,6 +127,8 @@ export function registerMaintenanceRoutes(app: FastifyInstance, options: Mainten
    * milliseconds of it registering. `writableEnded` tells "the answer was
    * written" from "the client went away".
    */
+  const held = new Set<string>();
+  let closing = false;
   app.get('/api/app/quiesce/wait', async (request, reply) => {
     const query = parseQuery(WaitQuerySchema, request.query);
     const windowId = maintenance.registerWindow(query.tab ?? null, query.doc ?? null);
@@ -134,7 +136,29 @@ export function registerMaintenanceRoutes(app: FastifyInstance, options: Mainten
       if (reply.raw.writableEnded) return;
       maintenance.disconnect(windowId);
     });
-    return maintenance.holdFor(windowId);
+    held.add(windowId);
+    try {
+      const outcome = await maintenance.holdFor(windowId);
+      // Released by the close below: drop the socket with the answer, or a
+      // browser's keep-alive connection outlives it and still holds the close.
+      if (closing) void reply.header('connection', 'close');
+      return outcome;
+    } finally {
+      held.delete(windowId);
+    }
+  });
+
+  /**
+   * The server is closing: answer every held wait now. Each one is an in-flight
+   * request that never ends by itself, and `app.close()` waits for in-flight
+   * requests — so one open window kept the server alive through the shell's
+   * `shutdown` and its SIGTERM, until the quit ladder's SIGKILL. The window hears
+   * `expired`, as when its socket drops; its re-arm meets the closing server's 503.
+   */
+  app.addHook('preClose', (done) => {
+    closing = true;
+    for (const windowId of held) maintenance.disconnect(windowId);
+    done();
   });
 
   app.post('/api/app/quiesce/report', async (request) => {

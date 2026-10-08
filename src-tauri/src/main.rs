@@ -981,7 +981,13 @@ fn drive(handle: tauri::AppHandle, rx: Receiver<Event>) {
                 // screen rather than a spinner, and the word is the shell's own
                 // because no code arrived — an exit status is not a bridge line.
                 let code = early_exit_code(status);
-                eprintln!("apunta: the server exited before it was ready ({code})");
+                if settled {
+                    // After `ready` this is the ordinary end: the quit ladder or
+                    // a crash after launch, not an early exit.
+                    eprintln!("apunta: the server exited ({code})");
+                } else {
+                    eprintln!("apunta: the server exited before it was ready ({code})");
+                }
                 if !settled {
                     show_error(&handle, &code);
                     close_window(&handle, "splash");
