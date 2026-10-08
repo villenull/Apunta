@@ -54,6 +54,14 @@ test.describe('dictating into the chat', () => {
     await page.goto(`/?patient=${patient.id}&note=${note.id}`);
     await page.getByTestId('chat-fab').click();
 
+    // Opened empty, the composer is as tall as its placeholder: measured while
+    // the panel was hidden it used to stay at 0px and cut the placeholder off
+    // (2026-10-08).
+    const composer = page.getByTestId('chat-input');
+    await expect
+      .poll(async () => composer.evaluate((el) => el.clientHeight >= el.scrollHeight && el.clientHeight > 12))
+      .toBe(true);
+
     const mic = page.getByTestId('chat-mic');
     await expect(mic).toHaveAttribute('aria-label', tr('dictation.mic'));
     await expect(mic).toHaveAttribute('aria-pressed', 'false');

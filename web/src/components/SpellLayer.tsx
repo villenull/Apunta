@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { useSpelling } from '../hooks/useSpelling.js';
 import { useI18n } from '../lib/i18n.js';
@@ -40,6 +40,20 @@ export type SpellLayerProps = InputProps | TextareaProps;
  * callers only choose the native control with `as` and optionally render
  * marker-specific backdrop content.
  */
+
+/** Size a textarea to its content. Hidden (scrollHeight 0), it is left alone. */
+function fitToContent(element: HTMLTextAreaElement): void {
+  const previous = element.style.height;
+  element.style.height = 'auto';
+  const wanted = element.scrollHeight;
+  if (wanted === 0) {
+    element.style.height = previous;
+    return;
+  }
+  const next = `${String(wanted)}px`;
+  element.style.height = next;
+}
+
 export function SpellLayer(props: SpellLayerProps): React.JSX.Element {
   const {
     as,
@@ -80,9 +94,27 @@ export function SpellLayer(props: SpellLayerProps): React.JSX.Element {
     if (as !== 'textarea' || !autoGrow) return;
     const element = control.current;
     if (!(element instanceof HTMLTextAreaElement)) return;
-    element.style.height = 'auto';
-    element.style.height = `${String(element.scrollHeight)}px`;
+    fitToContent(element);
   }, [as, autoGrow, value]);
+
+  // A box measured while hidden (the refine panel is `display: none` until it
+  // opens) reads a scrollHeight of 0 and was pinned at 0px: opened empty, its
+  // placeholder was cut off along the bottom until she typed (found
+  // 2026-10-08). Re-measuring whenever its own size changes covers the moment
+  // it becomes visible; a fit that changes nothing is a no-op, so this
+  // settles rather than loops.
+  useEffect(() => {
+    if (as !== 'textarea' || !autoGrow || typeof ResizeObserver === 'undefined') return;
+    const element = control.current;
+    if (!(element instanceof HTMLTextAreaElement)) return;
+    const observer = new ResizeObserver(() => {
+      fitToContent(element);
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+    };
+  }, [as, autoGrow]);
 
   const classes = ['spell-layer', className].filter(Boolean).join(' ');
   const wrapperClasses = ['spell-wrap', as === 'input' ? 'spell-input-wrap' : '', wrapClassName]
