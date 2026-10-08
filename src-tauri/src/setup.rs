@@ -147,6 +147,25 @@ impl Runner {
         Ok(())
     }
 
+    /// [`Runner::start`], after waiting up to five seconds for a run that is
+    /// still exiting. The server only asks for a new run once the last one has
+    /// answered, but its process can take a moment more to end.
+    pub fn start_when_free(
+        &self,
+        launch: &Launch,
+        action: SetupAction,
+        group: i32,
+        write: impl Fn(&str) + Send + 'static,
+    ) -> Result<(), String> {
+        for _ in 0..50 {
+            if !self.is_running() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        self.start(launch, action, group, write)
+    }
+
     /// Asks the running installer to stop. Its own `failed{cancelled}` line and
     /// then its exit follow; a partial download keeps its bytes for a resume.
     pub fn stop(&self) -> bool {
@@ -332,6 +351,40 @@ mod tests {
             .expect("an exit line");
         assert_eq!(exit, "{\"type\":\"setup_exit\",\"code\":null}\n");
         assert!(!runner.is_running());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// A plan that has printed its answer may still be exiting when Download
+    /// arrives; the next run waits for it instead of being refused.
+    #[cfg(unix)]
+    #[test]
+    fn a_run_waits_for_a_run_that_is_still_exiting() {
+        let dir = std::env::temp_dir().join(format!("apunta-setup-wait-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        let script = dir.join("setup.sh");
+        std::fs::write(&script, "exec sleep 0.5\n").expect("script");
+        let own_group = unsafe {
+            unsafe extern "C" {
+                fn getpgid(pid: i32) -> i32;
+            }
+            getpgid(0)
+        };
+        let config = launch(script);
+        let runner = Runner::default();
+        let (tx, rx) = mpsc::channel::<String>();
+        let first = tx.clone();
+        runner
+            .start(&config, SetupAction::Plan, own_group, move |line| {
+                let _ = first.send(line.to_string());
+            })
+            .expect("first run");
+        runner
+            .start_when_free(&config, SetupAction::Run, own_group, move |line| {
+                let _ = tx.send(line.to_string());
+            })
+            .expect("the second run waits, then starts");
+        let exits: Vec<String> = rx.iter().take(2).collect();
+        assert_eq!(exits, vec![exit_line(Some(0)), exit_line(Some(0))]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

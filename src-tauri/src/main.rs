@@ -285,6 +285,9 @@ fn begin_quit(handle: &tauri::AppHandle, door: &str) {
     // has since recycled cannot be reached through it.
     let pgid = state.pgid.swap(0, Ordering::SeqCst);
     let stdin = state.stdin.lock().ok().and_then(|mut slot| slot.take());
+    // A download in progress stops now rather than when the ladder's SIGTERM
+    // reaches the group: it keeps its partial file for the next launch.
+    state.setup.stop();
     if pgid <= 0 {
         // Nothing was ever spawned, so there is nothing to ladder down. The quit
         // still has to complete, or a refusal would hang on a ladder that has
@@ -426,20 +429,27 @@ fn run_setup(handle: &tauri::AppHandle, action: bridge::SetupAction) {
         return;
     }
     let launch = state.setup_launch.lock().ok().and_then(|slot| slot.clone());
-    let group = state.pgid.load(Ordering::SeqCst);
-    let writer = handle.clone();
-    let started = match launch {
-        Some(launch) => state.setup.start(&launch, action, group, move |line| {
+    let runner = state.setup.clone();
+    let handle = handle.clone();
+    // Off the bridge thread: a plan that has printed its answer can still be
+    // exiting when Download arrives, and this waits for it rather than refusing.
+    std::thread::spawn(move || {
+        let Some(launch) = launch else {
+            eprintln!("apunta: setup did not start: no launch configuration");
+            write_to_child(&handle, &setup::exit_line(None));
+            return;
+        };
+        let group = handle.state::<Spawned>().pgid.load(Ordering::SeqCst);
+        let writer = handle.clone();
+        let started = runner.start_when_free(&launch, action, group, move |line| {
             write_to_child(&writer, line);
-        }),
-        None => Err("no launch configuration".to_string()),
-    };
-    if let Err(reason) = started {
-        eprintln!("apunta: setup did not start: {reason}");
-        if !state.setup.is_running() {
-            write_to_child(handle, &setup::exit_line(None));
+        });
+        if let Err(reason) = started {
+            // Always answered: the server is waiting on this request's exit line.
+            eprintln!("apunta: setup did not start: {reason}");
+            write_to_child(&handle, &setup::exit_line(None));
         }
-    }
+    });
 }
 
 /// Writes one line to the child's stdin, if it still has one.

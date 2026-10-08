@@ -24,9 +24,16 @@
   what to check. Linux keeps the system Ollama.
 - **Stale messages fixed.** The missing-model errors no longer point at
   Settings controls that do not exist.
-- **Seen, not fixed:** quitting the shell always ends with SIGKILL, because
-  the server ignores both `shutdown` and SIGTERM. The previous production
-  AppImage does the same. It is offered as a separate task.
+- **Quitting is clean again.** Every open window holds a quiesce wait, and
+  `app.close()` waited for it, so quitting always ended in the ladder's
+  SIGKILL (the production AppImage did too). Held waits are now answered on
+  close; quitting the test AppImage takes about 0.2 s instead of 16 s. A
+  download in progress is stopped first, and keeps its partial file.
+- **Reviewed by the coordinator** (owner's call, 2026-10-08, since a Sonnet
+  5.5 subagent cannot be selected). It found two shell races, both fixed: a
+  Download pressed while the plan's process was still exiting was refused
+  with no answer, leaving the window on "running"; and quitting mid-download
+  waited 10 s for the ladder.
 
 # Public repository — 2026-10-08
 
