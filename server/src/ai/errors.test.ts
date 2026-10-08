@@ -7,7 +7,7 @@ describe('AiError', () => {
   it('carries a message written for a therapist, not a stack trace', () => {
     expect(aiError('ollama_unreachable').message).toContain(UNREACHABLE_MESSAGE);
     // Never a command: the packaged app has no Terminal to be told to open one.
-    expect(aiError('model_missing').message).toContain('Choose a model in Settings');
+    expect(aiError('model_missing').message).toContain('Set up the AI');
     expect(aiError('model_missing').message).not.toContain('script');
     expect(aiError('invalid_output').message).not.toMatch(/schema|zod|parse/i);
   });

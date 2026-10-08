@@ -364,7 +364,7 @@ export const esMX = {
     kind: { banner: 'text' },
   },
   'ai.model_missing': {
-    text: 'El modelo de IA de Apunta todavía no está instalado. Elige un modelo en Ajustes para instalarlo.',
+    text: 'El modelo de redacción de Apunta todavía no está instalado. Configura la IA desde el aviso en la parte superior de la pantalla y vuelve a intentarlo.',
   },
   'ai.non_gguf_model': {
     text: 'El modelo configurado no es una compilación GGUF, y Apunta no puede hacer que siga el formato de nota de forma confiable. Elige un modelo GGUF en Ajustes.',
@@ -400,10 +400,10 @@ export const esMX = {
     text: 'La IA local reportó un error. Revisa Ajustes e inténtalo de nuevo.',
   },
   'ai.whisper_missing': {
-    text: 'Apunta no encuentra whisper en esta computadora, así que no puede transcribir la grabación. Ajusta la ruta de whisper en Ajustes.',
+    text: 'Apunta no encuentra su programa de transcripción, así que no puede transcribir la grabación. Instalar Apunta de nuevo lo restituye.',
   },
   'ai.whisper_model_missing': {
-    text: 'El modelo de transcripción de Apunta todavía no está instalado. Elige un modelo de transcripción en Ajustes para instalarlo.',
+    text: 'El modelo de voz de Apunta todavía no está instalado, así que no puede transcribir la grabación. Configura la IA desde el aviso en la parte superior de la pantalla y vuelve a intentarlo.',
   },
   'ai.audio_unsupported': {
     text: 'Esa grabación está en un formato que Apunta no puede transcribir. Grábala de nuevo desde esta pantalla.',
@@ -994,6 +994,67 @@ export const esMX = {
   },
   'ai.bannerTail': {
     text: 'Todo excepto redactar una nota nueva sigue funcionando.',
+  },
+
+  'ai.setupNeeded': {
+    text: 'Apunta necesita descargar sus modelos de IA antes de poder transcribir y redactar.',
+  },
+  'ai.setUp': { text: 'Configurar' },
+  'ai.speechModelMissing': { text: 'Apunta no encuentra su modelo de voz.' },
+
+  'setup.title': { text: 'Configurar la IA de Apunta' },
+  'setup.intro': {
+    text: 'Apunta transcribe y redacta en esta computadora. Para eso necesita estos modelos, que se descargan una sola vez de quienes los publican.',
+  },
+  'setup.privacy': {
+    text: 'Solo se descargan los modelos. No se envía nada sobre ti, tus pacientes ni tus notas, y una vez aquí Apunta funciona sin conexión.',
+  },
+  'setup.checking': { text: 'Revisando lo que ya tiene esta computadora…' },
+  'setup.stepSpeech': { text: 'Modelo de voz, que lee tus grabaciones' },
+  'setup.stepPreview': { text: 'Modelo de vista previa, que muestra tus palabras mientras hablas' },
+  'setup.stepWriting': {
+    text: 'Modelo de redacción ({model}), que redacta tus notas',
+    kind: { model: 'text' },
+  },
+  'setup.sourceSpeech': { text: 'desde Hugging Face' },
+  'setup.sourceWriting': { text: 'desde la biblioteca de modelos de Ollama' },
+  'setup.size': { text: 'Unos {size}', kind: { size: 'text' } },
+  'setup.installed': { text: 'Instalado' },
+  'setup.downloading': { text: 'Descargando…' },
+  'setup.verifying': { text: 'Revisando la descarga…' },
+  'setup.progress': { text: 'Descargados {done} de {total}', kind: { done: 'text', total: 'text' } },
+  'setup.progressLabel': { text: 'Progreso de la descarga' },
+  'setup.noRoom': {
+    text: 'Esta computadora necesita {size} más de espacio libre antes de que Apunta pueda descargar sus modelos.',
+    kind: { size: 'text' },
+  },
+  'setup.ready': { text: 'La IA de Apunta está lista. Ya puedes transcribir y redactar.' },
+  'setup.start': { text: 'Descargar ({size})', kind: { size: 'text' } },
+  'setup.retry': { text: 'Intentar de nuevo' },
+  'setup.stop': { text: 'Detener' },
+  'setup.later': { text: 'Más tarde' },
+  'setup.hide': { text: 'Ocultar' },
+  'setup.done': { text: 'Listo' },
+  'setup.failed.not_enough_disk': {
+    text: 'No hay suficiente espacio libre para los modelos. Libera espacio y vuelve a intentarlo.',
+  },
+  'setup.failed.download_failed': {
+    text: 'La descarga se detuvo. Revisa la conexión a internet y vuelve a intentarlo; continúa donde se quedó.',
+  },
+  'setup.failed.checksum_mismatch': {
+    text: 'Un archivo descargado no coincidió con lo que Apunta esperaba, así que se descartó. Vuelve a intentarlo.',
+  },
+  'setup.failed.cancelled': {
+    text: 'La descarga se detuvo. Iníciala de nuevo cuando quieras; continúa donde se quedó.',
+  },
+  'setup.failed.runtime_unreachable': {
+    text: 'El motor de IA de Apunta no está funcionando, así que no se puede instalar el modelo de redacción. Reinicia Apunta y vuelve a intentarlo.',
+  },
+  'setup.failed.model_pull_failed': {
+    text: 'No se pudo descargar el modelo de redacción. Revisa la conexión a internet y vuelve a intentarlo.',
+  },
+  'setup.failed.unexpected': {
+    text: 'La configuración se detuvo de forma inesperada. Vuelve a intentarlo; si sigue pasando, reinicia Apunta.',
   },
   'backup.title': {
     text: 'Copia de seguridad',

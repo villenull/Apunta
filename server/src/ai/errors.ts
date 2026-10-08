@@ -79,8 +79,8 @@ export const UNREACHABLE_MESSAGE = msg('en', 'ai.unreachable_banner');
  */
 const MESSAGE_KEYS: Record<AiErrorCode, MessageKey> = {
   ollama_unreachable: 'ai.ollama_unreachable',
-  // "Choose a model in Settings" rather than a command: the packaged app has
-  // no Terminal, and Settings is where the model is chosen either way.
+  // Points at the setup notice rather than a command: the packaged app has no
+  // Terminal, and the notice is where the models are downloaded.
   model_missing: 'ai.model_missing',
   non_gguf_model: 'ai.non_gguf_model',
   unsupported_model_tag: 'ai.unsupported_model_tag',

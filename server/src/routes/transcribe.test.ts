@@ -324,7 +324,7 @@ describe('POST /api/transcribe — when whisper is not installed', () => {
       const error = events.at(-1);
       expect(error?.name).toBe('error');
       expect(error?.data['code']).toBe('whisper_missing');
-      expect(String(error?.data['message'])).toContain("can't find whisper");
+      expect(String(error?.data['message'])).toContain("can't find its transcription program");
       expect(listNotesForPatient(harness.db, patient.id)).toHaveLength(before);
       expectNoNewAudio(audioBefore);
     } finally {

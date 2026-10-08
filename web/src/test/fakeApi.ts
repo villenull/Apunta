@@ -15,6 +15,7 @@ import {
   STANDARD_PROGRESS_FORMAT,
   type SessionBrief,
   type SessionBriefContent,
+  type SetupStatusResponse,
   type TreatmentPlan,
 } from '@apunta/shared';
 import { vi } from 'vitest';
@@ -341,6 +342,12 @@ export interface FakeApiOptions {
   /** Overrides for `GET /api/health` — the AI banner reads this. */
   health?: Partial<HealthResponse>;
   /**
+   * The shell's first-run setup mirror (`GET /api/app/setup`). Absent, the
+   * route is a 404, as in a browser tab. The object is read on every request,
+   * so a test moves setup along by changing it; each POST calls `onAction`.
+   */
+  setup?: { status: SetupStatusResponse; onAction?: (action: string) => void };
+  /**
    * Make `GET /api/patient-groups` fail (F5). The point of the option is that a
    * failed group fetch has to be *distinguishable* from an empty one, and there
    * is no other way to reach that state in a test.
@@ -539,6 +546,14 @@ export function installFakeApi(initial: Partial<FakeApiState> = {}, options: Fak
         typeof init.body === 'string' ? (JSON.parse(init.body) as Record<string, unknown>) : {};
 
       if (path === '/api/health') return json({ ...HEALTHY, ...options.health });
+
+      if (options.setup !== undefined && path === '/api/app/setup' && method === 'GET') {
+        return json(options.setup.status);
+      }
+      if (options.setup !== undefined && path.startsWith('/api/app/setup/') && method === 'POST') {
+        options.setup.onAction?.(path.slice('/api/app/setup/'.length));
+        return json({ accepted: true }, 202);
+      }
 
       if (path === '/api/backup' && method === 'GET') return json({ ...BACKUP_STATUS, ...options.backup });
 

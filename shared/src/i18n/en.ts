@@ -560,7 +560,7 @@ export const en = {
   },
   /** `ai/errors.ts:43`. */
   'ai.model_missing': {
-    text: "Apunta's AI model isn't installed yet. Choose a model in Settings to install it.",
+    text: "Apunta's writing model isn't installed yet. Set up the AI from the notice at the top of the screen, then try again.",
   },
   /** `ai/errors.ts:45`. */
   'ai.non_gguf_model': {
@@ -604,11 +604,11 @@ export const en = {
   'ai.ollama_error': { text: 'The local AI reported an error. Check Settings, then try again.' },
   /** `ai/errors.ts:66`. */
   'ai.whisper_missing': {
-    text: "Apunta can't find whisper on this machine, so it can't transcribe the recording. Set the whisper path in Settings.",
+    text: "Apunta can't find its transcription program, so it can't transcribe the recording. Installing Apunta again puts it back.",
   },
   /** `ai/errors.ts:68`. */
   'ai.whisper_model_missing': {
-    text: "Apunta's transcription model isn't installed yet. Choose a transcription model in Settings to install it.",
+    text: "Apunta's speech model isn't installed yet, so it can't transcribe the recording. Set up the AI from the notice at the top of the screen, then try again.",
   },
   /** `ai/errors.ts:70`. */
   'ai.audio_unsupported': {
@@ -1390,6 +1390,70 @@ export const en = {
   'ai.unreachable': { text: "Apunta can't reach the local AI." },
   /** `AiBanner.tsx`, after the leading clause and before the button. */
   'ai.bannerTail': { text: 'Everything except drafting a new note still works.' },
+
+  /** `AiBanner.tsx`, desktop app only: a model first-run setup can download is missing. */
+  'ai.setupNeeded': { text: 'Apunta needs to download its AI models before it can transcribe and draft.' },
+  /** `AiBanner.tsx`, the button that opens first-run setup. */
+  'ai.setUp': { text: 'Set up' },
+  /** `AiBanner.tsx`, a browser tab whose speech model is missing. */
+  'ai.speechModelMissing': { text: "Apunta can't find its speech model." },
+
+  /*
+   * `web/src/components/AiSetupDialog.tsx` — first-run setup. Worded here from
+   * the step ids, sizes and failure codes; the installer's own English is never
+   * shown.
+   */
+  'setup.title': { text: "Set up Apunta's AI" },
+  'setup.intro': {
+    text: 'Apunta transcribes and drafts on this computer. To do that it needs these models, downloaded once from their publishers.',
+  },
+  'setup.privacy': {
+    text: 'Only the models are downloaded. Nothing about you, your patients or your notes is sent, and once they are here Apunta works offline.',
+  },
+  'setup.checking': { text: 'Checking what this computer already has…' },
+  'setup.stepSpeech': { text: 'Speech model, which reads your recordings' },
+  'setup.stepPreview': { text: 'Live preview model, which shows your words as you speak' },
+  'setup.stepWriting': { text: 'Writing model ({model}), which drafts your notes', kind: { model: 'text' } },
+  'setup.sourceSpeech': { text: 'from Hugging Face' },
+  'setup.sourceWriting': { text: "from Ollama's model library" },
+  'setup.size': { text: 'About {size}', kind: { size: 'text' } },
+  'setup.installed': { text: 'Installed' },
+  'setup.downloading': { text: 'Downloading…' },
+  'setup.verifying': { text: 'Checking the download…' },
+  'setup.progress': { text: 'Downloaded {done} of {total}', kind: { done: 'text', total: 'text' } },
+  'setup.progressLabel': { text: 'Download progress' },
+  'setup.noRoom': {
+    text: 'This computer needs {size} more free space before Apunta can download its models.',
+    kind: { size: 'text' },
+  },
+  'setup.ready': { text: "Apunta's AI is ready. You can transcribe and draft." },
+  'setup.start': { text: 'Download ({size})', kind: { size: 'text' } },
+  'setup.retry': { text: 'Try again' },
+  'setup.stop': { text: 'Stop' },
+  'setup.later': { text: 'Later' },
+  'setup.hide': { text: 'Hide' },
+  'setup.done': { text: 'Done' },
+  'setup.failed.not_enough_disk': {
+    text: 'There is not enough free space for the models. Free some space, then try again.',
+  },
+  'setup.failed.download_failed': {
+    text: 'The download stopped. Check the internet connection, then try again; it continues where it left off.',
+  },
+  'setup.failed.checksum_mismatch': {
+    text: "A downloaded file didn't match what Apunta expected, so it was thrown away. Try again.",
+  },
+  'setup.failed.cancelled': {
+    text: 'The download was stopped. Start it again whenever you like; it continues where it left off.',
+  },
+  'setup.failed.runtime_unreachable': {
+    text: "Apunta's AI runtime isn't running, so the writing model can't be installed. Restart Apunta, then try again.",
+  },
+  'setup.failed.model_pull_failed': {
+    text: "The writing model couldn't be downloaded. Check the internet connection, then try again.",
+  },
+  'setup.failed.unexpected': {
+    text: 'Setup stopped unexpectedly. Try again; if it keeps happening, restart Apunta.',
+  },
 
   /*
    * `web/src/components/BackupCard.tsx` — the Backup page: one heading, a
