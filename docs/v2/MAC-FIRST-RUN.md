@@ -69,9 +69,10 @@ The packager is finished when it prints `output: …/build/macos-resources` and
 npm run tauri:build
 ```
 
-This builds the app with the owner's updater key. The output is in
-`src-tauri/target/release/bundle/macos/Apunta.app` and
-`src-tauri/target/release/bundle/dmg/`.
+This builds the app with the owner's updater key. The file people download is
+the disk image, `src-tauri/target/release/bundle/dmg/Apunta_<version>_aarch64.dmg`.
+The `.app` it contains is also left at
+`src-tauri/target/release/bundle/macos/Apunta.app`.
 
 ## First launch: what to check
 
