@@ -160,11 +160,14 @@ licence notices live in [`THIRD-PARTY-LICENSES.md`](THIRD-PARTY-LICENSES.md).
 ### For the person using Apunta
 
 On Linux, Apunta is a single `Apunta.AppImage`: make it executable and open
-it. It needs the local AI stack (Ollama and a whisper.cpp build) set up once;
-[`docs/RECOVERY.md`](docs/RECOVERY.md) walks through it on a fresh PC.
+it. It needs Ollama installed; on its first launch Apunta offers to download
+its speech model and, if Ollama does not have it yet, its writing model.
+[`docs/RECOVERY.md`](docs/RECOVERY.md) walks through a fresh PC.
 
 On a Mac, Apunta will download as an `Apunta.dmg`: open it and drag Apunta
-to Applications. There is no `.dmg` to download yet. The macOS build is
+to Applications. It carries its own Ollama, and its first launch offers to
+download the models, so nothing else needs installing. There is no `.dmg` to
+download yet. The macOS build is
 configured (Apple silicon, macOS 14 or newer), and
 [`docs/v2/MAC-FIRST-RUN.md`](docs/v2/MAC-FIRST-RUN.md) is its first build and
 run, step by step.

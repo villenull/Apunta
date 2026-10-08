@@ -1,3 +1,33 @@
+# First-run setup — 2026-10-08
+
+- **The desktop app now sets itself up.** On a launch with a model missing, a
+  setup window opens over whatever comes first (onboarding included). It lists
+  each missing model with its size and source, and says nothing about her or
+  her notes is sent. Nothing downloads until she presses **Download**. Stop,
+  Try again (resuming the partial file) and a finished state follow. The
+  window is worded in the app's language from codes and byte counts.
+- **How it runs.** The page asks through shell-only routes
+  (`server/src/routes/app-setup.ts`). The server relays `setup_request` to the
+  shell, which runs the bundled installer (`installer/setup.mjs`, from both
+  packagers) as its own process in the server's process group
+  (`src-tauri/src/setup.rs`). The server mirrors the validated
+  `setup_event` lines back. The server itself downloads nothing; the event
+  schemas moved to `shared/src/setup.ts` so it never imports the installer.
+- **Proven on the test AppImage**, with an empty data folder: the window
+  opened by itself, downloaded and verified the speech model, stopped on Stop
+  and resumed from its partial file.
+- **Mac: Ollama 0.33.3 is bundled** (A19, owner-approved 2026-10-08, the
+  version every eval ran on). The packager verifies and unpacks it to
+  `macos-resources/ollama/`. The shell gives the server its path and port
+  11435, and the server's `OllamaProcess` runs it with its weights in the data
+  folder. Not run on a Mac; `docs/v2/MAC-FIRST-RUN.md` covers the download and
+  what to check. Linux keeps the system Ollama.
+- **Stale messages fixed.** The missing-model errors no longer point at
+  Settings controls that do not exist.
+- **Seen, not fixed:** quitting the shell always ends with SIGKILL, because
+  the server ignores both `shutdown` and SIGTERM. The previous production
+  AppImage does the same. It is offered as a separate task.
+
 # Public repository — 2026-10-08
 
 - **The repository is public** (owner decision). Before the switch, the README
