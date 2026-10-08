@@ -68,8 +68,9 @@ pub struct ChildPaths {
     pub licenses_file: PathBuf,
     pub web_dist: PathBuf,
     pub whisper_bin: PathBuf,
-    /// `bin/ollama`, the AI runtime. Only the Mac bundle carries it: on Linux the
-    /// system's Ollama service is used, as before.
+    /// `ollama/ollama`, the AI runtime, with its libraries beside it (A19). Only
+    /// the Mac bundle carries it: on Linux the system's Ollama service is used,
+    /// as before.
     pub ollama_bin: Option<PathBuf>,
 }
 
@@ -82,7 +83,7 @@ impl ChildPaths {
             licenses_file: bundle.join("THIRD-PARTY-LICENSES.md"),
             web_dist: bundle.join("web").join("dist"),
             whisper_bin: bundle.join("bin").join("whisper-cli"),
-            ollama_bin: Some(bundle.join("bin").join("ollama")).filter(|path| path.is_file()),
+            ollama_bin: Some(bundle.join("ollama").join("ollama")).filter(|path| path.is_file()),
         };
         let all_present = paths.sqlite_binding.is_file()
             && paths.licenses_file.is_file()
@@ -479,17 +480,18 @@ mod tests {
             ("APUNTA_DATA_DIR", "/tmp/apunta-v2/x/data"),
         ]);
         let without = bundle("no-runtime");
-        let _ = std::fs::remove_file(without.join("bin").join("ollama"));
+        let _ = std::fs::remove_dir_all(without.join("ollama"));
         let config = resolve(&without, &env, true).expect("resolves");
         assert!(config.paths.ollama_bin.is_none());
         assert!(config.ollama_url.is_none());
 
         let with = bundle("runtime");
-        std::fs::write(with.join("bin").join("ollama"), "").unwrap();
+        std::fs::create_dir_all(with.join("ollama")).unwrap();
+        std::fs::write(with.join("ollama").join("ollama"), "").unwrap();
         let config = resolve(&with, &env, true).expect("resolves");
         assert_eq!(
             config.paths.ollama_bin,
-            Some(with.join("bin").join("ollama"))
+            Some(with.join("ollama").join("ollama"))
         );
         assert_eq!(config.ollama_url.as_deref(), Some("http://127.0.0.1:8831"));
 

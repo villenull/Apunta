@@ -1073,7 +1073,7 @@ fn spawn(config: &launch::LaunchConfig, nonce: &str, recovery: bool) -> Result<C
         // stderr is this process's stderr: a log line stays a log line and can
         // never be confused with a bridge line.
         .stderr(Stdio::inherit());
-    // The bundled AI runtime (the Mac app). The server starts it on a port of its
+    // The bundled AI runtime (the Mac app, A19). The server starts it on a port of its
     // own, with its weights in the data folder (`server/src/ai/ollama-process.ts`);
     // without one, the system's Ollama is used as before.
     if let (Some(bin), Some(url)) = (&config.paths.ollama_bin, &config.ollama_url) {

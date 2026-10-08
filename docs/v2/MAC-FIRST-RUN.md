@@ -19,9 +19,15 @@ printed. A failure is useful: it is the first real evidence this path has had.
 - `scripts/v2/package-macos-resources.sh`: builds `build/macos-resources/`
   with the same layout as Linux. Run with `--dry-run` it prints its plan on
   any machine.
-- **Ollama is not bundled**, the same as on Linux: the app talks to the
-  installed Ollama. The card asked for a bundled one; that would need the shell
-  to start and stop it, which nothing does on Linux and nothing could test.
+- **Ollama is bundled** (2026-10-08, A19): the packager unpacks the pinned
+  Ollama 0.33.3 into `macos-resources/ollama/`. The server starts it on a
+  private port (11435, so an Ollama installed separately keeps 11434), with
+  its weights in Apunta's data folder, and stops it on quit.
+- **First-run setup** (2026-10-08): on a first launch with no models, the app
+  opens a setup window listing the speech and writing models, their sizes and
+  where they come from. Nothing downloads until **Download** is pressed; the
+  shell then runs the bundled installer, which downloads and verifies them.
+  This flow was proven on the Linux AppImage; the Mac uses the same code.
 - The old v1 path (`scripts/package-mac.sh`, `macos/`) is marked superseded.
 
 ## Before you start
@@ -40,10 +46,17 @@ You need:
    3. Extract it so that
       `~/.local/share/apunta-node/node-v24.19.0-darwin-arm64/bin/node` exists.
    4. Put that `bin` folder first on `PATH` for the rest of these steps.
-5. Ollama and the writing model:
-   1. `bash scripts/setup-macos.sh --dry-run` to see the plan.
-   2. `bash scripts/setup-macos.sh` to install them. It is the v1 setup script
-      and has also never run on a Mac, so note anything it gets wrong.
+5. **Ollama 0.33.3 for macOS**, row A19 in `docs/v2/ACQUISITION.md`. The
+   owner approved this download on 2026-10-08.
+   1. Download `ollama-darwin.tgz` from
+      https://github.com/ollama/ollama/releases/tag/v0.33.3 (159,236,337 bytes).
+   2. Check `shasum -a 256` prints
+      `342db03df80bb9db84ff64246031bd5f70c09b59ff52fa5cc9aaae3476cc4a9d`.
+   3. Save it as `~/.local/share/apunta-ollama/ollama-darwin-v0.33.3.tgz`. Do
+      not unpack it; the packager checks it and unpacks it itself.
+
+   Do **not** install Ollama or pull a model with Homebrew for this test. The
+   point is to see the app set itself up from nothing.
 
 ## Build
 
@@ -63,7 +76,9 @@ The packager is finished when it prints `output: …/build/macos-resources` and
 - the Node tree is missing;
 - the SQLite add-on prebuild is missing;
 - `whisper-cli` does not run after copying;
-- `whisper-cli` still links a library dynamically.
+- `whisper-cli` still links a library dynamically;
+- the Ollama tarball is missing or its checksum differs;
+- the unpacked `ollama` does not report version 0.33.3.
 
 ```bash
 npm run tauri:build
@@ -78,19 +93,26 @@ The `.app` it contains is also left at
 
 1. **Opening.** Open the `.dmg`, drag Apunta to Applications, then right-click
    › Open. It is ad-hoc signed, so macOS warns the first time. Does it open?
-2. **Onboarding.** Choose the standard format, add a made-up patient (John
+2. **Setup window.** It should open by itself over onboarding. It lists the
+   speech model (about 78.6 MB, from Hugging Face) and the writing model
+   (`qwen3.5:4b-q4_K_M`, about 3.4 GB, from Ollama's model library). Press
+   **Download**. Watch the progress, press **Stop** once and then **Try again**
+   (it should continue where it stopped), and wait for "Apunta's AI is ready".
+   Note the time it took. If it fails, write down the sentence it shows.
+3. **Onboarding.** Choose the standard format, add a made-up patient (John
    Smith).
-3. **Microphone.** Write a note › Record. macOS should ask for the microphone
+4. **Microphone.** Write a note › Record. macOS should ask for the microphone
    with the text above. Check the Spanish text by setting the Mac's language to
    Spanish and launching again.
-4. **Dictation.** Record about 10 seconds, stop and draft. Does a transcript
+5. **Dictation.** Record about 10 seconds, stop and draft. Does a transcript
    appear, and does a draft come back?
-5. **Settings › About.** Is the version shown?
-6. **Quit and reopen.** Is the note still there? The data lives in
+6. **Settings › About.** Is the version shown?
+7. **Quit and reopen.** Is the note still there, and does the setup window
+   stay closed? The data, models included, lives in
    `~/Library/Application Support/Apunta`.
-7. **After quitting.** Run `ps aux | grep -i apunta`. Nothing from Apunta should
-   be left running.
-8. **Signing.** Run `codesign -dv --verbose=2 /Applications/Apunta.app`. It
+8. **After quitting.** Run `ps aux | grep -i -e apunta -e ollama`. Nothing from
+   Apunta, and no `ollama serve`, should be left running.
+9. **Signing.** Run `codesign -dv --verbose=2 /Applications/Apunta.app`. It
    should show `Signature=adhoc`.
 
 ## Updating (after the first run works)
@@ -126,6 +148,11 @@ signed releases:
   Linux folder with a JSON merge-patch `null`. If `tauri:build` rejects the
   config over it, change the base `bundle.resources` entry to name each
   platform's folder in its own platform file instead.
+- **The bundled Ollama under ad-hoc signing.** Its binaries keep Ollama's own
+  signature inside the app. If the setup window says the AI runtime isn't
+  running, run
+  `"/Applications/Apunta.app/Contents/Resources/macos-resources/ollama/ollama" --version`
+  and record what it prints.
 - **The microphone inside the app window.** macOS needs the app to grant the
   web view's microphone request. If recording fails with a permission error
   even after you allow it, that is the shell's job, and the next card.

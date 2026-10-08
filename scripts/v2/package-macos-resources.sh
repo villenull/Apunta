@@ -17,6 +17,7 @@
 #   native/better_sqlite3.node copied from better-sqlite3's NAPI prebuild
 #   node_modules/better-sqlite3/{package.json,lib,prebuilds}
 #   bin/whisper-cli            whisper.cpp at the pinned revision, Metal, static
+#   ollama/                    the AI runtime (A19): `ollama` and its libraries
 #   THIRD-PARTY-LICENSES.md
 #   manifest.json
 #
@@ -28,15 +29,16 @@
 #     (Linux-only), from the SAME pinned revision, with Metal and the shaders
 #     embedded, and linked statically (BUILD_SHARED_LIBS=OFF): one binary with
 #     no @rpath to fix, so nothing is rewritten with install_name_tool.
-#   - Ollama is NOT bundled, exactly as on Linux: the shell talks to the
-#     installed Ollama (scripts/setup-macos.sh installs it with Homebrew). The
-#     card asked for a bundled one; that would need the shell to start and stop
-#     it, which nothing on Linux does and nothing here could test.
+#   - Ollama IS bundled, unlike Linux (which uses the system service): a Mac
+#     that opens the .dmg has no Ollama. The shell hands its path to the server,
+#     whose OllamaProcess starts it on a private port with its weights in the
+#     data folder, and first-run setup pulls the writing model into it.
 #   - No tool is ever installed and nothing is downloaded, except the whisper.cpp
 #     source at its pinned revision (ACQUISITION.md A06). The Node tree must
 #     already be at NODE_INSTALL, extracted from the tarball ACQUISITION.md A18
 #     names and verified against its pinned SHA-256 (APUNTA_NODE_TARBALL lets
-#     this script check the tarball itself).
+#     this script check the tarball itself). The Ollama tarball (A19) must
+#     already be at OLLAMA_TARBALL; it is verified here before it is unpacked.
 
 set -euo pipefail
 
@@ -60,6 +62,13 @@ OUT="$REPO_ROOT/build/macos-resources"
 NODE_VERSION="24.19.0"
 NODE_TARBALL_SHA256="8294b7aa9b03997481c06babf1e8b270c859358f27da57a11509afe537ac381d"
 NODE_INSTALL="${APUNTA_NODE_INSTALL:-$HOME/.local/share/apunta-node/node-v${NODE_VERSION}-darwin-arm64}"
+
+# A19. ollama-darwin.tgz from https://github.com/ollama/ollama/releases/tag/v0.33.3,
+# SHA-256 as published in that release's sha256sum.txt; 159,236,337 bytes. The
+# version every eval ran on (the Linux PC's Ollama).
+OLLAMA_VERSION="0.33.3"
+OLLAMA_TARBALL_SHA256="342db03df80bb9db84ff64246031bd5f70c09b59ff52fa5cc9aaae3476cc4a9d"
+OLLAMA_TARBALL="${APUNTA_OLLAMA_TARBALL:-$HOME/.local/share/apunta-ollama/ollama-darwin-v${OLLAMA_VERSION}.tgz}"
 
 # A06, the revision Linux pins: read from the Linux builder, never restated.
 WHISPER_COMMIT="$(sed -n 's/^WHISPER_COMMIT="\([0-9a-f]*\)"$/\1/p' "$REPO_ROOT/scripts/build-whisper-candidate.sh")"
@@ -191,6 +200,20 @@ if [ "$DRY_RUN" = 0 ]; then
   if otool -L "$OUT/bin/whisper-cli" | grep -E '@rpath|libwhisper|libggml' >/dev/null; then
     die "bin/whisper-cli still links a whisper/ggml dylib; the static build did not take"
   fi
+fi
+
+step "Bundling the AI runtime (A19, Ollama ${OLLAMA_VERSION})"
+if [ "$DRY_RUN" = 0 ]; then
+  [ -f "$OLLAMA_TARBALL" ] || die "the A19 tarball is not at ${OLLAMA_TARBALL}. Download it once (docs/v2/MAC-FIRST-RUN.md)."
+  actual="$(shasum -a 256 "$OLLAMA_TARBALL" | cut -d' ' -f1)"
+  [ "$actual" = "$OLLAMA_TARBALL_SHA256" ] || die "the Ollama tarball's SHA-256 is $actual, expected $OLLAMA_TARBALL_SHA256"
+fi
+run mkdir -p "$OUT/ollama"
+run tar -xzf "$OLLAMA_TARBALL" -C "$OUT/ollama"
+if [ "$DRY_RUN" = 0 ]; then
+  [ -x "$OUT/ollama/ollama" ] || die "the A19 tarball has no ollama binary at its top level"
+  # The real gate, as for whisper-cli: a runtime that cannot start fails here.
+  "$OUT/ollama/ollama" --version 2>&1 | grep -q "$OLLAMA_VERSION" || die "ollama/ollama does not report version $OLLAMA_VERSION"
 fi
 
 step "Copying the licences"

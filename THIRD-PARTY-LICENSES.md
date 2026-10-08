@@ -20,14 +20,14 @@ exactly what is inside it.
 - **Downloaded** means the Mac fetches it once, from its publisher, during
   first-run setup. Apunta never hosts, mirrors or re-serves those files, so
   they are not redistributed by us — see *The models* below.
-- Versions are the ones `scripts/package-mac.sh` pins. Changing a pin means
+- Versions are the ones the packaging scripts pin (Ollama: `scripts/v2/package-macos-resources.sh`). Changing a pin means
   changing this file.
 
 ## What ships inside Apunta.app
 
 | Component | What it does | Licence | Where it lands |
 | --- | --- | --- | --- |
-| **Ollama** `v0.32.15` | runs the writing model | MIT | `Contents/Helpers/ollama/` |
+| **Ollama** `v0.33.3` | runs the writing model | MIT | `Contents/Resources/macos-resources/ollama/` |
 | ↳ **llama.cpp / ggml** (vendored in Ollama) | the inference engine for GGUF weights | MIT | same directory |
 | ↳ **MLX** (vendored in Ollama) | Apple-silicon array framework | MIT | same directory |
 | ↳ **BoringSSL** (linked into `llama-server`) | TLS | Apache-2.0 | inside those binaries |
