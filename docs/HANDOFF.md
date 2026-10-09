@@ -1,3 +1,47 @@
+# Start here — the state of Apunta on 2026-10-09
+
+This section is current. Everything below it is a dated log, newest first;
+where an older section disagrees with this one, this one wins.
+
+## What works
+
+- **The Linux desktop app** (Tauri AppImage) runs the whole app locally:
+  dictation with whisper `tiny.en`, drafting with Ollama
+  `qwen3.5:4b-q4_K_M`, the server's draft checks (risk review restored in her
+  own words, retractions cut, ungathered background, diagnostic words,
+  corrected figures), refine chat, plans, prep, Brainstorm, Claude and Halaxy
+  imports. Eval: English fabrication 0%, safety facts 100%; Spanish held-out
+  fabrication 4.5% (2026-10-07 report).
+- **First-run setup**: a new install opens a setup window that downloads the
+  missing models on her press (2026-10-08 section below).
+- **The updater** works end to end on this PC (`scripts/v2/rehearse-update.sh`:
+  an update installs and restarts; a wrongly signed one is refused).
+- **Releases** are built and signed on this PC by the owner with
+  `bash scripts/v2/release-linux.sh`, as a draft, published by hand.
+- **CI** is green on `main` and runs on demand (`gh workflow run CI --ref main`).
+  The repository is public.
+- Quitting the app no longer hangs (2026-10-08).
+
+## Open, and who it waits on
+
+| Item | Waits on |
+| --- | --- |
+| Run `release-linux.sh`, read the draft, publish v0.1.0; then confirm the installed app (`~/Applications/Apunta.AppImage`, 0.0.0, built 2026-10-07 with the production key) offers and installs it | the owner |
+| Her first real dictations: the only allowed source for new retraction markers, Spanish ones included (`server/src/ai/retractions.ts`) | the owner |
+| Importing her real Claude export and Halaxy PDFs, through the previews (agents never open them) | the owner |
+| The Mac first run (`docs/v2/MAC-FIRST-RUN.md`): Node (A18) and Ollama 0.33.3 (A19) are approved; nothing has run on a Mac | the owner, when Mac work resumes |
+| The P5.4 updater code never had an independent review; its behaviour is now rehearsed end to end, and the first real update will be the field test | the owner's call |
+| A desktop-harness flow for the setup window (unit-tested and run once by hand) | an agent |
+| README: point the Linux install at the Releases page | an agent, after v0.1.0 is published |
+
+## How to pick up
+
+Read `CLAUDE.md` (rules, commands, how the owner works), then this section,
+then only the dated sections you need. Recovery of this PC: `docs/RECOVERY.md`.
+Live instance: port 7717 from its dedicated clone, deployed with
+`scripts/deploy-live-linux.sh`; never test against it, use
+`scripts/v2/sandbox.mjs`.
+
 # First release, v0.1.0 — 2026-10-09
 
 - **Releases are built and signed on this PC** (owner decision, instead of
@@ -264,7 +308,11 @@ Measured effect of fix 3: 39/40 assertions with onboarding `NOT RUN` before;
 - **Subagents ran on `opencode-go/longcat-2.5-preview-free`**, per the owner's
   standing instruction to re-check the allowed free lineup each session.
 
-## Open, and not claimed done
+## Open, and not claimed done (as of 2026-10-06; all since resolved)
+
+Resolved since: the key exists (2026-10-07); CI runs again, on demand, on the
+public repository; the eleven native flows passed 64/64 (2026-10-07); review
+is still outstanding, see "Start here".
 
 - **The production signing key is still absent** (AM-222).
   `check-release-config.mjs` reports `BLOCKED` and never substitutes a test key.
@@ -508,6 +556,9 @@ Continue from docs/v2/state/NEXT-SESSION.md and current checkpoints, not the
 historical sections below. Prior milestone evidence and failures remain history.
 
 # Where Apunta is — the handoff
+
+> **Historical (2026-09-22 to 2026-09-28).** `feature/v2` was merged and
+> retired on 2026-09-29; "Start here" at the top of this file is current.
 
 **Active v2 work (2026-09-27):** see `docs/v2/state/NEXT-SESSION.md` and
 `docs/v2/state/PROGRESS.json` for current status on `feature/v2`. The latest
@@ -966,7 +1017,7 @@ clipboard write was used after the initial sentinel.
 Previous fake-AI/automated evidence remains historical; it does not override
 these real-model failures. No candidate is clinically cleared.
 
-## Next session — do these in order
+## Next session — do these in order (2026-09-24; "Start here" supersedes it)
 
 1. Treat the 2026-09-22 retraction and Discussion reviews as **done**. Keep
    their focused synthetic gates and raw reports as regression evidence; do not
@@ -992,9 +1043,8 @@ these real-model failures. No candidate is clinically cleared.
 7. Mac work is paused for the coming months by the owner's decision. Keep the
    Linux PC as the machine running the local AI server; resume the Mac-only
    checklist only when she reopens that work.
-8. The hosted README still needs a real authenticated browser page check if
-   repository visibility/access changes; the API-render substitute above must
-   not be relabeled as hosted acceptance.
+8. The repository is public since 2026-10-08, so the hosted README is no
+   longer behind a sign-in.
 9. Speech: tiny.en stays (owner, 2026-10-04, AM-204). Drug-name accuracy is out of scope for the target use case; "scratch that" misrecognition is accepted until a real-use failure. No Whisper download is authorized.
 
 

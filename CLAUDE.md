@@ -161,8 +161,9 @@ Four standing preferences, recorded here so they survive a cleared session.
   copy edit, a config value) is written directly and checked once. The hard
   rules above (privacy, no real patient text, fake-AI runnable) stay absolute.
   The updater (P5.4) has its production key (2026-10-07,
-  `src-tauri/updater.pub`; the private half stays with the owner) but cannot
-  download until the repository is public (D3); user-facing work comes first.
+  `src-tauri/updater.pub`; the private half stays with the owner), and the
+  repository is public; releases are cut with `scripts/v2/release-linux.sh`.
+  User-facing work comes first.
 
 - **CI runs on demand, not on every push** (owner decision 2026-10-07: the
   private repo's 2,000 free monthly minutes ran out in six days at ~16 minutes a
