@@ -109,6 +109,13 @@ inserts them labelled "as dictated" (`server/src/ai/risk-review.ts`,
   refuses elsewhere, and `APUNTA_PACKAGE_ALLOW_NON_MACOS=1 ... -- --dry-run`
   prints the plan). `scripts/uninstall-macos.sh` is the reverse.
   `docs/INSTALL.md` is the non-technical guide; none of it has run on a Mac
+- `bash scripts/v2/release-linux.sh` — the owner runs this, in their own
+  terminal: builds and signs the Linux AppImage on this PC (it asks for the
+  updater key's password), writes and checks `latest.json`
+  (`scripts/v2/check-manifest.mjs`), tags `v<version>` and creates a **draft**
+  GitHub release with the release notes from `docs/releases/v<version>.md`.
+  Installed apps see it only once the owner publishes the draft. Bump every
+  version field first; `--no-upload` stops before anything leaves the PC
 - `npm run licenses` — regenerates the npm half of `THIRD-PARTY-LICENSES.md`;
   `npm run lint` fails when it is stale, or on a copyleft dependency
 

@@ -159,6 +159,15 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': 'off' },
   },
   {
+    // The release manifest check and its test name the release host on
+    // purpose: their job is to refuse a `latest.json` that points anywhere but
+    // this repository's own release assets. They run on the owner's PC before
+    // an upload, make no request, and nothing in server/, web/ or shared/
+    // imports them. The app's own update check stays in `src-tauri/`.
+    files: ['scripts/v2/check-manifest.mjs', 'scripts/v2/check-manifest.test.mjs'],
+    rules: { 'no-restricted-syntax': 'off' },
+  },
+  {
     files: ['web/**/*.{ts,tsx}'],
     languageOptions: {
       globals: { ...globals.browser },

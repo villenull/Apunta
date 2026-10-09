@@ -1,3 +1,19 @@
+# First release, v0.1.0 — 2026-10-09
+
+- **Releases are built and signed on this PC** (owner decision, instead of
+  GitHub secrets): `bash scripts/v2/release-linux.sh`, run by the owner in
+  their own terminal because it asks for the updater key's password. It
+  checks the checkout, builds and signs the AppImage, runs
+  `check:release`, writes `latest.json` and checks it
+  (`scripts/v2/check-manifest.mjs`: verified targets only, signed, and only
+  this repository's own assets for this version, derived from the app's
+  pinned endpoint). It then tags and creates a **draft** release; installed
+  apps see nothing until the owner presses Publish.
+- **Every version field is 0.1.0** (owner's choice). The installed AppImage
+  (2026-10-07) reports 0.0.0 and carries the production public key, so it
+  will be offered 0.1.0 once the draft is published.
+- Release notes live in `docs/releases/v<version>.md`.
+
 # First-run setup — 2026-10-08
 
 - **The desktop app now sets itself up.** On a launch with a model missing, a
