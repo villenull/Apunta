@@ -21,6 +21,13 @@ where an older section disagrees with this one, this one wins.
 - **CI** is green on `main` and runs on demand (`gh workflow run CI --ref main`).
   The repository is public.
 - Quitting the app no longer hangs (2026-10-08).
+- **First-run setup has its own desktop check**,
+  `node scripts/v2/tauri-setup-smoke.mjs` (2026-10-09, three passing runs, ~10
+  s): real providers, empty sandbox, window opens itself, closes on Later,
+  nothing downloaded, quit under a second. The fake-AI flow harness cannot see
+  this window, because nothing is missing in fake mode.
+- **The README's Linux install** points at the latest release; the link shows
+  nothing until v0.1.0 is published.
 
 ## Open, and who it waits on
 
@@ -31,8 +38,6 @@ where an older section disagrees with this one, this one wins.
 | Importing her real Claude export and Halaxy PDFs, through the previews (agents never open them) | the owner |
 | The Mac first run (`docs/v2/MAC-FIRST-RUN.md`): Node (A18) and Ollama 0.33.3 (A19) are approved; nothing has run on a Mac | the owner, when Mac work resumes |
 | The P5.4 updater code never had an independent review; its behaviour is now rehearsed end to end, and the first real update will be the field test | the owner's call |
-| A desktop-harness flow for the setup window (unit-tested and run once by hand) | an agent |
-| README: point the Linux install at the Releases page | an agent, after v0.1.0 is published |
 
 ## How to pick up
 

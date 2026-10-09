@@ -121,6 +121,11 @@ inserts them labelled "as dictated" (`server/src/ai/risk-review.ts`,
   version and the next as test-updater AppImages, signs the newer one with a
   throwaway key, and on loopback and a private display checks that an update
   installs and restarts and that a wrongly signed one is refused (~10 min)
+- `node scripts/v2/tauri-setup-smoke.mjs` — after `npm run tauri:build:test`:
+  runs the test AppImage on the real providers with an empty sandbox folder
+  and checks first-run setup opens by itself (the shell ran the installer's
+  plan), shows on screen, closes on Later with nothing downloaded, and that the
+  app quits promptly. Never presses Download, so it makes no outside request
 - `npm run licenses` — regenerates the npm half of `THIRD-PARTY-LICENSES.md`;
   `npm run lint` fails when it is stale, or on a copyleft dependency
 

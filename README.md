@@ -159,10 +159,23 @@ licence notices live in [`THIRD-PARTY-LICENSES.md`](THIRD-PARTY-LICENSES.md).
 
 ### For the person using Apunta
 
-On Linux, Apunta is a single `Apunta.AppImage`: make it executable and open
-it. It needs Ollama installed; on its first launch Apunta offers to download
-its speech model and, if Ollama does not have it yet, its writing model.
-[`docs/RECOVERY.md`](docs/RECOVERY.md) walks through a fresh PC.
+On Linux (x86-64), Apunta is a single AppImage:
+
+1. Install Ollama from its website, if it is not there already.
+2. Download `Apunta_<version>_amd64.AppImage` from the
+   [latest release](../../releases/latest).
+3. Make it runnable and open it:
+
+   ```sh
+   chmod +x Apunta_*_amd64.AppImage && ./Apunta_*_amd64.AppImage
+   ```
+
+On its first launch Apunta offers to download its speech model and, if
+Ollama does not have it yet, its writing model; nothing downloads until you
+press **Download**. After that it works offline, and it updates itself from
+the same releases page (signed, and you can turn the check off in Settings).
+[`docs/RECOVERY.md`](docs/RECOVERY.md) walks through setting up a fresh PC
+for development.
 
 On a Mac, Apunta will download as an `Apunta.dmg`: open it and drag Apunta
 to Applications. It carries its own Ollama, and its first launch offers to
