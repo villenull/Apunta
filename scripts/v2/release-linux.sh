@@ -13,8 +13,9 @@
 # What it does, in order, stopping at the first thing wrong:
 #   1. checks the checkout: on main, clean, identical to origin/main, every
 #      version field equal, the tag not taken, the key present, gh signed in;
-#   2. builds the runtime bundle and the production AppImage, signed
-#      (`npm run tauri:build:release`), then runs `npm run check:release`;
+#   2. builds the runtime bundle and the production AppImage (`npm run
+#      tauri:build`), runs `npm run check:release`, and signs the AppImage
+#      with `tauri signer sign`, which writes the `.sig` installed apps verify;
 #   3. writes `latest.json` — the file installed apps read — and checks it
 #      with scripts/v2/check-manifest.mjs;
 #   4. tags the commit, pushes the tag, and creates a DRAFT GitHub release
@@ -82,10 +83,8 @@ printf '\n'
 step "Building the runtime bundle"
 bash scripts/v2/package-linux-resources.sh
 
-step "Building and signing the AppImage"
-TAURI_SIGNING_PRIVATE_KEY="$(cat "$KEY")" TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$PASSWORD" \
-  npm run tauri:build:release
-unset PASSWORD
+step "Building the AppImage"
+npm run tauri:build
 
 step "Checking the release binary"
 npm run check:release
@@ -93,10 +92,16 @@ npm run check:release
 BUNDLE="src-tauri/target/release/bundle/appimage"
 NAME="Apunta_${VERSION}_amd64.AppImage"
 [ -f "$BUNDLE/$NAME" ] || die "the build left no $BUNDLE/$NAME"
-[ -s "$BUNDLE/$NAME.sig" ] || die "the build left no signature at $BUNDLE/$NAME.sig"
-if [ "$BUNDLE/$NAME" -nt "$BUNDLE/$NAME.sig" ]; then
-  die "$NAME.sig is older than the AppImage; it signs a previous build"
-fi
+
+step "Signing the AppImage"
+# Not the bundler's createUpdaterArtifacts: that needs a plugins.updater block
+# in the build config, which makes generate_context! need serde_json as a
+# direct crate (A05 admits four). `tauri signer sign` writes the same `.sig`.
+rm -f "$BUNDLE/$NAME.sig"
+TAURI_SIGNING_PRIVATE_KEY="$(cat "$KEY")" TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$PASSWORD" \
+  npx tauri signer sign "$BUNDLE/$NAME" >/dev/null
+unset PASSWORD
+[ -s "$BUNDLE/$NAME.sig" ] || die "signing left no signature at $BUNDLE/$NAME.sig"
 
 OUT="build/release/$TAG"
 rm -rf "$OUT"

@@ -125,13 +125,21 @@ signed releases:
    password (never put them in the repository):
 
    ```bash
-   TAURI_SIGNING_PRIVATE_KEY_PATH=~/.apunta-signing/apunta-updater.key npm run tauri:build:release
+   npm run tauri:build
    ```
 
-   It asks for the password, or reads it from
-   `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Besides the `.dmg` it produces
-   `bundle/macos/Apunta.app.tar.gz` and `Apunta.app.tar.gz.sig`, which are the
-   update and its signature.
+   ```bash
+   tar -czf src-tauri/target/release/bundle/macos/Apunta.app.tar.gz -C src-tauri/target/release/bundle/macos Apunta.app
+   ```
+
+   ```bash
+   TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.apunta-signing/apunta-updater.key)" npx tauri signer sign src-tauri/target/release/bundle/macos/Apunta.app.tar.gz
+   ```
+
+   The last command asks for the password. The `.tar.gz` and the
+   `Apunta.app.tar.gz.sig` it writes are the update and its signature. (The
+   bundler's own `createUpdaterArtifacts` is not used: it needs updater
+   settings in the build config that this app does not carry.)
 2. **Publish two versions.** Publish one as a GitHub release, with a
    `latest.json` whose `platforms` has a `darwin-aarch64` entry naming the
    `.tar.gz` URL and the contents of the `.sig`. Install it. Then raise the

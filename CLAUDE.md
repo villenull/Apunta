@@ -110,7 +110,8 @@ inserts them labelled "as dictated" (`server/src/ai/risk-review.ts`,
   prints the plan). `scripts/uninstall-macos.sh` is the reverse.
   `docs/INSTALL.md` is the non-technical guide; none of it has run on a Mac
 - `bash scripts/v2/release-linux.sh` — the owner runs this, in their own
-  terminal: builds and signs the Linux AppImage on this PC (it asks for the
+  terminal: builds the Linux AppImage on this PC and signs it with
+  `tauri signer sign` (it asks for the
   updater key's password), writes and checks `latest.json`
   (`scripts/v2/check-manifest.mjs`), tags `v<version>` and creates a **draft**
   GitHub release with the release notes from `docs/releases/v<version>.md`.
