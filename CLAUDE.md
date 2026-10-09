@@ -117,6 +117,10 @@ inserts them labelled "as dictated" (`server/src/ai/risk-review.ts`,
   GitHub release with the release notes from `docs/releases/v<version>.md`.
   Installed apps see it only once the owner publishes the draft. Bump every
   version field first; `--no-upload` stops before anything leaves the PC
+- `bash scripts/v2/rehearse-update.sh` — run before a release: builds this
+  version and the next as test-updater AppImages, signs the newer one with a
+  throwaway key, and on loopback and a private display checks that an update
+  installs and restarts and that a wrongly signed one is refused (~10 min)
 - `npm run licenses` — regenerates the npm half of `THIRD-PARTY-LICENSES.md`;
   `npm run lint` fails when it is stale, or on a copyleft dependency
 

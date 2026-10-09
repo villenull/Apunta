@@ -13,6 +13,11 @@
   (2026-10-07) reports 0.0.0 and carries the production public key, so it
   will be offered 0.1.0 once the draft is published.
 - Release notes live in `docs/releases/v<version>.md`.
+- **The update path is proven on this PC** with
+  `bash scripts/v2/rehearse-update.sh`: a 0.1.0 test build checked,
+  downloaded, verified a `tauri signer` signature, installed 0.1.1, restarted
+  on it and kept the previous AppImage; the same update signed with another key
+  was refused and nothing was replaced. Run it before each release.
 
 # First-run setup — 2026-10-08
 
