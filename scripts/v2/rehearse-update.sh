@@ -3,6 +3,13 @@
 # P6.2 — rehearse a real update on this PC before publishing a release.
 #
 #   bash scripts/v2/rehearse-update.sh
+#   bash scripts/v2/rehearse-update.sh --from old-test-updater.AppImage
+#
+# With `--from`, the installed app is that AppImage (a test-updater build of an
+# older commit, such as the one the owner has installed) and the update is this
+# checkout's own version; the older build's own updater code does the install.
+# Make one with `git checkout <commit>`, package-linux-resources.sh and
+# `npm run tauri:build:updater-test`, then `git checkout main`.
 #
 # Builds two test-updater AppImages from this checkout, the current version
 # and the next patch version, signs the newer one with a throwaway key using
@@ -20,6 +27,21 @@
 # real signing key is never used. About ten minutes, most of it the two builds.
 
 set -euo pipefail
+
+FROM=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --from)
+      FROM="$(realpath "${2:?--from needs an AppImage}")"
+      shift
+      ;;
+    *)
+      echo "usage: $0 [--from old-test-updater.AppImage]" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
@@ -43,8 +65,15 @@ ours() {
   done
   return 0
 }
+# Each AppImage run with APPIMAGE_EXTRACT_AND_RUN unpacks ~775 MB into /tmp and
+# leaves it; a few runs fill a tmpfs. Only the copies made after this marker go.
+MARKER="$WORK/started"
+touch "$MARKER"
 cleanup() {
   for pid in "${PIDS[@]}" $(ours); do kill "$pid" 2>/dev/null || true; done
+  sleep 2
+  find /tmp -maxdepth 1 -name 'appimage_extracted_*' -newer "$MARKER" -exec rm -rf {} + 2>/dev/null || true
+  rm -f "$WORK"/*.AppImage "$WORK"/serve/*.AppImage
 }
 trap cleanup EXIT
 
@@ -54,14 +83,25 @@ fail() {
   exit 1
 }
 
-CURRENT="$(node -p 'JSON.parse(require("fs").readFileSync("src-tauri/tauri.conf.json","utf8")).version')"
-NEXT="$(node -p "const [a,b,c]='$CURRENT'.split('.').map(Number); [a,b,c+1].join('.')")"
+CHECKOUT="$(node -p 'JSON.parse(require("fs").readFileSync("src-tauri/tauri.conf.json","utf8")).version')"
+if [ -n "$FROM" ]; then
+  [ -f "$FROM" ] || { echo "no AppImage at $FROM" >&2; exit 1; }
+  cp "$FROM" "$WORK/old.AppImage"
+  CURRENT="$(basename "$FROM" | sed -n 's/.*_\([0-9]*\.[0-9]*\.[0-9]*\)_amd64\.AppImage$/\1/p')"
+  [ -n "$CURRENT" ] || CURRENT="(from $(basename "$FROM"))"
+  NEXT="$CHECKOUT"
+else
+  CURRENT="$CHECKOUT"
+  NEXT="$(node -p "const [a,b,c]='$CURRENT'.split('.').map(Number); [a,b,c+1].join('.')")"
+fi
 printf 'rehearsing %s -> %s in %s\n' "$CURRENT" "$NEXT" "$WORK"
 
-step "Building $CURRENT (the installed app)"
-bash scripts/v2/package-linux-resources.sh >"$WORK/build-old.log" 2>&1
-npm run tauri:build:updater-test >>"$WORK/build-old.log" 2>&1
-cp "src-tauri/target/release/bundle/appimage/Apunta (test)_${CURRENT}_amd64.AppImage" "$WORK/old.AppImage"
+if [ -z "$FROM" ]; then
+  step "Building $CURRENT (the installed app)"
+  bash scripts/v2/package-linux-resources.sh >"$WORK/build-old.log" 2>&1
+  npm run tauri:build:updater-test >>"$WORK/build-old.log" 2>&1
+  cp "src-tauri/target/release/bundle/appimage/Apunta (test)_${CURRENT}_amd64.AppImage" "$WORK/old.AppImage"
+fi
 
 step "Building $NEXT (the update)"
 APUNTA_BUNDLE_VERSION="$NEXT" bash scripts/v2/package-linux-resources.sh >"$WORK/build-new.log" 2>&1
@@ -141,13 +181,15 @@ wait_state() {
 }
 quit() {
   for pid in $(ours); do kill -TERM "$pid" 2>/dev/null || true; done
-  for _ in $(seq 1 30); do [ -z "$(ours)" ] && return 0; sleep 0.5; done
+  # 30 s: builds before 2026-10-08 need the quit ladder's full SIGKILL path.
+  for _ in $(seq 1 60); do [ -z "$(ours)" ] && return 0; sleep 0.5; done
   fail "the app did not quit"
 }
 
 step "1. A correctly signed update installs and restarts"
 launch
-[ "$(version)" = "$CURRENT" ] || fail "the installed app is not $CURRENT"
+OLD_REPORTS="$(version)"
+[ -n "$FROM" ] || [ "$OLD_REPORTS" = "$CURRENT" ] || fail "the installed app is not $CURRENT"
 curl -s -X POST "$API/app/update/check" >/dev/null
 wait_state "^available"
 curl -s -X POST "$API/app/update/download" >/dev/null
@@ -168,7 +210,7 @@ wait_state "^available"
 curl -s -X POST "$API/app/update/download" >/dev/null
 wait_state ":rejected$"
 cmp -s "$BASE/apps/Apunta.AppImage" "$WORK/old.AppImage" || fail "a refused update still replaced the app"
-[ "$(version)" = "$CURRENT" ] || fail "a refused update changed the running version"
+[ "$(version)" = "$OLD_REPORTS" ] || fail "a refused update changed the running version"
 printf 'PASS: refused, nothing replaced\n'
 quit
 

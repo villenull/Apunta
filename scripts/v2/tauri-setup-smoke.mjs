@@ -23,7 +23,16 @@
  * signalled. Screenshots and logs land in a temporary folder it prints.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -65,7 +74,22 @@ function ourShells() {
   });
 }
 
+const started = Date.now();
 function cleanup() {
+  // An AppImage run with APPIMAGE_EXTRACT_AND_RUN unpacks ~775 MB into /tmp and
+  // leaves it; only the copies this run made are removed.
+  const removeExtracted = () => {
+    for (const name of readdirSync('/tmp')) {
+      if (!name.startsWith('appimage_extracted_')) continue;
+      const dir = join('/tmp', name);
+      try {
+        if (statSync(dir).mtimeMs >= started) rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // gone already, or not ours to read
+      }
+    }
+  };
+  setTimeout(removeExtracted, 3000);
   for (const pid of ourShells()) {
     try {
       process.kill(Number(pid), 'SIGTERM');

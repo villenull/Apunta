@@ -120,7 +120,9 @@ inserts them labelled "as dictated" (`server/src/ai/risk-review.ts`,
 - `bash scripts/v2/rehearse-update.sh` — run before a release: builds this
   version and the next as test-updater AppImages, signs the newer one with a
   throwaway key, and on loopback and a private display checks that an update
-  installs and restarts and that a wrongly signed one is refused (~10 min)
+  installs and restarts and that a wrongly signed one is refused (~10 min).
+  `--from <older test-updater AppImage>` starts from an older build instead,
+  so the update runs that build's own updater code
 - `node scripts/v2/tauri-setup-smoke.mjs` — after `npm run tauri:build:test`:
   runs the test AppImage on the real providers with an empty sandbox folder
   and checks first-run setup opens by itself (the shell ran the installer's

@@ -26,6 +26,19 @@ where an older section disagrees with this one, this one wins.
   s): real providers, empty sandbox, window opens itself, closes on Later,
   nothing downloaded, quit under a second. The fake-AI flow harness cannot see
   this window, because nothing is missing in fake mode.
+- **The updater was reviewed by the coordinator** (2026-10-09, owner's
+  call): the shell's state machine, download and signature check, keep-previous
+  and rollback, relaunch and health check, the server's journal and boot
+  decision, and the notice. No blocking defect. It was then rehearsed **from
+  the exact build the owner has installed** (commit `25b1c6b`, 7 Oct) to
+  0.1.0: installed, restarted, previous kept; a wrongly signed update
+  refused. Two things to know: that build still has the slow quit, so her
+  first update's restart takes about 20 s; and if the new version's health
+  confirmation ever fails (only if the journal cannot be removed), the notice
+  stays silent and the next start opens in recovery mode.
+- **Running AppImages unpacked fills /tmp**: each `APPIMAGE_EXTRACT_AND_RUN`
+  run leaves ~775 MB in `/tmp/appimage_extracted_*`. Both desktop scripts now
+  remove their own; clear old ones by hand if /tmp is full.
 - **The README's Linux install** points at the latest release; the link shows
   nothing until v0.1.0 is published.
 
@@ -37,7 +50,6 @@ where an older section disagrees with this one, this one wins.
 | Her first real dictations: the only allowed source for new retraction markers, Spanish ones included (`server/src/ai/retractions.ts`) | the owner |
 | Importing her real Claude export and Halaxy PDFs, through the previews (agents never open them) | the owner |
 | The Mac first run (`docs/v2/MAC-FIRST-RUN.md`): Node (A18) and Ollama 0.33.3 (A19) are approved; nothing has run on a Mac | the owner, when Mac work resumes |
-| The P5.4 updater code never had an independent review; its behaviour is now rehearsed end to end, and the first real update will be the field test | the owner's call |
 
 ## How to pick up
 
