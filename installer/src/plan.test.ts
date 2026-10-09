@@ -10,6 +10,7 @@ import {
 } from '@apunta/shared';
 import { describe, expect, it } from 'vitest';
 
+import { SPEECH_MODEL } from './catalog.js';
 import { checkDiskSpace, DISK_HEADROOM_BYTES, freeBytesFor } from './disk.js';
 import { buildPlan, describeWeightsProvenance, explainChoice } from './plan.js';
 
@@ -27,6 +28,13 @@ function planFor(overrides: Partial<Parameters<typeof buildPlan>[0]> = {}) {
 }
 
 describe('buildPlan', () => {
+  // The setup window shows this beside a download that counts up to the real
+  // file size; a rounded figure made the two disagree (78.6 MB vs 77.7 MB).
+  it('lists the speech model at its pinned size', () => {
+    const speech = planFor().steps.find((step) => step.id === 'speech_model');
+    expect(speech?.approxBytes).toBe(SPEECH_MODEL.sizeBytes);
+  });
+
   /**
    * C-MODEL@1. The first run downloads **the effective model**, and the
    * effective model does not come from this Mac's memory — so the RAM table is

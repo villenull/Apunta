@@ -79,13 +79,15 @@ export function buildPlan(input: PlanInput): PlanEvent {
       id: 'speech_model',
       label: 'The model that reads your recordings',
       needed: !input.speechModelPresent,
-      approxBytes: SPEECH_MODEL.approxBytes,
+      // The pinned size, not the rounded 75 MiB: it is exact, and the setup
+      // window shows it beside a download counting up to the same number.
+      approxBytes: SPEECH_MODEL.sizeBytes,
     },
     {
       id: 'preview_model',
       label: 'The model that shows your words as you speak',
       needed: previewNeedsItsOwnDownload(input.previewModelPresent),
-      approxBytes: PREVIEW_SPEECH_MODEL.approxBytes,
+      approxBytes: PREVIEW_SPEECH_MODEL.sizeBytes,
     },
     {
       id: 'writing_model',
