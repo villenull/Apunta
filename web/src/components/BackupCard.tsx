@@ -1,4 +1,10 @@
-import { instantToLocalDay, type BackupFile, type BackupStatusResponse } from '@apunta/shared';
+import {
+  instantToLocalDay,
+  type BackupFile,
+  type BackupStatusResponse,
+  type FileVaultState,
+  type MessageKey,
+} from '@apunta/shared';
 import { useCallback, useId, useRef, useState } from 'react';
 
 import {
@@ -6,6 +12,7 @@ import {
   createBackup,
   errorMessage,
   fetchBackupStatus,
+  fetchHealth,
   listBackupFolders,
   restoreBackup,
   setBackupLocation,
@@ -64,6 +71,36 @@ export function useBackup(): BackupControls {
   return { status: status.state, reload, busy, error, run };
 }
 
+const DISK_LINE: Partial<Record<FileVaultState, MessageKey>> = {
+  on: 'backup.diskOn',
+  off: 'backup.diskOff',
+  deferred: 'backup.diskDeferred',
+  unknown: 'backup.diskUnknown',
+};
+
+/**
+ * Whether the disk under the data folder is encrypted: FileVault on a Mac,
+ * LUKS on Linux. It sits with backups because the advice is the same either
+ * way: an unencrypted disk is what an encrypted, off-machine copy is for.
+ */
+function DiskEncryptionLine(): React.JSX.Element | null {
+  const { t } = useI18n();
+  const load = useCallback((signal: AbortSignal) => fetchHealth(signal), []);
+  const health = useLoader(load);
+  if (health.state.status !== 'ready') return null;
+  const key = DISK_LINE[health.state.data.fileVault.state];
+  if (key === undefined) return null;
+  return (
+    <p
+      className="small note-meta backup-disk"
+      data-testid="backup-disk"
+      data-state={health.state.data.fileVault.state}
+    >
+      {t(key)}
+    </p>
+  );
+}
+
 /** Only the summary and destination live on the page; choices live in dialogs. */
 export function BackupSection({ backup }: { backup: BackupControls }): React.JSX.Element {
   const { t } = useI18n();
@@ -75,6 +112,7 @@ export function BackupSection({ backup }: { backup: BackupControls }): React.JSX
     <section className="card settings-card" data-testid="backup-card">
       <h2 className="settings-title">{t('backup.title')}</h2>
       <p className="small note-meta backup-explanation">{t('backup.explain')}</p>
+      <DiskEncryptionLine />
       {backup.status.status === 'loading' && <p className="small state-note">{t('common.loading')}</p>}
       {backup.status.status === 'error' && (
         <p className="form-error" role="alert">

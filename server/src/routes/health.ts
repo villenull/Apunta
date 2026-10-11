@@ -77,7 +77,7 @@ export async function buildHealthResponse(
   const [llm, stt, fileVault] = await Promise.all([
     providers.llm.describe(),
     providers.stt.describe(),
-    fileVaultStatus(),
+    fileVaultStatus(Date.now(), { dataDir: config.dataDir }),
   ]);
 
   /**

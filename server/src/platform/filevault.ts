@@ -17,10 +17,12 @@ import type { FileVaultState, FileVaultStatus } from '@apunta/shared';
  *
  * Three properties this has to have:
  *
- * - **portable by omission.** `fdesetup` exists only on macOS; everywhere else
- *   the answer is `not_applicable` and nothing turns red. Server logic stays
- *   OS-portable (CLAUDE.md rule 4) — the platform check is here, not in a
- *   route.
+ * - **portable by omission.** `fdesetup` exists only on macOS. On Linux the
+ *   same question is asked of the disk under the data folder: is it a LUKS
+ *   (dm-crypt) device, read with `findmnt` and `lsblk` (2026-10-11). Anywhere
+ *   else the answer is `not_applicable` and nothing turns red. Server logic
+ *   stays OS-portable (CLAUDE.md rule 4) — the platform check is here, not in
+ *   a route.
  * - **cached.** `/api/health` is polled; shelling out per request would be
  *   both wasteful and a way to make the app feel slow.
  * - **never fatal.** A machine where `fdesetup` times out or is refused
@@ -51,6 +53,45 @@ export function parseFdesetupStatus(output: string): FileVaultState {
 export interface ProbeOptions {
   readonly platform?: string;
   readonly run?: (command: string, args: readonly string[]) => Promise<string>;
+  /** The folder whose disk is asked about on Linux: Apunta's data folder. */
+  readonly dataDir?: string;
+}
+
+/**
+ * Linux: whether the disk under a folder is encrypted, from two reads.
+ *
+ * `findmnt` gives the mount's source and filesystem; `lsblk -s` then lists that
+ * device and every device beneath it, and a `crypt` among them is LUKS
+ * (dm-crypt). An `ecryptfs` home is encrypted too. A device with no `crypt`
+ * under it is `off`. Anything that is not a block device (tmpfs, a network
+ * share, an overlay) is `unknown`, because nothing here can say.
+ */
+export function parseLinuxEncryption(findmnt: string, lsblkTypes: string | null): FileVaultStatus {
+  const [rawSource = '', fstype = ''] = findmnt.trim().split(/\s+/);
+  // btrfs subvolumes print as `/dev/mapper/root[/@home]`.
+  const source = rawSource.replace(/\[.*\]$/, '');
+  if (fstype === 'ecryptfs') return { state: 'on', detail: 'eCryptfs' };
+  if (!source.startsWith('/dev/') || lsblkTypes === null) {
+    return { state: 'unknown', detail: `not a disk device (${fstype || 'unknown filesystem'})` };
+  }
+  const types = lsblkTypes.split('\n').map((line) => line.trim());
+  if (types.includes('crypt')) return { state: 'on', detail: `LUKS (${source})` };
+  return { state: 'off', detail: `no encryption under ${source}` };
+}
+
+async function probeLinux(options: ProbeOptions): Promise<FileVaultStatus> {
+  const run = options.run ?? runFdesetup;
+  try {
+    const mount = await run('findmnt', ['-n', '-o', 'SOURCE,FSTYPE', '--target', options.dataDir ?? '/']);
+    const source = (mount.trim().split(/\s+/)[0] ?? '').replace(/\[.*\]$/, '');
+    const types = source.startsWith('/dev/') ? await run('lsblk', ['-s', '-n', '-o', 'TYPE', source]) : null;
+    return parseLinuxEncryption(mount, types);
+  } catch (error) {
+    return {
+      state: 'unknown',
+      detail: `could not read the disk (${error instanceof Error ? error.message : String(error)})`,
+    };
+  }
 }
 
 async function runFdesetup(command: string, args: readonly string[]): Promise<string> {
@@ -67,6 +108,7 @@ async function runFdesetup(command: string, args: readonly string[]): Promise<st
 
 export async function probeFileVault(options: ProbeOptions = {}): Promise<FileVaultStatus> {
   const target = options.platform ?? platform();
+  if (target === 'linux') return probeLinux(options);
   if (target !== 'darwin') {
     return { state: 'not_applicable', detail: `disk encryption is not checked on ${target}` };
   }

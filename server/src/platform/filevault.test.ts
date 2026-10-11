@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { clearFileVaultCache, fileVaultStatus, parseFdesetupStatus, probeFileVault } from './filevault.js';
+import {
+  clearFileVaultCache,
+  fileVaultStatus,
+  parseFdesetupStatus,
+  parseLinuxEncryption,
+  probeFileVault,
+} from './filevault.js';
 
 afterEach(() => {
   clearFileVaultCache();
@@ -43,10 +49,39 @@ describe('parseFdesetupStatus', () => {
 describe('probeFileVault', () => {
   it('does not run fdesetup off darwin, which is what keeps the server portable', async () => {
     const run = vi.fn();
-    const status = await probeFileVault({ platform: 'linux', run });
+    const status = await probeFileVault({ platform: 'win32', run });
 
     expect(status.state).toBe('not_applicable');
     expect(run).not.toHaveBeenCalled();
+  });
+
+  it('on Linux, asks about the disk under the data folder', async () => {
+    const calls: string[][] = [];
+    const run = vi.fn(async (command: string, args: readonly string[]) => {
+      calls.push([command, ...args]);
+      return command === 'findmnt' ? '/dev/mapper/root[/@home] btrfs\n' : 'crypt\npart\ndisk\n';
+    });
+    const status = await probeFileVault({
+      platform: 'linux',
+      run,
+      dataDir: '/home/john/.local/share/apunta',
+    });
+
+    expect(status).toEqual({ state: 'on', detail: 'LUKS (/dev/mapper/root)' });
+    expect(calls).toEqual([
+      ['findmnt', '-n', '-o', 'SOURCE,FSTYPE', '--target', '/home/john/.local/share/apunta'],
+      ['lsblk', '-s', '-n', '-o', 'TYPE', '/dev/mapper/root'],
+    ]);
+  });
+
+  it('on Linux, answers unknown when the tools fail — never off', async () => {
+    const status = await probeFileVault({
+      platform: 'linux',
+      run: async () => {
+        throw new Error('spawn findmnt ENOENT');
+      },
+    });
+    expect(status.state).toBe('unknown');
   });
 
   it('reports what the machine said, first line only', async () => {
@@ -86,5 +121,28 @@ describe('the cache', () => {
     // without restarting the app.
     await fileVaultStatus(1_000_000, options);
     expect(run).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('parseLinuxEncryption', () => {
+  it('reads LUKS anywhere under the device as encrypted', () => {
+    expect(parseLinuxEncryption('/dev/mapper/root btrfs', 'crypt\npart\ndisk').state).toBe('on');
+    expect(parseLinuxEncryption('/dev/mapper/vg-home ext4', 'lvm\ncrypt\npart\ndisk').state).toBe('on');
+  });
+
+  it('reads a plain partition as not encrypted', () => {
+    expect(parseLinuxEncryption('/dev/nvme0n1p2 ext4', 'part\ndisk')).toEqual({
+      state: 'off',
+      detail: 'no encryption under /dev/nvme0n1p2',
+    });
+  });
+
+  it('reads an eCryptfs home as encrypted', () => {
+    expect(parseLinuxEncryption('/home/.ecryptfs/john/.Private ecryptfs', null).state).toBe('on');
+  });
+
+  it('says unknown, not off, for anything that is not a disk device', () => {
+    expect(parseLinuxEncryption('tmpfs tmpfs', null).state).toBe('unknown');
+    expect(parseLinuxEncryption('server:/share nfs4', null).state).toBe('unknown');
   });
 });

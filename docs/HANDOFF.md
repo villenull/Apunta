@@ -39,6 +39,11 @@ where an older section disagrees with this one, this one wins.
 - **Running AppImages unpacked fills /tmp**: each `APPIMAGE_EXTRACT_AND_RUN`
   run leaves ~775 MB in `/tmp/appimage_extracted_*`. Both desktop scripts now
   remove their own; clear old ones by hand if /tmp is full.
+- **Disk encryption is checked on Linux too** (2026-10-11): `/api/health`'s
+  `fileVault` field now reads the disk under the data folder with `findmnt`
+  and `lsblk` (LUKS, or an eCryptfs home), and Settings › Backup shows one line
+  saying whether the disk is encrypted, on both platforms. This PC's data disk
+  is LUKS-encrypted. A data folder on tmpfs (the sandbox) reads as unknown.
 - **The README's Linux install** points at the latest release; the link shows
   nothing until v0.1.0 is published.
 
@@ -1054,9 +1059,9 @@ these real-model failures. No candidate is clinically cleared.
    **Add to existing**.
 5. Keep the exact-zero Whisper mitigation narrow. Do not add VAD/noise
    suppression without the missing non-silent reproducer and quiet control.
-6. Linux disk encryption is **not checked**. Recommend an off-machine backup
-   (encrypted, if it leaves the machine) rather than treating the local copy as
-   the only recovery path.
+6. Linux disk encryption is checked since 2026-10-11, and this PC's disk is
+   LUKS-encrypted. An off-machine backup (encrypted, if it leaves the
+   machine) is still the recovery path for a lost or failed disk.
 7. Mac work is paused for the coming months by the owner's decision. Keep the
    Linux PC as the machine running the local AI server; resume the Mac-only
    checklist only when she reopens that work.

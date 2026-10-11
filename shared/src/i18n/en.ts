@@ -1472,6 +1472,23 @@ export const en = {
   'backup.explain': {
     text: 'Backups keep a copy of your practice so you can recover your notes if something is lost or damaged. Apunta makes a daily backup automatically; use Back up now to save an extra copy. Restore brings back a saved copy after you confirm.',
   },
+  /*
+   * `BackupCard.tsx`: whether the disk under the data folder is encrypted
+   * (`/api/health`'s `fileVault`: FileVault on a Mac, LUKS on Linux). One line,
+   * informational; nothing is shown where the question does not apply.
+   */
+  'backup.diskOn': {
+    text: "This computer's disk is encrypted, so your notes stay protected if it is lost or stolen.",
+  },
+  'backup.diskOff': {
+    text: "This computer's disk is not encrypted. Keep an encrypted backup somewhere other than this computer.",
+  },
+  'backup.diskDeferred': {
+    text: 'Disk encryption is switched on and finishes the next time this computer restarts.',
+  },
+  'backup.diskUnknown': {
+    text: "Apunta could not tell whether this computer's disk is encrypted.",
+  },
 
   /** The row that opens the folder picker, above the full path. */
   'backup.locationLabel': { text: 'Current backup location' },

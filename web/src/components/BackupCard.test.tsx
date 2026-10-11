@@ -160,3 +160,37 @@ describe('the backup page', () => {
     });
   });
 });
+
+describe('the disk-encryption line', () => {
+  const disk = (state: 'on' | 'off' | 'deferred' | 'unknown' | 'not_applicable') =>
+    installFakeApi({}, { health: { fileVault: { state, detail: '' } } });
+
+  it('says the disk is encrypted when it is', async () => {
+    disk('on');
+    renderCard();
+    expect((await screen.findByTestId('backup-disk')).textContent).toBe(t('backup.diskOn'));
+  });
+
+  it('says plainly when it is not, and what to do about it', async () => {
+    disk('off');
+    renderCard();
+    const line = await screen.findByTestId('backup-disk');
+    expect(line.textContent).toContain('not encrypted');
+    expect(line.textContent).toContain('encrypted backup');
+  });
+
+  it('says it could not tell, rather than guessing either way', async () => {
+    disk('unknown');
+    renderCard();
+    expect((await screen.findByTestId('backup-disk')).textContent).toBe(t('backup.diskUnknown'));
+  });
+
+  it('shows nothing where the question does not apply', async () => {
+    disk('not_applicable');
+    renderCard();
+    await screen.findByTestId('backup-card');
+    await waitFor(() => {
+      expect(screen.queryByTestId('backup-disk')).toBeNull();
+    });
+  });
+});

@@ -1062,6 +1062,18 @@ export const esMX = {
   'backup.explain': {
     text: 'Las copias de seguridad guardan tu práctica para recuperar tus notas si algo se pierde o se daña. Apunta crea una copia diaria automáticamente; usa Hacer una copia ahora para guardar una adicional. Restaurar recupera una copia guardada después de que confirmes.',
   },
+  'backup.diskOn': {
+    text: 'El disco de esta computadora está cifrado, así que tus notas siguen protegidas si se pierde o te la roban.',
+  },
+  'backup.diskOff': {
+    text: 'El disco de esta computadora no está cifrado. Guarda una copia de seguridad cifrada en otro lugar, fuera de esta computadora.',
+  },
+  'backup.diskDeferred': {
+    text: 'El cifrado del disco está activado y termina la próxima vez que reinicies esta computadora.',
+  },
+  'backup.diskUnknown': {
+    text: 'Apunta no pudo saber si el disco de esta computadora está cifrado.',
+  },
   'backup.locationLabel': {
     text: 'Ubicación actual de las copias de seguridad',
   },
