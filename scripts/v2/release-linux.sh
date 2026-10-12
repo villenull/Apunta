@@ -77,6 +77,7 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || [ -n "$(git ls-remot
 fi
 [ -f "$KEY" ] || die "the updater's private key is not at $KEY (docs/RECOVERY.md)"
 if [ "$UPLOAD" = 1 ]; then
+  command -v gh >/dev/null 2>&1 || die "gh (the GitHub CLI) is not on PATH"
   gh auth status >/dev/null 2>&1 || die "gh is not signed in (gh auth login)"
 fi
 printf 'version %s, commit %s\n' "$VERSION" "$(git rev-parse --short HEAD)"
