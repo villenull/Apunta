@@ -52,6 +52,13 @@ die() {
 
 [ -x "$NODE_BIN/node" ] || die "the pinned Node 24.19.0 is not at $NODE_BIN (docs/RECOVERY.md)"
 export PATH="$NODE_BIN:$PATH"
+# rustup puts cargo in ~/.cargo/bin, which a terminal's PATH does not always
+# carry; the Tauri build needs it.
+[ -d "$HOME/.cargo/bin" ] && export PATH="$HOME/.cargo/bin:$PATH"
+# Every tool the build needs, checked before the password is asked for.
+for tool in cargo git; do
+  command -v "$tool" >/dev/null 2>&1 || die "$tool is not on PATH (docs/RECOVERY.md)"
+done
 
 step "Checking the checkout"
 VERSION="$(node -p 'JSON.parse(require("fs").readFileSync("src-tauri/tauri.conf.json","utf8")).version')"
